@@ -1,0 +1,4 @@
+LocalClasses_2.java:15: Local is already defined in foo()
+            class Local { }                     // ERROR
+            ^
+1 error

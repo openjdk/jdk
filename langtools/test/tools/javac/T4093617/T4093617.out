@@ -1,0 +1,4 @@
+T4093617.java:12: java.lang.Object has no superclass
+    Object() { super(); }
+               ^
+1 error

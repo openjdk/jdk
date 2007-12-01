@@ -1,0 +1,6 @@
+interface pkg1.A
+  name: A / A / pkg1.A
+  annotations:
+    @pkg1.Value("there is only one")
+    @pkg1.Array(favoriteNumbers=3.5)
+    @pkg1.Marker

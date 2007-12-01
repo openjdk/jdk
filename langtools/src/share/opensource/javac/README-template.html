@@ -1,0 +1,330 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!--
+Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+This code is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 2 only, as
+published by the Free Software Foundation.  Sun designates this
+particular file as subject to the "Classpath" exception as provided
+by Sun in the LICENSE file that accompanied this code.
+
+This code is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+version 2 for more details (a copy is included in the LICENSE file that
+accompanied this code).
+
+You should have received a copy of the GNU General Public License version
+2 along with this work; if not, write to the Free Software Foundation,
+Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+CA 95054 USA or visit www.sun.com if you need additional information or
+have any questions.
+-->
+
+<html>
+    <head>
+        <meta name="jdk-version" content="$(JDK_VERSION)">
+        <meta name="full-version" content="$(FULL_VERSION)">
+        <meta name="release" content="$(RELEASE)">
+        <meta name="date" content="$(BUILD_DATE)">
+        <link href="doc/document.css" rel="stylesheet">
+        <title>OpenJDK: javac -- README</title>
+        <style type="text/css">
+            p.noteX { margin-left:18pt; text-indent:-18pt }
+        </style>
+    </head>
+    <body>
+        <table width="100%" cellspacing="0" cellpadding="0" border="0" 
+            summary="This table is for formatting purposes only.">
+            <tr>
+                <td class="sun-darkblue">&nbsp;</td>
+            </tr>
+            <tr>
+                <td class="sun-darkblue">
+                    <h1>README</h1>
+
+                    <h2>Open JDK&#8482; Java programming language compiler (<code>javac</code>)<br>
+                    Version $(RELEASE)
+                    <!--$(FULL_VERSION)--></h2>
+                    <h4>$(BUILD_DATE)</h4>
+                </td>
+            </tr>
+            <tr>
+                <td class="sun-lightblue">&nbsp;</td>
+            </tr>
+        </table>
+        
+        <a name="top"></a>
+
+        <!--<p class="nav-link">[<a href="#intro">Skip TOC</a>]</p>-->
+
+        <h2>Table of Contents</h2>
+        
+        <ul>
+            <li><a href="#intro">Introduction</a></li>
+            <li><a href="#files">Files and Directories</a></li>
+            <li><a href="#specs">Specifications</a></li>
+            <li><a href="#build">Building the compiler</a></li>
+            <li><a href="#run">Running the compiler</a></li>
+            <li><a href="#test">Testing the compiler</a></li>
+        </ul>
+        
+        <h2><a name="intro">Introduction</a></h2>
+        <p>This bundle contains the source code for <code>javac</code>, a compiler for
+        the Java&trade; programming language.
+        Build files are provided for use with 
+        <a href="http://www.netbeans.org">NetBeans</a>,
+        <a href="http://ant.apache.org/">Apache Ant</a> or
+        <a href="http://www.gnu.org/software/make/">GNU make</a>.
+        The bundle also contains a set of compiler tests, for use with the
+        <a href="https://openjdk.dev.java.net/jtreg/">jtreg</a> test harness.
+        
+        
+        <h2><a name="files">Files and Directories</a></h2>
+        When you install the compiler bundle, a directory named 
+        <code>compiler</code> will be created, containing the following:
+        <table>
+            <thead>
+                <tr><th>Name<th>Description
+            </thead>
+            <tbody>
+                <tr>
+                    <td>README.html</td>
+                    <td>This file.</td>
+                </tr>
+	        <tr>
+	            <td>nbproject/project.xml</td>
+	            <td>A NetBeans project file.
+	        </tr>
+                <tr>
+                    <td>src/share/classes/</td>
+                    <td>The source files for the compiler.</td>
+                </tr>
+                <tr>
+                    <td>build.xml</td>
+                    <td>A build file for building the compiler, suitable for 
+                    use with NetBeans and Apache Ant.</td>
+                </tr>
+                <tr>
+                    <td>build.properties</td>
+                    <td>Build properties, used by build.xml.</td>
+                </tr>
+                <tr>
+                    <td>Makefile</td>
+                    <td>A Makefile for building the compiler, suitable for use 
+                    with GNU make.</td>
+                </tr>
+                <tr>
+                    <td>test/tools/javac/</td>
+                    <td>Regression tests for the compiler, for use with the JDK regression 
+                    test harness, jtreg.</td>
+                </tr>
+                <tr>
+                    <td><a href="doc">doc/</a></td>
+                    <td>Additional notes about the compiler.</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h2><a name="specs">Specifications</a></h2>
+        <p>The compiler is a program for compiling source code written in the Java 
+        programming language into class files suitable for execution on a Java
+        virtual machine. It also provides API for annotation processing,
+        and invoking the compiler programmatically.
+        <p>These behaviors are governed by the following specifications:
+        <ul>
+            <li>Java Language Specification (JLS)</li>
+            <li>Java Virtual Machine Specification (JVMS)</li>
+            <li>Java Compiler API (JSR 199)</li>
+            <li>Pluggable Annotation Processing API (JSR 269)</li>
+        </ul>
+        <p>For more details on these specifications, see the
+        <a href="http://download.java.net/jdk6/docs/technotes/guides/javac/index.html">javac Guide</a>.
+        </p>
+
+        <p>These specifications are controlled by the Java Community Process 
+        (<a href="http://jcp.org/">JCP</a>.) All implementations of these specifications
+        must pass the appropriate test suites.</p>
+
+        <p><b>Notice regarding JSR 199 and JSR 269:</b>
+        This is an implementation of an early-draft
+        specification developed under the Java Community Process (JCP)
+        and is made available for testing and evaluation purposes only.
+        The code is not compatible with any specification of the JCP.
+                
+        <h2><a name="build">Building the compiler</a></h2>
+
+        <h3>System Requirements</h3>
+        <p><code>javac</code> is written in the Java programming language. 
+        As a general rule, it can normally be compiled using tools in the 
+        latest released version of the JDK. 
+        (That is, a development version of <code>javac</code> version 7 
+        can be built with JDK version 6, etc.)
+        To <a href="#bootstrap">bootstrap</a> the compiler, you should also have 
+        a copy of the target JDK.</p>
+
+        <p>You can build <code>javac</code> using 
+        <a href="#build.netbeans">NetBeans</a>,
+        <a href="#build.ant">Apache Ant</a>,
+        or <a href="#build.make">GNU make</a>.
+        </p>
+
+        <p>To run the compiler tests, you will need the 
+        <a href="https://openjdk.dev.java.net/jtreg/">jtreg test harness</a>.
+
+        <h3><a name="bootstrap">Bootstrapping the compiler</a></h3>
+
+        <p>The source for the compiler is such that it can be compiled using the latest
+        publicly released version of the JDK.In practice, it is typically desirable
+        to compile it first using the latest publicly released version of the JDK,
+        and then again using itself, and the target platform on which it will be run.
+        This not only provides a good initial test of the newly built compiler, it
+        also means the compiler is built with the latest compiler sources, against
+        the target libraries.
+
+        <h3><a name="build.netbeans">Building with NetBeans</a></h3>
+        <p>The installation directory for the compiler is set up as a free-form NetBeans project,
+        so to build the compiler using NetBeans, you just have to open the
+        project and build it in the normal way, for example, by using the operations
+        on the <code>Build</code> menu.
+        <p>To run the tests, you will have to edit properties in the 
+        <code>build.properties</code> file, to specify where you have installed
+        the <code>jtreg</code> harness and, possibly, a different version of
+        JDK to use when running the tests.
+
+        <h3><a name="build.ant">Building with Apache Ant</a></h3>
+        <p>To build the compiler, go to the compiler installation directory, and run "ant".</p>
+        <pre>
+        % cd <i>install-dir</i>
+        % ant       
+        </pre>
+        <p>To run the tests, you will have to edit properties in the 
+        <code>build.properties</code> file, to specify where you have installed
+        the <code>jtreg</code> harness and, possibly, a different version of
+        JDK to use when running the tests. Then, you can run the tests using the
+        "test" target.
+        
+        <h3><a name="build.make">Building with GNU make</a></h3>
+        <p>To build the compiler, go to the compiler installation directory, and type "make".</p>
+        You should not have CLASSPATH and JAVAHOME environment variables set when you
+        do this.
+        <pre>
+        % cd <i>install-dir</i>
+        % make      
+        </pre>
+        <p>To run the tests, you will have to specify where you have installed
+        the <code>jtreg</code> harness and, possibly, a different version of
+        JDK to use when running the tests. Then, you can run the tests using the
+        "test" target. You can specify the values by giving them on the command
+        line when you run <code>make</code> or by editing the values into the Makefile.
+        
+        <h3>What gets built?</h3>
+        <p>Whichever build tool you use, the results are put in the <code>dist</code>
+        subdirectory of your installation directory. The following files will be built.
+        <table>
+            <thead>
+                <tr><th>Name<th>Description
+            </thead>
+            <tbody>
+                <tr>
+                    <td>dist/lib/javac.jar</td>
+                    <td>This is an executable jar file containing the compiler.</td>
+                </tr>
+                <tr>
+                    <td>dist/bin/javac</td>
+                    <td>This is a simple shell script to invoke the compiler.</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h3>Notes</h3>
+        
+        <p class="note"><i>Property files:</i>
+        It is possible to compile the resource property files into equivalent 
+        class files, for a minor performance improvement. For simplicity, that
+        feature is not included here.</p>
+        
+        <p class="note"><i>The launcher:</i>
+        JDK uses a program informally called "the launcher" which is used as
+        a wrapper for all JDK tools, including <code>java</code>, 
+        <code>javac</code>, <code>javadoc</code>, and so on. The program is a deployed
+        as a platform-dependent binary, thus obviating the need for a shell
+        script to invoke the tools. Again for simplicity, and because that program
+        is not normally considered part of <code>javac</code>, that program is
+        not included here.</p
+        
+        <h2><a name="run">Running the compiler</a></h2>
+        <p>Once you have built the compiler, you can run it in a number of ways.
+        <ul>
+            <li>
+                <p>Use the generated script, perhaps by putting it on your shell's
+                command execution path.</p>
+                <pre>    % <i>install-dir</i>/dist/bin/javac HelloWorld.java</pre>
+                <p>or</p>
+                <pre>    % javac HelloWorld.java</pre>
+            </li>
+            <li><p>Execute javac.jar with the <code>java</code> command.</p>
+                <pre>    % java -jar <i>install-dir</i>/dist/lib/javac.jar HelloWorld.java</pre>
+            </li>
+            <li><p>Execute javac.jar directly. Depending on your operating system,
+                you may be able to execute the jar file directly.</p>
+                <pre>    % <i>install-dir</i>/dist/lib/javac.jar HelloWorld.java</pre>
+                <p>See the 
+                <a href="http://java.sun.com/j2se/1.5.0/docs/guide/jar/jarGuide.html">Jar File Overview</a> 
+                for details.</p>
+            </li>
+        </ul>
+        
+        <h2><a name="test">Testing the compiler with <code>jtreg</code></h2>
+        <p>This bundle contains a large test suite of unit and regression tests
+        used to test <code>javac</code>. They are part of the JDK Regression Test
+        Suite, which uses the 
+        <a href="https://openjdk.dev.java.net/jtreg/">jtreg test harness</a>. 
+        This harness is
+        designed to run both API-style tests, and command-line tests, such as
+        found in the tests for <code>javac</code>.</p>
+
+        <p>The simplest way to run the tests is to prepend the newly created
+        copy of <code>javac.jar</code> to the bootstrap class path of a 
+        compatible version of JDK (meaning, it must accept the class file 
+        versions of newly compiled classes.)  To do this, you can use
+        the <code>-Xbootclasspath/p:</code><i>&lt;path&gt;</i> option
+        for <code>jtreg</code>. This option is similar to the equivalent
+        option for the <code>java</code> command.
+
+        <p><i><b>Note:</b>Some of the tests, written as shell tests, do not yet
+        support this mode of operation. You should use the 
+        <code>-noshell</code> to disable these tests for the time being.
+        This restriction will be lifted in the near future.</i>
+
+        <p><i><b>Note:</b>Four additional tests are ignored, using the <code>jtreg</code>
+	<code>@ignore</code> tag, because of problems caused by bugs that have not yet
+	been addressed.
+        
+        <p>You can run the compiler tests with a command such as the following:</p>
+        
+        <pre>    % jtreg -jdk:<i>jdk</i> -Xbootclasspath/p:<i>my-javac.jar</i> -verbose -noshell test/tools/javac</pre>
+
+        <p>Depending on the verbose options used, some amount of detail of the result
+        of each test is written to the console.  In addition, an HTML report about the
+        entire test run is written to a report directory, and a results file is written for
+        each test, in a "work" directory. The location of these directories can be
+        specified on the <code>jtreg</code> command line; the actual locations used
+        are reported to the console at the conclusion of the test run.
+        
+        <p>For more information on <code>jtreg</code>, use the 
+        the <code>-help</code> option for command-line help, or
+        the <code>-onlineHelp</code> option for the built-in online help.
+        Both of these options may optionally be followed by search
+        keywords</p>
+        
+        <p><code>jtreg</code> can also be run from Ant. See
+        <code>jtreg&nbsp;-onlineHelp&nbsp;ant</code> for details.</p>
+
+        <p>Both <code>build.xml</code> and <code>Makefile</code> contain "test" targets for running the tests. 
+        
+    </body>
+</html>

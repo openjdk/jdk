@@ -1,0 +1,7 @@
+Test.java:4: not a statement
+        abcdefg
+        ^
+Test.java:4: ';' expected
+        abcdefg
+               ^
+2 errors

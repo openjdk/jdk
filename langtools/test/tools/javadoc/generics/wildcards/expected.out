@@ -1,0 +1,16 @@
+class pkg1.A<T>
+  name: A / A / pkg1.A
+  type parameters:
+    T
+  superclass:
+    java.lang.Object
+  fields:
+    pkg1.A<?> f1
+    pkg1.A<? extends java.lang.Number> f2
+    pkg1.A<? super java.lang.Long> f3
+  constructors:
+    A()
+  methods:
+    void m1(A<?>)
+    void m2(A<? extends Number>)
+    void m3(A<? super Long>)

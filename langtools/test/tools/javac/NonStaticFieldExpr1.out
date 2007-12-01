@@ -1,0 +1,4 @@
+NonStaticFieldExpr1.java:10: non-static variable x cannot be referenced from a static context
+  int y = NonStaticFieldExpr1.x;                // SHOULD BE ERROR
+                             ^
+1 error

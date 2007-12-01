@@ -1,0 +1,14 @@
+
+public class Aggregate {
+
+  private Aggregate();
+
+  private static double hypot(double arg0,
+    double arg1);
+
+  public static void main(java.lang.String[] arg0);
+
+  public boolean equals(Aggregate arg0);
+
+  public int hashcode();
+}

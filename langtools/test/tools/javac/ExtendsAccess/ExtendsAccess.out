@@ -1,0 +1,151 @@
+ExtendsAccess.java:31: cannot find symbol
+symbol: class publicClass
+class ExtendsAccess111 extends publicClass { }                          // ERROR - 'publicClass' not in scope
+                               ^
+ExtendsAccess.java:32: cannot find symbol
+symbol: class defaultClass
+class ExtendsAccess112 extends defaultClass { }                         // ERROR - 'defaultClass' not in scope
+                               ^
+ExtendsAccess.java:33: cannot find symbol
+symbol: class protectedClass
+class ExtendsAccess113 extends protectedClass { }                       // ERROR - 'protectedClass' not in scope
+                               ^
+ExtendsAccess.java:34: cannot find symbol
+symbol: class privateClass
+class ExtendsAccess114 extends privateClass { }                         // ERROR - 'privateClass' not in scope
+                               ^
+ExtendsAccess.java:39: ExtendsAccess.privateClass has private access in ExtendsAccess
+class ExtendsAccess1241 extends ExtendsAccess.privateClass { }          // ERROR - cannot access 'privateClass'
+                                             ^
+ExtendsAccess.java:42: p.ExtendsAccess.defaultClass is not public in p.ExtendsAccess; cannot be accessed from outside package
+class ExtendsAccess1222 extends p.ExtendsAccess.defaultClass { }        // ERROR - cannot access 'defaultClass'
+                                               ^
+ExtendsAccess.java:43: p.ExtendsAccess.protectedClass has protected access in p.ExtendsAccess
+class ExtendsAccess1232 extends p.ExtendsAccess.protectedClass { }      // ERROR - cannot access 'protectedClass'
+                                               ^
+ExtendsAccess.java:44: p.ExtendsAccess.privateClass has private access in p.ExtendsAccess
+class ExtendsAccess1242 extends p.ExtendsAccess.privateClass { }        // ERROR - cannot access 'privateClass'
+                                               ^
+ExtendsAccess.java:56: ExtendsAccess.privateClass has private access in ExtendsAccess
+    class N extends privateClass { }                                    // ERROR - cannot access 'privateClass'
+                    ^
+ExtendsAccess.java:63: p.ExtendsAccess.defaultClass is not public in p.ExtendsAccess; cannot be accessed from outside package
+    class N extends defaultClass { }                                    // ERROR - cannot access 'defaultClass'
+                    ^
+ExtendsAccess.java:69: p.ExtendsAccess.privateClass has private access in p.ExtendsAccess
+    class N extends privateClass { }                                    // ERROR - cannot access 'privateClass'
+                    ^
+ExtendsAccess.java:85: ExtendsAccess.privateClass has private access in ExtendsAccess
+    class N extends ExtendsAccess.privateClass { }                      // ERROR - cannot access 'privateClass'
+                                 ^
+ExtendsAccess.java:92: p.ExtendsAccess.defaultClass is not public in p.ExtendsAccess; cannot be accessed from outside package
+    class N extends p.ExtendsAccess.defaultClass { }                    // ERROR - cannot access 'defaultClass'
+                                   ^
+ExtendsAccess.java:101: p.ExtendsAccess.privateClass has private access in p.ExtendsAccess
+    class N extends p.ExtendsAccess.privateClass { }                    // ERROR - cannot access 'privateClass'
+                                   ^
+ExtendsAccess.java:104: cannot find symbol
+symbol: class publicStaticClass
+class ExtendsAccess211 extends publicStaticClass { }                    // ERROR - 'publicStaticClass' not in scope
+                               ^
+ExtendsAccess.java:105: cannot find symbol
+symbol: class defaultStaticClass
+class ExtendsAccess212 extends defaultStaticClass { }                   // ERROR - 'defaultStaticClass' not in scope
+                               ^
+ExtendsAccess.java:106: cannot find symbol
+symbol: class protectedStaticClass
+class ExtendsAccess213 extends protectedStaticClass { }                 // ERROR - 'protectedStaticClass' not in scope
+                               ^
+ExtendsAccess.java:107: cannot find symbol
+symbol: class privateStaticClass
+class ExtendsAccess214 extends privateStaticClass { }                   // ERROR - 'privateStaticClass' not in scope
+                               ^
+ExtendsAccess.java:112: ExtendsAccess.privateStaticClass has private access in ExtendsAccess
+class ExtendsAccess2241 extends ExtendsAccess.privateStaticClass { }    // ERROR - cannot access 'privateStaticClass'
+                                             ^
+ExtendsAccess.java:115: p.ExtendsAccess.defaultStaticClass is not public in p.ExtendsAccess; cannot be accessed from outside package
+class ExtendsAccess2222 extends p.ExtendsAccess.defaultStaticClass { }  // ERROR - cannot access 'defaultStaticClass'
+                                               ^
+ExtendsAccess.java:116: p.ExtendsAccess.protectedStaticClass has protected access in p.ExtendsAccess
+class ExtendsAccess2232 extends p.ExtendsAccess.protectedStaticClass { }// ERROR - cannot access 'protectedStaticClass'
+                                               ^
+ExtendsAccess.java:117: p.ExtendsAccess.privateStaticClass has private access in p.ExtendsAccess
+class ExtendsAccess2242 extends p.ExtendsAccess.privateStaticClass { }  // ERROR - cannot access 'privateStaticClass'
+                                               ^
+ExtendsAccess.java:129: ExtendsAccess.privateStaticClass has private access in ExtendsAccess
+    class N extends privateStaticClass { }                      // ERROR - cannot access 'privateStaticClass'
+                    ^
+ExtendsAccess.java:136: p.ExtendsAccess.defaultStaticClass is not public in p.ExtendsAccess; cannot be accessed from outside package
+    class N extends defaultStaticClass { }                      // ERROR - cannot access 'defaultStaticClass'
+                    ^
+ExtendsAccess.java:142: p.ExtendsAccess.privateStaticClass has private access in p.ExtendsAccess
+    class N extends privateStaticClass { }                      // ERROR - cannot access 'privateStaticClass'
+                    ^
+ExtendsAccess.java:158: ExtendsAccess.privateStaticClass has private access in ExtendsAccess
+    class N extends ExtendsAccess.privateStaticClass { }        // ERROR - cannot access 'privateStaticClass'
+                                 ^
+ExtendsAccess.java:165: p.ExtendsAccess.defaultStaticClass is not public in p.ExtendsAccess; cannot be accessed from outside package
+    class N extends p.ExtendsAccess.defaultStaticClass { }      // ERROR - cannot access 'defaultStaticClass'
+                                   ^
+ExtendsAccess.java:174: p.ExtendsAccess.privateStaticClass has private access in p.ExtendsAccess
+    class N extends p.ExtendsAccess.privateStaticClass { }      // ERROR - cannot access 'privateStaticClass'
+                                   ^
+ExtendsAccess.java:177: cannot find symbol
+symbol: class publicInterface
+class ExtendsAccess311 extends ExtendsAccess implements publicInterface { }     // ERROR - 'publicInterface' not in scope
+                                                        ^
+ExtendsAccess.java:178: cannot find symbol
+symbol: class defaultInterface
+class ExtendsAccess312 extends ExtendsAccess implements defaultInterface { }    // ERROR - 'defaultInterface' not in scope
+                                                        ^
+ExtendsAccess.java:179: cannot find symbol
+symbol: class protectedInterface
+class ExtendsAccess313 extends ExtendsAccess implements protectedInterface { }  // ERROR - 'protectedInterface' not in scope
+                                                        ^
+ExtendsAccess.java:180: cannot find symbol
+symbol: class privateInterface
+class ExtendsAccess314 extends ExtendsAccess implements privateInterface { }    // ERROR - 'privateInterface' not in scope
+                                                        ^
+ExtendsAccess.java:186: ExtendsAccess.privateInterface has private access in ExtendsAccess
+        implements ExtendsAccess.privateInterface { }                           // ERROR - cannot access 'privateInterface'
+                                ^
+ExtendsAccess.java:191: p.ExtendsAccess.defaultInterface is not public in p.ExtendsAccess; cannot be accessed from outside package
+        implements p.ExtendsAccess.defaultInterface { }                         // ERROR - cannot access 'defaultStaticClass'
+                                  ^
+ExtendsAccess.java:193: p.ExtendsAccess.protectedInterface has protected access in p.ExtendsAccess
+        implements p.ExtendsAccess.protectedInterface { }                       // ERROR - cannot access 'protectedStaticClass'
+                                  ^
+ExtendsAccess.java:195: p.ExtendsAccess.privateInterface has private access in p.ExtendsAccess
+        implements p.ExtendsAccess.privateInterface { }                         // ERROR - cannot access 'privateInterface'
+                                  ^
+ExtendsAccess.java:207: ExtendsAccess.privateInterface has private access in ExtendsAccess
+    class N implements privateInterface { }                     // ERROR - cannot access 'privateInterface'
+                       ^
+ExtendsAccess.java:214: p.ExtendsAccess.defaultInterface is not public in p.ExtendsAccess; cannot be accessed from outside package
+    class N implements defaultInterface { }                     // ERROR - cannot access 'defaultStaticClass'
+                       ^
+ExtendsAccess.java:220: p.ExtendsAccess.privateInterface has private access in p.ExtendsAccess
+    class N implements privateInterface { }                     // ERROR - cannot access 'privateInterface'
+                       ^
+ExtendsAccess.java:236: ExtendsAccess.privateInterface has private access in ExtendsAccess
+    class N implements ExtendsAccess.privateInterface { }       // ERROR - cannot access 'privateInterface'
+                                    ^
+ExtendsAccess.java:243: p.ExtendsAccess.defaultInterface is not public in p.ExtendsAccess; cannot be accessed from outside package
+    class N implements p.ExtendsAccess.defaultInterface { }     // ERROR - cannot access 'defaultClass'
+                                      ^
+ExtendsAccess.java:252: p.ExtendsAccess.privateInterface has private access in p.ExtendsAccess
+    class N implements p.ExtendsAccess.privateInterface { }     // ERROR - cannot access 'privateInterface'
+                                      ^
+ExtendsAccess.java:36: an enclosing instance that contains ExtendsAccess.publicClass is required
+class ExtendsAccess1211 extends ExtendsAccess.publicClass { }           // OK - can extend inner classes (was ERROR - no enclosing instance)
+^
+ExtendsAccess.java:37: an enclosing instance that contains ExtendsAccess.defaultClass is required
+class ExtendsAccess1221 extends ExtendsAccess.defaultClass { }          // OK - can extend inner classes (was ERROR - no enclosing instance)
+^
+ExtendsAccess.java:38: an enclosing instance that contains ExtendsAccess.protectedClass is required
+class ExtendsAccess1231 extends ExtendsAccess.protectedClass { }        // OK - can extend inner classes (was ERROR - no enclosing instance)
+^
+ExtendsAccess.java:41: an enclosing instance that contains p.ExtendsAccess.publicClass is required
+class ExtendsAccess1212 extends p.ExtendsAccess.publicClass { }         // OK - can extend inner classes (was ERROR - no enclosing instance)
+^
+46 errors

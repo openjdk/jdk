@@ -1,0 +1,5 @@
+C.java:11: cannot access example.a.A
+file example/a/A.class not found
+    class CInner extends example.B {
+    ^
+1 error

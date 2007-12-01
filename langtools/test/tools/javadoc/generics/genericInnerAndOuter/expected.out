@@ -1,0 +1,53 @@
+class pkg1.O<T>
+  name: O / O / pkg1.O
+  type parameters:
+    T
+  superclass:
+    java.lang.Object
+  constructors:
+    O()
+
+class pkg1.O<T>.I<S>
+  name: I / O.I / pkg1.O.I
+  type parameters:
+    S
+  nested in:
+    pkg1.O<T>
+  superclass:
+    java.lang.Object
+  constructors:
+    O.I()
+  methods:
+    void m1(O<String>.I<Number>)
+
+class pkg1.X<T>
+  name: X / X / pkg1.X
+  type parameters:
+    T
+  superclass:
+    java.lang.Object
+  constructors:
+    X()
+
+class pkg1.X<T>.Y
+  name: Y / X.Y / pkg1.X.Y
+  nested in:
+    pkg1.X<T>
+  superclass:
+    java.lang.Object
+  constructors:
+    X.Y()
+
+class pkg1.X<T>.Y.Z<S>
+  name: Z / X.Y.Z / pkg1.X.Y.Z
+  type parameters:
+    S
+  nested in:
+    pkg1.X<T>.Y
+  superclass:
+    java.lang.Object
+  constructors:
+    X.Y.Z()
+  methods:
+    void m1(X<String>.Y.Z<Number>)
+
