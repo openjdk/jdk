@@ -1,0 +1,11 @@
+#! /bin/sh
+#
+# This file is used by adlc.make to selectively update generated
+# adlc files. Because source and target diretories are relative
+# paths, this file is copied to the target build directory before
+# use.
+#
+# adlc-updater <file> <source-dir> <target-dir>
+#
+[ -f $3/$1 ] && cmp -s $2/$1 $3/$1 || \
+( [ -f $3/$1 ]; echo Updating $3/$1 ; touch $2/made-change ; mv $2/$1 $3/$1 )

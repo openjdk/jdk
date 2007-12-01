@@ -1,0 +1,9 @@
+shell_impl.h
+proc_service_2.h
+
+The above files are captured from the dbx build environment.
+Rather then use a -I that points to stuff in .eng domain that
+may not be accessible in other domains these files are just
+copied here so local builds in other domains will work.
+These files rarely change so the fact that we might have to
+strobe in new ones on rare occasions is no big deal.
