@@ -1,0 +1,170 @@
+#
+# COMPONENT_NAME:  idl.parser
+#
+# ORIGINS: 27
+#
+# Licensed Materials - Property of IBM
+# 5639-D57 (C) COPYRIGHT International Business Machines Corp., 1997, 1999
+# RMI-IIOP v1.0
+#
+
+# Translator:  Each line below is of the form "<key>=<message>".
+#              The keys are NOT to be translated.
+#              The messages ARE to be translated.
+#
+#              DO NOT translate the following:
+#               ASCII
+#               #else
+#               #endif
+#               IDL
+#
+#              %0, %1, etc. are postional parameters to the message.  Do not
+#              translate these.  The number order is the order they are given to
+#              the message writer.  It is OK to change their order in the message
+#              if the language grammar so dictates.
+#
+#              Lines of the form "%0 (line %1):  <some message>\n%x\n%y" are error
+#              messages:  %0 is a filename; %1 is a line number; %x is line %1 from
+#              %0; %y is the error marker.  So the message comes out looking like:
+#                  <filename> (line xxx): <some message>
+#                  Line xxx from <filename> where the carat points to the error
+#                                                     ^
+#              So the first two and the last two parameters of these messages must
+#              remain in their positions.
+#
+#              A backslash (\) at the end of a line is a line continuation
+#              character.  A backslash at the beginning of a line means don't
+#              ignore leading blanks (they normally are).  These backslashes
+#              should remain in the message.
+#
+# Translator:  Start Translating
+
+Compile.parsing=\u6b63\u5728\u89e3\u6790 %0
+Compile.parseDone=\u5b8c\u6210--%0
+Compile.generating=\u6b63\u5728\u751f\u6210 %0
+Compile.genDone=\u5b8c\u6210--%0
+Deprecated.keyword=\u8b66\u544a\uff1a\u5173\u952e\u5b57 `%0' \u5df2\u8fc7\u65f6\u3002
+EvaluationException.1=%0 \u8fd0\u7b97\u7b26\u7684\u64cd\u4f5c\u6570\u4e0d\u4e00\u81f4\uff1a%1 \u548c %2\u3002
+EvaluationException.2=%0 \u8fd0\u7b97\u7b26\u7684\u64cd\u4f5c\u6570\u5fc5\u987b\u4e3a\u6570\u5b57\uff0c\u800c\u975e %1\u3002
+EvaluationException.or=\u6309\u4f4d or
+EvaluationException.xor=\u6309\u4f4d xor
+EvaluationException.and=\u6309\u4f4d and
+EvaluationException.plus=\u52a0
+EvaluationException.minus=\u51cf
+EvaluationException.left=\u5411\u5de6\u79fb\u4f4d
+EvaluationException.right=\u5411\u53f3\u79fb\u4f4d
+EvaluationException.times=\u4e58
+EvaluationException.divide=\u9664
+EvaluationException.mod=\u5efa\u6a21
+EvaluationException.pos=\u4e00\u5143\u6b63\u6570
+EvaluationException.neg=\u4e00\u5143\u8d1f\u6570
+EvaluationException.not=\u6309\u4f4d not
+EvaluationException.booleanNot=\u5e03\u5c14\u503c not
+EvaluationException.booleanAnd=\u5e03\u5c14\u503c and
+EvaluationException.booleanOr=\u5e03\u5c14\u503c or
+EvaluationException.equal=\u7b49\u4e8e
+EvaluationException.notEqual=\u4e0d\u7b49\u4e8e
+EvaluationException.greaterThan=\u5927\u4e8e
+EvaluationException.lessThan=\u5c0f\u4e8e
+EvaluationException.greaterEqual=\u5927\u4e8e\u6216\u7b49\u4e8e
+EvaluationException.lessEqual=\u5c0f\u4e8e\u6216\u7b49\u4e8e
+GenFileStream.1=\u65e0\u6cd5\u751f\u6210 {0}\uff1a%1
+InvalidArgument.1=\u53c2\u6570\u65e0\u6548\uff1a%0\u3002
+InvalidArgument.2=\u672a\u6307\u5b9a\u4efb\u4f55 IDL \u6587\u4ef6\u3002
+InvalidCharacter.1=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u5b57\u7b26\u65e0\u6548\uff1a%2 (ASCII %3)\u3002\n%4\n%5
+Migration.futureKeyword=\u8b66\u544a\uff1a\u6807\u8bc6\u7b26 `%0' \u4e0e\u5173\u952e\u5b57\u51b2\u7a81\uff0c\u8bf7\u4f7f\u7528\u6362\u7801\u7684\u6807\u8bc6\u7b26\u786e\u4fdd\u4ee5\u540e\u7684\u517c\u5bb9\u6027\u3002
+Migration.keywordCollision=\u8b66\u544a\uff1a\u6807\u8bc6\u7b26 `%0' \u4e0e\u5173\u952e\u5b57\u51b2\u7a81\uff0c\u8bf7\u4f7f\u7528\u6362\u7801\u7684\u6807\u8bc6\u7b26\u786e\u4fdd\u4ee5\u540e\u7684\u517c\u5bb9\u6027\u3002
+ParseException.abstractValueBox=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u65e0\u6cd5\u5c06\u503c\u6846\u58f0\u660e\u4e3a\u62bd\u8c61\u3002\n%2\n%3
+ParseException.alreadyDeclared=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u5df2\u58f0\u660e %2\u3002\n%3\n%4
+ParseException.declNotInSameFile=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u4ee5\u524d\u5df2\u5728\u6587\u4ef6 %3 \u7684\u5411\u524d\u58f0\u660e\u4e2d\u58f0\u660e\u4e86 %2\u3002\n%4\n%5
+ParseException.alreadyDerived=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u5df2\u5c06 %2 \u58f0\u660e\u4e3a %3 \u7684\u7236\u9879\u3002\n%4\n%5
+ParseException.alreadyDefaulted=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u9047\u5230\u9ed8\u8ba4\u5206\u652f\u3002\n%2\n%3
+ParseException.alreadyRaised=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u5df2\u5728 raises \u5b50\u53e5\u4e2d\u6307\u5b9a\u4e86 %2\u3002\n%3\n%4
+ParseException.attributeNotType=%0\uff08\u7b2c %1 \u884c\uff09\uff1a%2 \u4e3a\u5c5e\u6027\u3002\u4e0d\u80fd\u5c06\u5176\u7528\u4f5c\u7c7b\u578b\u3002\n%3\n%4
+ParseException.badAbstract=%0\uff08\u7b2c %1 \u884c\uff09\uff1a%2 \u7684\u5411\u524d\u548c\u5b9e\u9645\u58f0\u660e\u4e0d\u4e00\u81f4\u3002\u5176\u4e2d\u4e00\u4e2a\u662f\u62bd\u8c61\u58f0\u660e\uff0c\u800c\u53e6\u4e00\u4e2a\u5374\u4e0d\u662f\u3002\n%3\n%4
+ParseException.badCustom=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u65e0\u6cd5\u81ea\u5b9a\u4e49\u58f0\u660e\u5411\u524d\u503c\u58f0\u660e\u3002\n%2\n%3
+ParseException.badRepIDAlreadyAssigned=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u5728\u4ee5\u524d\u7684 ID pragma \u6307\u4ee4\u4e2d\u5df2\u5411\u7c7b\u578b %2 \u6307\u5b9a\u4e86\u7cfb\u7edf\u4fe1\u606f\u5e93 ID\u3002\n%3\n%4
+ParseException.badRepIDForm=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u7cfb\u7edf\u4fe1\u606f\u5e93 ID '%2' \u7684\u683c\u5f0f\u5e94\u4e3a '<\u683c\u5f0f>:<\u5b57\u7b26\u4e32>'\u3002\n%3\n%4
+ParseException.badRepIDPrefix=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u63a5\u53e3 %2 \u7684\u7cfb\u7edf\u4fe1\u606f\u5e93 ID \u524d\u7f00\u5e94\u4e3a `%3' \u800c\u975e '%4'\u3002\n%5\n%6
+ParseException.badState=%0\uff08\u7b2c %1 \u884c\uff09\uff1a%2 \u4e0d\u80fd\u4e3a\u6709\u72b6\u6001\u63a5\u53e3\uff1b\u5b83\u5177\u6709\u591a\u4e2a\u6709\u72b6\u6001\u7236\u63a5\u53e3\u3002\n%3\n%4
+ParseException.branchLabel=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u5df2\u58f0\u660e\u6761\u4ef6 %2\u3002\n%3\n%4
+ParseException.branchName=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u5df2\u58f0\u660e\u540d\u4e3a %2 \u7684\u5206\u652f\u3002\n%3\n%4
+ParseException.duplicateInit=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u521d\u59cb\u5316\u7a0b\u5e8f\u4e0e\u4ee5\u524d\u7684\u521d\u59cb\u5316\u7a0b\u5e8f\u5177\u6709\u76f8\u540c\u7684\u7b7e\u540d\u3002\n%2\n%3
+ParseException.duplicateState=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u6570\u636e\u6210\u5458 %2 \u4e0e\u4ee5\u524d\u7684\u6570\u636e\u6210\u5458\u5177\u6709\u76f8\u540c\u7684\u540d\u79f0\u3002\n%3\n%4
+ParseException.elseNoIf=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u9047\u5230\u7684 #else \u6ca1\u6709\u5339\u914d\u7684 #if\u3002\n%2\n%3
+ParseException.endNoIf=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u9047\u5230\u7684 #endif \u6ca1\u6709\u5339\u914d\u7684 #if\u3002\n%2\n%3
+ParseException.evaluation=%0\uff08\u7b2c %1 \u884c\uff09\uff1a  %2\n%3\n%4
+ParseException.forwardEntry=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u5b58\u5728\u5bf9 %2 \u7684\u5411\u524d\u5f15\u7528\uff0c\u4f46\u5c1a\u672a\u8fdb\u884c\u5b9a\u4e49\u3002\n%3\n%4
+ParseException.forwardedValueBox=%0\uff08\u7b2c %1 \u884c\uff09\uff1a%2 \u5177\u6709\u5411\u524d\u58f0\u660e\u3002\u65e0\u6cd5\u5411\u524d\u58f0\u660e\u503c\u6846\u3002\n%3\n%4
+ParseException.forwardInheritance=%0\uff08\u7b2c %1 \u884c\uff09\uff1a%2 \u4ece %3 \u7684\u4e0d\u5b8c\u6574\u7684\u5411\u524d\u58f0\u660e\u8fdb\u884c\u7ee7\u627f\u662f\u975e\u6cd5\u7684\u3002\n%4\n%5
+ParseException.generic=%0\uff08\u7b2c %1 \u884c\uff09\uff1a  %2\n%3\n%4
+ParseException.illegalArray=%0\uff08\u7b2c %1 \u884c\uff09\uff1a%2 \u4e2d\u7684\u6570\u7ec4\u7684\u7c7b\u578b\u4e0d\u5408\u6cd5\u3002\n%3\n%4
+ParseException.illegalException=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u5f02\u5e38\u4e0d\u80fd\u663e\u793a\u5728 %2 \u4e2d\u3002\n%3\n%4
+ParseException.invalidConst1=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u5e38\u91cf\u8868\u8fbe\u5f0f\u7684\u7c7b\u578b\u5fc5\u987b\u4e3a %2\uff0c\u800c\u4e0d\u80fd\u4e3a %3\u3002\n%4\n%5
+ParseException.invalidConst2=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u5e38\u91cf\u8868\u8fbe\u5f0f\u4e2d\u7684\u6807\u8bc6\u7b26\u5fc5\u987b\u4e3a\u5e38\u91cf\uff0c\u800c\u4e0d\u80fd\u4e3a %2\u3002\n%3\n%4
+ParseException.keywordCollision=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u6807\u8bc6\u7b26 `%2' \u4e0e\u5173\u952e\u5b57\u51b2\u7a81\uff1b\u5982\u679c\u9700\u8981\uff0c\u8bf7\u4f7f\u7528\u6362\u7801\u7684\u6807\u8bc6\u7b26\u3002\n%3\n%4
+ParseException.methodClash=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u63a5\u53e3 %2 \u4e2d\u7684\u65b9\u6cd5\u540d\u51b2\u7a81\uff1a%3\u3002\n%4\n%5
+ParseException.moduleNotType=%0\uff08\u7b2c %1 \u884c\uff09\uff1a%2 \u4e3a\u6a21\u5757\u3002\u4e0d\u80fd\u5c06\u5176\u7528\u4f5c\u7c7b\u578b\u3002\n%3\n%4
+ParseException.nestedValueBox=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u503c\u6846\u4e0d\u80fd\u5d4c\u5957\u3002\n%2\n%3
+ParseException.noDefault=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u6ee1\u8db3\u6240\u6709\u53ef\u80fd\u60c5\u51b5\u65f6\uff0c\u4e0d\u5141\u8bb8\u4f7f\u7528\u9ed8\u8ba4\u5206\u652f\u3002\n%2\n%3
+ParseException.nonAbstractParent=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u62bd\u8c61\u63a5\u53e3 %2 \u4e0d\u80fd\u4ece\u975e\u62bd\u8c61\u63a5\u53e3 %3 \u8fdb\u884c\u7ee7\u627f\u3002\n%4\n%5
+ParseException.nonAbstractParent2=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u62bd\u8c61\u503c %2 \u4e0d\u80fd\u4ece\u975e\u62bd\u8c61\u503c %3 \u8fdb\u884c\u7ee7\u627f\u3002\n%4\n%5
+ParseException.nonAbstractParent3=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u503c %2 \u65e0\u6cd5\u6309\u6307\u5b9a\u7684\u90a3\u6837\u4ece\u975e\u62bd\u8c61\u503c %3 \u8fdb\u884c\u7ee7\u627f\u3002\n%4\n%5
+ParseException.notANumber=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u9700\u8981\u6570\u5b57\u3002%2 \u4e0d\u662f\u6709\u6548\u6570\u5b57\u3002\n%3\n%4
+ParseException.nothing=%0 \u4e3a\u7a7a\u3002\u65e0\u7f16\u8bd1\u5185\u5bb9\u3002
+ParseException.notPosInt=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u9700\u8981\u6b63\u6574\u6570\u5e38\u91cf\uff0c\u800c\u4e0d\u662f %2\u3002\n%3\n%4
+ParseException.oneway=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u5c06 %2 \u58f0\u660e\u4e3a oneway\u3002Oneway \u65b9\u6cd5\u5fc5\u987b\uff1a\u8fd4\u56de void\uff1b\u4ec5\u5728\u53c2\u6570\u4e2d\u624d\u6709\uff1b\u4e0d\u4f1a\u51fa\u73b0\u4efb\u4f55\u5f02\u5e38\u3002\n%3\n%4
+ParseException.operationNotType=%0\uff08\u7b2c %1 \u884c\uff09\uff1a%2 \u4e3a\u64cd\u4f5c\u3002\u4e0d\u80fd\u5c06\u5176\u7528\u4f5c\u7c7b\u578b\u3002\n%3\n%4
+ParseException.outOfRange=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u5e38\u91cf\u8868\u8fbe\u5f0f\u7684\u503c %2 \u8d85\u51fa\u4e86\u7c7b\u578b %3 \u7684\u8303\u56f4\u3002\n%4\n%5
+ParseException.recursive=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u552f\u4e00\u7684\u5408\u6cd5\u9012\u5f52\u5b9a\u4e49\u4e3a\uff1asequence<%2> %3\u3002\n%4\n%5
+ParseException.selfInherit=%0\uff08\u7b2c %1 \u884c\uff09\uff1a%2 \u4e0d\u80fd\u4ece\u5176\u672c\u8eab\u8fdb\u884c\u7ee7\u627f\u3002\n%3\n%4
+ParseException.stringTooLong=%0\uff08\u7b2c %1 \u884c\uff09\uff1a"%2" \u7684\u957f\u5ea6\u4e0d\u80fd\u8d85\u8fc7 %3 \u4e2a\u5b57\u7b26\u3002\n%4\n%5
+ParseException.syntax1=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u9700\u8981 `%2'\uff0c\u800c\u9047\u5230 `%3'\u3002\n%4\n%5
+ParseException.syntax2=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u9700\u8981\u5176\u4e2d\u4e00\u4e2a `%2'\uff0c\u800c\u9047\u5230 `%3'\u3002\n%4\n%5
+ParseException.unclosed=%0\uff1a\u5728\u6ce8\u91ca\u4e2d\u9047\u5230\u610f\u5916\u7684\u6587\u4ef6\u7ed3\u5c3e\u3002
+ParseException.undeclaredType=%0\uff08\u7b2c %1 \u884c\uff09\uff1a%2 \u662f\u672a\u58f0\u660e\u7684\u7c7b\u578b\u3002\n%3\n%4
+ParseException.warning=%0\uff08\u7b2c %1 \u884c\uff09\uff1a  %2\n%3\n%4
+ParseException.constExprType=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u5e38\u91cf\u8868\u8fbe\u5f0f\u7684\u7c7b\u578b\u4e3a %2\uff0c\u4f46\u662f\u5b83\u5e94\u8be5\u4e3a %3\u3002\n%4\n%5
+ParseException.wrongType=%0\uff08\u7b2c %1 \u884c\uff09\uff1a%2 \u7684\u7c7b\u578b\u4e3a %3\uff0c\u4f46\u662f\u5b83\u5e94\u8be5\u4e3a %4\u3002\n%5\n%6
+ParseException.illegalIncompleteTypeReference=%0\uff08\u7b2c %1 \u884c\uff09\uff1a\u5bf9\u7c7b\u578b %2 \u7684\u4e0d\u5b8c\u6574\u5411\u524d\u58f0\u660e\u7684\u5f15\u7528\u975e\u6cd5\u3002\n%3\n%4
+Preprocessor.unknown=\u672a\u77e5\u9884\u5904\u7406\u7a0b\u5e8f\u6307\u4ee4 `%0'\u3002\u5ffd\u7565\u884c\u3002
+Preprocessor.unknownPragma=\u672a\u77e5 pragma `%0'\u3002\u5ffd\u7565\u884c\u3002
+Preprocessor.undefinedName=pragma %0 \u7684\u672a\u5b9a\u4e49\u7c7b\u578b\u540d\uff1a%1\u3002  \u5ffd\u7565\u884c\u3002
+Token.boolLit=<\u5e03\u5c14\u503c\u5b57\u9762\u503c>
+Token.charLit=<\u5b57\u7b26\u5b57\u9762\u503c>
+Token.intLit=<\u6574\u578b\u5b57\u9762\u503c>
+Token.floatLit=<\u6d6e\u70b9\u5b57\u9762\u503c>
+Token.stringLit=<\u5b57\u7b26\u4e32\u5b57\u9762\u503c>
+Token.literal=<\u5b57\u9762\u503c>
+Token.identifier=<\u6807\u8bc6\u7b26>
+Token.endOfFile=EOF
+Token.unknown=?
+Util.cantCreatePkg=\u65e0\u6cd5\u521b\u5efa\u8f6f\u4ef6\u5305 %0\u3002
+Version.product=IDL Parser Framework\uff0c\u7248\u672c "%0"
+Version.number=3.2
+default=\u9519\u8bef\uff01\u8bf7\u6c42\u7684\u6d88\u606f\u4e0d\u5b58\u5728\u3002\u6d88\u606f\u6587\u4ef6\u4e0d\u5305\u542b\u5bc6\u94a5\uff1a%0\u3002
+
+# Translator: In the list of options below, do not translate:
+#             -i, -d, -keep, -emitAll, -noWarn, -v, -verbose, -version, #define
+#             Do not translate the string "java com.sun.tools.corba.se.idl.Compile"
+
+usage=\u7f16\u8bd1\u5668\u7528\u6cd5\uff1a\n\
+\ java com.sun.tools.corba.se.idl.Compile [\u9009\u9879] <idl \u6587\u4ef6>\n\
+\u5176\u4e2d\uff0c<idl \u6587\u4ef6> \u662f\u5305\u542b IDL \u5b9a\u4e49\u7684\u6587\u4ef6\u7684\u540d\u79f0\uff0c\u800c\n\
+[\u9009\u9879] \u662f\u4ee5\u4e0b\u6240\u5217\u9009\u9879\u7684\u4efb\u4e00\u7ec4\u5408\u3002\u8fd9\u4e9b\u9009\u9879\n\
+\u662f\u53ef\u9009\u7684\u5e76\u4e14\u53ef\u4ee5\u4ee5\u4efb\u610f\u987a\u5e8f\u663e\u793a\uff1b<idl \u6587\u4ef6> \u662f\u5fc5\u987b\u7684\u5e76\u4e14\n\
+\u5fc5\u987b\u663e\u793a\u5728\u6700\u540e\u3002\n\
+\ \n\
+\u9009\u9879\uff1a\n\
+-d <\u7b26\u53f7>            \u7b49\u4ef7\u4e8e IDL \u6587\u4ef6\u4e2d\u7684\u4ee5\u4e0b\u884c\uff1a\n\
+\                       #define <\u7b26\u53f7>\n\
+-emitAll                  \u53d1\u51fa\u6240\u6709\u7c7b\u578b\uff0c\u5305\u62ec\u5728  #included\n\
+\                     \u6587\u4ef6\u4e2d\u627e\u5230\u7684\u90a3\u4e9b\u7c7b\u578b\u3002\n\
+-i <\u5305\u62ec\u8def\u5f84>        \u9ed8\u8ba4\u60c5\u51b5\u4e0b\uff0c\u641c\u7d22\u5f53\u524d\u76ee\u5f55\u4ee5\u83b7\u5f97\u5176\u6240\u5305\u542b\u7684\u6587\u4ef6\u3002\n\
+\                     \u6b64\u9009\u9879\u5c06\u6dfb\u52a0\u5176\u4ed6\u76ee\u5f55\u3002\n\
+-keep                \u5982\u679c\u8981\u751f\u6210\u7684\u6587\u4ef6\u5df2\u5b58\u5728\uff0c\u5219\u4e0d\n\
+\                     \u8986\u76d6\u5b83\u3002\u9ed8\u8ba4\u60c5\u51b5\u4e0b\u4f1a\u8986\u76d6\u8be5\u6587\u4ef6\u3002\n\
+-noWarn              \u6291\u5236\u8b66\u544a\u3002\n\
+-v, -verbose         \u8be6\u7ec6\u6a21\u5f0f\u3002\n\
+-version             \u663e\u793a\u7248\u672c\u53f7\u3002\n
+

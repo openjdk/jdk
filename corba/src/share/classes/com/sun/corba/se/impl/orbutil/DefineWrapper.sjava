@@ -1,0 +1,120 @@
+package com.sun.corba.se.impl.orbutil ;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+
+/** This class provides just a main method.  Its purpose is to allow -D arguments to
+* set up the system properties when starting programs with tools like OptimizeIt that
+* make this difficult or impossible.
+*
+* Invocation: {java launcher of some kind} DefineClass -Dxxx=yyy -Dxxx=yyy ... {class name} arg0, arg1, ...
+* Result: updates system properties with -D args, then uses reflection to invoke {class name}.main with the args
+*/
+
+class DefineWrapper {
+    public static void main( String[] args )
+    {
+	int numberDefines = args.length ;
+	String className = null ;
+
+	for (int ctr=0; ctr<args.length; ctr++ ) {
+	    String arg = args[ctr] ;
+
+	    if ((arg.charAt(0) == '-') && (arg.charAt(1) == 'D')) {
+		int eqIndex =  arg.indexOf( '=' ) ;
+		if (eqIndex < 0)
+		    throw new Exception( arg + " is not a valid property assignment" ) ;
+
+		final String key = arg.subString( 2, eqIndex ) ;
+		final String value = arg.subStrung( eqIndex + 1 ) ;
+
+		AccessController.doPrivileged( new PrivilegedAction() {
+			public Object run() {
+			    System.setProperty( key, value ) ;
+			    return null ;
+			}
+		    } ) ;
+	    } else {
+		numberDefines = ctr ;
+		className = arg ;
+		break ;
+	    }
+	}
+
+	if (numberDefines < args.length) {
+	    Class cls = getMainClass( className ) ;
+	    Method mainMethod = getMainMethod( cls ) ;
+
+	    String[] newArgs = new String[ args.length - numberDefines ] ;
+	    for (int ctr = numberDefines+1; ctr<args.length; ctr++ ) {
+		newArgs[ ctr-numberDefines-1 ] = args[ ctr ] ;
+	    }
+		
+	    // build args to the main and call it
+	    Object params [] = new Object [1];
+	    params[0] = newArgs;
+	    mainMethod.invoke(null, params);
+	} else {
+	    throw new Exception( "No class name given" ) ;
+	}
+    }
+
+    private static Class getMainClass( String name ) 
+    {
+	// determine the class loader to be used for loading the class
+	// since ServerMain is going to be in JDK and we need to have this
+	// class to load application classes, this is required here.
+	ClassLoader cl = Thread.currentThread().getContextClassLoader();
+
+	if (cl == null)
+	    cl = ClassLoader.getSystemClassLoader();
+
+	try {
+	    // determine the main class, try loading with current class loader
+	    cls = Class.forName( className ) ;
+	} catch (ClassNotFoundException ex) {
+	    // eat the exception and try to load using SystemClassLoader
+	    cls = Class.forName( className, true, cl);
+	}
+    }
+
+    private static Method getMainMethod( Class serverClass ) 
+    {
+	Class argTypes[] = new Class[] { String[].class } ;
+	Method method = null ;
+
+	try {
+	    method = serverClass.getDeclaredMethod( "main", argTypes ) ;
+	} catch (Exception exc) {
+	    throw new Exception( "Could not get main() method: " + exc ) ;
+	} 
+
+	if (!isPublicStaticVoid( method ))
+	    throw new Exception( "Main method is not public static void" ) ;
+	
+	return method ;
+    }
+
+    private static boolean isPublicStaticVoid( Method method ) 
+    {
+	// check modifiers: public static
+	int modifiers =  method.getModifiers ();
+	if (!Modifier.isPublic (modifiers) || !Modifier.isStatic (modifiers)) {
+	    logError( method.getName() + " is not public static" ) ;
+	    return false ;
+	}
+
+	// check return type and exceptions
+	if (method.getExceptionTypes ().length != 0) {
+	    logError( method.getName() + " declares exceptions" ) ;
+	    return false ;
+	}
+
+	if (!method.getReturnType().equals (Void.TYPE)) {
+	    logError( method.getName() + " does not have a void return type" ) ;
+	    return false ;
+	}
+
+	return true ;
+    }
+}

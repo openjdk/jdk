@@ -1,0 +1,81 @@
+IDL Tokens:
+
+Grouping: ( ) [ ] { }
+Separators: : :: ;
+Operators: % & * + , - / < << = > >> ^ | ~
+
+Keywords:
+    CORBA 2.2 or earlier:
+	any
+	attribute
+	boolean
+	case
+	char
+	const
+	context
+	default
+	double
+	enum
+	exception
+	FALSE
+	float
+	in
+	inout
+	interface
+	long
+	module
+	Object
+	octet
+	oneway
+	out
+	raises
+	readonly
+	sequence
+	short
+	string
+	struct
+	switch
+	TRUE
+	typedef
+	unsigned
+	union
+	void
+	wchar
+	wstring
+
+    CORBA 2.3 only:
+	init	(replaced by factory)
+
+    CORBA 2.3 and 2.4rtf:
+	abstract
+	custom
+	private
+	public
+	truncatable
+	ValueBase
+	valuetype
+	factory
+
+    CORBA 2.3, not supported by IBM compiler
+	native
+	fixed
+
+    CORBA 3.0:
+	component
+	consumes
+	emits
+	finder
+	getRaises
+	home
+	import
+	local
+	manages
+	multiple
+	primaryKey
+	provides
+	publishes
+	setRaises
+	supports
+	typeId
+	typePrefix
+	uses

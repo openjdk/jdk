@@ -1,0 +1,1280 @@
+/*
+ * Copyright 2000-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+// IDL
+// File: DynamicAny.idl
+
+#ifndef _DYNAMIC_ANY_IDL_
+#define _DYNAMIC_ANY_IDL_
+
+#pragma prefix "omg.org"
+#include <orb.idl>
+
+/**
+* An any can be passed to a program that doesn't have any static information for the
+type of the any (code generated for the type by an IDL compiler has not been
+compiled with the object implementation). As a result, the object receiving the any
+does not have a portable method of using it.
+<P>DynAnys enable traversal of the data value associated with an any at
+runtime and extraction of the primitive constituents of the data value. This is especially
+helpful for writing powerful generic servers (bridges, event channels supporting
+filtering).
+<P>Similarly, this facility enables the construction of an any at runtime, without having
+static knowledge of its type. This is especially helpful for writing generic clients
+(bridges, browsers, debuggers, user interface tools).
+*/
+module DynamicAny {
+    /**
+    * Any values can be dynamically interpreted (traversed) and constructed through DynAny objects.
+    * A DynAny object is associated with a data value which corresponds to a copy of the value
+    * inserted into an any.
+    * <P>A DynAny object may be viewed as an ordered collection of component DynAnys.
+    * For DynAnys representing a basic type, such as long, or a type without components,
+    * such as an empty exception, the ordered collection of components is empty.
+    * Each DynAny object maintains the notion of a current position into its collection
+    * of component DynAnys. The current position is identified by an index value that runs
+    * from 0 to n-1, where n is the number of components.
+    * The special index value -1 indicates a current position that points nowhere.
+    * For values that cannot have a current position (such as an empty exception),
+    * the index value is fixed at -1.
+    * If a DynAny is initialized with a value that has components, the index is initialized to 0.
+    * After creation of an uninitialized DynAny (that is, a DynAny that has no value but a TypeCode
+    * that permits components), the current position depends on the type of value represented by
+    * the DynAny. (The current position is set to 0 or -1, depending on whether the new DynAny
+    * gets default values for its components.)
+    * <P>The iteration operations rewind, seek, and next can be used to change the current position
+    * and the current_component operation returns the component at the current position.
+    * The component_count operation returns the number of components of a DynAny.
+    * Collectively, these operations enable iteration over the components of a DynAny, for example,
+    * to (recursively) examine its contents.
+    * <P>A constructed DynAny object is a DynAny object associated with a constructed type.
+    * There is a different interface, inheriting from the DynAny interface, associated with
+    * each kind of constructed type in IDL (fixed, enum, struct, sequence, union, array,
+    * exception, and value type).
+    * <P>A constructed DynAny object exports operations that enable the creation of new DynAny objects,
+    * each of them associated with a component of the constructed data value.
+    * As an example, a DynStruct is associated with a struct value. This means that the DynStruct
+    * may be seen as owning an ordered collection of components, one for each structure member.
+    * The DynStruct object exports operations that enable the creation of new DynAny objects,
+    * each of them associated with a member of the struct.
+    * <P>If a DynAny object has been obtained from another (constructed) DynAny object,
+    * such as a DynAny representing a structure member that was created from a DynStruct,
+    * the member DynAny is logically contained in the DynStruct.
+    * Calling an insert or get operation leaves the current position unchanged.
+    * Destroying a top-level DynAny object (one that was not obtained as a component of another DynAny)
+    * also destroys any component DynAny objects obtained from it.
+    * Destroying a non-top level DynAny object does nothing.
+    * Invoking operations on a destroyed top-level DynAny or any of its descendants raises OBJECT_NOT_EXIST.
+    * If the programmer wants to destroy a DynAny object but still wants to manipulate some component
+    * of the data value associated with it, then he or she should first create a DynAny for the component
+    * and, after that, make a copy of the created DynAny object.
+    * <P>The behavior of DynAny objects has been defined in order to enable efficient implementations
+    * in terms of allocated memory space and speed of access. DynAny objects are intended to be used
+    * for traversing values extracted from anys or constructing values of anys at runtime.
+    * Their use for other purposes is not recommended.
+    * <P>Insert and get operations are necessary to handle basic DynAny objects
+    * but are also helpful to handle constructed DynAny objects.
+    * Inserting a basic data type value into a constructed DynAny object
+    * implies initializing the current component of the constructed data value
+    * associated with the DynAny object. For example, invoking insert_boolean on a
+    * DynStruct implies inserting a boolean data value at the current position
+    * of the associated struct data value.
+    * A type is consistent for inserting or extracting a value if its TypeCode is equivalent to
+    * the TypeCode contained in the DynAny or, if the DynAny has components, is equivalent to the TypeCode
+    * of the DynAny at the current position.
+    * <P>DynAny and DynAnyFactory objects are intended to be local to the process in which they are
+    * created and used. This means that references to DynAny and DynAnyFactory objects cannot be exported
+    * to other processes, or externalized with ORB.object_to_string().
+    * If any attempt is made to do so, the offending operation will raise a MARSHAL system exception.
+    * Since their interfaces are specified in IDL, DynAny objects export operations defined in the standard
+    * org.omg.CORBA.Object interface. However, any attempt to invoke operations exported through the Object
+    * interface may raise the standard NO_IMPLEMENT exception.
+    * An attempt to use a DynAny object with the DII may raise the NO_IMPLEMENT exception.
+    */
+    interface DynAny {
+	#pragma sun_localservant DynAny ""
+        exception InvalidValue {};
+        exception TypeMismatch {};
+
+        /**
+        * Returns the TypeCode associated with this DynAny object.
+        * A DynAny object is created with a TypeCode value assigned to it.
+        * This TypeCode value determines the type of the value handled through the DynAny object.
+        * Note that the TypeCode associated with a DynAny object is initialized at the time the
+        * DynAny is created and cannot be changed during lifetime of the DynAny object.
+        *
+        * @return The TypeCode associated with this DynAny object
+        */
+        CORBA::TypeCode type();
+
+        /**
+        * Initializes the value associated with a DynAny object with the value
+        * associated with another DynAny object.
+        * The current position of the target DynAny is set to zero for values that have components
+        * and to -1 for values that do not have components.
+        *
+        * @param dyn_any
+        * @exception TypeMismatch if the type of the passed DynAny is not equivalent to the type of target DynAny
+        */
+        void assign(in DynAny dyn_any)
+            raises(TypeMismatch);
+
+        /**
+        * Initializes the value associated with a DynAny object with the value contained in an any.
+        * The current position of the target DynAny is set to zero for values that have components
+        * and to -1 for values that do not have components.
+        *
+        * @exception TypeMismatch if the type of the passed Any is not equivalent to the type of target DynAny
+        * @exception InvalidValue if the passed Any does not contain a legal value (such as a null string)
+        */
+        void from_any(in any value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Creates an any value from a DynAny object.
+        * A copy of the TypeCode associated with the DynAny object is assigned to the resulting any.
+        * The value associated with the DynAny object is copied into the any.
+        *
+        * @return a new Any object with the same value and TypeCode
+        */
+        any to_any();
+
+        /**
+        * Compares two DynAny values for equality.
+        * Two DynAny values are equal if their TypeCodes are equivalent and, recursively, all component DynAnys
+        * have equal values.
+        * The current position of the two DynAnys being compared has no effect on the result of equal.
+        *
+        * @return true of the DynAnys are equal, false otherwise
+        */
+        boolean equal(in DynAny dyn_any);
+
+        /**
+        * Destroys a DynAny object.
+        * This operation frees any resources used to represent the data value associated with a DynAny object.
+        * It must be invoked on references obtained from one of the creation operations on the ORB interface
+        * or on a reference returned by DynAny.copy() to avoid resource leaks.
+        * Invoking destroy on component DynAny objects (for example, on objects returned by the
+        * current_component operation) does nothing.
+        * Destruction of a DynAny object implies destruction of all DynAny objects obtained from it.
+        * That is, references to components of a destroyed DynAny become invalid.
+        * Invocations on such references raise OBJECT_NOT_EXIST.
+        * It is possible to manipulate a component of a DynAny beyond the life time of the DynAny
+        * from which the component was obtained by making a copy of the component with the copy operation
+        * before destroying the DynAny from which the component was obtained.
+        */
+        void destroy();
+
+        /**
+        * Creates a new DynAny object whose value is a deep copy of the DynAny on which it is invoked.
+        * The operation is polymorphic, that is, invoking it on one of the types derived from DynAny,
+        * such as DynStruct, creates the derived type but returns its reference as the DynAny base type.
+        *
+        * @return a deep copy of the DynAny object
+        */
+        DynAny copy();
+
+        /**
+        * Inserts a boolean value into the DynAny.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_boolean(in boolean value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts a byte value into the DynAny. The IDL octet data type is mapped to the Java byte data type.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_octet(in octet value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts a char value into the DynAny.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_char(in char value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts a short value into the DynAny.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_short(in short value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts a short value into the DynAny. The IDL ushort data type is mapped to the Java short data type.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_ushort(in unsigned short value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts an integer value into the DynAny. The IDL long data type is mapped to the Java int data type.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_long(in long value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts an integer value into the DynAny. The IDL ulong data type is mapped to the Java int data type.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_ulong(in unsigned long value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts a float value into the DynAny.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_float(in float value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts a double value into the DynAny.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_double(in double value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts a string value into the DynAny.
+        * Both bounded and unbounded strings are inserted using this method.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception InvalidValue if the string inserted is longer than the bound of a bounded string
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_string(in string value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts a reference to a CORBA object into the DynAny.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_reference(in Object value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts a TypeCode object into the DynAny.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_typecode(in CORBA::TypeCode value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts a long value into the DynAny. The IDL long long data type is mapped to the Java long data type.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_longlong(in long long value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts a long value into the DynAny.
+        * The IDL unsigned long long data type is mapped to the Java long data type.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_ulonglong(in unsigned long long value)
+            raises(TypeMismatch, InvalidValue);
+
+//        void insert_longdouble(in long double value)
+//            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts a char value into the DynAny. The IDL wchar data type is mapped to the Java char data type.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_wchar(in wchar value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts a string value into the DynAny.
+        * Both bounded and unbounded strings are inserted using this method.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception InvalidValue if the string inserted is longer than the bound of a bounded string
+        */
+        void insert_wstring(in wstring value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts an Any value into the Any represented by this DynAny.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_any(in any value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts the Any value contained in the parameter DynAny into the Any represented by this DynAny.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_dyn_any(in DynAny value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Inserts a reference to a Serializable object into this DynAny.
+        * The IDL ValueBase type is mapped to the Java Serializable type.
+        *
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        void insert_val(in ValueBase value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the boolean value from this DynAny.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        boolean get_boolean()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the byte value from this DynAny. The IDL octet data type is mapped to the Java byte data type.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        octet get_octet()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the char value from this DynAny.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        char get_char()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the short value from this DynAny.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        short get_short()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the short value from this DynAny. The IDL ushort data type is mapped to the Java short data type.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        unsigned short get_ushort()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the integer value from this DynAny. The IDL long data type is mapped to the Java int data type.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        long get_long()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the integer value from this DynAny. The IDL ulong data type is mapped to the Java int data type.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        unsigned long get_ulong()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the float value from this DynAny.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        float get_float()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the double value from this DynAny.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        double get_double()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the string value from this DynAny.
+        * Both bounded and unbounded strings are extracted using this method.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        string get_string()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the reference to a CORBA Object from this DynAny.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        Object get_reference()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the TypeCode object from this DynAny.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        CORBA::TypeCode get_typecode()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the long value from this DynAny. The IDL long long data type is mapped to the Java long data type.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        long long get_longlong()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the long value from this DynAny.
+        * The IDL unsigned long long data type is mapped to the Java long data type.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        unsigned long long get_ulonglong()
+            raises(TypeMismatch, InvalidValue);
+//        long double get_longdouble()
+//            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the long value from this DynAny. The IDL wchar data type is mapped to the Java char data type.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        wchar get_wchar()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the string value from this DynAny.
+        * Both bounded and unbounded strings are extracted using this method.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        */
+        wstring get_wstring()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts an Any value contained in the Any represented by this DynAny.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        any get_any()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts the Any value contained in the Any represented by this DynAny and returns it wrapped
+        * into a new DynAny.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        DynAny get_dyn_any()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Extracts a Serializable object from this DynAny.
+        * The IDL ValueBase type is mapped to the Java Serializable type.
+        *
+        * @exception TypeMismatch if the accessed component in the DynAny is of a type
+        * that is not equivalent to the requested type.
+        * @exception TypeMismatch if called on a DynAny whose current component itself has components
+        * @exception InvalidValue if this DynAny has components but has a current position of -1
+        */
+        ValueBase get_val()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Sets the current position to index. The current position is indexed 0 to n-1, that is,
+        * index zero corresponds to the first component. The operation returns true if the resulting
+        * current position indicates a component of the DynAny and false if index indicates
+        * a position that does not correspond to a component.
+        * Calling seek with a negative index is legal. It sets the current position to -1 to indicate
+        * no component and returns false. Passing a non-negative index value for a DynAny that does not
+        * have a component at the corresponding position sets the current position to -1 and returns false.
+        */
+        boolean seek(in long index);
+
+        /**
+        * Is equivalent to seek(0).
+        */
+        void rewind();
+
+        /**
+        * Advances the current position to the next component.
+        * The operation returns true while the resulting current position indicates a component, false otherwise.
+        * A false return value leaves the current position at -1.
+        * Invoking next on a DynAny without components leaves the current position at -1 and returns false.
+        */
+        boolean next();
+
+        /**
+        * Returns the number of components of a DynAny.
+        * For a DynAny without components, it returns zero.
+        * The operation only counts the components at the top level.
+        * For example, if component_count is invoked on a DynStruct with a single member,
+        * the return value is 1, irrespective of the type of the member.
+        * <UL>
+        * <LI>For sequences, the operation returns the current number of elements.
+        * <LI>For structures, exceptions, and value types, the operation returns the number of members.
+        * <LI>For arrays, the operation returns the number of elements.
+        * <LI>For unions, the operation returns 2 if the discriminator indicates that a named member is active,
+        * otherwise, it returns 1.
+        * <LI>For DynFixed and DynEnum, the operation returns zero.
+        * </UL>
+        */
+        unsigned long component_count();
+
+        /**
+        * Returns the DynAny for the component at the current position.
+        * It does not advance the current position, so repeated calls to current_component
+        * without an intervening call to rewind, next, or seek return the same component.
+        * The returned DynAny object reference can be used to get/set the value of the current component.
+        * If the current component represents a complex type, the returned reference can be narrowed
+        * based on the TypeCode to get the interface corresponding to the to the complex type.
+        * Calling current_component on a DynAny that cannot have components,
+        * such as a DynEnum or an empty exception, raises TypeMismatch.
+        * Calling current_component on a DynAny whose current position is -1 returns a nil reference.
+        * The iteration operations, together with current_component, can be used
+        * to dynamically compose an any value. After creating a dynamic any, such as a DynStruct,
+        * current_component and next can be used to initialize all the components of the value.
+        * Once the dynamic value is completely initialized, to_any creates the corresponding any value.
+        *
+        * @exception TypeMismatch If called on a DynAny that cannot have components,
+        * such as a DynEnum or an empty exception
+        */
+        DynAny current_component()
+            raises(TypeMismatch);
+    };
+
+    /**
+    * DynFixed objects support the manipulation of IDL fixed values.
+    * Because IDL does not have a generic type that can represent fixed types with arbitrary
+    * number of digits and arbitrary scale, the operations use the IDL string type.
+    */
+    interface DynFixed : DynAny {
+	#pragma sun_localservant DynFixed ""
+
+        /**
+        * Returns the value of a DynFixed.
+        */
+        string get_value();
+
+        /**
+        * Sets the value of the DynFixed.
+        * The val string must contain a fixed string constant in the same format as used for IDL fixed-point literals.
+        * However, the trailing d or D is optional. The return value is true if val can be represented as the DynFixed
+        * without loss of precision. If val has more fractional digits than can be represented in the DynFixed,
+        * fractional digits are truncated and the return value is false.
+        *
+        * @exception TypeMismatch If val does not contain a valid fixed-point literal or contains extraneous
+        *            characters other than leading or trailing white space
+        * @exception InvalidValue If val contains a value whose scale exceeds that of the DynFixed
+        *            or is not initialized
+        */
+        boolean set_value(in string val)
+            raises(TypeMismatch, InvalidValue);
+    };
+
+    /**
+    * DynEnum objects support the manipulation of IDL enumerated values.
+    * The current position of a DynEnum is always -1.
+    */
+    interface DynEnum : DynAny {
+	#pragma sun_localservant DynEnum ""
+
+        /**
+        * Returns the value of the DynEnum as an IDL identifier.
+        */
+        string get_as_string();
+
+        /**
+        * Sets the value of the DynEnum to the enumerated value whose IDL identifier is passed in the value parameter.
+        *
+        * @exception InvalidValue If value contains a string that is not a valid IDL identifier
+        *            for the corresponding enumerated type
+        */
+        void set_as_string(in string value)
+            raises(InvalidValue);
+
+        /**
+        * Returns the value of the DynEnum as the enumerated value's ordinal value.
+        * Enumerators have ordinal values 0 to n-1, as they appear from left to right
+        * in the corresponding IDL definition.
+        */
+        unsigned long get_as_ulong();
+
+        /**
+        * Sets the value of the DynEnum as the enumerated value's ordinal value.
+        *
+        * @exception InvalidValue If value contains a value that is outside the range of ordinal values
+        *            for the corresponding enumerated type
+        */
+        void set_as_ulong(in unsigned long value)
+            raises(InvalidValue);
+    };
+
+    typedef string FieldName;
+
+    /**
+    * NameValuePairs associate a name with an Any object.
+    */
+    struct NameValuePair {
+        /**
+        * The name associated with the Any.
+        */
+        FieldName id;
+        /**
+        * The Any value associated with the name.
+        */
+        any value;
+    };
+    typedef sequence<NameValuePair> NameValuePairSeq;
+
+    /**
+    * NameDynAnyPairs associate a name with an DynAny object.
+    */
+    struct NameDynAnyPair {
+        /**
+        * The name associated with the DynAny.
+        */
+        FieldName id;
+        /**
+        * The DynAny value associated with the name.
+        */
+        DynAny value;
+    };
+    typedef sequence<NameDynAnyPair> NameDynAnyPairSeq;
+
+    /**
+    * DynStruct objects support the manipulation of IDL struct and exception values.
+    * Members of the exceptions are handled in the same way as members of a struct.
+    */
+    interface DynStruct : DynAny {
+	#pragma sun_localservant DynStruct ""
+
+        /**
+        * Returns the name of the member at the current position.
+        * This operation may return an empty string since the TypeCode of the value being
+        * manipulated may not contain the names of members.
+        *
+        * @exception TypeMismatch if the DynStruct represents an empty exception.
+        * @exception InvalidValue if the current position does not indicate a member
+        */
+        FieldName current_member_name()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Returns the TCKind associated with the member at the current position.
+        *
+        * @exception TypeMismatch if the DynStruct represents an empty exception.
+        * @exception InvalidValue if the current position does not indicate a member
+        */
+        CORBA::TCKind current_member_kind()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Returns a sequence of NameValuePairs describing the name and the value of each member
+        * in the struct associated with a DynStruct object.
+        * The sequence contains members in the same order as the declaration order of members
+        * as indicated by the DynStruct's TypeCode. The current position is not affected.
+        * The member names in the returned sequence will be empty strings if the DynStruct's TypeCode
+        * does not contain member names.
+        */
+        NameValuePairSeq get_members();
+
+        /**
+        * Initializes the struct data value associated with a DynStruct object from a sequence of NameValuePairs.
+        * The operation sets the current position to zero if the passed sequences has non-zero length. Otherwise,
+        * if an empty sequence is passed, the current position is set to -1.
+        * <P>Members must appear in the NameValuePairs in the order in which they appear in the IDL specification
+        * of the struct as indicated by the DynStruct's TypeCode or they must be empty strings.
+        * The operation makes no attempt to assign member values based on member names.
+        *
+        * @exception TypeMismatch if the member names supplied in the passed sequence do not match the
+        *            corresponding member name in the DynStruct's TypeCode and they are not empty strings
+        * @exception InvalidValue if the passed sequence has a number of elements that disagrees
+        *            with the number of members as indicated by the DynStruct's TypeCode
+        */
+        void set_members(in NameValuePairSeq value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Returns a sequence of NameDynAnyPairs describing the name and the value of each member
+        * in the struct associated with a DynStruct object.
+        * The sequence contains members in the same order as the declaration order of members
+        * as indicated by the DynStruct's TypeCode. The current position is not affected.
+        * The member names in the returned sequence will be empty strings if the DynStruct's TypeCode
+        * does not contain member names.
+        */
+        NameDynAnyPairSeq get_members_as_dyn_any();
+
+        /**
+        * Initializes the struct data value associated with a DynStruct object from a sequence of NameDynAnyPairs.
+        * The operation sets the current position to zero if the passed sequences has non-zero length. Otherwise,
+        * if an empty sequence is passed, the current position is set to -1.
+        * <P>Members must appear in the NameDynAnyPairs in the order in which they appear in the IDL specification
+        * of the struct as indicated by the DynStruct's TypeCode or they must be empty strings.
+        * The operation makes no attempt to assign member values based on member names.
+        *
+        * @exception TypeMismatch if the member names supplied in the passed sequence do not match the
+        *            corresponding member name in the DynStruct's TypeCode and they are not empty strings
+        * @exception InvalidValue if the passed sequence has a number of elements that disagrees
+        *            with the number of members as indicated by the DynStruct's TypeCode
+        */
+        void set_members_as_dyn_any(in NameDynAnyPairSeq value)
+            raises(TypeMismatch, InvalidValue);
+    };
+
+    /**
+    * DynUnion objects support the manipulation of IDL unions.
+    * A union can have only two valid current positions:
+    * <UL>
+    * <LI>zero, which denotes the discriminator
+    * <LI>one, which denotes the active member
+    * </UL>
+    * The component_count value for a union depends on the current discriminator:
+    * it is 2 for a union whose discriminator indicates a named member, and 1 otherwise.
+    */
+    interface DynUnion : DynAny {
+	#pragma sun_localservant DynUnion ""
+
+        /**
+        * Returns the current discriminator value.
+        */
+        DynAny get_discriminator();
+
+        /**
+        * Sets the discriminator of the DynUnion to the specified value.
+        * Setting the discriminator to a value that is consistent with the currently active union member
+        * does not affect the currently active member. Setting the discriminator to a value that is inconsistent
+        * with the currently active member deactivates the member and activates the member that is consistent
+        * with the new discriminator value (if there is a member for that value) by initializing the member
+        * to its default value.
+        * Setting the discriminator of a union sets the current position to 0 if the discriminator value
+        * indicates a non-existent union member (has_no_active_member returns true in this case).
+        * Otherwise, if the discriminator value indicates a named union member, the current position is set to 1
+        * (has_no_active_member returns false and component_count returns 2 in this case).
+        *
+        * @exception TypeMismatch if the TypeCode of the parameter is not equivalent to the TypeCode
+        *            of the union's discriminator
+        */
+        void set_discriminator(in DynAny d)
+            raises(TypeMismatch);
+
+        /**
+        * Sets the discriminator to a value that is consistent with the value of the default case of a union.
+        * It sets the current position to zero and causes component_count to return 2.
+        *
+        * @exception TypeMismatch if the union does not have an explicit default case
+        */
+        void set_to_default_member()
+            raises(TypeMismatch);
+
+        /**
+        * Sets the discriminator to a value that does not correspond to any of the unions case labels.
+        * It sets the current position to zero and causes component_count to return 1.
+        *
+        * @exception TypeMismatch if the union has an explicit default case or if it uses the entire range
+        *            of discriminator values for explicit case labels
+        */
+        void set_to_no_active_member()
+            raises(TypeMismatch);
+
+        /**
+        * Returns true if the union has no active member, that is, the unions value consists solely
+        * of its discriminator because the discriminator has a value that is not listed as an explicit case label.
+        * Calling this operation on a union that has a default case returns false.
+        * Calling this operation on a union that uses the entire range of discriminator values
+        * for explicit case labels returns false.
+        */
+        boolean has_no_active_member();
+
+        /**
+        * Returns the TCKind value of the discriminators TypeCode.
+        */
+        CORBA::TCKind discriminator_kind();
+
+        /**
+        * Returns the TCKind value of the currently active members TypeCode. 
+        *
+        * @exception InvalidValue if the union does not have a currently active member
+        */
+        CORBA::TCKind member_kind()
+            raises(InvalidValue);
+
+        /**
+        * Returns the currently active member. Note that the returned reference remains valid only
+        * for as long as the currently active member does not change. Using the returned reference
+        * beyond the life time of the currently active member raises OBJECT_NOT_EXIST. 
+        *
+        * @exception InvalidValue if the union has no active member
+        */
+        DynAny member()
+            raises(InvalidValue);
+
+        /**
+        * Returns the name of the currently active member. If the unions TypeCode does not contain
+        * a member name for the currently active member, the operation returns an empty string.
+        *
+        * @exception InvalidValue if the union has no active member
+        */
+        FieldName member_name()
+            raises(InvalidValue);
+    };
+
+    typedef sequence<any> AnySeq;
+    typedef sequence<DynAny> DynAnySeq;
+
+    /**
+    * DynSequence objects support the manipulation of IDL sequences.
+    */
+    interface DynSequence : DynAny {
+	#pragma sun_localservant DynSequence ""
+
+        /**
+        * Returns the current length of the sequence.
+        */
+        unsigned long get_length();
+
+        /**
+        * Sets the length of the sequence.
+        * Increasing the length of a sequence adds new elements at the tail without affecting the values
+        * of already existing elements. Newly added elements are default-initialized.
+        * Increasing the length of a sequence sets the current position to the first newly-added element
+        * if the previous current position was -1. Otherwise, if the previous current position was not -1,
+        * the current position is not affected.
+        * Decreasing the length of a sequence removes elements from the tail without affecting the value
+        * of those elements that remain. The new current position after decreasing the length of a sequence
+        * is determined as follows:
+        * <UL>
+        * <LI>If the length of the sequence is set to zero, the current position is set to -1.
+        * <LI>If the current position is -1 before decreasing the length, it remains at -1.
+        * <LI>If the current position indicates a valid element and that element is not removed when the length
+        *     is decreased, the current position remains unaffected.
+        * <LI>If the current position indicates a valid element and that element is removed,
+        *     the current position is set to -1.
+        * </UL>
+        *
+        * @exception InvalidValue if this is a bounded sequence and len is larger than the bound
+        */
+        void set_length(in unsigned long len)
+            raises(InvalidValue);
+
+        /**
+        * Returns the elements of the sequence.
+        */
+        AnySeq get_elements();
+
+        /**
+        * Sets the elements of a sequence.
+        * The length of the DynSequence is set to the length of value. The current position is set to zero
+        * if value has non-zero length and to -1 if value is a zero-length sequence.
+        *
+        * @exception TypeMismatch if value contains one or more elements whose TypeCode is not equivalent
+        *            to the element TypeCode of the DynSequence
+        * @exception InvalidValue if the length of value exceeds the bound of a bounded sequence
+        */
+        void set_elements(in AnySeq value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Returns the DynAnys representing the elements of the sequence.
+        */
+        DynAnySeq get_elements_as_dyn_any();
+
+        /**
+        * Sets the elements of a sequence using DynAnys.
+        * The length of the DynSequence is set to the length of value. The current position is set to zero
+        * if value has non-zero length and to -1 if value is a zero-length sequence.
+        *
+        * @exception TypeMismatch if value contains one or more elements whose TypeCode is not equivalent
+        *            to the element TypeCode of the DynSequence
+        * @exception InvalidValue if the length of value exceeds the bound of a bounded sequence
+        */
+        void set_elements_as_dyn_any(in DynAnySeq value)
+            raises(TypeMismatch, InvalidValue);
+    };
+
+    /**
+    * DynArray objects support the manipulation of IDL arrays.
+    * Note that the dimension of the array is contained in the TypeCode which is accessible
+    * through the type attribute. It can also be obtained by calling the component_count operation.
+    */
+    interface DynArray : DynAny {
+	#pragma sun_localservant DynArray ""
+
+        /**
+        * Returns the elements of the DynArray.
+        */
+        AnySeq get_elements();
+
+        /**
+        * Sets the DynArray to contain the passed elements.
+        *
+        * @exception TypeMismatch if one or more elements have a type that is inconsistent with the DynArrays TypeCode
+        * @exception InvalidValue if the sequence does not contain the same number of elements as the array dimension
+        */
+        void set_elements(in AnySeq value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Returns the elements of the DynArray as DynAnys.
+        */
+        DynAnySeq get_elements_as_dyn_any();
+
+        /**
+        * Sets the DynArray to contain the passed elements.
+        *
+        * @exception TypeMismatch if one or more elements have a type that is inconsistent with the DynArrays TypeCode
+        * @exception InvalidValue if the sequence does not contain the same number of elements as the array dimension
+        */
+        void set_elements_as_dyn_any(in DynAnySeq value)
+            raises(TypeMismatch, InvalidValue);
+    };
+
+    /**
+    * DynValueCommon provides operations supported by both the DynValue and DynValueBox interfaces.
+    */
+    interface DynValueCommon : DynAny {
+        /**
+        * Returns true if the DynValueCommon represents a null value type.
+        */
+        boolean is_null();
+
+        /**
+        * Changes the representation of a DynValueCommon to a null value type.
+        */
+        void set_to_null();
+
+        /**
+        * Replaces a null value type with a newly constructed value. Its components are initialized
+        * to default values as in DynAnyFactory.create_dyn_any_from_type_code.
+        * If the DynValueCommon represents a non-null value type, then this operation has no effect. 
+        */
+        void set_to_value();
+    }; 
+
+    /**
+    * DynValue objects support the manipulation of IDL non-boxed value types.
+    * The DynValue interface can represent both null and non-null value types.
+    * For a DynValue representing a non-null value type, the DynValue's components comprise
+    * the public and private members of the value type, including those inherited from concrete base value types,
+    * in the order of definition. A DynValue representing a null value type has no components
+    * and a current position of -1.
+    * <P>Warning: Indiscriminantly changing the contents of private value type members can cause the value type
+    * implementation to break by violating internal constraints. Access to private members is provided to support
+    * such activities as ORB bridging and debugging and should not be used to arbitrarily violate
+    * the encapsulation of the value type. 
+    */
+    interface DynValue : DynValueCommon {
+	#pragma sun_localservant DynValue ""
+
+        /**
+        * Returns the name of the member at the current position.
+        * This operation may return an empty string since the TypeCode of the value being
+        * manipulated may not contain the names of members.
+        *
+        * @exception TypeMismatch if the DynValue represents a null value type.
+        * @exception InvalidValue if the current position does not indicate a member
+        */
+        FieldName current_member_name()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Returns the TCKind associated with the member at the current position.
+        *
+        * @exception TypeMismatch if the DynValue represents a null value type.
+        * @exception InvalidValue if the current position does not indicate a member
+        */
+        CORBA::TCKind current_member_kind()
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Returns a sequence of NameValuePairs describing the name and the value of each member
+        * in the value type.
+        * The sequence contains members in the same order as the declaration order of members
+        * as indicated by the DynValue's TypeCode. The current position is not affected.
+        * The member names in the returned sequence will be empty strings if the DynValue's TypeCode
+        * does not contain member names.
+        *
+        * @exception InvalidValue if this object represents a null value type
+        */
+        NameValuePairSeq get_members()
+            raises(InvalidValue);
+
+        /**
+        * Initializes the value type's members from a sequence of NameValuePairs.
+        * The operation sets the current position to zero if the passed sequences has non-zero length. Otherwise,
+        * if an empty sequence is passed, the current position is set to -1.
+        * A null value type can be initialized to a non-null value type using this method.
+        * <P>Members must appear in the NameValuePairs in the order in which they appear in the IDL specification
+        * of the value type as indicated by the DynValue's TypeCode or they must be empty strings.
+        * The operation makes no attempt to assign member values based on member names.
+        *
+        * @exception TypeMismatch if the member names supplied in the passed sequence do not match the
+        *            corresponding member name in the DynValue's TypeCode and they are not empty strings
+        * @exception InvalidValue if the passed sequence has a number of elements that disagrees
+        *            with the number of members as indicated by the DynValue's TypeCode
+        */
+        void set_members(in NameValuePairSeq value)
+            raises(TypeMismatch, InvalidValue);
+
+        /**
+        * Returns a sequence of NameDynAnyPairs describing the name and the value of each member
+        * in the value type.
+        * The sequence contains members in the same order as the declaration order of members
+        * as indicated by the DynValue's TypeCode. The current position is not affected.
+        * The member names in the returned sequence will be empty strings if the DynValue's TypeCode
+        * does not contain member names.
+        *
+        * @exception InvalidValue if this object represents a null value type
+        */
+        NameDynAnyPairSeq get_members_as_dyn_any()
+            raises(InvalidValue);
+
+        /**
+        * Initializes the value type's members from a sequence of NameDynAnyPairs.
+        * The operation sets the current position to zero if the passed sequences has non-zero length. Otherwise,
+        * if an empty sequence is passed, the current position is set to -1.
+        * A null value type can be initialized to a non-null value type using this method.
+        * <P>Members must appear in the NameDynAnyPairs in the order in which they appear in the IDL specification
+        * of the value type as indicated by the DynValue's TypeCode or they must be empty strings.
+        * The operation makes no attempt to assign member values based on member names.
+        *
+        * @exception TypeMismatch if the member names supplied in the passed sequence do not match the
+        *            corresponding member name in the DynValue's TypeCode and they are not empty strings
+        * @exception InvalidValue if the passed sequence has a number of elements that disagrees
+        *            with the number of members as indicated by the DynValue's TypeCode
+        */
+        void set_members_as_dyn_any(in NameDynAnyPairSeq value)
+            raises(TypeMismatch, InvalidValue);
+    };
+
+    /**
+    * DynValueBox objects support the manipulation of IDL boxed value types.
+    * The DynValueBox interface can represent both null and non-null value types.
+    * For a DynValueBox representing a non-null value type, the DynValueBox has a single component
+    * of the boxed type. A DynValueBox representing a null value type has no components
+    * and a current position of -1.
+    */
+    interface DynValueBox : DynValueCommon {
+
+        /**
+        * Returns the boxed value as an Any.
+        *
+        * @exception InvalidValue if this object represents a null value box type
+        */
+        any get_boxed_value()
+            raises(InvalidValue);
+
+        /**
+        * Replaces the boxed value with the specified value.
+        * If the DynBoxedValue represents a null valuetype, it is converted to a non-null value.
+        *
+        * @exception TypeMismatch if this object represents a non-null value box type and the type
+        *            of the parameter is not matching the current boxed value type.
+        */
+        void set_boxed_value(in any boxed)
+            raises(TypeMismatch);
+
+        /**
+        * Returns the boxed value as a DynAny.
+        *
+        * @exception InvalidValue if this object represents a null value box type
+        */
+        DynAny get_boxed_value_as_dyn_any()
+            raises(InvalidValue);
+
+        /**
+        * Replaces the boxed value with the value contained in the parameter.
+        * If the DynBoxedValue represents a null valuetype, it is converted to a non-null value.
+        *
+        * @exception TypeMismatch if this object represents a non-null value box type and the type
+        *            of the parameter is not matching the current boxed value type.
+        */
+        void set_boxed_value_as_dyn_any(in DynAny boxed)
+            raises(TypeMismatch);
+    };
+
+    /**
+    * DynAny objects can be created by invoking operations on the DynAnyFactory object.
+    * Generally there are only two ways to create a DynAny object:
+    * <UL>
+    * <LI>invoking an operation on an existing DynAny object
+    * <LI>invoking an operation on a DynAnyFactory object
+    * </UL>
+    * A constructed DynAny object supports operations that enable the creation of new DynAny
+    * objects encapsulating access to the value of some constituent.
+    * DynAny objects also support the copy operation for creating new DynAny objects.
+    * A reference to the DynAnyFactory object is obtained by calling ORB.resolve_initial_references()
+    * with the identifier parameter set to the string constant "DynAnyFactory".
+    * <P>Dynamic interpretation of an any usually involves creating a DynAny object using create_dyn_any()
+    * as the first step. Depending on the type of the any, the resulting DynAny object reference can be narrowed
+    * to a DynFixed, DynStruct, DynSequence, DynArray, DynUnion, DynEnum, or DynValue object reference.
+    * <P>Dynamic creation of an any involves creating a DynAny object using create_dyn_any_from_type_code(),
+    * passing the TypeCode associated with the value to be created. The returned reference is narrowed to one of
+    * the complex types, such as DynStruct, if appropriate. Then, the value can be initialized by means of
+    * invoking operations on the resulting object. Finally, the to_any operation can be invoked
+    * to create an any value from the constructed DynAny.
+    */
+    interface DynAnyFactory {
+	#pragma sun_localservant DynAnyFactory ""
+        exception InconsistentTypeCode {};
+
+        /**
+        * Creates a new DynAny object from an any value.
+        * A copy of the TypeCode associated with the any value is assigned to the resulting DynAny object.
+        * The value associated with the DynAny object is a copy of the value in the original any.
+        * The current position of the created DynAny is set to zero if the passed value has components,
+        * to -1 otherwise
+        *
+        * @exception InconsistentTypeCode if value has a TypeCode with a TCKind of tk_Principal,
+        * tk_native, or tk_abstract_interface
+        */
+        DynAny create_dyn_any(in any value)
+            raises(InconsistentTypeCode);
+
+        /**
+        * Creates a DynAny from a TypeCode. Depending on the TypeCode, the created object may be of type DynAny,
+        * or one of its derived types, such as DynStruct. The returned reference can be narrowed to the derived type.
+        * In all cases, a DynAny constructed from a TypeCode has an initial default value.
+        * The default values of basic types are:
+        * <UL>
+        * <LI>false for boolean
+        * <LI>zero for numeric types
+        * <LI>zero for types octet, char, and wchar
+        * <LI>the empty string for string and wstring
+        * <LI>null for object references
+        * <LI>a type code with a TCKind value of tk_null for type codes
+        * <LI>for any values, an any containing a type code with a TCKind value of tk_null type and no value
+        * </UL>
+        * For complex types, creation of the corresponding DynAny assigns a default value as follows:
+        * <UL>
+        * <LI>For DynSequence it sets the current position to -1 and creates an empty sequence.
+        * <LI>For DynEnum it sets the current position to -1 and sets the value of the enumerator
+        *     to the first enumerator value indicated by the TypeCode.
+        * <LI>For DynFixed it sets the current position to -1 and sets the value zero.
+        * <LI>For DynStruct it sets the current position to -1 for empty exceptions
+        *     and to zero for all other TypeCodes. The members (if any) are (recursively) initialized
+        *     to their default values.
+        * <LI>For DynArray sets the current position to zero and (recursively) initializes elements
+        *     to their default value.
+        * <LI>For DynUnion sets the current position to zero. The discriminator value is set
+        *     to a value consistent with the first named member of the union. That member is activated and (recursively)
+        *     initialized to its default value.
+        * <LI>For DynValue and DynValueBox it initializes to a null value.
+        * </UL>
+        */
+        DynAny create_dyn_any_from_type_code(in CORBA::TypeCode type)
+            raises(InconsistentTypeCode);
+    };
+}; // module DynamicAny
+
+#endif // _DYNAMIC_ANY_IDL_

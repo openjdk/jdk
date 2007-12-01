@@ -1,0 +1,992 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en]C-gatewaynet  (WinNT; U) 
+[Netscape]">
+   <TITLE>package</TITLE>
+<!--
+/*
+* Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+* DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+*
+* This code is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License version 2 only, as
+* published by the Free Software Foundation.  Sun designates this
+* particular file as subject to the "Classpath" exception as provided
+* by Sun in the LICENSE file that accompanied this code.
+*
+* This code is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+* version 2 for more details (a copy is included in the LICENSE file that
+* accompanied this code).
+*
+* You should have received a copy of the GNU General Public License version
+* 2 along with this work; if not, write to the Free Software Foundation,
+* Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+*
+* Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+* CA 95054 USA or visit www.sun.com if you need additional information or
+* have any questions.
+*/  
+-->
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+Provides the mapping of the OMG CORBA APIs to the Java<SUP><FONT 
+SIZE=-2>TM</FONT></SUP>
+programming language, including the class <TT>ORB</TT>, which is implemented
+so that a programmer can use it as a fully-functional Object Request Broker
+(ORB).
+
+<P>For a precise list of supported sections of official CORBA specifications with which 
+the Java[TM] Platform, Standard Edition 6 complies, see <A 
+HREF="doc-files/compliance.html"><em>Official Specifications for CORBA support in 
+Java[TM] SE 6</em></A>.
+
+
+<H1>General Information</H1>
+The information in this section is information relevant to someone who 
+compiles Interface Definition Language (IDL) files and uses the
+ORB to write clients and servers.
+
+<P>The classes and interfaces described in this section can be put into 
+four groups: <tt>ORB classes</tt>, Exceptions, <tt>Helper</tt> classes,
+and <tt>Holder</tt> classes.
+
+<H2>
+The <tt>ORB</tt> Class</H2>
+
+<P>An ORB handles (or brokers) method invocations between a client and
+the method's implementation on a server. Because the client and server
+may be anywhere on a network, and because the invocation and implementation
+may be written in different programming languages, an ORB does a great
+deal of work behind the scenes to accomplish this communication.
+
+<P>Most of what an ORB does is completely transparent to the user, and a major
+portion of the <TT>CORBA</TT> package consists of classes used by the ORB
+behind the scenes. The result is that most programmers will use only a
+small part of this package directly. In fact, most programmers will use
+only a few methods from the <TT>ORB</TT> class, some exceptions, and 
+occasionally,
+a holder class. 
+<H3>
+<TT>ORB</TT> Methods</H3>
+
+<P>Before an application can enter the CORBA environment, it must first: 
+<P>
+<UL>
+<LI>Be initialized into the ORB and possibly the object adapter (POA) environments.
+<LI>Get references to ORB object (for use in future ORB operations) 
+and perhaps other objects (including the root POA or some Object Adapter objects). 
+</UL>
+<P>The following operations are provided to initialize applications and obtain
+ the appropriate object references:
+ <P>
+ <UL>
+ <LI>Operations providing access to the ORB, which are discussed in this
+ section.
+ <LI>Operations providing access to Object Adapters, Interface Repository, 
+ Naming Service, and other Object Services. These operations are described 
+ in <a href="#adv"><em>Other Classes</em></a>.
+ </UL>
+ <P>
+When an application requires a CORBA environment it needs a mechanism to 
+get an ORB object reference and possibly an OA object reference 
+(such as the root POA). This serves two purposes. First, it initializes 
+an application into the ORB and OA environments. Second, it returns the 
+ORB object reference and the OA object reference to the application 
+for use in future ORB and OA operations. 
+
+<P>In order to obtain an ORB object reference, applications call 
+the <tt>ORB.init</tt> operation. The parameters to the call can comprise an 
+identifier for the ORB for which the object reference is required,
+ and an arg_list, which is used to allow environment-specific data to be 
+ passed into the call. 
+
+<P>These are the <TT>ORB</TT> methods
+ that provide access to the ORB:
+<UL>
+<LI>
+<TT><bold>init</bold>()</TT> 
+
+<LI>
+<TT><bold>init</bold>(String [] args, Properties props)</TT>
+
+<LI>
+<TT><bold>init</bold>(Applet app, Properties props)</TT>
+</UL>
+
+<P>Using the <tt>init()</tt> method without parameters initiates 
+a singleton ORB,  which can only
+give typecode creation <tt>any</tt>s needed in code generated
+in Helper classes by <tt>idlj</tt>.
+
+<P>Applications require a portable means by which to obtain their 
+initial object references. References are required for the root 
+POA, POA Current, Interface Repository, and various Object Services 
+instances.  The functionality required by the application is similar
+ to that provided by the Naming Service. However, the OMG does not 
+ want to mandate that the Naming Service be made available to all 
+ applications in order that they may be portably initialized. 
+ Consequently, the operations shown in this section provide a 
+ simplified, local version of the Naming Service that applications 
+ can use to obtain a small, defined set of object references which 
+ are essential to its operation. Because only a small well-defined 
+ set of objects are expected with this mechanism, the naming context
+ can be flattened to be a single-level name space. This simplification
+ results in only two operations being defined to achieve the functionality
+  required.
+  
+<P>Initial references are obtained via two operations provided in 
+the ORB object interface, providing facilities to list and 
+resolve initial object references.  These are:
+<UL>
+<LI>
+<TT><bold>resolve_initial_references</bold>(String name)</TT>
+<LI>
+<TT><bold>list_initial_services</bold>()</TT>
+<LI>
+<TT><bold>register_initial_reference</bold>(String id, 
+org.omg.CORBA.Object obj)</TT>
+</UL>
+
+<P>An example that uses some of these methods is <A 
+HREF="{@docRoot}/../technotes/guides/idl/GShome.html">
+<em>Getting Started with Java IDL</em></A>.
+
+<H2>
+Exceptions</H2>
+Exceptions in Java IDL are similar to those in any code written in the
+Java programming language. If a method is defined to throw an exception,
+then any code using that method must have a <TT>try</TT>/<TT>catch</TT>
+block and handle that exception when it is thrown.
+
+<P>The documentation on <A 
+HREF="{@docRoot}/../technotes/guides/idl/jidlExceptions.html"><em>Java
+IDL exceptions</em></A> has more information and explains the difference between
+system exceptions and user-defined exceptions.
+
+<P>The following is a list of the system exceptions (which are unchecked
+exceptions inheriting through <TT><a href="SystemException.html">
+org.omg.CORBA.SystemException</a></TT> from
+<TT>java.lang.RuntimeException</TT>) that are defined in the package 
+<TT>org.omg.CORBA</TT>:
+<PRE><code>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BAD_CONTEXT
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BAD_INV_ORDER
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BAD_OPERATION
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BAD_PARAM
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BAD_TYPECODE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; COMM_FAILURE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DATA_CONVERSION
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FREE_MEM
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IMP_LIMIT
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; INITIALIZE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; INTERNAL
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; INTF_REPOS
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; INVALID_TRANSACTION
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; INV_FLAG
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; INV_IDENT
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; INV_OBJREF
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; INV_POLICY
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MARSHAL
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="#NO_IMPLEMENT">NO_IMPLEMENT</a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NO_MEMORY
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NO_PERMISSION
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NO_RESOURCES
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NO_RESPONSE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; OBJECT_NOT_EXIST
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; OBJ_ADAPTER
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PERSIST_STORE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TRANSACTION_REQUIRED
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TRANSACTION_ROLLEDBACK
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TRANSIENT
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; UNKNOWN
+</code></PRE>
+<P>
+The following is a list of user-defined exceptions defined in the package
+<TT>org.omg.CORBA</TT>.
+<PRE><code>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Bounds
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; UnknownUserException
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WrongTransaction&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PolicyError
+</code></PRE>
+
+ <H2>Subpackages</H2>
+There are some packages inside the <TT>CORBA</TT> package with
+"Package" as part of their names. These packages are generally quite small
+because all they do is provide exceptions or classes for use by interfaces
+and classes in the <TT>CORBA</TT> package.
+
+<P>For example, the package <TT><a href="TypeCodePackage/package-summary.html">
+org.omg.CORBA.TypeCodePackage</a></TT> contains
+two exceptions thrown by methods in the class <TT>TypeCode</TT>. These
+exceptions are:
+<UL>
+<LI>
+<TT>BadKind</TT>
+
+<LI>
+<TT>Bounds</TT>
+</UL>
+The package <TT><a href="ORBPackage/package-summary.html">
+org.omg.CORBA.ORBPackage</a></TT> contains two exceptions:
+<UL>
+<LI>
+<TT>InvalidName</TT>
+
+<LI>
+<TT>InconsistentTypeCode</TT>
+</UL>
+
+<P>Another package that is a subpackage of <tt>CORBA</tt> is the <tt>
+<a href="portable/package-summary.html">portable</a></tt> package.  It 
+provides a set of ORB APIs that makes it 
+possible for code generated by one vendor's IDL compiler to run
+on another vendor's ORB. 
+
+
+
+
+<H2>
+Holder classes</H2>
+ 
+
+<P>Support for out and inout parameter passing modes requires the use of 
+additional  <em><a href="doc-files/generatedfiles.html#holder">holder  
+classes</a></em>. Because the Java programming language does not support out or 
+inout parameters, holder classes are needed as a means of passing a parameter
+that can be modified.   To support portable stubs and skeletons, holder classes also implement
+ the <tt><a href="portable/Streamable.html">org.omg.CORBA.portable.Streamable</a>
+ </tt> interface.
+ 
+ <P>Holder classes are named by appending "Holder" to the name of the type.
+ The name of the type refers to its name in the Java programming language.  For
+ example, a holder class for the interface named <tt>Account</tt> in the Java programming
+ language would be named <tt>AccountHolder</tt>.
+
+
+<P>Holder classes are available for all of the basic IDL
+ datatypes in the <tt>org.omg.CORBA</tt> package.  So, for example, 
+  there are already-defined classes for <tt>LongHolder</tt>, <tt>ShortHolder</tt>,
+ <tt>FloatHolder</tt>, and so on.  Classes are also generated for 
+ all named user-defined IDL types except those defined by <tt>typedefs</tt>. 
+ (Note that in this context user defined includes types that are 
+ defined in OMG specifications such as those for the Interface
+  Repository, and other OMG services.) 
+
+
+<P>Each holder class has:
+<P>
+<UL>
+<LI>a constructor from an instance
+<LI>a default constructor
+<LI>a public instance member, <tt>value</tt> which is the typed value. 
+<LI>a method for reading an input stream and assigning the contents to the 
+type's <tt>value</tt> field
+<LI>a method for writing the value of the <tt>value</tt> field to an output stream
+<LI>a method for getting the typecode of the type
+</UL>
+
+<P>The default constructor sets the value field to the default value for the 
+type as defined by the Java language: 
+<P>
+<UL>
+<LI><tt>false</tt> for boolean
+<LI><tt>0</tt> for numeric and char types
+<LI><tt>null</tt> for strings and object references
+</UL>
+
+
+
+<P>
+As an example, if the interface <code>Account</code>, defined in OMG IDL,
+were mapped to the Java programming language, the following holder class
+would be generated:
+<PRE>
+public final class AccountHolder implements 
+    org.omg.CORBA.portable.Streamable
+{
+  // field that holds an Account object
+  public Account value = null;
+
+  // default constructor
+  public AccountHolder ()
+  {
+  }
+  
+  // creates a new AccountHolder from initialValue
+  public AccountHolder (Account initialValue)
+  {
+    value = initialValue;
+  }
+  
+  // reads the contents of i and assigns the contents to value
+  public void _read (org.omg.CORBA.portable.InputStream i)
+  {
+    value = AccountHelper.read (i);
+  }
+
+  // writes value to o
+  public void _write (org.omg.CORBA.portable.OutputStream o)
+  {
+    AccountHelper.write (o, value);
+  }
+ 
+  // returns the typecode for Account
+  public org.omg.CORBA.TypeCode _type ()
+  {
+    return AccountHelper.type ();
+  }
+
+}
+</PRE>
+
+<P>For more information on Holder classes, see Chapter 1.4, <em>Mapping for
+Basic Types</em> in the <a href="http://cgi.omg.org/cgi-bin/doc?ptc/00-01-08">
+<em>OMG IDL to Java Language Mapping</em></a>. The Holder classes defined 
+in the package <TT>org.omg.CORBA</TT> are:
+<PRE>
+&nbsp;&nbsp;&nbsp;&nbsp; <TT>AnyHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>AnySeqHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>BooleanHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>BooleanSeqHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ByteHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>CharHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>CharSeqHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>CurrentHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>DoubleHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>DoubleSeqHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>FixedHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>FloatHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>FloatSeqHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>IntHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>LongHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>LongLongSeqHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>LongSeqHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ObjectHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>OctetSeqHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ParameterModeHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>PolicyErrorHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>PolicyListHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>PrincipalHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ServiceInformationHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ShortHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ShortSeqHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>StringHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>StringSeqHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>TypeCodeHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ULongLongSeqHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ULongSeqHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>UnknownUserExceptionHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>UShortSeqHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ValueBaseHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>WCharSeqHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>WrongTransactionHolder
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>WStringSeqHolder</TT>
+
+</PRE>
+
+<h2>Helper Classes </h2>
+<P>Helper files supply several static methods needed to manipulate the type.
+ These include:
+ <P>
+ <UL>
+ <LI><tt>Any</tt> insert and extract operations for the type
+ <LI>getting the repository id
+ <LI>getting the typecode
+ <LI>reading and writing the type from and to a stream
+ <LI>implement the <code>ValueHelper</code> interface (if it is  a user-defined
+   value type)
+ </UL> 
+
+<P>The helper class for a mapped IDL interface or abstract interface
+ also include narrow operation(s). The static narrow method allows 
+ an <tt>org.omg.CORBA.Object</tt> to be narrowed to the object reference 
+ of a more specific type. The IDL exception <tt>CORBA.BAD_PARAM</tt> 
+ is thrown if the narrow fails because the object reference does not 
+ support the requested type. A different system exception is raised 
+ to indicate other kinds of errors. Trying to narrow a <tt>null</tt> will always
+  succeed with a return value of <tt>null</tt>. Generally, the only helper method an application programmer uses is
+the <code>narrow</code> method.  The other methods are normally used behind
+the scenes and are transparent to the programmer.
+
+<P>Helper classes
+fall into two broad categories, <a href="#value">helpers for value types</a> and
+<a href="#basic">helpers for non value types</a>. Because all of the helper 
+classes in one category
+provide the same methods, one generic explanation of each 
+category of helper classes is presented here.
+
+<P>
+When OMG IDL is mapped to the Java programming language, 
+a "helper" class is generated for each user-defined type.
+This generated class will have the name of the user-defined type with
+the suffix <code>Helper</code> appended.  For example, if the
+interface <code>Account</code> is defined in OMG IDL, the
+<code>idlj</code> compiler will automatically generate a class named
+<code>AccountHelper</code>.  The <code>AccountHelper</code> class
+will contain the static methods needed for manipulating instances of the type,
+in this case, <code>Account</code> objects. 
+
+
+<a name="narrow"></a>
+<h3>The <code>narrow</code> Method</h3>
+When an object is the return value for a method, it is returned in the
+form of a generic object, either an <code>org.omg.CORBA.Object</code> object
+or a <code>java.lang.Object</code> object. This object must be cast to its
+more specific type before it can be operated on.  For example, an
+<code>Account</code> object will be returned as a generic object and must
+be narrowed to an <code>Account</code> object so that <code>Account</code>
+methods may be called on it.
+<P>
+The <code>narrow</code> method has two forms, one that takes an
+<code>org.omg.CORBA.Object</code> object and one that takes a
+<code>java.lang.Object</code> object. Whether the interface is abstract or
+not determines which <code>narrow</code> method its helper class will provide.
+The helper class for an interface
+that is not abstract will have a <code>narrow</code> method that takes a CORBA
+object, whereas the <code>narrow</code> method for an interface that is abstract 
+will
+take an object in the Java programming language.  The helper class for a
+non-abstract interface that has at least one abstract base interface will provide
+both versions of the <code>narrow</code> method.
+<P>The <A HREF="{@docRoot}/../technotes/guides/idl/jidlExample.html"><em>Hello World</em></A> 
+tutorial uses a <tt>narrow</tt> method that looks 
+like this:
+<P>
+<PRE>
+        // create and initialize the ORB
+	ORB orb = ORB.init(args, null);
+
+        // get the root naming context
+        org.omg.CORBA.Object objRef = 
+	    orb.resolve_initial_references("NameService");
+        // Use NamingContextExt instead of NamingContext. This is 
+        // part of latest Inter-Operable naming Service.  
+        NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+ 
+        // resolve the Object Reference in Naming
+        String name = "Hello";
+        helloImpl = HelloHelper.narrow(ncRef.resolve_str(name));
+</PRE>
+
+<a name="basic"></a>
+<h3>Example of a Basic Helper Class</h3>
+A basic helper class, for purposes of this explanation, is one with
+the methods that are provided by every helper class, plus a <code>narrow</code> 
+method if the type defined in OMG IDL maps to an interface in the Java
+programming language.  Types that are not value types will have a basic
+helper class generated for them.
+<P>
+For example, assuming that the interface <code>Account</code> is not a
+value type IDL type and is also not an abstract interface and has no
+abstract base interfaces, its <code>AccountHelper</code> class will look
+like this:
+<PRE>
+abstract public class AccountHelper
+{
+  private static String  _id = "IDL:Account:1.0";
+
+  // inserts an Account object into an Any object
+  public static void insert (org.omg.CORBA.Any a, Account that)
+  {
+    org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
+    a.type (type ());
+    write (out, that);
+    a.read_value (out.create_input_stream (), type ());
+  }
+
+  // extracts an Account object from an Any object
+  public static Account extract (org.omg.CORBA.Any a)
+  {
+    return read (a.create_input_stream ());
+  }
+
+  
+  private static org.omg.CORBA.TypeCode __typeCode = null;
+  // gets the typecode for this type
+  synchronized public static org.omg.CORBA.TypeCode type ()
+  {
+    if (__typeCode == null)
+    {
+      __typeCode = org.omg.CORBA.ORB.init ().create_interface_tc (AccountHelper.id (), "Account");
+    }
+    return __typeCode;
+  }
+
+  // gets the repository id for this type
+  public static String id ()
+  {
+    return _id;
+  }
+
+  // reads an Account object from an input stream
+  public static Account read (org.omg.CORBA.portable.InputStream istream)
+  {
+    return narrow (istream.read_Object (_AccountStub.class));
+  }
+
+  // writes an Account object to an outputstream
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, Account value)
+  {
+    ostream.write_Object ((org.omg.CORBA.Object) value);
+  }
+
+  // converts (narrows) an Object to an Account object
+  public static Account narrow (org.omg.CORBA.Object obj)
+  {
+    if (obj == null)
+      return null;
+    else if (obj instanceof Account)
+      return (Account)obj;
+    else if (!obj._is_a (id ()))
+      throw new org.omg.CORBA.BAD_PARAM ();
+    else
+    {
+      org.omg.CORBA.portable.Delegate delegate = ((org.omg.CORBA.portable.ObjectImpl)obj)._get_delegate ();
+      _AccountStub stub = new _AccountStub ();
+      stub._set_delegate(delegate);
+      return stub;
+    }
+  }
+
+}
+</PRE>
+<P>
+
+<h3>Value Type Helper Classes</h3>
+A helper class for a value type includes different renderings of
+the same methods generated for non-value type methods. The main difference
+ is that value types are types that can be
+passed by value as parameters or return values of a method, which means that
+they must be serializable.
+<P>Assuming that <code>Address</code> is a value type, the
+<code>AddressHelper</code> class will look like this:
+<pre>
+abstract public class AddressHelper
+{
+  private static String  _id = "IDL:Address:1.0";
+
+  // same as for non-value type
+  public static void insert (org.omg.CORBA.Any a, Address that)
+  {
+    org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
+    a.type (type ());
+    write (out, that);
+    a.read_value (out.create_input_stream (), type ());
+  }
+
+  // same as for non-value type
+  public static Address extract (org.omg.CORBA.Any a)
+  {
+    return read (a.create_input_stream ());
+  }
+
+  private static org.omg.CORBA.TypeCode __typeCode = null;
+  private static boolean __active = false;
+  
+  // getting the typecode for the type
+  synchronized public static org.omg.CORBA.TypeCode type ()
+  {
+    if (__typeCode == null)
+    {
+      synchronized (org.omg.CORBA.TypeCode.class)
+      {
+        if (__typeCode == null)
+        {
+          if (__active)
+          {
+            return org.omg.CORBA.ORB.init().create_recursive_tc ( _id );
+          }
+          __active = true;
+          org.omg.CORBA.ValueMember[] _members0 = new org.omg.CORBA.ValueMember[0];
+          org.omg.CORBA.TypeCode _tcOf_members0 = null;
+          __typeCode = org.omg.CORBA.ORB.init ().create_value_tc (_id, "Address", org.omg.CORBA.VM_NONE.value, null, _members0);
+          __active = false;
+        }
+      }
+    }
+    return __typeCode;
+  }
+
+  // same as for non-value type
+  public static String id ()
+  {
+    return _id;
+  }
+
+  // reads a serializable instance of Address from the given input stream
+  public static Address read (org.omg.CORBA.portable.InputStream istream)
+  {
+    return (Address)((org.omg.CORBA_2_3.portable.InputStream) istream).read_value (id ());
+  }
+
+  // writes a serializable instance of Address to the given output stream
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, Address value)
+  {
+    ((org.omg.CORBA_2_3.portable.OutputStream) ostream).write_value (value, id ());
+  }
+
+
+}
+</pre>
+
+<P>The Helper classes defined in the package <TT>org.omg.CORBA</TT> are:
+<PRE><code>
+&nbsp;&nbsp;&nbsp;&nbsp; <TT>AnySeqHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>BooleanSeqHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>CharSeqHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>CompletionStatusHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>CurrentHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>DefinitionKindHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>DoubleSeqHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>FieldNameHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>FloatSeqHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>IdentifierHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>IDLTypeHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>LongLongSeqHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>LongSeqHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>NameValuePairHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ObjectHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>OctetSeqHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ParameterModeHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>PolicyErrorCodeHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>PolicyErrorHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>PolicyHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>PolicyListHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>PolicyTypeHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>RepositoryIdHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ServiceDetailHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ServiceInformationHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>SetOverrideTypeHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ShortSeqHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>StringSeqHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>StringValueHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>StructMemberHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ULongLongSeqHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ULongSeqHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>UnionMemberHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>UnknownUserExceptionHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>UShortSeqHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ValueBaseHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>ValueMemberHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>VersionSpecHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>VisibilityHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>WCharSeqHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>WrongTransactionHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>WStringSeqHelper
+</TT>&nbsp;&nbsp;&nbsp;&nbsp; <TT>WStringValueHelper</TT>
+
+</code></PRE>
+<a name="adv"></a>
+<H1>
+Other Classes</H1>
+The other classes and interfaces in the <TT>CORBA</TT> package, which are
+used behind the scenes, can be put into four groups. Three of the groups
+are used with requests in some capacity, and the fourth group, concerning
+the Interface Repository, is a category by itself.
+<H2>
+Classes Created by an ORB</H2>
+The first group contains classes that are created by an ORB and contain
+information used in request operations. 
+<UL>
+<LI>
+<TT>TCKind</TT> -- indicates the kind (datatype) for a <TT>TypeCode</TT>
+object
+
+<LI>
+<TT>TypeCode</TT> -- indicates a datatype and possibly other information
+
+<LI>
+<TT>Any</TT> -- contains a value and its typecode
+
+<LI>
+<TT>NamedValue</TT> -- contains a name, an <TT>Any</TT> object, and an
+argument mode flag. <TT>NamedValue</TT> objects contain information about
+method arguments, method return values, or a context.
+
+<LI>
+<TT>ContextList</TT> -- a list of strings that describe the contexts that
+need to be resolved and sent with an invocation
+
+<LI>
+<TT>ExceptionList</TT> -- a list of <TT>TypeCode</TT>s for exceptions that
+may be thrown by a method
+
+<LI>
+<TT>Environment</TT> -- a container for the exception thrown during a method
+invocation
+
+<LI>
+<TT>Context</TT> -- a list of <TT>NamedValue</TT> objects used to pass
+auxiliary information from client to server
+
+<LI>
+<TT>NVList</TT> -- a list of <TT>NamedValue</TT> objects, used to pass
+arguments or get results
+</UL>
+
+<H2>
+Classes That Deal with Requests</H2>
+The second group of classes deals with requests:
+<UL>
+<LI>
+<TT>Object</TT> -- the base class for all CORBA object references
+
+<LI>
+<TT>Request</TT> -- the main class in the DII, which contains methods for
+adding arguments to the request, for accessing information about the method
+being invoked (the method name, its arguments, exceptions it throws, and
+so on), and for making invocations on the request
+
+<LI>
+<TT>DynamicImplementation</TT> -- the base class for server implementations
+using the DSI. It has the method <TT>invoke</TT>, which is used by an 
+implementation
+of this class to determine the state of a <TT>ServerRequest</TT> object
+and to set its result or exception
+
+<LI>
+<TT>ServerRequest</TT> -- captures the explicit state of a request for
+the Dynamic Skeleton Interface
+</UL>
+
+<H2>
+Interfaces That Serve as Constants</H2>
+The third group contains interfaces that serve as constants. The IDL-to-Java
+mapping mandates that IDL enums are mapped to a Java class with the enumerated
+values represented as public static final fields in that class (e.g. 
+DefinitionKind).
+On the other hand IDL constants defined outside of an IDL interface are
+mapped to a Java interface for each constant.
+
+<P>This is why several interfaces in the <TT>org.omg.CORBA</TT> package
+consist of a single field, <TT>value</TT>, which is a <TT>short</TT>. This
+field is a constant used for such things as an error code or value modifier.
+For example, the <TT>value</TT> field of the interface <TT>BAD_POLICY</TT>
+is one of the possible reasons for the exception <TT>PolicyError</TT> to
+be thrown. To specify this error code, you would use <TT>BAD_POLICY.value</TT>.
+
+<P>The exception <TT>PolicyError</TT> uses the <TT>value</TT> field of
+the following interfaces as its possible error codes.
+<UL>
+<LI>
+<TT>BAD_POLICY</TT>
+
+<LI>
+<TT>BAD_POLICY_TYPE</TT>
+
+<LI>
+<TT>BAD_POLICY_VALUE</TT>
+
+<LI>
+<TT>UNSUPPORTED_POLICY</TT>
+
+<LI>
+<TT>UNSUPPORTED_POLICY_VALUE</TT>
+</UL>
+The method <TT>TypeCode.type_modifier</TT> returns the <TT>value</TT> field
+of one of the following interfaces. The <TT>VM</TT> in the names of these
+interfaces stands for "value modifier."
+<UL>
+<LI>
+<TT>VM_NONE</TT>
+
+<LI>
+<TT>VM_ABSTRACT</TT>
+
+<LI>
+<TT>VM_CUSTOM</TT>
+
+<LI>
+<TT>VM_TRUNCATABLE</TT>
+</UL>
+The following constants are returned by a <code>ValueMember</code> object's
+access method to denote the visibility of the <code>ValueMember</code> object.
+<UL>
+<LI>
+<TT>PRIVATE_MEMBER</TT>
+
+<LI>
+<TT>PUBLIC_MEMBER</TT>
+</UL>
+These flags, used in <TT>NamedValue</TT> objects or as parameters to methods,
+are defined in the following interfaces:
+<UL>
+<LI>
+<TT>ARG_IN</TT>
+
+<LI>
+<TT>ARG_INOUT</TT>
+
+<LI>
+<TT>ARG_OUT</TT>
+
+<LI>
+<TT>CTX_RESTRICT_SCOPE</TT>
+</UL>
+
+<H2>
+Interface Repository Interfaces and Classes</H2>
+A fourth group contains the Interface Repository interfaces and classes,
+which are generated by the <TT>idlj</TT> compiler from the OMG IDL
+interface <TT>ir.idl</TT>. The purpose of the Interface Repository is to
+identify the interfaces stored in it so that they can be accessed by an
+ORB. Each module, type, interface, attribute, operation, parameter, exception,
+constant, and so on is described completely by the Interface Repository
+API.
+
+<P>An ORB does not require that there be an interface repository, and Java
+IDL does not include one. Even though this release does not include an
+implementation of an interface repository, the following IR classes and
+interfaces have been included for the purpose of creating typecodes (see
+create_value_tc, create_struct_tc, create_union_tc and create_exception_tc
+methods in interface org.omg.CORBA.ORB):
+<BR>&nbs
+<UL>
+<LI>
+IRObject
+
+<LI>
+IDLType
+
+<LI>
+DefinitionKind
+
+<LI>
+StructMember
+
+<LI>
+UnionMember
+
+<LI>
+ValueMember
+</UL>
+<!-- End Page Data -->
+<HR>
+<H1>
+Related Documentation</H1>
+For overviews, guides, and a tutorial, please see:
+<UL>
+<LI>
+<A HREF="{@docRoot}/../technotes/guides/idl/index.html">Java IDL home page</A>
+</UL>
+
+
+
+
+<P><A NAME="unimpl"></A>
+<H1>
+CORBA Features Not Implemented in Java IDL</H1>
+
+<P>Some of the API included in <TT>org.omg</TT> subpackages is provided for
+conformance with the current OMG CORBA specification but is not implemented
+in Sun's release of the JDK<SUP><FONT SIZE=-2>TM</FONT></SUP>. This enables
+other JDK licensees to provide implementations of this API in standard
+extensions and products.
+
+<P><A NAME="NO_IMPLEMENT"></A>
+<h2>Features That Throw NO_IMPLEMENT</h2>
+
+<P>Some of the API included in <TT>org.omg</TT> subpackages throw 
+<tt>NO_IMPLEMENT</tt> exceptions for various reasons.  Among these reasons
+are:
+<P>
+	<UL>
+	<LI>In some cases, for example <tt>LocalObject</tt>, the complete
+	implementation according to the specification indicates that 
+	these API should throw <tt>NO_IMPLEMENT</tt>.
+	<P>
+	<LI>In most cases, for example methods in <tt>ORB.java</tt>, 
+	methods that throw  
+	<tt>NO_IMPLEMENT</tt> are actually implemented in subclasses
+	elsewhere in the ORB code.
+	<P>
+	<LI>In some cases, for example <tt>_get_interface_def()</tt> 
+	and <tt>_get_interface</tt>, API are really not yet implemented.
+	</UL>
+
+
+
+
+<H2>
+General Summary of Features or API Not Implemented in This Release:</H2>
+
+<UL>
+<LI>
+Interface Repository. An Interface Repository is not required for normal
+operation of Java IDL.
+
+<LI>
+Java IDL does not support <TT>long double</TT>.  
+
+
+<LI>
+Policies (<TT><a href="Policy.html">org.omg.CORBA.Policy</a></TT>) and methods for getting them are not implemented.
+
+<LI>
+Domain managers (<TT><a href="DomainManager.html">org.omg.CORBA.DomainManager</a></TT>) and methods for
+getting them are not implemented.
+
+<LI>
+Service Information <TT><a href="ServiceInformation.html">org.omg.CORBA.ServiceInformation</a></TT> and ORB method <TT>public boolean get_service_information(short service_type, 
+ServiceInformationHolder
+service_info)</TT>  are not implemented.
+
+<LI>ORB methods for supporting single-threading (<tt>perform_work</tt>, <tt>work_pending</tt>) are not implemented.
+
+<LI>IDL contexts.
+</UL>
+
+<HR>
+<H2>
+Specific List of Unimplemented Features in Package <TT>org.omg.CORBA</TT></H2>
+
+
+<H3>
+Unimplemented Methods in package <TT>org.omg.CORBA</TT>:</H3>
+
+<UL>
+<LI>
+<TT>ORB</TT>
+
+<UL>
+<LI>
+<TT>public org.omg.CORBA.Policy create_policy(int type, org.omg.CORBA.Any
+val)</TT>
+
+
+
+<LI>
+<TT>public void perform_work()</TT>
+
+<LI>
+<TT>public boolean work_pending()</TT>
+
+<LI>
+<TT>public org.omg.CORBA.Current get_current()</TT>
+
+<LI>
+<TT>create_operation_list</TT>
+
+<LI>
+<TT>get_default_context</TT>
+
+<LI>
+<TT>get_service_information</TT>
+
+<LI>
+obsolete <TT>DynAnys</TT> (deprecated in favor of <tt>DynamicAny</tt> package)
+
+
+</UL>
+
+
+
+</UL>
+@since JDK1.2
+@serial exclude
+</BODY>
+</HTML>

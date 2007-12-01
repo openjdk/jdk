@@ -1,0 +1,209 @@
+/*
+ *    COMPONENT_NAME:  idl.parser
+ *                                                 
+ *    ORIGINS: 27
+ *
+ *    THIS PRODUCT CONTAINS RESTRICTED MATERIALS OF IBM                        
+ *    5639-D57, (C) COPYRIGHT International Business Machines Corp., 1997, 1998
+ *                                        
+ */
+
+CORBA IDL
+---------------
+
+<specification>      typedef, struct, union, enum, const, exception, interface, module
+
+<specification'>     <FOLLOW>, typedef, struct, union, enum, const, exception, interface, module
+
+<definition>         typedef, struct, union, enum, const, exception, interface, module
+
+<module>             module
+
+<module'>            typedef, struct, union, enum, const, exception, interface, module
+
+<module''>           typedef, struct, union, enum, const, exception, interface, module, <FOLLOW>
+
+<interface>          interface
+
+<interface'>         <FOLLOW>, :, {
+
+<interface_dcl>      :, {
+
+<interface_body>	  typedef, struct, union, enum, const, exception, readonly, attribute, oneway, float, double, long, short, unsigned, char, boolean, octet, any, string, id, ::, void, state
+
+<interface_body'>    <FOLLOW>, typedef, struct, union, enum, const, exception, readonly, attribute, oneway, float, double, long, short, unsigned, char, boolean, octet, any, string, id, ::, void, state
+
+<export>             typedef, struct, union, enum, const, exception, readonly, attribute, oneway, float, double, long, short, unsigned, char, boolean, octet, any, string, id, ::, void, state
+
+<state_def>          state
+
+<state_def'>         private, protected, public, float, double, long, short, unsigned, char, boolean, octet, any, sequence, string, id, ::, struct, union, enum, <FOLLOW>
+
+<state_member>       private, protected, public, float, double, long, short, unsigned, char, boolean, octet, any, sequence, string, id, ::, struct, union, enum
+
+<state_modifier>     private, protected, public
+
+<inheritance_spec>   :
+
+<inheritance_spec'>  <FOLLOW>, ","
+
+<scoped_name>        id, ::
+
+<scoped_name'>       <FOLLOW>, ::
+
+<const_dcl>          const
+
+<const_type>         long, short, unsigned, char, boolean, float, double, string, id, ::
+
+<const_exp>          -, +, ~, id, ::, literal, (
+
+<or_expr>            -, +, ~, id, ::, literal, (
+
+<or_expr'>           <FOLLOW>, |
+
+<xor_expr>           -, +, ~, id, ::, literal, (
+
+<xor_expr'>          <FOLLOW>, ^
+
+<and_expr>           -, +, ~, id, ::, literal, (
+
+<and_expr'>          <FOLLOW>, &
+
+<shift_expr>         -, +, ~, id, ::, literal, (
+
+<shift_expr'>        <FOLLOW>, >>, <<
+
+<add_expr>           -, +, ~, id, ::, literal, (
+
+<add_expr'>          <FOLLOW>, +, -
+
+<mult_expr>          -, +, ~, id, ::, literal, (
+
+<mult_expr'>         <FOLLOW>, *, /, %
+
+<unary_expr>         -, +, ~, id, ::, literal, (
+
+<unary_operator>     -, +, ~
+
+<primary_expr>       id, ::, literal, (
+
+<literal>            literals
+
+<positive_int_const> -, +, ~, id, ::, literal, (
+
+<type_dcl>           typedef, struct, union, enum
+
+<type_declarator>    float, double, long, short, unsigned, char, boolean, octet, any, sequence, string, id, ::, struct, union, enum
+
+<type_spec>          float, double, long, short, unsigned, char, boolean, octet, any, sequence, string, id, ::, struct, union, enum
+
+<simple_type_spec>   float, double, long, short, unsigned, char, boolean, octet, any, sequence, string, id, ::
+
+<base_type_spec>     float, double, long, short, unsigned, char, boolean, octet, any
+
+<template_type_spec> sequence, string
+
+<constr_type_spec>   struct, union, enum
+
+<declarators>        id
+
+<declarators'>       <FOLLOW>, ","
+
+<declarator>         id
+
+<declarator'>        <FOLLOW>, [
+
+<floating_pt_type>   float, double
+
+<integer_type>       long, short, unsigned
+
+<signed_int>         long, short
+
+<unsigned_int>       unsigned
+
+<char_type>          char
+
+<boolean_type>       boolean
+
+<octet_type>         octet
+
+<any_type>           any
+
+<struct_type>        struct
+
+<member_list>        float, double, long, short, unsigned, char, boolean, octet, any, sequence, string, id, ::, struct, union, enum
+
+<member_list'>       <FOLLOW>, float, double, long, short, unsigned, char, boolean, octet, any, sequence, string, id, ::, struct, union, enum
+
+<member>             float, double, long, short, unsigned, char, boolean, octet, any, sequence, string, id, ::, struct, union, enum
+
+<union_type>         union
+
+<switch_type_spec>   long, short, unsigned, char, boolean, enum, id, ::
+
+<switch_body>        case, default
+
+<switch_body'>       <FOLLOW>, case, default
+
+<case>               case, default
+
+<case'>              <FOLLOW>, case, default
+
+<case_label>         case, default
+
+<element_spec>       float, double, long, short, unsigned, char, boolean, octet, any, sequence, string, id, ::, struct, union, enum
+
+<enum_type>          enum
+
+<enum_type'>         <FOLLOW>, ","
+
+<sequence_type>      sequence
+
+<sequence_type'>     ",", >
+
+<string_type>        string
+
+<string_type'>       <FOLLOW>, <
+
+<fixed_array_size>   [
+
+<attr_dcl>           readonly, attribute
+
+<attr_dcl'>          <FOLLOW>, ","
+
+<except_dcl>         exception
+
+<except_dcl'>        <FOLLOW>, float, double, long, short, unsigned, char, boolean, octet, any, sequence, string, id, ::, struct, union, enum
+
+<op_dcl>             oneway, float, double, long, short, unsigned, char, boolean, octet, any, string, id, ::, void
+
+<op_dcl'>            id, macroID
+
+<op_dcl''>           <FOLLOW>, raises, context, ;
+
+<op_dcl'''>          <FOLLOW>, context
+
+<op_attribute>       oneway
+
+<op_type_spec>       float, double, long, short, unsigned, char, boolean, octet, any, string, id, ::, void
+
+<parameter_dcls>     (
+
+<parameter_dcls'>    in, out, inout, )
+
+<parameter_dcls''>   <FOLLOW>, ","
+
+<param_dcl>          in, out, inout
+
+<param_attribute>    in, out, inout
+
+<raises_expr>        raises
+
+<raises_expr'>       <FOLLOW>, ","
+
+<context_expr>       context
+
+<context_expr'>      <FOLLOW>, ","
+
+<param_type_spec>    float, double, long, short, unsigned, char, boolean, octet, any, string, id, ::
+

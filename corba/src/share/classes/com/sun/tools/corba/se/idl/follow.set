@@ -1,0 +1,209 @@
+/*
+ *    COMPONENT_NAME:  idl.parser
+ *                                                 
+ *    ORIGINS: 27
+ *
+ *    THIS PRODUCT CONTAINS RESTRICTED MATERIALS OF IBM                        
+ *    5639-D57, (C) COPYRIGHT International Business Machines Corp., 1997, 1998
+ *                                        
+ */
+
+CORBA IDL
+-----------------
+
+<specification>      EOF
+
+<specification'>     EOF
+
+<definition>         EOF, typedef, struct, union, enum, const, exception, interface, module, }
+
+<module>             ;
+
+<module'>            }
+
+<module''>           }
+
+<interface>          ;
+
+<interface'>         ;
+
+<interface_dcl>      ;
+
+<interface_body>     }
+
+<interface_body'>    }
+
+<export>             typedef, struct, union, enum, const, exception, readonly, attribute, oneway, float, double, long, short, unsigned, char, boolean, octet, any, string, id, ::, void, state, }
+
+<state_def>          typedef, struct, union, enum, const, exception, readonly, attribute, oneway, float, double, long, short, unsigned, char, boolean, octet, any, string, id, ::, void, state, }
+
+<state_def'>         }
+
+<state_member>       private, protected, public, float, double, long, short, unsigned, char, boolean, octet, any, sequence, string, id, ::, struct, union, enum, }
+
+<state_modifier>     float, double, long, short, unsigned, char, boolean, octet, any, sequence, string, id, ::, struct, union, enum
+
+<inheritance_spec>   {
+
+<inheritance_spec'>  {
+
+<scoped_name>        ",", {, id, ::, literal, (, >, ), macroID
+
+<scoped_name'>       ",", {, id, ::, literal, (, >, ), macroID
+
+<const_dcl>          ;
+
+<const_type>         id
+
+<const_exp>          ;, ), >, ], :
+
+<or_expr>            ;, ), >, ], :
+
+<or_expr'>           ;, ), >, ], :
+
+<xor_expr>           |, ;, ), >, ], :
+
+<xor_expr'>          | ;, ), >, ], :
+
+<and_expr>           ^, |, ;, ), >, ], :
+
+<and_expr'>          ^, |, ;, ), >, ], :
+
+<shift_expr>         &, ^, |, ;, ), >, ], :
+
+<shift_expr'>        &, ^, |, ;, ), >, ], :
+
+<add_expr>           >>, <<, &, ^, |, ;, ), >, ], :
+
+<add_expr'>          >>, <<, &, ^, |, ;, ), >, ], :
+
+<mult_expr>          >>, <<, &, ^, |, ;, ), >, ], :
+
+<mult_expr'>         +, -, >>, <<, &, ^, |, ;, ), >, ], :
+
+<unary_expr>         *, /, %, +, -, >>, <<, &, ^, |,  ;, ), >, ], :
+
+<unary_operator>     id, ::, literal, (
+
+<primary_expr>       *, /, %, +, -, >>, <<, &, ^, |,  ;, ), >, ], :
+
+<literal>            *, /, %, +, -, >>, <<, &, ^, |,  ;, ), >, ], : (and , for string literal in <context_expr>)
+
+<positive_int_const> >, ]
+
+<type_dcl>           ;
+
+<type_declarator>    ;
+
+<type_spec>          id
+
+<simple_type_spec>   id, ",", >
+
+<base_type_spec>     id, ",", >, macroID
+
+<template_type_spec> id, ",", >
+
+<constr_type_spec>   id
+
+<declarators>        ;
+
+<declarators'>       ;
+
+<declarator>         ",", ;
+
+<declarator'>        ",", ;
+
+<floating_pt_type>   id, ",", >, macroID
+
+<integer_type>       id, ",", >, macroID, )
+
+<signed_int>         id, ",", >, macroID, )
+
+<unsigned_int>       id, ",", >, macroID, )
+
+<char_type>          id, ",", >, macroID, )
+
+<boolean_type>       id, ",", >, macroID, )
+
+<octet_type>         id, ",", >, macroID
+
+<any_type>           id, ",", >, macroID
+
+<struct_type>        ;, id
+
+<member_list>        }
+
+<member_list'>       }
+
+<member>             float, double, long, short, unsigned, char, boolean, octet, any, sequence, string, id, ::, struct, union, enum, }
+
+<union_type>         ;, id
+
+<switch_type_spec>   )
+
+<switch_body>        }
+
+<switch_body'>       }
+
+<case>               case, default, }
+
+<case'>              float, double, long, short, unsigned, char, boolean, octet, any, sequence, string, id, ::, struct, union, enum
+
+<case_label>         case, default, float, double, long, short, unsigned, char, boolean, octet, any, sequence, string, id, ::, struct, union, enum
+
+<element_spec>       ;
+
+<enum_type>          ;, id, )
+
+<enum_type'>         }
+
+<sequence_type>      id, ",", >
+
+<sequence_type'>     id, ",", >
+
+<string_type>        id, ",", >, macroID
+
+<string_type'>       id, ",", >, macroID
+
+<fixed_array_size>   [, ",", ;
+
+<attr_dcl>           ;
+
+<attr_dcl'>          ;
+
+<except_dcl>         ;
+
+<except_dcl'>        }
+
+<op_dcl>             ;
+
+<op_dcl'>            ;
+
+<op_dcl''>           ;
+
+<op_dcl'''>          ;
+
+<op_attribute>       float, double, long, short, unsigned, char, boolean, octet, any, string, id, ::, void
+
+<op_type_spec>       id, macroID
+
+<parameter_dcls>     raises, context, ;
+
+<parameter_dcls'>    raises, context, ;
+
+<parameter_dcls''>   )
+
+<param_dcl>          , )
+
+<param_attribute>    float, double, long, short, unsigned, char, boolean, octet, any, string, id, ::
+
+<raises_expr>        context, ;
+
+<raises_expr'>       )
+
+<context_expr>       ;
+
+<context_expr'>      )
+
+<param_type_spec>    id, macroID
+
