@@ -1,0 +1,42 @@
+README-pre-components:
+---------------------
+Current pre-components are langtools, jaxws, jaxp, and corba.
+
+Pre-components can use ant to build but must have a make/Makefile for
+building (a GNU make Makefile).
+All ant knowledge is being isolated in the workspaces that use it.
+
+Also for various reasons it is nice to have a Makefile wrapper over the
+running of ant, but in general having to do
+anything with shell commands is much easier to do in a Makefile
+than in an ant script.
+
+The make/makefile rules are:
+
+ Variables:
+  ALT_BOOTDIR           The jdk home to use to build, if provided
+  ALT_LANGTOOLS_DIST    The dist area from a langtools build to use, if provided
+  ALT_OUTPUTDIR         Parent dir of build and dist directories, if provided
+  VARIANT               If DBG, debug build, if OPT, optimized build
+  TARGET_CLASS_VERSION  The classfile version number (currently 5)
+  ANT_HOME              Home of ant to use, if provided
+  FINDBUGS_HOME         Home of findbugs to use, if provided
+  QUIET                 If defined, be quiet
+  VERBOSE               If defined, be verbose
+  JDK_VERSION           Version being built
+  FULL_VERSION          Full version string for this jdk build
+  MILESTONE             fcs, beta, internal or empty
+  BUILD_NUMBER          Number of the jdk build
+  JPRT_ARCHIVE_BUNDLE   Path to zip bundle to create for JPRT
+
+ Targets:
+  all                   Build everything, including dist
+  build                 Build build area
+  clean                 Clean up
+  clobber               Same as clean (don't ask)
+  sanity                Perform any sanity checks, exit non-zero if errors
+  jprt_build_product    JPRT product build, zip results into JPRT_ARCHIVE_BUNDLE
+  jprt_build_debug      JPRT debug build, zip results into JPRT_ARCHIVE_BUNDLE
+  jprt_build_fastdebug  JPRT fastdebug build, zip results into JPRT_ARCHIVE_BUNDLE
+
+Then of course we expect a dist/lib/classes.jar, dist/lib/src.zip and dist/lib/bin.zip.
