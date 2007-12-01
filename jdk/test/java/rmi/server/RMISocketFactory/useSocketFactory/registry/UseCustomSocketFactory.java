@@ -1,0 +1,132 @@
+/* 
+ * Copyright 1998-1999 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/* @test
+ * @bug 4148850
+ *
+ * @summary synopsis: need to obtain remote references securely
+ *
+ * @author Laird Dornin; code borrowed from Ann Wollrath
+ *
+ * @library ../../../../testlibrary
+ * @build Hello
+ * @build HelloImpl
+ * @build HelloImpl_Stub
+ * @build UseCustomSocketFactory
+ * @build Compress
+ * @run main/othervm/policy=security.policy/timeout=240 UseCustomSocketFactory
+ */
+
+import java.io.*;
+import java.rmi.*;
+import java.rmi.server.*;
+import java.rmi.registry.*;
+
+/**
+ * Test ensures that the rmiregistry is capable of running over customx
+ * (i.e. compression) client and server socket factories.
+ */
+public class UseCustomSocketFactory {
+    
+    Hello hello = null;
+    
+    public static void main(String[] args) {
+	
+	Registry registry = null;
+	HelloImpl impl = null;
+
+	System.out.println("\nRegression test for bug 4148850\n");
+	
+	TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");	
+
+	try {
+	    impl = new HelloImpl();
+
+	    /* Make sure that the rmiregistry can communicate over a
+	     * custom socket.  Ensure that the functionality exists to
+	     * allow the rmiregistry to be secure.  
+	     */
+	    registry = LocateRegistry.
+		createRegistry(TestLibrary.REGISTRY_PORT,
+			       new Compress.CompressRMIClientSocketFactory(),
+			       new Compress.CompressRMIServerSocketFactory());
+	    registry.rebind("/HelloServer", impl);
+	    checkStub(registry, "RMIServerSocket");
+	    
+	} catch (Exception e) {
+	    TestLibrary.bomb("creating registry", e);
+	}
+	
+	JavaVM serverVM = new JavaVM("HelloImpl", "-Djava.security.policy=" + 
+				     TestParams.defaultPolicy, "");
+
+	try {
+
+	    /*
+	     * spawn VM for HelloServer which will download a client socket
+	     * factory 
+	     */
+	    serverVM.start();
+
+	    synchronized (impl) {
+
+		System.out.println("waiting for remote notification");
+		 
+		if (!HelloImpl.clientCalledSuccessfully) {
+		    impl.wait(75 * 1000);
+		}
+		
+		if (!HelloImpl.clientCalledSuccessfully) {
+		    throw new RuntimeException("Client did not execute call in time...");
+		}
+	    }
+
+	    System.err.println("\nRegression test for bug 4148850 passed.\n ");
+
+	} catch (Exception e) {
+	    TestLibrary.bomb("test failed", e);
+	    
+	} finally {
+	    serverVM.destroy();
+	    try {
+		registry.unbind("/HelloServer");
+	    } catch (Exception e) {
+		TestLibrary.bomb("unbinding HelloServer", e);
+	    }
+	    TestLibrary.unexport(registry);
+	    TestLibrary.unexport(impl);
+	    impl = null;
+	    registry = null;
+	}
+    }
+
+    static void checkStub(Object stub, String toCheck) throws RemoteException {
+	System.err.println("Ensuring that the stub contains a socket factory string: " +
+			   toCheck);
+	System.err.println(stub);
+	if (stub.toString().indexOf(toCheck) < 0) {
+	    throw new RemoteException("RemoteStub.toString() did not contain instance of "
+				      + toCheck);
+	}
+    }
+}

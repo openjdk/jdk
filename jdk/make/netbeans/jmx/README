@@ -1,0 +1,90 @@
+Working On Java[TM] Management Extensions (JMX[TM)) Using NetBeans IDE
+
+README FIRST
+ 
+  make/netbeans/README for getting started with NetBeans IDE and OpenJDK,
+  and workings with OpenJDK NetBeans projects. 
+
+This README focusses on working on the OpenJDK JMX API using NetBeans IDE.
+
+  This NetBeans project for OpenJDK JMX allows you to modify, build, and test
+  the JMX API in a standalone manner. It can also be used to generate 
+  the JMX API documentation for preview.
+
+  The JMX API does not contain native code. It is a pure java library. 
+  You do not need to install all the Java SE sources to work on JMX,
+  you only need the following subset:
+
+            make/netbeans/
+            src/share/classes/com/sun/jmx/
+            src/share/classes/javax/management/
+            test/TEST.ROOT
+            test/com/sun/management/
+            test/java/lang/management/
+            test/javax/management/
+
+  If you don't want to build the whole JDK, you will also need a 
+  pre-built version of OpenJDK (or JDK 7). Edit your 
+
+            $HOME/.openjdk/build.properties
+
+  file (create it if you don't have one yet) and set the bootstrap.jdk variable 
+  point to that JDK:
+
+            bootstrap.jdk=<JDK_7_HOME>
+
+  Then from within NetBeans IDE open the JMX project, and invoke the 
+  "Build Project" and "Test Project" target. Note that running all the
+  tests for JMX takes a while. The build may also fail if it doesn't 
+  find a directory named src/${platform}. This may happen if you haven't
+  installed all OpenJDK sources. In this case, you can simply
+  create an empty directory with the name expected by the build mechanism.
+         
+  Which tests are run are defined by the jtreg.test variable declared
+  in make/netbeans/jmx/build.properties. Note that JMX tests are all
+  placed under test/javax/management/.   test/java/lang/management/
+  and test/com/sun/management/ contain some tests that happen to
+  use JMX and we therefore recommend to run these tests too.
+
+  If you are working on a JMX fix, don't forget to create a 
+  corresponding jtreg unit test under test/javax/management/. 
+  You can look at existing tests to see how this is done.
+
+The set of actions defined in this project are:
+
+* Build Project:
+
+  - Compiles JMX API source files and puts the class files under
+    build/${platform}-${arch}/classes.
+
+  - Generates a JMX jar file under dist/lib/jmx.jar. To use your modified
+    JMX classes instead of the built-in JDK classes you will need
+    to put this jar file in front of the bootclasspath:
+
+       java -Xbootclasspath/p:dist/lib/jmx.jar mytestapp.MyAppMainClass
+
+* Generate Javadoc for Project
+
+  - Generates the JMX API Documentation under
+
+    build/${platform}-${arch}/javadoc/jmx.
+
+* Test Project
+
+  - Runs the JMX and Management and Monitoring jtreg unit tests.
+
+  - The results are written under build/${platform}-${arch}/jtreg/jmx
+    and the HTML test report can be found at
+    build/${platform}-${arch}/jtreg/jmx/JTreport/report.html.
+
+* Clean Project
+
+  - Cleans the files created by this projet under build/ 
+    Some files may remain.
+
+
+IMPORTANT NOTE
+
+  Please make sure to follow carefully the governance rules documented at
+  http://openjdk.dev.java.net/
+

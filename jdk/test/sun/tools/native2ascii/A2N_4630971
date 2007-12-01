@@ -1,0 +1,4 @@
+#input test file 4630971 for bug native2ascii -reverse 
+#occurence of a backslash character in last 5 chars
+#of input file should not hang native2ascii -reverse
+Hello world\\\\\

@@ -1,0 +1,127 @@
+/*
+ * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package com.sun.crypto.provider;
+
+import java.util.*;
+import java.io.*;
+import sun.security.util.*;
+import sun.misc.HexDumpEncoder;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidParameterSpecException;
+import javax.crypto.spec.IvParameterSpec;
+
+/**
+ * This class implements the parameter (IV) used with Block Ciphers
+ * in feedback-mode. IV is defined in the standards as follows:
+ *
+ * <pre>
+ * IV ::= OCTET STRING  -- length depends on the block size of the
+ * block ciphers
+ * </pre>
+ *
+ * @author Valerie Peng
+ *
+ */
+final class BlockCipherParamsCore {
+    private int block_size = 0;
+    private byte[] iv = null;
+
+    BlockCipherParamsCore(int blksize) {
+        block_size = blksize;
+    }
+
+    void init(AlgorithmParameterSpec paramSpec)
+        throws InvalidParameterSpecException {
+        if (!(paramSpec instanceof IvParameterSpec)) {
+            throw new InvalidParameterSpecException
+                ("Inappropriate parameter specification");
+        }
+        byte[] tmpIv = ((IvParameterSpec)paramSpec).getIV();
+        if (tmpIv.length != block_size) {
+            throw new InvalidParameterSpecException("IV not " +
+                        block_size + " bytes long");
+        }
+        iv = (byte[]) tmpIv.clone();
+    }
+
+    void init(byte[] encoded) throws IOException {
+        DerInputStream der = new DerInputStream(encoded);
+
+        byte[] tmpIv = der.getOctetString();
+        if (der.available() != 0) {
+            throw new IOException("IV parsing error: extra data");
+        }
+        if (tmpIv.length != block_size) {
+            throw new IOException("IV not " + block_size +
+                " bytes long");
+        }
+        iv = tmpIv;
+    }
+
+    void init(byte[] encoded, String decodingMethod)
+        throws IOException {
+        if ((decodingMethod != null) &&
+            (!decodingMethod.equalsIgnoreCase("ASN.1"))) {
+            throw new IllegalArgumentException("Only support ASN.1 format");
+        }
+        init(encoded);
+    }
+
+    AlgorithmParameterSpec getParameterSpec(Class paramSpec)
+        throws InvalidParameterSpecException
+    {
+        if (IvParameterSpec.class.isAssignableFrom(paramSpec)) {
+            return new IvParameterSpec(this.iv);
+        } else {
+            throw new InvalidParameterSpecException
+                ("Inappropriate parameter specification");
+        }
+    }
+
+    byte[] getEncoded() throws IOException {
+        DerOutputStream out = new DerOutputStream();
+        out.putOctetString(this.iv);
+        return out.toByteArray();
+    }
+
+    byte[] getEncoded(String encodingMethod)
+        throws IOException {
+        return getEncoded();
+    }
+
+    /*
+     * Returns a formatted string describing the parameters.
+     */
+    public String toString() {
+        String LINE_SEP = System.getProperty("line.separator");
+
+        String ivString = LINE_SEP + "    iv:" + LINE_SEP + "[";
+        HexDumpEncoder encoder = new HexDumpEncoder();
+        ivString += encoder.encodeBuffer(this.iv);
+        ivString += "]" + LINE_SEP;
+        return ivString;
+    }
+}

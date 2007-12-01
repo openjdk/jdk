@@ -1,0 +1,94 @@
+/*
+ * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+//#define USE_TRACE
+
+
+#include <jni.h>
+#include "SoundDefs.h"
+#include "Ports.h"
+#include "Utilities.h"
+#include "com_sun_media_sound_PortMixerProvider.h"
+
+
+//////////////////////////////////////////// PortMixerProvider ////////////////////////////////////////////
+
+int getPortMixerDescription(int mixerIndex, PortMixerDescription* desc) {
+    strcpy(desc->name, "Unknown Name");
+    strcpy(desc->vendor, "Unknown Vendor");
+    strcpy(desc->description, "Port Mixer");
+    strcpy(desc->version, "Unknown Version");
+#if USE_PORTS == TRUE
+    PORT_GetPortMixerDescription(mixerIndex, desc);
+#endif // USE_PORTS
+    return TRUE;
+}
+
+JNIEXPORT jint JNICALL Java_com_sun_media_sound_PortMixerProvider_nGetNumDevices(JNIEnv *env, jclass cls) {
+    INT32 numDevices = 0;
+
+    TRACE0("Java_com_sun_media_sound_PortMixerProvider_nGetNumDevices.\n");
+
+#if USE_PORTS == TRUE
+    numDevices = PORT_GetPortMixerCount();
+#endif // USE_PORTS
+
+    TRACE1("Java_com_sun_media_sound_PortMixerProvider_nGetNumDevices returning %d.\n", (int) numDevices);
+
+    return (jint)numDevices;
+}
+
+JNIEXPORT jobject JNICALL Java_com_sun_media_sound_PortMixerProvider_nNewPortMixerInfo(JNIEnv *env, jclass cls, jint mixerIndex) {
+    jclass portMixerInfoClass;
+    jmethodID portMixerInfoConstructor;
+    PortMixerDescription desc;
+    jobject info = NULL;
+    TRACE1("Java_com_sun_media_sound_PortMixerProvider_nNewPortMixerInfo(%d).\n", mixerIndex);
+
+    // retrieve class and constructor of PortMixerProvider.PortMixerInfo
+    portMixerInfoClass = (*env)->FindClass(env, IMPLEMENTATION_PACKAGE_NAME"/PortMixerProvider$PortMixerInfo");
+    if (portMixerInfoClass == NULL) {
+        ERROR0("Java_com_sun_media_sound_PortMixerProvider_nNewPortMixerInfo: portMixerInfoClass is NULL\n");
+        return NULL;
+    }
+    portMixerInfoConstructor = (*env)->GetMethodID(env, portMixerInfoClass, "<init>",
+                  "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+    if (portMixerInfoConstructor == NULL) {
+        ERROR0("Java_com_sun_media_sound_PortMixerProvider_nNewPortMixerInfo: portMixerInfoConstructor is NULL\n");
+        return NULL;
+    }
+
+    if (getPortMixerDescription(mixerIndex, &desc)) {
+        // create a new PortMixerInfo object and return it
+        info = (*env)->NewObject(env, portMixerInfoClass, portMixerInfoConstructor, mixerIndex,
+                                 (*env)->NewStringUTF(env, desc.name),
+                                 (*env)->NewStringUTF(env, desc.vendor),
+                                 (*env)->NewStringUTF(env, desc.description),
+                                 (*env)->NewStringUTF(env, desc.version));
+    }
+
+    TRACE0("Java_com_sun_media_sound_PortMixerProvider_nNewPortMixerInfo succeeded.\n");
+    return info;
+}

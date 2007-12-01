@@ -1,0 +1,26 @@
+!XGetWindowProperty|int
+    w                long
+    property         Atom
+    long_offset      long
+    long_length      long
+    delete           Bool
+    req_type         Atom
+    actual_type      Atom out
+    actual_format    int out
+    number_of_items  long out
+    bytes_after      long out
+    data             pointer out free
+!XQueryTree|int
+    w                long
+    root             long out
+    parent           long out
+    children         pointer out free
+    nchildren        int out
+!XTranslateCoordinates|int
+    scr_w            long
+    dest_w           long 
+    src_x            int
+    src_y            int
+    dest_x           int out
+    dest_y           int out
+    child            long out

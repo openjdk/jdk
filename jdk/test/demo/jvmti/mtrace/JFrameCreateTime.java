@@ -1,0 +1,55 @@
+/*
+ * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+
+/* JFrameCreateTime:
+ *
+ * Example swing application that just creates a JFrame object.
+ *
+ */
+
+/* Early in 1.5 it was reported that doing a step into the first JFrame
+ *   was very slow (VisualMust debugger people reported this).
+ */
+
+import javax.swing.*;
+
+public class JFrameCreateTime {
+    public static void main(String[] args) {
+        JFrame f;
+        long start, end;
+
+        start = System.currentTimeMillis();
+        f = new JFrame("JFrame");
+        end = System.currentTimeMillis();
+
+        System.out.println("JFrame first creation took " + (end - start) + " ms");
+
+        start = System.currentTimeMillis();
+        f = new JFrame("JFrame");
+        end = System.currentTimeMillis();
+
+        System.out.println("JFrame second creation took " + (end - start) + " ms");
+        System.exit(0);
+    }
+}

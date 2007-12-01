@@ -1,0 +1,44 @@
+/*
+ * security policy used by the test process
+ */
+
+grant codeBase "file:${java.home}/lib/ext/*" {
+    permission java.security.AllPermission;
+};
+
+grant {
+  // Needed because of bug#: 4182104
+  permission java.lang.RuntimePermission "modifyThreadGroup";
+  permission java.lang.RuntimePermission "modifyThread";
+
+  // properties are needed because of bug#: 4179055
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.server";
+  permission java.util.PropertyPermission "package.restrict.access.sun", "read";
+  permission java.util.PropertyPermission "package.restrict.access.sun.rmi", "read";
+
+  // standard test activation permissions
+  permission java.io.FilePermission "..${/}..${/}test.props", "read";
+
+  // test needs to cleanup rmid's log.
+  permission java.io.FilePermission ".${/}log", "read,write,delete";
+  permission java.io.FilePermission ".${/}log${/}-", "read,write,delete";
+
+  // test needs to use java to exec an rmid
+  permission java.io.FilePermission "${java.home}${/}bin${/}java", "execute";
+
+  // test rmid uses these properties to propagate security values to rmid
+  permission java.util.PropertyPermission "java.security.policy", "read";
+  permission java.util.PropertyPermission "java.security.manager", "read";
+
+  // used by TestLibrary to determine test environment 
+  permission java.util.PropertyPermission "test.classes", "read";
+  permission java.util.PropertyPermission "test.src", "read";
+  permission java.util.PropertyPermission "user.dir", "read";
+  permission java.util.PropertyPermission "java.home", "read";
+
+  // Needed to create an activation group
+  permission java.lang.RuntimePermission "setFactory";
+
+  // allow exporting of remote objects on an arbitrary port.
+  permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
+};

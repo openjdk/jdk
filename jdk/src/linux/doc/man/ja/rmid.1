@@ -1,0 +1,564 @@
+'\" t
+.\"
+.\" Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\" 
+.TH rmid 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH "名前"
+rmid \- RMI 起動システムデーモン
+.LP
+
+.LP
+.LP
+\f3rmid\fP で起動システムデーモンを開始すると、オブジェクトを仮想マシン (VM) に登録して起動できるようになります。
+.LP
+.SH "形式"
+.B rmid 
+[
+.I options
+]
+.SH "機能説明"
+.IX "RMI activation system daemon" "" "RMI activation system daemon \(em \fLrmid\fP"
+.IX "rmid" "" "\fLrmid\fP \(em RMI activation system daemon"
+.B rmid
+ツールは、起動システムデーモンを開始します。起動可能なオブジェクトを起動
+システムに登録したり、Java VM でアクティブにしたりするには、あらかじめ起動
+システムデーモンを開始しておく必要があります。
+起動可能なリモートオブジェクト
+を使ったプログラムの作成方法についての詳細は、Java RMI の仕様
+.fi
+ (http://java.sun.com/javase/6/docs/platform/rmi/spec/rmitoc.html) 
+および起動のチュートリアル
+.fi
+ (http://java.sun.com/javase/6/docs/technotes/guides/rmi/activation/overview.html) 
+を参照してください。
+.LP
+起動システムデーモンは、次のようにセキュリティポリシーファイルを指定して
+.B rmid
+コマンドを実行することによって開始できます。 
+.LP
+.ti +5n
+.B % rmid \-J\-Djava.security.policy=rmid.policy
+.LP
+注: Sun の
+.BR rmid
+実装を実行する場合、デフォルトではセキュリティポリシーファイルを指定する必要があります。そうすることで、起動グループ用の JVM の起動に、各
+.B ActivationGroupDesc
+内の情報を使用できるかどうかを
+.B rmid 
+が確認できます。特に、
+.B CommandEnvironment
+により指定されるコマンドやオプション、および
+.B ActivationGroupDesc
+のコンストラクタに渡されるすべての
+.B プロパティ
+は、
+.BR rmid
+用のセキュリティポリシーファイルで明示的に許可することが必要になりました。
+.B sun.rmi.activation.execPolicy
+プロパティの値は、起動グループの JVM の起動に
+.B ActivationGroupDesc
+内の情報を使用できるかどうかの判断に
+.B rmid
+が使用するポリシーを定義します。 
+.LP
+.B rmid
+をデフォルト設定で実行することにより、以下が行われます。 
+.LP
+.RS
+.TP 2
+\(bu
+このコマンドはアクティベータを起動するとともにデフォルトポートの
+.BR 1098 
+で内部レジストリを
+開始し、
+.LP
+.PD 0
+.TP
+\(bu
+.B ActivationSystem
+を
+.B java.rmi.activation.ActivationSystem 
+という名前に内部レジストリ上でバインドします。
+
+.LP
+.RE
+レジストリにほかのポートを指定するには、
+.BR rmid
+の起動時に 
+.B -port 
+オプションを指定しなければなりません。たとえば、次のようにします。 
+
+.ti +5n
+.LP
+.B rmid \-J\-Djava.security.policy=rmid.policy \-port 1099
+
+.LP
+このコマンドは、起動システムデーモンを開始し、レジストリのデフォルトポート
+.B 1099
+でレジストリを開始します。
+
+.LP
+.SS inetd/xinetd からの rmid の起動
+
+コマンド行から 
+.B rmid 
+を起動しないで、
+inetd (Solaris) または xinetd (Linux) を設定し、
+.B rmid 
+を必要に応じて起動することができます。 
+
+.LP
+起動時に 
+.B rmid 
+は、System.inheritedChannel メソッドを呼び出して
+継承チャネル (inetd/xinetd からの継承) の
+取得を試みます。
+継承されたチャンネルが \f2null\fP であるか、\f2java.nio.channels.ServerSocketChannel\fP のインスタンスでなかった場合、\f2rmid\fP はそのチャンネルは \f2inetd\fP/\f2xinetd\fP によって起動されたものではないと判断し、前述のように起動します。
+
+.LP
+.LP
+継承チャンネルが ServerSocketChannel 
+インスタンスの場合、
+.B rmid 
+は ServerSocketChannel から
+取得した java.net.ServerSocket を、
+エクスポートするリモートオブジェクト 
+(java.rmi.activation.ActivationSystem が
+バインドされるレジストリと 
+java.rmi.activation.Activator 
+リモートオブジェクト) に対する要求を
+受け入れるサーバソケットとして使用します。
+.LP
+このモードでは、
+.B rmid 
+の動作は、次のことを除いて、
+コマンド行から起動した場合と同じです。
+
+.TP 2
+\(bu System.err に表示される出力はファイルにリダイレクト
+されます。このファイルは、接頭辞「rmid-err」と接尾辞「tmp」を
+使用して java.io.tmpdir システムプロパティ 
+(通常 /var/tmp または /tmp) で指定したディレクトリにあります。
+
+.TP 2
+\(bu \-port オプションは許可されていません。このオプションが
+指定されている場合、
+.B rmid 
+はエラーメッセージを表示して
+終了します。
+
+.TP 2
+\(bu \-log オプションは必須です。このオプションが
+指定されていない場合、
+.B rmid 
+はエラーメッセージを表示して
+終了します。
+
+.LP
+必要に応じて開始するサービスの設定方法についての詳細は、
+inetd (Solaris) または xinetd (Linux) のマニュアルページを
+参照してください。 
+
+.SH "オプション"
+
+.TP
+.BI \-C someCommandLineOption
+.B rmid
+の子プロセス (起動グループ) が作成されたときに、各子プロセスにコマンド行引数
+として渡されるオプションを指定します。たとえば、次のように指定すると、起動システム
+デーモンによって生成される各 Java Virtual Machine にプロパティを渡すことができます。 
+
+.sp 1n
+.ti +5n
+.B rmid \-C\-Dsome.property=value
+
+.sp 1n
+コマンド行引数を子プロセスに渡す機能は、デバッグを行う際に便利です。
+たとえば、次のようなコマンドを実行できます。 
+
+.sp 1n
+.ti +5n
+.B rmid \-C\-Djava.rmi.server.logCalls=true
+
+.sp 1n
+このコマンドによって、すべての子 JVM でサーバ呼び出しのログが残るようになります。 
+
+.TP
+.BI \-J<someCommandLineOption>
+.B rmid 
+を実行中の java インタプリタに渡すオプションを指定します。たとえば、
+.B rmid
+で 
+.BR rmid.policy
+という名前のポリシーファイルを使用する場合、
+.BR rmid
+のコマンド行で
+.B \-J
+オプションを使って
+.B java.security.policy
+プロパティを定義します。次に例を示します。 
+
+.sp 1n
+.ti +5n
+.B rmid \-J\-Djava.security.policy=rmid.policy
+
+.TP
+.BI \-J\-Dsun.rmi.activation.execPolicy=<policy> 
+起動グループの実行対象となる JVM の起動に使用するコマンドおよびコマンド行オプションを検査するために、
+.B rmid
+が採用するポリシーを指定します。このオプションは、Sun の RMI 起動デーモン実装だけに存在することに注意してください。コマンド行にこのプロパティを指定しない場合、結果は 
+.B \-J-Dsun.rmi.activation.execPolicy=default
+を指定した場合と同じになります。
+.IR policy 
+に指定可能な値は、
+.BR default 
+、
+.IR policyClassName
+、または none です。
+.BR 
+
+.RS
+.TP 2
+\(bu
+.B default 
+(または、このプロパティを指定しない場合)
+
+.LP
+デフォルトの
+.B execPolicy
+では、使用するセキュリティポリシーファイル内のコマンドおよびオプションを実行する権限が
+.B rmid
+に与えられる場合にのみ、
+.B rmid
+は特定のコマンド行オプションを指定してコマンドを実行できます。
+.BR default 
+の実行ポリシーを使用できるのは、
+デフォルトの起動グループ実装だけです。 
+.sp 1n
+
+.B rmid
+は、起動グループの JVM を起動する際、その登録された起動グループ記述子である 
+.BR ActivationGroupDesc
+内の情報を使用します。グループ記述子では、オプションの
+.B ActivationGroupDesc.CommandEnvironment
+を指定します。これには、起動グループを開始する「コマンド」、およびコマンド行に追加する
+任意のコマンド行「オプション」が含まれます。デフォルトでは、
+.B rmid
+は
+.BR java.home 
+にある
+.B java
+コマンドを使用します。グループ記述子には、次に示すように、オプションとしてコマンド行に
+追加される「プロパティ」オーバーライドも含まれます。 
+
+.sp 1n
+.ti +5n
+.BI \-D<property>=<value>
+
+.sp 1n
+アクセス権
+.B com.sun.rmi.rmid.ExecPermission
+を使用すると、
+.B rmid
+に対し、グループ記述子の
+.B CommandEnvironment
+で指定されたコマンドを実行して起動グループを開始する権限を与えることができます。
+アクセス権 
+.B com.sun.rmi.rmid.ExecOptionPermission
+を使用すると、起動グループを開始するときに、
+グループ記述子でプロパティオーバーライドとして指定されたコマンド行
+オプション、または
+.BR CommandEnvironment
+でオプションとして指定されたコマンド行オプションを
+.B rmid
+から使用できます。 
+
+.sp 1n
+.B rmid
+にさまざまなコマンドおよびオプションを実行する権限を与える場合、アクセス権
+.B ExecPermission
+および
+.B ExecOptionPermission
+を普遍的に (つまり、すべてのコードソースに対して) 許可する必要があります。 
+
+.TP
+.BI ExecPermission
+.B ExecPermission
+クラスは、起動グループを開始するために
+.B rmid
+が特定の「コマンド」を実行する権限を表します。 
+.sp 1n
+.TP
+.B 構文
+.br
+.B ExecPermission
+の「名前」は、
+.B rmid
+に実行権限を与えるコマンドのパス名です。「/*」(「/」はファイル区切り文字、つまり 
+.BR File.separatorChar 
+) で終わるパス名は、そのディレクトリに含まれるすべてのファイルを表します。「/-」
+で終わるパス名は、そのディレクトリに含まれるすべてのファイルとサブディレクトリ 
+(再帰的に) を表します。パス名に特別なトークン「<<ALL FILES>>」を指定した場合は、
+任意のファイルに一致します。 
+.sp 1n
+
+.B 注: 
+「*」が 1 つだけ指定されたパス名は、現在のディレクトリ内のすべてのファイルを表し、
+「-」が 1 つだけ指定されたパス名は、現在のディレクトリ内のすべてのファイルと、
+現在のディレクトリに含まれるすべてのファイルとサブディレクトリ (再帰的に) を表します。 
+
+.TP
+.BI ExecOptionPermission
+.B ExecOptionPermission
+クラスは、起動グループの開始時に
+.B rmid
+が特定のコマンド行「オプション」を使用する権限を表します。
+.B ExecOptionPermission
+の「名前」は、コマンド行オプションの値です。
+.sp 1n
+.TP
+.B 構文
+.br
+オプションでは、制限付きワイルドカード指定がサポートされます。
+アスタリスクは、ワイルドカードマッチングを指定します。アスタリスクは、
+オプション名自体を表す (つまり、すべてのオプションに一致する) ために
+使用できます。また、「.」および「=」の次に指定する場合にのみ、
+オプション名の最後にアスタリスクを使用できます。 
+.sp 1n
+
+例を示します。「*」、「-Dfoo.*」、「-Da.b.c=*」は有効です。「*foo」、「-Da*b」
+、「ab*」は無効です。
+
+.TP
+.BI rmid のポリシーファイル
+.B rmid
+にさまざまなコマンドおよびオプションを実行する権限を与える場合は、アクセス権
+.B ExecPermission
+および
+.B ExecOptionPermission
+を普遍的に (つまり、すべてのコードソースに対して) 許可する必要があります。
+これらのアクセス権を検査するのは
+.B rmid
+だけであるため、普遍的に許可しても安全です。
+
+.sp 1n
+.B rmid
+にさまざまな実行権限を許可するポリシーファイルの例を、次に示します。
+
+.sp 1n
+.ft 3
+.nf
+grant {
+    permission com.sun.rmi.rmid.ExecPermission
+           "/files/apps/java/jdk1.2.2/solaris/bin/java";
+
+    permission com.sun.rmi.rmid.ExecPermission
+           "/files/apps/java/jdk1.2.2/solaris/bin/java_g";
+
+    permission com.sun.rmi.rmid.ExecPermission
+           "/files/apps/rmidcmds/*";
+
+    permission com.sun.rmi.rmid.ExecOptionPermission
+           "-Djava.security.policy=/files/policies/group.policy";
+
+    permission com.sun.rmi.rmid.ExecOptionPermission
+           "-Djava.security.debug=*";
+
+    permission com.sun.rmi.rmid.ExecOptionPermission
+           "-Dsun.rmi.*";
+};
+
+.fi
+.ft 1
+
+.sp 1n
+最初の 2 つのアクセス権は、
+.B rmid
+に対し、パス名により明示された 1.2.2 バージョンの
+.B java
+コマンドを実行する許可を与えます。デフォルトでは、
+.B java.home
+にある
+.B java
+コマンドのバージョン (
+.B rmid
+が使用するのと同じもの) が使用されるため、ポリシーファイルで指定する必要はありません。
+3 番目のアクセス権は、
+.B rmid
+に対し、ディレクトリ
+.BR /files/apps/rmidcmds
+内の任意のコマンドを実行する権限を与えます。
+
+.sp 1n
+4 番目に許可されたアクセス権
+.BR ExecOptionPermission
+は、
+.B rmid 
+に対し、セキュリティポリシーファイルを
+.BR /files/policies/group.policy
+に定義する起動グループを開始する権限を与えます。次のアクセス権は、起動グループが 
+.B java.security.debug 
+プロパティを使用する権限を与えます。最後のアクセス権は、
+起動グループが 
+.B sun.rmi
+プロパティ名階層内の任意のプロパティを使用する権限を与えます。
+
+.sp 1n
+ポリシーファイルを使って
+.B rmid
+を起動するには、
+.BR rmid
+のコマンド行で
+.B java.security.policy
+プロパティを指定する必要があります。次に例を示します。
+
+.sp 1n
+.ti +5n
+.B rmid \-J\-Djava.security.policy=rmid.policy 
+
+.TP 2
+\(bu
+.I <policyClassName>
+
+.sp 1n
+デフォルトの動作では十分な柔軟性が得られない場合、管理者は
+.BR rmid
+の起動時に、
+.B checkExecCommand
+メソッドが実行されるクラスの名前を指定することにより、
+.BR rmid
+が実行するコマンドを検査できます。
+.sp 1n
+
+.IR policyClassName
+には、public で引数を必要としないコンストラクタとともに public クラスを指定します。また、次の 
+.B checkExecCommand
+メソッド実装も指定します。
+
+.sp 1n
+.ft 3
+.nf
+.in +5n
+public void checkExecCommand(ActivationGroupDesc desc,
+                             String[] command)
+    throws SecurityException;
+.in
+.fi
+.ft 1
+
+.sp 1n
+起動グループを開始する前に、
+.B rmid
+は、ポリシーの
+.BR checkExecCommand
+メソッドを呼び出して、起動グループの記述子および起動グループを開始する完全な
+コマンドを含む配列を渡します。
+.B checkExecCommand
+が
+.BR SecurityException
+をスローする場合、
+.B rmid
+は起動グループを開始せず、オブジェクトの起動を試みている呼び出し側に
+.B ActivationException
+がスローされます。 
+
+.TP
+\(bu
+.B none
+
+.sp 1n
+.B sun.rmi.activation.execPolicy
+プロパティの値が「none」の場合、
+.B rmid
+は、起動グループの開始コマンドの検証を一切行いません。 
+
+.TP
+
+.BI \-log  " dir"
+起動システムデーモンがデータベースおよび関連情報を書き込むのに使う、
+ディレクトリの名前を指定します。デフォルトでは、
+.B rmid
+コマンドを実行したディレクトリに
+.B log 
+というログディレクトリが作成されます。 
+
+.TP
+.BI \-port " port" 
+.BR rmid
+のレジストリが使うポートを指定します。起動システムデーモンは、
+.BR java.rmi.activation.ActivationSystem 
+という名前で 
+.BR ActivationSystem
+をレジストリにバインドします。したがって、ローカルマシンの
+.B ActivationSystem 
+は、次のように
+.B Naming.lookup
+メソッドを呼び出すことによって取得できます。 
+
+.LP
+.RS 
+.ft 3
+.nf
+import java.rmi.*;
+import java.rmi.activation.*;
+
+ActivationSystem system;
+system = (ActivationSystem)
+Naming.lookup("//:port/java.rmi.activation.ActivationSystem");
+.fl
+.fi
+
+.RE
+.TP 
+.BI \-stop
+.B -port
+オプションによって指定されたポートの、現在の 
+.B rmid
+の呼び出しを停止します。ポートの指定がない場合は、ポート 1098 で実行されている 
+.B rmid
+を停止します。 
+.SH "環境変数"
+.TP 20
+.SB "CLASSPATH"
+ユーザ定義クラスへのパスをシステムに通知するために使用します。ディレクトリはコロンで
+区切ります。以下に例を示します。 
+.RS
+.LP
+.ft 3
+
+.nf
+% .:/usr/local/java/classes
+
+.fi
+.ft 1
+.RE
+.SH "関連項目"
+.LP
+
+.LP
+.LP
+rmic、CLASSPATH、java
+.LP
+
+.LP
+ 

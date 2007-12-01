@@ -1,0 +1,4 @@
+grant {
+    permission com.sun.rmi.rmid.ExecOptionPermission "-Djava.security.manager=java.lang.SecurityManager";
+    permission com.sun.rmi.rmid.ExecOptionPermission "-Djava.security.policy=*";
+};

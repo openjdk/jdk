@@ -1,0 +1,63 @@
+#!/bin/sh
+
+#
+# Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+
+# @test
+# @bug 6265810
+# @run shell jrunscript-fTest.sh
+# @summary Test that output of 'jrunscript -f' matches the dash-f.out file
+
+. ${TESTSRC-.}/common.sh
+
+setup
+
+rm -f jrunscript-fTest.out 2>/dev/null
+${JRUNSCRIPT} -f ${TESTSRC}/hello.js > jrunscript-fTest.out 2>&1
+
+diff jrunscript-fTest.out ${TESTSRC}/dash-f.out
+if [ $? != 0 ]
+then
+  echo "Output of jrunscript -f differ from expected output. Failed."
+  rm -f jrunscript-fTest.out 2>/dev/null
+  exit 1
+fi
+
+# -f option used with JavaScript as language chosen explicitly
+# with -l option
+
+rm -f jrunscript-fTest.out 2>/dev/null
+${JRUNSCRIPT} -l js -f ${TESTSRC}/hello.js > jrunscript-fTest.out 2>&1
+
+diff jrunscript-fTest.out ${TESTSRC}/dash-f.out
+if [ $? != 0 ]
+then
+  echo "Output of jrunscript -f differ from expected output. Failed."
+  rm -f jrunscript-fTest.out 2>/dev/null
+  exit 1
+fi
+
+rm -f jrunscript-fTest.out
+echo "Passed"
+exit 0

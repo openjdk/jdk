@@ -1,0 +1,67 @@
+Working on JConsole Using the NetBeans IDE
+
+This JConsole NetBeans project allows a developer interested in making changes
+to and/or fixing bugs in the jconsole tool to modify, build, run and test
+jconsole in a standalone manner as well as generating the javadoc for the
+JConsole plugin API.
+
+README FIRST
+
+  make/netbeans/README to get started with NetBeans IDE and OpenJDK, and
+  working with the OpenJDK NetBeans projects.
+
+WORKING WITH JCONSOLE
+
+JConsole doesn't contain native code. It's a pure java tool. You don't need to
+have all the Java SE sources to work on JConsole but just the following subset:
+
+            make/netbeans/ 
+            src/share/classes/com/sun/tools/jconsole/
+            src/share/classes/sun/tools/jconsole/
+            test/TEST.ROOT
+            test/sun/tools/jconsole/
+
+The set of actions supported by this project are:
+
+* Build Project:
+
+  - Compiles JConsole's source files and puts the class files under
+    build/${platform}-${arch}/classes.
+
+  - Generates JConsole's jar file under dist/lib/jconsole.jar
+
+    This new jar file could be used to patch an existing JDK installation
+    by replacing the jar file at <jdk-home>/lib/jconsole.jar, then calling
+    <jdk-home>/bin/jconsole will make use of the new jar file.
+
+* Generate Javadoc for Project
+
+  - Generates the javadoc for the JConsole Plugin API source files,
+    i.e. the ones under src/share/classes/com/sun/tools/jconsole.
+
+  - The javadoc is generated under build/${platform}-${arch}/javadoc/jconsole.
+
+* Test Project
+
+  - Runs the JConsole jtreg unit tests located under test/sun/tools/jconsole.
+
+  - The test results are written under
+
+        build/${platform}-${arch}/jtreg/jconsole
+
+    and the HTML test report can be found at
+
+        build/${platform}-${arch}/jtreg/jconsole/JTreport/report.html
+
+* Run Project
+
+  - Runs the newly built JConsole tool.
+
+* Clean Project
+
+  - Cleans the files created by this projet under build and dist.
+
+IMPORTANT NOTE
+
+  Please make sure to follow carefully the governance rules documented at
+  http://openjdk.dev.java.net/

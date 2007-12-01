@@ -1,0 +1,11 @@
+
+grant {
+    // The following permissions are not required because the test is
+    // not expected to connect to an LDAP server
+    //
+    //permission java.net.SocketPermission "*:389", "connect";
+    //permission java.net.SocketPermission "*:636", "connect";
+    //permission javax.security.auth.AuthPermission "modifyPrincipals";
+};
+
+

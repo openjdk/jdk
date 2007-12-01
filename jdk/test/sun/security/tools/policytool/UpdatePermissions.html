@@ -1,0 +1,54 @@
+<html>
+<body>
+
+<applet width=100 height=100 code=UpdatePermissions.class>
+</applet>
+
+This is a multi-stage test.  Click on "done" when you have completed
+reading these instructions.<br><br>
+
+First, policytool will be invoked.<br><br>
+
+Then, follow these steps:<br>
+1) Click on the "Add Policy Entry" button in the
+main policytool window.<br><br>
+
+2) Click on the "Add Permission" button in the Policy Entry window.<br><br>
+
+3) In the Permission window, pull down the "Permission" menu and
+select "AWTPermission".<br><br>
+
+4) In the Permission window, pull down the "Target Name" menu and
+select "listenToAllAWTEvents".<br><br>
+
+5) Click on the "OK" button in the Permission window.<br><br>
+
+6) Click on the "Done" button in the Policy Entry window.<br><br>
+
+7) In the main policytool window, pull down the "File" menu and
+select "Save As".<br><br>
+
+8) In the SaveAs window, enter "/tmp/ptool.test" as the file name
+and click "OK".<br><br>
+
+9) cat /tmp/ptool.test<br><br>
+
+10) check to make sure that the new entry is in the policy file.<br><br>
+
+11) repeat steps 1-9 for:<br>
+	AWTPermission:		readDisplayPixels<br>
+	NetPermission:		specifyStreamHandler<br>
+	RuntimePermission:	setContextClassLoader,
+				setSecurityManager,
+				shutdownHooks,
+				stopThread<br>
+	SecurityPermission:	printIdentity<br><br>
+
+In the confirmation dialog pop-up, click "OK".<br><br>
+
+Exit policytool.<br><br>
+
+Press "Pass" if ... press "Fail" otherwise.<br><br>
+
+</body>
+</html>

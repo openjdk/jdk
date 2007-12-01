@@ -1,0 +1,39 @@
+<HTML>
+<HEAD>
+<TITLE>
+JDI Type Signatures
+</TITLE>
+</HEAD>
+<BODY BGCOLOR="white">
+<dl><dd>
+<Table Border="0">
+<caption><h2>JDI Type Signatures</h2></caption>
+<tr><th>Type Signature
+<th>Java Type
+<tr><td>Z<td>boolean
+<tr><td>B<td>byte
+<tr><td>C<td>char
+<tr><td>S<td>short
+<tr><td>I<td>int
+<tr><td>J<td>long
+<tr><td>F<td>float
+<tr><td>D<td>double
+<tr><td><strong>L</strong> <em>fully-qualified-class</em> 
+<strong>;</strong>
+<td>fully-qualified-class
+<tr><td><strong>[</strong> <em>type
+</em>
+<td><em>type</em>[]
+<tr><td>
+<strong>(</strong> <em>arg-types </em><strong>)</strong> <em>ret-type
+</em>
+<td>method type (including constructors)
+</Table>
+</dd></dl>
+<p>For example, the Java method:
+<p><pre>    long f (int n, String s, int[] arr);
+</pre>has the following type signature:
+<p><pre>    (ILjava/lang/String;[I)J
+</pre>
+</BODY>
+</HTML>

@@ -1,0 +1,109 @@
+'\" t
+.\"
+.\" Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\" `
+'\"macro stdmacro
+.TH extcheck 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH "名前"
+extcheck \- jar の競合検出ユーティリティ
+.LP
+
+.LP
+.LP
+\f3extcheck\fP は、ターゲットの jar ファイルと現在インストールされている拡張機能の jar ファイル間のバージョンの競合を検出します。
+.LP
+.SH "形式"
+.B extcheck 
+[ 
+.B \-verbose 
+] 
+.B targetfile.jar
+.SH "機能説明"
+.IX "jar conflict detection utility" "" "jar conflict detection utility \(em \fLextcheck\fP"
+.IX "extcheck" "" "\fLextcheck\fP \(em jar conflict detection utility"
+.B extcheck 
+ユーティリティは、指定された
+.B jar
+ファイルのタイトルおよびバージョンが Java(TM) SDK 
+ソフトウェアにインストールされている拡張機能と競合していないかを
+検査します。
+拡張機能をインストールする前に、このユーティリティを使って、
+バージョンが同じか、
+より新しい拡張機能がすでにインストールされていないかどうかを調べる
+ことができます。
+.LP
+.B extcheck
+ユーティリティは、
+.I targetfile.jar
+ファイルのマニフェスト内のヘッダ
+.I Specification-title 
+および 
+.I Specification-version
+を、拡張機能ディレクトリ内に現在インストールされているすべての jar 
+ファイル内の対応するヘッダと比較します。
+デフォルトでは、拡張機能ディレクトリは、
+.I jre/lib/ext
+です。
+.B extcheck 
+ユーティリティは、
+.I java.lang.Package.isCompatibleWith
+メソッドと同様の方法でバージョン番号を比較します。
+.LP
+競合が検出されない場合、リターンコードは
+.I 0 です。
+.LP
+拡張機能ディレクトリ内の 
+.B jar 
+ファイルのマニフェストに、同一の 
+.I Specification-title、
+および同一またはより新しい 
+.I Specification-version 
+番号がある場合、ゼロでないエラー
+コードが返されます。
+.I targetfile.jar 
+のマニフェストに 
+.I Specification-title 
+または 
+.I Specification-version 
+属性がない場合も、ゼロでないエラーコードが返されます。
+.SH "オプション"
+以下のオプションが指定できます。
+.TP 15
+.B -verbose
+拡張機能ディレクトリ内の
+.B jar
+ファイルを、検査時に一覧表示します。また、ターゲット 
+.B jar
+ファイルのマニフェストの属性、および競合する
+.B jar
+ファイルについても報告します。
+.TP 15
+.BI \-J "option"
+.I option
+を Java 仮想マシンに渡します。ここで、
+.I option
+は、Java アプリケーション起動プログラム java(1) のマニュアルページで
+説明されているオプションの 1 つです。たとえば、-J-Xms48m
+は、起動時に使用するメモリを 48M バイトに設定します。
+.SH "関連項目"
+.BR jar (1)

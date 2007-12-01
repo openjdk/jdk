@@ -1,0 +1,77 @@
+<!--
+ Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Sun designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Sun in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ CA 95054 USA or visit www.sun.com if you need additional information or
+ have any questions.
+-->
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<body bgcolor="white">
+
+Provides interfaces for generating RSA (Rivest, Shamir and
+Adleman AsymmetricCipher algorithm)
+keys as defined in the RSA Laboratory Technical Note
+PKCS#1, and DSA (Digital Signature
+Algorithm) keys as defined in NIST's FIPS-186.
+<P>
+Note that these interfaces are intended only for key
+implementations whose key material is accessible and 
+available. These interfaces are not intended for key 
+implementations whose key material resides in 
+inaccessible, protected storage (such as in a 
+hardware device). 
+<P>
+For more developer information on how to use these 
+interfaces, including information on how to design 
+<code>Key</code> classes for hardware devices, please refer
+to these cryptographic provider developer guides:
+<ul>
+  <li><a href=
+    "{@docRoot}/../technotes/guides/security/crypto/HowToImplAProvider.html">
+    <b>How to Implement a Provider for the
+    Java<FONT SIZE=-2><SUP>TM</SUP></FONT> Cryptography Architecture
+    </b></a></li>
+</ul>
+
+<h2>Package Specification</h2>
+
+<ul>
+  <li>PKCS #1: RSA Encryption Standard, Version 1.5, November 1993 </li>
+  <li>Federal Information Processing Standards Publication (FIPS PUB) 186:
+    Digital Signature Standard (DSS) </li>
+</ul>
+
+<h2>Related Documentation</h2>
+
+For further documentation, please see:
+<ul>
+  <li>
+    <a href=
+      "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html">
+      <b>Java<FONT SIZE=-2><SUP>TM</SUP></FONT>
+      Cryptography Architecture API Specification and Reference
+      </b></a></li>
+</ul>
+
+@since JDK1.1
+</body>
+</html>

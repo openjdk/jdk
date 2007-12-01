@@ -1,0 +1,30 @@
+
+This directory contains the source and the binary version of a Windows 
+utility to remove all non-owner Access Control Entries from a given file.
+
+The tool is used by regression tests in the following directories :-
+
+test/sun/management/jmxremote/bootstrap
+test/sun/management/snmp/bootstrap
+
+The tests in these directories create password or ACL files that need to
+be "secured" (meaning that only the owner should have access to the 
+files). 
+
+Both the source and the binary version are checked into SCCS. If
+you require to make changes to the tool then you need to Visual
+C++ to rebuild revokeall.exe after changing the source.
+
+To rebuild the tool you need to setup your environment (by
+calling the VC++ VCVARS32.BAT script), and then executing the 
+following command :-
+
+cl /mt revokeall.c advapi32.lib
+
+This will generate revokeall.exe.
+
+Note that a 32-bit version of revokeall.exe is checked into SCCS
+- this 32-bit application is also used when running on 64-bit
+versions of Windows (AMD64 and IA64).
+
+

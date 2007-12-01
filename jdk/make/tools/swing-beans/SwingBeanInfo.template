@@ -1,0 +1,116 @@
+/*
+ * Copyright 1998-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package @(BeanPackageName);
+
+import java.beans.BeanDescriptor;
+import java.beans.PropertyDescriptor;
+import java.awt.Image;
+
+import sun.swing.BeanInfoUtils;
+
+/**
+ * Descriptive information about the @(BeanClassName) class for Java 
+ * Beans application builders.  This BeanInfo class provides descriptions
+ * of each property, of the bean itself, it indicates which
+ * @(BeanClassName) properties are bound, and it provides other
+ * information and icons useful to builders.
+ * 
+ * @author Auto-Generated Source Code
+ */
+
+public class @(BeanClassName)BeanInfo extends javax.swing.SwingBeanInfoBase {
+    private static final Class class@(BeanClassName) = @(BeanClassObject);
+
+    /**
+     * @return a @(BeanClassName) BeanDescriptor
+     */
+    public BeanDescriptor getBeanDescriptor() {
+        return BeanInfoUtils.createBeanDescriptor(class@(BeanClassName),
+                                                  new Object[] {
+                BeanInfoUtils.PREFERRED, Boolean.TRUE,
+                @(ClassDescriptors)
+                    BeanInfoUtils.SHORTDESCRIPTION, "@(BeanDescription)"
+        });
+    }
+
+
+    /**
+     * Create a @(BeanClassName) PropertyDescriptor.  This is just an internal
+     * convenience method that allows one to leave the @(BeanClassName).class
+     * argument out of the createPropertyDescriptor() class in the 
+     * getPropertyDescriptors() method below.
+     * 
+     * @param name the name of the property
+     * @param args an array java.beans.PropertyDescriptor property names and values
+     * @return a @(BeanClassName) PropertyDescriptor.
+     * @see BeanInfoUtils#createPropertyDescriptor
+     */
+    private PropertyDescriptor createPropertyDescriptor(String name, Object[] args) {
+        return BeanInfoUtils.createPropertyDescriptor(class@(BeanClassName), name, args);
+    }
+
+
+    /**
+     * This method returns a list of bean PropertyDescriptors, one for each public
+     * property in @(BeanClassName).  The first property is the "default" property.
+     *
+     * @return a complete list of bean PropertyDescriptors for @(BeanClassName)
+     * @see SwingBeanInfo
+     * @see java.beans.BeanInfo#getDefaultPropertyIndex
+     */
+    public PropertyDescriptor[] getPropertyDescriptors() {
+        @(EnumVariables)
+        return new PropertyDescriptor[] {
+            @(BeanPropertyDescriptors)
+        };
+    }
+
+
+    /**
+     * @return an icon of the specified kind for @(BeanClassName)
+     */
+    public Image getIcon(int kind) {
+        Image i;
+        switch (kind){
+            case ICON_COLOR_32x32:
+                i = loadImage("beaninfo/images/@(BeanClassName)Color32.gif");
+                return ((i == null) ? loadImage("beaninfo/images/JComponentColor32.gif") : i);
+            case ICON_COLOR_16x16:
+                i = loadImage("beaninfo/images/@(BeanClassName)Color16.gif");
+                return ((i == null) ? loadImage("beaninfo/images/JComponentColor16.gif") : i);
+            case ICON_MONO_32x32:
+                i = loadImage("beaninfo/images/@(BeanClassName)Mono32.gif");
+                return ((i == null) ? loadImage("beaninfo/images/JComponentMono32.gif") : i);		  
+            case ICON_MONO_16x16:
+                i = loadImage("beaninfo/images/@(BeanClassName)Mono16.gif");
+                return ((i == null) ? loadImage("beaninfo/images/JComponentMono16.gif") : i);		  
+            default:
+                return super.getIcon(kind);
+        }
+    }
+}
+
+

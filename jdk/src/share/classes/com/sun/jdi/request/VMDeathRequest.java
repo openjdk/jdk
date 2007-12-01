@@ -1,0 +1,61 @@
+/*
+ * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package com.sun.jdi.request;
+
+import com.sun.jdi.*;
+
+/**
+ * Request for notification when the target VM terminates.
+ * When an enabled VMDeathRequest is satisfied, an
+ * {@link com.sun.jdi.event.EventSet event set} containing a
+ * {@link com.sun.jdi.event.VMDeathEvent VMDeathEvent}
+ * will be placed on the
+ * {@link com.sun.jdi.event.EventQueue EventQueue}.
+ * The collection of existing VMDeathRequests is
+ * managed by the {@link EventRequestManager}
+ * <P>
+ * Even without creating a VMDeathRequest, a single
+ * unsolicited VMDeathEvent will be sent with a
+ * {@link EventRequest#suspendPolicy() suspend policy}
+ * of {@link EventRequest#SUSPEND_NONE SUSPEND_NONE}.
+ * This request would typically be created so that a
+ * VMDeathEvent with a suspend policy of
+ * {@link EventRequest#SUSPEND_ALL SUSPEND_ALL}
+ * will be sent.  This event can be used to assure
+ * completion of any processing which requires the VM
+ * to be alive (e.g. event processing).  Note: the
+ * unsolicited VMDeathEvent will still be sent.
+ *
+ * @see com.sun.jdi.event.VMDeathEvent
+ * @see com.sun.jdi.event.EventQueue
+ * @see EventRequestManager
+ *
+ * @author Robert Field
+ * @since  1.4
+ */
+public interface VMDeathRequest extends EventRequest {
+
+}

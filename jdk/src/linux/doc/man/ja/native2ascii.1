@@ -1,0 +1,103 @@
+'\" t
+.\"
+.\" Copyright 2000-2004 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\" 
+.TH native2ascii 1 "2004 年 6 月 22 日"
+.SH "名前"
+native2ascii \- ネイティブコードから ASCII への変換
+.\" 
+.\"  This document was created by saving an HTML file as text
+.\"  from the JavaSoft web site:
+.\" 
+.\" http://java.sun.com/products/jdk/1.2/docs/tooldocs/tools.html
+.\" 
+.\"  and adding appropriate troff macros.  Because the JavaSoft web site 
+.\"  man pages can change without notice, it may be helpful to diff
+.\"  files to identify changes other than new functionality. 
+.\" 
+.SH "形式"
+.B native2ascii
+[
+.B options 
+]
+.if n .ti +5n
+[
+.IR inputfile " [" outputfile "]]"
+.SH "機能説明"
+.IX "native to ASCII converter" "" "native to ASCII converter \(em \fLnative2ascii\fP"
+.IX "native2ascii" "" "\fLnative2ascii\fP \(em native to ASCII converter"
+Java コンパイラなどの
+Java 
+ツールが処理できるファイルは、
+Latin-1
+文字もしくは\^
+Unicode
+でエンコードされた文字
+(\\udddd)
+からなるファイルだけです。
+.B native2ascii
+は、他の文字コードのファイルを
+Latin-1
+または
+Unicode
+エンコーディングのファイルに変換します。
+.LP
+.I outputfile
+引数を省略すると、出力先は標準出力となります。
+また、
+.I inputfile
+引数を省略すると、入力元は標準入力となります。
+.SH "オプション"
+以下のオプションが使用できます。
+.TP 5
+.B \-encoding \f2encoding_name\f1
+変換処理で用いるエンコーディング名を指定します。
+デフォルトのエンコーディング名は、システムプロパティの
+\f3file.encoding\f1
+から得られます。
+.I encoding_name 
+文字列は、ドキュメント「サポートされているエンコーディング」の、
+サポートされるエンコーディングの表で最初の列にある文字列の 1 つでなければ
+なりません。
+.br
+http://java.sun.com/j2se/1.5/docs/guide/intl/encoding.doc.html
+.\" http://java.sun.com/j2se/1.5/docs/guide/intl/encoding.doc.html
+.TP 5
+.B \-reverse
+逆の変換処理を行います。つまり
+Latin-1
+または
+Unicode
+でエンコーディングされている文字を、ネイティブコードに変換します。
+.TP 15
+.BI \-J "option"
+.I option
+を Java 仮想マシンに渡します。ここで、
+.I option
+は、Java アプリケーション起動プログラム java(1) のマニュアルページで
+説明されているオプションの 1 つです。たとえば、
+.I \-J-Xms48m
+は、起動時に使用するメモリを 48M バイトに設定します。
+.B \-J
+が基本となる仮想マシンにオプションを渡すことは、共通の規約です。
+

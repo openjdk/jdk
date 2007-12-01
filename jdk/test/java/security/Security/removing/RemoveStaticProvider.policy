@@ -1,0 +1,10 @@
+grant {
+    permission java.security.SecurityPermission "removeProvider.SunJCE";
+    permission java.security.SecurityPermission "insertProvider.SunJCE";
+};
+
+// Standard extensions get all permissions
+grant codeBase "file:${java.home}/lib/ext/*" {
+        permission java.security.AllPermission;
+};
+

@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/*
+ *@test
+ *@bug 6271396
+ *@summary Test case for verifying typo of timezone display name Australia/Lord_Howe
+ */
+
+import java.util.Locale;
+import java.util.TimeZone;
+
+public class Bug6271396 {
+
+    public static void main(String[] args) {
+
+        TimeZone Lord_Howe = TimeZone.getTimeZone("Australia/Lord_Howe");
+        Locale tzLocale = new Locale("fr");
+
+        if (!Lord_Howe.getDisplayName(false, TimeZone.LONG, tzLocale).equals
+           ("Heure standard de Lord Howe"))
+             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
+                                        "non-daylight saving name for " +
+                                        "Australia/Lord_Howe should be " +
+                                        "\"Heure standard de Lord Howe\"");
+        if (!Lord_Howe.getDisplayName(true, TimeZone.LONG, tzLocale).equals
+           ("Heure d'\u00e9t\u00e9 de Lord Howe"))
+             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
+                                        "daylight saving name for " +
+                                        "Australia/Lord_Howe should be " +
+                                        "\"Heure d'\u00e9t\u00e9 de Lord Howe\"");
+
+        tzLocale = new Locale("zh", "TW");
+        if (!Lord_Howe.getDisplayName(false, TimeZone.LONG, tzLocale).equals
+           ("\u8c6a\u52f3\u7235\u5cf6\u6a19\u6e96\u6642\u9593"))
+             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
+                                        "non-daylight saving name for " +
+                                        "Australia/Lord_Howe should be " +
+                                        "\"\u8c6a\u52f3\u7235\u5cf6" +
+                                        "\u6a19\u6e96\u6642\u9593\"");
+        if (!Lord_Howe.getDisplayName(true, TimeZone.LONG, tzLocale).equals
+           ("\u8c6a\u52f3\u7235\u5cf6\u590f\u4ee4\u6642\u9593"))
+             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
+                                        "daylight saving name for " +
+                                        "Australia/Lord_Howe should be " +
+                                        "\"\u8c6a\u52f3\u7235\u5cf6" +
+                                        "\u590f\u4ee4\u6642\u9593\"");
+   }
+}

@@ -1,0 +1,67 @@
+/*
+ * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package com.sun.jmx.mbeanserver;
+
+// Java import
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
+import java.io.StreamCorruptedException;
+
+/**
+ * This class deserializes an object in the context of a specific class loader.
+ *
+ * @since 1.5
+ */
+class ObjectInputStreamWithLoader extends ObjectInputStream {
+
+
+    private ClassLoader loader;
+
+
+    /**
+     * @exception IOException Signals that an I/O exception of some
+     * sort has occurred.
+     * @exception StreamCorruptedException The object stream is corrupt.
+     */
+    public ObjectInputStreamWithLoader(InputStream in, ClassLoader theLoader)
+            throws IOException {
+        super(in);
+        this.loader = theLoader;
+    }
+
+    protected Class resolveClass(ObjectStreamClass aClass)
+            throws IOException, ClassNotFoundException {
+        if (loader == null) {
+            return super.resolveClass(aClass);
+        } else {
+            String name = aClass.getName();
+            // Query the class loader ...
+            return Class.forName(name, false, loader);
+        }
+    }
+}

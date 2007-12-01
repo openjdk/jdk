@@ -1,0 +1,83 @@
+URL: http://a/b/c/d;p?q
+spec: g
+expected: http://a/b/c/g
+
+URL: http://a/b/c/d;p?q
+spec: ./g
+expected: http://a/b/c/g
+
+URL: http://a/b/c/d;p?q
+spec: g/
+expected: http://a/b/c/g/
+
+URL: http://a/b/c/d;p?q
+spec: /g
+expected: http://a/g
+
+URL: http://a/b/c/d;p?q
+spec: //g
+expected: http://g
+
+URL: http://a/b/c/d;p?q
+spec: ?y
+expected: http://a/b/c/?y
+
+URL: http://a/b/c/d;p?q
+spec: g?y
+expected: http://a/b/c/g?y
+
+URL: http://a/b/c/d;p?q
+spec: g#s
+expected: http://a/b/c/g#s
+
+URL: http://a/b/c/d;p?q
+spec: g?y#s
+expected: http://a/b/c/g?y#s
+
+URL: http://a/b/c/d;p?q
+spec: ;x
+expected: http://a/b/c/;x
+
+URL: http://a/b/c/d;p?q
+spec: g;x
+expected: http://a/b/c/g;x
+
+URL: http://a/b/c/d;p?q
+spec: g;x?y#s
+expected: http://a/b/c/g;x?y#s
+
+URL: http://a/b/c/d;p?q
+spec: .
+expected: http://a/b/c/
+
+URL: http://a/b/c/d;p?q
+spec: ./
+expected: http://a/b/c/
+
+URL: http://a/b/c/d;p?q
+spec: ..
+expected: http://a/b/
+
+URL: http://a/b/c/d;p?q
+spec: ../
+expected: http://a/b/
+
+URL: http://a/b/c/d;p?q
+spec: ../g
+expected: http://a/b/g
+
+URL: http://a/b/c/d;p?q
+spec: ../..
+expected: http://a/
+
+URL: http://a/b/c/d;p?q
+spec: ../../
+expected: http://a/
+
+URL: http://a/b/c/d;p?q
+spec: ../../g
+expected: http://a/g
+
+URL: null
+spec: http://www.javasoft.com/jdc/community/chat/index.html#javalive?frontpage-jdc
+expected: http://www.javasoft.com/jdc/community/chat/index.html#javalive?frontpage-jdc

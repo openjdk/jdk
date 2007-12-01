@@ -1,0 +1,129 @@
+'\" t
+.\"
+.\" Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\" 
+.\" 
+.TH jinfo 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH 名前
+jinfo \- 構成情報 
+.\"
+.SH 形式
+.B jinfo 
+.BI [ option ] " pid" 
+.br
+.B jinfo
+.BI [ option ] " executable core" 
+.br
+.B jinfo
+.BI [ option ] " [server-id@]remote-hostname-or-IP"
+.LP
+.SH パラメータ
+.LP
+
+.LP
+.TP 3
+option
+オプションは相互に排他的です。オプションを使用する場合は、コマンド名の直後に指定する必要があります。
+.TP 3
+pid
+構成情報を出力するプロセス ID。プロセスは Java プロセスでなければなりません。マシン上で実行している Java プロセスのリストを取得するには、
+.B jps
+を使用します。
+.TP 3
+executable 
+コアダンプが生成された Java 実行可能ファイル。
+.TP 3
+core 
+構成情報を出力するコアファイル。
+.TP 3
+remote\-hostname\-or\-IP 
+リモートデバッグサーバ (
+.B jsadebugd 
+を参照) のホスト名または IP アドレス。
+.TP 3
+server\-id 
+同じリモートホスト上で複数のデバッグサーバが実行している場合の、オプションの一意 ID。
+.LP
+.SH 機能説明
+.B jinfo
+は、指定された Java プロセスまたはコアファイルまたはリモートデバッグサーバの Java 構成情報を出力します。構成情報には、Java システムプロパティと Java 仮想マシンコマンド行フラグが含まれます。
+指定されたプロセスが 64 ビット VM 上で実行されている場合、\f2\-J\-d64\fP オプションを指定しなければならない場合があります。次に例を示します。
+.br
+
+.LP
+.RS 3
+
+.LP
+jinfo \-J\-d64 \-sysprops pid
+.RE
+.LP
+注 - このユーティリティはサポートされていないため、JDK の将来のバージョンでは使用できない可能性があります。
+Windows 上の jinfo でサポートされているのは、実行中のプロセスの \-flag オプションだけです。
+.LP
+.SH オプション
+.if t .TP 20
+.if n .TP 15
+.B " <no option>"
+コマンド行フラグとシステムプロパティと値のペアの両方を出力します。
+.br
+.TP 3
+\-flag name 
+指定されたコマンド行フラグの名前と値を出力します。
+.br
+.TP 3
+\-flag [+|\-]name 
+指定されたブール型のコマンド行フラグを有効または無効にします。
+.br
+.TP 3
+\-flag name=value 
+指定されたコマンド行フラグを指定された値に設定します。
+.if t .TP 20
+.if n .TP 15
+.B \-flags
+JVM に渡されるコマンド行フラグをペアで出力します。
+.if t .TP 20
+.if n .TP 15
+.B \-sysprops
+Java システムプロパティを名前と値のペアとして出力します。
+.if t .TP 20
+.if n .TP 15
+.B \-h
+ヘルプメッセージを出力します。
+.if t .TP 20
+.if n .TP 15
+.B \-help
+ヘルプメッセージを出力します。
+.SH 関連項目
+.LP
+.RS 3
+.TP 2
+*
+jps 
+.TP 2
+*
+jsadebugd 
+.RE
+
+.LP
+
+.LP
+ 

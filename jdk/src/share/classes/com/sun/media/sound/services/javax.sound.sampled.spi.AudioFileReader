@@ -1,0 +1,4 @@
+# Providers for audio file reading
+com.sun.media.sound.AuFileReader
+com.sun.media.sound.AiffFileReader
+com.sun.media.sound.WaveFileReader

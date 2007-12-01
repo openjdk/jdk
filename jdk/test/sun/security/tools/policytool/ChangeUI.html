@@ -1,0 +1,81 @@
+<html>
+<body>
+
+<applet width=100 height=100 code=ChangeUI.class>
+</applet>
+
+<b>ATTENTION:</b> policytool now contains no platform-specific codes anymore and 
+should behaves exactly the same across all platforms. This also means:
+<ol>
+    <li>You may only need to test it on one platform</li>
+    <li>You can create policy files for a platform which is different than
+    the platform you are running policytool on</li>
+</ol>
+
+This is a multi-stage test.  Click on "done" when you have completed
+reading these instructions.<br><br>
+
+First, policytool will be invoked.<br><br>
+<ol>
+<li>Add new policy entry
+<li>Add permission:
+    <pre>
+    Type                   Target name     Actions
+    FilePermission         c:\\foo\\bar    read
+    </pre>
+    <ol>
+        <li>Press OK</li>
+        <li>Confirm the file name warning dialog appears</li>
+        <li>Choose Retain, confirm the permission edit dialog is closed</li>
+        <li>Double click the newly craeted FilePermission entry to edit it</li>
+        <li>Press OK</li>
+        <li>Confirm the file name warning dialog appears</li>
+        <li>Choose Edit, confirm the permission edit dialog is still opened</li>
+        <li>change Target name to c:\foo\bar</li>
+        <li>Press OK, no warning dialog is shown</li>
+    </ol>
+<li>Add permission:
+    <pre>
+    Type                   Target name
+    DelegationPermission   "me@SOMEWHERE" "you@SOMEWHERE"
+    </pre>
+    <ol>
+        <li>Press OK</li>
+        <li>Double click the newly craeted DelegationPermission entry to edit it</li>
+        <li>Confirm the target name is still "me@SOMEWHERE" "you@SOMEWHERE"</li>
+        <li>Press OK</li>
+    </ol>
+<li>Confirm there are 2 entries in the permission list
+<li>Press Done
+<li>Double click the new policy entry to edit it
+<li>Add permission:
+    <pre>
+    Type
+    AllPermission
+    </pre>
+<li>Add a new Principal, say, KerberosPrincipal with Principal Name as aaa
+<li>Confirm there is 1 entry in the Pricipals list
+<li>Confirm there are 3 entries in the permission list
+<li>Press cancel
+<li>Double click the policy entry to edit it
+<li>Confirm there is ZERO entry in the Pricipals list
+<li>Confirm there are 2 entries in the permission list
+<li>Press cancel
+<li>Save as /tmp/p
+<li>Confirm that the file /tmp/p looks like
+<pre>
+/* AUTOMATICALLY GENERATED ON Tue Jul 19 16:27:30 CST 2005*/
+/* DO NOT EDIT */
+
+grant {
+  permission java.io.FilePermission "c:\\foo\\bar", "read";
+  permission javax.security.auth.kerberos.DelegationPermission "\"me@SOMEWHERE\" \"you@SOMEWHERE\"";
+};
+</pre>
+</ol>
+<br><br>
+
+Press "Pass" if ... press "Fail" otherwise.<br><br>
+
+</body>
+</html>

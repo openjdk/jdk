@@ -1,0 +1,12 @@
+/*
+ * security policy used activation groups
+ */
+
+grant {
+  // Needed because of bug#: 4182104
+  permission java.lang.RuntimePermission "modifyThreadGroup";
+  permission java.lang.RuntimePermission "modifyThread";
+
+  // allow remote objects to be exported on arbitrary ports.
+  permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
+};

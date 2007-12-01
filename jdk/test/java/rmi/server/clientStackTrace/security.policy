@@ -1,0 +1,12 @@
+/*
+ * security policy used by the test process
+ */
+
+grant codeBase "file:${java.home}/lib/ext/*" {
+    permission java.security.AllPermission;
+};
+
+grant {
+  // test needs to export rmid and communicate with objects on arbitrary ports
+  permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
+};
