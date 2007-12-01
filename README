@@ -1,0 +1,31 @@
+README:
+  This file should be located at the top of the OpenJDK Mercurial repository
+  forest. This top or enclosing repository will include a "make" directory,
+  and a Makefile at the very top of the repository.
+  It should also include the 6 repositories: "jdk", "hotspot", "langtools",
+  "corba", "jaxws"  and "jaxp".
+
+  See http://openjdk.java.net/ for more information about the OpenJDK.
+
+Simple Build Instructions:
+
+  1. Download and install a JDK 6 from
+     http://java.sun.com/javase/downloads/index.jsp
+     Set the environment variable ALT_BOOTDIR to the location of this JDK 6.
+
+  2. Download and install the Binary Plugs for the most recent JDK7 from
+     http://download.java.net/openjdk/jdk7/
+     Set the environment variable ALT_BINARY_PLUGS_PATH to the location of
+     these binary plugs.
+     
+  3. Check the sanity of doing a build with the current machine:
+       gnumake sanity
+     See README-builds.html if you run into problems.
+  
+  4. Do a complete build of the jdk:
+       gnumake all
+     The resulting JDK image should be found in build/*/j2sdk-image
+
+where gnumake is GNU make 3.78.1 or newer, /usr/bin/make on Linux and
+/usr/sfw/bin/gmake or /opt/sfw/bin/gmake on Solaris.
+

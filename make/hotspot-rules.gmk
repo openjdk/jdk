@@ -1,0 +1,98 @@
+#
+# Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+################################################################
+# HOTSPOT TARGETS
+################################################################
+
+# All the output from a hotspot build should be re-located to the
+#    build output area.
+#
+HOTSPOT_OUTPUTDIR = $(HOTSPOT_DIR)/outputdir
+
+# HOTSPOT_EXPORT_PATH points to a dir that contains files
+# that are needed in an SDK build, in the same relative positions as
+# these files are in an SDK image.
+# The SDK java/redist/Makefile will copy files from HOTSPOT_EXPORT_PATH
+# into the SDK being built.
+# This is the export path supplied to the hotspot makefiles.
+#
+HOTSPOT_EXPORT_PATH = $(HOTSPOT_DIR)/import
+
+# Default targets
+HOTSPOT = hotspot-sanity hotspot-build
+
+hotspot:: $(HOTSPOT)
+
+# Hotspot clobber removes the output directory and exported files
+hotspot-clobber:: 
+	$(RM) -r $(HOTSPOT_OUTPUTDIR)
+	$(RM) -r $(HOTSPOT_EXPORT_PATH)
+
+hotspot-sanity::
+	@$(MKDIR) -p $(HOTSPOT_OUTPUTDIR)
+	@$(MKDIR) -p $(HOTSPOT_EXPORT_PATH)
+	@$(ECHO) "Hotspot Settings: \n" \
+	    "     HOTSPOT_BUILD_JOBS  = $(HOTSPOT_BUILD_JOBS) \n"  \
+	    "     HOTSPOT_OUTPUTDIR   = $(HOTSPOT_OUTPUTDIR) \n"  \
+	    "     HOTSPOT_EXPORT_PATH = $(HOTSPOT_EXPORT_PATH) \n"  \
+	    "\n"  >> $(MESSAGE_FILE)
+
+#
+# Basic hotspot build and export of it's files
+#
+
+HOTSPOT_TARGET = all_product
+ifeq ($(DEBUG_NAME), debug)
+  HOTSPOT_TARGET = all_debug
+endif
+ifeq ($(DEBUG_NAME), fastdebug)
+  HOTSPOT_TARGET = all_fastdebug
+endif
+
+HOTSPOT_BUILD_ARGUMENTS += $(COMMON_BUILD_ARGUMENTS)
+HOTSPOT_BUILD_ARGUMENTS += ALT_OUTPUTDIR=$(HOTSPOT_OUTPUTDIR)
+HOTSPOT_BUILD_ARGUMENTS += ALT_EXPORT_PATH=$(HOTSPOT_EXPORT_PATH)
+
+# Why do these need to be passed in? Because of windows nmake? and MAKEFLAGS=?
+#   Or is there something wrong with hotspot/make/Makefile?
+HOTSPOT_BUILD_ARGUMENTS += ALT_SLASH_JAVA=$(SLASH_JAVA)
+HOTSPOT_BUILD_ARGUMENTS += ALT_BOOTDIR=$(BOOTDIR)
+
+ifeq ($(BUILD_LANGTOOLS), true)
+  HOTSPOT_BUILD_ARGUMENTS += ALT_LANGTOOLS_DIST=$(ABS_LANGTOOLS_DIST)
+endif
+
+hotspot-build::
+	$(MKDIR) -p $(HOTSPOT_OUTPUTDIR)
+	$(MKDIR) -p $(HOTSPOT_EXPORT_PATH)
+	$(CD) $(HOTSPOT_TOPDIR)/make && \
+	    $(MAKE) $(HOTSPOT_BUILD_ARGUMENTS) $(HOTSPOT_TARGET)
+
+#####################
+# .PHONY
+#####################
+.PHONY: hotspot-build hotspot-clobber hotspot-sanity
+

@@ -1,0 +1,131 @@
+#
+# Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+################################################################
+# JDK TARGETS
+################################################################
+
+JDK_JAVA_EXE = $(OUTPUTDIR)/bin/java$(EXE_SUFFIX)
+
+# NO_IMAGES may be set in conjunction with DEV_ONLY
+ifdef NO_IMAGES
+  IMAGES_TARGET =
+else
+  IMAGES_TARGET = images
+endif
+
+# No DOCS build when JDK_UPDATE_VERSION set
+ifdef JDK_UPDATE_VERSION
+  DOCS_TARGET =
+else
+  DOCS_TARGET = docs
+endif
+
+# NO_DOCS may be set in conjunction with DEV_ONLY
+ifdef NO_DOCS
+  DOCS_TARGET =
+endif
+
+# If langtools not being built, full jdk javadoc is not possible
+ifneq ($(BUILD_LANGTOOLS), true)
+  DOCS_TARGET =
+endif
+ifneq ($(BUILD_CORBA), true)
+  DOCS_TARGET =
+endif
+ifneq ($(BUILD_JAXP), true)
+  DOCS_TARGET =
+endif
+ifneq ($(BUILD_JAXWS), true)
+  DOCS_TARGET =
+endif
+
+ifndef DEV_ONLY
+  JDK_BUILD_TARGETS = sanity all $(DOCS_TARGET) images
+else
+  JDK_BUILD_TARGETS = sanity all $(IMAGES_TARGET)
+endif
+
+JDK_CLOBBER_TARGETS = clobber
+
+JDK_BUILD_ARGUMENTS = $(COMMON_BUILD_ARGUMENTS) \
+    ALT_OUTPUTDIR=$(ABS_OUTPUTDIR)
+
+ifeq ($(BUILD_LANGTOOLS), true)
+  JDK_BUILD_ARGUMENTS += ALT_LANGTOOLS_DIST=$(ABS_LANGTOOLS_DIST)
+endif
+ifeq ($(BUILD_CORBA), true)
+  JDK_BUILD_ARGUMENTS += ALT_CORBA_DIST=$(ABS_CORBA_DIST)
+endif
+ifeq ($(BUILD_JAXP), true)
+  JDK_BUILD_ARGUMENTS += ALT_JAXP_DIST=$(ABS_JAXP_DIST)
+endif
+ifeq ($(BUILD_JAXWS), true)
+  JDK_BUILD_ARGUMENTS += ALT_JAXWS_DIST=$(ABS_JAXWS_DIST)
+endif
+
+ifeq ($(BUILD_HOTSPOT), true)
+  JDK_BUILD_ARGUMENTS += ALT_HOTSPOT_IMPORT_PATH=$(HOTSPOT_DIR)/import
+endif
+
+JDK_BUILD_ARGUMENTS += \
+        BUILD_HOTSPOT=$(BUILD_HOTSPOT)
+
+
+$(JDK_JAVA_EXE):: jdk-build
+
+jdk: jdk-build
+jdk-build:
+	( $(CD) $(JDK_TOPDIR)/make && \
+	  $(MAKE) $(JDK_BUILD_TARGETS) $(JDK_BUILD_ARGUMENTS) ; )
+
+jdk-clobber::
+	( $(CD) $(JDK_TOPDIR)/make && \
+	  $(MAKE) $(JDK_CLOBBER_TARGETS) $(JDK_BUILD_ARGUMENTS) ; )
+
+jdk-sanity::
+	@( $(CD) $(JDK_TOPDIR)/make && \
+	  $(MAKE) sanity HOTSPOT_IMPORT_CHECK=false $(JDK_BUILD_ARGUMENTS) ; )
+
+compare-images: compare-image
+compare-image:
+	( $(CD) $(JDK_TOPDIR)/make && \
+	  $(MAKE) ALT_OUTPUTDIR=$(ABS_OUTPUTDIR) compare-image )
+
+compare-images-clobber: compare-image-clobber
+compare-image-clobber:
+	( $(CD) $(JDK_TOPDIR)/make && \
+	  $(MAKE) ALT_OUTPUTDIR=$(ABS_OUTPUTDIR) compare-image-clobber )
+
+.PHONY: jdk jdk-build jdk-clobber jdk-sanity 
+
+# FIXUP: Old j2se target names
+j2se-build: jdk-build
+j2se-clobber:: jdk-clobber
+j2se-sanity:: jdk-sanity
+j2se: jdk
+
+.PHONY: j2se j2se-build j2se-clobber j2se-sanity 
+
