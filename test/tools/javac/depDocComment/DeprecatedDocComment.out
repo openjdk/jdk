@@ -1,0 +1,10 @@
+DeprecatedDocComment.java:26: warning: [deprecation] deprecatedTest1() in DeprecatedDocComment2 has been deprecated
+      DeprecatedDocComment2.deprecatedTest1();
+                           ^
+DeprecatedDocComment.java:30: warning: [deprecation] deprecatedTest5() in DeprecatedDocComment2 has been deprecated
+      DeprecatedDocComment2.deprecatedTest5();
+                           ^
+DeprecatedDocComment.java:31: warning: [deprecation] deprecatedTest6() in DeprecatedDocComment2 has been deprecated
+      DeprecatedDocComment2.deprecatedTest6();
+                           ^
+3 warnings

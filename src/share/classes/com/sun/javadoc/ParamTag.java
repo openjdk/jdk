@@ -1,0 +1,67 @@
+/*
+ * Copyright 1998-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package com.sun.javadoc;
+
+/**
+ * Represents an @param documentation tag.
+ * Stores the name and comment parts of the parameter tag.
+ * An @param tag may represent either a method or constructor parameter,
+ * or a type parameter.
+ *
+ * @author Robert Field
+ *
+ */
+public interface ParamTag extends Tag {
+
+    /**
+     * Return the name of the parameter or type parameter
+     * associated with this <code>ParamTag</code>.
+     * The angle brackets delimiting a type parameter are not part of
+     * its name.
+     *
+     * @return the parameter name.
+     */
+    String parameterName();
+
+    /**
+     * Return the parameter comment
+     * associated with this <code>ParamTag</code>.
+     *
+     * @return the parameter comment.
+     */
+    String parameterComment();
+
+    /**
+     * Return true if this <code>ParamTag</code> corresponds to a type
+     * parameter.  Return false if it corresponds to an ordinary parameter
+     * of a method or constructor.
+     *
+     * @return true if this <code>ParamTag</code> corresponds to a type
+     * parameter.
+     * @since 1.5
+     */
+    boolean isTypeParameter();
+}

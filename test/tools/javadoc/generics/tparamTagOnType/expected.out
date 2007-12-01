@@ -1,0 +1,5 @@
+interface pkg1.A<T>
+  name: A / A / pkg1.A
+  type parameters:
+    T
+  @param <T> the type parameter

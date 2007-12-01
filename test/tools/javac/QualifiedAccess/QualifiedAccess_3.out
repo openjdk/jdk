@@ -1,0 +1,13 @@
+QualifiedAccess_3.java:39: pack1.P1.Foo is not public in pack1.P1; cannot be accessed from outside package
+        P1.Foo.Bar x = null;            // ERROR - 'P1.Foo' not accessible
+          ^
+QualifiedAccess_3.java:40: length in Array is defined in an inaccessible class or interface
+        int i = p1.a.length;            // ERROR - Type of 'a' not accessible
+                    ^
+QualifiedAccess_3.java:43: privatei in pack1.P2 is defined in an inaccessible class or interface
+        p1.p2.privatei = 3;             // ERROR - Type of 'p1.p2' not accessible.
+             ^
+QualifiedAccess_3.java:44: privatei in pack1.P2 is defined in an inaccessible class or interface
+        System.out.println (p1.p2.privatei);    // ERROR - Type of 'p1.p2' not accessible.
+                                 ^
+4 errors

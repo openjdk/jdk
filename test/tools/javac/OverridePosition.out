@@ -1,0 +1,7 @@
+OverridePosition.java:17: method() in T4524388.Testa cannot implement method() in T4524388.Interface; attempting to assign weaker access privileges; was public
+    void method() {}
+         ^
+OverridePosition.java:24: method() in T4524388.A cannot implement method() in T4524388.Interface; attempting to assign weaker access privileges; was public
+class B extends A implements Interface {
+^
+2 errors

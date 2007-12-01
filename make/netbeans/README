@@ -1,0 +1,28 @@
+Working on the "langtools" workspace using NetBeans.
+
+This directory (make/netbeans) contains NetBeans projects that
+allow you to work on the various tools using the NetBeans IDE.
+
+NetBeans 5.0 or later is required and sufficient to use these 
+projects. This is different from other projects in OpenJDK, 
+which requires version 6.0 or later.
+
+The following projects are provided:
+
+compiler: for working on the compiler, javac
+javadoc:  for working on the documentation tool, javadoc
+doclets:  for working on the standard doclets used by the 
+ 	  documentation tool, javadoc
+javah:    for working on the C header tool, javah
+javap:    for working on the disassembler, javap
+apt:      for working on the annotation processing tool, apt.
+          Note that this is just provided for completeness;
+          the tool has been superceded by new features in javac,
+          and work on apt itself is discouraged.
+
+However, any tool can be worked on from any project; the only difference
+between these projects is the behavior of the standard NetBeans actions,
+so that "Build" in the compiler project will build the compiler, etc.
+
+
+

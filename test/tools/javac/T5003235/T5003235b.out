@@ -1,0 +1,13 @@
+T5003235b.java:28: k in Outer.Inner is defined in an inaccessible class or interface
+        System.out.println("Value of k: " + outer.inner.k);
+                                                       ^
+T5003235b.java:29: l in Outer.Inner is defined in an inaccessible class or interface
+        System.out.println("Value of l: " + outer.inner.l);
+                                                       ^
+T5003235b.java:30: m in Outer.Inner is defined in an inaccessible class or interface
+        System.out.println("Value of m: " + outer.inner.m);
+                                                       ^
+T5003235b.java:31: n in Outer.Inner is defined in an inaccessible class or interface
+        System.out.println("Value of n: " + outer.inner.n);
+                                                       ^
+4 errors

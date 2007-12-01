@@ -1,0 +1,4 @@
+T4666866.java:10: t is not abstract and does not override abstract method run() in java.lang.Runnable
+class t implements Runnable {}
+^
+1 error
