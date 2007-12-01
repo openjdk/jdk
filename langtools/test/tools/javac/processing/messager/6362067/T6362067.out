@@ -1,0 +1,5 @@
+T6362067.java:17:8: compiler.note.proc.messager: note:elem
+T6362067.java:15:1: compiler.note.proc.messager: note:anno
+T6362067.java:16:1: compiler.note.proc.messager: note:anno
+T6362067.java:16:1: compiler.note.proc.messager: note:value
+- compiler.note.proc.messager: note:nopos

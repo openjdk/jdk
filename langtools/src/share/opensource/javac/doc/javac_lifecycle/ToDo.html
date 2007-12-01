@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!--
+Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+This code is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 2 only, as
+published by the Free Software Foundation.  Sun designates this
+particular file as subject to the "Classpath" exception as provided
+by Sun in the LICENSE file that accompanied this code.
+
+This code is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+version 2 for more details (a copy is included in the LICENSE file that
+accompanied this code).
+
+You should have received a copy of the GNU General Public License version
+2 along with this work; if not, write to the Free Software Foundation,
+Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+CA 95054 USA or visit www.sun.com if you need additional information or
+have any questions.
+-->
+
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+        <meta name="author" content="Jonathan Gibbons">
+        <link type="text/css" rel=stylesheet href="style.css">
+        <title>JavaCompiler's "to do" list</title>
+    </head>
+    <body>
+
+        <h3>com.sun.tools.javac.main.JavaCompiler's "to do" list</h3>
+
+        <p>
+            After the source files have been parsed, and their symbols entered 
+            in the symbol table, the top level classes and some other items end 
+            up on JavaCompiler's "to do" list.
+        </p>
+
+        <p>
+            For each entry on the "to do" list, <code>JavaCompiler</code>
+            processes it as follows:
+        </p>
+
+        <ul>
+            <li><p>Some parts of the compilation involve modifying the parse tree,
+                so a copy of the root of the tree is kept prior to such manipulation.
+            </p>
+            <p class="note">
+                Note: this copy is just used to check whether the class is one of those
+                found in a compilation unit on the command line (i.e. in rootClasses).
+            </p>
+
+            <li><p>The top level classes are "attributed", using
+                <a href="../../src/share/classes/com/sun/tools/javac/comp/Attr.java" class="code">Attr</a>,
+                meaning that names and other elements within the parse tree are resolved
+                and associated with the corresponding types and symbols. Many semantic
+                errors may be detected here, either by <code>Attr</code>, or by
+                <a href="../../src/share/classes/com/sun/tools/javac/comp/Check.java" class="code">Check</a>.
+            </p>
+                <p>While attributing the tree, class files will be read as necessary.
+                    In addition, if a class is required, and a source file for the class is found
+                    that is newer than the class file, the source file will be automatically parsed
+                    and put on the "to do" list. This is done by registering JavaCompiler as an
+                    implementation of 
+                    <a href="../../src/share/classes/com/sun/tools/javac/comp/Attr.java" class="code">Attr</a><span class=code>.SourceCompleter</span>.
+                </p>
+                <p class=note>
+                    Note: there is a hidden option <code>-attrparseonly</code> which can be used to skip
+                    the rest of the processing for this file. In so doing, it "breaks" the
+                    protocol use to save and restore the source file used to report error
+                    messages (Log.useSource). There is a "try finally" block which
+                    could reasonably be used/extended to restore the source file correctly.
+                </p>
+            </li>
+
+            <li><p>If there are no errors so far, flow analysis will be done for the class, using
+                <a href="../../src/share/classes/com/sun/tools/javac/comp/Flow.java" class="code">Flow</a>.
+                Flow analysis is used to check for definite assignment to variables,
+                and unreachable statements, which may result in additional errors.
+            </p>
+                <p class="note">Note: flow analysis can be suppressed with the hidden
+                    option <code>-relax</code>.
+                </p>
+            </li>
+
+            <li>If the "to do" item is a TopLevel tree, it will be the contents of a
+            <span class="code">package-info.java</span> file, containing annotations for a package.
+            (See notes for <a href="Enter.html#package-info">Enter</a>.) 
+            <ul>
+                <li>Syntactic sugar is processed, using
+                <a href="../../src/share/classes/com/sun/tools/javac/comp/Lower.java" class="code">Lower</a>.
+                <code>Lower</code> is defined to return a list of trees for the translated classes
+                and all the translated inner classes.</li>
+                <li>If <code>Lower</code> returns a non-empty list, there is an assertion that
+                    the list has a single element, in which case, code is generated, using 
+                    <a href="../../src/share/classes/com/sun/tools/javac/jvm/Gen.java" class="code">Gen</a>,
+                    and the resulting code is written out using 
+                    <a href="../../src/share/classes/com/sun/tools/javac/jvm/ClassWriter.java" class="code">ClassWriter</a>.
+                </li>
+                <li>No further processing is done on this "to do" item.<br>
+                </li>
+            </ul>
+            <p class=note>Note that <a href="Enter.html">Enter</a> will have processed all other TopLevel 
+                putting the individual classes that it finds there on the "to do" 
+                (and not the TopLevel node itself.)
+            </p>
+
+            <li>If stub outputs have been requested, with the hidden <code>-stubs</code> option,
+            <ul>
+                <li>If the class was one of those mentioned on the command line and is in 
+                <span class=code>java.lang</span>,
+                pretty print the source with no method bodies.</li>
+                <li>No further processing is done on this "to do" item. </li>
+            </ul>
+
+            <li>Code involving generic types is translated to code without generic types, using 
+                <a href="../../src/share/classes/com/sun/tools/javac/comp/TransTypes.java" class="code">TransTypes</a>.
+            </li>
+
+            <li>If source output has been requested, with the hidden <code>-s</code> option
+            <ul>
+                <li>If the original tree was from command line, pretty print the source code
+                </li>
+                <li>No further processing is done on this "to do" item.</li>
+            </ul>
+
+            <li>Syntactic sugar is processed, using 
+            <a href="../../src/share/classes/com/sun/tools/javac/comp/Lower.java" class="code">Lower</a>.
+            This takes care of inner classes, class literals, assertions, foreach
+            loops, etc.
+            <code>Lower</code> is defined to return a list of trees for the translated classes
+            and all the translated inner classes.</li>
+
+            <p class=note>
+            Note: see also the use of <code>Lower</code> earlier in the loop, when processing
+            TopLevel trees.</p>
+
+            <li>For each class returned by <code>Lower</code><br>
+            <ul>
+                <li>If source has been requestion with the hidden <code>-printflat</code>
+                option, the source of the class is printed.
+                <li>Otherwise, code for the class is generated, using 
+                <a href="../../src/share/classes/com/sun/tools/javac/jvm/Gen.java" class="code">Gen</a>,
+                and the resulting code is written out using 
+                <a href="../../src/share/classes/com/sun/tools/javac/jvm/ClassWriter.java" class="code">ClassWriter</a>.
+            </ul>
+
+        </ul>
+
+        <h4>Issues</h4>
+        The "to do" list is mostly organized by top level classes, and not by 
+        compilation units. This means that if a compilation unit contains several 
+        classes, it is possible for code to be generated for some of the classes 
+        in the file, at which point at error may be detected for one of the 
+        remaining classes, preventing code from being generated for that and any 
+        subsequent classes. This means that the compilation unit will be partially 
+        compiled, with some but not all of the class files being generated. 
+        (Bug <a href="http://monaco.sfbay.sun.com/detail.jsf?cr=5011101">5011101</a>)
+
+    </body>
+</html>
+

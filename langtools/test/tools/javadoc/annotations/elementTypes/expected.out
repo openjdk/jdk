@@ -1,0 +1,17 @@
+@interface pkg1.A
+  elements:
+    int i()
+    double d()
+    boolean b()
+    String s()
+    java.lang.Class c()
+    java.lang.Class<? extends java.lang.Number> w()
+    ElementType e()
+    A a()
+    java.lang.String[] sa()
+
+interface pkg1.B
+  name: B / B / pkg1.B
+  annotations:
+    @pkg1.A(i=2, d=3.14, b=true, s="sigh", c=java.lang.Boolean.class, w=java.lang.Long.class, e=java.lang.annotation.ElementType.TYPE, a=@pkg1.A, sa={"up", "down"})
+

@@ -1,0 +1,25 @@
+CyclicInheritance.java:15: cyclic inheritance involving C1
+class C1 extends C1 {}                  // ERROR - Cyclic inheritance
+^
+CyclicInheritance.java:17: cyclic inheritance involving C11
+class C11 extends C12 {}                // ERROR - Cyclic inheritance
+^
+CyclicInheritance.java:20: cyclic inheritance involving I1
+interface I1 extends I1 {}              // ERROR - Cyclic inheritance
+^
+CyclicInheritance.java:22: cyclic inheritance involving I11
+interface I11 extends I12 {}            // ERROR - Cyclic inheritance
+^
+CyclicInheritance.java:27: cyclic inheritance involving C211
+class C211 implements C211.I {          // ERROR - may change pending resoluation of 4087020
+^
+CyclicInheritance.java:31: cyclic inheritance involving C212
+class C212 extends C212.C {             // ERROR - Cyclic inheritance, subclass cannot enclose superclass
+^
+CyclicInheritance.java:36: C221.I has private access in C221
+class C221 implements C221.I {          // ERROR - Cannot access C21 (private)
+                          ^
+CyclicInheritance.java:40: C222.C has private access in C222
+class C222 extends C222.C {             // ERROR - Cannot access C22 (private)
+                       ^
+8 errors

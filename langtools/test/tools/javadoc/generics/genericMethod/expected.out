@@ -1,0 +1,20 @@
+constructor <T>pkg1.A()
+  signature: ()
+             ()
+  type parameters:
+    T
+method pkg1.A.<T>m1(T)
+  signature: (T)
+             (T)
+  type parameters:
+    T
+  returns:
+    void
+method pkg1.A.<T extends java.lang.Number, U>m2(T, U)
+  signature: (T, U)
+             (T, U)
+  type parameters:
+    T extends java.lang.Number
+    U
+  returns:
+    void

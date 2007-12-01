@@ -1,0 +1,29 @@
+Round1Apf: 1
+	[final round: false, error raised: false, source files created: true, class files created: true]
+Round1Apf: 1 complete
+Round1Apf: 2
+Round2Apf: 1
+	[final round: false, error raised: false, source files created: true, class files created: true]
+Round1Apf: 2 complete
+Round1Apf: 3
+Round2Apf: 2
+Round3Apf: 1
+	[final round: false, error raised: false, source files created: true, class files created: false]
+Round1Apf: 3 complete
+Round1Apf: 4
+Round2Apf: 3
+Round3Apf: 2
+Round4Apf: 1
+	[final round: false, error raised: false, source files created: true, class files created: false]
+Round1Apf: 4 complete
+	[final round: false, error raised: false, source files created: true, class files created: false]
+Round4Apf: 1 complete
+Round1Apf: 5
+Round2Apf: 4
+Round3Apf: 3
+Round4Apf: 2
+	[final round: true, error raised: false, source files created: false, class files created: false]
+Round1Apf: 5 complete
+	[final round: true, error raised: false, source files created: false, class files created: false]
+Round4Apf: 2 complete
+Valediction

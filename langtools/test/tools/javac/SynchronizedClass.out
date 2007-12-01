@@ -1,0 +1,4 @@
+SynchronizedClass.java:9: modifier synchronized not allowed here
+public synchronized class SynchronizedClass { } // ERROR
+                    ^
+1 error

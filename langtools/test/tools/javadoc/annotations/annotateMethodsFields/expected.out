@@ -1,0 +1,22 @@
+element pkg1.A.value()
+  annotations:
+    @pkg1.A("value")
+  returns:
+    String
+
+field E econst
+  annotations:
+    @pkg1.A("econst")
+
+field int f
+  annotations:
+    @pkg1.A("f")
+
+method pkg1.B.m1(int)
+  signature: (int)
+             (int)
+  annotations:
+    @pkg1.A("m1")
+  returns:
+    void
+

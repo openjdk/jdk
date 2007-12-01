@@ -1,0 +1,52 @@
+NestedInnerClassNames.java:16: NestedInnerClassNames is already defined in unnamed package
+    class NestedInnerClassNames {}              // ERROR
+    ^
+NestedInnerClassNames.java:23: NestedInnerClassNames.foo is already defined in NestedInnerClassNames
+        class foo { }                           // ERROR
+        ^
+NestedInnerClassNames.java:34: NestedInnerClassNames is already defined in unnamed package
+        class NestedInnerClassNames {}          // ERROR
+        ^
+NestedInnerClassNames.java:45: NestedInnerClassNames.baz is already defined in NestedInnerClassNames
+        class baz {                             // ERROR
+        ^
+NestedInnerClassNames.java:46: NestedInnerClassNames.baz.baz is already defined in NestedInnerClassNames.baz
+            class baz { }                       // ERROR
+            ^
+NestedInnerClassNames.java:59: NestedInnerClassNames.foo$bar is already defined in NestedInnerClassNames
+        class foo$bar {                         // ERROR
+        ^
+NestedInnerClassNames.java:76: NestedInnerClassNames.$bar is already defined in NestedInnerClassNames
+            class $bar { }                      // ERROR
+            ^
+NestedInnerClassNames.java:90: NestedInnerClassNames.bar$bar.bar is already defined in NestedInnerClassNames.bar$bar
+            class bar{ }                       // ERROR
+            ^
+NestedInnerClassNames.java:109: duplicate class: NestedInnerClassNames.foo.foo
+    class foo$foo { }                           // ERROR
+    ^
+NestedInnerClassNames.java:19: NestedInnerClassNames is already defined in unnamed package
+        class NestedInnerClassNames {}          // ERROR
+        ^
+NestedInnerClassNames.java:28: foo is already defined in m2()
+            class foo { }                       // ERROR
+            ^
+NestedInnerClassNames.java:40: NestedInnerClassNames is already defined in unnamed package
+            class NestedInnerClassNames {}      // ERROR
+            ^
+NestedInnerClassNames.java:52: baz is already defined in m4()
+            class baz {                         // ERROR
+            ^
+NestedInnerClassNames.java:53: baz.baz is already defined in baz
+                class baz { }                   // ERROR
+                ^
+NestedInnerClassNames.java:67: foo$bar is already defined in m5()
+            class foo$bar {                     // ERROR
+            ^
+NestedInnerClassNames.java:83: $bar is already defined in m6()
+                class $bar { }                  // ERROR
+                ^
+NestedInnerClassNames.java:97: bar$bar.bar is already defined in bar$bar
+                class bar{ }                   // ERROR
+                ^
+17 errors

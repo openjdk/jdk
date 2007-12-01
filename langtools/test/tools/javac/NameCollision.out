@@ -1,0 +1,4 @@
+NameCollision.java:13: interface expected here
+    class Runnable implements Runnable { } // ERROR
+                              ^
+1 error

@@ -1,0 +1,6 @@
+ExtendArray.java:11: unexpected type
+found   : java.lang.Object[]
+required: class
+public class ExtendArray extends Object[] {}
+                                       ^
+1 error

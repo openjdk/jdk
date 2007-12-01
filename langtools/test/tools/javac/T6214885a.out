@@ -1,0 +1,6 @@
+T6214885.java:11 cannot find symbol
+symbol  : variable x
+location: class T6214885
+        x = 1;
+        ^
+1 error

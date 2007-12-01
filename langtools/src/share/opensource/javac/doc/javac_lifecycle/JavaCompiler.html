@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!--
+Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+This code is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 2 only, as
+published by the Free Software Foundation.  Sun designates this
+particular file as subject to the "Classpath" exception as provided
+by Sun in the LICENSE file that accompanied this code.
+
+This code is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+version 2 for more details (a copy is included in the LICENSE file that
+accompanied this code).
+
+You should have received a copy of the GNU General Public License version
+2 along with this work; if not, write to the Free Software Foundation,
+Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+CA 95054 USA or visit www.sun.com if you need additional information or
+have any questions.
+-->
+
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+        <meta name="author" content="Jonathan Gibbons">
+        <link type="text/css" rel=stylesheet href="style.css">
+        <title>JavaCompiler</title>
+    </head>
+    <body>
+
+        <h3>com.sun.tools.javac.main.JavaCompiler</h3>
+        <p>
+            <code>JavaCompiler</code> provides (and enforces) a use-once method to compile a list of source files. 
+            It invokes the various phases of the compiler to cause those source files to be compiled.
+        </p>
+        <ul>
+            <li>All the files given on the command line are parsed, to build a
+                list of parse trees. Lexing and parsing are done with
+                <a href="../../src/share/classes/com/sun/tools/javac/parser/Scanner.java" class=code>Scanner</a>    and
+                <a href="../../src/share/classes/com/sun/tools/javac/parser/Parser.java" class=code>Parser</a>.
+                Lexical and syntax errors will be detected here.
+                <p class=note>
+                    Note: Additional files may be parsed later, if they are found on the class/source path, and if they are newer than their matching class file.
+                </p>
+            </li>
+
+            <li>For each of the parse trees, their symbols are "entered", using
+                <a href="../../src/share/classes/com/sun/tools/javac/comp/Enter.java" class=code>Enter</a>.  This will also set up a "to do" list of additional work to be done to compile those parse trees.
+                <i>(<a href="Enter.html">more...</a>)</i>
+            </li>
+
+            <li>If source code or stub code will be generated, a list is made
+                (in rootClasses) of all the top level classes defined in the parse trees. This will be used later, to check whether a class being processed was directly provided on the command line or not.
+            </li>
+
+            <li>Then, for as long as there is work on the "to do" list,
+                <code>JavaCompiler</code> processes entries from the "to do" list.
+                In so doing, the compiler might find additional classes that need to be
+                processed, which may result in additional entries being added to the
+                "to do" list. <i>(<a href="ToDo.html">more...</a>)</i>
+            </li>
+
+            <li>Print final messages.</li>
+
+            <li>Return a list of class symbols, perhaps just those from
+                final lower (may not include top level classes)
+            </li>
+        </ul>
+
+
+ 
+    </body>
+</html>
+

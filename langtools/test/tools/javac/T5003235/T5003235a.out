@@ -1,0 +1,13 @@
+T5003235a.java:21: defaultM() in Super.Inner is defined in an inaccessible class or interface
+        i.defaultM();
+         ^
+T5003235a.java:22: protectedM() in Super.Inner is defined in an inaccessible class or interface
+        i.protectedM();
+         ^
+T5003235a.java:23: publicM() in Super.Inner is defined in an inaccessible class or interface
+        i.publicM();
+         ^
+T5003235a.java:24: privateM() in Super.Inner is defined in an inaccessible class or interface
+        i.privateM();
+         ^
+4 errors

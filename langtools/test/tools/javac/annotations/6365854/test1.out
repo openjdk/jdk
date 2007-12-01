@@ -1,0 +1,2 @@
+- compiler.warn.annotation.method.not.found.reason: test.annotation.TestAnnotation, test, class file for test.annotation.TestAnnotation not found
+1 warning

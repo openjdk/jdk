@@ -1,0 +1,14 @@
+warning: Beware the ides of March!
+HelloAnnotation.java:6: Note: You are about to be warned
+@interface HelloAnnotation {
+ ^
+HelloAnnotation.java:6: warning: Strange class name
+@interface HelloAnnotation {
+ ^
+Note: MIRROR HelloAnnotation.java:6
+Note: VALUE HelloAnnotation.java:6
+Note: MIRROR HelloAnnotation.java:6
+Note: VALUE HelloAnnotation.java:6
+Note: MIRROR HelloAnnotation.java:6
+Note: VALUE HelloAnnotation.java:5
+2 warnings
