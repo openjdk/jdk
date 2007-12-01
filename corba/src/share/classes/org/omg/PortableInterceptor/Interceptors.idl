@@ -1,0 +1,2214 @@
+/*
+ * Copyright 2000-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/*
+ * Differences from original:
+ *
+ * - do not include orb.idl
+ * - include IOP.idl, Messaging.idl and CORBAX.idl
+ * - renamed component parameter names to tagged_component (so that they 
+ *   do not conflict with the CORBA 3.0 "component" keyword).
+ * - javadocs added (synchronized with orbos/00-08-06)
+ * 
+ * NOTE: After compilation of this IDL file, all Helper and Holder classes
+ * that are not needed are removed.
+ */
+#include "IOP.idl"
+#include "Messaging.idl"
+#include "CORBAX.idl"
+#include "corba.idl"
+
+#pragma prefix "omg.org"
+
+#ifndef CORBA3
+#define local
+#endif
+
+module Dynamic {
+
+  /**
+   * <code>NVList</code> PIDL represented by <code>ParameterList</code> IDL.  
+   * This exists in order to keep the Portable Interceptor IDL from becoming 
+   * PIDL.
+   */
+  struct Parameter {
+    any argument;
+    CORBA::ParameterMode mode;
+  };
+
+  /**
+   * <code>NVList</code> PIDL represented by <code>ParameterList</code> IDL.  
+   * This exists in order to keep the Portable Interceptor IDL from becoming 
+   * PIDL.
+   */
+  typedef sequence<Parameter> ParameterList;
+
+  /**
+   * <code>ContextList</code> PIDL represented by <code>ContextList</code> 
+   * IDL.  This exists in order to keep the Portable Interceptor IDL from 
+   * becoming PIDL.
+   */
+  typedef CORBA::StringSeq ContextList;
+
+  /**
+   * <code>ExceptionList</code> PIDL represented by <code>ExceptionList</code> 
+   * IDL.  This exists in order to keep the Portable Interceptor IDL from 
+   * becoming PIDL.
+   */
+  typedef sequence<CORBA::TypeCode> ExceptionList;
+
+  /**
+   * <code>Context</code> PIDL represented by <code>RequestContext</code> 
+   * IDL.  This exists in order to keep the Portable Interceptor IDL from o
+   * becoming PIDL.
+   * <p>
+   * <code>Context</code> objects are encoded as <code>String[]</code>.  The 
+   * <code>Strings</code> occur in pairs.  The first <code>String</code> in 
+   * each pair is the context property name and the second <code>String</code>
+   * in each pair is the associated value.
+   */
+  typedef CORBA::StringSeq RequestContext;
+};
+
+module PortableInterceptor {
+  /**
+   * All Portable Interceptors implement Interceptor.
+   */
+  local interface Interceptor {
+    /**
+     * Returns the name of the interceptor.
+     * <p>
+     * Each Interceptor may have a name that may be used administratively 
+     * to order the lists of Interceptors. Only one Interceptor of a given 
+     * name can be registered with the ORB for each Interceptor type. An 
+     * Interceptor may be anonymous, i.e., have an empty string as the name 
+     * attribute. Any number of anonymous Interceptors may be registered with 
+     * the ORB.
+     *
+     * @return the name of the interceptor.
+     */
+    readonly attribute string name;
+
+    // Added in ptc/00-08-06
+    /**
+     * Provides an opportunity to destroy this interceptor.
+     * The destroy method is called during <code>ORB.destroy</code>. When an 
+     * application calls <code>ORB.destroy</code>, the ORB:
+     * <ol>
+     *   <li>waits for all requests in progress to complete</li>
+     *   <li>calls the <code>Interceptor.destroy</code> operation for each 
+     *       interceptor</li>
+     *   <li>completes destruction of the ORB</li>
+     * </ol>
+     * Method invocations from within <code>Interceptor.destroy</code> on 
+     * object references for objects implemented on the ORB being destroyed 
+     * result in undefined behavior. However, method invocations on objects 
+     * implemented on an ORB other than the one being destroyed are 
+     * permitted. (This means that the ORB being destroyed is still capable 
+     * of acting as a client, but not as a server.) 
+     */
+    void destroy();
+  };
+
+
+  /**
+   * The <code>ForwardRequest</code> exception is the means by which an 
+   * Interceptor can indicate to the ORB that a retry of the request should 
+   * occur with the new object given in the exception. This behavior of 
+   * causing a retry only occurs if the ORB receives a ForwardRequest from 
+   * an interceptor. If <code>ForwardRequest</code> is thrown anywhere else 
+   * it is passed through the ORB as is normal for a user exception. 
+   * <p>
+   * If an Interceptor throws a <code>ForwardRequest</code> exception in 
+   * response to a call of an interceptor, no other Interceptors are called 
+   * for that interception point. The remaining Interceptors in the Flow Stack 
+   * shall have their appropriate ending interception point called: 
+   * <code>receive_other</code> on the client, or <code>send_other</code> on 
+   * the server. The <code>reply_status</code> in the 
+   * <code>receive_other</code> or <code>send_other</code> would be 
+   * <code>LOCATION_FORWARD</code>.
+   */
+  exception ForwardRequest {
+    /** 
+     * The new object to forward the request to.
+     */
+    Object forward;
+//   Change in ptc/00-08-06
+//    boolean permanent;
+  };
+
+  /** Reply status, represented as an int */
+  typedef short ReplyStatus;
+
+  // Valid reply_status values:
+
+  /**
+   * Indicates a successful Reply Status. One possible value for 
+   * <code>RequestInfo.reply_status</code>.
+   * @see RequestInfo#reply_status
+   * @see SYSTEM_EXCEPTION
+   * @see USER_EXCEPTION
+   * @see LOCATION_FORWARD
+   * @see TRANSPORT_RETRY
+   */
+  const ReplyStatus SUCCESSFUL = 0;
+
+  /**
+   * Indicates a SystemException reply status. One possible value for 
+   * <code>RequestInfo.reply_status</code>.
+   * @see RequestInfo#reply_status
+   * @see SUCCESSFUL
+   * @see USER_EXCEPTION
+   * @see LOCATION_FORWARD
+   * @see TRANSPORT_RETRY
+   */
+  const ReplyStatus SYSTEM_EXCEPTION = 1;
+
+  /**
+   * Indicates a UserException reply status. One possible value for 
+   * <code>RequestInfo.reply_status</code>.
+   * @see RequestInfo#reply_status
+   * @see SUCCESSFUL
+   * @see SYSTEM_EXCEPTION
+   * @see LOCATION_FORWARD
+   * @see TRANSPORT_RETRY
+   */
+  const ReplyStatus USER_EXCEPTION = 2;
+
+  /**
+   * Indicates a LocationForward reply status. One possible value for 
+   * <code>RequestInfo.reply_status</code>.
+   * @see RequestInfo#reply_status
+   * @see SUCCESSFUL
+   * @see SYSTEM_EXCEPTION
+   * @see USER_EXCEPTION
+   * @see TRANSPORT_RETRY
+   */
+  const ReplyStatus LOCATION_FORWARD = 3;
+
+// Changes in ptc/00-08-06
+//  const ReplyStatus LOCATION_FORWARD_PERMANENT = 4;
+
+  /**
+   * Indicates a Transport Retry reply status. One possible value for 
+   * <code>RequestInfo.reply_status</code>.
+   * @see RequestInfo#reply_status
+   * @see SUCCESSFUL
+   * @see SYSTEM_EXCEPTION
+   * @see USER_EXCEPTION
+   * @see LOCATION_FORWARD
+   */
+  const ReplyStatus TRANSPORT_RETRY = 4;
+
+  /**
+   * XXX
+   */
+  const ReplyStatus UNKNOWN = 5;
+
+  /** Slot id, represented as an int */
+  typedef unsigned long SlotId;
+
+  /**
+   * This exception is thrown when <code>get_slot</code> or 
+   * <code>set_slot</code> is called on a slot that has not been allocated.
+   */
+  exception InvalidSlot {};
+
+  /**
+   * Portable Interceptors Current (also known as <code>PICurrent</code>) 
+   * is merely a slot table, the slots of which are used by each service to 
+   * transfer their context data between their context and the request's or 
+   * reply's service context. Each service which wishes to use PICurrent 
+   * reserves a slot or slots at initialization time and uses those slots 
+   * during the processing of requests and replies.
+   * <p>
+   * Before an invocation is made, PICurrent is obtained via a call to 
+   * <code>ORB.resolve_initial_references( "PICurrent" )</code>. From within 
+   * the interception points, the data on PICurrent that has moved from the 
+   * thread scope to the request scope is available via the 
+   * <code>get_slot</code> operation on the <code>RequestInfo</code> object. 
+   * A PICurrent can still be obtained via 
+   * <code>resolve_initial_references</code>, but that is the Interceptor's 
+   * thread scope PICurrent.
+   */
+  local interface Current : CORBA::Current {
+
+    /**
+     * Retrieves the slot data the application set in PICurrent via 
+     * <code>get_slot</code>.  The data is in the form of an Any. 
+     * <p>
+     * If the given slot has not been set, an Any containing a type code 
+     * with a <code>TCKind</code> value of <code>tk_null</code> and no value 
+     * is returned. 
+     *
+     * @param id The <code>SlotId</code> of the slot from which the data will 
+     *     be returned. 
+     * @return The data, in the form of an Any, of the given slot identifier.
+     * @exception InvalidSlot thrown if get_slot is called on a slot that 
+     *     has not been allocated. 
+     * @exception BAD_INV_ORDER thrown if <code>get_slot</code> is called 
+     *     from within an ORB initializer 
+     */
+    any get_slot (in SlotId id) raises (InvalidSlot);
+
+    /**
+     * Sets data in a slot. The data is in the form of an Any. If data 
+     * already exists in that slot, it is overridden. 
+     *
+     * @param id The <code>SlotId</code> of the slot to which the data will 
+     *     be set. 
+     * @param data The data, in the form of an Any, which will be set 
+     *     to the identified slot. 
+     * @exception InvalidSlot thrown if <code>set_slot</code> is called on 
+     *     a slot that has not been allocated.
+     * @exception BAD_INV_ORDER thrown if <code>set_slot</code> is called 
+     *     from within an ORB initializer. 
+     */
+    void set_slot (in SlotId id, in any data) raises (InvalidSlot);
+  };
+
+  /**
+   * Request Information, accessible to Interceptors.
+   * <p>
+   * Each interception point is given an object through which the 
+   * Interceptor can access request information. Client-side and server-side 
+   * interception points are concerned with different information, so there 
+   * are two information objects: <code>ClientRequestInfo</code> is passed 
+   * to the client-side interception points and <code>ServerRequestInfo</code>
+   * is passed to the server-side interception points. But there is 
+   * information that is common to both, so they both inherit from a common 
+   * interface: <code>RequestInfo</code>.
+   *
+   * @see ClientRequestInfo
+   * @see ServerRequestInfo
+   */
+  local interface RequestInfo {
+    /**
+     * Returns an id that uniquely identifies an active request/reply 
+     * sequence. Once a request/reply sequence is concluded this ID may be 
+     * reused. Note that this id is not the same as the GIOP 
+     * <code>request_id</code>. If GIOP is the transport mechanism used, 
+     * then these IDs may very well be the same, but this is not guaranteed 
+     * nor required.
+     */
+    readonly attribute unsigned long request_id;
+
+    /**
+     * Returns the name of the operation being invoked.
+     */
+    readonly attribute string operation;
+
+    /**
+     * Returns an array of <code>Parameter</code> objects, containing the 
+     * arguments on the operation being invoked.  If there are no arguments, 
+     * this attribute will be a zero length array. 
+     * <p>
+     * Not all environments provide access to the arguments. With the Java 
+     * portable bindings, for example, the arguments are not available. 
+     * In these environments, when this attribute is accessed, 
+     * <code>NO_RESOURCES</code> will be thrown with a standard minor code 
+     * of 1.
+     * <p>
+     * <i>Note: Arguments are available for DSI/DII calls.</i>
+     *
+     * @exception NO_RESOURCES thrown if arguments are not available.
+     * @see <a href="package-summary.html#unimpl">
+     *     <code>PortableInterceptor</code> package comments for 
+     *     limitations / unimplemented features</a>
+     */
+    readonly attribute Dynamic::ParameterList arguments;
+
+    /**
+     * Returns an array of <code>TypeCode</code> objects describing the 
+     * <code>TypeCode</code>s of the user exceptions that this operation 
+     * invocation may throw. If there are no user exceptions, this 
+     * will return a zero length array. 
+     * <p>
+     * Not all environments provide access to the exception list. With 
+     * the Java portable bindings, for example, the exception list is 
+     * not available. In these environments, when this attribute is 
+     * accessed, <code>NO_RESOURCES</code> will be thrown with a 
+     * standard minor code of 1.
+     * <p>
+     * <i>Note: Exceptions are available for DSI/DII calls.</i>
+     *
+     * @exception NO_RESOURCES thrown if exceptions are not available.
+     * @see <a href="package-summary.html#unimpl">
+     *     <code>PortableInterceptor</code> package comments for 
+     *     limitations / unimplemented features</a>
+     */
+    readonly attribute Dynamic::ExceptionList exceptions;
+
+    /**
+     * Returns an array of <code>String</code> objects describing the 
+     * contexts that may be passed on this operation invocation.  If there 
+     * are no contexts, this will return a zero length array. 
+     * <p>
+     * Not all environments provide access to the context list. With the 
+     * Java portable bindings, for example, the context list is not 
+     * available. In these environments, when this attribute is accessed, 
+     * <code>NO_RESOURCES</code> will be thrown with a standard minor code 
+     * of 1.
+     * <p>
+     * <i>Note: Contexts are available for DSI/DII calls.</i>
+     *
+     * @exception NO_RESOURCES thrown if contexts are not available.
+     * @see <a href="package-summary.html#unimpl">
+     *     <code>PortableInterceptor</code> package comments for 
+     *     limitations / unimplemented features</a>
+     */
+    readonly attribute Dynamic::ContextList contexts;
+
+    /**
+     * Returns an array of <code>String</code> objects containing the 
+     * contexts being sent on the request.
+     * <p>
+     * Not all environments provide access to the context. With the Java 
+     * portable bindings, for example, the context is not available. In 
+     * these environments, when this attribute is accessed, NO_RESOURCES will 
+     * be thrown with standard minor code of 1.
+     * <p>
+     * <i>Note: <code>operation_context</code> is available for 
+     * DSI/DII calls.</i>
+     *
+     * @exception NO_RESOURCES thrown if operation context is not available.
+     * @see <a href="package-summary.html#unimpl">
+     *     <code>PortableInterceptor</code> package comments for 
+     *     limitations / unimplemented features</a>
+     */
+    readonly attribute Dynamic::RequestContext operation_context;
+
+    /**
+     * Returns an any containing the result of the operation invocation. 
+     * If the operation return type is void, this attribute will be an any 
+     * containing a type code with a <code>TCKind</code> value of 
+     * <code>tk_void</code> and no value. 
+     * <p>
+     * Not all environments provide access to the result. With the Java 
+     * portable bindings, for example, the result is not available. In 
+     * these environments, when this attribute is accessed, 
+     * <code>NO_RESOURCES</code> will be thrown with a standard minor code of 
+     * 1.
+     * <p>
+     * <i>Note: Result is available for DSI/DII calls.</i>
+     *
+     * @exception NO_RESOURCES thrown if result is not available.
+     * @see <a href="package-summary.html#unimpl">
+     *     <code>PortableInterceptor</code> package comments for 
+     *     limitations / unimplemented features</a>
+     */
+    readonly attribute any result;
+
+    /**
+     * Indicates whether a response is expected. 
+     * <p>
+     * On the client, a reply is not returned when 
+     * <code>response_expected</code> is false, so <code>receive_reply</code> 
+     * cannot be called. <code>receive_other</code> is called unless an 
+     * exception occurs, in which case <code>receive_exception</code> is 
+     * called. 
+     * <p>
+     * On the client, within <code>send_poll</code>, this attribute is true.
+     */
+    readonly attribute boolean response_expected;
+
+    /**
+     * Defines how far the request shall progress before control is returned
+     * to the client.  This is defined in the Messaging specification, and 
+     * is pertinent only when <code>response_expected</code> is false. If 
+     * <code>response_expected</code> is true, the value of 
+     * <code>sync_scope</code> is undefined. This attribute may have one of 
+     * the following values: 
+     * <ul>
+     *   <li><code>Messaging.SYNC_NONE</code></li>
+     *   <li><code>Messaging.SYNC_WITH_TRANSPORT</code></li>
+     *   <li><code>Messaging.SYNC_WITH_SERVER</code></li>
+     *   <li><code>Messaging.SYNC_WITH_TARGET</code></li>
+     * </ul>
+     * On the server, for all scopes, a reply will be created from the 
+     * return of the target operation call, but the reply will not return 
+     * to the client. Although it does not return to the client, it does 
+     * occur, so the normal server-side interception points are 
+     * followed (i.e., <code>receive_request_service_contexts</code>, 
+     * <code>receive_request</code>, <code>send_reply</code> or 
+     * <code>send_exception</code>). 
+     * <p>
+     * For <code>SYNC_WITH_SERVER</code> and <code>SYNC_WITH_TARGET</code>, 
+     * the server does send an empty reply back to the client before the 
+     * target is invoked. This reply is not intercepted by server-side 
+     * Interceptors.
+     * 
+     * @see <a href="package-summary.html#unimpl">
+     *     <code>PortableInterceptor</code> package comments for 
+     *     limitations / unimplemented features</a>
+     */
+    readonly attribute Messaging::SyncScope sync_scope;
+
+    /**
+     * Describes the state of the result of the operation invocation. The
+     * return value can be one of the following: 
+     * <ul>
+     *   <li><code>PortableInterceptor.SUCCESSFUL</code></li>
+     *   <li><code>PortableInterceptor.SYSTEM_EXCEPTION</code></li>
+     *   <li><code>PortableInterceptor.USER_EXCEPTION</code></li>
+     *   <li><code>PortableInterceptor.LOCATION_FORWARD</code></li>
+     *   <li><code>PortableInterceptor.TRANSPORT_RETRY</code></li>
+     * </ul>
+     * On the client:
+     * <ul>
+     *   <li>Within the <code>receive_reply</code> interception point, this 
+     *       will only return <code>SUCCESSFUL</code></li>.
+     *   <li>Within the <code>receive_exception</code> interception point, 
+     *       this will be either <code>SYSTEM_EXCEPTION</code> or 
+     *       <code>USER_EXCEPTION</code>.</li>
+     *   <li>Within the <code>receive_other</code> interception point, this 
+     *       will be any of: <code>SUCCESSFUL</code>, 
+     *       <code>LOCATION_FORWARD</code>, or <code>TRANSPORT_RETRY</code>. 
+     *       <code>SUCCESSFUL</code> means an asynchronous request returned 
+     *       successfully. <code>LOCATION_FORWARD</code> means that a reply 
+     *       came back with <code>LOCATION_FORWARD</code> as its status. 
+     *       <code>TRANSPORT_RETRY</code> means that the transport 
+     *       mechanism indicated a retry - a GIOP reply with a status of 
+     *       <code>NEEDS_ADDRESSING_MODE</code>, for instance. </li>
+     * </ul>
+     * On the server: 
+     * <ul>
+     *   <li>Within the <code>send_reply</code> interception point, this 
+     *       will only be <code>SUCCESSFUL</code>.</li>
+     *   <li>Within the <code>send_exception</code> interception point, 
+     *       this will be either <code>SYSTEM_EXCEPTION</code> or 
+     *       <code>USER_EXCEPTION</code>.</li>
+     *   <li>Within the <code>send_other</code> interception point, this 
+     *       attribute will be any of: <code>SUCCESSFUL</code>, or 
+     *       <code>LOCATION_FORWARD</code>. <code>SUCCESSFUL</code> means 
+     *       an asynchronous request returned successfully. 
+     *       <code>LOCATION_FORWARD</code> means that a reply came back 
+     *       with <code>LOCATION_FORWARD</code> as its status.</li>
+     * </ul>
+     * 
+     * @see SUCCESSFUL
+     * @see SYSTEM_EXCEPTION
+     * @see USER_EXCEPTION
+     * @see LOCATION_FORWARD
+     * @see TRANSPORT_RETRY
+     */
+    readonly attribute ReplyStatus reply_status;
+
+    /** 
+     * Contains the object to which the request will be forwarded, if the 
+     * <code>reply_status</code> attribute is <code>LOCATION_FORWARD</code>.
+     * It is indeterminate whether a forwarded request will actually occur.
+     */
+    readonly attribute Object forward_reference;
+
+    /**
+     * Returns the data from the given slot of the 
+     * <code>PortableInterceptor.Current</code> that is in the scope of 
+     * the request. 
+     * <p>
+     * If the given slot has not been set, then an any containing a 
+     * type code with a <code>TCKind</code> value of <code>tk_null</code> is 
+     * returned. 
+     *
+     * @param id The <code>SlotId</code> of the slot which is to be 
+     *     returned. 
+     * @return The slot data, in the form of an any, obtained with the 
+     *     given identifier.
+     * @exception InvalidSlot thrown if the ID does not define an 
+     *    allocated slot.
+     * @see Current
+     */
+    any get_slot (in SlotId id) raises (InvalidSlot);
+
+    /**
+     * Returns a copy of the service context with the given ID that 
+     * is associated with the request. 
+     * <p>
+     * @param id The <code>IOP.ServiceId</code> of the service context 
+     *     which is to be returned. 
+     * @return The <code>IOP.ServiceContext</code> obtained with the 
+     *     given identifier.
+     * @exception BAD_PARAM thrown with a standard minor code of 26, if the 
+     *     request's service context does not contain an entry for that ID.
+     */
+    IOP::ServiceContext get_request_service_context 
+      (in IOP::ServiceId id);
+
+    /**
+     * Returns a copy of the service context with the given ID that 
+     * is associated with the reply. 
+     * 
+     * @param id The <code>IOP.ServiceId</code> of the service context 
+     *     which is to be returned. 
+     * @return The <code>IOP.ServiceContext</code> obtained with the given 
+     *     identifier. 
+     * @exception BAD_PARAM thrown with a standard minor code of 26 if the 
+     *     request's service context does not contain an entry for that ID.
+     */
+    IOP::ServiceContext get_reply_service_context 
+      (in IOP::ServiceId id);
+  };
+
+  /**
+   * Request Information, accessible to client-side request interceptors.
+   * <p>
+   * Some attributes and operations on <code>ClientRequestInfo</code> are 
+   * not valid at all interception points.  The following table shows the 
+   * validity of each attribute or operation.  If it is not valid, attempting 
+   * to access it will result in a <code>BAD_INV_ORDER</code> being thrown
+   * with a standard minor code of 14.
+   * <p>
+   *
+   * <table border=1 summary="Shows the validity of each attribute or operation">
+   *  <thead>
+   *    <tr>
+   *      <th>&nbsp;</th>
+   *      <th id="send_req">send_request</th>
+   *      <th id="send_poll">send_poll</th>
+   *      <th id="rec_reply">receive_reply</th>
+   *      <th id="rec_ex">receive_exception</th>
+   *      <th id="rec_oth">receive_other</th>
+   *    </tr>
+   *  </thead>
+   *  <tbody>
+   *
+   *  <tr>
+   *     <td id="ri" colspan=6><i>Inherited from RequestInfo:</i></td>
+   *  </tr>
+   * 
+   *  <tr><th id="req_id"><p align="left">request_id</p></th>
+   *  <td headers="ri req_id send_req">yes</td> 
+   *  <td headers="ri req_id send_poll">yes</td> 
+   *  <td headers="ri req_id rec_reply">yes</td> 
+   *  <td headers="ri req_id rec_ex">yes</td> 
+   *  <td headers="ri req_id rec_oth">yes</td></tr>
+   * 
+   *  <tr><th id="op"><p align="left">operation</p></th>
+   *  <td headers="ri op send_req">yes</td> 
+   *  <td headers="ri op send_poll">yes</td> 
+   *  <td headers="ri op rec_reply">yes</td> 
+   *  <td headers="ri op rec_ex">yes</td> 
+   *  <td headers="ri op rec_oth">yes</td></tr>
+   *
+   *  <tr><th id="arg"><p align="left">arguments</p></th>
+   *  <td headers="ri arg send_req">yes<sub>1</sub></td>
+   *  <td headers="ri arg send_poll">no </td> 
+   *  <td headers="ri arg rec_reply">yes</td> 
+   *  <td headers="ri arg rec_ex">no </td> 
+   *  <td headers="ri arg rec_oth">no </td></tr>
+   *
+   *  <tr><th id="exc"><p align="left">exceptions</p></th>
+   *  <td headers="ri exc send_req">yes</td> 
+   *  <td headers="ri exc send_poll">no </td> 
+   *  <td headers="ri exc rec_reply">yes</td> 
+   *  <td headers="ri exc rec_ex">yes</td> 
+   *  <td headers="ri exc rec_oth">yes</td></tr>
+   *
+   *  <tr><th id="con"><p align="left">contexts</p></th>
+   *  <td headers="ri con send_req">yes</td> 
+   *  <td headers="ri con send_poll">no </td> 
+   *  <td headers="ri con rec_reply">yes</td> 
+   *  <td headers="ri con rec_ex">yes</td> 
+   *  <td headers="ri con rec_oth">yes</td></tr>
+   *
+   *  <tr><th id="op_con"><p align="left">operation_context</p></th>
+   *  <td headers="ri op_con send_req">yes</td> 
+   *  <td headers="ri op_con send_poll">no </td> 
+   *  <td headers="ri op_con rec_reply">yes</td> 
+   *  <td headers="ri op_con rec_ex">yes</td> 
+   *  <td headers="ri op_con rec_oth">yes</td>
+   *  </tr>
+   *
+   *  <tr><th id="result"><p align="left">result</p></th>
+   *  <td headers="ri result send_req">no </td> 
+   *  <td headers="ri result send_poll">no </td> 
+   *  <td headers="ri result rec_reply">yes</td> 
+   *  <td headers="ri result rec_ex">no </td> 
+   *  <td headers="ri result rec_oth">no </td>
+   *  </tr>
+   *
+   *  <tr><th id="res_exp"><p align="left">response_expected</p></th>
+   *  <td headers="ri res_exp send_req">yes</td> 
+   *  <td headers="ri res_exp send_poll">yes</td> 
+   *  <td headers="ri res_exp rec_reply">yes</td> 
+   *  <td headers="ri res_exp rec_ex">yes</td> 
+   *  <td headers="ri res_exp rec_oth">yes</td></tr>
+   *
+   *  <tr><th id="sync_sco"><p align="left">sync_scope</p></th>
+   *  <td headers="ri sync_sco send_req">yes</td> 
+   *  <td headers="ri sync_sco send_poll">no </td> 
+   *  <td headers="ri sync_sco rec_reply">yes</td> 
+   *  <td headers="ri sync_sco rec_ex">yes</td> 
+   *  <td headers="ri sync_sco rec_oth">yes</td>
+   *  </tr>
+   *
+   *  <tr><th id="rep_stat"><p align="left">reply_status</p></th>
+   *  <td headers="ri rep_stat send_req">no </td> 
+   *  <td headers="ri rep_stat send_poll">no </td> 
+   *  <td headers="ri rep_stat rec_reply">yes</td> 
+   *  <td headers="ri rep_stat rec_ex">yes</td> 
+   *  <td headers="ri rep_stat rec_oth">yes</td></tr>
+   *
+   *  <tr><th id="for_ref"><p align="left">forward_reference</p></th>
+   *  <td headers="ri for_ref send_req">no </td>
+   *  <td headers="ri for_ref send_poll">no </td> 
+   *  <td headers="ri for_ref rec_reply">no </td> 
+   *  <td headers="ri for_ref rec_ex">no </td> 
+   *  <td headers="ri for_ref rec_oth">yes<sub>2</sub>
+   *  </td></tr>
+   *
+   *  <tr><th id="get_slot"><p align="left">get_slot</p></th>
+   *  <td headers="ri get_slot send_req">yes</td> 
+   *  <td headers="ri get_slot send_poll">yes</td> 
+   *  <td headers="ri get_slot rec_reply">yes</td> 
+   *  <td headers="ri get_slot rec_ex">yes</td> 
+   *  <td headers="ri get_slot rec_oth">yes</td></tr>
+   *
+   *  <tr><th id="grsc"><p align="left">get_request_service_context</p></th>
+   *  <td headers="ri grsc send_req">yes</td> 
+   *  <td headers="ri grsc send_poll">no </td> 
+   *  <td headers="ri grsc rec_reply">yes</td> 
+   *  <td headers="ri grsc rec_ex">yes</td> 
+   *  <td headers="ri grsc rec_oth">yes</td></tr>
+   *
+   *  <tr><th id="gpsc"><p align="left">get_reply_service_context</p></th>
+   *  <td headers="ri gpsc send_req">no </td> 
+   *  <td headers="ri gpsc send_poll">no </td> 
+   *  <td headers="ri gpsc rec_reply">yes</td> 
+   *  <td headers="ri gpsc rec_ex">yes</td> 
+   *  <td headers="ri gpsc rec_oth">yes</td>
+   *  </tr>
+   *
+   *  <tr>
+   *    <td id="cri" colspan=6><i>ClientRequestInfo-specific:</i></td>
+   *  </tr>
+   *
+   *  <tr><th id="target"><p align="left">target</p></th>
+   *  <td headers="cri target send_req">yes</td> 
+   *  <td headers="cri target send_poll">yes</td> 
+   *  <td headers="cri target rec_reply">yes</td> 
+   *  <td headers="cri target rec_ex">yes</td> 
+   *  <td headers="cri target rec_oth">yes</td></tr>
+   *
+   *  <tr><th id="eftarget"><p align="left">effective_target</p></th>
+   *  <td headers="cri eftarget send_req">yes</td> 
+   *  <td headers="cri eftarget send_poll">yes</td> 
+   *  <td headers="cri eftarget rec_reply">yes</td> 
+   *  <td headers="cri eftarget rec_ex">yes</td> 
+   *  <td headers="cri eftarget rec_oth">yes</td>
+   *  </tr>
+   *
+   *  <tr><th id="efprof"><p align="left">effective_profile</p></th>
+   *  <td headers="cri efprof send_req">yes</td> 
+   *  <td headers="cri efprof send_poll">yes</td> 
+   *  <td headers="cri efprof rec_reply">yes</td> 
+   *  <td headers="cri efprof rec_ex">yes</td> 
+   *  <td headers="cri efprof rec_oth">yes</td></tr>
+   *
+   *  <tr><th id="rxp"><p align="left">received_exception</p></th>
+   *  <td headers="cri rxp send_req">no </td> 
+   *  <td headers="cri rxp send_poll">no </td> 
+   *  <td headers="cri rxp rec_reply">no </td> 
+   *  <td headers="cri rxp rec_ex">yes</td> 
+   *  <td headers="cri rxp rec_oth">no </td></tr>
+   *
+   *  <tr><th id="rei"><p align="left">received_exception_id</p></th>
+   *  <td headers="cri rei send_req">no </td> 
+   *  <td headers="cri rei send_poll">no </td> 
+   *  <td headers="cri rei rec_reply">no </td> 
+   *  <td headers="cri rei rec_ex">yes</td> 
+   *  <td headers="cri rei rec_oth">no </td></tr>
+   *
+   *  <tr><th id="gec"><p align="left">get_effective_component</p></th>
+   *  <td headers="cri gec send_req">yes</td> 
+   *  <td headers="cri gec send_poll">no </td> 
+   *  <td headers="cri gec rec_reply">yes</td> 
+   *  <td headers="cri gec rec_ex">yes</td> 
+   *  <td headers="cri gec rec_oth">yes</td></tr>
+   *
+   *  <tr><th id="gecs"><p align="left">get_effective_components</p></th>
+   *  <td headers="cri gecs send_req">yes</td> 
+   *  <td headers="cri gecs send_poll">no </td> 
+   *  <td headers="cri gecs rec_reply">yes</td> 
+   *  <td headers="cri gecs rec_ex">yes</td> 
+   *  <td headers="cri gecs rec_oth">yes</td></tr>
+   *
+   *  <tr><th id="grpcy"><p align="left">get_request_policy</p></th>
+   *  <td headers="cri grpcy send_req">yes</td>
+   *  <td headers="cri grpcy send_poll">no </td> 
+   *  <td headers="cri grpcy rec_reply">yes</td> 
+   *  <td headers="cri grpcy rec_ex">yes</td> 
+   *  <td headers="cri grpcy rec_oth">yes</td></tr>
+   *
+   *  <tr><th id="arsc"><p align="left">add_request_service_context</p></th>
+   *    <td headers="cri arsc send_req">yes</td> 
+   *    <td headers="cri arsc send_poll">no </td> 
+   *    <td headers="cri arsc rec_reply">no </td> 
+   *    <td headers="cri arsc rec_ex">no </td> 
+   *    <td headers="cri arsc rec_oth">no </td></tr>
+   *
+   *   </tbody>
+   * </table>
+   *
+   * <ol>
+   *   <li>When <code>ClientRequestInfo</code> is passed to 
+   *       <code>send_request</code>, there is an entry in the list for every 
+   *       argument, whether in, inout, or out.  But only the in and inout 
+   *       arguments will be available.</li>
+   *   <li>If the <code>reply_status</code> atribute is not 
+   *       <code>LOCATION_FORWARD</code>, accessing this attribute will 
+   *       throw <code>BAD_INV_ORDER</code> with a standard minor code of 
+   *       14.</li>
+   * </ol>
+   *
+   * @see ClientRequestInterceptor
+   */
+  local interface ClientRequestInfo : RequestInfo {
+
+    /**
+     * Returns the object which the client called to perform the 
+     * operation. 
+     *
+     * @see #effective_target
+     */
+    readonly attribute Object target;
+
+    /**
+     * Returns the actual object on which the operation will be invoked. 
+     * If the <code>reply_status</code> is <code>LOCATION_FORWARD</code>, 
+     * then on subsequent requests, <code>effective_target</code> will 
+     * contain the forwarded IOR while target will remain unchanged. 
+     *
+     * @see #target
+     */
+    readonly attribute Object effective_target;
+
+    /**
+     * Returns the profile that will be used to send the request. If a 
+     * location forward has occurred for this operation's object and 
+     * that object's profile changed accordingly, then this profile will 
+     * be that located profile.
+     */
+    readonly attribute IOP::TaggedProfile effective_profile;
+
+    /** 
+     * Returns an any which contains the exception to be returned to 
+     * the client. 
+     * <p>
+     * If the exception is a user exception which cannot be inserted 
+     * into an any (e.g., it is unknown or the bindings don t provide 
+     * the <code>TypeCode</code>), then this attribute will be an any 
+     * containing the system exception <code>UNKNOWN</code> with a 
+     * standard minor code of 1. However, the repository id of 
+     * the exception is available in the <code>received_exception_id</code> 
+     * attribute.
+     * 
+     * @see #received_exception_id
+     */
+    readonly attribute any received_exception;
+
+    /**
+     * Returns the repository id of the exception to be returned to 
+     * the client.
+     *
+     * @see #received_exception
+     * @see <a href="package-summary.html#unimpl">
+     *     <code>PortableInterceptor</code> package comments for 
+     *     limitations / unimplemented features</a>
+     */
+    readonly attribute CORBA::RepositoryId received_exception_id;
+
+    /** 
+     * Returns the <code>IOP.TaggedComponent</code> with the given ID from 
+     * the profile selected for this request. 
+     * <p>
+     * If there is more than one component for a given component ID, it 
+     * is undefined which component this operation returns. If there is 
+     * more than one component for a given component ID, 
+     * <code>get_effective_components</code> should be called instead. 
+     * 
+     * @param id The component id of the component which 
+     *     is to be returned. 
+     * @return The <code>IOP.TaggedComponent</code> obtained with the 
+     *     given identifier.
+     * @exception BAD_PARAM thrown, with a standard minor code of 28, if
+     *     no component exists for the given component ID.
+     * @see #get_effective_components
+     */
+    IOP::TaggedComponent get_effective_component 
+      (in IOP::ComponentId id);
+
+    /**
+     * Returns an array of all tagged components with the given ID from the 
+     * profile selected for this request. 
+     * 
+     * @param id The component id of the components which are to be returned. 
+     * @return An array of <code>TaggedComponent</code> objects, each of 
+     *     which contains the given identifier.
+     * @exception BAD_PARAM thrown, with a standard minor code of 28, if
+     *     no component exists for the given component ID.
+     * @see #get_effective_component
+     */
+    IOP::TaggedComponentSeq get_effective_components 
+      (in IOP::ComponentId id);
+
+    /**
+     * Returns the given policy in effect for this operation. 
+     * 
+     * @exception INV_POLICY thrown, with a standard minor code of 1, if the 
+     *     policy type is not valid either because the specified type is 
+     *     not supported by this ORB or because a policy object of that type 
+     *     is not associated with this Object
+     * @param type The policy type which specifies the policy to be 
+     *     returned. 
+     * @return The <code>CORBA.Policy</code> obtained with the given type.
+     * @see <a href="package-summary.html#unimpl">
+     *     <code>PortableInterceptor</code> package comments for 
+     *     limitations / unimplemented features</a>
+     */
+    CORBA::Policy get_request_policy 
+      (in CORBA::PolicyType type);
+
+    /** 
+     * Allows Interceptors to add service contexts to the request. 
+     * <p>
+     * There is no declaration of the order of the service contexts. 
+     * They may or may not appear in the order that they are added. 
+     *
+     * @param service_context The <code>IOP.ServiceContext</code> to be 
+     *     added to the request. 
+     * @param replace Indicates the behavior of this operation when a 
+     *     service context already exists with the given ID. If false, 
+     *     then <code>BAD_INV_ORDER</code> with a standard minor code of 15 
+     *     is thrown. If true, then the existing service context is 
+     *     replaced by the new one.
+     */
+    void add_request_service_context (
+      in IOP::ServiceContext service_context,
+      in boolean replace);
+  };
+
+  // Should be type string
+  typedef string ServerId ;
+
+  // This should actually be the CORBA::ORBid type once that is available
+  typedef string ORBId ;
+
+  /** The name of an object adapter. This is unique only within
+   * the scope of the ORB that created the object adapter.
+   */
+  typedef org::omg::CORBA::StringSeq AdapterName ;
+
+  /** Type of an object id. This provides the identity of a particular
+   * object that was created by an object adapter.
+   */
+  typedef org::omg::CORBA::OctetSeq ObjectId ;
+
+  /**
+   * Request Information, accessible to server-side request interceptors.
+   * <p>
+   * Some attributes and operations on <code>ServerRequestInfo</code> are not 
+   * valid at all interception points.  The following table shows the validity 
+   * of each attribute or operation.  If it is not valid, attempting to access 
+   * it will result in a <code>BAD_INV_ORDER</code> being thrown with a 
+   * standard minor code of 14.
+   * <p>
+   *
+   *
+   * <table border=1 summary="Shows the validity of each attribute or operation">
+   *   <thead>
+   *     <tr>
+   *       <th>&nbsp;</th>
+   *       <th id="rec_req_ser_con" valign="bottom">receive_request_<br>service_contexts</th>
+   *       <th id="rec_req"  valign="bottom">receive_request</th>
+   *       <th id="send_rep" valign="bottom">send_reply</th>
+   *       <th id="send_exc" valign="bottom">send_exception</th>
+   *       <th id="send_oth" valign="bottom">send_other</th>
+   *     </tr>
+   *   </thead>
+   *  <tbody>
+   *
+   *
+   * <tr>
+   *   <td id="ri" colspan=6><i>Inherited from RequestInfo:</i></td>
+   * </tr>
+   *
+   * <tr><th id="req_id"><p align="left">request_id</p></th>
+   * <td headers="ri req_id rec_req_ser_con">yes</td> 
+   * <td headers="ri req_id rec_req">yes</td> 
+   * <td headers="ri req_id send_rep">yes</td> 
+   * <td headers="ri req_id send_exc">yes</td> 
+   * <td headers="ri req_id send_oth">yes</td></tr>
+   *
+   * <tr><th id="op"><p align="left">operation</p></th>
+   * <td headers="ri op rec_req_ser_con">yes</td> 
+   * <td headers="ri op rec_req">yes</td> 
+   * <td headers="ri op send_rep">yes</td> 
+   * <td headers="ri op send_exc">yes</td> 
+   * <td headers="ri op send_oth">yes</td></tr>
+   *
+   * <tr><th id="args"><p align="left">arguments</p></th>
+   * <td headers="ri args rec_req_ser_con">no </td> 
+   * <td headers="ri args rec_req">yes<sub>1</sub></td>
+   * <td headers="ri args send_rep">yes</td> 
+   * <td headers="ri args send_exc">no<sub>2</sub></td>
+   * <td headers="ri args send_oth">no<sub>2</sub>
+   * </td></tr>
+   *
+   * <tr><th id="exps"><p align="left">exceptions</p></th>
+   * <td headers="ri exps rec_req_ser_con">no </td> 
+   * <td headers="ri exps rec_req">yes</td> 
+   * <td headers="ri exps send_rep">yes</td> 
+   * <td headers="ri exps send_exc">yes</td> 
+   * <td headers="ri exps send_oth">yes</td></tr>
+   *
+   * <tr><th id="contexts"><p align="left">contexts</p></th>
+   * <td headers="ri contexts rec_req_ser_con">no </td> 
+   * <td headers="ri contexts rec_req">yes</td> 
+   * <td headers="ri contexts send_rep">yes</td> 
+   * <td headers="ri contexts send_exc">yes</td> 
+   * <td headers="ri contexts send_oth">yes</td></tr>
+   *
+   * <tr><th id="op_con"><p align="left">operation_context</p></th>
+   * <td headers="ri op_con rec_req_ser_con">no </td> 
+   * <td headers="ri op_con rec_req">yes</td> 
+   * <td headers="ri op_con send_rep">yes</td> 
+   * <td headers="ri op_con send_exc">no </td> 
+   * <td headers="ri op_con send_oth">no </td>
+   * </tr>
+   * 
+   * <tr><th id="result"><p align="left">result</p></th>
+   * <td headers="ri result rec_req_ser_con">no </td> 
+   * <td headers="ri result rec_req">no </td> 
+   * <td headers="ri result send_rep">yes</td> 
+   * <td headers="ri result send_exc">no </td> 
+   * <td headers="ri result send_oth">no </td>
+   * </tr>
+   *
+   * <tr><th id="res_ex"><p align="left">response_expected</p></th>
+   * <td headers="ri res_ex rec_req_ser_con">yes</td> 
+   * <td headers="ri res_ex rec_req">yes</td> 
+   * <td headers="ri res_ex send_rep">yes</td> 
+   * <td headers="ri res_ex send_exc">yes</td> 
+   * <td headers="ri res_ex send_oth">yes</td></tr>
+   *
+   * <tr><th id="syn_scp"><p align="left">sync_scope</p></th>
+   * <td headers="ri syn_scp rec_req_ser_con">yes</td> 
+   * <td headers="ri syn_scp rec_req">yes</td> 
+   * <td headers="ri syn_scp send_rep">yes</td> 
+   * <td headers="ri syn_scp send_exc">yes</td> 
+   * <td headers="ri syn_scp send_oth">yes</td></tr>
+   * 
+   *    <tr><td><b>request_id</b></td>
+   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * 
+   *    <tr><td><b>operation</b></td>
+   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * 
+   *    <tr><td><b>arguments</b></td>
+   *    <td>no </td> <td>yes<sub>1</sub</td> 
+   *                              <td>yes</td> <td>no<sub>2</sub></td> 
+   *                                                        <td>no<sub>2</sub>
+   *                                                        </td></tr>
+   * 
+   *    <tr><td><b>exceptions</b></td>
+   *    <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * 
+   *    <tr><td><b>contexts</b></td>
+   *    <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * 
+   *    <tr><td><b>operation_context</b></td>
+   *    <td>no </td> <td>yes</td> <td>yes</td> <td>no </td> <td>no </td></tr>
+   * 
+   *    <tr><td><b>result</b></td>
+   *    <td>no </td> <td>no </td> <td>yes</td> <td>no </td> <td>no </td></tr>
+   * 
+   *    <tr><td><b>response_expected</b></td>
+   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * 
+   *    <tr><td><b>sync_scope</b></td>
+   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * 
+   *    <tr><td><b>reply_status</b></td>
+   *    <td>no </td> <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * 
+   *    <tr><td><b>forward_reference</b></td>
+   *    <td>no </td> <td>no </td> <td>no </td> <td>no </td> <td>yes<sub>2</sub>
+   * 								</td></tr>
+   * 
+   *    <tr><td><b>get_slot</b></td>
+   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * 
+   *    <tr><td><b>get_request_service_context</b></td>
+   *    <td>yes</td> <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * 
+   *    <tr><td><b>get_reply_service_context</b></td>
+   *    <td>no </td> <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * 
+   *    <tr>
+   *      <td colspan=6><i>ServerRequestInfo-specific:</i></td>
+   *    </tr>
+   * 
+   *    <tr><td><b>sending_exception</b></td>
+   *    <td>no </td> <td>no </td> <td>no </td> <td>yes</td> <td>no </td></tr>
+   * 
+   *    <tr><td><b>object_id</b></td>
+   *    <td>no </td> <td>yes</td> <td>yes</td> <td>yes<sub>3</sub></td> 
+   * 						       <td>yes<sub>3</sub>
+   * 						                </td></tr>
+   * 
+   *    <tr><td><b>adapter_id</b></td>
+   *    <td>no </td> <td>yes</td> <td>yes</td> <td>yes<sub>3</sub></td> 
+   * 						       <td>yes<sub>3</sub>
+   * 								</td></tr>
+   * 
+   *    <tr><td><b>server_id</b></td>
+   *    <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   *
+   *    <tr><td><b>orb_id</b></td>
+   *    <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   *
+   *    <tr><td><b>adapter_name</b></td>
+   *    <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   *
+   *    <tr><td><b>target_most_derived_interface</b></td>
+   *    <td>no </td> <td>yes</td> <td>no<sub>4</sub></td> 
+   * 					  <td>no<sub>4</sub></td> 
+   * 						       <td>no<sub>4</sub>
+   * 							       </td></tr>
+   * 
+   *    <tr><td><b>get_server_policy</b></td>
+   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * 
+   *    <tr><td><b>set_slot</b></td>
+   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * 
+   *    <tr><td><b>target_is_a</b></td>
+   *    <td>no </td> <td>yes</td> <td>no<sub>4</sub></td> 
+   * 					  <td>no<sub>4</sub></td> 
+   * 						       <td>no<sub>4</sub>
+   * 							       </td></tr>
+   * 
+   *    <tr><td><b>add_reply_service_context</b></td>
+   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   *   </tbody>
+   * </table>
+   *
+   * <ol>
+   *   <li>When <code>ServerRequestInfo</code> is passed to 
+   *       <code>receive_request</code>, there is an entry in the list for 
+   *       every argument, whether in, inout, or out. But only the in and 
+   *       inout arguments will be available.</li>
+   *   <li>If the <code>reply_status</code> attribute is not 
+   *       <code>LOCATION_FORWARD</code>, accessing this attribute will throw
+   *       <code>BAD_INV_ORDER</code> with a standard minor code of 14.</li>
+   *   <li>If the servant locator caused a location forward, or thrown an 
+   *       exception, this attribute/operation may not be available in this 
+   *       interception point. <code>NO_RESOURCES</code> with a standard minor 
+   *       code of 1 will be thrown if it is not available.</li>
+   *   <li>The operation is not available in this interception point because 
+   *       the necessary information requires access to the target object's 
+   *       servant, which may no longer be available to the ORB. For example, 
+   *       if the object's adapter is a POA that uses a 
+   *       <code>ServantLocator</code>, then the ORB invokes the interception 
+   *       point after it calls <code>ServantLocator.postinvoke()</code></li>.
+   * </ol>
+   *
+   * @see ServerRequestInterceptor
+   */
+  local interface ServerRequestInfo : RequestInfo {
+
+    /**
+     * Returns an any which contains the exception to be returned to 
+     * the client. 
+     * <p>
+     * If the exception is a user exception which cannot be inserted into 
+     * an any (e.g., it is unknown or the bindings don't provide the 
+     * <code>TypeCode</code>), then this attribute will be an any 
+     * containing the system exception <code>UNKNOWN</code> with a 
+     * standard minor code of 1.
+     *
+     * @see <a href="package-summary.html#unimpl">
+     *     <code>PortableInterceptor</code> package comments for 
+     *     limitations / unimplemented features</a>
+     */
+    readonly attribute any sending_exception;
+
+    /**
+     * Returns the opaque <code>object_id</code> describing the target of 
+     * the operation invocation.
+     */
+    readonly attribute ObjectId object_id;
+
+    /** 
+     * Returns the opaque identifier for the object adapter.
+     */
+    readonly attribute CORBA::OctetSeq adapter_id;
+
+    /**
+     * Returns the server ID that was specified on ORB::init using the -ORBServerId
+     * argument.
+     */
+    readonly attribute ServerId server_id ;
+
+    /** 
+     * Returns the ID that was used to create the ORB.
+     */
+    readonly attribute ORBId orb_id ;
+
+    /** 
+     * Returns the sequence of strings that identifies the object
+     * adapter instance that is handling this request.
+     */
+    readonly attribute AdapterName adapter_name ;
+
+    /**
+     * Returns the repository id for the most derived interface of the 
+     * servant.
+     */
+    readonly attribute CORBA::RepositoryId 
+      target_most_derived_interface;
+
+    /**
+     * Returns the policy in effect for this operation for the given 
+     * policy type. The returned <code>CORBA.Policy</code> object shall 
+     * only be a policy whose type was registered via 
+     * <code>register_policy_factory</code>. 
+     * 
+     * @param type The <code>CORBA.PolicyType</code> which specifies the 
+     *     policy to be returned. 
+     * @return The <code>CORBA.Policy</code> obtained with the given 
+     *     policy type.
+     * @exception INV_POLICY thrown, with a standard minor code of 2, if
+     *     a policy for the given type was not registered via 
+     *     <code>register_policy_factory</code>.
+     * @see ORBInitInfo#register_policy_factory
+     */
+    CORBA::Policy get_server_policy 
+      (in CORBA::PolicyType type);
+
+    /**
+     * Allows an Interceptor to set a slot in the 
+     * <code>PortableInterceptor.Current</code> that is in the scope of 
+     * the request. If data already exists in that slot, it will be 
+     * overwritten. 
+     * 
+     * @param id The id of the slot. 
+     * @param data The data, in the form of an any, to store in that slot.
+     * @exception InvalidSlot thrown if the ID does not define an allocated 
+     *     slot. 
+     * @see Current
+     */
+    void set_slot (in SlotId id, in any data) raises (InvalidSlot);
+
+    /**
+     * Returns true if the servant is the given repository id, 
+     * false if it is not. 
+     *
+     * @param id The caller wants to know if the servant is this 
+     *     repository id. 
+     * @return Is the servant the given RepositoryId?
+     */
+    boolean target_is_a (in CORBA::RepositoryId id);
+
+    /**
+     * Allows Interceptors to add service contexts to the request. 
+     * <p>
+     * There is no declaration of the order of the service contexts. 
+     * They may or may not appear in the order that they are added. 
+     *
+     * @param service_context The <code>IOP.ServiceContext</code> to add to 
+     *     the reply. 
+     * @param replace Indicates the behavior of this operation when a 
+     *     service context already exists with the given ID. If false, 
+     *     then <code>BAD_INV_ORDER</code> with a standard minor code of 15 
+     *     is thrown. If true, then the existing service context is 
+     *     replaced by the new one.
+     * @exception BAD_INV_ORDER thrown, with a standard minor code of 15, if
+     *     replace is false and a service context already exists with the
+     *     given ID.
+     */
+    void add_reply_service_context (
+      in IOP::ServiceContext service_context,
+      in boolean replace);
+  };
+
+  /**
+   * Client-side request interceptor.
+   * <p>
+   * A request Interceptor is designed to intercept the flow of a 
+   * request/reply sequence through the ORB at specific points so that 
+   * services can query the request information and manipulate the service 
+   * contexts which are propagated between clients and servers. The primary 
+   * use of request Interceptors is to enable ORB services to transfer 
+   * context information between clients and servers. There are two types 
+   * of request Interceptors: client-side and server-side. 
+   * <p>
+   * To write a client-side Interceptor, implement the 
+   * <code>ClientRequestInterceptor</code> interface. 
+   *
+   * @see ClientRequestInfo
+   */
+  local interface ClientRequestInterceptor : Interceptor {
+    /**
+     * Allows an Interceptor to query request information and modify the 
+     * service context before the request is sent to the server.
+     * <p>
+     * This interception point may throw a system exception. If it does, 
+     * no other Interceptors' <code>send_request</code> operations are called. 
+     * Those Interceptors on the Flow Stack are popped and their 
+     * <code>receive_exception</code> interception points are called. This 
+     * interception point may also throw a <code>ForwardRequest</code> 
+     * exception. If an Interceptor throws this exception, no other 
+     * Interceptors' <code>send_request</code> operations are 
+     * called. Those Interceptors on the Flow Stack are popped and their 
+     * <code>receive_other</code> interception points are called. 
+     * <p>
+     * Compliant Interceptors shall properly follow completion_status 
+     * semantics if they throw a system exception from this interception 
+     * point. The <code>completion_status</code> shall be 
+     * <code>COMPLETED_NO</code>.
+     *
+     * @param ri Information about the current request being intercepted.
+     * @exception ForwardRequest If thrown, indicates to the ORB that a
+     *     retry of the request should occur with the new object given in
+     *     the exception.
+     */
+    void send_request  (in ClientRequestInfo ri) raises (ForwardRequest);
+
+    /**
+     * Allows an Interceptor to query information during a Time-Independent 
+     * Invocation (TII) polling get reply sequence. 
+     * <p>
+     * With TII, an application may poll for a response to a request sent 
+     * previously by the polling client or some other client. This poll is 
+     * reported to Interceptors through the <code>send_poll</code> 
+     * interception point and the response is returned through the 
+     * <code>receive_reply</code> or <code>receive_exception</code> 
+     * interception points.  If the response is not available before the
+     * poll time-out expires, the system exception <code>TIMEOUT</code> is
+     * thrown and <code>receive_exception</code> is called with this 
+     * exception. 
+     * <p>
+     * This interception point may throw a system exception. If it does, 
+     * no other Interceptors' <code>send_poll</code> operations are 
+     * called. Those Interceptors on the Flow Stack are popped and their 
+     * <code>receive_exception</code> interception points are called. 
+     * <p>
+     * Compliant Interceptors shall properly follow 
+     * <code>completion_status</code> semantics if they throw a system 
+     * exception from this interception point. The completion_status shall be 
+     * <code>COMPLETED_NO</code>.
+     * 
+     * @param ri Information about the current request being intercepted.
+     * @exception TIMEOUT thrown if the response is not available before 
+     *     the poll time-out expires
+     */
+    void send_poll (in ClientRequestInfo ri);
+
+    /**
+     * Allows an Interceptor to query the information on a reply after it 
+     * is returned from the server and before control is returned to the 
+     * client. 
+     * <p>
+     * This interception point may throw a system exception. If it does, 
+     * no other Interceptors' <code>receive_reply</code> operations are 
+     * called. The remaining Interceptors in the Flow Stack shall have 
+     * their <code>receive_exception</code> interception point called. 
+     * <p>
+     * Compliant Interceptors shall properly follow 
+     * <code>completion_status</code> semantics if they throw a system 
+     * exception from this interception point. The 
+     * <code>completion_status</code> shall be <code>COMPLETED_YES</code>.
+     *
+     * @param ri Information about the current request being intercepted.
+     */
+    void receive_reply (in ClientRequestInfo ri);
+
+    /**
+     * Indicates to the interceptor that an exception occurred.  Allows
+     * an Interceptor to query the exception's information before it is 
+     * thrown to the client.
+     * <p>
+     * This interception point may throw a system exception. This has the 
+     * effect of changing the exception which successive Interceptors 
+     * popped from the Flow Stack receive on their calls to 
+     * <code>receive_exception</code>. The exception thrown to the client 
+     * will be the last exception thrown by an Interceptor, or the original 
+     * exception if no Interceptor changes the exception. 
+     * <p>
+     * This interception point may also throw a <code>ForwardRequest</code> 
+     * exception.  If an Interceptor throws this exception, no other 
+     * Interceptors' <code>receive_exception</code> operations are called. 
+     * The remaining Interceptors in the Flow Stack are popped and have their 
+     * <code>receive_other</code> interception point called. 
+     * <p>
+     * If the <code>completion_status</code> of the exception is not 
+     * <code>COMPLETED_NO</code>, then it is inappropriate for this 
+     * interception point to throw a <code>ForwardRequest</code> exception. 
+     * The request s at-most-once semantics would be lost. 
+     * <p>
+     * Compliant Interceptors shall properly follow 
+     * <code>completion_status</code> semantics if they throw a system 
+     * exception from this interception point. If the original exception is 
+     * a system exception, the <code>completion_status</code> of the new 
+     * exception shall be the same as on the original. If the original 
+     * exception is a user exception, then the <code>completion_status</code> 
+     * of the new exception shall be <code>COMPLETED_YES</code>. 
+     * <p>
+     * Under some conditions, depending on what policies are in effect, an 
+     * exception (such as <code>COMM_FAILURE</code>) may result in a retry 
+     * of the request. While this retry is a new request with respect to 
+     * Interceptors, there is one point of correlation between the original 
+     * request and the retry: because control has not returned to the 
+     * client, the <code>PortableInterceptor.Current</code> for both the 
+     * original request and the retrying request is the same.
+     *
+     * @param ri Information about the current request being intercepted.
+     * @exception ForwardRequest If thrown, indicates to the ORB that a
+     *     retry of the request should occur with the new object given in
+     *     the exception.
+     */
+    void receive_exception (in ClientRequestInfo ri) raises (ForwardRequest);
+
+    /**
+     * Allows an Interceptor to query the information available when a 
+     * request results in something other than a normal reply or an 
+     * exception. For example, a request could result in a retry 
+     * (e.g., a GIOP Reply with a <code>LOCATION_FORWARD</code> status was 
+     * received); or on asynchronous calls, the reply does not immediately 
+     * follow the request, but control shall return to the client and an 
+     * ending interception point shall be called. 
+     * <p>
+     * For retries, depending on the policies in effect, a new request may or 
+     * may not follow when a retry has been indicated. If a new request does 
+     * follow, while this request is a new request, with respect to 
+     * Interceptors, there is one point of correlation between the original 
+     * request and the retry: because control has not returned to the client, 
+     * the request scoped <code>PortableInterceptor.Current</code> for both 
+     * the original request and the retrying request is the same.  
+     * <p>
+     * This interception point may throw a system exception. If it does, no 
+     * other Interceptors' <code>receive_other</code> operations are called. 
+     * The remaining Interceptors in the Flow Stack are popped and have 
+     * their <code>receive_exception</code> interception point called.
+     * <p>
+     * This interception point may also throw a <code>ForwardRequest</code> 
+     * exception.  If an Interceptor throws this exception, successive 
+     * Interceptors' <code>receive_other</code> operations are called with 
+     * the new information provided by the <code>ForwardRequest</code> 
+     * exception. 
+     * <p>
+     * Compliant Interceptors shall properly follow 
+     * <code>completion_status</code> semantics if they throw a system 
+     * exception from this interception point. The 
+     * <code>completion_status</code> shall be <code>COMPLETED_NO</code>. 
+     * If the target invocation had completed, this interception point 
+     * would not be called.
+     * 
+     * @param ri Information about the current request being intercepted.
+     * @exception ForwardRequest If thrown, indicates to the ORB that a
+     *     retry of the request should occur with the new object given in
+     *     the exception.
+     */
+    void receive_other (in ClientRequestInfo ri) raises (ForwardRequest);
+  };
+
+  /**
+   * Server-side request interceptor.
+   * <p>
+   * A request Interceptor is designed to intercept the flow of a 
+   * request/reply sequence through the ORB at specific points so that 
+   * services can query the request information and manipulate the service 
+   * contexts which are propagated between clients and servers. The primary 
+   * use of request Interceptors is to enable ORB services to transfer 
+   * context information between clients and servers. There are two types 
+   * of request Interceptors: client-side and server-side. 
+   * <p>
+   * To write a server-side Interceptor, implement the 
+   * ServerRequestInterceptor interface.
+   *
+   * @see ServerRequestInfo
+   */
+  local interface ServerRequestInterceptor : Interceptor {
+    /**
+     * Allows the interceptor to process service context information.
+     * <p>
+     * At this interception point, Interceptors must get their service 
+     * context information from the incoming request transfer it to 
+     * <code>PortableInterceptor.Current</code>'s slots.  
+     * <p>
+     * This interception point is called before the servant manager is called. 
+     * Operation parameters are not yet available at this point. This 
+     * interception point may or may not execute in the same thread as 
+     * the target invocation. 
+     * <p>
+     * This interception point may throw a system exception. If it does, 
+     * no other Interceptors' <code>receive_request_service_contexts</code> 
+     * operations are called. Those Interceptors on the Flow Stack are 
+     * popped and their <code>send_exception</code> interception points are 
+     * called. 
+     * <p>
+     * This interception point may also throw a <code>ForwardRequest</code> 
+     * exception.  If an Interceptor throws this exception, no other 
+     * Interceptors' <code>receive_request_service_contexts</code> operations 
+     * are called. Those Interceptors on the Flow Stack are popped and 
+     * their <code>send_other</code> interception points are called. 
+     * <p>
+     * Compliant Interceptors shall properly follow 
+     * <code>completion_status</code> semantics if they throw a system 
+     * exception from this interception point. The 
+     * <code>completion_status</code> shall be COMPLETED_NO.
+     *
+     * @param ri Information about the current request being intercepted.
+     * @exception ForwardRequest If thrown, indicates to the ORB that a
+     *     retry of the request should occur with the new object given in
+     *     the exception.
+     */
+    void receive_request_service_contexts (in ServerRequestInfo ri) 
+      raises (ForwardRequest);
+
+    /**
+     * Allows an Interceptor to query request information after all the 
+     * information, including operation parameters, are available. This 
+     * interception point shall execute in the same thread as the target 
+     * invocation.
+     * <p>
+     * In the DSI model, since the parameters are first available when 
+     * the user code calls <code>arguments</code>, <code>receive_request</code>
+     * is called from within <code>arguments</code>. It is possible that 
+     * <code>arguments</code> is not called in the DSI model. The target 
+     * may call <code>set_exception</code> before calling 
+     * <code>arguments</code>. The ORB shall guarantee that 
+     * <code>receive_request</code> is called once, either through 
+     * <code>arguments</code> or through <code>set_exception</code>. If it 
+     * is called through <code>set_exception</code>, requesting the 
+     * arguments will result in <code>NO_RESOURCES</code> being thrown with 
+     * a standard minor code of 1. 
+     * <p>
+     * This interception point may throw a system exception. If it does, no 
+     * other Interceptors' <code>receive_request</code> operations are 
+     * called. Those Interceptors on the Flow Stack are popped and their 
+     * <code>send_exception</code> interception points are called. 
+     * <p>
+     * This interception point may also throw a <code>ForwardRequest</code> 
+     * exception.  If an Interceptor throws this exception, no other 
+     * Interceptors' <code>receive_request</code> operations are called. 
+     * Those Interceptors on the Flow Stack are popped and their 
+     * <code>send_other</code> interception points are called.
+     * <p>
+     * Compliant Interceptors shall properly follow 
+     * <code>completion_status</code> semantics if they throw a system 
+     * exception from this interception point. The 
+     * <code>completion_status</code> shall be <code>COMPLETED_NO</code>.
+     *
+     * @param ri Information about the current request being intercepted.
+     * @exception ForwardRequest If thrown, indicates to the ORB that a
+     *     retry of the request should occur with the new object given in
+     *     the exception.
+     */
+    void receive_request (in ServerRequestInfo ri) raises (ForwardRequest);
+
+    /**
+     * Allows an Interceptor to query reply information and modify the 
+     * reply service context after the target operation has been invoked 
+     * and before the reply is returned to the client. This interception 
+     * point shall execute in the same thread as the target invocation. 
+     * <p>
+     * This interception point may throw a system exception. If it does, 
+     * no other Interceptors' <code>send_reply</code> operations are called. 
+     * The remaining Interceptors in the Flow Stack shall have their 
+     * <code>send_exception</code> interception point called. 
+     * <p>
+     * Compliant Interceptors shall properly follow 
+     * <code>completion_status</code> semantics if they throw a 
+     * system exception from this interception point. The 
+     * <code>completion_status</code> shall be <code>COMPLETED_YES</code>.
+     *
+     * @param ri Information about the current request being intercepted.
+     */
+    void send_reply (in ServerRequestInfo ri);
+
+    /**
+     * Allows an Interceptor to query the exception information and modify 
+     * the reply service context before the exception is thrown to the client. 
+     * When an exception occurs, this interception point is called. This 
+     * interception point shall execute in the same thread as the target 
+     * invocation. 
+     * <p>
+     * This interception point may throw a system exception. This has the 
+     * effect of changing the exception which successive Interceptors 
+     * popped from the Flow Stack receive on their calls to 
+     * <code>send_exception</code>. The exception thrown to the client will 
+     * be the last exception thrown by an Interceptor, or the original 
+     * exception if no Interceptor changes the exception. 
+     * <p>
+     * This interception point may also throw a <code>ForwardRequest</code> 
+     * exception.  If an Interceptor throws this exception, no other 
+     * Interceptors' <code>send_exception</code> operations are called. The 
+     * remaining Interceptors in the Flow Stack shall have their 
+     * <code>send_other</code> interception points called. 
+     * <p>
+     * If the <code>completion_status</code> of the exception is not 
+     * <code>COMPLETED_NO</code>, then it is inappropriate for this 
+     * interception point to throw a <code>ForwardRequest</code> exception. 
+     * The request's at-most-once semantics would be lost. 
+     * <p>
+     * Compliant Interceptors shall properly follow 
+     * <code>completion_status</code> semantics if they throw a system 
+     * exception from this interception point. If the original exception 
+     * is a system exception, the <code>completion_status</code> of the new 
+     * exception shall be the same as on the original. If the original 
+     * exception is a user exception, then the <code>completion_status</code> 
+     * of the new exception shall be <code>COMPLETED_YES</code>.
+     *
+     * @param ri Information about the current request being intercepted.
+     * @exception ForwardRequest If thrown, indicates to the ORB that a
+     *     retry of the request should occur with the new object given in
+     *     the exception.
+     */
+    void send_exception (in ServerRequestInfo ri) raises (ForwardRequest);
+
+    /**
+     * Allows an Interceptor to query the information available when a 
+     * request results in something other than a normal reply or an 
+     * exception. For example, a request could result in a retry 
+     * (e.g., a GIOP Reply with a <code>LOCATION_FORWARD</code> status was 
+     * received). This interception point shall execute in the same thread 
+     * as the target invocation. 
+     * <p>
+     * This interception point may throw a system exception. If it does, 
+     * no other Interceptors' <code>send_other</code> operations are called. 
+     * The remaining Interceptors in the Flow Stack shall have their 
+     * <code>send_exception</code> interception points called. 
+     * <p>
+     * This interception point may also throw a <code>ForwardRequest</code> 
+     * exception.  If an Interceptor throws this exception, successive 
+     * Interceptors' <code>send_other</code> operations are called with 
+     * the new information provided by the <code>ForwardRequest</code> 
+     * exception. 
+     * <p>
+     * Compliant Interceptors shall properly follow 
+     * <code>completion_status</code> semantics if they throw a system 
+     * exception from this interception point. The 
+     * <code>completion_status</code> shall be <code>COMPLETED_NO</code>.
+     *
+     * @param ri Information about the current request being intercepted.
+     * @exception ForwardRequest If thrown, indicates to the ORB that a
+     *     retry of the request should occur with the new object given in
+     *     the exception.
+     */
+    void send_other (in ServerRequestInfo ri) raises (ForwardRequest);
+  };
+
+  /** The object reference factory.  This provides the capability of
+  * creating an object reference.
+  */
+  abstract valuetype ObjectReferenceFactory {
+    /** make_object creates a CORBA object reference according
+    * to the data in this template, with the given repository ID and
+    * object ID.
+    */
+    Object make_object( in string repositoryId, in ObjectId object_id ) ;
+  } ;
+    
+  /** The object reference template.  An instance of this must
+   * exist for each object adapter created in an ORB.  The server_id,
+   * orb_id, and adapter_name attributes uniquely identify this template
+   * within the scope of an IMR.  Note that adapter_id is similarly unique
+   * within the same scope, but it is opaque, and less useful in many
+   * cases.
+   */
+  abstract valuetype ObjectReferenceTemplate : ObjectReferenceFactory {
+
+    readonly attribute ServerId server_id ;
+
+    readonly attribute ORBId orb_id ;
+
+    readonly attribute AdapterName adapter_name ;
+  } ;
+
+  /** Sequence of object reference templates is used for reporting state
+   * changes that do not occur on the adapter manager.
+   */
+  typedef sequence<ObjectReferenceTemplate> ObjectReferenceTemplateSeq ;
+
+  /** Adapter manager identifier.  Every object adapter has an adapter manager,
+   * indicated in this API only through the ID.  A group of object adapter
+   * instances may share the same adapter manager, in which case state transitions
+   * reported for the adapter manager are observed by all object adapters with the
+   * same adapter manager ID.
+   */
+  typedef long AdapterManagerId ;
+
+  /** Type of object adapter state.  State changes are reported either to
+   * the object adapter or to the adapter manager.
+   */
+  typedef short AdapterState ;
+
+  /** Object adapter state that holds requests temporarily until the 
+   * state is changed.
+   */
+  const AdapterState HOLDING	    = 0 ;
+
+  /** Object adapter state that indicates normal request processing.
+   */
+  const AdapterState ACTIVE	    = 1 ;
+
+  /** Object adapter state that causes all requests to be discarded.
+   */
+  const AdapterState DISCARDING   = 2 ;
+
+  /** Object adapter state that causes all requests to be discarded.
+   * This state indicates that the adapter is shutting down.
+   */
+  const AdapterState INACTIVE     = 3 ;
+
+  /** Object adapter state indicating that the adapter has been destroyed.
+   */
+  const AdapterState NON_EXISTENT = 4 ;
+
+  /**
+   * Provides the server-side ORB service with access to the applicable 
+   * policies during IOR construction and the ability to add components. 
+   * The ORB passes an instance of its implementation of this interface as 
+   * a parameter to <code>IORInterceptor.establish_components</code>.
+   *
+   * @see IORInterceptor
+   */
+  local interface IORInfo {
+
+    /**
+     * Allows an ORB service implementation to determine what server side 
+     * policy of a particular type is in effect for an IOR being 
+     * constructed.  When the IOR being constructed is for an object 
+     * implemented using a POA, all Policy objects passed to the 
+     * <code>PortableServer.POA.create_POA</code> call that created that 
+     * POA are accessable via <code>get_effective_policy</code>. 
+     * <p>
+     * If a policy for the given type is not known to the ORB, then this 
+     * operation will throw <code>INV_POLICY</code> with a standard minor 
+     * code of 2. 
+     * 
+     * @param type an int specifying the type of policy to return. 
+     * @return The effective <code>CORBA.Policy</code> object of the 
+     *     requested type. If the given policy type is known, but no policy 
+     *     of that type is in effect, then this operation will return a 
+     *     nil object reference.
+     */
+    CORBA::Policy get_effective_policy 
+      (in CORBA::PolicyType type);
+
+    /**
+     * A portable ORB service implementation calls 
+     * <code>add_ior_component</code> from its implementation of 
+     * <code>establish_components</code> to add a tagged component to the 
+     * set which will be included when constructing IORs. The components in 
+     * this set will be included in all profiles. 
+     * <p>
+     * Any number of components may exist with the same component ID. 
+     * 
+     * @param a_component The IOP.TaggedComponent to add.
+     */
+    void add_ior_component 
+      (in IOP::TaggedComponent tagged_component);
+
+    /**
+     * A portable ORB service implementation calls 
+     * <code>add_ior_component_to_profile</code> from its implementation of 
+     * <code>establish_components</code> to add a tagged component to the 
+     * set which will be included when constructing IORs. The components in 
+     * this set will be included in the specified profile. 
+     * <p>
+     * Any number of components may exist with the same component ID. 
+     * 
+     * @param a_component The <code>IOP.TaggedComponent</code> to add. 
+     * @param profile_id The profile id of the profile to 
+     *     which this component will be added.
+     * @exception BAD_PARAM thrown, with a standard minor code of 29, if the 
+     *     given profile ID does not define a known profile or it is 
+     *     impossible to add components to that profile.
+     */
+    void add_ior_component_to_profile (
+      in IOP::TaggedComponent tagged_component,
+      in IOP::ProfileId profile_id);
+
+    /** Return the adapter manager id of the object adapter
+     * that was just created and is running IOR interceptors.
+     */
+    readonly attribute AdapterManagerId manager_id ;
+
+    /** Return the adapter state of the object adapter
+     * that was just created and is running IOR interceptors.
+     */
+    readonly attribute AdapterState state ;
+
+    /** Return the object reference template of the object adapter
+     * that was just created and is running IOR interceptors.
+     */
+    readonly attribute ObjectReferenceTemplate adapter_template ;
+
+    /** On read, returns the current factory that will be used to create
+     * object references for the object adapter that was just created
+     * and is running IOR interceptors.  By default, this factory is the same
+     * as the value of the adapter_template attribute.  The current_factory 
+     * may also be set to another object reference template inside an
+     * IORInterceptor_3_0.
+     */
+    attribute ObjectReferenceFactory current_factory ;
+  };
+
+  /**
+   * Interceptor used to establish tagged components in the profiles within 
+   * an IOR.
+   * <p>
+   * In some cases, a portable ORB service implementation may need to add 
+   * information describing the server's or object's ORB service related 
+   * capabilities to object references in order to enable the ORB service 
+   * implementation in the client to function properly. 
+   * <p>
+   * This is supported through the <code>IORInterceptor</code> and 
+   * <code>IORInfo</code> interfaces. 
+   *
+   * @see IORInfo
+   */
+  local interface IORInterceptor : Interceptor {
+    /**
+     * A server side ORB calls the <code>establish_components</code> 
+     * operation on all registered <code>IORInterceptor</code> instances 
+     * when it is assembling the list of components that will be included 
+     * in the profile or profiles of an object reference. This operation 
+     * is not necessarily called for each individual object reference. 
+     * In the case of the POA, this operation is called each time POA::create_POA
+     * is called.  In any case, <code>establish_components</code> is 
+     * guaranteed to be called at least once for each distinct set of 
+     * server policies. 
+     * <p>
+     * An implementation of <code>establish_components</code> must not 
+     * throw exceptions. If it does, the ORB shall ignore the exception 
+     * and proceed to call the next IOR Interceptor's 
+     * <code>establish_components</code> operation. 
+     *
+     * @param info The <code>IORInfo</code> instance used by the ORB 
+     *     service to query applicable policies and add components to be 
+     *     included in the generated IORs.
+     */
+    void establish_components (in IORInfo info);
+  };
+
+  local interface IORInterceptor_3_0 : IORInterceptor {
+    /** The components_established method is invoked on all registered 
+     * IORInterceptor_3_0 instances after establish_components
+     * has been invoked on all registered IORInterceptor instances.
+     * The adapter_template is available in info during this call.
+     * The current_factory may be get or set in info during this call.
+     * <p>
+     * Any exception thrown from this method is handled by the Object 
+     * Adapter that called this interceptor.  In the case of the POA,
+     * an exception results in a OBJ_ADAPTER exception with an OMG
+     * standard minor code of 6.
+     * @param info The IORInfo for the object adapter being created.
+     */
+    void components_established( in IORInfo info ) ;
+
+    /** Called whenever the state of an adapter manager changes.
+     * For the POA, that is the POAManager.  If the state change
+     * is reported through <code>adapter_manager_state_changed</code>,
+     * it is not reported through <code>adapter_state_changed</code>.
+     * @param id the adapter manager id of the adapter manager that 
+     * changed state
+     * @param state the new state of the adapter manager
+     */
+    void adapter_manager_state_changed( in AdapterManagerId id, 
+	in AdapterState state ) ;
+
+    /** Called whenever the state of an object adapter changes, and
+     * the state change is not caused by an adapter manager.  Such
+     * changes are reported to all registered <code>IORInterceptor_3_0</code> 
+     * instances.
+     * @param templates the sequence of <code>ObjectReferenceTemplate</code> instances
+     *     on which this state change occurred.
+     * @param state the new <code>AdapterState</code> shared by all of the templates.
+     */
+    void adapter_state_changed( in ObjectReferenceTemplateSeq templates, 
+	in AdapterState state ) ;
+  };
+
+  /**
+   * Enables policy types to be constructed using 
+   * <code>CORBA.ORB.create_policy</code>.
+   * <p>
+   * A portable ORB service implementation registers an instance of the 
+   * <code>PolicyFactory</code> interface during ORB initialization in order 
+   * to enable its policy types to be constructed using 
+   * <code>CORBA.ORB.create_policy</code>. The POA is required to preserve 
+   * any policy which is registered with <code>ORBInitInfo</code> in this 
+   * manner.
+   *
+   * @see ORBInitInfo#register_policy_factory
+   */
+  local interface PolicyFactory
+  {
+    /**
+     * Returns an instance of the appropriate interface derived from 
+     * <code>CORBA.Policy</code> whose value corresponds to the 
+     * specified any. 
+     * <p>
+     * The ORB calls <code>create_policy</code> on a registered 
+     * <code>PolicyFactory</code> instance when 
+     * <code>CORBA.ORB.create_policy</code> is called for the 
+     * <code>PolicyType</code> under which the <code>PolicyFactory</code> has 
+     * been registered. The <code>create_policy</code> operation then 
+     * returns an instance of the appropriate interface derived from 
+     * <code>CORBA.Policy</code> whose value corresponds to the specified 
+     * any. If it cannot, it shall throw an exception as described for 
+     * <code>CORBA.ORB.create_policy</code>. 
+     * 
+     * @param type An int specifying the type of policy being created. 
+     * @param value An any containing data with which to construct the 
+     *     <code>CORBA.Policy</code>. 
+     * @return A <code>CORBA.Policy<code> object of the specified type and 
+     *     value.
+     */
+    CORBA::Policy create_policy 
+      (in CORBA::PolicyType type, in any value)
+      raises (CORBA::PolicyError);
+  };
+
+  /** 
+   * Passed to each <code>ORBInitializer</code>, allowing it to
+   * to register interceptors and perform other duties while the ORB is 
+   * initializing.
+   * <p>
+   * The <code>ORBInitInfo</code> object is only valid during 
+   * <code>ORB.init</code>.  If a service keeps a reference to its 
+   * <code>ORBInitInfo</code> object and tries to use it after 
+   * <code>ORB.init</code> returns, the object no longer exists and an 
+   * <code>OBJECT_NOT_EXIST</code> exception shall be thrown.
+   *
+   * @see ORBInitializer
+   */
+  local interface ORBInitInfo {
+
+    /** Object id, represented as a String */
+    typedef string ObjectId;
+
+    /**
+     * Only one Interceptor of a given name can be registered with the 
+     * ORB for each Interceptor type. If an attempt is made to register a 
+     * second Interceptor with the same name, DuplicateName is thrown. 
+     * <p>
+     * An Interceptor may be anonymous, i.e., have an empty string as the 
+     * name attribute. Any number of anonymous Interceptors may be 
+     * registered with the ORB so, if the Interceptor being registered 
+     * is anonymous, the registration operation will not throw 
+     * <code>DuplicateName</code>.
+     */
+    exception DuplicateName {
+      /** 
+       * The name for which there was already an interceptor registered.
+       */
+      string name;
+    };
+
+    /** 
+     * This exception is thrown by 
+     * <code>register_initial_reference</code> and 
+     * <code>resolve_initial_references</code>. 
+     * <code>register_initial_reference</code> throws <code>InvalidName</code>
+     * if:
+     * <ul>
+     *   <li>this operation is called with an empty string id; or</li>
+     *   <li>this operation is called with an id that is already registered,
+     *       including the default names defined by OMG.</li>
+     * </ul>
+     * <code>resolve_initial_references</code> throws
+     * <code>InvalidName</code> if the name to be resolved is invalid.
+     */
+    exception InvalidName {};
+
+    /** 
+     * Returns the arguments passed to <code>ORB.init</code>.  They may or
+     * may not contain the ORB's arguments.
+     */
+    readonly attribute CORBA::StringSeq arguments;
+
+    /** 
+     * Returns the ID of the ORB being initialized.
+     */
+    readonly attribute string orb_id;
+
+    /** 
+     * Returns the <code>IOP.CodecFactory</code>. The 
+     * <code>CodecFactory</code> is normally obtained via a call to 
+     * <code>ORB.resolve_initial_references( "CodecFactory" )</code>, but 
+     * since the ORB is not yet available and Interceptors, particularly when 
+     * processing service contexts, will require a <code>Codec</code>, a 
+     * means of obtaining a <code>Codec</code> is necessary during ORB 
+     * initialization.
+     */
+    readonly attribute IOP::CodecFactory codec_factory;
+
+    /** 
+     * Identical to <code>ORB.register_initial_reference</code>. This same 
+     * functionality exists here because the ORB, not yet fully initialized, 
+     * is not yet available but initial references may need to be 
+     * registered as part of Interceptor registration. The only difference 
+     * is that the version of this operation on the ORB uses PIDL 
+     * (<code>CORBA.ORB.ObjectId</code>) and 
+     * (<code>CORBA.ORB.InvalidName</code>) whereas the version in this 
+     * interface uses IDL defined in this interface; the semantics are 
+     * identical.
+     */
+    void register_initial_reference (in ObjectId id, in Object obj)
+      raises (InvalidName);
+
+    // This was incorrectly returning void in orbos/99-12-02, correction
+    // from errata in orbos/00-01-01
+    /**
+     * Identical to <code>ORB.resolve_initial_references</code>. This same 
+     * functionality exists here because the ORB, not yet fully initialized, 
+     * is not yet available but initial references may be required from the 
+     * ORB as part of Interceptor registration. The only difference is that 
+     * the version of this operation on the ORB uses PIDL 
+     * (<code>CORBA::ORB::ObjectId</code> and 
+     * <code>CORBA::ORB::InvalidName</code>) whereas the version in this 
+     * interface uses IDL defined in this interface; the semantics 
+     * are identical.
+     * <p>
+     * This operation is only valid during post_init.
+     */
+    Object resolve_initial_references (in ObjectId id) raises (InvalidName);
+
+    /**
+     * Used to add a client-side request Interceptor to the list of 
+     * client-side request Interceptors.  
+     *
+     * @param interceptor The <code>ClientRequestInterceptor</code> to be 
+     *     added.
+     * @exception DuplicateName thrown if a client-side request Interceptor 
+     *     has already been registered with this Interceptor's name.
+     */
+    void add_client_request_interceptor 
+      (in ClientRequestInterceptor interceptor)
+      raises (DuplicateName);
+
+    /** 
+     * Used to add a server-side request Interceptor to the list of 
+     * server-side request Interceptors.
+     *
+     * @param interceptor The ServerRequestInterceptor to be added.
+     * @exception DuplicateName thrown if a server-side request Interceptor 
+     *     has already been registered with this Interceptor's name
+     */
+    void add_server_request_interceptor (
+      in ServerRequestInterceptor interceptor)
+      raises (DuplicateName);
+
+    /**
+     * Used to add an IOR Interceptor to the list of IOR Interceptors. 
+     *
+     * @param interceptor The IORInterceptor to be added.
+     * @exception DuplicateName thrown if an IOR Interceptor has already 
+     *     been registered with this Interceptor's name. 
+     */
+    void add_ior_interceptor (in IORInterceptor interceptor)
+      raises (DuplicateName);
+
+    /**
+     * Called to allocate a slot on <code>PortableInterceptor.Current</code>. 
+     * <p>
+     * Note that while slot id's can be allocated within an ORB initializer, 
+     * the slots themselves cannot be initialized. 
+     *
+     * @return The index to the slot which has been allocated.
+     * @exception BAD_INV_ORDER thrown, with a standard minor code of 14, if 
+     *     <code>set_slot</code> or <code>get_slot</code> is called on the 
+     *     <code>PICurrent</code> within an ORB initializer. 
+     * @see Current
+     */
+    SlotId allocate_slot_id ();
+
+    /**
+     * Registers a <code>PolicyFactory</code> for the given 
+     * <code>PolicyType</code>. 
+     * 
+     * @param type The policy type that the given <code>PolicyFactory</code> 
+     *     serves. 
+     * @param policy_factory The factory for the given policy type.
+     * @exception BAD_INV_ORDER thrown, with a standard minor code of 16, if 
+     *     a <code>PolicyFactory</code> already exists for the given 
+     *     <code>PolicyType</code>.
+     */
+    void register_policy_factory (
+      in CORBA::PolicyType type,
+      in PolicyFactory policy_factory);
+  };
+
+  /**
+   * Facilitates interceptor registration and ORB initialization.
+   * <p>
+   * Interceptors are intended to be a means by which ORB services gain 
+   * access to ORB processing, effectively becoming part of the ORB. 
+   * Since Interceptors are part of the ORB, when <code>ORB.init</code> 
+   * returns an ORB, the Interceptors shall have been registered. 
+   * Interceptors cannot be registered on an ORB after it has been 
+   * returned by a call to <code>ORB.init</code>.
+   * <p>
+   * An Interceptor is registered by registering an associated 
+   * <code>ORBInitializer</code> object which implements the 
+   * <code>ORBInitializer</code> interface. When an ORB is initializing, 
+   * it shall call each registered <code>ORBInitializer</code>, passing it 
+   * an <code>ORBInitInfo</code> object which is used to register its 
+   * Interceptor.
+   * <p>
+   * <b>Registering ORB Initializers in Java</b>
+   * <p>
+   * ORBInitializers are registered via Java ORB properties.
+   * <p>
+   * The property names are of the form: 
+   *   <blockquote><code>
+   *     org.omg.PortableInterceptor.ORBInitializerClass.&lt;Service&gt;
+   *   </code></blockquote>
+   * where <code>&lt;Service&gt;</code> is the string name of a class 
+   * which implements 
+   *   <blockquote><code>
+   *     org.omg.PortableInterceptor.ORBInitializer
+   *   </code></blockquote>
+   * To avoid name collisions, the reverse DNS name convention should be 
+   * used. For example, if company X has three initializers, it could define 
+   * the following properties: 
+   * <ul>
+   *   <li><code>
+   *     org.omg.PortableInterceptor.ORBInitializerClass.com.x.Init1
+   *   </code></li>
+   *   <li><code>
+   *     org.omg.PortableInterceptor.ORBInitializerClass.com.x.Init2
+   *   </code></li>
+   *   <li><code>
+   *     org.omg.PortableInterceptor.ORBInitializerClass.com.x.Init3
+   *   </code></li>
+   * </ul>
+   * During ORB.init, these ORB properties which begin with 
+   * <code>org.omg.PortableInterceptor.ORBInitializerClass</code> shall be 
+   * collected, the <code>&lt;Service&gt;</code> portion of each property 
+   * shall be extracted, an object shall be instantiated with the 
+   * <code>&lt;Service&gt;</code> string as its class name, and the 
+   * <code>pre_init</code> and <code>post_init</code> methods shall be 
+   * called on that object. If there are any exceptions, the ORB shall 
+   * ignore them and proceed. 
+   * <p>
+   * <b><i>Example</i></b>
+   * <p>
+   * A client-side logging service written by company X, for example, may 
+   * have the following ORBInitializer implementation: 
+   * <code><pre>
+   * package com.x.logging;
+   * 
+   * import org.omg.PortableInterceptor.Interceptor; 
+   * import org.omg.PortableInterceptor.ORBInitializer; 
+   * import org.omg.PortableInterceptor.ORBInitInfo; 
+   * 
+   * public class LoggingService implements ORBInitializer { 
+   *     void pre_init( ORBInitInfo info ) { 
+   *         // Instantiate the Logging Service s Interceptor. 
+   *         Interceptor interceptor = new LoggingInterceptor(); 
+   *
+   *         // Register the Logging Service s Interceptor. 
+   *         info.add_client_request_interceptor( interceptor ); 
+   *     } 
+   * 
+   *     void post_init( ORBInitInfo info ) { 
+   *         // This service does not need two init points. 
+   *     } 
+   * } 
+   * </pre></code>
+   * To run a program called <code>MyApp</code> using this logging 
+   * service, the user could type: 
+   *   <blockquote><code>
+   *     java 
+   *-Dorg.omg.PortableInterceptor.ORBInitializerClass.com.x.Logging.LoggingService 
+   *     MyApp
+   *   </code></blockquote>
+   * <p>
+   * <b>Notes about Registering Interceptors</b>
+   * <p>
+   * Request Interceptors are registered on a per-ORB basis. 
+   * <p>
+   * To achieve virtual per-object Interceptors, query the policies on the 
+   * target from within the interception points to determine whether they 
+   * should do any work. 
+   * <p>
+   * To achieve virtual per-POA Interceptors, instantiate each POA with a 
+   * different ORB. While Interceptors may be ordered administratively, 
+   * there is no concept of order with respect to the registration of 
+   * Interceptors. Request Interceptors are concerned with service contexts. 
+   * Service contexts have no order, so there is no purpose for request 
+   * Interceptors to have an order. IOR Interceptors are concerned with 
+   * tagged components. Tagged components also have no order, so there 
+   * is no purpose for IOR Interceptors to have an order. 
+   * <p>
+   * Registration code should avoid using the ORB (i.e., calling 
+   * <code>ORB.init</code> with the provided <code>orb_id</code>). Since 
+   * registration occurs during ORB initialization, results of invocations 
+   * on this ORB while it is in this state are undefined. 
+   * 
+   * @see ORBInitInfo
+   */
+  local interface ORBInitializer {
+
+    /** 
+     * Called during ORB initialization.  If it is expected that initial 
+     * services registered by an interceptor will be used by other 
+     * interceptors, then those initial services shall be registered at 
+     * this point via calls to 
+     * <code>ORBInitInfo.register_initial_reference</code>. 
+     * 
+     * @param info provides initialization attributes and operations by 
+     *     which Interceptors can be registered.
+     */
+    void pre_init (in ORBInitInfo info);
+
+    /**
+     * Called during ORB initialization. If a service must resolve initial 
+     * references as part of its initialization, it can assume that all 
+     * initial references will be available at this point. 
+     * <p>
+     * Calling the <code>post_init</code> operations is not the final 
+     * task of ORB initialization. The final task, following the 
+     * <code>post_init</code> calls, is attaching the lists of registered 
+     * interceptors to the ORB. Therefore, the ORB does not contain the 
+     * interceptors during calls to <code>post_init</code>. If an 
+     * ORB-mediated call is made from within <code>post_init</code>, no 
+     * request interceptors will be invoked on that call. 
+     * Likewise, if an operation is performed which causes an IOR to be 
+     * created, no IOR interceptors will be invoked. 
+     *
+     * @param info provides initialization attributes and 
+     *     operations by which Interceptors can be registered.
+     */
+    void post_init (in ORBInitInfo info);
+  };
+};

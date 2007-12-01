@@ -1,0 +1,64 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<!--
+
+Copyright 2002-2003 Sun Microsystems, Inc.  All Rights Reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+This code is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 2 only, as
+published by the Free Software Foundation.  Sun designates this
+particular file as subject to the "Classpath" exception as provided
+by Sun in the LICENSE file that accompanied this code.
+
+This code is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+version 2 for more details (a copy is included in the LICENSE file that
+accompanied this code).
+
+You should have received a copy of the GNU General Public License version
+2 along with this work; if not, write to the Free Software Foundation,
+Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+CA 95054 USA or visit www.sun.com if you need additional information or
+have any questions.
+
+-->
+
+</head>
+<body bgcolor="white">
+<p>
+Provides access to the components and profiles in an IOR without the overhead
+of CDR encoding.
+<p>
+The abstract model of IORs works as follows:
+
+<ul>
+<li>An IOR has a type ID string, and contains TaggedProfile instances.</li>
+<li>An IIOPProfile isA TaggedProfile.</li>
+<li>An IIOPProfile is composed of an IIOPProfileTemplate and an object ID.</li>
+<li>An IIOPProfileTemplate has an ObjectKeyTemplate, and contains TaggedComponents.</li>
+<li>A TaggedComponent has an ID, and can be written to an OuputStream.<li>
+<li>A TaggedComponentFactory reads a TaggedComponent from an InputStream.<li>
+</ul>
+<p>
+In all cases, containment is represented by having the appropriate interface (IOR and
+IIOPProfileTemplate above) extend java.util.List.  This makes it easy to use all of the 
+facilities in the Java collections framework with IORs.  However, note that all
+objects available through these APIs are immutable.  Thus all list update operations
+through UnsupportedOperationException, and list iterators cannot modify the underlying
+list.
+<p>
+Templates are used because the basic object adapter model for object creation is to 
+establish all properties of an IOR (except for type and object ID) when the object
+adapter is created.  This has been present for the POA essentially from the beginning,
+since policies can only be passed to create_POA, and cannot be changed on an existing
+POA.  The Portable Interceptors work has also made this clear, since the IOR interceptor
+runs only when an object adapter is created, which is the only time that user code
+can add tagged components to an IOR.
+
+</body>
+</html>

@@ -1,0 +1,408 @@
+/*
+ * Copyright 2000-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+#include "Interceptors.idl"
+
+module PortableActivationIDL {
+    /** Possible values for endpointType argument on Server.getEndpoint()
+    * If you change the value of this constant then update
+    * core.EndPoint accordingly.  It has a duplicate definition
+    * to avoid a compilation dependency.
+    */
+    const string IIOP_CLEAR_TEXT = "IIOP_CLEAR_TEXT";
+
+    /** Raised if getEndpoint is called on a server callback object for
+    * an invalid endpoint type
+    */
+    exception NoSuchEndPoint {} ;
+
+    /** Raised if an attempt is made to retrieve ports corresponding to
+    * non-registered ORB
+    */
+    exception InvalidORBid {} ;
+
+    /** Raised if an operation is attempted against an invalid server ID.
+    */
+    exception ServerNotRegistered {
+	PortableInterceptor::ServerId serverId ;
+    };
+
+    /** Raised if an operation is attempted for a server that is not running,
+    * and the server is required to be running for the operation.
+    */
+    exception ServerNotActive {
+	PortableInterceptor::ServerId serverId ;
+    };
+
+    /** Raised if an operation is attempted against a server that is in a 
+    * hold down state.  A server becomes held down if it fails to activate
+    * within 10 seconds.
+    */
+    exception ServerHeldDown {
+	PortableInterceptor::ServerId serverId ;
+    };
+
+    /** Raised if an attempt is made to activate a server that is already 
+    * running.
+    */
+    exception ServerAlreadyActive{
+	PortableInterceptor::ServerId serverId ;
+    };
+
+    /** Raised if an attempt is made to register a serverdef with the
+    * same applicationName as an existing serverdef.
+    */
+    exception ServerAlreadyRegistered {
+	PortableInterceptor::ServerId serverId;
+    };
+
+    /** Raised if an attempt is made to install a server that is currently 
+    * installed.  Note that a newly created server starts out in an uninstalled
+    * state.
+    */
+    exception ServerAlreadyInstalled {
+	PortableInterceptor::ServerId serverId;
+    } ;
+
+    /** Raised if an attempt is made to uninstall a server that is currently 
+    * uninstalled.  Note that a newly created server starts out in an 
+    * uninstalled
+    * state.
+    */
+    exception ServerAlreadyUninstalled {
+	PortableInterceptor::ServerId serverId;
+    } ;
+
+    /** Raised if an attempt is made to register an invalid serverdef.
+    */
+    exception BadServerDefinition {
+	string reason;
+    };
+
+    /** Raised if an attempt is made to register endpoints for the
+     * same ORB again
+     */
+    exception ORBAlreadyRegistered {
+	PortableInterceptor::ORBId orbId;
+    };
+
+    /** Type of TCP port number, used in structures that describe 
+    * transport endpoints.  The valid range is actually 0-65535, but
+    * we use a long here to avoid signed/unsigned conversion headaches
+    * in Java.
+    */
+    typedef long TCPPort ;
+
+    /** Sequence of server Ids, used for queries about servers.
+    */
+    typedef sequence<PortableInterceptor::ServerId> ServerIds;
+
+    /** End point information for one particular kind of port associated with an 
+    * an ORB.  This is only used in the
+    * Activator interface, which must always run on the same host as the daemon,
+    * therefore we do not need the host name here.
+    */
+    struct EndPointInfo {
+	string endpointType;
+	TCPPort port;
+    };
+
+    /** A list of endpoint information for a particular ORB.  
+    */
+    typedef sequence<EndPointInfo> EndpointInfoList;
+
+    /** struct contain ORB and port info for a particular type of endpoint.
+    * This is only used in the
+    * Activator interface, which must always run on the same host as the daemon,
+    * therefore we do not need the host name here.
+    */
+    struct ORBPortInfo {
+	PortableInterceptor::ORBId orbId;
+	TCPPort port;
+    };
+
+    /** A list of ORB and port information for a particular endpoint type.
+    */
+    typedef sequence<ORBPortInfo> ORBPortInfoList;
+
+    /** A list of ORB IDs.
+    */
+    typedef sequence<PortableInterceptor::ORBId> ORBidList;
+
+    /** Server callback interface, passed to Activator in registerServer method.
+    */
+    interface ServerProxy {
+	/** Shutdown this server.  Returns after orb.shutdown() completes.
+	*/
+	void shutdown();
+
+	/** Install the server.  Returns after the install hook completes
+	* execution in the server.
+	*/
+	void install();
+
+	/** Uninstall the server.  Returns after the uninstall hook
+	* completes execution.
+	*/
+	void uninstall();
+    };
+
+    /** ORB callback interface, passed to Activator in registerORB method.
+    */
+    interface ORBProxy {
+	/** Method used to cause ORB to activate the named adapter, if possible.
+	* This will cause the named POA to register itself with the activator as
+	* a side effect.  This should always happen before this call can complete.
+	* This method returns true if adapter activation succeeded, otherwise it
+	* returns false.
+	*/
+	boolean activate_adapter( in PortableInterceptor::AdapterName name ) ;
+    } ;
+    
+    interface Activator {
+	/*******************************************************
+	*		    Server State Change Methods
+	********************************************************/
+
+    	/** A new ORB started server registers itself with the Activator
+	*/
+    	void registerServer(in PortableInterceptor::ServerId serverId, in ServerProxy serverObj) 
+	    raises (ServerNotRegistered);
+
+	/** A server is shutting down that was started by this activator.
+	* Complete termination of the server is detected by the death of the
+	* process implementing the server.
+	*/
+	void serverGoingDown( in PortableInterceptor::ServerId serverId ) ;
+
+	/** Called whenever an ORB instance is created.  This registers
+	* the transport endpoints and the ORB proxy callback object.
+	* Note that we cannot detect when an ORB shuts down, although
+	* all of the POA shutdowns should still be reported.
+	*/
+	void registerORB( in PortableInterceptor::ServerId serverId, in PortableInterceptor::ORBId orbId, 
+	    in ORBProxy orb, in EndpointInfoList endPointInfo) 
+	    raises (ServerNotRegistered,NoSuchEndPoint, ORBAlreadyRegistered) ;
+
+	/** Construct or find an ORBD object template corresponding to the 
+	* server's object template and return it.  Called whenever a 
+	* persistent POA is created.
+	*/
+	PortableInterceptor::ObjectReferenceTemplate registerPOA( 
+	    in PortableInterceptor::ServerId serverId, in PortableInterceptor::ORBId orbId, 
+	    in PortableInterceptor::ObjectReferenceTemplate poaTemplate ) ;
+ 
+	/** Called whenever a POA is destroyed.
+	*/
+	void poaDestroyed( 
+	    in PortableInterceptor::ServerId serverId, in PortableInterceptor::ORBId orbId, 
+	    in PortableInterceptor::ObjectReferenceTemplate poaTemplate ) ;       
+
+	/*******************************************************
+	*		    Server Control Methods
+	********************************************************/
+
+	/** If the server is not running, start it up.  This is allowed
+	* whether or not the server has been installed.
+	*/
+	void activate(in PortableInterceptor::ServerId serverId) 
+	    raises (ServerAlreadyActive, ServerNotRegistered, ServerHeldDown);
+
+	/** If the server is running, shut it down
+	*/
+	void shutdown(in PortableInterceptor::ServerId serverId) 
+	    raises (ServerNotActive, ServerNotRegistered);
+
+	/** Invoke the server install hook.  If the server is not 
+	* currently running, this method will activate it.
+	*/
+	void install(in PortableInterceptor::ServerId serverId) 
+	    raises (ServerNotRegistered, ServerHeldDown, 
+		ServerAlreadyInstalled);
+
+	/** Invoke the server uninstall hook.  If the server is not
+	* currently running, this method will activate it.
+	* After this hook completes, the server may still be running.
+	*/
+	void uninstall(in PortableInterceptor::ServerId serverId) 
+	    raises (ServerNotRegistered, ServerHeldDown, 
+		ServerAlreadyUninstalled);
+
+	/*******************************************************
+	*		    Accessors
+	********************************************************/
+
+	/** list active servers
+	*/
+	ServerIds getActiveServers();
+
+	/** list all registered ORBs for a server
+	*/
+	ORBidList getORBNames(in PortableInterceptor::ServerId serverId)
+	    raises (ServerNotRegistered);
+
+	/** Find the server template that corresponds to the ORBD's
+	* adapter id.
+	*/
+	PortableInterceptor::ObjectReferenceTemplate lookupPOATemplate( 
+	    in PortableInterceptor::ServerId serverId, in PortableInterceptor::ORBId orbId, 
+	    in PortableInterceptor::AdapterName orbAdapterName ) ;
+    };
+
+    interface Locator {
+	/** struct to return the list of endpoints for a server for a specific
+	* endpoint type.  
+	*/
+	struct ServerLocationPerType {
+	    string hostname;
+	    ORBPortInfoList ports;
+        };
+
+	/** struct to return the list of endpoints for a server for a specific
+	* ORB
+	*/
+	struct ServerLocationPerORB {
+	    string hostname;
+	    EndpointInfoList ports;
+        };
+
+	/** locate server - returns the port with a specific type for all registered
+	* ORBs of an active server.
+	* Starts the server if it is not already running.
+	*/
+	ServerLocationPerType locateServer(
+	    in PortableInterceptor::ServerId serverId,
+	    in string endPoint) 
+	    raises(NoSuchEndPoint, ServerNotRegistered, ServerHeldDown);
+
+	/** locate server - returns all ports registered with a specified ORB for
+	* an active server
+	* Starts the server if it is not already running.
+	*/
+	ServerLocationPerORB locateServerForORB(
+	    in PortableInterceptor::ServerId serverId,
+	    in PortableInterceptor::ORBId orbId) 
+	    raises(InvalidORBid, ServerNotRegistered, ServerHeldDown);
+
+	/** get the port for the endpoint of the locator
+	*/
+	TCPPort getEndpoint(in string endPointType)
+	    raises(NoSuchEndPoint);
+
+	/** Useful from external BadServerIdHandlers which need
+	* to pick a particular port type.
+	*/
+	TCPPort getServerPortForType(
+            in ServerLocationPerORB location,
+	    in string endPointType)
+	    raises(NoSuchEndPoint);
+    };
+
+    /** Interface used to combine the Activator and Locator when both are
+    * implemented together in the same process, as is currently the case
+    * for our implementation.
+    */
+    interface ServerManager : Activator, Locator { };
+
+    /** Interface used to support binding references in the bootstrap name
+    * service.
+    */
+    interface InitialNameService {
+	exception NameAlreadyBound {};
+
+	/** bind initial name
+	*/
+	void bind (
+	    in string name,
+	    in Object obj,
+	    in boolean isPersistant) raises (NameAlreadyBound);
+    };
+
+    interface Repository {
+	/** server program definition.  
+	*/
+	struct ServerDef {
+	    string  applicationName;	// alias used for servers with identical
+					// serverName values.
+	    string  serverName;		// Class name of server's main class.
+	    string  serverClassPath;	// class path used to run the server.
+	    string  serverArgs;		// arguments passed to the server
+	    string  serverVmArgs;	// arguments passed to the server's Java VM1
+	    boolean isInstalled;	// Whether or not the server has been installed
+	};
+	
+	/** register server definition.
+	* This returns the serverId of the server.  A newly created server is
+	* always uninstalled.
+	*/
+	PortableInterceptor::ServerId registerServer (in ServerDef serverDef) 
+	    raises (ServerAlreadyRegistered, BadServerDefinition);
+	
+	/** unregister server definition
+	*/
+	void unregisterServer (in PortableInterceptor::ServerId serverId) 
+	    raises (ServerNotRegistered);
+
+	/** get server definition
+	*/
+	ServerDef getServer(in PortableInterceptor::ServerId serverId) 
+	    raises (ServerNotRegistered);
+
+	/** Return whether the server has been installed
+	*/
+	boolean isInstalled( in PortableInterceptor::ServerId serverId ) 
+	    raises (ServerNotRegistered);
+
+	/** Mark the server as being installed.  Raises ServerAlreadyInstalled
+	* if the server is currently marked as installed.
+	*/
+	void install( in PortableInterceptor::ServerId serverId ) 
+	    raises (ServerNotRegistered, ServerAlreadyInstalled) ;
+
+	/** Mark the server as being uninstalled.  Raises ServerAlreadyUninstalled
+	* if the server is currently marked as uninstalled.
+	*/
+	void uninstall( in PortableInterceptor::ServerId serverId ) 
+	    raises (ServerNotRegistered, ServerAlreadyUninstalled) ;
+
+	/** list registered servers
+	*/
+	ServerIds listRegisteredServers ();
+
+	/** Type used for a list of application names
+	*/
+	typedef sequence<string>    AppNames ;
+
+	/** Returns list of ALL applicationNames defined in ServerDefs of registered 
+	* servers.
+	*/
+	AppNames   getApplicationNames();
+
+	/** Find the ServerID associated with the given application name.
+	*/
+	PortableInterceptor::ServerId getServerID( in string applicationName ) 
+		raises (ServerNotRegistered) ;
+    };
+};

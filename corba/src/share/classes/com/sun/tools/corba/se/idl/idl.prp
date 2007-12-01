@@ -1,0 +1,170 @@
+#
+# COMPONENT_NAME:  idl.parser
+#
+# ORIGINS: 27
+#
+# Licensed Materials - Property of IBM
+# 5639-D57 (C) COPYRIGHT International Business Machines Corp., 1997, 1999
+# RMI-IIOP v1.0
+#
+
+# Translator:  Each line below is of the form "<key>=<message>".
+#              The keys are NOT to be translated.
+#              The messages ARE to be translated.
+#
+#              DO NOT translate the following:
+#               ASCII
+#               #else
+#               #endif
+#               IDL
+#
+#              %0, %1, etc. are postional parameters to the message.  Do not
+#              translate these.  The number order is the order they are given to
+#              the message writer.  It is OK to change their order in the message
+#              if the language grammar so dictates.
+#
+#              Lines of the form "%0 (line %1):  <some message>\n%x\n%y" are error
+#              messages:  %0 is a filename; %1 is a line number; %x is line %1 from
+#              %0; %y is the error marker.  So the message comes out looking like:
+#                  <filename> (line xxx): <some message>
+#                  Line xxx from <filename> where the carat points to the error
+#                                                     ^
+#              So the first two and the last two parameters of these messages must
+#              remain in their positions.
+#
+#              A backslash (\) at the end of a line is a line continuation
+#              character.  A backslash at the beginning of a line means don't
+#              ignore leading blanks (they normally are).  These backslashes
+#              should remain in the message.
+#
+# Translator:  Start Translating
+
+Compile.parsing=Parsing %0
+Compile.parseDone=done  - %0
+Compile.generating=Generating %0
+Compile.genDone=done   -   %0
+Deprecated.keyword=WARNING: Keyword `%0' is deprecated.
+EvaluationException.1=Operands of %0 operator are inconsistent:  %1 and %2.
+EvaluationException.2=Operand of %0 operator must be a number, not a %1.
+EvaluationException.or=bitwise or
+EvaluationException.xor=bitwise xor
+EvaluationException.and=bitwise and
+EvaluationException.plus=addition
+EvaluationException.minus=subtraction
+EvaluationException.left=left shift
+EvaluationException.right=right shift
+EvaluationException.times=multiplication
+EvaluationException.divide=division
+EvaluationException.mod=modulo
+EvaluationException.pos=unary positive
+EvaluationException.neg=unary negation
+EvaluationException.not=bitwise not
+EvaluationException.booleanNot=boolean not
+EvaluationException.booleanAnd=boolean and
+EvaluationException.booleanOr=boolean or
+EvaluationException.equal=equal
+EvaluationException.notEqual=not equal
+EvaluationException.greaterThan=greater than
+EvaluationException.lessThan=less than
+EvaluationException.greaterEqual=greater than or equal
+EvaluationException.lessEqual=less than or equal
+GenFileStream.1=%0 could not be generated:  %1
+InvalidArgument.1=Invalid argument:  %0.
+InvalidArgument.2=No IDL file was specified.
+InvalidCharacter.1=%0 (line %1):  invalid character:  %2 (ASCII %3).\n%4\n%5
+Migration.futureKeyword=WARNING: Identifier `%0' collides with a keyword; use an escaped identifier to ensure future compatibility.
+Migration.keywordCollision=WARNING: Identifier `%0' collides with a keyword; use an escaped identifier to ensure future compatibility.
+ParseException.abstractValueBox=%0 (line %1):  A value box cannot be declared abstract.\n%2\n%3
+ParseException.alreadyDeclared=%0 (line %1):  %2 has already been declared.\n%3\n%4
+ParseException.declNotInSameFile=%0 (line %1): %2 was declared previously in a forward declaration in file %3.\n%4\n%5
+ParseException.alreadyDerived=%0 (line %1):  %2 has already been declared as a parent of %3.\n%4\n%5
+ParseException.alreadyDefaulted=%0 (line %1):  The default branch has already been encountered.\n%2\n%3
+ParseException.alreadyRaised=%0 (line %1):  %2 already specified in raises clause.\n%3\n%4
+ParseException.attributeNotType=%0 (line %1):  %2 is an attribute.  It cannot be used as a type.\n%3\n%4
+ParseException.badAbstract=%0 (line %1): The forward and actual declaration of %2 is inconsistent. One is abstract and the other is not.\n%3\n%4
+ParseException.badCustom=%0 (line %1):  A forward value declaration cannot be declared custom.\n%2\n%3
+ParseException.badRepIDAlreadyAssigned=%0 (line %1):  Type %2 has already been assigned a Repository ID in a previous ID pragma directive.\n%3\n%4
+ParseException.badRepIDForm=%0 (line %1): Repository ID '%2' should have form '<format>:<string>'.\n%3\n%4
+ParseException.badRepIDPrefix=%0 (line %1):  Interface %2 should have Repository ID prefix `%3', not '%4'.\n%5\n%6
+ParseException.badState=%0 (line %1): %2 cannot be a stateful interface; it has more than one stateful parent.\n%3\n%4
+ParseException.branchLabel=%0 (line %1):  case %2 has already been declared.\n%3\n%4
+ParseException.branchName=%0 (line %1):  A branch named %2 has already been declared.\n%3\n%4
+ParseException.duplicateInit=%0 (line %1):  An initializer has the same signature as a previous initializer.\n%2\n%3
+ParseException.duplicateState=%0 (line %1):  The data member %2 has the same name as a previous data member.\n%3\n%4
+ParseException.elseNoIf=%0 (line %1):  #else encountered without a matching #if.\n%2\n%3
+ParseException.endNoIf=%0 (line %1):  #endif encountered without a matching #if.\n%2\n%3
+ParseException.evaluation=%0 (line %1):  %2\n%3\n%4
+ParseException.forwardEntry=%0 (line %1):  There is a forward reference to %2, but it is not defined.\n%3\n%4
+ParseException.forwardedValueBox=%0 (line %1):  %2 has a forward declaration. A value box cannot be forward declared.\n%3\n%4
+ParseException.forwardInheritance=%0 (line %1):  It is illegal for %2 to inherit from the incomplete forward declaration of %3.\n%4\n%5
+ParseException.generic=%0 (line %1):  %2\n%3\n%4
+ParseException.illegalArray=%0 (line %1):  An array is not a legal type in a %2.\n%3\n%4
+ParseException.illegalException=%0 (line %1):  Exceptions cannot appear within %2s.\n%3\n%4
+ParseException.invalidConst1=%0 (line %1):  Constant expression must be of type %2, not %3.\n%4\n%5
+ParseException.invalidConst2=%0 (line %1):  Identifiers in constant expressions must be constants, not %2.\n%3\n%4
+ParseException.keywordCollision=%0 (line %1):  Identifier `%2' collides with keyword; use escaped identifier if necessary.\n%3\n%4
+ParseException.methodClash=%0 (line %1):  Method name clash in interface %2:  %3.\n%4\n%5
+ParseException.moduleNotType=%0 (line %1):  %2 is a module.  It cannot be used as a type.\n%3\n%4
+ParseException.nestedValueBox=%0 (line %1):  Value boxes cannot be nested.\n%2\n%3
+ParseException.noDefault=%0 (line %1):  A default branch is not allowed when all possible cases are fully covered.\n%2\n%3
+ParseException.nonAbstractParent=%0 (line %1):  The abstract interface %2 cannot inherit from the non-abstract interface %3.\n%4\n%5
+ParseException.nonAbstractParent2=%0 (line %1):  The abstract value %2 cannot inherit from the non-abstract value %3.\n%4\n%5
+ParseException.nonAbstractParent3=%0 (line %1):  The value %2 cannot inherit from the non-abstract value %3 as specified.\n%4\n%5
+ParseException.notANumber=%0 (line %1):  A number was expected.  %2 is not a valid number.\n%3\n%4
+ParseException.nothing=%0 is empty.  There is nothing to compile.
+ParseException.notPosInt=%0 (line %1):  Expected a positive integer constant, not %2.\n%3\n%4
+ParseException.oneway=%0 (line %1):  %2 is declared to be oneway.  Oneway methods must:  return void; have only in parameters; raise no exceptions.\n%3\n%4
+ParseException.operationNotType=%0 (line %1): %2 is an operation.  It cannot be used as a type.\n%3\n%4
+ParseException.outOfRange=%0 (line %1):  The value of the constant expression, %2, is out of range for type %3.\n%4\n%5
+ParseException.recursive=%0 (line %1):  The only legal recursive definition is:  sequence<%2> %3.\n%4\n%5
+ParseException.selfInherit=%0 (line %1):  %2 cannot inherit from itself.\n%3\n%4
+ParseException.stringTooLong=%0 (line %1):  "%2" cannot be more than %3 characters long.\n%4\n%5
+ParseException.syntax1=%0 (line %1):  Expected `%2'; encountered `%3'.\n%4\n%5
+ParseException.syntax2=%0 (line %1):  Expected one of%2; encountered `%3'.\n%4\n%5
+ParseException.unclosed=%0:  Unexpected end of file encountered in comment.
+ParseException.undeclaredType=%0 (line %1):  %2 is an undeclared type.\n%3\n%4
+ParseException.warning=%0 (line %1):  %2\n%3\n%4
+ParseException.constExprType=%0 (line %1):  The type of the constant expression is %2, but it should be %3.\n%4\n%5
+ParseException.wrongType=%0 (line %1):  The type of %2 is %3, but it should be %4.\n%5\n%6
+ParseException.illegalIncompleteTypeReference=%0 (line %1): Illegal reference to incomplete forward declaration of type %2.\n%3\n%4
+Preprocessor.unknown=Unknown preprocessor directive, `%0'.  Line ignored.
+Preprocessor.unknownPragma=Unknown pragma `%0'.  Line ignored.
+Preprocessor.undefinedName=Undefined type name for pragma %0:  %1.  Line ignored.
+Token.boolLit=<boolean literal>
+Token.charLit=<character literal>
+Token.intLit=<integer literal>
+Token.floatLit=<floating point literal>
+Token.stringLit=<string literal>
+Token.literal=<literal>
+Token.identifier=<identifier>
+Token.endOfFile=EOF
+Token.unknown=?
+Util.cantCreatePkg=Cannot create the package %0.
+Version.product=IDL Parser Framework, version "%0"
+Version.number=3.2
+default=Error!  A message was requested which does not exist.  The messages file does not contain the key: %0.
+
+# Translator: In the list of options below, do not translate:
+#             -i, -d, -keep, -emitAll, -noWarn, -v, -verbose, -version, #define
+#             Do not translate the string "java com.sun.tools.corba.se.idl.Compile"
+
+usage=Compiler Usage:\n\
+\ java com.sun.tools.corba.se.idl.Compile [options] <idl file>\n\
+where <idl file> is the name of a file containing IDL definitions, and\n\
+[options] is any combination of the options listed below.  The options\n\
+are optional and may appear in any order; <idl file> is required and\n\
+must appear last.\n\
+\ \n\
+Options:\n\
+  -d <symbol>          This is equivalent to the following line in an\n\
+\                     IDL file:  #define <symbol>\n\
+  -emitAll             Emit all types, including those found in #included\n\
+\                     files.\n\
+  -i <include path>    By default, the current directory is scanned for\n\
+\                     included files.  This option adds another directory.\n\
+  -keep                If a file to be generated already exists, do not\n\
+\                     overwrite it.  By default it is overwritten.\n\
+  -noWarn              Suppress warnings.\n\
+  -v, -verbose         Verbose mode.\n\
+  -version             Display the version number.\n
+

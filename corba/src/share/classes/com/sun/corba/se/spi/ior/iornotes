@@ -1,0 +1,107 @@
+Implementation hierarchies in the IOR code
+
+Utility classes:
+    impl.ior.ByteBuffer			class used to speed up computation of the adapter id
+    impl.ior.EncapsulationUtility	misc. utilities for dealing with CDR encapsulation
+    impl.ior.FreezableList		special list class that can change from mutable to immutable (one way only)
+    impl.ior.MinorCodes			minor codes for all IOR errors
+    impl.ior.ORTImpl			wrapper around IORTemplate for ORT
+    spi.ior.IORFactories		factory for all basic IOR types
+    spi.ior.IIOP.???Factories		factory for IIOP IOR factory types (IIOPProfile, IIOPProfileTemplate, 
+					    and all of the supported IIOP tagged component factories)
+					This needs to provide access to all of the IdentifiableFactory instances
+					we need for registration.  It also needs to provide factory methods for
+					creating all of these types.  
+	impl.ior.iiop.TaggedComponentFactories needs to be absorbed here.
+
+
+Support for non-registered (unknown) TaggedComponent and TaggedProfile instances
+    impl.ior.GenericIdEncapsulation
+	impl.ior.GenericTaggedComponent
+	impl.ior.GenericTaggedProfile
+
+Basic common representation for writing, getting ids, inherited lists:
+    spi.ior.IdentifiableContainerBase
+    spi.ior.Writeable
+	spi.ior.Identifiable
+	    spi.ior.IdentifiableBase
+
+Some basic IOR types and their implementation:
+    spi.ior.IOR
+	impl.ior.IORImpl
+
+    spi.ior.IORTemplate
+	impl.ior.IORTemplateImpl
+
+    spi.ior.IdentifiableFactory (the basic factory type, which is never created in the spi.ior package.
+	All instances of this factory are necessarily protocol dependent, for example IIOP in the
+	spi.ior.iiop package).
+    spi.ior.IdentifiableFactoryFinder
+	impl.ior.IdentifiableFactoryFinderBase
+	    impl.ior.TaggedComponentFactoryFinderImpl
+	    impl.ior.TaggedProfileFactoryFinderImpl
+
+    spi.ior.ObjectAdapterId
+	impl.ior.ObjectAdapterIdBase
+	    impl.ior.ObjectAdapterIdArray
+		impl.ior.ObjectAdapterIdNumber
+
+    spi.ior.ObjectId
+	impl.ior.ObjectIdImpl
+
+    spi.ior.ObjectKey
+	impl.ior.ObjectKeyImpl
+
+The ObjectKeyTemplate family, which needs some work for pluggability yet:
+    impl.ior.ObjectKeyFactory
+    impl.ior.ObjectKeyTemplateFactory : should this be in the SPI?
+    spi.ior.ObjectKeyTemplate
+	impl.ior.WireObjectKeyTemplate
+	impl.ior.ObjectKeyTemplateBase
+	    impl.ior.OldObjectKeyTemplateBase
+		impl.ior.OldJIDLObjectKeyTemplate
+		impl.ior.OldPOAObjectKeyTemplate
+	    impl.ior.NewObjectKeyTemplateBase
+		impl.ior.JIDLObjectKeyTemplate
+		impl.ior.POAObjectKeyTemplate
+
+IIOP types and their implementations:
+    spi.ior.TaggedComponent
+	spi.ior.TaggedComponentBase
+	    impl.ior.iiop.AlternateIIOPAddressComponent
+	    impl.ior.iiop.CodeSetsComponent
+	    impl.ior.iiop.JavaCodebaseComponent
+	    impl.ior.iiop.MaxStreamFormatVersionComponent
+	    impl.ior.iiop.ORBTypeComponent
+	    impl.ior.iiop.PoliciesComponent
+
+    spi.ior.TaggedProfile
+	spi.ior.iiop.IIOPProfile
+	    impl.ior.iiop.IIOPProfileImpl
+
+    spi.ior.TaggedProfileTemplate
+	spi.ior.iiop.IIOPProfileTemplate
+	    impl.ior.iiop.IIOPProfileTemplateImpl
+
+    spi.ior.iiop.IIOPAddress
+	impl.ior.iiop.IIOPAddressBase
+	    impl.ior.iiop.IIOPAddressFutureImpl
+	    impl.ior.iiop.IIOPAddressImpl
+
+Issues:
+
+1. GIOPVersion.chooseRequestVersion( ORB, IOR ) is not well-defined: it should be
+   (ORB, IIOPProfile). 
+   Call sites:
+   Connection.locate: not used
+	Called from GIOPImpl.locate: not used
+   CorbaContactInfoImpl.createMessageMediator
+	This needs a version that looks only at a single profile.
+
+2. MessageBase.createRequest takes an IOR instead of an IIOPProfile.
+
+3. CDRInputStream_1_0.read_Object( Class ) calls IOR.getCodebase() in 
+   a call to Utility.loadStubClass, which is
+   only defined on a profile.  What do we do here?
+   Similar problem in same class internalIORToObject, which call IOR.getServant
+   and IOR.getCodebase.  IOR.getCodeBase is called in loadStub.
