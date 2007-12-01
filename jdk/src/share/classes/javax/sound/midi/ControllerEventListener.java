@@ -1,0 +1,64 @@
+/*
+ * Copyright 1999-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package javax.sound.midi;
+
+import java.util.EventListener;
+
+
+/**
+ * The <code>ControllerEventListener</code> interface should be implemented
+ * by classes whose instances need to be notified when a <code>Sequencer</code>
+ * has processed a requested type of MIDI control-change event.
+ * To register a <code>ControllerEventListener</code> object to receive such
+ * notifications, invoke the
+ * {@link Sequencer#addControllerEventListener(ControllerEventListener, int[])
+ * addControllerEventListener} method of <code>Sequencer</code>,
+ * specifying the types of MIDI controllers about which you are interested in
+ * getting control-change notifications.
+ *
+ * @see MidiChannel#controlChange(int, int)
+ *
+ * @author Kara Kytle
+ */
+public interface ControllerEventListener extends EventListener {
+
+    /**
+     * Invoked when a <code>Sequencer</code> has encountered and processed
+     * a control-change event of interest to this listener.  The event passed
+     * in is a <code>ShortMessage</code> whose first data byte indicates
+     * the controller number and whose second data byte is the value to which
+     * the controller was set.
+     *
+     * @param event the control-change event that the sequencer encountered in
+     * the sequence it is processing
+     *
+     * @see Sequencer#addControllerEventListener(ControllerEventListener, int[])
+     * @see MidiChannel#controlChange(int, int)
+     * @see ShortMessage#getData1
+     * @see ShortMessage#getData2
+     */
+    public void controlChange(ShortMessage event);
+}

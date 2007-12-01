@@ -1,0 +1,19 @@
+grant {
+    // These permissions are required for the test to start
+    permission java.lang.RuntimePermission 
+			"accessClassInPackage.sun.*";
+
+    permission java.lang.RuntimePermission "loadLibrary.sunmscapi";
+
+    permission java.util.PropertyPermission "os.arch", "read";
+
+    permission java.util.PropertyPermission 
+			"sun.security.mscapi.keyStoreCompatibilityMode", "read";
+
+    permission java.io.FilePermission "<<ALL FILES>>", "read";
+
+    permission java.security.SecurityPermission "putProviderProperty.SunMSCAPI";
+
+    // This permission is required for the test to run to completion
+    //permission java.security.SecurityPermission "authProvider.SunMSCAPI";
+};

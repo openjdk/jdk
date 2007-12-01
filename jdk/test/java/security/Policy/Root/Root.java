@@ -1,0 +1,47 @@
+/*
+ * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/*
+ *
+ * @bug 4619757
+ * @summary User Policy Setting is not recognized on Netscape 6
+ *              when invoked as root
+ * @ignore - must run test as root
+ *
+ * place Root.policy in the root home directory (/), as /.java.policy
+ * run this test as root:
+ *      java Root
+ */
+
+import java.security.*;
+
+public class Root {
+    public static void main(String[] args) {
+        Policy p = Policy.getPolicy();
+        if (p.implies(Root.class.getProtectionDomain(), new AllPermission())) {
+            System.out.println("Test succeeded");
+        } else {
+            throw new SecurityException("Test failed");
+        }
+    }
+}

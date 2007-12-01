@@ -1,0 +1,7 @@
+grant codeBase "file:${java.home}/lib/ext/*" {
+    permission java.security.AllPermission;
+};
+
+grant {
+    // XXX note package access is *not* granted to the 'sun' package
+};

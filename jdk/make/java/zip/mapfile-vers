@@ -1,0 +1,81 @@
+#
+# Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+# Define public interface.
+
+SUNWprivate_1.1 {
+	global:
+		Java_java_util_jar_JarFile_getMetaInfEntryNames;
+		Java_java_util_zip_Adler32_update;
+		Java_java_util_zip_Adler32_updateBytes;
+		Java_java_util_zip_CRC32_update;
+		Java_java_util_zip_CRC32_updateBytes;
+		Java_java_util_zip_Deflater_deflateBytes;
+		Java_java_util_zip_Deflater_end;
+		Java_java_util_zip_Deflater_getAdler;
+		Java_java_util_zip_Deflater_getBytesRead;
+		Java_java_util_zip_Deflater_getBytesWritten;
+		Java_java_util_zip_Deflater_init;
+		Java_java_util_zip_Deflater_initIDs;
+		Java_java_util_zip_Deflater_reset;
+		Java_java_util_zip_Deflater_setDictionary;
+		Java_java_util_zip_Inflater_end;
+		Java_java_util_zip_Inflater_getAdler;
+		Java_java_util_zip_Inflater_getBytesRead;
+		Java_java_util_zip_Inflater_getBytesWritten;
+		Java_java_util_zip_Inflater_inflateBytes;
+		Java_java_util_zip_Inflater_init;
+		Java_java_util_zip_Inflater_initIDs;
+		Java_java_util_zip_Inflater_reset;
+		Java_java_util_zip_Inflater_setDictionary;
+		Java_java_util_zip_ZipEntry_initFields;
+		Java_java_util_zip_ZipEntry_initIDs;
+		Java_java_util_zip_ZipFile_close;
+		Java_java_util_zip_ZipFile_freeEntry;
+		Java_java_util_zip_ZipFile_getCSize;
+		Java_java_util_zip_ZipFile_getEntry;
+		Java_java_util_zip_ZipFile_getMethod;
+		Java_java_util_zip_ZipFile_getNextEntry;
+		Java_java_util_zip_ZipFile_getSize;
+		Java_java_util_zip_ZipFile_getZipMessage;
+		Java_java_util_zip_ZipFile_getTotal;
+		Java_java_util_zip_ZipFile_initIDs;
+		Java_java_util_zip_ZipFile_open;
+		Java_java_util_zip_ZipFile_read;
+
+		ZIP_Close;
+		ZIP_CRC32;
+		ZIP_FindEntry;
+		ZIP_GetEntry;
+		ZIP_GetNextEntry;
+		ZIP_Lock;
+		ZIP_Open;
+		ZIP_Read;
+		ZIP_ReadEntry;
+		ZIP_Unlock;
+
+	local:
+		*;
+};

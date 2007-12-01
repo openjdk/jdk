@@ -1,0 +1,10 @@
+grant codeBase "file:${{java.ext.dirs}}/*" {
+	permission java.security.AllPermission;
+};
+
+grant {
+    // do not grant this:
+    //
+    // permission java.security.SecurityPermission
+    //			"createPolicy.JavaPolicy";
+};

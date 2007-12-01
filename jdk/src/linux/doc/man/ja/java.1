@@ -1,0 +1,714 @@
+'\" t
+.\"
+.\" Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\" 
+.TH java 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH "名前"
+java \- Java アプリケーション起動プログラム
+.SH "形式"
+.B java 
+[ 
+.B options 
+] 
+.B class 
+[ 
+.B argument ... 
+]
+.LP
+.B java 
+[ 
+.B options 
+] 
+.B \-jar " file.jar"
+.if n .ti +5n
+[ 
+.B argument ... 
+]
+.LP
+.TP 15
+.B options
+コマンド行オプション。
+.TP
+.B class
+呼び出されるクラスの名前。
+.TP
+.B file.jar
+呼び出されるファイルの名前。必ず
+.I \-jar
+と同時に使用される。
+.TP
+.B argument
+.B main
+関数に渡される引数。
+.SH "機能説明"
+.IX "Java interpreter" "" "Java interpreter \(em \fLjava\fP"
+.IX "java" "" "\fLjava\fP \(em Java interpreter"
+.LP
+.B java
+ツールは、Java アプリケーションを起動します。
+.B java
+ツールは、Java Runtime Environment を起動したあと、指定されたクラスをロードし、このクラスの
+.B main 
+メソッドを呼び出して Java アプリケーションを起動します。
+.LP
+このメソッドは
+.B public
+および
+.B static
+で宣言され、値を返さず、パラメータとして
+.I String
+配列を使用できなければなりません。
+メソッド宣言は次のようにする必要があります。
+.LP
+.ft 3
+.nf
+   public static void main(String args[])
+.fi
+.ft 1
+.LP
+デフォルトでは、オプションではない最初の引数が、呼び出すクラスの名前に
+なります。この名前には、完全指定のクラス名を使用する必要があります。
+.B \-jar
+オプションを指定した場合、オプションではない最初の引数は、アプリケーションの
+クラスファイルとリソースファイルを含む JAR アーカイブの名前になります。
+この場合、Main-Class マニフェストヘッダで指定されたクラスがスタート
+アップクラスになります。 
+.LP
+Java Runtime は、ブートストラップクラスパス、インストール型拡張機能、
+およびユーザクラスパスの 3 つの場所から、起動クラスとその他の
+使用するクラスを探します。 
+.LP
+クラス名または JAR ファイル名のあとにあるオプションではない引数は、
+main 関数に渡されます。 
+.LP
+.SH "オプション"
+起動コマンドには、現在の実行環境および将来のリリースでサポートされる
+標準オプションがあります。
+また、仮想マシンの現在の実装では、非標準オプションをサポートしています。
+この仕様は将来変更される可能性があります。
+.SS "標準オプション"
+.IX "java" "Standard Options" "\fLjava\fP \(em Java interpreter"
+.TP 3
+.LP
+.B \-client
+Java HotSpot Client
+.SM VM\s0
+を選択します。
+64 ビット対応 JDK は現時点では、このオプションを無視し、代わりに Java Hotspot Server VM を使用します。
+デフォルトの VM の選択については、
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/vm/server\-class.html
+の
+.na
+「\f2Server\-Class Machine Detection\fP」を参照してください。
+.TP
+.B \-server
+Java HotSpot Server 
+VM 
+を選択します。
+64 ビット対応 JDK 上では、サポートされるのは Java Hotspot Server VM だけであるため、\-server オプションが暗黙的に選択されます。 
+デフォルトの VM の選択については、
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/vm/server\-class.html
+の
+.na
+「\f2Server\-Class Machine Detection\fP」を参照してください。
+.TP
+.B \-agentlib:libname[=options]
+ネイティブのエージェントライブラリ
+.I libname
+を読み込みします。次に例を示します。
+.LP
+.RS 5
+.nf
+\-agentlib:hprof 
+\-agentlib:jdwp=help 
+\-agentlib:hprof=help 
+.fi
+.RE
+.LP
+詳細は、
+.fi
+http://java.sun.com/javase/6/docs/platform/jvmti/jvmti.html#starting
+の
+.na
+「\f2JVMTI Agent Command Line Options\fP」を参照してください。
+.TP
+.B \-agentpath:pathname[=options]
+ネイティブのエージェントライブラリをフルパス名を使用して読み込みします。
+詳細は、
+.fi
+http://java.sun.com/javase/6/docs/platform/jvmti/jvmti.html#starting
+の
+.na
+「\f2JVMTI Agent Command Line Options\fP」を参照してください。
+.TP
+.B \-classpath " classpath"
+.TP
+.B \-cp " classpath"
+クラスファイルを探すディレクトリ、JAR アーカイブ、および ZIP アーカイブのリストを指定します。クラスパスの各エントリはコロン (:) で区切ります。
+.B \-classpath 
+または 
+.B \-cp
+を指定すると、これらのオプションの値によって 
+.SB CLASSPATH
+環境変数の設定は上書きされます。 
+.LP
+.B \-classpath
+と
+.B \-cp 
+を使用せず、
+.SB CLASSPATH
+も設定されていない場合、ユーザクラスパスは現在のディレクトリ (.) になります。 
+.LP
+便宜上、\f2*\fP のベース名を含むクラスパス要素は、ディレクトリ内の拡張子 \f2.jar\fP または \f2.JAR\fP を持つすべてのファイルのリストを指定するのと同じとみなされます (Java プログラムはこの 2 つの呼び出しを区別できない)。
+.br
+.br
+たとえば、ディレクトリ 
+.I foo
+に 
+.I a.jar
+と 
+.I b.JAR
+が含まれている場合、クラスパス要素 
+.I foo/*
+は 
+.I A.jar:b.JAR
+に展開されます。ただし、JAR ファイルの順番は指定されません。このリストには、隠しファイルも含め、指定されたディレクトリ内のすべての JAR ファイルが含まれます。
+* だけから成るクラスパスエントリは、カレントディレクトリ内のすべての JAR ファイルのリストに展開されます。
+.I CLASSPATH
+環境変数も、定義時には同様に展開されます。クラスパスのワイルドカード展開は必ず、Java 仮想マシンの起動前に実行されます。したがって、
+.I System.getenv
+("
+.I CLASSPATH
+")
+呼び出しのように環境に問い合わせを行わない限り、Java プログラムが展開されていないワイルドカードを認識することはありません。   
+.LP
+クラスパスの詳細については、「クラスパスの設定」を参照してください。  
+.TP
+.B \-Dproperty=value
+システムプロパティの値を設定します。 
+.TP
+.B \-d32
+.TP
+.B \-d64
+それぞれ 32 ビット環境、64 ビット環境でプログラムを実行することを要求します。要求された環境がインストールされていないかサポートされていない場合は、エラーが報告されます。
+.LP
+現時点では、64 ビット操作をサポートしているのは Java HotSpot Server VM 
+だけであり、
+.B \-server
+オプションでは、
+.B \-d64 
+が暗黙的に使用されます。
+したがって、\-d64 使用時には「-client」オプションは無視されます。
+この仕様は将来変更される場合があります。
+.LP
+.B \-d32
+と
+.B \-d64
+のどちらも指定しなかった場合、
+64 ビット専用システムを除いて、
+デフォルトでは 32 ビット環境で実行されます。
+この仕様は将来変更される場合があります。
+.TP 3
+\-enableassertions[:<package name>"..." | :<class name> ]
+.TP 3
+\-ea[:<package name>"..." | :<class name> ]
+.LP
+表明を有効にします。デフォルトで、表明は無効です。
+.sp 1n
+引数を指定しなくても、
+.BR enableassertions
+または
+.BR \-ea 
+で表明が有効になります。
+「...」で終わる引数を 1 つ指定すると、
+スイッチにより、指定したパッケージおよびすべての
+サブパッケージ内の表明が有効になります。
+「...」という引数を指定すると、スイッチにより、
+現在の作業用ディレクトリ内にある名前のないパッケージ内の
+表明が有効になります。
+「...」で終わらない引数を 1 つ指定すると、
+スイッチにより、指定したクラス内の表明が有効になります。
+.LP
+1 行のコマンドに、これらのスイッチの複数のインスタンスが
+含まれている場合、クラスを読み込む前に、正しく処理されます。
+たとえば、パッケージ
+.I com.wombat.fruitbat 
+ (およびすべてのサブパッケージ) 内だけの有効な表明を
+含んだプログラムを実行する場合、次のコマンドを使用できます。
+.TP
+.BR java -ea:com.wombat.fruitbat... <Main Class>
+.LP
+.BR \-enableassertions 
+および
+.BR \-ea 
+スイッチは、すべての
+クラスローダおよびシステムクラス (クラスローダを持たない) に適用されます。
+この規則には 1 つ例外があります。引数がない形式の場合、
+スイッチはシステムに適用されません。これを利用して、簡単に、
+システムクラスを除くすべてのクラスの表明を有効にすることができます。
+すべてのシステムクラスの表明を有効にする個別のスイッチも
+用意されています。
+.BR \-enablesystemassertions 
+を参照してください。
+.TP 3
+\-disableassertions[:<package name>"..." | :<class name> ]
+.TP 3
+\-da[:<package name>"..." | :<class name> ]
+.LP
+表明を無効にします。これはデフォルトです。
+.sp 1n
+引数を指定せずに、
+.BR disableassertions 
+または
+.BR \-da 
+で表明を無効にします。
+「...」で終わる引数を 1 つ指定すると、
+スイッチにより、指定したパッケージおよびすべての
+サブパッケージ内の表明が無効になります。
+「...」という引数を指定すると、スイッチにより、現在の作業用
+ディレクトリ内にある名前のないパッケージ内の表明が無効に
+なります。「...」で終わらない引数を 1 つ指定すると、スイッチにより、
+指定したクラス内の表明が無効になります。
+.LP
+パッケージ
+.I com.wombat.fruitbat 
+の表明は有効に、クラス
+.I com.wombat.fruitbat.Brickbat
+の表明は無効にしてプログラムを実行するには、
+次のコマンドを使用します。
+
+java -ea:com.wombat.fruitbat... -da:com.wombat.fruitbat.Brickbat <Main Class>
+
+.BR \-disableassertions 
+および
+.BR \-da 
+スイッチは、すべての
+クラスローダおよびシステムクラス (クラスローダを持たない) に適用されます。
+この規則には 1 つ例外があります。
+引数を持たない形式の場合、スイッチはシステムに適用されません。
+これを利用して、簡単に、
+システムクラスを除くすべてのクラス内の表明を有効にすることができます。
+すべてのシステムクラス内内の表明を有効にする個別のスイッチも
+用意されています。
+.BR \-disablesystemassertions 
+を参照してください。
+.TP
+.BR \-enablesystemassertions
+.TP 3
+\-esa
+すべてのシステムクラスの表明を有効にします (システムクラスの
+デフォルトの表明ステータスを true に設定します)。
+.TP
+.BR \-disablesystemassertions
+.TP 3
+\-dsa
+すべてのシステムクラスの表明を無効にします。
+.TP 3
+\-jar
+JAR の中にカプセル化されたプログラムを実行します。最初の引数は、起動クラスの名前ではなく、JAR アーカイブファイルの名前になります。
+このオプションが動作するためには、JAR ファイルのマニフェストに形式 \f3Main-Class:\f1\f2classname\f1 の行が入っていなければなりません。
+.I classname
+は、ユーザのアプリケーションの開始点となる 
+.I public static void main(String[] args) 
+メソッドを持つクラスを識別します。
+Jar ファイルと Jar ファイルのマニフェストを扱う方法については、Jar ツールのリファレンスページと、
+.na
+\f2Java Tutorial\fP
+.fi
+(http://java.sun.com/docs/books/tutorial/jar) 
+の Jar トレールを参照してください。
+.LP
+このオプションを使用するときは、JAR ファイルがすべてのユーザクラスのソースとなるため、他のユーザクラスパスの設定は無視されます。
+.LP
+.B "java \-jar" 
+オプションで実行できる JAR ファイルでは、
+.B "java \-jar" 
+なしでも実行できるように、実行権限を設定できます。
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/jar/index.html
+の
+.na
+「\f2Java Archive (JAR) Files\f」を参照してください。
+.TP
+.B \-javaagent:jarpath[=options]
+Java プログラミング言語エージェントを読み込みます。
+http://java.sun.com/javase/6/docs/api/java/lang/instrument/package\-summary.html
+の
+「\f2java.lang.instrument\fP」を参照してください。
+.LP
+.B \-verbose
+.LP
+.TP 3
+\-verbose: class
+クラスが読み込まれるたびにクラスに関する情報を表示します。 
+.PD
+.LP
+.TP 3
+\-verbose:gc
+ガベージコレクションイベントが発生するたびに報告します。 
+.TP 3
+.B \-verbose:jni
+ネイティブメソッドおよびその他の Java Native Interface (JNI) の使用に関する
+情報を報告します。 
+.TP 3
+.B \-version
+バージョン情報を表示して終了します。 
+.TP 3
+.B \-version:release
+コマンド行に指定されたクラスまたは JAR ファイルが、\f2release\fP で指定されたバージョンを必要としていることを示します。起動された java コマンドのバージョンがこの指定内容を満たさず、かつ適切な実装がシステム上で見つかった場合には、その適切な実装が使用されます。
+.LP
+\f2release\fP では、特定のバージョンを指定できるだけでなく、バージョン文字列と呼ばれるバージョンのリストを指定することもできます。バージョン文字列は、いくつかのバージョン範囲を空白で区切った形式の順序付きリストです。バージョン範囲は、バージョン ID、バージョン ID の後にアスタリスク (*) を付加したもの、バージョン ID の後にプラス記号 (+) を付加したもの、2 つのバージョン範囲をアンパサンド (&) で結合したもの、のいずれかになります。アスタリスクはプレフィックス一致を、プラス記号は指定されたバージョン以上を、アンパサンドは 2 つのバージョン範囲の論理積を、それぞれ意味します。次に例を示します。 
+.nf
+\f3
+.fl
+-version:"1.5.0_04 1.5*&1.5.1_02+"
+.fl
+\fP
+.fi
+上記の意味は、バージョン 1.5.0_04、または 1.5.1_02 以上で 1.5 をバージョン ID プレフィックスとして持つバージョン、のいずれかをクラスまたは JAR ファイルが必要とする、ということです。バージョン文字列の厳密な構文や定義については、「Java Network Launching Protocol & API Specification (JSR\-56)」の「Appendix A」を参照してください。
+.LP
+JAR ファイルの場合は通常、バージョン要件をコマンド行に指定するよりも、JAR ファイルのマニフェスト内に指定することが推奨されています。 
+.LP
+このオプションの使用に関する重要なポリシー情報については、後述の「注」節を参照してください。
+.TP
+.B \-showversion
+バージョン情報を表示して、実行を継続します。
+.TP
+.B \-?
+.PD 0
+.TP
+.B \-help
+使用法を表示して終了します。 
+.PD
+.TP
+.B \-X
+非標準オプションに関する情報を表示して終了します。 
+.LP
+.SS "非標準オプション"
+.LP
+.IX "java" "Non-Standard Options" "\fLjava\fP \(em Java interpreter"
+.LP
+.TP 3
+.B \-Xint
+インタプリタ専用モードで動作します。ネイティブコードへのコンパイルは
+無効になり、すべてのバイトコードがインタプリタによって実行されます。
+Java HotSpot VM 適応型コンパイラによって得られるパフォーマンス上の
+利点は、このモードでは実現されません。 
+.TP 3
+.B \-Xbatch
+バックグラウンドコンパイルを無効にします。
+通常、VM ではメソッドをバックグラウンドタスクとしてコンパイルします。
+このとき、バックグラウンドコンパイルが終了するまでは、
+インタプリタモードでメソッドが実行されます。
+.B \-Xbatch 
+フラグを使用すると、バックグラウンドコンパイルが
+無効になるため、すべてのメソッドのコンパイルは完了するまで
+フォアグラウンドのタスクとして処理されます。
+.TP 3
+.B \-Xbootclasspath: bootclasspath
+ブートクラスファイルを探すため、ディレクトリ、JAR アーカイブ、および ZIP 
+アーカイブをコロンで区切ったリストを指定します。指定されたパスに
+存在するブートクラスファイルは、JDK に含まれる
+ブートクラスファイルの代わりに使われます。
+注: rt.jar 内のクラスを上書きする目的でこのオプションを
+使用するアプリケーションは配備しないでください。
+配備すると、Java Runtime Environment 
+バイナリコードライセンス違反になることがあります。
+.TP 3
+.B \-Xbootclasspath/a:path
+デフォルトのブートストラップクラスパスに追加するディレクトリ、
+.SM JAR
+アーカイブ、および
+.SM ZIP
+アーカイブのパスをコロンで区切って指定します。 
+.TP 3
+.B \-Xbootclasspath/p:path
+デフォルトのブートストラップクラスパスの前に追加する
+ディレクトリ、
+.SM JAR
+アーカイブ、および
+.SM ZIP
+アーカイブのパスをコロンで区切って指定します。
+注: このオプションを、
+.B rt.jar
+内のクラスをオーバーライド
+する目的で使用するアプリケーションは指定しないでください。
+指定すると、Java Runtime Environment 
+バイナリコードライセンス違反になることがあります。 
+.TP 3
+.B \-Xcheck:jni
+Java Native Interface (JNI) 機能に対して
+追加チェックを実行します。特に、Java 仮想マシン (JVM) は 
+JNI 要求を処理する前に、JNI 機能に渡される
+パラメータおよび実行環境データを検証します。
+無効なデータを検出した場合、ネイティブコードに
+問題があると判断し、Java 仮想マシンは
+致命的なエラーで終了します。
+このオプションを使用すると、
+パフォーマンスが低下します。
+.TP 3
+.B \-Xfuture
+厳密なクラスファイル形式の検査を実行します。下位互換性を維持
+するため、JDK の Virtual Machine で実行されるデフォルトの
+形式検査は、JDK ソフトウェアの 1.1.x バージョンで実行される検査よりも
+厳密ではありません。
+.B \-Xfuture
+フラグを使用すると、クラスファイル形式を
+より仕様に準拠したものにするための、さらに厳密なクラスファイル形式検査が
+有効になります。開発者が新しいコードを開発する際には、このフラグの
+使用を推奨します。Java アプリケーション起動ツールの
+将来のリリースでは、より厳密な検査がデフォルトになるからです。 
+.TP 3
+.B \-Xnoclassgc
+クラスのガベージコレクションを無効にします。
+このオプションを使用すると、ロード済みクラスからメモリが回復されることがなくなるため、全体的なメモリ使用量が増大します。この場合、アプリケーションによっては OutOfMemoryError がスローされる可能性があります。
+.TP 3
+.BI \-Xincgc
+インクリメンタルガベージコレクタを有効にします。
+インクリメンタルガベージコレクタは、デフォルトでは
+無効に設定されていますが、有効にするとプログラムの実行中の
+ガベージコレクションによる停止を防ぎます。
+インクリメンタルガベージコレクタは、場合によってはプログラムと同時に
+実行されます。同時に実行されている間は、プログラムで利用可能な
+プロセッサ能力が減少します。
+.TP 3
+.B \-Xloggc:file
+.BR \-verbose:gc 
+と同様、各ガベージコレクションイベントで
+レポートを作成し、このデータを
+.I file 
+に記録します。
+.I \-verbose:gc 
+により入手できる情報に加えて、レポートされるイベントには
+最初のガベージコレクションイベントからの経過時間 (秒数) が付けられます。
+.sp 1
+ネットワークの遅延による JVM の停止を避けるために、このファイルの
+記憶域として常にローカルファイルシステムを使用します。
+このファイルは、フルファイルシステムおよびロギングが不完全なファイル
+に追加される場合、切り詰められることがあります。
+コマンド行で
+.I \-verbose:gc 
+といっしょに指定された場合、このオプションが優先されます。
+.TP 3
+.B \-Xmsn
+メモリ割り当てプールの初期サイズを指定します。
+指定する値は、1M バイトよりも大きな 1024 の倍数でなければなりません。
+文字
+.B k 
+または
+.B K
+を付けると K バイト、文字
+.B m 
+または
+.B M
+を付けると M バイトを表します。
+デフォルト値は、実行時にシステムの設定に基づいて選択されます。詳細については、「HotSpot Ergonomics」を参照してください
+.br
+例:
+.LP
+.RS 5
+.nf
+\-Xms6291456
+\-Xms6144k
+\-Xms6m
+.fi
+.RE
+.TP 3
+.B \-Xmxn
+メモリ割り当てプールの最大サイズをバイト単位で指定します。
+指定する値は、2M バイトよりも大きな 1024 の倍数でなければなりません。
+文字
+.B k 
+または
+.B K
+を付けると K バイト、文字
+.B m 
+または
+.B M
+を付けると M バイトを表します。
+デフォルト値は、実行時にシステムの設定に基づいて選択されます。詳細については、「HotSpot Ergonomics」を参照してください
+.br
+例:
+.LP
+.RS 5
+.nf
+\-Xmx83886080
+\-Xmx81920k
+\-Xmx80m
+.fi
+.RE
+.LP
+Solaris 7 および Solaris 8 SPARC プラットフォームの場合、この値の上限はおよそ 4000m からオーバーヘッドの量を引いたものであり、Solaris 2.6 および x86 プラットフォームの場合は 2000m からオーバーヘッドの量を引いたものです。
+Linux プラットフォームの場合の上限は、およそ
+2000m からオーバーヘッドの量を引いたものです。
+.TP 3
+.BI \-Xprof
+実行中のプログラムのプロファイルを生成し、プロファイリングデータを
+標準出力に送ります。このオプションは、プログラム開発に役立つ
+ユーティリティとして提供されているもので、本番稼動システムでの使用を
+目的としたものではありません。 
+.TP 3
+\-Xrs
+Java 仮想マシン (JVM) によるオペレーティングシステムシグナルの利用
+を減らします。
+.LP
+前回のリリースではシャットダウンフック機能が追加され、
+Java アプリケーションを順番にシャットダウンできるようになりました。
+この機能により、JVM が異常終了した場合でも、シャットダウン時に
+クリーンアップコード (データベース接続を閉じる、など) を
+実行できるようになりました。
+.LP
+Sun の JVM は、シグナルをキャッチして異常な JVM 終了
+に対するシャットダウンフックを実装します。JVM は、SIGHUP、SIGINT、SIGTERM を
+使用してシャットダウンフックの実行を開始します。
+.LP
+JVM  では、同様の機構を使用して、1.2 以前のデバッグ用の
+スレッドスタックダンプ機能を実装しています。Sun の JVM は、
+SIGQUIT を使用してスレッドダンプを実行します。
+.LP
+JVM を組み込んだアプリケーションは、SIGINT や SIGTERM のような
+シグナルを頻繁にトラップする必要があります。このような場合、JVM の
+シグナルハンドラとの間に干渉が発生する可能性があります。
+このような干渉を避けるために、\-Xrs コマンド行オプションを
+使用できます。
+Sun の JVM で \-Xrs が使用されると、SIGINT、SIGTERM、SIGHUP、
+および SIGQUIT のシグナルマスクは JVM によって変更されず、
+これらのシグナルのシグナルハンドラはインストールされません。
+.LP
+\-Xrs を指定することによって、影響が 2 つあります。
+.RS 3
+.TP 2
+*
+SIGQUIT スレッドダンプは使用できません。
+.TP 2
+*
+シャットダウンフックの実行は、ユーザコードが受け持ちます。
+たとえば JVM が終了するときに System.exit() を呼び出します。
+.TP
+.B \-Xssn
+スレッドスタックサイズを設定します。
+.TP
+.BI \-XX:+UseAltSigs
+VM ではデフォルトで 
+.I SIGUSR1 
+および 
+.I SIGUSR2 
+を使用しますが、
+.I SIGUSR1 
+および 
+.I SIGUSR2 
+をシグナル連鎖するアプリケーションと
+競合する場合があります。
+.I \-XX:+UseAltSigs 
+オプションは、VM にデフォルトとして
+.I SIGUSR1 
+と 
+.I SIGUSR2 
+以外のシグナルを使用させます。
+.LP
+.SH "注"
+.LP
+
+.LP
+\f3\-version:\fP\f2release\fP コマンド行オプションでは、どんなに複雑にリリースを指定してもかまいません。ただし、現実的なリリース指定の限られたサブセットを使用するだけでも適切なポリシーを表現できるため、それらのサブセットのみが完全にサポートされます。それらのポリシーを次に示します。 
+.RS 3
+.TP 3
+1.
+任意のバージョン。これは、このオプションを使用しないことで表現できます。 
+.TP 3
+2.
+ある特定のバージョン ID よりも大きい任意のバージョン。次に例を示します。 
+.nf
+\f3
+.fl
+"1.5.0_03+"
+.fl
+\fP
+.fi
+.LP
+この場合、1.5.0_03 よりも大きい任意のバージョンが使用されます。これは、指定されたバージョンで特定のインタフェースが導入された (あるいはそのバグが修正された) 場合に便利です。  
+.TP 3
+3.
+ある特定のバージョン ID よりも大きいバージョン。ただし、そのリリースファミリの上限によって制限するもの。次に例を示します。 
+.TP
+"1.5.0_03+&1.5*"
+.TP 3
+4.
+上の項目 2 または 3 の「OR」表現。次に例を示します。 
+.nf
+\f3
+.fl
+"1.4.2_05+&1.4* 1.5+"
+.fl
+\fP
+.fi
+これは項目 2 に似ていますが、ある変更が特定のリリース (1.5) で導入されたが、その同じ変更が以前のリリースのアップデートでも利用可能になった、という場合に便利です。 
+.RE
+
+.LP
+.SH "関連項目"
+.LP
+
+.LP
+.RS 3
+.TP 2
+*
+javac \- Java プログラム言語コンパイラ
+.TP 2
+*
+jdb \- Java アプリケーションデバッガ
+.TP 2
+*
+javah \- C ヘッダとスタブファイルジェネレータ
+.TP 2
+*
+jar \- JAR アーカイブツール
+.TP 2
+*
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/extensions/index.html
+の
+.na
+「\f2The Java Extensions Framework\fP」
+.TP 2
+*
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/security/index.html
+の
+.na
+「\f2Security Features\fP」
+.TP 2
+*
+.fi
+http://java.sun.com/docs/hotspot/VMOptions.html
+の
+.na
+「\f2HotSpot VM Specific Options\fP」
+.RE
+
+.LP
+
+.LP
+ 

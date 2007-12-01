@@ -1,0 +1,48 @@
+######################################################################
+#     Default Access Control File for Remote JMX(TM) Monitoring
+######################################################################
+#
+# Access control file for Remote JMX API access to monitoring.
+# This file defines the allowed access for different roles.  The
+# password file (jmxremote.password by default) defines the roles and their
+# passwords.  To be functional, a role must have an entry in
+# both the password and the access files.
+#
+# Default location of this file is $JRE/lib/management/jmxremote.access
+# You can specify an alternate location by specifying a property in 
+# the management config file $JRE/lib/management/management.properties
+# (See that file for details)
+#
+# The file format for password and access files is syntactically the same
+# as the Properties file format.  The syntax is described in the Javadoc
+# for java.util.Properties.load.
+# Typical access file has multiple  lines, where each line is blank,
+# a comment (like this one), or an access control entry.
+#
+# An access control entry consists of a role name, and an
+# associated access level.  The role name is any string that does not
+# itself contain spaces or tabs.  It corresponds to an entry in the
+# password file (jmxremote.password).  The access level is one of the
+# following:
+#       "readonly" grants access to read attributes of MBeans.
+#                   For monitoring, this means that a remote client in this
+#                   role can read measurements but cannot perform any action
+#                   that changes the environment of the running program.
+#       "readwrite" grants access to read and write attributes of MBeans,
+#                   to invoke operations on them, and to create or remove them.
+#		    This access should be granted to only trusted clients, 
+#                   since they can potentially interfere with the smooth
+#		    operation of a running program 
+#
+# A given role should have at most one entry in this file.  If a role
+# has no entry, it has no access.
+# If multiple entries are found for the same role name, then the last
+# access entry is used.
+#
+#
+# Default access control entries:
+# o The "monitorRole" role has readonly access.  
+# o The "controlRole" role has readwrite access.
+
+monitorRole   readonly
+controlRole   readwrite

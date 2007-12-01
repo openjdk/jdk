@@ -1,0 +1,14 @@
+This directory originally held the files:
+
+   SolarisLoginModule.java
+   SolarisSystem.java
+   UnixLoginModule.java
+   UnixSystem.java
+
+They were moved to src/share/classes/com/sun/security/auth/module
+because they need to be there for Javadoc to include them in 
+the JAAS specification.  Moving them derives from the fact that 
+the final documentation is built from the platform-specific source 
+bundles rather than from the full workspace, so files from all 
+platforms need to be in the share directory.  For details, 
+see bug 4492476.

@@ -1,0 +1,68 @@
+/*
+ * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/**
+ * @test
+ * @bug 4856966
+ * @summary test that reinitializing Signatures works correctly
+ * @author Andreas Sterbenz
+ * @library ..
+ */
+
+import java.util.*;
+
+import java.security.*;
+
+public class ReinitSignature extends PKCS11Test {
+
+    public static void main(String[] args) throws Exception {
+        main(new ReinitSignature());
+    }
+
+    public void main(Provider p) throws Exception {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
+        kpg.initialize(512);
+        KeyPair kp = kpg.generateKeyPair();
+        PrivateKey privateKey = kp.getPrivate();
+        PublicKey publicKey = kp.getPublic();
+        Signature sig = Signature.getInstance("MD5withRSA", p);
+        byte[] data = new byte[10 * 1024];
+        new Random().nextBytes(data);
+        sig.initSign(privateKey);
+        sig.initSign(privateKey);
+        sig.update(data);
+        sig.initSign(privateKey);
+        sig.update(data);
+        byte[] signature = sig.sign();
+        sig.update(data);
+        sig.initSign(privateKey);
+        sig.update(data);
+        sig.sign();
+        sig.sign();
+        sig.initSign(privateKey);
+        sig.sign();
+
+        System.out.println("All tests passed");
+    }
+
+}

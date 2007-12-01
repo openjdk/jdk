@@ -1,0 +1,104 @@
+<HTML>
+<HEAD>
+   <TITLE>Release notes for the jdb debugger</TITLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF" LINK="#0000FF" VLINK="#000077" ALINK="#FF0000">
+&nbsp;
+<TABLE BORDER=0 WIDTH="100%" >
+<TR>
+
+<TD>
+<CENTER>
+<H1>Release notes for the jdb debugger</H1></CENTER>
+</TD>
+</TR>
+</TABLE>
+<!-- Body text begins here -->
+<P>
+<A HREF="index.html">Home Page</A>
+
+<P>
+As a demonstration of the 
+<A HREF="http://java.sun.com/j2se/1.4/docs/guide/jpda/architecture.html">
+Java<sup><font size=-2>TM</font></sup> Platform Debugger Architecture</A>
+we are providing source code for the <b>jdb</b> debugger, which was
+re-written to use
+<A HREF="http://java.sun.com/j2se/1.4/docs/guide/jpda/architecture.html#jdi">
+JDI</A>.
+
+<P>
+<H2><b>jdb</b> man pages</H2>
+<BLOCKQUOTE>
+<a href="http://java.sun.com/j2se/1.4/docs/tooldocs/win32/jdb.html"><font size="+1"><b>jdb</b> man pages for Windows</font></a>
+<P>
+<a href="http://java.sun.com/j2se/1.4/docs/tooldocs/solaris/jdb.html"><font size="+1"><b>jdb</b> man pages for Solaris</font></a>
+</BLOCKQUOTE>
+<P>
+<H2>Invoking <b>jdb</b></H2>
+The <b>jdb</b> sample can be started by executing:
+<PRE>
+   java com.sun.tools.example.debug.tty.TTY &lt;options&gt;.. &lt;class-name&gt;
+</PRE>
+where &lt;class-name&gt; is the name you would normally
+place on the <code>java</code> command line. The <code>-help</code>
+option provides information on options. 
+</P>
+<P>
+Note: the path to the <A HREF="index.html#SETUP">JDI Library</A> and to 
+the compiled <b>jdb</b> class files must be on the class path
+used to invoke com.sun.tools.example.debug.tty.TTY.
+
+<p>
+For more information on invoking and connecting, refer to the
+<A HREF="http://java.sun.com/j2se/1.4/docs/guide/jpda/conninv.html">
+Connection and Invocation Details</A> section of the 
+<A HREF="http://java.sun.com/j2se/1.4/docs/guide/jpda/">
+JPDA documentation</A>, 
+particularly the section on <b>jdb</b>.
+<P>
+
+
+<H2>Source for jdb</H2>
+Full source code for <b>jdb</b> is included under the
+<code>debug</code> directory of <code>examples.jar</code>.  
+Note: these directories also include the
+source for <a href="javadt.html"><code>javadt</code></a>.
+Source code for these example applications is included to provide concrete
+examples for debugger developers.  Example code may be used, modified
+and redistributed by debugger developers providing they adhere to the
+terms in the COPYRIGHT notice.
+<P>
+<b>jdb</b> uses the following packages (found under the 
+<code>debug</code> directory): 
+<DL>
+<DT><code>tty</code>
+<DD>Application code
+<DT><code>expr</code>
+<DD>Expression processing code
+</DL>
+
+<P>
+<H2>Building jdb</H2>
+To completely rebuild the <b>jdb</b> classes from the 
+provided source files under the <code>debug</code> directory, 
+you need only to compile them. No special
+options are required, aside from those which set your classpath to 
+include the <A HREF="index.html#SETUP">JDI Library</A>.
+</P>
+<P>
+However, if you want to modify the expression parser in the file
+<code>Expr.jj</code>, you will need the 
+<a href="http://www.metamata.com/javacc/">
+JavaCC parser generator</a>. 
+It is available free from 
+<a
+href="http://www.webgain.com/products/metamata/java_doc.html">Metamata
+(now part of WebGain)</a>.
+<P>
+    <hr>
+    <address><a href="mailto:java-debugger@java.sun.com">java-debugger@java.sun.com</a></address>
+    </P>
+<P>
+</P>
+  </BODY>
+</HTML>

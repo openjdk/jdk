@@ -1,0 +1,68 @@
+/*
+ * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package javax.naming.ldap;
+
+import javax.naming.event.NamingListener;
+
+/**
+ * This interface is for handling <tt>UnsolicitedNotificationEvent</tt>.
+ * "Unsolicited notification" is defined in
+ * <A HREF="ftp://ftp.isi.edu/in-notes/rfc2251.txt">RFC 2251</A>.
+ * It allows the server to send unsolicited notifications to the client.
+ * A <tt>UnsolicitedNotificationListener</tt> must:
+ *<ol>
+ * <li>Implement this interface and its method
+ * <li>Implement <tt>NamingListener.namingExceptionThrown()</tt> so
+ * that it will be notified of exceptions thrown while attempting to
+ * collect unsolicited notification events.
+ * <li>Register with the context using one of the <tt>addNamingListener()</tt>
+ * methods from <tt>EventContext</tt> or <tt>EventDirContext</tt>.
+ * Only the <tt>NamingListener</tt> argument of these methods are applicable;
+ * the rest are ignored for a <tt>UnsolicitedNotificationListener</tt>.
+ * (These arguments might be applicable to the listener if it implements
+ * other listener interfaces).
+ *</ol>
+ *
+ * @author Rosanna Lee
+ * @author Scott Seligman
+ * @author Vincent Ryan
+ *
+ * @see UnsolicitedNotificationEvent
+ * @see UnsolicitedNotification
+ * @see javax.naming.event.EventContext#addNamingListener
+ * @see javax.naming.event.EventDirContext#addNamingListener
+ * @see javax.naming.event.EventContext#removeNamingListener
+ * @since 1.3
+ */
+public interface UnsolicitedNotificationListener extends NamingListener {
+
+    /**
+     * Called when an unsolicited notification has been received.
+     *
+     * @param evt The non-null UnsolicitedNotificationEvent
+     */
+     void notificationReceived(UnsolicitedNotificationEvent evt);
+}

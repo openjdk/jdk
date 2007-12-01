@@ -1,0 +1,155 @@
+'\" t
+.\"
+.\" Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\"
+.TH unpack200 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH 名前
+unpack200 \- JAR アンパックツール
+.SH 形式
+.LP
+
+.LP
+.LP
+\f4unpack200\fP\f2 [ \fP\f2options\fP ] \f2input\-file\fP \f2JAR\-file\fP
+.LP
+.LP
+オプションの指定順序に決まりはありません。コマンド行に指定された最後のオプションが、それ以前に指定されたすべてのオプションより優先されます。
+.TP
+.I input\-file  
+入力ファイルの名前。入力ファイルは通常、pack200 gzip ファイルか pack200 ファイルです。このほかに、0 を設定すれば pack200(1) から作成された JAR ファイルも入力ファイルとして使用できます。この場合、入力ファイルの内容が Pack200 マーカーとともに出力 JAR ファイルにコピーされます。
+.TP
+.I JAR\-file    
+出力 JAR ファイル名。
+.SH 機能説明
+unpack200 ツールは pack200(1) で作成されたパックファイルを JAR ファイルに変換するネイティブ実装です。
+.TP
+一般的な使用方法:
+.LP
+.RS
+.ft 3
+.nf
+% unpack200 myarchive.pack.gz myarchive.jar
+.fi
+.ft 1
+.RE
+.LP
+この例では、デフォルトの unpack200 設定で、myarchive.pack.gz から myarchive.jar が作成されます。
+.SH オプション
+.LP
+.SS 
+標準オプション
+.TP
+.B \-Hvalue \--deflate-hint=value
+JAR ファイル内のすべてのエントリに true、false、keep としてデフレーションを設定します。デフォルトモードは keep です。true または false の場合、デフォルトの動作をオーバーライドして、出力 JAR ファイル内のすべてのエントリのデフレーションモードを設定します。
+.LP
+.RE
+.SS 
+非標準オプション
+.LP
+
+.LP
+.LP
+\f4\-r \-\-remove\-pack\-file\fP
+.LP
+.RS 3
+
+.LP
+.LP
+入力パックファイルを削除します。
+.LP
+.RE
+.LP
+\f4\-v \-\-verbose\fP
+.LP
+.RS 3
+
+.LP
+.LP
+最小限のメッセージを出力します。このオプションを複数指定すると、より長いメッセージが出力されます。
+.LP
+.RE
+.LP
+\f4\-q \-\-quiet\fP
+.LP
+.RS 3
+
+.LP
+.LP
+メッセージを表示せずに動作します。
+.LP
+.RE
+.LP
+\f4\-lfilename \-\-log\-file=\fP\f2filename\fP
+.LP
+.RS 3
+
+.LP
+.LP
+メッセージを出力するログファイルを指定します。
+.LP
+.RE
+.SH 終了ステータス
+次の終了値が返されます。
+.TP
+.B 0 " 成功"
+.TP
+.B >0  " エラー"
+.SH 関連項目
+.LP
+.RS 3
+.TP 2
+*
+pack200 \- JAR パックツール
+.TP 2
+*
+\f2pack200(1)\fP, \f2jar(1)\fP, \f2jarsigner(1)\fP, \f2attributes(5)\fP のマニュアルページ
+.TP 2
+*
+Java SE のドキュメント
+.TP 2
+*
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/deployment/deployment\-guide/pack200.html 
+の
+.na
+「\f2Java Deployment Guide」 \- Pack200\fP
+.TP 2
+*
+\f2jar\fP \- Java アーカイブツール 
+.TP 2
+*
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/solaris/jarsigner.html 
+の
+.na
+「\f2jarsigner\fP」 \- JAR 署名ツール
+.RE
+
+.LP
+.SH 注意事項
+このコマンドと unpack(1) コマンドを混同しないでください。これらは別製品です。
+.LP
+.LP
+ドキュメント間に矛盾がある場合、SDK に付属する Java SE API 仕様が最優先されます。
+.LP
+ 

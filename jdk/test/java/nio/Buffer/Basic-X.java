@@ -1,0 +1,828 @@
+/*
+ * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/* Type-specific source code for unit test
+ *
+ * Regenerate the BasicX classes via genBasic.sh whenever this file changes.
+ * We check in the generated source files so that the test tree can be used
+ * independently of the rest of the source tree.
+ */
+
+#warn This file is preprocessed before being compiled
+
+import java.nio.*;
+
+
+public class Basic$Type$
+    extends Basic
+{
+
+    private static void relGet($Type$Buffer b) {
+        int n = b.capacity();
+        $type$ v;
+        for (int i = 0; i < n; i++)
+            ck(b, (long)b.get(), (long)(($type$)ic(i)));
+        b.rewind();
+    }
+
+    private static void relGet($Type$Buffer b, int start) {
+        int n = b.remaining();
+        $type$ v;
+        for (int i = start; i < n; i++)
+            ck(b, (long)b.get(), (long)(($type$)ic(i)));
+        b.rewind();
+    }
+
+    private static void absGet($Type$Buffer b) {
+        int n = b.capacity();
+        $type$ v;
+        for (int i = 0; i < n; i++)
+            ck(b, (long)b.get(), (long)(($type$)ic(i)));
+        b.rewind();
+    }
+
+    private static void bulkGet($Type$Buffer b) {
+        int n = b.capacity();
+        $type$[] a = new $type$[n + 7];
+        b.get(a, 7, n);
+        for (int i = 0; i < n; i++)
+            ck(b, (long)a[i + 7], (long)(($type$)ic(i)));
+    }
+
+    private static void relPut($Type$Buffer b) {
+        int n = b.capacity();
+        b.clear();
+        for (int i = 0; i < n; i++)
+            b.put(($type$)ic(i));
+        b.flip();
+    }
+
+    private static void absPut($Type$Buffer b) {
+        int n = b.capacity();
+        b.clear();
+        for (int i = 0; i < n; i++)
+            b.put(i, ($type$)ic(i));
+        b.limit(n);
+        b.position(0);
+    }
+
+    private static void bulkPutArray($Type$Buffer b) {
+        int n = b.capacity();
+        b.clear();
+        $type$[] a = new $type$[n + 7];
+        for (int i = 0; i < n; i++)
+            a[i + 7] = ($type$)ic(i);
+        b.put(a, 7, n);
+        b.flip();
+    }
+
+    private static void bulkPutBuffer($Type$Buffer b) {
+        int n = b.capacity();
+        b.clear();
+        $Type$Buffer c = $Type$Buffer.allocate(n + 7);
+        c.position(7);
+        for (int i = 0; i < n; i++)
+            c.put(($type$)ic(i));
+        c.flip();
+        c.position(7);
+        b.put(c);
+        b.flip();
+    }
+
+    //6231529
+    private static void callReset($Type$Buffer b) {
+        b.position(0);
+        b.mark();
+
+        b.duplicate().reset();
+        b.asReadOnlyBuffer().reset();
+    }
+
+#if[byte]
+#else[byte]
+    // 6221101-6234263
+
+    private static void putBuffer() {
+        final int cap = 10;
+
+        $Type$Buffer direct1 = ByteBuffer.allocateDirect(cap).as$Type$Buffer();
+        $Type$Buffer nondirect1 = ByteBuffer.allocate(cap).as$Type$Buffer();
+        direct1.put(nondirect1);
+
+        $Type$Buffer direct2 = ByteBuffer.allocateDirect(cap).as$Type$Buffer();
+        $Type$Buffer nondirect2 = ByteBuffer.allocate(cap).as$Type$Buffer();
+        nondirect2.put(direct2);
+
+        $Type$Buffer direct3 = ByteBuffer.allocateDirect(cap).as$Type$Buffer();
+        $Type$Buffer direct4 = ByteBuffer.allocateDirect(cap).as$Type$Buffer();
+        direct3.put(direct4);
+
+        $Type$Buffer nondirect3 = ByteBuffer.allocate(cap).as$Type$Buffer();
+        $Type$Buffer nondirect4 = ByteBuffer.allocate(cap).as$Type$Buffer();
+        nondirect3.put(nondirect4);
+    }
+#end[byte]
+
+#if[char]
+
+    private static void bulkPutString($Type$Buffer b) {
+        int n = b.capacity();
+        b.clear();
+        StringBuffer sb = new StringBuffer(n + 7);
+        sb.append("1234567");
+        for (int i = 0; i < n; i++)
+            sb.append((char)ic(i));
+        b.put(sb.toString(), 7, 7 + n);
+        b.flip();
+    }
+
+#end[char]
+
+    private static void checkSlice($Type$Buffer b, $Type$Buffer slice) {
+        ck(slice, 0, slice.position());
+        ck(slice, b.remaining(), slice.limit());
+        ck(slice, b.remaining(), slice.capacity());
+        if (b.isDirect() != slice.isDirect())
+            fail("Lost direction", slice);
+        if (b.isReadOnly() != slice.isReadOnly())
+            fail("Lost read-only", slice);
+    }
+
+#if[byte]
+
+    private static void checkBytes(ByteBuffer b, byte[] bs) {
+        int n = bs.length;
+        int p = b.position();
+        byte v;
+        if (b.order() == ByteOrder.BIG_ENDIAN) {
+            for (int i = 0; i < n; i++)
+                ck(b, b.get(), bs[i]);
+        } else {
+            for (int i = n - 1; i >= 0; i--)
+                ck(b, b.get(), bs[i]);
+        }
+        b.position(p);
+    }
+
+    private static void testViews(int level, ByteBuffer b, boolean direct) {
+
+        ShortBuffer sb = b.asShortBuffer();
+        BasicShort.test(level, sb, direct);
+        checkBytes(b, new byte[] { 0, (byte)ic(0) });
+
+        CharBuffer cb = b.asCharBuffer();
+        BasicChar.test(level, cb, direct);
+        checkBytes(b, new byte[] { 0, (byte)ic(0) });
+
+        IntBuffer ib = b.asIntBuffer();
+        BasicInt.test(level, ib, direct);
+        checkBytes(b, new byte[] { 0, 0, 0, (byte)ic(0) });
+
+        LongBuffer lb = b.asLongBuffer();
+        BasicLong.test(level, lb, direct);
+        checkBytes(b, new byte[] { 0, 0, 0, 0, 0, 0, 0, (byte)ic(0) });
+
+        FloatBuffer fb = b.asFloatBuffer();
+        BasicFloat.test(level, fb, direct);
+        checkBytes(b, new byte[] { 0x42, (byte)0xc2, 0, 0 });
+
+        DoubleBuffer db = b.asDoubleBuffer();
+        BasicDouble.test(level, db, direct);
+        checkBytes(b, new byte[] { 0x40, 0x58, 0x40, 0, 0, 0, 0, 0 });
+
+    }
+
+    private static void testHet(int level, ByteBuffer b) {
+
+        int p = b.position();
+        b.limit(b.capacity());
+        show(level, b);
+        out.print("    put:");
+
+        b.putChar((char)1);
+        b.putChar((char)Character.MAX_VALUE);
+        out.print(" char");
+
+        b.putShort((short)1);
+        b.putShort((short)Short.MAX_VALUE);
+        out.print(" short");
+
+        b.putInt(1);
+        b.putInt(Integer.MAX_VALUE);
+        out.print(" int");
+
+        b.putLong((long)1);
+        b.putLong((long)Long.MAX_VALUE);
+        out.print(" long");
+
+        b.putFloat((float)1);
+        b.putFloat((float)Float.MIN_VALUE);
+        b.putFloat((float)Float.MAX_VALUE);
+        out.print(" float");
+
+        b.putDouble((double)1);
+        b.putDouble((double)Double.MIN_VALUE);
+        b.putDouble((double)Double.MAX_VALUE);
+        out.print(" double");
+
+        out.println();
+        b.limit(b.position());
+        b.position(p);
+        show(level, b);
+        out.print("    get:");
+
+        ck(b, b.getChar(), 1);
+        ck(b, b.getChar(), Character.MAX_VALUE);
+        out.print(" char");
+
+        ck(b, b.getShort(), 1);
+        ck(b, b.getShort(), Short.MAX_VALUE);
+        out.print(" short");
+
+        ck(b, b.getInt(), 1);
+        ck(b, b.getInt(), Integer.MAX_VALUE);
+        out.print(" int");
+
+        ck(b, b.getLong(), 1);
+        ck(b, b.getLong(), Long.MAX_VALUE);
+        out.print(" long");
+
+        ck(b, (long)b.getFloat(), 1);
+        ck(b, (long)b.getFloat(), (long)Float.MIN_VALUE);
+        ck(b, (long)b.getFloat(), (long)Float.MAX_VALUE);
+        out.print(" float");
+
+        ck(b, (long)b.getDouble(), 1);
+        ck(b, (long)b.getDouble(), (long)Double.MIN_VALUE);
+        ck(b, (long)b.getDouble(), (long)Double.MAX_VALUE);
+        out.print(" double");
+
+        out.println();
+
+    }
+
+#end[byte]
+
+    private static void tryCatch(Buffer b, Class ex, Runnable thunk) {
+        boolean caught = false;
+        try {
+            thunk.run();
+        } catch (Throwable x) {
+            if (ex.isAssignableFrom(x.getClass()))
+                caught = true;
+        }
+        if (!caught)
+            fail(ex.getName() + " not thrown", b);
+    }
+
+    private static void tryCatch($type$ [] t, Class ex, Runnable thunk) {
+        tryCatch($Type$Buffer.wrap(t), ex, thunk);
+    }
+
+    public static void test(int level, final $Type$Buffer b, boolean direct) {
+
+        show(level, b);
+
+        if (direct != b.isDirect())
+            fail("Wrong direction", b);
+
+        // Gets and puts
+
+        relPut(b);
+        relGet(b);
+        absGet(b);
+        bulkGet(b);
+
+        absPut(b);
+        relGet(b);
+        absGet(b);
+        bulkGet(b);
+
+        bulkPutArray(b);
+        relGet(b);
+
+        bulkPutBuffer(b);
+        relGet(b);
+
+#if[char]
+
+        bulkPutString(b);
+        relGet(b);
+        b.position(1);
+        b.limit(7);
+        ck(b, b.toString().equals("bcdefg"));
+
+        // CharSequence ops
+
+        b.position(2);
+        ck(b, b.charAt(1), 'd');
+        CharBuffer c = (CharBuffer)b.subSequence(1, 4);
+        ck(b, b.subSequence(1, 4).toString().equals("def"));
+
+        // 4938424
+        b.position(4);
+        ck(b, b.charAt(1), 'f');
+        ck(b, b.subSequence(1, 3).toString().equals("fg"));
+
+#end[char]
+
+        // Compact
+
+        relPut(b);
+        b.position(13);
+        b.compact();
+        b.flip();
+        relGet(b, 13);
+
+        // Exceptions
+
+        boolean caught = false;
+        relPut(b);
+        b.limit(b.capacity() / 2);
+        b.position(b.limit());
+
+        tryCatch(b, BufferUnderflowException.class, new Runnable() {
+                public void run() {
+                    b.get();
+                }});
+
+        tryCatch(b, BufferOverflowException.class, new Runnable() {
+                public void run() {
+                    b.put(($type$)42);
+                }});
+
+        // The index must be non-negative and lesss than the buffer's limit.
+        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    b.get(b.limit());
+                }});
+        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    b.get(-1);
+                }});
+
+        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    b.put(b.limit(), ($type$)42);
+                }});
+
+        // Values
+
+        b.clear();
+        b.put(($type$)0);
+        b.put(($type$)-1);
+        b.put(($type$)1);
+        b.put($Fulltype$.MAX_VALUE);
+        b.put($Fulltype$.MIN_VALUE);
+#if[float]
+        b.put(-Float.MAX_VALUE);
+        b.put(-Float.MIN_VALUE);
+        b.put(Float.NEGATIVE_INFINITY);
+        b.put(Float.POSITIVE_INFINITY);
+        b.put(Float.NaN);
+        b.put(0.91697687f);             // Changes value if incorrectly swapped
+#end[float]
+#if[double]
+        b.put(-Double.MAX_VALUE);
+        b.put(-Double.MIN_VALUE);
+        b.put(Double.NEGATIVE_INFINITY);
+        b.put(Double.POSITIVE_INFINITY);
+        b.put(Double.NaN);
+        b.put(0.5121609353879392);      // Changes value if incorrectly swapped
+#end[double]
+
+        $type$ v;
+        b.flip();
+        ck(b, b.get(), 0);
+        ck(b, b.get(), ($type$)-1);
+        ck(b, b.get(), 1);
+        ck(b, b.get(), $Fulltype$.MAX_VALUE);
+        ck(b, b.get(), $Fulltype$.MIN_VALUE);
+
+#if[float]
+        ck(b, b.get(), -Float.MAX_VALUE);
+        ck(b, b.get(), -Float.MIN_VALUE);
+        ck(b, b.get(), Float.NEGATIVE_INFINITY);
+        ck(b, b.get(), Float.POSITIVE_INFINITY);
+        if (Float.floatToRawIntBits(v = b.get()) != Float.floatToRawIntBits(Float.NaN))
+            fail(b, (long)Float.NaN, (long)v);
+        ck(b, b.get(), 0.91697687f);
+#end[float]
+#if[double]
+        ck(b, b.get(), -Double.MAX_VALUE);
+        ck(b, b.get(), -Double.MIN_VALUE);
+        ck(b, b.get(), Double.NEGATIVE_INFINITY);
+        ck(b, b.get(), Double.POSITIVE_INFINITY);
+        if (Double.doubleToRawLongBits(v = b.get())
+            != Double.doubleToRawLongBits(Double.NaN))
+            fail(b, (long)Double.NaN, (long)v);
+        ck(b, b.get(), 0.5121609353879392);
+#end[double]
+
+
+        // Comparison
+        b.rewind();
+        $Type$Buffer b2 = $Type$Buffer.allocate(b.capacity());
+        b2.put(b);
+        b2.flip();
+        b.position(2);
+        b2.position(2);
+        if (!b.equals(b2)) {
+            for (int i = 2; i < b.limit(); i++) {
+                $type$ x = b.get(i);
+                $type$ y = b2.get(i);
+                if (x != y
+#if[double]
+                    || Double.compare(x, y) != 0
+#end[double]
+#if[float]
+                    || Float.compare(x, y) != 0
+#end[float]
+                    )
+                    out.println("[" + i + "] " + x + " != " + y);
+            }
+            fail("Identical buffers not equal", b, b2);
+        }
+        if (b.compareTo(b2) != 0)
+            fail("Comparison to identical buffer != 0", b, b2);
+
+        b.limit(b.limit() + 1);
+        b.position(b.limit() - 1);
+        b.put(($type$)99);
+        b.rewind();
+        b2.rewind();
+        if (b.equals(b2))
+            fail("Non-identical buffers equal", b, b2);
+        if (b.compareTo(b2) <= 0)
+            fail("Comparison to shorter buffer <= 0", b, b2);
+        b.limit(b.limit() - 1);
+
+        b.put(2, ($type$)42);
+        if (b.equals(b2))
+            fail("Non-identical buffers equal", b, b2);
+        if (b.compareTo(b2) <= 0)
+            fail("Comparison to lesser buffer <= 0", b, b2);
+
+        // Sub, dup
+
+        relPut(b);
+        relGet(b.duplicate());
+        b.position(13);
+        relGet(b.duplicate(), 13);
+        relGet(b.duplicate().slice(), 13);
+        relGet(b.slice(), 13);
+        relGet(b.slice().duplicate(), 13);
+
+        // Slice
+
+        b.position(5);
+        $Type$Buffer sb = b.slice();
+        checkSlice(b, sb);
+        b.position(0);
+        $Type$Buffer sb2 = sb.slice();
+        checkSlice(sb, sb2);
+
+        if (!sb.equals(sb2))
+            fail("Sliced slices do not match", sb, sb2);
+        if ((sb.hasArray()) && (sb.arrayOffset() != sb2.arrayOffset()))
+            fail("Array offsets do not match: "
+                 + sb.arrayOffset() + " != " + sb2.arrayOffset(), sb, sb2);
+
+#if[byte]
+
+        // Views
+
+        b.clear();
+        b.order(ByteOrder.BIG_ENDIAN);
+        testViews(level + 1, b, direct);
+
+        for (int i = 1; i <= 9; i++) {
+            b.position(i);
+            show(level + 1, b);
+            testViews(level + 2, b, direct);
+        }
+
+        b.position(0);
+        b.order(ByteOrder.LITTLE_ENDIAN);
+        testViews(level + 1, b, direct);
+
+        // Heterogeneous accessors
+
+        b.order(ByteOrder.BIG_ENDIAN);
+        for (int i = 0; i <= 9; i++) {
+            b.position(i);
+            testHet(level + 1, b);
+        }
+        b.order(ByteOrder.LITTLE_ENDIAN);
+        b.position(3);
+        testHet(level + 1, b);
+
+#end[byte]
+
+        // Read-only views
+
+        b.rewind();
+        final $Type$Buffer rb = b.asReadOnlyBuffer();
+        if (!b.equals(rb))
+            fail("Buffer not equal to read-only view", b, rb);
+        show(level + 1, rb);
+
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    relPut(rb);
+                }});
+
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    absPut(rb);
+                }});
+
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    bulkPutArray(rb);
+                }});
+
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    bulkPutBuffer(rb);
+                }});
+
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.compact();
+                }});
+
+#if[byte]
+
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.putChar((char)1);
+                }});
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.putChar(0, (char)1);
+                }});
+
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.putShort((short)1);
+                }});
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.putShort(0, (short)1);
+                }});
+
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.putInt(1);
+                }});
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.putInt(0, 1);
+                }});
+
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.putLong((long)1);
+                }});
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.putLong(0, (long)1);
+                }});
+
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.putFloat((float)1);
+                }});
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.putFloat(0, (float)1);
+                }});
+
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.putDouble((double)1);
+                }});
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.putDouble(0, (double)1);
+                }});
+
+#end[byte]
+
+        if (rb.getClass().getName().startsWith("java.nio.Heap")) {
+
+            tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                    public void run() {
+                        rb.array();
+                    }});
+
+            tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                    public void run() {
+                        rb.arrayOffset();
+                    }});
+
+            if (rb.hasArray())
+                fail("Read-only heap buffer's backing array is accessible",
+                     rb);
+
+        }
+
+        // Bulk puts from read-only buffers
+
+        b.clear();
+        rb.rewind();
+        b.put(rb);
+
+#if[byte]
+        // For byte buffers, test both the direct and non-direct cases
+        $Type$Buffer ob
+            = (b.isDirect()
+               ? $Type$Buffer.allocate(rb.capacity())
+               : $Type$Buffer.allocateDirect(rb.capacity()));
+        rb.rewind();
+        ob.put(rb);
+#end[byte]
+
+        relPut(b);                       // Required by testViews
+
+    }
+
+#if[char]
+
+    private static void testStr() {
+        final String s = "abcdefghijklm";
+        int start = 3;
+        int end = 9;
+        final CharBuffer b = CharBuffer.wrap(s, start, end);
+        show(0, b);
+        ck(b, b.toString().equals(s.substring(start, end)));
+        ck(b, b.toString().equals("defghi"));
+        ck(b, b.isReadOnly());
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    b.put('x');
+                }});
+        ck(b, start, b.position());
+        ck(b, end, b.limit());
+        ck(b, s.length(), b.capacity());
+
+        // The index, relative to the position, must be non-negative and
+        // smaller than remaining().
+        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    b.charAt(-1);
+                }});
+        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    b.charAt(b.remaining());
+                }});
+
+        // The index must be non-negative and less than the buffer's limit.
+        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    b.get(b.limit());
+                }});
+        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    b.get(-1);
+                }});
+
+        // The start must be non-negative and no larger than remaining().
+        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    b.subSequence(-1, b.remaining());
+                }});
+        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    b.subSequence(b.remaining() + 1, b.remaining());
+                }});
+
+        // The end must be no smaller than start and no larger than
+        // remaining().
+        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    b.subSequence(2, 1);
+                }});
+        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    b.subSequence(0, b.remaining() + 1);
+                }});
+
+        // The offset must be non-negative and no larger than <array.length>.
+        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    $Type$Buffer.wrap(s, -1, s.length());
+                }});
+        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    $Type$Buffer.wrap(s, s.length() + 1, s.length());
+                }});
+        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    $Type$Buffer.wrap(s, 1, 0);
+                }});
+        tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    $Type$Buffer.wrap(s, 0, s.length() + 1);
+                }});
+    }
+
+#end[char]
+
+    public static void test(final $type$ [] ba) {
+        int offset = 47;
+        int length = 900;
+        final $Type$Buffer b = $Type$Buffer.wrap(ba, offset, length);
+        show(0, b);
+        ck(b, b.capacity(), ba.length);
+        ck(b, b.position(), offset);
+        ck(b, b.limit(), offset + length);
+
+        // The offset must be non-negative and no larger than <array.length>.
+        tryCatch(ba, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    $Type$Buffer.wrap(ba, -1, ba.length);
+                }});
+        tryCatch(ba, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    $Type$Buffer.wrap(ba, ba.length + 1, ba.length);
+                }});
+        tryCatch(ba, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    $Type$Buffer.wrap(ba, 0, -1);
+                }});
+        tryCatch(ba, IndexOutOfBoundsException.class, new Runnable() {
+                public void run() {
+                    $Type$Buffer.wrap(ba, 0, ba.length + 1);
+                }});
+
+        // A NullPointerException will be thrown if the array is null.
+        tryCatch(ba, NullPointerException.class, new Runnable() {
+                public void run() {
+                    $Type$Buffer.wrap(($type$ []) null, 0, 5);
+                }});
+        tryCatch(ba, NullPointerException.class, new Runnable() {
+                public void run() {
+                    $Type$Buffer.wrap(($type$ []) null);
+                }});
+    }
+
+    private static void testAllocate() {
+        // An IllegalArgumentException will be thrown for negative capacities.
+        tryCatch((Buffer) null, IllegalArgumentException.class, new Runnable() {
+                public void run() {
+                    $Type$Buffer.allocate(-1);
+                }});
+#if[byte]
+        tryCatch((Buffer) null, IllegalArgumentException.class, new Runnable() {
+                public void run() {
+                    $Type$Buffer.allocateDirect(-1);
+                }});
+#end[byte]
+    }
+
+    public static void test() {
+        testAllocate();
+        test(0, $Type$Buffer.allocate(7 * 1024), false);
+        test(0, $Type$Buffer.wrap(new $type$[7 * 1024], 0, 7 * 1024), false);
+        test(new $type$[1024]);
+#if[byte]
+        $Type$Buffer b = $Type$Buffer.allocateDirect(7 * 1024);
+        for (b.position(0); b.position() < b.limit(); )
+            ck(b, b.get(), 0);
+        test(0, b, true);
+#end[byte]
+#if[char]
+        testStr();
+#end[char]
+
+        callReset($Type$Buffer.allocate(10));
+
+#if[byte]
+#else[byte]
+        putBuffer();
+#end[byte]
+    }
+
+}

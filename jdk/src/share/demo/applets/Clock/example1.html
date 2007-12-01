@@ -1,0 +1,47 @@
+<HTML>
+  <HEAD>
+    <TITLE>A Clock (1.6)</TITLE>
+  </HEAD>
+  <BODY>
+    <h1>A Clock (1.6)</h1>
+    <hr>
+    <applet code="Clock.class" width=170 height=150>
+      alt="Your browser understands the &lt;APPLET&gt; tag but isn't running the applet, for some reason."
+      Your browser is completely ignoring the &lt;APPLET&gt; tag!
+</applet>
+      <p>
+        The clock applet now has three parameters; the background
+        color (bgcolor), the main foreground color (the hands and
+        dial) (fgcolor1) and the secondary foreground color (the
+        seconds hand and numbers) (fgcolor2).  These three parameters
+        are hexadecimal RGB numbers (like the ones used for the body
+        bgcolor tag in HTML).  For example:
+      <p>
+        &lt;applet code="Clock.class" width=170 height=150&gt;<br>
+        &lt;param name=bgcolor  value="000000"&gt;<br>
+        &lt;param name=fgcolor1 value="ff0000"&gt;<br>
+        &lt;param name=fgcolor2 value="ff00ff"&gt;<br>
+        &lt;/applet&gt;<p>
+        would give you a black background, a red dial and hands, and purple numbers.
+      <p>
+        For those who don't convert to hexadecimal easily, here are some common
+        values:
+      <ul>
+        <li>black = 000000
+        <li>blue = 0000ff
+        <li>cyan = 00ffff
+        <li>darkGray = 404040
+        <li>gray = 808080
+        <li>green = 00ff00
+        <li>lightGray = c0c0c0
+        <li>magenta = ff00ff
+        <li>orange = ffc800
+        <li>pink = ffafaf
+        <li>red = ff0000
+        <li>white = ffffff
+        <li>yellow = ffff00
+      </ul>
+      <hr>
+      <a href="Clock.java">The source</a>.
+  </BODY>
+</HTML>

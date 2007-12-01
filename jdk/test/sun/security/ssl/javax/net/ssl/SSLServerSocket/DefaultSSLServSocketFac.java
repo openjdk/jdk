@@ -1,0 +1,49 @@
+/*
+ * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/**
+ * @test
+ * @bug 6449579
+ * @summary DefaultSSLServerSocketFactory does not override createServerSocket()
+ */
+import java.security.Security;
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+
+public class DefaultSSLServSocketFac {
+    public static void main(String[] args) throws Exception {
+        try {
+            Security.setProperty("ssl.ServerSocketFactory.provider", "oops");
+            ServerSocketFactory ssocketFactory =
+                        SSLServerSocketFactory.getDefault();
+            SSLServerSocket sslServerSocket =
+                        (SSLServerSocket)ssocketFactory.createServerSocket();
+        } catch (Exception e) {
+            if (!(e.getCause() instanceof ClassNotFoundException)) {
+                throw e;
+            }
+            // get the expected exception
+        }
+    }
+}

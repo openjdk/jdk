@@ -1,0 +1,370 @@
+'\" t
+.\"
+.\" Copyright 2000-2004 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\" 
+.TH rmic 1 "2004 年 6 月 22 日"
+.SH "名前"
+rmic \- Java RMI スタブコンパイラ
+.\" 
+.\"  This document was created by saving an HTML file as text
+.\"  from the JavaSoft web site:
+.\" 
+.\" http://java.sun.com/products/jdk/1.2/docs/tooldocs/tools.html
+.\" 
+.\"  and adding appropriate troff macros.  Because the JavaSoft web site 
+.\"  man pages can change without notice, it may be helpful to diff
+.\"  files to identify changes other than new functionality. 
+.\" 
+.SH "形式"
+.B rmic 
+[
+.BI options 
+] 
+.I package-qualified-class-names
+.SH "機能説明"
+.IX "Java RMI stub compiler" "" "Java RMI stub compiler \(em \fLrmic\fP"
+.IX "rmic" "" "\fLrmic\fP \(em Java RMI stub compiler"
+.B rmic 
+コンパイラは、リモートオブジェクト用のスタブおよび
+スケルトンクラスファイル (JRMP プロトコル) とスタブ
+および Tie クラスファイル (IIOP プロトコル) を生成します。
+これらのクラスファイルは、リモートオブジェクト
+実装クラスである、コンパイルされた Java プログラミング言語
+クラスから生成されます。リモート実装クラスは、
+インタフェース \f3java.rmi.Remote\f1 
+を実装するクラスです。
+.B rmic 
+コマンドで指定されるクラスは、
+.BR javac (1) 
+コマンドで正常にコンパイルされ、
+完全にパッケージ修飾されたクラスで
+なければなりません。
+次に示す例では、
+.B HelloImpl
+というクラスファイルに対して
+.B rmic
+を実行しています。
+.LP
+.RS
+rmic hello.HelloImpl
+.RE
+.LP
+.B HelloImpl_Stub.class 
+ファイルを (クラスのパッケージに対して指定された)  
+.B hello
+サブディレクトリに作成します。
+.LP
+JRMP プロトコルサーバ側エンティティである
+リモートオブジェクトのスケルトンには、
+リモートオブジェクト実装の呼び出しを
+ディスパッチするメソッドがあります。
+.LP
+リモートオブジェクトの Tie は、スケルトンに似た
+サーバ側エンティティですが、IIOP プロトコル
+を使用してクライアントと通信します。 
+.LP
+スタブは、リモートオブジェクトのプロキシで、
+実際のリモートオブジェクト実装が存在するサーバに、
+リモートオブジェクトに対するメソッド呼び出しを転送します。
+クライアントのリモートオブジェクトへの参照は、
+実際にはローカルスタブへの参照です。
+.LP
+デフォルトでは、
+.B rmic 
+は \-v1.2 オプションが
+指定された場合と同様に 1.2 JRMP スタブプロトコルを
+使用するスタブクラスを生成します (1.5 より前の
+リリースでは、\-vcompat オプションがデフォルト)。
+IIOP プロトコル用のスタブクラスおよび Tie クラスを
+生成するには、\-iiop オプションを使用します。
+.LP
+スタブは、リモートインタフェースのみを実装し、
+リモートオブジェクトによっても実装されるローカル
+インタフェースは実装しません。スタブはリモート
+オブジェクトとまったく同じリモートインタフェースの
+セットを実装するため、クライアントはキャストおよび
+型チェックに Java 言語の組み込み演算子を使用できます。
+IIOP の場合は、
+.B PortableRemoteObject.narrow 
+メソッドを
+使用する必要があります。
+.SH オプション
+.if t .TP 20
+.if n .TP 15
+.BI \-bootclasspath " path"
+ブートストラップクラスファイルの位置をオーバーライドします。
+.if t .TP 20
+.if n .TP 15
+.BI \-classpath " path"
+.B rmic
+がクラスを探すのに用いるパスを
+.I path
+で指定します。この指定値は、デフォルトおよび
+.B CLASSPATH
+環境変数の設定値をオーバーライドします。
+複数のディレクトリを指定する場合はコロンで区切ります。
+したがって
+.I path
+の通常の形式は次のようになります。
+.sp 1n
+.ti +5n
+.BI .:< your_path >
+.sp 1n
+以下に例を示します。
+.sp 1n
+.ti +5n
+.B .:/usr/local/java/classes
+.if t .TP 20
+.if n .TP 15
+.BI \-d " directory"
+クラス階層のルートディレクトリを指定します。
+このオプションを使用して、スタブ、スケルトン、および Tie ファイルの出力先ディレクトリを指定できます。
+たとえば、次のコマンドを入力します。
+.LP
+.RS 5
+rmic \-d /java/classes foo.MyClass
+.RE
+.LP
+この例では、MyClass から派生したスタブおよび
+スケルトンクラスをディレクトリ /java/classes/foo 
+に配置します。\-d オプションが指定されていない場合、
+デフォルトの動作は「\-d .」が指定された場合と同様です。
+ターゲットクラスのパッケージ階層は、
+現在のディレクトリに作成され、スタブ/Tie/スケルトン
+ファイルはその階層内に配置されます。
+(以前の一部のバージョンの 
+.B rmic 
+では、
+\-d が指定されなかった場合、パッケージ階層は作成されず、
+すべての出力ファイル
+は、現在のディレクトリ内に直接配置されました。) 
+.if t .TP 20
+.if n .TP 15
+.BI \-extdirs " path"
+インストールされている拡張機能の位置を上書きします。
+.if t .TP 20
+.if n .TP 15
+.B \-g
+ローカル変数を含む、すべてのデバッグ情報の
+生成を有効にします。デフォルトでは、
+行番号情報のみが生成されます。 
+.if t .TP 20
+.if n .TP 15
+.B \-idl
+.B rmic
+によって、指定したクラスおよび参照されたクラスの
+.SM OMG IDL
+が生成されます。
+.SM IDL
+では、プログラミング言語に依存せずに、宣言するだけでオブジェクトの 
+.SM API
+を指定できます。
+.SM IDL
+は、
+.SM CORBA
+バインディングを提供する任意の言語 (Java、C++ など) を使用して、メソッドおよびデータの
+書き込みおよび呼び出しを行うときの仕様として使われます。
+.B \-idl
+オプションは、合わせて以下のオプションも指定できます。
+.RS
+.TP 5
+.BR \-always " または " \-alwaysgenerate
+既存のスタブ、Tie、および \s-1IDL\s0 が入力クラスより新しいときでも、強制的に生成し直します。 
+.PD 0
+.TP
+.B \-factory
+生成された IDL で factory キーワードを使います。
+.TP
+.B \-idlModule fromJavaPackage[.class] toIDLModule
+.B IDLEntity
+パッケージのマッピングを指定します。次に例を示します。
+.sp 1n
+.in +5n
+.ft 3
+.nf
+\-idlModule foo.bar
+my::real::idlmod.
+.fi
+.ft 1
+.in
+.sp 1n
+.TP
+.B \-idlFile fromJavaPackage[.class] toIDLFile
+.B IDLEntity
+ファイルのマッピングを指定します。次に例を示します。
+.sp 1n
+.ti +5n
+.B \-idlFile test.pkg.X TEST16.idl
+.RE
+.PD
+.if t .TP 20
+.if n .TP 15
+.B \-iiop
+.B rmic
+は、
+.SM JRMP
+のスタブとスケルトンクラスの代わりに、
+.SM IIOP
+のスタブと Tie クラスを生成します。スタブクラスは、リモートオブジェクトの
+ローカルプロキシで、クライアントがサーバに呼び出しを送信するときに
+使われます。各リモートインタフェースにはスタブクラスが必要です。スタブクラス
+によってリモートインタフェースが実装されます。クライアントでリモートオブジェクト
+を参照すると、実際にはスタブを参照することになります。Tie クラスは、
+サーバ側で受信した呼び出しを処理し、その呼び出しを適切な実装クラスにディスパッチ
+するときに使われます。各実装クラスには、Tie クラスが必要です。 
+.sp 1n
+.B \-iiop
+を指定して
+.B rmic
+を起動すると、次の命名規約に準拠したスタブと Tie が生成されます。 
+.sp 1n
+.in +5n
+.ft 3
+.nf
+_<implementationName>_stub.class
+.sp 1n
+_<interfaceName>_tie.class
+.ft 1
+.fi
+.in
+.sp 1n
+.B \-iiop
+オプションは、合わせて以下のオプションも指定できます。
+.sp 1n
+.ne 1
+.bp
+.RS
+.PD 0
+.TP 5
+.BR \-always " または " \-alwaysgenerate
+既存のスタブ、Tie、および \s-1IDL\s0 が入力クラスより新しいときでも、強制的
+に生成し直します。 
+.TP
+.B \-nolocalstubs
+同じプロセスのクライアントとサーバに対して最適化されたスタブを作成しません。
+.TP
+.B \-noValueMethods
+.B \-idl
+オプションとともに使用する必要があります。発行された
+.SM IDL\s0
+に、valuetype メソッドおよび初期化子を追加しません。このメソッドおよび初期化子
+は、valuetype のオプションです。
+.B \-idl
+オプションを使うときは、
+.B \-noValueMethods
+オプションを指定しない限り生成されます。 
+.TP
+.B \-poa 
+.br
+継承を
+.BR org.omg.CORBA_2_3.portable.ObjectImpl から
+.BR org.omg.PortableServer.Servant\. へ変更します。
+.RS
+.LP
+Portable Object Adapter (POA) の
+.BR PortableServer
+モジュールは、ネイティブ の servant 型を定義します。
+Java プログラミング言語では、servant 型は、Java の 
+.BR org.omg.PortableServer.Servant
+クラスにマップされます。これはすべての POA サーバント実装の基底クラスとして
+機能し、アプリケーション開発者が呼び出せる多数のメソッドを提供します。また、
+POA 自体が読み出したり、サーバント動作を制御するためにユーザが上書きした
+りできるメソッドも提供します。CORBA V 2.3.1 の「OMG IDL to Java Language Mapping Specfication (ptc/00-01-08.pdf)」に基づいています。
+.RE
+.PD
+.RE
+.TP 20
+.if t .TP 20
+.if n .TP 15
+.B \-J
+任意の java オプションと
+併用した場合、
+\-J の後のオプション (
+.B \-J 
+とオプションの間は空白文字をいれない) 
+を java インタプリタに
+渡します。
+.if t .TP 20
+.if n .TP 15
+.B \-keepgenerated
+スタブ、スケルトンおよび tie クラス用に生成された .java ソースファイルを保持し、.class ファイルと同じディレクトリに書き込みます。
+.if t .TP 20
+.if n .TP 15
+.B \-nowarn
+警告をオフにします。このオプションを使用した場合、コンパイラは警告を出力しません。
+.if t .TP 20
+.if n .TP 15
+.B \-vcompat
+1.1 と 1.2 の両方の JRMP スタブプロトコル
+バージョンと互換性があるスタブおよび
+スケルトンクラスを生成します (1.5 より前の
+リリースでは、このオプションはデフォルト)。 
+生成されたスタブクラスは、JDK 1.1 の仮想マシンに
+読み込まれる場合、1.1 のスタブプロトコルバージョンを
+使用し、1.2 以降の仮想マシンに読み込まれる場合は、
+1.2 のスタブプロトコルバージョンを使用します。
+生成されたスケルトンクラスは、1.1 と 1.2 の両方の
+スタブプロトコルバージョンをサポートします。
+生成されたクラスは、両方の操作モードをサポート
+するため、比較的サイズが大きくなります。 
+.if t .TP 20
+.if n .TP 15
+.B \-verbose
+コンパイラとリンカに詳細情報を出力させます。具体的には、
+コンパイルされるクラスファイル、およびロードされる
+クラスファイルに関する情報が出力されます。
+.TP 15
+.B  \-v1.1
+JDK 1.1 のスタブプロトコルバージョン
+専用のスタブおよびスケルトンを作成します。
+このオプションは、JDK 1.1 から 
+.B rmic 
+によって生成され、アップグレードできない 
+(および動的クラスローディングが使用
+されていない) 既存の静的に配備された
+スタブクラスと直列化互換性のあるスタブ
+クラスを生成する場合にのみ使用します。 
+.if t .TP 20
+.if n .TP 15
+.B  \-v1.2
+(デフォルト) 1.2 JRMP のスタブプロトコル
+バージョン専用のスタブクラスを生成します。
+スケルトンクラスは 1.2 のスタブプロトコル
+バージョンで使用されないため、このオプション
+ではスケルトンクラスが生成されません。
+生成されたスタブクラスが JDK 1.1 の仮想マシンに
+読み込まれた場合は、機能しません。
+.SH 環境変数
+.if t .TP 20
+.if n .TP 15
+.B CLASSPATH
+ユーザ定義クラスへのパスをシステムに通知するために使用します。
+ディレクトリはコロンで
+区切ります。以下に例を示します。 
+.sp 1n
+.ti +5n
+.B .:/usr/local/java/classes
+.SH 関連項目
+.BR java (1),
+.BR javac (1),
+.BR CLASSPATH

@@ -1,0 +1,339 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- http://www.xml.com/lpt/a/2002/01/23/relaxng.html -->
+<!-- http://www.oasis-open.org/committees/relax-ng/tutorial-20011203.html -->
+<!-- http://www.zvon.org/xxl/XMLSchemaTutorial/Output/ser_wildcards_st8.html -->
+<!-- http://lists.oasis-open.org/archives/relax-ng-comment/200206/maillist.html -->
+
+<grammar xmlns='http://relaxng.org/ns/structure/1.0'
+        xmlns:ds='http://www.w3.org/2000/09/xmldsig#'
+        xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+        ns='http://www.w3.org/2000/09/xmldsig#'
+        datatypeLibrary='http://www.w3.org/2001/XMLSchema-datatypes'>
+
+    <start>
+            <element name='Signature'><ref name='SignatureType'/></element>
+    </start>   
+    
+    <define name='CryptoBinary'>
+        <data type='base64Binary'/>
+    </define>
+    
+    <define name='SignatureType'>
+        <element name='SignedInfo'><ref name='SignedInfoType'/></element>
+        <element name='SignatureValue'><ref name='SignatureValueType'/></element>
+        <optional><element name='KeyInfo'><ref name='KeyInfoType'/></element></optional>
+        <zeroOrMore><element name='Object'><ref name='ObjectType'/></element></zeroOrMore>
+        <optional><attribute name='Id'><data type='ID'/></attribute></optional>
+        <optional><attribute name='xsi:schemaLocation'/></optional>
+    </define>
+
+    <define name='SignatureValueType'>
+        <data type='base64Binary'/>
+        <optional><attribute name='Id'><data type='ID'/></attribute></optional>
+    </define>
+    
+<!-- Start SignedInfo -->
+    
+    <define name='SignedInfoType'>
+        <element name='CanonicalizationMethod'><ref name='CanonicalizationMethodType'/></element>
+        <element name='SignatureMethod'><ref name='SignatureMethodType'/></element>
+        <optional><element name='KeyInfo'><ref name='KeyInfoType'/></element></optional>
+        <oneOrMore><element name='Reference'><ref name='ReferenceType'/></element></oneOrMore>
+        <optional><attribute name='Id'><data type='ID'/></attribute></optional>
+    </define>    
+
+    <define name='CanonicalizationMethodType'>
+        <zeroOrMore><ref name='anyThing'/></zeroOrMore>
+        <optional><attribute name='Algorithm'><data type='anyURI'/></attribute></optional>
+    </define>    
+
+
+    <define name='SignatureMethodType'>
+        <optional><element name='HMACOutputLength'><data type='integer'/></element></optional>
+        <zeroOrMore><ref name='anyThing'/></zeroOrMore>
+        <optional><attribute name='Algorithm'><data type='anyURI'/></attribute></optional>
+    </define>    
+        
+<!-- Start Reference -->
+    
+    <define name='ReferenceType'>
+        <optional><element name='Transforms'><ref name='TransformsType'/></element></optional>
+        <element name='DigestMethod'><ref name='DigestMethodType'/></element>
+        <element name='DigestValue'><ref name='DigestValueType'/></element>
+        <optional><attribute name='Type'><data type='anyURI'/></attribute></optional>
+        <optional><attribute name='URI'><data type='anyURI'/></attribute></optional>
+        <optional><attribute name='Id'><data type='ID'/></attribute></optional>
+     </define>
+
+    <define name='TransformsType'>
+        <oneOrMore><element name='Transform'><ref name='TransformType'/></element></oneOrMore>
+    </define>
+
+    <define name='TransformType'>
+        <optional><element name='XPath'><data type='string'/></element></optional>
+        <zeroOrMore><ref name='anyThing'/></zeroOrMore>
+        <attribute name='Algorithm'><data type='anyURI'/></attribute>
+    </define>    
+
+<!-- End Reference -->
+
+    <define name='DigestMethodType'>
+        <zeroOrMore><ref name='anyThing'/></zeroOrMore>
+        <attribute name='Algorithm'><data type='anyURI'/></attribute>
+    </define>   
+
+    <define name='DigestValueType'>
+        <data type='base64Binary'/>
+    </define>  
+    
+<!-- End SignedInfo -->
+
+<!-- Start KeyInfo -->
+    
+    <define name='KeyInfoType'>
+        <oneOrMore>
+            <choice>
+                <element name='KeyName'><data type='string'/></element>
+                <element name='KeyValue'><ref name='KeyValueType'/></element>
+                <element name='RetrievalMethod'><ref name='RetrievalMethodType'/></element>
+                <element name='X509Data'><ref name='X509DataType'/></element>
+                <element name='PGPData'><ref name='PGPDataType'/></element>
+                <element name='SPKIData'><ref name='SPKIDataType'/></element>
+                <element name='MgmtData'><data type='string'/></element>
+                <ref name='anyThing'/>
+            </choice>
+        </oneOrMore>
+        <optional><attribute name='Id'><data type='ID'/></attribute></optional>
+</define>
+
+    <define name='KeyValueType'>
+            <choice>
+                <text/>
+                <element name='DSAKeyValue'><ref name='DSAKeyValueType'/></element>
+                <element name='RSAKeyValue'><ref name='RSAKeyValueType'/></element>
+                <ref name='anyThing'/>
+            </choice>
+    </define>
+
+    <define name='RetrievalMethodType'>
+        <optional><element name='Transforms'><ref name='TransformsType'/></element></optional>
+        <optional><attribute name='Type'><data type='anyURI'/></attribute></optional>
+        <optional><attribute name='URI'><data type='anyURI'/></attribute></optional>
+    </define>
+
+<!-- Start X509Data -->
+
+    <define name='X509DataType'>
+        <oneOrMore>
+            <choice>
+                <element name='X509IssuerSerial'>
+                    <element name='X509IssuerName'>
+                        <data type='string'/>
+                    </element>
+                    <element name='X509SerialNumber'>
+                        <data type='integer'/>
+                    </element>
+                </element>
+                <element name='X509SKI'>
+                    <data type='base64Binary'/>
+                </element>
+                <element name='X509SubjectName'>
+                    <data type='string'/>
+                </element>
+                <element name='X509Certificate'>
+                    <data type='base64Binary'/>
+                </element>
+                <element name='X509CRL'>
+                    <data type='base64Binary'/>
+                </element>
+                <ref name='anyThing'/>
+            </choice>
+        </oneOrMore>
+    </define>
+
+<!-- End X509Data -->
+
+<!-- Begin PGPData -->
+
+    <define name='PGPDataType'>
+        <choice>
+            <group>
+                <element name='PGPKeyID'>
+                    <data type='base64Binary'/>
+                </element>
+                <optional>
+                    <element name='PGPKeyPacket'>
+                        <data type='base64Binary'/>
+                    </element>
+                </optional>
+                <zeroOrMore>
+                    <ref name='anyThing'/>
+                </zeroOrMore>
+            </group>
+            <group>
+                <element name='PGPKeyPacket'>
+                    <data type='base64Binary'/>
+                </element>
+                <zeroOrMore>
+                    <ref name='anyThing'/>
+                </zeroOrMore>
+            </group>
+        </choice>
+    </define>
+
+<!-- End PGPData -->
+
+<!-- Begin SPKIData -->
+
+    <define name='SPKIDataType'>
+        <oneOrMore>
+            <element name='SPKISexp'>
+                <data type='base64Binary'/>
+            </element>
+            <optional>
+                <ref name='anyThing'/>
+            </optional>
+        </oneOrMore>
+    </define>
+    
+<!-- End SPKIData -->
+
+<!-- End KeyInfo -->
+
+
+<!-- Start Object (Manifest, SignatureProperty) -->
+
+    <define name='ObjectType'>
+        <zeroOrMore>
+            <choice>
+                <element name='Manifest'><ref name='ManifestType'/></element>
+                <element name='SignatureProperties'><ref name='SignaturePropertiesType'/></element>                
+                <ref name='anyThing'/>
+            </choice>
+        </zeroOrMore>
+        <optional>
+            <attribute name='Encoding'>
+                <data type='anyURI'/>
+            </attribute>
+        </optional>
+        <optional>
+            <attribute name='MimeType'>
+                <data type='string'/>
+            </attribute>
+        </optional>
+        <optional>
+            <attribute name='Id'>
+                <data type='ID'/>
+            </attribute>
+        </optional>
+    </define>
+
+    <define name='ManifestType'>
+        <oneOrMore>
+            <element name='Reference'><ref name='ReferenceType'/></element>
+        </oneOrMore>
+        <optional><attribute name='Id'><data type='ID'/></attribute></optional>
+    </define>
+
+    <define name='SignaturePropertiesType'>
+        <oneOrMore>
+            <element name='SignatureProperty'><ref name='SignaturePropertyType'/></element>
+        </oneOrMore>
+        <optional>
+            <attribute name='Id'>
+                <data type='ID'/>
+            </attribute>
+        </optional>
+    </define>
+
+    <define name='SignaturePropertyType'>
+        <oneOrMore><ref name='anyThing'/></oneOrMore>
+        <optional>
+            <attribute name='Id'>
+                <data type='ID'/>
+            </attribute>
+        </optional>
+        <attribute name='Target'>
+            <data type='anyURI'/>
+        </attribute>
+    </define>
+
+<!-- End Object (Manifest, SignatureProperty) -->
+
+
+<!-- Start KeyValue Element-types -->
+
+    <define name='DSAKeyValueType'>
+        <optional>
+            <element name='P'>
+                <ref name='CryptoBinary'/>
+            </element>
+            <element name='Q'>
+                <ref name='CryptoBinary'/>
+            </element>
+        </optional>
+        <optional>
+            <element name='G'>
+                <ref name='CryptoBinary'/>
+            </element>
+        </optional>
+        <element name='Y'>
+            <ref name='CryptoBinary'/>
+        </element>
+        <optional>
+            <element name='J'>
+                <ref name='CryptoBinary'/>
+            </element>
+        </optional>
+        <optional>
+            <element name='Seed'>
+                <ref name='CryptoBinary'/>
+            </element>
+            <element name='PgenCounter'>
+                <ref name='CryptoBinary'/>
+            </element>
+        </optional>
+    </define>
+
+    <define name='RSAKeyValueType'>
+        <element name='Modulus'>
+            <ref name='CryptoBinary'/>
+        </element>
+        <element name='Exponent'>
+            <ref name='CryptoBinary'/>
+        </element>
+    </define>
+
+
+<!-- End KeyValue Element-types -->
+
+<!-- End Signature -->
+
+
+        <!-- This should emulate the ANY content model under lax validation -->
+        <define name='anyThing'>
+            <zeroOrMore>
+                <choice>
+                    <text/>
+                    <element>
+                        <!-- "except" provided for DTD compatibility -->
+                        <!-- [1] ns='http://www.oasis-open.org/committees/relax-ng/compatibility.html#id' -->
+                        <anyName>
+                            <except>
+                                <nsName/>
+                                <!--  <nsName ns='http://www.w3.org/2001/04/xmlenc#'/>  -->
+                            </except>
+                        </anyName>
+                        <ref name='anyThing'/>
+                        <zeroOrMore>
+                            <attribute>
+                              <anyName/>
+                            </attribute>
+                        </zeroOrMore>
+                    </element>
+                </choice>
+            </zeroOrMore>
+            </define>
+            
+
+</grammar>

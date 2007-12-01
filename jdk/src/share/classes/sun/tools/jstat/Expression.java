@@ -1,0 +1,98 @@
+/*
+ * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package sun.tools.jstat;
+
+/**
+ * A class that represents a mathematical expression as a tree structure
+ * containing operators as interior nodes and operands as leaves. The
+ * operands can be literals or lazily bound variables.
+ *
+ * @author Brian Doherty
+ * @since 1.5
+ */
+public class Expression {
+    private static int nextOrdinal;
+    private boolean debug = Boolean.getBoolean("Expression.debug");
+    private Expression left;
+    private Expression right;
+    private Operator operator;
+    private int ordinal = nextOrdinal++;
+
+    Expression() {
+        if (debug) {
+            System.out.println("Expression " + ordinal + " created");
+        }
+    }
+
+    void setLeft(Expression left) {
+        if (debug) {
+            System.out.println("Setting left on " + ordinal + " to " + left);
+        }
+        this.left = left;
+    }
+
+    Expression getLeft() {
+        return left;
+    }
+
+    void setRight(Expression right) {
+        if (debug) {
+            System.out.println("Setting right on " + ordinal + " to " + right);
+        }
+        this.right = right;
+    }
+
+    Expression getRight() {
+        return right;
+    }
+
+    void setOperator(Operator o) {
+        if (debug) {
+            System.out.println("Setting operator on " + ordinal + " to " + o);
+        }
+        this.operator = o;
+    }
+
+    Operator getOperator() {
+        return operator;
+    }
+
+    public String toString() {
+        StringBuilder b = new StringBuilder();
+        b.append('(');
+        if (left != null) {
+            b.append(left.toString());
+        }
+        if (operator != null) {
+            b.append(operator.toString());
+            if (right != null) {
+                b.append(right.toString());
+            }
+        }
+        b.append(')');
+        return b.toString();
+    }
+}

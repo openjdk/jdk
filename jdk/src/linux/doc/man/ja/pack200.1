@@ -1,0 +1,401 @@
+'\t" t
+.\"
+.\" Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\"
+.TH pack200 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH 名前
+pack200 \- JAR パックツール
+.SH 形式
+.B pack200 
+[ 
+.I options 
+] 
+.I output\-file 
+.I JAR\-file
+.SH 
+オプションの指定順序に決まりはありません。コマンド行または properties ファイルに指定された最後のオプションが、それ以前に指定されたすべてのオプションより優先されます。
+.LP
+.RS 3
+
+.JP
+.TP 3
+options 
+コマンド行オプション。
+.TP 3
+output\-file  
+出力ファイルの名前。
+.TP 3
+JAR\-file     
+入力ファイルの名前。
+.LP
+.RE
+.SH 機能説明
+.LP
+
+.LP
+.LP
+\f2pack200\fP ツールは、Java \f2gzip\fP 圧縮ツールを使って JAR ファイルを圧縮 \f2pack200\fP ファイルに変換する Java アプリケーションです。\f2pack200\fP ファイルは高圧縮のファイルで、帯域幅の節約やダウンロード時間の短縮や直接配備することができます。
+.LP     
+.LP
+\f2pack200\fP ツールには、圧縮エンジンの設定や微調整を行うオプションが用意されています。
+.TP
+一般的な使用方法:
+.LP
+.ft 3
+.nf     
+\f2% pack200 myarchive.pack.gz myarchive.jar\fP
+.fi
+.ft 1
+.LP
+この例では、デフォルトの \f2pack200\fP 設定で、\f2myarchive.pack.gz\fP が作成されます。
+.LP
+.SH オプション
+.LP
+
+.LP
+.LP 
+\f4\-r \-\-repack\fP
+.LP
+.RS 3
+
+.LP
+.LP
+\f2myarchive.jar\fP ファイルのパックまたはアンパックにより、JAR ファイルを作成します。作成されたファイルは、\f2jarsigner(1)\fP ツールの入力ファイルとして使用できます。
+.LP
+.RS 3
+
+.LP
+.LP
+\f2% pack200 \-\-repack myarchive\-packed.jar myarchive.jar\fP
+.LP
+.LP
+\f2% pack200 \-\-repack myarchive.jar\fP
+.LP
+.RE
+.RE
+.LP
+\f4\-g \-\-no\-gzip\fP
+.LP
+.RS 3
+
+.LP
+.LP
+\f2pack200\fP ファイルを作成します。このオプションを指定するときは、適切な圧縮ツールを使用する必要があります。また、ターゲットシステムでは、対応する圧縮解除ツールを使用する必要があります。
+.LP
+.RS 3
+
+.LP
+.LP
+\f2% pack200 \-\-no\-gzip myarchive.pack myarchive.jar\fP
+.LP
+.RE
+.RE
+.LP
+\f4\-G \-\-strip-debug\fP
+.LP
+.RS 3
+
+.LP
+.LP
+出力からデバッグ用の属性を削除します。対象となる属性には、\f2SourceFile\fP、\f2LineNumberTable\fP、\f2LocalVariableTable\fP、および \f2LocalVariableTypeTable\fP などがあります。これらの属性を削除すれば、ダウンロードとインストールのサイズは小さくなりますが、デバッガの機能は制限されます。
+.LP
+.RE
+.LP
+\f4\-O \-\-no\-keep\-file\-order\fP
+.LP
+.RS 3
+
+.LP
+.LP
+パックツールは、すべての要素を並べ替えて転送します。また、JAR ディレクトリ名を削除します。このため、ダウンロードのサイズは小さくなりますが、インデックスをはじめとする JAR ファイルの最適化機能は正常に動作しなくなることがあります。
+.LP
+.RE
+.LP
+\f4\-Svalue \-\-segment\-limit=\fP\f2value\fP
+.LP
+.RS 3
+
+.LP
+.LP
+各アーカイブセグメントの予測ターゲットサイズ N (バイト) を指定します。N バイト以上を必要とする単一の入力ファイルには、独立したアーカイブセグメントが割り当てられます。たとえば、これは特殊な例ですが、値が \f2-1\fP の場合、すべての入力ファイルを含む単一の巨大なセグメントが生成されます。一方、値が \f20\fP の場合、クラスごとにセグメントが 1 つずつ生成されます。アーカイブセグメントのサイズが大きければ大きいほど断片化は起こりにくく、圧縮率も高くなります。しかし、こうしたセグメントを処理するためには、大量のメモリが必要になります。
+.LP
+.LP
+各セグメントのサイズは、セグメント内で転送される入力ファイルのサイズと、このファイルの名前のサイズ、およびその他の転送プロパティによって予測されます。
+.LP
+.LP
+デフォルトのサイズは \f21000000\fP (百万バイト) です。これは、標準サイズの入力 JAR ファイルを単一セグメント内で転送できるサイズです。パックツールおよびアンパックツールのメモリ要件には制限が課されます。
+.LP
+.LP
+この制限が課されていない 10M バイトの JAR パックファイルは通常、元の 10% 程度のサイズにパックされます。しかし、パックツールでより大きな Java ヒープ (セグメントの制限の約 10 倍) を必要とする場合もあります。
+.LP
+.RE
+.LP
+\f4\-Evalue \-\-effort=\fP\f2value\fP
+.LP
+.RS 3
+
+.LP
+.LP
+単一の 10 進数値を指定した場合、パックツールは、指定された圧縮率でアーカイブを圧縮します。レベル \f21\fP の場合、圧縮速度は速くても圧縮率はそれほど高くありません。レベル \f29\fP の場合、圧縮速度は遅くても圧縮率は高くなります。
+特殊な値 \f20\fP を指定した場合は、元の JAR ファイルを圧縮なしで直接コピーします。JSR 200 標準では、すべてのアンパックツールはこの特殊な処理をアーカイブ全体のパススルーとして理解する必要があります。
+.LP
+.LP
+デフォルト値は \f25\fP です。この場合、標準的な時間で、適度な圧縮が行われます。
+.LP
+.RE
+.LP
+\f4\-Hvalue \-\-deflate\-hint=\fP\f2value\fP
+.LP
+.RS 3
+
+.LP
+.LP
+デフォルト値を上書きし、入力情報を保存します。転送されるアーカイブのサイズは大きくなります。可能な値:
+.LP
+.TP 3
+true
+.TP 3
+false
+どちらの場合でも、パックツールはデフレーションヒントを出力アーカイブに設定します。アーカイブ要素の個々のデフレーションヒントは転送しません。
+.LP
+.TP 3
+keep
+入力 JAR 内のデフレーションヒントを保存します (デフォルト)。
+.in
+.TP
+\f4\-mvalue \-\-modification\-time=\fP\f2value\fP
+.LP
+.RS 3
+
+.LP
+.LP
+可能な値:
+.LP
+.TP 3
+latest
+パックツールは、元のアーカイブの全エントリの最終更新時刻か、そのセグメントのすべてのエントリの最終更新時刻を特定しようとします。この単一の値はセグメントの一部として転送され、各セグメントの全エントリに適用されます。この場合、すべてのインストールファイルに単一の日付が設定されるという問題はありますが、アーカイブの転送サイズを少し小さくすることができます。
+.TP 3
+keep
+入力 JAR 内の更新時刻を保存します (デフォルト)。
+.LP
+.RE
+.LP
+\f4\-Pfile \-\-pass\-file=\fP\f2file\fP
+.LP
+.RS 3
+
+.LP
+.LP
+ファイルを圧縮せず、バイト単位で転送するように指定します。このオプションを繰り返し使用して、複数のファイルを指定できます。パス名の変換は行われません。システムファイルの区切り文字が JAR ファイルの区切り文字 "\f2/\fP" で置き換えられるだけです。ファイル名は、JAR ファイル内の文字列と完全に一致していなければなりません。file にディレクトリ名を指定した場合、そのディレクトリ内のすべてのファイルが転送されます。
+.LP
+.RE
+.LP
+\f4\-Uaction \-\-unknown\-attribute=\fP\f2action\fP
+.LP
+.RS 3
+
+.LP
+.LP
+デフォルトの動作を無効にします。たとえば、不明な属性を含むクラスファイルを指定したアクションで転送します。アクションとして指定可能な値:
+.LP
+.TP 3
+error
+\f2pack200\fP の操作に失敗し、適切な解説が表示されます。
+.TP 3
+strip
+属性はドロップされます。注: VM 必須属性を削除するとクラスローダの障害が発生することがあります。
+.TP 3
+pass
+この属性が検出された場合、クラス全体が 1 つのリソースとして転送されます。
+.LP
+.RE
+.LP
+\f4\-Cattribute\-name=\fP\f2layout\fP \f3\-\-class\-attribute=\fP\f2attribute\-name=action\fP
+.br
+ \f4\-Fattribute\-name=\fP\f2layout\fP \f3\-\-field\-attribute=\fP\f2attribute\-name=action\fP
+.br
+ \f4\-Mattribute\-name=\fP\f2layout\fP \f3\-\-method\-attribute=\fP\f2attribute\-name=action\fP
+.br
+ \f4\-Dattribute\-name=\fP\f2layout\fP \f3\-\-code\-attribute=\fP\f2attribute\-name=action\fP
+.LP
+.RS 3
+
+.LP
+.LP
+これら 4 つのオプションでは、クラスエンティティに Class 属性、Field 属性、Method 属性、Code 属性などの属性のレイアウトを指定できます。attribute\-name には、これからレイアウトまたはアクションを定義する属性の名前を指定します。アクションとして指定可能な値:
+.LP
+.TP 3
+(一部のレイアウト文字列)
+レイアウト言語は、JSR 200 仕様に定義されています。
+.LP
+例: \f2\-\-class\-attribute=SourceFile=RUH\fP
+.TP 3
+error
+この属性が検出された場合、pack200 の操作に失敗し、適切な解説が表示されます。
+.TP 3
+strip
+この属性が検出された場合、属性は出力から削除されます。注: VM 必須属性を削除するとクラスローダの障害が発生することがあります。
+.LP
+.LP
+例: \f2\-\-class\-attribute=CompilationID=pass\fP というこの属性を含むクラスファイルを転送します。パックツールは、その他のアクションを行いません。
+.LP
+.RE
+.LP
+\f4\-f\fP\f2 \fP\f2pack.properties\fP \f3\-\-config\-file=\fP\f2pack.properties\fP
+.LP
+.RS 3
+
+.LP
+.LP
+コマンド行に、パックツールを初期化するための Java プロパティが含まれている設定ファイルを指定できます。
+.LP
+.RS 3
+
+.LP
+.LP
+\f2% pack200 \-f pack.properties myarchive.pack.gz myarchive.jar\fP
+.br
+\f2% more pack.properties\fP
+.br
+\f2# Generic properties for the packer.\fP
+.br
+\f2modification.time=latest\fP
+.br
+\f2deflate.hint=false\fP
+.br
+\f2keep.file.order=false\fP
+.br
+\f2# This option will cause the files bearing new attributes to\fP
+.br
+\f2# be reported as an error rather than passed uncompressed.\fP
+.br
+\f2unknown.attribute=error\fP
+.br
+\f2# Change the segment limit to be unlimited.\fP
+.br
+\f2segment.limit=\-1\fP
+.LP
+.RE
+.RE
+.RS 3
+
+.LP
+.LP
+\f4\-v \-\-verbose\fP
+.LP
+.RS 3
+
+.LP
+.LP
+最小限のメッセージを出力します。このオプションを複数指定すると、より長いメッセージが出力されます。
+.LP
+.RE
+.LP
+\f4\-q \-\-quiet\fP
+.LP
+.RS 3
+
+.LP
+.LP
+メッセージを表示せずに動作します。
+.LP
+.RE
+.LP
+\f4\-lfilename \-\-log\-file=\fP\f2filename\fP
+.LP
+.RS 3
+
+.LP
+.LP
+出力メッセージのログファイルを指定します。
+.LP
+.RE
+.LP
+\f4\-Joption\fP
+.LP
+.RS 3
+
+.LP
+.LP
+\f2pack200\fP によって呼び出される Java 起動ツールにオプションを渡します。たとえば \f2\-J\-Xms48m\fP と指定した場合、起動メモリが 48M バイトに設定されます。\f2\-X\fP で始まってはいませんが、\f2pack200\fP の標準オプションではありません。慣習として、\f2\-J\fP には、Java で書かれたアプリケーションを実行する VM にオプションを渡す働きがあります。
+.LP
+.RE
+.RE
+.SH 終了ステータス
+.LP
+
+.LP
+.LP
+次の終了値が返されます。
+.LP
+.RS 3
+
+.LP
+.LP
+\f2\ 0\fP "成功"
+.LP
+.LP
+\f2>0\fP "エラー"
+.LP
+.RE
+.SH 関連項目
+.LP
+.RS 3
+.TP 2
+*
+unpack200 \- JAR アンパックツール
+.TP 2
+*
+\f2unpack200(1)\fP、\f2jar(1)\fP、\f2jarsigner(1)\fP、\f2attributes(5)\fP のマニュアルページ 
+.TP 2
+*
+Java SE のドキュメント 
+.TP 2
+*
+.na
+\f2Java Deployment Guide \- Pack200\fP
+.fi
+(http://java.sun.com/javase/6/docs/technotes/guides/deployment/deployment\-guide/pack200.html)
+.TP 2
+*
+\f2jar\fP \- Java アーカイブツール
+.TP 2
+*
+.na
+\f2jarsigner\fP \- JAR 署名および検証ツール
+.fi
+(http://java.sun.com/javase/6/docs/technotes/tools/solaris/jarsigner.html)
+.RE
+
+.LP
+.SH 注意事項
+.LP
+
+.LP
+.LP
+このコマンドと \f2pack(1)\fP コマンドを混同しないでください。これらは別製品です。
+.LP
+.LP
+SDK に付属する Java SE API 仕様との相違が見つかった場合には、仕様を優先してください。
+.LP
+

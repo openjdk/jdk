@@ -1,0 +1,25 @@
+The *.ent files in this directory provide common functionality to the
+project.xml file of various projects.  There are different kinds,
+e.g. "-sources" from share-sources.ent
+
+* -sources: Defines sources used by a project.
+
+* -view: Defines project's sources that are displayed in the Projects tab.
+
+* -actions: Defines a set of actions of the project available from NetBeans.
+
+* -bindings: Defines the targets invoked by the corresponding actions.
+
+Note that -sources and -view files come in pairs: A project will have an
+entity reference for each, so that it uses and displays the sources.
+
+Similarly, -actions and -bindings are paired.
+
+These kinds are not paired:
+
+build-folder.ent: Defines the location of the folder where compiled classes,
+resources, etc. are placed.
+
+java-data-native.ent, java-data-no-native.ent: These define information about
+the location of classes and sources of native and non-native projects, where
+"native" is suggestive of "native code", that is, non-Java source code.

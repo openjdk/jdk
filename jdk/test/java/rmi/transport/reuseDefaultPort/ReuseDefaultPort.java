@@ -1,0 +1,84 @@
+/* 
+ * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/* @test
+ * @bug 6269166
+ * @summary After a remote object has been exported on an anonymous
+ * port, it should be possible to export another remote object on an
+ * explicit port (and with the same socket factories, if any) with the
+ * same value as the actual port to which the first export got bound.
+ * While the fact that this works (instead of failing with a
+ * BindException) might seem odd and not to be expected, it has
+ * historically worked with the J2SE RMI implementation, so it should
+ * continue to work because existing applications might depend on it.
+ * @author Peter Jones
+ *
+ * @build ReuseDefaultPort
+ * @run main/othervm ReuseDefaultPort
+ */
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.rmi.Remote;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.RMISocketFactory;
+import java.rmi.server.UnicastRemoteObject;
+
+public class ReuseDefaultPort implements Remote {
+
+    private static final int PORT = 2223;
+
+    private ReuseDefaultPort() { }
+
+    public static void main(String[] args) throws Exception {
+	System.err.println("\nRegression test for bug 6269166\n");
+	RMISocketFactory.setSocketFactory(new SF());
+	Remote impl = new ReuseDefaultPort();
+	Remote stub = UnicastRemoteObject.exportObject(impl, 0);
+	System.err.println("- exported object: " + stub);
+	try {
+	    Registry registry = LocateRegistry.createRegistry(PORT);
+	    System.err.println("- exported registry: " + registry);
+	    System.err.println("TEST PASSED");
+	} finally {
+	    UnicastRemoteObject.unexportObject(impl, true);
+	}
+    }
+
+    private static class SF extends RMISocketFactory {
+	private static RMISocketFactory defaultFactory =
+	    RMISocketFactory.getDefaultSocketFactory();
+	SF() { }
+	public Socket createSocket(String host, int port) throws IOException {
+	    return defaultFactory.createSocket(host, port);
+	}
+	public ServerSocket createServerSocket(int port) throws IOException {
+	    if (port == 0) {
+		port = PORT;
+	    }
+	    return defaultFactory.createServerSocket(port);
+	}
+    }
+}

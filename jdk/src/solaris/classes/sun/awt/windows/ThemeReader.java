@@ -1,0 +1,99 @@
+/*
+ * Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package sun.awt.windows;
+
+import java.awt.*;
+
+
+/**
+ * This is a stubbed out placeholder class, intended to allow building
+ * WindowsLookAndFeel on Unix. This class is never actually called on
+ * Unix, and will be deleted when WindowsLookAndFeel is no longer built
+ * on Unix.
+ *
+ * @author Leif Samuelsson
+ */
+public class ThemeReader {
+    public static boolean isThemed() {
+        return false;
+    }
+
+    public static void paintBackground(int[] buffer, String widget,
+           int part, int state, int x, int y, int w, int h, int stride) {
+    }
+
+    public static Insets getThemeMargins(String widget, int part, int state, int marginType) {
+        return null;
+    }
+
+    public static boolean isThemePartDefined(String widget, int part, int state) {
+        return false;
+    }
+
+    public static Color getColor(String widget, int part, int state, int property) {
+        return null;
+    }
+
+    public static int getInt(String widget, int part, int state, int property) {
+        return 0;
+    }
+
+    public static int getEnum(String widget, int part, int state, int property) {
+        return 0;
+    }
+
+    public static boolean getBoolean(String widget, int part, int state, int property) {
+        return false;
+    }
+
+    public static boolean getSysBoolean(String widget, int property) {
+        return false;
+    }
+
+    public static Point getPoint(String widget, int part, int state, int property) {
+        return null;
+    }
+
+    public static Dimension getPosition(String widget, int part, int state, int property) {
+        return null;
+    }
+
+    public static Dimension getPartSize(String widget, int part, int state) {
+        return null;
+    }
+    public static long getThemeTransitionDuration(String widget, int part,
+                                       int stateFrom, int stateTo, int propId) {
+        return 0;
+    }
+    public static boolean isGetThemeTransitionDurationDefined() {
+        return false;
+    }
+    public static Insets getThemeBackgroundContentMargins(String widget,
+                    int part, int state, int boundingWidth, int boundingHeight) {
+        return null;
+    }
+
+}

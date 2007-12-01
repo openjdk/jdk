@@ -1,0 +1,40 @@
+data = R0x2000;
+text = LOAD ?RXO;
+# Test Null
+text: .text%VerifyFixClassname;
+text: .text%VerifyClassname;
+text: .text%skip_over_fieldname: OUTPUTDIR/tmp/java/verify/obj/check_format.o;
+text: .text%skip_over_field_signature: OUTPUTDIR/tmp/java/verify/obj/check_format.o;
+text: .text%VerifyClass;
+text: .text%make_class_info_from_name: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%class_name_to_ID: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%make_class_info: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%free_block: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%verify_method: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%verify_opcode_operands: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%initialize_dataflow: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%signature_to_fieldtype: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%check_register_values: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%pop_stack: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%update_registers: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%push_stack: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%merge_into_successors: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%cp_index_to_class_fullinfo: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%set_protected: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%merge_into_one_successor: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%merge_registers: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+# Test Exit
+# Test Hello
+text: .text%merge_fullinfo_types: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%isAssignableTo: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+# Test Sleep
+text: .text%isLegalTarget: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%verify_constant_pool_type: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+# Test IntToString
+# Test LoadToolkit
+# Test LoadFrame
+# Test LoadJFrame
+# Test JHello
+# SwingSet
+text: .text%copy_stack: OUTPUTDIR/tmp/java/verify/obj/check_code.o;
+text: .text%ntohl: OUTPUTDIR/tmp/java/verify/obj/check_code.o;

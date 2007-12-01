@@ -1,0 +1,128 @@
+'\" t
+.\"
+.\" Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\" 
+.TH serialver 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH "名前"
+serialver \- シリアルバージョンコマンド
+.\" 
+.\"  This document was created by saving an HTML file as text
+.\"  from the JavaSoft web site:
+.\" 
+.\" http://java.sun.com/j2se/1.5/docs/tooldocs/tools.html
+.\" 
+.\"  and adding appropriate troff macros.  Because the JavaSoft web site 
+.\"  man pages can change without notice, it may be helpful to diff
+.\"  files to identify changes other than new functionality. 
+.\" 
+.LP
+
+.LP
+.LP
+\f3serialver\fP コマンドは \f2serialVersionUID\fP を返します。
+.LP
+.SH "形式"
+.B serialver 
+[
+.B options
+] [
+.I classnames
+]
+.TP
+.BI options
+このドキュメントで指定されているコマンド行オプション。
+.TP
+.BI classnames
+1 つまたは複数のクラス名。
+.SH "機能説明"
+.IX "serial version command" "" "serial version command \(em \fLserialver\fP"
+.IX "serialver" "" "\fLserialver\fP \(em serial version command"
+.B serialver
+は、指定された 1 個
+または複数個のクラスの
+.B シリアルバージョン UID
+を、展開しているクラスへコピーするのに適した形式で返します。
+引数なしで呼び出した場合、
+.B serialver
+は使用方法を説明する行を表示します。
+.SH "オプション"
+.TP 15
+.B \-classpath " <directories and zip/jar files separated by:>"
+アプリケーションのクラスおよびリソースの検索パスを設定します。 
+.TP 15
+.B \-show
+単なるユーザインタフェースを表示します。
+ここで完全クラス名を入力し、
+Enter
+キーまたは
+Show
+ボタンを押すと、シリアルバージョン
+UID
+が表示されます。
+.TP 15 
+.BI \-J "option"
+.I option
+を Java 仮想マシンに渡します。ここで、
+.I option
+は、Java アプリケーション起動プログラムの参照ページで
+説明されているオプションの 1 つです。たとえば、
+.I \-J-Xms48m
+は、起動時に使用するメモリを 48M バイトに設定します。
+.LP
+.SH "注意"
+.LP
+
+.LP
+.LP
+\f3serialver\fP コマンドは、指定されたクラスをその仮想マシン内に読み込んで初期化しますが、デフォルトではセキュリティマネージャの設定は行いません。信頼できないクラスとともに \f3serialver\fP を実行する場合には、次のオプションを使ってセキュリティマネージャを設定できます。
+.LP
+.RS 3
+
+.LP
+.LP
+\f2\-J\-Djava.security.manager\fP
+.LP
+.RE
+.LP
+また、必要であれば、次のオプションを使ってセキュリティポリシーを指定できます。
+.LP
+.RS 3
+
+.LP
+.LP
+\f2\-J\-Djava.security.policy=<policy file>\fP
+.LP
+.SH "関連項目"
+.LP
+
+.LP
+.LP
+.fi
+http://java.sun.com/javase/6/docs/api/java/io/objectstreamclass.html
+の
+.na
+「\f2java.io.ObjectStreamClass\fP」
+.LP
+
+.LP
+ 

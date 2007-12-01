@@ -1,0 +1,301 @@
+'\" t
+.\"
+.\" Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\" 
+.TH orbd 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH "名前"
+orbd - Object Request Broker デーモン
+.LP
+.B orbd
+は、クライアントが CORBA 環境内のサーバー上に存在する
+持続オブジェクトを透過的に特定して呼び出す場合に使用します。
+.LP
+\f3関連項目:\fP
+.na
+\f2「Naming Service」\fP
+.fi
+(http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlNaming.html)
+.LP
+.SH "形式"
+.LP
+
+.LP
+.nf
+\f3
+.fl
+orbd <\fP\f3options\fP\f3>
+.fl
+\fP
+.fi
+
+.LP
+.SH "機能説明"
+\f3orbd\fP ツールを含むサーバーマネージャは、クライアントが CORBA 環境内のサーバー上に存在する持続オブジェクトを透過的に特定して呼び出す場合に使用します。持続サーバーは、ネームサービス内の持続オブジェクト参照を発行する一方で、オブジェクト参照内にサーバーのポート番号ではなく ORBD のポート番号を組み込みます。持続オブジェクト参照のためにオブジェクト参照内に ORBD ポート番号を組み込むと、以下の利点が得られます。
+.LP
+.RS 3
+.TP 2
+*
+ネームサービス内のオブジェクト参照は、サーバーのライフサイクルとは無関係に維持されます。たとえば、オブジェクト参照はサーバーの最初のインストール時にネームサービス内でサーバーによって発行され、その後は何度サーバーの起動または停止が行われても ORBD は常に呼び出し側のクライアントに正しいオブジェクト参照を返します。
+.TP 2
+*
+クライアントはネームサービス内でオブジェクト参照を 1 度確認する必要があり、サーバーのライフサイクルが原因で起きる変更に関係なくこの参照を繰り返し使用できます。
+.RE
+
+.LP
+.LP
+ORBD のサーバーマネージャにアクセスするには、\f2servertool\fP を使用してサーバーを起動する必要があります。\f2servertool\fP はアプリケーションプログラマが、持続サーバーの登録、登録解除、起動、停止を行うためのコマンド行インタフェースです。\f2サーバーマネージャ\fPの詳細については、このドキュメントの「サーバーマネージャ」の節を参照してください。
+.LP
+.LP
+\f2orbd\fP の起動時にはネームサービスも起動されます。ネームサービスの詳細については、
+.na
+「\f2Naming Service\fP」
+.fi
+(http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlNaming.html) を参照してください。
+.LP
+.SH 必須オプション
+.LP
+
+.LP
+.TP 3
+\-ORBInitialPort nameserverport
+ネームサーバーを起動するポートを指定します。起動後に \f2orbd\fP はこのポートで着信要求を待機します。Solaris ソフトウェアを使用する場合は、スーパーユーザーになって 1024 未満のポートでプロセスを開始する必要があります。このため、1024 以上のポート番号の使用を推奨します。 (必須) 
+.LP
+.SH その他のオプション
+.LP
+
+.LP
+.TP 3
+\-port port
+ORBD を開始する起動ポートを指定します。ORBD はこのポートで、持続オブジェクトの要求を受け付けます。このポートのデフォルト値は 1049 です。このポート番号は、持続 Interoperable Object References (IOR) のポートフィールドに追加されます。(省略可能)
+.TP 3
+\-defaultdb directory
+ORBD 持続ストレージディレクトリである \f2orb.db\fP が作成されるベースを指定します。このオプションが指定されない場合、デフォルト値は "./orb.db" です。(省略可能)
+.TP 3
+\-serverPollingTime milliseconds
+\f2servertool\fP 経由で登録された持続サーバーの健全性を ORBD が検査する頻度を指定します。デフォルト値は 1,000 ミリ秒 (1 秒) です。\f2milliseconds\fP に指定される値は、有効な正の整数でなければなりません (省略可能)。
+.TP 3
+\-serverStartupDelay milliseconds 
+\f2servertool\fP 経由で登録された持続サーバーが再起動されてから ORBD がロケーション転送例外を送信するまでの、ORBD の待機時間を指定します。デフォルト値は 1,000 ミリ秒 (1 秒) です。\f2milliseconds\fP に指定される値は、有効な正の整数でなければなりません (省略可能)。
+.TP 3
+\-Joption
+\f2option\fP を Java 仮想マシンに渡します。ここで、\f2option\fP は、「\f2Java アプリケーション起動プログラム\fP」
+.fi
+ (http://java.sun.com/javase/6/docs/technotes/tools/solaris/java.html) のリファレンスページで説明されているオプションの 1 つです。たとえば、\f3\-J\-Xms48m\fP は、起動時に使用するメモリを 48M バイトに設定します。\f3\-J\fP が基本にする仮想マシンにオプションを渡すことは、共通の規約です。
+.LP
+.SH ネームサービスの起動と停止
+.LP
+.LP
+ネームサービスは、名前をオブジェクト参照にバインドすることによって、「\f2CORBA objects\fP」
+.fi
+ (http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlGlossary.html#CORBA%20object) を指定できるようにする CORBA サービスです。「\f2name binding\fP」
+.fi
+ (http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlGlossary.html#name%20binding) は、ネーミングサービスに保存できます。クライアントは名前を指定して、目的のオブジェクト参照を取得できます。 
+.LP
+.LP
+クライアントまたはサーバーを実行する前に、ORBD を開始します。ORBD には、持続ネーミングサービスと一時ネーミングサービスが含まれています。これらは両方とも COS ネーミングサービスの実装です。 
+.LP
+.RS 3
+.TP 2
+*
+\f4持続\fP\f3ネーミングサービス\fPは、ネーミングコンテキストに持続性を提供します。つまり、この情報はサービスの停止と起動の間で持続し、サービスに障害が発生した場合に回復可能です。ORBD が再起動されると、持続ネーミングサービスはネーミングコンテキストグラフを復元するため、すべてのクライアントとサーバーの名前のバインディングは損傷を受けません (持続する)。
+.TP 2
+*
+以前のバージョンとの互換性のため、\f2tnameserv\fP (以前のバージョンの JDK と一緒に出荷された\f4一時\fP\f3ネーミングサービス\fP) もこのリリースの J2SE に含まれています。一時ネーミングサービスが実行されている限り、ネーミングコンテキストは保持されます。サービスが中断された場合、ネーミングコンテキストグラフは失われます。
+.RE
+
+.LP
+.LP
+\f2\-ORBInitialPort\fP 引数は、\f2orbd\fP に必須のコマンド行引数で、ネーミングサービスが実行されるポート番号の設定に使用されます。以下の説明は、Java\ IDL Object Request Broker Daemon にポート 1050 を使用できると仮定しています。Solaris ソフトウェアを使用する場合は、スーパーユーザーになって 1024 未満のポートでプロセスを開始する必要があります。このため、1024 以上のポート番号の使用を推奨します。必要な場合は、別のポートを使用することもできます。
+.LP
+.LP
+UNIX コマンドシェルから \f2orbd\fP を起動するには、次のように入力します。
+.LP
+.nf
+\f3
+.fl
+  orbd \-ORBInitialPort 1050&
+.fl
+\fP
+.fi
+
+.LP
+.LP
+MS\-DOS システムプロンプト (Windows) から起動するには、次のように入力します。
+.LP
+.nf
+\f3
+.fl
+  start orbd \-ORBInitialPort 1050
+.fl
+\fP
+.fi
+
+.LP
+.LP
+ORBD の実行後に、サーバーおよびクライアントアプリケーションを実行できます。クライアントおよびサーバーアプリケーションを実行する場合は、ネーミングサービスが実行されているポート番号 (および該当する場合は、マシン名) をアプリケーションに認識させる必要があります。これを実行する方法の 1 つとして、次のコードをアプリケーションに追加することができます。
+.LP
+.nf
+\f3
+.fl
+        Properties props = new Properties();
+.fl
+        props.put("org.omg.CORBA.ORBInitialPort", "1050");
+.fl
+        props.put("org.omg.CORBA.ORBInitialHost", "MyHost");
+.fl
+        ORB orb = ORB.init(args, props);
+.fl
+\fP
+.fi
+
+.LP
+.LP
+この例では、ネーミングサービスはホスト「MyHost」のポート 1050 で実行されています。また、サーバーまたはクライアントアプリケーションの実行時にコマンド行からポート番号またはマシン名を指定することもできます。たとえば、「HelloApplication」を次のコマンド行で起動します。
+.LP
+.nf
+\f3
+.fl
+     java HelloApplication \-ORBInitialPort 1050 \-ORBInitialHost MyHost
+.fl
+\fP
+.fi
+
+.LP
+.LP
+ネーミングサービスを停止するには、該当するオペレーティングシステムコマンドを使用します (Solaris での \f2pkill orbd\fP、または \f2orbd\fP が実行されている DOS ウィンドウでの \f2Ctrl+C\fP など)。一時ネームサービスの場合、サービスが終了すると、ネーミングサービスに登録されている名前が消失する可能性があります。Java IDL ネーミングサービスは明示的に停止されるまで実行します。
+.LP
+ORBD に含まれているネーミングサービスの詳細については、「\f2Naming Service\fP」
+.fi
+ (http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlNaming.html) を参照してください。 
+.LP
+.SH サーバーマネージャ
+.LP
+.LP
+ORBD のサーバーマネージャにアクセスして持続サーバーを実行するには、\f2servertool\fP を使用してサーバーを起動する必要があります。\f2servertool\fP はアプリケーションプログラマが、持続サーバーの登録、登録解除、起動、停止を行うためのコマンド行インタフェースです。\f2servertool\fP を使用してサーバーを起動する場合、\f2orbd\fP と同じホストおよびポートで起動する必要があります。異なるポートでサーバーが起動された場合、ローカルコンテキストのデータベースに格納されている情報は無効になり、サービスは正常に機能しなくなります。
+.LP
+.SS
+サーバーマネージャ: 例
+.LP
+.LP
+デモ用のサンプルチュートリアル
+.fi
+ (http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlExample.html) を使って、\f2idlj\fP コンパイラと \f2javac\fP コンパイラをチュートリアルで示されているように実行します。サーバーマネージャを実行するには、以下の手順に従ってアプリケーションを実行します。
+.LP
+.RS 3
+.TP 3
+1.
+orbd を起動します。
+.LP
+\f2orbd\fP を UNIX コマンドシェルから起動するには、次のように入力します。
+.nf
+\f3
+.fl
+  orbd \-ORBInitialPort 1050 
+.fl
+\fP
+.fi
+.LP
+MS\-DOS システムプロンプト (Windows) から起動するには、次のように入力します。 
+.nf
+\f3
+.fl
+  start orbd \-ORBInitialPort 1050
+.fl
+\fP
+.fi
+.LP
+\f21050\fP は、ネームサーバーを実行するポートです。\f2\-ORBInitialPort\fP は必須のコマンド行引数です。Solaris ソフトウェアを使用する場合は、ルートから 1024 未満のポートでプロセスを開始する必要があります。このため、1024 以上のポート番号の使用を推奨します。
+.TP 3
+2.
+\f2servertool\fP を起動します。
+.LP
+Hello サーバーを起動するには、次のように入力します。
+.nf
+\f3
+.fl
+  servertool \-ORBInitialPort 1050
+.fl
+\fP
+.fi
+.LP
+ネームサーバー (\f2orbd\fP) のポートが前の手順で使用したポート (たとえば、\f2\-ORBInitialPort 1050\fP) と同じであることを確認してください。\f2servertool\fP は、ネームサーバーと同じポートで起動する必要があります。
+.LP
+\f2servertool\fP コマンド行インタフェースが表示されます。
+.TP 3
+3.
+Hello サーバーを \f2servertool\fP プロンプトから起動します。 
+.nf
+\f3
+.fl
+  servertool > register \-server HelloServer \-classpath . 
+			\-applicationName HelloServerApName
+.fl
+\fP
+.fi
+.LP
+\f2servertool\fP は、このサーバーを登録し、それに「HelloServerApName」という名前を割り当て、そのサーバー ID と登録されているすべてのサーバーの一覧を表示します。
+.TP 3
+4.
+クライアントアプリケーションを別のターミナルウィンドウまたはプロンプトから実行します。
+.nf
+\f3
+.fl
+  java HelloClient \-ORBInitialPort 1050 \-ORBInitialHost localhost
+.fl
+\fP
+.fi
+.LP
+この例の場合、ネームサーバーは Hello クライアントと同じホストで実行されているので、\f2\-ORBInitialHost localhost\fP を省くことができます。ネームサーバーが別のホストで実行されている場合は、\f2\-ORBInitialHost\fP \f2nameserverhost\fP を使用して IDL ネームサーバーが実行されているホストを指定します。 
+.LP
+前の手順と同様に、ネームサーバー (\f2orbd\fP) のポート (たとえば、\f2\-ORBInitialPort 1050\fP) を指定します。 
+.TP 3
+5.
+サーバーマネージャの実験が終了したら、ネームサーバー (\f2orbd\fP) と \f2servertool\fP を必ず停止 (終了) してください。 
+.LP
+\f2orbd\fP を DOS プロンプトから停止するには、サーバーが実行されているウィンドウを選択し、\f2Ctrl+C\fP を押して停止します。\f2orbd\fP を UNIX シェルから停止するには、プロセスを検索して終了します。サーバーは、明示的に停止されるまで起動を引き続き待機します。 
+.LP
+\f2servertool\fP を停止するには、\f2quit\fP と入力し、キーボードの \f2Enter\fP キーを押します。 
+.RE
+
+.LP
+.SH 関連項目
+.LP
+.RS 3
+.TP 2
+*
+「\f2Naming Service\fP」
+.fi
+(http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlNaming.html)
+.br
+.TP 2
+*
+servertool 
+.RE
+
+.LP
+.br
+
+.LP
+
+.LP
+ 

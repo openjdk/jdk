@@ -1,0 +1,876 @@
+'\" t
+.\"
+.\" Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\" 
+.\"
+.\" 
+.TH idlj 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH "名前"
+idlj - IDL-to-Java コンパイラ
+.LP
+.B idlj
+は、指定された IDL ファイルから Java バインディングを生成します。
+.SH "形式"
+.B idlj
+[
+.IB options
+]
+.B idl-file
+.LP
+.BR idl-file
+には、Interface Definition Language (IDL) 定義が格納されている
+ファイルの名前を指定します。
+.BR Options
+は任意の順序で指定できますが、
+.BR idl-file
+よりも前に指定する必要があります。
+.SH "機能説明"
+IDL-to-Java コンパイラは、指定された IDL ファイルに対して Java 
+バインディングを生成します。
+バインディングの詳細は、「\f2OMG IDL to Java Language Language Mapping Specification\fP」
+.fi
+(http://java.sun.com/javase/6/docs/technotes/guides/idl/mapping/jidlMapping.html) 
+を参照してください。
+IDL-to-Java コンパイラの旧リリースのなかには、
+.BR idltojava という名前が付けられていたものがあります。
+.SH "クライアントバインディングとサーババインディングの発行"
+
+.LP
+.BR My.idl
+という名前の IDL ファイルに対して Java バインディングを生成
+するには、次のように指定します。
+.LP
+.RS
+.ft 3
+.nf
+idlj My.idl
+.fi
+.ft 1
+.RE
+.LP
+クライアント側のバインディングを生成する上記のコマンドは、
+次のようにも指定できます。
+.LP
+.RS
+.ft 3
+.nf
+idlj -fclient My.idl
+.fi
+.ft 1
+.RE
+.LP
+クライアント側のバインディングには、サーバ側のスケルトンは
+取り込まれていません。インタフェースに対してサーバ側のバインディング
+を生成するには、次のように指定します。
+.LP
+.RS
+.ft 3
+.nf
+idlj -fserver My.idl
+.fi
+.ft 1
+.RE
+.LP
+サーバ側のバインディングには、クライアント側のバインディングのほか
+にスケルトンが取り込まれています。これらはすべて、POA (継承モデル) 
+クラスです。クライアント側とサーバ側の両方のバインディングを生成する
+には、以下の等価コマンドのどちらか一方を使用してください。
+.LP
+.RS
+.ft 3
+.nf
+idlj -fclient -fserver My.idl
+.br
+idlj -fall My.idl
+.fi
+.ft 1
+.RE
+.LP
+サーバ側モデルとしては、継承モデルと Tie 委譲モデルの 2 種類を
+利用できます。
+.LP
+デフォルトのサーバ側モデルは、ポータブルサーバント継承モデルです。
+.BR My.idl
+でインタフェース My が定義されていると、ファイル 
+.BR MyPOA.java が生成されます。ユーザは、
+.BR My に対してその実装を提供する必要があります。この実装は、
+.BR MyPOA から継承しなければなりません。
+.LP
+.BR MyPOA.java は、
+.na
+\f2org.omg.PortableServer.Servant\fP 
+.fi
+(http://java.sun.com/javase/6/docs/api/org/omg/PortableServer/Servant.html) 
+を拡張するストリームベースのスケルトンであり、このスケルトンが実装する 
+IDL インタフェースに関連した
+.BR InvokeHandler
+インタフェースとオペレーションインタフェースを実装します。
+.LP
+.na
+\f2Portable Object Adapter (POA)\fP
+.fi
+(http://java.sun.com/javase/6/docs/technotes/guides/idl/POA.html) の
+.BR PortableServer 
+モジュールは、ネイティブ Servant 型を定義します。Java プログラミング言語では、
+.BR Servant
+型は、Java 
+.BR org.omg.PortableServer.Servant
+クラスにマップされます。
+これはすべての
+.BR POA
+サーバント実装の基底クラスとして機能し、アプリケーション開発者が呼び出せる
+多数のメソッドを提供します。また、POA 自体が呼び出したり、サーバント動作を
+制御するためにユーザが上書きしたりできるメソッドも提供します。
+.LP
+継承モデルには、J2SE 1.4 より前のバージョンの Java プログラミング言語
+と互換性のあるサーバ側バインディングを生成するために
+.BR -oldImplBase
+フラグを使用するというオプションもあります。
+\f2\-oldImplBase\fP フラグの使用は非標準であることに注意してください。これらの API はまもなく非推奨となります。このフラグを使用するのは、J2SE 1.3 で記述された既存のサーバとの互換性を確保する必要がある場合だけにしてください。その場合、既存の MAKEFILE を変更し、\f2\-oldImplBase\fP フラグを \f2idlj\fP コンパイラに追加する必要があります。そうしないと、POA ベースのサーバ側マッピングが生成されてしまいます。
+下位互換を維持したサーバ側
+バインディングを生成するには、次のように指定します。
+.LP
+.RS
+.ft 3
+.nf
+idlj -fclient -fserver -oldImplBase My.idl
+.br
+idlj -fall -oldImplBase My.idl
+.fi
+.ft 1
+.RE
+.LP
+.BR My.idl
+内でインタフェース My が定義されていると、ファイル 
+.I _MyImpleBase.java
+が生成されます。ユーザは、
+.BR My
+に対してその実装を提供する必要があります。この実証は、
+.I _MyImplBase
+ から継承しなければなりません。
+.LP
+もう一方のサーバ側モデルは、Tie モデルと呼ばれます。これは、
+委譲モデルです。Tie モデルは Tie とスケルトンを同時には生成
+できないため、これらは別々に生成する必要があります。次のコ
+マンドは、Tie モデルに対してバインディングを生成します。
+.LP
+.RS
+.ft 3
+.nf
+idlj -fall My.idl
+.br
+idlj -fallTIE My.idl
+.fi
+.ft 1
+.RE
+.LP
+インタフェース 
+.BR My
+の場合、2 つめのコマンドは 
+.BR MyPOATie.java
+ を生成します。
+.BR MyPOATie
+のコンストラクタは、delegate を受け取ります。
+この例ではデフォルトの POA モデルを使用しているので、コンストラクタは \f2poa\fP も必要とします。
+ユーザは、delegate 
+に対して実装を提供する必要があります。ただし、インタフェース 
+.BR MyOperations
+を継承すればよく、ほかのクラスから継承する必要はありません。
+しかし、この実装を ORB と共に使用するには、
+.BR MyPOATie 
+内に実装をラップする必要があります。例を示します。
+.nf
+\f3
+.fl
+    ORB orb = ORB.init(args, System.getProperties());
+.fl
+
+.fl
+    // rootpoa への参照を取得し、POAManager を有効にします
+.fl
+    POA rootpoa = (POA)orb.resolve_initial_references("RootPOA");
+.fl
+    rootpoa.the_POAManager().activate();
+.fl
+
+.fl
+    // サーバントを作成し、それを ORB に登録します
+.fl
+    MyServant myDelegate = new MyServant();
+.fl
+    myDelegate.setORB(orb); 
+.fl
+
+.fl
+    // Tie を作成します。サーバントが delegate になります。
+.fl
+    MyPOATie tie = new MyPOATie(myDelegate, rootpoa);
+.fl
+
+.fl
+    // Tie の objectRef を取得します
+.fl
+    My ref = tie._this(orb);
+.fl
+\fP
+.fi
+
+.LP
+実装をほかの実装から継承しなければならない場合は、標準の継承モデル
+の代わりに Tie モデルを使用することもできます。Java は任意の数の
+インタフェース継承を認めていますが、クラスの継承に使用できる
+スロットは 1 つだけです。継承モデルを使用すると、このスロットが占
+有されます。Tie モデルを使用すると、スロットをユーザ自身の使用の
+ために解放できます。ただし、一定レベルの間接参照を引き起こすと
+いう欠点があります。つまり、メソッドを呼び出すと、余分なメソッド呼
+び出しが 1 つ発生します。
+.LP
+1.4 よりも前の J2SE バージョンで IDL-to-Java 言語
+マッピングのバージョンと互換性があるサーバ側の Tie モデルバインディングを生成
+するには、次のように指定します。
+.LP
+.RS
+.ft 3
+.nf
+idlj -oldImplBase -fall My.idl
+.br
+idlj -oldImplBase -fallTIE My.idl
+.fi
+.ft 1
+.RE
+.LP
+インタフェース
+.BR My
+の場合、このコマンドは
+.I My_Tie.java
+を生成します。
+.I My_Tie
+のコンストラクタは、
+.BR impl
+を受け取ります。ユーザは、
+.BR impl
+に対して実装を提供する必要があります。ただし、インタフェース 
+.BR HelloOperations
+を継承すればよく、ほかのクラスから継承する必要はありません。
+しかし、この実装を ORB と共に使用するには、
+.BR My_Tie
+ 内に実装をラップする必要があります。例を示します。
+.LP
+.nf
+\f3
+.fl
+    ORB orb = ORB.init(args, System.getProperties());
+.fl
+
+.fl
+    // サーバントを作成し、それを ORB に登録します
+.fl
+    MyServant myDelegate = new MyServant();
+.fl
+    myDelegate.setORB(orb); 
+.fl
+
+.fl
+    // Tie を作成します。サーバントが delegate になります。
+.fl
+    MyPOATie tie = new MyPOATie(myDelegate);
+.fl
+
+.fl
+    // Tie の objectRef を取得します
+.fl
+    My ref = tie._this(orb);
+.fl
+\fP
+.fi
+
+.LP
+.SH "発行されたファイルの代替場所の指定"
+.br
+発行されたファイルを現在のディレクトリ以外のディレクトリに保存したい場合は、
+次のようにコンパイラを呼び出してください。
+.LP
+.RS
+.ft 3
+.nf
+idlj -td /altdir My.idl
+.fi
+.ft 1
+.RE
+.LP
+インタフェース 
+.BR My
+の場合、バインディングは
+.BR ./My.java
+ ではなく 
+.BR /altdir/My.java
+などに対して発行されます。
+.SH "インクルードファイルの代替場所の指定"
+.BR My.idl
+にほかの idl ファイル、
+.BR MyOther.idl 
+が取り込まれている場合、コンパイラは 
+.BR MyOther.idl 
+がローカルディレクトリに存在すると見なします。たとえば、
+.BR MyOther.idl 
+が 
+.BR /includes
+に存在する場合は、次のコマンドでコンパイラを呼び出します。
+.LP
+.RS
+.ft 3
+.nf
+idlj -i /includes My.idl
+.fi
+.ft 1 
+.RE
+.LP
+.BR たとえば、My.idl が
+.BR /moreIncludes
+に存在する
+.BR Another.idl 
+も取り込んでいる場合は、次のコマンドでコンパイラを呼び出します。
+.LP
+.RS
+.ft 3
+.nf
+idlj -i /includes -i /moreIncludes My.idl
+.fi
+.ft 1 
+.RE
+.LP
+この形式でファイルを取り込むと、コマンドが非常に長くなることがあります。
+このため、インクルードファイルの検索場所をコンパイラに知らせる方法が
+別に用意されています。この方法は、環境変数の概念に似ています。まず、
+CLASSPATH にリストされているディレクトリ内に、
+.BR idl.config
+という名前のファイルを作成します。そして、
+.BR idl.config
+内に次の形式の行を 1 つ作成します。
+.LP
+.RS
+.ft 3
+.nf
+includes=/includes;/moreIncludes
+.fi
+.ft 1 
+.RE
+.LP
+コンパイラはこのファイルを見つけ、インクルードリストに読み込みます。
+この例では 2 つのディレクトリ間の区切り文字はセミコロン (;) であること
+に注意してください。
+この区切り文字はプラットフォームによって異なります。Windows プラットフォームではセミコロンを使用し、UNIX プラットフォームではコロンを使用する、などのようになります。
+インクルードの詳
+細は、
+.na
+\f2CLASSPATH\ のドキュメント (Solaris: 
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/solaris/classpath.html) 
+(Windows: 
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/windows/classpath.html) 
+を参照してください。
+.SH "インクルードファイルに対するバインディングの発行"
+デフォルトでは、コマンド行 idl ファイルに定義されているインタフェース、
+構造体などに対してのみ、Java バインディングが生成されます。インクルード
+ファイルに定義されているタイプの Java バインディングは生成されません。
+例として、次の 2 つの idl ファイルを考えてみましょう。
+.TP
+.B My.idl
+.LP
+.RS
+#include <MyOther.idl> 
+.br
+interface My 
+.br
+{ 
+.br
+}; 
+.RE
+.TP
+.B MyOther.idl
+.LP
+.RS
+interface MyOther 
+.br
+{ 
+.br
+};
+.RE
+.LP
+次のコマンドは、
+.BR My
+に対する Java バインディングしか生成しません。
+.LP
+.RS
+.ft 3
+.nf
+idlj My.idl
+.fi
+.ft 1
+.RE
+.LP
+.BR My.idl
+内に定義されているすべてのタイプ、および 
+.BR My.idl
+に取り込まれているファイル (この例では 
+.BR MyOther.idl
+) 内に定義されているすべてのタイプを生成するには、
+次のコマンドを使用してください。
+.LP
+.RS
+.ft 3
+.nf
+idlj -emitAll My.idl 
+.fi
+.ft 1
+.RE
+.LP
+このデフォルトの規則については、次の点に注意する必要があります。
+グローバルスコープに出現する 
+.BR #include
+文は、記述どおりに処理されます。これらの 
+.BR #include
+文は、インポート文と見なすことができます。一部の囲みスコープ内に
+出現する #include 文は、通常の 
+.BR #include
+文として扱われます。つまり、インクルードファイル内のコードは
+オリジナルファイル内に出現しているかのように扱われ、これに
+対して Java バインディングが発行されます。例を示します。
+.TP
+.B My.idl
+.LP
+.RS
+#include <MyOther.idl> 
+.br
+interface My 
+.br
+{ 
+.br
+  #include <Embedded.idl> 
+.br
+}; 
+.RE
+.TP
+.B MyOther.idl
+.LP
+.RS
+interface MyOther 
+.br
+{ 
+.br
+}; 
+.RE
+.TP
+.B Embedded.idl
+.LP
+.RS
+enum E {one, two, three};
+.RE
+.LP
+次のコマンドを実行すると、
+.LP
+.RS
+.ft 3
+.nf
+idlj My.idl
+.fi
+.ft 1
+.RE
+.LP
+以下の Java ファイルのリストが生成されます。
+.LP
+.B ./MyHolder.java\fP
+.br
+.B ./MyHelper.java\fP
+.br
+.B ./_MyStub.java\fP
+.br
+.B ./MyPackage\fP
+.br
+.B ./MyPackage/EHolder.java\fP
+.br
+.B ./MyPackage/EHelper.java\fP
+.br
+.B ./MyPackage/E.java\fP
+.br
+.B ./My.java\fP
+.LP
+.BR MyOther.java
+は生成されないことに注意してください。これは、インポートに類似した
+.BR #include
+で定義されているためです。しかし、通常の
+.BR #include
+に定義された 
+.BR E.java
+は生成されます。
+.BR Embedded.idl
+はインタフェース My のスコープ内に取り込まれているため、
+.BR My
+のスコープ内 (つまり 
+.BR MyPackage
+) に生成されます。
+.LP
+上記の例で 
+.BI -emitAll
+フラグが使用されていた場合は、すべてのインクルードファイル内に
+定義されているすべてのタイプが発行されます。
+.SH "パッケージ接頭辞の挿入"
+あなたが次の IDL ファイルを作成した ABC という名の企業に勤務していると
+仮定してください。
+.TP
+.B Widgets. idl
+module Widgets 
+.br
+{ 
+.br
+  interface W1 {...}; 
+.br
+  interface W2 {...}; 
+.br
+}; 
+.LP
+このファイルに対して IDL-to-Java コンパイラを実行すると、パッケージ
+Widgets 内の W1 と W2 に対して Java バインディングが生成されます。
+しかし、業界規約では、企業のパッケージは 
+.BR com.<company name>
+という名前のパッケージ内に配置しなければならないと規定されています。
+そのため、この 
+.BR Widgets
+パッケージのままでは不十分です。規定に従うには、
+.BR com.abc.Widgets
+でなければなりません。
+.BR Widgets
+モジュールにこのパッケージ接頭辞を配置するには、次のコマンドを
+実行してください。
+.LP
+.RS
+.ft 3
+.nf
+idlj -pkgPrefix Widgets com.abc Widgets.idl
+.fi
+.ft 1
+.RE
+.LP
+.BR Widgets.idl 
+を取り込んでいる IDL ファイルが存在する場合は、そのコマンド内にも 
+.BI \-pkgPrefix 
+フラグを指定する必要があります。このフラグを指定しないと、IDL ファイルは
+.BR com.abc.Widgets
+パッケージではなく 
+.BR Widgets
+パッケージを検索します。
+.LP
+接頭辞を必要とするこれらのパッケージが多数存在する場合は、前述した 
+.BR idl.config
+ファイルに配置する方が簡単でしょう。各パッケージ接頭辞行は、次の書式で記述します。
+.LP
+.RS
+.ft 3
+.nf
+PkgPrefix.<type>=<prefix>
+.fi
+.ft 1
+.RE
+.LP
+この書式に従うと、上記例の行は次のようになります。
+.LP
+.RS
+.ft 3
+.nf
+PkgPrefix.Widgets=com.abc
+.fi
+.ft 1
+.RE
+.LP
+このオプションを使用しても、リポジトリ ID には影響を与えません。
+.SH "コンパイル前のシンボルの定義"
+バインディング内にデバッグコードを取り込む場合などに IDL ファイル内
+にコンパイル用のシンボルが定義されていないときは、それらのシンボル
+を定義する必要があることがあります。次のコマンド
+.LP
+.RS
+.ft 3
+.nf
+idlj -d MYDEF My.idl
+.fi
+.ft 1
+.RE
+.LP
+は、My.idl 内に 
+.BR #define
+.BR MYDEF
+という行を含めるのと同じです。
+.SH "既存のバインディングの保持"
+Java バインディングファイルが既に存在する場合は、
+.BI \-keep 
+フラグを使用してコンパイラによる上書きを防止できます。デフォルトでは、
+既に存在するかどうかにかかわらずすべてのファイルが生成されます。
+ファイルをカスタマイズ (カスタマイズはその内容がよほど適切でない限り推奨
+されません) してある場合は、
+.BI \-keep 
+オプションが非常に役立ちます。次のコマンド
+.LP
+.RS
+.ft 3
+.nf
+idlj -keep My.idl
+.fi
+.ft 1
+.RE
+.LP
+は、まだ存在していないすべてのクライアント側バインディングを発行します。
+.SH "コンパイルの進捗の表示"
+IDL-to-Java コンパイラは、その実行段階でステータスメッセージを
+生成します。この生成を詳細 (verbose) モードにするには、
+.BR -v
+オプションを使用してください。
+.LP
+.RS
+.ft 3
+.nf
+idlj -v My.idl
+.fi
+.ft 1
+.RE
+.LP
+デフォルトでは、コンパイラは詳細モードで動作しません。
+.SH "バージョン情報の表示"
+IDL-to-Java コンパイラのビルドバージョンを表示するには、コマンド行で
+.BI \-version
+オプションを指定してください。
+.LP
+.RS
+.ft 3
+.nf
+idlj -version 
+.fi
+.ft 1
+.RE
+.LP
+コンパイラが生成したバインディング内に、バージョン情報も表示されます。
+コマンド行に指定されるその他のオプションは無視されます。
+.SH "オプション"
+.TP
+.BI \-d " symbol"
+これは、IDL ファイルに次の行を指定するのと同じです。
+.LP
+.RS
+.ft 3
+.nf
+#define symbol
+.fi
+.ft 1
+.RE
+.TP
+.BI \-emitAll
+.BR #include
+ファイル内に指定されているものも含め、すべてのタイプを発行します。
+.TP
+.BI \-fside
+発行するバインディングを定義します。
+.BI side
+には、
+.BR client
+、
+.BR server
+、
+.BR serverTIE
+、
+.BR all
+、
+.BR allTIE
+のうちいずれか 1 つを指定します。
+.BR -fserverTIE
+と 
+.BR -fallTIE
+オプションを指定すると、委譲モデルスケルトンが発行されます。
+フラグを指定しない場合は、
+.BR -fclient
+と見なされます。
+.TP
+.BI \-i " include-path"
+デフォルトでは、現在のディレクトリでインクルードファイルが
+検索されます。このオプションを使用すると、ほかのディレクトリを
+追加できます。 
+.TP
+.BI \-keep
+生成されるファイルが既に存在する場合、既存ファイルを上書きしません。
+デフォルトでは、既存ファイルが上書きされます。
+.TP
+.BI \-noWarn
+警告メッセージを表示しないようにします。
+.TP
+.BI \-oldImplBase
+1.4 より前の JDK ORB と互換性のあるスケルトンを生成します。
+デフォルトでは、POA 継承モデルのサーバ側バインディングが生成されます。
+このオプションは、
+.BR ImplBase
+継承モデルクラスであるサーバ側バインディングを生成することによって、
+旧バージョンの Java プログラミング言語との下位互換性を提供します。
+.TP
+.BI \-pkgPrefix " type prefix"
+ファイルスコープで 
+.BI type 
+が検出された場合、そのタイプに対して生成されるすべてのファイルについて、
+生成される Java パッケージ名に
+.BI prefix 
+という接頭辞を付けます。
+.BI type 
+は、トップレベルモジュールの単純名か、モジュールの外部で定義された 
+IDL タイプの単純名です。
+.TP
+.BI \-pkgTranslate " type package"
+特定の識別子内でモジュール名 \f2type\fP が見つかった場合、生成された Java パッケージ内のすべてのファイルに対して、その識別子内のモジュール名を \f2package\fP で置き換えます。
+.BR pkgPrefix 
+変更が初めに行われることに注意してください。
+.BI type 
+はトップレベルモジュールの単純名か、モジュールの外部で定義された IDL タイプの
+単純名のいずれかであり、パッケージのフルネームと正確に一致する必要があります。
+
+.LP
+特定の識別子に一致する変換が 2 つ以上見つかった場合、もっとも長い一致が選択されます。たとえば、引数を次のように指定したとします。
+.nf
+\f3
+.fl
+  \-pkgTranslate foo bar \-pkgTranslate foo.baz buzz.fizz
+.fl
+\fP
+.fi
+.LP
+このとき、次の変換が実行されます。
+.nf
+\f3
+.fl
+foo          => bar
+.fl
+foo.boo      => bar.boo
+.fl
+foo.baz      => buzz.fizz
+.fl
+foo.baz.bar  => buzz.fizz.bar
+.fl
+\fP
+.fi
+.LP
+次のパッケージ名は変換できません。
+.RS 3
+.TP 2
+*
+\f2org\fP 
+.TP 2
+*
+\f2org.omg\fP または \f2org.omg\fP のサブパッケージ
+.RE
+.LP
+これらのパッケージの変換を試みると、コンパイル不可能なコードが生成されます。
+これらのパッケージを 
+.BR \-pkgTranslate
+の後の最初の引数として使用すると、エラーとして扱われます。
+.RE
+.TP
+.BI \-skeletonName " xxx%yyy"
+.BI xxx%yyy
+をスケルトンの名前付けのパターンとして使用します。デフォルトは次のとおりです。
+.LP
+.RS
+.TP 2
+\(bu POA 基底クラス 
+(
+.BR \-fserver
+または
+.BR \-fall
+) の場合、%POA
+.TP 2
+\(bu 
+.BR \-oldImplBase
+クラス (
+.BR \-oldImplBase
+および、
+.BR \-fserver
+または
+.BR \-fall
+) の場合、_%ImplBase
+.RE
+.TP
+.BI \-td " dir"
+出力ディレクトリとして、現在のディレクトリではなく
+.BI dir
+を使用します。
+.TP
+.BI \-tieName " xxx%yyy"
+パターンに応じて Tie に名前を付けます。デフォルトは次のとおりです。
+.LP
+.RS
+.TP 2
+\(bu POA Tie 基底クラス (
+.BR \-fserverTie
+または 
+.BR \-fallTie
+) の場合、%POATie
+.TP 2
+\(bu 
+.BR oldImplBase Tie
+クラス (
+.BR \-oldImplBase
+および、
+.BR \-fserverTie
+または
+.BR \-fallTie
+のいずれか) の場合、%_Tie
+.RE
+.TP
+.BI \-nowarn, \-verbose
+詳細モードにします。
+.TP
+.BI \-version
+バージョン情報を表示して終了します。
+.LP
+オプションの詳細は、「機能説明」の節を参照してください。
+.SH "制限事項"
+.LP
+.TP 2
+\(bu グローバルスコープ内でエスケープされた識別子は、
+IDL プリミティブ型 (
+.BR Object 
+または 
+.BR ValueBase
+) と同じスペルであってはなりません。これは、シンボルテーブルがこれらの
+識別子を使用してすでにロードされているためです。これらを定義し直すと、
+それらの本来の定義を上書きすることになります (この制限は永続的に
+適用される見込み)。
+.TP 2
+\(bu IDL の fixed 型はサポートされていません。
+.SH "既知の問題"
+.LP
+
+.LP
+.RS 3
+.TP 2
+*
+グローバル識別子のインポートは生成されません。エクスポートされていないローカル実装を呼び出すと例外が発生しますが、その原因はおそらく \f2ServerDelegate\fP DSI コード内の \f2NullPointerException\fP です。
+.RE
+
+.LP
+
+.LP
+ 

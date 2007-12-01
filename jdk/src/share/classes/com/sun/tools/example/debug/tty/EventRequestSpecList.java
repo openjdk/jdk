@@ -1,0 +1,173 @@
+/*
+ * Copyright 1998-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package com.sun.tools.example.debug.tty;
+
+import com.sun.jdi.*;
+import com.sun.jdi.request.EventRequest;
+import com.sun.jdi.event.ClassPrepareEvent;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.StringTokenizer;
+
+class EventRequestSpecList {
+
+    private static final int statusResolved = 1;
+    private static final int statusUnresolved = 2;
+    private static final int statusError = 3;
+
+    // all specs
+    private List<EventRequestSpec> eventRequestSpecs = Collections.synchronizedList(
+                                                  new ArrayList<EventRequestSpec>());
+
+    EventRequestSpecList() {
+    }
+
+    /**
+     * Resolve all deferred eventRequests waiting for 'refType'.
+     * @return true if it completes successfully, false on error.
+     */
+    boolean resolve(ClassPrepareEvent event) {
+        boolean failure = false;
+        synchronized(eventRequestSpecs) {
+            Iterator iter = eventRequestSpecs.iterator();
+            while (iter.hasNext()) {
+                EventRequestSpec spec = (EventRequestSpec)iter.next();
+                if (!spec.isResolved()) {
+                    try {
+                        EventRequest eventRequest = spec.resolve(event);
+                        if (eventRequest != null) {
+                            MessageOutput.println("Set deferred", spec.toString());
+                        }
+                    } catch (Exception e) {
+                        MessageOutput.println("Unable to set deferred",
+                                              new Object [] {spec.toString(),
+                                                             spec.errorMessageFor(e)});
+                        failure = true;
+                    }
+                }
+            }
+        }
+        return !failure;
+    }
+
+    void resolveAll() {
+        Iterator iter = eventRequestSpecs.iterator();
+        while (iter.hasNext()) {
+            EventRequestSpec spec = (EventRequestSpec)iter.next();
+            try {
+                EventRequest eventRequest = spec.resolveEagerly();
+                if (eventRequest != null) {
+                    MessageOutput.println("Set deferred", spec.toString());
+                }
+            } catch (Exception e) {
+            }
+        }
+    }
+
+    boolean addEagerlyResolve(EventRequestSpec spec) {
+        try {
+            eventRequestSpecs.add(spec);
+            EventRequest eventRequest = spec.resolveEagerly();
+            if (eventRequest != null) {
+                MessageOutput.println("Set", spec.toString());
+            }
+            return true;
+        } catch (Exception exc) {
+            MessageOutput.println("Unable to set",
+                                  new Object [] {spec.toString(),
+                                                 spec.errorMessageFor(exc)});
+            return false;
+        }
+    }
+
+    EventRequestSpec createBreakpoint(String classPattern,
+                                 int line) throws ClassNotFoundException {
+        ReferenceTypeSpec refSpec =
+            new PatternReferenceTypeSpec(classPattern);
+        return new BreakpointSpec(refSpec, line);
+    }
+
+    EventRequestSpec createBreakpoint(String classPattern,
+                                 String methodId,
+                                 List methodArgs)
+                                throws MalformedMemberNameException,
+                                       ClassNotFoundException {
+        ReferenceTypeSpec refSpec =
+            new PatternReferenceTypeSpec(classPattern);
+        return new BreakpointSpec(refSpec, methodId, methodArgs);
+    }
+
+    EventRequestSpec createExceptionCatch(String classPattern,
+                                          boolean notifyCaught,
+                                          boolean notifyUncaught)
+                                            throws ClassNotFoundException {
+        ReferenceTypeSpec refSpec =
+            new PatternReferenceTypeSpec(classPattern);
+        return new ExceptionSpec(refSpec, notifyCaught, notifyUncaught);
+    }
+
+    EventRequestSpec createAccessWatchpoint(String classPattern,
+                                       String fieldId)
+                                      throws MalformedMemberNameException,
+                                             ClassNotFoundException {
+        ReferenceTypeSpec refSpec =
+            new PatternReferenceTypeSpec(classPattern);
+        return new AccessWatchpointSpec(refSpec, fieldId);
+    }
+
+    EventRequestSpec createModificationWatchpoint(String classPattern,
+                                       String fieldId)
+                                      throws MalformedMemberNameException,
+                                             ClassNotFoundException {
+        ReferenceTypeSpec refSpec =
+            new PatternReferenceTypeSpec(classPattern);
+        return new ModificationWatchpointSpec(refSpec, fieldId);
+    }
+
+    boolean delete(EventRequestSpec proto) {
+        synchronized (eventRequestSpecs) {
+            int inx = eventRequestSpecs.indexOf(proto);
+            if (inx != -1) {
+                EventRequestSpec spec = (EventRequestSpec)eventRequestSpecs.get(inx);
+                spec.remove();
+                eventRequestSpecs.remove(inx);
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    List<EventRequestSpec> eventRequestSpecs() {
+       // We need to make a copy to avoid synchronization problems
+        synchronized (eventRequestSpecs) {
+            return new ArrayList<EventRequestSpec>(eventRequestSpecs);
+        }
+    }
+}

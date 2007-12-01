@@ -1,0 +1,73 @@
+/*
+ * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/**
+ * @test
+ * @bug 6329006
+ * @summary verify that NSS no-db mode works correctly
+ * @author Andreas Sterbenz
+ * @library ..
+ */
+
+import java.util.*;
+
+import java.security.*;
+
+public class Crypto extends SecmodTest {
+
+    public static void main(String[] args) throws Exception {
+        if (initSecmod() == false) {
+            return;
+        }
+
+        String configName = BASE + SEP + "nsscrypto.cfg";
+        Provider p = getSunPKCS11(configName);
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
+        KeyPair kp = kpg.generateKeyPair();
+
+        System.out.println(kp.getPublic());
+        System.out.println(kp.getPrivate());
+
+        SecureRandom random = new SecureRandom();
+        byte[] data = new byte[2048];
+        random.nextBytes(data);
+
+        Signature sig = Signature.getInstance("SHA1withRSA", p);
+        sig.initSign(kp.getPrivate());
+
+        sig.update(data);
+        byte[] s = sig.sign();
+        System.out.println("signature: " + toString(s));
+
+        sig.initVerify(kp.getPublic());
+        sig.update(data);
+        boolean ok = sig.verify(s);
+        if (ok == false) {
+            throw new Exception("Signature verification failed");
+        }
+
+        System.out.println("OK");
+    }
+
+}

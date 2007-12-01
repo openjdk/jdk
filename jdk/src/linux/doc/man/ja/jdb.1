@@ -1,0 +1,506 @@
+'\" t
+.\"
+.\" Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\" 
+.\" 
+.\" 
+.\"  This document was created by saving an HTML file as text
+.\"  from the JavaSoft web site:
+.\" 
+.\" http://java.sun.com/j2se/1.4/docs/tooldocs/tools.html
+.\" 
+.\"  and adding appropriate troff macros.  Because the JavaSoft web site 
+.\"  man pages can change without notice, it may be helpful to diff
+.\"  files to identify changes other than new functionality. 
+.\" 
+.TH jdb 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH "名前"
+jdb \- Java デバッガ
+.LP
+
+.LP
+.LP
+\f3jdb\fP は、Java 言語プログラムのバグを見つけて修正するために使用するツールです。
+.LP
+.SH "形式"
+.B jdb 
+[ 
+.I options
+] [
+.I class
+] [
+.I  arguments
+]
+.LP
+.TP 15
+.I options
+以下に指定するコマンド行オプション
+.TP
+.I class
+デバッグを開始するクラス名
+.TP
+.I arguments
+クラスの
+.B main(\|)
+メソッドに渡される引数
+.SH "機能説明"
+.IX "Java debugger" "" "Java debugger \(em \fLjdb\fP"
+.IX "jdb" "" "\fLjdb\fP \(em Java debugger"
+Java デバッガの
+.BR jdb
+は、
+Java
+クラス用の単純なコマンド行デバッガです。
+.na
+「\f2Java Platform Debugger Architecture\fP」
+.fi
+ (http://java.sun.com/javase/6/docs/technotes/guides/jpda/index.html) 
+を画面に表示しながら実行し、ローカルまたはリモートの Java 仮想マシン
+の検査とデバッグを行うことができます。
+.SS "jdb セッションの開始"
+.IX "jdb" "Starting a jdb Session" "\fLjdb\fP \(em Java debugger"
+jdb セッションを開始するにはさまざまな方法があります。 もっとも頻繁に使
+われるのは、アプリケーションのメインクラスをデバッグして、
+.B jdb
+から新しく Java 仮想マシン (VM) を起動する方法です。 コマンド行で、
+.BR java (1)
+の代わりに
+.B jdb
+コマンドを入力します。たとえば、アプリケーションのメインクラスが
+.BR MyClass
+の場合は、次のコマンドを使用して jdb 環境でデバッグします。
+.LP
+.RS
+.B % jdb MyClass
+.RE
+.LP
+このようにして起動すると、
+.B jdb
+は 2 つ目の Java VM を呼び出し、指定されたパラメータを渡し、
+指定されたクラスをロードします。そのあと、
+クラスの最初の命令を実行する前に VM を停止させます。
+.LP
+.B jdb
+のもう 1 つの使用方法は、すでに起動している Java VM に
+.B jdb
+を接続することです。
+jdb が接続する VM を、その実行中に起動するための構文を次に示します。 これは、インプロセスデバッグ用ライブラリをロードし、接続の種類を指定します。
+.LP
+.nf
+\f3
+.fl
+\-agentlib:jdwp=transport=dt_socket,server=y,suspend=n
+.fl
+\fP
+.fi
+
+.LP
+.LP
+たとえば、次のコマンドは
+.B MyClass
+アプリケーションを実行し、後で
+.B jdb 
+を接続できるようにします。
+.LP
+.nf
+\f3
+.fl
+ % java \-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=n MyClass
+.fl
+\fP
+.fi
+
+.LP
+.LP
+次のコマンドで
+.B jdb 
+を VM に接続できます。
+.LP
+.RS
+.B % jdb \-attach 8000
+.RE
+.LP
+このとき、
+.B jdb
+は新しい VM を起動するのではなく、既存の VM に接続するので、
+.B jdb 
+コマンド行で
+.B MyClass
+を指定しないことに注意してください。
+.LP
+これ以外にもデバッガ (jdb) を VM に接続する方法はたくさんあり、
+.BR jdb
+はそのすべての方法をサポートしています。
+このような接続オプションについては、
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/jpda/conninv.html
+で Java Platform Debugger Architecture のマニュアルを参照してください。
+\f3jdb\fP で使用するために J2SE 1.4.2 以前の VM を起動する方法については、
+.fi
+http://java.sun.com/j2se/1.4.2/docs/technotes/guides/jpda/conninv.html
+の 1.4.2 のドキュメントを参照してください。
+.SS " jdb 基本コマンド"
+.IX "jdb" "Basic jdb Commands" "\fLjdb\fP \(em Java debugger"
+以下に
+.B jdb
+基本コマンドの一覧を示します。
+Java
+デバッガで使用可能なその他のコマンドは、
+.B help
+コマンドで表示できます。
+.TP 15
+.B help または ?
+.BR jdb
+のコマンドの中でもっとも重要なのが、この
+.B help
+コマンドです。利用可能なコマンドの一覧を、
+各コマンドの簡単な説明つきで表示します。
+.TP 15
+.B run
+.BR jdb
+を起動して必要なブレークポイントを設定したあとに、このコマンドを使用して、
+デバッグするアプリケーションの実行を開始します。このコマンドは、
+デバッグするアプリケーションを
+.B jdb
+から起動するときにだけ使用できます。 
+既存の VM に接続する場合とは異なります。
+.TP
+.B cont
+ブレークポイント、例外、またはステップ実行のあとで、デバッグ中の
+アプリケーションの実行を継続します。
+.TP 15
+.B print
+Java オブジェクトおよびプリミティブ値を表示します。 プリミティブ型の変数
+またはフィールドの場合には、実際の値を出力します。 オブジェクトの場合
+には、短い説明を出力します。 オブジェクトについては、以降の
+.B dump
+コマンドの説明を参照してください。 
+.sp 1n
+.LP
+注: 局所
+(スタック)
+変数をブラウズするには、そのクラスが
+.B javac \-g
+オプションでコンパイルされている必要があります。
+.sp 1n
+.LP
+.B print
+は、メソッドの呼び出しを含む多数の簡単な Java 式をサポートします。
+次に例を示します。 
+.RS
+.TP 3
+\(bu
+.B print MyClass.myStaticField 
+.PD 0
+.TP
+\(bu
+.B print myObj.myInstanceField 
+.TP
+\(bu
+\f3print\f1 \f2i\f1 \f3+\f1 \f2j\f1 \f3+\f1 \f2k\f1 (
+.IR i、
+.IR j 、
+および 
+.I k
+はプリミティブであり、フィールドまたは局所変数のいずれか) 
+.TP
+\(bu
+\f3print myObj.myMethod(\|)\f1 (
+.B myMethod
+が null 以外を返す場合) 
+.TP
+\(bu
+.B print new java.lang.String("Hello").length(\|)
+.RE
+.PD
+.TP
+.B dump
+プリミティブ値の場合には、このコマンドは
+.BR print
+と同じです。オブジェクトの場合には、オブジェクト内に定義されている
+各フィールドの現在の値を出力します。 static フィールドと instance
+フィールドを出力します。 
+.sp 1n
+.LP
+.B dump
+コマンドは、
+.B print
+コマンドと同じ式をサポートします。 
+.TP
+.B threads
+現在実行中のスレッドを一覧表示します。スレッドごとに、名前と現在の状態、
+およびほかのコマンドに使用できるインデックスを出力します。次に例を
+示します。 
+.sp 1n
+.RS 20
+.LP
+.B 4. (java.lang.Thread)0x1 main      running
+.RE
+.RS 
+.sp 1n
+.LP
+この例では、スレッドインデックスは
+.BR 4
+であり、スレッドは
+.BR java.lang.Thread 
+のインスタンスです。スレッドの名前は「
+.BR main
+」であり、現在実行中です。 
+.RE
+.TP 15
+.B thread
+現在のスレッドを選択します。 多くの
+.B jdb
+コマンドは、現在のスレッドの設定に基づいて実行されます。 スレッドは、
+.B threads 
+コマンドで説明するスレッドインデックスとともに指定します。 
+.TP 15
+.B where
+引数のない
+.B where
+コマンドは、現在のスレッド
+(
+.B thread
+コマンドで設定)
+のスタックをダンプします。
+.B where all
+と指定すると、現在のスレッドグループにある全スレッドの
+スタックをダンプします。
+.BI where " threadindex"
+と指定すると、
+.I threadindex
+が示すスレッドのスタックだけをダンプします。
+.sp 1n
+.LP
+現在のスレッドが (ブレークポイントなどのイベントや
+.B suspend
+コマンドで) 中断している場合、
+.B print 
+コマンドや
+.B dump
+コマンドを使用すれば、局所変数やフィールドを表示できます。
+どのスタックフレームを現在のフレームにするかは、
+.B up
+および
+.B down
+コマンドで選択できます。
+.SS "ブレークポイント用コマンド"
+.IX "jdb" "Breakpoints" "\fLjdb\fP \(em Java debugger"
+.B jdb
+では、ブレークポイントを行番号で、
+またはメソッドの最初の命令で
+設定できます。次に例を示します。
+.TP 25
+.B stop at MyClass:22
+.BR MyClass
+が含まれるソースファイルの
+.B 22
+行目の最初の命令にブレークポイントを設定する
+.TP
+.B stop in java.lang.String.length
+.BR java.lang.String.length
+メソッドの最初にブレークポイントを設定する
+.TP
+.BI "stop in MyClass." init
+.I init
+は
+.B MyClass
+コンストラクタを識別する
+.TP
+.BI "stop in MyClass." clinit
+.I clinit
+は
+.BR MyClass
+の静的な初期化コードを識別する 
+.LP
+メソッドがオーバーロードされる場合には、メソッドの引数の型も指定して、
+ブレークポイントに対して適切なメソッドが選択されるようにしなければなりませ
+ん。 たとえば、次のように指定します。
+.LP
+.RS 15
+.B MyClass.myMethod(int,java.lang.String)
+.RE
+.LP
+または
+.LP
+.RS 15
+.B MyClass.myMethod() 
+.RE
+.LP
+.B clear
+コマンドは、「
+.BR clear MyClass:45
+」のような構文を使用してブレークポイントを削除します。
+引数を指定しないで
+.B clear
+コマンドを使用すると、現在設定されてい
+るすべてのブレークポイントが表示されます。
+.B cont
+コマンドで実行が継続します。 
+.SS "コマンドのステップ実行"
+.IX "jdb" "Stepping" "\fLjdb\fP \(em Java debugger"
+.B step
+コマンドは、現在のスタックフレームまたは呼び出されたメソッド内で、
+次の行を実行します。 
+.B next
+コマンドは、現在のスタックフレームの次の行を
+実行します。 
+.SS "例外処理用コマンド"
+.IX "jdb" "Exceptions" "\fLjdb\fP \(em Java debugger"
+スローしているスレッドの呼び出しスタック上のどこにも catch 文がないような
+例外が発生すると、VM は通常、例外トレースを出力して終了します。 ただし、
+.BR jdb 
+環境で実行している場合は、このような例外が発生すると
+.B jdb
+に制御が戻ります。 次に、
+.BR jdb 
+を使用して例外の原因を診断します。 
+.TP 15
+.B catch
+デバッグ中のアプリケーションは他の例外がスローされたところで停止します。
+次に例を示します。
+.LP
+.RS 20
+.B catch java.io.FileNotFoundException
+.RE
+.sp 1n
+.RS 15
+または
+.RE
+.LP
+.RS 20
+.B catch mypackage.BigTroubleException
+.RE
+.sp 1n
+.RS 15
+例外が指定したクラス (または、サブクラス) のインスタンスである場合、
+アプリケーションはスローされたところで停止します。
+.RE
+.TP 15
+.B ignore
+以前の
+.B catch
+コマンドの効果を無効にします。なお、この指定によって例外を無視するのは
+デバッガだけであり、デバッグされた VM は無視しません。
+.SH "コマンド行オプション"
+コマンド行で Java アプリケーション起動ツールの代わりに
+.B jdb
+を使用する場合、
+.B jdb
+は、
+.BR \-D、
+.BR \-classpath、
+.BI \-X option\f1
+など、
+.BR java (1)
+コマンドと同じオプションを多数使用できます。
+.LP
+.B jdb 
+は、そのほかに次のオプションも使用できます。 
+.TP 3
+.BI \-help 
+ヘルプメッセージを表示します。
+.TP 3
+.BI \-sourcepath " dir1\f1:\f2dir2\f1:..."
+指定されたパスで、ソースファイルを検索します。 このオプションが
+指定されていない場合は、デフォルトパスの「.」を検索します。 
+.TP
+.BI \-attach " address"
+デフォルトの接続機構を使用して、すでに実行中の VM にデバッガを接続
+します。 
+.TP
+.BI \-listen " address"
+実行中の VM が標準のコネクタを使って指定されたアドレスに接続するのを待機します。
+.TP
+.BI \-listenany
+実行中の VM が標準のコネクタを使って利用可能な任意のアドレスに接続するのを待機します。
+.TP
+.B \-launch
+デバッグするアプリケーションを
+.BR jdb
+の起動後ただちに起動します。 このオプションを使用すると、
+.B run
+コマンドを使用する必要はありません。 デバッグするアプリケーションは、
+起動後、最初のアプリケーションクラスがロードされる直前に停止します。
+その時点で、必要なブレークポイントを設定できます。
+実行を継続するには
+.B cont
+コマンドを使用します。
+.TP 3
+\-listconnectors 
+この VM で利用できるコネクタを一覧表示します。
+.TP 3
+\-connect
+<connector\-name>:<name1>=<value1>,... 
+一覧表示された引数の値と指定のコネクタを使ってターゲット VM に接続します。
+.TP 3
+\-dbgtrace [flags] 
+jdb のデバッグ情報を出力します。
+.TP 3
+\-tclient 
+Java HotSpot(tm) VM (クライアント) 内でアプリケーションを実行します。
+.TP 3
+\-tserver 
+Java HotSpot(tm) VM (サーバ) 内でアプリケーションを実行します。
+.TP
+.BI \-J "option"
+jdb の実行に使用される Java 仮想マシンに \f2option\fP を渡します。(アプリケーション Java 仮想マシンに対するオプションは、\f3run\fP コマンドに渡される。)
+たとえば、
+.I \-J-Xms48m
+は、起動時に使用するメモリを 48M バイトに設定します。
+
+
+.LP
+これ以外にも、デバッガをデバッグされる VM に接続するための代替機構
+用のオプションがサポートされています。
+このような接続の代替機構については、
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/jpda/conninv.html
+の Java Platform Debugger Architecture のマニュアルを参照してください。
+.LP
+.SS 
+デバッグ対象のプロセスに転送されるオプション
+.LP
+.TP 3
+\-v \-verbose[:class|gc|jni] 
+冗長モードにします。
+.TP 3
+\-D<name>=<value> 
+システムプロパティを設定します。
+.TP 3
+\-classpath <directories separated by
+":"> 
+クラスを検索するディレクトリを一覧表示します。
+.TP 3
+\-X<option> 
+非標準ターゲット VM オプションです。
+.LP
+.SH "関連項目"
+.LP
+
+.LP
+.LP
+javac、java、javah、javap、javadoc
+.LP
+
+.LP
+ 

@@ -1,0 +1,66 @@
+/*
+ * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/* @test
+ * @bug 4290727
+ * @summary Verify that ConnectException will trigger HTTP fallback if
+ *          sun.rmi.transport.proxy.eagerHttpFallback system property is set.
+ * @run main/othervm EagerHttpFallback
+ */
+
+import java.rmi.*;
+import java.rmi.registry.*;
+
+public class EagerHttpFallback {
+
+    static final int INITIAL_PORT = 7070;
+    static final int FALLBACK_PORT = 7071;
+
+    public static void main(String[] args) throws Exception {
+        System.setProperty("http.proxyHost", "127.0.0.1");
+        System.setProperty("http.proxyPort", Integer.toString(FALLBACK_PORT));
+        System.setProperty("sun.rmi.transport.proxy.eagerHttpFallback",
+                           "true");
+        LocateRegistry.createRegistry(FALLBACK_PORT);
+
+        /*
+         * The call below should trigger a ConnectException in the
+         * RMIMasterSocketFactory when it attempts a direct connection to
+         * INITIAL_PORT, which no one is listening on.  Since
+         * eagerHttpFallback is set, this ConnectException should trigger HTTP
+         * fallback, which will send a call through the HTTP proxy, which is
+         * configured to be localhost with a port behind which a registry is
+         * listening--so if fallback works properly, the list() call should
+         * succeed.
+         */
+        try {
+            LocateRegistry.getRegistry(INITIAL_PORT).list();
+        } catch (Exception e) {
+            System.err.println(
+                "call on registry stub with port " + INITIAL_PORT +
+                "did not successfully perform HTTP fallback to " +
+                FALLBACK_PORT);
+            throw e;
+        }
+    }
+}

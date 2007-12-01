@@ -1,0 +1,68 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<!--
+Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+This code is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 2 only, as
+published by the Free Software Foundation.  Sun designates this
+particular file as subject to the "Classpath" exception as provided
+by Sun in the LICENSE file that accompanied this code.
+
+This code is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+version 2 for more details (a copy is included in the LICENSE file that
+accompanied this code).
+
+You should have received a copy of the GNU General Public License version
+2 along with this work; if not, write to the Free Software Foundation,
+Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+CA 95054 USA or visit www.sun.com if you need additional information or
+have any questions.
+-->
+
+<title>WBMP Metadata Format Specification</title>
+</head>
+
+<body>
+<center><h1>
+WBMP Metadata Format Specification
+</h1></center>
+
+The XML schema for the native image metadata format is as follows:
+
+<pre>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!-- Schema for WBMP native image metadata format. --&gt;
+
+&lt;xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns="http://javax.imageio.plugins"
+            targetNamespace="http://javax.imageio.plugins"&gt;
+
+  &lt;!-- WBMP Schema 1.0 root element. --&gt;
+  &lt;xsd:element name="javax_imageio_wbmp_1.0"&gt;
+    &lt;xsd:sequence&gt;
+
+      &lt;!-- WBMP image type --&gt;
+      &lt;xsd:element name="WBMPType" type="xsd:unsignedInt"/&gt;
+
+      &lt;!-- Bitmap width --&gt;
+      &lt;xsd:element name="Width" type="xsd:unsignedInt"/&gt;
+
+      &lt;!-- Bitmap height --&gt;
+      &lt;xsd:element name="Height" type="xsd:unsignedInt"/&gt;
+
+     &lt;/xsd:sequence&gt;
+  &lt;/xsd:element&gt; &lt;!-- wbmp_image_1.0 --&gt;
+
+&lt;/xsd:schema&gt;
+</pre>
+
+@since 1.5
+
+</body>

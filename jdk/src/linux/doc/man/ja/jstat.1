@@ -1,0 +1,667 @@
+'\" t
+.\"
+.\" Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\" 
+.\" 
+.TH jstat 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH 名前
+jstat \- Java 仮想マシン統計監視ツール
+.\"
+.SH 形式
+.nf
+\f3jstat\fP [ \f2generalOption\fP | \f2outputOptions\fP\f2vmid\fP [\f2interval\fP[s|ms] [\f2count\fP]] ]
+.fl
+.fi
+.SH パラメータ
+.if t .TP 20
+.if n .TP 15
+.I generalOption
+単一の汎用コマンド行オプション (
+.B \-help
+、
+.B \-options
+、または 
+.B \-version
+) 
+.if t .TP 20
+.if n .TP 15
+.I outputOptions
+1 つ以上の出力オプション。1 つの statOption と 
+.B \-t
+、
+.B \-h
+、および 
+.B \-J 
+オプションのいずれかで構成されます。
+.if t .TP 20
+.if n .TP 15
+.I vmid
+仮想マシン識別子。ターゲットの Java 仮想マシン (JVM) を示す文字列。一般的な構文は、次のとおりです。
+.LP
+.RS
+.ft 3
+.nf
+[\fP\f4protocol\fP\f3:][//]\fP\f4lvmid\fP[@\f2hostname\fP[:\f2port\fP]/\f2servername\fP]
+.fi
+.ft 1
+.RE
+.LP
+vmid 文字列の構文は、URI の構文とほぼ同じです。vmid は、ローカル JVM を表す単純な整数から、通信プロトコル、ポート番号、およびその他の実装固有の値を指定する複雑な構造までさまざまです。詳しくは、以下の「仮想マシン識別子」を参照してください。
+.if t .TP 20
+.if n .TP 15
+.I interval[s|ms]
+指定された単位 (秒 (s) またはミリ秒 (ms) ) でのサンプリング間隔。デフォルトの単位はミリ秒です。正の整数でなければなりません。これが指定された場合、
+.B jstat 
+は 
+.I interval 
+ごとに出力を生成します。
+.if t .TP 20
+.if n .TP 15
+.I count
+表示するサンプル数。デフォルトの値は infinity です。つまり、
+.B jstat 
+はターゲット JVM が終了するか 
+.B jstat 
+コマンドが終了されるまで統計を表示します。正の整数でなければなりません。
+.SH 機能説明
+.B jstat 
+ツールは、計測機構付き HotSpot Java 仮想マシン (JVM) のパフォーマンス統計を表示します。ターゲット JVM は、仮想マシン識別子、すなわち、以下の 
+.I vmid 
+オプションによって識別されます。
+.LP
+注 - このユーティリティはサポートされていないため、JDK の将来のバージョンでは使用できない可能性があります。現時点では、Windows 98 および Windows ME プラットフォームでは使用できません。
+.SS 仮想マシン識別子
+vmid 文字列の構文は、URI の構文とほぼ同じです。
+.LP
+.RS
+.ft 3
+.nf
+[protocol:][//]lvmid[@hostname][:port][/servername]
+.fi
+.ft 1
+.RE
+.if t .TP 20
+.if n .TP 15
+.I protocol
+通信プロトコル。
+.I protocol 
+が省かれ、
+.I hostname 
+が指定されなかった場合、デフォルトのプロトコルは、プラットフォームに固有の最適化されたローカルプロトコルです。
+.I protocol 
+が省かれ、
+.I hostname 
+が指定された場合、デフォルトのプロトコルは rmi です。
+.if t .TP 20
+.if n .TP 15
+.I lvmid
+ターゲット JVM のローカル仮想マシン識別子。
+.I lvmid 
+は、プラットフォーム固有の値であり、システム上の JVM を一意に識別します。
+.I lvmid 
+は、仮想マシン識別子の唯一の必須コンポーネントです。
+.I lvmid 
+は、一般に、ターゲット JVM プロセスのオペレーティングシステムのプロセス識別子ですが、必ずしもそうとは限りません。
+.B jps 
+コマンドを使用して、
+.I lvmid 
+を調べることができます。また、UNIX プラットフォームでは 
+.B ps 
+コマンドで、Windows ではタスクマネージャで 
+.I lvmid 
+を調べることができます。
+.if t .TP 20
+.if n .TP 15
+.I hostname
+ターゲットホストを示すホスト名または IP アドレス。
+.I hostname 
+が省かれた場合、ターゲットホストはローカルホストです。
+.if t .TP 20
+.if n .TP 15
+.B port
+リモートサーバと通信するためのデフォルトポート。
+.I hostname 
+が省かれるか、
+.I protocol 
+が最適化されたローカルプロトコルを指定している場合、
+.B port 
+は無視されます。そうでない場合、
+.B port 
+パラメータの扱いは、実装に固有です。デフォルトの rmi プロトコルの場合、
+.B port 
+はリモートホスト上の 
+.B rmiregistry 
+のポート番号を示します。
+.B port 
+が省かれ、
+.I protocol 
+が rmi を示す場合は、デフォルトの rmiregistry ポート (1099) が使用されます。
+.if t .TP 20
+.if n .TP 15
+.I servername
+このパラメータの取り扱いは、実装によって異なります。最適化されたローカルプロトコルの場合、このフィールドは無視されます。rmi プロトコルの場合、このパラメータは、リモートホスト上の RMI リモートオブジェクトの名前を表します。
+.SH オプション
+.B jstat 
+コマンドは、汎用オプションと出力オプションの 2 種類のオプションをサポートしています。汎用オプションを指定すると、
+.B jstat 
+は簡単な使用法とバージョン情報を表示します。出力オプションによって、統計出力の内容と形式が決まります。
+.LP
+注 - すべてのオプションとそれらの機能は、将来のリリースで変更または削除されることがあります。
+.SS 汎用オプション
+汎用オプションの 1 つを指定した場合、他のオプションやパラメータを指定することはできません。
+.if t .TP 20
+.if n .TP 15
+.BI \-help
+ヘルプメッセージを表示します。
+.if t .TP 20
+.if n .TP 15
+.BI \-version
+バージョン情報を表示します。
+.if t .TP 20
+.if n .TP 15
+.BI \-options
+統計オプションのリストを表示します。次の「出力オプション」を参照してください。
+.SS 出力オプション
+汎用オプションを指定しなかった場合は、出力オプションを指定することができます。出力オプションは、
+.B jstat 
+の出力の内容と形式を決め、1 つの statOption と他のオプション (
+.B \-h
+、
+.B \-t
+、および 
+.B \-J
+) のいずれかで構成されます。statOption は最初に指定する必要があります。
+.LP
+出力は、列が空白文字で区切られた表として書式化されます。タイトルの付いた見出し行が列の内容を表します。
+.B \-h 
+オプションを使用すると、見出しを表示する頻度を設定できます。列見出しの名前は、一般にオプション間で整合性が取れています。一般に、2 つのオプションで列の名前が同じになる場合、2 つの列のデータソースは同じです。
+.LP
+.B \-t 
+オプションを使用すると、出力の最初の列に Timestamp というラベルの付いたタイムスタンプ列が表示されます。Timestamp 列には、ターゲット JVM の起動からの経過時間が秒単位で表示されます。タイムスタンプの分解能は、さまざまな要因によって異なり、高負荷システムでは、遅延スレッドスケジューリングによって変動が生じることがあります。
+.LP
+.I interval 
+および 
+.I count 
+パラメータは、それぞれ 
+.B jstat 
+が出力を表示する頻度と回数を決めます。
+.LP
+注 - 将来のリリースで形式が変更される可能性があるので、
+.B jstat 
+の出力を解析するスクリプトは書かない方がよいでしょう。
+.B jstat 
+出力を解析するスクリプトを書く場合は、このツールの将来のリリースでは修正が必要になることを想定しておいてください。
+.if t .TP 20
+.if n .TP 15
+.BI \-statOption
+.B jstat が表示する統計情報を決めます。次の表に、使用可能なオプションを示します。\-options 汎用オプションを使用すると、特定のプラットフォームインストールでのオプションのリストが表示されます。
+.LP
+.sp 1n
+.TS
+box;
+cbp-1 | cbp-1
+l | l .
+オプション	表示される情報
+_
+class	クラスローダの動作に関する統計
+compiler	T{
+HotSpot Just-In-Time コンパイラの動作に関する統計
+T}	
+gc	T{
+ガベージコレクトされたヒープの動作に関する統計
+T}	
+gccapacity	世代の容量とそれらに対応する空間の統計
+gccause	T{
+ガベージコレクション統計の要約 ( \-gcutil と同じ) と、
+前回および現在 (該当する場合) のガベージコレクション
+イベントの原因
+T}	
+gcnew	新しい世代の動作の統計
+gcnewcapacity	新しい世代とそれらに対応する空間のサイズの統計
+gcold	T{
+古い永続的世代の動作の統計
+T}	
+gcoldcapacity	古い世代のサイズの統計
+gcpermcapacity	永続的世代のサイズの統計
+gcutil	ガベージコレクション統計の要約
+printcompilation	ガベージコレクション統計の要約
+.TE
+.if t .TP 20
+.if n .TP 15
+.BI \-h " n"
+.I n 
+個のサンプル (出力行 
+.I n 
+行) ごとに列見出しを表示します。
+.I n 
+は正の整数です。デフォルト値は 0 であり、データの最初の行の上に列見出しを表示します。
+.if t .TP 
+.if n .TP 
+.BI \-t " n"
+出力の最初の列としてタイムスタンプ列を表示します。タイムスタンプは、ターゲット JVM が起動してからの時間です。
+.if t .TP 
+.if n .TP 
+.BI \-J javaOption
+.I javaOption 
+を Java アプリケーション起動ツールに渡します。たとえば、
+.BI \-J \-Xms48m 
+は、起動メモリを 48M バイトに設定します。オプションの完全なリストについては、以下のドキュメントを参照してください。
+.RS 3
+.TP 2
+*
+.na
+java \- Java アプリケーション起動ツール (Solaris) @
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/solaris/java.html
+.TP 2
+*
+.na
+java \- Java アプリケーション起動ツール(Linux) @
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/linux/java.html
+.TP 2
+*
+.na
+java \- Java アプリケーション起動ツール (Windows) @
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/windows/java.html
+.RE
+.SS statOption と出力
+次の表に、各 
+.I statOption 
+に対して 
+.B jstat 
+が出力する列の要約を示します。
+.br
+.SS
+\-class オプション
+.br
+クラスローダ統計
+.br
+.LP
+.sp 1n
+.TS
+box;
+cbp-1 | cbp-1
+l | l .
+列	説明
+_
+Loaded	ロードされたクラスの数
+Bytes	ロードされた K バイト数
+Unloaded	アンロードされたクラスの数
+Bytes	アンロードされた K バイト数
+Time	クラスのロードおよびアンロード操作の実行に要した時間
+.TE
+.SS 
+\-compiler
+オプション
+.br
+HotSpot Just-In-Time コンパイラ統計
+.br
+.sp 1n
+.TS
+box;
+cbp-1 | cbp-1
+l | l .
+列	説明
+_
+Compiled	実行されたコンパイルタスクの数
+Failed	失敗したコンパイルタスクの数
+Invalid	無効化されたコンパイルタスクの数
+Time	コンパイルタスクの実行に要した時間
+FailedType	前回失敗したコンパイルのコンパイルタイプ
+FailedMethod	前回失敗したコンパイルのクラス名とメソッド
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-29
+.SS 
+\-gc オプション
+.br
+ガベージコレクトされたヒープの統計
+.br
+.TS
+box;
+cbp-1 | cbp-1
+l | l .
+列	説明
+_
+SOC	現在のサバイバースペース 0 の容量 (K バイト)
+S1C	現在のサバイバースペース 1 の容量 (K バイト)
+S0U	サバイバースペース 0 の使用量 (K バイト)
+S1U	サバイバースペース 1 の使用量 (K バイト)
+EC	現在のエデンスペースの容量 (K バイト)
+EU	エデンスペースの使用量 (K バイト)
+OC	現在のオールドスペースの容量 (K バイト)
+OU	オールドスペースの使用量 (K バイト)
+PC	現在の永続的スペースの容量 (K バイト)
+PU	永続的スペースの使用量 (K バイト)
+YGC	若い世代の GC イベントの数
+YGCT	若い世代のガベージコレクション時間
+FGC	フル GC イベントの数
+FGCT	フルガベージコレクション時間
+GCT	ガベージコレクション合計時間
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-63
+.SS 
+\-gccapacity オプション
+.br
+メモリプール世代とスペース容量
+.br
+.TS
+box;
+cbp-1 | cbp-1
+l | l .
+列	説明
+_
+NGCMN	新世代の最小容量 (K バイト)
+NGCMX	新世代の最大容量 (K バイト)
+NGC	新世代の現在の容量 (K バイト)
+S0C	現在のサバイバースペース 0 の容量 (K バイト)
+S1C	現在のサバイバースペース 1 の容量 (K バイト)
+EC	現在のエデンスペースの容量 (K バイト)
+OGCMN	旧世代の最小容量 (K バイト)
+OGCMX	旧世代の最大容量 (K バイト)
+OGC	旧世代の現在の容量 (K バイト)
+OC	現在のオールドスペースの容量 (K バイト)
+PGCMN	永続的世代の最小容量 (K バイト)
+PGCMX	永続的世代の最大容量 (K バイト)
+PGC	永続的世代の現在の容量 (K バイト)
+PC	永続的スペースの現在の容量 (K バイト)
+YGC	若い世代の GC イベントの数。
+FGC	フル GC イベントの数。
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-67
+.SS 
+\-gccause
+オプション
+.LP
+このオプションは、\f3\-gcutil\fP オプションと同じガベージコレクション統計データの概要を表示しますが、最後のガベージコレクションイベントと (適用可能な場合は) 現在のガベージコレクションイベントの原因が含まれます。\f3\-gcutil\fP で一覧表示される列の他に、このオプションでは次の列が追加されます。
+.TS
+box;
+cbp-1 | cbp-1
+l | l .
+列	説明
+_
+LGCC	前回のガベージコレクションの原因
+GCC	現在のガベージコレクションの原因
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-13
+.SS 
+\-gcnew オプション
+.br
+新世代統計
+.br
+.TS
+box;
+cbp-1 | cbp-1
+l | l .
+列	説明
+_
+SOC	現在のサバイバースペース 0 の容量 (K バイト)
+S1C	現在のサバイバースペース 1 の容量 (K バイト)
+S0U	サバイバースペース 0 の使用量 (K バイト)
+S1U	サバイバースペース 1 の使用量 (K バイト)
+TT	保有しきい値
+MTT	最大保有しきい値
+DSS	目標サバイバーサイズ (K バイト)
+EC	現在のエデンスペースの容量 (K バイト)
+EU	エデンスペースの使用量 (K バイト)
+YGC	若い世代の GC イベントの数。
+YGCT	若い世代のガベージコレクション時間。
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-47
+.SS 
+\-gcnewcapacity オプション
+.br
+新世代のスペースサイズ統計
+.br
+.TS
+box;
+cbp-1 | cbp-1
+l | l .
+列	説明
+_
+NGCMN	新世代の最小容量 (K バイト)
+NGCMX	新世代の最大容量 (K バイト)
+NGC	現在の新世代容量 (K バイト)
+S0CMX	サバイバースペース 0 の最大容量 (K バイト)
+S0C	現在のサバイバースペース 0 の容量 (K バイト)
+S1CMX	サバイバースペース 1 の最大容量 (K バイト)
+S1C	現在のサバイバースペース 1 の容量 (K バイト)
+ECMX	エデンスペースの最大容量 (K バイト)
+EC	現在のエデンスペースの容量 (K バイト)
+YGC	若い世代の GC イベントの数
+FGC	フル GC イベントの数
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-49
+.SS 
+\-gcold オプション
+.br
+旧および永続世代統計
+.br
+.TS
+box;
+cbp-1 | cbp-1
+l | l .
+列	説明
+_
+PC	現在の永続スペースの容量 (K バイト)
+PU	永続スペースの使用量 (K バイト)
+OC	現在のオールドスペースの容量 (K バイト)
+OU	オールドスペースの使用量 (K バイト)
+YGC	若い世代の GC イベントの数
+FGC	フル GC イベントの数
+FGCT	フルガベージコレクション時間
+GCT	ガベージコレクション合計時間
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-35
+.SS 
+\-gcoldcapacity オプション
+.br
+旧世代統計
+.br
+.TS
+box;
+cbp-1 | cbp-1
+l | l .
+列	説明
+_
+OGCMN	旧世代の最小容量 (K バイト)
+OGCMV	旧世代の最大容量 (K バイト)
+OGC	旧世代の現在の容量 (K バイト)
+OC	現在のオールドスペースの容量 (K バイト)
+YGC	若い世代の GC イベントの数
+FGC	フル GC イベントの数
+FGCT	フルガベージコレクション時間
+GCT	ガベージコレクション合計時間
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-35
+.SS 
+\-gcpermcapacity オプション
+.br
+永続世代統計
+.br
+.TS
+box;
+cbp-1 | cbp-1
+l | l .
+列	説明
+_
+PGCMN	永続世代の最小容量 (K バイト)
+PGCMX	永続世代の最大容量 (K バイト)
+PGC	永続世代の現在の容量 (K バイト)
+PC	永続スペースの現在の容量 (K バイト)
+YGC	若い世代の GC イベントの数
+FGC	フル GC イベントの数
+FGCT	フルガベージコレクション時間
+GCT	ガベージコレクション合計時間
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-35
+.SS 
+\-gcutil
+オプション
+.br
+ガベージコレクション統計の要約
+.br
+.TS
+box;
+cbp-1 | cbp-1
+l | l .
+列	説明
+_
+S0	T{
+サバイバースペース 0 の使用率 (スペースの現在の容量に対するパーセンテージ)
+T}	
+S1	T{
+サバイバースペース 1 の使用率 (スペースの現在の容量に対するパーセンテージ)
+T}	
+E	T{
+エデンスペースの使用率 (スペースの現在の容量に対するパーセンテージ)
+T}	
+O	T{
+オールドスペースの使用率 (スペースの現在の容量に対するパーセンテージ)
+T}	
+P	T{
+永続スペースの使用率 (スペースの現在の容量に対するパーセンテージ)
+T}	
+YGC	若い世代の GC イベントの数                              
+YGCT	若い世代のガベージコレクション時間
+FGC	フル GC イベントの数
+FGCT	フルガベージコレクション時間
+GCT	ガベージコレクション合計時間
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-43
+.SS 
+\-printcompilation オプション
+.br
+HotSpot コンパイラメソッド統計
+.br
+.TS
+box;
+cbp-1 | cbp-1
+l | l .
+列	説明
+_
+Compiled	実行されたコンパイルタスクの数                      
+Size	メソッドのバイトコードのバイト数
+Type	コンパイルタイプ
+Method	T{
+コンパイルされたメソッドを識別するクラス名とメソッド名。クラス名では、名前空間セパレータとして "." の代わりに "/" を使用します。メソッド名は、指定されたクラス内のメソッドです。この 2 つのフィールドの形式は、
+"HotSpot \- XX:+PrintComplation"
+オプションと同じです。
+T}	
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-19
+.SS 
+.SH 
+このセクションでは、lvmid が 21891 であるローカル JVM の監視例をいくつか示します。
+.SS gcutil オプションの使用
+この例では、lvmid 21891 にアタッチして、250 ミリ秒間隔で 7 つのサンプルを採取し、
+.B \-gcutil 
+オプションでの指定に従って出力を表示します。
+.LP
+.ft 3
+.nf
+jstat -gcutil 21891 250 7
+  S0     S1     E      O      P     YGC    YGCT    FGC    FGCT     GCT
+ 12.44   0.00  27.20   9.49  96.70    78    0.176     5    0.495    0.672
+ 12.44   0.00  62.16   9.49  96.70    78    0.176     5    0.495    0.672
+ 12.44   0.00  83.97   9.49  96.70    78    0.176     5    0.495    0.672
+  0.00   7.74   0.00   9.51  96.70    79    0.177     5    0.495    0.673
+  0.00   7.74  23.37   9.51  96.70    79    0.177     5    0.495    0.673
+  0.00   7.74  43.82   9.51  96.70    79    0.177     5    0.495    0.673
+  0.00   7.74  58.11   9.51  96.71    79    0.177     5    0.495    0.673
+.fi
+.ft 1
+.LP
+この例の出力は、3 番目と 4 番目のサンプルの間に若い世代のコレクションが発生したことを示しています。コレクションの所要時間は 0.001 秒であり、オブジェクトがエデンスペース (E) からオールドスペース (O) に昇格されたため、オールドスペースの使用率が 9.49% から 9.51% に増加しています。コレクションの前のサバイバースペースの使用率は 12.44% でしたが、このコレクションの後の使用率は、わずか 7.74% です。
+.SS 列見出し文字列の繰り返し
+この例では、lvmid 21891 にアタッチして、250 ミリ秒間隔でサンプルを採取し、
+.B \-gcutil 
+オプションでの指定に従って出力を表示します。また、
+.B \-h3 
+オプションを使用して、3 行のデータごとに列見出しを出力します。
+.LP
+.ft 3
+.nf
+jstat -gcnew -h3 21891 250
+ S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT
+  64.0   64.0    0.0   31.7 31  31   32.0    512.0    178.6    249    0.203
+  64.0   64.0    0.0   31.7 31  31   32.0    512.0    355.5    249    0.203
+  64.0   64.0   35.4    0.0  2  31   32.0    512.0     21.9    250    0.204
+ S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT
+  64.0   64.0   35.4    0.0  2  31   32.0    512.0    245.9    250    0.204
+  64.0   64.0   35.4    0.0  2  31   32.0    512.0    421.1    250    0.204
+  64.0   64.0    0.0   19.0 31  31   32.0    512.0     84.4    251    0.204
+ S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT
+  64.0   64.0    0.0   19.0 31  31   32.0    512.0    306.7    251    0.204
+.fi
+.ft 1
+.LP
+見出し文字列の繰り返しを示しているほかに、この例は、2 番目と 3 番目のサンプルの間に若い世代の GC が発生したことを示しています。その所要時間は 0.001 秒でした。コレクションによって、サバイバースペース 0 の使用量 (S0U) が目標サバイバーサイズ (DSS) を超える十分なライブデータが見つかりました。結果として、オブジェクトは旧世代に昇格され (この出力には示されていない)、保有しきい値 (TT) が 31 から 2 に下がっています。
+.LP
+5 番目と 6 番目のサンプルの間にもう 1 つのコレクションが発生しています。このコレクションでは、ごくわずかのサバイバーが見つかり、保有しきい値が 31 に戻っています。
+.SS 各サンプルのタイムスタンプの表示
+この例では、lvmid 21891 にアタッチして、250 ミリ秒間隔で 3 つのサンプルを採取します。
+.B \-t 
+オプションを使用して、最初の列に各サンプルのタイムスタンプを生成します。
+.LP
+.ft 3
+.nf
+jstat \-gcoldcapacity \-t 21891 250 3
+Timestamp  OGCMN    OGCMX    OGC      OC       YGC   FGC   FGCT    GCT
+150.1      1408.0   60544.0  11696.0  11696.0  194   80    2.874   3.799
+150.4      1408.0   60544.0  13820.0  13820.0  194   81    2.938   3.863
+150.7      1408.0   60544.0  13820.0  13820.0  194   81    2.938   3.863
+.br
+.fi
+.LP
+\f2Timestamp\fP 列には、ターゲット JVM の起動時からの経過時間が、秒単位でレポートされています。さらに、\f3\-gcoldcapacity\fP 出力では、割り当て要求または昇格要求あるいはその両方を満たすためにヒープが拡張するごとに、Old 世代の容量 (OGC) と Old 領域の容量 (OC) とが増加していることがわかります。Old 世代の容量 (OGC) は、81 番目のフル GC (FGC) 後に、11696 KB から 13820 KB へ増加しています。Old 世代 (および領域) の最大容量は、60544 KB (OGCMX) なので、まだ拡張できる余裕が残されています。
+.SS 
+リモート JVM のインストゥルメンテーションの監視
+.LP
+この例は、\f3\-gcutil\fP オプションを使用して、\f2remote.domain\fP というシステム上の \f2lvmid\fP 40496 に接続し、サンプルを秒単位で無期限に取得しています。
+.nf
+\f3jstat \-gcutil 40496@remote.domain 1000\fP
+.br
+
+.fl
+... \f2出力省略\fP
+.br
+.fi
+.LP
+\f2lvmid\fP は、リモートホストの名前と結合されて、\f240496@remote.domain\fP の \f2vmid\fP を構成しています。結果として、この \f2vmid\fP は、\f3rmi\fP プロトコルを使用して、リモートホスト上のデフォルトの \f3jstatd\fP サーバと通信します。\f3jstatd\fP サーバは、\f3rmiregistry\fP を使用して、デフォルトの \f3rmiregistry\fP ポート (ポート 1099) にバインドされた \f2remote.domain\fP に配置されれます。
+.SH 関連項目
+.RS 3
+.TP 2
+*
+java \- Java アプリケーション起動ツール
+.TP 2
+*
+jps \- Java プロセスステータスツール
+.TP 2
+*
+jstatd \- jvmstat デーモン
+.TP 2
+*
+rmiregistry \- Java リモートオブジェクトレジストリ
+.RE
+ 

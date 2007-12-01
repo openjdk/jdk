@@ -1,0 +1,11 @@
+/*
+ * security policy used by the rmid process exec'ed by a running
+ * instance of the test.
+ */
+
+grant {
+  permission java.io.FilePermission "..${/}..${/}test.props", "read";
+
+  // test needs to communicate with the activation system
+  permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
+};
