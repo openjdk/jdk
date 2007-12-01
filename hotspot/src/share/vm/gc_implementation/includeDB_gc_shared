@@ -1,0 +1,67 @@
+//
+// Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+// DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+//
+// This code is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 2 only, as
+// published by the Free Software Foundation.
+//
+// This code is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// version 2 for more details (a copy is included in the LICENSE file that
+// accompanied this code).
+//
+// You should have received a copy of the GNU General Public License version
+// 2 along with this work; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+// CA 95054 USA or visit www.sun.com if you need additional information or
+// have any questions.
+//  
+//
+
+// NOTE: DO NOT CHANGE THIS COPYRIGHT TO NEW STYLE - IT WILL BREAK makeDeps!
+
+gcAdaptivePolicyCounters.hpp		adaptiveSizePolicy.hpp
+gcAdaptivePolicyCounters.hpp		gcPolicyCounters.hpp
+
+gcAdaptivePolicyCounters.cpp		resourceArea.hpp
+gcAdaptivePolicyCounters.cpp            gcAdaptivePolicyCounters.hpp
+
+gSpaceCounters.cpp                      generation.hpp
+gSpaceCounters.cpp                      resourceArea.hpp
+gSpaceCounters.cpp                      gSpaceCounters.hpp
+
+gSpaceCounters.hpp                      generation.hpp
+gSpaceCounters.hpp                      perfData.hpp
+gSpaceCounters.hpp                      generationCounters.hpp
+
+immutableSpace.cpp                      immutableSpace.hpp
+immutableSpace.cpp                      oop.inline.hpp
+immutableSpace.cpp                      universe.hpp
+
+isGCActiveMark.hpp                      parallelScavengeHeap.hpp
+
+markSweep.inline.hpp			psParallelCompact.hpp
+
+mutableNUMASpace.cpp                    mutableNUMASpace.hpp
+mutableNUMASpace.cpp                    sharedHeap.hpp
+mutableNUMASpace.cpp                    thread_<os_family>.inline.hpp
+
+mutableNUMASpace.hpp                    mutableSpace.hpp
+mutableNUMASpace.hpp                    gcUtil.hpp
+
+mutableSpace.cpp                        mutableSpace.hpp
+mutableSpace.cpp                        oop.inline.hpp
+mutableSpace.cpp                        safepoint.hpp
+mutableSpace.cpp                        thread.hpp
+
+spaceCounters.cpp                       resourceArea.hpp
+spaceCounters.cpp                       spaceCounters.hpp
+
+spaceCounters.hpp                       immutableSpace.hpp
+spaceCounters.hpp                       mutableSpace.hpp
+spaceCounters.hpp                       perfData.hpp
+spaceCounters.hpp                       generationCounters.hpp

@@ -1,0 +1,1369 @@
+<html>
+<head>
+<title>
+JavaScript interface to Hotspot Serviceability Agent
+</title>
+</head>
+<body>
+<h1>JavaScript interface to Hotspot Serviceability Agent</h1>
+
+<p>
+Serviceability Agent (SA) provides Java API and tools to diagnose HotSpot Virtual Machine and 
+Java apps running on it. SA is a snapshot debugger -- can be used to observe state of a frozen java process or java core dump.
+</p>
+
+<h2>Existing SA APIs</h2>
+<p>
+There are two application programmer interfaces (APIs) for SA:
+<dl>
+<dt>1. Private java API
+</dt>
+<dd>
+This tries to mimic hotspot VM's internal C++ classes and methods. Because VM data structures
+are a moving target, this API can never be 'stable'! Besides, to use SA's private API knowledge of
+HotSpot code base is essential.
+</dd>
+<dt>2. SA-JDI -- Java Debugger Interface read-only subset API
+</dt>
+<dd>
+This is read-only subset of JDI (Java Debugger Interface)
+This is a standardized interface to get java level state of a java process or java core dump. While this
+interface is useful, this misses parts of java level state from target process or core such as
+<ul>
+<li>heap walking interface -- only objects traceable to static variables (of classes) and local
+variables of stack frames can be accessed.
+<li>re-constructing .class from debuggee are missing.
+<li>re-constructing object mirrors for Java objects of the debuggee.
+</ul>
+</dd>
+</dl>
+</p>
+
+<h2>SA Scripting interface</h2>
+
+<p>
+Traditionally, platform debuggers such as dbx, gdb and Solaris mdb (Module Debugger), provide a scripting
+language interface. Scripting language interface provides easy-to-use, dynamically typed
+interface to access data structures from debuggee. dbx and mdb even allow user to write
+C/C++ modules to extend the scripting language commands. 
+</p>
+
+<p>
+SA provides SOQL - Simple Object Query Language -- a SQL-like query language to access
+Java heap as an object database. SA's main GUI (HSDB) also exposes scripting interface of underlying debugger such as dbx, windbg. 
+But to use this interface, user has to learn scripting interface of multiple debugger back-ends such as dbx, windbg. 
+And these scripting interfaces are 'raw' in the sense that no java state is exposed -- only C/C++ state of VM is exposed.
+Higher level SA services are not available through scripting interface.
+</p>
+
+<p>
+<b>jsdb -- JavaScript Debugger</b> attempts to provide JavaScript interface to SA. 
+jsdb provides
+
+<ul>
+<li>high-level hotspot (and SA) independent scripting interface
+<li>low-level SA-aware scripting interface. 
+</ul>
+</p>
+
+<h2>High level interface (Java State)</h2>
+
+<b>jsdb</b> is a command line <a href="http://www.ecma-international.org/publications/standards/Ecma-262.htm">JavaScript</a> shell based on 
+<a href="http://www.mozilla.org/rhino/">Mozilla's Rhino JavaScript Engine</a>. 
+This command line utility attaches to Java process or core file or remote debug server and waits for user input.
+This shell supports the following global functions and objects in addition to the standard JavaScript functions and 
+objects:
+
+<h3>jdsb globals</h3>
+
+<table border="1">
+<tr>
+<th>Function/Variable</th>
+<th>Description</th>
+</tr>
+<tr>
+<td>
+address(jobject)
+</td>
+<td>
+function that returns the address of the Java object as a string
+</td>
+</tr>
+<td>
+classof(jobject)
+</td>
+<td>
+function that returns the JavaScript object that represents class object of the Java object
+</td>
+</tr>
+<td>
+dumpClass(jclass,[dir])
+</td>
+<td>
+function that writes .class for the given Java Class. Optionally (second arg) accepts the directory where the
+.class has to be written.
+</td>
+</tr>
+<td>
+help()
+</td>
+<td>
+function that prints help message for global functions and objects
+</td>
+</tr>
+<tr>
+<td>
+identityHash(jobject)
+</td>
+<td>
+function that returns the identity hashCode of the Java object
+</td>
+</tr>
+<tr>
+<td>
+mirror(jobject)
+</td>
+<td>
+function that returns a local mirror of the Java object.
+</td>
+</tr>
+<tr>
+<td>
+load([file1, file2,...])
+</td>
+<td>
+function that loads zero or more JavaScript file(s). With no arguments, reads <stdin> for
+JavaScript code.
+</td>
+</tr>
+<tr>
+<td>
+object(string) 
+</td>
+<td>
+function that converts a string address into Java object
+</td>
+</tr>
+<tr>
+<td>
+owner(jobject)
+</td>
+<td>
+function that returns the owner thread of this monitor or null
+</td>
+</tr>
+<tr>
+<td>
+sizeof(jobject)
+</td>
+<td>
+function that returns the size of Java object in bytes
+</td>
+</tr>
+<tr>
+<td>
+staticof(jclass, field)
+</td>
+<td>
+function that returns the value of given field of the given Java class
+</td>
+</tr>
+<tr>
+<td>
+print(expr1, expr2,...)  
+</td>
+<td>
+function that prints zero or more JavaScript expressions after converting those as strings
+</td>
+</tr>
+<tr>
+<td>
+println(expr1, expr2..)
+</td>
+<td>
+function that same as print, but prints a newline at the end
+</td>
+</tr>
+<tr>
+<td>
+read([prompt])
+</td>
+<td>
+function that reads a single line from standard input
+</td>
+</tr>
+<tr>
+<td>
+quit()
+</td>
+<td>
+function that quits the interactive load call as well as the shell
+</td>
+</tr>
+<tr>
+<td>
+jvm
+</td>
+<td>
+variable -- a JavaScript object that represents the target jvm that is being debugged
+</td>
+</tr>
+</table>
+
+<h3>jvm object</h3>
+
+<p>
+jvm object supports the following read-only properties.
+</p>
+
+<table border="1">
+<tr>
+<th>
+Property name
+</th>
+<th>
+Description
+</th>
+</tr>
+<tr>
+<td>
+threads
+</td>
+<td>
+array of Java threads from the debuggee
+</td>
+</tr>
+<tr>
+<td>
+heap
+</td>
+<td>
+object representing the heap of the debuggee
+</td>
+</tr>
+<tr>
+<td>
+type
+</td>
+<td>
+string value that is either "Server" or "Client" or "Core" -- the flavour of debuggee VM
+</td>
+</tr>
+<tr>
+<td>
+bootClassPath
+</td>
+<td>
+string value of bootclasspath of the debuggee
+</td>
+</tr>
+<tr>
+<td>
+cpu
+</td>
+<td>
+string value of cpu on which the debuggee runs/ran
+</td>
+</tr>
+<tr>
+<td>
+sysProps
+</td>
+<td>
+name-value pairs (JavaScript associative array) of Java System properties of the debuggee
+</td>
+</tr>
+<tr>
+<td>
+addressSize
+</td>
+<td>
+int value -- 32 for 32 bit debuggee, 64 for 64 bit debuggee
+</td>
+</tr>
+<tr>
+<td>
+os
+</td>
+<td>
+string value of OS on which the debuggee runs/ran
+</td>
+</tr>
+<tr>
+<td>
+buildInfo
+</td>
+<td>
+internal build info string from debuggee
+</td>
+</tr>
+<tr>
+<td>
+flags
+</td>
+<td>
+name-value pairs (JavaScript associative array) of JVM command line flags of the debuggee
+</td>
+</tr>
+<tr>
+<td>
+classPath
+</td>
+<td>
+string value of classpath of the debuggee
+</td>
+</tr>
+<tr>
+<td>
+userDir
+</td>
+<td>
+string value of user.dir System property of the debuggee
+</td>
+</tr>
+</table>
+
+<h3>heap object</h3>
+
+<p>
+heap object represents Java heap of the debuggee VM
+</p>
+<table border="1">
+<tr>
+<th>
+Function or property name
+</th>
+<th>
+Description
+</th>
+</tr>
+<tr>
+<td>
+capacity
+</td>
+<td>
+byte size of capacity of the heap
+</td>
+</tr>
+<tr>
+<td>
+used
+</td>
+<td>
+byte size of used portion (of live objects) of the heap
+</td>
+</tr>
+<tr>
+<td>
+forEachObject(func, [class], [include subtypes -- true|false])
+</td>
+<td>
+This function accepts a callback function 'func' and optionally class name and boolean arguments.
+This function calls the callback for each Java object in the debuggee's heap. The optional class
+argument may be used to receive objects of given class only. The third arguments specifies whether
+to include objects of subtype of given class [or interface] or not. The default value of class is "java.lang.Object"
+and and that of the third argument is true. i.e., by default all objects are included.
+</td>
+</tr>
+<tr>
+<td>
+forEachClass(func, [initiating loader -- true|false])
+</td>
+<td>
+This function accepts a callback function 'func'. This function iterates through the classes of the debuggee and calls the
+callback for each class. The second parameter tells whether to pass initiating loader to the iterator callback or not.
+</td>
+</tr>
+</table>
+
+<h3>Accessing Java objects and arrays in script</h3>
+
+<p>
+From a given Java object, we can access all fields of the Java object by usual '.' operator. i.e., if you got a Java object
+called 'o' of type java.lang.Thread from debuggee, you can access 'stackSize' field by o.stackSize syntax. Similarly, length of Java array
+objects can be accessed by length property. And array indexing follows usual syntax. i.e., n'th element of array 'a' is 
+accessed by a[n].
+</p>
+
+<h3>jvm.threads array</h3>
+
+<p>
+This is a JavaScript array of Java threads of the debuggee. As usual, 'length' property tells the number of threads and individual
+threads may be accessed by index operator -- i.e, jvm.threads[0] returns the first thread.
+</p>
+
+<h3>thread object</h3>
+
+
+<p>
+In addition to the fields of java.lang.Thread (or subclass) fields, thread objects have two additional properties.
+
+<ul>
+<li>frames -- array of stack frame objects
+<li>monitors -- array of monitor objects owned by the thread
+</ul>
+
+</p>
+
+<h3>stack frame object</h3>
+
+<table border="1">
+<tr>
+<th>
+Property name
+</th>
+<th>
+Description
+</th>
+</tr>
+<td>
+thisObject
+</td>
+<td>
+Object representing 'this' of the current frame [will be null for static methods]
+</td>
+</tr>
+<tr>
+<td>
+locals
+</td>
+<td>
+name-value pairs of local variables [JavaScript associative array]
+</td>
+</tr>
+<tr>
+<td>
+line
+</td>
+<td>
+Java source line number at which the frame is executing
+</td>
+</tr>
+<tr>
+<td>
+bci
+</td>
+<td>
+byte code index of the bytecode that the frame is executing
+</td>
+</tr>
+<tr>
+<td>
+thread
+</td>
+<td>
+thread to which this frame belongs
+</td>
+</tr>
+<tr>
+<td>
+method
+</td>
+<td>
+Java method that the frame is executing
+</td>
+</tr>
+</table>
+
+<h3>method object</h3>
+
+<p>
+method object represents a Java method of debuggee
+</p>
+
+<table border="1">
+<tr>
+<th>
+Property name
+</th>
+<th>
+Description
+</th>
+</tr>
+<tr>
+<td>
+isStatic
+</td>
+<td>
+boolean - true for static methods and false for non-static methods
+</td>
+</tr>
+
+<tr>
+<td>
+isSynchronized
+</td>
+<td>
+boolean - true for synchronized methods and false for non-synchronized methods
+</td>
+</tr>
+
+<tr>
+<td>
+isNative
+</td>
+<td>
+boolean - true for native methods and false for non-native methods
+</td>
+</tr>
+
+<tr>
+<td>
+isProtected
+</td>
+<td>
+boolean - true for protected methods and false for non-protected methods
+</td>
+</tr>
+
+<tr>
+<td>
+isPrivate
+</td>
+<td>
+boolean - true for private methods and false for non-private methods
+</td>
+</tr>
+
+<tr>
+<td>
+isSynthetic
+</td>
+<td>
+boolean - true for Javac generated synthetic methods and false for non-synthetic methods
+</td>
+</tr>
+
+<tr>
+<td>
+isPackagePrivate
+</td>
+<td>
+boolean - true for package-private methods and false for non-package-private methods
+</td>
+</tr>
+
+<tr>
+<td>
+isPublic
+</td>
+<td>
+boolean - true for public methods and false for non-public methods
+</td>
+</tr>
+
+<tr>
+<td>
+holder
+</td>
+<td>
+an object that represents Class that contains this method
+</td>
+</tr>
+
+<tr>
+<td>
+signature
+</td>
+<td>
+string -- signature of this method
+</td>
+</tr>
+
+<tr>
+<td>
+isObsolete
+</td>
+<td>
+boolean - true for obsolete (hotswapped) methods and false for non-obsolete methods
+</td>
+</tr>
+
+<tr>
+<td>
+isStrict
+</td>
+<td>
+boolean - true for strictfp methods and false for non-strictfp methods
+</td>
+</tr>
+
+<tr>
+<td>
+isFinal
+</td>
+<td>
+boolean - true for final methods and false for non-final methods
+</td>
+</tr>
+
+<tr>
+<td>
+name
+</td>
+<td>
+string - name of this method
+</td>
+</tr>
+</table>
+
+<h3>class object</h3>
+
+<p>
+A class object represents loaded Java class in debuggee VM. This represents java.lang.Class instance in the debuggee.
+This is type of return value of classof global function. Also, method.holder property and field.holder are
+of this type.
+</p>
+
+<table border="1">
+<tr>
+<th>
+Property name
+</th>
+<th>
+Description
+</th>
+</tr>
+
+<tr>
+<td>
+name
+</td>
+<td>
+name of this class
+</td>
+</tr>
+
+<tr>
+<td>
+superClass
+</td>
+<td>
+class object representing super class of this class
+</td>
+</tr>
+
+<tr>
+<td>
+isArrayClass
+</td>
+<td>
+boolean -- is the current class an array class?
+</td>
+</tr>
+
+<tr>
+<td>
+isStatic
+</td>
+<td>
+boolean -- is the current class static or not
+</td>
+</tr>
+
+<tr>
+<td>
+isInterface
+</td>
+<td>
+boolean -- is the current class an interface
+</td>
+</tr>
+
+<tr>
+<td>
+isAbstract
+</td>
+<td>
+boolean -- is the current class abstract or not
+</td>
+</tr>
+
+<tr>
+<td>
+isProtected
+</td>
+<td>
+boolean -- is the current class protected or not
+</td>
+</tr>
+
+<tr>
+<td>
+isPrivate
+</td>
+<td>
+boolean -- is the current class private or not
+</td>
+</tr>
+
+<tr>
+<td>
+isPackagePrivate
+</td>
+<td>
+boolean -- is the current class package private or not
+</td>
+</tr>
+
+<tr>
+<td>
+isSynthetic
+</td>
+<td>
+boolean -- is the current class synthetic or not
+</td>
+</tr>
+
+<tr>
+<td>
+classLoader
+</td>
+<td>
+object that represents ClassLoader object that loaded the current class
+</td>
+</tr>
+
+
+<tr>
+<td>
+fields
+</td>
+<td>
+array of static and instance fields of the current class
+</td>
+</tr>
+
+<tr>
+<td>
+protectionDomain
+</td>
+<td>
+protection domain to which current class belongs
+</td>
+</tr>
+
+<tr>
+<td>
+isPublic
+</td>
+<td>
+boolean -- is the current class public or not
+</td>
+</tr>
+
+<tr>
+<td>
+signers
+</td>
+<td>
+array of signers for current class
+</td>
+</tr>
+
+<tr>
+<td>
+sourceFile
+</td>
+<td>
+string -- name of the source file for current class
+</td>
+</tr>
+
+<tr>
+<td>
+interfaces
+</td>
+<td>
+array -- interfaces implemented by current class
+</td>
+</tr>
+
+<tr>
+<td>
+isStrict
+</td>
+<td>
+boolean -- is the current class strictfp or not
+</td>
+</tr>
+
+<tr>
+<td>
+methods
+</td>
+<td>
+array of methods (static and instance) of the current class
+</td>
+</tr>
+
+
+<tr>
+<td>
+isFinal
+</td>
+<td>
+boolean -- is the current class final or not
+</td>
+</tr>
+
+<tr>
+<td>
+statics
+</td>
+<td>
+name-value pairs (JavaScript associate array) of static fields of the current class
+</td>
+</tr>
+</table>
+
+<h3>field object</h3>
+<p>
+field represents a static or instance field of some class in debuggee
+</p>
+
+<table border="1">
+<tr>
+<th>
+Property name
+</th>
+<th>
+Description
+</th>
+</tr>
+
+<tr>
+<td>
+isStatic
+</td>
+<td>
+boolean -- is this field a static field?
+</td>
+</tr>
+
+<tr>
+<td>
+holder
+</td>
+<td>
+class that owns this field
+</td>
+</tr>
+
+<tr>
+<td>
+signature
+</td>
+<td>
+string signature of this field
+</td>
+</tr>
+
+<tr>
+<td>
+isProtected
+</td>
+<td>
+boolean - is this field a protected field or not?
+</td>
+</tr>
+
+<tr>
+<td>
+isPrivate
+</td>
+<td>
+boolean - is this field a private field or not?
+</td>
+</tr>
+
+<tr>
+<td>
+isSynthetic
+</td>
+<td>
+boolean - is this javac generated synthetic field or not?
+</td>
+</tr>
+
+<tr>
+<td>
+isPackagePrivate
+</td>
+<td>
+boolean - is this field a package private field or not?
+</td>
+</tr>
+
+<tr>
+<td>
+isTransient
+</td>
+<td>
+boolean - is this field a transient field or not?
+</td>
+</tr>
+
+<tr>
+<td>
+isFinal
+</td>
+<td>
+boolean - is this field final or not?
+</td>
+</tr>
+
+<tr>
+<td>
+name
+</td>
+<td>
+string - name of this field
+</td>
+</tr>
+
+<tr>
+<td>
+isPublic
+</td>
+<td>
+boolean - is this field public or not?
+</td>
+</tr>
+</table>
+
+<h3>Initialization Script</h3>
+<p>
+jsdb engine looks for initialization script file named <b>jsdb.js</b> in user's home directory. If found, it loads just after attaching to debuggee but before printing prompt for user's input. User can assume that s/he can access debuggee VM
+state during initialization script.
+</p>
+
+<h3>Sample scripts</h3>
+
+Semantics and knowledge of application classes (for eg. AppServer's classes) would be needed to create app specific
+scripts. The following script samples are app-independent and provide a flavour of kind of scripts that can be written.
+ 	
+<h4>Script to print system properties of JVM</h4>
+
+<pre>
+<code>
+jvm.sysProps.toString()
+</code>
+</pre>
+
+<h4>Script to print JVM command line flags</h4>
+<pre>
+<code>
+jvm.flags.toString()
+</code>
+</pre>
+
+
+<h4>Script to print class-wise histogram of objects</h4>
+
+<pre>
+<code>
+
+// associate array to hold histogram
+var histo;
+function func(obj) {
+    var classname = classof(obj).name;
+    if (histo[classname] == undefined) {
+       // first time we are visiting this class type
+       histo[classname] = 1;
+    } else {
+       histo[classname]++; 
+    }
+}
+
+// iterate through java heap calling 'func' for each object
+jvm.heap.forEachObject(func);
+
+// print the histogram
+for (i in histo) {
+   println('number of instances of ', i, ' = ', histo[i]);
+}
+
+</code>
+</pre>
+
+<h4>Script to print stack trace of all Java threads</h4>
+
+<pre>
+<code>
+
+function printStackTrace(t) {
+    println(t.name);
+    println('');
+    for (i in t.frames) {
+       println(t.frames[i]);
+    }
+    println('');
+}
+
+// walk through the list of threads and call printStackTrace
+// for each thread
+for (o in jvm.threads) {
+    printStackTrace(jvm.threads[o]);
+}
+
+
+</code>
+</pre>
+
+
+<h4>Script to re-construct .class files for all non-bootstrap classes</h4>
+
+<pre>
+<code>
+
+function dump(cl) {
+   if (!cl.isArrayClass  && cl.classLoader != null) { 
+      // not an array class and a non-bootstrap class
+      // create .class files in e:\tmp dir
+      dumpClass(cl, "e:\\tmp); 
+   } else {
+      println("skipping bootstrap class ", cl.name);
+   }
+}
+
+// walk thru heap and call callback for each java.lang.Class instance
+jvm.heap.forEachObject(dump, "java.lang.Class");
+</code>
+</pre>
+
+<h4>Script to print paths of all java.io.File's currently accessed</h4>
+
+<pre>
+<code>
+
+function printFile(f) {
+   // construct a mirror java.io.File here and
+   // print absolute path here
+   println(mirror(f).getAbsolutePath());
+}
+
+jvm.heap.forEachObject(printFile, "java.io.File");
+
+</code>
+</pre>
+
+<h4>Script to print static fields of java.lang.Thread class</h4>
+<pre>
+<code>
+
+var threadClass = classof("java.lang.Thread");
+for (i in threadClass.statics) {
+  println(i, '=', threadClass.statics[i]);
+}
+
+</code>
+</pre>
+
+<h3>Low level interface (VM State)</h3>
+
+<p>
+Low level jsdb interface works by <a href="http://www.mozilla.org/rhino/ScriptingJava.html">JavaScript-to-Java (previously known as "LiveConnect")
+interface</a> provided by Rhino JavaScript engine. 
+</p>
+
+<h2>sapkg object</h2>
+<p>
+This object provides short names for SA package names. For eg. instead of writing
+Packages.sun.jvm.hotspot.memory, we can write sapkg.memory.
+</p>
+
+<h2>sa object</h2>
+<p>
+This object contains all SA singleton objects such as VM, Universe, SymbolTable,
+SystemDictionary, ObjectHeap, CollectedHeap, Debugger, CDebugger (if available),
+Interpreter, TypeDataBase and Threads. For eg. to access SymbolTable of Java debuggee,
+we can use sa.symbolTable. User can execute the following code to get fields of this object.
+</p>
+<pre>
+<code>
+for (i in sa) {
+  println(i);
+}
+</code>
+</pre>
+
+<h4>Heap Iterators</h4>
+<dl>
+<dt>forEachOop(callback)</dt>
+<dd>calls a callback function for each Oop in Java heap</dd>
+<dt>forEachOopOfKlass(callback, klass, [includeSubtypes])</dt>
+<dd>calls a callback function for each Oop of a give Klass type
+Optinally, third argument can specify whether to include subtype Oops
+or not.
+</dd>
+</dl>
+
+<h4>System Dictionary Access</h4>
+<dl>
+<dt>forEachKlass(callback)</dt>
+<dd>calls a callback function for each Klass in Java heap</dd>
+<dt>forEachKlassAndLoader(callback)</dt>
+<dd>
+calls callback with Klass and initiating loader (Oop) for System dictionary
+entry.
+</dd>
+<dt>forEachPrimArrayKlass(callback)</dt>
+<dd>
+calls callback with Klass and initiating loader (Oop) for each
+primitive array Klass in the system.
+</dd>
+<dt>findInstanceKlass(name)</dt>
+<dd>
+finds the first instance klass with given name from System dictionary
+</dd>
+</dl>
+
+<h4>Thread, Frame Iterators</h4>
+<dl>
+<dt>forEachJavaThread(callback)</dt>
+<dd>calls callback for each Java Thread</dd>
+<dt>forEachFrame(javaThread, callback)</dt>
+<dd>calls callback for each Frame of a given JavaThread</dd>
+<dt>forEachVFrame(javaThread, callback)</dt>
+<dd>calls callback for each JavaVFrame of a given JavaThread</dd>
+<dt>forEachThread(callback)</dt>
+<dd>calls callback for each (native) ThreadProxy (obtained by CDebugger.getThreadList)
+</dd>
+<dt>forEachCFrame(threadProxy, callback)</dt>
+<dd>
+calls callback for each CFrame of a given ThreadProxy object
+</dd>
+</dl>
+
+<h4>Code blobs, Interpreter codelets</h4>
+<dl>
+<dt>forEachCodeBlob(callback)</dt>
+<dd>
+calls callback with each code blob in code cache
+</dd>
+<dt>findCodeBlob(address)</dt>
+<dd>
+finds the code blob, if any, that contains the given address.
+Returns null, on failure.
+</dd>
+<dt>findNMethod(address)</dt>
+<dd>
+finds the NMethod that contains given address.
+</dd>
+<dt>pcDescAt(addr)</dt>
+<dd>
+returns PCDesc at given address or null.
+</dd>
+<dt>forEachInterpCodelet(callbacl)</dt>
+<dd>
+calls callback with each Interpreter codelet
+</dd>
+</dl>
+
+<h4>VM structs, constants</h4>
+<dl>
+<dt>forEachType(callback)</dt>
+<dd>
+calls callback for each Type in VM's type database
+</dd>
+<dt>forEachVMIntConst(callback)</dt>
+<dd>
+calls callback for each named integer constant. passes name 
+as argument.
+</dd>
+<dt>forEachVMLongConst(callback)</dt>
+<dd>
+calls callback for each named long constant. passes name 
+as argument.
+</dd>
+<dt>findVMType(name)</dt>
+<dd>
+finds a VM type by name. returns null if no known Type of given name
+exists in type database.
+</dd>
+<dt>findVMIntConst(name)</dt>
+<dd>
+finds an integer constant in type data base by name.
+</dd>
+<dt>findVMLongConst(name)</dt>
+<dd>
+finds an long constant in type data base by name.
+</dd>
+<dt>vmTypeof(addr)</dt>
+<dd>
+returns VM type of object at 'addr' if any. Else, returns null.
+</dd>
+<dt>isOfVMType(addr, type)</dt>
+<dd>
+returns whether object at 'addr' is of VM type 'type' or not.
+</dd>
+<dt>printVMType(type, addr)</dt>
+<dd>
+prints 'addr' as VM object of type 'type'
+</dd>
+<dt>print<i>XXX</i>(addr)</dt>
+<dd>
+For each VM type, these functions are defined. For eg. there is printUniverse,
+printSystemDictionary etc. are available. Without 'addr' being passed static fields are printed. With 'addr' param being passed, instance fields are printed.
+</dd>
+</dl>
+
+<h4>Low level debugger facilities</h4>
+<dl>
+<dt>num2addr(number)</dt>
+<dd>
+converts a (long) number to SA Address instance
+</dd>
+<dt>str2addr(string)</dt>
+<dd>
+converts a given hex string to SA Address instance
+</dd>
+<dt>any2addr(any)</dt>
+<dd>
+Takes a number or a string or an Address and returns
+an Address instance. For other types, returns 'undefined'
+</dd>
+<dt>addr2str(addr)</dt>
+<dd>
+converts a given Address instance to a hex string
+</dd>
+<dt>addr2num(addr)</dt>
+<dd>
+converts a given Address instance to a (long) number
+</dd>
+<dt>sym2addr(library, symbol)</dt>
+<dd>
+returns Address of a given symbol in a given library (shared object or DLL)
+Example: sym2addr('jvm.dll', 'JNI_CreateJavaVM')
+<dt>addr2sym(addr)</dt>
+<dd>
+Returns nearest symbol to a given address (if any). If no such symbol is found,
+returns the given address as a string.
+</dd>
+<dt>readBytesAt(addr, num)</dt>
+<dd>
+returns 'num' bytes at 'addr' as a Java byte[]
+</dd>
+<dt>readWordsAt(addr, num)</dt>
+<dd>
+returns 'num' words at 'addr' as a Java long[]
+</dd>
+<dt>readCStrAt(addr)</dt>
+<dd>
+returns 'C' String at given address
+</dd>
+<dt>readCStrLen(addr)</dt>
+<dd>
+returns the length of the 'C' String at given address
+</dd>
+<dt>readRegs(threadProxy)</dt>
+<dd>
+returns register set (of Thread Context) of a given thread specified
+by threadProxy. return value is an associate array having name-value pairs
+of registers.
+</dd>
+<dt>regs(threadProxy)</dt>
+<dd>
+prints register set of a given thread.
+</dd>
+<dt>mem(addr, [num])</dt>
+<dd>
+prints 'num' words (address size) at 'addr'. Prints nearest symbol for address, if found.
+</dd>
+<dt>dis(addr, [num])</dt>
+<dd>prints native code disassembly of 'num' bytes at given address 'addr'.
+Default value of 'num' is 4. This automatically detects whether the given address
+inside a nmethod. If so, it prints safepoint info, entry points , method signature etc. 
+of the nmethod.
+</dd>
+<dt>jdis(method [or addr])</dt>
+<dd>
+prints Java bytecode disassembly for given method Oop or address of a method Oop.
+</dd>
+<dt>nmethoddis(nmethod)</dt>
+<dd>
+prints disassembly of given nmethod object. Note that you don't have to call this directly
+instead use 'dis'.
+</dd>
+<dt>where</dt>
+<dd>
+prints Java stack trace for all Java threads
+</dd>
+</dl>
+
+<h4>Miscellaneous</h4>
+<dl>
+<dt>addr2oop(addr)</dt>
+<dd>
+converts a given address to a Oop object
+</dd>
+<dt>oop2addr(oop)</dt>
+<dd>
+returns address of a given Oop object
+</dd>
+<dt>isOfVMType(addr, type)</dt>
+<dd>
+returns whether the given 'addr' points to a (C++) VM object of specified
+type. type may be specified by SA Type object or string name of the type.
+</dd>
+<dt>newVMObject(addr)</dt>
+<dd>
+returns instance of SA object for a given address (similar to SA VirtualConstructor
+interface).
+</dd>
+<dt>vmobj2addr(vmobject)</dt>
+<dd>
+returns Address represented by a given SA VMObject
+</dd>
+<dt>addr2vmobj(addr)</dt>
+<dd>same as newVMObject(addr)</dd>
+<dt>whatis(addr)</dt>
+<dd>
+returns string description of given address (using SA FindPointer and guess type API).
+<dt>isOop(addr)</dt>
+<dd>
+returns whether a given address is a valid Oop address or not
+</dd>
+</dl>
+
+<h4>Moving b/w jsdb low level and high level interfaces</h4>
+
+<p>
+Java objects of debuggee are represented by different script wrappers in high level
+interface. In the low-level interface these are instances of SA Oop class or its'
+subclass. To move b/w low-level and high-level interfaces the following functions may
+be used
+</p>
+<dl>
+<dt>oop2obj(oop)</dt>
+<dd>
+converts a given Oop object to a high-level wrapper object
+</dd>
+<dt>obj2oop(obj)</dt>
+<dd>
+converts a jsdb high level wrapper to underlying Oop instance
+</dd>
+</dl>
+
+<h3>JavaScript tips</h3>
+
+<ul>
+<li>to know properties, functions of any object, use the script
+<pre>
+<core>
+for(i in object) { println(i); }
+</code>
+</pre>
+<li>to view the source code of any function, just type the name of
+function in jsdb prompt
+<li>to view global functions, properties, run
+<pre>
+<code>
+for(i in this) { println(i); }
+</code>
+</pre>
+</ul>
+
+</body>
+</html>
