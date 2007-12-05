@@ -1070,6 +1070,7 @@ inline bool Type::is_floatingpoint() const {
 #define LShiftXNode  LShiftLNode
 // For object size computation:
 #define AddXNode     AddLNode
+#define RShiftXNode  RShiftLNode
 // For card marks and hashcodes
 #define URShiftXNode URShiftLNode
 // Opcodes
@@ -1108,6 +1109,7 @@ inline bool Type::is_floatingpoint() const {
 #define LShiftXNode  LShiftINode
 // For object size computation:
 #define AddXNode     AddINode
+#define RShiftXNode  RShiftINode
 // For card marks and hashcodes
 #define URShiftXNode URShiftINode
 // Opcodes
