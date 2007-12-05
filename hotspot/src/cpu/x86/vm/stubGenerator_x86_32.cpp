@@ -1416,8 +1416,8 @@ class StubGenerator: public StubCodeGenerator {
     // ======== end loop ========
 
     // It was a real error; we must depend on the caller to finish the job.
-    // Register rdx = -1 * number of *remaining* oops, r14 = *total* oops.
-    // Emit GC store barriers for the oops we have copied (r14 + rdx),
+    // Register "count" = -1 * number of *remaining* oops, length_arg = *total* oops.
+    // Emit GC store barriers for the oops we have copied (length_arg + count),
     // and report their number to the caller.
     __ addl(count, length_arg);         // transfers = (length - remaining)
     __ movl(rax, count);                // save the value
@@ -1430,6 +1430,7 @@ class StubGenerator: public StubCodeGenerator {
     // Come here on success only.
     __ BIND(L_do_card_marks);
     __ movl(count, length_arg);
+    __ movl(to, to_arg);                // reload
     gen_write_ref_array_post_barrier(to, count);
     __ xorl(rax, rax);                  // return 0 on success
 
