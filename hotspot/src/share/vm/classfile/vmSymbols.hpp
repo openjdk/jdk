@@ -58,12 +58,17 @@
   template(java_lang_ThreadDeath,                     "java/lang/ThreadDeath")                    \
   template(java_lang_Boolean,                         "java/lang/Boolean")                        \
   template(java_lang_Character,                       "java/lang/Character")                      \
+  template(java_lang_Character_CharacterCache,        "java/lang/Character$CharacterCache")       \
   template(java_lang_Float,                           "java/lang/Float")                          \
   template(java_lang_Double,                          "java/lang/Double")                         \
   template(java_lang_Byte,                            "java/lang/Byte")                           \
+  template(java_lang_Byte_Cache,                      "java/lang/Byte$ByteCache")                 \
   template(java_lang_Short,                           "java/lang/Short")                          \
+  template(java_lang_Short_ShortCache,                "java/lang/Short$ShortCache")               \
   template(java_lang_Integer,                         "java/lang/Integer")                        \
+  template(java_lang_Integer_IntegerCache,            "java/lang/Integer$IntegerCache")           \
   template(java_lang_Long,                            "java/lang/Long")                           \
+  template(java_lang_Long_LongCache,                  "java/lang/Long$LongCache")                 \
   template(java_lang_Shutdown,                        "java/lang/Shutdown")                       \
   template(java_lang_ref_Reference,                   "java/lang/ref/Reference")                  \
   template(java_lang_ref_SoftReference,               "java/lang/ref/SoftReference")              \
@@ -274,6 +279,7 @@
   template(exclusive_owner_thread_name,               "exclusiveOwnerThread")                     \
   template(park_blocker_name,                         "parkBlocker")                              \
   template(park_event_name,                           "nativeParkEventPointer")                   \
+  template(cache_field_name,                          "cache")                                    \
   template(value_name,                                "value")                                    \
                                                                                                   \
   /* non-intrinsic name/signature pairs: */                                                       \

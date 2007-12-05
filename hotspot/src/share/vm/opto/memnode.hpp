@@ -141,6 +141,9 @@ public:
   // zero out the control input.
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
+  // Recover original value from boxed values
+  Node *eliminate_autobox(PhaseGVN *phase);
+
   // Compute a new Type for this node.  Basically we just do the pre-check,
   // then call the virtual add() to set the type.
   virtual const Type *Value( PhaseTransform *phase ) const;

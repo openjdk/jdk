@@ -310,7 +310,13 @@ public:
   virtual const RegMask &out_RegMask() const;
   void dominated_by(Node* prev_dom, PhaseIterGVN* igvn);
   int is_range_check(Node* &range, Node* &index, jint &offset);
+  Node* fold_compares(PhaseGVN* phase);
   static Node* up_one_dom(Node* curr, bool linear_only = false);
+
+  // Takes the type of val and filters it through the test represented
+  // by if_proj and returns a more refined type if one is produced.
+  // Returns NULL is it couldn't improve the type.
+  static const TypeInt* filtered_int_type(PhaseGVN* phase, Node* val, Node* if_proj);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

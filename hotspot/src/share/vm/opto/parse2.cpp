@@ -885,6 +885,9 @@ inline void Parse::repush_if_args() {
 void Parse::do_ifnull(BoolTest::mask btest) {
   int target_bci = iter().get_dest();
 
+  Block* branch_block = successor_for_bci(target_bci);
+  Block* next_block   = successor_for_bci(iter().next_bci());
+
   float cnt;
   float prob = branch_prediction(cnt, btest, target_bci);
   if (prob == PROB_UNKNOWN) {
@@ -902,13 +905,16 @@ void Parse::do_ifnull(BoolTest::mask btest) {
     uncommon_trap(Deoptimization::Reason_unreached,
                   Deoptimization::Action_reinterpret,
                   NULL, "cold");
+    if (EliminateAutoBox) {
+      // Mark the successor blocks as parsed
+      branch_block->next_path_num();
+      next_block->next_path_num();
+    }
     return;
   }
 
   // If this is a backwards branch in the bytecodes, add Safepoint
   maybe_add_safepoint(target_bci);
-  Block* branch_block = successor_for_bci(target_bci);
-  Block* next_block   = successor_for_bci(iter().next_bci());
 
   explicit_null_checks_inserted++;
   Node* a = null();
@@ -935,6 +941,10 @@ void Parse::do_ifnull(BoolTest::mask btest) {
 
     if (stopped()) {            // Path is dead?
       explicit_null_checks_elided++;
+      if (EliminateAutoBox) {
+        // Mark the successor block as parsed
+        branch_block->next_path_num();
+      }
     } else {                    // Path is live.
       // Update method data
       profile_taken_branch(target_bci);
@@ -950,6 +960,10 @@ void Parse::do_ifnull(BoolTest::mask btest) {
 
   if (stopped()) {              // Path is dead?
     explicit_null_checks_elided++;
+    if (EliminateAutoBox) {
+      // Mark the successor block as parsed
+      next_block->next_path_num();
+    }
   } else  {                     // Path is live.
     // Update method data
     profile_not_taken_branch();
@@ -961,6 +975,9 @@ void Parse::do_ifnull(BoolTest::mask btest) {
 //------------------------------------do_if------------------------------------
 void Parse::do_if(BoolTest::mask btest, Node* c) {
   int target_bci = iter().get_dest();
+
+  Block* branch_block = successor_for_bci(target_bci);
+  Block* next_block   = successor_for_bci(iter().next_bci());
 
   float cnt;
   float prob = branch_prediction(cnt, btest, target_bci);
@@ -980,6 +997,11 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     uncommon_trap(Deoptimization::Reason_unreached,
                   Deoptimization::Action_reinterpret,
                   NULL, "cold");
+    if (EliminateAutoBox) {
+      // Mark the successor blocks as parsed
+      branch_block->next_path_num();
+      next_block->next_path_num();
+    }
     return;
   }
 
@@ -1018,15 +1040,17 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     untaken_branch = tmp;
   }
 
-  Block* branch_block = successor_for_bci(target_bci);
-  Block* next_block   = successor_for_bci(iter().next_bci());
-
   // Branch is taken:
   { PreserveJVMState pjvms(this);
     taken_branch = _gvn.transform(taken_branch);
     set_control(taken_branch);
 
-    if (!stopped()) {
+    if (stopped()) {
+      if (EliminateAutoBox) {
+        // Mark the successor block as parsed
+        branch_block->next_path_num();
+      }
+    } else {
       // Update method data
       profile_taken_branch(target_bci);
       adjust_map_after_if(taken_btest, c, prob, branch_block, next_block);
@@ -1039,7 +1063,12 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   set_control(untaken_branch);
 
   // Branch not taken.
-  if (!stopped()) {
+  if (stopped()) {
+    if (EliminateAutoBox) {
+      // Mark the successor block as parsed
+      next_block->next_path_num();
+    }
+  } else {
     // Update method data
     profile_not_taken_branch();
     adjust_map_after_if(untaken_btest, c, untaken_prob,

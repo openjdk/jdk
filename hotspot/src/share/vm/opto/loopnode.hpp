@@ -850,7 +850,6 @@ private:
   const TypeInt* filtered_type( Node *n ) { return filtered_type(n, NULL); }
  // Helpers for filtered type
   const TypeInt* filtered_type_from_dominators( Node* val, Node *val_ctrl);
-  const TypeInt* filtered_type_at_if( Node* val, Node *if_proj);
 
   // Helper functions
   void register_new_node( Node *n, Node *blk );

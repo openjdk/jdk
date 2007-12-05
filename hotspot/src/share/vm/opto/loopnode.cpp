@@ -651,7 +651,7 @@ const TypeInt* PhaseIdealLoop::filtered_type_from_dominators( Node* val, Node *u
     while (if_cnt < if_limit) {
       if ((pred->Opcode() == Op_IfTrue || pred->Opcode() == Op_IfFalse)) {
         if_cnt++;
-        const TypeInt* if_t = filtered_type_at_if(val, pred);
+        const TypeInt* if_t = IfNode::filtered_int_type(&_igvn, val, pred);
         if (if_t != NULL) {
           if (rtn_t == NULL) {
             rtn_t = if_t;
@@ -673,59 +673,6 @@ const TypeInt* PhaseIdealLoop::filtered_type_from_dominators( Node* val, Node *u
   return rtn_t;
 }
 
-
-//------------------------------filtered_type_at_if--------------------------------
-// Return a possibly more restrictive type for val based on condition control flow for an if
-const TypeInt* PhaseIdealLoop::filtered_type_at_if( Node* val, Node *if_proj) {
-  assert(if_proj &&
-         (if_proj->Opcode() == Op_IfTrue || if_proj->Opcode() == Op_IfFalse), "expecting an if projection");
-  if (if_proj->in(0) && if_proj->in(0)->is_If()) {
-    IfNode* iff = if_proj->in(0)->as_If();
-    if (iff->in(1) && iff->in(1)->is_Bool()) {
-      BoolNode* bol = iff->in(1)->as_Bool();
-      if (bol->in(1) && bol->in(1)->is_Cmp()) {
-        const CmpNode* cmp  = bol->in(1)->as_Cmp();
-        if (cmp->in(1) == val) {
-          const TypeInt* cmp2_t = _igvn.type(cmp->in(2))->isa_int();
-          if (cmp2_t != NULL) {
-            jint lo = cmp2_t->_lo;
-            jint hi = cmp2_t->_hi;
-            BoolTest::mask msk = if_proj->Opcode() == Op_IfTrue ? bol->_test._test : bol->_test.negate();
-            switch (msk) {
-            case BoolTest::ne:
-              // Can't refine type
-              return NULL;
-            case BoolTest::eq:
-              return cmp2_t;
-            case BoolTest::lt:
-              lo = TypeInt::INT->_lo;
-              if (hi - 1 < hi) {
-                hi = hi - 1;
-              }
-              break;
-            case BoolTest::le:
-              lo = TypeInt::INT->_lo;
-              break;
-            case BoolTest::gt:
-              if (lo + 1 > lo) {
-                lo = lo + 1;
-              }
-              hi = TypeInt::INT->_hi;
-              break;
-            case BoolTest::ge:
-              // lo unchanged
-              hi = TypeInt::INT->_hi;
-              break;
-            }
-            const TypeInt* rtn_t = TypeInt::make(lo, hi, cmp2_t->_widen);
-            return rtn_t;
-          }
-        }
-      }
-    }
-  }
-  return NULL;
-}
 
 //------------------------------dump_spec--------------------------------------
 // Dump special per-node info

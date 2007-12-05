@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,22 @@
  *
  */
 
+#include "incls/_precompiled.incl"
+#include "incls/_ciObjArray.cpp.incl"
+
 // ciObjArray
 //
-// This class represents a ObjArrayOop in the HotSpot virtual
+// This class represents an objArrayOop in the HotSpot virtual
 // machine.
-class ciObjArray : public ciArray {
-  CI_PACKAGE_ACCESS
 
-protected:
-  ciObjArray(objArrayHandle h_o) : ciArray(h_o) {}
-
-  ciObjArray(ciKlass* klass, int len) : ciArray(klass, len) {}
-
-  objArrayOop get_objArrayOop() {
-    return (objArrayOop)get_oop();
+ciObject* ciObjArray::obj_at(int index) {
+  VM_ENTRY_MARK;
+  objArrayOop array = get_objArrayOop();
+  if (index < 0 || index >= array->length()) return NULL;
+  oop o = array->obj_at(index);
+  if (o == NULL) {
+    return ciNullObject::make();
+  } else {
+    return CURRENT_ENV->get_object(o);
   }
-
-  const char* type_string() { return "ciObjArray"; }
-
-public:
-  // What kind of ciObject is this?
-  bool is_obj_array() { return true; }
-
-  ciObject* obj_at(int index);
-};
+}

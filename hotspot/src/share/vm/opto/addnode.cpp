@@ -608,6 +608,28 @@ Node* AddPNode::Ideal_base_and_offset(Node* ptr, PhaseTransform* phase,
   return NULL;
 }
 
+//------------------------------unpack_offsets----------------------------------
+// Collect the AddP offset values into the elements array, giving up
+// if there are more than length.
+int AddPNode::unpack_offsets(Node* elements[], int length) {
+  int count = 0;
+  Node* addr = this;
+  Node* base = addr->in(AddPNode::Base);
+  while (addr->is_AddP()) {
+    if (addr->in(AddPNode::Base) != base) {
+      // give up
+      return -1;
+    }
+    elements[count++] = addr->in(AddPNode::Offset);
+    if (count == length) {
+      // give up
+      return -1;
+    }
+    addr = addr->in(AddPNode::Address);
+  }
+  return count;
+}
+
 //------------------------------match_edge-------------------------------------
 // Do we Match on this edge index or not?  Do not match base pointer edge
 uint AddPNode::match_edge(uint idx) const {
