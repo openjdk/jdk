@@ -467,6 +467,11 @@ JRT_ENTRY(void, SharedRuntime::throw_AbstractMethodError(JavaThread* thread))
   throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_AbstractMethodError());
 JRT_END
 
+JRT_ENTRY(void, SharedRuntime::throw_IncompatibleClassChangeError(JavaThread* thread))
+  // These errors occur only at call sites
+  throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_IncompatibleClassChangeError(), "vtable stub");
+JRT_END
+
 JRT_ENTRY(void, SharedRuntime::throw_ArithmeticException(JavaThread* thread))
   throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_ArithmeticException(), "/ by zero");
 JRT_END
