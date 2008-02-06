@@ -188,10 +188,6 @@ void mutex_init() {
 
   def(Safepoint_lock               , Monitor, safepoint,   true ); // locks SnippetCache_lock/Threads_lock
 
-  if (!UseMembar) {
-    def(SerializePage_lock         , Monitor, leaf,        true );
-  }
-
   def(Threads_lock                 , Monitor, barrier,     true );
 
   def(VMOperationQueue_lock        , Monitor, nonleaf,     true ); // VM_thread allowed to block on these
