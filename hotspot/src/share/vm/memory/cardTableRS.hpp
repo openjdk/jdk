@@ -126,7 +126,7 @@ public:
   }
 
   void verify();
-  void verify_empty(MemRegion mr);
+  void verify_aligned_region_empty(MemRegion mr);
 
   void clear(MemRegion mr) { _ct_bs.clear(mr); }
   void clear_into_younger(Generation* gen, bool clear_perm);
