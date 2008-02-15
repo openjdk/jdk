@@ -785,6 +785,9 @@ void ParNewGeneration::collect(bool   full,
     swap_spaces();  // Make life simpler for CMS || rescan; see 6483690.
     from()->set_next_compaction_space(to());
     gch->set_incremental_collection_will_fail();
+
+    // Reset the PromotionFailureALot counters.
+    NOT_PRODUCT(Universe::heap()->reset_promotion_should_fail();)
   }
   // set new iteration safe limit for the survivor spaces
   from()->set_concurrent_iteration_safe_limit(from()->top());
