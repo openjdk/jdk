@@ -5732,13 +5732,19 @@ void CMSCollector::sweep(bool asynch) {
   // in the perm_gen_verify_bit_map. In order to do that we traverse
   // all blocks in perm gen and mark all dead objects.
   if (verifying() && !cms_should_unload_classes()) {
-    CMSTokenSyncWithLocks ts(true, _permGen->freelistLock(),
-                             bitMapLock());
     assert(perm_gen_verify_bit_map()->sizeInBits() != 0,
            "Should have already been allocated");
     MarkDeadObjectsClosure mdo(this, _permGen->cmsSpace(),
                                markBitMap(), perm_gen_verify_bit_map());
-    _permGen->cmsSpace()->blk_iterate(&mdo);
+    if (asynch) {
+      CMSTokenSyncWithLocks ts(true, _permGen->freelistLock(),
+                               bitMapLock());
+      _permGen->cmsSpace()->blk_iterate(&mdo);
+    } else {
+      // In the case of synchronous sweep, we already have
+      // the requisite locks/tokens.
+      _permGen->cmsSpace()->blk_iterate(&mdo);
+    }
   }
 
   if (asynch) {
