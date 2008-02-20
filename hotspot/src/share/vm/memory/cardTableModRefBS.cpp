@@ -257,7 +257,7 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     }
     assert(index_for(new_region.last()) < (int) _guard_index,
       "The guard card will be overwritten");
-    jbyte* const end = (jbyte*) new_end_for_commit;
+    jbyte* const end = byte_after(new_region.last());
     // do nothing if we resized downward.
     if (entry < end) {
       memset(entry, clean_card, pointer_delta(end, entry, sizeof(jbyte)));
