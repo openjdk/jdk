@@ -1486,70 +1486,75 @@ static void dump_nodes(const Node* start, int d, bool only_ctrl) {
   Node* s = (Node*)start; // remove const
   if (NotANode(s)) return;
 
+  uint depth = (uint)ABS(d);
+  int direction = d;
   Compile* C = Compile::current();
   ResourceArea *area = Thread::current()->resource_area();
-  Node_Stack      stack(area, MIN2((uint)ABS(d), C->unique() >> 1));
-  OldNewVectorSet visited(C->node_arena(), area);
+  Node_Stack      stack(area, MIN2(depth, C->unique() >> 1));
+  OldNewVectorSet dumped(C->node_arena(), area);
   OldNewVectorSet on_stack(C->node_arena(), area);
 
-  visited.set(s);
   on_stack.set(s);
   stack.push(s, 0);
-  if (d < 0) s->dump();
+  if (direction < 0) {
+    dumped.set(s);
+    s->dump();
+  }
 
   // Do a depth first walk over edges
   while (stack.is_nonempty()) {
     Node* tp  = stack.node();
     uint  idx = stack.index();
-    uint  limit = d > 0 ? tp->len() : tp->outcnt();
+    uint  limit;
+    // Limit depth
+    if (stack.size() < depth) {
+      limit = direction > 0 ? tp->len() : tp->outcnt();
+    } else {
+      limit = 0; // reached depth limit.
+    }
     if (idx >= limit) {
       // no more arcs to visit
-      if (d > 0) tp->dump();
+      if (direction > 0 && !dumped.test_set(tp)) tp->dump();
       on_stack.del(tp);
       stack.pop();
     } else {
       // process the "idx"th arc
       stack.set_index(idx + 1);
-      Node* n = d > 0 ? tp->in(idx) : tp->raw_out(idx);
+      Node* n = direction > 0 ? tp->in(idx) : tp->raw_out(idx);
 
       if (NotANode(n))  continue;
       // do not recurse through top or the root (would reach unrelated stuff)
       if (n->is_Root() || n->is_top())  continue;
       if (only_ctrl && !n->is_CFG()) continue;
 
-      if (!visited.test_set(n)) {  // forward arc
-        // Limit depth
-        if (stack.size() < (uint)ABS(d)) {
-          if (d < 0) n->dump();
-          stack.push(n, 0);
-          on_stack.set(n);
-        }
+      if (!on_stack.test(n)) { // forward arc
+        if (direction < 0 && !dumped.test_set(n)) n->dump();
+        stack.push(n, 0);
+        on_stack.set(n);
       } else {  // back or cross arc
-        if (on_stack.test(n)) {  // back arc
-          // print loop if there are no phis or regions in the mix
-          bool found_loop_breaker = false;
-          int k;
-          for (k = stack.size() - 1; k >= 0; k--) {
-            Node* m = stack.node_at(k);
-            if (m->is_Phi() || m->is_Region() || m->is_Root() || m->is_Start()) {
-              found_loop_breaker = true;
-              break;
-            }
-            if (m == n) // Found loop head
-              break;
+        // print loop if there are no phis or regions in the mix
+        bool found_loop_breaker = false;
+        int k;
+        for (k = stack.size() - 1; k >= 0; k--) {
+          Node* m = stack.node_at(k);
+          if (m->is_Phi() || m->is_Region() || m->is_Root() || m->is_Start()) {
+            found_loop_breaker = true;
+            break;
           }
-          assert(k >= 0, "n must be on stack");
+          if (m == n) // Found loop head
+            break;
+        }
+        assert(k >= 0, "n must be on stack");
 
-          if (!found_loop_breaker) {
-            tty->print("# %s LOOP FOUND:", only_ctrl ? "CONTROL" : "DATA");
-            for (int i = stack.size() - 1; i >= k; i--) {
-              Node* m = stack.node_at(i);
-              bool mnew = C->node_arena()->contains(m);
-              tty->print(" %s%d:%s", (mnew? "": "o"), m->_idx, m->Name());
-              if (i != 0) tty->print(d > 0? " <-": " ->");
-            }
-            tty->cr();
+        if (!found_loop_breaker) {
+          tty->print("# %s LOOP FOUND:", only_ctrl ? "CONTROL" : "DATA");
+          for (int i = stack.size() - 1; i >= k; i--) {
+            Node* m = stack.node_at(i);
+            bool mnew = C->node_arena()->contains(m);
+            tty->print(" %s%d:%s", (mnew? "": "o"), m->_idx, m->Name());
+            if (i != 0) tty->print(direction > 0? " <-": " ->");
           }
+          tty->cr();
         }
       }
     }
