@@ -3121,12 +3121,7 @@ ConcurrentMarkSweepGeneration::expand_and_allocate(size_t word_size,
   if (GCExpandToAllocateDelayMillis > 0) {
     os::sleep(Thread::current(), GCExpandToAllocateDelayMillis, false);
   }
-  size_t adj_word_sz = CompactibleFreeListSpace::adjustObjectSize(word_size);
-  if (parallel) {
-    return cmsSpace()->par_allocate(adj_word_sz);
-  } else {
-    return cmsSpace()->allocate(adj_word_sz);
-  }
+  return have_lock_and_allocate(word_size, tlab);
 }
 
 // YSR: All of this generation expansion/shrinking stuff is an exact copy of
