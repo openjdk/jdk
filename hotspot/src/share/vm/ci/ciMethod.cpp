@@ -146,7 +146,7 @@ void ciMethod::load_code() {
   memcpy(_code, me->code_base(), code_size());
 
   // Revert any breakpoint bytecodes in ci's copy
-  if (_is_compilable && me->number_of_breakpoints() > 0) {
+  if (me->number_of_breakpoints() > 0) {
     BreakpointInfo* bp = instanceKlass::cast(me->method_holder())->breakpoints();
     for (; bp != NULL; bp = bp->next()) {
       if (bp->match(me)) {
