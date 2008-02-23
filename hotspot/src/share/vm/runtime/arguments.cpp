@@ -924,10 +924,18 @@ static void no_shared_spaces() {
 void Arguments::set_parnew_gc_flags() {
   assert(!UseSerialGC && !UseParallelGC, "control point invariant");
 
+  // Turn off AdaptiveSizePolicy by default for parnew until it is
+  // complete.
+  if (UseParNewGC &&
+      FLAG_IS_DEFAULT(UseAdaptiveSizePolicy)) {
+    FLAG_SET_DEFAULT(UseAdaptiveSizePolicy, false);
+  }
+
   if (FLAG_IS_DEFAULT(UseParNewGC) && ParallelGCThreads > 1) {
     FLAG_SET_DEFAULT(UseParNewGC, true);
   } else if (UseParNewGC && ParallelGCThreads == 0) {
-    FLAG_SET_DEFAULT(ParallelGCThreads, nof_parallel_gc_threads());
+    FLAG_SET_DEFAULT(ParallelGCThreads,
+                     Abstract_VM_Version::parallel_worker_threads());
     if (FLAG_IS_DEFAULT(ParallelGCThreads) && ParallelGCThreads == 1) {
       FLAG_SET_DEFAULT(UseParNewGC, false);
     }
@@ -956,25 +964,6 @@ void Arguments::set_parnew_gc_flags() {
   }
 }
 
-// CAUTION: this code is currently shared by UseParallelGC, UseParNewGC and
-// UseconcMarkSweepGC. Further tuning of individual collectors might
-// dictate refinement on a per-collector basis.
-int Arguments::nof_parallel_gc_threads() {
-  if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
-    // For very large machines, there are diminishing returns
-    // for large numbers of worker threads.  Instead of
-    // hogging the whole system, use 5/8ths of a worker for every
-    // processor after the first 8.  For example, on a 72 cpu
-    // machine use 8 + (72 - 8) * (5/8) == 48 worker threads.
-    // This is just a start and needs further tuning and study in
-    // Tiger.
-    int ncpus = os::active_processor_count();
-    return (ncpus <= 8) ? ncpus : 3 + ((ncpus * 5) / 8);
-  } else {
-    return ParallelGCThreads;
-  }
-}
-
 // Adjust some sizes to suit CMS and/or ParNew needs; these work well on
 // sparc/solaris for certain applications, but would gain from
 // further optimization and tuning efforts, and would almost
@@ -984,26 +973,24 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     return;
   }
 
+  assert(UseConcMarkSweepGC, "CMS is expected to be on here");
+
   // If we are using CMS, we prefer to UseParNewGC,
   // unless explicitly forbidden.
-  if (UseConcMarkSweepGC && !UseParNewGC && FLAG_IS_DEFAULT(UseParNewGC)) {
-    FLAG_SET_DEFAULT(UseParNewGC, true);
+  if (!UseParNewGC && FLAG_IS_DEFAULT(UseParNewGC)) {
+    FLAG_SET_ERGO(bool, UseParNewGC, true);
   }
 
   // Turn off AdaptiveSizePolicy by default for cms until it is
-  // complete.  Also turn it off in general if the
-  // parnew collector has been selected.
-  if ((UseConcMarkSweepGC || UseParNewGC) &&
-      FLAG_IS_DEFAULT(UseAdaptiveSizePolicy)) {
+  // complete.
+  if (FLAG_IS_DEFAULT(UseAdaptiveSizePolicy)) {
     FLAG_SET_DEFAULT(UseAdaptiveSizePolicy, false);
   }
 
   // In either case, adjust ParallelGCThreads and/or UseParNewGC
   // as needed.
-  set_parnew_gc_flags();
-
-  if (!UseConcMarkSweepGC) {
-    return;
+  if (UseParNewGC) {
+    set_parnew_gc_flags();
   }
 
   // Now make adjustments for CMS
@@ -1147,17 +1134,11 @@ void Arguments::set_ergonomics_flags() {
         FLAG_IS_DEFAULT(UseParallelGC)) {
       if (should_auto_select_low_pause_collector()) {
         FLAG_SET_ERGO(bool, UseConcMarkSweepGC, true);
-        set_cms_and_parnew_gc_flags();
       } else {
         FLAG_SET_ERGO(bool, UseParallelGC, true);
       }
       no_shared_spaces();
     }
-
-    // This is here because the parallel collector could
-    // have been selected so this initialization should
-    // still be done.
-    set_parallel_gc_flags();
   }
 }
 
@@ -1170,6 +1151,9 @@ void Arguments::set_parallel_gc_flags() {
   // If no heap maximum was requested explicitly, use some reasonable fraction
   // of the physical memory, up to a maximum of 1GB.
   if (UseParallelGC) {
+    FLAG_SET_ERGO(uintx, ParallelGCThreads,
+                  Abstract_VM_Version::parallel_worker_threads());
+
     if (FLAG_IS_DEFAULT(MaxHeapSize)) {
       const uint64_t reasonable_fraction =
         os::physical_memory() / DefaultMaxRAMFraction;
@@ -1312,6 +1296,31 @@ static bool verify_serial_gc_flags() {
           UseParallelOldGC));
 }
 
+// Check consistency of GC selection
+bool Arguments::check_gc_consistency() {
+  bool status = true;
+  // Ensure that the user has not selected conflicting sets
+  // of collectors. [Note: this check is merely a user convenience;
+  // collectors over-ride each other so that only a non-conflicting
+  // set is selected; however what the user gets is not what they
+  // may have expected from the combination they asked for. It's
+  // better to reduce user confusion by not allowing them to
+  // select conflicting combinations.
+  uint i = 0;
+  if (UseSerialGC)                       i++;
+  if (UseConcMarkSweepGC || UseParNewGC) i++;
+  if (UseParallelGC || UseParallelOldGC) i++;
+  if (i > 1) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Conflicting collector combinations in option list; "
+                "please refer to the release notes for the combinations "
+                "allowed\n");
+    status = false;
+  }
+
+  return status;
+}
+
 // Check the consistency of vm_init_args
 bool Arguments::check_vm_args_consistency() {
   // Method for adding checks for flag consistency.
@@ -1354,14 +1363,14 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
-  status &= verify_percentage(MaxLiveObjectEvacuationRatio,
+  status = status && verify_percentage(MaxLiveObjectEvacuationRatio,
                               "MaxLiveObjectEvacuationRatio");
-  status &= verify_percentage(AdaptiveSizePolicyWeight,
+  status = status && verify_percentage(AdaptiveSizePolicyWeight,
                               "AdaptiveSizePolicyWeight");
-  status &= verify_percentage(AdaptivePermSizeWeight, "AdaptivePermSizeWeight");
-  status &= verify_percentage(ThresholdTolerance, "ThresholdTolerance");
-  status &= verify_percentage(MinHeapFreeRatio, "MinHeapFreeRatio");
-  status &= verify_percentage(MaxHeapFreeRatio, "MaxHeapFreeRatio");
+  status = status && verify_percentage(AdaptivePermSizeWeight, "AdaptivePermSizeWeight");
+  status = status && verify_percentage(ThresholdTolerance, "ThresholdTolerance");
+  status = status && verify_percentage(MinHeapFreeRatio, "MinHeapFreeRatio");
+  status = status && verify_percentage(MaxHeapFreeRatio, "MaxHeapFreeRatio");
 
   if (MinHeapFreeRatio > MaxHeapFreeRatio) {
     jio_fprintf(defaultStream::error_stream(),
@@ -1377,14 +1386,14 @@ bool Arguments::check_vm_args_consistency() {
     MarkSweepAlwaysCompactCount = 1;  // Move objects every gc.
   }
 
-  status &= verify_percentage(GCHeapFreeLimit, "GCHeapFreeLimit");
-  status &= verify_percentage(GCTimeLimit, "GCTimeLimit");
+  status = status && verify_percentage(GCHeapFreeLimit, "GCHeapFreeLimit");
+  status = status && verify_percentage(GCTimeLimit, "GCTimeLimit");
   if (GCTimeLimit == 100) {
     // Turn off gc-overhead-limit-exceeded checks
     FLAG_SET_DEFAULT(UseGCOverheadLimit, false);
   }
 
-  status &= verify_percentage(GCHeapFreeLimit, "GCHeapFreeLimit");
+  status = status && verify_percentage(GCHeapFreeLimit, "GCHeapFreeLimit");
 
   // Check user specified sharing option conflict with Parallel GC
   bool cannot_share = (UseConcMarkSweepGC || UseParallelGC ||
@@ -1402,24 +1411,7 @@ bool Arguments::check_vm_args_consistency() {
     }
   }
 
-  // Ensure that the user has not selected conflicting sets
-  // of collectors. [Note: this check is merely a user convenience;
-  // collectors over-ride each other so that only a non-conflicting
-  // set is selected; however what the user gets is not what they
-  // may have expected from the combination they asked for. It's
-  // better to reduce user confusion by not allowing them to
-  // select conflicting combinations.
-  uint i = 0;
-  if (UseSerialGC)                       i++;
-  if (UseConcMarkSweepGC || UseParNewGC) i++;
-  if (UseParallelGC || UseParallelOldGC) i++;
-  if (i > 1) {
-    jio_fprintf(defaultStream::error_stream(),
-                "Conflicting collector combinations in option list; "
-                "please refer to the release notes for the combinations "
-                "allowed\n");
-    status = false;
-  }
+  status = status && check_gc_consistency();
 
   if (_has_alloc_profile) {
     if (UseParallelGC || UseParallelOldGC) {
@@ -1451,15 +1443,15 @@ bool Arguments::check_vm_args_consistency() {
                   "allocation buffers\n(-XX:+UseTLAB).\n");
       status = false;
     } else {
-      status &= verify_percentage(CMSIncrementalDutyCycle,
+      status = status && verify_percentage(CMSIncrementalDutyCycle,
                                   "CMSIncrementalDutyCycle");
-      status &= verify_percentage(CMSIncrementalDutyCycleMin,
+      status = status && verify_percentage(CMSIncrementalDutyCycleMin,
                                   "CMSIncrementalDutyCycleMin");
-      status &= verify_percentage(CMSIncrementalSafetyFactor,
+      status = status && verify_percentage(CMSIncrementalSafetyFactor,
                                   "CMSIncrementalSafetyFactor");
-      status &= verify_percentage(CMSIncrementalOffset,
+      status = status && verify_percentage(CMSIncrementalOffset,
                                   "CMSIncrementalOffset");
-      status &= verify_percentage(CMSExpAvgFactor,
+      status = status && verify_percentage(CMSExpAvgFactor,
                                   "CMSExpAvgFactor");
       // If it was not set on the command line, set
       // CMSInitiatingOccupancyFraction to 1 so icms can initiate cycles early.
@@ -2064,7 +2056,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 
       // Enable parallel GC and adaptive generation sizing
       FLAG_SET_CMDLINE(bool, UseParallelGC, true);
-      FLAG_SET_DEFAULT(ParallelGCThreads, nof_parallel_gc_threads());
+      FLAG_SET_DEFAULT(ParallelGCThreads,
+                       Abstract_VM_Version::parallel_worker_threads());
 
       // Encourage steady state memory management
       FLAG_SET_CMDLINE(uintx, ThresholdTolerance, 100);
@@ -2451,14 +2444,24 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   no_shared_spaces();
 #endif // KERNEL
 
-  // Set some flags for ParallelGC if needed.
-  set_parallel_gc_flags();
-
-  // Set some flags for CMS and/or ParNew collectors, as needed.
-  set_cms_and_parnew_gc_flags();
-
   // Set flags based on ergonomics.
   set_ergonomics_flags();
+
+  // Check the GC selections again.
+  if (!check_gc_consistency()) {
+    return JNI_EINVAL;
+  }
+
+  if (UseParallelGC) {
+    // Set some flags for ParallelGC if needed.
+    set_parallel_gc_flags();
+  } else if (UseConcMarkSweepGC) {
+    // Set some flags for CMS
+    set_cms_and_parnew_gc_flags();
+  } else if (UseParNewGC) {
+    // Set some flags for ParNew
+    set_parnew_gc_flags();
+  }
 
 #ifdef SERIALGC
   assert(verify_serial_gc_flags(), "SerialGC unset");
@@ -2478,6 +2481,12 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   if (PrintCommandLineFlags) {
     CommandLineFlags::printSetFlags();
   }
+
+#ifdef ASSERT
+  if (PrintFlagsFinal) {
+    CommandLineFlags::printFlags();
+  }
+#endif
 
   return JNI_OK;
 }
