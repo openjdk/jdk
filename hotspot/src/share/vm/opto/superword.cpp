@@ -159,7 +159,8 @@ void SuperWord::find_adjacent_refs() {
   Node_List memops;
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
-    if (n->is_Mem() && in_bb(n)) {
+    if (n->is_Mem() && in_bb(n) &&
+        is_java_primitive(n->as_Mem()->memory_type())) {
       int align = memory_alignment(n->as_Mem(), 0);
       if (align != bottom_align) {
         memops.push(n);
@@ -570,7 +571,7 @@ void SuperWord::set_alignment(Node* s1, Node* s2, int align) {
 int SuperWord::data_size(Node* s) {
   const Type* t = velt_type(s);
   BasicType  bt = t->array_element_basic_type();
-  int bsize = type2aelembytes[bt];
+  int bsize = type2aelembytes(bt);
   assert(bsize != 0, "valid size");
   return bsize;
 }

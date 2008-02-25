@@ -97,7 +97,13 @@ public:
 
   // What is the type of the value in memory?  (T_VOID mean "unspecified".)
   virtual BasicType memory_type() const = 0;
-  virtual int memory_size() const { return type2aelembytes[memory_type()]; }
+  virtual int memory_size() const {
+#ifdef ASSERT
+    return type2aelembytes(memory_type(), true);
+#else
+    return type2aelembytes(memory_type());
+#endif
+  }
 
   // Search through memory states which precede this node (load or store).
   // Look for an exact match for the address, with no intervening

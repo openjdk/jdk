@@ -889,7 +889,7 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
       int shift = -1;
       Node* cache = NULL;
       if (is_autobox_cache(atp)) {
-        shift  = exact_log2(type2aelembytes[T_OBJECT]);
+        shift  = exact_log2(type2aelembytes(T_OBJECT));
         cache = AddPNode::Ideal_base_and_offset(load_base->in(Address), phase, cache_offset);
       }
       if (cache != NULL && base->in(Address)->is_AddP()) {

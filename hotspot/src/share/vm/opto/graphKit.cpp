@@ -1447,7 +1447,7 @@ Node* GraphKit::store_oop_to_unknown(Node* ctl,
 //-------------------------array_element_address-------------------------
 Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
                                       const TypeInt* sizetype) {
-  uint shift  = exact_log2(type2aelembytes[elembt]);
+  uint shift  = exact_log2(type2aelembytes(elembt));
   uint header = arrayOopDesc::base_offset_in_bytes(elembt);
 
   // short-circuit a common case (saves lots of confusing waste motion)
