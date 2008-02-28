@@ -505,15 +505,25 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       const Type *temp_t2 = phase->type( in(Offset) );
       if( temp_t2 == Type::TOP ) return NULL;
       const TypeX *t2 = temp_t2->is_intptr_t();
+      Node* address;
+      Node* offset;
       if( t2->is_con() ) {
         // The Add of the flattened expression
-        set_req(Address, addp->in(Address));
-        set_req(Offset , phase->MakeConX(t2->get_con() + t12->get_con()));
-        return this;                    // Made progress
+        address = addp->in(Address);
+        offset  = phase->MakeConX(t2->get_con() + t12->get_con());
+      } else {
+        // Else move the constant to the right.  ((A+con)+B) into ((A+B)+con)
+        address = phase->transform(new (phase->C, 4) AddPNode(in(Base),addp->in(Address),in(Offset)));
+        offset  = addp->in(Offset);
       }
-      // Else move the constant to the right.  ((A+con)+B) into ((A+B)+con)
-      set_req(Address, phase->transform(new (phase->C, 4) AddPNode(in(Base),addp->in(Address),in(Offset))));
-      set_req(Offset , addp->in(Offset));
+      PhaseIterGVN *igvn = phase->is_IterGVN();
+      if( igvn ) {
+        set_req_X(Address,address,igvn);
+        set_req_X(Offset,offset,igvn);
+      } else {
+        set_req(Address,address);
+        set_req(Offset,offset);
+      }
       return this;
     }
   }
