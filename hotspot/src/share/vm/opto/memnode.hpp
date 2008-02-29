@@ -60,13 +60,13 @@ protected:
     debug_only(_adr_type=at; adr_type();)
   }
 
+public:
   // Helpers for the optimizer.  Documented in memnode.cpp.
   static bool detect_ptr_independence(Node* p1, AllocateNode* a1,
                                       Node* p2, AllocateNode* a2,
                                       PhaseTransform* phase);
   static bool adr_phi_is_loop_invariant(Node* adr_phi, Node* cast);
 
-public:
   // This one should probably be a phase-specific function:
   static bool detect_dominating_control(Node* dom, Node* sub);
 
