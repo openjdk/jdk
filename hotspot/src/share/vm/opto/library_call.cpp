@@ -4170,6 +4170,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
       && !_gvn.eqv_uncast(src, dest)
       && ((alloc = tightly_coupled_allocation(dest, slow_region))
           != NULL)
+      && _gvn.find_int_con(alloc->in(AllocateNode::ALength), 1) > 0
       && alloc->maybe_set_complete(&_gvn)) {
     // "You break it, you buy it."
     InitializeNode* init = alloc->initialization();
