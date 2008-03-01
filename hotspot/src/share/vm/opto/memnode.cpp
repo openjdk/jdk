@@ -108,19 +108,13 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   // Avoid independent memory operations
   Node* old_mem = mem;
 
-  if (mem->is_Proj() && mem->in(0)->is_Initialize()) {
-    InitializeNode* init = mem->in(0)->as_Initialize();
-    if (init->is_complete()) {  // i.e., after macro expansion
-      const TypePtr* tp = t_adr->is_ptr();
-      uint alias_idx = phase->C->get_alias_index(tp);
-      // Free this slice from the init.  It was hooked, temporarily,
-      // by GraphKit::set_output_for_allocation.
-      if (alias_idx > Compile::AliasIdxRaw) {
-        mem = init->memory(alias_idx);
-        // ...but not with the raw-pointer slice.
-      }
-    }
-  }
+  // The code which unhooks non-raw memories from complete (macro-expanded)
+  // initializations was removed. After macro-expansion all stores catched
+  // by Initialize node became raw stores and there is no information
+  // which memory slices they modify. So it is unsafe to move any memory
+  // operation above these stores. Also in most cases hooked non-raw memories
+  // were already unhooked by using information from detect_ptr_independence()
+  // and find_previous_store().
 
   if (mem->is_MergeMem()) {
     MergeMemNode* mmem = mem->as_MergeMem();
