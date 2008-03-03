@@ -30,6 +30,7 @@ package javax.management.remote;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 
+import java.beans.ConstructorProperties;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
