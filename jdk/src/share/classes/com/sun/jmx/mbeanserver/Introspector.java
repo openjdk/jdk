@@ -43,6 +43,13 @@ import javax.management.MBeanInfo;
 import javax.management.NotCompliantMBeanException;
 
 import com.sun.jmx.mbeanserver.Util;
+import com.sun.jmx.remote.util.EnvHelp;
+import java.beans.BeanInfo;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import javax.management.AttributeNotFoundException;
+import javax.management.openmbean.CompositeData;
 
 /**
  * This class contains the methods for performing all the tests needed to verify
@@ -481,5 +488,34 @@ public class Introspector {
         }
 
         return null;
+    }
+
+    public static Object elementFromComplex(Object complex, String element)
+    throws AttributeNotFoundException {
+        try {
+            if (complex.getClass().isArray() && element.equals("length")) {
+                return Array.getLength(complex);
+            } else if (complex instanceof CompositeData) {
+                return ((CompositeData) complex).get(element);
+            } else {
+                // Java Beans introspection
+                //
+                BeanInfo bi = java.beans.Introspector.getBeanInfo(complex.getClass());
+                PropertyDescriptor[] pds = bi.getPropertyDescriptors();
+                for (PropertyDescriptor pd : pds)
+                    if (pd.getName().equals(element))
+                        return pd.getReadMethod().invoke(complex);
+                throw new AttributeNotFoundException(
+                    "Could not find the getter method for the property " +
+                    element + " using the Java Beans introspector");
+            }
+        } catch (InvocationTargetException e) {
+            throw new IllegalArgumentException(e);
+        } catch (AttributeNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw EnvHelp.initCause(
+                new AttributeNotFoundException(e.getMessage()), e);
+        }
     }
 }
