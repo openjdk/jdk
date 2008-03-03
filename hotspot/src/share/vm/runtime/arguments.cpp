@@ -1000,7 +1000,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   intx tenuring_default;
   if (CMSUseOldDefaults) {  // old defaults: "old" as of 6.0
     if FLAG_IS_DEFAULT(CMSYoungGenPerWorker) {
-      FLAG_SET_DEFAULT(CMSYoungGenPerWorker, 4*M);
+      FLAG_SET_ERGO(intx, CMSYoungGenPerWorker, 4*M);
     }
     young_gen_per_worker = 4*M;
     new_ratio = (intx)15;
@@ -1025,16 +1025,20 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   // for "short" pauses ~ 4M*ParallelGCThreads
   if (FLAG_IS_DEFAULT(MaxNewSize)) {  // MaxNewSize not set at command-line
     if (!FLAG_IS_DEFAULT(NewSize)) {   // NewSize explicitly set at command-line
-      FLAG_SET_DEFAULT(MaxNewSize, MAX2(NewSize, preferred_max_new_size));
+      FLAG_SET_ERGO(uintx, MaxNewSize, MAX2(NewSize, preferred_max_new_size));
     } else {
-      FLAG_SET_DEFAULT(MaxNewSize, preferred_max_new_size);
+      FLAG_SET_ERGO(uintx, MaxNewSize, preferred_max_new_size);
     }
+    if(PrintGCDetails && Verbose) {
+      // Too early to use gclog_or_tty
+      tty->print_cr("Ergo set MaxNewSize: " SIZE_FORMAT, MaxNewSize);
+  }
   }
   // Unless explicitly requested otherwise, prefer a large
   // Old to Young gen size so as to shift the collection load
   // to the old generation concurrent collector
   if (FLAG_IS_DEFAULT(NewRatio)) {
-    FLAG_SET_DEFAULT(NewRatio, MAX2(NewRatio, new_ratio));
+    FLAG_SET_ERGO(intx, NewRatio, MAX2(NewRatio, new_ratio));
 
     size_t min_new  = align_size_up(ScaleForWordSize(min_new_default), os::vm_page_size());
     size_t prev_initial_size = initial_heap_size();
@@ -1052,19 +1056,34 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     size_t max_heap = align_size_down(MaxHeapSize,
                                       CardTableRS::ct_max_alignment_constraint());
 
+    if(PrintGCDetails && Verbose) {
+      // Too early to use gclog_or_tty
+      tty->print_cr("CMS set min_heap_size: " SIZE_FORMAT
+           " initial_heap_size:  " SIZE_FORMAT
+           " max_heap: " SIZE_FORMAT,
+           min_heap_size(), initial_heap_size(), max_heap);
+    }
     if (max_heap > min_new) {
       // Unless explicitly requested otherwise, make young gen
       // at least min_new, and at most preferred_max_new_size.
       if (FLAG_IS_DEFAULT(NewSize)) {
-        FLAG_SET_DEFAULT(NewSize, MAX2(NewSize, min_new));
-        FLAG_SET_DEFAULT(NewSize, MIN2(preferred_max_new_size, NewSize));
+        FLAG_SET_ERGO(uintx, NewSize, MAX2(NewSize, min_new));
+        FLAG_SET_ERGO(uintx, NewSize, MIN2(preferred_max_new_size, NewSize));
+        if(PrintGCDetails && Verbose) {
+          // Too early to use gclog_or_tty
+          tty->print_cr("Ergo set NewSize: " SIZE_FORMAT, NewSize);
+        }
       }
       // Unless explicitly requested otherwise, size old gen
       // so that it's at least 3X of NewSize to begin with;
       // later NewRatio will decide how it grows; see above.
       if (FLAG_IS_DEFAULT(OldSize)) {
         if (max_heap > NewSize) {
-          FLAG_SET_DEFAULT(OldSize, MIN2(3*NewSize,  max_heap - NewSize));
+          FLAG_SET_ERGO(uintx, OldSize, MIN2(3*NewSize,  max_heap - NewSize));
+          if(PrintGCDetails && Verbose) {
+            // Too early to use gclog_or_tty
+            tty->print_cr("Ergo set OldSize: " SIZE_FORMAT, OldSize);
+          }
         }
       }
     }
@@ -1073,14 +1092,14 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   // promote all objects surviving "tenuring_default" scavenges.
   if (FLAG_IS_DEFAULT(MaxTenuringThreshold) &&
       FLAG_IS_DEFAULT(SurvivorRatio)) {
-    FLAG_SET_DEFAULT(MaxTenuringThreshold, tenuring_default);
+    FLAG_SET_ERGO(intx, MaxTenuringThreshold, tenuring_default);
   }
   // If we decided above (or user explicitly requested)
   // `promote all' (via MaxTenuringThreshold := 0),
   // prefer minuscule survivor spaces so as not to waste
   // space for (non-existent) survivors
   if (FLAG_IS_DEFAULT(SurvivorRatio) && MaxTenuringThreshold == 0) {
-    FLAG_SET_DEFAULT(SurvivorRatio, MAX2((intx)1024, SurvivorRatio));
+    FLAG_SET_ERGO(intx, SurvivorRatio, MAX2((intx)1024, SurvivorRatio));
   }
   // If OldPLABSize is set and CMSParPromoteBlocksToClaim is not,
   // set CMSParPromoteBlocksToClaim equal to OldPLABSize.
@@ -1089,7 +1108,11 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   // See CR 6362902.
   if (!FLAG_IS_DEFAULT(OldPLABSize)) {
     if (FLAG_IS_DEFAULT(CMSParPromoteBlocksToClaim)) {
-      FLAG_SET_CMDLINE(uintx, CMSParPromoteBlocksToClaim, OldPLABSize);
+      // OldPLABSize is not the default value but CMSParPromoteBlocksToClaim
+      // is.  In this situtation let CMSParPromoteBlocksToClaim follow
+      // the value (either from the command line or ergonomics) of
+      // OldPLABSize.  Following OldPLABSize is an ergonomics decision.
+      FLAG_SET_ERGO(uintx, CMSParPromoteBlocksToClaim, OldPLABSize);
     }
     else {
       // OldPLABSize and CMSParPromoteBlocksToClaim are both set.
@@ -1211,12 +1234,13 @@ void Arguments::set_parallel_gc_flags() {
 
     if (UseParallelOldGC) {
       // Par compact uses lower default values since they are treated as
-      // minimums.
+      // minimums.  These are different defaults because of the different
+      // interpretation and are not ergonomically set.
       if (FLAG_IS_DEFAULT(MarkSweepDeadRatio)) {
-        MarkSweepDeadRatio = 1;
+        FLAG_SET_DEFAULT(MarkSweepDeadRatio, 1);
       }
       if (FLAG_IS_DEFAULT(PermMarkSweepDeadRatio)) {
-        PermMarkSweepDeadRatio = 5;
+        FLAG_SET_DEFAULT(PermMarkSweepDeadRatio, 5);
       }
     }
   }
@@ -2452,7 +2476,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     return JNI_EINVAL;
   }
 
-  if (UseParallelGC) {
+  if (UseParallelGC || UseParallelOldGC) {
     // Set some flags for ParallelGC if needed.
     set_parallel_gc_flags();
   } else if (UseConcMarkSweepGC) {
