@@ -59,13 +59,13 @@ include $(JDK_TOPDIR)/make/common/CancelImplicits.gmk
 # there yet.
 #
 ifndef SHARE_SRC
-  SHARE_SRC    = $(JDK_TOPDIR)/src/share
+  SHARE_SRC    = $(BUILDDIR)/../src/share
 endif
 
 # Files that cannot be included in the OpenJDK distribution are
 # collected under a parent directory which contains just those files.
 ifndef CLOSED_SRC
-  CLOSED_SRC  = $(JDK_TOPDIR)/src/closed
+  CLOSED_SRC  = $(BUILDDIR)/../src/closed
 endif
 
 # If we have no closed directory, force it to an openjdk build
