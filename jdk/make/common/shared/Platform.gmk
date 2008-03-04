@@ -93,10 +93,8 @@ SYSTEM_UNAME := $(shell uname)
 # Normal boot jdk is previous release, but a hard requirement is a 1.5 boot
 REQUIRED_BOOT_VER = 1.5
 
-#This is specific to OpenJDK build
-ifdef OPENJDK
-  REQUIRED_FREETYPE_VERSION=2.3.0
-endif
+# If we are using freetype, this is the required version
+REQUIRED_FREETYPE_VERSION=2.3.0
 
 #
 # Prune out all known SCM (Source Code Management) directories
