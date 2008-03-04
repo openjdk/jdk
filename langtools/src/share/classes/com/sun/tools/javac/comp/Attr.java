@@ -2514,6 +2514,7 @@ public class Attr extends JCTree.Visitor {
                     log.error(tree.bounds.tail.head.pos(),
                               "type.var.may.not.be.followed.by.other.bounds");
                     tree.bounds = List.of(tree.bounds.head);
+                    a.bound = bs.head;
                 }
             } else {
                 // if first bound was a class or interface, accept only interfaces
