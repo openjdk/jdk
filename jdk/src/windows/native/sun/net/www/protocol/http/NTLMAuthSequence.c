@@ -52,7 +52,7 @@ static INITIALIZE_SECURITY_CONTEXT_FN pInitializeSecurityContext;
 static COMPLETE_AUTH_TOKEN_FN pCompleteAuthToken;
 static DELETE_SECURITY_CONTEXT_FN pDeleteSecurityContext;
 
-static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle, SecBufferDesc OutBuffDesc);
+static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle);
 
 static jfieldID ntlm_ctxHandleID;
 static jfieldID ntlm_crdHandleID;
@@ -247,7 +247,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_get
     }
 
     if (ss < 0) {
-        endSequence (pCred, pCtx, OutBuffDesc);
+        endSequence (pCred, pCtx);
         return 0;
     }
 
@@ -255,7 +255,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_get
         ss = pCompleteAuthToken( pCtx, &OutBuffDesc );
 
         if (ss < 0) {
-            endSequence (pCred, pCtx, OutBuffDesc);
+            endSequence (pCred, pCtx);
             return 0;
         }
     }
@@ -265,24 +265,22 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_get
         (*env)->SetByteArrayRegion(env, ret, 0, OutSecBuff.cbBuffer,
                 OutSecBuff.pvBuffer);
         if (lastToken != 0) // 2nd stage
-            endSequence (pCred, pCtx, OutBuffDesc);
+            endSequence (pCred, pCtx);
         result = ret;
     }
 
     if ((ss != SEC_I_CONTINUE_NEEDED) && (ss == SEC_I_COMPLETE_AND_CONTINUE)) {
-        endSequence (pCred, pCtx, OutBuffDesc);
+        endSequence (pCred, pCtx);
     }
 
     return result;
 }
 
-static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle, SecBufferDesc OutBuffDesc) {
+static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle) {
     if (credHand != 0) {
         pFreeCredentialsHandle (credHand);
         free (credHand);
     }
-
-    pFreeContextBuffer (&OutBuffDesc);
 
     if (ctxHandle != 0) {
         pDeleteSecurityContext(ctxHandle);
