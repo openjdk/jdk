@@ -144,8 +144,8 @@ public class KDCReq {
         } else {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
         }
-        subDer = der.getData().getDerValue();
-        if ((subDer.getTag() & 0x01F) == 0x03) {
+        if ((der.getData().peekByte() & 0x1F) == 0x03) {
+            subDer = der.getData().getDerValue();
             DerValue subsubDer = subDer.getData().getDerValue();
             if (subsubDer.getTag() != DerValue.tag_SequenceOf) {
                 throw new Asn1Exception(Krb5.ASN1_BAD_ID);
