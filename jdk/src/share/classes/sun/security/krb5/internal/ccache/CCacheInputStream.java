@@ -215,7 +215,9 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
                 addrType = read(2);
                 addrLength = read(4);
                 if (!(addrLength == 4 || addrLength == 16)) {
-                    System.out.println("Incorrect address format.");
+                    if (DEBUG) {
+                        System.out.println("Incorrect address format.");
+                    }
                     return null;
                 }
                 byte[] result = new byte[addrLength];
