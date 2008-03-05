@@ -338,15 +338,19 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
             System.out.println(">>>DEBUG <CCacheInputStream> key type: " + key.getEType());
         long times[] = readTimes();
         KerberosTime authtime = new KerberosTime(times[0]);
-        KerberosTime starttime = new KerberosTime(times[1]);
+        KerberosTime starttime =
+                (times[1]==0) ? null : new KerberosTime(times[1]);
         KerberosTime endtime = new KerberosTime(times[2]);
-        KerberosTime renewTill = new KerberosTime(times[3]);
+        KerberosTime renewTill =
+                (times[3]==0) ? null : new KerberosTime(times[3]);
 
         if (DEBUG) {
             System.out.println(">>>DEBUG <CCacheInputStream> auth time: " + authtime.toDate().toString());
-            System.out.println(">>>DEBUG <CCacheInputStream> start time: " + starttime.toDate().toString());
+            System.out.println(">>>DEBUG <CCacheInputStream> start time: " +
+                    ((starttime==null)?"null":starttime.toDate().toString()));
             System.out.println(">>>DEBUG <CCacheInputStream> end time: " + endtime.toDate().toString());
-            System.out.println(">>>DEBUG <CCacheInputStream> renew_till time: " + renewTill.toDate().toString());
+            System.out.println(">>>DEBUG <CCacheInputStream> renew_till time: " +
+                    ((renewTill==null)?"null":renewTill.toDate().toString()));
         }
         boolean skey = readskey();
         boolean flags[] = readFlags();

@@ -79,9 +79,13 @@ public class Credentials {
         key = (EncryptionKey) new_key.clone();
 
         authtime = (KerberosTime) new_authtime.clone();
-        starttime = (KerberosTime) new_starttime.clone();
+        if (new_starttime != null) {
+            starttime = (KerberosTime) new_starttime.clone();
+        }
         endtime = (KerberosTime) new_endtime.clone();
-        renewTill = (KerberosTime) new_renewTill.clone();
+        if (new_renewTill != null) {
+            renewTill = (KerberosTime) new_renewTill.clone();
+        }
         if (new_caddr != null) {
             caddr = (HostAddresses) new_caddr.clone();
         }
@@ -112,9 +116,13 @@ public class Credentials {
         key = (EncryptionKey) kdcRep.encKDCRepPart.key.clone();
         flags = (TicketFlags) kdcRep.encKDCRepPart.flags.clone();
         authtime = (KerberosTime) kdcRep.encKDCRepPart.authtime.clone();
-        starttime = (KerberosTime) kdcRep.encKDCRepPart.starttime.clone();
+        if (kdcRep.encKDCRepPart.starttime != null) {
+            starttime = (KerberosTime) kdcRep.encKDCRepPart.starttime.clone();
+        }
         endtime = (KerberosTime) kdcRep.encKDCRepPart.endtime.clone();
-        renewTill = (KerberosTime) kdcRep.encKDCRepPart.renewTill.clone();
+        if (kdcRep.encKDCRepPart.renewTill != null) {
+            renewTill = (KerberosTime) kdcRep.encKDCRepPart.renewTill.clone();
+        }
         srealm = (Realm) kdcRep.encKDCRepPart.srealm.clone();
         sname = (PrincipalName) kdcRep.encKDCRepPart.sname.clone();
         caddr = (HostAddresses) kdcRep.encKDCRepPart.caddr.clone();
@@ -181,9 +189,14 @@ public class Credentials {
         boolean valid = true;
         if (endtime.getTime() < System.currentTimeMillis()) {
             valid = false;
-        } else if ((starttime.getTime() > System.currentTimeMillis())
-                || ((starttime == null) && (authtime.getTime() > System.currentTimeMillis()))) {
-            valid = false;
+        } else if (starttime != null) {
+            if (starttime.getTime() > System.currentTimeMillis()) {
+                valid = false;
+            }
+        } else {
+            if (authtime.getTime() > System.currentTimeMillis()) {
+                valid = false;
+            }
         }
         return valid;
     }
