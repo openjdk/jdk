@@ -64,11 +64,6 @@ import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
-import java.nio.channels.Selector;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SelectableChannel;
 import java.lang.reflect.*;
 
 /**
@@ -824,6 +819,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * - get input, [read input,] get output, [write output]
      */
 
+    @Override
     public synchronized OutputStream getOutputStream() throws IOException {
 
         try {
@@ -908,30 +904,25 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
             URI uri = ParseUtil.toURI(url);
             if (uri != null) {
-                Map cookies = cookieHandler.get(uri, requests.getHeaders(EXCLUDE_HEADERS));
+                Map<String, List<String>> cookies = cookieHandler.get(uri, requests.getHeaders(EXCLUDE_HEADERS));
                 if (!cookies.isEmpty()) {
-                    Set s = cookies.entrySet();
-                    Iterator k_itr = s.iterator();
-                    while (k_itr.hasNext()) {
-                        Map.Entry entry = (Map.Entry)k_itr.next();
-                        String key = (String)entry.getKey();
+                    for (Map.Entry<String, List<String>> entry : cookies.entrySet()) {
+                        String key = entry.getKey();
                         // ignore all entries that don't have "Cookie"
                         // or "Cookie2" as keys
                         if (!"Cookie".equalsIgnoreCase(key) &&
                             !"Cookie2".equalsIgnoreCase(key)) {
                             continue;
                         }
-                        List l = (List)entry.getValue();
+                        List<String> l = entry.getValue();
                         if (l != null && !l.isEmpty()) {
-                            Iterator v_itr = l.iterator();
                             StringBuilder cookieValue = new StringBuilder();
-                            while (v_itr.hasNext()) {
-                                String value = (String)v_itr.next();
-                                cookieValue.append(value).append(';');
+                            for (String value : l) {
+                                cookieValue.append(value).append("; ");
                             }
-                            // strip off the ending ;-sign
+                            // strip off the trailing '; '
                             try {
-                                requests.add(key, cookieValue.substring(0, cookieValue.length() - 1));
+                                requests.add(key, cookieValue.substring(0, cookieValue.length() - 2));
                             } catch (StringIndexOutOfBoundsException ignored) {
                                 // no-op
                             }
@@ -950,6 +941,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         } // end of getting cookies
     }
 
+    @Override
+    @SuppressWarnings("empty-statement")
     public synchronized InputStream getInputStream() throws IOException {
 
         if (!doInput) {
@@ -1386,6 +1379,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         }
     }
 
+    @Override
     public InputStream getErrorStream() {
         if (connected && responseCode >= 400) {
             // Client Error 4xx and Server Error 5xx
@@ -2152,6 +2146,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * Gets a header field by name. Returns null if not known.
      * @param name the name of the header field
      */
+    @Override
     public String getHeaderField(String name) {
         try {
             getInputStream();
@@ -2174,6 +2169,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * @return a Map of header fields
      * @since 1.4
      */
+    @Override
     public Map getHeaderFields() {
         try {
             getInputStream();
@@ -2190,6 +2186,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * Gets a header field by index. Returns null if not known.
      * @param n the index of the header field
      */
+    @Override
     public String getHeaderField(int n) {
         try {
             getInputStream();
@@ -2205,6 +2202,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * Gets a header field by index. Returns null if not known.
      * @param n the index of the header field
      */
+    @Override
     public String getHeaderFieldKey(int n) {
         try {
             getInputStream();
@@ -2222,6 +2220,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * exists, overwrite its value with the new value.
      * @param value the value to be set
      */
+    @Override
     public void setRequestProperty(String key, String value) {
         if (connected)
             throw new IllegalStateException("Already connected");
@@ -2243,6 +2242,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * @see #getRequestProperties(java.lang.String)
      * @since 1.4
      */
+    @Override
     public void addRequestProperty(String key, String value) {
         if (connected)
             throw new IllegalStateException("Already connected");
@@ -2262,6 +2262,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         requests.set(key, value);
     }
 
+    @Override
     public String getRequestProperty (String key) {
         // don't return headers containing security sensitive information
         if (key != null) {
@@ -2286,6 +2287,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * @throws IllegalStateException if already connected
      * @since 1.4
      */
+    @Override
     public Map getRequestProperties() {
         if (connected)
             throw new IllegalStateException("Already connected");
@@ -2294,6 +2296,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         return requests.getHeaders(EXCLUDE_HEADERS);
     }
 
+    @Override
     public void setConnectTimeout(int timeout) {
         if (timeout < 0)
             throw new IllegalArgumentException("timeouts can't be negative");
@@ -2313,6 +2316,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * @see java.net.URLConnection#connect()
      * @since 1.5
      */
+    @Override
     public int getConnectTimeout() {
         return (connectTimeout < 0 ? 0 : connectTimeout);
     }
@@ -2337,6 +2341,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * @see java.io.InputStream#read()
      * @since 1.5
      */
+    @Override
     public void setReadTimeout(int timeout) {
         if (timeout < 0)
             throw new IllegalArgumentException("timeouts can't be negative");
@@ -2354,10 +2359,12 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * @see java.io.InputStream#read()
      * @since 1.5
      */
+    @Override
     public int getReadTimeout() {
         return readTimeout < 0 ? 0 : readTimeout;
     }
 
+    @Override
     protected void finalize() {
         // this should do nothing.  The stream finalizer will close
         // the fd
@@ -2437,6 +2444,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
          * @see     java.io.FilterInputStream#in
          * @see     java.io.FilterInputStream#reset()
          */
+        @Override
         public synchronized void mark(int readlimit) {
             super.mark(readlimit);
             if (cacheRequest != null) {
@@ -2466,6 +2474,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
          * @see        java.io.FilterInputStream#in
          * @see        java.io.FilterInputStream#mark(int)
          */
+        @Override
         public synchronized void reset() throws IOException {
             super.reset();
             if (cacheRequest != null) {
@@ -2474,6 +2483,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
         }
 
+        @Override
         public int read() throws IOException {
             try {
                 byte[] b = new byte[1];
@@ -2487,10 +2497,12 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
         }
 
+        @Override
         public int read(byte[] b) throws IOException {
             return read(b, 0, b.length);
         }
 
+        @Override
         public int read(byte[] b, int off, int len) throws IOException {
             try {
                 int newLen = super.read(b, off, len);
@@ -2521,6 +2533,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
         }
 
+        @Override
         public void close () throws IOException {
             try {
                 if (outputStream != null) {
@@ -2565,6 +2578,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             error = false;
         }
 
+        @Override
         public void write (int b) throws IOException {
             checkError();
             written ++;
@@ -2574,10 +2588,12 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             out.write (b);
         }
 
+        @Override
         public void write (byte[] b) throws IOException {
             write (b, 0, b.length);
         }
 
+        @Override
         public void write (byte[] b, int off, int len) throws IOException {
             checkError();
             written += len;
@@ -2608,6 +2624,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             return closed && ! error;
         }
 
+        @Override
         public void close () throws IOException {
             if (closed) {
                 return;
@@ -2726,6 +2743,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
         }
 
+        @Override
         public int available() throws IOException {
             if (is == null) {
                 return buffer.remaining();
@@ -2740,10 +2758,12 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             return (ret == -1? ret : (b[0] & 0x00FF));
         }
 
+        @Override
         public int read(byte[] b) throws IOException {
             return read(b, 0, b.length);
         }
 
+        @Override
         public int read(byte[] b, int off, int len) throws IOException {
             int rem = buffer.remaining();
             if (rem > 0) {
@@ -2759,6 +2779,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
         }
 
+        @Override
         public void close() throws IOException {
             buffer = null;
             if (is != null) {
@@ -2775,6 +2796,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
 class EmptyInputStream extends InputStream {
 
+    @Override
     public int available() {
         return 0;
     }
