@@ -2048,6 +2048,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      */
     private void disconnectInternal() {
         responseCode = -1;
+        inputStream = null;
         if (pi != null) {
             pi.finishTracking();
             pi = null;
