@@ -1022,10 +1022,27 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   Node* tst = _gvn.transform(tst0);
   BoolTest::mask taken_btest   = BoolTest::illegal;
   BoolTest::mask untaken_btest = BoolTest::illegal;
-  if (btest == BoolTest::ne) {
-    // For now, these are the only cases of btest that matter.  (More later.)
-    taken_btest   = taken_if_true ?        btest : BoolTest::eq;
-    untaken_btest = taken_if_true ? BoolTest::eq :        btest;
+
+  if (tst->is_Bool()) {
+    // Refresh c from the transformed bool node, since it may be
+    // simpler than the original c.  Also re-canonicalize btest.
+    // This wins when (Bool ne (Conv2B p) 0) => (Bool ne (CmpP p NULL)).
+    // That can arise from statements like: if (x instanceof C) ...
+    if (tst != tst0) {
+      // Canonicalize one more time since transform can change it.
+      btest = tst->as_Bool()->_test._test;
+      if (!BoolTest(btest).is_canonical()) {
+        // Reverse edges one more time...
+        tst   = _gvn.transform( tst->as_Bool()->negate(&_gvn) );
+        btest = tst->as_Bool()->_test._test;
+        assert(BoolTest(btest).is_canonical(), "sanity");
+        taken_if_true = !taken_if_true;
+      }
+      c = tst->in(1);
+    }
+    BoolTest::mask neg_btest = BoolTest(btest).negate();
+    taken_btest   = taken_if_true ?     btest : neg_btest;
+    untaken_btest = taken_if_true ? neg_btest :     btest;
   }
 
   // Generate real control flow
