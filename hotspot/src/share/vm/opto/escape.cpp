@@ -601,6 +601,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       if (es != PointsToNode::NoEscape || !ptn._unique_type) {
         continue; //  can't make a unique type
       }
+      if (alloc->is_Allocate()) {
+        // Set the scalar_replaceable flag before the next check.
+        alloc->as_Allocate()->_is_scalar_replaceable = true;
+      }
+
       set_map(alloc->_idx, n);
       set_map(n->_idx, alloc);
       const TypeInstPtr *t = igvn->type(n)->isa_instptr();
