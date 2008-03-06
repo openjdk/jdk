@@ -19,15 +19,22 @@
 // Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
 // CA 95054 USA or visit www.sun.com if you need additional information or
 // have any questions.
-//  
+//
 //
 
 // NOTE: DO NOT CHANGE THIS COPYRIGHT TO NEW STYLE - IT WILL BREAK makeDeps!
 
-gcAdaptivePolicyCounters.hpp		adaptiveSizePolicy.hpp
-gcAdaptivePolicyCounters.hpp		gcPolicyCounters.hpp
+allocationStats.cpp                     allocationStats.hpp
+allocationStats.cpp                     ostream.hpp
 
-gcAdaptivePolicyCounters.cpp		resourceArea.hpp
+allocationStats.hpp                     allocation.hpp
+allocationStats.hpp                     gcUtil.hpp
+allocationStats.hpp                     globalDefinitions.hpp
+
+gcAdaptivePolicyCounters.hpp            adaptiveSizePolicy.hpp
+gcAdaptivePolicyCounters.hpp            gcPolicyCounters.hpp
+
+gcAdaptivePolicyCounters.cpp            resourceArea.hpp
 gcAdaptivePolicyCounters.cpp            gcAdaptivePolicyCounters.hpp
 
 gSpaceCounters.cpp                      generation.hpp
@@ -44,7 +51,7 @@ immutableSpace.cpp                      universe.hpp
 
 isGCActiveMark.hpp                      parallelScavengeHeap.hpp
 
-markSweep.inline.hpp			psParallelCompact.hpp
+markSweep.inline.hpp                    psParallelCompact.hpp
 
 mutableNUMASpace.cpp                    mutableNUMASpace.hpp
 mutableNUMASpace.cpp                    sharedHeap.hpp

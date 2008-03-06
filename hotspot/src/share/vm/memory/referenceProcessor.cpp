@@ -85,7 +85,7 @@ ReferenceProcessor* ReferenceProcessor::create_ref_processor(
   ReferenceProcessor* rp =
     new ReferenceProcessor(span, atomic_discovery,
                            mt_discovery, mt_degree,
-                           mt_processing);
+                           mt_processing && (parallel_gc_threads > 0));
   if (rp == NULL) {
     vm_exit_during_initialization("Could not allocate ReferenceProcessor object");
   }

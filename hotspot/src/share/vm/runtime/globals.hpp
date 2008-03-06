@@ -1794,6 +1794,9 @@ class CommandLineFlags {
           "number of times a GC thread (minus the coordinator) "            \
           "will sleep while yielding before giving up and resuming GC")     \
                                                                             \
+  notproduct(bool, PrintFlagsFinal, false,                                  \
+          "Print all command line flags after argument processing")         \
+                                                                            \
   /* gc tracing */                                                          \
   manageable(bool, PrintGC, false,                                          \
           "Print message at garbage collect")                               \
