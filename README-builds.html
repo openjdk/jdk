@@ -342,32 +342,29 @@
 
 <blockquote>
     <p>
-    The source code for the 
-    OpenJDK is
-    delivered in <i>3</i> sibling directories:
+    The source code for the OpenJDK is delivered in a set of
+    directories:
     <tt>hotspot</tt>, 
     <tt>langtools</tt>, 
     <tt>corba</tt>, 
     <tt>jaxws</tt>, 
     <tt>jaxp</tt>, 
-    <tt>jdk</tt>
     and
+    <tt>jdk</tt>.
     The <tt>hotspot</tt> directory contains the source code and make
-    files for
-    building the 
-    OpenJDK
-    Hotspot Virtual Machine. 
-    The <tt>jdk</tt>
-    directory contains the source code and make files for
-    building the 
-    OpenJDK
-    runtime libraries, tools and demos. 
-    The top level Makefile is used to build the complete OpenJDK 
-    release including building the hotspot
-    VM, staging the VM binaries, and building the 
-    OpenJDK 
-    runtime libraries,
-    tools and demos.
+    files for building the OpenJDK Hotspot Virtual Machine. 
+    The <tt>langtools</tt> directory contains the source code and make
+    files for building the OpenJDK javac and language tools.
+    The <tt>corba</tt> directory contains the source code and make
+    files for building the OpenJDK Corba files.
+    The <tt>jaxws</tt> directory contains the source code and make
+    files for building the OpenJDK JAXWS files.
+    The <tt>jaxp</tt> directory contains the source code and make
+    files for building the OpenJDK JAXP files.
+    The <tt>jdk</tt> directory contains the source code and make files for
+    building the OpenJDK runtime libraries and misc files.
+    The top level <tt>Makefile</tt>
+    is used to build the entire OpenJDK.
 </blockquote>
 
 <!-- ------------------------------------------------------ -->
@@ -730,17 +727,15 @@
         under an open-source license.
         In order to build an OpenJDK binary from source code,
         you must first download and install the appropriate
-        binary plug bundles from the OpenJDK Download area.
+	binary plug bundles from the OpenJDK, go to the
+	<a href="http://openjdk.java.net">OpenJDK</a> site and select
+	the "<b>Bundles(7)</b>" link.
         During the OpenJDK build process these "binary plugs"
         for the encumbered components will be copied into your
         resulting OpenJDK binary build image.
         These binary plug files are only for the purpose of
         building an OpenJDK binary.
-        Download the Binary Plugs by selecting the <b>Downloads</b>
-        link at
-        <a href="http://openjdk.java.net/">the OpenJDK site</a>,
-        install the bundle,
-        and make sure you set
+        Make sure you set
         <tt><a href="#ALT_BINARY_PLUGS_PATH">ALT_BINARY_PLUGS_PATH</a></tt>
         to the root of this installation.
     </blockquote>
