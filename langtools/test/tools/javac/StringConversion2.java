@@ -1,5 +1,5 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,17 @@
 
 /*
  * @test
- * @bug 4642850
- * @summary compiler allows Object += String
- * @author gafter
- *
- * @compile/fail ObjectAppend.java
+ * @bug 4741726
+ * @summary allow Object += String
  */
 
-class ObjectAppend {{
-    Object o = null;
-    o += "string";
-}}
+public class StringConversion2
+{
+    public static void main(String[] args) {
+        Object o = "Hello ";
+        String s = "World!";
+        o += s;
+        if (!o.equals("Hello World!"))
+            throw new Error("test failed");
+    }
+}
