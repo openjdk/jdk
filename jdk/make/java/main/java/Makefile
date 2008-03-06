@@ -43,7 +43,7 @@ include $(BUILDDIR)/common/Defs.gmk
 
 # Override the default version info with our own resource file (see 5106536)
 ifeq ($(PLATFORM), windows)
-LDLIBS_COMMON += user32.lib
+LDLIBS_COMMON += user32.lib comctl32.lib
 ifdef OPENJDK
     RC_FLAGS += -i "$(PLATFORM_SRC)/resource/icons"
 else
