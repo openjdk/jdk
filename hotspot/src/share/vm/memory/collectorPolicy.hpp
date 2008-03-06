@@ -82,8 +82,11 @@ class CollectorPolicy : public CHeapObj {
   size_t max_alignment()                       { return _max_alignment; }
 
   size_t initial_heap_byte_size() { return _initial_heap_byte_size; }
+  void set_initial_heap_byte_size(size_t v) { _initial_heap_byte_size = v; }
   size_t max_heap_byte_size()     { return _max_heap_byte_size; }
+  void set_max_heap_byte_size(size_t v) { _max_heap_byte_size = v; }
   size_t min_heap_byte_size()     { return _min_heap_byte_size; }
+  void set_min_heap_byte_size(size_t v) { _min_heap_byte_size = v; }
 
   enum Name {
     CollectorPolicyKind,
@@ -182,8 +185,24 @@ class GenCollectorPolicy : public CollectorPolicy {
   // compute max heap alignment
   size_t compute_max_alignment();
 
+ // Scale the base_size by NewRation according to
+ //     result = base_size / (NewRatio + 1)
+ // and align by min_alignment()
+ size_t scale_by_NewRatio_aligned(size_t base_size);
+
+ // Bound the value by the given maximum minus the
+ // min_alignment.
+ size_t bound_minus_alignment(size_t desired_size, size_t maximum_size);
 
  public:
+  // Accessors
+  size_t min_gen0_size() { return _min_gen0_size; }
+  void set_min_gen0_size(size_t v) { _min_gen0_size = v; }
+  size_t initial_gen0_size() { return _initial_gen0_size; }
+  void set_initial_gen0_size(size_t v) { _initial_gen0_size = v; }
+  size_t max_gen0_size() { return _max_gen0_size; }
+  void set_max_gen0_size(size_t v) { _max_gen0_size = v; }
+
   virtual int number_of_generations() = 0;
 
   virtual GenerationSpec **generations()       {
@@ -236,6 +255,14 @@ class TwoGenerationCollectorPolicy : public GenCollectorPolicy {
   void initialize_generations()                { ShouldNotReachHere(); }
 
  public:
+  // Accessors
+  size_t min_gen1_size() { return _min_gen1_size; }
+  void set_min_gen1_size(size_t v) { _min_gen1_size = v; }
+  size_t initial_gen1_size() { return _initial_gen1_size; }
+  void set_initial_gen1_size(size_t v) { _initial_gen1_size = v; }
+  size_t max_gen1_size() { return _max_gen1_size; }
+  void set_max_gen1_size(size_t v) { _max_gen1_size = v; }
+
   // Inherited methods
   TwoGenerationCollectorPolicy* as_two_generation_policy() { return this; }
 
@@ -246,6 +273,10 @@ class TwoGenerationCollectorPolicy : public GenCollectorPolicy {
   virtual CollectorPolicy::Name kind() {
     return CollectorPolicy::TwoGenerationCollectorPolicyKind;
   }
+
+  // Returns true is gen0 sizes were adjusted
+  bool adjust_gen0_sizes(size_t* gen0_size_ptr, size_t* gen1_size_ptr,
+                               size_t heap_size, size_t min_gen1_size);
 };
 
 class MarkSweepPolicy : public TwoGenerationCollectorPolicy {

@@ -65,7 +65,7 @@ void KlassInfoEntry::print_on(outputStream* st) const {
       name = "<no name>";
   }
   // simplify the formatting (ILP32 vs LP64) - always cast the numbers to 64-bit
-  st->print_cr("%13" FORMAT64_MODIFIER "d  %13" FORMAT64_MODIFIER "u  %s",
+  st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s",
                (jlong)  _instance_count,
                (julong) _instance_words * HeapWordSize,
                name);
@@ -80,7 +80,10 @@ KlassInfoEntry* KlassInfoBucket::lookup(const klassOop k) {
     elt = elt->next();
   }
   elt = new KlassInfoEntry(k, list());
-  set_list(elt);
+  // We may be out of space to allocate the new entry.
+  if (elt != NULL) {
+    set_list(elt);
+  }
   return elt;
 }
 
@@ -103,21 +106,25 @@ void KlassInfoBucket::empty() {
 }
 
 KlassInfoTable::KlassInfoTable(int size, HeapWord* ref) {
-  _size = size;
+  _size = 0;
   _ref = ref;
-  _buckets = NEW_C_HEAP_ARRAY(KlassInfoBucket, _size);
-
-  for (int index = 0; index < _size; index++) {
-    _buckets[index].initialize();
+  _buckets = NEW_C_HEAP_ARRAY(KlassInfoBucket, size);
+  if (_buckets != NULL) {
+    _size = size;
+    for (int index = 0; index < _size; index++) {
+      _buckets[index].initialize();
+    }
   }
 }
 
 KlassInfoTable::~KlassInfoTable() {
-  for (int index = 0; index < _size; index++) {
-    _buckets[index].empty();
+  if (_buckets != NULL) {
+    for (int index = 0; index < _size; index++) {
+      _buckets[index].empty();
+    }
+    FREE_C_HEAP_ARRAY(KlassInfoBucket, _buckets);
+    _size = 0;
   }
-  FREE_C_HEAP_ARRAY(KlassInfoBucket, _buckets);
-  _size = 0;
 }
 
 uint KlassInfoTable::hash(klassOop p) {
@@ -127,19 +134,32 @@ uint KlassInfoTable::hash(klassOop p) {
 
 KlassInfoEntry* KlassInfoTable::lookup(const klassOop k) {
   uint         idx = hash(k) % _size;
+  assert(_buckets != NULL, "Allocation failure should have been caught");
   KlassInfoEntry*  e   = _buckets[idx].lookup(k);
-  assert(k == e->klass(), "must be equal");
+  // Lookup may fail if this is a new klass for which we
+  // could not allocate space for an new entry.
+  assert(e == NULL || k == e->klass(), "must be equal");
   return e;
 }
 
-void KlassInfoTable::record_instance(const oop obj) {
+// Return false if the entry could not be recorded on account
+// of running out of space required to create a new entry.
+bool KlassInfoTable::record_instance(const oop obj) {
   klassOop      k = obj->klass();
   KlassInfoEntry* elt = lookup(k);
-  elt->set_count(elt->count() + 1);
-  elt->set_words(elt->words() + obj->size());
+  // elt may be NULL if it's a new klass for which we
+  // could not allocate space for a new entry in the hashtable.
+  if (elt != NULL) {
+    elt->set_count(elt->count() + 1);
+    elt->set_words(elt->words() + obj->size());
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void KlassInfoTable::iterate(KlassInfoClosure* cic) {
+  assert(_size == 0 || _buckets != NULL, "Allocation failure should have been caught");
   for (int index = 0; index < _size; index++) {
     _buckets[index].iterate(cic);
   }
@@ -176,7 +196,7 @@ void KlassInfoHisto::print_elements(outputStream* st) const {
     total += elements()->at(i)->count();
     totalw += elements()->at(i)->words();
   }
-  st->print_cr("Total %13" FORMAT64_MODIFIER "d  %13" FORMAT64_MODIFIER "u",
+  st->print_cr("Total " INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13),
                total, totalw * HeapWordSize);
 }
 
@@ -199,12 +219,18 @@ class HistoClosure : public KlassInfoClosure {
 class RecordInstanceClosure : public ObjectClosure {
  private:
   KlassInfoTable* _cit;
+  size_t _missed_count;
  public:
-  RecordInstanceClosure(KlassInfoTable* cit) : _cit(cit) {}
+  RecordInstanceClosure(KlassInfoTable* cit) :
+    _cit(cit), _missed_count(0) {}
 
   void do_object(oop obj) {
-    _cit->record_instance(obj);
+    if (!_cit->record_instance(obj)) {
+      _missed_count++;
+    }
   }
+
+  size_t missed_count() { return _missed_count; }
 };
 
 void HeapInspection::heap_inspection(outputStream* st) {
@@ -230,21 +256,32 @@ void HeapInspection::heap_inspection(outputStream* st) {
       ShouldNotReachHere(); // Unexpected heap kind for this op
   }
   // Collect klass instance info
-
-  // Iterate over objects in the heap
   KlassInfoTable cit(KlassInfoTable::cit_size, ref);
-  RecordInstanceClosure ric(&cit);
-  Universe::heap()->object_iterate(&ric);
+  if (!cit.allocation_failed()) {
+    // Iterate over objects in the heap
+    RecordInstanceClosure ric(&cit);
+    Universe::heap()->object_iterate(&ric);
 
-  // Sort and print klass instance info
-  KlassInfoHisto histo("\n"
-                   " num     #instances         #bytes  class name\n"
-                   "----------------------------------------------",
-                   KlassInfoHisto::histo_initial_size);
-  HistoClosure hc(&histo);
-  cit.iterate(&hc);
-  histo.sort();
-  histo.print_on(st);
+    // Report if certain classes are not counted because of
+    // running out of C-heap for the histogram.
+    size_t missed_count = ric.missed_count();
+    if (missed_count != 0) {
+      st->print_cr("WARNING: Ran out of C-heap; undercounted " SIZE_FORMAT
+                   " total instances in data below",
+                   missed_count);
+    }
+    // Sort and print klass instance info
+    KlassInfoHisto histo("\n"
+                     " num     #instances         #bytes  class name\n"
+                     "----------------------------------------------",
+                     KlassInfoHisto::histo_initial_size);
+    HistoClosure hc(&histo);
+    cit.iterate(&hc);
+    histo.sort();
+    histo.print_on(st);
+  } else {
+    st->print_cr("WARNING: Ran out of C-heap; histogram not generated");
+  }
   st->flush();
 
   if (Universe::heap()->kind() == CollectedHeap::GenCollectedHeap) {

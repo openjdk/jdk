@@ -1835,7 +1835,7 @@ void CompactibleFreeListSpace::object_iterate_since_last_GC(ObjectClosure* cl) {
   guarantee(false, "NYI");
 }
 
-bool CompactibleFreeListSpace::linearAllocationWouldFail() {
+bool CompactibleFreeListSpace::linearAllocationWouldFail() const {
   return _smallLinearAllocBlock._word_size == 0;
 }
 
@@ -1904,6 +1904,13 @@ CompactibleFreeListSpace::refillLinearAllocBlock(LinearAllocBlock* blk) {
     blk->_word_size = fc->size();
     fc->dontCoalesce();   // to prevent sweeper from sweeping us up
   }
+}
+
+// Support for concurrent collection policy decisions.
+bool CompactibleFreeListSpace::should_concurrent_collect() const {
+  // In the future we might want to add in frgamentation stats --
+  // including erosion of the "mountain" into this decision as well.
+  return !adaptive_freelists() && linearAllocationWouldFail();
 }
 
 // Support for compaction
@@ -2013,11 +2020,11 @@ void CompactibleFreeListSpace::clearFLCensus() {
   }
 }
 
-void CompactibleFreeListSpace::endSweepFLCensus(int sweepCt) {
+void CompactibleFreeListSpace::endSweepFLCensus(size_t sweep_count) {
   setFLSurplus();
   setFLHints();
   if (PrintGC && PrintFLSCensus > 0) {
-    printFLCensus(sweepCt);
+    printFLCensus(sweep_count);
   }
   clearFLCensus();
   assert_locked();
@@ -2293,59 +2300,37 @@ void CompactibleFreeListSpace::checkFreeListConsistency() const {
 }
 #endif
 
-void CompactibleFreeListSpace::printFLCensus(int sweepCt) const {
+void CompactibleFreeListSpace::printFLCensus(size_t sweep_count) const {
   assert_lock_strong(&_freelistLock);
-  ssize_t bfrSurp     = 0;
-  ssize_t surplus     = 0;
-  ssize_t desired     = 0;
-  ssize_t prevSweep   = 0;
-  ssize_t beforeSweep = 0;
-  ssize_t count       = 0;
-  ssize_t coalBirths  = 0;
-  ssize_t coalDeaths  = 0;
-  ssize_t splitBirths = 0;
-  ssize_t splitDeaths = 0;
-  gclog_or_tty->print("end sweep# %d\n", sweepCt);
-  gclog_or_tty->print("%4s\t"    "%7s\t"      "%7s\t"      "%7s\t"      "%7s\t"
-             "%7s\t"    "%7s\t"      "%7s\t"      "%7s\t"      "%7s\t"
-             "%7s\t"    "\n",
-             "size",    "bfrsurp",   "surplus",   "desired",   "prvSwep",
-             "bfrSwep", "count",     "cBirths",   "cDeaths",   "sBirths",
-             "sDeaths");
-
+  FreeList total;
+  gclog_or_tty->print("end sweep# " SIZE_FORMAT "\n", sweep_count);
+  FreeList::print_labels_on(gclog_or_tty, "size");
   size_t totalFree = 0;
   for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
     const FreeList *fl = &_indexedFreeList[i];
-        totalFree += fl->count() * fl->size();
-
-    gclog_or_tty->print("%4d\t"          "%7d\t"             "%7d\t"        "%7d\t"
-               "%7d\t"          "%7d\t"             "%7d\t"        "%7d\t"
-               "%7d\t"          "%7d\t"             "%7d\t"        "\n",
-               fl->size(),       fl->bfrSurp(),     fl->surplus(), fl->desired(),
-               fl->prevSweep(),  fl->beforeSweep(), fl->count(),   fl->coalBirths(),
-               fl->coalDeaths(), fl->splitBirths(), fl->splitDeaths());
-    bfrSurp     += fl->bfrSurp();
-    surplus     += fl->surplus();
-    desired     += fl->desired();
-    prevSweep   += fl->prevSweep();
-    beforeSweep += fl->beforeSweep();
-    count       += fl->count();
-    coalBirths  += fl->coalBirths();
-    coalDeaths  += fl->coalDeaths();
-    splitBirths += fl->splitBirths();
-    splitDeaths += fl->splitDeaths();
+    totalFree += fl->count() * fl->size();
+    if (i % (40*IndexSetStride) == 0) {
+      FreeList::print_labels_on(gclog_or_tty, "size");
+    }
+    fl->print_on(gclog_or_tty);
+    total.set_bfrSurp(    total.bfrSurp()     + fl->bfrSurp()    );
+    total.set_surplus(    total.surplus()     + fl->surplus()    );
+    total.set_desired(    total.desired()     + fl->desired()    );
+    total.set_prevSweep(  total.prevSweep()   + fl->prevSweep()  );
+    total.set_beforeSweep(total.beforeSweep() + fl->beforeSweep());
+    total.set_count(      total.count()       + fl->count()      );
+    total.set_coalBirths( total.coalBirths()  + fl->coalBirths() );
+    total.set_coalDeaths( total.coalDeaths()  + fl->coalDeaths() );
+    total.set_splitBirths(total.splitBirths() + fl->splitBirths());
+    total.set_splitDeaths(total.splitDeaths() + fl->splitDeaths());
   }
-  gclog_or_tty->print("%4s\t"
-            "%7d\t"      "%7d\t"     "%7d\t"        "%7d\t"       "%7d\t"
-            "%7d\t"      "%7d\t"     "%7d\t"        "%7d\t"       "%7d\t" "\n",
-            "totl",
-            bfrSurp,     surplus,     desired,     prevSweep,     beforeSweep,
-            count,       coalBirths,  coalDeaths,  splitBirths,   splitDeaths);
-  gclog_or_tty->print_cr("Total free in indexed lists %d words", totalFree);
+  total.print_on(gclog_or_tty, "TOTAL");
+  gclog_or_tty->print_cr("Total free in indexed lists "
+                         SIZE_FORMAT " words", totalFree);
   gclog_or_tty->print("growth: %8.5f  deficit: %8.5f\n",
-    (double)(splitBirths+coalBirths-splitDeaths-coalDeaths)/
-            (prevSweep != 0 ? (double)prevSweep : 1.0),
-    (double)(desired - count)/(desired != 0 ? (double)desired : 1.0));
+    (double)(total.splitBirths()+total.coalBirths()-total.splitDeaths()-total.coalDeaths())/
+            (total.prevSweep() != 0 ? (double)total.prevSweep() : 1.0),
+    (double)(total.desired() - total.count())/(total.desired() != 0 ? (double)total.desired() : 1.0));
   _dictionary->printDictCensus();
 }
 
