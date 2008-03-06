@@ -410,6 +410,7 @@ domgraph.cpp                            vectset.hpp
 
 escape.cpp                              allocation.hpp
 escape.cpp                              bcEscapeAnalyzer.hpp
+escape.cpp                              c2compiler.hpp
 escape.cpp                              callnode.hpp
 escape.cpp                              cfgnode.hpp
 escape.cpp                              compile.hpp
