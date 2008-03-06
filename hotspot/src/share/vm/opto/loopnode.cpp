@@ -1561,7 +1561,7 @@ PhaseIdealLoop::PhaseIdealLoop( PhaseIterGVN &igvn, const PhaseIdealLoop *verify
       // on just their loop-phi's for this pass of loop opts
       if( SplitIfBlocks && do_split_ifs ) {
         if (lpt->policy_range_check(this)) {
-          lpt->_rce_candidate = true;
+          lpt->_rce_candidate = 1; // = true
         }
       }
     }
@@ -2145,7 +2145,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
     // as well?  If so, then I found another entry into the loop.
     while( is_postvisited(l->_head) ) {
       // found irreducible
-      l->_irreducible = true;
+      l->_irreducible = 1; // = true
       l = l->_parent;
       _has_irreducible_loops = true;
       // Check for bad CFG here to prevent crash, and bailout of compile
@@ -2199,6 +2199,12 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
               (iff->as_If()->_prob >= 0.01) )
             innermost->_has_call = 1;
         }
+      } else if( n->is_Allocate() && n->as_Allocate()->_is_scalar_replaceable ) {
+        // Disable loop optimizations if the loop has a scalar replaceable
+        // allocation. This disabling may cause a potential performance lost
+        // if the allocation is not eliminated for some reason.
+        innermost->_allow_optimizations = false;
+        innermost->_has_call = 1; // = true
       }
     }
   }

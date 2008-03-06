@@ -626,6 +626,8 @@ public:
     return TypeFunc::make(domain, range);
   }
 
+  bool _is_scalar_replaceable;  // Result of Escape Analysis
+
   virtual uint size_of() const; // Size is bigger
   AllocateNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
                Node *size, Node *klass_node, Node *initial_test);
