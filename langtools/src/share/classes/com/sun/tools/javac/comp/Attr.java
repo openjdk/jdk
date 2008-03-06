@@ -1609,17 +1609,10 @@ public class Attr extends JCTree.Visitor {
                               tree.getTag() - JCTree.ASGOffset,
                               owntype,
                               operand);
-            if (types.isSameType(operator.type.getReturnType(), syms.stringType)) {
-                // String assignment; make sure the lhs is a string
-                chk.checkType(tree.lhs.pos(),
-                              owntype,
-                              syms.stringType);
-            } else {
-                chk.checkDivZero(tree.rhs.pos(), operator, operand);
-                chk.checkCastable(tree.rhs.pos(),
-                                  operator.type.getReturnType(),
-                                  owntype);
-            }
+            chk.checkDivZero(tree.rhs.pos(), operator, operand);
+            chk.checkCastable(tree.rhs.pos(),
+                              operator.type.getReturnType(),
+                              owntype);
         }
         result = check(tree, owntype, VAL, pkind, pt);
     }
