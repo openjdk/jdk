@@ -93,7 +93,6 @@ public final class FontManager {
      */
     private static final int CHANNELPOOLSIZE = 20;
     private static int lastPoolIndex = 0;
-    private static int poolSize = 0;
     private static FileFont fontFileCache[] = new FileFont[CHANNELPOOLSIZE];
 
     /* Need to implement a simple linked list scheme for fast
@@ -283,35 +282,51 @@ public final class FontManager {
     private static native void initIDs();
 
     public static void addToPool(FileFont font) {
-        boolean added = false;
+
+        FileFont fontFileToClose = null;
+        int freeSlot = -1;
+
         synchronized (fontFileCache) {
-            /* use poolSize to quickly detect if there's any free slots.
-             * This is a performance tweak based on the assumption that
-             * if this is executed at all often, its because there are many
-             * fonts being used and the pool will be full, and we will save
-             * a fruitless iteration
+            /* Avoid duplicate entries in the pool, and don't close() it,
+             * since this method is called only from within open().
+             * Seeing a duplicate is most likely to happen if the thread
+             * was interrupted during a read, forcing perhaps repeated
+             * close and open calls and it eventually it ends up pointing
+             * at the same slot.
              */
-            if (poolSize < CHANNELPOOLSIZE) {
-                for (int i=0; i<CHANNELPOOLSIZE; i++) {
-                    if (fontFileCache[i] == null) {
-                        fontFileCache[i] = font;
-                        poolSize++;
-                        added = true;
-                        break;
-                    }
+            for (int i=0;i<CHANNELPOOLSIZE;i++) {
+                if (fontFileCache[i] == font) {
+                    return;
                 }
-                assert added;
+                if (fontFileCache[i] == null && freeSlot < 0) {
+                    freeSlot = i;
+                }
+            }
+            if (freeSlot >= 0) {
+                fontFileCache[freeSlot] = font;
+                return;
             } else {
-                // is it possible for this to be the same font?
-                assert fontFileCache[lastPoolIndex] != font;
-                /* replace with new font,  poolSize is unchanged. */
-                fontFileCache[lastPoolIndex].close();
+                /* replace with new font. */
+                fontFileToClose = fontFileCache[lastPoolIndex];
                 fontFileCache[lastPoolIndex] = font;
                 /* lastPoolIndex is updated so that the least recently opened
                  * file will be closed next.
                  */
                 lastPoolIndex = (lastPoolIndex+1) % CHANNELPOOLSIZE;
             }
+        }
+        /* Need to close the font file outside of the synchronized block,
+         * since its possible some other thread is in an open() call on
+         * this font file, and could be holding its lock and the pool lock.
+         * Releasing the pool lock allows that thread to continue, so it can
+         * then release the lock on this font, allowing the close() call
+         * below to proceed.
+         * Also, calling close() is safe because any other thread using
+         * the font we are closing() synchronizes all reading, so we
+         * will not close the file while its in use.
+         */
+        if (fontFileToClose != null) {
+            fontFileToClose.close();
         }
     }
 
@@ -334,7 +349,6 @@ public final class FontManager {
             for (int i=0; i<CHANNELPOOLSIZE; i++) {
                 if (fontFileCache[i] == font) {
                     fontFileCache[i] = null;
-                    poolSize--;
                 }
             }
         }
