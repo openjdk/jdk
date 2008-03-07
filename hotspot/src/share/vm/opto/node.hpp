@@ -1384,7 +1384,7 @@ public:
     _inode_top->indx = i;
   }
   uint size_max() const { return (uint)pointer_delta(_inode_max, _inodes,  sizeof(INode)); } // Max size
-  uint size() const { return (uint)pointer_delta(_inode_top, _inodes,  sizeof(INode)) + 1; } // Current size
+  uint size() const { return (uint)pointer_delta((_inode_top+1), _inodes,  sizeof(INode)); } // Current size
   bool is_nonempty() const { return (_inode_top >= _inodes); }
   bool is_empty() const { return (_inode_top < _inodes); }
   void clear() { _inode_top = _inodes - 1; } // retain storage
