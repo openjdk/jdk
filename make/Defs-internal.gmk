@@ -151,8 +151,6 @@ ifdef OPENJDK
 else
   ifndef SKIP_OPENJDK_BUILD
     SKIP_OPENJDK_BUILD = false
-    # FIXUP: until freetype fixed on linux and solaris rmi build fixed
-    SKIP_OPENJDK_BUILD = true
   endif
 endif
 
