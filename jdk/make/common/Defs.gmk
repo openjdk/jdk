@@ -41,7 +41,15 @@
 SUN_MAKE_TEST:sh = echo "ERROR: PLEASE USE GNU VERSION OF MAKE"; exit 33
 
 ifndef JDK_TOPDIR
-  JDK_TOPDIR=$(BUILDDIR)/..
+  ifdef BUILDDIR
+    JDK_TOPDIR=$(BUILDDIR)/..
+  else
+    JDK_TOPDIR:=$(error "ERROR: Cannot define top of jdk repository")
+  endif
+endif
+ifndef BUILDDIR
+  # Hack, due to deploy repository using this file.
+  BUILDDIR=$(JDK_TOPDIR)/make
 endif
 ifndef JDK_MAKE_SHARED_DIR
   JDK_MAKE_SHARED_DIR=$(JDK_TOPDIR)/make/common/shared
