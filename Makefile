@@ -23,6 +23,8 @@
 # have any questions.
 #
 
+BUILD_PARENT_DIRECTORY=.
+
 ifndef TOPDIR
   TOPDIR:=$(shell \
     if [ -r ./j2se/make/Makefile -o -r ./jdk/make/Makefile ]; then \
@@ -66,6 +68,7 @@ include ./make/Defs-internal.gmk
 
 all::
 	@$(ECHO) $(PLATFORM) $(ARCH) $(RELEASE) build started: `$(DATE) '+%y-%m-%d %H:%M'`
+	$(MKDIR) -p $(OUTPUTDIR)
 
 # Rules for sanity checks
 include ./make/sanity-rules.gmk
@@ -94,12 +97,9 @@ all:: setup build
 
 setup: openjdk_check
 	$(MKDIR) -p $(OUTPUTDIR)/j2sdk-image
-	$(MKDIR) -p $(ABS_OUTPUTDIR)/j2sdk-image
-	$(MKDIR) -p $(OUTPUTDIR)-fastdebug/j2sdk-image
-	$(MKDIR) -p $(ABS_OUTPUTDIR)-fastdebug/j2sdk-image
 
 # Check on whether we really can build the openjdk, need source etc.
-openjdk_check:
+openjdk_check: FRC
 ifneq ($(SKIP_OPENJDK_BUILD), true)
 	@$(ECHO) " "
 	@$(ECHO) "================================================="
@@ -170,7 +170,7 @@ endif
 
 COMMON_DEBUG_FLAGS= \
 	DEBUG_NAME=$(DEBUG_NAME) \
-	ALT_OUTPUTDIR=$(_OUTPUTDIR)-$(DEBUG_NAME) \
+	ALT_OUTPUTDIR=$(ABS_OUTPUTDIR)-$(DEBUG_NAME) \
 	NO_DOCS=true
 
 product_build: setup
@@ -500,4 +500,7 @@ include ./make/jprt.gmk
 # FIXUP: Old j2se targets
 j2se_fastdebug_only: jdk_fastdebug_only
 j2se_only: jdk_only
+
+# Force target
+FRC:
 
