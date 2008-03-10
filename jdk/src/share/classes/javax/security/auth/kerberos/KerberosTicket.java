@@ -276,7 +276,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
 
         if (flags != null) {
            if (flags.length >= NUM_FLAGS)
-                this.flags = (boolean[]) flags.clone();
+                this.flags = flags.clone();
            else {
                 this.flags = new boolean[NUM_FLAGS];
                 // Fill in whatever we have
@@ -304,7 +304,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
         this.endTime = endTime;
 
         if (clientAddresses != null)
-           this.clientAddresses = (InetAddress[]) clientAddresses.clone();
+           this.clientAddresses = clientAddresses.clone();
     }
 
     /**
@@ -430,7 +430,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * @return the flags associated with this ticket.
      */
     public final boolean[]  getFlags() {
-        return (flags == null? null: (boolean[]) flags.clone());
+        return (flags == null? null: flags.clone());
     }
 
     /**
@@ -479,8 +479,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * provided.
      */
     public final java.net.InetAddress[] getClientAddresses() {
-        return (clientAddresses == null?
-                null: (InetAddress[]) clientAddresses.clone());
+        return (clientAddresses == null) ? null: clientAddresses.clone();
     }
 
     /**
@@ -491,7 +490,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
     public final byte[] getEncoded() {
         if (destroyed)
             throw new IllegalStateException("This ticket is no longer valid");
-        return (byte[]) asn1Encoding.clone();
+        return asn1Encoding.clone();
     }
 
     /** Determines if this ticket is still current.  */

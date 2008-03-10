@@ -701,7 +701,7 @@ public class IdentityHashMap<K,V>
         try {
             IdentityHashMap<K,V> m = (IdentityHashMap<K,V>) super.clone();
             m.entrySet = null;
-            m.table = (Object[])table.clone();
+            m.table = table.clone();
             return m;
         } catch (CloneNotSupportedException e) {
             throw new InternalError();
@@ -975,7 +975,7 @@ public class IdentityHashMap<K,V>
          */
         public boolean removeAll(Collection<?> c) {
             boolean modified = false;
-            for (Iterator i = iterator(); i.hasNext(); ) {
+            for (Iterator<K> i = iterator(); i.hasNext(); ) {
                 if (c.contains(i.next())) {
                     i.remove();
                     modified = true;
@@ -1033,7 +1033,7 @@ public class IdentityHashMap<K,V>
             return containsValue(o);
         }
         public boolean remove(Object o) {
-            for (Iterator i = iterator(); i.hasNext(); ) {
+            for (Iterator<V> i = iterator(); i.hasNext(); ) {
                 if (i.next() == o) {
                     i.remove();
                     return true;
@@ -1121,7 +1121,7 @@ public class IdentityHashMap<K,V>
          */
         public boolean removeAll(Collection<?> c) {
             boolean modified = false;
-            for (Iterator i = iterator(); i.hasNext(); ) {
+            for (Iterator<Map.Entry<K,V>> i = iterator(); i.hasNext(); ) {
                 if (c.contains(i.next())) {
                     i.remove();
                     modified = true;
