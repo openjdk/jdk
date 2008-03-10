@@ -194,8 +194,7 @@ class StringCoding {
 
     static char[] decode(Charset cs, byte[] ba, int off, int len) {
         StringDecoder sd = new StringDecoder(cs, cs.name());
-        byte[] b = Arrays.copyOf(ba, ba.length);
-        return sd.decode(b, off, len);
+        return sd.decode(Arrays.copyOfRange(ba, off, off + len), 0, len);
     }
 
     static char[] decode(byte[] ba, int off, int len) {
@@ -293,8 +292,7 @@ class StringCoding {
 
     static byte[] encode(Charset cs, char[] ca, int off, int len) {
         StringEncoder se = new StringEncoder(cs, cs.name());
-        char[] c = Arrays.copyOf(ca, ca.length);
-        return se.encode(c, off, len);
+        return se.encode(Arrays.copyOfRange(ca, off, off + len), 0, len);
     }
 
     static byte[] encode(char[] ca, int off, int len) {
