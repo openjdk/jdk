@@ -444,24 +444,6 @@ handleSetLength(jlong fd, jlong length) {
     return 0;
 }
 
-int
-handleFileSizeFD(jlong fd, jlong *size)
-{
-    DWORD sizeLow = 0;
-    DWORD sizeHigh = 0;
-    HANDLE h = (HANDLE)fd;
-    if (h == INVALID_HANDLE_VALUE) {
-        return -1;
-    }
-    sizeLow = GetFileSize(h, &sizeHigh);
-    if (sizeLow == ((DWORD)-1)) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            return -1;
-        }
-    }
-    return (((jlong)sizeHigh) << 32) | sizeLow;
-}
-
 JNIEXPORT
 size_t
 handleRead(jlong fd, void *buf, jint len)
