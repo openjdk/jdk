@@ -95,7 +95,7 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
     fd = GET_FD(this, fid);
     if (fd == -1) {
         JNU_ThrowIOException(env, "Stream Closed");
-        return  -1;
+        return -1;
     }
 
     nread = IO_Read(fd, buf, len);

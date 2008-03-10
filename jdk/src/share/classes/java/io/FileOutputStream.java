@@ -58,8 +58,6 @@ class FileOutputStream extends OutputStream
 
     private FileChannel channel= null;
 
-    private boolean append = false;
-
     private final Object closeLock = new Object();
     private volatile boolean closed = false;
     private static final ThreadLocal<Boolean> runningFinalize =
@@ -200,12 +198,7 @@ class FileOutputStream extends OutputStream
         }
         fd = new FileDescriptor();
         fd.incrementAndGetUseCount();
-        this.append = append;
-        if (append) {
-            openAppend(name);
-        } else {
-            open(name);
-        }
+        open(name, append);
     }
 
     /**
@@ -250,16 +243,12 @@ class FileOutputStream extends OutputStream
     }
 
     /**
-     * Opens a file, with the specified name, for writing.
+     * Opens a file, with the specified name, for overwriting or appending.
      * @param name name of file to be opened
+     * @param append whether the file is to be opened in append mode
      */
-    private native void open(String name) throws FileNotFoundException;
-
-    /**
-     * Opens a file, with the specified name, for appending.
-     * @param name name of file to be opened
-     */
-    private native void openAppend(String name) throws FileNotFoundException;
+    private native void open(String name, boolean append)
+        throws FileNotFoundException;
 
     /**
      * Writes the specified byte to this file output stream. Implements
@@ -383,7 +372,7 @@ class FileOutputStream extends OutputStream
     public FileChannel getChannel() {
         synchronized (this) {
             if (channel == null) {
-                channel = FileChannelImpl.open(fd, false, true, this, append);
+                channel = FileChannelImpl.open(fd, false, true, this);
 
                 /*
                  * Increment fd's use count. Invoking the channel's close()
