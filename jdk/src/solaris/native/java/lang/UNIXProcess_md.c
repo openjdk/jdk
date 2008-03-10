@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -491,10 +491,8 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
                                        jbyteArray argBlock, jint argc,
                                        jbyteArray envBlock, jint envc,
                                        jbyteArray dir,
-                                       jboolean redirectErrorStream,
-                                       jobject stdin_fd,
-                                       jobject stdout_fd,
-                                       jobject stderr_fd)
+                                       jintArray std_fds,
+                                       jboolean redirectErrorStream)
 {
     int errnum;
     int resultPid = -1;
@@ -505,6 +503,7 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
     const char *pargBlock = getBytes(env, argBlock);
     const char *penvBlock = getBytes(env, envBlock);
     const char *pdir      = getBytes(env, dir);
+    jint *fds = NULL;
 
     in[0] = in[1] = out[0] = out[1] = err[0] = err[1] = fail[0] = fail[1] = -1;
 
@@ -527,9 +526,13 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
         initVectorFromBlock(envv, penvBlock, envc);
     }
 
-    if ((pipe(in)   < 0) ||
-        (pipe(out)  < 0) ||
-        (pipe(err)  < 0) ||
+    assert(std_fds != NULL);
+    fds = (*env)->GetIntArrayElements(env, std_fds, NULL);
+    if (fds == NULL) goto Catch;
+
+    if ((fds[0] == -1 && pipe(in)  < 0) ||
+        (fds[1] == -1 && pipe(out) < 0) ||
+        (fds[2] == -1 && pipe(err) < 0) ||
         (pipe(fail) < 0)) {
         throwIOException(env, errno, "Bad file descriptor");
         goto Catch;
@@ -544,23 +547,26 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
     if (resultPid == 0) {
         /* Child process */
 
-        /* Close the parent sides of the pipe.
-           Give the child sides of the pipes the right fileno's.
+        /* Close the parent sides of the pipes.
            Closing pipe fds here is redundant, since closeDescriptors()
            would do it anyways, but a little paranoia is a good thing. */
+        closeSafely(in[1]);
+        closeSafely(out[0]);
+        closeSafely(err[0]);
+        closeSafely(fail[0]);
+
+        /* Give the child sides of the pipes the right fileno's. */
         /* Note: it is possible for in[0] == 0 */
-        close(in[1]);
-        moveDescriptor(in[0], STDIN_FILENO);
-        close(out[0]);
-        moveDescriptor(out[1], STDOUT_FILENO);
-        close(err[0]);
+        moveDescriptor(in[0] != -1 ?  in[0] : fds[0], STDIN_FILENO);
+        moveDescriptor(out[1]!= -1 ? out[1] : fds[1], STDOUT_FILENO);
+
         if (redirectErrorStream) {
-            close(err[1]);
+            closeSafely(err[1]);
             dup2(STDOUT_FILENO, STDERR_FILENO);
         } else {
-            moveDescriptor(err[1], STDERR_FILENO);
+            moveDescriptor(err[1] != -1 ? err[1] : fds[2], STDERR_FILENO);
         }
-        close(fail[0]);
+
         moveDescriptor(fail[1], FAIL_FILENO);
 
         /* close everything */
@@ -606,9 +612,9 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
         goto Catch;
     }
 
-    (*env)->SetIntField(env, stdin_fd,  IO_fd_fdID, in [1]);
-    (*env)->SetIntField(env, stdout_fd, IO_fd_fdID, out[0]);
-    (*env)->SetIntField(env, stderr_fd, IO_fd_fdID, err[0]);
+    fds[0] = (in [1] != -1) ? in [1] : -1;
+    fds[1] = (out[0] != -1) ? out[0] : -1;
+    fds[2] = (err[0] != -1) ? err[0] : -1;
 
  Finally:
     /* Always clean up the child's side of the pipes */
@@ -627,6 +633,9 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
     releaseBytes(env, argBlock, pargBlock);
     releaseBytes(env, envBlock, penvBlock);
     releaseBytes(env, dir,      pdir);
+
+    if (fds != NULL)
+        (*env)->ReleaseIntArrayElements(env, std_fds, fds, 0);
 
     return resultPid;
 
