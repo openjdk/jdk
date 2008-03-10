@@ -95,11 +95,8 @@ public class ClassTypeImpl extends ReferenceTypeImpl
     }
 
     public List<ClassType> subclasses() {
-        List<ReferenceType> all = vm.allClasses();
         List<ClassType> subs = new ArrayList<ClassType>();
-        Iterator iter = all.iterator();
-        while (iter.hasNext()) {
-            ReferenceType refType = (ReferenceType)iter.next();
+        for (ReferenceType refType : vm.allClasses()) {
             if (refType instanceof ClassType) {
                 ClassType clazz = (ClassType)refType;
                 ClassType superclass = clazz.superclass();
@@ -223,7 +220,7 @@ public class ClassTypeImpl extends ReferenceTypeImpl
 
         List<? extends Value> arguments = method.validateAndPrepareArgumentsForInvoke(origArguments);
 
-        ValueImpl[] args = (ValueImpl[])arguments.toArray(new ValueImpl[0]);
+        ValueImpl[] args = arguments.toArray(new ValueImpl[0]);
         JDWP.ClassType.InvokeMethod ret;
         try {
             PacketStream stream =
@@ -271,7 +268,7 @@ public class ClassTypeImpl extends ReferenceTypeImpl
 
         List<Value> arguments = method.validateAndPrepareArgumentsForInvoke(
                                                        origArguments);
-        ValueImpl[] args = (ValueImpl[])arguments.toArray(new ValueImpl[0]);
+        ValueImpl[] args = arguments.toArray(new ValueImpl[0]);
         JDWP.ClassType.NewInstance ret = null;
         try {
             PacketStream stream =
@@ -301,11 +298,8 @@ public class ClassTypeImpl extends ReferenceTypeImpl
     }
 
     public Method concreteMethodByName(String name, String signature)  {
-       List methods = visibleMethods();
        Method method = null;
-       Iterator iter = methods.iterator();
-       while (iter.hasNext()) {
-           Method candidate = (Method)iter.next();
+       for (Method candidate : visibleMethods()) {
            if (candidate.name().equals(name) &&
                candidate.signature().equals(signature) &&
                !candidate.isAbstract()) {
@@ -330,9 +324,7 @@ public class ClassTypeImpl extends ReferenceTypeImpl
          * Avoid duplicate checking on each method by iterating through
          * duplicate-free allInterfaces() rather than recursing
          */
-        Iterator iter = allInterfaces().iterator();
-        while (iter.hasNext()) {
-            InterfaceType interfaze = (InterfaceType)iter.next();
+        for (InterfaceType interfaze : allInterfaces()) {
             list.addAll(interfaze.methods());
         }
 

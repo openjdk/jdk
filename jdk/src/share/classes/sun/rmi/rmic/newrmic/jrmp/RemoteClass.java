@@ -121,7 +121,7 @@ final class RemoteClass {
      * in the array).
      **/
     ClassDoc[] remoteInterfaces() {
-        return (ClassDoc[]) remoteInterfaces.clone();
+        return remoteInterfaces.clone();
     }
 
     /**
@@ -136,7 +136,7 @@ final class RemoteClass {
      * stub/skeleton protocol.
      **/
     Method[] remoteMethods() {
-        return (Method[]) remoteMethods.clone();
+        return remoteMethods.clone();
     }
 
     /**
@@ -559,7 +559,7 @@ final class RemoteClass {
          * methods that can be legally thrown by all of them.
          **/
         ClassDoc[] exceptionTypes() {
-            return (ClassDoc[]) exceptionTypes.clone();
+            return exceptionTypes.clone();
         }
 
         /**

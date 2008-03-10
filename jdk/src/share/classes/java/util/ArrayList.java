@@ -892,7 +892,7 @@ public class ArrayList<E> extends AbstractList<E>
         private final AbstractList<E> parent;
         private final int parentOffset;
         private final int offset;
-        private int size;
+        int size;
 
         SubList(AbstractList<E> parent,
                 int offset, int fromIndex, int toIndex) {
@@ -971,6 +971,7 @@ public class ArrayList<E> extends AbstractList<E>
         public ListIterator<E> listIterator(final int index) {
             checkForComodification();
             rangeCheckForAdd(index);
+            final int offset = this.offset;
 
             return new ListIterator<E>() {
                 int cursor = index;

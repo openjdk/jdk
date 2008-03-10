@@ -38,7 +38,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Stephen R. Pietrowicz (NCSA)
  * @author Dave Brown
  */
-public class KeepAliveCache extends ConcurrentHashMap implements Runnable {
+public class KeepAliveCache
+    extends ConcurrentHashMap<KeepAliveKey, ClientVector>
+    implements Runnable {
     private static final long serialVersionUID = -2937172892064557949L;
 
     /* maximum # keep-alive connections to maintain at once
@@ -88,12 +90,12 @@ public class KeepAliveCache extends ConcurrentHashMap implements Runnable {
              * back from the server.  If I'm connected through a Netscape proxy
              * to a server that sent me a keep-alive
              * time of 15 sec, the proxy unilaterally terminates my connection
-             * The robustness to to get around this is in HttpClient.parseHTTP()
+             * The robustness to get around this is in HttpClient.parseHTTP()
              */
             final KeepAliveCache cache = this;
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
-                public Object run() {
+                new java.security.PrivilegedAction<Void>() {
+                public Void run() {
                    // We want to create the Keep-Alive-Timer in the
                     // system threadgroup
                     ThreadGroup grp = Thread.currentThread().getThreadGroup();
@@ -112,7 +114,7 @@ public class KeepAliveCache extends ConcurrentHashMap implements Runnable {
         }
 
         KeepAliveKey key = new KeepAliveKey(url, obj);
-        ClientVector v = (ClientVector)super.get(key);
+        ClientVector v = super.get(key);
 
         if (v == null) {
             int keepAliveTimeout = http.getKeepAliveTimeout();
@@ -125,10 +127,10 @@ public class KeepAliveCache extends ConcurrentHashMap implements Runnable {
         }
     }
 
-    /* remove an obsolete HttpClient from it's VectorCache */
+    /* remove an obsolete HttpClient from its VectorCache */
     public synchronized void remove (HttpClient h, Object obj) {
         KeepAliveKey key = new KeepAliveKey(h.url, obj);
-        ClientVector v = (ClientVector)super.get(key);
+        ClientVector v = super.get(key);
         if (v != null) {
             v.remove(h);
             if (v.empty()) {
@@ -137,7 +139,7 @@ public class KeepAliveCache extends ConcurrentHashMap implements Runnable {
         }
     }
 
-    /* called by a clientVector thread when all it's connections have timed out
+    /* called by a clientVector thread when all its connections have timed out
      * and that vector of connections should be removed.
      */
     synchronized void removeVector(KeepAliveKey k) {
@@ -147,10 +149,10 @@ public class KeepAliveCache extends ConcurrentHashMap implements Runnable {
     /**
      * Check to see if this URL has a cached HttpClient
      */
-    public synchronized Object get(URL url, Object obj) {
+    public synchronized HttpClient get(URL url, Object obj) {
 
         KeepAliveKey key = new KeepAliveKey(url, obj);
-        ClientVector v = (ClientVector)super.get(key);
+        ClientVector v = super.get(key);
         if (v == null) { // nothing in cache yet
             return null;
         }
@@ -180,17 +182,16 @@ public class KeepAliveCache extends ConcurrentHashMap implements Runnable {
 
                 long currentTime = System.currentTimeMillis();
 
-                Iterator itr = keySet().iterator();
-                ArrayList keysToRemove = new ArrayList();
+                ArrayList<KeepAliveKey> keysToRemove
+                    = new ArrayList<KeepAliveKey>();
 
-                while (itr.hasNext()) {
-                    KeepAliveKey key = (KeepAliveKey)itr.next();
-                    ClientVector v = (ClientVector)get(key);
+                for (KeepAliveKey key : keySet()) {
+                    ClientVector v = get(key);
                     synchronized (v) {
                         int i;
 
                         for (i = 0; i < v.size(); i++) {
-                            KeepAliveEntry e = (KeepAliveEntry)v.elementAt(i);
+                            KeepAliveEntry e = v.elementAt(i);
                             if ((currentTime - e.idleStartTime) > v.nap) {
                                 HttpClient h = e.hc;
                                 h.closeServer();
@@ -205,9 +206,9 @@ public class KeepAliveCache extends ConcurrentHashMap implements Runnable {
                         }
                     }
                 }
-                itr = keysToRemove.iterator();
-                while (itr.hasNext()) {
-                    removeVector((KeepAliveKey)itr.next());
+
+                for (KeepAliveKey key : keysToRemove) {
+                    removeVector(key);
                 }
             }
         } while (size() > 0);
@@ -234,7 +235,7 @@ public class KeepAliveCache extends ConcurrentHashMap implements Runnable {
  */
 
 
-class ClientVector extends java.util.Stack {
+class ClientVector extends java.util.Stack<KeepAliveEntry> {
     private static final long serialVersionUID = -8680532108106489459L;
 
     // sleep time in milliseconds, before cache clear
@@ -254,7 +255,7 @@ class ClientVector extends java.util.Stack {
             HttpClient hc = null;
             long currentTime = System.currentTimeMillis();
             do {
-                KeepAliveEntry e = (KeepAliveEntry)pop();
+                KeepAliveEntry e = pop();
                 if ((currentTime - e.idleStartTime) > nap) {
                     e.hc.closeServer();
                 } else {

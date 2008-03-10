@@ -59,19 +59,19 @@ public class KeepAliveStreamCleaner extends LinkedBlockingQueue<KeepAliveCleaner
 
     static {
         final String maxDataKey = "http.KeepAlive.remainingData";
-        int maxData = ((Integer) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
-                    return new Integer(NetProperties.getInteger(maxDataKey, MAX_DATA_REMAINING));
-                }})).intValue() * 1024;
+        int maxData = AccessController.doPrivileged(
+            new PrivilegedAction<Integer>() {
+                public Integer run() {
+                    return NetProperties.getInteger(maxDataKey, MAX_DATA_REMAINING);
+                }}).intValue() * 1024;
         MAX_DATA_REMAINING = maxData;
 
         final String maxCapacityKey = "http.KeepAlive.queuedConnections";
-        int maxCapacity = ((Integer) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
-                    return new Integer(NetProperties.getInteger(maxCapacityKey, MAX_CAPACITY));
-                }})).intValue();
+        int maxCapacity = AccessController.doPrivileged(
+            new PrivilegedAction<Integer>() {
+                public Integer run() {
+                    return NetProperties.getInteger(maxCapacityKey, MAX_CAPACITY);
+                }}).intValue();
         MAX_CAPACITY = maxCapacity;
 
     }
