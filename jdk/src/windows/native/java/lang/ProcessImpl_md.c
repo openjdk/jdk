@@ -33,7 +33,12 @@
 #include <windows.h>
 #include <io.h>
 
-#define PIPE_SIZE 4096
+/* We try to make sure that we can read and write 4095 bytes (the
+ * fixed limit on Linux) to the pipe on all operating systems without
+ * deadlock.  Windows 2000 inexplicably appears to need an extra 24
+ * bytes of slop to avoid deadlock.
+ */
+#define PIPE_SIZE (4096+24)
 
 char *
 extractExecutablePath(JNIEnv *env, char *source)
