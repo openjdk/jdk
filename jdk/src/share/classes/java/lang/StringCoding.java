@@ -53,22 +53,23 @@ class StringCoding {
 
     private StringCoding() { }
 
-    /* The cached coders for each thread
-     */
-    private static ThreadLocal decoder = new ThreadLocal();
-    private static ThreadLocal encoder = new ThreadLocal();
+    /** The cached coders for each thread */
+    private final static ThreadLocal<SoftReference<StringDecoder>> decoder =
+        new ThreadLocal<SoftReference<StringDecoder>>();
+    private final static ThreadLocal<SoftReference<StringEncoder>> encoder =
+        new ThreadLocal<SoftReference<StringEncoder>>();
 
     private static boolean warnUnsupportedCharset = true;
 
-    private static Object deref(ThreadLocal tl) {
-        SoftReference sr = (SoftReference)tl.get();
+    private static <T> T deref(ThreadLocal<SoftReference<T>> tl) {
+        SoftReference<T> sr = tl.get();
         if (sr == null)
             return null;
         return sr.get();
     }
 
-    private static void set(ThreadLocal tl, Object ob) {
-        tl.set(new SoftReference(ob));
+    private static <T> void set(ThreadLocal<SoftReference<T>> tl, T ob) {
+        tl.set(new SoftReference<T>(ob));
     }
 
     // Trim the given byte array to the given length
@@ -174,7 +175,7 @@ class StringCoding {
     static char[] decode(String charsetName, byte[] ba, int off, int len)
         throws UnsupportedEncodingException
     {
-        StringDecoder sd = (StringDecoder)deref(decoder);
+        StringDecoder sd = deref(decoder);
         String csn = (charsetName == null) ? "ISO-8859-1" : charsetName;
         if ((sd == null) || !(csn.equals(sd.requestedCharsetName())
                               || csn.equals(sd.charsetName()))) {
@@ -273,7 +274,7 @@ class StringCoding {
     static byte[] encode(String charsetName, char[] ca, int off, int len)
         throws UnsupportedEncodingException
     {
-        StringEncoder se = (StringEncoder)deref(encoder);
+        StringEncoder se = deref(encoder);
         String csn = (charsetName == null) ? "ISO-8859-1" : charsetName;
         if ((se == null) || !(csn.equals(se.requestedCharsetName())
                               || csn.equals(se.charsetName()))) {
