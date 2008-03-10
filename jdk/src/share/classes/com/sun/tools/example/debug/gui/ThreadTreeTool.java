@@ -133,9 +133,7 @@ public class ThreadTreeTool extends JPanel {
 
         public void sessionStart(EventObject e) {
             try {
-                Iterator iter = runtime.allThreads().iterator();
-                while (iter.hasNext()) {
-                    ThreadReference thread = ((ThreadReference)iter.next());
+                for (ThreadReference thread : runtime.allThreads()) {
                     root.addThread(thread);
                 }
             } catch (VMDisconnectedException ee) {
@@ -244,16 +242,16 @@ public class ThreadTreeTool extends JPanel {
             }
         }
 
-        private void addThread(List threadPath, ThreadReference thread) {
+        private void addThread(List<String> threadPath, ThreadReference thread) {
             int size = threadPath.size();
             if (size == 0) {
                 return;
             } else if (size == 1) {
-                String name = (String)threadPath.get(0);
+                String name = threadPath.get(0);
                 insertNode(name, thread);
             } else {
-                String head = (String)threadPath.get(0);
-                List tail = threadPath.subList(1, size);
+                String head = threadPath.get(0);
+                List<String> tail = threadPath.subList(1, size);
                 ThreadTreeNode child = insertNode(head, null);
                 child.addThread(tail, thread);
             }
@@ -288,17 +286,17 @@ public class ThreadTreeTool extends JPanel {
             }
         }
 
-        private void removeThread(List threadPath, ThreadReference thread) {
+        private void removeThread(List<String> threadPath, ThreadReference thread) {
             int size = threadPath.size();
             if (size == 0) {
                 return;
             } else if (size == 1) {
-                String name = (String)threadPath.get(0);
+                String name = threadPath.get(0);
                 ThreadTreeNode child = findLeafNode(thread, name);
                 treeModel.removeNodeFromParent(child);
             } else {
-                String head = (String)threadPath.get(0);
-                List tail = threadPath.subList(1, size);
+                String head = threadPath.get(0);
+                List<String> tail = threadPath.subList(1, size);
                 ThreadTreeNode child = findInternalNode(head);
                 child.removeThread(tail, thread);
                 if (child.isThreadGroup() && child.getChildCount() < 1) {
