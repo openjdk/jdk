@@ -144,8 +144,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
     static {
         maxRedirects = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetIntegerAction("http.maxRedirects",
-                defaultmaxRedirects)).intValue();
+            new sun.security.action.GetIntegerAction(
+                "http.maxRedirects", defaultmaxRedirects)).intValue();
         version = java.security.AccessController.doPrivileged(
                     new sun.security.action.GetPropertyAction("java.version"));
         String agent = java.security.AccessController.doPrivileged(
@@ -291,10 +291,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                             final String scheme,
                             final URL url,
                             final RequestorType authType) {
-        return (PasswordAuthentication)
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
-                public Object run() {
+        return java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<PasswordAuthentication>() {
+                public PasswordAuthentication run() {
                     return Authenticator.requestPasswordAuthentication(
                         host, addr, port, protocol,
                         prompt, scheme, url, authType);
@@ -559,15 +558,15 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         responses = new MessageHeader();
         this.handler = handler;
         instProxy = p;
-        cookieHandler = (CookieHandler)java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-            public Object run() {
+        cookieHandler = java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<CookieHandler>() {
+                public CookieHandler run() {
                 return CookieHandler.getDefault();
             }
         });
-        cacheHandler = (ResponseCache)java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-            public Object run() {
+        cacheHandler = java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<ResponseCache>() {
+                public ResponseCache run() {
                 return ResponseCache.getDefault();
             }
         });
@@ -650,8 +649,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         final boolean result[] = {false};
 
         java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-            public Object run() {
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
                 try {
                     InetAddress a1 = InetAddress.getByName(h1);
                     InetAddress a2 = InetAddress.getByName(h2);
@@ -729,10 +728,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 /**
                  * Do we have to use a proxy?
                  */
-                ProxySelector sel = (ProxySelector)
+                ProxySelector sel =
                     java.security.AccessController.doPrivileged(
-                             new java.security.PrivilegedAction() {
-                                 public Object run() {
+                        new java.security.PrivilegedAction<ProxySelector>() {
+                            public ProxySelector run() {
                                      return ProxySelector.getDefault();
                                  }
                              });
@@ -908,25 +907,23 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
             URI uri = ParseUtil.toURI(url);
             if (uri != null) {
-                Map cookies = cookieHandler.get(uri, requests.getHeaders(EXCLUDE_HEADERS));
+                Map<String, List<String>> cookies
+                    = cookieHandler.get(
+                        uri, requests.getHeaders(EXCLUDE_HEADERS));
                 if (!cookies.isEmpty()) {
-                    Set s = cookies.entrySet();
-                    Iterator k_itr = s.iterator();
-                    while (k_itr.hasNext()) {
-                        Map.Entry entry = (Map.Entry)k_itr.next();
-                        String key = (String)entry.getKey();
+                    for (Map.Entry<String, List<String>> entry :
+                             cookies.entrySet()) {
+                        String key = entry.getKey();
                         // ignore all entries that don't have "Cookie"
                         // or "Cookie2" as keys
                         if (!"Cookie".equalsIgnoreCase(key) &&
                             !"Cookie2".equalsIgnoreCase(key)) {
                             continue;
                         }
-                        List l = (List)entry.getValue();
+                        List<String> l = entry.getValue();
                         if (l != null && !l.isEmpty()) {
-                            Iterator v_itr = l.iterator();
                             StringBuilder cookieValue = new StringBuilder();
-                            while (v_itr.hasNext()) {
-                                String value = (String)v_itr.next();
+                            for (String value : l) {
                                 cookieValue.append(value).append(';');
                             }
                             // strip off the ending ;-sign
@@ -1363,23 +1360,20 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * original exception and with the same message. Right now,
      * there is no convenient APIs for doing so.
      */
-    private IOException getChainedException(IOException rememberedException) {
+    private IOException getChainedException(final IOException rememberedException) {
         try {
-            final IOException originalException = rememberedException;
-            final Class[] cls = new Class[1];
-            cls[0] = String.class;
-            final String[] args = new String[1];
-            args[0] = originalException.getMessage();
-            IOException chainedException = (IOException)
-                java.security.AccessController.doPrivileged
-                (new java.security.PrivilegedExceptionAction() {
-                        public Object run()
-                            throws Exception {
-                            Constructor ctr = originalException.getClass().getConstructor(cls);
-                            return (IOException)ctr.newInstance((Object[])args);
+            final Object[] args = { rememberedException.getMessage() };
+            IOException chainedException =
+                java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedExceptionAction<IOException>() {
+                        public IOException run() throws Exception {
+                            return (IOException)
+                                rememberedException.getClass()
+                                .getConstructor(new Class[] { String.class })
+                                .newInstance(args);
                         }
                     });
-            chainedException.initCause(originalException);
+            chainedException.initCause(rememberedException);
             return chainedException;
         } catch (Exception ignored) {
             return rememberedException;
@@ -1629,10 +1623,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     InetAddress addr = null;
                     try {
                         final String finalHost = host;
-                        addr = (InetAddress)
-                            java.security.AccessController.doPrivileged
-                                (new java.security.PrivilegedExceptionAction() {
-                                public Object run()
+                        addr = java.security.AccessController.doPrivileged(
+                            new java.security.PrivilegedExceptionAction<InetAddress>() {
+                                public InetAddress run()
                                     throws java.net.UnknownHostException {
                                     return InetAddress.getByName(finalHost);
                                 }
@@ -2174,7 +2167,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * @return a Map of header fields
      * @since 1.4
      */
-    public Map getHeaderFields() {
+    public Map<String, List<String>> getHeaderFields() {
         try {
             getInputStream();
         } catch (IOException e) {}
@@ -2286,7 +2279,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * @throws IllegalStateException if already connected
      * @since 1.4
      */
-    public Map getRequestProperties() {
+    public Map<String, List<String>> getRequestProperties() {
         if (connected)
             throw new IllegalStateException("Already connected");
 
@@ -2367,20 +2360,15 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         return method;
     }
 
-    private MessageHeader mapToMessageHeader(Map map) {
+    private MessageHeader mapToMessageHeader(Map<String, List<String>> map) {
         MessageHeader headers = new MessageHeader();
         if (map == null || map.isEmpty()) {
             return headers;
         }
-        Set entries = map.entrySet();
-        Iterator itr1 = entries.iterator();
-        while (itr1.hasNext()) {
-            Map.Entry entry = (Map.Entry)itr1.next();
-            String key = (String)entry.getKey();
-            List values = (List)entry.getValue();
-            Iterator itr2 = values.iterator();
-            while (itr2.hasNext()) {
-                String value = (String)itr2.next();
+        for (Map.Entry<String, List<String>> entry : map.entrySet()) {
+            String key = entry.getKey();
+            List<String> values = entry.getValue();
+            for (String value : values) {
                 if (key == null) {
                     headers.prepend(key, value);
                 } else {

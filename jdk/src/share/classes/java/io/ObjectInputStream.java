@@ -212,7 +212,8 @@ public class ObjectInputStream
     private static final Object unsharedMarker = new Object();
 
     /** table mapping primitive type names to corresponding class objects */
-    private static final HashMap primClasses = new HashMap(8, 1.0F);
+    private static final HashMap<String, Class<?>> primClasses
+        = new HashMap<String, Class<?>>(8, 1.0F);
     static {
         primClasses.put("boolean", boolean.class);
         primClasses.put("byte", byte.class);
@@ -620,7 +621,7 @@ public class ObjectInputStream
         try {
             return Class.forName(name, false, latestUserDefinedLoader());
         } catch (ClassNotFoundException ex) {
-            Class cl = (Class) primClasses.get(name);
+            Class<?> cl = primClasses.get(name);
             if (cl != null) {
                 return cl;
             } else {
@@ -1254,11 +1255,11 @@ public class ObjectInputStream
      * override security-sensitive non-final methods.  Returns true if subclass
      * is "safe", false otherwise.
      */
-    private static boolean auditSubclass(final Class subcl) {
+    private static boolean auditSubclass(final Class<?> subcl) {
         Boolean result = AccessController.doPrivileged(
             new PrivilegedAction<Boolean>() {
                 public Boolean run() {
-                    for (Class cl = subcl;
+                    for (Class<?> cl = subcl;
                          cl != ObjectInputStream.class;
                          cl = cl.getSuperclass())
                     {
@@ -2217,9 +2218,9 @@ public class ObjectInputStream
             try {
                 while (list != null) {
                     AccessController.doPrivileged(
-                        new PrivilegedExceptionAction()
+                        new PrivilegedExceptionAction<Void>()
                     {
-                        public Object run() throws InvalidObjectException {
+                        public Void run() throws InvalidObjectException {
                             list.obj.validateObject();
                             return null;
                         }

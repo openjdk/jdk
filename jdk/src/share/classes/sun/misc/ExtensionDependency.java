@@ -284,10 +284,9 @@ public class ExtensionDependency {
         // Load the jar file ...
         Manifest man;
         try {
-            man = (Manifest) AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction() {
-                     public Object run()
+            man = AccessController.doPrivileged(
+                new PrivilegedExceptionAction<Manifest>() {
+                    public Manifest run()
                             throws IOException, FileNotFoundException {
                          if (!file.exists())
                              throw new FileNotFoundException(file.getName());
@@ -391,9 +390,9 @@ public class ExtensionDependency {
         final String extName = extensionName;
         final String[] fileExt = {".jar", ".zip"};
 
-        return (File) AccessController.doPrivileged
-            (new PrivilegedAction() {
-                public Object run() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<File>() {
+                public File run() {
                     try {
                         File fExtension;
                         File[] dirs = getExtDirs();
@@ -460,7 +459,7 @@ public class ExtensionDependency {
      * @return the list of files installed in all the directories
      */
     private static File[] getExtFiles(File[] dirs) throws IOException {
-        Vector urls = new Vector();
+        Vector<File> urls = new Vector<File>();
         for (int i = 0; i < dirs.length; i++) {
             String[] files = dirs[i].list(new JarFilter());
             if (files != null) {
@@ -484,16 +483,15 @@ public class ExtensionDependency {
      * </p>
      */
     private File[] getInstalledExtensions() throws IOException {
-        return (File[]) AccessController.doPrivileged
-            (
-             new PrivilegedAction() {
-                 public Object run() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<File[]>() {
+                public File[] run() {
                      try {
                          return getExtFiles(getExtDirs());
                      } catch(IOException e) {
                          debug("Cannot get list of installed extensions");
                          debugException(e);
-                         return new URL[0];
+                        return new File[0];
                      }
                  }
             });

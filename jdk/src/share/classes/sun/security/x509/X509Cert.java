@@ -516,7 +516,7 @@ public class X509Cert implements Certificate, Serializable {
      * Null is returned in the case of a partially constructed cert.
      */
     public byte []      getSignedCert ()
-        { return (byte[])signedCert.clone(); }
+        { return signedCert.clone(); }
 
 
     /**
