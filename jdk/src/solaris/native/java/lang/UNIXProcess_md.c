@@ -479,6 +479,37 @@ closeSafely(int fd)
         close(fd);
 }
 
+/*
+ * Reads nbyte bytes from file descriptor fd into buf,
+ * The read operation is retried in case of EINTR or partial reads.
+ *
+ * Returns number of bytes read (normally nbyte, but may be less in
+ * case of EOF).  In case of read errors, returns -1 and sets errno.
+ */
+static ssize_t
+readFully(int fd, void *buf, size_t nbyte)
+{
+    ssize_t remaining = nbyte;
+    for (;;) {
+        ssize_t n = read(fd, buf, remaining);
+        if (n == 0) {
+            return nbyte - remaining;
+        } else if (n > 0) {
+            remaining -= n;
+            if (remaining <= 0)
+                return nbyte;
+            /* We were interrupted in the middle of reading the bytes.
+             * Unlikely, but possible. */
+            buf = (void *) (((char *)buf) + n);
+        } else if (errno == EINTR) {
+            /* Strange signals like SIGJVM1 are possible at any time.
+             * See http://www.dreamsongs.com/WorseIsBetter.html */
+        } else {
+            return -1;
+        }
+    }
+}
+
 #ifndef __solaris__
 #undef fork1
 #define fork1() fork()
@@ -606,9 +637,15 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
     /* parent process */
 
     close(fail[1]); fail[1] = -1; /* See: WhyCantJohnnyExec */
-    if (read(fail[0], &errnum, sizeof(errnum)) != 0) {
+
+    switch (readFully(fail[0], &errnum, sizeof(errnum))) {
+    case 0: break; /* Exec succeeded */
+    case sizeof(errnum):
         waitpid(resultPid, NULL, 0);
         throwIOException(env, errnum, "Exec failed");
+        goto Catch;
+    default:
+        throwIOException(env, errno, "Read failed");
         goto Catch;
     }
 
