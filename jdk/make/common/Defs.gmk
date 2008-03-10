@@ -178,14 +178,6 @@ ifdef OPENJDK
   endif
 endif # OPENJDK
 
-# Default output directory
-ifdef OPENJDK
-_OUTPUTDIR=$(JDK_TOPDIR)/build/$(PLATFORM)-$(ARCH)$(OPENJDK_SUFFIX)
-else
-_OUTPUTDIR=$(JDK_TOPDIR)/build/$(PLATFORM)-$(ARCH)
-endif
-
-
 #
 # Get platform definitions
 #

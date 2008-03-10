@@ -36,7 +36,7 @@ ifndef JDK_MAKE_SHARED_DIR
 endif
 
 ifndef CONTROL_TOPDIR
-  CONTROL_TOPDIR=$(TOPDIR)/control
+  CONTROL_TOPDIR=$(TOPDIR)
 endif
 ifndef HOTSPOT_TOPDIR
   HOTSPOT_TOPDIR=$(TOPDIR)/hotspot
@@ -70,7 +70,8 @@ endif
 include $(JDK_MAKE_SHARED_DIR)/Platform.gmk
 
 # Default output directory
-_OUTPUTDIR=$(CONTROL_TOPDIR)/build/$(PLATFORM)-$(ARCH)
+BUILD_PARENT_DIRECTORY=$(TOPDIR)
+_OUTPUTDIR=$(TOPDIR)/build/$(PLATFORM)-$(ARCH)
 
 # Get platform specific settings
 include $(JDK_MAKE_SHARED_DIR)/Defs.gmk
