@@ -60,13 +60,13 @@ protected:
     debug_only(_adr_type=at; adr_type();)
   }
 
+public:
   // Helpers for the optimizer.  Documented in memnode.cpp.
   static bool detect_ptr_independence(Node* p1, AllocateNode* a1,
                                       Node* p2, AllocateNode* a2,
                                       PhaseTransform* phase);
   static bool adr_phi_is_loop_invariant(Node* adr_phi, Node* cast);
 
-public:
   // This one should probably be a phase-specific function:
   static bool detect_dominating_control(Node* dom, Node* sub);
 
@@ -97,7 +97,13 @@ public:
 
   // What is the type of the value in memory?  (T_VOID mean "unspecified".)
   virtual BasicType memory_type() const = 0;
-  virtual int memory_size() const { return type2aelembytes[memory_type()]; }
+  virtual int memory_size() const {
+#ifdef ASSERT
+    return type2aelembytes(memory_type(), true);
+#else
+    return type2aelembytes(memory_type());
+#endif
+  }
 
   // Search through memory states which precede this node (load or store).
   // Look for an exact match for the address, with no intervening
@@ -140,6 +146,9 @@ public:
   // If the load is from Field memory and the pointer is non-null, we can
   // zero out the control input.
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+
+  // Recover original value from boxed values
+  Node *eliminate_autobox(PhaseGVN *phase);
 
   // Compute a new Type for this node.  Basically we just do the pre-check,
   // then call the virtual add() to set the type.

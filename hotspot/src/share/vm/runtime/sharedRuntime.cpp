@@ -467,6 +467,11 @@ JRT_ENTRY(void, SharedRuntime::throw_AbstractMethodError(JavaThread* thread))
   throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_AbstractMethodError());
 JRT_END
 
+JRT_ENTRY(void, SharedRuntime::throw_IncompatibleClassChangeError(JavaThread* thread))
+  // These errors occur only at call sites
+  throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_IncompatibleClassChangeError(), "vtable stub");
+JRT_END
+
 JRT_ENTRY(void, SharedRuntime::throw_ArithmeticException(JavaThread* thread))
   throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_ArithmeticException(), "/ by zero");
 JRT_END
@@ -1834,7 +1839,25 @@ int AdapterHandlerLibrary::get_create_adapter_index(methodHandle method) {
                                                                         regs);
 
     B = BufferBlob::create(AdapterHandlerEntry::name, &buffer);
-    if (B == NULL)  return -2;          // Out of CodeCache space
+    if (B == NULL) {
+      // CodeCache is full, disable compilation
+      // Ought to log this but compile log is only per compile thread
+      // and we're some non descript Java thread.
+      UseInterpreter = true;
+      if (UseCompiler || AlwaysCompileLoopMethods ) {
+#ifndef PRODUCT
+        warning("CodeCache is full. Compiler has been disabled");
+        if (CompileTheWorld || ExitOnFullCodeCache) {
+          before_exit(JavaThread::current());
+          exit_globals(); // will delete tty
+          vm_direct_exit(CompileTheWorld ? 0 : 1);
+        }
+#endif
+        UseCompiler               = false;
+        AlwaysCompileLoopMethods  = false;
+      }
+      return 0; // Out of CodeCache space (_handlers[0] == NULL)
+    }
     entry->relocate(B->instructions_begin());
 #ifndef PRODUCT
     // debugging suppport

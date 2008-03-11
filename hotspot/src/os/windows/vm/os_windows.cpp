@@ -621,7 +621,12 @@ julong os::physical_memory() {
 }
 
 julong os::allocatable_physical_memory(julong size) {
+#ifdef _LP64
+  return size;
+#else
+  // Limit to 1400m because of the 2gb address space wall
   return MIN2(size, (julong)1400*M);
+#endif
 }
 
 // VC6 lacks DWORD_PTR

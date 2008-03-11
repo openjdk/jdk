@@ -882,6 +882,14 @@ klassOop ClassHierarchyWalker::find_witness_in(DepChange& changes,
   // Must not move the class hierarchy during this check:
   assert_locked_or_safepoint(Compile_lock);
 
+  int nof_impls = instanceKlass::cast(context_type)->nof_implementors();
+  if (nof_impls > 1) {
+    // Avoid this case: *I.m > { A.m, C }; B.m > C
+    // %%% Until this is fixed more systematically, bail out.
+    // See corresponding comment in find_witness_anywhere.
+    return context_type;
+  }
+
   assert(!is_participant(new_type), "only old classes are participants");
   if (participants_hide_witnesses) {
     // If the new type is a subtype of a participant, we are done.

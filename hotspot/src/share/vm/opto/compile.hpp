@@ -31,6 +31,7 @@ class InlineTree;
 class Int_Array;
 class Matcher;
 class MachNode;
+class MachSafePointNode;
 class Node;
 class Node_Array;
 class Node_Notes;
@@ -52,9 +53,6 @@ class TypeFunc;
 class Unique_Node_List;
 class nmethod;
 class WarmCallInfo;
-#ifdef ENABLE_ZAP_DEAD_LOCALS
-class MachSafePointNode;
-#endif
 
 //------------------------------Compile----------------------------------------
 // This class defines a top-level Compiler invocation.
@@ -127,6 +125,7 @@ class Compile : public Phase {
   const int             _compile_id;
   const bool            _save_argument_registers; // save/restore arg regs for trampolines
   const bool            _subsume_loads;         // Load can be matched as part of a larger op.
+  const bool            _do_escape_analysis;    // Do escape analysis.
   ciMethod*             _method;                // The method being compiled.
   int                   _entry_bci;             // entry bci for osr methods.
   const TypeFunc*       _tf;                    // My kind of signature
@@ -260,6 +259,8 @@ class Compile : public Phase {
   // instructions that subsume a load may result in an unschedulable
   // instruction sequence.
   bool              subsume_loads() const       { return _subsume_loads; }
+  // Do escape analysis.
+  bool              do_escape_analysis() const  { return _do_escape_analysis; }
   bool              save_argument_registers() const { return _save_argument_registers; }
 
 
@@ -560,7 +561,7 @@ class Compile : public Phase {
   // replacement, entry_bci indicates the bytecode for which to compile a
   // continuation.
   Compile(ciEnv* ci_env, C2Compiler* compiler, ciMethod* target,
-          int entry_bci, bool subsume_loads);
+          int entry_bci, bool subsume_loads, bool do_escape_analysis);
 
   // Second major entry point.  From the TypeFunc signature, generate code
   // to pass arguments from the Java calling convention to the C calling

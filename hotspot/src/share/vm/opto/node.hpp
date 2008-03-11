@@ -91,6 +91,7 @@ class Node_List;
 class Node_Stack;
 class NullCheckNode;
 class OopMap;
+class ParmNode;
 class PCTableNode;
 class PhaseCCP;
 class PhaseGVN;
@@ -557,6 +558,7 @@ public:
       DEFINE_CLASS_ID(JumpProj,  Proj, 1)
       DEFINE_CLASS_ID(IfTrue,    Proj, 2)
       DEFINE_CLASS_ID(IfFalse,   Proj, 3)
+      DEFINE_CLASS_ID(Parm,      Proj, 4)
 
     DEFINE_CLASS_ID(Region, Node, 3)
       DEFINE_CLASS_ID(Loop, Region, 0)
@@ -712,6 +714,7 @@ public:
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
+  DEFINE_CLASS_QUERY(Parm)
   DEFINE_CLASS_QUERY(PCTable)
   DEFINE_CLASS_QUERY(Phi)
   DEFINE_CLASS_QUERY(Proj)
@@ -1381,7 +1384,7 @@ public:
     _inode_top->indx = i;
   }
   uint size_max() const { return (uint)pointer_delta(_inode_max, _inodes,  sizeof(INode)); } // Max size
-  uint size() const { return (uint)pointer_delta(_inode_top, _inodes,  sizeof(INode)) + 1; } // Current size
+  uint size() const { return (uint)pointer_delta((_inode_top+1), _inodes,  sizeof(INode)); } // Current size
   bool is_nonempty() const { return (_inode_top >= _inodes); }
   bool is_empty() const { return (_inode_top < _inodes); }
   void clear() { _inode_top = _inodes - 1; } // retain storage

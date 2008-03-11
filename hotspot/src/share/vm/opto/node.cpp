@@ -1462,96 +1462,47 @@ void Node::dump_out() const {
 }
 
 //------------------------------dump_nodes-------------------------------------
-
-// Helper class  for dump_nodes. Wraps an old and new VectorSet.
-class OldNewVectorSet : public StackObj {
-   Arena*    _node_arena;
-   VectorSet _old_vset, _new_vset;
-   VectorSet* select(Node* n) {
-     return _node_arena->contains(n) ? &_new_vset : &_old_vset;
-   }
-  public:
-  OldNewVectorSet(Arena* node_arena, ResourceArea* area) :
-     _node_arena(node_arena),
-     _old_vset(area), _new_vset(area) {}
-
-  void set(Node* n)      { select(n)->set(n->_idx); }
-  bool test_set(Node* n) { return select(n)->test_set(n->_idx) != 0; }
-  bool test(Node* n)     { return select(n)->test(n->_idx) != 0; }
-  void del(Node* n)      { (*select(n)) >>= n->_idx; }
-};
-
-
 static void dump_nodes(const Node* start, int d, bool only_ctrl) {
   Node* s = (Node*)start; // remove const
   if (NotANode(s)) return;
 
+  uint depth = (uint)ABS(d);
+  int direction = d;
   Compile* C = Compile::current();
-  ResourceArea *area = Thread::current()->resource_area();
-  Node_Stack      stack(area, MIN2((uint)ABS(d), C->unique() >> 1));
-  OldNewVectorSet visited(C->node_arena(), area);
-  OldNewVectorSet on_stack(C->node_arena(), area);
+  GrowableArray <Node *> nstack(C->unique());
 
-  visited.set(s);
-  on_stack.set(s);
-  stack.push(s, 0);
-  if (d < 0) s->dump();
+  nstack.append(s);
+  int begin = 0;
+  int end = 0;
+  for(uint i = 0; i < depth; i++) {
+    end = nstack.length();
+    for(int j = begin; j < end; j++) {
+      Node* tp  = nstack.at(j);
+      uint limit = direction > 0 ? tp->len() : tp->outcnt();
+      for(uint k = 0; k < limit; k++) {
+        Node* n = direction > 0 ? tp->in(k) : tp->raw_out(k);
 
-  // Do a depth first walk over edges
-  while (stack.is_nonempty()) {
-    Node* tp  = stack.node();
-    uint  idx = stack.index();
-    uint  limit = d > 0 ? tp->len() : tp->outcnt();
-    if (idx >= limit) {
-      // no more arcs to visit
-      if (d > 0) tp->dump();
-      on_stack.del(tp);
-      stack.pop();
-    } else {
-      // process the "idx"th arc
-      stack.set_index(idx + 1);
-      Node* n = d > 0 ? tp->in(idx) : tp->raw_out(idx);
+        if (NotANode(n))  continue;
+        // do not recurse through top or the root (would reach unrelated stuff)
+        if (n->is_Root() || n->is_top())  continue;
+        if (only_ctrl && !n->is_CFG()) continue;
 
-      if (NotANode(n))  continue;
-      // do not recurse through top or the root (would reach unrelated stuff)
-      if (n->is_Root() || n->is_top())  continue;
-      if (only_ctrl && !n->is_CFG()) continue;
-
-      if (!visited.test_set(n)) {  // forward arc
-        // Limit depth
-        if (stack.size() < (uint)ABS(d)) {
-          if (d < 0) n->dump();
-          stack.push(n, 0);
-          on_stack.set(n);
-        }
-      } else {  // back or cross arc
-        if (on_stack.test(n)) {  // back arc
-          // print loop if there are no phis or regions in the mix
-          bool found_loop_breaker = false;
-          int k;
-          for (k = stack.size() - 1; k >= 0; k--) {
-            Node* m = stack.node_at(k);
-            if (m->is_Phi() || m->is_Region() || m->is_Root() || m->is_Start()) {
-              found_loop_breaker = true;
-              break;
-            }
-            if (m == n) // Found loop head
-              break;
-          }
-          assert(k >= 0, "n must be on stack");
-
-          if (!found_loop_breaker) {
-            tty->print("# %s LOOP FOUND:", only_ctrl ? "CONTROL" : "DATA");
-            for (int i = stack.size() - 1; i >= k; i--) {
-              Node* m = stack.node_at(i);
-              bool mnew = C->node_arena()->contains(m);
-              tty->print(" %s%d:%s", (mnew? "": "o"), m->_idx, m->Name());
-              if (i != 0) tty->print(d > 0? " <-": " ->");
-            }
-            tty->cr();
-          }
+        bool on_stack = nstack.contains(n);
+        if (!on_stack) {
+          nstack.append(n);
         }
       }
+    }
+    begin = end;
+  }
+  end = nstack.length();
+  if (direction > 0) {
+    for(int j = end-1; j >= 0; j--) {
+      nstack.at(j)->dump();
+    }
+  } else {
+    for(int j = 0; j < end; j++) {
+      nstack.at(j)->dump();
     }
   }
 }
