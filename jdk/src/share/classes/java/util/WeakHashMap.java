@@ -182,7 +182,7 @@ public class WeakHashMap<K,V>
      *
      * @see ConcurrentModificationException
      */
-    volatile int modCount;
+    int modCount;
 
     @SuppressWarnings("unchecked")
     private Entry<K,V>[] newTable(int n) {
