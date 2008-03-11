@@ -173,7 +173,7 @@ public class IdentityHashMap<K,V>
     /**
      * The number of modifications, to support fast-fail iterators
      */
-    private transient volatile int modCount;
+    private transient int modCount;
 
     /**
      * The next size value at which to resize (capacity * load factor).
