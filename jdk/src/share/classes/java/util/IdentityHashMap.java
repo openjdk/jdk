@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -749,7 +749,6 @@ public class IdentityHashMap<K,V>
             expectedModCount = ++modCount;
             int deletedSlot = lastReturnedIndex;
             lastReturnedIndex = -1;
-            size--;
             // back up index to revisit new contents after deletion
             index = deletedSlot;
             indexValid = false;
@@ -781,6 +780,8 @@ public class IdentityHashMap<K,V>
                 expectedModCount = modCount;
                 return;
             }
+
+            size--;
 
             Object item;
             for (int i = nextKeyIndex(d, len); (item = tab[i]) != null;
