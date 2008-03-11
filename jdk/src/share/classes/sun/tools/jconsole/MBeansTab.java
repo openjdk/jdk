@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.tools.jconsole;
 
 import java.awt.BorderLayout;
+import java.awt.EventQueue;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -42,7 +43,8 @@ import com.sun.tools.jconsole.JConsoleContext;
 
 @SuppressWarnings("serial")
 public class MBeansTab extends Tab implements
-        NotificationListener, PropertyChangeListener, TreeSelectionListener {
+        NotificationListener, PropertyChangeListener,
+        TreeSelectionListener, TreeWillExpandListener {
 
     private XTree tree;
     private XSheet sheet;
@@ -70,6 +72,7 @@ public class MBeansTab extends Tab implements
         return sheet;
     }
 
+    @Override
     public void dispose() {
         super.dispose();
         sheet.dispose();
@@ -79,61 +82,79 @@ public class MBeansTab extends Tab implements
         return vmPanel.getUpdateInterval();
     }
 
-    void synchroniseMBeanServerView() {
-        // Register listener for MBean registration/unregistration
-        //
-        try {
-            getMBeanServerConnection().addNotificationListener(
-                    MBeanServerDelegate.DELEGATE_NAME,
-                    this,
-                    null,
-                    null);
-        } catch (InstanceNotFoundException e) {
-            // Should never happen because the MBeanServerDelegate
-            // is always present in any standard MBeanServer
-            //
-            if (JConsole.isDebug()) {
-                e.printStackTrace();
+    private void buildMBeanServerView() {
+        new SwingWorker<Set<ObjectName>, Void>() {
+            @Override
+            public Set<ObjectName> doInBackground() {
+                // Register listener for MBean registration/unregistration
+                //
+                try {
+                    getMBeanServerConnection().addNotificationListener(
+                            MBeanServerDelegate.DELEGATE_NAME,
+                            MBeansTab.this,
+                            null,
+                            null);
+                } catch (InstanceNotFoundException e) {
+                    // Should never happen because the MBeanServerDelegate
+                    // is always present in any standard MBeanServer
+                    //
+                    if (JConsole.isDebug()) {
+                        e.printStackTrace();
+                    }
+                } catch (IOException e) {
+                    if (JConsole.isDebug()) {
+                        e.printStackTrace();
+                    }
+                    vmPanel.getProxyClient().markAsDead();
+                    return null;
+                }
+                // Retrieve MBeans from MBeanServer
+                //
+                Set<ObjectName> mbeans = null;
+                try {
+                    mbeans = getMBeanServerConnection().queryNames(null, null);
+                } catch (IOException e) {
+                    if (JConsole.isDebug()) {
+                        e.printStackTrace();
+                    }
+                    vmPanel.getProxyClient().markAsDead();
+                    return null;
+                }
+                return mbeans;
             }
-        } catch (IOException e) {
-            if (JConsole.isDebug()) {
-                e.printStackTrace();
+            @Override
+            protected void done() {
+                try {
+                    // Wait for mbsc.queryNames() result
+                    Set<ObjectName> mbeans = get();
+                    // Do not display anything until the new tree has been built
+                    //
+                    tree.setVisible(false);
+                    // Cleanup current tree
+                    //
+                    tree.removeAll();
+                    // Add MBeans to tree
+                    //
+                    tree.addMBeansToView(mbeans);
+                    // Display the new tree
+                    //
+                    tree.setVisible(true);
+                } catch (Exception e) {
+                    Throwable t = Utils.getActualException(e);
+                    if (JConsole.isDebug()) {
+                        System.err.println("Problem at MBean tree construction");
+                        t.printStackTrace();
+                    }
+                }
             }
-            vmPanel.getProxyClient().markAsDead();
-            return;
-        }
-        // Retrieve MBeans from MBeanServer
-        //
-        Set<ObjectName> newSet = null;
-        try {
-            newSet = getMBeanServerConnection().queryNames(null,null);
-        } catch (IOException e) {
-            if (JConsole.isDebug()) {
-                e.printStackTrace();
-            }
-            vmPanel.getProxyClient().markAsDead();
-            return;
-        }
-        // Cleanup current tree
-        //
-        tree.removeAll();
-        // Do not display anything until the new tree has been built
-        //
-        tree.setVisible(false);
-        // Add MBeans to tree
-        //
-        for (ObjectName mbean : newSet) {
-            tree.addMBeanToView(mbean);
-        }
-        // Display the new tree
-        //
-        tree.setVisible(true);
+        }.execute();
     }
 
     public MBeanServerConnection getMBeanServerConnection() {
         return vmPanel.getProxyClient().getMBeanServerConnection();
     }
 
+    @Override
     public void update() {
         // Ping the connection to see if it is still alive. At
         // some point the ProxyClient class should centralize
@@ -160,6 +181,7 @@ public class MBeansTab extends Tab implements
         tree.getSelectionModel().setSelectionMode(
                 TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.addTreeSelectionListener(this);
+        tree.addTreeWillExpandListener(this);
         tree.addMouseListener(ml);
         JScrollPane theScrollPane = new JScrollPane(
                 tree,
@@ -177,55 +199,55 @@ public class MBeansTab extends Tab implements
         add(mainSplit);
     }
 
-    /* notification listener */
-    public void handleNotification(Notification notification, Object handback) {
-        if (notification instanceof MBeanServerNotification) {
-            ObjectName mbean =
-                    ((MBeanServerNotification) notification).getMBeanName();
-            if (notification.getType().equals(
-                    MBeanServerNotification.REGISTRATION_NOTIFICATION)) {
-                tree.addMBeanToView(mbean);
-            } else if (notification.getType().equals(
-                    MBeanServerNotification.UNREGISTRATION_NOTIFICATION)) {
-                tree.delMBeanFromView(mbean);
+    /* notification listener:  handleNotification */
+    public void handleNotification(
+            final Notification notification, Object handback) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                if (notification instanceof MBeanServerNotification) {
+                    ObjectName mbean =
+                            ((MBeanServerNotification) notification).getMBeanName();
+                    if (notification.getType().equals(
+                            MBeanServerNotification.REGISTRATION_NOTIFICATION)) {
+                        tree.addMBeanToView(mbean);
+                    } else if (notification.getType().equals(
+                            MBeanServerNotification.UNREGISTRATION_NOTIFICATION)) {
+                        tree.removeMBeanFromView(mbean);
+                    }
+                }
             }
-        }
+        });
     }
 
-    /* property change listener */
+    /* property change listener:  propertyChange */
     public void propertyChange(PropertyChangeEvent evt) {
-        if (evt.getPropertyName() == JConsoleContext.CONNECTION_STATE_PROPERTY) {
+        if (JConsoleContext.CONNECTION_STATE_PROPERTY.equals(evt.getPropertyName())) {
             boolean connected = (Boolean) evt.getNewValue();
             if (connected) {
-                workerAdd(new Runnable() {
-                    public void run() {
-                        synchroniseMBeanServerView();
-                    }
-                });
+                buildMBeanServerView();
             } else {
                 sheet.dispose();
             }
         }
-
     }
 
-    /* tree selection listener */
+    /* tree selection listener: valueChanged */
     public void valueChanged(TreeSelectionEvent e) {
         DefaultMutableTreeNode node =
                 (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
         sheet.displayNode(node);
     }
-
-    /* tree mouse listener */
+    /* tree mouse listener: mousePressed */
     private MouseListener ml = new MouseAdapter() {
+        @Override
         public void mousePressed(MouseEvent e) {
             if (e.getClickCount() == 1) {
                 int selRow = tree.getRowForLocation(e.getX(), e.getY());
                 if (selRow != -1) {
                     TreePath selPath =
                             tree.getPathForLocation(e.getX(), e.getY());
-                    DefaultMutableTreeNode node = (DefaultMutableTreeNode)
-                            selPath.getLastPathComponent();
+                    DefaultMutableTreeNode node =
+                            (DefaultMutableTreeNode) selPath.getLastPathComponent();
                     if (sheet.isMBeanNode(node)) {
                         tree.expandPath(selPath);
                     }
@@ -233,4 +255,22 @@ public class MBeansTab extends Tab implements
             }
         }
     };
+
+    /* tree will expand listener: treeWillExpand */
+    public void treeWillExpand(TreeExpansionEvent e)
+            throws ExpandVetoException {
+        TreePath path = e.getPath();
+        if (!tree.hasBeenExpanded(path)) {
+            DefaultMutableTreeNode node =
+                    (DefaultMutableTreeNode) path.getLastPathComponent();
+            if (sheet.isMBeanNode(node) && !tree.hasMetadataNodes(node)) {
+                tree.addMetadataNodes(node);
+            }
+        }
+    }
+
+    /* tree will expand listener: treeWillCollapse */
+    public void treeWillCollapse(TreeExpansionEvent e)
+            throws ExpandVetoException {
+    }
 }
