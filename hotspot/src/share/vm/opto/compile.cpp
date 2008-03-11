@@ -333,6 +333,12 @@ void Compile::print_compile_messages() {
     tty->print_cr("** Bailout: Recompile without subsuming loads          **");
     tty->print_cr("*********************************************************");
   }
+  if (_do_escape_analysis != DoEscapeAnalysis && PrintOpto) {
+    // Recompiling without escape analysis
+    tty->print_cr("*********************************************************");
+    tty->print_cr("** Bailout: Recompile without escape analysis          **");
+    tty->print_cr("*********************************************************");
+  }
   if (env()->break_at_compile()) {
     // Open the debugger when compiing this method.
     tty->print("### Breaking when compiling: ");
@@ -415,7 +421,7 @@ debug_only( int Compile::_debug_idx = 100000; )
 // the continuation bci for on stack replacement.
 
 
-Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr_bci, bool subsume_loads )
+Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr_bci, bool subsume_loads, bool do_escape_analysis )
                 : Phase(Compiler),
                   _env(ci_env),
                   _log(ci_env->log()),
@@ -430,6 +436,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _for_igvn(NULL),
                   _warm_calls(NULL),
                   _subsume_loads(subsume_loads),
+                  _do_escape_analysis(do_escape_analysis),
                   _failure_reason(NULL),
                   _code_buffer("Compile::Fill_buffer"),
                   _orig_pc_slot(0),
@@ -487,7 +494,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   PhaseGVN gvn(node_arena(), estimated_size);
   set_initial_gvn(&gvn);
 
-  if (DoEscapeAnalysis)
+  if (_do_escape_analysis)
     _congraph = new ConnectionGraph(this);
 
   { // Scope for timing the parser
@@ -577,6 +584,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   if (_congraph != NULL) {
     NOT_PRODUCT( TracePhase t2("escapeAnalysis", &_t_escapeAnalysis, TimeCompiler); )
     _congraph->compute_escape();
+    if (failing())  return;
+
 #ifndef PRODUCT
     if (PrintEscapeAnalysis) {
       _congraph->dump();
@@ -675,6 +684,7 @@ Compile::Compile( ciEnv* ci_env,
     _orig_pc_slot(0),
     _orig_pc_slot_offset_in_bytes(0),
     _subsume_loads(true),
+    _do_escape_analysis(false),
     _failure_reason(NULL),
     _code_buffer("Compile::Fill_buffer"),
     _node_bundling_limit(0),
@@ -822,7 +832,7 @@ void Compile::Init(int aliaslevel) {
   //   Type::update_loaded_types(_method, _method->constants());
 
   // Init alias_type map.
-  if (!DoEscapeAnalysis && aliaslevel == 3)
+  if (!_do_escape_analysis && aliaslevel == 3)
     aliaslevel = 2;  // No unique types without escape analysis
   _AliasLevel = aliaslevel;
   const int grow_ats = 16;

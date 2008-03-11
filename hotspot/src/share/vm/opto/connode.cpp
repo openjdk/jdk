@@ -982,34 +982,9 @@ Node *ConvL2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new (phase->C, 3) AddINode(add1,add2);
   }
 
-  // Fold up with a prior LoadL: LoadL->ConvL2I ==> LoadI
-  // Requires we understand the 'endianess' of Longs.
-  if( andl_op == Op_LoadL ) {
-    Node *adr = andl->in(MemNode::Address);
-    // VM_LITTLE_ENDIAN is #defined appropriately in the Makefiles
-#ifndef VM_LITTLE_ENDIAN
-    // The transformation can cause problems on BIG_ENDIAN architectures
-    // where the jint is not the same address as the jlong. Specifically, we
-    // will fail to insert an anti-dependence in GCM between the LoadI and a
-    // subsequent StoreL because different memory offsets provoke
-    // flatten_alias_type() into indicating two different types.  See bug
-    // 4755222.
-
-    // Node *base = adr->is_AddP() ? adr->in(AddPNode::Base) : adr;
-    // adr = phase->transform( new (phase->C, 4) AddPNode(base,adr,phase->MakeConX(sizeof(jint))));
-    return NULL;
-#else
-    if (phase->C->alias_type(andl->adr_type())->is_volatile()) {
-      // Picking up the low half by itself bypasses the atomic load and we could
-      // end up with more than one non-atomic load.  See bugs 4432655 and 4526490.
-      // We could go to the trouble of iterating over andl's output edges and
-      // punting only if there's more than one real use, but we don't bother.
-      return NULL;
-    }
-    return new (phase->C, 3) LoadINode(andl->in(MemNode::Control),andl->in(MemNode::Memory),adr,((LoadLNode*)andl)->raw_adr_type());
-#endif
-  }
-
+  // Disable optimization: LoadL->ConvL2I ==> LoadI.
+  // It causes problems (sizes of Load and Store nodes do not match)
+  // in objects initialization code and Escape Analysis.
   return NULL;
 }
 

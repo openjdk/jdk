@@ -38,7 +38,7 @@ class     CallRuntimeNode;
 class       CallLeafNode;
 class         CallLeafNoFPNode;
 class     AllocateNode;
-class     AllocateArrayNode;
+class       AllocateArrayNode;
 class     LockNode;
 class     UnlockNode;
 class JVMState;
@@ -91,7 +91,9 @@ public:
 class ParmNode : public ProjNode {
   static const char * const names[TypeFunc::Parms+1];
 public:
-  ParmNode( StartNode *src, uint con ) : ProjNode(src,con) {}
+  ParmNode( StartNode *src, uint con ) : ProjNode(src,con) {
+    init_class_id(Class_Parm);
+  }
   virtual int Opcode() const;
   virtual bool  is_CFG() const { return (_con == TypeFunc::Control); }
   virtual uint ideal_reg() const;
@@ -623,6 +625,8 @@ public:
 
     return TypeFunc::make(domain, range);
   }
+
+  bool _is_scalar_replaceable;  // Result of Escape Analysis
 
   virtual uint size_of() const; // Size is bigger
   AllocateNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,

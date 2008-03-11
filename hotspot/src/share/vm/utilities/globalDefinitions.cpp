@@ -214,7 +214,7 @@ BasicType type2wfield[T_CONFLICT+1] = {
 };
 
 
-int type2aelembytes[T_CONFLICT+1] = {
+int _type2aelembytes[T_CONFLICT+1] = {
   0,                      // 0
   0,                      // 1
   0,                      // 2
@@ -230,10 +230,16 @@ int type2aelembytes[T_CONFLICT+1] = {
   T_OBJECT_aelem_bytes,   // T_OBJECT   = 12,
   T_ARRAY_aelem_bytes,    // T_ARRAY    = 13,
   0,                      // T_VOID     = 14,
-  T_INT_aelem_bytes,      // T_ADDRESS  = 15,
+  T_OBJECT_aelem_bytes,   // T_ADDRESS  = 15,
   0                       // T_CONFLICT = 16,
 };
 
+#ifdef ASSERT
+int type2aelembytes(BasicType t, bool allow_address) {
+  assert(allow_address || t != T_ADDRESS, " ");
+  return _type2aelembytes[t];
+}
+#endif
 
 // Support for 64-bit integer arithmetic
 
