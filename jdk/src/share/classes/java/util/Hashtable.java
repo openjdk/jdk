@@ -27,7 +27,7 @@ package java.util;
 import java.io.*;
 
 /**
- * This class implements a hashtable, which maps keys to values. Any
+ * This class implements a hash table, which maps keys to values. Any
  * non-<code>null</code> object can be used as a key or as a value. <p>
  *
  * To successfully store and retrieve objects from a hashtable, the
