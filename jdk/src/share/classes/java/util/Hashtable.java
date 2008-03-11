@@ -100,9 +100,15 @@ import java.io.*;
  *
  * <p>As of the Java 2 platform v1.2, this class was retrofitted to
  * implement the {@link Map} interface, making it a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html"> Java
- * Collections Framework</a>.  Unlike the new collection
- * implementations, {@code Hashtable} is synchronized.
+ * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ *
+ * Java Collections Framework</a>.  Unlike the new collection
+ * implementations, {@code Hashtable} is synchronized.  If a
+ * thread-safe implementation is not needed, it is recommended to use
+ * {@link HashMap} in place of {@code Hashtable}.  If a thread-safe
+ * highly-concurrent implementation is desired, then it is recommended
+ * to use {@link java.util.concurrent.ConcurrentHashMap} in place of
+ * {@code Hashtable}.
  *
  * @author  Arthur van Hoff
  * @author  Josh Bloch
