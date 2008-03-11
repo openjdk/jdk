@@ -1771,9 +1771,16 @@ Node *StoreCMNode::Identity( PhaseTransform *phase ) {
 
 //------------------------------Value-----------------------------------------
 const Type *StoreCMNode::Value( PhaseTransform *phase ) const {
+  // Either input is TOP ==> the result is TOP
+  const Type *t = phase->type( in(MemNode::Memory) );
+  if( t == Type::TOP ) return Type::TOP;
+  t = phase->type( in(MemNode::Address) );
+  if( t == Type::TOP ) return Type::TOP;
+  t = phase->type( in(MemNode::ValueIn) );
+  if( t == Type::TOP ) return Type::TOP;
   // If extra input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(MemNode::OopStore) );
-  if( t1 == Type::TOP ) return Type::TOP;
+  t = phase->type( in(MemNode::OopStore) );
+  if( t == Type::TOP ) return Type::TOP;
 
   return StoreNode::Value( phase );
 }
