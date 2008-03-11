@@ -702,13 +702,19 @@ public class ScheduledThreadPoolExecutor
 
     /**
      * Initiates an orderly shutdown in which previously submitted
-     * tasks are executed, but no new tasks will be accepted.  If the
-     * {@code ExecuteExistingDelayedTasksAfterShutdownPolicy} has
-     * been set {@code false}, existing delayed tasks whose delays
-     * have not yet elapsed are cancelled.  And unless the
-     * {@code ContinueExistingPeriodicTasksAfterShutdownPolicy} has
-     * been set {@code true}, future executions of existing periodic
-     * tasks will be cancelled.
+     * tasks are executed, but no new tasks will be accepted.
+     * Invocation has no additional effect if already shut down.
+     *
+     * <p>This method does not wait for previously submitted tasks to
+     * complete execution.  Use {@link #awaitTermination awaitTermination}
+     * to do that.
+     *
+     * <p>If the {@code ExecuteExistingDelayedTasksAfterShutdownPolicy}
+     * has been set {@code false}, existing delayed tasks whose delays
+     * have not yet elapsed are cancelled.  And unless the {@code
+     * ContinueExistingPeriodicTasksAfterShutdownPolicy} has been set
+     * {@code true}, future executions of existing periodic tasks will
+     * be cancelled.
      *
      * @throws SecurityException {@inheritDoc}
      */
@@ -720,6 +726,10 @@ public class ScheduledThreadPoolExecutor
      * Attempts to stop all actively executing tasks, halts the
      * processing of waiting tasks, and returns a list of the tasks
      * that were awaiting execution.
+     *
+     * <p>This method does not wait for actively executing tasks to
+     * terminate.  Use {@link #awaitTermination awaitTermination} to
+     * do that.
      *
      * <p>There are no guarantees beyond best-effort attempts to stop
      * processing actively executing tasks.  This implementation
