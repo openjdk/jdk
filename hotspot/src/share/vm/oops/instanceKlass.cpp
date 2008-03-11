@@ -791,17 +791,39 @@ void instanceKlass::do_local_static_fields_impl(instanceKlassHandle this_oop, vo
 }
 
 
+static int compare_fields_by_offset(int* a, int* b) {
+  return a[0] - b[0];
+}
+
 void instanceKlass::do_nonstatic_fields(FieldClosure* cl) {
-  fieldDescriptor fd;
   instanceKlass* super = superklass();
   if (super != NULL) {
     super->do_nonstatic_fields(cl);
   }
+  fieldDescriptor fd;
   int length = fields()->length();
+  // In DebugInfo nonstatic fields are sorted by offset.
+  int* fields_sorted = NEW_C_HEAP_ARRAY(int, 2*(length+1));
+  int j = 0;
   for (int i = 0; i < length; i += next_offset) {
     fd.initialize(as_klassOop(), i);
-    if (!(fd.is_static())) cl->do_field(&fd);
+    if (!fd.is_static()) {
+      fields_sorted[j + 0] = fd.offset();
+      fields_sorted[j + 1] = i;
+      j += 2;
+    }
   }
+  if (j > 0) {
+    length = j;
+    // _sort_Fn is defined in growableArray.hpp.
+    qsort(fields_sorted, length/2, 2*sizeof(int), (_sort_Fn)compare_fields_by_offset);
+    for (int i = 0; i < length; i += 2) {
+      fd.initialize(as_klassOop(), fields_sorted[i + 1]);
+      assert(!fd.is_static() && fd.offset() == fields_sorted[i], "only nonstatic fields");
+      cl->do_field(&fd);
+    }
+  }
+  FREE_C_HEAP_ARRAY(int, fields_sorted);
 }
 
 
