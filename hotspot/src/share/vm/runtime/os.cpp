@@ -956,7 +956,6 @@ bool os::set_boot_path(char fileSep, char pathSep) {
     return true;
 }
 
-
 void os::set_memory_serialize_page(address page) {
   int count = log2_intptr(sizeof(class JavaThread)) - log2_intptr(64);
   _mem_serialize_page = (volatile int32_t *)page;
@@ -967,6 +966,8 @@ void os::set_memory_serialize_page(address page) {
   set_serialize_page_mask((uintptr_t)(vm_page_size() - sizeof(int32_t)));
 }
 
+static volatile intptr_t SerializePageLock = 0;
+
 // This method is called from signal handler when SIGSEGV occurs while the current
 // thread tries to store to the "read-only" memory serialize page during state
 // transition.
@@ -974,15 +975,14 @@ void os::block_on_serialize_page_trap() {
   if (TraceSafepoint) {
     tty->print_cr("Block until the serialize page permission restored");
   }
-  // When VMThread is holding the SerializePage_lock during modifying the
+  // When VMThread is holding the SerializePageLock during modifying the
   // access permission of the memory serialize page, the following call
   // will block until the permission of that page is restored to rw.
   // Generally, it is unsafe to manipulate locks in signal handlers, but in
   // this case, it's OK as the signal is synchronous and we know precisely when
-  // it can occur. SerializePage_lock is a transiently-held leaf lock, so
-  // lock_without_safepoint_check should be safe.
-  SerializePage_lock->lock_without_safepoint_check();
-  SerializePage_lock->unlock();
+  // it can occur.
+  Thread::muxAcquire(&SerializePageLock, "set_memory_serialize_page");
+  Thread::muxRelease(&SerializePageLock);
 }
 
 // Serialize all thread state variables
@@ -990,14 +990,12 @@ void os::serialize_thread_states() {
   // On some platforms such as Solaris & Linux, the time duration of the page
   // permission restoration is observed to be much longer than expected  due to
   // scheduler starvation problem etc. To avoid the long synchronization
-  // time and expensive page trap spinning, 'SerializePage_lock' is used to block
-  // the mutator thread if such case is encountered. Since this method is always
-  // called by VMThread during safepoint, lock_without_safepoint_check is used
-  // instead. See bug 6546278.
-  SerializePage_lock->lock_without_safepoint_check();
+  // time and expensive page trap spinning, 'SerializePageLock' is used to block
+  // the mutator thread if such case is encountered. See bug 6546278 for details.
+  Thread::muxAcquire(&SerializePageLock, "serialize_thread_states");
   os::protect_memory( (char *)os::get_memory_serialize_page(), os::vm_page_size() );
   os::unguard_memory( (char *)os::get_memory_serialize_page(), os::vm_page_size() );
-  SerializePage_lock->unlock();
+  Thread::muxRelease(&SerializePageLock);
 }
 
 // Returns true if the current stack pointer is above the stack shadow
