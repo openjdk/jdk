@@ -131,6 +131,10 @@ public class ClassReader extends ClassFile implements Completer {
      */
     private final JavaFileManager fileManager;
 
+    /** Factory for diagnostics
+     */
+    JCDiagnostic.Factory diagFactory;
+
     /** Can be reassigned from outside:
      *  the completer to be used for ".java" files. If this remains unassigned
      *  ".java" files will not be loaded.
@@ -221,6 +225,7 @@ public class ClassReader extends ClassFile implements Completer {
         fileManager = context.get(JavaFileManager.class);
         if (fileManager == null)
             throw new AssertionError("FileManager initialization error");
+        diagFactory = JCDiagnostic.Factory.instance(context);
 
         init(syms, definitive);
         log = Log.instance(context);
@@ -256,23 +261,26 @@ public class ClassReader extends ClassFile implements Completer {
  * Error Diagnoses
  ***********************************************************************/
 
-    public static class BadClassFile extends CompletionFailure {
+
+    public class BadClassFile extends CompletionFailure {
         private static final long serialVersionUID = 0;
 
-        /**
-         * @param msg A localized message.
-         */
-        public BadClassFile(ClassSymbol c, Object cname, Object msg) {
-            super(c, Log.getLocalizedString("bad.class.file.header",
-                                            cname, msg));
+        public BadClassFile(TypeSymbol sym, JavaFileObject file, JCDiagnostic diag) {
+            super(sym, createBadClassFileDiagnostic(file, diag));
         }
+    }
+    // where
+    private JCDiagnostic createBadClassFileDiagnostic(JavaFileObject file, JCDiagnostic diag) {
+        String key = (file.getKind() == JavaFileObject.Kind.SOURCE
+                    ? "bad.source.file.header" : "bad.class.file.header");
+        return diagFactory.fragment(key, file, diag);
     }
 
     public BadClassFile badClassFile(String key, Object... args) {
         return new BadClassFile (
             currentOwner.enclClass(),
             currentClassFile,
-            Log.getLocalizedString(key, args));
+            diagFactory.fragment(key, args));
     }
 
 /************************************************************************
@@ -1893,10 +1901,10 @@ public class ClassReader extends ClassFile implements Completer {
                 currentClassFile = previousClassFile;
             }
         } else {
+            JCDiagnostic diag =
+                diagFactory.fragment("class.file.not.found", c.flatname);
             throw
-                newCompletionFailure(c,
-                                     Log.getLocalizedString("class.file.not.found",
-                                                            c.flatname));
+                newCompletionFailure(c, diag);
         }
     }
     // where
@@ -1934,22 +1942,22 @@ public class ClassReader extends ClassFile implements Completer {
          *  In practice, only one can be used at a time, so we share one
          *  to reduce the expense of allocating new exception objects.
          */
-        private CompletionFailure newCompletionFailure(ClassSymbol c,
-                                                       String localized) {
+        private CompletionFailure newCompletionFailure(TypeSymbol c,
+                                                       JCDiagnostic diag) {
             if (!cacheCompletionFailure) {
                 // log.warning("proc.messager",
                 //             Log.getLocalizedString("class.file.not.found", c.flatname));
                 // c.debug.printStackTrace();
-                return new CompletionFailure(c, localized);
+                return new CompletionFailure(c, diag);
             } else {
                 CompletionFailure result = cachedCompletionFailure;
                 result.sym = c;
-                result.errmsg = localized;
+                result.diag = diag;
                 return result;
             }
         }
         private CompletionFailure cachedCompletionFailure =
-            new CompletionFailure(null, null);
+            new CompletionFailure(null, (JCDiagnostic) null);
         {
             cachedCompletionFailure.setStackTrace(new StackTraceElement[0]);
         }
