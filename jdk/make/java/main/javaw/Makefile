@@ -46,7 +46,7 @@ STATIC_JLI = true
 include $(BUILDDIR)/common/Defs.gmk
 
 OTHER_CPPFLAGS += -DJAVAW
-LDLIBS_COMMON +=  user32.lib
+LDLIBS_COMMON +=  user32.lib comctl32.lib
 
 # Override the default version info with our own resource file (see 5106536)
 ifeq ($(PLATFORM), windows)

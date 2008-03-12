@@ -151,11 +151,18 @@ class NumericValueExp extends QueryEval implements ValueExp {
      * Returns the string representing the object
      */
     public String toString()  {
+      if (val == null)
+        return "null";
       if (val instanceof Long || val instanceof Integer)
       {
-        return String.valueOf(val.longValue());
+        return Long.toString(val.longValue());
       }
-      return String.valueOf(val.doubleValue());
+      double d = val.doubleValue();
+      if (Double.isInfinite(d))
+          return (d > 0) ? "(1.0 / 0.0)" : "(-1.0 / 0.0)";
+      if (Double.isNaN(d))
+          return "(0.0 / 0.0)";
+      return Double.toString(d);
     }
 
     /**
@@ -244,4 +251,10 @@ class NumericValueExp extends QueryEval implements ValueExp {
         out.defaultWriteObject();
       }
     }
+
+    @Deprecated
+    public void setMBeanServer(MBeanServer s) {
+        super.setMBeanServer(s);
+    }
+
  }
