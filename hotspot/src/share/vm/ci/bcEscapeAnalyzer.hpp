@@ -46,9 +46,12 @@ class BCEscapeAnalyzer : public ResourceObj {
   BitMap            _arg_stack;
   BitMap            _arg_returned;
   BitMap            _dirty;
+  enum{ ARG_OFFSET_MAX = 31};
+  uint              *_arg_modified;
 
   bool              _return_local;
   bool              _allocated_escapes;
+  bool              _unknown_modified;
   bool              _return_allocated;
 
   ciObjectList     _dependencies;
@@ -80,6 +83,7 @@ class BCEscapeAnalyzer : public ResourceObj {
   void set_method_escape(ArgumentMap vars);
   void set_global_escape(ArgumentMap vars);
   void set_dirty(ArgumentMap vars);
+  void set_modified(ArgumentMap vars, int offs, int size);
 
   bool is_recursive_call(ciMethod* callee);
   void add_dependence(ciKlass *klass, ciMethod *meth);
@@ -139,6 +143,13 @@ class BCEscapeAnalyzer : public ResourceObj {
   bool is_return_allocated() const {
     return !_conservative && _return_allocated && !_allocated_escapes;
   }
+
+  // Tracking of argument modification
+
+  enum {OFFSET_ANY = -1};
+  bool is_arg_modified(int arg, int offset, int size_in_bytes);
+  void set_arg_modified(int arg, int offset, int size_in_bytes);
+  bool has_non_arg_side_affects()    { return _unknown_modified; }
 
   // Copy dependencies from this analysis into "deps"
   void copy_dependencies(Dependencies *deps);

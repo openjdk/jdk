@@ -584,6 +584,8 @@
    do_name(     attemptUpdate_name,                                 "attemptUpdate")                                    \
    do_signature(attemptUpdate_signature,                            "(JJ)Z")                                            \
                                                                                                                         \
+  do_intrinsic(_fillInStackTrace,         java_lang_Throwable, fillInStackTrace_name, void_throwable_signature,  F_RNY) \
+                                                                                                                        \
   /* support for sun.misc.Unsafe */                                                                                     \
   do_class(sun_misc_Unsafe,               "sun/misc/Unsafe")                                                            \
                                                                                                                         \
@@ -871,7 +873,8 @@ class vmIntrinsics: AllStatic {
     F_R,                        // !static        !synchronized (R="regular")
     F_S,                        //  static        !synchronized
     F_RN,                       // !static native !synchronized
-    F_SN                        //  static native !synchronized
+    F_SN,                       //  static native !synchronized
+    F_RNY                       // !static native  synchronized
   };
 
 public:
