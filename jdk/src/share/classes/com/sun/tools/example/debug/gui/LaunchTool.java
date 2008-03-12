@@ -131,14 +131,13 @@ class LaunchTool {
         final JPanel radioPanel = new JPanel();
         final ButtonGroup radioGroup = new ButtonGroup();
         VirtualMachineManager manager = Bootstrap.virtualMachineManager();
-        List all = manager.allConnectors();
+        List<Connector> all = manager.allConnectors();
         Map<ButtonModel, Connector> modelToConnector = new HashMap<ButtonModel, Connector>(all.size(), 0.5f);
 
         dialog.setModal(true);
         dialog.setTitle("Select Connector Type");
         radioPanel.setLayout(new BoxLayout(radioPanel, BoxLayout.Y_AXIS));
-        for (Iterator it = all.iterator(); it.hasNext(); ) {
-            Connector connector = (Connector)it.next();
+        for (Connector connector : all) {
             JRadioButton radio = new JRadioButton(connector.description());
             modelToConnector.put(radio.getModel(), connector);
             radioPanel.add(radio);
@@ -166,7 +165,7 @@ class LaunchTool {
         dialog.show();
 
         return oked[0] ?
-            (Connector)(modelToConnector.get(radioGroup.getSelection())) :
+            modelToConnector.get(radioGroup.getSelection()) :
             null;
     }
 
@@ -188,13 +187,12 @@ class LaunchTool {
         //        guts.add(new JLabel(connector.description()));
 
         final List<ArgRep> argReps = new ArrayList<ArgRep>(args.size());
-        for (Iterator it = args.values().iterator(); it.hasNext(); ) {
-            Object arg = it.next();
+        for (Connector.Argument arg : args.values()) {
             ArgRep ar;
             if (arg instanceof Connector.BooleanArgument) {
                 ar = new BooleanArgRep((Connector.BooleanArgument)arg, guts);
             } else {
-                ar = new StringArgRep((Connector.Argument)arg, guts);
+                ar = new StringArgRep(arg, guts);
             }
             argReps.add(ar);
         }
@@ -202,8 +200,7 @@ class LaunchTool {
 
         JPanel buttonPanel = okCancel( dialog, new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                for (Iterator it = argReps.iterator(); it.hasNext(); ) {
-                    ArgRep ar = (ArgRep)it.next();
+                for (ArgRep ar : argReps) {
                     if (!ar.isSpecified()) {
                         JOptionPane.showMessageDialog(dialog,
                                     ar.arg.label() +

@@ -485,7 +485,7 @@ class PacketStream {
      * Read field represented as vm specific byte sequence.
      */
     Field readField() {
-        ReferenceTypeImpl refType = (ReferenceTypeImpl)readReferenceType();
+        ReferenceTypeImpl refType = readReferenceType();
         long fieldRef = readFieldRef();
         return refType.getFieldMirror(fieldRef);
     }

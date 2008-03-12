@@ -174,8 +174,8 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
 
         if (startCleanupThread) {
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
-                public Object run() {
+                new java.security.PrivilegedAction<Void>() {
+                public Void run() {
                     // We want to create the Keep-Alive-SocketCleaner in the
                     // system threadgroup
                     ThreadGroup grp = Thread.currentThread().getThreadGroup();

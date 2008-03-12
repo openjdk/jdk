@@ -205,9 +205,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     _wc_enabled = cpwildcard;
     _ergo_policy = ergo;
 
-    if (javaw == JNI_TRUE)
-        SetJavaw();
-
+    InitLauncher(javaw);
     DumpState();
 
     /*

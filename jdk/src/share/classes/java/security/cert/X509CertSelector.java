@@ -381,7 +381,7 @@ public class X509CertSelector implements CertSelector {
         if (subjectKeyID == null) {
             this.subjectKeyID = null;
         } else {
-            this.subjectKeyID = (byte[])subjectKeyID.clone();
+            this.subjectKeyID = subjectKeyID.clone();
         }
     }
 
@@ -442,7 +442,7 @@ public class X509CertSelector implements CertSelector {
         if (authorityKeyID == null) {
             this.authorityKeyID = null;
         } else {
-            this.authorityKeyID = (byte[])authorityKeyID.clone();
+            this.authorityKeyID = authorityKeyID.clone();
         }
     }
 
@@ -566,7 +566,7 @@ public class X509CertSelector implements CertSelector {
             subjectPublicKey = null;
             subjectPublicKeyBytes = null;
         } else {
-            subjectPublicKeyBytes = (byte[])key.clone();
+            subjectPublicKeyBytes = key.clone();
             subjectPublicKey = X509Key.parse(new DerValue(subjectPublicKeyBytes));
         }
     }
@@ -590,7 +590,7 @@ public class X509CertSelector implements CertSelector {
         if (keyUsage == null) {
             this.keyUsage = null;
         } else {
-            this.keyUsage = (boolean[])keyUsage.clone();
+            this.keyUsage = keyUsage.clone();
         }
     }
 
@@ -1041,7 +1041,7 @@ public class X509CertSelector implements CertSelector {
             ncBytes = null;
             nc = null;
         } else {
-            ncBytes = (byte[])bytes.clone();
+            ncBytes = bytes.clone();
             nc = new NameConstraintsExtension(FALSE, bytes);
         }
     }
@@ -1438,7 +1438,7 @@ public class X509CertSelector implements CertSelector {
         if (subjectKeyID == null) {
             return null;
         }
-        return (byte[])subjectKeyID.clone();
+        return subjectKeyID.clone();
     }
 
     /**
@@ -1457,7 +1457,7 @@ public class X509CertSelector implements CertSelector {
         if (authorityKeyID == null) {
           return null;
         }
-        return (byte[])authorityKeyID.clone();
+        return authorityKeyID.clone();
     }
 
     /**
@@ -1546,7 +1546,7 @@ public class X509CertSelector implements CertSelector {
         if (keyUsage == null) {
             return null;
         }
-        return (boolean[])keyUsage.clone();
+        return keyUsage.clone();
     }
 
     /**
@@ -1736,7 +1736,7 @@ public class X509CertSelector implements CertSelector {
         if (ncBytes == null) {
             return null;
         } else {
-            return (byte[]) ncBytes.clone();
+            return ncBytes.clone();
         }
     }
 
