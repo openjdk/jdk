@@ -19,7 +19,7 @@
 // Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
 // CA 95054 USA or visit www.sun.com if you need additional information or
 // have any questions.
-//  
+//
 //
 
 ad_<arch_model>.cpp                     adGlobals_<arch_model>.hpp
@@ -410,6 +410,7 @@ domgraph.cpp                            vectset.hpp
 
 escape.cpp                              allocation.hpp
 escape.cpp                              bcEscapeAnalyzer.hpp
+escape.cpp                              c2compiler.hpp
 escape.cpp                              callnode.hpp
 escape.cpp                              cfgnode.hpp
 escape.cpp                              compile.hpp
@@ -990,6 +991,7 @@ stubRoutines.cpp                        runtime.hpp
 
 subnode.cpp                             addnode.hpp
 subnode.cpp                             allocation.inline.hpp
+subnode.cpp                             callnode.hpp
 subnode.cpp                             cfgnode.hpp
 subnode.cpp                             compileLog.hpp
 subnode.cpp                             connode.hpp
@@ -1086,7 +1088,7 @@ idealGraphPrinter.hpp                   growableArray.hpp
 idealGraphPrinter.hpp                   ostream.hpp
 
 idealGraphPrinter.cpp                   idealGraphPrinter.hpp
-idealGraphPrinter.cpp			chaitin.hpp
+idealGraphPrinter.cpp                   chaitin.hpp
 idealGraphPrinter.cpp                   machnode.hpp
 idealGraphPrinter.cpp                   parse.hpp
 idealGraphPrinter.cpp                   threadCritical.hpp
@@ -1098,4 +1100,4 @@ parse2.cpp                              idealGraphPrinter.hpp
 parse1.cpp                              idealGraphPrinter.hpp
 matcher.cpp                             idealGraphPrinter.hpp
 loopnode.cpp                            idealGraphPrinter.hpp
-chaitin.cpp				idealGraphPrinter.hpp
+chaitin.cpp                             idealGraphPrinter.hpp

@@ -921,11 +921,8 @@ static void turn_off_compiler(Compile* C) {
     // blown the code cache size.
     C->record_failure("excessive request to CodeCache");
   } else {
-    UseInterpreter            = true;
-    UseCompiler               = false;
-    AlwaysCompileLoopMethods  = false;
+    // Let CompilerBroker disable further compilations.
     C->record_failure("CodeCache is full");
-    warning("CodeCache is full. Compiling has been disabled");
   }
 }
 

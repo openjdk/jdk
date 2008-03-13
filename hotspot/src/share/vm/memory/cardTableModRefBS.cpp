@@ -51,7 +51,7 @@ CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap,
   _whole_heap(whole_heap),
   _guard_index(cards_required(whole_heap.word_size()) - 1),
   _last_valid_index(_guard_index - 1),
-  _page_size(os::page_size_for_region(_guard_index + 1, _guard_index + 1, 1)),
+  _page_size(os::vm_page_size()),
   _byte_map_size(compute_byte_map_size())
 {
   _kind = BarrierSet::CardTableModRef;

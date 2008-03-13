@@ -108,19 +108,13 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   // Avoid independent memory operations
   Node* old_mem = mem;
 
-  if (mem->is_Proj() && mem->in(0)->is_Initialize()) {
-    InitializeNode* init = mem->in(0)->as_Initialize();
-    if (init->is_complete()) {  // i.e., after macro expansion
-      const TypePtr* tp = t_adr->is_ptr();
-      uint alias_idx = phase->C->get_alias_index(tp);
-      // Free this slice from the init.  It was hooked, temporarily,
-      // by GraphKit::set_output_for_allocation.
-      if (alias_idx > Compile::AliasIdxRaw) {
-        mem = init->memory(alias_idx);
-        // ...but not with the raw-pointer slice.
-      }
-    }
-  }
+  // The code which unhooks non-raw memories from complete (macro-expanded)
+  // initializations was removed. After macro-expansion all stores catched
+  // by Initialize node became raw stores and there is no information
+  // which memory slices they modify. So it is unsafe to move any memory
+  // operation above these stores. Also in most cases hooked non-raw memories
+  // were already unhooked by using information from detect_ptr_independence()
+  // and find_previous_store().
 
   if (mem->is_MergeMem()) {
     MergeMemNode* mmem = mem->as_MergeMem();
@@ -634,6 +628,46 @@ uint LoadNode::hash() const {
 Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
   Node* ld_adr = in(MemNode::Address);
 
+  const TypeInstPtr* tp = phase->type(ld_adr)->isa_instptr();
+  Compile::AliasType* atp = tp != NULL ? phase->C->alias_type(tp) : NULL;
+  if (EliminateAutoBox && atp != NULL && atp->index() >= Compile::AliasIdxRaw &&
+      atp->field() != NULL && !atp->field()->is_volatile()) {
+    uint alias_idx = atp->index();
+    bool final = atp->field()->is_final();
+    Node* result = NULL;
+    Node* current = st;
+    // Skip through chains of MemBarNodes checking the MergeMems for
+    // new states for the slice of this load.  Stop once any other
+    // kind of node is encountered.  Loads from final memory can skip
+    // through any kind of MemBar but normal loads shouldn't skip
+    // through MemBarAcquire since the could allow them to move out of
+    // a synchronized region.
+    while (current->is_Proj()) {
+      int opc = current->in(0)->Opcode();
+      if ((final && opc == Op_MemBarAcquire) ||
+          opc == Op_MemBarRelease || opc == Op_MemBarCPUOrder) {
+        Node* mem = current->in(0)->in(TypeFunc::Memory);
+        if (mem->is_MergeMem()) {
+          MergeMemNode* merge = mem->as_MergeMem();
+          Node* new_st = merge->memory_at(alias_idx);
+          if (new_st == merge->base_memory()) {
+            // Keep searching
+            current = merge->base_memory();
+            continue;
+          }
+          // Save the new memory state for the slice and fall through
+          // to exit.
+          result = new_st;
+        }
+      }
+      break;
+    }
+    if (result != NULL) {
+      st = result;
+    }
+  }
+
+
   // Loop around twice in the case Load -> Initialize -> Store.
   // (See PhaseIterGVN::add_users_to_worklist, which knows about this case.)
   for (int trip = 0; trip <= 1; trip++) {
@@ -723,6 +757,168 @@ Node *LoadNode::Identity( PhaseTransform *phase ) {
   return this;
 }
 
+
+// Returns true if the AliasType refers to the field that holds the
+// cached box array.  Currently only handles the IntegerCache case.
+static bool is_autobox_cache(Compile::AliasType* atp) {
+  if (atp != NULL && atp->field() != NULL) {
+    ciField* field = atp->field();
+    ciSymbol* klass = field->holder()->name();
+    if (field->name() == ciSymbol::cache_field_name() &&
+        field->holder()->uses_default_loader() &&
+        klass == ciSymbol::java_lang_Integer_IntegerCache()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Fetch the base value in the autobox array
+static bool fetch_autobox_base(Compile::AliasType* atp, int& cache_offset) {
+  if (atp != NULL && atp->field() != NULL) {
+    ciField* field = atp->field();
+    ciSymbol* klass = field->holder()->name();
+    if (field->name() == ciSymbol::cache_field_name() &&
+        field->holder()->uses_default_loader() &&
+        klass == ciSymbol::java_lang_Integer_IntegerCache()) {
+      assert(field->is_constant(), "what?");
+      ciObjArray* array = field->constant_value().as_object()->as_obj_array();
+      // Fetch the box object at the base of the array and get its value
+      ciInstance* box = array->obj_at(0)->as_instance();
+      ciInstanceKlass* ik = box->klass()->as_instance_klass();
+      if (ik->nof_nonstatic_fields() == 1) {
+        // This should be true nonstatic_field_at requires calling
+        // nof_nonstatic_fields so check it anyway
+        ciConstant c = box->field_value(ik->nonstatic_field_at(0));
+        cache_offset = c.as_int();
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+// Returns true if the AliasType refers to the value field of an
+// autobox object.  Currently only handles Integer.
+static bool is_autobox_object(Compile::AliasType* atp) {
+  if (atp != NULL && atp->field() != NULL) {
+    ciField* field = atp->field();
+    ciSymbol* klass = field->holder()->name();
+    if (field->name() == ciSymbol::value_name() &&
+        field->holder()->uses_default_loader() &&
+        klass == ciSymbol::java_lang_Integer()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+// We're loading from an object which has autobox behaviour.
+// If this object is result of a valueOf call we'll have a phi
+// merging a newly allocated object and a load from the cache.
+// We want to replace this load with the original incoming
+// argument to the valueOf call.
+Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
+  Node* base = in(Address)->in(AddPNode::Base);
+  if (base->is_Phi() && base->req() == 3) {
+    AllocateNode* allocation = NULL;
+    int allocation_index = -1;
+    int load_index = -1;
+    for (uint i = 1; i < base->req(); i++) {
+      allocation = AllocateNode::Ideal_allocation(base->in(i), phase);
+      if (allocation != NULL) {
+        allocation_index = i;
+        load_index = 3 - allocation_index;
+        break;
+      }
+    }
+    LoadNode* load = NULL;
+    if (allocation != NULL && base->in(load_index)->is_Load()) {
+      load = base->in(load_index)->as_Load();
+    }
+    if (load != NULL && in(Memory)->is_Phi() && in(Memory)->in(0) == base->in(0)) {
+      // Push the loads from the phi that comes from valueOf up
+      // through it to allow elimination of the loads and the recovery
+      // of the original value.
+      Node* mem_phi = in(Memory);
+      Node* offset = in(Address)->in(AddPNode::Offset);
+
+      Node* in1 = clone();
+      Node* in1_addr = in1->in(Address)->clone();
+      in1_addr->set_req(AddPNode::Base, base->in(allocation_index));
+      in1_addr->set_req(AddPNode::Address, base->in(allocation_index));
+      in1_addr->set_req(AddPNode::Offset, offset);
+      in1->set_req(0, base->in(allocation_index));
+      in1->set_req(Address, in1_addr);
+      in1->set_req(Memory, mem_phi->in(allocation_index));
+
+      Node* in2 = clone();
+      Node* in2_addr = in2->in(Address)->clone();
+      in2_addr->set_req(AddPNode::Base, base->in(load_index));
+      in2_addr->set_req(AddPNode::Address, base->in(load_index));
+      in2_addr->set_req(AddPNode::Offset, offset);
+      in2->set_req(0, base->in(load_index));
+      in2->set_req(Address, in2_addr);
+      in2->set_req(Memory, mem_phi->in(load_index));
+
+      in1_addr = phase->transform(in1_addr);
+      in1 =      phase->transform(in1);
+      in2_addr = phase->transform(in2_addr);
+      in2 =      phase->transform(in2);
+
+      PhiNode* result = PhiNode::make_blank(base->in(0), this);
+      result->set_req(allocation_index, in1);
+      result->set_req(load_index, in2);
+      return result;
+    }
+  } else if (base->is_Load()) {
+    // Eliminate the load of Integer.value for integers from the cache
+    // array by deriving the value from the index into the array.
+    // Capture the offset of the load and then reverse the computation.
+    Node* load_base = base->in(Address)->in(AddPNode::Base);
+    if (load_base != NULL) {
+      Compile::AliasType* atp = phase->C->alias_type(load_base->adr_type());
+      intptr_t cache_offset;
+      int shift = -1;
+      Node* cache = NULL;
+      if (is_autobox_cache(atp)) {
+        shift  = exact_log2(type2aelembytes(T_OBJECT));
+        cache = AddPNode::Ideal_base_and_offset(load_base->in(Address), phase, cache_offset);
+      }
+      if (cache != NULL && base->in(Address)->is_AddP()) {
+        Node* elements[4];
+        int count = base->in(Address)->as_AddP()->unpack_offsets(elements, ARRAY_SIZE(elements));
+        int cache_low;
+        if (count > 0 && fetch_autobox_base(atp, cache_low)) {
+          int offset = arrayOopDesc::base_offset_in_bytes(memory_type()) - (cache_low << shift);
+          // Add up all the offsets making of the address of the load
+          Node* result = elements[0];
+          for (int i = 1; i < count; i++) {
+            result = phase->transform(new (phase->C, 3) AddXNode(result, elements[i]));
+          }
+          // Remove the constant offset from the address and then
+          // remove the scaling of the offset to recover the original index.
+          result = phase->transform(new (phase->C, 3) AddXNode(result, phase->MakeConX(-offset)));
+          if (result->Opcode() == Op_LShiftX && result->in(2) == phase->intcon(shift)) {
+            // Peel the shift off directly but wrap it in a dummy node
+            // since Ideal can't return existing nodes
+            result = new (phase->C, 3) RShiftXNode(result->in(1), phase->intcon(0));
+          } else {
+            result = new (phase->C, 3) RShiftXNode(result, phase->intcon(shift));
+          }
+#ifdef _LP64
+          result = new (phase->C, 2) ConvL2INode(phase->transform(result));
+#endif
+          return result;
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+
 //------------------------------Ideal------------------------------------------
 // If the load is from Field memory and the pointer is non-null, we can
 // zero out the control input.
@@ -752,6 +948,17 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         && detect_dominating_control(base->in(0), phase->C->start())) {
       // A method-invariant, non-null address (constant or 'this' argument).
       set_req(MemNode::Control, NULL);
+    }
+  }
+
+  if (EliminateAutoBox && can_reshape && in(Address)->is_AddP()) {
+    Node* base = in(Address)->in(AddPNode::Base);
+    if (base != NULL) {
+      Compile::AliasType* atp = phase->C->alias_type(adr_type());
+      if (is_autobox_object(atp)) {
+        Node* result = eliminate_autobox(phase);
+        if (result != NULL) return result;
+      }
     }
   }
 
@@ -857,6 +1064,17 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
         if (jt->empty() && !t->empty()) {
           // This can happen if a interface-typed array narrows to a class type.
           jt = _type;
+        }
+
+        if (EliminateAutoBox) {
+          // The pointers in the autobox arrays are always non-null
+          Node* base = in(Address)->in(AddPNode::Base);
+          if (base != NULL) {
+            Compile::AliasType* atp = phase->C->alias_type(base->adr_type());
+            if (is_autobox_cache(atp)) {
+              return jt->join(TypePtr::NOTNULL)->is_ptr();
+            }
+          }
         }
         return jt;
       }
@@ -1553,9 +1771,16 @@ Node *StoreCMNode::Identity( PhaseTransform *phase ) {
 
 //------------------------------Value-----------------------------------------
 const Type *StoreCMNode::Value( PhaseTransform *phase ) const {
+  // Either input is TOP ==> the result is TOP
+  const Type *t = phase->type( in(MemNode::Memory) );
+  if( t == Type::TOP ) return Type::TOP;
+  t = phase->type( in(MemNode::Address) );
+  if( t == Type::TOP ) return Type::TOP;
+  t = phase->type( in(MemNode::ValueIn) );
+  if( t == Type::TOP ) return Type::TOP;
   // If extra input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(MemNode::OopStore) );
-  if( t1 == Type::TOP ) return Type::TOP;
+  t = phase->type( in(MemNode::OopStore) );
+  if( t == Type::TOP ) return Type::TOP;
 
   return StoreNode::Value( phase );
 }

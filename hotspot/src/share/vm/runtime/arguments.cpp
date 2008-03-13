@@ -1262,6 +1262,22 @@ void Arguments::set_bytecode_flags() {
 
 // Aggressive optimization flags  -XX:+AggressiveOpts
 void Arguments::set_aggressive_opts_flags() {
+#ifdef COMPILER2
+  if (AggressiveOpts || !FLAG_IS_DEFAULT(AutoBoxCacheMax)) {
+    if (FLAG_IS_DEFAULT(EliminateAutoBox)) {
+      FLAG_SET_DEFAULT(EliminateAutoBox, true);
+    }
+    if (FLAG_IS_DEFAULT(AutoBoxCacheMax)) {
+      FLAG_SET_DEFAULT(AutoBoxCacheMax, 20000);
+    }
+
+    // Feed the cache size setting into the JDK
+    char buffer[1024];
+    sprintf(buffer, "java.lang.Integer.IntegerCache.high=%d", AutoBoxCacheMax);
+    add_property(buffer);
+  }
+#endif
+
   if (AggressiveOpts) {
 NOT_WINDOWS(
     // No measured benefit on Windows

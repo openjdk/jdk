@@ -395,6 +395,15 @@ PhiNode *ConnectionGraph::create_split_phi(PhiNode *orig_phi, int alias_idx, Gro
   if (result != NULL && C->get_alias_index(result->adr_type()) == alias_idx) {
     return result;
   }
+  if ((int)C->unique() + 2*NodeLimitFudgeFactor > MaxNodeLimit) {
+    if (C->do_escape_analysis() == true && !C->failing()) {
+      // Retry compilation without escape analysis.
+      // If this is the first failure, the sentinel string will "stick"
+      // to the Compile object, and the C2Compiler will see it and retry.
+      C->record_failure(C2Compiler::retry_no_escape_analysis());
+    }
+    return NULL;
+  }
 
   orig_phi_worklist.append_if_missing(orig_phi);
   result = PhiNode::make(orig_phi->in(0), NULL, Type::MEMORY, atype);
@@ -442,6 +451,9 @@ PhiNode *ConnectionGraph::split_memory_phi(PhiNode *orig_phi, int alias_idx, Gro
         } else {
           mem = nphi;
         }
+      }
+      if (C->failing()) {
+        return NULL;
       }
       result->set_req(idx++, mem);
     }
@@ -589,6 +601,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       if (es != PointsToNode::NoEscape || !ptn._unique_type) {
         continue; //  can't make a unique type
       }
+      if (alloc->is_Allocate()) {
+        // Set the scalar_replaceable flag before the next check.
+        alloc->as_Allocate()->_is_scalar_replaceable = true;
+      }
+
       set_map(alloc->_idx, n);
       set_map(n->_idx, alloc);
       const TypeInstPtr *t = igvn->type(n)->isa_instptr();
@@ -672,6 +689,9 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       if (mem->is_Phi()) {
         mem = split_memory_phi(mem->as_Phi(), alias_idx, orig_phis, igvn);
       }
+      if (_compile->failing()) {
+        return;
+      }
       if (mem != n->in(MemNode::Memory))
         set_map(n->_idx, mem);
       if (n->is_Load()) {
@@ -742,7 +762,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
           if((uint)_compile->get_general_index(ni) == i) {
             Node *m = (ni >= nmm->req()) ? nmm->empty_memory() : nmm->in(ni);
             if (nmm->is_empty_memory(m)) {
-              nmm->set_memory_at(ni, split_memory_phi(mem->as_Phi(), ni, orig_phis, igvn));
+              m = split_memory_phi(mem->as_Phi(), ni, orig_phis, igvn);
+              if (_compile->failing()) {
+                return;
+              }
+              nmm->set_memory_at(ni, m);
             }
           }
         }
@@ -881,6 +905,11 @@ void ConnectionGraph::compute_escape() {
   // Now use the escape information to create unique types for
   // unescaped objects
   split_unique_types(alloc_worklist);
+  if (_compile->failing())  return;
+
+  // Clean up after split unique types.
+  ResourceMark rm;
+  PhaseRemoveUseless pru(_compile->initial_gvn(), _compile->for_igvn());
 }
 
 Node * ConnectionGraph::skip_casts(Node *n) {

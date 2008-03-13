@@ -435,9 +435,11 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
 
   // Check profitability
   int cost = 0;
+  int phis = 0;
   for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
     Node *out = region->fast_out(i);
     if( !out->is_Phi() ) continue; // Ignore other control edges, etc
+    phis++;
     PhiNode* phi = out->as_Phi();
     switch (phi->type()->basic_type()) {
     case T_LONG:
@@ -489,6 +491,12 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     }
   }
   if( cost >= ConditionalMoveLimit ) return NULL; // Too much goo
+  Node* bol = iff->in(1);
+  assert( bol->Opcode() == Op_Bool, "" );
+  int cmp_op = bol->in(1)->Opcode();
+  // It is expensive to generate flags from a float compare.
+  // Avoid duplicated float compare.
+  if( phis > 1 && (cmp_op == Op_CmpF || cmp_op == Op_CmpD)) return NULL;
 
   // --------------
   // Now replace all Phis with CMOV's

@@ -141,41 +141,45 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 #ifdef COMPILER2
   // Reallocate the non-escaping objects and restore their fields. Then
   // relock objects if synchronization on them was eliminated.
-  if (DoEscapeAnalysis && EliminateAllocations) {
-    GrowableArray<ScopeValue*>* objects = chunk->at(0)->scope()->objects();
-    bool reallocated = false;
-    if (objects != NULL) {
-      JRT_BLOCK
-        reallocated = realloc_objects(thread, &deoptee, objects, THREAD);
-      JRT_END
-    }
-    if (reallocated) {
-      reassign_fields(&deoptee, &map, objects);
-#ifndef PRODUCT
-      if (TraceDeoptimization) {
-        ttyLocker ttyl;
-        tty->print_cr("REALLOC OBJECTS in thread " INTPTR_FORMAT, thread);
-        print_objects(objects);
+  if (DoEscapeAnalysis) {
+    if (EliminateAllocations) {
+      GrowableArray<ScopeValue*>* objects = chunk->at(0)->scope()->objects();
+      bool reallocated = false;
+      if (objects != NULL) {
+        JRT_BLOCK
+          reallocated = realloc_objects(thread, &deoptee, objects, THREAD);
+        JRT_END
       }
-#endif
-    }
-    for (int i = 0; i < chunk->length(); i++) {
-      GrowableArray<MonitorValue*>* monitors = chunk->at(i)->scope()->monitors();
-      if (monitors != NULL) {
-        relock_objects(&deoptee, &map, monitors);
+      if (reallocated) {
+        reassign_fields(&deoptee, &map, objects);
 #ifndef PRODUCT
         if (TraceDeoptimization) {
           ttyLocker ttyl;
-          tty->print_cr("RELOCK OBJECTS in thread " INTPTR_FORMAT, thread);
-          for (int j = 0; i < monitors->length(); i++) {
-            MonitorValue* mv = monitors->at(i);
-            if (mv->eliminated()) {
-              StackValue* owner = StackValue::create_stack_value(&deoptee, &map, mv->owner());
-              tty->print_cr("     object <" INTPTR_FORMAT "> locked", owner->get_obj()());
+          tty->print_cr("REALLOC OBJECTS in thread " INTPTR_FORMAT, thread);
+          print_objects(objects);
+      }
+#endif
+      }
+    }
+    if (EliminateLocks) {
+      for (int i = 0; i < chunk->length(); i++) {
+        GrowableArray<MonitorValue*>* monitors = chunk->at(i)->scope()->monitors();
+        if (monitors != NULL) {
+          relock_objects(&deoptee, &map, monitors);
+#ifndef PRODUCT
+          if (TraceDeoptimization) {
+            ttyLocker ttyl;
+            tty->print_cr("RELOCK OBJECTS in thread " INTPTR_FORMAT, thread);
+            for (int j = 0; j < monitors->length(); j++) {
+              MonitorValue* mv = monitors->at(j);
+              if (mv->eliminated()) {
+                StackValue* owner = StackValue::create_stack_value(&deoptee, &map, mv->owner());
+                tty->print_cr("     object <" INTPTR_FORMAT "> locked", owner->get_obj()());
+              }
             }
           }
-        }
 #endif
+        }
       }
     }
   }
@@ -656,6 +660,7 @@ public:
 
 
   void do_field(fieldDescriptor* fd) {
+    intptr_t val;
     StackValue* value =
       StackValue::create_stack_value(_fr, _reg_map, _sv->field_at(i()));
     int offset = fd->offset();
@@ -669,24 +674,36 @@ public:
       assert(value->type() == T_INT, "Agreement.");
       StackValue* low =
         StackValue::create_stack_value(_fr, _reg_map, _sv->field_at(++_i));
+#ifdef _LP64
+      jlong res = (jlong)low->get_int();
+#else
+#ifdef SPARC
+      // For SPARC we have to swap high and low words.
+      jlong res = jlong_from((jint)low->get_int(), (jint)value->get_int());
+#else
       jlong res = jlong_from((jint)value->get_int(), (jint)low->get_int());
+#endif //SPARC
+#endif
       _obj->long_field_put(offset, res);
       break;
     }
-
+    // Have to cast to INT (32 bits) pointer to avoid little/big-endian problem.
     case T_INT: case T_FLOAT: // 4 bytes.
       assert(value->type() == T_INT, "Agreement.");
-      _obj->int_field_put(offset, (jint)value->get_int());
+      val = value->get_int();
+      _obj->int_field_put(offset, (jint)*((jint*)&val));
       break;
 
     case T_SHORT: case T_CHAR: // 2 bytes
       assert(value->type() == T_INT, "Agreement.");
-      _obj->short_field_put(offset, (jshort)value->get_int());
+      val = value->get_int();
+      _obj->short_field_put(offset, (jshort)*((jint*)&val));
       break;
 
-    case T_BOOLEAN: // 1 byte
+    case T_BOOLEAN: case T_BYTE: // 1 byte
       assert(value->type() == T_INT, "Agreement.");
-      _obj->bool_field_put(offset, (jboolean)value->get_int());
+      val = value->get_int();
+      _obj->bool_field_put(offset, (jboolean)*((jint*)&val));
       break;
 
     default:
@@ -698,25 +715,49 @@ public:
 
 // restore elements of an eliminated type array
 void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type) {
-  StackValue* low;
-  jlong lval;
   int index = 0;
+  intptr_t val;
 
   for (int i = 0; i < sv->field_size(); i++) {
     StackValue* value = StackValue::create_stack_value(fr, reg_map, sv->field_at(i));
     switch(type) {
-      case T_BOOLEAN: obj->bool_at_put (index, (jboolean) value->get_int()); break;
-      case T_BYTE:    obj->byte_at_put (index, (jbyte)    value->get_int()); break;
-      case T_CHAR:    obj->char_at_put (index, (jchar)    value->get_int()); break;
-      case T_SHORT:   obj->short_at_put(index, (jshort)   value->get_int()); break;
-      case T_INT:     obj->int_at_put  (index, (jint)     value->get_int()); break;
-      case T_FLOAT:   obj->float_at_put(index, (jfloat)   value->get_int()); break;
-      case T_LONG:
-      case T_DOUBLE:
-        low = StackValue::create_stack_value(fr, reg_map, sv->field_at(++i));
-        lval = jlong_from((jint)value->get_int(), (jint)low->get_int());
-        sv->value()->long_field_put(index, lval);
-        break;
+    case T_LONG: case T_DOUBLE: {
+      assert(value->type() == T_INT, "Agreement.");
+      StackValue* low =
+        StackValue::create_stack_value(fr, reg_map, sv->field_at(++i));
+#ifdef _LP64
+      jlong res = (jlong)low->get_int();
+#else
+#ifdef SPARC
+      // For SPARC we have to swap high and low words.
+      jlong res = jlong_from((jint)low->get_int(), (jint)value->get_int());
+#else
+      jlong res = jlong_from((jint)value->get_int(), (jint)low->get_int());
+#endif //SPARC
+#endif
+      obj->long_at_put(index, res);
+      break;
+    }
+
+    // Have to cast to INT (32 bits) pointer to avoid little/big-endian problem.
+    case T_INT: case T_FLOAT: // 4 bytes.
+      assert(value->type() == T_INT, "Agreement.");
+      val = value->get_int();
+      obj->int_at_put(index, (jint)*((jint*)&val));
+      break;
+
+    case T_SHORT: case T_CHAR: // 2 bytes
+      assert(value->type() == T_INT, "Agreement.");
+      val = value->get_int();
+      obj->short_at_put(index, (jshort)*((jint*)&val));
+      break;
+
+    case T_BOOLEAN: case T_BYTE: // 1 byte
+      assert(value->type() == T_INT, "Agreement.");
+      val = value->get_int();
+      obj->bool_at_put(index, (jboolean)*((jint*)&val));
+      break;
+
       default:
         ShouldNotReachHere();
     }

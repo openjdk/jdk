@@ -367,6 +367,12 @@
   notproduct(bool, PrintEliminateLocks, false,                              \
           "Print out when locks are eliminated")                            \
                                                                             \
+  diagnostic(bool, EliminateAutoBox, false,                                 \
+          "Private flag to control optimizations for autobox elimination")  \
+                                                                            \
+  product(intx, AutoBoxCacheMax, 128,                                       \
+          "Sets max value cached by the java.lang.Integer autobox cache")   \
+                                                                            \
   product(bool, DoEscapeAnalysis, false,                                    \
           "Perform escape analysis")                                        \
                                                                             \

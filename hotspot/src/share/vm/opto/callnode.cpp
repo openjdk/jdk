@@ -832,6 +832,7 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
 {
   init_class_id(Class_Allocate);
   init_flags(Flag_is_macro);
+  _is_scalar_replaceable = false;
   Node *topnode = C->top();
 
   init_req( TypeFunc::Control  , ctrl );

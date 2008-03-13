@@ -1447,7 +1447,7 @@ Node* GraphKit::store_oop_to_unknown(Node* ctl,
 //-------------------------array_element_address-------------------------
 Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
                                       const TypeInt* sizetype) {
-  uint shift  = exact_log2(type2aelembytes[elembt]);
+  uint shift  = exact_log2(type2aelembytes(elembt));
   uint header = arrayOopDesc::base_offset_in_bytes(elembt);
 
   // short-circuit a common case (saves lots of confusing waste motion)
@@ -2808,7 +2808,7 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
       ciInstanceKlass* ik = oop_type->klass()->as_instance_klass();
       for (int i = 0, len = ik->nof_nonstatic_fields(); i < len; i++) {
         ciField* field = ik->nonstatic_field_at(i);
-        if (field->offset() >= TrackedInitializationLimit)
+        if (field->offset() >= TrackedInitializationLimit * HeapWordSize)
           continue;  // do not bother to track really large numbers of fields
         // Find (or create) the alias category for this field:
         int fieldidx = C->alias_type(field)->index();
