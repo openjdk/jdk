@@ -87,6 +87,58 @@ extern void print_alias_types();
 
 #endif
 
+static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const TypePtr *tp, const TypePtr *adr_check, outputStream *st) {
+  uint alias_idx = phase->C->get_alias_index(tp);
+  Node *mem = mmem;
+#ifdef ASSERT
+  {
+    // Check that current type is consistent with the alias index used during graph construction
+    assert(alias_idx >= Compile::AliasIdxRaw, "must not be a bad alias_idx");
+    bool consistent =  adr_check == NULL || adr_check->empty() ||
+                       phase->C->must_alias(adr_check, alias_idx );
+    // Sometimes dead array references collapse to a[-1], a[-2], or a[-3]
+    if( !consistent && adr_check != NULL && !adr_check->empty() &&
+           tp->isa_aryptr() &&    tp->offset() == Type::OffsetBot &&
+        adr_check->isa_aryptr() && adr_check->offset() != Type::OffsetBot &&
+        ( adr_check->offset() == arrayOopDesc::length_offset_in_bytes() ||
+          adr_check->offset() == oopDesc::klass_offset_in_bytes() ||
+          adr_check->offset() == oopDesc::mark_offset_in_bytes() ) ) {
+      // don't assert if it is dead code.
+      consistent = true;
+    }
+    if( !consistent ) {
+      st->print("alias_idx==%d, adr_check==", alias_idx);
+      if( adr_check == NULL ) {
+        st->print("NULL");
+      } else {
+        adr_check->dump();
+      }
+      st->cr();
+      print_alias_types();
+      assert(consistent, "adr_check must match alias idx");
+    }
+  }
+#endif
+  // TypeInstPtr::NOTNULL+any is an OOP with unknown offset - generally
+  // means an array I have not precisely typed yet.  Do not do any
+  // alias stuff with it any time soon.
+  const TypeOopPtr *tinst = tp->isa_oopptr();
+  if( tp->base() != Type::AnyPtr &&
+      !(tinst &&
+        tinst->klass()->is_java_lang_Object() &&
+        tinst->offset() == Type::OffsetBot) ) {
+    // compress paths and change unreachable cycles to TOP
+    // If not, we can update the input infinitely along a MergeMem cycle
+    // Equivalent code in PhiNode::Ideal
+    Node* m  = phase->transform(mmem);
+    // If tranformed to a MergeMem, get the desired slice
+    // Otherwise the returned node represents memory for every slice
+    mem = (m->is_MergeMem())? m->as_MergeMem()->memory_at(alias_idx) : m;
+    // Update input if it is progress over what we have now
+  }
+  return mem;
+}
+
 //--------------------------Ideal_common---------------------------------------
 // Look for degenerate control and memory inputs.  Bypass MergeMem inputs.
 // Unhook non-raw memories from complete (macro-expanded) initializations.
@@ -119,48 +171,8 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   if (mem->is_MergeMem()) {
     MergeMemNode* mmem = mem->as_MergeMem();
     const TypePtr *tp = t_adr->is_ptr();
-    uint alias_idx = phase->C->get_alias_index(tp);
-#ifdef ASSERT
-    {
-      // Check that current type is consistent with the alias index used during graph construction
-      assert(alias_idx >= Compile::AliasIdxRaw, "must not be a bad alias_idx");
-      const TypePtr *adr_t =  adr_type();
-      bool consistent =  adr_t == NULL || adr_t->empty() || phase->C->must_alias(adr_t, alias_idx );
-      // Sometimes dead array references collapse to a[-1], a[-2], or a[-3]
-      if( !consistent && adr_t != NULL && !adr_t->empty() &&
-             tp->isa_aryptr() &&    tp->offset() == Type::OffsetBot &&
-          adr_t->isa_aryptr() && adr_t->offset() != Type::OffsetBot &&
-          ( adr_t->offset() == arrayOopDesc::length_offset_in_bytes() ||
-            adr_t->offset() == oopDesc::klass_offset_in_bytes() ||
-            adr_t->offset() == oopDesc::mark_offset_in_bytes() ) ) {
-        // don't assert if it is dead code.
-        consistent = true;
-      }
-      if( !consistent ) {
-        tty->print("alias_idx==%d, adr_type()==", alias_idx); if( adr_t == NULL ) { tty->print("NULL"); } else { adr_t->dump(); }
-        tty->cr();
-        print_alias_types();
-        assert(consistent, "adr_type must match alias idx");
-      }
-    }
-#endif
-    // TypeInstPtr::NOTNULL+any is an OOP with unknown offset - generally
-    // means an array I have not precisely typed yet.  Do not do any
-    // alias stuff with it any time soon.
-    const TypeInstPtr *tinst = tp->isa_instptr();
-    if( tp->base() != Type::AnyPtr &&
-        !(tinst &&
-          tinst->klass()->is_java_lang_Object() &&
-          tinst->offset() == Type::OffsetBot) ) {
-      // compress paths and change unreachable cycles to TOP
-      // If not, we can update the input infinitely along a MergeMem cycle
-      // Equivalent code in PhiNode::Ideal
-      Node* m  = phase->transform(mmem);
-      // If tranformed to a MergeMem, get the desired slice
-      // Otherwise the returned node represents memory for every slice
-      mem = (m->is_MergeMem())? m->as_MergeMem()->memory_at(alias_idx) : m;
-      // Update input if it is progress over what we have now
-    }
+
+    mem = step_through_mergemem(phase, mmem, tp, adr_type(), tty);
   }
 
   if (mem != old_mem) {
@@ -534,7 +546,10 @@ Node *MemNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
           const Node* call = adr->in(0);
           if (call->is_CallStaticJava()) {
             const CallStaticJavaNode* call_java = call->as_CallStaticJava();
-            assert(call_java && call_java->method() == NULL, "must be runtime call");
+            const TypeTuple *r = call_java->tf()->range();
+            assert(r->cnt() > TypeFunc::Parms, "must return value");
+            const Type* ret_type = r->field_at(TypeFunc::Parms);
+            assert(ret_type && ret_type->isa_ptr(), "must return pointer");
             // We further presume that this is one of
             // new_instance_Java, new_array_Java, or
             // the like, but do not assert for this.
@@ -732,6 +747,21 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
   return NULL;
 }
 
+//----------------------is_instance_field_load_with_local_phi------------------
+bool LoadNode::is_instance_field_load_with_local_phi(Node* ctrl) {
+  if( in(MemNode::Memory)->is_Phi() && in(MemNode::Memory)->in(0) == ctrl &&
+      in(MemNode::Address)->is_AddP() ) {
+    const TypeOopPtr* t_oop = in(MemNode::Address)->bottom_type()->isa_oopptr();
+    // Only instances.
+    if( t_oop != NULL && t_oop->is_instance_field() &&
+        t_oop->offset() != Type::OffsetBot &&
+        t_oop->offset() != Type::OffsetTop) {
+      return true;
+    }
+  }
+  return false;
+}
+
 //------------------------------Identity---------------------------------------
 // Loads are identity if previous store is to same address
 Node *LoadNode::Identity( PhaseTransform *phase ) {
@@ -754,6 +784,25 @@ Node *LoadNode::Identity( PhaseTransform *phase ) {
     // usually runs first, producing the singleton type of the Con.)
     return value;
   }
+
+  // Search for an existing data phi which was generated before for the same
+  // instance's field to avoid infinite genertion of phis in a loop.
+  Node *region = mem->in(0);
+  if (is_instance_field_load_with_local_phi(region)) {
+    const TypePtr *addr_t = in(MemNode::Address)->bottom_type()->isa_ptr();
+    int this_index  = phase->C->get_alias_index(addr_t);
+    int this_offset = addr_t->offset();
+    int this_id    = addr_t->is_oopptr()->instance_id();
+    const Type* this_type = bottom_type();
+    for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
+      Node* phi = region->fast_out(i);
+      if (phi->is_Phi() && phi != mem &&
+          phi->as_Phi()->is_same_inst_field(this_type, this_id, this_index, this_offset)) {
+        return phi;
+      }
+    }
+  }
+
   return this;
 }
 
@@ -1189,6 +1238,17 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
       return value->bottom_type();
   }
 
+  const TypeOopPtr *tinst = tp->isa_oopptr();
+  if (tinst != NULL && tinst->is_instance_field()) {
+    // If we have an instance type and our memory input is the
+    // programs's initial memory state, there is no matching store,
+    // so just return a zero of the appropriate type
+    Node *mem = in(MemNode::Memory);
+    if (mem->is_Parm() && mem->in(0)->is_Start()) {
+      assert(mem->as_Parm()->_con == TypeFunc::Memory, "must be memory Parm");
+      return Type::get_zero_type(_type->basic_type());
+    }
+  }
   return _type;
 }
 
@@ -1712,7 +1772,7 @@ bool StoreNode::value_never_loaded( PhaseTransform *phase) const {
   const TypeOopPtr *adr_oop = phase->type(adr)->isa_oopptr();
   if (adr_oop == NULL)
     return false;
-  if (!adr_oop->is_instance())
+  if (!adr_oop->is_instance_field())
     return false; // if not a distinct instance, there may be aliases of the address
   for (DUIterator_Fast imax, i = adr->fast_outs(imax); i < imax; i++) {
     Node *use = adr->fast_out(i);
@@ -3244,7 +3304,7 @@ Node *MergeMemNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  assert(verify_sparse(), "please, no dups of base");
+  assert(progress || verify_sparse(), "please, no dups of base");
   return progress;
 }
 

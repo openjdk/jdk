@@ -172,6 +172,9 @@ public:
   // Map a load opcode to its corresponding store opcode.
   virtual int store_Opcode() const = 0;
 
+  // Check if the load's memory input is a Phi node with the same control.
+  bool is_instance_field_load_with_local_phi(Node* ctrl);
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
