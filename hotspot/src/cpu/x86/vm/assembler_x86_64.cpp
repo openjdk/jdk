@@ -1304,7 +1304,7 @@ void Assembler::movl(Address dst, Register src) {
   emit_operand(src, dst);
 }
 
-void Assembler::mov64(Register dst, int64_t imm64) {
+void Assembler::mov64(Register dst, intptr_t imm64) {
   InstructionMark im(this);
   int encode = prefixq_and_encode(dst->encoding());
   emit_byte(0xB8 | encode);
@@ -1331,7 +1331,7 @@ void Assembler::movq(Register dst, Address src) {
   emit_operand(dst, src);
 }
 
-void Assembler::mov64(Address dst, int64_t imm32) {
+void Assembler::mov64(Address dst, intptr_t imm32) {
   assert(is_simm32(imm32), "lost bits");
   InstructionMark im(this);
   prefixq(dst);
