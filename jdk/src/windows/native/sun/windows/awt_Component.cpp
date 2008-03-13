@@ -5403,6 +5403,7 @@ void AwtComponent::UnlinkObjects()
     if (m_peerObject) {
         env->SetLongField(m_peerObject, AwtComponent::hwndID, 0);
         JNI_SET_PDATA(m_peerObject, static_cast<PDATA>(NULL));
+        JNI_SET_DESTROYED(m_peerObject);
         env->DeleteGlobalRef(m_peerObject);
         m_peerObject = NULL;
     }
