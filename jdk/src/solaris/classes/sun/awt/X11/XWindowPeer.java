@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,9 +112,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             PARENT_WINDOW, Long.valueOf(0)}));
     }
 
-    // fallback default font object
-    static Font defaultFont;
-
     /*
      * This constant defines icon size recommended for using.
      * Apparently, we should use XGetIconSizes which should
@@ -162,10 +159,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
         Font f = target.getFont();
         if (f == null) {
-            if (defaultFont == null) {
-                defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
-            }
-            f = defaultFont;
+            f = XWindow.getDefaultFont();
             target.setFont(f);
             // we should not call setFont because it will call a repaint
             // which the peer may not be ready to do yet.
