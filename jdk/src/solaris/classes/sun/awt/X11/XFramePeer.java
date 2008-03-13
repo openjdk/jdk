@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,18 @@
  */
 package sun.awt.X11;
 
-import java.util.Vector;
-import java.awt.*;
-import java.awt.peer.*;
-import java.awt.event.*;
-import sun.awt.im.*;
-import sun.awt.*;
-import java.util.logging.*;
-import java.lang.reflect.Field;
-import java.util.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.MenuBar;
+import java.awt.Rectangle;
+import java.awt.peer.FramePeer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 class XFramePeer extends XDecoratedPeer implements FramePeer, XConstants {
     private static Logger log = Logger.getLogger("sun.awt.X11.XFramePeer");
@@ -285,19 +288,20 @@ class XFramePeer extends XDecoratedPeer implements FramePeer, XConstants {
          * Let's see if this is a window state protocol message, and
          * if it is - decode a new state in terms of java constants.
          */
-        Integer newState = XWM.getWM().isStateChange(this, ev);
-        if (newState == null) {
+        if (!XWM.getWM().isStateChange(this, ev)) {
+            stateLog.finer("either not a state atom or state has not been changed");
             return;
         }
 
-        int changed = state ^ newState.intValue();
+        final int newState = XWM.getWM().getState(this);
+        int changed = state ^ newState;
         if (changed == 0) {
             stateLog.finer("State is the same: " + state);
             return;
         }
 
         int old_state = state;
-        state = newState.intValue();
+        state = newState;
 
         if ((changed & Frame.ICONIFIED) != 0) {
             if ((state & Frame.ICONIFIED) != 0) {
