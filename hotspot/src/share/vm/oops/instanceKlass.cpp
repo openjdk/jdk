@@ -972,7 +972,6 @@ jmethodID instanceKlass::jmethod_id_for_impl(instanceKlassHandle ik_h, methodHan
     // These allocations will have to be freed if they are unused.
 
     // Allocate a new array of methods.
-    jmethodID* to_dealloc_jmeths = NULL;
     jmethodID* new_jmeths = NULL;
     if (length <= idnum) {
       // A new array will be needed (unless some other thread beats us to it)
@@ -983,7 +982,6 @@ jmethodID instanceKlass::jmethod_id_for_impl(instanceKlassHandle ik_h, methodHan
     }
 
     // Allocate a new method ID.
-    jmethodID to_dealloc_id = NULL;
     jmethodID new_id = NULL;
     if (method_h->is_old() && !method_h->is_obsolete()) {
       // The method passed in is old (but not obsolete), we need to use the current version
@@ -997,40 +995,51 @@ jmethodID instanceKlass::jmethod_id_for_impl(instanceKlassHandle ik_h, methodHan
       new_id = JNIHandles::make_jmethod_id(method_h);
     }
 
-    {
+    if (Threads::number_of_threads() == 0 || SafepointSynchronize::is_at_safepoint()) {
+      // No need and unsafe to lock the JmethodIdCreation_lock at safepoint.
+      id = get_jmethod_id(ik_h, idnum, new_id, new_jmeths);
+    } else {
       MutexLocker ml(JmethodIdCreation_lock);
-
-      // We must not go to a safepoint while holding this lock.
-      debug_only(No_Safepoint_Verifier nosafepoints;)
-
-      // Retry lookup after we got the lock
-      jmeths = ik_h->methods_jmethod_ids_acquire();
-      if (jmeths == NULL || (length = (size_t)jmeths[0]) <= idnum) {
-        if (jmeths != NULL) {
-          // We have grown the array: copy the existing entries, and delete the old array
-          for (size_t index = 0; index < length; index++) {
-            new_jmeths[index+1] = jmeths[index+1];
-          }
-          to_dealloc_jmeths = jmeths; // using the new jmeths, deallocate the old one
-        }
-        ik_h->release_set_methods_jmethod_ids(jmeths = new_jmeths);
-      } else {
-        id = jmeths[idnum+1];
-        to_dealloc_jmeths = new_jmeths; // using the old jmeths, deallocate the new one
-      }
-      if (id == NULL) {
-        id = new_id;
-        jmeths[idnum+1] = id;  // install the new method ID
-      } else {
-        to_dealloc_id = new_id; // the new id wasn't used, mark it for deallocation
-      }
+      id = get_jmethod_id(ik_h, idnum, new_id, new_jmeths);
     }
+  }
+  return id;
+}
 
-    // Free up unneeded or no longer needed resources
-    FreeHeap(to_dealloc_jmeths);
-    if (to_dealloc_id != NULL) {
-      JNIHandles::destroy_jmethod_id(to_dealloc_id);
+
+jmethodID instanceKlass::get_jmethod_id(instanceKlassHandle ik_h, size_t idnum,
+                                        jmethodID new_id, jmethodID* new_jmeths) {
+  // Retry lookup after we got the lock or ensured we are at safepoint
+  jmethodID* jmeths = ik_h->methods_jmethod_ids_acquire();
+  jmethodID  id                = NULL;
+  jmethodID  to_dealloc_id     = NULL;
+  jmethodID* to_dealloc_jmeths = NULL;
+  size_t     length;
+
+  if (jmeths == NULL || (length = (size_t)jmeths[0]) <= idnum) {
+    if (jmeths != NULL) {
+      // We have grown the array: copy the existing entries, and delete the old array
+      for (size_t index = 0; index < length; index++) {
+        new_jmeths[index+1] = jmeths[index+1];
+      }
+      to_dealloc_jmeths = jmeths; // using the new jmeths, deallocate the old one
     }
+    ik_h->release_set_methods_jmethod_ids(jmeths = new_jmeths);
+  } else {
+    id = jmeths[idnum+1];
+    to_dealloc_jmeths = new_jmeths; // using the old jmeths, deallocate the new one
+  }
+  if (id == NULL) {
+    id = new_id;
+    jmeths[idnum+1] = id;  // install the new method ID
+  } else {
+    to_dealloc_id = new_id; // the new id wasn't used, mark it for deallocation
+  }
+
+  // Free up unneeded or no longer needed resources
+  FreeHeap(to_dealloc_jmeths);
+  if (to_dealloc_id != NULL) {
+    JNIHandles::destroy_jmethod_id(to_dealloc_id);
   }
   return id;
 }
@@ -2187,12 +2196,20 @@ void instanceKlass::add_previous_version(instanceKlassHandle ikh,
   RC_TRACE(0x00000100, ("adding previous version ref for %s @%d, EMCP_cnt=%d",
     ikh->external_name(), _previous_versions->length(), emcp_method_count));
   constantPoolHandle cp_h(ikh->constants());
-  jweak cp_ref = JNIHandles::make_weak_global(cp_h);
+  jobject cp_ref;
+  if (cp_h->is_shared()) {
+    // a shared ConstantPool requires a regular reference; a weak
+    // reference would be collectible
+    cp_ref = JNIHandles::make_global(cp_h);
+  } else {
+    cp_ref = JNIHandles::make_weak_global(cp_h);
+  }
   PreviousVersionNode * pv_node = NULL;
   objArrayOop old_methods = ikh->methods();
 
   if (emcp_method_count == 0) {
-    pv_node = new PreviousVersionNode(cp_ref, NULL);
+    // non-shared ConstantPool gets a weak reference
+    pv_node = new PreviousVersionNode(cp_ref, !cp_h->is_shared(), NULL);
     RC_TRACE(0x00000400,
       ("add: all methods are obsolete; flushing any EMCP weak refs"));
   } else {
@@ -2212,7 +2229,8 @@ void instanceKlass::add_previous_version(instanceKlassHandle ikh,
         }
       }
     }
-    pv_node = new PreviousVersionNode(cp_ref, method_refs);
+    // non-shared ConstantPool gets a weak reference
+    pv_node = new PreviousVersionNode(cp_ref, !cp_h->is_shared(), method_refs);
   }
 
   _previous_versions->append(pv_node);
@@ -2230,7 +2248,7 @@ void instanceKlass::add_previous_version(instanceKlassHandle ikh,
     // check the previous versions array for a GC'ed weak refs
     pv_node = _previous_versions->at(i);
     cp_ref = pv_node->prev_constant_pool();
-    assert(cp_ref != NULL, "weak cp ref was unexpectedly cleared");
+    assert(cp_ref != NULL, "cp ref was unexpectedly cleared");
     if (cp_ref == NULL) {
       delete pv_node;
       _previous_versions->remove_at(i);
@@ -2303,7 +2321,7 @@ void instanceKlass::add_previous_version(instanceKlassHandle ikh,
           // check the previous versions array for a GC'ed weak refs
           pv_node = _previous_versions->at(j);
           cp_ref = pv_node->prev_constant_pool();
-          assert(cp_ref != NULL, "weak cp ref was unexpectedly cleared");
+          assert(cp_ref != NULL, "cp ref was unexpectedly cleared");
           if (cp_ref == NULL) {
             delete pv_node;
             _previous_versions->remove_at(j);
@@ -2401,8 +2419,8 @@ bool instanceKlass::has_previous_version() const {
     // been GC'ed
     PreviousVersionNode * pv_node = _previous_versions->at(i);
 
-    jweak cp_ref = pv_node->prev_constant_pool();
-    assert(cp_ref != NULL, "weak reference was unexpectedly cleared");
+    jobject cp_ref = pv_node->prev_constant_pool();
+    assert(cp_ref != NULL, "cp reference was unexpectedly cleared");
     if (cp_ref == NULL) {
       continue;  // robustness
     }
@@ -2462,10 +2480,11 @@ void instanceKlass::set_methods_annotations_of(int idnum, typeArrayOop anno, obj
 
 // Construct a PreviousVersionNode entry for the array hung off
 // the instanceKlass.
-PreviousVersionNode::PreviousVersionNode(jweak prev_constant_pool,
-  GrowableArray<jweak>* prev_EMCP_methods) {
+PreviousVersionNode::PreviousVersionNode(jobject prev_constant_pool,
+  bool prev_cp_is_weak, GrowableArray<jweak>* prev_EMCP_methods) {
 
   _prev_constant_pool = prev_constant_pool;
+  _prev_cp_is_weak = prev_cp_is_weak;
   _prev_EMCP_methods = prev_EMCP_methods;
 }
 
@@ -2473,7 +2492,11 @@ PreviousVersionNode::PreviousVersionNode(jweak prev_constant_pool,
 // Destroy a PreviousVersionNode
 PreviousVersionNode::~PreviousVersionNode() {
   if (_prev_constant_pool != NULL) {
-    JNIHandles::destroy_weak_global(_prev_constant_pool);
+    if (_prev_cp_is_weak) {
+      JNIHandles::destroy_weak_global(_prev_constant_pool);
+    } else {
+      JNIHandles::destroy_global(_prev_constant_pool);
+    }
   }
 
   if (_prev_EMCP_methods != NULL) {
@@ -2493,8 +2516,8 @@ PreviousVersionInfo::PreviousVersionInfo(PreviousVersionNode *pv_node) {
   _prev_constant_pool_handle = constantPoolHandle();  // NULL handle
   _prev_EMCP_method_handles = NULL;
 
-  jweak cp_ref = pv_node->prev_constant_pool();
-  assert(cp_ref != NULL, "weak constant pool ref was unexpectedly cleared");
+  jobject cp_ref = pv_node->prev_constant_pool();
+  assert(cp_ref != NULL, "constant pool ref was unexpectedly cleared");
   if (cp_ref == NULL) {
     return;  // robustness
   }
