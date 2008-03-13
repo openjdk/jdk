@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,8 +221,7 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
 
                 // Update target's dimensions to reflect this embedded window.
                 ::GetClientRect(frame->m_hwnd, &rect);
-                ::MapWindowPoints(frame->m_hwnd, hwndParent, (LPPOINT)&rect,
-                                  2);
+                ::MapWindowPoints(frame->m_hwnd, hwndParent, (LPPOINT)&rect, 2);
 
                 env->SetIntField(target, AwtComponent::xID, rect.left);
                 env->SetIntField(target, AwtComponent::yID, rect.top);
@@ -231,6 +230,7 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
                 env->SetIntField(target, AwtComponent::heightID,
                                  rect.bottom-rect.top);
                 frame->InitPeerGraphicsConfig(env, self);
+                AwtToolkit::GetInstance().RegisterEmbedderProcessId(hwndParent);
             } else {
                 jint state = env->GetIntField(target, AwtFrame::stateID);
                 DWORD exStyle;

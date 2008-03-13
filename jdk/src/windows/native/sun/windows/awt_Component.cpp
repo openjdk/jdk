@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2190,8 +2190,11 @@ AwtComponent::AwtSetFocus()
         DWORD fgProcessID;
         ::GetWindowThreadProcessId(fgWindow, &fgProcessID);
 
-        if (fgProcessID != ::GetCurrentProcessId()) {
-            // fix for 6458497.  we shouldn't request focus if it is out of our application.
+        if (fgProcessID != ::GetCurrentProcessId()
+            && !AwtToolkit::GetInstance().IsEmbedderProcessId(fgProcessID))
+        {
+            // fix for 6458497.  we shouldn't request focus if it is out of both
+            // our and embedder process.
             return FALSE;
         }
     }
