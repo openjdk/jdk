@@ -857,6 +857,13 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
     for (j = 0; j < l; j++)
       call->set_req(p++, in_map->in(k+j));
 
+    // Copy any scalar object fields.
+    k = in_jvms->scloff();
+    l = in_jvms->scl_size();
+    out_jvms->set_scloff(p);
+    for (j = 0; j < l; j++)
+      call->set_req(p++, in_map->in(k+j));
+
     // Finish the new jvms.
     out_jvms->set_endoff(p);
 
@@ -864,6 +871,7 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
     assert(out_jvms->depth()      == in_jvms->depth(),      "depth must match");
     assert(out_jvms->loc_size()   == in_jvms->loc_size(),   "size must match");
     assert(out_jvms->mon_size()   == in_jvms->mon_size(),   "size must match");
+    assert(out_jvms->scl_size()   == in_jvms->scl_size(),   "size must match");
     assert(out_jvms->debug_size() == in_jvms->debug_size(), "size must match");
 
     // Update the two tail pointers in parallel.

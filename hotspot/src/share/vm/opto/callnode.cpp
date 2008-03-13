@@ -230,6 +230,7 @@ JVMState::JVMState(ciMethod* method, JVMState* caller) {
   _locoff = TypeFunc::Parms;
   _stkoff = _locoff + _method->max_locals();
   _monoff = _stkoff + _method->max_stack();
+  _scloff = _monoff;
   _endoff = _monoff;
   _sp = 0;
 }
@@ -242,6 +243,7 @@ JVMState::JVMState(int stack_size) {
   _locoff = TypeFunc::Parms;
   _stkoff = _locoff;
   _monoff = _stkoff + stack_size;
+  _scloff = _monoff;
   _endoff = _monoff;
   _sp = 0;
 }
@@ -297,12 +299,22 @@ uint JVMState::debug_depth() const {
   return total;
 }
 
+#ifndef PRODUCT
+
 //------------------------------format_helper----------------------------------
 // Given an allocation (a Chaitin object) and a Node decide if the Node carries
 // any defined value or not.  If it does, print out the register or constant.
-#ifndef PRODUCT
-static void format_helper( PhaseRegAlloc *regalloc, outputStream* st, Node *n, const char *msg, uint i ) {
+static void format_helper( PhaseRegAlloc *regalloc, outputStream* st, Node *n, const char *msg, uint i, GrowableArray<SafePointScalarObjectNode*> *scobjs ) {
   if (n == NULL) { st->print(" NULL"); return; }
+  if (n->is_SafePointScalarObject()) {
+    // Scalar replacement.
+    SafePointScalarObjectNode* spobj = n->as_SafePointScalarObject();
+    scobjs->append_if_missing(spobj);
+    int sco_n = scobjs->find(spobj);
+    assert(sco_n >= 0, "");
+    st->print(" %s%d]=#ScObj" INT32_FORMAT, msg, i, sco_n);
+    return;
+  }
   if( OptoReg::is_valid(regalloc->get_reg_first(n))) { // Check for undefined
     char buf[50];
     regalloc->dump_register(n,buf);
@@ -342,10 +354,8 @@ static void format_helper( PhaseRegAlloc *regalloc, outputStream* st, Node *n, c
     }
   }
 }
-#endif
 
 //------------------------------format-----------------------------------------
-#ifndef PRODUCT
 void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) const {
   st->print("        #");
   if( _method ) {
@@ -356,24 +366,25 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
     return;
   }
   if (n->is_MachSafePoint()) {
+    GrowableArray<SafePointScalarObjectNode*> scobjs;
     MachSafePointNode *mcall = n->as_MachSafePoint();
     uint i;
     // Print locals
     for( i = 0; i < (uint)loc_size(); i++ )
-      format_helper( regalloc, st, mcall->local(this, i), "L[", i );
+      format_helper( regalloc, st, mcall->local(this, i), "L[", i, &scobjs );
     // Print stack
     for (i = 0; i < (uint)stk_size(); i++) {
       if ((uint)(_stkoff + i) >= mcall->len())
         st->print(" oob ");
       else
-       format_helper( regalloc, st, mcall->stack(this, i), "STK[", i );
+       format_helper( regalloc, st, mcall->stack(this, i), "STK[", i, &scobjs );
     }
     for (i = 0; (int)i < nof_monitors(); i++) {
       Node *box = mcall->monitor_box(this, i);
       Node *obj = mcall->monitor_obj(this, i);
       if ( OptoReg::is_valid(regalloc->get_reg_first(box)) ) {
         while( !box->is_BoxLock() )  box = box->in(1);
-        format_helper( regalloc, st, box, "MON-BOX[", i );
+        format_helper( regalloc, st, box, "MON-BOX[", i, &scobjs );
       } else {
         OptoReg::Name box_reg = BoxLockNode::stack_slot(box);
         st->print(" MON-BOX%d=%s+%d",
@@ -381,15 +392,71 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
                    OptoReg::regname(OptoReg::c_frame_pointer),
                    regalloc->reg2offset(box_reg));
       }
-      format_helper( regalloc, st, obj, "MON-OBJ[", i );
+      format_helper( regalloc, st, obj, "MON-OBJ[", i, &scobjs );
+    }
+
+    for (i = 0; i < (uint)scobjs.length(); i++) {
+      // Scalar replaced objects.
+      st->print_cr("");
+      st->print("        # ScObj" INT32_FORMAT " ", i);
+      SafePointScalarObjectNode* spobj = scobjs.at(i);
+      ciKlass* cik = spobj->bottom_type()->is_oopptr()->klass();
+      assert(cik->is_instance_klass() ||
+             cik->is_array_klass(), "Not supported allocation.");
+      ciInstanceKlass *iklass = NULL;
+      if (cik->is_instance_klass()) {
+        cik->print_name_on(st);
+        iklass = cik->as_instance_klass();
+      } else if (cik->is_type_array_klass()) {
+        cik->as_array_klass()->base_element_type()->print_name_on(st);
+        st->print("[%d]=", spobj->n_fields());
+      } else if (cik->is_obj_array_klass()) {
+        ciType* cie = cik->as_array_klass()->base_element_type();
+        int ndim = 1;
+        while (cie->is_obj_array_klass()) {
+          ndim += 1;
+          cie = cie->as_array_klass()->base_element_type();
+        }
+        cie->print_name_on(st);
+        while (ndim-- > 0) {
+          st->print("[]");
+        }
+        st->print("[%d]=", spobj->n_fields());
+      }
+      st->print("{");
+      uint nf = spobj->n_fields();
+      if (nf > 0) {
+        uint first_ind = spobj->first_index();
+        Node* fld_node = mcall->in(first_ind);
+        ciField* cifield;
+        if (iklass != NULL) {
+          st->print(" [");
+          cifield = iklass->nonstatic_field_at(0);
+          cifield->print_name_on(st);
+          format_helper( regalloc, st, fld_node, ":", 0, &scobjs );
+        } else {
+          format_helper( regalloc, st, fld_node, "[", 0, &scobjs );
+        }
+        for (uint j = 1; j < nf; j++) {
+          fld_node = mcall->in(first_ind+j);
+          if (iklass != NULL) {
+            st->print(", [");
+            cifield = iklass->nonstatic_field_at(j);
+            cifield->print_name_on(st);
+            format_helper( regalloc, st, fld_node, ":", j, &scobjs );
+          } else {
+            format_helper( regalloc, st, fld_node, ", [", j, &scobjs );
+          }
+        }
+      }
+      st->print(" }");
     }
   }
   st->print_cr("");
   if (caller() != NULL)  caller()->format(regalloc, n, st);
 }
-#endif
 
-#ifndef PRODUCT
+
 void JVMState::dump_spec(outputStream *st) const {
   if (_method != NULL) {
     bool printed = false;
@@ -419,9 +486,8 @@ void JVMState::dump_spec(outputStream *st) const {
   }
   if (caller() != NULL)  caller()->dump_spec(st);
 }
-#endif
 
-#ifndef PRODUCT
+
 void JVMState::dump_on(outputStream* st) const {
   if (_map && !((uintptr_t)_map & 1)) {
     if (_map->len() > _map->req()) {  // _map->has_exceptions()
@@ -434,8 +500,8 @@ void JVMState::dump_on(outputStream* st) const {
     }
     _map->dump(2);
   }
-  st->print("JVMS depth=%d loc=%d stk=%d mon=%d end=%d mondepth=%d sp=%d bci=%d method=",
-             depth(), locoff(), stkoff(), monoff(), endoff(), monitor_depth(), sp(), bci());
+  st->print("JVMS depth=%d loc=%d stk=%d mon=%d scalar=%d end=%d mondepth=%d sp=%d bci=%d method=",
+             depth(), locoff(), stkoff(), monoff(), scloff(), endoff(), monitor_depth(), sp(), bci());
   if (_method == NULL) {
     st->print_cr("(none)");
   } else {
@@ -465,6 +531,7 @@ JVMState* JVMState::clone_shallow(Compile* C) const {
   n->set_locoff(_locoff);
   n->set_stkoff(_stkoff);
   n->set_monoff(_monoff);
+  n->set_scloff(_scloff);
   n->set_endoff(_endoff);
   n->set_sp(_sp);
   n->set_map(_map);
@@ -765,6 +832,7 @@ const RegMask &SafePointNode::out_RegMask() const {
 void SafePointNode::grow_stack(JVMState* jvms, uint grow_by) {
   assert((int)grow_by > 0, "sanity");
   int monoff = jvms->monoff();
+  int scloff = jvms->scloff();
   int endoff = jvms->endoff();
   assert(endoff == (int)req(), "no other states or debug info after me");
   Node* top = Compile::current()->top();
@@ -772,6 +840,7 @@ void SafePointNode::grow_stack(JVMState* jvms, uint grow_by) {
     ins_req(monoff, top);
   }
   jvms->set_monoff(monoff + grow_by);
+  jvms->set_scloff(scloff + grow_by);
   jvms->set_endoff(endoff + grow_by);
 }
 
@@ -781,6 +850,7 @@ void SafePointNode::push_monitor(const FastLockNode *lock) {
   const int MonitorEdges = 2;
   assert(JVMState::logMonitorEdges == exact_log2(MonitorEdges), "correct MonitorEdges");
   assert(req() == jvms()->endoff(), "correct sizing");
+  int nextmon = jvms()->scloff();
   if (GenerateSynchronizationCode) {
     add_req(lock->box_node());
     add_req(lock->obj_node());
@@ -788,6 +858,7 @@ void SafePointNode::push_monitor(const FastLockNode *lock) {
     add_req(NULL);
     add_req(NULL);
   }
+  jvms()->set_scloff(nextmon+MonitorEdges);
   jvms()->set_endoff(req());
 }
 
@@ -795,10 +866,13 @@ void SafePointNode::pop_monitor() {
   // Delete last monitor from debug info
   debug_only(int num_before_pop = jvms()->nof_monitors());
   const int MonitorEdges = (1<<JVMState::logMonitorEdges);
+  int scloff = jvms()->scloff();
   int endoff = jvms()->endoff();
+  int new_scloff = scloff - MonitorEdges;
   int new_endoff = endoff - MonitorEdges;
+  jvms()->set_scloff(new_scloff);
   jvms()->set_endoff(new_endoff);
-  while (endoff > new_endoff)  del_req(--endoff);
+  while (scloff > new_scloff)  del_req(--scloff);
   assert(jvms()->nof_monitors() == num_before_pop-1, "");
 }
 
@@ -821,6 +895,63 @@ uint SafePointNode::match_edge(uint idx) const {
 
   return (TypeFunc::Parms == idx);
 }
+
+//==============  SafePointScalarObjectNode  ==============
+
+SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp,
+#ifdef ASSERT
+                                                     AllocateNode* alloc,
+#endif
+                                                     uint first_index,
+                                                     uint n_fields) :
+  TypeNode(tp, 1), // 1 control input -- seems required.  Get from root.
+#ifdef ASSERT
+  _alloc(alloc),
+#endif
+  _first_index(first_index),
+  _n_fields(n_fields)
+{
+  init_class_id(Class_SafePointScalarObject);
+}
+
+
+uint SafePointScalarObjectNode::ideal_reg() const {
+  return 0; // No matching to machine instruction
+}
+
+const RegMask &SafePointScalarObjectNode::in_RegMask(uint idx) const {
+  return *(Compile::current()->matcher()->idealreg2debugmask[in(idx)->ideal_reg()]);
+}
+
+const RegMask &SafePointScalarObjectNode::out_RegMask() const {
+  return RegMask::Empty;
+}
+
+uint SafePointScalarObjectNode::match_edge(uint idx) const {
+  return 0;
+}
+
+SafePointScalarObjectNode*
+SafePointScalarObjectNode::clone(int jvms_adj, Dict* sosn_map) const {
+  void* cached = (*sosn_map)[(void*)this];
+  if (cached != NULL) {
+    return (SafePointScalarObjectNode*)cached;
+  }
+  Compile* C = Compile::current();
+  SafePointScalarObjectNode* res = (SafePointScalarObjectNode*)Node::clone();
+  res->_first_index += jvms_adj;
+  sosn_map->Insert((void*)this, (void*)res);
+  return res;
+}
+
+
+#ifndef PRODUCT
+void SafePointScalarObjectNode::dump_spec(outputStream *st) const {
+  st->print(" # fields@[%d..%d]", first_index(),
+             first_index() + n_fields() - 1);
+}
+
+#endif
 
 //=============================================================================
 uint AllocateNode::size_of() const { return sizeof(*this); }

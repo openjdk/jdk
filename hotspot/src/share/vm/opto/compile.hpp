@@ -606,8 +606,20 @@ class Compile : public Phase {
 
   // Build OopMaps for each GC point
   void BuildOopMaps();
-  // Append debug info for the node to the array
-  void FillLocArray( int idx, Node *local, GrowableArray<ScopeValue*> *array );
+
+  // Append debug info for the node "local" at safepoint node "sfpt" to the
+  // "array",   May also consult and add to "objs", which describes the
+  // scalar-replaced objects.
+  void FillLocArray( int idx, MachSafePointNode* sfpt,
+                     Node *local, GrowableArray<ScopeValue*> *array,
+                     GrowableArray<ScopeValue*> *objs );
+
+  // If "objs" contains an ObjectValue whose id is "id", returns it, else NULL.
+  static ObjectValue* sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id);
+  // Requres that "objs" does not contains an ObjectValue whose id matches
+  // that of "sv.  Appends "sv".
+  static void set_sv_for_object_node(GrowableArray<ScopeValue*> *objs,
+                                     ObjectValue* sv );
 
   // Process an OopMap Element while emitting nodes
   void Process_OopMap_Node(MachNode *mach, int code_offset);
