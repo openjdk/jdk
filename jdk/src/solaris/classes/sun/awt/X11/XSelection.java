@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,8 +281,10 @@ public class XSelection {
         if (targetsGetter.isExecuted() && !targetsGetter.isDisposed() &&
                 (targetsGetter.getActualType() == XAtom.XA_ATOM ||
                  targetsGetter.getActualType() == XDataTransferer.TARGETS_ATOM.getAtom()) &&
-                targetsGetter.getActualFormat() == 32) {
-
+                targetsGetter.getActualFormat() == 32)
+        {
+            // we accept property with TARGETS type to be compatible with old jdks
+            // see 6607163
             int count = (int)targetsGetter.getNumberOfItems();
             if (count > 0) {
                 long atoms = targetsGetter.getData();
@@ -687,7 +689,7 @@ public class XSelection {
                         XToolkit.awtLock();
                         try {
                             XlibWrapper.XChangeProperty(XToolkit.getDisplay(), requestor,
-                                                        property, format, dataFormat,
+                                                        property, XAtom.XA_ATOM, dataFormat,
                                                         XlibWrapper.PropModeReplace,
                                                         nativeDataPtr, count);
                         } finally {
