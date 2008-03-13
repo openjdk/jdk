@@ -154,7 +154,7 @@ public final class AppContext {
     /* The main "system" AppContext, used by everything not otherwise
        contained in another AppContext.
      */
-    private static AppContext mainAppContext = null;
+    private static volatile AppContext mainAppContext = null;
 
     /*
      * The hash map associated with this AppContext.  A private delegate
@@ -179,31 +179,30 @@ public final class AppContext {
     public static final String DISPOSED_PROPERTY_NAME = "disposed";
     public static final String GUI_DISPOSED = "guidisposed";
 
-    private boolean isDisposed = false; // true if AppContext is disposed
+    private volatile boolean isDisposed = false; // true if AppContext is disposed
 
     public boolean isDisposed() {
         return isDisposed;
     }
-
 
     static {
         // On the main Thread, we get the ThreadGroup, make a corresponding
         // AppContext, and instantiate the Java EventQueue.  This way, legacy
         // code is unaffected by the move to multiple AppContext ability.
         AccessController.doPrivileged(new PrivilegedAction() {
-          public Object run() {
-            ThreadGroup currentThreadGroup =
-                                Thread.currentThread().getThreadGroup();
-            ThreadGroup parentThreadGroup = currentThreadGroup.getParent();
-            while (parentThreadGroup != null) {
-                // Find the root ThreadGroup to construct our main AppContext
-                currentThreadGroup = parentThreadGroup;
-                parentThreadGroup = currentThreadGroup.getParent();
+            public Object run() {
+                ThreadGroup currentThreadGroup =
+                        Thread.currentThread().getThreadGroup();
+                ThreadGroup parentThreadGroup = currentThreadGroup.getParent();
+                while (parentThreadGroup != null) {
+                    // Find the root ThreadGroup to construct our main AppContext
+                    currentThreadGroup = parentThreadGroup;
+                    parentThreadGroup = currentThreadGroup.getParent();
+                }
+                mainAppContext = new AppContext(currentThreadGroup);
+                numAppContexts = 1;
+                return mainAppContext;
             }
-            mainAppContext = new AppContext(currentThreadGroup);
-            numAppContexts = 1;
-            return mainAppContext;
-          }
         });
     }
 
@@ -214,7 +213,7 @@ public final class AppContext {
      * number is 1.  If so, it returns the sole AppContext without
      * checking Thread.currentThread().
      */
-    private static int numAppContexts;
+    private static volatile int numAppContexts;
 
     /*
      * The context ClassLoader that was used to create this AppContext.
@@ -241,14 +240,15 @@ public final class AppContext {
         threadGroup2appContext.put(threadGroup, this);
 
         this.contextClassLoader =
-            (ClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
+             AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+                    public ClassLoader run() {
                         return Thread.currentThread().getContextClassLoader();
                     }
                 });
     }
 
-    private static MostRecentThreadAppContext mostRecentThreadAppContext = null;
+    private static final ThreadLocal<AppContext> threadAppContext =
+            new ThreadLocal<AppContext>();
 
     /**
      * Returns the appropriate AppContext for the caller,
@@ -265,59 +265,46 @@ public final class AppContext {
         if (numAppContexts == 1)   // If there's only one system-wide,
             return mainAppContext; // return the main system AppContext.
 
-        final Thread currentThread = Thread.currentThread();
+        AppContext appContext = threadAppContext.get();
 
-        AppContext appContext = null;
+        if (null == appContext) {
+            appContext = AccessController.doPrivileged(new PrivilegedAction<AppContext>()
+            {
+                public AppContext run() {
+                    // Get the current ThreadGroup, and look for it and its
+                    // parents in the hash from ThreadGroup to AppContext --
+                    // it should be found, because we use createNewContext()
+                    // when new AppContext objects are created.
+                    ThreadGroup currentThreadGroup = Thread.currentThread().getThreadGroup();
+                    ThreadGroup threadGroup = currentThreadGroup;
+                    AppContext context = threadGroup2appContext.get(threadGroup);
+                    while (context == null) {
+                        threadGroup = threadGroup.getParent();
+                        if (threadGroup == null) {
+                            // If we get here, we're running under a ThreadGroup that
+                            // has no AppContext associated with it.  This should never
+                            // happen, because createNewContext() should be used by the
+                            // toolkit to create the ThreadGroup that everything runs
+                            // under.
+                            throw new RuntimeException("Invalid ThreadGroup");
+                        }
+                        context = threadGroup2appContext.get(threadGroup);
+                    }
+                    // In case we did anything in the above while loop, we add
+                    // all the intermediate ThreadGroups to threadGroup2appContext
+                    // so we won't spin again.
+                    for (ThreadGroup tg = currentThreadGroup; tg != threadGroup; tg = tg.getParent()) {
+                        threadGroup2appContext.put(tg, context);
+                    }
+                    // Now we're done, so we cache the latest key/value pair.
+                    // (we do this before checking with any AWTSecurityManager, so if
+                    // this Thread equates with the main AppContext in the cache, it
+                    // still will)
+                    threadAppContext.set(context);
 
-        // Note: this most recent Thread/AppContext caching is thread-hot.
-        // A simple test using SwingSet found that 96.8% of lookups
-        // were matched using the most recent Thread/AppContext.  By
-        // instantiating a simple MostRecentThreadAppContext object on
-        // cache misses, the cache hits can be processed without
-        // synchronization.
-
-        MostRecentThreadAppContext recent = mostRecentThreadAppContext;
-        if ((recent != null) && (recent.thread == currentThread))  {
-            appContext = recent.appContext; // Cache hit
-        } else {
-          appContext = (AppContext)AccessController.doPrivileged(
-                                            new PrivilegedAction() {
-            public Object run() {
-            // Get the current ThreadGroup, and look for it and its
-            // parents in the hash from ThreadGroup to AppContext --
-            // it should be found, because we use createNewContext()
-            // when new AppContext objects are created.
-            ThreadGroup currentThreadGroup = currentThread.getThreadGroup();
-            ThreadGroup threadGroup = currentThreadGroup;
-            AppContext context = threadGroup2appContext.get(threadGroup);
-            while (context == null) {
-                threadGroup = threadGroup.getParent();
-                if (threadGroup == null) {
-                    // If we get here, we're running under a ThreadGroup that
-                    // has no AppContext associated with it.  This should never
-                    // happen, because createNewContext() should be used by the
-                    // toolkit to create the ThreadGroup that everything runs
-                    // under.
-                    throw new RuntimeException("Invalid ThreadGroup");
+                    return context;
                 }
-                context = threadGroup2appContext.get(threadGroup);
-            }
-            // In case we did anything in the above while loop, we add
-            // all the intermediate ThreadGroups to threadGroup2appContext
-            // so we won't spin again.
-            for (ThreadGroup tg = currentThreadGroup; tg != threadGroup; tg = tg.getParent()) {
-                threadGroup2appContext.put(tg, context);
-            }
-            // Now we're done, so we cache the latest key/value pair.
-            // (we do this before checking with any AWTSecurityManager, so if
-            // this Thread equates with the main AppContext in the cache, it
-            // still will)
-            mostRecentThreadAppContext =
-                new MostRecentThreadAppContext(currentThread, context);
-
-            return context;
-          }
-         });
+            });
         }
 
         if (appContext == mainAppContext)  {
@@ -326,9 +313,9 @@ public final class AppContext {
             // allow it to choose the AppContext to return.
             SecurityManager securityManager = System.getSecurityManager();
             if ((securityManager != null) &&
-                (securityManager instanceof AWTSecurityManager))  {
-                AWTSecurityManager awtSecMgr =
-                                      (AWTSecurityManager)securityManager;
+                (securityManager instanceof AWTSecurityManager))
+            {
+                AWTSecurityManager awtSecMgr = (AWTSecurityManager)securityManager;
                 AppContext secAppContext = awtSecMgr.getAppContext();
                 if (secAppContext != null)  {
                     appContext = secAppContext; // Return what we're told
@@ -455,7 +442,7 @@ public final class AppContext {
         // Threads in the ThreadGroup to exit.
 
         long startTime = System.currentTimeMillis();
-        long endTime = startTime + (long)THREAD_INTERRUPT_TIMEOUT;
+        long endTime = startTime + THREAD_INTERRUPT_TIMEOUT;
         while ((this.threadGroup.activeCount() > 0) &&
                (System.currentTimeMillis() < endTime)) {
             try {
@@ -470,7 +457,7 @@ public final class AppContext {
         // Threads in the ThreadGroup to die.
 
         startTime = System.currentTimeMillis();
-        endTime = startTime + (long)THREAD_INTERRUPT_TIMEOUT;
+        endTime = startTime + THREAD_INTERRUPT_TIMEOUT;
         while ((this.threadGroup.activeCount() > 0) &&
                (System.currentTimeMillis() < endTime)) {
             try {
@@ -489,10 +476,7 @@ public final class AppContext {
         }
         threadGroup2appContext.remove(this.threadGroup);
 
-        MostRecentThreadAppContext recent = mostRecentThreadAppContext;
-        if ((recent != null) && (recent.appContext == this))
-            mostRecentThreadAppContext = null;
-                // If the "most recent" points to this, clear it for GC
+        threadAppContext.set(null);
 
         // Finally, we destroy the ThreadGroup entirely.
         try {
@@ -675,6 +659,7 @@ public final class AppContext {
      * Returns a string representation of this AppContext.
      * @since   1.2
      */
+    @Override
     public String toString() {
         return getClass().getName() + "[threadGroup=" + threadGroup.getName() + "]";
     }
@@ -777,15 +762,6 @@ public final class AppContext {
             return new PropertyChangeListener[0];
         }
         return changeSupport.getPropertyChangeListeners(propertyName);
-    }
-}
-
-final class MostRecentThreadAppContext {
-    final Thread thread;
-    final AppContext appContext;
-    MostRecentThreadAppContext(Thread key, AppContext value) {
-        thread = key;
-        appContext = value;
     }
 }
 
