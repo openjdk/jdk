@@ -150,7 +150,9 @@ ifdef OPENJDK
   SKIP_OPENJDK_BUILD = true
 else
   ifndef SKIP_OPENJDK_BUILD
-    SKIP_OPENJDK_BUILD = false
+    #SKIP_OPENJDK_BUILD = false
+    # Until 6675289 is resolved, or this feature is removed.
+    SKIP_OPENJDK_BUILD = true
   endif
 endif
 
