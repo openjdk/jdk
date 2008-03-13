@@ -146,7 +146,9 @@ public final class AppContext {
      * Returns a set containing all <code>AppContext</code>s.
      */
     public static Set<AppContext> getAppContexts() {
-        return new HashSet<AppContext>(threadGroup2appContext.values());
+        synchronized (threadGroup2appContext) {
+            return new HashSet<AppContext>(threadGroup2appContext.values());
+        }
     }
 
     /* The main "system" AppContext, used by everything not otherwise
