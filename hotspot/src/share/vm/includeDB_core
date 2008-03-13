@@ -3068,6 +3068,7 @@ oopMap.hpp                              vmreg.hpp
 
 oopMapCache.cpp                         allocation.inline.hpp
 oopMapCache.cpp                         handles.inline.hpp
+oopMapCache.cpp                         jvmtiRedefineClassesTrace.hpp
 oopMapCache.cpp                         oop.inline.hpp
 oopMapCache.cpp                         oopMapCache.hpp
 oopMapCache.cpp                         resourceArea.hpp
