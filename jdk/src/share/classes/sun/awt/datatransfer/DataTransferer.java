@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,62 +270,58 @@ public abstract class DataTransferer {
      * instead, null will be returned.
      */
     public static DataTransferer getInstance() {
-        if (transferer == null) {
-            synchronized (DataTransferer.class) {
-                if (transferer == null) {
-                    final String name = SunToolkit.
-                        getDataTransfererClassName();
-                    if (name != null) {
-                        PrivilegedAction action = new PrivilegedAction() {
-                          public Object run() {
-                              Class cls = null;
-                              Method method = null;
-                              Object ret = null;
+        synchronized (DataTransferer.class) {
+            if (transferer == null) {
+                final String name = SunToolkit.getDataTransfererClassName();
+                if (name != null) {
+                    PrivilegedAction<DataTransferer> action = new PrivilegedAction<DataTransferer>()
+                    {
+                      public DataTransferer run() {
+                          Class cls = null;
+                          Method method = null;
+                          DataTransferer ret = null;
 
-                              try {
-                                  cls = Class.forName(name);
-                              } catch (ClassNotFoundException e) {
-                                  ClassLoader cl = ClassLoader.
-                                      getSystemClassLoader();
-                                  if (cl != null) {
-                                      try {
-                                          cls = cl.loadClass(name);
-                                      } catch (ClassNotFoundException ee) {
-                                          ee.printStackTrace();
-                                          throw new AWTError("DataTransferer not found: " + name);
-                                      }
-                                  }
-                              }
-                              if (cls != null) {
+                          try {
+                              cls = Class.forName(name);
+                          } catch (ClassNotFoundException e) {
+                              ClassLoader cl = ClassLoader.
+                                  getSystemClassLoader();
+                              if (cl != null) {
                                   try {
-                                      method = cls.getDeclaredMethod
-                                          ("getInstanceImpl");
-                                      method.setAccessible(true);
-                                  } catch (NoSuchMethodException e) {
-                                      e.printStackTrace();
-                                      throw new AWTError("Cannot instantiate DataTransferer: " + name);
-                                  } catch (SecurityException e) {
-                                      e.printStackTrace();
-                                      throw new AWTError("Access is denied for DataTransferer: " + name);
+                                      cls = cl.loadClass(name);
+                                  } catch (ClassNotFoundException ee) {
+                                      ee.printStackTrace();
+                                      throw new AWTError("DataTransferer not found: " + name);
                                   }
                               }
-                              if (method != null) {
-                                  try {
-                                      ret = method.invoke(null);
-                                  } catch (InvocationTargetException e) {
-                                      e.printStackTrace();
-                                      throw new AWTError("Cannot instantiate DataTransferer: " + name);
-                                  } catch (IllegalAccessException e) {
-                                      e.printStackTrace();
-                                      throw new AWTError("Cannot access DataTransferer: " + name);
-                                  }
-                              }
-                              return ret;
                           }
-                        };
-                        transferer = (DataTransferer)
-                            AccessController.doPrivileged(action);
-                    }
+                          if (cls != null) {
+                              try {
+                                  method = cls.getDeclaredMethod("getInstanceImpl");
+                                  method.setAccessible(true);
+                              } catch (NoSuchMethodException e) {
+                                  e.printStackTrace();
+                                  throw new AWTError("Cannot instantiate DataTransferer: " + name);
+                              } catch (SecurityException e) {
+                                  e.printStackTrace();
+                                  throw new AWTError("Access is denied for DataTransferer: " + name);
+                              }
+                          }
+                          if (method != null) {
+                              try {
+                                  ret = (DataTransferer) method.invoke(null);
+                              } catch (InvocationTargetException e) {
+                                  e.printStackTrace();
+                                  throw new AWTError("Cannot instantiate DataTransferer: " + name);
+                              } catch (IllegalAccessException e) {
+                                  e.printStackTrace();
+                                  throw new AWTError("Cannot access DataTransferer: " + name);
+                              }
+                          }
+                          return ret;
+                      }
+                    };
+                    transferer = AccessController.doPrivileged(action);
                 }
             }
         }
