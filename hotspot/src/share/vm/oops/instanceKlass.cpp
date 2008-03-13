@@ -950,7 +950,6 @@ jmethodID instanceKlass::jmethod_id_for_impl(instanceKlassHandle ik_h, methodHan
     // These allocations will have to be freed if they are unused.
 
     // Allocate a new array of methods.
-    jmethodID* to_dealloc_jmeths = NULL;
     jmethodID* new_jmeths = NULL;
     if (length <= idnum) {
       // A new array will be needed (unless some other thread beats us to it)
@@ -961,7 +960,6 @@ jmethodID instanceKlass::jmethod_id_for_impl(instanceKlassHandle ik_h, methodHan
     }
 
     // Allocate a new method ID.
-    jmethodID to_dealloc_id = NULL;
     jmethodID new_id = NULL;
     if (method_h->is_old() && !method_h->is_obsolete()) {
       // The method passed in is old (but not obsolete), we need to use the current version
@@ -975,40 +973,51 @@ jmethodID instanceKlass::jmethod_id_for_impl(instanceKlassHandle ik_h, methodHan
       new_id = JNIHandles::make_jmethod_id(method_h);
     }
 
-    {
+    if (Threads::number_of_threads() == 0 || SafepointSynchronize::is_at_safepoint()) {
+      // No need and unsafe to lock the JmethodIdCreation_lock at safepoint.
+      id = get_jmethod_id(ik_h, idnum, new_id, new_jmeths);
+    } else {
       MutexLocker ml(JmethodIdCreation_lock);
-
-      // We must not go to a safepoint while holding this lock.
-      debug_only(No_Safepoint_Verifier nosafepoints;)
-
-      // Retry lookup after we got the lock
-      jmeths = ik_h->methods_jmethod_ids_acquire();
-      if (jmeths == NULL || (length = (size_t)jmeths[0]) <= idnum) {
-        if (jmeths != NULL) {
-          // We have grown the array: copy the existing entries, and delete the old array
-          for (size_t index = 0; index < length; index++) {
-            new_jmeths[index+1] = jmeths[index+1];
-          }
-          to_dealloc_jmeths = jmeths; // using the new jmeths, deallocate the old one
-        }
-        ik_h->release_set_methods_jmethod_ids(jmeths = new_jmeths);
-      } else {
-        id = jmeths[idnum+1];
-        to_dealloc_jmeths = new_jmeths; // using the old jmeths, deallocate the new one
-      }
-      if (id == NULL) {
-        id = new_id;
-        jmeths[idnum+1] = id;  // install the new method ID
-      } else {
-        to_dealloc_id = new_id; // the new id wasn't used, mark it for deallocation
-      }
+      id = get_jmethod_id(ik_h, idnum, new_id, new_jmeths);
     }
+  }
+  return id;
+}
 
-    // Free up unneeded or no longer needed resources
-    FreeHeap(to_dealloc_jmeths);
-    if (to_dealloc_id != NULL) {
-      JNIHandles::destroy_jmethod_id(to_dealloc_id);
+
+jmethodID instanceKlass::get_jmethod_id(instanceKlassHandle ik_h, size_t idnum,
+                                        jmethodID new_id, jmethodID* new_jmeths) {
+  // Retry lookup after we got the lock or ensured we are at safepoint
+  jmethodID* jmeths = ik_h->methods_jmethod_ids_acquire();
+  jmethodID  id                = NULL;
+  jmethodID  to_dealloc_id     = NULL;
+  jmethodID* to_dealloc_jmeths = NULL;
+  size_t     length;
+
+  if (jmeths == NULL || (length = (size_t)jmeths[0]) <= idnum) {
+    if (jmeths != NULL) {
+      // We have grown the array: copy the existing entries, and delete the old array
+      for (size_t index = 0; index < length; index++) {
+        new_jmeths[index+1] = jmeths[index+1];
+      }
+      to_dealloc_jmeths = jmeths; // using the new jmeths, deallocate the old one
     }
+    ik_h->release_set_methods_jmethod_ids(jmeths = new_jmeths);
+  } else {
+    id = jmeths[idnum+1];
+    to_dealloc_jmeths = new_jmeths; // using the old jmeths, deallocate the new one
+  }
+  if (id == NULL) {
+    id = new_id;
+    jmeths[idnum+1] = id;  // install the new method ID
+  } else {
+    to_dealloc_id = new_id; // the new id wasn't used, mark it for deallocation
+  }
+
+  // Free up unneeded or no longer needed resources
+  FreeHeap(to_dealloc_jmeths);
+  if (to_dealloc_id != NULL) {
+    JNIHandles::destroy_jmethod_id(to_dealloc_id);
   }
   return id;
 }
