@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package java.awt;
 
-import java.applet.Applet;
 import java.awt.event.*;
 import java.awt.im.InputContext;
 import java.awt.image.BufferStrategy;
@@ -355,18 +354,21 @@ public class Window extends Container implements Accessible {
     static class WindowDisposerRecord implements sun.java2d.DisposerRecord {
         final WeakReference<Window> owner;
         final WeakReference weakThis;
-        final AppContext context;
+        final WeakReference<AppContext> context;
         WindowDisposerRecord(AppContext context, Window victim) {
             owner = new WeakReference<Window>(victim.getOwner());
             weakThis = victim.weakThis;
-            this.context = context;
+            this.context = new WeakReference<AppContext>(context);
         }
         public void dispose() {
             Window parent = owner.get();
             if (parent != null) {
                 parent.removeOwnedWindow(weakThis);
             }
-            Window.removeFromWindowList(context, weakThis);
+            AppContext ac = context.get();
+            if (null != ac) {
+                Window.removeFromWindowList(ac, weakThis);
+            }
         }
     }
 
