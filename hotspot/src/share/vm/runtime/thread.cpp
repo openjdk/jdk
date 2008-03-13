@@ -1317,10 +1317,6 @@ JavaThread::~JavaThread() {
   ThreadSafepointState::destroy(this);
   if (_thread_profiler != NULL) delete _thread_profiler;
   if (_thread_stat != NULL) delete _thread_stat;
-
-  if (jvmti_thread_state() != NULL) {
-    JvmtiExport::cleanup_thread(this);
-  }
 }
 
 
@@ -1569,6 +1565,10 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
 
   if (UseTLAB) {
     tlab().make_parsable(true);  // retire TLAB
+  }
+
+  if (jvmti_thread_state() != NULL) {
+    JvmtiExport::cleanup_thread(this);
   }
 
   // Remove from list of active threads list, and notify VM thread if we are the last non-daemon thread

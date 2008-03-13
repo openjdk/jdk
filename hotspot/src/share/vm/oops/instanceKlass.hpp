@@ -432,6 +432,8 @@ class instanceKlass: public Klass {
                                                         _enclosing_method_method_index = method_index; }
 
   // jmethodID support
+  static jmethodID get_jmethod_id(instanceKlassHandle ik_h, size_t idnum,
+                                  jmethodID new_id, jmethodID* new_jmeths);
   static jmethodID jmethod_id_for_impl(instanceKlassHandle ik_h, methodHandle method_h);
   jmethodID jmethod_id_or_null(methodOop method);
 
