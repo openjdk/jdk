@@ -98,8 +98,7 @@ class XDecoratedPeer extends XWindowPeer {
         // happen after the X window is created.
         initResizability();
         updateSizeHints(dimensions);
-        content = createContent(dimensions);
-        content.initialize();
+        content = XContentWindow.createContent(this);
         if (warningWindow != null) {
             warningWindow.toFront();
         }
@@ -158,20 +157,6 @@ class XDecoratedPeer extends XWindowPeer {
                 }
             }
         }
-    }
-
-    XContentWindow createContent(WindowDimensions dims) {
-        Rectangle rec = dims.getBounds();
-        // Fix for  - set the location of the content window to the (-left inset, -top inset)
-        Insets ins = dims.getInsets();
-        if (ins != null) {
-            rec.x = -ins.left;
-            rec.y = -ins.top;
-        } else {
-            rec.x = 0;
-            rec.y = 0;
-        }
-        return new XContentWindow(this, rec);
     }
 
     XFocusProxyWindow createFocusProxy() {
@@ -286,7 +271,7 @@ class XDecoratedPeer extends XWindowPeer {
                 return;
             }
             Component t = (Component)target;
-            if (getDecorations() == winAttr.AWT_DECOR_NONE) {
+            if (getDecorations() == XWindowAttributesData.AWT_DECOR_NONE) {
                 setReparented(true);
                 insets_corrected = true;
                 reshape(dimensions, SET_SIZE, false);
@@ -651,12 +636,12 @@ class XDecoratedPeer extends XWindowPeer {
         }
         if (!isReparented() && isVisible() && runningWM != XWM.NO_WM
                 &&  !XWM.isNonReparentingWM()
-                && getDecorations() != winAttr.AWT_DECOR_NONE) {
+                && getDecorations() != XWindowAttributesData.AWT_DECOR_NONE) {
             insLog.fine("- visible but not reparented, skipping");
             return;
         }
         //Last chance to correct insets
-        if (!insets_corrected && getDecorations() != winAttr.AWT_DECOR_NONE) {
+        if (!insets_corrected && getDecorations() != XWindowAttributesData.AWT_DECOR_NONE) {
             long parent = XlibUtil.getParentWindow(window);
             Insets correctWM = (parent != -1) ? XWM.getWM().getInsets(this, window, parent) : null;
             if (insLog.isLoggable(Level.FINER)) {
@@ -870,7 +855,7 @@ class XDecoratedPeer extends XWindowPeer {
         return getSize().height;
     }
 
-    public WindowDimensions getDimensions() {
+    final public WindowDimensions getDimensions() {
         return dimensions;
     }
 
