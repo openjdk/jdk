@@ -54,15 +54,30 @@ void PhaseMacroExpand::copy_call_debug_info(CallNode *oldcall, CallNode * newcal
   uint new_dbg_start = newcall->tf()->domain()->cnt();
   int jvms_adj  = new_dbg_start - old_dbg_start;
   assert (new_dbg_start == newcall->req(), "argument count mismatch");
+
+  Dict* sosn_map = new Dict(cmpkey,hashkey);
   for (uint i = old_dbg_start; i < oldcall->req(); i++) {
-    newcall->add_req(oldcall->in(i));
+    Node* old_in = oldcall->in(i);
+    // Clone old SafePointScalarObjectNodes, adjusting their field contents.
+    if (old_in->is_SafePointScalarObject()) {
+      SafePointScalarObjectNode* old_sosn = old_in->as_SafePointScalarObject();
+      uint old_unique = C->unique();
+      Node* new_in = old_sosn->clone(jvms_adj, sosn_map);
+      if (old_unique != C->unique()) {
+        new_in = transform_later(new_in); // Register new node.
+      }
+      old_in = new_in;
+    }
+    newcall->add_req(old_in);
   }
+
   newcall->set_jvms(oldcall->jvms());
   for (JVMState *jvms = newcall->jvms(); jvms != NULL; jvms = jvms->caller()) {
     jvms->set_map(newcall);
     jvms->set_locoff(jvms->locoff()+jvms_adj);
     jvms->set_stkoff(jvms->stkoff()+jvms_adj);
     jvms->set_monoff(jvms->monoff()+jvms_adj);
+    jvms->set_scloff(jvms->scloff()+jvms_adj);
     jvms->set_endoff(jvms->endoff()+jvms_adj);
   }
 }

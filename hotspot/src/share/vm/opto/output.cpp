@@ -561,7 +561,30 @@ static LocationValue *new_loc_value( PhaseRegAlloc *ra, OptoReg::Name regnum, Lo
     : new LocationValue(Location::new_stk_loc(l_type,  ra->reg2offset(regnum)));
 }
 
-void Compile::FillLocArray( int idx, Node *local, GrowableArray<ScopeValue*> *array ) {
+
+ObjectValue*
+Compile::sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id) {
+  for (int i = 0; i < objs->length(); i++) {
+    assert(objs->at(i)->is_object(), "corrupt object cache");
+    ObjectValue* sv = (ObjectValue*) objs->at(i);
+    if (sv->id() == id) {
+      return sv;
+    }
+  }
+  // Otherwise..
+  return NULL;
+}
+
+void Compile::set_sv_for_object_node(GrowableArray<ScopeValue*> *objs,
+                                     ObjectValue* sv ) {
+  assert(sv_for_node_id(objs, sv->id()) == NULL, "Precondition");
+  objs->append(sv);
+}
+
+
+void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
+                            GrowableArray<ScopeValue*> *array,
+                            GrowableArray<ScopeValue*> *objs ) {
   assert( local, "use _top instead of null" );
   if (array->length() != idx) {
     assert(array->length() == idx + 1, "Unexpected array count");
@@ -577,6 +600,29 @@ void Compile::FillLocArray( int idx, Node *local, GrowableArray<ScopeValue*> *ar
     array->pop();
   }
   const Type *t = local->bottom_type();
+
+  // Is it a safepoint scalar object node?
+  if (local->is_SafePointScalarObject()) {
+    SafePointScalarObjectNode* spobj = local->as_SafePointScalarObject();
+
+    ObjectValue* sv = Compile::sv_for_node_id(objs, spobj->_idx);
+    if (sv == NULL) {
+      ciKlass* cik = t->is_oopptr()->klass();
+      assert(cik->is_instance_klass() ||
+             cik->is_array_klass(), "Not supported allocation.");
+      sv = new ObjectValue(spobj->_idx,
+                           new ConstantOopWriteValue(cik->encoding()));
+      Compile::set_sv_for_object_node(objs, sv);
+
+      uint first_ind = spobj->first_index();
+      for (uint i = 0; i < spobj->n_fields(); i++) {
+        Node* fld_node = sfpt->in(first_ind+i);
+        (void)FillLocArray(sv->field_values()->length(), sfpt, fld_node, sv->field_values(), objs);
+      }
+    }
+    array->append(sv);
+    return;
+  }
 
   // Grab the register number for the local
   OptoReg::Name regnum = _regalloc->get_reg_first(local);
@@ -755,6 +801,11 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
   JVMState* youngest_jvms = sfn->jvms();
   int max_depth = youngest_jvms->depth();
 
+  // Allocate the object pool for scalar-replaced objects -- the map from
+  // small-integer keys (which can be recorded in the local and ostack
+  // arrays) to descriptions of the object state.
+  GrowableArray<ScopeValue*> *objs = new GrowableArray<ScopeValue*>();
+
   // Visit scopes from oldest to youngest.
   for (int depth = 1; depth <= max_depth; depth++) {
     JVMState* jvms = youngest_jvms->of_depth(depth);
@@ -773,13 +824,13 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
     // Insert locals into the locarray
     GrowableArray<ScopeValue*> *locarray = new GrowableArray<ScopeValue*>(num_locs);
     for( idx = 0; idx < num_locs; idx++ ) {
-      FillLocArray( idx, sfn->local(jvms, idx), locarray );
+      FillLocArray( idx, sfn, sfn->local(jvms, idx), locarray, objs );
     }
 
     // Insert expression stack entries into the exparray
     GrowableArray<ScopeValue*> *exparray = new GrowableArray<ScopeValue*>(num_exps);
     for( idx = 0; idx < num_exps; idx++ ) {
-      FillLocArray( idx,  sfn->stack(jvms, idx), exparray );
+      FillLocArray( idx,  sfn, sfn->stack(jvms, idx), exparray, objs );
     }
 
     // Add in mappings of the monitors
@@ -803,7 +854,27 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
       // Create ScopeValue for object
       ScopeValue *scval = NULL;
-      if( !obj_node->is_Con() ) {
+
+      if( obj_node->is_SafePointScalarObject() ) {
+        SafePointScalarObjectNode* spobj = obj_node->as_SafePointScalarObject();
+        scval = Compile::sv_for_node_id(objs, spobj->_idx);
+        if (scval == NULL) {
+          const Type *t = obj_node->bottom_type();
+          ciKlass* cik = t->is_oopptr()->klass();
+          assert(cik->is_instance_klass() ||
+                 cik->is_array_klass(), "Not supported allocation.");
+          ObjectValue* sv = new ObjectValue(spobj->_idx,
+                                new ConstantOopWriteValue(cik->encoding()));
+          Compile::set_sv_for_object_node(objs, sv);
+
+          uint first_ind = spobj->first_index();
+          for (uint i = 0; i < spobj->n_fields(); i++) {
+            Node* fld_node = sfn->in(first_ind+i);
+            (void)FillLocArray(sv->field_values()->length(), sfn, fld_node, sv->field_values(), objs);
+          }
+          scval = sv;
+        }
+      } else if( !obj_node->is_Con() ) {
         OptoReg::Name obj_reg = _regalloc->get_reg_first(obj_node);
         scval = new_loc_value( _regalloc, obj_reg, Location::oop );
       } else {
@@ -814,6 +885,9 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
       monarray->append(new MonitorValue(scval, Location::new_stk_loc(Location::normal,_regalloc->reg2offset(box_reg))));
     }
 
+    // We dump the object pool first, since deoptimization reads it in first.
+    debug_info()->dump_object_pool(objs);
+
     // Build first class objects to pass to scope
     DebugToken *locvals = debug_info()->create_scope_values(locarray);
     DebugToken *expvals = debug_info()->create_scope_values(exparray);
@@ -823,6 +897,7 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
     ciMethod* scope_method = method ? method : _method;
     // Describe the scope here
     assert(jvms->bci() >= InvocationEntryBci && jvms->bci() <= 0x10000, "must be a valid or entry BCI");
+    // Now we can describe the scope.
     debug_info()->describe_scope(safepoint_pc_offset,scope_method,jvms->bci(),locvals,expvals,monvals);
   } // End jvms loop
 
