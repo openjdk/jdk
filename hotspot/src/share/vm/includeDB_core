@@ -714,6 +714,11 @@ ciObjArray.hpp                          ciArray.hpp
 ciObjArray.hpp                          ciClassList.hpp
 ciObjArray.hpp                          objArrayOop.hpp
 
+ciObjArray.cpp                          ciObjArray.hpp
+ciObjArray.cpp                          ciNullObject.hpp
+ciObjArray.cpp                          ciUtilities.hpp
+ciObjArray.cpp                          objArrayOop.hpp
+
 ciObjArrayKlass.cpp                     ciInstanceKlass.hpp
 ciObjArrayKlass.cpp                     ciObjArrayKlass.hpp
 ciObjArrayKlass.cpp                     ciObjArrayKlassKlass.hpp

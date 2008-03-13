@@ -157,22 +157,7 @@ frame os::current_frame() {
   }
 }
 
-
 // Utility functions
-
-julong os::allocatable_physical_memory(julong size) {
-#ifdef AMD64
-  return size;
-#else
-  julong result = MIN2(size, (julong)3800*M);
-   if (!is_allocatable(result)) {
-     // See comments under solaris for alignment considerations
-     julong reasonable_size = (julong)2*G - 2 * os::vm_page_size();
-     result =  MIN2(size, reasonable_size);
-   }
-   return result;
-#endif // AMD64
-}
 
 // From IA32 System Programming Guide
 enum {

@@ -175,17 +175,12 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   // %%%% Could load both offset and interface in one ldx, if they were
   // in the opposite order.  This would save a load.
   __ ld_ptr(L0, base + itableOffsetEntry::interface_offset_in_bytes(), L1);
-#ifdef ASSERT
-  Label ok;
-  // Check that entry is non-null and an Oop
-  __ bpr(Assembler::rc_nz, false, Assembler::pt, L1, ok);
-  __ delayed()->nop();
-  __ stop("null entry point found in itable's offset table");
-  __ bind(ok);
-  __ verify_oop(L1);
-#endif // ASSERT
 
-  __ cmp(G5_interface, L1);
+  // If the entry is NULL then we've reached the end of the table
+  // without finding the expected interface, so throw an exception
+  Label throw_icce;
+  __ bpr(Assembler::rc_z, false, Assembler::pn, L1, throw_icce);
+  __ delayed()->cmp(G5_interface, L1);
   __ brx(Assembler::notEqual, true, Assembler::pn, search);
   __ delayed()->add(L0, itableOffsetEntry::size() * wordSize, L0);
 
@@ -223,24 +218,30 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   __ JMP(G3_scratch, 0);
   __ delayed()->nop();
 
+  __ bind(throw_icce);
+  Address icce(G3_scratch, StubRoutines::throw_IncompatibleClassChangeError_entry());
+  __ jump_to(icce, 0);
+  __ delayed()->restore();
+
   masm->flush();
+
+  guarantee(__ pc() <= s->code_end(), "overflowed buffer");
+
   s->set_exception_points(npe_addr, ame_addr);
   return s;
 }
 
 
 int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
-  if (TraceJumps || DebugVtables || CountCompiledCalls || VerifyOops) return 999;
+  if (TraceJumps || DebugVtables || CountCompiledCalls || VerifyOops) return 1000;
   else {
     const int slop = 2*BytesPerInstWord; // sethi;add  (needed for long offsets)
     if (is_vtable_stub) {
       const int basic = 5*BytesPerInstWord; // ld;ld;ld,jmp,nop
       return basic + slop;
     } else {
-#ifdef ASSERT
-      return 999;
-#endif // ASSERT
-      const int basic = 17*BytesPerInstWord; // save, ld, ld, sll, and, add, add, ld, cmp, br, add, ld, add, ld, ld, jmp, restore
+      // save, ld, ld, sll, and, add, add, ld, cmp, br, add, ld, add, ld, ld, jmp, restore, sethi, jmpl, restore
+      const int basic = (20 LP64_ONLY(+ 6)) * BytesPerInstWord;
       return (basic + slop);
     }
   }
@@ -252,29 +253,3 @@ int VtableStub::pd_code_alignment() {
   const unsigned int icache_line_size = 32;
   return icache_line_size;
 }
-
-
-//Reconciliation History
-// 1.2 97/12/09 17:13:31 vtableStubs_i486.cpp
-// 1.4 98/01/21 19:18:37 vtableStubs_i486.cpp
-// 1.5 98/02/13 16:33:55 vtableStubs_i486.cpp
-// 1.7 98/03/05 17:17:28 vtableStubs_i486.cpp
-// 1.9 98/05/18 09:26:17 vtableStubs_i486.cpp
-// 1.10 98/05/26 16:28:13 vtableStubs_i486.cpp
-// 1.11 98/05/27 08:51:35 vtableStubs_i486.cpp
-// 1.12 98/06/15 15:04:12 vtableStubs_i486.cpp
-// 1.13 98/07/28 18:44:22 vtableStubs_i486.cpp
-// 1.15 98/08/28 11:31:19 vtableStubs_i486.cpp
-// 1.16 98/09/02 12:58:31 vtableStubs_i486.cpp
-// 1.17 98/09/04 12:15:52 vtableStubs_i486.cpp
-// 1.18 98/11/19 11:55:24 vtableStubs_i486.cpp
-// 1.19 99/01/12 14:57:56 vtableStubs_i486.cpp
-// 1.20 99/01/19 17:42:52 vtableStubs_i486.cpp
-// 1.22 99/01/21 10:29:25 vtableStubs_i486.cpp
-// 1.30 99/06/02 15:27:39 vtableStubs_i486.cpp
-// 1.26 99/06/24 14:25:07 vtableStubs_i486.cpp
-// 1.23 99/02/22 14:37:52 vtableStubs_i486.cpp
-// 1.28 99/06/29 18:06:17 vtableStubs_i486.cpp
-// 1.29 99/07/22 17:03:44 vtableStubs_i486.cpp
-// 1.30 99/08/11 09:33:27 vtableStubs_i486.cpp
-//End

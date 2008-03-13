@@ -1971,7 +1971,7 @@ void nmethod::print_dependencies() {
     if (ctxk != NULL) {
       Klass* k = Klass::cast(ctxk);
       if (k->oop_is_instance() && ((instanceKlass*)k)->is_dependent_nmethod(this)) {
-        tty->print("   [nmethod<=klass]%s", k->external_name());
+        tty->print_cr("   [nmethod<=klass]%s", k->external_name());
       }
     }
     deps.log_dependency();  // put it into the xml log also

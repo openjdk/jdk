@@ -135,7 +135,7 @@ Node* PackNode::binaryTreePack(Compile* C, int lo, int hi) {
   int mid = lo + ct/2;
   Node* n1 = ct == 2 ? in(lo)   : binaryTreePack(C, lo,  mid);
   Node* n2 = ct == 2 ? in(lo+1) : binaryTreePack(C, mid, hi );
-  int rslt_bsize = ct * type2aelembytes[elt_basic_type()];
+  int rslt_bsize = ct * type2aelembytes(elt_basic_type());
   if (bottom_type()->is_floatingpoint()) {
     switch (rslt_bsize) {
     case  8: return new (C, 3) PackFNode(n1, n2);

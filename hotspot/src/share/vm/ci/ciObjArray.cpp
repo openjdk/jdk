@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,21 @@
  */
 
 #include "incls/_precompiled.incl"
-#include "incls/_vmreg.cpp.incl"
+#include "incls/_ciObjArray.cpp.incl"
 
-// First VMReg value that could refer to a stack slot
-VMReg VMRegImpl::stack0 = (VMReg)(intptr_t)((ConcreteRegisterImpl::number_of_registers + 1) & ~1);
+// ciObjArray
+//
+// This class represents an objArrayOop in the HotSpot virtual
+// machine.
 
-// VMRegs are 4 bytes wide on all platforms
-const int VMRegImpl::stack_slot_size = 4;
-const int VMRegImpl::slots_per_word = wordSize / stack_slot_size;
-
-const int VMRegImpl::register_count = ConcreteRegisterImpl::number_of_registers;
-// Register names
-const char *VMRegImpl::regName[ConcreteRegisterImpl::number_of_registers];
-
-#ifndef PRODUCT
-void VMRegImpl::print_on(outputStream* st) const {
-  if( is_reg() ) {
-    assert( VMRegImpl::regName[value()], "" );
-    st->print("%s",VMRegImpl::regName[value()]);
-  } else if (is_stack()) {
-    int stk = value() - stack0->value();
-    st->print("[%d]", stk*4);
+ciObject* ciObjArray::obj_at(int index) {
+  VM_ENTRY_MARK;
+  objArrayOop array = get_objArrayOop();
+  if (index < 0 || index >= array->length()) return NULL;
+  oop o = array->obj_at(index);
+  if (o == NULL) {
+    return ciNullObject::make();
   } else {
-    st->print("BAD!");
+    return CURRENT_ENV->get_object(o);
   }
 }
-#endif // PRODUCT
