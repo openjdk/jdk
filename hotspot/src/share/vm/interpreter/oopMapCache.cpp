@@ -532,6 +532,10 @@ void OopMapCache::flush_obsolete_entries() {
     if (!_array[i].is_empty() && _array[i].method()->is_old()) {
       // Cache entry is occupied by an old redefined method and we don't want
       // to pin it down so flush the entry.
+      RC_TRACE(0x08000000, ("flush: %s(%s): cached entry @%d",
+        _array[i].method()->name()->as_C_string(),
+        _array[i].method()->signature()->as_C_string(), i));
+
       _array[i].flush();
     }
 }
@@ -577,6 +581,15 @@ void OopMapCache::lookup(methodHandle method,
   // Entry is not in hashtable.
   // Compute entry and return it
 
+  if (method->should_not_be_cached()) {
+    // It is either not safe or not a good idea to cache this methodOop
+    // at this time. We give the caller of lookup() a copy of the
+    // interesting info via parameter entry_for, but we don't add it to
+    // the cache. See the gory details in methodOop.cpp.
+    compute_one_oop_map(method, bci, entry_for);
+    return;
+  }
+
   // First search for an empty slot
   for(i = 0; i < _probe_depth; i++) {
     entry  = entry_at(probe + i);
@@ -584,12 +597,6 @@ void OopMapCache::lookup(methodHandle method,
       entry->fill(method, bci);
       entry_for->resource_copy(entry);
       assert(!entry_for->is_empty(), "A non-empty oop map should be returned");
-      if (method->is_old()) {
-        // The caller of lookup() will receive a copy of the interesting
-        // info via entry_for, but we don't keep an old redefined method in
-        // the cache to avoid pinning down the method.
-        entry->flush();
-      }
       return;
     }
   }
@@ -622,13 +629,6 @@ void OopMapCache::lookup(methodHandle method,
     method->print_value(); tty->cr();
   }
   assert(!entry_for->is_empty(), "A non-empty oop map should be returned");
-
-  if (method->is_old()) {
-    // The caller of lookup() will receive a copy of the interesting
-    // info via entry_for, but we don't keep an old redefined method in
-    // the cache to avoid pinning down the method.
-    entry->flush();
-  }
 
   return;
 }
