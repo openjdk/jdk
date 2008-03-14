@@ -78,7 +78,7 @@ private:
                               Node* length,
                               const TypeFunc* slow_call_type,
                               address slow_call_address);
-  void eliminate_locking_node(AbstractLockNode *alock);
+  bool eliminate_locking_node(AbstractLockNode *alock);
   void expand_lock_node(LockNode *lock);
   void expand_unlock_node(UnlockNode *unlock);
 

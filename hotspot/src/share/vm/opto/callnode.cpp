@@ -1364,7 +1364,7 @@ void AbstractLockNode::set_eliminated() {
 //=============================================================================
 Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
-  // perform any generic optimizations first
+  // perform any generic optimizations first (returns 'this' or NULL)
   Node *result = SafePointNode::Ideal(phase, can_reshape);
 
   // Now see if we can optimize away this lock.  We don't actually
@@ -1372,7 +1372,20 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // prevents macro expansion from expanding the lock.  Since we don't
   // modify the graph, the value returned from this function is the
   // one computed above.
-  if (EliminateLocks && !is_eliminated()) {
+  if (result == NULL && can_reshape && EliminateLocks && !is_eliminated()) {
+    //
+    // If we are locking an unescaped object, the lock/unlock is unnecessary
+    //
+    ConnectionGraph *cgr = Compile::current()->congraph();
+    PointsToNode::EscapeState es = PointsToNode::GlobalEscape;
+    if (cgr != NULL)
+      es = cgr->escape_state(obj_node(), phase);
+    if (es != PointsToNode::UnknownEscape && es != PointsToNode::GlobalEscape) {
+      // Mark it eliminated to update any counters
+      this->set_eliminated();
+      return result;
+    }
+
     //
     // Try lock coarsening
     //
@@ -1412,8 +1425,10 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           int unlocks = 0;
           for (int i = 0; i < lock_ops.length(); i++) {
             AbstractLockNode* lock = lock_ops.at(i);
-            if (lock->Opcode() == Op_Lock) locks++;
-            else                               unlocks++;
+            if (lock->Opcode() == Op_Lock)
+              locks++;
+            else
+              unlocks++;
             if (Verbose) {
               lock->dump(1);
             }
@@ -1450,7 +1465,7 @@ uint UnlockNode::size_of() const { return sizeof(*this); }
 //=============================================================================
 Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
-  // perform any generic optimizations first
+  // perform any generic optimizations first (returns 'this' or NULL)
   Node * result = SafePointNode::Ideal(phase, can_reshape);
 
   // Now see if we can optimize away this unlock.  We don't actually
@@ -1458,66 +1473,18 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // prevents macro expansion from expanding the unlock.  Since we don't
   // modify the graph, the value returned from this function is the
   // one computed above.
-  if (EliminateLocks && !is_eliminated()) {
+  // Escape state is defined after Parse phase.
+  if (result == NULL && can_reshape && EliminateLocks && !is_eliminated()) {
     //
-    // If we are unlocking an unescaped object, the lock/unlock is unnecessary
-    // We can eliminate them if there are no safepoints in the locked region.
+    // If we are unlocking an unescaped object, the lock/unlock is unnecessary.
     //
     ConnectionGraph *cgr = Compile::current()->congraph();
-    if (cgr != NULL && cgr->escape_state(obj_node(), phase) == PointsToNode::NoEscape) {
-      GrowableArray<AbstractLockNode*>   lock_ops;
-      LockNode *lock = find_matching_lock(this);
-      if (lock != NULL) {
-        lock_ops.append(this);
-        lock_ops.append(lock);
-        // find other unlocks which pair with the lock we found and add them
-        // to the list
-        Node * box = box_node();
-
-        for (DUIterator_Fast imax, i = box->fast_outs(imax); i < imax; i++) {
-          Node *use = box->fast_out(i);
-          if (use->is_Unlock() && use != this) {
-            UnlockNode *unlock1 = use->as_Unlock();
-            if (!unlock1->is_eliminated()) {
-              LockNode *lock1 = find_matching_lock(unlock1);
-              if (lock == lock1)
-                lock_ops.append(unlock1);
-              else if (lock1 == NULL) {
-               // we can't find a matching lock, we must assume the worst
-                lock_ops.trunc_to(0);
-                break;
-              }
-            }
-          }
-        }
-        if (lock_ops.length() > 0) {
-
-  #ifndef PRODUCT
-          if (PrintEliminateLocks) {
-            int locks = 0;
-            int unlocks = 0;
-            for (int i = 0; i < lock_ops.length(); i++) {
-              AbstractLockNode* lock = lock_ops.at(i);
-              if (lock->Opcode() == Op_Lock) locks++;
-              else                               unlocks++;
-              if (Verbose) {
-                lock->dump(1);
-              }
-            }
-            tty->print_cr("***Eliminated %d unescaped unlocks and %d unescaped locks", unlocks, locks);
-          }
-  #endif
-
-          // for each of the identified locks, mark them
-          // as eliminatable
-          for (int i = 0; i < lock_ops.length(); i++) {
-            AbstractLockNode* lock = lock_ops.at(i);
-
-            // Mark it eliminated to update any counters
-            lock->set_eliminated();
-          }
-        }
-      }
+    PointsToNode::EscapeState es = PointsToNode::GlobalEscape;
+    if (cgr != NULL)
+      es = cgr->escape_state(obj_node(), phase);
+    if (es != PointsToNode::UnknownEscape && es != PointsToNode::GlobalEscape) {
+      // Mark it eliminated to update any counters
+      this->set_eliminated();
     }
   }
   return result;
