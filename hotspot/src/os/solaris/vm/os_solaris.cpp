@@ -2785,16 +2785,15 @@ char* os::Solaris::mmap_chunk(char *addr, size_t size, int flags, int prot) {
   return b;
 }
 
-char*
-os::reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
-  char* addr = NULL;
-  int   flags;
+char* os::Solaris::anon_mmap(char* requested_addr, size_t bytes, size_t alignment_hint, bool fixed) {
+  char* addr = requested_addr;
+  int flags = MAP_PRIVATE | MAP_NORESERVE;
 
-  flags = MAP_PRIVATE | MAP_NORESERVE;
-  if (requested_addr != NULL) {
-      flags |= MAP_FIXED;
-      addr = requested_addr;
-  } else if (has_map_align && alignment_hint > (size_t) vm_page_size()) {
+  assert(!(fixed && (alignment_hint > 0)), "alignment hint meaningless with fixed mmap");
+
+  if (fixed) {
+    flags |= MAP_FIXED;
+  } else if (has_map_align && (alignment_hint > (size_t) vm_page_size())) {
     flags |= MAP_ALIGN;
     addr = (char*) alignment_hint;
   }
@@ -2802,11 +2801,14 @@ os::reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
   // Map uncommitted pages PROT_NONE so we fail early if we touch an
   // uncommitted page. Otherwise, the read/write might succeed if we
   // have enough swap space to back the physical page.
-  addr = Solaris::mmap_chunk(addr, bytes, flags, PROT_NONE);
+  return mmap_chunk(addr, bytes, flags, PROT_NONE);
+}
+
+char* os::reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
+  char* addr = Solaris::anon_mmap(requested_addr, bytes, alignment_hint, (requested_addr != NULL));
 
   guarantee(requested_addr == NULL || requested_addr == addr,
             "OS failed to return requested mmap address.");
-
   return addr;
 }
 
@@ -2832,6 +2834,31 @@ char* os::attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   // in one of the methods further up the call chain.  See bug 5044738.
   assert(bytes % os::vm_page_size() == 0, "reserving unexpected size block");
 
+  // Since snv_84, Solaris attempts to honor the address hint - see 5003415.
+  // Give it a try, if the kernel honors the hint we can return immediately.
+  char* addr = Solaris::anon_mmap(requested_addr, bytes, 0, false);
+  volatile int err = errno;
+  if (addr == requested_addr) {
+    return addr;
+  } else if (addr != NULL) {
+    unmap_memory(addr, bytes);
+  }
+
+  if (PrintMiscellaneous && Verbose) {
+    char buf[256];
+    buf[0] = '\0';
+    if (addr == NULL) {
+      jio_snprintf(buf, sizeof(buf), ": %s", strerror(err));
+    }
+    warning("attempt_reserve_memory_at: couldn't reserve %d bytes at "
+            PTR_FORMAT ": reserve_memory_helper returned " PTR_FORMAT
+            "%s", bytes, requested_addr, addr, buf);
+  }
+
+  // Address hint method didn't work.  Fall back to the old method.
+  // In theory, once SNV becomes our oldest supported platform, this
+  // code will no longer be needed.
+  //
   // Repeatedly allocate blocks until the block is allocated at the
   // right spot. Give up after max_tries.
   int i;
