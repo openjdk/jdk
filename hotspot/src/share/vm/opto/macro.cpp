@@ -828,43 +828,102 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
 // Note:  The membar's associated with the lock/unlock are currently not
 //        eliminated.  This should be investigated as a future enhancement.
 //
-void PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
-  Node* mem = alock->in(TypeFunc::Memory);
+bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
+
+  if (!alock->is_eliminated()) {
+    return false;
+  }
+  // Mark the box lock as eliminated if all correspondent locks are eliminated
+  // to construct correct debug info.
+  BoxLockNode* box = alock->box_node()->as_BoxLock();
+  if (!box->is_eliminated()) {
+    bool eliminate = true;
+    for (DUIterator_Fast imax, i = box->fast_outs(imax); i < imax; i++) {
+      Node *lck = box->fast_out(i);
+      if (lck->is_Lock() && !lck->as_AbstractLock()->is_eliminated()) {
+        eliminate = false;
+        break;
+      }
+    }
+    if (eliminate)
+      box->set_eliminated();
+  }
+
+  #ifndef PRODUCT
+  if (PrintEliminateLocks) {
+    if (alock->is_Lock()) {
+      tty->print_cr("++++ Eliminating: %d Lock", alock->_idx);
+    } else {
+      tty->print_cr("++++ Eliminating: %d Unlock", alock->_idx);
+    }
+  }
+  #endif
+
+  Node* mem  = alock->in(TypeFunc::Memory);
+  Node* ctrl = alock->in(TypeFunc::Control);
+
+  extract_call_projections(alock);
+  // There are 2 projections from the lock.  The lock node will
+  // be deleted when its last use is subsumed below.
+  assert(alock->outcnt() == 2 &&
+         _fallthroughproj != NULL &&
+         _memproj_fallthrough != NULL,
+         "Unexpected projections from Lock/Unlock");
+
+  Node* fallthroughproj = _fallthroughproj;
+  Node* memproj_fallthrough = _memproj_fallthrough;
 
   // The memory projection from a lock/unlock is RawMem
   // The input to a Lock is merged memory, so extract its RawMem input
   // (unless the MergeMem has been optimized away.)
   if (alock->is_Lock()) {
-    if (mem->is_MergeMem())
-      mem = mem->as_MergeMem()->in(Compile::AliasIdxRaw);
+    // Seach for MemBarAcquire node and delete it also.
+    MemBarNode* membar = fallthroughproj->unique_ctrl_out()->as_MemBar();
+    assert(membar != NULL && membar->Opcode() == Op_MemBarAcquire, "");
+    Node* ctrlproj = membar->proj_out(TypeFunc::Control);
+    Node* memproj = membar->proj_out(TypeFunc::Memory);
+    _igvn.hash_delete(ctrlproj);
+    _igvn.subsume_node(ctrlproj, fallthroughproj);
+    _igvn.hash_delete(memproj);
+    _igvn.subsume_node(memproj, memproj_fallthrough);
   }
 
-  extract_call_projections(alock);
-  // There are 2 projections from the lock.  The lock node will
-  // be deleted when its last use is subsumed below.
-  assert(alock->outcnt() == 2 && _fallthroughproj != NULL &&
-          _memproj_fallthrough != NULL, "Unexpected projections from Lock/Unlock");
-  _igvn.hash_delete(_fallthroughproj);
-  _igvn.subsume_node(_fallthroughproj, alock->in(TypeFunc::Control));
-  _igvn.hash_delete(_memproj_fallthrough);
-  _igvn.subsume_node(_memproj_fallthrough, mem);
-  return;
+  // Seach for MemBarRelease node and delete it also.
+  if (alock->is_Unlock() && ctrl != NULL && ctrl->is_Proj() &&
+      ctrl->in(0)->is_MemBar()) {
+    MemBarNode* membar = ctrl->in(0)->as_MemBar();
+    assert(membar->Opcode() == Op_MemBarRelease &&
+           mem->is_Proj() && membar == mem->in(0), "");
+    _igvn.hash_delete(fallthroughproj);
+    _igvn.subsume_node(fallthroughproj, ctrl);
+    _igvn.hash_delete(memproj_fallthrough);
+    _igvn.subsume_node(memproj_fallthrough, mem);
+    fallthroughproj = ctrl;
+    memproj_fallthrough = mem;
+    ctrl = membar->in(TypeFunc::Control);
+    mem  = membar->in(TypeFunc::Memory);
+  }
+
+  _igvn.hash_delete(fallthroughproj);
+  _igvn.subsume_node(fallthroughproj, ctrl);
+  _igvn.hash_delete(memproj_fallthrough);
+  _igvn.subsume_node(memproj_fallthrough, mem);
+  return true;
 }
 
 
 //------------------------------expand_lock_node----------------------
 void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 
+  if (eliminate_locking_node(lock)) {
+    return;
+  }
+
   Node* ctrl = lock->in(TypeFunc::Control);
   Node* mem = lock->in(TypeFunc::Memory);
   Node* obj = lock->obj_node();
   Node* box = lock->box_node();
-  Node *flock = lock->fastlock_node();
-
-  if (lock->is_eliminated()) {
-    eliminate_locking_node(lock);
-    return;
-  }
+  Node* flock = lock->fastlock_node();
 
   // Make the merge point
   Node *region = new (C, 3) RegionNode(3);
@@ -913,16 +972,14 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 //------------------------------expand_unlock_node----------------------
 void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
 
-  Node *ctrl = unlock->in(TypeFunc::Control);
+  if (eliminate_locking_node(unlock)) {
+    return;
+  }
+
+  Node* ctrl = unlock->in(TypeFunc::Control);
   Node* mem = unlock->in(TypeFunc::Memory);
   Node* obj = unlock->obj_node();
   Node* box = unlock->box_node();
-
-
-  if (unlock->is_eliminated()) {
-    eliminate_locking_node(unlock);
-    return;
-  }
 
   // No need for a null check on unlock
 

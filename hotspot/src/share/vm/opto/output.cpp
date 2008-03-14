@@ -882,7 +882,8 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
       }
 
       OptoReg::Name box_reg = BoxLockNode::stack_slot(box_node);
-      monarray->append(new MonitorValue(scval, Location::new_stk_loc(Location::normal,_regalloc->reg2offset(box_reg))));
+      Location basic_lock = Location::new_stk_loc(Location::normal,_regalloc->reg2offset(box_reg));
+      monarray->append(new MonitorValue(scval, basic_lock, box_node->as_BoxLock()->is_eliminated()));
     }
 
     // We dump the object pool first, since deoptimization reads it in first.
