@@ -809,7 +809,7 @@ class XDecoratedPeer extends XWindowPeer {
                 fs &= ~(MWM_FUNC_RESIZE | MWM_FUNC_MAXIMIZE);
             }
             winAttr.functions = fs;
-            XWM.setShellNotResizable(this, dimensions, dimensions.getScreenBounds(), false);
+            XWM.setShellNotResizable(this, dimensions, dimensions.getBounds(), false);
         }
     }
 
