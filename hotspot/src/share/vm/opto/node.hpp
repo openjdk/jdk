@@ -1328,7 +1328,6 @@ public:
 // Inline definition of Compile::record_for_igvn must be deferred to this point.
 inline void Compile::record_for_igvn(Node* n) {
   _for_igvn->push(n);
-  record_for_escape_analysis(n);
 }
 
 //------------------------------Node_Stack-------------------------------------
