@@ -5425,7 +5425,13 @@ void AwtComponent::UnlinkObjects()
 void AwtComponent::Enable(BOOL bEnable)
 {
     sm_suppressFocusAndActivation = TRUE;
+
+    if (bEnable && IsTopLevel()) {
+        // we should not enable blocked toplevels
+        bEnable = !::IsWindow(AwtWindow::GetModalBlocker(GetHWnd()));
+    }
     ::EnableWindow(GetHWnd(), bEnable);
+
     sm_suppressFocusAndActivation = FALSE;
     CriticalSection::Lock l(GetLock());
     VerifyState();

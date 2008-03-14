@@ -180,7 +180,6 @@ void AwtWindow::Dispose()
     }
 
     ::RemoveProp(GetHWnd(), ModalBlockerProp);
-    ::RemoveProp(GetHWnd(), ModalSaveWSEXProp);
 
     if (m_grabbedWindow == this) {
         Ungrab();
@@ -1455,20 +1454,17 @@ void AwtWindow::SetModalBlocker(HWND window, HWND blocker) {
     if (!::IsWindow(window)) {
         return;
     }
-    DWORD exStyle = ::GetWindowLong(window, GWL_EXSTYLE);
+
     if (::IsWindow(blocker)) {
-        // save WS_EX_NOACTIVATE and WS_EX_APPWINDOW styles
-        DWORD saveStyle = exStyle & (AWT_WS_EX_NOACTIVATE | WS_EX_APPWINDOW);
-        ::SetProp(window, ModalSaveWSEXProp, reinterpret_cast<HANDLE>(saveStyle));
-        ::SetWindowLong(window, GWL_EXSTYLE, (exStyle | AWT_WS_EX_NOACTIVATE) & ~WS_EX_APPWINDOW);
         ::SetProp(window, ModalBlockerProp, reinterpret_cast<HANDLE>(blocker));
+        ::EnableWindow(window, FALSE);
     } else {
-        // restore WS_EX_NOACTIVATE and WS_EX_APPWINDOW styles
-        DWORD saveStyle = reinterpret_cast<DWORD>(::GetProp(window, ModalSaveWSEXProp));
-        ::SetWindowLong(window, GWL_EXSTYLE,
-                        (exStyle & ~(AWT_WS_EX_NOACTIVATE | WS_EX_APPWINDOW)) | saveStyle);
-        ::RemoveProp(window, ModalSaveWSEXProp);
         ::RemoveProp(window, ModalBlockerProp);
+         AwtComponent *comp = AwtComponent::GetComponent(window);
+         // we don't expect to be called with non-java HWNDs
+         DASSERT(comp && comp->IsTopLevel());
+         // we should not unblock disabled toplevels
+         ::EnableWindow(window, comp->isEnabled());
     }
 }
 
