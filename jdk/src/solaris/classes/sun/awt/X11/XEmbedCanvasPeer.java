@@ -647,12 +647,6 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         }
         if (isXEmbedActive()) {
             switch ((int)msg.get_data(1)) {
-              case _SUN_XEMBED_START:
-                  // Child has finished initialization and waits for notify
-                  xembed.processXEmbedInfo();
-
-                  notifyChildEmbedded();
-                  break;
               case XEMBED_REQUEST_FOCUS:
                   requestXEmbedFocus();
                   break;
