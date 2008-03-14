@@ -4431,7 +4431,8 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
                                        e.isPopupTrigger(),
                                        ((MouseWheelEvent)e).getScrollType(),
                                        ((MouseWheelEvent)e).getScrollAmount(),
-                                       ((MouseWheelEvent)e).getWheelRotation());
+                                       ((MouseWheelEvent)e).getWheelRotation(),
+                                       ((MouseWheelEvent)e).getPreciseWheelRotation());
             }
             else {
                 retargeted = new MouseEvent(target,
