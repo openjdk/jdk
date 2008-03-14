@@ -388,6 +388,9 @@ public:
   void               set_next_exception(SafePointNode* n);
   bool                   has_exceptions() const { return next_exception() != NULL; }
 
+  // Does this node have a use of n other than in debug information?
+  virtual bool           has_non_debug_use(Node *n)  {return false; }
+
   // Standard Node stuff
   virtual int            Opcode() const;
   virtual bool           pinned() const { return true; }
@@ -457,7 +460,6 @@ public:
   const TypeFunc *_tf;        // Function type
   address      _entry_point;  // Address of method being called
   float        _cnt;          // Estimate of number of times called
-  PointsToNode::EscapeState _escape_state;
 
   CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type)
     : SafePointNode(tf->domain()->cnt(), NULL, adr_type),
@@ -467,7 +469,6 @@ public:
   {
     init_class_id(Class_Call);
     init_flags(Flag_is_Call);
-    _escape_state = PointsToNode::UnknownEscape;
   }
 
   const TypeFunc* tf()        const { return _tf; }
@@ -492,6 +493,15 @@ public:
   // For macro nodes, the JVMState gets modified during expansion, so when cloning
   // the node the JVMState must be cloned.
   virtual void        clone_jvms() { }   // default is not to clone
+
+  // Returns true if the call may modify n
+  virtual bool        may_modify(const TypePtr *addr_t, PhaseTransform *phase);
+  // Does this node have a use of n other than in debug information?
+  virtual bool        has_non_debug_use(Node *n);
+  // Returns the unique CheckCastPP of a call
+  // or result projection is there are several CheckCastPP
+  // or returns NULL if there is no one.
+  Node *result_cast();
 
   virtual uint match_edge(uint idx) const;
 
@@ -689,6 +699,9 @@ public:
   virtual uint ideal_reg() const { return Op_RegP; }
   virtual bool        guaranteed_safepoint()  { return false; }
 
+  // allocations do not modify their arguments
+  virtual bool        may_modify(const TypePtr *addr_t, PhaseTransform *phase) { return false;}
+
   // Pattern-match a possible usage of AllocateNode.
   // Return null if no allocation is recognized.
   // The operand is the pointer produced by the (possible) allocation.
@@ -800,6 +813,9 @@ public:
   bool is_eliminated()         {return _eliminate; }
   // mark node as eliminated and update the counter if there is one
   void set_eliminated();
+
+  // locking does not modify its arguments
+  virtual bool        may_modify(const TypePtr *addr_t, PhaseTransform *phase){ return false;}
 
 #ifndef PRODUCT
   void create_lock_counter(JVMState* s);

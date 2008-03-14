@@ -624,6 +624,87 @@ uint CallNode::match_edge(uint idx) const {
   return 0;
 }
 
+//
+// Determine whether the call could modify a memory value  of the
+// specified address type
+//
+bool CallNode::may_modify(const TypePtr *addr_t, PhaseTransform *phase) {
+  const TypeOopPtr *adrInst_t  = addr_t->isa_oopptr();
+
+  // if not an InstPtr or not an instance type, assume the worst
+  if (adrInst_t == NULL || !adrInst_t->is_instance_field()) {
+    return true;
+  }
+  Compile *C = phase->C;
+  int offset = adrInst_t->offset();
+  assert(offset >= 0, "should be valid offset");
+  assert(addr_t->isa_instptr() || addr_t->isa_aryptr(), "only instances or arrays are expected");
+
+  int base_idx = C->get_alias_index(adrInst_t);
+  ciMethod * meth = is_CallStaticJava() ?  as_CallStaticJava()->method() : NULL;
+  BCEscapeAnalyzer *bcea = (meth != NULL) ? meth->get_bcea() : NULL;
+
+  const TypeTuple * d = tf()->domain();
+  for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
+    const Type* t = d->field_at(i);
+    Node *arg = in(i);
+    const Type *at = phase->type(arg);
+    if (at == TypePtr::NULL_PTR || at == Type::TOP)
+      continue;  // null can't affect anything
+
+    const TypeOopPtr *at_ptr = at->isa_oopptr();
+    if (!arg->is_top() && (t->isa_oopptr() != NULL ||
+                           t->isa_ptr() && at_ptr != NULL)) {
+      assert(at_ptr != NULL, "expecting an OopPtr");
+      // If we have found an argument matching adr_base_t, check if the field
+      // at the specified offset is modified.  Since we don't know the size,
+      // assume 8.
+      int at_idx = C->get_alias_index(at_ptr->add_offset(offset)->isa_oopptr());
+      if (base_idx == at_idx &&
+          (bcea == NULL ||
+           bcea->is_arg_modified(i - TypeFunc::Parms, offset, 8))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Does this call have a direct reference to n other than debug information?
+bool CallNode::has_non_debug_use(Node *n) {
+  const TypeTuple * d = tf()->domain();
+  for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
+    Node *arg = in(i);
+    if (arg == n) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Returns the unique CheckCastPP of a call
+// or 'this' if there are several CheckCastPP
+// or returns NULL if there is no one.
+Node *CallNode::result_cast() {
+  Node *cast = NULL;
+
+  Node *p = proj_out(TypeFunc::Parms);
+  if (p == NULL)
+    return NULL;
+
+  for (DUIterator_Fast imax, i = p->fast_outs(imax); i < imax; i++) {
+    Node *use = p->fast_out(i);
+    if (use->is_CheckCastPP()) {
+      if (cast != NULL) {
+        return this;  // more than 1 CheckCastPP
+      }
+      cast = use;
+    }
+  }
+  return cast;
+}
+
+
 //=============================================================================
 uint CallJavaNode::size_of() const { return sizeof(*this); }
 uint CallJavaNode::cmp( const Node &n ) const {

@@ -382,6 +382,12 @@
   product(bool, EliminateAllocations, true,                                 \
           "Use escape analysis to eliminate allocations")                   \
                                                                             \
+  notproduct(bool, PrintEliminateAllocations, false,                        \
+          "Print out when allocations are eliminated")                      \
+                                                                            \
+  product(intx, EliminateAllocationArraySizeLimit, 64,                      \
+          "Array size (number of elements) limit for scalar replacement")   \
+                                                                            \
   product(intx, MaxLabelRootDepth, 1100,                                    \
           "Maximum times call Label_Root to prevent stack overflow")        \
 
