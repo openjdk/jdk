@@ -935,24 +935,26 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     public GraphicsConfiguration getGraphicsConfiguration() {
         synchronized(getTreeLock()) {
-            GraphicsConfiguration gc = graphicsConfig;
-            Component parent = getParent();
-            while ((gc == null) && (parent != null)) {
-                gc = parent.getGraphicsConfiguration();
-                parent = parent.getParent();
+            if (graphicsConfig != null) {
+                return graphicsConfig;
+            } else if (getParent() != null) {
+                return getParent().getGraphicsConfiguration();
+            } else {
+                return null;
             }
-            return gc;
         }
     }
 
     final GraphicsConfiguration getGraphicsConfiguration_NoClientCode() {
-        GraphicsConfiguration gc = this.graphicsConfig;
-        Component par = this.parent;
-        while ((gc == null) && (par != null)) {
-            gc = par.getGraphicsConfiguration_NoClientCode();
-            par = par.parent;
+        GraphicsConfiguration graphicsConfig = this.graphicsConfig;
+        Container parent = this.parent;
+        if (graphicsConfig != null) {
+            return graphicsConfig;
+        } else if (parent != null) {
+            return parent.getGraphicsConfiguration_NoClientCode();
+        } else {
+            return null;
         }
-        return gc;
     }
 
     /**
