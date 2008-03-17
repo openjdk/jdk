@@ -64,8 +64,8 @@ public class MarshalOutputStream extends ObjectOutputStream
         super(out);
         this.useProtocolVersion(protocolVersion);
         java.security.AccessController.doPrivileged(
-                                    new java.security.PrivilegedAction() {
-            public Object run() {
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
                 enableReplaceObject(true);
                 return null;
             }

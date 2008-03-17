@@ -92,7 +92,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
             Connector connector;
 
             try {
-                connector = (Connector)connectors.next();
+                connector = connectors.next();
             } catch (ThreadDeath x) {
                 throw x;
             } catch (Exception x) {
@@ -121,7 +121,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
             TransportService transportService;
 
             try {
-                transportService = (TransportService)transportServices.next();
+                transportService = transportServices.next();
             } catch (ThreadDeath x) {
                 throw x;
             } catch (Exception x) {

@@ -109,34 +109,25 @@ class BetweenQueryExp extends QueryEval implements QueryExp {
         ValueExp val1 = exp1.apply(name);
         ValueExp val2 = exp2.apply(name);
         ValueExp val3 = exp3.apply(name);
-        String sval1;
-        String sval2;
-        String sval3;
-        double dval1;
-        double dval2;
-        double dval3;
-        long lval1;
-        long lval2;
-        long lval3;
         boolean numeric = val1 instanceof NumericValueExp;
 
         if (numeric) {
             if (((NumericValueExp)val1).isLong()) {
-                lval1 = ((NumericValueExp)val1).longValue();
-                lval2 = ((NumericValueExp)val2).longValue();
-                lval3 = ((NumericValueExp)val3).longValue();
+                long lval1 = ((NumericValueExp)val1).longValue();
+                long lval2 = ((NumericValueExp)val2).longValue();
+                long lval3 = ((NumericValueExp)val3).longValue();
                 return lval2 <= lval1 && lval1 <= lval3;
             } else {
-                dval1 = ((NumericValueExp)val1).doubleValue();
-                dval2 = ((NumericValueExp)val2).doubleValue();
-                dval3 = ((NumericValueExp)val3).doubleValue();
+                double dval1 = ((NumericValueExp)val1).doubleValue();
+                double dval2 = ((NumericValueExp)val2).doubleValue();
+                double dval3 = ((NumericValueExp)val3).doubleValue();
                 return dval2 <= dval1 && dval1 <= dval3;
             }
 
         } else {
-            sval1 = ((StringValueExp)val1).toString();
-            sval2 = ((StringValueExp)val2).toString();
-            sval3 = ((StringValueExp)val3).toString();
+            String sval1 = ((StringValueExp)val1).getValue();
+            String sval2 = ((StringValueExp)val2).getValue();
+            String sval3 = ((StringValueExp)val3).getValue();
             return sval2.compareTo(sval1) <= 0 && sval1.compareTo(sval3) <= 0;
         }
     }
@@ -148,4 +139,8 @@ class BetweenQueryExp extends QueryEval implements QueryExp {
         return "(" + exp1 + ") between (" + exp2 + ") and (" + exp3 + ")";
     }
 
- }
+    @Override
+    String toQueryString() {
+        return exp1 + " between " + exp2 + " and " + exp3;
+    }
+}

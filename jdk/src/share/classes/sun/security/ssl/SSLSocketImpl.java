@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.PrivilegedAction;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.crypto.BadPaddingException;
 
@@ -274,7 +276,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * from the peer are handled properly.
      */
     private Object              handshakeLock;
-    Object                      writeLock;
+    ReentrantLock               writeLock;
     private Object              readLock;
 
     private InputRecord         inrec;
@@ -313,7 +315,6 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      */
     private HashMap<HandshakeCompletedListener, AccessControlContext>
                                                         handshakeListeners;
-
 
     /*
      * Reuse the same internal input/output streams.
@@ -526,7 +527,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         enabledCipherSuites = CipherSuiteList.getDefault();
         enabledProtocols = ProtocolList.getDefault();
         handshakeLock = new Object();
-        writeLock = new Object();
+        writeLock = new ReentrantLock();
         readLock = new Object();
         inrec = null;
 
@@ -677,14 +678,79 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         // implementations are fragile and don't like to see empty
         // records, so this also increases robustness.
         //
-        synchronized (writeLock) {
-            if (!r.isEmpty()) {
-                // r.compress(c);
-                r.addMAC(writeMAC);
-                r.encrypt(writeCipher);
-                r.write(sockOutput);
+        if (!r.isEmpty()) {
+
+            // If the record is a close notify alert, we need to honor
+            // socket option SO_LINGER. Note that we will try to send
+            // the close notify even if the SO_LINGER set to zero.
+            if (r.isAlert(Alerts.alert_close_notify) && getSoLinger() >= 0) {
+
+                // keep and clear the current thread interruption status.
+                boolean interrupted = Thread.interrupted();
+                try {
+                    if (writeLock.tryLock(getSoLinger(), TimeUnit.SECONDS)) {
+                        try {
+                            writeRecordInternal(r);
+                        } finally {
+                            writeLock.unlock();
+                        }
+                    } else {
+                        SSLException ssle = new SSLException(
+                                "SO_LINGER timeout," +
+                                " close_notify message cannot be sent.");
+
+
+                        // For layered, non-autoclose sockets, we are not
+                        // able to bring them into a usable state, so we
+                        // treat it as fatal error.
+                        if (self != this && !autoClose) {
+                            // Note that the alert description is
+                            // specified as -1, so no message will be send
+                            // to peer anymore.
+                            fatal((byte)(-1), ssle);
+                        } else if ((debug != null) && Debug.isOn("ssl")) {
+                            System.out.println(threadName() +
+                                ", received Exception: " + ssle);
+                        }
+
+                        // RFC2246 requires that the session becomes
+                        // unresumable if any connection is terminated
+                        // without proper close_notify messages with
+                        // level equal to warning.
+                        //
+                        // RFC4346 no longer requires that a session not be
+                        // resumed if failure to properly close a connection.
+                        //
+                        // We choose to make the session unresumable if
+                        // failed to send the close_notify message.
+                        //
+                        sess.invalidate();
+                    }
+                } catch (InterruptedException ie) {
+                    // keep interrupted status
+                    interrupted = true;
+                }
+
+                // restore the interrupted status
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            } else {
+                writeLock.lock();
+                try {
+                    writeRecordInternal(r);
+                } finally {
+                    writeLock.unlock();
+                }
             }
         }
+    }
+
+    private void writeRecordInternal(OutputRecord r) throws IOException {
+        // r.compress(c);
+        r.addMAC(writeMAC);
+        r.encrypt(writeCipher);
+        r.write(sockOutput);
     }
 
 
@@ -1533,7 +1599,11 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
             if (oldState == cs_HANDSHAKE) {
                 sockInput.skip(sockInput.available());
             }
-            sendAlert(Alerts.alert_fatal, description);
+
+            // If the description equals -1, the alert won't be sent to peer.
+            if (description != -1) {
+                sendAlert(Alerts.alert_fatal, description);
+            }
             if (cause instanceof SSLException) { // only true if != null
                 closeReason = (SSLException)cause;
             } else {
@@ -1614,7 +1684,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * Emit alerts.  Caller must have synchronized with "this".
      */
     private void sendAlert(byte level, byte description) {
-        if (connectionState >= cs_CLOSED) {
+        if (connectionState >= cs_SENT_CLOSE) {
             return;
         }
 

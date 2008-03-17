@@ -38,7 +38,7 @@ import javax.management.MBeanServer;
  *
  * @since 1.5
  */
-public abstract class QueryEval implements Serializable   {
+public abstract class QueryEval extends ToQueryString implements Serializable {
 
     /* Serial version */
     private static final long serialVersionUID = 2675899265640874796L;
