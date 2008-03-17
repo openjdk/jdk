@@ -673,13 +673,13 @@ GetJavaProperties(JNIEnv* env)
     /* OS properties */
     {
         char buf[100];
-        OSVERSIONINFO ver;
+        OSVERSIONINFOEX ver;
         ver.dwOSVersionInfoSize = sizeof(ver);
-        GetVersionEx(&ver);
+        GetVersionEx((OSVERSIONINFO *) &ver);
 
         /*
          * From msdn page on OSVERSIONINFOEX, current as of this
-         * writing decoding of dwMajorVersion and dwMinorVersion.
+         * writing, decoding of dwMajorVersion and dwMinorVersion.
          *
          *  Operating system            dwMajorVersion  dwMinorVersion
          * ==================           ==============  ==============
@@ -692,7 +692,7 @@ GetJavaProperties(JNIEnv* env)
          * Windows 2000                 5               0
          * Windows XP                   5               1
          * Windows Server 2003 family   5               2
-         * Windows Vista                6               0
+         * Windows Vista family         6               0
          *
          * This mapping will presumably be augmented as new Windows
          * versions are released.
@@ -724,7 +724,20 @@ GetJavaProperties(JNIEnv* env)
                 default: sprops.os_name = "Windows NT (unknown)"; break;
                 }
             } else if (ver.dwMajorVersion == 6) {
-                sprops.os_name = "Windows Vista";
+                /*
+                 * From MSDN OSVERSIONINFOEX documentation:
+                 *
+                 * "Because the version numbers for Windows Server 2008
+                 * and Windows Vista are identical, you must also test
+                 * whether the wProductType member is VER_NT_WORKSTATION.
+                 * If wProductType is VER_NT_WORKSTATION, the operating
+                 * system is Windows Vista; otherwise, it is Windows
+                 * Server 2008."
+                 */
+                if (ver.wProductType == VER_NT_WORKSTATION)
+                    sprops.os_name = "Windows Vista";
+                else
+                    sprops.os_name = "Windows Server 2008";
             } else {
                 sprops.os_name = "Windows NT (unknown)";
             }

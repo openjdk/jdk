@@ -121,7 +121,7 @@ public class SslRMIClientSocketFactory
             sslSocketFactory.createSocket(host, port);
         // Set the SSLSocket Enabled Cipher Suites
         //
-        final String enabledCipherSuites = (String)
+        final String enabledCipherSuites =
             System.getProperty("javax.rmi.ssl.client.enabledCipherSuites");
         if (enabledCipherSuites != null) {
             StringTokenizer st = new StringTokenizer(enabledCipherSuites, ",");
@@ -139,7 +139,7 @@ public class SslRMIClientSocketFactory
         }
         // Set the SSLSocket Enabled Protocols
         //
-        final String enabledProtocols = (String)
+        final String enabledProtocols =
             System.getProperty("javax.rmi.ssl.client.enabledProtocols");
         if (enabledProtocols != null) {
             StringTokenizer st = new StringTokenizer(enabledProtocols, ",");

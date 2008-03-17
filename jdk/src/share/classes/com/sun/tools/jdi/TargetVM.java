@@ -148,7 +148,7 @@ public class TargetVM implements Runnable {
                 idString = String.valueOf(p.id);
 
                 synchronized(waitingQueue) {
-                    p2 = (Packet)waitingQueue.get(idString);
+                    p2 = waitingQueue.get(idString);
 
                     if (p2 != null)
                         waitingQueue.remove(idString);

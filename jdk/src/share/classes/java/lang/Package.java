@@ -507,7 +507,7 @@ public class Package implements java.lang.reflect.AnnotatedElement {
      */
     static Package getSystemPackage(String name) {
         synchronized (pkgs) {
-            Package pkg = (Package)pkgs.get(name);
+            Package pkg = pkgs.get(name);
             if (pkg == null) {
                 name = name.replace('.', '/').concat("/");
                 String fn = getSystemPackage0(name);
@@ -529,18 +529,18 @@ public class Package implements java.lang.reflect.AnnotatedElement {
             for (int i = 0; i < names.length; i++) {
                 defineSystemPackage(names[i], getSystemPackage0(names[i]));
             }
-            return (Package[])pkgs.values().toArray(new Package[pkgs.size()]);
+            return pkgs.values().toArray(new Package[pkgs.size()]);
         }
     }
 
     private static Package defineSystemPackage(final String iname,
                                                final String fn)
     {
-        return (Package) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+        return AccessController.doPrivileged(new PrivilegedAction<Package>() {
+            public Package run() {
                 String name = iname;
                 // Get the cached code source url for the file name
-                URL url = (URL)urls.get(fn);
+                URL url = urls.get(fn);
                 if (url == null) {
                     // URL not found, so create one
                     File file = new File(fn);
@@ -559,7 +559,7 @@ public class Package implements java.lang.reflect.AnnotatedElement {
                 // Convert to "."-separated package name
                 name = name.substring(0, name.length() - 1).replace('/', '.');
                 Package pkg;
-                Manifest man = (Manifest)mans.get(fn);
+                Manifest man = mans.get(fn);
                 if (man != null) {
                     pkg = new Package(name, man, url, null);
                 } else {
@@ -588,13 +588,16 @@ public class Package implements java.lang.reflect.AnnotatedElement {
     }
 
     // The map of loaded system packages
-    private static Map pkgs = new HashMap(31);
+    private static Map<String, Package> pkgs
+        = new HashMap<String, Package>(31);
 
     // Maps each directory or zip file name to its corresponding url
-    private static Map urls = new HashMap(10);
+    private static Map<String, URL> urls
+        = new HashMap<String, URL>(10);
 
     // Maps each code source url for a jar file to its manifest
-    private static Map mans = new HashMap(10);
+    private static Map<String, Manifest> mans
+        = new HashMap<String, Manifest>(10);
 
     private static native String getSystemPackage0(String name);
     private static native String[] getSystemPackages0();

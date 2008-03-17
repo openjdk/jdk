@@ -49,20 +49,21 @@ class Util {
     private static final int TEMP_BUF_POOL_SIZE = 3;
 
     // Per-thread soft cache of the last temporary direct buffer
-    private static ThreadLocal[] bufferPool;
+    private static ThreadLocal<SoftReference<ByteBuffer>>[] bufferPool;
 
     static {
-        bufferPool = new ThreadLocal[TEMP_BUF_POOL_SIZE];
+        bufferPool = (ThreadLocal<SoftReference<ByteBuffer>>[])
+            new ThreadLocal[TEMP_BUF_POOL_SIZE];
         for (int i=0; i<TEMP_BUF_POOL_SIZE; i++)
-            bufferPool[i] = new ThreadLocal();
+            bufferPool[i] = new ThreadLocal<SoftReference<ByteBuffer>>();
     }
 
     static ByteBuffer getTemporaryDirectBuffer(int size) {
         ByteBuffer buf = null;
         // Grab a buffer if available
         for (int i=0; i<TEMP_BUF_POOL_SIZE; i++) {
-            SoftReference ref = (SoftReference)(bufferPool[i].get());
-            if ((ref != null) && ((buf = (ByteBuffer)ref.get()) != null) &&
+            SoftReference<ByteBuffer> ref = bufferPool[i].get();
+            if ((ref != null) && ((buf = ref.get()) != null) &&
                 (buf.capacity() >= size)) {
                 buf.rewind();
                 buf.limit(size);
@@ -80,18 +81,18 @@ class Util {
             return;
         // Put it in an empty slot if such exists
         for (int i=0; i<TEMP_BUF_POOL_SIZE; i++) {
-            SoftReference ref = (SoftReference)(bufferPool[i].get());
+            SoftReference<ByteBuffer> ref = bufferPool[i].get();
             if ((ref == null) || (ref.get() == null)) {
-                bufferPool[i].set(new SoftReference(buf));
+                bufferPool[i].set(new SoftReference<ByteBuffer>(buf));
                 return;
             }
         }
         // Otherwise replace a smaller one in the cache if such exists
         for (int i=0; i<TEMP_BUF_POOL_SIZE; i++) {
-            SoftReference ref = (SoftReference)(bufferPool[i].get());
-            ByteBuffer inCacheBuf = (ByteBuffer)ref.get();
+            SoftReference<ByteBuffer> ref = bufferPool[i].get();
+            ByteBuffer inCacheBuf = ref.get();
             if ((inCacheBuf == null) || (buf.capacity() > inCacheBuf.capacity())) {
-                bufferPool[i].set(new SoftReference(buf));
+                bufferPool[i].set(new SoftReference<ByteBuffer>(buf));
                 return;
             }
         }
@@ -120,10 +121,12 @@ class Util {
     }
 
     // Per-thread cached selector
-    private static ThreadLocal localSelector = new ThreadLocal();
+    private static ThreadLocal<SoftReference<SelectorWrapper>> localSelector
+        = new ThreadLocal<SoftReference<SelectorWrapper>>();
     // Hold a reference to the selWrapper object to prevent it from
     // being cleaned when the temporary selector wrapped is on lease.
-    private static ThreadLocal localSelectorWrapper = new ThreadLocal();
+    private static ThreadLocal<SelectorWrapper> localSelectorWrapper
+        = new ThreadLocal<SelectorWrapper>();
 
     // When finished, invoker must ensure that selector is empty
     // by cancelling any related keys and explicitly releasing
@@ -131,15 +134,16 @@ class Util {
     static Selector getTemporarySelector(SelectableChannel sc)
         throws IOException
     {
-        SoftReference ref = (SoftReference)localSelector.get();
+        SoftReference<SelectorWrapper> ref = localSelector.get();
         SelectorWrapper selWrapper = null;
         Selector sel = null;
         if (ref == null
-            || ((selWrapper = (SelectorWrapper) ref.get()) == null)
+            || ((selWrapper = ref.get()) == null)
             || ((sel = selWrapper.get()) == null)
             || (sel.provider() != sc.provider())) {
             sel = sc.provider().openSelector();
-            localSelector.set(new SoftReference(new SelectorWrapper(sel)));
+            localSelector.set(new SoftReference<SelectorWrapper>(
+                                  new SelectorWrapper(sel)));
         } else {
             localSelectorWrapper.set(selWrapper);
         }
@@ -235,10 +239,10 @@ class Util {
     private static volatile Constructor directByteBufferConstructor = null;
 
     private static void initDBBConstructor() {
-        AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                public Void run() {
                     try {
-                        Class cl = Class.forName("java.nio.DirectByteBuffer");
+                        Class<?> cl = Class.forName("java.nio.DirectByteBuffer");
                         Constructor ctor = cl.getDeclaredConstructor(
                             new Class[] { int.class,
                                           long.class,
@@ -282,10 +286,10 @@ class Util {
     private static volatile Constructor directByteBufferRConstructor = null;
 
     private static void initDBBRConstructor() {
-        AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                public Void run() {
                     try {
-                        Class cl = Class.forName("java.nio.DirectByteBufferR");
+                        Class<?> cl = Class.forName("java.nio.DirectByteBufferR");
                         Constructor ctor = cl.getDeclaredConstructor(
                             new Class[] { int.class,
                                           long.class,
