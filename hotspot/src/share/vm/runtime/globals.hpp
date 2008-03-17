@@ -1319,6 +1319,10 @@ class CommandLineFlags {
   product(bool, CMSClassUnloadingEnabled, false,                            \
           "Whether class unloading enabled when using CMS GC")              \
                                                                             \
+  product(uintx, CMSClassUnloadingMaxInterval, 0,                           \
+          "When CMS class unloading is enabled, the maximum CMS cycle count"\
+          " for which classes may not be unloaded")                         \
+                                                                            \
   product(bool, CMSCompactWhenClearAllSoftRefs, true,                       \
           "Compact when asked to collect CMS gen with clear_all_soft_refs") \
                                                                             \
@@ -1504,16 +1508,29 @@ class CommandLineFlags {
           "Percentage of MinHeapFreeRatio in CMS generation that is "       \
           "  allocated before a CMS collection cycle commences")            \
                                                                             \
-  product(intx, CMSBootstrapOccupancy, 50,                                  \
+  product(intx, CMSTriggerPermRatio, 80,                                    \
+          "Percentage of MinHeapFreeRatio in the CMS perm generation that"  \
+          "  is allocated before a CMS collection cycle commences, that  "  \
+          "  also collects the perm generation")                            \
+                                                                            \
+  product(uintx, CMSBootstrapOccupancy, 50,                                 \
           "Percentage CMS generation occupancy at which to "                \
           " initiate CMS collection for bootstrapping collection stats")    \
                                                                             \
   product(intx, CMSInitiatingOccupancyFraction, -1,                         \
           "Percentage CMS generation occupancy to start a CMS collection "  \
-          " cycle (A negative value means that CMSTirggerRatio is used)")   \
+          " cycle (A negative value means that CMSTriggerRatio is used)")   \
+                                                                            \
+  product(intx, CMSInitiatingPermOccupancyFraction, -1,                     \
+          "Percentage CMS perm generation occupancy to start a CMScollection"\
+          " cycle (A negative value means that CMSTriggerPermRatio is used)")\
                                                                             \
   product(bool, UseCMSInitiatingOccupancyOnly, false,                       \
           "Only use occupancy as a crierion for starting a CMS collection") \
+                                                                            \
+  product(intx, CMSIsTooFullPercentage, 98,                                 \
+          "An absolute ceiling above which CMS will always consider the"    \
+          " perm gen ripe for collection")                                  \
                                                                             \
   develop(bool, CMSTestInFreeList, false,                                   \
           "Check if the coalesced range is already in the "                 \
