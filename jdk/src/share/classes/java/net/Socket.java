@@ -731,7 +731,8 @@ class Socket implements java.io.Closeable {
      * then this method will continue to return the connected address
      * after the socket is closed.
      *
-     * @return a <code>SocketAddress</code> reprensenting the remote endpoint of this
+
+     * @return a <code>SocketAddress</code> representing the remote endpoint of this
      *         socket, or <code>null</code> if it is not connected yet.
      * @see #getInetAddress()
      * @see #getPort()
