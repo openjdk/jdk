@@ -495,7 +495,7 @@ MsgRouting AwtFrame::WmMouseMove(UINT flags, int x, int y) {
 
             ::SetWindowPos(GetHWnd(), NULL, r.left, r.top,
                            r.right-r.left, r.bottom-r.top,
-                           SWP_NOACTIVATE | SWP_NOSENDCHANGING | SWP_NOZORDER |
+                           SWP_NOACTIVATE | SWP_NOZORDER |
                            SWP_NOCOPYBITS | SWP_DEFERERASE);
         }
         return mrConsume;
