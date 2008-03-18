@@ -2267,53 +2267,56 @@ public class Container extends Component {
                                          EventTargetFilter filter,
                                          boolean searchHeavyweightChildren,
                                          boolean searchHeavyweightDescendants) {
-        int ncomponents = this.ncomponents;
-        Component component[] = this.component;
+        synchronized (getTreeLock()) {
+            int ncomponents = this.ncomponents;
+            Component component[] = this.component;
 
-        for (int i = 0 ; i < ncomponents ; i++) {
-            Component comp = component[i];
-            if (comp != null && comp.visible &&
-                ((!searchHeavyweightChildren &&
-                  comp.peer instanceof LightweightPeer) ||
-                 (searchHeavyweightChildren &&
-                  !(comp.peer instanceof LightweightPeer))) &&
-                comp.contains(x - comp.x, y - comp.y)) {
+            for (int i = 0 ; i < ncomponents ; i++) {
+                Component comp = component[i];
+                if (comp != null && comp.visible &&
+                    ((!searchHeavyweightChildren &&
+                      comp.peer instanceof LightweightPeer) ||
+                     (searchHeavyweightChildren &&
+                      !(comp.peer instanceof LightweightPeer))) &&
+                    comp.contains(x - comp.x, y - comp.y)) {
 
-                // found a component that intersects the point, see if there is
-                // a deeper possibility.
-                if (comp instanceof Container) {
-                    Container child = (Container) comp;
-                    Component deeper = child.getMouseEventTarget(x - child.x,
-                                                                 y - child.y,
-                                                                 includeSelf,
-                                                                 filter,
-                                                                 searchHeavyweightDescendants);
-                    if (deeper != null) {
-                        return deeper;
-                    }
-                } else {
-                    if (filter.accept(comp)) {
-                        // there isn't a deeper target, but this component is a
-                        // target
-                        return comp;
+                    // found a component that intersects the point, see if there
+                    // is a deeper possibility.
+                    if (comp instanceof Container) {
+                        Container child = (Container) comp;
+                        Component deeper = child.getMouseEventTarget(
+                                x - child.x,
+                                y - child.y,
+                                includeSelf,
+                                filter,
+                                searchHeavyweightDescendants);
+                        if (deeper != null) {
+                            return deeper;
+                        }
+                    } else {
+                        if (filter.accept(comp)) {
+                            // there isn't a deeper target, but this component
+                            // is a target
+                            return comp;
+                        }
                     }
                 }
             }
+
+            boolean isPeerOK;
+            boolean isMouseOverMe;
+
+            isPeerOK = (peer instanceof LightweightPeer) || includeSelf;
+            isMouseOverMe = contains(x,y);
+
+            // didn't find a child target, return this component if it's
+            // a possible target
+            if (isMouseOverMe && isPeerOK && filter.accept(this)) {
+                return this;
+            }
+            // no possible target
+            return null;
         }
-
-        boolean isPeerOK;
-        boolean isMouseOverMe;
-
-        isPeerOK = (peer instanceof LightweightPeer) || includeSelf;
-        isMouseOverMe = contains(x,y);
-
-        // didn't find a child target, return this component if it's a possible
-        // target
-        if (isMouseOverMe && isPeerOK && filter.accept(this)) {
-            return this;
-        }
-        // no possible target
-        return null;
     }
 
     static interface EventTargetFilter {
