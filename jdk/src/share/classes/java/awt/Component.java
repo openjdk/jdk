@@ -9476,6 +9476,19 @@ public abstract class Component implements ImageObserver, MenuContainer,
     // ************************** MIXING CODE *******************************
 
     /**
+     * Check whether we can trust the current bounds of the component.
+     * The return value of false indicates that the container of the
+     * component is invalid, and therefore needs to be layed out, which would
+     * probably mean changing the bounds of its children.
+     * Null-layout of the container or absence of the container mean
+     * the bounds of the component are final and can be trusted.
+     */
+    private boolean areBoundsValid() {
+        Container cont = getContainer();
+        return cont == null || cont.isValid() || cont.getLayout() == null;
+    }
+
+    /**
      * Applies the shape to the component
      * @param shape Shape to be applied to the component
      */
@@ -9498,7 +9511,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 // to modify the object outside of the mixing code.
                 this.compoundShape = shape;
 
-                if (isValid()) {
+                if (areBoundsValid()) {
                     Point compAbsolute = getLocationOnWindow();
 
                     if (mixingLog.isLoggable(Level.FINER)) {
@@ -9625,7 +9638,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     void applyCurrentShape() {
         checkTreeLock();
-        if (!isValid()) {
+        if (!areBoundsValid()) {
             return; // Because applyCompoundShape() ignores such components anyway
         }
         if (mixingLog.isLoggable(Level.FINE)) {
