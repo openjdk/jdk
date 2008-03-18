@@ -95,7 +95,8 @@ class XFramePeer extends XDecoratedPeer implements FramePeer, XConstants {
         }
     }
 
-    private boolean isTargetUndecorated() {
+    @Override
+    boolean isTargetUndecorated() {
         if (undecorated != null) {
             return undecorated.booleanValue();
         } else {

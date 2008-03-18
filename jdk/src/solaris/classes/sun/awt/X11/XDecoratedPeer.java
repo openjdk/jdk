@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 import sun.awt.ComponentAccessor;
 import sun.awt.SunToolkit;
 
-class XDecoratedPeer extends XWindowPeer {
+abstract class XDecoratedPeer extends XWindowPeer {
     private static final Logger log = Logger.getLogger("sun.awt.X11.XDecoratedPeer");
     private static final Logger insLog = Logger.getLogger("sun.awt.X11.insets.XDecoratedPeer");
     private static final Logger focusLog = Logger.getLogger("sun.awt.X11.focus.XDecoratedPeer");
@@ -456,6 +456,15 @@ class XDecoratedPeer extends XWindowPeer {
         if (insLog.isLoggable(Level.FINE)) {
             insLog.fine("Reshaping " + this + " to " + newDimensions + " op " + op + " user reshape " + userReshape);
         }
+        if (userReshape) {
+            // We handle only userReshape == true cases. It means that
+            // if the window manager or any other part of the windowing
+            // system sets inappropriate size for this window, we can
+            // do nothing but accept it.
+            Rectangle reqBounds = newDimensions.getBounds();
+            Rectangle newBounds = constrainBounds(reqBounds.x, reqBounds.y, reqBounds.width, reqBounds.height);
+            newDimensions = new WindowDimensions(newBounds, newDimensions.getInsets(), newDimensions.isClientSizeSet());
+        }
         XToolkit.awtLock();
         try {
             if (!isReparented() || !isVisible()) {
@@ -569,6 +578,49 @@ class XDecoratedPeer extends XWindowPeer {
                                                       new Object[] {operationToString(operation), dims});
 
         reshape(dims, operation, userReshape);
+    }
+
+    // This method gets overriden in XFramePeer & XDialogPeer.
+    abstract boolean isTargetUndecorated();
+
+    @Override
+    Rectangle constrainBounds(int x, int y, int width, int height) {
+        // We don't restrict the setBounds() operation if the code is trusted.
+        if (!hasWarningWindow()) {
+            return new Rectangle(x, y, width, height);
+        }
+
+        // If it's undecorated or is not currently visible,
+        // apply the same constraints as for the Window.
+        if (!isVisible() || isTargetUndecorated()) {
+            return super.constrainBounds(x, y, width, height);
+        }
+
+        // If it's visible & decorated, constraint the size only
+        int newX = x;
+        int newY = y;
+        int newW = width;
+        int newH = height;
+
+        GraphicsConfiguration gc = ((Window)target).getGraphicsConfiguration();
+        Rectangle sB = gc.getBounds();
+        Insets sIn = ((Window)target).getToolkit().getScreenInsets(gc);
+
+        Rectangle curBounds = getBounds();
+
+        int maxW = Math.max(sB.width - sIn.left - sIn.right, curBounds.width);
+        int maxH = Math.max(sB.height - sIn.top - sIn.bottom, curBounds.height);
+
+        // First make sure the size is withing the visible part of the screen
+        if (newW > maxW) {
+            newW = maxW;
+        }
+
+        if (newH > maxH) {
+            newH = maxH;
+        }
+
+        return new Rectangle(newX, newY, newW, newH);
     }
 
     /**

@@ -62,6 +62,12 @@ public:
     /* long[] getActiveWindowHandles() method in WWindowPeer */
     static jmethodID getActiveWindowsMID;
 
+    // The coordinates at the peer.
+    static jfieldID sysXID;
+    static jfieldID sysYID;
+    static jfieldID sysWID;
+    static jfieldID sysHID;
+
     AwtWindow();
     virtual ~AwtWindow();
 
