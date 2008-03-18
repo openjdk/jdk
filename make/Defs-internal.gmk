@@ -28,6 +28,12 @@
 # not contain rules.
 #
 
+ifdef OPENJDK
+  ifneq ($(OPENJDK),true)
+    x:=$(error "OPENJDK (if defined) can only be set to true")
+  endif
+endif
+
 # Define absolute paths to TOPDIRs
 ABS_CONTROL_TOPDIR:=$(call OptFullPath,"$(CONTROL_TOPDIR)")
 ABS_LANGTOOLS_TOPDIR:=$(call OptFullPath,"$(LANGTOOLS_TOPDIR)")
@@ -96,10 +102,8 @@ ifndef BUILD_JDK
 endif
 ifeq ($(JDK_SRC_AVAILABLE),true)
   JDK_CLOSED_SRC_AVAILABLE := $(call MkExists,$(JDK_TOPDIR)/src/closed)
-  ifndef OPENJDK
-    ifeq ($(JDK_CLOSED_SRC_AVAILABLE),false)
-      OPENJDK = true
-    endif
+  ifeq ($(JDK_CLOSED_SRC_AVAILABLE),false)
+    OPENJDK = true
   endif
 endif
 
