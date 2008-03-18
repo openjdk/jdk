@@ -634,6 +634,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     private PropertyChangeSupport changeSupport;
 
+    private transient final Object changeSupportLock = new Object();
+    private Object getChangeSupportLock() {
+        return changeSupportLock;
+    }
+
     boolean isPacked = false;
 
     /**
@@ -7839,15 +7844,17 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getPropertyChangeListeners
      * @see #addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)
      */
-    public synchronized void addPropertyChangeListener(
+    public void addPropertyChangeListener(
                                                        PropertyChangeListener listener) {
-        if (listener == null) {
-            return;
+        synchronized (getChangeSupportLock()) {
+            if (listener == null) {
+                return;
+            }
+            if (changeSupport == null) {
+                changeSupport = new PropertyChangeSupport(this);
+            }
+            changeSupport.addPropertyChangeListener(listener);
         }
-        if (changeSupport == null) {
-            changeSupport = new PropertyChangeSupport(this);
-        }
-        changeSupport.addPropertyChangeListener(listener);
     }
 
     /**
@@ -7863,12 +7870,14 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getPropertyChangeListeners
      * @see #removePropertyChangeListener(java.lang.String,java.beans.PropertyChangeListener)
      */
-    public synchronized void removePropertyChangeListener(
+    public void removePropertyChangeListener(
                                                           PropertyChangeListener listener) {
-        if (listener == null || changeSupport == null) {
-            return;
+        synchronized (getChangeSupportLock()) {
+            if (listener == null || changeSupport == null) {
+                return;
+            }
+            changeSupport.removePropertyChangeListener(listener);
         }
-        changeSupport.removePropertyChangeListener(listener);
     }
 
     /**
@@ -7885,11 +7894,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see      java.beans.PropertyChangeSupport#getPropertyChangeListeners
      * @since    1.4
      */
-    public synchronized PropertyChangeListener[] getPropertyChangeListeners() {
-        if (changeSupport == null) {
-            return new PropertyChangeListener[0];
+    public PropertyChangeListener[] getPropertyChangeListeners() {
+        synchronized (getChangeSupportLock()) {
+            if (changeSupport == null) {
+                return new PropertyChangeListener[0];
+            }
+            return changeSupport.getPropertyChangeListeners();
         }
-        return changeSupport.getPropertyChangeListeners();
     }
 
     /**
@@ -7923,16 +7934,18 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getPropertyChangeListeners(java.lang.String)
      * @see #addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)
      */
-    public synchronized void addPropertyChangeListener(
+    public void addPropertyChangeListener(
                                                        String propertyName,
                                                        PropertyChangeListener listener) {
-        if (listener == null) {
-            return;
+        synchronized (getChangeSupportLock()) {
+            if (listener == null) {
+                return;
+            }
+            if (changeSupport == null) {
+                changeSupport = new PropertyChangeSupport(this);
+            }
+            changeSupport.addPropertyChangeListener(propertyName, listener);
         }
-        if (changeSupport == null) {
-            changeSupport = new PropertyChangeSupport(this);
-        }
-        changeSupport.addPropertyChangeListener(propertyName, listener);
     }
 
     /**
@@ -7951,13 +7964,15 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getPropertyChangeListeners(java.lang.String)
      * @see #removePropertyChangeListener(java.beans.PropertyChangeListener)
      */
-    public synchronized void removePropertyChangeListener(
+    public void removePropertyChangeListener(
                                                           String propertyName,
                                                           PropertyChangeListener listener) {
-        if (listener == null || changeSupport == null) {
-            return;
+        synchronized (getChangeSupportLock()) {
+            if (listener == null || changeSupport == null) {
+                return;
+            }
+            changeSupport.removePropertyChangeListener(propertyName, listener);
         }
-        changeSupport.removePropertyChangeListener(propertyName, listener);
     }
 
     /**
@@ -7974,12 +7989,14 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getPropertyChangeListeners
      * @since 1.4
      */
-    public synchronized PropertyChangeListener[] getPropertyChangeListeners(
+    public PropertyChangeListener[] getPropertyChangeListeners(
                                                                             String propertyName) {
-        if (changeSupport == null) {
-            return new PropertyChangeListener[0];
+        synchronized (getChangeSupportLock()) {
+            if (changeSupport == null) {
+                return new PropertyChangeListener[0];
+            }
+            return changeSupport.getPropertyChangeListeners(propertyName);
         }
-        return changeSupport.getPropertyChangeListeners(propertyName);
     }
 
     /**
@@ -7994,7 +8011,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     protected void firePropertyChange(String propertyName,
                                       Object oldValue, Object newValue) {
-        PropertyChangeSupport changeSupport = this.changeSupport;
+        PropertyChangeSupport changeSupport;
+        synchronized (getChangeSupportLock()) {
+            changeSupport = this.changeSupport;
+        }
         if (changeSupport == null ||
             (oldValue != null && newValue != null && oldValue.equals(newValue))) {
             return;
