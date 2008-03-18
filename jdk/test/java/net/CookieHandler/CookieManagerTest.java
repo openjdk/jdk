@@ -132,17 +132,17 @@ class CookieHttpTransaction implements HttpCallback {
                 ),
                 new CookieTestCase("Set-Cookie",
                 "PART_NUMBER=ROCKET_LAUNCHER_0001; path=/;" + "domain=." + localHostAddr,
-                "CUSTOMER=WILE:BOB;PART_NUMBER=ROCKET_LAUNCHER_0001",
+                "CUSTOMER=WILE:BOB; PART_NUMBER=ROCKET_LAUNCHER_0001",
                 "/"
                 ),
                 new CookieTestCase("Set-Cookie",
                 "SHIPPING=FEDEX; path=/foo;" + "domain=." + localHostAddr,
-                "CUSTOMER=WILE:BOB;PART_NUMBER=ROCKET_LAUNCHER_0001",
+                "CUSTOMER=WILE:BOB; PART_NUMBER=ROCKET_LAUNCHER_0001",
                 "/"
                 ),
                 new CookieTestCase("Set-Cookie",
                 "SHIPPING=FEDEX; path=/foo;" + "domain=." + localHostAddr,
-                "CUSTOMER=WILE:BOB;PART_NUMBER=ROCKET_LAUNCHER_0001;SHIPPING=FEDEX",
+                "CUSTOMER=WILE:BOB; PART_NUMBER=ROCKET_LAUNCHER_0001; SHIPPING=FEDEX",
                 "/foo"
                 )
                 };
@@ -157,7 +157,7 @@ class CookieHttpTransaction implements HttpCallback {
                 ),
                 new CookieTestCase("Set-Cookie",
                 "PART_NUMBER=RIDING_ROCKET_0023; path=/ammo;" + "domain=." + localHostAddr,
-                "PART_NUMBER=RIDING_ROCKET_0023;PART_NUMBER=ROCKET_LAUNCHER_0001",
+                "PART_NUMBER=RIDING_ROCKET_0023; PART_NUMBER=ROCKET_LAUNCHER_0001",
                 "/ammo"
                 )
                 };
@@ -167,17 +167,17 @@ class CookieHttpTransaction implements HttpCallback {
         testCases[count++] = new CookieTestCase[]{
                 new CookieTestCase("Set-Cookie2",
                 "Customer=\"WILE_E_COYOTE\"; Version=\"1\"; Path=\"/acme\";" + "domain=." + localHostAddr,
-                "$Version=\"1\";Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";$Domain=\"." + localHostAddr + "\"",
+                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";$Domain=\"." + localHostAddr + "\"",
                 "/acme/login"
                 ),
                 new CookieTestCase("Set-Cookie2",
                 "Part_Number=\"Rocket_Launcher_0001\"; Version=\"1\";Path=\"/acme\";" + "domain=." + localHostAddr,
-                "$Version=\"1\";Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr  + "\"" + ";Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr +  "\"",
+                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr  + "\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr +  "\"",
                 "/acme/pickitem"
                 ),
                 new CookieTestCase("Set-Cookie2",
                 "Shipping=\"FedEx\"; Version=\"1\"; Path=\"/acme\";" + "domain=." + localHostAddr,
-                "$Version=\"1\";Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr  + "\"" + ";Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr  + "\"" + ";Shipping=\"FedEx\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr + "\"",
+                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr  + "\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr  + "\"" + "; Shipping=\"FedEx\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr + "\"",
                 "/acme/shipping"
                 )
                 };
@@ -187,17 +187,17 @@ class CookieHttpTransaction implements HttpCallback {
         testCases[count++] = new CookieTestCase[]{
                 new CookieTestCase("Set-Cookie2",
                 "Part_Number=\"Rocket_Launcher_0001\"; Version=\"1\"; Path=\"/acme\";" + "domain=." + localHostAddr,
-                "$Version=\"1\";Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";$Domain=\"." + localHostAddr + "\"",
+                "$Version=\"1\"; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";$Domain=\"." + localHostAddr + "\"",
                 "/acme/ammo"
                 ),
                 new CookieTestCase("Set-Cookie2",
                 "Part_Number=\"Riding_Rocket_0023\"; Version=\"1\"; Path=\"/acme/ammo\";" + "domain=." + localHostAddr,
-                "$Version=\"1\";Part_Number=\"Riding_Rocket_0023\";$Path=\"/acme/ammo\";$Domain=\"." + localHostAddr  + "\"" + ";Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr + "\"",
+                "$Version=\"1\"; Part_Number=\"Riding_Rocket_0023\";$Path=\"/acme/ammo\";$Domain=\"." + localHostAddr  + "\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr + "\"",
                 "/acme/ammo"
                 ),
                 new CookieTestCase("",
                 "",
-                "$Version=\"1\";Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr + "\"",
+                "$Version=\"1\"; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";" + "$Domain=\"." + localHostAddr + "\"",
                 "/acme/parts"
                 )
                 };
@@ -207,12 +207,12 @@ class CookieHttpTransaction implements HttpCallback {
         testCases[count++] = new CookieTestCase[]{
                 new CookieTestCase("Set-Cookie2",
                 "Part_Number=\"Rocket_Launcher_0001\"; Version=\"1\"; Path=\"/acme\";" + "domain=." + localHostAddr,
-                "$Version=\"1\";Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";$Domain=\"." + localHostAddr + "\"",
+                "$Version=\"1\"; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";$Domain=\"." + localHostAddr + "\"",
                 "/acme"
                 ),
                 new CookieTestCase("Set-Cookie2",
                 "Part_Number=\"Rocket_Launcher_2000\"; Version=\"1\"; Path=\"/acme\";" + "domain=." + localHostAddr,
-                "$Version=\"1\";Part_Number=\"Rocket_Launcher_2000\";$Path=\"/acme\";$Domain=\"." + localHostAddr + "\"",
+                "$Version=\"1\"; Part_Number=\"Rocket_Launcher_2000\";$Path=\"/acme\";$Domain=\"." + localHostAddr + "\"",
                 "/acme"
                 )
                 };
@@ -222,17 +222,17 @@ class CookieHttpTransaction implements HttpCallback {
         testCases[count++] = new CookieTestCase[]{
                 new CookieTestCase("Set-Cookie2",
                 "Customer=\"WILE_E_COYOTE\"; Version=\"1\"; Path=\"/acme\"",
-                "$Version=\"1\";Customer=\"WILE_E_COYOTE\";$Path=\"/acme\"",
+                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\"",
                 "/acme/login"
                 ),
                 new CookieTestCase("Set-Cookie2",
                 "Part_Number=\"Rocket_Launcher_0001\"; Version=\"1\";Path=\"/acme\"",
-                "$Version=\"1\";Customer=\"WILE_E_COYOTE\";$Path=\"/acme\"" + ";Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\"",
+                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\"",
                 "/acme/pickitem"
                 ),
                 new CookieTestCase("Set-Cookie2",
                 "Shipping=\"FedEx\"; Version=\"1\"; Path=\"/acme\"",
-                "$Version=\"1\";Customer=\"WILE_E_COYOTE\";$Path=\"/acme\"" + ";Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\"" + ";Shipping=\"FedEx\";$Path=\"/acme\"",
+                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\"" + "; Shipping=\"FedEx\";$Path=\"/acme\"",
                 "/acme/shipping"
                 )
                 };
