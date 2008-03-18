@@ -826,7 +826,10 @@ public class Window extends Container implements Accessible {
     static private final AtomicBoolean
         beforeFirstWindowShown = new AtomicBoolean(true);
 
-    static final void closeSplashScreen() {
+    final void closeSplashScreen() {
+        if (isTrayIconWindow) {
+            return;
+        }
         if (beforeFirstWindowShown.getAndSet(false)) {
             SunToolkit.closeSplashScreen();
         }
