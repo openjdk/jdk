@@ -29,6 +29,11 @@
 //------------------------------split_thru_phi---------------------------------
 // Split Node 'n' through merge point if there is enough win.
 Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
+  if (n->Opcode() == Op_ConvI2L && n->bottom_type() != TypeLong::LONG) {
+    // ConvI2L may have type information on it which is unsafe to push up
+    // so disable this for now
+    return NULL;
+  }
   int wins = 0;
   assert( !n->is_CFG(), "" );
   assert( region->is_Region(), "" );
