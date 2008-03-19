@@ -3372,6 +3372,21 @@ void Assembler::cvtss2sd(XMMRegister dst, XMMRegister src) {
   emit_byte(0xC0 | encode);
 }
 
+void Assembler::cvtdq2pd(XMMRegister dst, XMMRegister src) {
+  emit_byte(0xF3);
+  int encode = prefix_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xE6);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::cvtdq2ps(XMMRegister dst, XMMRegister src) {
+  int encode = prefix_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0x5B);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::cvtsd2ss(XMMRegister dst, XMMRegister src) {
   emit_byte(0xF2);
   int encode = prefix_and_encode(dst->encoding(), src->encoding());
