@@ -732,20 +732,13 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-jlong os::timeofday() {
-  FILETIME wt;
-  GetSystemTimeAsFileTime(&wt);
-  return windows_to_java_time(wt);
-}
-
-
-// Must return millis since Jan 1 1970 for JVM_CurrentTimeMillis
-// _use_global_time is only set if CacheTimeMillis is true
 jlong os::javaTimeMillis() {
   if (UseFakeTimers) {
     return fake_time++;
   } else {
-    return (_use_global_time ? read_global_time() : timeofday());
+    FILETIME wt;
+    GetSystemTimeAsFileTime(&wt);
+    return windows_to_java_time(wt);
   }
 }
 
