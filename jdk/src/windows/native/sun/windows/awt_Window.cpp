@@ -334,8 +334,11 @@ LRESULT CALLBACK AwtWindow::CBTFilter(int nCode, WPARAM wParam, LPARAM lParam)
     if (nCode == HCBT_ACTIVATE || nCode == HCBT_SETFOCUS) {
         AwtComponent *comp = AwtComponent::GetComponent((HWND)wParam);
 
-        if (comp != NULL && comp->IsTopLevel() && !((AwtWindow*)comp)->IsFocusableWindow()) {
-            return 1; // Don't change focus/activation.
+        if (comp != NULL && comp->IsTopLevel()) {
+            AwtWindow* win = (AwtWindow*)comp;
+            if (!win->IsFocusableWindow() || win->m_filterFocusAndActivation) {
+                return 1; // Don't change focus/activation.
+            }
         }
     }
     return ::CallNextHookEx(AwtWindow::ms_hCBTFilter, nCode, wParam, lParam);
