@@ -1881,7 +1881,7 @@ uint ClearArrayNode::match_edge(uint idx) const {
 //------------------------------Identity---------------------------------------
 // Clearing a zero length array does nothing
 Node *ClearArrayNode::Identity( PhaseTransform *phase ) {
-  return phase->type(in(2))->higher_equal(TypeInt::ZERO)  ? in(1) : this;
+  return phase->type(in(2))->higher_equal(TypeX::ZERO)  ? in(1) : this;
 }
 
 //------------------------------Idealize---------------------------------------
@@ -1954,6 +1954,11 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
                                    Node* start_offset,
                                    Node* end_offset,
                                    PhaseGVN* phase) {
+  if (start_offset == end_offset) {
+    // nothing to do
+    return mem;
+  }
+
   Compile* C = phase->C;
   int unit = BytesPerLong;
   Node* zbase = start_offset;
@@ -1979,6 +1984,11 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
                                    intptr_t start_offset,
                                    intptr_t end_offset,
                                    PhaseGVN* phase) {
+  if (start_offset == end_offset) {
+    // nothing to do
+    return mem;
+  }
+
   Compile* C = phase->C;
   assert((end_offset % BytesPerInt) == 0, "odd end offset");
   intptr_t done_offset = end_offset;
