@@ -33,9 +33,6 @@ volatile int32_t* os::_mem_serialize_page = NULL;
 uintptr_t         os::_serialize_page_mask = 0;
 long              os::_rand_seed          = 1;
 int               os::_processor_count    = 0;
-volatile jlong    os::_global_time        = 0;
-volatile int      os::_global_time_lock   = 0;
-bool              os::_use_global_time    = false;
 size_t            os::_page_sizes[os::page_sizes_max];
 
 #ifndef PRODUCT
@@ -43,74 +40,6 @@ int os::num_mallocs = 0;            // # of calls to malloc/realloc
 size_t os::alloc_bytes = 0;         // # of bytes allocated
 int os::num_frees = 0;              // # of calls to free
 #endif
-
-// Atomic read of a jlong is assured by a seqlock; see update_global_time()
-jlong os::read_global_time() {
-#ifdef _LP64
-  return _global_time;
-#else
-  volatile int lock;
-  volatile jlong current_time;
-  int ctr = 0;
-
-  for (;;) {
-    lock = _global_time_lock;
-
-    // spin while locked
-    while ((lock & 0x1) != 0) {
-      ++ctr;
-      if ((ctr & 0xFFF) == 0) {
-        // Guarantee writer progress.  Can't use yield; yield is advisory
-        // and has almost no effect on some platforms.  Don't need a state
-        // transition - the park call will return promptly.
-        assert(Thread::current() != NULL, "TLS not initialized");
-        assert(Thread::current()->_ParkEvent != NULL, "sync not initialized");
-        Thread::current()->_ParkEvent->park(1);
-      }
-      lock = _global_time_lock;
-    }
-
-    OrderAccess::loadload();
-    current_time = _global_time;
-    OrderAccess::loadload();
-
-    // ratify seqlock value
-    if (lock == _global_time_lock) {
-      return current_time;
-    }
-  }
-#endif
-}
-
-//
-// NOTE - Assumes only one writer thread!
-//
-// We use a seqlock to guarantee that jlong _global_time is updated
-// atomically on 32-bit platforms.  A locked value is indicated by
-// the lock variable LSB == 1.  Readers will initially read the lock
-// value, spinning until the LSB == 0.  They then speculatively read
-// the global time value, then re-read the lock value to ensure that
-// it hasn't changed.  If the lock value has changed, the entire read
-// sequence is retried.
-//
-// Writers simply set the LSB = 1 (i.e. increment the variable),
-// update the global time, then release the lock and bump the version
-// number (i.e. increment the variable again.)  In this case we don't
-// even need a CAS since we ensure there's only one writer.
-//
-void os::update_global_time() {
-#ifdef _LP64
-  _global_time = timeofday();
-#else
-  assert((_global_time_lock & 0x1) == 0, "multiple writers?");
-  jlong current_time = timeofday();
-  _global_time_lock++; // lock
-  OrderAccess::storestore();
-  _global_time = current_time;
-  OrderAccess::storestore();
-  _global_time_lock++; // unlock
-#endif
-}
 
 // Fill in buffer with current local time as an ISO-8601 string.
 // E.g., yyyy-mm-ddThh:mm:ss-zzzz.
@@ -138,7 +67,7 @@ char* os::iso8601_time(char* buffer, size_t buffer_length) {
     return NULL;
   }
   // Get the current time
-  jlong milliseconds_since_19700101 = timeofday();
+  jlong milliseconds_since_19700101 = javaTimeMillis();
   const int milliseconds_per_microsecond = 1000;
   const time_t seconds_since_19700101 =
     milliseconds_since_19700101 / milliseconds_per_microsecond;

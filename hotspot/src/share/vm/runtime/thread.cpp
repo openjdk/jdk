@@ -3066,7 +3066,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (MemProfiling)                   MemProfiler::engage();
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
-  if (CacheTimeMillis)                TimeMillisUpdateTask::engage();
 
   BiasedLocking::init();
 

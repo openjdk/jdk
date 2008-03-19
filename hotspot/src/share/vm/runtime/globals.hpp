@@ -344,12 +344,6 @@ class CommandLineFlags {
   product(bool, ForceTimeHighResolution, false,                             \
           "Using high time resolution(For Win32 only)")                     \
                                                                             \
-  product(bool, CacheTimeMillis, false,                                     \
-          "Cache os::javaTimeMillis with CacheTimeMillisGranularity")       \
-                                                                            \
-  diagnostic(uintx, CacheTimeMillisGranularity, 50,                         \
-          "Granularity for CacheTimeMillis")                                \
-                                                                            \
   develop(bool, TraceItables, false,                                        \
           "Trace initialization and use of itables")                        \
                                                                             \

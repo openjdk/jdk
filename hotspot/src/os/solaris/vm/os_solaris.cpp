@@ -1691,17 +1691,12 @@ jlong getTimeMillis() {
   return (jlong)(nanotime / NANOSECS_PER_MILLISECS);
 }
 
-jlong os::timeofday() {
+// Must return millis since Jan 1 1970 for JVM_CurrentTimeMillis
+jlong os::javaTimeMillis() {
   timeval t;
   if (gettimeofday( &t, NULL) == -1)
-    fatal1("timeofday: gettimeofday (%s)", strerror(errno));
+    fatal1("os::javaTimeMillis: gettimeofday (%s)", strerror(errno));
   return jlong(t.tv_sec) * 1000  +  jlong(t.tv_usec) / 1000;
-}
-
-// Must return millis since Jan 1 1970 for JVM_CurrentTimeMillis
-// _use_global_time is only set if CacheTimeMillis is true
-jlong os::javaTimeMillis() {
-  return (_use_global_time ? read_global_time() : timeofday());
 }
 
 jlong os::javaTimeNanos() {
