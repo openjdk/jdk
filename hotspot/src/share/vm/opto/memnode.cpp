@@ -29,6 +29,8 @@
 #include "incls/_precompiled.incl"
 #include "incls/_memnode.cpp.incl"
 
+static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const TypePtr *tp, const TypePtr *adr_check, outputStream *st);
+
 //=============================================================================
 uint MemNode::size_of() const { return sizeof(*this); }
 
@@ -86,6 +88,60 @@ void MemNode::dump_adr_type(const Node* mem, const TypePtr* adr_type, outputStre
 extern void print_alias_types();
 
 #endif
+
+Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGVN *phase) {
+  const TypeOopPtr *tinst = t_adr->isa_oopptr();
+  if (tinst == NULL || !tinst->is_instance_field())
+    return mchain;  // don't try to optimize non-instance types
+  uint instance_id = tinst->instance_id();
+  Node *prev = NULL;
+  Node *result = mchain;
+  while (prev != result) {
+    prev = result;
+    // skip over a call which does not affect this memory slice
+    if (result->is_Proj() && result->as_Proj()->_con == TypeFunc::Memory) {
+      Node *proj_in = result->in(0);
+      if (proj_in->is_Call()) {
+        CallNode *call = proj_in->as_Call();
+        if (!call->may_modify(t_adr, phase)) {
+          result = call->in(TypeFunc::Memory);
+        }
+      } else if (proj_in->is_Initialize()) {
+        AllocateNode* alloc = proj_in->as_Initialize()->allocation();
+        // Stop if this is the initialization for the object instance which
+        // which contains this memory slice, otherwise skip over it.
+        if (alloc != NULL && alloc->_idx != instance_id) {
+          result = proj_in->in(TypeFunc::Memory);
+        }
+      } else if (proj_in->is_MemBar()) {
+        result = proj_in->in(TypeFunc::Memory);
+      }
+    } else if (result->is_MergeMem()) {
+      result = step_through_mergemem(phase, result->as_MergeMem(), t_adr, NULL, tty);
+    }
+  }
+  return result;
+}
+
+Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGVN *phase) {
+  const TypeOopPtr *t_oop = t_adr->isa_oopptr();
+  bool is_instance = (t_oop != NULL) && t_oop->is_instance_field();
+  PhaseIterGVN *igvn = phase->is_IterGVN();
+  Node *result = mchain;
+  result = optimize_simple_memory_chain(result, t_adr, phase);
+  if (is_instance && igvn != NULL  && result->is_Phi()) {
+    PhiNode *mphi = result->as_Phi();
+    assert(mphi->bottom_type() == Type::MEMORY, "memory phi required");
+    const TypePtr *t = mphi->adr_type();
+    if (t == TypePtr::BOTTOM || t == TypeRawPtr::BOTTOM) {
+      // clone the Phi with our address type
+      result = mphi->split_out_instance(t_adr, igvn);
+    } else {
+      assert(phase->C->get_alias_index(t) == phase->C->get_alias_index(t_adr), "correct memory chain");
+    }
+  }
+  return result;
+}
 
 static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const TypePtr *tp, const TypePtr *adr_check, outputStream *st) {
   uint alias_idx = phase->C->get_alias_index(tp);
@@ -266,6 +322,8 @@ Node* MemNode::find_previous_store(PhaseTransform* phase) {
   if (offset == Type::OffsetBot)
     return NULL;            // cannot unalias unless there are precise offsets
 
+  const TypeOopPtr *addr_t = adr->bottom_type()->isa_oopptr();
+
   intptr_t size_in_bytes = memory_size();
 
   Node* mem = in(MemNode::Memory);   // start searching here...
@@ -345,6 +403,22 @@ Node* MemNode::find_previous_store(PhaseTransform* phase) {
         return mem;         // let caller handle steps (c), (d)
       }
 
+    } else if (addr_t != NULL && addr_t->is_instance_field()) {
+      // Can't use optimize_simple_memory_chain() since it needs PhaseGVN.
+      if (mem->is_Proj() && mem->in(0)->is_Call()) {
+        CallNode *call = mem->in(0)->as_Call();
+        if (!call->may_modify(addr_t, phase)) {
+          mem = call->in(TypeFunc::Memory);
+          continue;         // (a) advance through independent call memory
+        }
+      } else if (mem->is_Proj() && mem->in(0)->is_MemBar()) {
+        mem = mem->in(0)->in(TypeFunc::Memory);
+        continue;           // (a) advance through independent MemBar memory
+      } else if (mem->is_MergeMem()) {
+        int alias_idx = phase->C->get_alias_index(adr_type());
+        mem = mem->as_MergeMem()->memory_at(alias_idx);
+        continue;           // (a) advance through independent MergeMem memory
+      }
     }
 
     // Unless there is an explicit 'continue', we must bail out here,
@@ -1007,6 +1081,122 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (is_autobox_object(atp)) {
         Node* result = eliminate_autobox(phase);
         if (result != NULL) return result;
+      }
+    }
+  }
+
+  Node* mem = in(MemNode::Memory);
+  const TypePtr *addr_t = phase->type(address)->isa_ptr();
+
+  if (addr_t != NULL) {
+    // try to optimize our memory input
+    Node* opt_mem = MemNode::optimize_memory_chain(mem, addr_t, phase);
+    if (opt_mem != mem) {
+      set_req(MemNode::Memory, opt_mem);
+      return this;
+    }
+    const TypeOopPtr *t_oop = addr_t->isa_oopptr();
+    if (can_reshape && opt_mem->is_Phi() &&
+        (t_oop != NULL) && t_oop->is_instance_field()) {
+      assert(t_oop->offset() != Type::OffsetBot && t_oop->offset() != Type::OffsetTop, "");
+      Node *region = opt_mem->in(0);
+      uint cnt = opt_mem->req();
+      for( uint i = 1; i < cnt; i++ ) {
+        Node *in = opt_mem->in(i);
+        if( in == NULL ) {
+          region = NULL; // Wait stable graph
+          break;
+        }
+      }
+      if (region != NULL) {
+        // Check for loop invariant.
+        if (cnt == 3) {
+          for( uint i = 1; i < cnt; i++ ) {
+            Node *in = opt_mem->in(i);
+            Node* m = MemNode::optimize_memory_chain(in, addr_t, phase);
+            if (m == opt_mem) {
+              set_req(MemNode::Memory, opt_mem->in(cnt - i)); // Skip this phi.
+              return this;
+            }
+          }
+        }
+        // Split through Phi (see original code in loopopts.cpp).
+        assert(phase->C->have_alias_type(addr_t), "instance should have alias type");
+        const Type* this_type = this->bottom_type();
+        int this_index  = phase->C->get_alias_index(addr_t);
+        int this_offset = addr_t->offset();
+        int this_iid    = addr_t->is_oopptr()->instance_id();
+        int wins = 0;
+        PhaseIterGVN *igvn = phase->is_IterGVN();
+        Node *phi = new (igvn->C, region->req()) PhiNode(region, this_type, NULL, this_iid, this_index, this_offset);
+        for( uint i = 1; i < region->req(); i++ ) {
+          Node *x;
+          Node* the_clone = NULL;
+          if( region->in(i) == phase->C->top() ) {
+            x = phase->C->top();      // Dead path?  Use a dead data op
+          } else {
+            x = this->clone();        // Else clone up the data op
+            the_clone = x;            // Remember for possible deletion.
+            // Alter data node to use pre-phi inputs
+            if( this->in(0) == region ) {
+              x->set_req( 0, region->in(i) );
+            } else {
+              x->set_req( 0, NULL );
+            }
+            for( uint j = 1; j < this->req(); j++ ) {
+              Node *in = this->in(j);
+              if( in->is_Phi() && in->in(0) == region )
+                x->set_req( j, in->in(i) ); // Use pre-Phi input for the clone
+            }
+          }
+          // Check for a 'win' on some paths
+          const Type *t = x->Value(igvn);
+
+          bool singleton = t->singleton();
+
+          // See comments in PhaseIdealLoop::split_thru_phi().
+          if( singleton && t == Type::TOP ) {
+            singleton &= region->is_Loop() && (i != LoopNode::EntryControl);
+          }
+
+          if( singleton ) {
+            wins++;
+            x = igvn->makecon(t);
+          } else {
+            // We now call Identity to try to simplify the cloned node.
+            // Note that some Identity methods call phase->type(this).
+            // Make sure that the type array is big enough for
+            // our new node, even though we may throw the node away.
+            // (This tweaking with igvn only works because x is a new node.)
+            igvn->set_type(x, t);
+            Node *y = x->Identity(igvn);
+            if( y != x ) {
+              wins++;
+              x = y;
+            } else {
+              y = igvn->hash_find(x);
+              if( y ) {
+                wins++;
+                x = y;
+              } else {
+                // Else x is a new node we are keeping
+                // We do not need register_new_node_with_optimizer
+                // because set_type has already been called.
+                igvn->_worklist.push(x);
+              }
+            }
+          }
+          if (x != the_clone && the_clone != NULL)
+            igvn->remove_dead_node(the_clone);
+          phi->set_req(i, x);
+        }
+        if( wins > 0 ) {
+          // Record Phi
+          igvn->register_new_node_with_optimizer(phi);
+          return phi;
+        } else {
+          igvn->remove_dead_node(phi);
+        }
       }
     }
   }

@@ -625,8 +625,8 @@ uint CallNode::match_edge(uint idx) const {
 }
 
 //
-// Determine whether the call could modify a memory value  of the
-// specified address type
+// Determine whether the call could modify the field of the specified
+// instance at the specified offset.
 //
 bool CallNode::may_modify(const TypePtr *addr_t, PhaseTransform *phase) {
   const TypeOopPtr *adrInst_t  = addr_t->isa_oopptr();
@@ -638,9 +638,24 @@ bool CallNode::may_modify(const TypePtr *addr_t, PhaseTransform *phase) {
   Compile *C = phase->C;
   int offset = adrInst_t->offset();
   assert(offset >= 0, "should be valid offset");
-  assert(addr_t->isa_instptr() || addr_t->isa_aryptr(), "only instances or arrays are expected");
+  ciKlass* adr_k = adrInst_t->klass();
+  assert(adr_k->is_loaded() &&
+         adr_k->is_java_klass() &&
+         !adr_k->is_interface(),
+         "only non-abstract classes are expected");
 
   int base_idx = C->get_alias_index(adrInst_t);
+  int size = BytesPerLong; // If we don't know the size, assume largest.
+  if (adrInst_t->isa_instptr()) {
+    ciField* field = C->alias_type(base_idx)->field();
+    if (field != NULL) {
+      size = field->size_in_bytes();
+    }
+  } else {
+    assert(adrInst_t->isa_aryptr(), "only arrays are expected");
+    size = type2aelembytes(adr_k->as_array_klass()->element_type()->basic_type());
+  }
+
   ciMethod * meth = is_CallStaticJava() ?  as_CallStaticJava()->method() : NULL;
   BCEscapeAnalyzer *bcea = (meth != NULL) ? meth->get_bcea() : NULL;
 
@@ -656,14 +671,19 @@ bool CallNode::may_modify(const TypePtr *addr_t, PhaseTransform *phase) {
     if (!arg->is_top() && (t->isa_oopptr() != NULL ||
                            t->isa_ptr() && at_ptr != NULL)) {
       assert(at_ptr != NULL, "expecting an OopPtr");
-      // If we have found an argument matching adr_base_t, check if the field
-      // at the specified offset is modified.  Since we don't know the size,
-      // assume 8.
-      int at_idx = C->get_alias_index(at_ptr->add_offset(offset)->isa_oopptr());
-      if (base_idx == at_idx &&
-          (bcea == NULL ||
-           bcea->is_arg_modified(i - TypeFunc::Parms, offset, 8))) {
-        return true;
+      ciKlass* at_k = at_ptr->klass();
+      if ((adrInst_t->base() == at_ptr->base()) &&
+          at_k->is_loaded() &&
+          at_k->is_java_klass() &&
+          !at_k->is_interface()) {
+        // If we have found an argument matching addr_t, check if the field
+        // at the specified offset is modified.
+        int at_idx = C->get_alias_index(at_ptr->add_offset(offset)->isa_oopptr());
+        if (base_idx == at_idx &&
+            (bcea == NULL ||
+             bcea->is_arg_modified(i - TypeFunc::Parms, offset, size))) {
+          return true;
+        }
       }
     }
   }

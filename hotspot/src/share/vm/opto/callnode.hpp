@@ -419,7 +419,7 @@ class SafePointScalarObjectNode: public TypeNode {
   uint _first_index; // First input edge index of a SafePoint node where
                      // states of the scalarized object fields are collected.
   uint _n_fields;    // Number of non-static fields of the scalarized object.
-  DEBUG_ONLY(AllocateNode* _alloc);
+  DEBUG_ONLY(AllocateNode* _alloc;)
 public:
   SafePointScalarObjectNode(const TypeOopPtr* tp,
 #ifdef ASSERT

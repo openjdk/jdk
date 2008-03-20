@@ -67,6 +67,8 @@ public:
                                       PhaseTransform* phase);
   static bool adr_phi_is_loop_invariant(Node* adr_phi, Node* cast);
 
+  static Node *optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGVN *phase);
+  static Node *optimize_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGVN *phase);
   // This one should probably be a phase-specific function:
   static bool detect_dominating_control(Node* dom, Node* sub);
 
