@@ -6492,7 +6492,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 // will need some help.
                 Container parent = this.parent;
                 if (parent != null && parent.peer instanceof LightweightPeer) {
-                    nativeInLightFixer = new NativeInLightFixer();
+                    relocateComponent();
                 }
             }
             invalidate();
@@ -6601,10 +6601,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 if (inputContext != null) {
                     inputContext.removeNotify(this);
                 }
-            }
-
-            if (nativeInLightFixer != null) {
-                nativeInLightFixer.uninstall();
             }
 
             ComponentPeer p = peer;
@@ -8514,8 +8510,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
         setComponentOrientation(orientation);
     }
 
-    transient NativeInLightFixer nativeInLightFixer;
-
     /**
      * Checks that this component meets the prerequesites to be focus owner:
      * - it is enabled, visible, focusable
@@ -8541,188 +8535,25 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * This odd class is to help out a native component that has been
-     * embedded in a lightweight component.  Moving lightweight
-     * components around and changing their visibility is not seen
-     * by the native window system.  This is a feature for lightweights,
-     * but a problem for native components that depend upon the
-     * lightweights.  An instance of this class listens to the lightweight
-     * parents of an associated native component (the outer class).
-     *
-     * @author  Timothy Prinzing
+     * Fix the location of the HW component in a LW container hierarchy.
      */
-    final class NativeInLightFixer implements ComponentListener, ContainerListener {
-
-        NativeInLightFixer() {
-            lightParents = new Vector();
-            install(parent);
-        }
-
-        void install(Container parent) {
-            lightParents.clear();
-            Container p = parent;
-            boolean isLwParentsVisible = true;
-            // stash a reference to the components that are being observed so that
-            // we can reliably remove ourself as a listener later.
-            for (; p.peer instanceof LightweightPeer; p = p.parent) {
-
-                // register listeners and stash a reference
-                p.addComponentListener(this);
-                p.addContainerListener(this);
-                lightParents.addElement(p);
-                isLwParentsVisible &= p.isVisible();
+    final void relocateComponent() {
+        synchronized (getTreeLock()) {
+            if (peer == null) {
+                return;
             }
-            // register with the native host (native parent of associated native)
-            // to get notified if the top-level lightweight is removed.
-            nativeHost = p;
-            p.addContainerListener(this);
-
-            // kick start the fixup.  Since the event isn't looked at
-            // we can simulate movement notification.
-            componentMoved(null);
-            if (!isLwParentsVisible) {
-                synchronized (getTreeLock()) {
-                    if (peer != null) {
-                        peer.hide();
-                    }
-                }
-            }
-        }
-
-        void uninstall() {
-            if (nativeHost != null) {
-                removeReferences();
-            }
-        }
-
-        // --- ComponentListener -------------------------------------------
-
-        /**
-         * Invoked when one of the lightweight parents has been resized.
-         * This doesn't change the position of the native child so it
-         * is ignored.
-         */
-        public void componentResized(ComponentEvent e) {
-        }
-
-        /**
-         * Invoked when one of the lightweight parents has been moved.
-         * The native peer must be told of the new position which is
-         * relative to the native container that is hosting the
-         * lightweight components.
-         */
-        public void componentMoved(ComponentEvent e) {
-            synchronized (getTreeLock()) {
-                int nativeX = x;
-                int nativeY = y;
-                for(Component c = parent; (c != null) &&
-                        (c.peer instanceof LightweightPeer);
-                    c = c.parent) {
-
-                    nativeX += c.x;
-                    nativeY += c.y;
-                }
-                if (peer != null) {
-                    peer.setBounds(nativeX, nativeY, width, height,
-                                   ComponentPeer.SET_LOCATION);
-                }
-            }
-        }
-
-        /**
-         * Invoked when a lightweight parent component has been
-         * shown.  The associated native component must also be
-         * shown if it hasn't had an overriding hide done on it.
-         */
-        public void componentShown(ComponentEvent e) {
-            if (shouldShow()) {
-                synchronized (getTreeLock()) {
-                    if (peer != null) {
-                        peer.show();
-                    }
-                }
-            }
-        }
-
-        /**
-         * Invoked when one of the lightweight parents become visible.
-         * Returns true if component and all its lightweight
-         * parents are visible.
-         */
-        private boolean shouldShow() {
-            boolean isLwParentsVisible = visible;
-            for (int i = lightParents.size() - 1;
-                 i >= 0 && isLwParentsVisible;
-                 i--)
+            int nativeX = x;
+            int nativeY = y;
+            for (Component cont = getContainer();
+                    cont != null && cont.isLightweight();
+                    cont = cont.getContainer())
             {
-                isLwParentsVisible &=
-                    ((Container) lightParents.elementAt(i)).isVisible();
+                nativeX += cont.x;
+                nativeY += cont.y;
             }
-            return isLwParentsVisible;
+            peer.setBounds(nativeX, nativeY, width, height,
+                    ComponentPeer.SET_LOCATION);
         }
-
-        /**
-         * Invoked when component has been hidden.
-         */
-        public void componentHidden(ComponentEvent e) {
-            if (visible) {
-                synchronized (getTreeLock()) {
-                    if (peer != null) {
-                        peer.hide();
-                    }
-                }
-            }
-        }
-
-        // --- ContainerListener ------------------------------------
-
-        /**
-         * Invoked when a component has been added to a lightweight
-         * parent.  This doesn't effect the native component.
-         */
-        public void componentAdded(ContainerEvent e) {
-        }
-
-        /**
-         * Invoked when a lightweight parent has been removed.
-         * This means the services of this listener are no longer
-         * required and it should remove all references (ie
-         * registered listeners).
-         */
-        public void componentRemoved(ContainerEvent e) {
-            Component c = e.getChild();
-            if (c == Component.this) {
-                removeReferences();
-            } else {
-                int n = lightParents.size();
-                for (int i = 0; i < n; i++) {
-                    Container p = (Container) lightParents.elementAt(i);
-                    if (p == c) {
-                        removeReferences();
-                        break;
-                    }
-                }
-            }
-        }
-
-        /**
-         * Removes references to this object so it can be
-         * garbage collected.
-         */
-        void removeReferences() {
-            int n = lightParents.size();
-            for (int i = 0; i < n; i++) {
-                Container c = (Container) lightParents.elementAt(i);
-                c.removeComponentListener(this);
-                c.removeContainerListener(this);
-            }
-            nativeHost.removeContainerListener(this);
-            lightParents.clear();
-            nativeHost = null;
-        }
-
-        Vector lightParents;
-        Container nativeHost;
     }
 
     /**
