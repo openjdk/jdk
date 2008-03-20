@@ -1279,12 +1279,10 @@ void Arguments::set_aggressive_opts_flags() {
 #endif
 
   if (AggressiveOpts) {
-NOT_WINDOWS(
-    // No measured benefit on Windows
-    if (FLAG_IS_DEFAULT(CacheTimeMillis)) {
-      FLAG_SET_DEFAULT(CacheTimeMillis, true);
-    }
-)
+// Sample flag setting code
+//    if (FLAG_IS_DEFAULT(EliminateZeroing)) {
+//      FLAG_SET_DEFAULT(EliminateZeroing, true);
+//    }
   }
 }
 

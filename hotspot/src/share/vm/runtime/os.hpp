@@ -66,9 +66,6 @@ class os: AllStatic {
   static address            _polling_page;
   static volatile int32_t * _mem_serialize_page;
   static uintptr_t          _serialize_page_mask;
-  static volatile jlong     _global_time;
-  static volatile int       _global_time_lock;
-  static bool               _use_global_time;
   static size_t             _page_sizes[page_sizes_max];
 
   static void init_page_sizes(size_t default_page_size) {
@@ -88,11 +85,6 @@ class os: AllStatic {
   static bool getenv(const char* name, char* buffer, int len);
   static bool have_special_privileges();
 
-  static jlong  timeofday();
-  static void   enable_global_time()   { _use_global_time = true; }
-  static void   disable_global_time()  { _use_global_time = false; }
-  static jlong  read_global_time();
-  static void   update_global_time();
   static jlong  javaTimeMillis();
   static jlong  javaTimeNanos();
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);

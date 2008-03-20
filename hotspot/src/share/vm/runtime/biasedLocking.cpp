@@ -38,8 +38,11 @@ static void enable_biased_locking(klassOop k) {
 
 class VM_EnableBiasedLocking: public VM_Operation {
  public:
-  VM_EnableBiasedLocking() {}
-  VMOp_Type type() const   { return VMOp_EnableBiasedLocking; }
+  VM_EnableBiasedLocking()        {}
+  VMOp_Type type() const          { return VMOp_EnableBiasedLocking; }
+  Mode evaluation_mode() const    { return _async_safepoint; }
+  bool is_cheap_allocated() const { return true; }
+
   void doit() {
     // Iterate the system dictionary enabling biased locking for all
     // currently loaded classes
@@ -62,8 +65,10 @@ class EnableBiasedLockingTask : public PeriodicTask {
   EnableBiasedLockingTask(size_t interval_time) : PeriodicTask(interval_time) {}
 
   virtual void task() {
-    VM_EnableBiasedLocking op;
-    VMThread::execute(&op);
+    // Use async VM operation to avoid blocking the Watcher thread.
+    // VM Thread will free C heap storage.
+    VM_EnableBiasedLocking *op = new VM_EnableBiasedLocking();
+    VMThread::execute(op);
 
     // Reclaim our storage and disenroll ourself
     delete this;
