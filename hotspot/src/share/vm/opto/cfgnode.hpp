@@ -148,6 +148,7 @@ public:
   static PhiNode* make( Node* r, Node* x, const Type *t, const TypePtr* at = NULL );
   // create a new phi with narrowed memory type
   PhiNode* slice_memory(const TypePtr* adr_type) const;
+  PhiNode* split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) const;
   // like make(r, x), but does not initialize the in edges to x
   static PhiNode* make_blank( Node* r, Node* x );
 
