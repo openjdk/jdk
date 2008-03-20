@@ -78,6 +78,15 @@ private:
                               Node* length,
                               const TypeFunc* slow_call_type,
                               address slow_call_address);
+  Node *value_from_mem(Node *mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, Node *alloc);
+  Node *value_from_mem_phi(Node *mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, Node *alloc, int level);
+
+  bool eliminate_allocate_node(AllocateNode *alloc);
+  bool can_eliminate_allocation(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints);
+  bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints_done);
+  void process_users_of_allocation(AllocateNode *alloc);
+
+  void eliminate_card_mark(Node *cm);
   bool eliminate_locking_node(AbstractLockNode *alock);
   void expand_lock_node(LockNode *lock);
   void expand_unlock_node(UnlockNode *unlock);
