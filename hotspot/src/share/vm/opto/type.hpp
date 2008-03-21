@@ -686,6 +686,7 @@ public:
   bool klass_is_exact()    const { return _klass_is_exact; }
   bool is_instance()       const { return _instance_id != UNKNOWN_INSTANCE; }
   uint instance_id()       const { return _instance_id; }
+  bool is_instance_field() const { return _instance_id != UNKNOWN_INSTANCE && _offset >= 0; }
 
   virtual intptr_t get_con() const;
 

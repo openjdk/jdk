@@ -587,11 +587,6 @@ ConNode* PhaseValues::uncached_makecon(const Type *t) {
       Node_Notes* loc = C->locate_node_notes(nna, x->_idx, true);
       loc->clear(); // do not put debug info on constants
     }
-    // Collect points-to information for escape analysys
-    ConnectionGraph *cgr = C->congraph();
-    if (cgr != NULL) {
-      cgr->record_escape(x, this);
-    }
   } else {
     x->destruct();              // Hit, destroy duplicate constant
     x = k;                      // use existing constant
@@ -712,12 +707,6 @@ Node *PhaseGVN::transform_no_reclaim( Node *n ) {
     // Return the pre-existing node
     NOT_PRODUCT( set_progress(); )
     return i;
-  }
-
-  // Collect points-to information for escape analysys
-  ConnectionGraph *cgr = C->congraph();
-  if (cgr != NULL) {
-    cgr->record_escape(k, this);
   }
 
   // Return Idealized original
@@ -1245,7 +1234,7 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
 
     uint use_op = use->Opcode();
     // If changed Cast input, check Phi users for simple cycles
-    if( use->is_ConstraintCast() || use->Opcode() == Op_CheckCastPP ) {
+    if( use->is_ConstraintCast() || use->is_CheckCastPP() ) {
       for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
         Node* u = use->fast_out(i2);
         if (u->is_Phi())

@@ -407,11 +407,6 @@ uint Compile::scratch_emit_size(const Node* n) {
   return buf.code_size();
 }
 
-void  Compile::record_for_escape_analysis(Node* n) {
-  if (_congraph != NULL)
-    _congraph->record_for_escape_analysis(n);
-}
-
 
 // ============================================================================
 //------------------------------Compile standard-------------------------------
@@ -493,9 +488,6 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   estimated_size = (estimated_size < MINIMUM_NODE_HASH ? MINIMUM_NODE_HASH : estimated_size);
   PhaseGVN gvn(node_arena(), estimated_size);
   set_initial_gvn(&gvn);
-
-  if (_do_escape_analysis)
-    _congraph = new ConnectionGraph(this);
 
   { // Scope for timing the parser
     TracePhase t3("parse", &_t_parser, true);
@@ -581,6 +573,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   NOT_PRODUCT( verify_graph_edges(); )
 
   // Perform escape analysis
+  if (_do_escape_analysis)
+    _congraph = new ConnectionGraph(this);
   if (_congraph != NULL) {
     NOT_PRODUCT( TracePhase t2("escapeAnalysis", &_t_escapeAnalysis, TimeCompiler); )
     _congraph->compute_escape();

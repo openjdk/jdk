@@ -164,6 +164,7 @@ callGenerator.hpp                       deoptimization.hpp
 callGenerator.hpp                       type.hpp
 
 callnode.cpp                            callnode.hpp
+callnode.cpp                            bcEscapeAnalyzer.hpp
 callnode.cpp                            escape.hpp
 callnode.cpp                            locknode.hpp
 callnode.cpp                            machnode.hpp
@@ -176,7 +177,6 @@ callnode.cpp                            rootnode.hpp
 callnode.cpp                            runtime.hpp
 
 callnode.hpp                            connode.hpp
-callnode.hpp                            escape.hpp
 callnode.hpp                            mulnode.hpp
 callnode.hpp                            multnode.hpp
 callnode.hpp                            opcodes.hpp
@@ -347,7 +347,6 @@ connode.cpp                             addnode.hpp
 connode.cpp                             allocation.inline.hpp
 connode.cpp                             compile.hpp
 connode.cpp                             connode.hpp
-connode.cpp                             escape.hpp
 connode.cpp                             machnode.hpp
 connode.cpp                             matcher.hpp
 connode.cpp                             memnode.hpp
@@ -844,7 +843,6 @@ phaseX.cpp                              block.hpp
 phaseX.cpp                              callnode.hpp
 phaseX.cpp                              cfgnode.hpp
 phaseX.cpp                              connode.hpp
-phaseX.cpp                              escape.hpp
 phaseX.cpp                              loopnode.hpp
 phaseX.cpp                              machnode.hpp
 phaseX.cpp                              opcodes.hpp
