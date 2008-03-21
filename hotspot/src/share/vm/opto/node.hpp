@@ -106,6 +106,7 @@ class RegMask;
 class RegionNode;
 class RootNode;
 class SafePointNode;
+class SafePointScalarObjectNode;
 class StartNode;
 class State;
 class StoreNode;
@@ -575,6 +576,7 @@ public:
       DEFINE_CLASS_ID(ConstraintCast, Type, 1)
       DEFINE_CLASS_ID(CheckCastPP, Type, 2)
       DEFINE_CLASS_ID(CMove, Type, 3)
+      DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
 
     DEFINE_CLASS_ID(Mem,   Node, 6)
       DEFINE_CLASS_ID(Load,  Mem, 0)
@@ -721,6 +723,7 @@ public:
   DEFINE_CLASS_QUERY(Region)
   DEFINE_CLASS_QUERY(Root)
   DEFINE_CLASS_QUERY(SafePoint)
+  DEFINE_CLASS_QUERY(SafePointScalarObject)
   DEFINE_CLASS_QUERY(Start)
   DEFINE_CLASS_QUERY(Store)
   DEFINE_CLASS_QUERY(Sub)
@@ -1325,7 +1328,6 @@ public:
 // Inline definition of Compile::record_for_igvn must be deferred to this point.
 inline void Compile::record_for_igvn(Node* n) {
   _for_igvn->push(n);
-  record_for_escape_analysis(n);
 }
 
 //------------------------------Node_Stack-------------------------------------

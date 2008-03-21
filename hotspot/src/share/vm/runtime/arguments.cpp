@@ -1276,6 +1276,9 @@ void Arguments::set_aggressive_opts_flags() {
     sprintf(buffer, "java.lang.Integer.IntegerCache.high=%d", AutoBoxCacheMax);
     add_property(buffer);
   }
+  if (AggressiveOpts && FLAG_IS_DEFAULT(DoEscapeAnalysis)) {
+    FLAG_SET_DEFAULT(DoEscapeAnalysis, true);
+  }
 #endif
 
   if (AggressiveOpts) {

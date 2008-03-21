@@ -812,8 +812,7 @@ int Node::disconnect_inputs(Node *n) {
 Node* Node::uncast() const {
   // Should be inline:
   //return is_ConstraintCast() ? uncast_helper(this) : (Node*) this;
-  if (is_ConstraintCast() ||
-      (is_Type() && req() == 2 && Opcode() == Op_CheckCastPP))
+  if (is_ConstraintCast() || is_CheckCastPP())
     return uncast_helper(this);
   else
     return (Node*) this;
@@ -827,7 +826,7 @@ Node* Node::uncast_helper(const Node* p) {
       break;
     } else if (p->is_ConstraintCast()) {
       p = p->in(1);
-    } else if (p->is_Type() && p->Opcode() == Op_CheckCastPP) {
+    } else if (p->is_CheckCastPP()) {
       p = p->in(1);
     } else {
       break;

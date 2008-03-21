@@ -857,6 +857,13 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
     for (j = 0; j < l; j++)
       call->set_req(p++, in_map->in(k+j));
 
+    // Copy any scalar object fields.
+    k = in_jvms->scloff();
+    l = in_jvms->scl_size();
+    out_jvms->set_scloff(p);
+    for (j = 0; j < l; j++)
+      call->set_req(p++, in_map->in(k+j));
+
     // Finish the new jvms.
     out_jvms->set_endoff(p);
 
@@ -864,6 +871,7 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
     assert(out_jvms->depth()      == in_jvms->depth(),      "depth must match");
     assert(out_jvms->loc_size()   == in_jvms->loc_size(),   "size must match");
     assert(out_jvms->mon_size()   == in_jvms->mon_size(),   "size must match");
+    assert(out_jvms->scl_size()   == in_jvms->scl_size(),   "size must match");
     assert(out_jvms->debug_size() == in_jvms->debug_size(), "size must match");
 
     // Update the two tail pointers in parallel.
@@ -2914,10 +2922,22 @@ Node* GraphKit::new_instance(Node* klass_node,
   const TypeOopPtr* oop_type = tklass->as_instance_type();
 
   // Now generate allocation code
+
+  // With escape analysis, the entire memory state is needed to be able to
+  // eliminate the allocation.  If the allocations cannot be eliminated, this
+  // will be optimized to the raw slice when the allocation is expanded.
+  Node *mem;
+  if (C->do_escape_analysis()) {
+    mem = reset_memory();
+    set_all_memory(mem);
+  } else {
+    mem = memory(Compile::AliasIdxRaw);
+  }
+
   AllocateNode* alloc
     = new (C, AllocateNode::ParmLimit)
         AllocateNode(C, AllocateNode::alloc_type(),
-                     control(), memory(Compile::AliasIdxRaw), i_o(),
+                     control(), mem, i_o(),
                      size, klass_node,
                      initial_slow_test);
 
@@ -3048,11 +3068,23 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
   }
 
   // Now generate allocation code
+
+  // With escape analysis, the entire memory state is needed to be able to
+  // eliminate the allocation.  If the allocations cannot be eliminated, this
+  // will be optimized to the raw slice when the allocation is expanded.
+  Node *mem;
+  if (C->do_escape_analysis()) {
+    mem = reset_memory();
+    set_all_memory(mem);
+  } else {
+    mem = memory(Compile::AliasIdxRaw);
+  }
+
   // Create the AllocateArrayNode and its result projections
   AllocateArrayNode* alloc
     = new (C, AllocateArrayNode::ParmLimit)
         AllocateArrayNode(C, AllocateArrayNode::alloc_type(),
-                          control(), memory(Compile::AliasIdxRaw), i_o(),
+                          control(), mem, i_o(),
                           size, klass_node,
                           initial_slow_test,
                           length);

@@ -184,6 +184,7 @@ private:
   uint              _locoff;    // Offset to locals in input edge mapping
   uint              _stkoff;    // Offset to stack in input edge mapping
   uint              _monoff;    // Offset to monitors in input edge mapping
+  uint              _scloff;    // Offset to fields of scalar objs in input edge mapping
   uint              _endoff;    // Offset to end of input edge mapping
   uint              _sp;        // Jave Expression Stack Pointer for this state
   int               _bci;       // Byte Code Index of this JVM point
@@ -207,16 +208,19 @@ public:
   uint              stkoff() const { return _stkoff; }
   uint              argoff() const { return _stkoff + _sp; }
   uint              monoff() const { return _monoff; }
+  uint              scloff() const { return _scloff; }
   uint              endoff() const { return _endoff; }
   uint              oopoff() const { return debug_end(); }
 
   int            loc_size() const { return _stkoff - _locoff; }
   int            stk_size() const { return _monoff - _stkoff; }
-  int            mon_size() const { return _endoff - _monoff; }
+  int            mon_size() const { return _scloff - _monoff; }
+  int            scl_size() const { return _endoff - _scloff; }
 
   bool        is_loc(uint i) const { return i >= _locoff && i < _stkoff; }
   bool        is_stk(uint i) const { return i >= _stkoff && i < _monoff; }
-  bool        is_mon(uint i) const { return i >= _monoff && i < _endoff; }
+  bool        is_mon(uint i) const { return i >= _monoff && i < _scloff; }
+  bool        is_scl(uint i) const { return i >= _scloff && i < _endoff; }
 
   uint              sp()     const { return _sp; }
   int               bci()    const { return _bci; }
@@ -227,7 +231,9 @@ public:
   uint              depth()  const { return _depth; }
   uint        debug_start()  const; // returns locoff of root caller
   uint        debug_end()    const; // returns endoff of self
-  uint        debug_size()   const { return loc_size() + sp() + mon_size(); }
+  uint        debug_size()   const {
+    return loc_size() + sp() + mon_size() + scl_size();
+  }
   uint        debug_depth()  const; // returns sum of debug_size values at all depths
 
   // Returns the JVM state at the desired depth (1 == root).
@@ -254,8 +260,11 @@ public:
   void              set_locoff(uint off) { _locoff = off; }
   void              set_stkoff(uint off) { _stkoff = off; }
   void              set_monoff(uint off) { _monoff = off; }
+  void              set_scloff(uint off) { _scloff = off; }
   void              set_endoff(uint off) { _endoff = off; }
-  void              set_offsets(uint off) { _locoff = _stkoff = _monoff = _endoff = off; }
+  void              set_offsets(uint off) {
+    _locoff = _stkoff = _monoff = _scloff = _endoff = off;
+  }
   void              set_map(SafePointNode *map) { _map = map; }
   void              set_sp(uint sp) { _sp = sp; }
   void              set_bci(int bci) { _bci = bci; }
@@ -379,6 +388,9 @@ public:
   void               set_next_exception(SafePointNode* n);
   bool                   has_exceptions() const { return next_exception() != NULL; }
 
+  // Does this node have a use of n other than in debug information?
+  virtual bool           has_non_debug_use(Node *n)  {return false; }
+
   // Standard Node stuff
   virtual int            Opcode() const;
   virtual bool           pinned() const { return true; }
@@ -399,6 +411,47 @@ public:
 #endif
 };
 
+//------------------------------SafePointScalarObjectNode----------------------
+// A SafePointScalarObjectNode represents the state of a scalarized object
+// at a safepoint.
+
+class SafePointScalarObjectNode: public TypeNode {
+  uint _first_index; // First input edge index of a SafePoint node where
+                     // states of the scalarized object fields are collected.
+  uint _n_fields;    // Number of non-static fields of the scalarized object.
+  DEBUG_ONLY(AllocateNode* _alloc;)
+public:
+  SafePointScalarObjectNode(const TypeOopPtr* tp,
+#ifdef ASSERT
+                            AllocateNode* alloc,
+#endif
+                            uint first_index, uint n_fields);
+  virtual int Opcode() const;
+  virtual uint           ideal_reg() const;
+  virtual const RegMask &in_RegMask(uint) const;
+  virtual const RegMask &out_RegMask() const;
+  virtual uint           match_edge(uint idx) const;
+
+  uint first_index() const { return _first_index; }
+  uint n_fields()    const { return _n_fields; }
+  DEBUG_ONLY(AllocateNode* alloc() const { return _alloc; })
+
+  virtual uint size_of() const { return sizeof(*this); }
+
+  // Assumes that "this" is an argument to a safepoint node "s", and that
+  // "new_call" is being created to correspond to "s".  But the difference
+  // between the start index of the jvmstates of "new_call" and "s" is
+  // "jvms_adj".  Produce and return a SafePointScalarObjectNode that
+  // corresponds appropriately to "this" in "new_call".  Assumes that
+  // "sosn_map" is a map, specific to the translation of "s" to "new_call",
+  // mapping old SafePointScalarObjectNodes to new, to avoid multiple copies.
+  SafePointScalarObjectNode* clone(int jvms_adj, Dict* sosn_map) const;
+
+#ifndef PRODUCT
+  virtual void              dump_spec(outputStream *st) const;
+#endif
+};
+
 //------------------------------CallNode---------------------------------------
 // Call nodes now subsume the function of debug nodes at callsites, so they
 // contain the functionality of a full scope chain of debug nodes.
@@ -407,7 +460,6 @@ public:
   const TypeFunc *_tf;        // Function type
   address      _entry_point;  // Address of method being called
   float        _cnt;          // Estimate of number of times called
-  PointsToNode::EscapeState _escape_state;
 
   CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type)
     : SafePointNode(tf->domain()->cnt(), NULL, adr_type),
@@ -417,7 +469,6 @@ public:
   {
     init_class_id(Class_Call);
     init_flags(Flag_is_Call);
-    _escape_state = PointsToNode::UnknownEscape;
   }
 
   const TypeFunc* tf()        const { return _tf; }
@@ -442,6 +493,15 @@ public:
   // For macro nodes, the JVMState gets modified during expansion, so when cloning
   // the node the JVMState must be cloned.
   virtual void        clone_jvms() { }   // default is not to clone
+
+  // Returns true if the call may modify n
+  virtual bool        may_modify(const TypePtr *addr_t, PhaseTransform *phase);
+  // Does this node have a use of n other than in debug information?
+  virtual bool        has_non_debug_use(Node *n);
+  // Returns the unique CheckCastPP of a call
+  // or result projection is there are several CheckCastPP
+  // or returns NULL if there is no one.
+  Node *result_cast();
 
   virtual uint match_edge(uint idx) const;
 
@@ -639,6 +699,9 @@ public:
   virtual uint ideal_reg() const { return Op_RegP; }
   virtual bool        guaranteed_safepoint()  { return false; }
 
+  // allocations do not modify their arguments
+  virtual bool        may_modify(const TypePtr *addr_t, PhaseTransform *phase) { return false;}
+
   // Pattern-match a possible usage of AllocateNode.
   // Return null if no allocation is recognized.
   // The operand is the pointer produced by the (possible) allocation.
@@ -750,6 +813,9 @@ public:
   bool is_eliminated()         {return _eliminate; }
   // mark node as eliminated and update the counter if there is one
   void set_eliminated();
+
+  // locking does not modify its arguments
+  virtual bool        may_modify(const TypePtr *addr_t, PhaseTransform *phase){ return false;}
 
 #ifndef PRODUCT
   void create_lock_counter(JVMState* s);

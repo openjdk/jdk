@@ -67,6 +67,8 @@ public:
                                       PhaseTransform* phase);
   static bool adr_phi_is_loop_invariant(Node* adr_phi, Node* cast);
 
+  static Node *optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGVN *phase);
+  static Node *optimize_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGVN *phase);
   // This one should probably be a phase-specific function:
   static bool detect_dominating_control(Node* dom, Node* sub);
 
@@ -171,6 +173,9 @@ public:
 
   // Map a load opcode to its corresponding store opcode.
   virtual int store_Opcode() const = 0;
+
+  // Check if the load's memory input is a Phi node with the same control.
+  bool is_instance_field_load_with_local_phi(Node* ctrl);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

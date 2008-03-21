@@ -29,10 +29,26 @@
 //------------------------------split_thru_phi---------------------------------
 // Split Node 'n' through merge point if there is enough win.
 Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
+  if (n->Opcode() == Op_ConvI2L && n->bottom_type() != TypeLong::LONG) {
+    // ConvI2L may have type information on it which is unsafe to push up
+    // so disable this for now
+    return NULL;
+  }
   int wins = 0;
   assert( !n->is_CFG(), "" );
   assert( region->is_Region(), "" );
-  Node *phi = new (C, region->req()) PhiNode( region, n->bottom_type() );
+
+  const Type* type = n->bottom_type();
+  const TypeOopPtr *t_oop = _igvn.type(n)->isa_oopptr();
+  Node *phi;
+  if( t_oop != NULL && t_oop->is_instance_field() ) {
+    int iid    = t_oop->instance_id();
+    int index  = C->get_alias_index(t_oop);
+    int offset = t_oop->offset();
+    phi = new (C,region->req()) PhiNode(region, type, NULL, iid, index, offset);
+  } else {
+    phi = new (C,region->req()) PhiNode(region, type);
+  }
   uint old_unique = C->unique();
   for( uint i = 1; i < region->req(); i++ ) {
     Node *x;
