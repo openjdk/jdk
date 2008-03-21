@@ -108,6 +108,17 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
      */
     static P11Key convertKey(Token token, Key key, String algo)
             throws InvalidKeyException {
+        return convertKey(token, key, algo, null);
+    }
+
+    /**
+     * Convert an arbitrary key of algorithm w/ custom attributes into a
+     * P11Key of provider.
+     * Used in P11KeyStore.storeSkey.
+     */
+    static P11Key convertKey(Token token, Key key, String algo,
+            CK_ATTRIBUTE[] extraAttrs)
+            throws InvalidKeyException {
         token.ensureValid();
         if (key == null) {
             throw new InvalidKeyException("Key must not be null");
@@ -134,6 +145,22 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         if (key instanceof P11Key) {
             P11Key p11Key = (P11Key)key;
             if (p11Key.token == token) {
+                if (extraAttrs != null) {
+                    Session session = null;
+                    try {
+                        session = token.getObjSession();
+                        long newKeyID = token.p11.C_CopyObject(session.id(),
+                                p11Key.keyID, extraAttrs);
+                        p11Key = (P11Key) (P11Key.secretKey(p11Key.session,
+                                newKeyID, p11Key.algorithm, p11Key.keyLength,
+                                extraAttrs));
+                    } catch (PKCS11Exception p11e) {
+                        throw new InvalidKeyException
+                                ("Cannot duplicate the PKCS11 key", p11e);
+                    } finally {
+                        token.releaseSession(session);
+                    }
+                }
                 return p11Key;
             }
         }
@@ -141,11 +168,11 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         if (p11Key != null) {
             return p11Key;
         }
-        if ("RAW".equals(key.getFormat()) == false) {
+        if ("RAW".equalsIgnoreCase(key.getFormat()) == false) {
             throw new InvalidKeyException("Encoded format must be RAW");
         }
         byte[] encoded = key.getEncoded();
-        p11Key = createKey(token, encoded, algo, algoType);
+        p11Key = createKey(token, encoded, algo, algoType, extraAttrs);
         token.secretCache.put(key, p11Key);
         return p11Key;
     }
@@ -159,7 +186,8 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
     }
 
     private static P11Key createKey(Token token, byte[] encoded,
-            String algorithm, long keyType) throws InvalidKeyException {
+            String algorithm, long keyType, CK_ATTRIBUTE[] extraAttrs)
+            throws InvalidKeyException {
         int n = encoded.length << 3;
         int keyLength = n;
         try {
@@ -220,11 +248,17 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         }
         Session session = null;
         try {
-            CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
-                new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
-                new CK_ATTRIBUTE(CKA_KEY_TYPE, keyType),
-                new CK_ATTRIBUTE(CKA_VALUE, encoded)
-            };
+            CK_ATTRIBUTE[] attributes;
+            if (extraAttrs != null) {
+                attributes = new CK_ATTRIBUTE[3 + extraAttrs.length];
+                System.arraycopy(extraAttrs, 0, attributes, 3,
+                        extraAttrs.length);
+            } else {
+                attributes = new CK_ATTRIBUTE[3];
+            }
+            attributes[0] = new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY);
+            attributes[1] = new CK_ATTRIBUTE(CKA_KEY_TYPE, keyType);
+            attributes[2] = new CK_ATTRIBUTE(CKA_VALUE, encoded);
             attributes = token.getAttributes
                 (O_IMPORT, CKO_SECRET_KEY, keyType, attributes);
             session = token.getObjSession();
@@ -273,7 +307,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
     private byte[] getKeyBytes(SecretKey key) throws InvalidKeySpecException {
         try {
             key = engineTranslateKey(key);
-            if ("RAW".equals(key.getFormat()) == false) {
+            if ("RAW".equalsIgnoreCase(key.getFormat()) == false) {
                 throw new InvalidKeySpecException
                     ("Could not obtain key bytes");
             }
