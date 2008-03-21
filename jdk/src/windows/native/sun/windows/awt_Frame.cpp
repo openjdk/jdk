@@ -408,8 +408,9 @@ MsgRouting AwtFrame::WmShowWindow(BOOL show, UINT status)
      * message. This breaks Java focus. To workaround the problem we
      * set the toplevel being shown foreground programmatically.
      * The fix is localized to non-foreground process case only.
+     * (See also: 6599270)
      */
-    if (show == TRUE && status == 0) {
+    if (!IsEmbeddedFrame() && show == TRUE && status == 0) {
         HWND fgHWnd = ::GetForegroundWindow();
         if (fgHWnd != NULL) {
             DWORD fgProcessID;
