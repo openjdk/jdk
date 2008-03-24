@@ -45,11 +45,36 @@ doAttribute(const char* name, const char* value, void* user_data) {
         if (attribute->name == NULL) {
             free(attribute);
         } else {
-            attribute->value = strdup(value);
+            char *begin = value;
+            char *end;
+
+            /* skip any leading white space */
+            while (isspace(*begin)) {
+                begin++;
+            }
+
+            /* skip any trailing white space */
+            end = &begin[strlen(begin)];
+            while (end > begin && isspace(end[-1])) {
+                end--;
+            }
+
+            if (begin == end) {
+                /* no value so skip this attribute */
+                free(attribute->name);
+                free(attribute);
+                return;
+            }
+
+            size_t value_len = (size_t)(end - begin);
+            attribute->value = malloc(value_len + 1);
             if (attribute->value == NULL) {
                 free(attribute->name);
                 free(attribute);
             } else {
+                /* save the value without leading or trailing whitespace */
+                strncpy(attribute->value, begin, value_len);
+                attribute->value[value_len] = NULL;
                 attribute->next = NULL;
                 if (context->head == NULL) {
                     context->head = attribute;
