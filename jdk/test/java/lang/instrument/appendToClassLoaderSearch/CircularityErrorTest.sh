@@ -26,7 +26,7 @@
 # @summary Unit tests for appendToBootstrapClassLoaderSearch and
 #   appendToSystemClasLoaderSearch methods.
 #
-# @run shell CircularityErrorTest.sh
+# @run shell/timeout=240 CircularityErrorTest.sh
 
 if [ "${TESTSRC}" = "" ]
 then

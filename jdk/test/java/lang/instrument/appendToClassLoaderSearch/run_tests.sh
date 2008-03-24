@@ -30,7 +30,7 @@
 #   appendToSystemClasLoaderSearch methods.
 #
 # @build Agent AgentSupport BootSupport BasicTest PrematureLoadTest DynamicTest
-# @run shell run_tests.sh
+# @run shell/timeout=240 run_tests.sh
 
 if [ "${TESTSRC}" = "" ]
 then
