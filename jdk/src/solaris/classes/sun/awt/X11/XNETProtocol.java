@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,15 @@
 
 package sun.awt.X11;
 
-import java.awt.*;
+import java.awt.Frame;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.LogManager;
-import java.awt.*;
-import java.awt.image.*;
-import java.util.*;
 
-class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
-    final static Logger log = Logger.getLogger("sun.awt.X11.XNETProtocol");
+final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProtocol
+{
+    private final static Logger log = Logger.getLogger("sun.awt.X11.XNETProtocol");
     private final static Logger iconLog = Logger.getLogger("sun.awt.X11.icon.XNETProtocol");
+    private static Logger stateLog = Logger.getLogger("sun.awt.X11.states.XNETProtocol");
 
     /**
      * XStateProtocol
@@ -276,6 +274,7 @@ class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
 
     boolean doStateProtocol() {
         boolean res = active() && checkProtocol(XA_NET_SUPPORTED, XA_NET_WM_STATE);
+        stateLog.finer("doStateProtocol() returns " + res);
         return res;
     }
 
