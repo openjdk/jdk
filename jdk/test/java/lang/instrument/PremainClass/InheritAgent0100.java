@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,34 @@
  * have any questions.
  */
 
-/*
- * dummy "Hello World"ish application for "premain" tests
+/**
+ * @test
+ * @bug 6289149
+ * @summary test config (0,1,0,0): inherited 1-arg in agent class
+ * @author Daniel D. Daugherty, Sun Microsystems
+ *
+ * @run shell ../MakeJAR3.sh InheritAgent0100
+ * @run main/othervm -javaagent:InheritAgent0100.jar DummyMain
  */
-public class DummyMain {
-    public static void main(String[] args) {
-        System.out.println("Hello from DummyMain!");
+
+import java.lang.instrument.*;
+
+class InheritAgent0100 extends InheritAgent0100Super {
+
+    // This agent does NOT have a single argument premain() method.
+
+    // This agent does NOT have a double argument premain() method.
+}
+
+class InheritAgent0100Super {
+
+    //
+    // This agent has a single argument premain() method which
+    // is the one that should be called.
+    //
+    public static void premain (String agentArgs) {
+        System.out.println("Hello from Single-Arg InheritAgent0100Super!");
     }
+
+    // This agent does NOT have a double argument premain() method.
 }
