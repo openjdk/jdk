@@ -283,7 +283,7 @@ initializeJPLISAgent(   JPLISAgent *    agent,
     checkCapabilities(agent);
 
     /* check phase - if live phase then we don't need the VMInit event */
-    jvmtierror == (*jvmtienv)->GetPhase(jvmtienv, &phase);
+    jvmtierror = (*jvmtienv)->GetPhase(jvmtienv, &phase);
     jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
     if (phase == JVMTI_PHASE_LIVE) {
         return JPLIS_INIT_ERROR_NONE;
