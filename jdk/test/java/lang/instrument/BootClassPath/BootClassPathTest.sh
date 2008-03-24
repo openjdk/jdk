@@ -23,7 +23,7 @@
 
 # @test
 # @bug 5055293
-# @summary Test non US-ASCII characters in the value of the Boot-Class-Path 
+# @summary Test non US-ASCII characters in the value of the Boot-Class-Path
 #          attribute.
 
 if [ "${TESTJAVA}" = "" ]
@@ -72,7 +72,7 @@ echo "Creating agent jar file..."
 
 echo "Running test..."
 
-"${JAVA}" -javaagent:"${TESTCLASSES}"/Agent.jar -classpath "${TESTCLASSES}" DummyMain
+"${JAVA}" ${TESTVMOPTS} -javaagent:"${TESTCLASSES}"/Agent.jar -classpath "${TESTCLASSES}" DummyMain
 result=$?
 
 echo "Cleanup..."
