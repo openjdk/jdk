@@ -259,7 +259,7 @@ initializeJPLISAgent(   JPLISAgent *    agent,
     agent->mNormalEnvironment.mIsRetransformer       = JNI_FALSE;
     agent->mRetransformEnvironment.mJVMTIEnv         = NULL;        /* NULL until needed */
     agent->mRetransformEnvironment.mAgent            = agent;
-    agent->mRetransformEnvironment.mIsRetransformer  = JNI_TRUE;
+    agent->mRetransformEnvironment.mIsRetransformer  = JNI_FALSE;   /* JNI_FALSE until mJVMTIEnv is set */
     agent->mAgentmainCaller                          = NULL;
     agent->mInstrumentationImpl                      = NULL;
     agent->mPremainCaller                            = NULL;
@@ -998,6 +998,7 @@ retransformableEnvironment(JPLISAgent * agent) {
     if (jvmtierror == JVMTI_ERROR_NONE) {
         // install the retransforming environment
         agent->mRetransformEnvironment.mJVMTIEnv = retransformerEnv;
+        agent->mRetransformEnvironment.mIsRetransformer = JNI_TRUE;
 
         // Make it for ClassFileLoadHook handling
         jvmtierror = (*retransformerEnv)->SetEnvironmentLocalStorage(
@@ -1032,7 +1033,7 @@ isModifiableClass(JNIEnv * jnienv, JPLISAgent * agent, jclass clazz) {
 
 jboolean
 isRetransformClassesSupported(JNIEnv * jnienv, JPLISAgent * agent) {
-    return retransformableEnvironment(agent) != NULL;
+    return agent->mRetransformEnvironment.mIsRetransformer;
 }
 
 void
