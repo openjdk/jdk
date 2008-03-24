@@ -79,6 +79,12 @@ public class TransformerManagementThreadAddTests extends ATestCaseScaffold
     protected static final int TOTAL_THREADS = MAX_TRANS - MIN_TRANS + 1;
 
     private byte[]          fDummyClassBytes;
+    // fCheckedTransformers is a Vector that is used to verify
+    // that the transform() function is called in the same
+    // order in which the transformers were added to the
+    // TransformerManager. The test currently verifies that all
+    // transformers for a specific worker thread are in
+    // increasing order by index value.
     private Vector              fCheckedTransformers;
     private Instrumentation fInstrumentation;
     private int             fFinished;
@@ -264,11 +270,19 @@ public class TransformerManagementThreadAddTests extends ATestCaseScaffold
     private void
     executeTransform()
     {
-        fCheckedTransformers.clear();
-
         try
         {
             ClassDefinition cd = new ClassDefinition(DummyClass.class, fDummyClassBytes);
+
+            // When the ClassDefinition above is created for the first
+            // time and every time redefineClasses() below is called,
+            // the transform() function is called for each registered
+            // transformer. We only want one complete set of calls to
+            // be logged in the fCheckedTransformers Vector so we clear
+            // any calls logged for ClassDefinition above and just use
+            // the ones logged for redefineClasses() below.
+            fCheckedTransformers.clear();
+
             getInstrumentation().redefineClasses(new ClassDefinition[]{ cd });
         }
         catch (ClassNotFoundException e)
