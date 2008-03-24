@@ -1076,6 +1076,12 @@ retransformClasses(JNIEnv * jnienv, JPLISAgent * agent, jobjectArray classes) {
         numClasses = (*jnienv)->GetArrayLength(jnienv, classes);
         errorOccurred = checkForThrowable(jnienv);
         jplis_assert(!errorOccurred);
+
+        if (!errorOccurred && numClasses == 0) {
+            jplis_assert(numClasses != 0);
+            errorOccurred = JNI_TRUE;
+            errorCode = JVMTI_ERROR_NULL_POINTER;
+        }
     }
 
     if (!errorOccurred) {
@@ -1095,6 +1101,13 @@ retransformClasses(JNIEnv * jnienv, JPLISAgent * agent, jobjectArray classes) {
             errorOccurred = checkForThrowable(jnienv);
             jplis_assert(!errorOccurred);
             if (errorOccurred) {
+                break;
+            }
+
+            if (classArray[index] == NULL) {
+                jplis_assert(classArray[index] != NULL);
+                errorOccurred = JNI_TRUE;
+                errorCode = JVMTI_ERROR_NULL_POINTER;
                 break;
             }
         }
