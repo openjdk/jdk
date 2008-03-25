@@ -26,30 +26,17 @@
 BUILD_PARENT_DIRECTORY=.
 
 ifndef TOPDIR
-  TOPDIR:=$(shell \
-    if [ -r ./j2se/make/Makefile -o -r ./jdk/make/Makefile ]; then \
-      echo "."; \
-    else \
-      echo "../.."; \
-    fi)
+  TOPDIR:=.
 endif
 
 ifndef CONTROL_TOPDIR
-  CONTROL_TOPDIR=$(TOPDIR)/control
-  CONTROL_TOPDIR:=$(shell \
-    if [ -r $(TOPDIR)/control/make/Makefile ]; then \
-      echo "$(TOPDIR)/control"; \
-    else \
-      echo "$(TOPDIR)"; \
-    fi)
+  CONTROL_TOPDIR=$(TOPDIR)
 endif
 
 # Openjdk sources (only used if SKIP_OPENJDK_BUILD!=true)
 OPENJDK_SOURCETREE=$(TOPDIR)/openjdk
 OPENJDK_BUILDDIR:=$(shell \
-  if [ -r $(OPENJDK_SOURCETREE)/control/make/Makefile ]; then \
-    echo "$(OPENJDK_SOURCETREE)/control/make"; \
-  elif [ -r $(OPENJDK_SOURCETREE)/Makefile ]; then \
+  if [ -r $(OPENJDK_SOURCETREE)/Makefile ]; then \
     echo "$(OPENJDK_SOURCETREE)"; \
   else \
     echo "."; \
@@ -496,10 +483,6 @@ include ./make/jprt.gmk
 .PHONY: all build what clobber insane \
 	fastdebug_build debug_build product_build setup \
         dev dev-build dev-sanity dev-clobber
-
-# FIXUP: Old j2se targets
-j2se_fastdebug_only: jdk_fastdebug_only
-j2se_only: jdk_only
 
 # Force target
 FRC:
