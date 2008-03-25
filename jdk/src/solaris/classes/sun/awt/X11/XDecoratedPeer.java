@@ -1013,6 +1013,16 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
     private void handleWmTakeFocus(XClientMessageEvent cl) {
         focusLog.log(Level.FINE, "WM_TAKE_FOCUS on {0}", new Object[]{this});
+        // A workaround to Metacity issue (see 6613426).
+        // The first check is to skip redundant WM_TAKE_FOCUS on click
+        // in a focused frame. The second check is to allow requesting focus
+        // on click in a frame when its owned window is currently focused.
+        if (this == getNativeFocusedWindowPeer() &&
+            target == XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow())
+        {
+            focusLog.fine("The window is already focused, skipping.");
+            return;
+        }
         requestWindowFocus(cl.get_data(1), true);
     }
 
