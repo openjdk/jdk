@@ -179,6 +179,7 @@ getJPLISEnvironment(jvmtiEnv * jvmtienv) {
     jvmtierror = (*jvmtienv)->GetEnvironmentLocalStorage(
                                             jvmtienv,
                                             (void**)&environment);
+    /* can be called from any phase */
     jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
 
     if (jvmtierror == JVMTI_ERROR_NONE) {
@@ -230,6 +231,7 @@ createNewJPLISAgent(JavaVM * vm, JPLISAgent **agent_ptr) {
         /* don't leak envs */
         if ( initerror != JPLIS_INIT_ERROR_NONE ) {
             jvmtiError jvmtierror = (*jvmtienv)->DisposeEnvironment(jvmtienv);
+            /* can be called from any phase */
             jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
         }
     }
@@ -277,6 +279,7 @@ initializeJPLISAgent(   JPLISAgent *    agent,
     jvmtierror = (*jvmtienv)->SetEnvironmentLocalStorage(
                                             jvmtienv,
                                             &(agent->mNormalEnvironment));
+    /* can be called from any phase */
     jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
 
     /* check what capabilities are available */
@@ -284,9 +287,15 @@ initializeJPLISAgent(   JPLISAgent *    agent,
 
     /* check phase - if live phase then we don't need the VMInit event */
     jvmtierror = (*jvmtienv)->GetPhase(jvmtienv, &phase);
+    /* can be called from any phase */
     jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
     if (phase == JVMTI_PHASE_LIVE) {
         return JPLIS_INIT_ERROR_NONE;
+    }
+
+    if (phase != JVMTI_PHASE_ONLOAD) {
+        /* called too early or called too late; either way bail out */
+        return JPLIS_INIT_ERROR_FAILURE;
     }
 
     /* now turn on the VMInit event */
@@ -298,6 +307,7 @@ initializeJPLISAgent(   JPLISAgent *    agent,
         jvmtierror = (*jvmtienv)->SetEventCallbacks( jvmtienv,
                                                      &callbacks,
                                                      sizeof(callbacks));
+        check_phase_ret_blob(jvmtierror, JPLIS_INIT_ERROR_FAILURE);
         jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
     }
 
@@ -307,6 +317,7 @@ initializeJPLISAgent(   JPLISAgent *    agent,
                                                 JVMTI_ENABLE,
                                                 JVMTI_EVENT_VM_INIT,
                                                 NULL /* all threads */);
+        check_phase_ret_blob(jvmtierror, JPLIS_INIT_ERROR_FAILURE);
         jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
     }
 
@@ -622,6 +633,7 @@ setLivePhaseEventHandlers(  JPLISAgent * agent) {
     jvmtierror = (*jvmtienv)->SetEventCallbacks( jvmtienv,
                                                  &callbacks,
                                                  sizeof(callbacks));
+    check_phase_ret_false(jvmtierror);
     jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
 
 
@@ -632,6 +644,7 @@ setLivePhaseEventHandlers(  JPLISAgent * agent) {
                                                     JVMTI_DISABLE,
                                                     JVMTI_EVENT_VM_INIT,
                                                     NULL /* all threads */);
+        check_phase_ret_false(jvmtierror);
         jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
     }
 
@@ -642,6 +655,7 @@ setLivePhaseEventHandlers(  JPLISAgent * agent) {
                                                     JVMTI_ENABLE,
                                                     JVMTI_EVENT_CLASS_FILE_LOAD_HOOK,
                                                     NULL /* all threads */);
+        check_phase_ret_false(jvmtierror);
         jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
     }
 
@@ -660,6 +674,7 @@ checkCapabilities(JPLISAgent * agent) {
     memset(&potentialCapabilities, 0, sizeof(potentialCapabilities));
 
     jvmtierror = (*jvmtienv)->GetPotentialCapabilities(jvmtienv, &potentialCapabilities);
+    check_phase_ret(jvmtierror);
     jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
 
     if ( jvmtierror == JVMTI_ERROR_NONE ) {
@@ -681,9 +696,11 @@ enableNativeMethodPrefixCapability(jvmtiEnv * jvmtienv) {
     jvmtiError          jvmtierror;
 
         jvmtierror = (*jvmtienv)->GetCapabilities(jvmtienv, &desiredCapabilities);
+        /* can be called from any phase */
         jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
         desiredCapabilities.can_set_native_method_prefix = 1;
         jvmtierror = (*jvmtienv)->AddCapabilities(jvmtienv, &desiredCapabilities);
+        check_phase_ret(jvmtierror);
         jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
 }
 
@@ -715,9 +732,11 @@ addOriginalMethodOrderCapability(JPLISAgent * agent) {
     jvmtiError          jvmtierror;
 
     jvmtierror = (*jvmtienv)->GetCapabilities(jvmtienv, &desiredCapabilities);
+    /* can be called from any phase */
     jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
     desiredCapabilities.can_maintain_original_method_order = 1;
     jvmtierror = (*jvmtienv)->AddCapabilities(jvmtienv, &desiredCapabilities);
+    check_phase_ret(jvmtierror);
     jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
 }
 
@@ -732,9 +751,11 @@ addRedefineClassesCapability(JPLISAgent * agent) {
 
     if (agent->mRedefineAvailable && !agent->mRedefineAdded) {
         jvmtierror = (*jvmtienv)->GetCapabilities(jvmtienv, &desiredCapabilities);
+        /* can be called from any phase */
         jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
         desiredCapabilities.can_redefine_classes = 1;
         jvmtierror = (*jvmtienv)->AddCapabilities(jvmtienv, &desiredCapabilities);
+        check_phase_ret(jvmtierror);
 
         /*
          * With mixed premain/agentmain agents then it's possible that the
@@ -1026,6 +1047,7 @@ isModifiableClass(JNIEnv * jnienv, JPLISAgent * agent, jclass clazz) {
     jvmtierror = (*jvmtienv)->IsModifiableClass( jvmtienv,
                                                  clazz,
                                                  &is_modifiable);
+    check_phase_ret_false(jvmtierror);
     jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
 
     return is_modifiable;
@@ -1231,6 +1253,7 @@ redefineClasses(JNIEnv * jnienv, JPLISAgent * agent, jobjectArray classDefinitio
             if (!errorOccurred) {
                 jvmtiError  errorCode = JVMTI_ERROR_NONE;
                 errorCode = (*jvmtienv)->RedefineClasses(jvmtienv, numDefs, classDefs);
+                check_phase_blob_ret(errorCode, deallocate(jvmtienv, (void*)classDefs));
                 errorOccurred = (errorCode != JVMTI_ERROR_NONE);
                 if ( errorOccurred ) {
                     createAndThrowThrowableFromJVMTIErrorCode(jnienv, errorCode);
@@ -1264,6 +1287,7 @@ commonGetClassList( JNIEnv *            jnienv,
                         classLoader,
                         &classCount,
                         &classes);
+    check_phase_ret_blob(jvmtierror, localArray);
     errorOccurred = (jvmtierror != JVMTI_ERROR_NONE);
     jplis_assert(!errorOccurred);
 
@@ -1325,6 +1349,7 @@ getObjectSize(JNIEnv * jnienv, JPLISAgent * agent, jobject objectToSize) {
     jvmtiError  jvmtierror  = JVMTI_ERROR_NONE;
 
     jvmtierror = (*jvmtienv)->GetObjectSize(jvmtienv, objectToSize, &objectSize);
+    check_phase_ret_0(jvmtierror);
     jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
     if ( jvmtierror != JVMTI_ERROR_NONE ) {
         createAndThrowThrowableFromJVMTIErrorCode(jnienv, jvmtierror);
@@ -1374,6 +1399,7 @@ appendToClassLoaderSearch(JNIEnv * jnienv, JPLISAgent * agent, jstring jarFile, 
                 } else {
                     jvmtierror = (*jvmtienv)->AddToSystemClassLoaderSearch(jvmtienv, platformChars);
                 }
+                check_phase_ret(jvmtierror);
 
                 if ( jvmtierror != JVMTI_ERROR_NONE ) {
                     createAndThrowThrowableFromJVMTIErrorCode(jnienv, jvmtierror);
@@ -1464,6 +1490,7 @@ setNativeMethodPrefixes(JNIEnv * jnienv, JPLISAgent * agent, jobjectArray prefix
             }
 
             err = (*jvmtienv)->SetNativeMethodPrefixes(jvmtienv, inx, (char**)prefixes);
+            /* can be called from any phase */
             jplis_assert(err == JVMTI_ERROR_NONE);
 
             for (i = 0; i < inx; i++) {
