@@ -23,81 +23,37 @@
 
 /*
   test
-  @bug 4041703 4096228 4025223 4260929
-  @summary Ensures that appletviewer sets a reasonable default focus
-           for an Applet on start
+  @bug     4041703 4096228 4025223 4260929
+  @summary Ensures that appletviewer sets a reasonable default focus for an Applet on start
   @author  das area=appletviewer
-  @run shell AppletInitialFocusTest.sh
+  @run     applet AppletInitialFocusTest.html
 */
 
 import java.applet.Applet;
-import java.awt.*;
-import java.awt.event.*;
-
-class MyKeyboardFocusManager extends DefaultKeyboardFocusManager {
-    public Window getGlobalFocusedWindow() {
-        return super.getGlobalFocusedWindow();
-    }
-}
+import java.awt.Button;
+import java.awt.Component;
+import java.awt.Robot;
+import java.awt.Window;
+import test.java.awt.regtesthelpers.Util;
 
 public class AppletInitialFocusTest extends Applet {
-
-    Window window;
+    Robot robot = Util.createRobot();
     Button button = new Button("Button");
-    MyKeyboardFocusManager manager = new MyKeyboardFocusManager();
-
-    Object lock = new Object();
 
     public void init() {
-        KeyboardFocusManager.setCurrentKeyboardFocusManager(manager);
-
-        Component parent = this;
-        while (parent != null && !(parent instanceof Window)) {
-            parent = parent.getParent();
-        }
-        /*
-         * This applet is designed to be run only with appletviewer,
-         * so there always should be a toplevel frame.
-         */
-        if (parent == null) {
-            synchronized (lock) {
-                System.err.println("appletviewer not running");
-                System.exit(3);
-            }
-        }
-        window = (Window)parent;
-
-        button.addFocusListener(new FocusAdapter() {
-            public void focusGained(FocusEvent e) {
-                synchronized (lock) {
-                    System.err.println("passed");
-                    System.exit(0);
-                }
-            }
-        });
         add(button);
     }
 
     public void start() {
-        Thread thread = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    Thread.sleep(1000);
-                    synchronized (lock) {
-                        Window focused = manager.getGlobalFocusedWindow();
-                        if (window == focused) {
-                            System.err.println("failed");
-                            System.exit(2);
-                        } else {
-                            System.err.println("window never activated");
-                            System.err.println(focused);
-                            System.exit(0);
-                        }
+        new Thread(new Runnable() {
+                public void run() {
+                    Util.waitTillShown(button);
+                    robot.delay(1000); // delay the thread to let EDT to start dispatching focus events
+                    Util.waitForIdle(robot);
+                    if (!button.hasFocus()) {
+                        throw new RuntimeException("Appletviewer doesn't set default focus correctly.");
                     }
-                } catch(InterruptedException e) {
                 }
-            }
-        });
-        thread.start();
+            }).start();
     }
 }

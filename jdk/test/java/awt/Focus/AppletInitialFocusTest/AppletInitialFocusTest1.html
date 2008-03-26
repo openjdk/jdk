@@ -1,11 +1,13 @@
 <html>
-<!--  
-  test
+<!--
+  @test
   @bug 4411534 4517274
   @summary ensures that user's requestFocus() during applet initialization
            is not ignored
   @author  prs area=appletviewer
-  @run shell AppletInitialFocusTest1.sh
+  @library ../../regtesthelpers
+  @build   Util
+  @run applet AppletInitialFocusTest1.html
   -->
 <head>
 <title> AppletInitialFocusTest1 </title>
