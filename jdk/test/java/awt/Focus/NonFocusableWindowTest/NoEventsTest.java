@@ -20,19 +20,20 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 /*
   @test
   @bug 4452384
   @summary Tests that non-focusable windows doesn't generate any focus events when accessed.
-  @author dom: area=awt.focus
-  @run main Test
+  @author Denis.Mikhalkin: area=awt.focus
+  @run main NoEventsTest
 */
 
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 
-public class Test extends Frame {
+public class NoEventsTest extends Frame {
     public static final int DEF_WIDTH = 400,
         DEF_HEIGHT = 300,
         DEF_TOP = 1,
@@ -80,8 +81,8 @@ public class Test extends Frame {
         windows = new Window[7];
         windows[0] = new TestWindow(0, 0, false, main_frame);
         //windows[1] = new TestWindow(2, 1, true, main_frame);
-        windows[2] = new Test(1, 0, false, true);
-        windows[3] = new Test(2, 0, false, false);
+        windows[2] = new NoEventsTest(1, 0, false, true);
+        windows[3] = new NoEventsTest(2, 0, false, false);
         //windows[4] = new Test(3, 0, true, true);
         windows[5] = new TestDialog(0, 1, false, true, main_frame);
         windows[6] = new TestDialog(1, 1, false, false, main_frame);
@@ -174,12 +175,12 @@ public class Test extends Frame {
             }
         }
     }
-    public Test(int row, int col, boolean focusable, boolean resizable) {
+    public NoEventsTest(int row, int col, boolean focusable, boolean resizable) {
         super("Frame" + row + "" + col);
         TestPanel panel = new TestPanel(row, col);
-        if (Test.automatic) {
-            row = Test.DEF_ROW;
-            col = Test.DEF_COL;
+        if (NoEventsTest.automatic) {
+            row = NoEventsTest.DEF_ROW;
+            col = NoEventsTest.DEF_COL;
         }
         setName(getTitle());
         add("Center", panel);
@@ -187,7 +188,7 @@ public class Test extends Frame {
                             ", " + (resizable?"resizable":"non-resizable"));
         l.setBackground(Color.green);
         add("North", l);
-        setBounds(Test.DEF_LEFT + DEF_WIDTH*col, DEF_TOP + DEF_HEIGHT*row, DEF_WIDTH, DEF_HEIGHT);
+        setBounds(NoEventsTest.DEF_LEFT + DEF_WIDTH*col, DEF_TOP + DEF_HEIGHT*row, DEF_WIDTH, DEF_HEIGHT);
         if (!focusable) {
             setFocusableWindowState(false);
         }
@@ -202,9 +203,9 @@ class TestWindow extends Window {
         super(owner);
         setName("Window" + row + "" + col);
         TestPanel panel = new TestPanel(row, col);
-        if (Test.automatic) {
-            row = Test.DEF_ROW;
-            col = Test.DEF_COL;
+        if (NoEventsTest.automatic) {
+            row = NoEventsTest.DEF_ROW;
+            col = NoEventsTest.DEF_COL;
         }
 
         add("Center", panel);
@@ -213,7 +214,7 @@ class TestWindow extends Window {
         l.setBackground(Color.green);
         add("North", l);
 
-        setBounds(Test.DEF_LEFT + Test.DEF_WIDTH*col, Test.DEF_TOP + Test.DEF_HEIGHT*row, Test.DEF_WIDTH, Test.DEF_HEIGHT);
+        setBounds(NoEventsTest.DEF_LEFT + NoEventsTest.DEF_WIDTH*col, NoEventsTest.DEF_TOP + NoEventsTest.DEF_HEIGHT*row, NoEventsTest.DEF_WIDTH, NoEventsTest.DEF_HEIGHT);
         if (!focusable) {
             setFocusableWindowState(false);
         }
@@ -225,9 +226,9 @@ class TestDialog extends Dialog {
         super(owner);
         setName("Dialog" + row + "" + col);
         TestPanel panel = new TestPanel(row, col);
-        if (Test.automatic) {
-            row = Test.DEF_ROW;
-            col = Test.DEF_COL;
+        if (NoEventsTest.automatic) {
+            row = NoEventsTest.DEF_ROW;
+            col = NoEventsTest.DEF_COL;
         }
 
         add("Center", panel);
@@ -236,7 +237,7 @@ class TestDialog extends Dialog {
         l.setBackground(Color.green);
         add("North", l);
 
-        setBounds(Test.DEF_LEFT + Test.DEF_WIDTH*col, Test.DEF_TOP + Test.DEF_HEIGHT*row, Test.DEF_WIDTH, Test.DEF_HEIGHT);
+        setBounds(NoEventsTest.DEF_LEFT + NoEventsTest.DEF_WIDTH*col, NoEventsTest.DEF_TOP + NoEventsTest.DEF_HEIGHT*row, NoEventsTest.DEF_WIDTH, NoEventsTest.DEF_HEIGHT);
         if (!focusable) {
             setFocusableWindowState(false);
         }
@@ -415,3 +416,5 @@ class GlobalListener implements AWTEventListener {
 //         }
     }
 }
+
+
