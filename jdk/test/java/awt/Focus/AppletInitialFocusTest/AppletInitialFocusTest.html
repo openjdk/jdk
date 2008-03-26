@@ -1,11 +1,12 @@
 <html>
-<!--  
-  test
+<!--
+  @test
   @bug 4041703 4096228 4025223 4260929
-  @summary Ensures that appletviewer sets a reasonable default focus
-           for an Applet on start
+  @summary Ensures that appletviewer sets a reasonable default focus for an Applet on start
   @author  das area=appletviewer
-  @run shell AppletInitialFocusTest.sh
+  @library ../../regtesthelpers
+  @build   Util
+  @run applet AppletInitialFocusTest.html
   -->
 <head>
 <title> AppletInitialFocusTest </title>
