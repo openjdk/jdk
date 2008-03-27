@@ -102,4 +102,9 @@ class MDialogPeer extends MWindowPeer implements DialogPeer, MInputMethodControl
     public void blockWindows(java.util.List<Window> toBlock) {
         // do nothing
     }
+
+    @Override
+    final boolean isTargetUndecorated() {
+        return ((Dialog)target).isUndecorated();
+    }
 }
