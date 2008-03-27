@@ -1,7 +1,5 @@
-#!/bin/sh
-
 #
-# Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,36 +21,15 @@
 # have any questions.
 #
 
-
+# @test
+# @bug 6572160
+# @summary stress getObjectSize() API
+# @author Daniel D. Daugherty as modified from the code of fischman@google.com
 #
-# Common setup for unit tests. Setups up the following variables:
+# @run build StressGetObjectSizeApp
+# @run shell MakeJAR.sh basicAgent
+# @run shell StressGetObjectSizeTest.sh
 #
-# PS - path sep.
-# FS - file sep.
-# JAVA - java cmd.
-# JAVAC - javac cmd.
-# JAR - jar cmd.
-
-OS=`uname -s`
-case "$OS" in
-  SunOS )
-    PS=":"
-    FS="/"
-    ;;
-  Linux )
-    PS=":"
-    FS="/"
-    ;;
-  Windows* | CYGWIN*)
-    PS=";"
-    OS="Windows"
-    FS="\\"
-    ;;
-  * )
-    echo "Unrecognized system!"
-    exit 1;
-    ;;
-esac
 
 if [ "${TESTJAVA}" = "" ]
 then
@@ -72,7 +49,22 @@ then
   exit 1
 fi
 
-JAVA="${TESTJAVA}/bin/java"
-JAVAC="${TESTJAVA}/bin/javac"
-JAR="${TESTJAVA}/bin/jar"
+JAVA="${TESTJAVA}"/bin/java
 
+"${JAVA}" ${TESTVMOPTS} -javaagent:basicAgent.jar \
+    -classpath "${TESTCLASSES}" StressGetObjectSizeApp StressGetObjectSizeApp \
+    > output.log 2>&1
+cat output.log
+
+MESG="ASSERTION FAILED"
+grep "$MESG" output.log
+result=$?
+if [ "$result" = 0 ]; then
+    echo "FAIL: found '$MESG' in the test output"
+    result=1
+else
+    echo "PASS: did NOT find '$MESG' in the test output"
+    result=0
+fi
+
+exit $result

@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,23 @@
  * have any questions.
  */
 
-/*
- * dummy "Hello World"ish application for "premain" tests
- */
-public class DummyMain {
-    public static void main(String[] args) {
-        System.out.println("Hello from DummyMain!");
+import java.lang.reflect.Method;
+
+public class RedefineMethodAddInvokeTarget {
+    public void test(int counter) throws Exception {
+        Method method = getClass().getDeclaredMethod("myMethod" +
+            (counter == 0 ? "" : counter));
+        method.setAccessible(true);
+        method.invoke(this);
+    }
+
+    public void myMethod() {
+        System.out.println("Hello from the non-EMCP myMethod()!");
+    }
+
+    private final void myMethod1() {
+        System.out.println("Hello from myMethod1()!");
+        System.out.println("Calling myMethod() from myMethod1():");
+        myMethod();
     }
 }

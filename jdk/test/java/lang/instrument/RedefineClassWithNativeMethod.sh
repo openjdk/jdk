@@ -1,7 +1,5 @@
-#!/bin/sh
-
 #
-# Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,36 +21,15 @@
 # have any questions.
 #
 
-
+# @test
+# @bug 5003341 4917140 6545149
+# @summary Redefine a class with a native method.
+# @author Daniel D. Daugherty as modified from the test submitted by clovis@par.univie.ac.at
 #
-# Common setup for unit tests. Setups up the following variables:
+# @run shell MakeJAR3.sh RedefineClassWithNativeMethodAgent 'Can-Redefine-Classes: true'
+# @run build RedefineClassWithNativeMethodApp
+# @run shell RedefineClassWithNativeMethod.sh
 #
-# PS - path sep.
-# FS - file sep.
-# JAVA - java cmd.
-# JAVAC - javac cmd.
-# JAR - jar cmd.
-
-OS=`uname -s`
-case "$OS" in
-  SunOS )
-    PS=":"
-    FS="/"
-    ;;
-  Linux )
-    PS=":"
-    FS="/"
-    ;;
-  Windows* | CYGWIN*)
-    PS=";"
-    OS="Windows"
-    FS="\\"
-    ;;
-  * )
-    echo "Unrecognized system!"
-    exit 1;
-    ;;
-esac
 
 if [ "${TESTJAVA}" = "" ]
 then
@@ -72,7 +49,33 @@ then
   exit 1
 fi
 
-JAVA="${TESTJAVA}/bin/java"
-JAVAC="${TESTJAVA}/bin/javac"
-JAR="${TESTJAVA}/bin/jar"
+JAVAC="${TESTJAVA}"/bin/javac
+JAVA="${TESTJAVA}"/bin/java
 
+"${JAVA}" ${TESTVMOPTS} \
+    -javaagent:RedefineClassWithNativeMethodAgent.jar=java/lang/Thread.class \
+    -classpath "${TESTCLASSES}" RedefineClassWithNativeMethodApp \
+    > output.log 2>&1
+result=$?
+
+cat output.log
+
+if [ "$result" = 0 ]; then
+    echo "PASS: RedefineClassWithNativeMethodApp exited with status of 0."
+else
+    echo "FAIL: RedefineClassWithNativeMethodApp exited with status of $result"
+    exit "$result"
+fi
+
+MESG="Exception"
+grep "$MESG" output.log
+result=$?
+if [ "$result" = 0 ]; then
+    echo "FAIL: found '$MESG' in the test output"
+    result=1
+else
+    echo "PASS: did NOT find '$MESG' in the test output"
+    result=0
+fi
+
+exit $result

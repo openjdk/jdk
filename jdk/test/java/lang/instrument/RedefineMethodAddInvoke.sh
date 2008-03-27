@@ -1,5 +1,5 @@
 #
-# Copyright 2004-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,14 @@
 #
 
 # @test
-# @bug 5055293
-# @summary Test non US-ASCII characters in the value of the Boot-Class-Path
-#          attribute.
+# @bug 6667089
+# @summary Reflexive invocation of newly added methods broken.
+# @author Daniel D. Daugherty
 #
-# @run shell/timeout=240 BootClassPathTest.sh
+# @run shell MakeJAR3.sh RedefineMethodAddInvokeAgent 'Can-Redefine-Classes: true'
+# @run build RedefineMethodAddInvokeApp
+# @run shell RedefineMethodAddInvoke.sh
+#
 
 if [ "${TESTJAVA}" = "" ]
 then
@@ -48,38 +51,32 @@ fi
 
 JAVAC="${TESTJAVA}"/bin/javac
 JAVA="${TESTJAVA}"/bin/java
-JAR="${TESTJAVA}"/bin/jar
 
-echo "Creating manifest file..."
+cp "${TESTSRC}"/RedefineMethodAddInvokeTarget_1.java \
+    RedefineMethodAddInvokeTarget.java
+"${JAVAC}" -d . RedefineMethodAddInvokeTarget.java
+mv RedefineMethodAddInvokeTarget.java RedefineMethodAddInvokeTarget_1.java
+mv RedefineMethodAddInvokeTarget.class RedefineMethodAddInvokeTarget_1.class
 
-"$JAVAC" -d "${TESTCLASSES}" "${TESTSRC}"/Setup.java
+cp "${TESTSRC}"/RedefineMethodAddInvokeTarget_2.java \
+    RedefineMethodAddInvokeTarget.java
+"${JAVAC}" -d . RedefineMethodAddInvokeTarget.java
+mv RedefineMethodAddInvokeTarget.java RedefineMethodAddInvokeTarget_2.java
+mv RedefineMethodAddInvokeTarget.class RedefineMethodAddInvokeTarget_2.class
 
-# java Setup <workdir> <premain-class>
-# - outputs boot class path to boot.dir
+"${JAVA}" ${TESTVMOPTS} -javaagent:RedefineMethodAddInvokeAgent.jar \
+    -classpath "${TESTCLASSES}" RedefineMethodAddInvokeApp > output.log 2>&1
+cat output.log
 
-"$JAVA" -classpath "${TESTCLASSES}" Setup "${TESTCLASSES}" Agent
-BOOTDIR=`cat ${TESTCLASSES}/boot.dir`
-
-echo "Created ${BOOTDIR}"
-
-echo "Building test classes..."
-
-"$JAVAC" -d "${TESTCLASSES}" "${TESTSRC}"/Agent.java "${TESTSRC}"/DummyMain.java
-"$JAVAC" -d "${BOOTDIR}" "${TESTSRC}"/AgentSupport.java
-
-echo "Creating agent jar file..."
-
-"$JAR" -cvfm "${TESTCLASSES}"/Agent.jar "${TESTCLASSES}"/MANIFEST.MF \
-    -C "${TESTCLASSES}" Agent.class || exit 1
-
-echo "Running test..."
-
-"${JAVA}" ${TESTVMOPTS} -javaagent:"${TESTCLASSES}"/Agent.jar -classpath "${TESTCLASSES}" DummyMain
+MESG="Exception"
+grep "$MESG" output.log
 result=$?
-
-echo "Cleanup..."
-
-"$JAVAC" -d "${TESTCLASSES}" "${TESTSRC}"/Cleanup.java
-"$JAVA" -classpath "${TESTCLASSES}" Cleanup "${BOOTDIR}"
+if [ "$result" = 0 ]; then
+    echo "FAIL: found '$MESG' in the test output"
+    result=1
+else
+    echo "PASS: did NOT find '$MESG' in the test output"
+    result=0
+fi
 
 exit $result

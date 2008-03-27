@@ -303,39 +303,78 @@ public class InstrumentationImpl implements Instrumentation {
         NoSuchMethodException firstExc = null;
         boolean twoArgAgent = false;
 
-        // The agent class has a premain or agentmain method that has 1 or 2
-        // arguments. We first check for a signature of (String, Instrumentation),
-        // and if not found we check for (String). If neither is found then we
-        // throw the NoSuchMethodException from the first attempt so that the
-        // exception text indicates the lookup failed for the 2-arg method
-        // (same as JDK5.0).
+        // The agent class must have a premain or agentmain method that
+        // has 1 or 2 arguments. We check in the following order:
+        //
+        // 1) declared with a signature of (String, Instrumentation)
+        // 2) declared with a signature of (String)
+        // 3) inherited with a signature of (String, Instrumentation)
+        // 4) inherited with a signature of (String)
+        //
+        // So the declared version of either 1-arg or 2-arg always takes
+        // primary precedence over an inherited version. After that, the
+        // 2-arg version takes precedence over the 1-arg version.
+        //
+        // If no method is found then we throw the NoSuchMethodException
+        // from the first attempt so that the exception text indicates
+        // the lookup failed for the 2-arg method (same as JDK5.0).
 
         try {
-            m = javaAgentClass.getMethod( methodname,
-                                          new Class[] {
-                                              String.class,
-                                              java.lang.instrument.Instrumentation.class
-                                          }
-                                        );
+            m = javaAgentClass.getDeclaredMethod( methodname,
+                                 new Class[] {
+                                     String.class,
+                                     java.lang.instrument.Instrumentation.class
+                                 }
+                               );
             twoArgAgent = true;
         } catch (NoSuchMethodException x) {
             // remember the NoSuchMethodException
             firstExc = x;
         }
 
-        // check for the 1-arg method
         if (m == null) {
+            // now try the declared 1-arg method
             try {
-                m = javaAgentClass.getMethod(methodname, new Class[] { String.class });
+                m = javaAgentClass.getDeclaredMethod(methodname,
+                                                 new Class[] { String.class });
             } catch (NoSuchMethodException x) {
-                // Neither method exists so we throw the first NoSuchMethodException
-                // as per 5.0
+                // ignore this exception because we'll try
+                // two arg inheritance next
+            }
+        }
+
+        if (m == null) {
+            // now try the inherited 2-arg method
+            try {
+                m = javaAgentClass.getMethod( methodname,
+                                 new Class[] {
+                                     String.class,
+                                     java.lang.instrument.Instrumentation.class
+                                 }
+                               );
+                twoArgAgent = true;
+            } catch (NoSuchMethodException x) {
+                // ignore this exception because we'll try
+                // one arg inheritance next
+            }
+        }
+
+        if (m == null) {
+            // finally try the inherited 1-arg method
+            try {
+                m = javaAgentClass.getMethod(methodname,
+                                             new Class[] { String.class });
+            } catch (NoSuchMethodException x) {
+                // none of the methods exists so we throw the
+                // first NoSuchMethodException as per 5.0
                 throw firstExc;
             }
         }
 
         // the premain method should not be required to be public,
         // make it accessible so we can call it
+        // Note: The spec says the following:
+        //     The agent class must implement a public static premain method...
         setAccessible(m, true);
 
         // invoke the 1 or 2-arg method

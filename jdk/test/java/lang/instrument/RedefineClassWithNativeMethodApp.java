@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,18 @@
  * have any questions.
  */
 
-/*
- * dummy "Hello World"ish application for "premain" tests
- */
-public class DummyMain {
-    public static void main(String[] args) {
-        System.out.println("Hello from DummyMain!");
+public class RedefineClassWithNativeMethodApp {
+    public static void main(String[] args) throws Exception {
+        try {
+            // give the agent a chance to redefine the target class
+            Thread.sleep(2000);
+        } catch (InterruptedException ie) {
+        }
+
+        System.out.println("Creating instance of " +
+            RedefineClassWithNativeMethodAgent.clz);
+        RedefineClassWithNativeMethodAgent.clz.newInstance();
+
+        System.exit(0);
     }
 }
