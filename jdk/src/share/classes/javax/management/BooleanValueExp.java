@@ -84,4 +84,10 @@ class BooleanValueExp extends QueryEval implements ValueExp {
         return this;
     }
 
+    @Deprecated
+    public void setMBeanServer(MBeanServer s) {
+        super.setMBeanServer(s);
+    }
+
+
  }

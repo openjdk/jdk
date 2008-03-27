@@ -165,9 +165,9 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
         // Initialize the configuration parameters.
         //
         this.enabledCipherSuites = enabledCipherSuites == null ?
-            null : (String[]) enabledCipherSuites.clone();
+            null : enabledCipherSuites.clone();
         this.enabledProtocols = enabledProtocols == null ?
-            null : (String[]) enabledProtocols.clone();
+            null : enabledProtocols.clone();
         this.needClientAuth = needClientAuth;
 
         // Force the initialization of the default at construction time,
@@ -196,13 +196,11 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
         //
         if (this.enabledCipherSuites != null) {
             sslSocket.setEnabledCipherSuites(this.enabledCipherSuites);
-            enabledCipherSuitesList =
-                    Arrays.asList((String[]) this.enabledCipherSuites);
+            enabledCipherSuitesList = Arrays.asList(this.enabledCipherSuites);
         }
         if (this.enabledProtocols != null) {
             sslSocket.setEnabledProtocols(this.enabledProtocols);
-            enabledProtocolsList =
-                    Arrays.asList((String[]) this.enabledProtocols);
+            enabledProtocolsList = Arrays.asList(this.enabledProtocols);
         }
     }
 
@@ -218,7 +216,7 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
      */
     public final String[] getEnabledCipherSuites() {
         return enabledCipherSuites == null ?
-            null : (String[]) enabledCipherSuites.clone();
+            null : enabledCipherSuites.clone();
     }
 
     /**
@@ -234,7 +232,7 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
      */
     public final String[] getEnabledProtocols() {
         return enabledProtocols == null ?
-            null : (String[]) enabledProtocols.clone();
+            null : enabledProtocols.clone();
     }
 
     /**
@@ -315,8 +313,8 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
                 (enabledCipherSuites != null && that.enabledCipherSuites == null))
             return false;
         if (enabledCipherSuites != null && that.enabledCipherSuites != null) {
-            List thatEnabledCipherSuitesList =
-                    Arrays.asList((String[]) that.enabledCipherSuites);
+            List<String> thatEnabledCipherSuitesList =
+                    Arrays.asList(that.enabledCipherSuites);
             if (!enabledCipherSuitesList.equals(thatEnabledCipherSuitesList))
                 return false;
         }
@@ -327,8 +325,8 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
                 (enabledProtocols != null && that.enabledProtocols == null))
             return false;
         if (enabledProtocols != null && that.enabledProtocols != null) {
-            List thatEnabledProtocolsList =
-                    Arrays.asList((String[]) that.enabledProtocols);
+            List<String> thatEnabledProtocolsList =
+                    Arrays.asList(that.enabledProtocols);
             if (!enabledProtocolsList.equals(thatEnabledProtocolsList))
                 return false;
         }
@@ -374,7 +372,7 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
     private final String[] enabledCipherSuites;
     private final String[] enabledProtocols;
     private final boolean needClientAuth;
-    private List enabledCipherSuitesList;
-    private List enabledProtocolsList;
+    private List<String> enabledCipherSuitesList;
+    private List<String> enabledProtocolsList;
     private SSLContext context;
 }

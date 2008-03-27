@@ -327,7 +327,7 @@ class SDE {
 
         ignoreWhite();
         while (((ch = sdeRead()) != '\n') && (ch != '\r')) {
-            sb.append((char)ch);
+            sb.append(ch);
         }
         // check for CR LF
         if ((ch == '\r') && (sdePeek() == '\n')) {

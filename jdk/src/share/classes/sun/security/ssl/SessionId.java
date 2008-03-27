@@ -64,7 +64,7 @@ class SessionId
     /** Returns the bytes in the ID.  May be an empty array.  */
     byte [] getId ()
     {
-        return (byte []) sessionId.clone ();
+        return sessionId.clone ();
     }
 
     /** Returns the ID as a string */

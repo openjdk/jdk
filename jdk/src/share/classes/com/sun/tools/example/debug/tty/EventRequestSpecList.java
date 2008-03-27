@@ -55,9 +55,7 @@ class EventRequestSpecList {
     boolean resolve(ClassPrepareEvent event) {
         boolean failure = false;
         synchronized(eventRequestSpecs) {
-            Iterator iter = eventRequestSpecs.iterator();
-            while (iter.hasNext()) {
-                EventRequestSpec spec = (EventRequestSpec)iter.next();
+            for (EventRequestSpec spec : eventRequestSpecs) {
                 if (!spec.isResolved()) {
                     try {
                         EventRequest eventRequest = spec.resolve(event);
@@ -77,9 +75,7 @@ class EventRequestSpecList {
     }
 
     void resolveAll() {
-        Iterator iter = eventRequestSpecs.iterator();
-        while (iter.hasNext()) {
-            EventRequestSpec spec = (EventRequestSpec)iter.next();
+        for (EventRequestSpec spec : eventRequestSpecs) {
             try {
                 EventRequest eventRequest = spec.resolveEagerly();
                 if (eventRequest != null) {
@@ -106,16 +102,16 @@ class EventRequestSpecList {
         }
     }
 
-    EventRequestSpec createBreakpoint(String classPattern,
-                                 int line) throws ClassNotFoundException {
+    BreakpointSpec createBreakpoint(String classPattern, int line)
+        throws ClassNotFoundException {
         ReferenceTypeSpec refSpec =
             new PatternReferenceTypeSpec(classPattern);
         return new BreakpointSpec(refSpec, line);
     }
 
-    EventRequestSpec createBreakpoint(String classPattern,
+    BreakpointSpec createBreakpoint(String classPattern,
                                  String methodId,
-                                 List methodArgs)
+                                    List<String> methodArgs)
                                 throws MalformedMemberNameException,
                                        ClassNotFoundException {
         ReferenceTypeSpec refSpec =
@@ -132,7 +128,7 @@ class EventRequestSpecList {
         return new ExceptionSpec(refSpec, notifyCaught, notifyUncaught);
     }
 
-    EventRequestSpec createAccessWatchpoint(String classPattern,
+    WatchpointSpec createAccessWatchpoint(String classPattern,
                                        String fieldId)
                                       throws MalformedMemberNameException,
                                              ClassNotFoundException {
@@ -141,7 +137,7 @@ class EventRequestSpecList {
         return new AccessWatchpointSpec(refSpec, fieldId);
     }
 
-    EventRequestSpec createModificationWatchpoint(String classPattern,
+    WatchpointSpec createModificationWatchpoint(String classPattern,
                                        String fieldId)
                                       throws MalformedMemberNameException,
                                              ClassNotFoundException {
@@ -154,7 +150,7 @@ class EventRequestSpecList {
         synchronized (eventRequestSpecs) {
             int inx = eventRequestSpecs.indexOf(proto);
             if (inx != -1) {
-                EventRequestSpec spec = (EventRequestSpec)eventRequestSpecs.get(inx);
+                EventRequestSpec spec = eventRequestSpecs.get(inx);
                 spec.remove();
                 eventRequestSpecs.remove(inx);
                 return true;

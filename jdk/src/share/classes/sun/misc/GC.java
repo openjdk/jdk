@@ -128,8 +128,8 @@ public class GC {
 
         /* Create a new daemon thread in the root thread group */
         public static void create() {
-            PrivilegedAction pa = new PrivilegedAction() {
-                public Object run() {
+            PrivilegedAction<Void> pa = new PrivilegedAction<Void>() {
+                public Void run() {
                     ThreadGroup tg = Thread.currentThread().getThreadGroup();
                     for (ThreadGroup tgn = tg;
                          tgn != null;
@@ -170,13 +170,14 @@ public class GC {
      * method.  Given a request, the only interesting operation is that of
      * cancellation.
      */
-    public static class LatencyRequest implements Comparable {
+    public static class LatencyRequest
+        implements Comparable<LatencyRequest> {
 
         /* Instance counter, used to generate unique identifers */
         private static long counter = 0;
 
         /* Sorted set of active latency requests */
-        private static SortedSet requests = null;
+        private static SortedSet<LatencyRequest> requests = null;
 
         /* Examine the request set and reset the latency target if necessary.
          * Must be invoked while holding the lock.
@@ -187,7 +188,7 @@ public class GC {
                     setLatencyTarget(NO_TARGET);
                 }
             } else {
-                LatencyRequest r = (LatencyRequest)requests.first();
+                LatencyRequest r = requests.first();
                 if (r.latency != latencyTarget) {
                     setLatencyTarget(r.latency);
                 }
@@ -211,7 +212,7 @@ public class GC {
             synchronized (lock) {
                 this.id = ++counter;
                 if (requests == null) {
-                    requests = new TreeSet();
+                    requests = new TreeSet<LatencyRequest>();
                 }
                 requests.add(this);
                 adjustLatencyIfNeeded();
@@ -240,8 +241,7 @@ public class GC {
             }
         }
 
-        public int compareTo(Object o) {
-            LatencyRequest r = (LatencyRequest)o;
+        public int compareTo(LatencyRequest r) {
             long d = this.latency - r.latency;
             if (d == 0) d = this.id - r.id;
             return (d < 0) ? -1 : ((d > 0) ? +1 : 0);

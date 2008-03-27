@@ -426,11 +426,11 @@ class InputRecord extends ByteArrayInputStream implements Record {
             if (really < 0) {
                 throw new SSLException("SSL peer shut down incorrectly");
             }
-
-            // now we've got a complete record.
-            count = contentLen + headerSize;
-            exlen = 0;
         }
+
+        // now we've got a complete record.
+        count = contentLen + headerSize;
+        exlen = 0;
 
         if (debug != null && Debug.isOn("record")) {
             if (count < 0 || count > (maxRecordSize - headerSize)) {
@@ -502,10 +502,11 @@ class InputRecord extends ByteArrayInputStream implements Record {
                 if (really < 0) {
                     throw new EOFException("SSL peer shut down incorrectly");
                 }
-
-                // now we've got a complete record.
-                exlen = 0;
             }
+
+            // now we've got a complete record.
+            exlen = 0;
+
             hashInternal(buf, 2, 3);
             hashInternal(v2Buf, 0, len);
             V2toV3ClientHello(v2Buf);

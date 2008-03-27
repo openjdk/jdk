@@ -50,7 +50,7 @@ public class RMIMasterSocketFactory extends RMISocketFactory {
     static int logLevel = LogStream.parseLevel(getLogLevel());
 
     private static String getLogLevel() {
-        return (String) java.security.AccessController.doPrivileged(
+        return java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("sun.rmi.transport.proxy.logLevel"));
     }
 
@@ -63,15 +63,15 @@ public class RMIMasterSocketFactory extends RMISocketFactory {
     private static long connectTimeout = getConnectTimeout();
 
     private static long getConnectTimeout() {
-        return ((Long) java.security.AccessController.doPrivileged(
+        return java.security.AccessController.doPrivileged(
                 new GetLongAction("sun.rmi.transport.proxy.connectTimeout",
-                                  15000))).longValue(); // default: 15 seconds
+                              15000)).longValue(); // default: 15 seconds
     }
 
     /** whether to fallback to HTTP on general connect failures */
-    private static final boolean eagerHttpFallback = ((Boolean)
+    private static final boolean eagerHttpFallback =
         java.security.AccessController.doPrivileged(new GetBooleanAction(
-            "sun.rmi.transport.proxy.eagerHttpFallback"))).booleanValue();
+            "sun.rmi.transport.proxy.eagerHttpFallback")).booleanValue();
 
     /** table of hosts successfully connected to and the factory used */
     private Hashtable successTable = new Hashtable();
@@ -100,14 +100,14 @@ public class RMIMasterSocketFactory extends RMISocketFactory {
 
         try {
             String proxyHost;
-            proxyHost = (String) java.security.AccessController.doPrivileged(
+            proxyHost = java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction("http.proxyHost"));
 
             if (proxyHost == null)
-                proxyHost=(String)java.security.AccessController.doPrivileged(
+                proxyHost = java.security.AccessController.doPrivileged(
                     new sun.security.action.GetPropertyAction("proxyHost"));
 
-            Boolean tmp = (Boolean)java.security.AccessController.doPrivileged(
+            Boolean tmp = java.security.AccessController.doPrivileged(
                 new sun.security.action.GetBooleanAction("java.rmi.server.disableHttp"));
 
             if (!tmp.booleanValue() &&
@@ -178,10 +178,8 @@ public class RMIMasterSocketFactory extends RMISocketFactory {
         try {
             synchronized (connector) {
 
-                Thread t = (Thread)
-                    java.security.AccessController.doPrivileged(
-                        new NewThreadAction(connector, "AsyncConnector",
-                                            true));
+                Thread t = java.security.AccessController.doPrivileged(
+                    new NewThreadAction(connector, "AsyncConnector", true));
                 t.start();
 
                 try {
