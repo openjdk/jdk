@@ -195,7 +195,7 @@ public class TreeSet<E> extends AbstractSet<E>
      * @since 1.6
      */
     public NavigableSet<E> descendingSet() {
-        return new TreeSet(m.descendingMap());
+        return new TreeSet<E>(m.descendingMap());
     }
 
     /**
@@ -505,8 +505,8 @@ public class TreeSet<E> extends AbstractSet<E>
         s.writeInt(m.size());
 
         // Write out all elements in the proper order.
-        for (Iterator i=m.keySet().iterator(); i.hasNext(); )
-            s.writeObject(i.next());
+        for (E e : m.keySet())
+            s.writeObject(e);
     }
 
     /**

@@ -56,9 +56,7 @@ class ThreadInfo {
 
     private static void initThreads() {
         if (!gotInitialThreads) {
-            Iterator iter = Env.vm().allThreads().iterator();
-            while (iter.hasNext()) {
-                ThreadReference thread = (ThreadReference)iter.next();
+            for (ThreadReference thread : Env.vm().allThreads()) {
                 threads.add(new ThreadInfo(thread));
             }
             gotInitialThreads = true;
@@ -113,9 +111,7 @@ class ThreadInfo {
         current = null;
         group = null;
         synchronized (threads) {
-            Iterator iter = threads().iterator();
-            while (iter.hasNext()) {
-                ThreadInfo ti = (ThreadInfo)iter.next();
+            for (ThreadInfo ti : threads()) {
                 ti.invalidate();
             }
         }
@@ -163,8 +159,7 @@ class ThreadInfo {
         if (group == null) {
             // Current thread group defaults to the first top level
             // thread group.
-            setThreadGroup((ThreadGroupReference)
-                           Env.vm().topLevelThreadGroups().get(0));
+            setThreadGroup(Env.vm().topLevelThreadGroups().get(0));
         }
         return group;
     }
@@ -173,9 +168,7 @@ class ThreadInfo {
         ThreadInfo retInfo = null;
 
         synchronized (threads) {
-            Iterator iter = threads().iterator();
-            while (iter.hasNext()) {
-                ThreadInfo ti  = (ThreadInfo)iter.next();
+            for (ThreadInfo ti : threads()) {
                 if (ti.thread.uniqueID() == id) {
                    retInfo = ti;
                    break;
@@ -208,7 +201,7 @@ class ThreadInfo {
      *
      * @return a <code>List</code> of the stack frames.
      */
-    List getStack() throws IncompatibleThreadStateException {
+    List<StackFrame> getStack() throws IncompatibleThreadStateException {
         return thread.frames();
     }
 

@@ -37,18 +37,20 @@ import java.util.StringTokenizer;
 
 public class MimeTable implements FileNameMap {
     /** Keyed by content type, returns MimeEntries */
-    private Hashtable entries = new Hashtable();
+    private Hashtable<String, MimeEntry> entries
+        = new Hashtable<String, MimeEntry>();
 
     /** Keyed by file extension (with the .), returns MimeEntries */
-    private Hashtable extensionMap = new Hashtable();
+    private Hashtable<String, MimeEntry> extensionMap
+        = new Hashtable<String, MimeEntry>();
 
     // Will be reset if in the platform-specific data file
     private static String tempFileTemplate;
 
     static {
         java.security.AccessController.doPrivileged(
-                                   new java.security.PrivilegedAction() {
-            public Object run() {
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
                 tempFileTemplate =
                     System.getProperty("content.types.temp.file.template",
                                        "/tmp/%s");
@@ -60,7 +62,8 @@ public class MimeTable implements FileNameMap {
                     "/usr/etc/mailcap",
                     "/usr/local/etc/mailcap",
                     System.getProperty("hotjava.home",
-                                       "/usr/local/hotjava") + "/lib/mailcap",
+                                           "/usr/local/hotjava")
+                        + "/lib/mailcap",
                 };
                 return null;
             }
@@ -83,8 +86,8 @@ public class MimeTable implements FileNameMap {
     public static MimeTable getDefaultTable() {
         if (defaultInstance == null) {
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
-                public Object run() {
+                new java.security.PrivilegedAction<Void>() {
+                    public Void run() {
                     defaultInstance = new MimeTable();
                     URLConnection.setFileNameMap(defaultInstance);
                     return null;
@@ -130,7 +133,7 @@ public class MimeTable implements FileNameMap {
     }
 
     public synchronized MimeEntry remove(String type) {
-        MimeEntry entry = (MimeEntry)entries.get(type);
+        MimeEntry entry = entries.get(type);
         return remove(entry);
     }
 
@@ -142,16 +145,16 @@ public class MimeTable implements FileNameMap {
             }
         }
 
-        return (MimeEntry)entries.remove(entry.getType());
+        return entries.remove(entry.getType());
     }
 
     public synchronized MimeEntry find(String type) {
-        MimeEntry entry = (MimeEntry)entries.get(type);
+        MimeEntry entry = entries.get(type);
         if (entry == null) {
             // try a wildcard lookup
-            Enumeration e = entries.elements();
+            Enumeration<MimeEntry> e = entries.elements();
             while (e.hasMoreElements()) {
-                MimeEntry wild = (MimeEntry)e.nextElement();
+                MimeEntry wild = e.nextElement();
                 if (wild.matches(type)) {
                     return wild;
                 }
@@ -191,13 +194,13 @@ public class MimeTable implements FileNameMap {
      * with it.
      */
     public synchronized MimeEntry findByExt(String fileExtension) {
-        return (MimeEntry)extensionMap.get(fileExtension);
+        return extensionMap.get(fileExtension);
     }
 
     public synchronized MimeEntry findByDescription(String description) {
-        Enumeration e = elements();
+        Enumeration<MimeEntry> e = elements();
         while (e.hasMoreElements()) {
-            MimeEntry entry = (MimeEntry)e.nextElement();
+            MimeEntry entry = e.nextElement();
             if (description.equals(entry.getDescription())) {
                 return entry;
             }
@@ -211,7 +214,7 @@ public class MimeTable implements FileNameMap {
         return tempFileTemplate;
     }
 
-    public synchronized Enumeration elements() {
+    public synchronized Enumeration<MimeEntry> elements() {
         return entries.elements();
     }
 
@@ -269,7 +272,7 @@ public class MimeTable implements FileNameMap {
         }
 
         // now, parse the mime-type spec's
-        Enumeration types = entries.propertyNames();
+        Enumeration<?> types = entries.propertyNames();
         while (types.hasMoreElements()) {
             String type = (String)types.nextElement();
             String attrs = entries.getProperty(type);
@@ -392,9 +395,9 @@ public class MimeTable implements FileNameMap {
 
     public Properties getAsProperties() {
         Properties properties = new Properties();
-        Enumeration e = elements();
+        Enumeration<MimeEntry> e = elements();
         while (e.hasMoreElements()) {
-            MimeEntry entry = (MimeEntry)e.nextElement();
+            MimeEntry entry = e.nextElement();
             properties.put(entry.getType(), entry.toProperty());
         }
 
