@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,30 +26,32 @@
 package sun.awt.X11;
 
 import java.awt.datatransfer.Transferable;
-
 import java.util.SortedMap;
-import java.util.Set;
-import java.util.Iterator;
-import java.util.HashSet;
-
 import java.io.IOException;
-
 import java.security.AccessController;
-
+import java.util.HashMap;
+import java.util.Map;
+import sun.awt.UNIXToolkit;
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.SunClipboard;
 import sun.awt.datatransfer.ClipboardTransferable;
-
 import sun.security.action.GetIntegerAction;
-
-
 
 /**
  * A class which interfaces with the X11 selection service in order to support
  * data transfer via Clipboard operations.
  */
-public class XClipboard extends SunClipboard implements Runnable {
+public final class XClipboard extends SunClipboard implements OwnershipListener
+{
     private final XSelection selection;
+    // Time of calling XConvertSelection().
+    private long convertSelectionTime;
+    // The flag used not to call XConvertSelection() if the previous SelectionNotify
+    // has not been processed by checkChange().
+    private volatile boolean isSelectionNotifyProcessed;
+    // The property in which the owner should place requested targets
+    // when tracking changes of available data flavors (practically targets).
+    private volatile XAtom targetsPropertyAtom;
 
     private static final Object classLock = new Object();
 
@@ -57,31 +59,33 @@ public class XClipboard extends SunClipboard implements Runnable {
 
     private static int pollInterval;
 
-    private static Set listenedClipboards;
-
+    private static Map<Long, XClipboard> targetsAtom2Clipboard;
 
     /**
      * Creates a system clipboard object.
      */
     public XClipboard(String name, String selectionName) {
         super(name);
-        selection = new XSelection(XAtom.get(selectionName), this);
+        selection = new XSelection(XAtom.get(selectionName));
+        selection.registerOwershipListener(this);
     }
 
-    /**
-     * The action to be run when we lose ownership
+    /*
      * NOTE: This method may be called by privileged threads.
      *       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
      */
-    public void run() {
-        lostOwnershipImpl();
+    public void ownershipChanged(final boolean isOwner) {
+        if (isOwner) {
+            checkChangeHere(contents);
+        } else {
+            lostOwnershipImpl();
+        }
     }
 
     protected synchronized void setContentsNative(Transferable contents) {
         SortedMap formatMap = DataTransferer.getInstance().getFormatsForTransferable
                 (contents, DataTransferer.adaptFlavorMap(flavorMap));
-        long[] formats =
-            DataTransferer.getInstance().keysToLongArray(formatMap);
+        long[] formats = DataTransferer.keysToLongArray(formatMap);
 
         if (!selection.setOwner(contents, formatMap, formats,
                                 XToolkit.getCurrentServerTime())) {
@@ -94,6 +98,7 @@ public class XClipboard extends SunClipboard implements Runnable {
         return selection.getSelectionAtom().getAtom();
     }
 
+    @Override
     public synchronized Transferable getContents(Object requestor) {
         if (contents != null) {
             return contents;
@@ -115,62 +120,163 @@ public class XClipboard extends SunClipboard implements Runnable {
         return selection.getData(format, XToolkit.getCurrentServerTime());
     }
 
-    // Called on the toolkit thread under awtLock.
-    public void checkChange(long[] formats) {
-        if (!selection.isOwner()) {
-            super.checkChange(formats);
-        }
-    }
-
-    void checkChangeHere(Transferable contents) {
+    private void checkChangeHere(Transferable contents) {
         if (areFlavorListenersRegistered()) {
-            super.checkChange(DataTransferer.getInstance().
+            checkChange(DataTransferer.getInstance().
                         getFormatsForTransferableAsArray(contents, flavorMap));
         }
     }
 
-    protected void registerClipboardViewerChecked() {
-        if (pollInterval <= 0) {
-            pollInterval = ((Integer)AccessController.doPrivileged(
-                    new GetIntegerAction("awt.datatransfer.clipboard.poll.interval",
-                                         defaultPollInterval))).intValue();
+    private static int getPollInterval() {
+        synchronized (XClipboard.classLock) {
             if (pollInterval <= 0) {
-                pollInterval = defaultPollInterval;
+                pollInterval = AccessController.doPrivileged(
+                        new GetIntegerAction("awt.datatransfer.clipboard.poll.interval",
+                                             defaultPollInterval));
+                if (pollInterval <= 0) {
+                    pollInterval = defaultPollInterval;
+                }
             }
+            return pollInterval;
         }
-        selection.initializeSelectionForTrackingChanges();
+    }
+
+    private XAtom getTargetsPropertyAtom() {
+        if (null == targetsPropertyAtom) {
+            targetsPropertyAtom =
+                    XAtom.get("XAWT_TARGETS_OF_SELECTION:" + selection.getSelectionAtom().getName());
+        }
+        return targetsPropertyAtom;
+    }
+
+    protected void registerClipboardViewerChecked() {
+        // for XConvertSelection() to be called for the first time in getTargetsDelayed()
+        isSelectionNotifyProcessed = true;
+
         boolean mustSchedule = false;
         synchronized (XClipboard.classLock) {
-            if (listenedClipboards == null) {
-                listenedClipboards = new HashSet(2);
+            if (targetsAtom2Clipboard == null) {
+                targetsAtom2Clipboard = new HashMap<Long, XClipboard>(2);
             }
-            mustSchedule = listenedClipboards.isEmpty();
-            listenedClipboards.add(this);
+            mustSchedule = targetsAtom2Clipboard.isEmpty();
+            targetsAtom2Clipboard.put(getTargetsPropertyAtom().getAtom(), this);
+            if (mustSchedule) {
+                XToolkit.addEventDispatcher(XWindow.getXAWTRootWindow().getWindow(),
+                                            new SelectionNotifyHandler());
+            }
         }
         if (mustSchedule) {
-            XToolkit.schedule(new CheckChangeTimerTask(), pollInterval);
+            XToolkit.schedule(new CheckChangeTimerTask(), XClipboard.getPollInterval());
         }
     }
 
     private static class CheckChangeTimerTask implements Runnable {
         public void run() {
-            for (Iterator iter = listenedClipboards.iterator(); iter.hasNext();) {
-                XClipboard clpbrd = (XClipboard)iter.next();
-                clpbrd.selection.getTargetsDelayed();
+            for (XClipboard clpbrd : targetsAtom2Clipboard.values()) {
+                clpbrd.getTargetsDelayed();
             }
             synchronized (XClipboard.classLock) {
-                if (listenedClipboards != null && !listenedClipboards.isEmpty()) {
-                    XToolkit.schedule(this, pollInterval);
+                if (targetsAtom2Clipboard != null && !targetsAtom2Clipboard.isEmpty()) {
+                    XToolkit.schedule(this, XClipboard.getPollInterval());
+                }
+            }
+        }
+    }
+
+    private static class SelectionNotifyHandler implements XEventDispatcher {
+        public void dispatchEvent(XEvent ev) {
+            if (ev.get_type() == XlibWrapper.SelectionNotify) {
+                final XSelectionEvent xse = ev.get_xselection();
+                XClipboard clipboard = null;
+                synchronized (XClipboard.classLock) {
+                    if (targetsAtom2Clipboard != null && !targetsAtom2Clipboard.isEmpty()) {
+                        XToolkit.removeEventDispatcher(XWindow.getXAWTRootWindow().getWindow(), this);
+                        return;
+                    }
+                    final long propertyAtom = xse.get_property();
+                    clipboard = targetsAtom2Clipboard.get(propertyAtom);
+                }
+                if (null != clipboard) {
+                    clipboard.checkChange(xse);
                 }
             }
         }
     }
 
     protected void unregisterClipboardViewerChecked() {
-        selection.deinitializeSelectionForTrackingChanges();
+        isSelectionNotifyProcessed = false;
         synchronized (XClipboard.classLock) {
-            listenedClipboards.remove(this);
+            targetsAtom2Clipboard.remove(getTargetsPropertyAtom().getAtom());
         }
     }
 
+    // checkChange() will be called on SelectionNotify
+    private void getTargetsDelayed() {
+        XToolkit.awtLock();
+        try {
+            long curTime = System.currentTimeMillis();
+            if (isSelectionNotifyProcessed || curTime >= (convertSelectionTime + UNIXToolkit.getDatatransferTimeout()))
+            {
+                convertSelectionTime = curTime;
+                XlibWrapper.XConvertSelection(XToolkit.getDisplay(),
+                                              selection.getSelectionAtom().getAtom(),
+                                              XDataTransferer.TARGETS_ATOM.getAtom(),
+                                              getTargetsPropertyAtom().getAtom(),
+                                              XWindow.getXAWTRootWindow().getWindow(),
+                                              XlibWrapper.CurrentTime);
+                isSelectionNotifyProcessed = false;
+            }
+        } finally {
+            XToolkit.awtUnlock();
+        }
+    }
+
+    /*
+     * Tracks changes of available formats.
+     * NOTE: This method may be called by privileged threads.
+     *       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
+     */
+    private void checkChange(XSelectionEvent xse) {
+        final long propertyAtom = xse.get_property();
+        if (propertyAtom != getTargetsPropertyAtom().getAtom()) {
+            // wrong atom
+            return;
+        }
+
+        final XAtom selectionAtom = XAtom.get(xse.get_selection());
+        final XSelection changedSelection = XSelection.getSelection(selectionAtom);
+
+        if (null == changedSelection || changedSelection != selection) {
+            // unknown selection - do nothing
+            return;
+        }
+
+        isSelectionNotifyProcessed = true;
+
+        if (selection.isOwner()) {
+            // selection is owner - do not need formats
+            return;
+        }
+
+        long[] formats = null;
+
+        if (propertyAtom == XlibWrapper.None) {
+            // We treat None property atom as "empty selection".
+            formats = new long[0];
+        } else {
+            WindowPropertyGetter targetsGetter =
+                new WindowPropertyGetter(XWindow.getXAWTRootWindow().getWindow(),
+                                         XAtom.get(propertyAtom), 0,
+                                         XSelection.MAX_LENGTH, true,
+                                         XlibWrapper.AnyPropertyType);
+            try {
+                targetsGetter.execute();
+                formats = XSelection.getFormats(targetsGetter);
+            } finally {
+                targetsGetter.dispose();
+            }
+        }
+
+        checkChange(formats);
+    }
 }

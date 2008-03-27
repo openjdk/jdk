@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ package sun.awt.X11;
 import sun.misc.Unsafe;
 import java.util.HashMap;
 
-public class XAtom {
+public final class XAtom {
 
     // Order of lock:  XAWTLock -> XAtom.class
 
@@ -175,7 +175,7 @@ public class XAtom {
     public static XAtom get(String name) {
         XAtom xatom = lookup(name);
         if (xatom == null) {
-            xatom = new XAtom(name);
+            xatom = new XAtom(XToolkit.getDisplay(), name);
         }
         return xatom;
     }
@@ -232,10 +232,6 @@ public class XAtom {
         this(display, name, true);
     }
 
-    private XAtom(String name) {
-        this(XToolkit.getDisplay(), name, true);
-    }
-
     public XAtom(String name, boolean autoIntern) {
         this(XToolkit.getDisplay(), name, autoIntern);
     }
@@ -262,7 +258,7 @@ public class XAtom {
      * @since 1.5
      */
 
-    public XAtom(long display, String name, boolean autoIntern) {
+    private XAtom(long display, String name, boolean autoIntern) {
         this.name = name;
         this.display = display;
         if (autoIntern) {
@@ -651,28 +647,6 @@ public class XAtom {
         }
     }
 
-    /**
-     * Initializes atom with name and display values
-     */
-    public void setValues(long display, String name, boolean autoIntern) {
-        this.display = display;
-        this.name = name;
-        if (autoIntern) {
-            XToolkit.awtLock();
-            try {
-                atom = XlibWrapper.InternAtom(display,name,0);
-            } finally {
-                XToolkit.awtUnlock();
-            }
-        }
-        register();
-    }
-
-    public void setValues(long display, long atom) {
-        this.display = display;
-        this.atom = atom;
-        register();
-    }
     public void setValues(long display, String name, long atom) {
         this.display = display;
         this.atom = atom;
