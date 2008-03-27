@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,16 @@
  * have any questions.
  */
 
-/*
- * dummy "Hello World"ish application for "premain" tests
+/**
+ *      Test Java Program
+ *
+ *      @author Daryl Puryear
+ *      @copyright 1999-2004 Wily Technology, Inc.  All rights reserved.
  */
-public class DummyMain {
-    public static void main(String[] args) {
-        System.out.println("Hello from DummyMain!");
-    }
+public class TestClass3
+{
+        public
+        TestClass3()
+        {
+        }
 }

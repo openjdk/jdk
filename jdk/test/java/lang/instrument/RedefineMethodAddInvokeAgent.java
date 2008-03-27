@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,23 @@
  * have any questions.
  */
 
-/*
- * dummy "Hello World"ish application for "premain" tests
- */
-public class DummyMain {
-    public static void main(String[] args) {
-        System.out.println("Hello from DummyMain!");
+import java.lang.instrument.Instrumentation;
+
+public class RedefineMethodAddInvokeAgent {
+    private static Instrumentation instrumentation;
+
+    private RedefineMethodAddInvokeAgent() {
+    }
+
+    public static void premain(String agentArgs, Instrumentation inst) {
+        System.out.println("Hello from RedefineMethodAddInvokeAgent!");
+        System.out.println("isRedefineClassesSupported()=" +
+            inst.isRedefineClassesSupported());
+
+        instrumentation = inst;
+    }
+
+    public static Instrumentation getInstrumentation() {
+        return instrumentation;
     }
 }

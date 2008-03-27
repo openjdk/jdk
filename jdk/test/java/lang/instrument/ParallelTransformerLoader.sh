@@ -1,7 +1,5 @@
-#!/bin/sh
-
 #
-# Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,36 +21,15 @@
 # have any questions.
 #
 
-
+# @test
+# @bug 5088398
+# @summary Test parallel class loading by parallel transformers.
+# @author Daniel D. Daugherty as modified from the code of Daryl Puryear @ Wily
 #
-# Common setup for unit tests. Setups up the following variables:
+# @run shell MakeJAR3.sh ParallelTransformerLoaderAgent
+# @run build ParallelTransformerLoaderApp
+# @run shell/timeout=240 ParallelTransformerLoader.sh
 #
-# PS - path sep.
-# FS - file sep.
-# JAVA - java cmd.
-# JAVAC - javac cmd.
-# JAR - jar cmd.
-
-OS=`uname -s`
-case "$OS" in
-  SunOS )
-    PS=":"
-    FS="/"
-    ;;
-  Linux )
-    PS=":"
-    FS="/"
-    ;;
-  Windows* | CYGWIN*)
-    PS=";"
-    OS="Windows"
-    FS="\\"
-    ;;
-  * )
-    echo "Unrecognized system!"
-    exit 1;
-    ;;
-esac
 
 if [ "${TESTJAVA}" = "" ]
 then
@@ -72,7 +49,24 @@ then
   exit 1
 fi
 
-JAVA="${TESTJAVA}/bin/java"
-JAVAC="${TESTJAVA}/bin/javac"
-JAR="${TESTJAVA}/bin/jar"
+JAR="${TESTJAVA}"/bin/jar
+JAVAC="${TESTJAVA}"/bin/javac
+JAVA="${TESTJAVA}"/bin/java
 
+"${JAVAC}" -d . \
+    "${TESTSRC}"/TestClass1.java \
+    "${TESTSRC}"/TestClass2.java \
+    "${TESTSRC}"/TestClass3.java
+
+"${JAR}" cvf Test.jar Test*.class
+# Removing the test class files is important. If these
+# .class files are available on the classpath other
+# than via Test.jar, then the deadlock will not reproduce.
+rm -f Test*.class
+
+"${JAVA}" ${TESTVMOPTS} -javaagent:ParallelTransformerLoaderAgent.jar=Test.jar \
+    -classpath "${TESTCLASSES}" ParallelTransformerLoaderApp
+result=$?
+echo "result=$result"
+
+exit $result

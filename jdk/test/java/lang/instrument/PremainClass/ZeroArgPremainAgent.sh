@@ -1,7 +1,5 @@
-#!/bin/sh
-
 #
-# Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,36 +21,15 @@
 # have any questions.
 #
 
-
+# @test
+# @bug 6289149
+# @summary test when the agent's class has a zero arg premain() function.
+# @author Daniel D. Daugherty, Sun Microsystems
 #
-# Common setup for unit tests. Setups up the following variables:
+# @run build DummyMain
+# @run shell ../MakeJAR3.sh ZeroArgPremainAgent
+# @run shell ZeroArgPremainAgent.sh
 #
-# PS - path sep.
-# FS - file sep.
-# JAVA - java cmd.
-# JAVAC - javac cmd.
-# JAR - jar cmd.
-
-OS=`uname -s`
-case "$OS" in
-  SunOS )
-    PS=":"
-    FS="/"
-    ;;
-  Linux )
-    PS=":"
-    FS="/"
-    ;;
-  Windows* | CYGWIN*)
-    PS=";"
-    OS="Windows"
-    FS="\\"
-    ;;
-  * )
-    echo "Unrecognized system!"
-    exit 1;
-    ;;
-esac
 
 if [ "${TESTJAVA}" = "" ]
 then
@@ -72,7 +49,20 @@ then
   exit 1
 fi
 
-JAVA="${TESTJAVA}/bin/java"
-JAVAC="${TESTJAVA}/bin/javac"
-JAR="${TESTJAVA}/bin/jar"
+JAVAC="${TESTJAVA}"/bin/javac
+JAVA="${TESTJAVA}"/bin/java
 
+"${JAVA}" ${TESTVMOPTS} -javaagent:ZeroArgPremainAgent.jar \
+    -classpath "${TESTCLASSES}" DummyMain > output.log 2>&1
+cat output.log
+
+MESG="java.lang.NoSuchMethodException"
+grep "$MESG" output.log
+result=$?
+if [ "$result" = 0 ]; then
+    echo "PASS: found '$MESG' in the test output"
+else
+    echo "FAIL: did NOT find '$MESG' in the test output"
+fi
+
+exit $result
