@@ -204,4 +204,10 @@ public class MEmbeddedFramePeer extends MFramePeer {
     }
 
     public native Rectangle getBoundsPrivate();
+
+    @Override
+    Rectangle constrainBounds(int x, int y, int width, int height) {
+        // We don't constrain the bounds of the EmbeddedFrames
+        return new Rectangle(x, y, width, height);
+    }
 }
