@@ -1078,6 +1078,9 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                     focusNextComponent(focusedComponent);
                 }
                 return;
+            } else if (e.getID() == KeyEvent.KEY_PRESSED) {
+                // Fix for 6637607: consumeNextKeyTyped should be reset.
+                consumeNextKeyTyped = false;
             }
 
             toTest = focusedComponent.getFocusTraversalKeys(

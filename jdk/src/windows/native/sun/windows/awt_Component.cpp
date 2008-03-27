@@ -5740,6 +5740,10 @@ void AwtComponent::_NativeHandleEvent(void *param)
                 env->DeleteGlobalRef(event);
                 delete nhes;
                 return;
+
+            } else if (id == java_awt_event_KeyEvent_KEY_PRESSED) {
+                // Fix for 6637607: reset consuming
+                keyDownConsumed = FALSE;
             }
 
             /* Consume a KEY_TYPED event if a KEY_PRESSED had been, to support
