@@ -51,21 +51,21 @@ void PointsToNode::remove_edge(uint targIdx, PointsToNode::EdgeType et) {
 }
 
 #ifndef PRODUCT
-static char *node_type_names[] = {
+static const char *node_type_names[] = {
   "UnknownType",
   "JavaObject",
   "LocalVar",
   "Field"
 };
 
-static char *esc_names[] = {
+static const char *esc_names[] = {
   "UnknownEscape",
   "NoEscape",
   "ArgEscape",
   "GlobalEscape"
 };
 
-static char *edge_type_suffix[] = {
+static const char *edge_type_suffix[] = {
  "?", // UnknownEdge
  "P", // PointsToEdge
  "D", // DeferredEdge
@@ -383,18 +383,25 @@ static Node* get_addp_base(Node *addp) {
   //       | |
   //       AddP  ( base == address )
   //
-  // case #6. Constant Pool or ThreadLocal or Raw object's field reference:
-  //      ConP # Object from Constant Pool.
+  // case #6. Constant Pool, ThreadLocal, CastX2P or
+  //          Raw object's field reference:
+  //      {ConP, ThreadLocal, CastX2P, raw Load}
   //  top   |
   //     \  |
   //     AddP  ( base == top )
+  //
+  // case #7. Klass's field reference.
+  //      LoadKlass
+  //       | |
+  //       AddP  ( base == address )
   //
   Node *base = addp->in(AddPNode::Base)->uncast();
   if (base->is_top()) { // The AddP case #3 and #6.
     base = addp->in(AddPNode::Address)->uncast();
     assert(base->Opcode() == Op_ConP || base->Opcode() == Op_ThreadLocal ||
-           base->is_Mem() && base->bottom_type() == TypeRawPtr::NOTNULL ||
-           base->is_Proj() && base->in(0)->is_Allocate(), "sanity");
+           base->Opcode() == Op_CastX2P ||
+           (base->is_Mem() && base->bottom_type() == TypeRawPtr::NOTNULL) ||
+           (base->is_Proj() && base->in(0)->is_Allocate()), "sanity");
   }
   return base;
 }
