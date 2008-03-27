@@ -85,3 +85,13 @@ vpath %.c   $(PLATFORM_SRC)/native/$(PKGDIR)/splashscreen
 CPPFLAGS += -I$(PLATFORM_SRC)/native/$(PKGDIR)/splashscreen -I$(SHARE_SRC)/native/$(PKGDIR)/splashscreen
 CPPFLAGS += -I$(SHARE_SRC)/native/$(PKGDIR)/image/jpeg -I$(SHARE_SRC)/native/java/util/zip/zlib-1.1.3
 
+ifeq ($(PLATFORM), linux)
+  ifeq ($(ARCH_DATA_MODEL), 64)
+    # 64-bit gcc has problems compiling MMX instructions.
+    # Google it for more details. Possibly the newer versions of
+    # the PNG-library and/or the new compiler will not need this
+    # option in the future.
+    CPPFLAGS += -DPNG_NO_MMX_CODE
+  endif
+endif
+
