@@ -1553,7 +1553,7 @@ class MetaData {
     private static String[] getConstructorProperties(Class type) {
         String[] names = null;
         int length = 0;
-        for (Constructor constructor : type.getConstructors()) {
+        for (Constructor<?> constructor : type.getConstructors()) {
             String[] value = getAnnotationValue(constructor);
             if ((value != null) && (length < value.length) && isValid(constructor, value)) {
                 names = value;
@@ -1563,14 +1563,14 @@ class MetaData {
         return names;
     }
 
-    private static String[] getAnnotationValue(Constructor constructor) {
+    private static String[] getAnnotationValue(Constructor<?> constructor) {
         ConstructorProperties annotation = constructor.getAnnotation(ConstructorProperties.class);
         return (annotation != null)
                 ? annotation.value()
                 : null;
     }
 
-    private static boolean isValid(Constructor constructor, String[] names) {
+    private static boolean isValid(Constructor<?> constructor, String[] names) {
         Class[] parameters = constructor.getParameterTypes();
         if (names.length != parameters.length) {
             return false;
