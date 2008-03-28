@@ -162,7 +162,7 @@ public class StackFrameImpl extends MirrorImpl
             for (LocalVariable variable : allVariables) {
                 String name = variable.name();
                 if (variable.isVisible(this)) {
-                    LocalVariable existing = (LocalVariable)map.get(name);
+                    LocalVariable existing = map.get(name);
                     if ((existing == null) ||
                         ((LocalVariableImpl)variable).hides(existing)) {
                         map.put(name, variable);
@@ -330,7 +330,7 @@ public class StackFrameImpl extends MirrorImpl
             slot = 1;
         }
         for (int ii = 0; ii < count; ++ii) {
-            char sigChar =  (char)argSigs.get(ii).charAt(0);
+            char sigChar = argSigs.get(ii).charAt(0);
             slots[ii] = new JDWP.StackFrame.GetValues.SlotInfo(slot++,(byte)sigChar);
             if (sigChar == 'J' || sigChar == 'D') {
                 slot++;

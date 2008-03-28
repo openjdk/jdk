@@ -37,7 +37,7 @@ class RepeatNode extends AbstractTypeNode {
         if (components.size() != 1) {
             error("Repeat must have exactly one member, use Group for more");
         }
-        member = (Node)(components.get(0));
+        member = components.get(0);
         if (!(member instanceof TypeNode)) {
             error("Repeat member must be type specifier");
         }

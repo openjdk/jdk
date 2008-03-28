@@ -25,11 +25,14 @@
  * @test
  * @bug 4199068 4738465 4937983 4930681 4926230 4931433 4932663 4986689
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
- *      6464154 6523983 6206031
+ *      6464154 6523983 6206031 4960438 6631352 6631966
  * @summary Basic tests for Process and Environment Variable code
  * @run main/othervm Basic
  * @author Martin Buchholz
  */
+
+import java.lang.ProcessBuilder.Redirect;
+import static java.lang.ProcessBuilder.Redirect.*;
 
 import java.io.*;
 import java.util.*;
@@ -257,7 +260,29 @@ public class Basic {
     public static class JavaChild {
         public static void main(String args[]) throws Throwable {
             String action = args[0];
-            if (action.equals("System.getenv(String)")) {
+            if (action.equals("testIO")) {
+                String expected = "standard input";
+                char[] buf = new char[expected.length()+1];
+                int n = new InputStreamReader(System.in).read(buf,0,buf.length);
+                if (n != expected.length())
+                    System.exit(5);
+                if (! new String(buf,0,n).equals(expected))
+                    System.exit(5);
+                System.err.print("standard error");
+                System.out.print("standard output");
+            } else if (action.equals("testInheritIO")) {
+                List<String> childArgs = new ArrayList<String>(javaChildArgs);
+                childArgs.add("testIO");
+                ProcessBuilder pb = new ProcessBuilder(childArgs);
+                pb.inheritIO();
+                ProcessResults r = run(pb);
+                if (! r.out().equals(""))
+                    System.exit(7);
+                if (! r.err().equals(""))
+                    System.exit(8);
+                if (r.exitValue() != 0)
+                    System.exit(9);
+            } else if (action.equals("System.getenv(String)")) {
                 String val = System.getenv(args[1]);
                 printUTF8(val == null ? "null" : val);
             } else if (action.equals("System.getenv(\\u1234)")) {
@@ -599,6 +624,333 @@ public class Basic {
         } catch (Throwable t) { unexpected(t); }
     }
 
+    static void checkRedirects(ProcessBuilder pb,
+                               Redirect in, Redirect out, Redirect err) {
+        equal(pb.redirectInput(),  in);
+        equal(pb.redirectOutput(), out);
+        equal(pb.redirectError(),  err);
+    }
+
+    static void redirectIO(ProcessBuilder pb,
+                           Redirect in, Redirect out, Redirect err) {
+        pb.redirectInput(in);
+        pb.redirectOutput(out);
+        pb.redirectError(err);
+    }
+
+    static void setFileContents(File file, String contents) {
+        try {
+            Writer w = new FileWriter(file);
+            w.write(contents);
+            w.close();
+        } catch (Throwable t) { unexpected(t); }
+    }
+
+    static String fileContents(File file) {
+        try {
+            Reader r = new FileReader(file);
+            StringBuilder sb = new StringBuilder();
+            char[] buffer = new char[1024];
+            int n;
+            while ((n = r.read(buffer)) != -1)
+                sb.append(buffer,0,n);
+            r.close();
+            return new String(sb);
+        } catch (Throwable t) { unexpected(t); return ""; }
+    }
+
+    static void testIORedirection() throws Throwable {
+        final File ifile = new File("ifile");
+        final File ofile = new File("ofile");
+        final File efile = new File("efile");
+        ifile.delete();
+        ofile.delete();
+        efile.delete();
+
+        //----------------------------------------------------------------
+        // Check mutual inequality of different types of Redirect
+        //----------------------------------------------------------------
+        Redirect[] redirects =
+            { PIPE,
+              INHERIT,
+              Redirect.from(ifile),
+              Redirect.to(ifile),
+              Redirect.appendTo(ifile),
+              Redirect.from(ofile),
+              Redirect.to(ofile),
+              Redirect.appendTo(ofile),
+            };
+        for (int i = 0; i < redirects.length; i++)
+            for (int j = 0; j < redirects.length; j++)
+                equal(redirects[i].equals(redirects[j]), (i == j));
+
+        //----------------------------------------------------------------
+        // Check basic properties of different types of Redirect
+        //----------------------------------------------------------------
+        equal(PIPE.type(), Redirect.Type.PIPE);
+        equal(PIPE.toString(), "PIPE");
+        equal(PIPE.file(), null);
+
+        equal(INHERIT.type(), Redirect.Type.INHERIT);
+        equal(INHERIT.toString(), "INHERIT");
+        equal(INHERIT.file(), null);
+
+        equal(Redirect.from(ifile).type(), Redirect.Type.READ);
+        equal(Redirect.from(ifile).toString(),
+              "redirect to read from file \"ifile\"");
+        equal(Redirect.from(ifile).file(), ifile);
+        equal(Redirect.from(ifile),
+              Redirect.from(ifile));
+        equal(Redirect.from(ifile).hashCode(),
+              Redirect.from(ifile).hashCode());
+
+        equal(Redirect.to(ofile).type(), Redirect.Type.WRITE);
+        equal(Redirect.to(ofile).toString(),
+              "redirect to write to file \"ofile\"");
+        equal(Redirect.to(ofile).file(), ofile);
+        equal(Redirect.to(ofile),
+              Redirect.to(ofile));
+        equal(Redirect.to(ofile).hashCode(),
+              Redirect.to(ofile).hashCode());
+
+        equal(Redirect.appendTo(ofile).type(), Redirect.Type.APPEND);
+        equal(Redirect.appendTo(efile).toString(),
+              "redirect to append to file \"efile\"");
+        equal(Redirect.appendTo(efile).file(), efile);
+        equal(Redirect.appendTo(efile),
+              Redirect.appendTo(efile));
+        equal(Redirect.appendTo(efile).hashCode(),
+              Redirect.appendTo(efile).hashCode());
+
+        //----------------------------------------------------------------
+        // Check initial values of redirects
+        //----------------------------------------------------------------
+        List<String> childArgs = new ArrayList<String>(javaChildArgs);
+        childArgs.add("testIO");
+        final ProcessBuilder pb = new ProcessBuilder(childArgs);
+        checkRedirects(pb, PIPE, PIPE, PIPE);
+
+        //----------------------------------------------------------------
+        // Check inheritIO
+        //----------------------------------------------------------------
+        pb.inheritIO();
+        checkRedirects(pb, INHERIT, INHERIT, INHERIT);
+
+        //----------------------------------------------------------------
+        // Check setters and getters agree
+        //----------------------------------------------------------------
+        pb.redirectInput(ifile);
+        equal(pb.redirectInput().file(), ifile);
+        equal(pb.redirectInput(), Redirect.from(ifile));
+
+        pb.redirectOutput(ofile);
+        equal(pb.redirectOutput().file(), ofile);
+        equal(pb.redirectOutput(), Redirect.to(ofile));
+
+        pb.redirectError(efile);
+        equal(pb.redirectError().file(), efile);
+        equal(pb.redirectError(), Redirect.to(efile));
+
+        THROWS(IllegalArgumentException.class,
+            new Fun(){void f() {
+                pb.redirectInput(Redirect.to(ofile)); }},
+            new Fun(){void f() {
+                pb.redirectInput(Redirect.appendTo(ofile)); }},
+            new Fun(){void f() {
+                pb.redirectOutput(Redirect.from(ifile)); }},
+            new Fun(){void f() {
+                pb.redirectError(Redirect.from(ifile)); }});
+
+        THROWS(IOException.class,
+               // Input file does not exist
+               new Fun(){void f() throws Throwable { pb.start(); }});
+        setFileContents(ifile, "standard input");
+
+        //----------------------------------------------------------------
+        // Writing to non-existent files
+        //----------------------------------------------------------------
+        {
+            ProcessResults r = run(pb);
+            equal(r.exitValue(), 0);
+            equal(fileContents(ofile), "standard output");
+            equal(fileContents(efile), "standard error");
+            equal(r.out(), "");
+            equal(r.err(), "");
+            ofile.delete();
+            efile.delete();
+        }
+
+        //----------------------------------------------------------------
+        // Both redirectErrorStream + redirectError
+        //----------------------------------------------------------------
+        {
+            pb.redirectErrorStream(true);
+            ProcessResults r = run(pb);
+            equal(r.exitValue(), 0);
+            equal(fileContents(ofile),
+                  "standard error" + "standard output");
+            equal(fileContents(efile), "");
+            equal(r.out(), "");
+            equal(r.err(), "");
+            ofile.delete();
+            efile.delete();
+        }
+
+        //----------------------------------------------------------------
+        // Appending to existing files
+        //----------------------------------------------------------------
+        {
+            setFileContents(ofile, "ofile-contents");
+            setFileContents(efile, "efile-contents");
+            pb.redirectOutput(Redirect.appendTo(ofile));
+            pb.redirectError(Redirect.appendTo(efile));
+            pb.redirectErrorStream(false);
+            ProcessResults r = run(pb);
+            equal(r.exitValue(), 0);
+            equal(fileContents(ofile),
+                  "ofile-contents" + "standard output");
+            equal(fileContents(efile),
+                  "efile-contents" + "standard error");
+            equal(r.out(), "");
+            equal(r.err(), "");
+            ofile.delete();
+            efile.delete();
+        }
+
+        //----------------------------------------------------------------
+        // Replacing existing files
+        //----------------------------------------------------------------
+        {
+            setFileContents(ofile, "ofile-contents");
+            setFileContents(efile, "efile-contents");
+            pb.redirectOutput(ofile);
+            pb.redirectError(Redirect.to(efile));
+            ProcessResults r = run(pb);
+            equal(r.exitValue(), 0);
+            equal(fileContents(ofile), "standard output");
+            equal(fileContents(efile), "standard error");
+            equal(r.out(), "");
+            equal(r.err(), "");
+            ofile.delete();
+            efile.delete();
+        }
+
+        //----------------------------------------------------------------
+        // Appending twice to the same file?
+        //----------------------------------------------------------------
+        {
+            setFileContents(ofile, "ofile-contents");
+            setFileContents(efile, "efile-contents");
+            Redirect appender = Redirect.appendTo(ofile);
+            pb.redirectOutput(appender);
+            pb.redirectError(appender);
+            ProcessResults r = run(pb);
+            equal(r.exitValue(), 0);
+            equal(fileContents(ofile),
+                  "ofile-contents" +
+                  "standard error" +
+                  "standard output");
+            equal(fileContents(efile), "efile-contents");
+            equal(r.out(), "");
+            equal(r.err(), "");
+            ifile.delete();
+            ofile.delete();
+            efile.delete();
+        }
+
+        //----------------------------------------------------------------
+        // Testing INHERIT is harder.
+        // Note that this requires __FOUR__ nested JVMs involved in one test,
+        // if you count the harness JVM.
+        //----------------------------------------------------------------
+        {
+            redirectIO(pb, PIPE, PIPE, PIPE);
+            List<String> command = pb.command();
+            command.set(command.size() - 1, "testInheritIO");
+            Process p = pb.start();
+            new PrintStream(p.getOutputStream()).print("standard input");
+            p.getOutputStream().close();
+            ProcessResults r = run(p);
+            equal(r.exitValue(), 0);
+            equal(r.out(), "standard output");
+            equal(r.err(), "standard error");
+        }
+
+        //----------------------------------------------------------------
+        // Test security implications of I/O redirection
+        //----------------------------------------------------------------
+
+        // Read access to current directory is always granted;
+        // So create a tmpfile for input instead.
+        final File tmpFile = File.createTempFile("Basic", "tmp");
+        setFileContents(tmpFile, "standard input");
+
+        final Policy policy = new Policy();
+        Policy.setPolicy(policy);
+        System.setSecurityManager(new SecurityManager());
+        try {
+            final Permission xPermission
+                = new FilePermission("<<ALL FILES>>", "execute");
+            final Permission rxPermission
+                = new FilePermission("<<ALL FILES>>", "read,execute");
+            final Permission wxPermission
+                = new FilePermission("<<ALL FILES>>", "write,execute");
+            final Permission rwxPermission
+                = new FilePermission("<<ALL FILES>>", "read,write,execute");
+
+            THROWS(SecurityException.class,
+               new Fun() { void f() throws IOException {
+                   policy.setPermissions(xPermission);
+                   redirectIO(pb, from(tmpFile), PIPE, PIPE);
+                   pb.start();}},
+               new Fun() { void f() throws IOException {
+                   policy.setPermissions(rxPermission);
+                   redirectIO(pb, PIPE, to(ofile), PIPE);
+                   pb.start();}},
+               new Fun() { void f() throws IOException {
+                   policy.setPermissions(rxPermission);
+                   redirectIO(pb, PIPE, PIPE, to(efile));
+                   pb.start();}});
+
+            {
+                policy.setPermissions(rxPermission);
+                redirectIO(pb, from(tmpFile), PIPE, PIPE);
+                ProcessResults r = run(pb);
+                equal(r.out(), "standard output");
+                equal(r.err(), "standard error");
+            }
+
+            {
+                policy.setPermissions(wxPermission);
+                redirectIO(pb, PIPE, to(ofile), to(efile));
+                Process p = pb.start();
+                new PrintStream(p.getOutputStream()).print("standard input");
+                p.getOutputStream().close();
+                ProcessResults r = run(p);
+                policy.setPermissions(rwxPermission);
+                equal(fileContents(ofile), "standard output");
+                equal(fileContents(efile), "standard error");
+            }
+
+            {
+                policy.setPermissions(rwxPermission);
+                redirectIO(pb, from(tmpFile), to(ofile), to(efile));
+                ProcessResults r = run(pb);
+                policy.setPermissions(rwxPermission);
+                equal(fileContents(ofile), "standard output");
+                equal(fileContents(efile), "standard error");
+            }
+
+        } finally {
+            policy.setPermissions(new RuntimePermission("setSecurityManager"));
+            System.setSecurityManager(null);
+            tmpFile.delete();
+            ifile.delete();
+            ofile.delete();
+            efile.delete();
+        }
+    }
+
     private static void realMain(String[] args) throws Throwable {
         if (Windows.is())
             System.out.println("This appears to be a Windows system.");
@@ -606,6 +958,9 @@ public class Basic {
             System.out.println("This appears to be a Unix system.");
         if (UnicodeOS.is())
             System.out.println("This appears to be a Unicode-based OS.");
+
+        try { testIORedirection(); }
+        catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------
         // Basic tests for setting, replacing and deleting envvars
@@ -1354,7 +1709,8 @@ public class Basic {
                                   execPermission);
             ProcessBuilder pb = new ProcessBuilder("env");
             pb.environment().put("foo","bar");
-            pb.start();
+            Process p = pb.start();
+            closeStreams(p);
         } catch (IOException e) { // OK
         } catch (Throwable t) { unexpected(t); }
 
@@ -1376,6 +1732,14 @@ public class Basic {
         policy.setPermissions(new RuntimePermission("setSecurityManager"));
         System.setSecurityManager(null);
 
+    }
+
+    static void closeStreams(Process p) {
+        try {
+            p.getOutputStream().close();
+            p.getInputStream().close();
+            p.getErrorStream().close();
+        } catch (Throwable t) { unexpected(t); }
     }
 
     //----------------------------------------------------------------
@@ -1432,8 +1796,17 @@ public class Basic {
                 }
             } catch (Throwable t) {
                 throwable = t;
+            } finally {
+                try { is.close(); }
+                catch (Throwable t) { throwable = t; }
             }
         }
+    }
+
+    static ProcessResults run(ProcessBuilder pb) {
+        try {
+            return run(pb.start());
+        } catch (Throwable t) { unexpected(t); return null; }
     }
 
     private static ProcessResults run(Process p) {

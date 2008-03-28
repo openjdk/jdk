@@ -83,7 +83,7 @@ public class GSSManagerImpl extends GSSManager {
     public Oid[] getNamesForMech(Oid mech)
         throws GSSException {
         MechanismFactory factory = list.getMechFactory(mech);
-        return (Oid[])factory.getNameTypes().clone();
+        return factory.getNameTypes().clone();
     }
 
     public Oid[] getMechsForName(Oid nameType){

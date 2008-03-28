@@ -172,7 +172,6 @@ const char* GetDotVersion();
 const char* GetFullVersion();
 jboolean IsJavaArgs();
 jboolean IsJavaw();
-void SetJavaw();
 jint GetErgoPolicy();
 
 jboolean ServerClassMachine();
@@ -180,5 +179,9 @@ jboolean ServerClassMachine();
 static int ContinueInNewThread(InvocationFunctions* ifn, int argc, char** argv,
                         char* jarfile, char* classname, int ret);
 
+/*
+ * Initialize platform specific settings
+ */
+void InitLauncher(jboolean javaw);
 
 #endif /* _JAVA_H_ */

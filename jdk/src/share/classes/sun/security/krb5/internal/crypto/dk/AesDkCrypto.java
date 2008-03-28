@@ -440,7 +440,9 @@ public class AesDkCrypto extends DkCrypto {
                 for (int i = 0; i < hashSize; i++) {
                     if (calculatedHmac[i] != ciphertext[hmacOffset+i]) {
                         cksumFailed = true;
-                        System.err.println("Checksum failed !");
+                        if (debug) {
+                            System.err.println("Checksum failed !");
+                        }
                         break;
                     }
                 }

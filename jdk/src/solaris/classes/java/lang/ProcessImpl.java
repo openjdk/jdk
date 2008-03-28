@@ -26,7 +26,10 @@
 package java.lang;
 
 import java.io.IOException;
-import java.lang.Process;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.lang.ProcessBuilder.Redirect;
+import java.lang.ProcessBuilder.Redirect;
 
 /**
  * This class is for the exclusive use of ProcessBuilder.start() to
@@ -36,6 +39,9 @@ import java.lang.Process;
  * @since   1.5
  */
 final class ProcessImpl {
+    private static final sun.misc.JavaIOFileDescriptorAccess fdAccess
+        = sun.misc.SharedSecrets.getJavaIOFileDescriptorAccess();
+
     private ProcessImpl() {}    // Not instantiable
 
     private static byte[] toCString(String s) {
@@ -54,6 +60,7 @@ final class ProcessImpl {
     static Process start(String[] cmdarray,
                          java.util.Map<String,String> environment,
                          String dir,
+                         ProcessBuilder.Redirect[] redirects,
                          boolean redirectErrorStream)
         throws IOException
     {
@@ -78,11 +85,61 @@ final class ProcessImpl {
         int[] envc = new int[1];
         byte[] envBlock = ProcessEnvironment.toEnvironmentBlock(environment, envc);
 
+        int[] std_fds;
+
+        FileInputStream  f0 = null;
+        FileOutputStream f1 = null;
+        FileOutputStream f2 = null;
+
+        try {
+            if (redirects == null) {
+                std_fds = new int[] { -1, -1, -1 };
+            } else {
+                std_fds = new int[3];
+
+                if (redirects[0] == Redirect.PIPE)
+                    std_fds[0] = -1;
+                else if (redirects[0] == Redirect.INHERIT)
+                    std_fds[0] = 0;
+                else {
+                    f0 = new FileInputStream(redirects[0].file());
+                    std_fds[0] = fdAccess.get(f0.getFD());
+                }
+
+                if (redirects[1] == Redirect.PIPE)
+                    std_fds[1] = -1;
+                else if (redirects[1] == Redirect.INHERIT)
+                    std_fds[1] = 1;
+                else {
+                    f1 = redirects[1].toFileOutputStream();
+                    std_fds[1] = fdAccess.get(f1.getFD());
+                }
+
+                if (redirects[2] == Redirect.PIPE)
+                    std_fds[2] = -1;
+                else if (redirects[2] == Redirect.INHERIT)
+                    std_fds[2] = 2;
+                else {
+                    f2 = redirects[2].toFileOutputStream();
+                    std_fds[2] = fdAccess.get(f2.getFD());
+                }
+            }
+
         return new UNIXProcess
             (toCString(cmdarray[0]),
              argBlock, args.length,
              envBlock, envc[0],
              toCString(dir),
+                 std_fds,
              redirectErrorStream);
+        } finally {
+            // In theory, close() can throw IOException
+            // (although it is rather unlikely to happen here)
+            try { if (f0 != null) f0.close(); }
+            finally {
+                try { if (f1 != null) f1.close(); }
+                finally { if (f2 != null) f2.close(); }
+            }
+        }
     }
 }

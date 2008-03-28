@@ -84,8 +84,8 @@ public class ReflectionFactory {
      * <code>AccessController.doPrivileged</code>.
      */
     public static final class GetReflectionFactoryAction
-        implements PrivilegedAction {
-        public Object run() {
+        implements PrivilegedAction<ReflectionFactory> {
+        public ReflectionFactory run() {
             return getReflectionFactory();
         }
     }
@@ -164,7 +164,7 @@ public class ReflectionFactory {
     public ConstructorAccessor newConstructorAccessor(Constructor c) {
         checkInitted();
 
-        Class declaringClass = c.getDeclaringClass();
+        Class<?> declaringClass = c.getDeclaringClass();
         if (Modifier.isAbstract(declaringClass.getModifiers())) {
             return new InstantiationExceptionConstructorAccessorImpl(null);
         }
@@ -204,9 +204,9 @@ public class ReflectionFactory {
 
     /** Creates a new java.lang.reflect.Field. Access checks as per
         java.lang.reflect.AccessibleObject are not overridden. */
-    public Field newField(Class declaringClass,
+    public Field newField(Class<?> declaringClass,
                           String name,
-                          Class type,
+                          Class<?> type,
                           int modifiers,
                           int slot,
                           String signature,
@@ -223,11 +223,11 @@ public class ReflectionFactory {
 
     /** Creates a new java.lang.reflect.Method. Access checks as per
         java.lang.reflect.AccessibleObject are not overridden. */
-    public Method newMethod(Class declaringClass,
+    public Method newMethod(Class<?> declaringClass,
                             String name,
-                            Class[] parameterTypes,
-                            Class returnType,
-                            Class[] checkedExceptions,
+                            Class<?>[] parameterTypes,
+                            Class<?> returnType,
+                            Class<?>[] checkedExceptions,
                             int modifiers,
                             int slot,
                             String signature,
@@ -250,9 +250,9 @@ public class ReflectionFactory {
 
     /** Creates a new java.lang.reflect.Constructor. Access checks as
         per java.lang.reflect.AccessibleObject are not overridden. */
-    public Constructor newConstructor(Class declaringClass,
-                                      Class[] parameterTypes,
-                                      Class[] checkedExceptions,
+    public Constructor newConstructor(Class<?> declaringClass,
+                                      Class<?>[] parameterTypes,
+                                      Class<?>[] checkedExceptions,
                                       int modifiers,
                                       int slot,
                                       String signature,
@@ -310,7 +310,7 @@ public class ReflectionFactory {
     /** Makes a copy of the passed constructor. The returned
         constructor is a "child" of the passed one; see the comments
         in Constructor.java for details. */
-    public Constructor copyConstructor(Constructor arg) {
+    public <T> Constructor<T> copyConstructor(Constructor<T> arg) {
         return langReflectAccess().copyConstructor(arg);
     }
 
@@ -321,7 +321,7 @@ public class ReflectionFactory {
     //
 
     public Constructor newConstructorForSerialization
-        (Class classToInstantiate, Constructor constructorToCall)
+        (Class<?> classToInstantiate, Constructor constructorToCall)
     {
         // Fast path
         if (constructorToCall.getDeclaringClass() == classToInstantiate) {
@@ -366,8 +366,9 @@ public class ReflectionFactory {
         run, before the system properties are set up. */
     private static void checkInitted() {
         if (initted) return;
-        AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+        AccessController.doPrivileged(
+            new PrivilegedAction<Void>() {
+                public Void run() {
                     // Tests to ensure the system properties table is fully
                     // initialized. This is needed because reflection code is
                     // called very early in the initialization process (before

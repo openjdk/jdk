@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
 
 package sun.management;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Iterator;
-import java.util.Set;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import sun.misc.Perf;
 import sun.management.counter.Units;
@@ -46,36 +47,67 @@ import sun.management.counter.perf.PerfInstrumentation;
 public class ConnectorAddressLink {
 
     private static final String CONNECTOR_ADDRESS_COUNTER =
-        "sun.management.JMXConnectorServer.address";
+            "sun.management.JMXConnectorServer.address";
+
+    /*
+     * The format of the jvmstat counters representing the properties of
+     * a given out-of-the-box JMX remote connector will be as follows:
+     *
+     * sun.management.JMXConnectorServer.<counter>.<key>=<value>
+     *
+     * where:
+     *
+     *     counter = index computed by this class which uniquely identifies
+     *               an out-of-the-box JMX remote connector running in this
+     *               Java virtual machine.
+     *     key/value = a given key/value pair in the map supplied to the
+     *                 exportRemote() method.
+     *
+     * For example,
+     *
+     * sun.management.JMXConnectorServer.0.remoteAddress=service:jmx:rmi:///jndi/rmi://myhost:5000/jmxrmi
+     * sun.management.JMXConnectorServer.0.authenticate=false
+     * sun.management.JMXConnectorServer.0.ssl=false
+     * sun.management.JMXConnectorServer.0.sslRegistry=false
+     * sun.management.JMXConnectorServer.0.sslNeedClientAuth=false
+     */
+    private static final String REMOTE_CONNECTOR_COUNTER_PREFIX =
+            "sun.management.JMXConnectorServer.";
+
+    /*
+     * JMX remote connector counter (it will be incremented every
+     * time a new out-of-the-box JMX remote connector is created).
+     */
+    private static AtomicInteger counter = new AtomicInteger();
 
     /**
      * Exports the specified connector address to the instrumentation buffer
      * so that it can be read by this or other Java virtual machines running
      * on the same system.
      *
-     * @param   address         The connector address.
+     * @param address The connector address.
      */
     public static void export(String address) {
         if (address == null || address.length() == 0) {
             throw new IllegalArgumentException("address not specified");
         }
         Perf perf = Perf.getPerf();
-        perf.createString(CONNECTOR_ADDRESS_COUNTER, 1, Units.STRING.intValue(), address);
+        perf.createString(
+                CONNECTOR_ADDRESS_COUNTER, 1, Units.STRING.intValue(), address);
     }
 
     /**
      * Imports the connector address from the instrument buffer
      * of the specified Java virtual machine.
      *
-     * @param   vmid    an identifier that uniquely identifies a local
-     *                  Java virtual machine, or <code>0</code> to indicate
-     *                  the current Java virtual machine.
+     * @param vmid an identifier that uniquely identifies a local Java virtual
+     * machine, or <code>0</code> to indicate the current Java virtual machine.
      *
-     * @return  the value of the connector address, or <code>null</code>
-     *          if the target VM has not exported a connector address.
+     * @return the value of the connector address, or <code>null</code> if the
+     * target VM has not exported a connector address.
      *
-     * @throws  IOException     An I/O error occurred while trying to acquire
-     *                          the instrumentation buffer.
+     * @throws IOException An I/O error occurred while trying to acquire the
+     * instrumentation buffer.
      */
     public static String importFrom(int vmid) throws IOException {
         Perf perf = Perf.getPerf();
@@ -85,14 +117,65 @@ public class ConnectorAddressLink {
         } catch (IllegalArgumentException iae) {
             throw new IOException(iae.getMessage());
         }
-        List counters = (new PerfInstrumentation(bb)).findByPattern(CONNECTOR_ADDRESS_COUNTER);
+        List counters =
+                new PerfInstrumentation(bb).findByPattern(CONNECTOR_ADDRESS_COUNTER);
         Iterator i = counters.iterator();
         if (i.hasNext()) {
-            Counter c = (Counter)i.next();
-            return (String)c.getValue();
+            Counter c = (Counter) i.next();
+            return (String) c.getValue();
         } else {
             return null;
         }
     }
 
+    /**
+     * Exports the specified remote connector address and associated
+     * configuration properties to the instrumentation buffer so that
+     * it can be read by this or other Java virtual machines running
+     * on the same system.
+     *
+     * @param properties The remote connector address properties.
+     */
+    public static void exportRemote(Map<String, String> properties) {
+        final int index = counter.getAndIncrement();
+        Perf perf = Perf.getPerf();
+        for (Map.Entry<String, String> entry : properties.entrySet()) {
+            perf.createString(REMOTE_CONNECTOR_COUNTER_PREFIX + index + "." +
+                    entry.getKey(), 1, Units.STRING.intValue(), entry.getValue());
+        }
+    }
+
+    /**
+     * Imports the remote connector address and associated
+     * configuration properties from the instrument buffer
+     * of the specified Java virtual machine.
+     *
+     * @param vmid an identifier that uniquely identifies a local Java virtual
+     * machine, or <code>0</code> to indicate the current Java virtual machine.
+     *
+     * @return a map containing the remote connector's properties, or an empty
+     * map if the target VM has not exported the remote connector's properties.
+     *
+     * @throws IOException An I/O error occurred while trying to acquire the
+     * instrumentation buffer.
+     */
+    public static Map<String, String> importRemoteFrom(int vmid) throws IOException {
+        Perf perf = Perf.getPerf();
+        ByteBuffer bb;
+        try {
+            bb = perf.attach(vmid, "r");
+        } catch (IllegalArgumentException iae) {
+            throw new IOException(iae.getMessage());
+        }
+        List counters = new PerfInstrumentation(bb).getAllCounters();
+        Map<String, String> properties = new HashMap<String, String>();
+        for (Object c : counters) {
+            String name = ((Counter) c).getName();
+            if (name.startsWith(REMOTE_CONNECTOR_COUNTER_PREFIX) &&
+                    !name.equals(CONNECTOR_ADDRESS_COUNTER)) {
+                properties.put(name, ((Counter) c).getValue().toString());
+            }
+        }
+        return properties;
+    }
 }

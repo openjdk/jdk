@@ -160,9 +160,7 @@ public class TTY implements EventNotifier {
                 // here the next time.
                 Env.setAtExitMethod(null);
                 EventRequestManager erm = Env.vm().eventRequestManager();
-                Iterator it = erm.methodExitRequests().iterator();
-                while (it.hasNext()) {
-                    EventRequest eReq = (EventRequest)it.next();
+                for (EventRequest eReq : erm.methodExitRequests()) {
                     if (eReq.equals(me.request())) {
                         eReq.disable();
                     }
@@ -178,9 +176,8 @@ public class TTY implements EventNotifier {
     public void vmInterrupted() {
         Thread.yield();  // fetch output
         printCurrentLocation();
-        Iterator it = monitorCommands.iterator();
-        while (it.hasNext()) {
-            StringTokenizer t = new StringTokenizer((String)it.next());
+        for (String cmd : monitorCommands) {
+            StringTokenizer t = new StringTokenizer(cmd);
             t.nextToken();  // get rid of monitor number
             executeCommand(t);
         }
@@ -563,9 +560,8 @@ public class TTY implements EventNotifier {
             ++monitorCount;
             monitorCommands.add(monitorCount + ": " + t.nextToken(""));
         } else {
-            Iterator it = monitorCommands.iterator();
-            while (it.hasNext()) {
-                MessageOutput.printDirectln((String)it.next());// Special case: use printDirectln()
+            for (String cmd : monitorCommands) {
+                MessageOutput.printDirectln(cmd);// Special case: use printDirectln()
             }
         }
     }
@@ -581,9 +577,7 @@ public class TTY implements EventNotifier {
                 return;
             }
             String monStr = monTok + ":";
-            Iterator it = monitorCommands.iterator();
-            while (it.hasNext()) {
-                String cmd = (String)it.next();
+            for (String cmd : monitorCommands) {
                 StringTokenizer ct = new StringTokenizer(cmd);
                 if (ct.nextToken().equals(monStr)) {
                     monitorCommands.remove(cmd);
@@ -768,10 +762,8 @@ public class TTY implements EventNotifier {
     }
 
     private static boolean supportsSharedMemory() {
-        List connectors = Bootstrap.virtualMachineManager().allConnectors();
-        Iterator iter = connectors.iterator();
-        while (iter.hasNext()) {
-            Connector connector = (Connector)iter.next();
+        for (Connector connector :
+                 Bootstrap.virtualMachineManager().allConnectors()) {
             if (connector.transport() == null) {
                 continue;
             }

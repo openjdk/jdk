@@ -93,20 +93,18 @@ SYSTEM_UNAME := $(shell uname)
 # Normal boot jdk is previous release, but a hard requirement is a 1.5 boot
 REQUIRED_BOOT_VER = 1.5
 
-#This is specific to OpenJDK build
-ifdef OPENJDK
-  REQUIRED_FREETYPE_VERSION=2.3.0
-endif
+# If we are using freetype, this is the required version
+REQUIRED_FREETYPE_VERSION=2.3.0
 
 #
 # Prune out all known SCM (Source Code Management) directories
 # so they will not be included when copying directory trees
 # or packaging up .jar files, etc.  This applies to all workspaces.
 #
-SCM_DIRs = .hg .svn CVS RCS SCCS Codemgr_wsdata deleted_files
+SCM_DIRs = .hg .svn CVS RCS SCCS Codemgr_wsdata deleted_files .hgignore .hgtags
 # When changing SCM_DIRs also change SCM_DIRS_rexp and SCM_DIRS_prune:
-SCM_DIRS_rexp = ".hg|.svn|CVS|RCS|SCCS|Codemgr_wsdata|deleted_files"
-SCM_DIRS_prune = \( -name .hg -o -name .svn -o -name CVS -o -name RCS -o -name SCCS -o -name Codemgr_wsdata -o -name deleted_files \) -prune
+SCM_DIRS_rexp = ".hg|.svn|CVS|RCS|SCCS|Codemgr_wsdata|deleted_files|.hgignore|.hgtags"
+SCM_DIRS_prune = \( -name .hg -o -name .svn -o -name CVS -o -name RCS -o -name SCCS -o -name Codemgr_wsdata -o -name deleted_files -o -name .hgignore -o -name .hgtags \) -prune
 
 # Don't define this unless it's not defined
 ifndef VARIANT

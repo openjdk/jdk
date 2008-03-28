@@ -51,13 +51,13 @@ ifndef LIB_LOCATION
 endif # LIB_LOCATION
 
 ifndef PLATFORM_SRC
-  PLATFORM_SRC  = $(JDK_TOPDIR)/src/windows
+  PLATFORM_SRC  = $(BUILDDIR)/../src/windows
 endif # PLATFORM_SRC
 
 # Platform specific closed sources
 ifndef OPENJDK
   ifndef CLOSED_PLATFORM_SRC
-    CLOSED_PLATFORM_SRC  = $(JDK_TOPDIR)/src/closed/windows
+    CLOSED_PLATFORM_SRC  = $(BUILDDIR)/../src/closed/windows
   endif
 endif
 
@@ -367,7 +367,7 @@ else
 endif
 
 # Settings for the VERSIONINFO tap on windows. 
-VERSIONINFO_RESOURCE = $(JDK_TOPDIR)/src/windows/resource/version.rc
+VERSIONINFO_RESOURCE = $(BUILDDIR)/../src/windows/resource/version.rc
 
 ifneq ($(JDK_BUILD_NUMBER),)
  COOKED_BUILD_NUMBER = $(shell $(ECHO) $(JDK_BUILD_NUMBER) | $(SED) -e 's/^b//' -e 's/^0//')

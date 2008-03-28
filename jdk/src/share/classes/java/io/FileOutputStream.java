@@ -52,20 +52,16 @@ public
 class FileOutputStream extends OutputStream
 {
     /**
-     * The system dependent file descriptor. The value is
-     * 1 more than actual file descriptor. This means that
-     * the default value 0 indicates that the file is not open.
+     * The system dependent file descriptor.
      */
-    private FileDescriptor fd;
+    private final FileDescriptor fd;
 
     private FileChannel channel= null;
 
-    private boolean append = false;
-
-    private Object closeLock = new Object();
+    private final Object closeLock = new Object();
     private volatile boolean closed = false;
-    private static ThreadLocal<Boolean> runningFinalize =
-                                        new ThreadLocal<Boolean>();
+    private static final ThreadLocal<Boolean> runningFinalize =
+        new ThreadLocal<Boolean>();
 
     private static boolean isRunningFinalize() {
         Boolean val;
@@ -75,7 +71,7 @@ class FileOutputStream extends OutputStream
     }
 
     /**
-     * Creates an output file stream to write to the file with the
+     * Creates a file output stream to write to the file with the
      * specified name. A new <code>FileDescriptor</code> object is
      * created to represent this file connection.
      * <p>
@@ -100,8 +96,8 @@ class FileOutputStream extends OutputStream
     }
 
     /**
-     * Creates an output file stream to write to the file with the specified
-     * <code>name</code>.  If the second argument is <code>true</code>, then
+     * Creates a file output stream to write to the file with the specified
+     * name.  If the second argument is <code>true</code>, then
      * bytes will be written to the end of the file rather than the beginning.
      * A new <code>FileDescriptor</code> object is created to represent this
      * file connection.
@@ -202,16 +198,11 @@ class FileOutputStream extends OutputStream
         }
         fd = new FileDescriptor();
         fd.incrementAndGetUseCount();
-        this.append = append;
-        if (append) {
-            openAppend(name);
-        } else {
-            open(name);
-        }
+        open(name, append);
     }
 
     /**
-     * Creates an output file stream to write to the specified file
+     * Creates a file output stream to write to the specified file
      * descriptor, which represents an existing connection to an actual
      * file in the file system.
      * <p>
@@ -223,7 +214,7 @@ class FileOutputStream extends OutputStream
      * is thrown.
      * <p>
      * This constructor does not throw an exception if <code>fdObj</code>
-     * is {link java.io.FileDescriptor#valid() invalid}.
+     * is {@link java.io.FileDescriptor#valid() invalid}.
      * However, if the methods are invoked on the resulting stream to attempt
      * I/O on the stream, an <code>IOException</code> is thrown.
      *
@@ -252,16 +243,12 @@ class FileOutputStream extends OutputStream
     }
 
     /**
-     * Opens a file, with the specified name, for writing.
+     * Opens a file, with the specified name, for overwriting or appending.
      * @param name name of file to be opened
+     * @param append whether the file is to be opened in append mode
      */
-    private native void open(String name) throws FileNotFoundException;
-
-    /**
-     * Opens a file, with the specified name, for appending.
-     * @param name name of file to be opened
-     */
-    private native void openAppend(String name) throws FileNotFoundException;
+    private native void open(String name, boolean append)
+        throws FileNotFoundException;
 
     /**
      * Writes the specified byte to this file output stream. Implements
@@ -385,7 +372,7 @@ class FileOutputStream extends OutputStream
     public FileChannel getChannel() {
         synchronized (this) {
             if (channel == null) {
-                channel = FileChannelImpl.open(fd, false, true, this, append);
+                channel = FileChannelImpl.open(fd, false, true, this);
 
                 /*
                  * Increment fd's use count. Invoking the channel's close()
@@ -408,7 +395,7 @@ class FileOutputStream extends OutputStream
      */
     protected void finalize() throws IOException {
         if (fd != null) {
-            if (fd == fd.out || fd == fd.err) {
+            if (fd == FileDescriptor.out || fd == FileDescriptor.err) {
                 flush();
             } else {
 

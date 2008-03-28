@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package sun.tools.jconsole.inspector;
 
 import javax.swing.JTable;
@@ -108,6 +109,7 @@ public class XDataViewer {
     public Component createOperationViewer(Object value,
                                            XMBean mbean) {
         if(value instanceof Number) return null;
+        if(value instanceof Component) return (Component) value;
         return createAttributeViewer(value, mbean, null, null);
     }
 
