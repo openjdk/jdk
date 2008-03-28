@@ -1247,8 +1247,14 @@ void BCEscapeAnalyzer::compute_escape_info() {
 
   initialize();
 
-  // do not scan method if it has no object parameters
-  if (_arg_local.is_empty()) {
+  // Do not scan method if it has no object parameters and
+  // does not returns an object (_return_allocated is set in initialize()).
+  if (_arg_local.is_empty() && !_return_allocated) {
+    // Clear all info since method's bytecode was not analysed and
+    // set pessimistic escape information.
+    clear_escape_info();
+    methodData()->set_eflag(methodDataOopDesc::allocated_escapes);
+    methodData()->set_eflag(methodDataOopDesc::unknown_modified);
     methodData()->set_eflag(methodDataOopDesc::estimated);
     return;
   }
@@ -1259,45 +1265,8 @@ void BCEscapeAnalyzer::compute_escape_info() {
     success = do_analysis();
   }
 
-  // dump result of bytecode analysis
-#ifndef PRODUCT
-  if (BCEATraceLevel >= 3) {
-    tty->print("[EA] estimated escape information for");
-    if (iid != vmIntrinsics::_none)
-      tty->print(" intrinsic");
-    method()->print_short_name();
-    tty->print_cr(has_dependencies() ? " (not stored)" : "");
-    tty->print("     non-escaping args:      ");
-    _arg_local.print_on(tty);
-    tty->print("     stack-allocatable args: ");
-    _arg_stack.print_on(tty);
-    if (_return_local) {
-      tty->print("     returned args:          ");
-      _arg_returned.print_on(tty);
-    } else if (is_return_allocated()) {
-      tty->print_cr("     allocated return values");
-    } else {
-      tty->print_cr("     non-local return values");
-    }
-    tty->print("     modified args: ");
-    for (int i = 0; i < _arg_size; i++) {
-      if (_arg_modified[i] == 0)
-        tty->print("    0");
-      else
-        tty->print("    0x%x", _arg_modified[i]);
-    }
-    tty->cr();
-    tty->print("     flags: ");
-    if (_unknown_modified)
-      tty->print(" unknown_modified");
-    if (_return_allocated)
-      tty->print(" return_allocated");
-    tty->cr();
-  }
-
-#endif
-  // don't store interprocedural escape information if it introduces dependencies
-  // or if method data is empty
+  // don't store interprocedural escape information if it introduces
+  // dependencies or if method data is empty
   //
   if (!has_dependencies() && !methodData()->is_empty()) {
     for (i = 0; i < _arg_size; i++) {
@@ -1316,6 +1285,15 @@ void BCEscapeAnalyzer::compute_escape_info() {
     if (_return_local) {
       methodData()->set_eflag(methodDataOopDesc::return_local);
     }
+    if (_return_allocated) {
+      methodData()->set_eflag(methodDataOopDesc::return_allocated);
+    }
+    if (_allocated_escapes) {
+      methodData()->set_eflag(methodDataOopDesc::allocated_escapes);
+    }
+    if (_unknown_modified) {
+      methodData()->set_eflag(methodDataOopDesc::unknown_modified);
+    }
     methodData()->set_eflag(methodDataOopDesc::estimated);
   }
 }
@@ -1331,33 +1309,47 @@ void BCEscapeAnalyzer::read_escape_info() {
     _arg_modified[i] = methodData()->arg_modified(i);
   }
   _return_local = methodData()->eflag_set(methodDataOopDesc::return_local);
-
-  // dump result of loaded escape information
-#ifndef PRODUCT
-  if (BCEATraceLevel >= 4) {
-    tty->print("     non-escaping args:      ");
-    _arg_local.print_on(tty);
-    tty->print("     stack-allocatable args: ");
-    _arg_stack.print_on(tty);
-    if (_return_local) {
-      tty->print("     returned args:          ");
-      _arg_returned.print_on(tty);
-    } else {
-      tty->print_cr("     non-local return values");
-    }
-    tty->print("     modified args: ");
-    for (int i = 0; i < _arg_size; i++) {
-      if (_arg_modified[i] == 0)
-        tty->print("    0");
-      else
-        tty->print("    0x%x", _arg_modified[i]);
-    }
-    tty->cr();
-  }
-#endif
+  _return_allocated = methodData()->eflag_set(methodDataOopDesc::return_allocated);
+  _allocated_escapes = methodData()->eflag_set(methodDataOopDesc::allocated_escapes);
+  _unknown_modified = methodData()->eflag_set(methodDataOopDesc::unknown_modified);
 
 }
 
+#ifndef PRODUCT
+void BCEscapeAnalyzer::dump() {
+  tty->print("[EA] estimated escape information for");
+  method()->print_short_name();
+  tty->print_cr(has_dependencies() ? " (not stored)" : "");
+  tty->print("     non-escaping args:      ");
+  _arg_local.print_on(tty);
+  tty->print("     stack-allocatable args: ");
+  _arg_stack.print_on(tty);
+  if (_return_local) {
+    tty->print("     returned args:          ");
+    _arg_returned.print_on(tty);
+  } else if (is_return_allocated()) {
+    tty->print_cr("     return allocated value");
+  } else {
+    tty->print_cr("     return non-local value");
+  }
+  tty->print("     modified args: ");
+  for (int i = 0; i < _arg_size; i++) {
+    if (_arg_modified[i] == 0)
+      tty->print("    0");
+    else
+      tty->print("    0x%x", _arg_modified[i]);
+  }
+  tty->cr();
+  tty->print("     flags: ");
+  if (_return_allocated)
+    tty->print(" return_allocated");
+  if (_allocated_escapes)
+    tty->print(" allocated_escapes");
+  if (_unknown_modified)
+    tty->print(" unknown_modified");
+  tty->cr();
+}
+#endif
 
 BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
     : _conservative(method == NULL || !EstimateArgEscape)
@@ -1401,6 +1393,12 @@ BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
       compute_escape_info();
       methodData()->update_escape_info();
     }
+#ifndef PRODUCT
+    if (BCEATraceLevel >= 3) {
+      // dump escape information
+      dump();
+    }
+#endif
   }
 }
 
