@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,8 +221,7 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
 
                 // Update target's dimensions to reflect this embedded window.
                 ::GetClientRect(frame->m_hwnd, &rect);
-                ::MapWindowPoints(frame->m_hwnd, hwndParent, (LPPOINT)&rect,
-                                  2);
+                ::MapWindowPoints(frame->m_hwnd, hwndParent, (LPPOINT)&rect, 2);
 
                 env->SetIntField(target, AwtComponent::xID, rect.left);
                 env->SetIntField(target, AwtComponent::yID, rect.top);
@@ -231,6 +230,7 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
                 env->SetIntField(target, AwtComponent::heightID,
                                  rect.bottom-rect.top);
                 frame->InitPeerGraphicsConfig(env, self);
+                AwtToolkit::GetInstance().RegisterEmbedderProcessId(hwndParent);
             } else {
                 jint state = env->GetIntField(target, AwtFrame::stateID);
                 DWORD exStyle;
@@ -408,8 +408,9 @@ MsgRouting AwtFrame::WmShowWindow(BOOL show, UINT status)
      * message. This breaks Java focus. To workaround the problem we
      * set the toplevel being shown foreground programmatically.
      * The fix is localized to non-foreground process case only.
+     * (See also: 6599270)
      */
-    if (show == TRUE && status == 0) {
+    if (!IsEmbeddedFrame() && show == TRUE && status == 0) {
         HWND fgHWnd = ::GetForegroundWindow();
         if (fgHWnd != NULL) {
             DWORD fgProcessID;
@@ -495,7 +496,7 @@ MsgRouting AwtFrame::WmMouseMove(UINT flags, int x, int y) {
 
             ::SetWindowPos(GetHWnd(), NULL, r.left, r.top,
                            r.right-r.left, r.bottom-r.top,
-                           SWP_NOACTIVATE | SWP_NOSENDCHANGING | SWP_NOZORDER |
+                           SWP_NOACTIVATE | SWP_NOZORDER |
                            SWP_NOCOPYBITS | SWP_DEFERERASE);
         }
         return mrConsume;

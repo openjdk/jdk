@@ -154,7 +154,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     private boolean doRestoreFocus(Component toFocus, Component vetoedComponent,
                                    boolean clearOnFailure)
     {
-        if (toFocus.isShowing() && toFocus.isFocusable() &&
+        if (toFocus != vetoedComponent && toFocus.isShowing() && toFocus.isFocusable() &&
             toFocus.requestFocus(false, CausedFocusEvent.Cause.ROLLBACK)) {
             return true;
         } else {

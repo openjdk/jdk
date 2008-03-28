@@ -55,7 +55,10 @@ include $(JDK_MAKE_SHARED_DIR)/Defs-utils.gmk
 
 # Simple pwd path
 define PwdPath
-$(shell cd $1 2> $(DEV_NULL) && pwd)
+$(shell $(CD) $1 2> $(DEV_NULL) && $(PWD))
+endef
+define AbsPwdPathCheck
+$(shell $(CD) .. 2> $(DEV_NULL) && $(CD) $1 2> $(DEV_NULL) && $(PWD))
 endef
 
 # Checks an ALT value for spaces (should be one word), 
@@ -422,23 +425,54 @@ CACERTS_FILE:=$(call AltCheckSpaces,CACERTS_FILE)
 CACERTS_FILE:=$(call AltCheckValue,CACERTS_FILE)
 
 # OUTPUTDIR: Location of all output for the build
-_BACKUP_OUTPUTDIR = $(TEMP_DISK)/$(USER)/jdk-outputdir
 ifdef ALT_OUTPUTDIR
-  _POSSIBLE_OUTPUTDIR =$(subst \,/,$(ALT_OUTPUTDIR))
+  OUTPUTDIR:=$(subst \,/,$(ALT_OUTPUTDIR))
+  # Assumes this is absolute (checks later)
+  ABS_OUTPUTDIR:=$(OUTPUTDIR)
 else
   ifndef _OUTPUTDIR
-    _OUTPUTDIR = $(_BACKUP_OUTPUTDIR)
+    # Default:  Get "build" parent directory, which should always exist
+    ifndef BUILD_PARENT_DIRECTORY
+      BUILD_PARENT_DIRECTORY=$(BUILDDIR)/..
+    endif
+    ABS_BUILD_PARENT_DIRECTORY:=$(call FullPath,$(BUILD_PARENT_DIRECTORY))
+    ifdef OPENJDK
+      _OUTPUTDIRNAME=$(PLATFORM)-$(ARCH)$(OPENJDK_SUFFIX)
+    else
+      _OUTPUTDIRNAME=$(PLATFORM)-$(ARCH)
+    endif
+    _OUTPUTDIR=$(BUILD_PARENT_DIRECTORY)/build/$(_OUTPUTDIRNAME)
+    ABS_OUTPUTDIR:=$(ABS_BUILD_PARENT_DIRECTORY)/build/$(_OUTPUTDIRNAME)
   endif
-  _POSSIBLE_OUTPUTDIR =$(_OUTPUTDIR)
+  OUTPUTDIR:=$(_OUTPUTDIR)
 endif
-_create_outputdir1:=$(shell mkdir -p $(_POSSIBLE_OUTPUTDIR) > $(DEV_NULL) 2>&1)
-OUTPUTDIR:=$(call WriteDirExists,$(_POSSIBLE_OUTPUTDIR),$(_BACKUP_OUTPUTDIR))
-_create_outputdir2:=$(shell mkdir -p $(OUTPUTDIR) > $(DEV_NULL) 2>&1)
-ifeq "$(OUTPUTDIR)" "$(_BACKUP_OUTPUTDIR)"
-  _outputdir_warning:=$(warning "WARNING: OUTPUTDIR '$(_POSSIBLE_OUTPUTDIR)' not writable, will use '$(_BACKUP_OUTPUTDIR)'")
-endif
+# Check for spaces and null value
 OUTPUTDIR:=$(call AltCheckSpaces,OUTPUTDIR)
 OUTPUTDIR:=$(call AltCheckValue,OUTPUTDIR)
+# Create the output directory and make sure it exists and is writable
+_create_outputdir:=$(shell $(MKDIR) -p "$(OUTPUTDIR)" > $(DEV_NULL) 2>&1)
+ifeq ($(call WriteDirExists,$(OUTPUTDIR),/dev/null),/dev/null)
+  _outputdir_error:=$(error "ERROR: OUTPUTDIR '$(OUTPUTDIR)' not created or not writable")
+endif
+# Define absolute path if needed and check for spaces and null value
+ifndef ABS_OUTPUTDIR
+  ABS_OUTPUTDIR:=$(call FullPath,$(OUTPUTDIR))
+endif
+ABS_OUTPUTDIR:=$(call AltCheckSpaces,ABS_OUTPUTDIR)
+ABS_OUTPUTDIR:=$(call AltCheckValue,ABS_OUTPUTDIR)
+# Make doubly sure this is a full path
+ifeq ($(call AbsPwdPathCheck,$(ABS_OUTPUTDIR)), )
+  ifdef ALT_OUTPUTDIR
+    _outputdir_error:=$(error "ERROR: Trouble with the absolute path for OUTPUTDIR '$(OUTPUTDIR)', was ALT_OUTPUTDIR '$(ALT_OUTPUTDIR)' an absolute path?")
+  else
+    _outputdir_error:=$(error "ERROR: Trouble with the absolute path for OUTPUTDIR '$(OUTPUTDIR)'")
+  endif
+endif
+_dir1:=$(call FullPath,$(ABS_OUTPUTDIR))
+_dir2:=$(call FullPath,$(OUTPUTDIR))
+ifneq ($(_dir1),$(_dir2))
+  _outputdir_error:=$(error "ERROR: ABS_OUTPUTDIR '$(ABS_OUTPUTDIR)' is not the same directory as OUTPUTDIR '$(OUTPUTDIR)', '$(_dir1)'!='$(_dir2)'")
+endif
 
 # Bin directory
 #   NOTE: ISA_DIR is usually empty, on Solaris it might be /sparcv9 or /amd64
@@ -474,9 +508,6 @@ ifdef ALT_COPYRIGHT_YEAR
 else
   COPYRIGHT_YEAR = $(shell $(DATE) '+%Y')
 endif
-
-# Absolute path to output directory
-ABS_OUTPUTDIR:=$(call FullPath,$(OUTPUTDIR))
 
 # Get shared compiler settings
 include $(JDK_MAKE_SHARED_DIR)/Compiler.gmk

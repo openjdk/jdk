@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,7 @@ class XDnDConstants {
     static final XAtom XA_XdndStatus     = XAtom.get("XdndStatus");
     static final XAtom XA_XdndFinished   = XAtom.get("XdndFinished");
 
-    static final XSelection XDnDSelection =
-        new XSelection(XA_XdndSelection, null);
+    static final XSelection XDnDSelection = new XSelection(XA_XdndSelection);
 
     public static final int XDND_MIN_PROTOCOL_VERSION = 3;
     public static final int XDND_PROTOCOL_VERSION     = 5;
