@@ -64,11 +64,18 @@ class WFramePeer extends WWindowPeer implements FramePeer {
         }
     }
 
+    @Override
+    boolean isTargetUndecorated() {
+        return ((Frame)target).isUndecorated();
+    }
+
     public void reshape(int x, int y, int width, int height) {
+        Rectangle newBounds = constrainBounds(x, y, width, height);
+
         if (((Frame)target).isUndecorated()) {
-            super.reshape(x,y,width,height);
+            super.reshape(newBounds.x, newBounds.y, newBounds.width, newBounds.height);
         } else {
-            reshapeFrame(x,y,width,height);
+            reshapeFrame(newBounds.x, newBounds.y, newBounds.width, newBounds.height);
         }
     }
 

@@ -74,7 +74,6 @@ public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher
                 XToolkit.awtUnlock();
             }
         }
-        notifyReady();
     }
 
     void handleClientMessage(XEvent xev) {
@@ -84,7 +83,6 @@ public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher
             if (xembedLog.isLoggable(Level.FINE)) xembedLog.fine("Embedded message: " + msgidToString((int)msg.get_data(1)));
             switch ((int)msg.get_data(1)) {
               case XEMBED_EMBEDDED_NOTIFY: // Notification about embedding protocol start
-                  // NOTE: May be called two times because we send _SUN_XEMBED_START
                   active = true;
                   server = getEmbedder(embedded, msg);
                   // Check if window is reparented. If not - it was created with
@@ -222,14 +220,5 @@ public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher
 
     long getX11Mods(AWTKeyStroke stroke) {
         return XWindow.getXModifiers(stroke);
-    }
-
-    void notifyReady() {
-        long wnd = server;
-        if (wnd == 0) {
-            // Server is still 0, get the parent
-            wnd = embedded.getParentWindowHandle();
-        }
-        sendMessage(wnd, _SUN_XEMBED_START);
     }
 }
