@@ -50,9 +50,9 @@ class BCEscapeAnalyzer : public ResourceObj {
   uint              *_arg_modified;
 
   bool              _return_local;
+  bool              _return_allocated;
   bool              _allocated_escapes;
   bool              _unknown_modified;
-  bool              _return_allocated;
 
   ciObjectList     _dependencies;
 
@@ -153,4 +153,9 @@ class BCEscapeAnalyzer : public ResourceObj {
 
   // Copy dependencies from this analysis into "deps"
   void copy_dependencies(Dependencies *deps);
+
+#ifndef PRODUCT
+  // dump escape information
+  void dump();
+#endif
 };
