@@ -32,9 +32,8 @@ import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.util.Iterator;
-import sun.misc.Service;
-import sun.misc.ServiceConfigurationError;
-
+import java.util.ServiceLoader;
+import java.util.ServiceConfigurationError;
 
 // These imports needed only as a workaround for a JavaDoc bug
 import java.lang.RuntimePermission;
@@ -274,12 +273,14 @@ public abstract class Preferences {
 
     private static PreferencesFactory factory1() {
         // 2. Try service provider interface
-        Iterator i = Service.providers(PreferencesFactory.class,
-                                       ClassLoader.getSystemClassLoader());
+        Iterator<PreferencesFactory> itr = ServiceLoader
+            .load(PreferencesFactory.class, ClassLoader.getSystemClassLoader())
+            .iterator();
+
         // choose first provider instance
-        while (i.hasNext()) {
+        while (itr.hasNext()) {
             try {
-                return (PreferencesFactory) i.next();
+                return itr.next();
             } catch (ServiceConfigurationError sce) {
                 if (sce.getCause() instanceof SecurityException) {
                     // Ignore the security exception, try the next provider

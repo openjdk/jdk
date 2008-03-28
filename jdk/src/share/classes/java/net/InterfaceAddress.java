@@ -103,11 +103,9 @@ public class InterfaceAddress {
             return false;
         }
         InterfaceAddress cmp = (InterfaceAddress) obj;
-        if ((address != null & cmp.address == null) ||
-            (!address.equals(cmp.address)))
+        if ( !(address == null ? cmp.address == null : address.equals(cmp.address)) )
             return false;
-        if ((broadcast != null & cmp.broadcast == null) ||
-            (!broadcast.equals(cmp.broadcast)))
+        if ( !(broadcast  == null ? cmp.broadcast == null : broadcast.equals(cmp.broadcast)) )
             return false;
         if (maskLength != cmp.maskLength)
             return false;

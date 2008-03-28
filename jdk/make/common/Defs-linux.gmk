@@ -50,13 +50,13 @@ CC_DEPEND	 = -MM
 CC_DEPEND_FILTER = $(SED) -e 's!$*\.$(OBJECT_SUFFIX)!$(dir $@)& $(dir $@)$*.$(DEPEND_SUFFIX)!g'
 
 ifndef PLATFORM_SRC
-  PLATFORM_SRC = $(JDK_TOPDIR)/src/solaris
+  PLATFORM_SRC = $(BUILDDIR)/../src/solaris
 endif # PLATFORM_SRC
 
 # Platform specific closed sources
 ifndef OPENJDK
   ifndef CLOSED_PLATFORM_SRC
-    CLOSED_PLATFORM_SRC = $(JDK_TOPDIR)/src/closed/solaris
+    CLOSED_PLATFORM_SRC = $(BUILDDIR)/../src/closed/solaris
   endif
 endif
 

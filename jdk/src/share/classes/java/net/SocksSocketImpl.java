@@ -78,8 +78,8 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
     {
         try {
             AccessController.doPrivileged(
-                  new java.security.PrivilegedExceptionAction() {
-                          public Object run() throws IOException {
+                new java.security.PrivilegedExceptionAction<Void>() {
+                    public Void run() throws IOException {
                               superConnectServer(host, port, timeout);
                               cmdIn = getInputStream();
                               cmdOut = getOutputStream();
@@ -129,10 +129,10 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             String userName;
             String password = null;
             final InetAddress addr = InetAddress.getByName(server);
-            PasswordAuthentication pw = (PasswordAuthentication)
+            PasswordAuthentication pw =
                 java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                            public Object run() {
+                    new java.security.PrivilegedAction<PasswordAuthentication>() {
+                        public PasswordAuthentication run() {
                                 return Authenticator.requestPasswordAuthentication(
                                        server, addr, port, "SOCKS5", "SOCKS authentication", null);
                             }
@@ -339,10 +339,9 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             // This is the general case
             // server is not null only when the socket was created with a
             // specified proxy in which case it does bypass the ProxySelector
-            ProxySelector sel = (ProxySelector)
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                        public Object run() {
+            ProxySelector sel = java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<ProxySelector>() {
+                    public ProxySelector run() {
                             return ProxySelector.getDefault();
                         }
                     });
@@ -652,10 +651,9 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             // This is the general case
             // server is not null only when the socket was created with a
             // specified proxy in which case it does bypass the ProxySelector
-            ProxySelector sel = (ProxySelector)
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                        public Object run() {
+            ProxySelector sel = java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<ProxySelector>() {
+                    public ProxySelector run() {
                             return ProxySelector.getDefault();
                         }
                     });
@@ -701,8 +699,9 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
 
                 // Connects to the SOCKS server
                 try {
-                    AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                            public Object run() throws Exception {
+                    AccessController.doPrivileged(
+                        new PrivilegedExceptionAction<Void>() {
+                            public Void run() throws Exception {
                                 cmdsock = new Socket(new PlainSocketImpl());
                                 cmdsock.connect(new InetSocketAddress(server, port));
                                 cmdIn = cmdsock.getInputStream();
@@ -731,8 +730,9 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             }
         } else {
             try {
-                AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                        public Object run() throws Exception {
+                AccessController.doPrivileged(
+                    new PrivilegedExceptionAction<Void>() {
+                        public Void run() throws Exception {
                             cmdsock = new Socket(new PlainSocketImpl());
                             cmdsock.connect(new InetSocketAddress(server, port));
                             cmdIn = cmdsock.getInputStream();

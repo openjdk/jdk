@@ -650,7 +650,7 @@ public final class Long extends Number implements Comparable<Long> {
 
         try {
             result = Long.valueOf(nm.substring(index), radix);
-            result = negative ? new Long((long)-result.longValue()) : result;
+            result = negative ? new Long(-result.longValue()) : result;
         } catch (NumberFormatException e) {
             // If number is Long.MIN_VALUE, we'll end up here. The next line
             // handles this case, and causes any genuine format error to be

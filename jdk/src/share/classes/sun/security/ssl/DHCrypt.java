@@ -132,8 +132,7 @@ final class DHCrypt {
         }
         try {
             KeyFactory factory = JsseJce.getKeyFactory("DH");
-            return (DHPublicKeySpec)factory.getKeySpec
-                                            (key, DHPublicKeySpec.class);
+            return factory.getKeySpec(key, DHPublicKeySpec.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

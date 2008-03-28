@@ -43,8 +43,8 @@ class Reflect {                                 // package-private
     }
 
     private static void setAccessible(final AccessibleObject ao) {
-        AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                public Void run() {
                     ao.setAccessible(true);
                     return null;
                 }});
@@ -54,7 +54,7 @@ class Reflect {                                 // package-private
                                          Class[] paramTypes)
     {
         try {
-            Class cl = Class.forName(className);
+            Class<?> cl = Class.forName(className);
             Constructor c = cl.getDeclaredConstructor(paramTypes);
             setAccessible(c);
             return c;
@@ -82,7 +82,7 @@ class Reflect {                                 // package-private
                                Class[] paramTypes)
     {
         try {
-            Class cl = Class.forName(className);
+            Class<?> cl = Class.forName(className);
             Method m = cl.getDeclaredMethod(methodName, paramTypes);
             setAccessible(m);
             return m;

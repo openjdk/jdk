@@ -39,6 +39,7 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
+import java.security.cert.Certificate;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.HashMap;
@@ -172,17 +173,18 @@ public abstract class ClassLoader {
     private ClassLoader parent;
 
     // Hashtable that maps packages to certs
-    private Hashtable package2certs = new Hashtable(11);
+    private Hashtable<String, Certificate[]> package2certs
+        = new Hashtable<String, Certificate[]>(11);
 
     // Shared among all packages with unsigned classes
-    java.security.cert.Certificate[] nocerts;
+    Certificate[] nocerts;
 
     // The classes loaded by this class loader.  The only purpose of this table
     // is to keep the classes from being GC'ed until the loader is GC'ed.
-    private Vector classes = new Vector();
+    private Vector<Class<?>> classes = new Vector<Class<?>>();
 
     // The initiating protection domains for all classes loaded by this loader
-    private Set domains = new HashSet();
+    private Set<ProtectionDomain> domains = new HashSet<ProtectionDomain>();
 
     // Invoked by the VM to record every loaded class with this loader.
     void addClass(Class c) {
@@ -191,7 +193,7 @@ public abstract class ClassLoader {
 
     // The packages defined in this class loader.  Each package name is mapped
     // to its corresponding Package object.
-    private HashMap packages = new HashMap();
+    private HashMap<String, Package> packages = new HashMap<String, Package>();
 
     /**
      * Creates a new class loader using the specified parent class loader for
@@ -342,8 +344,8 @@ public abstract class ClassLoader {
             final String name = cls.getName();
             final int i = name.lastIndexOf('.');
             if (i != -1) {
-                AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
+                AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                    public Void run() {
                         sm.checkPackageAccess(name.substring(0, i));
                         return null;
                     }
@@ -524,17 +526,20 @@ public abstract class ClassLoader {
         // Class format error - try to transform the bytecode and
         // define the class again
         //
-        Object[] transformers = ClassFileTransformer.getTransformers();
+        ClassFileTransformer[] transformers = ClassFileTransformer.getTransformers();
         Class c = null;
 
-        for (int i = 0; transformers != null && i < transformers.length; i++) {
-            try {
-              // Transform byte code using transformer
-              byte[] tb = ((ClassFileTransformer) transformers[i]).transform(b, off, len);
-              c = defineClass1(name, tb, 0, tb.length, protectionDomain, source);
-              break;
-            } catch (ClassFormatError cfe2)     {
-              // If ClassFormatError occurs, try next transformer
+        if (transformers != null) {
+            for (ClassFileTransformer transformer : transformers) {
+                try {
+                    // Transform byte code using transformer
+                    byte[] tb = transformer.transform(b, off, len);
+                    c = defineClass1(name, tb, 0, tb.length,
+                                     protectionDomain, source);
+                    break;
+                } catch (ClassFormatError cfe2)     {
+                    // If ClassFormatError occurs, try next transformer
+                }
             }
         }
 
@@ -550,7 +555,7 @@ public abstract class ClassLoader {
     private void postDefineClass(Class c, ProtectionDomain protectionDomain)
     {
         if (protectionDomain.getCodeSource() != null) {
-            java.security.cert.Certificate certs[] =
+            Certificate certs[] =
                 protectionDomain.getCodeSource().getCertificates();
             if (certs != null)
                 setSigners(c, certs);
@@ -767,8 +772,7 @@ public abstract class ClassLoader {
     private synchronized void checkCerts(String name, CodeSource cs) {
         int i = name.lastIndexOf('.');
         String pname = (i == -1) ? "" : name.substring(0, i);
-        java.security.cert.Certificate[] pcerts =
-            (java.security.cert.Certificate[]) package2certs.get(pname);
+        Certificate[] pcerts = package2certs.get(pname);
         if (pcerts == null) {
             // first class in this package gets to define which
             // certificates must be the same for all other classes
@@ -778,12 +782,12 @@ public abstract class ClassLoader {
             }
             if (pcerts == null) {
                 if (nocerts == null)
-                    nocerts = new java.security.cert.Certificate[0];
+                    nocerts = new Certificate[0];
                 pcerts = nocerts;
             }
             package2certs.put(pname, pcerts);
         } else {
-            java.security.cert.Certificate[] certs = null;
+            Certificate[] certs = null;
             if (cs != null) {
                 certs = cs.getCertificates();
             }
@@ -799,8 +803,8 @@ public abstract class ClassLoader {
      * check to make sure the certs for the new class (certs) are the same as
      * the certs for the first class inserted in the package (pcerts)
      */
-    private boolean compareCerts(java.security.cert.Certificate[] pcerts,
-                                 java.security.cert.Certificate[] certs)
+    private boolean compareCerts(Certificate[] pcerts,
+                                 Certificate[] certs)
     {
         // certs can be null, indicating no certs.
         if ((certs == null) || (certs.length == 0)) {
@@ -1031,7 +1035,7 @@ public abstract class ClassLoader {
         }
         tmp[1] = findResources(name);
 
-        return new CompoundEnumeration(tmp);
+        return new CompoundEnumeration<URL>(tmp);
     }
 
     /**
@@ -1068,7 +1072,7 @@ public abstract class ClassLoader {
      * @since  1.2
      */
     protected Enumeration<URL> findResources(String name) throws IOException {
-        return new CompoundEnumeration(new Enumeration[0]);
+        return java.util.Collections.emptyEnumeration();
     }
 
     /**
@@ -1134,13 +1138,13 @@ public abstract class ClassLoader {
     /**
      * Find resources from the VM's built-in classloader.
      */
-    private static Enumeration getBootstrapResources(String name)
+    private static Enumeration<URL> getBootstrapResources(String name)
         throws IOException
     {
-        final Enumeration e = getBootstrapClassPath().getResources(name);
-        return new Enumeration () {
-            public Object nextElement() {
-                return ((Resource)e.nextElement()).getURL();
+        final Enumeration<Resource> e = getBootstrapClassPath().getResources(name);
+        return new Enumeration<URL> () {
+            public URL nextElement() {
+                return e.nextElement().getURL();
             }
             public boolean hasMoreElements() {
                 return e.hasMoreElements();
@@ -1323,9 +1327,8 @@ public abstract class ClassLoader {
                 Throwable oops = null;
                 scl = l.getClassLoader();
                 try {
-                    PrivilegedExceptionAction a;
-                    a = new SystemClassLoaderAction(scl);
-                    scl = (ClassLoader) AccessController.doPrivileged(a);
+                    scl = AccessController.doPrivileged(
+                        new SystemClassLoaderAction(scl));
                 } catch (PrivilegedActionException pae) {
                     oops = pae.getCause();
                     if (oops instanceof InvocationTargetException) {
@@ -1456,7 +1459,7 @@ public abstract class ClassLoader {
      */
     protected Package getPackage(String name) {
         synchronized (packages) {
-            Package pkg = (Package)packages.get(name);
+            Package pkg = packages.get(name);
             if (pkg == null) {
                 if (parent != null) {
                     pkg = parent.getPackage(name);
@@ -1481,9 +1484,9 @@ public abstract class ClassLoader {
      * @since  1.2
      */
     protected Package[] getPackages() {
-        Map map;
+        Map<String, Package> map;
         synchronized (packages) {
-            map = (Map)packages.clone();
+            map = new HashMap<String, Package>(packages);
         }
         Package[] pkgs;
         if (parent != null) {
@@ -1499,7 +1502,7 @@ public abstract class ClassLoader {
                 }
             }
         }
-        return (Package[])map.values().toArray(new Package[map.size()]);
+        return map.values().toArray(new Package[map.size()]);
     }
 
 
@@ -1585,8 +1588,7 @@ public abstract class ClassLoader {
         // Invoked in the VM to determine the context class in
         // JNI_Load/JNI_Unload
         static Class getFromClass() {
-            return ((NativeLibrary)
-                    (ClassLoader.nativeLibraryContext.peek())).fromClass;
+            return ClassLoader.nativeLibraryContext.peek().fromClass;
         }
     }
 
@@ -1597,22 +1599,27 @@ public abstract class ClassLoader {
     // Returns (and initializes) the default domain.
     private synchronized ProtectionDomain getDefaultDomain() {
         if (defaultDomain == null) {
-            CodeSource cs =
-                new CodeSource(null, (java.security.cert.Certificate[]) null);
+            CodeSource cs = new CodeSource(null, (Certificate[]) null);
             defaultDomain = new ProtectionDomain(cs, null, this, null);
         }
         return defaultDomain;
     }
 
     // All native library names we've loaded.
-    private static Vector loadedLibraryNames = new Vector();
+    private static Vector<String> loadedLibraryNames
+        = new Vector<String>();
+
     // Native libraries belonging to system classes.
-    private static Vector systemNativeLibraries = new Vector();
+    private static Vector<NativeLibrary> systemNativeLibraries
+        = new Vector<NativeLibrary>();
+
     // Native libraries associated with the class loader.
-    private Vector nativeLibraries = new Vector();
+    private Vector<NativeLibrary> nativeLibraries
+        = new Vector<NativeLibrary>();
 
     // native libraries being loaded/unloaded.
-    private static Stack nativeLibraryContext = new Stack();
+    private static Stack<NativeLibrary> nativeLibraryContext
+        = new Stack<NativeLibrary>();
 
     // The paths searched for libraries
     static private String usr_paths[];
@@ -1699,13 +1706,13 @@ public abstract class ClassLoader {
     }
 
     private static boolean loadLibrary0(Class fromClass, final File file) {
-        Boolean exists = (Boolean)
-            AccessController.doPrivileged(new PrivilegedAction() {
+        boolean exists = AccessController.doPrivileged(
+            new PrivilegedAction<Object>() {
                 public Object run() {
-                    return new Boolean(file.exists());
-                }
-            });
-        if (!exists.booleanValue()) {
+                    return file.exists() ? Boolean.TRUE : null;
+                }})
+            != null;
+        if (!exists) {
             return false;
         }
         String name;
@@ -1716,12 +1723,12 @@ public abstract class ClassLoader {
         }
         ClassLoader loader =
             (fromClass == null) ? null : fromClass.getClassLoader();
-        Vector libs =
+        Vector<NativeLibrary> libs =
             loader != null ? loader.nativeLibraries : systemNativeLibraries;
         synchronized (libs) {
             int size = libs.size();
             for (int i = 0; i < size; i++) {
-                NativeLibrary lib = (NativeLibrary)libs.elementAt(i);
+                NativeLibrary lib = libs.elementAt(i);
                 if (name.equals(lib.name)) {
                     return true;
                 }
@@ -1748,8 +1755,7 @@ public abstract class ClassLoader {
                  */
                 int n = nativeLibraryContext.size();
                 for (int i = 0; i < n; i++) {
-                    NativeLibrary lib = (NativeLibrary)
-                        nativeLibraryContext.elementAt(i);
+                    NativeLibrary lib = nativeLibraryContext.elementAt(i);
                     if (name.equals(lib.name)) {
                         if (loader == lib.fromClass.getClassLoader()) {
                             return true;
@@ -1780,12 +1786,12 @@ public abstract class ClassLoader {
 
     // Invoked in the VM class linking code.
     static long findNative(ClassLoader loader, String name) {
-        Vector libs =
+        Vector<NativeLibrary> libs =
             loader != null ? loader.nativeLibraries : systemNativeLibraries;
         synchronized (libs) {
             int size = libs.size();
             for (int i = 0; i < size; i++) {
-                NativeLibrary lib = (NativeLibrary)libs.elementAt(i);
+                NativeLibrary lib = libs.elementAt(i);
                 long entry = lib.find(name);
                 if (entry != 0)
                     return entry;
@@ -1805,13 +1811,13 @@ public abstract class ClassLoader {
     // is null then we are delegating assertion status queries to the VM, i.e.,
     // none of this ClassLoader's assertion status modification methods have
     // been invoked.
-    private Map packageAssertionStatus = null;
+    private Map<String, Boolean> packageAssertionStatus = null;
 
     // Maps String fullyQualifiedClassName to Boolean assertionStatus If this
     // field is null then we are delegating assertion status queries to the VM,
     // i.e., none of this ClassLoader's assertion status modification methods
     // have been invoked.
-    Map classAssertionStatus = null;
+    Map<String, Boolean> classAssertionStatus = null;
 
     /**
      * Sets the default assertion status for this class loader.  This setting
@@ -1878,7 +1884,7 @@ public abstract class ClassLoader {
         if (packageAssertionStatus == null)
             initializeJavaAssertionMaps();
 
-        packageAssertionStatus.put(packageName, Boolean.valueOf(enabled));
+        packageAssertionStatus.put(packageName, enabled);
     }
 
     /**
@@ -1909,7 +1915,7 @@ public abstract class ClassLoader {
         if (classAssertionStatus == null)
             initializeJavaAssertionMaps();
 
-        classAssertionStatus.put(className, Boolean.valueOf(enabled));
+        classAssertionStatus.put(className, enabled);
     }
 
     /**
@@ -1927,8 +1933,8 @@ public abstract class ClassLoader {
          * Whether or not "Java assertion maps" are initialized, set
          * them to empty maps, effectively ignoring any present settings.
          */
-        classAssertionStatus = new HashMap();
-        packageAssertionStatus = new HashMap();
+        classAssertionStatus = new HashMap<String, Boolean>();
+        packageAssertionStatus = new HashMap<String, Boolean>();
 
         defaultAssertionStatus = false;
     }
@@ -1962,20 +1968,20 @@ public abstract class ClassLoader {
         // assert packageAssertionStatus != null;
 
         // Check for a class entry
-        result = (Boolean)classAssertionStatus.get(className);
+        result = classAssertionStatus.get(className);
         if (result != null)
             return result.booleanValue();
 
         // Check for most specific package entry
         int dotIndex = className.lastIndexOf(".");
         if (dotIndex < 0) { // default package
-            result = (Boolean)packageAssertionStatus.get(null);
+            result = packageAssertionStatus.get(null);
             if (result != null)
                 return result.booleanValue();
         }
         while(dotIndex > 0) {
             className = className.substring(0, dotIndex);
-            result = (Boolean)packageAssertionStatus.get(className);
+            result = packageAssertionStatus.get(className);
             if (result != null)
                 return result.booleanValue();
             dotIndex = className.lastIndexOf(".", dotIndex-1);
@@ -1989,17 +1995,17 @@ public abstract class ClassLoader {
     private void initializeJavaAssertionMaps() {
         // assert Thread.holdsLock(this);
 
-        classAssertionStatus = new HashMap();
-        packageAssertionStatus = new HashMap();
+        classAssertionStatus = new HashMap<String, Boolean>();
+        packageAssertionStatus = new HashMap<String, Boolean>();
         AssertionStatusDirectives directives = retrieveDirectives();
 
         for(int i = 0; i < directives.classes.length; i++)
             classAssertionStatus.put(directives.classes[i],
-                              Boolean.valueOf(directives.classEnabled[i]));
+                                     directives.classEnabled[i]);
 
         for(int i = 0; i < directives.packages.length; i++)
             packageAssertionStatus.put(directives.packages[i],
-                              Boolean.valueOf(directives.packageEnabled[i]));
+                                       directives.packageEnabled[i]);
 
         defaultAssertionStatus = directives.deflt;
     }
@@ -2009,28 +2015,24 @@ public abstract class ClassLoader {
 }
 
 
-class SystemClassLoaderAction implements PrivilegedExceptionAction {
+class SystemClassLoaderAction
+    implements PrivilegedExceptionAction<ClassLoader> {
     private ClassLoader parent;
 
     SystemClassLoaderAction(ClassLoader parent) {
         this.parent = parent;
     }
 
-    public Object run() throws Exception {
-        ClassLoader sys;
-        Constructor ctor;
-        Class c;
-        Class cp[] = { ClassLoader.class };
-        Object params[] = { parent };
-
+    public ClassLoader run() throws Exception {
         String cls = System.getProperty("java.system.class.loader");
         if (cls == null) {
             return parent;
         }
 
-        c = Class.forName(cls, true, parent);
-        ctor = c.getDeclaredConstructor(cp);
-        sys = (ClassLoader) ctor.newInstance(params);
+        Constructor ctor = Class.forName(cls, true, parent)
+            .getDeclaredConstructor(new Class[] { ClassLoader.class });
+        ClassLoader sys = (ClassLoader) ctor.newInstance(
+            new Object[] { parent });
         Thread.currentThread().setContextClassLoader(sys);
         return sys;
     }

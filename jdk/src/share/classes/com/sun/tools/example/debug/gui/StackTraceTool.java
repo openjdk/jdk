@@ -139,7 +139,7 @@ public class StackTraceTool extends JPanel {
                 String methName =
                     meth.declaringType().name() + '.' + meth.name();
                 String position = "";
-                if (meth instanceof Method && ((Method)meth).isNative()) {
+                if (meth.isNative()) {
                     position = " (native method)";
                 } else if (loc.lineNumber() != -1) {
                     position = ":" + loc.lineNumber();

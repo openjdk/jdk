@@ -67,7 +67,7 @@ public final class MethodUtil extends SecureClassLoader {
         super();
     }
 
-    public static Method getMethod(Class cls, String name, Class[] args)
+    public static Method getMethod(Class<?> cls, String name, Class[] args)
         throws NoSuchMethodException {
         ReflectUtil.checkPackageAccess(cls);
         return cls.getMethod(name, args);
@@ -89,7 +89,7 @@ public final class MethodUtil extends SecureClassLoader {
         if (System.getSecurityManager() == null) {
             return cls.getMethods();
         }
-        Map sigs = new HashMap();
+        Map<Signature, Method> sigs = new HashMap<Signature, Method>();
         while (cls != null) {
             boolean done = getInternalPublicMethods(cls, sigs);
             if (done) {
@@ -98,14 +98,14 @@ public final class MethodUtil extends SecureClassLoader {
             getInterfaceMethods(cls, sigs);
             cls = cls.getSuperclass();
         }
-        Collection c = sigs.values();
-        return (Method[]) c.toArray(new Method[c.size()]);
+        return sigs.values().toArray(new Method[sigs.size()]);
     }
 
     /*
      * Process the immediate interfaces of this class or interface.
      */
-    private static void getInterfaceMethods(Class cls, Map sigs) {
+    private static void getInterfaceMethods(Class cls,
+                                            Map<Signature, Method> sigs) {
         Class[] intfs = cls.getInterfaces();
         for (int i=0; i < intfs.length; i++) {
             Class intf = intfs[i];
@@ -120,7 +120,8 @@ public final class MethodUtil extends SecureClassLoader {
      *
      * Process the methods in this class or interface
      */
-    private static boolean getInternalPublicMethods(Class cls, Map sigs) {
+    private static boolean getInternalPublicMethods(Class cls,
+                                                    Map<Signature, Method> sigs) {
         Method[] methods = null;
         try {
             /*
@@ -178,7 +179,7 @@ public final class MethodUtil extends SecureClassLoader {
         return done;
     }
 
-    private static void addMethod(Map sigs, Method method) {
+    private static void addMethod(Map<Signature, Method> sigs, Method method) {
         Signature signature = new Signature(method);
         if (!sigs.containsKey(signature)) {
             sigs.put(signature, method);
@@ -186,7 +187,7 @@ public final class MethodUtil extends SecureClassLoader {
             /*
              * Superclasses beat interfaces.
              */
-            Method old = (Method)sigs.get(signature);
+            Method old = sigs.get(signature);
             if (old.getDeclaringClass().isInterface()) {
                 sigs.put(signature, method);
             }
@@ -280,17 +281,15 @@ public final class MethodUtil extends SecureClassLoader {
     }
 
     private static Method getTrampoline() {
-        Method tramp = null;
-
         try {
-            tramp = (Method) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                public Object run() throws Exception {
-                    Class[] types;
-                    Class t = getTrampolineClass();
-                    Method b;
-
-                    types = new Class[] {Method.class, Object.class, Object[].class};
-                    b = t.getDeclaredMethod("invoke", types);
+            return AccessController.doPrivileged(
+                new PrivilegedExceptionAction<Method>() {
+                    public Method run() throws Exception {
+                        Class<?> t = getTrampolineClass();
+                        Class[] types = {
+                            Method.class, Object.class, Object[].class
+                        };
+                        Method b = t.getDeclaredMethod("invoke", types);
                     ((AccessibleObject)b).setAccessible(true);
                     return b;
                 }
@@ -298,7 +297,6 @@ public final class MethodUtil extends SecureClassLoader {
         } catch (Exception e) {
             throw new InternalError("bouncer cannot be found");
         }
-        return tramp;
     }
 
 

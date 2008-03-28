@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 5026745
+ * @bug 5026745 6631048
  * @run main/othervm/timeout=500 Test
  * @summary Cannot flush output stream when writing to an HttpUrlConnection
  */
@@ -152,6 +152,50 @@ public class Test implements HttpHandler {
                     System.out.println ("received string : " + s);
                     exchange.sendResponseHeaders(500, 0);
                 } else if (error) {
+                    System.out.println ("error");
+                    exchange.sendResponseHeaders(500, 0);
+                } else {
+                    exchange.sendResponseHeaders(200, 0);
+                }
+                break;
+            case 10: /* test11 */
+                printRequestURI(exchange);
+                is = exchange.getRequestBody();
+                s = read (is, str1.length());
+
+                error = false;
+                for (int i=10; i< 30 * 1024; i++) {
+                    byte c = (byte)is.read();
+
+                    if (c != (byte)i) {
+                        error = true;
+                        System.out.println ("error at position " + i);
+                    }
+                }
+                if (!s.equals(str1) ) {
+                    System.out.println ("received string : " + s);
+                    exchange.sendResponseHeaders(500, 0);
+                } else if (error) {
+                    System.out.println ("error");
+                    exchange.sendResponseHeaders(500, 0);
+                } else {
+                    exchange.sendResponseHeaders(200, 0);
+                }
+                break;
+            case 11: /* test12 */
+                printRequestURI(exchange);
+                is = exchange.getRequestBody();
+
+                error = false;
+                for (int i=10; i< 30 * 1024; i++) {
+                    byte c = (byte)is.read();
+
+                    if (c != (byte)i) {
+                        error = true;
+                        System.out.println ("error at position " + i);
+                    }
+                }
+                if (error) {
                     System.out.println ("error");
                     exchange.sendResponseHeaders(500, 0);
                 } else {
@@ -390,6 +434,56 @@ public class Test implements HttpHandler {
         }
     }
 
+    static void test11 (String u) throws Exception {
+        URL url = new URL (u);
+        System.out.println ("client opening connection to: " + u);
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
+        urlc.setChunkedStreamingMode (36 * 1024);
+        urlc.setDoOutput(true);
+        urlc.setRequestMethod ("POST");
+        OutputStream os = urlc.getOutputStream ();
+        byte[] buf = new byte [30 * 1024];
+        for (int i=0; i< 30 * 1024; i++) {
+            buf[i] = (byte) i;
+        }
+        /* write a small bit first, and then the large buffer */
+        os.write (str1.getBytes());
+        //os.write (buf, 10, buf.length - 10); /* skip 10 bytes to test offset */
+        os.write (buf, 10, (10 * 1024) - 10);
+        os.write (buf, (10 * 1024), (10 * 1024));
+        os.write (buf, (20 * 1024), (10 * 1024));
+        os.close();
+        InputStream is = urlc.getInputStream();
+        is.close();
+        int ret = urlc.getResponseCode();
+        if (ret != 200) {
+            throw new Exception ("Expected 200: got " + ret);
+        }
+    }
+
+    static void test12 (String u) throws Exception {
+        URL url = new URL (u);
+        System.out.println ("client opening connection to: " + u);
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
+        urlc.setChunkedStreamingMode (36 * 1024);
+        urlc.setDoOutput(true);
+        urlc.setRequestMethod ("POST");
+        OutputStream os = urlc.getOutputStream ();
+        byte[] buf = new byte [30 * 1024];
+        for (int i=0; i< 30 * 1024; i++) {
+            buf[i] = (byte) i;
+        }
+        os.write (buf, 10, buf.length - 10); /* skip 10 bytes to test offset */
+        os.close();
+        InputStream is = urlc.getInputStream();
+        is.close();
+        int ret = urlc.getResponseCode();
+        if (ret != 200) {
+            throw new Exception ("Expected 200: got " + ret);
+        }
+    }
+
+
     static com.sun.net.httpserver.HttpServer httpserver;
 
     public static void main (String[] args) throws Exception {
@@ -411,6 +505,8 @@ public class Test implements HttpHandler {
             test8("http://localhost:"+ port + "/test/test8");
             test9("http://localhost:"+ port + "/test/test9");
             test10("http://localhost:"+ port + "/test/test10");
+            test11("http://localhost:"+ port + "/test/test11");
+            test12("http://localhost:"+ port + "/test/test12");
         } finally {
             if (httpserver != null)
                 httpserver.stop(0);
