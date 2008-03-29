@@ -3089,6 +3089,8 @@ bool os::large_page_init() {
   if (UseISM) {
     // ISM disables MPSS to be compatible with old JDK behavior
     UseMPSS = false;
+    _page_sizes[0] = _large_page_size;
+    _page_sizes[1] = vm_page_size();
   }
 
   UseMPSS = UseMPSS &&
@@ -3175,6 +3177,10 @@ size_t os::large_page_size() {
 // MPSS allows application to commit large page memory on demand; with ISM
 // the entire memory region must be allocated as shared memory.
 bool os::can_commit_large_page_memory() {
+  return UseISM ? false : true;
+}
+
+bool os::can_execute_large_page_memory() {
   return UseISM ? false : true;
 }
 
