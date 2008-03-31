@@ -833,6 +833,7 @@ public class XTrayIconPeer implements TrayIconPeer {
                 Dimension tpSize = textPanel.getSize();
                 iconCanvas.setSize(BALLOON_ICON_WIDTH, (BALLOON_ICON_HEIGHT > tpSize.height ?
                                                         BALLOON_ICON_HEIGHT : tpSize.height));
+                iconCanvas.validate();
             }
 
             SunToolkit.executeOnEventHandlerThread(xtiPeer.target, new Runnable() {
