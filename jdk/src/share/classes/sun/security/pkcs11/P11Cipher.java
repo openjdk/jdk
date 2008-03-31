@@ -817,7 +817,8 @@ final class P11Cipher extends CipherSpi {
         if (errorCode == CKR_BUFFER_TOO_SMALL) {
             throw (ShortBufferException)
                     (new ShortBufferException().initCause(e));
-        } else if (errorCode == CKR_DATA_LEN_RANGE) {
+        } else if (errorCode == CKR_DATA_LEN_RANGE ||
+                   errorCode == CKR_ENCRYPTED_DATA_LEN_RANGE) {
             throw (IllegalBlockSizeException)
                     (new IllegalBlockSizeException(e.toString()).initCause(e));
         }
