@@ -1974,8 +1974,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                 // So, I do not want to implement complicated logic for better retargeting.
                 target = pressTarget.isVisible() ? pressTarget : this;
                 xme.set_window(target.getWindow());
-                xme.set_x(xme.get_x_root() - target.getX());
-                xme.set_y(xme.get_y_root() - target.getY());
+                Point localCoord = target.toLocal(xme.get_x_root(), xme.get_y_root());
+                xme.set_x(localCoord.x);
+                xme.set_y(localCoord.y);
             }
             grabLog.log(Level.FINER, "  -  Grab event target {0}", new Object[] {target});
             if (target != null) {
@@ -2026,8 +2027,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                     // see 6390326 for more information.
                     target = pressTarget.isVisible() ? pressTarget : this;
                     xbe.set_window(target.getWindow());
-                    xbe.set_x(xbe.get_x_root() - target.getX());
-                    xbe.set_y(xbe.get_y_root() - target.getY());
+                    Point localCoord = target.toLocal(xbe.get_x_root(), xbe.get_y_root());
+                    xbe.set_x(localCoord.x);
+                    xbe.set_y(localCoord.y);
                     pressTarget = this;
                 }
                 if (target != null && target != getContentXWindow() && target != this) {
