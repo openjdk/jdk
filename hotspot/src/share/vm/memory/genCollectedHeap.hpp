@@ -35,6 +35,7 @@ class GenCollectedHeap : public SharedHeap {
   friend class CMSCollector;
   friend class GenMarkSweep;
   friend class VM_GenCollectForAllocation;
+  friend class VM_GenCollectForPermanentAllocation;
   friend class VM_GenCollectFull;
   friend class VM_GenCollectFullConcurrent;
   friend class VM_GC_HeapInspection;

@@ -999,7 +999,7 @@ void PSParallelCompact::pre_compact(PreGCValues* pre_gc_values)
   DEBUG_ONLY(mark_bitmap_count = mark_bitmap_size = 0;)
 
   // Increment the invocation count
-  heap->increment_total_collections();
+  heap->increment_total_collections(true);
 
   // We need to track unique mark sweep invocations as well.
   _total_invocations++;
@@ -1964,7 +1964,7 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
   assert(ref_processor() != NULL, "Sanity");
 
-  if (GC_locker::is_active()) {
+  if (GC_locker::check_active_before_gc()) {
     return;
   }
 
