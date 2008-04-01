@@ -1335,7 +1335,7 @@ sane-compiler: sane-link
 ifndef OPENJDK
 	@if [ "$(CC_CHECK)" != "same" ]; then \
 	      $(ECHO) "WARNING: The $(PLATFORM) compiler is not version $(COMPILER_VERSION) $(REQUIRED_CC_VER) \n" \
-	      "      Specifically the $(COMPILER_NAME) $(CC_TYPE) compiler. \n " \
+	      "      Specifically the $(COMPILER_NAME) compiler. \n " \
 	      "      $(YOU_ARE_USING) compiler version: $(CC_VER) \n" \
 	      "      The compiler was obtained from the following location: \n" \
 	      "          $(COMPILER_PATH) \n" \
