@@ -438,7 +438,7 @@ public abstract class OpenConverter {
                 c.getClassLoader() == null);
 
         final List<Method> methods =
-                MBeanAnalyzer.eliminateCovariantMethods(c.getMethods());
+                MBeanAnalyzer.eliminateCovariantMethods(Arrays.asList(c.getMethods()));
         final SortedMap<String,Method> getterMap = newSortedMap();
 
         /* Select public methods that look like "T getX()" or "boolean

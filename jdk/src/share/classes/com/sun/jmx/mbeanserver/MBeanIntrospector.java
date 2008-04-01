@@ -34,6 +34,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.List;
 import java.util.WeakHashMap;
 
@@ -169,6 +170,19 @@ abstract class MBeanIntrospector<M> {
      */
     abstract Descriptor getMBeanDescriptor(Class<?> resourceClass);
 
+    void checkCompliance(Class<?> mbeanType) throws NotCompliantMBeanException {
+        if (!mbeanType.isInterface()) {
+            throw new NotCompliantMBeanException("Not an interface: " +
+                    mbeanType.getName());
+        }
+    }
+
+    /**
+     * Get the methods to be analyzed to build the MBean interface.
+     */
+    List<Method> getMethods(final Class<?> mbeanType) throws Exception {
+        return Arrays.asList(mbeanType.getMethods());
+    }
 
     final PerInterface<M> getPerInterface(Class<?> mbeanInterface)
     throws NotCompliantMBeanException {
