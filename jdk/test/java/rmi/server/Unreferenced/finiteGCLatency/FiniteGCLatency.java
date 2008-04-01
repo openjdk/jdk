@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -54,69 +54,69 @@ public class FiniteGCLatency implements Remote, Unreferenced {
     private boolean unreferencedInvoked = false;
 
     public void unreferenced() {
-	System.err.println("unreferenced() method invoked");
-	synchronized (lock) {
-	    unreferencedInvoked = true;
-	    lock.notify();
-	}
+        System.err.println("unreferenced() method invoked");
+        synchronized (lock) {
+            unreferencedInvoked = true;
+            lock.notify();
+        }
     }
 
     public static void main(String[] args) {
 
-	System.err.println("\nRegression test for bug 4164696\n");
+        System.err.println("\nRegression test for bug 4164696\n");
 
-	/*
-	 * Set the interval that RMI will request for GC latency (before RMI
-	 * gets initialized and this property is read) to an unrealistically
-	 * small value, so that this test shouldn't have to wait too long.
-	 */
-	System.setProperty("sun.rmi.dgc.client.gcInterval",
-	    String.valueOf(GC_INTERVAL));
+        /*
+         * Set the interval that RMI will request for GC latency (before RMI
+         * gets initialized and this property is read) to an unrealistically
+         * small value, so that this test shouldn't have to wait too long.
+         */
+        System.setProperty("sun.rmi.dgc.client.gcInterval",
+            String.valueOf(GC_INTERVAL));
 
-	FiniteGCLatency obj = new FiniteGCLatency();
+        FiniteGCLatency obj = new FiniteGCLatency();
 
-	try {
-	    UnicastRemoteObject.exportObject(obj);
-	    System.err.println("exported remote object");
+        try {
+            UnicastRemoteObject.exportObject(obj);
+            System.err.println("exported remote object");
 
-	    LocateRegistry.createRegistry(TestLibrary.REGISTRY_PORT);
-	    System.err.println("created registry");
+            LocateRegistry.createRegistry(TestLibrary.REGISTRY_PORT);
+            System.err.println("created registry");
 
-	    Registry registry = LocateRegistry.getRegistry("", TestLibrary.REGISTRY_PORT);
-	    registry.bind(BINDING, obj);
-	    System.err.println("bound remote object in registry");
+            Registry registry = LocateRegistry.getRegistry("", TestLibrary.REGISTRY_PORT);
+            registry.bind(BINDING, obj);
+            System.err.println("bound remote object in registry");
 
-	    synchronized (obj.lock) {
-		registry.unbind(BINDING);
-		System.err.println("unbound remote object from registry; " +
-		    "waiting for unreferenced() callback...");
-		obj.lock.wait(TIMEOUT);
+            synchronized (obj.lock) {
+                registry.unbind(BINDING);
+                System.err.println("unbound remote object from registry; " +
+                    "waiting for unreferenced() callback...");
+                obj.lock.wait(TIMEOUT);
 
-		if (obj.unreferencedInvoked) {
-		    System.err.println("TEST PASSED: unreferenced() invoked");
-		} else {
-		    throw new RuntimeException(
-			"TEST FAILED: unrefereced() not invoked after " +
-			((double) TIMEOUT / 1000.0) + " seconds");
-		}
-	    }
+                if (obj.unreferencedInvoked) {
+                    System.err.println("TEST PASSED: unreferenced() invoked");
+                } else {
+                    throw new RuntimeException(
+                        "TEST FAILED: unrefereced() not invoked after " +
+                        ((double) TIMEOUT / 1000.0) + " seconds");
+                }
+            }
 
-	} catch (Exception e) {
-	    if (e instanceof RuntimeException) {
-		throw (RuntimeException) e;
-	    } else {
-		throw new RuntimeException(
-		    "TEST FAILED: unexpected exception: " + e.toString());
-	    }
-	} finally {
-	    /*
-	     * When all is said and done, try to unexport the remote object
-	     * so that the VM has a chance to exit.
-	     */
-	    try {
-		UnicastRemoteObject.unexportObject(obj, true);
-	    } catch (RemoteException e) {
-	    }
-	}
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            } else {
+                throw new RuntimeException(
+                    "TEST FAILED: unexpected exception: " + e.toString());
+            }
+        } finally {
+            /*
+             * When all is said and done, try to unexport the remote object
+             * so that the VM has a chance to exit.
+             */
+            try {
+                UnicastRemoteObject.unexportObject(obj, true);
+            } catch (RemoteException e) {
+            }
+        }
     }
 }

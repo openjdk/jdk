@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,38 +29,38 @@ public final class RetryDirtyCalls_Stub
     implements Self
 {
     private static final long serialVersionUID = 2;
-    
+
     private static java.lang.reflect.Method $method_getSelf_0;
-    
+
     static {
-	try {
-	    $method_getSelf_0 = Self.class.getMethod("getSelf", new java.lang.Class[] {});
-	} catch (java.lang.NoSuchMethodException e) {
-	    throw new java.lang.NoSuchMethodError(
-		"stub class initialization failed");
-	}
+        try {
+            $method_getSelf_0 = Self.class.getMethod("getSelf", new java.lang.Class[] {});
+        } catch (java.lang.NoSuchMethodException e) {
+            throw new java.lang.NoSuchMethodError(
+                "stub class initialization failed");
+        }
     }
-    
+
     // constructors
     public RetryDirtyCalls_Stub(java.rmi.server.RemoteRef ref) {
-	super(ref);
+        super(ref);
     }
-    
+
     // methods from remote interfaces
-    
+
     // implementation of getSelf()
     public Self getSelf()
-	throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
     {
-	try {
-	    Object $result = ref.invoke(this, $method_getSelf_0, null, 2868857108246021904L);
-	    return ((Self) $result);
-	} catch (java.lang.RuntimeException e) {
-	    throw e;
-	} catch (java.rmi.RemoteException e) {
-	    throw e;
-	} catch (java.lang.Exception e) {
-	    throw new java.rmi.UnexpectedException("undeclared checked exception", e);
-	}
+        try {
+            Object $result = ref.invoke(this, $method_getSelf_0, null, 2868857108246021904L);
+            return ((Self) $result);
+        } catch (java.lang.RuntimeException e) {
+            throw e;
+        } catch (java.rmi.RemoteException e) {
+            throw e;
+        } catch (java.lang.Exception e) {
+            throw new java.rmi.UnexpectedException("undeclared checked exception", e);
+        }
     }
 }

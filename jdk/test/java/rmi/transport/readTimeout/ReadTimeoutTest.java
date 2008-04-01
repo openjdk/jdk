@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,134 +50,134 @@ import java.net.*;
 
 public class ReadTimeoutTest
 {
-    private static final int DELAY = 5000;	// milliseconds
+    private static final int DELAY = 5000;      // milliseconds
 
     public static void main(String[] args)
-	throws Exception
+        throws Exception
     {
-	// Make trouble for ourselves
-	if (System.getSecurityManager() == null)
-	    System.setSecurityManager(new RMISecurityManager());
-	
-	// Flaky code alert - hope this is executed before TCPTransport.<clinit>
-	System.setProperty("sun.rmi.transport.tcp.readTimeout", Integer.toString(DELAY));
+        // Make trouble for ourselves
+        if (System.getSecurityManager() == null)
+            System.setSecurityManager(new RMISecurityManager());
 
-	// Set the socket factory.
-	System.err.println("(installing socket factory)");
-	SomeFactory fac = new SomeFactory();
-	RMISocketFactory.setSocketFactory(fac);
+        // Flaky code alert - hope this is executed before TCPTransport.<clinit>
+        System.setProperty("sun.rmi.transport.tcp.readTimeout", Integer.toString(DELAY));
 
-	// Create remote object
-	TestImpl impl = new TestImpl();
+        // Set the socket factory.
+        System.err.println("(installing socket factory)");
+        SomeFactory fac = new SomeFactory();
+        RMISocketFactory.setSocketFactory(fac);
 
-	// Export and get which port.
-	System.err.println("(exporting remote object)");
-	TestIface stub = impl.export();
-	Socket DoS = null;
-	try {
-	    int port = fac.whichPort();
+        // Create remote object
+        TestImpl impl = new TestImpl();
 
-	    // Sanity
-	    if (port == 0)
-		throw new Error("TEST FAILED: export didn't reserve a port(?)");
-	
-	    // Now, connect to that port
-	    //Thread.sleep(2000);
-	    System.err.println("(connecting to listening port on 127.0.0.1:" +
-			       port + ")");
-	    DoS = new Socket("127.0.0.1", port);
-	    InputStream stream = DoS.getInputStream();
+        // Export and get which port.
+        System.err.println("(exporting remote object)");
+        TestIface stub = impl.export();
+        Socket DoS = null;
+        try {
+            int port = fac.whichPort();
 
-	    // Read on the socket in the background
-	    boolean[] successful = new boolean[] { false };
-	    (new SomeReader(stream, successful)).start();
+            // Sanity
+            if (port == 0)
+                throw new Error("TEST FAILED: export didn't reserve a port(?)");
 
-	    // Wait for completion
-	    int nretries = 4;
-	    while (nretries-- > 0) {
-		if (successful[0])
-		    break;
-		Thread.sleep(DELAY);
-	    }
+            // Now, connect to that port
+            //Thread.sleep(2000);
+            System.err.println("(connecting to listening port on 127.0.0.1:" +
+                               port + ")");
+            DoS = new Socket("127.0.0.1", port);
+            InputStream stream = DoS.getInputStream();
 
-	    if (successful[0]) {
-		System.err.println("TEST PASSED.");
-	    } else {
-		throw new Error("TEST FAILED.");
-	    }
+            // Read on the socket in the background
+            boolean[] successful = new boolean[] { false };
+            (new SomeReader(stream, successful)).start();
 
-	} finally {
-	    try {
-		if (DoS != null)
-		    DoS.close();	// aborts the reader if still blocked
-		impl.unexport();
-	    } catch (Throwable unmatter) {
-	    }
-	}
+            // Wait for completion
+            int nretries = 4;
+            while (nretries-- > 0) {
+                if (successful[0])
+                    break;
+                Thread.sleep(DELAY);
+            }
 
-	// Should exit here
+            if (successful[0]) {
+                System.err.println("TEST PASSED.");
+            } else {
+                throw new Error("TEST FAILED.");
+            }
+
+        } finally {
+            try {
+                if (DoS != null)
+                    DoS.close();        // aborts the reader if still blocked
+                impl.unexport();
+            } catch (Throwable unmatter) {
+            }
+        }
+
+        // Should exit here
     }
 
     private static class SomeFactory
-	extends RMISocketFactory
+        extends RMISocketFactory
     {
-	private int servport = 0;
+        private int servport = 0;
 
-	public Socket createSocket(String h, int p)
-	    throws IOException
-	{
-	    return (new Socket(h, p));
-	}
+        public Socket createSocket(String h, int p)
+            throws IOException
+        {
+            return (new Socket(h, p));
+        }
 
-	/** Create a server socket and remember which port it's on.
-	 * Aborts if createServerSocket(0) is called twice, because then
-	 * it doesn't know whether to remember the first or second port.
-	 */
-	public ServerSocket createServerSocket(int p)
-	    throws IOException
-	{
-	    ServerSocket ss;
-	    ss = new ServerSocket(p);
-	    if (p == 0) {
-		if (servport != 0) {
-		    System.err.println("TEST FAILED: " +
-				       "Duplicate createServerSocket(0)");
-		    throw new Error("Test aborted (createServerSocket)");
-		}
-		servport = ss.getLocalPort();
-	    }
-	    return (ss);
-	}
+        /** Create a server socket and remember which port it's on.
+         * Aborts if createServerSocket(0) is called twice, because then
+         * it doesn't know whether to remember the first or second port.
+         */
+        public ServerSocket createServerSocket(int p)
+            throws IOException
+        {
+            ServerSocket ss;
+            ss = new ServerSocket(p);
+            if (p == 0) {
+                if (servport != 0) {
+                    System.err.println("TEST FAILED: " +
+                                       "Duplicate createServerSocket(0)");
+                    throw new Error("Test aborted (createServerSocket)");
+                }
+                servport = ss.getLocalPort();
+            }
+            return (ss);
+        }
 
-	/** Return which port was reserved by createServerSocket(0).
-	 * If the return value was 0, createServerSocket(0) wasn't called.
-	 */
-	public int whichPort() {
-	    return (servport);
-	}
+        /** Return which port was reserved by createServerSocket(0).
+         * If the return value was 0, createServerSocket(0) wasn't called.
+         */
+        public int whichPort() {
+            return (servport);
+        }
     } // end class SomeFactory
 
     protected static class SomeReader extends Thread {
-	private InputStream readon;
-	private boolean[] vec;
+        private InputStream readon;
+        private boolean[] vec;
 
-	public SomeReader(InputStream s, boolean[] successvec) {
-	    super();
-	    this.setDaemon(true);
-	    this.readon = s;
-	    this.vec = successvec;
-	}
+        public SomeReader(InputStream s, boolean[] successvec) {
+            super();
+            this.setDaemon(true);
+            this.readon = s;
+            this.vec = successvec;
+        }
 
-	public void run() {
-	    try {
-		int c = this.readon.read();
-		if (c != -1)
-		    throw new Error ("Server returned " + c);
-		this.vec[0] = true;
+        public void run() {
+            try {
+                int c = this.readon.read();
+                if (c != -1)
+                    throw new Error ("Server returned " + c);
+                this.vec[0] = true;
 
-	    } catch (IOException e) {
-		e.printStackTrace();
-	    }
-	}
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     } // end class SomeReader
 }
