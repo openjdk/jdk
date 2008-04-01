@@ -38,6 +38,8 @@ class PermGen : public CHeapObj {
   size_t _capacity_expansion_limit;  // maximum expansion allowed without a
                                      // full gc occuring
 
+  HeapWord* mem_allocate_in_gen(size_t size, Generation* gen);
+
  public:
   enum Name {
     MarkSweepCompact, MarkSweep, ConcurrentMarkSweep

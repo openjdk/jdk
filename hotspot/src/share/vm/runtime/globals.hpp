@@ -1919,6 +1919,10 @@ class CommandLineFlags {
   develop(bool, IgnoreLibthreadGPFault, false,                              \
           "Suppress workaround for libthread GP fault")                     \
                                                                             \
+  product(bool, PrintJNIGCStalls, false,                                    \
+          "Print diagnostic message when GC is stalled"                     \
+          "by JNI critical section")                                        \
+                                                                            \
   /* JVMTI heap profiling */                                                \
                                                                             \
   diagnostic(bool, TraceJVMTIObjectTagging, false,                          \
