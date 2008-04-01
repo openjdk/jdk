@@ -143,6 +143,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // relock objects if synchronization on them was eliminated.
   if (DoEscapeAnalysis) {
     if (EliminateAllocations) {
+      assert (chunk->at(0)->scope() != NULL,"expect only compiled java frames");
       GrowableArray<ScopeValue*>* objects = chunk->at(0)->scope()->objects();
       bool reallocated = false;
       if (objects != NULL) {
@@ -162,19 +163,26 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
       }
     }
     if (EliminateLocks) {
+#ifndef PRODUCT
+      bool first = true;
+#endif
       for (int i = 0; i < chunk->length(); i++) {
-        GrowableArray<MonitorValue*>* monitors = chunk->at(i)->scope()->monitors();
-        if (monitors != NULL) {
-          relock_objects(&deoptee, &map, monitors);
+        compiledVFrame* cvf = chunk->at(i);
+        assert (cvf->scope() != NULL,"expect only compiled java frames");
+        GrowableArray<MonitorInfo*>* monitors = cvf->monitors();
+        if (monitors->is_nonempty()) {
+          relock_objects(monitors, thread);
 #ifndef PRODUCT
           if (TraceDeoptimization) {
             ttyLocker ttyl;
-            tty->print_cr("RELOCK OBJECTS in thread " INTPTR_FORMAT, thread);
             for (int j = 0; j < monitors->length(); j++) {
-              MonitorValue* mv = monitors->at(j);
-              if (mv->eliminated()) {
-                StackValue* owner = StackValue::create_stack_value(&deoptee, &map, mv->owner());
-                tty->print_cr("     object <" INTPTR_FORMAT "> locked", owner->get_obj()());
+              MonitorInfo* mi = monitors->at(j);
+              if (mi->eliminated()) {
+                if (first) {
+                  first = false;
+                  tty->print_cr("RELOCK OBJECTS in thread " INTPTR_FORMAT, thread);
+                }
+                tty->print_cr("     object <" INTPTR_FORMAT "> locked", mi->owner());
               }
             }
           }
@@ -799,18 +807,27 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
 
 
 // relock objects for which synchronization was eliminated
-void Deoptimization::relock_objects(frame* fr, RegisterMap* reg_map, GrowableArray<MonitorValue*>* monitors) {
+void Deoptimization::relock_objects(GrowableArray<MonitorInfo*>* monitors, JavaThread* thread) {
   for (int i = 0; i < monitors->length(); i++) {
-    MonitorValue* mv = monitors->at(i);
-    StackValue* owner = StackValue::create_stack_value(fr, reg_map, mv->owner());
-    if (mv->eliminated()) {
-      Handle obj = owner->get_obj();
-      assert(obj.not_null(), "reallocation was missed");
-      BasicLock* lock = StackValue::resolve_monitor_lock(fr, mv->basic_lock());
-      lock->set_displaced_header(obj->mark());
-      obj->set_mark((markOop) lock);
+    MonitorInfo* mon_info = monitors->at(i);
+    if (mon_info->eliminated()) {
+      assert(mon_info->owner() != NULL, "reallocation was missed");
+      Handle obj = Handle(mon_info->owner());
+      markOop mark = obj->mark();
+      if (UseBiasedLocking && mark->has_bias_pattern()) {
+        // New allocated objects may have the mark set to anonymously biased.
+        // Also the deoptimized method may called methods with synchronization
+        // where the thread-local object is bias locked to the current thread.
+        assert(mark->is_biased_anonymously() ||
+               mark->biased_locker() == thread, "should be locked to current thread");
+        // Reset mark word to unbiased prototype.
+        markOop unbiased_prototype = markOopDesc::prototype()->set_age(mark->age());
+        obj->set_mark(unbiased_prototype);
+      }
+      BasicLock* lock = mon_info->lock();
+      ObjectSynchronizer::slow_enter(obj, lock, thread);
     }
-    assert(owner->get_obj()->is_locked(), "object must be locked now");
+    assert(mon_info->owner()->is_locked(), "object must be locked now");
   }
 }
 
@@ -916,7 +933,7 @@ static void collect_monitors(compiledVFrame* cvf, GrowableArray<Handle>* objects
   GrowableArray<MonitorInfo*>* monitors = cvf->monitors();
   for (int i = 0; i < monitors->length(); i++) {
     MonitorInfo* mon_info = monitors->at(i);
-    if (mon_info->owner() != NULL) {
+    if (mon_info->owner() != NULL && !mon_info->eliminated()) {
       objects_to_revoke->append(Handle(mon_info->owner()));
     }
   }
