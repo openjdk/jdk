@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,7 +33,7 @@ import java.rmi.RemoteException;
 
 /**
  * The RMI benchmark server is a simple compute-engine-like server which allows
- * client benchmarks to create/export and unexport objects off of the server, 
+ * client benchmarks to create/export and unexport objects off of the server,
  * or run arbitrary tasks.
  */
 public interface BenchServer extends Remote {
@@ -41,41 +41,40 @@ public interface BenchServer extends Remote {
      * Interface used for creating server-side remote objects.
      */
     public interface RemoteObjectFactory extends Serializable {
-	Remote create() throws RemoteException;
+        Remote create() throws RemoteException;
     }
-    
+
     /**
      * Interface used for server-side tasks.
      */
     public interface Task extends Serializable {
-	Object execute() throws Exception;
+        Object execute() throws Exception;
     }
 
     /**
-     * Uses the given remote object factory to create a new remote object on 
+     * Uses the given remote object factory to create a new remote object on
      * the server side.
      */
     Remote create(RemoteObjectFactory factory) throws RemoteException;
-    
+
     /**
-     * Unexports the specified remote object.  Returns true if successful, 
+     * Unexports the specified remote object.  Returns true if successful,
      * false otherwise.
      */
     boolean unexport(Remote obj, boolean force) throws RemoteException;
-    
+
     /**
      * Execute given task.
      */
     Object execute(Task task) throws Exception;
-    
+
     /**
      * Invoke the garbage collector.
      */
     void gc() throws RemoteException;
-    
+
     /**
      * Terminate the server.
      */
     void terminate(int delay) throws RemoteException;
 }
-

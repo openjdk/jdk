@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2000 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,4 +26,3 @@ import java.rmi.*;
 public interface Ping extends Remote {
     public void ping() throws RemoteException;
 }
-

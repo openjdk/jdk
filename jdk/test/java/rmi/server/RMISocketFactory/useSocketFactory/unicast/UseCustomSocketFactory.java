@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998-1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,7 @@
  * @bug 4127826
  *
  * @summary synopsis: need to download factories for use with custom socket
- * types 
+ * types
  * @author Ann Wollrath
  *
  * @library ../../../../testlibrary
@@ -45,77 +45,77 @@ import java.rmi.registry.*;
 public class UseCustomSocketFactory {
 
     public static void main(String[] args) {
-	
-	String[] protocol = new String[] { "", "compress", "xor" };
 
-	System.out.println("\nRegression test for bug 4127826\n");
-	
-	TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");	
+        String[] protocol = new String[] { "", "compress", "xor" };
 
-	try {
-	    LocateRegistry.createRegistry(TestLibrary.REGISTRY_PORT);
-	} catch (Exception e) {
-	    TestLibrary.bomb("creating registry", e);
-	}
+        System.out.println("\nRegression test for bug 4127826\n");
 
-	for (int i = 0; i < protocol.length; i++) {
+        TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
 
-	    System.err.println("test policy: " + 
-			       TestParams.defaultPolicy);
+        try {
+            LocateRegistry.createRegistry(TestLibrary.REGISTRY_PORT);
+        } catch (Exception e) {
+            TestLibrary.bomb("creating registry", e);
+        }
 
-	    JavaVM serverVM = new JavaVM("EchoImpl", 
-					 "-Djava.security.policy=" + 
-					 TestParams.defaultPolicy,
-					 protocol[i]);
-	    System.err.println("\nusing protocol: " +
-			       (protocol[i] == "" ? "none" : protocol[i]));
-	    
-	    try {
-		/* spawn VM for EchoServer */
-		serverVM.start();
+        for (int i = 0; i < protocol.length; i++) {
 
-		/* lookup server */
-		int tries = 8;
-		Echo obj = null;
-		do {
-		    try {
-			obj = (Echo) Naming.lookup("//:" + TestLibrary.REGISTRY_PORT +
-						   "/EchoServer");
-			break;
-		    } catch (NotBoundException e) {
-			try {
-			    Thread.sleep(2000);
-			} catch (Exception ignore) {
-			}
-			continue;
-		    }
-		} while (--tries > 0);
+            System.err.println("test policy: " +
+                               TestParams.defaultPolicy);
 
-		if (obj == null)
-		    TestLibrary.bomb("server not bound in 8 tries", null);
+            JavaVM serverVM = new JavaVM("EchoImpl",
+                                         "-Djava.security.policy=" +
+                                         TestParams.defaultPolicy,
+                                         protocol[i]);
+            System.err.println("\nusing protocol: " +
+                               (protocol[i] == "" ? "none" : protocol[i]));
 
-		/* invoke remote method and print result*/
-		System.err.println("Bound to " + obj);
-		byte[] data = ("Greetings, citizen " +
-			       System.getProperty("user.name") + "!"). getBytes();
-		byte[] result = obj.echoNot(data);
-		for (int j = 0; j < result.length; j++)
-		    result[j] = (byte) ~result[j];
-		System.err.println("Result: " + new String(result));
-		
-	    } catch (Exception e) {
-		TestLibrary.bomb("test failed", e);
-		
-	    } finally {
-		serverVM.destroy();
-		try {
-		    Naming.unbind("//:" + TestLibrary.REGISTRY_PORT + 
-				  "/EchoServer");
-		} catch (Exception e) {
-		    TestLibrary.bomb("unbinding EchoServer", e);
-		    
-		}
-	    }
-	}
+            try {
+                /* spawn VM for EchoServer */
+                serverVM.start();
+
+                /* lookup server */
+                int tries = 8;
+                Echo obj = null;
+                do {
+                    try {
+                        obj = (Echo) Naming.lookup("//:" + TestLibrary.REGISTRY_PORT +
+                                                   "/EchoServer");
+                        break;
+                    } catch (NotBoundException e) {
+                        try {
+                            Thread.sleep(2000);
+                        } catch (Exception ignore) {
+                        }
+                        continue;
+                    }
+                } while (--tries > 0);
+
+                if (obj == null)
+                    TestLibrary.bomb("server not bound in 8 tries", null);
+
+                /* invoke remote method and print result*/
+                System.err.println("Bound to " + obj);
+                byte[] data = ("Greetings, citizen " +
+                               System.getProperty("user.name") + "!"). getBytes();
+                byte[] result = obj.echoNot(data);
+                for (int j = 0; j < result.length; j++)
+                    result[j] = (byte) ~result[j];
+                System.err.println("Result: " + new String(result));
+
+            } catch (Exception e) {
+                TestLibrary.bomb("test failed", e);
+
+            } finally {
+                serverVM.destroy();
+                try {
+                    Naming.unbind("//:" + TestLibrary.REGISTRY_PORT +
+                                  "/EchoServer");
+                } catch (Exception e) {
+                    TestLibrary.bomb("unbinding EchoServer", e);
+
+                }
+            }
+        }
     }
 }

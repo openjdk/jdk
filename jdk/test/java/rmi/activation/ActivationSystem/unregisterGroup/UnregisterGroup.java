@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998-2000 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -65,8 +65,8 @@ class Callback extends UnicastRemoteObject implements CallbackInterface {
 }
 
 public class UnregisterGroup
-	extends Activatable
-	implements ActivateMe, Runnable
+        extends Activatable
+        implements ActivateMe, Runnable
 {
 
     private static Exception exception = null;
@@ -77,30 +77,30 @@ public class UnregisterGroup
     private static int PORT = 2006;
 
     public UnregisterGroup(ActivationID id, MarshalledObject mobj)
-	throws Exception
+        throws Exception
     {
-	super(id, 0);
+        super(id, 0);
     }
 
     public void ping()
     {}
 
     public void unregister() throws Exception {
-	super.unregister(super.getID());
+        super.unregister(super.getID());
     }
-    
+
     /**
      * Spawns a thread to deactivate the object.
      */
     public void shutdown() throws Exception {
-	(new Thread(this,"UnregisterGroup")).start();
+        (new Thread(this,"UnregisterGroup")).start();
     }
 
     /**
      * To support exiting of group VM as a last resort
      */
     public void justGoAway() {
-	System.exit(0);
+        System.exit(0);
     }
 
     /**
@@ -111,151 +111,151 @@ public class UnregisterGroup
      */
     public void run() {
 
-	ActivationLibrary.deactivate(this, getID());
-	System.err.println("\tActivationLibrary.deactivate returned");
+        ActivationLibrary.deactivate(this, getID());
+        System.err.println("\tActivationLibrary.deactivate returned");
 
-	try {
-	    CallbackInterface cobj =
-		(CallbackInterface)Naming.lookup("//:" + PORT + "/Callback");
-	    cobj.inc();
-	} catch (Exception e) {
-	    System.err.println("cobj.inc exception");
-	    e.printStackTrace();
-	}
+        try {
+            CallbackInterface cobj =
+                (CallbackInterface)Naming.lookup("//:" + PORT + "/Callback");
+            cobj.inc();
+        } catch (Exception e) {
+            System.err.println("cobj.inc exception");
+            e.printStackTrace();
+        }
 
     }
 
     public static void main(String[] args) {
 
-	Registry registry;
+        Registry registry;
 
- 	System.err.println("\nRegression test for bug 4134233\n");
-	
-	TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");		
-	RMID rmid = null;
-	
-	try {
-	    RMID.removeLog();
-	    rmid = RMID.createRMID();
-	    rmid.start();
+        System.err.println("\nRegression test for bug 4134233\n");
 
-	    /* Cause activation groups to have a security policy that will
-	     * allow security managers to be downloaded and installed
-	     */
-	    final Properties p = new Properties();
-	    // this test must always set policies/managers in its
-	    // activation groups
-	    p.put("java.security.policy", 
-		  TestParams.defaultGroupPolicy);
-	    p.put("java.security.manager", 
-		  TestParams.defaultSecurityManager);
+        TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
+        RMID rmid = null;
 
-	    //final int NUM_OBJECTS = 10;
-	    
-	    Thread t = new Thread() {
-		public void run () {
-		    try {
-			System.err.println("Creating group descriptor");
-			ActivationGroupDesc groupDesc =
-			    new ActivationGroupDesc(p, null);
-			ActivationSystem system = ActivationGroup.getSystem();
-			ActivationGroupID groupID =
-			    system.registerGroup(groupDesc);
+        try {
+            RMID.removeLog();
+            rmid = RMID.createRMID();
+            rmid.start();
 
-			ActivateMe[] obj = new ActivateMe[NUM_OBJECTS];
+            /* Cause activation groups to have a security policy that will
+             * allow security managers to be downloaded and installed
+             */
+            final Properties p = new Properties();
+            // this test must always set policies/managers in its
+            // activation groups
+            p.put("java.security.policy",
+                  TestParams.defaultGroupPolicy);
+            p.put("java.security.manager",
+                  TestParams.defaultSecurityManager);
 
-			for (int i = 0; i < NUM_OBJECTS; i++) {
-			    System.err.println("Creating descriptor: " + i);
-			    ActivationDesc desc =
-				new ActivationDesc(groupID, "UnregisterGroup",
-						   null, null);
-			    System.err.println("Registering descriptor: " + i);
-			    obj[i] = (ActivateMe) Activatable.register(desc);
-			    System.err.println("Activating object: " + i);
-			    obj[i].ping();
-			}
-			lastResortExitObj = obj[0];
+            //final int NUM_OBJECTS = 10;
 
-			System.err.println("Unregistering group");
-			system.unregisterGroup(groupID);
+            Thread t = new Thread() {
+                public void run () {
+                    try {
+                        System.err.println("Creating group descriptor");
+                        ActivationGroupDesc groupDesc =
+                            new ActivationGroupDesc(p, null);
+                        ActivationSystem system = ActivationGroup.getSystem();
+                        ActivationGroupID groupID =
+                            system.registerGroup(groupDesc);
 
-			try {
-			    System.err.println("Get the group descriptor");
-			    system.getActivationGroupDesc(groupID);
-			    error = "test failed: group still registered";
-			} catch (UnknownGroupException e) {
-			    System.err.println("Test passed: " +
-					       "group unregistered");
-			}
+                        ActivateMe[] obj = new ActivateMe[NUM_OBJECTS];
+
+                        for (int i = 0; i < NUM_OBJECTS; i++) {
+                            System.err.println("Creating descriptor: " + i);
+                            ActivationDesc desc =
+                                new ActivationDesc(groupID, "UnregisterGroup",
+                                                   null, null);
+                            System.err.println("Registering descriptor: " + i);
+                            obj[i] = (ActivateMe) Activatable.register(desc);
+                            System.err.println("Activating object: " + i);
+                            obj[i].ping();
+                        }
+                        lastResortExitObj = obj[0];
+
+                        System.err.println("Unregistering group");
+                        system.unregisterGroup(groupID);
+
+                        try {
+                            System.err.println("Get the group descriptor");
+                            system.getActivationGroupDesc(groupID);
+                            error = "test failed: group still registered";
+                        } catch (UnknownGroupException e) {
+                            System.err.println("Test passed: " +
+                                               "group unregistered");
+                        }
 
 
-			/*
-			 * Deactivate objects so group VM will exit.
-			 */
-			for (int i = 0; i < NUM_OBJECTS; i++) {
-			    System.err.println("Deactivating object: " + i);
-			    obj[i].shutdown();
-			    obj[i] = null;
-			}
-			lastResortExitObj = null;
+                        /*
+                         * Deactivate objects so group VM will exit.
+                         */
+                        for (int i = 0; i < NUM_OBJECTS; i++) {
+                            System.err.println("Deactivating object: " + i);
+                            obj[i].shutdown();
+                            obj[i] = null;
+                        }
+                        lastResortExitObj = null;
 
-		    } catch (Exception e) {
-			exception = e;
-		    }
+                    } catch (Exception e) {
+                        exception = e;
+                    }
 
-		    done = true;
-		}
-	    };
+                    done = true;
+                }
+            };
 
-	    t.start();
-	    t.join(120000);
+            t.start();
+            t.join(120000);
 
-	    if (exception != null) {
-		TestLibrary.bomb("test failed", exception);
-	    } else if (error != null) {
-		TestLibrary.bomb(error, null);
-	    } else if (!done) {
-		TestLibrary.bomb("test failed: not completed before timeout", null);
-	    } else {
-		System.err.println("Test passed");
-	    }
+            if (exception != null) {
+                TestLibrary.bomb("test failed", exception);
+            } else if (error != null) {
+                TestLibrary.bomb(error, null);
+            } else if (!done) {
+                TestLibrary.bomb("test failed: not completed before timeout", null);
+            } else {
+                System.err.println("Test passed");
+            }
 
-	    
-	} catch (Exception e) {
-	    TestLibrary.bomb("test failed", e);
-	} finally {
-	    if (lastResortExitObj != null) {
-		try {
-		    lastResortExitObj.justGoAway();
-		} catch (Exception munch) {
-		}
-	    }
 
-	    // Wait for the object deactivation to take place first
-	    try {
+        } catch (Exception e) {
+            TestLibrary.bomb("test failed", e);
+        } finally {
+            if (lastResortExitObj != null) {
+                try {
+                    lastResortExitObj.justGoAway();
+                } catch (Exception munch) {
+                }
+            }
 
- 		// create reg and export callback object
- 		registry = LocateRegistry.createRegistry(PORT);
- 		Callback robj = new Callback();
- 		registry.bind("Callback", robj);
+            // Wait for the object deactivation to take place first
+            try {
 
- 		//get the callback object 
- 		int maxwait=30;
- 		int nd = robj.getNumDeactivated();
- 		while ((nd < NUM_OBJECTS) && (maxwait> 0)) {
-		    System.err.println("num_deactivated="+nd);
-		    try {
-			Thread.sleep(1000);
-		    } catch (InterruptedException ie) {}
-		    maxwait--;
-		    nd = robj.getNumDeactivated();
- 		}
-	    } catch (Exception ce) {
- 		System.err.println("E:"+ce);
- 		ce.printStackTrace();
-	    }
+                // create reg and export callback object
+                registry = LocateRegistry.createRegistry(PORT);
+                Callback robj = new Callback();
+                registry.bind("Callback", robj);
 
-	    ActivationLibrary.rmidCleanup(rmid);
-	}
+                //get the callback object
+                int maxwait=30;
+                int nd = robj.getNumDeactivated();
+                while ((nd < NUM_OBJECTS) && (maxwait> 0)) {
+                    System.err.println("num_deactivated="+nd);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ie) {}
+                    maxwait--;
+                    nd = robj.getNumDeactivated();
+                }
+            } catch (Exception ce) {
+                System.err.println("E:"+ce);
+                ce.printStackTrace();
+            }
+
+            ActivationLibrary.rmidCleanup(rmid);
+        }
     }
 }
