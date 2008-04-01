@@ -634,7 +634,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     private PropertyChangeSupport changeSupport;
 
-    private transient final Object changeSupportLock = new Object();
+    // Note: this field is considered final, though readObject() prohibits
+    // initializing final fields.
+    private transient Object changeSupportLock = new Object();
     private Object getChangeSupportLock() {
         return changeSupportLock;
     }
@@ -8310,6 +8312,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {
+        changeSupportLock = new Object();
+
         s.defaultReadObject();
 
         appContext = AppContext.getAppContext();
