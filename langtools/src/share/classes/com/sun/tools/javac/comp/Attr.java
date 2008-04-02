@@ -2199,7 +2199,7 @@ public class Attr extends JCTree.Visitor {
                 (env.tree.getTag() != JCTree.ASSIGN ||
                  TreeInfo.skipParens(((JCAssign) env.tree).lhs) != tree)) {
 
-                if (!onlyWarning || isNonStaticEnumField(v)) {
+                if (!onlyWarning || isStaticEnumField(v)) {
                     log.error(tree.pos(), "illegal.forward.ref");
                 } else if (useBeforeDeclarationWarning) {
                     log.warning(tree.pos(), "forward.ref", v);
@@ -2233,7 +2233,7 @@ public class Attr extends JCTree.Visitor {
             // initializer expressions of an enum constant e to refer
             // to itself or to an enum constant of the same type that
             // is declared to the right of e."
-            if (isNonStaticEnumField(v)) {
+            if (isStaticEnumField(v)) {
                 ClassSymbol enclClass = env.info.scope.owner.enclClass();
 
                 if (enclClass == null || enclClass.owner == null)
@@ -2254,8 +2254,14 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        private boolean isNonStaticEnumField(VarSymbol v) {
-            return Flags.isEnum(v.owner) && Flags.isStatic(v) && !Flags.isConstant(v);
+        /** Is the given symbol a static, non-constant field of an Enum?
+         *  Note: enum literals should not be regarded as such
+         */
+        private boolean isStaticEnumField(VarSymbol v) {
+            return Flags.isEnum(v.owner) &&
+                   Flags.isStatic(v) &&
+                   !Flags.isConstant(v) &&
+                   v.name != names._class;
         }
 
         /** Can the given symbol be the owner of code which forms part
