@@ -256,39 +256,49 @@ void ConnectionGraph::PointsTo(VectorSet &ptset, Node * n, PhaseTransform *phase
   }
 }
 
-void ConnectionGraph::remove_deferred(uint ni) {
-  VectorSet visited(Thread::current()->resource_area());
+void ConnectionGraph::remove_deferred(uint ni, GrowableArray<uint>* deferred_edges, VectorSet* visited) {
+  // This method is most expensive during ConnectionGraph construction.
+  // Reuse vectorSet and an additional growable array for deferred edges.
+  deferred_edges->clear();
+  visited->Clear();
 
   uint i = 0;
   PointsToNode *ptn = ptnode_adr(ni);
 
-  while(i < ptn->edge_count()) {
+  // Mark current edges as visited and move deferred edges to separate array.
+  for (; i < ptn->edge_count(); i++) {
     uint t = ptn->edge_target(i);
-    PointsToNode *ptt = ptnode_adr(t);
-    if (ptn->edge_type(i) != PointsToNode::DeferredEdge) {
-      i++;
-    } else {
+#ifdef ASSERT
+    assert(!visited->test_set(t), "expecting no duplications");
+#else
+    visited->set(t);
+#endif
+    if (ptn->edge_type(i) == PointsToNode::DeferredEdge) {
       ptn->remove_edge(t, PointsToNode::DeferredEdge);
-      if(!visited.test_set(t)) {
-        for (uint j = 0; j < ptt->edge_count(); j++) {
-          uint n1 = ptt->edge_target(j);
-          PointsToNode *pt1 = ptnode_adr(n1);
-          switch(ptt->edge_type(j)) {
-            case PointsToNode::PointsToEdge:
-              add_pointsto_edge(ni, n1);
-              if(n1 == _phantom_object) {
-                // Special case - field set outside (globally escaping).
-                ptn->set_escape_state(PointsToNode::GlobalEscape);
-              }
-              break;
-            case PointsToNode::DeferredEdge:
-              add_deferred_edge(ni, n1);
-              break;
-            case PointsToNode::FieldEdge:
-              assert(false, "invalid connection graph");
-              break;
+      deferred_edges->append(t);
+    }
+  }
+  for (int next = 0; next < deferred_edges->length(); ++next) {
+    uint t = deferred_edges->at(next);
+    PointsToNode *ptt = ptnode_adr(t);
+    for (uint j = 0; j < ptt->edge_count(); j++) {
+      uint n1 = ptt->edge_target(j);
+      if (visited->test_set(n1))
+        continue;
+      switch(ptt->edge_type(j)) {
+        case PointsToNode::PointsToEdge:
+          add_pointsto_edge(ni, n1);
+          if(n1 == _phantom_object) {
+            // Special case - field set outside (globally escaping).
+            ptn->set_escape_state(PointsToNode::GlobalEscape);
           }
-        }
+          break;
+        case PointsToNode::DeferredEdge:
+          deferred_edges->append(n1);
+          break;
+        case PointsToNode::FieldEdge:
+          assert(false, "invalid connection graph");
+          break;
       }
     }
   }
@@ -1236,8 +1246,10 @@ void ConnectionGraph::compute_escape() {
   }
 
   VectorSet ptset(Thread::current()->resource_area());
-  GrowableArray<Node*>  alloc_worklist;
-  GrowableArray<int>  worklist;
+  GrowableArray<Node*> alloc_worklist;
+  GrowableArray<int>   worklist;
+  GrowableArray<uint>  deferred_edges;
+  VectorSet visited(Thread::current()->resource_area());
 
   // remove deferred edges from the graph and collect
   // information we will need for type splitting
@@ -1247,7 +1259,7 @@ void ConnectionGraph::compute_escape() {
     PointsToNode::NodeType nt = ptn->node_type();
     Node *n = ptn->_node;
     if (nt == PointsToNode::LocalVar || nt == PointsToNode::Field) {
-      remove_deferred(ni);
+      remove_deferred(ni, &deferred_edges, &visited);
       if (n->is_AddP()) {
         // If this AddP computes an address which may point to more that one
         // object, nothing the address points to can be scalar replaceable.
