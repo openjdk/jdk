@@ -157,6 +157,19 @@ public class Infer {
                     if (isSubClass(bs.head, that.hibounds))
                         that.inst = types.fromUnknownFun.apply(bs.head);
                 }
+                if (that.inst == null) {
+                    int classCount = 0, interfaceCount = 0;
+                    for (Type t : that.hibounds) {
+                        if (t.tag == CLASS) {
+                            if (t.isInterface())
+                                interfaceCount++;
+                            else
+                                classCount++;
+                        }
+                    }
+                    if ((that.hibounds.size() == classCount + interfaceCount) && classCount == 1)
+                        that.inst = types.makeCompoundType(that.hibounds);
+                }
                 if (that.inst == null || !types.isSubtypeUnchecked(that.inst, that.hibounds, warn))
                     throw ambiguousNoInstanceException
                         .setMessage("no.unique.maximal.instance.exists",
