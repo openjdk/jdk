@@ -407,6 +407,8 @@ public class Resolve {
                      Type site,
                      Name name,
                      TypeSymbol c) {
+        while (c.type.tag == TYPEVAR)
+            c = c.type.getUpperBound().tsym;
         Symbol bestSoFar = varNotFound;
         Symbol sym;
         Scope.Entry e = c.members().lookup(name);
@@ -418,7 +420,7 @@ public class Resolve {
             e = e.next();
         }
         Type st = types.supertype(c.type);
-        if (st != null && st.tag == CLASS) {
+        if (st != null && (st.tag == CLASS || st.tag == TYPEVAR)) {
             sym = findField(env, site, name, st.tsym);
             if (sym.kind < bestSoFar.kind) bestSoFar = sym;
         }
@@ -733,7 +735,9 @@ public class Resolve {
                               boolean allowBoxing,
                               boolean useVarargs,
                               boolean operator) {
-        for (Type ct = intype; ct.tag == CLASS; ct = types.supertype(ct)) {
+        for (Type ct = intype; ct.tag == CLASS || ct.tag == TYPEVAR; ct = types.supertype(ct)) {
+            while (ct.tag == TYPEVAR)
+                ct = ct.getUpperBound();
             ClassSymbol c = (ClassSymbol)ct.tsym;
             if ((c.flags() & (ABSTRACT | INTERFACE)) == 0)
                 abstractok = false;
