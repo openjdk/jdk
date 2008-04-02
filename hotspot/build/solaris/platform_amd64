@@ -12,6 +12,4 @@ lib_arch = amd64
 
 compiler = sparcWorks
 
-gnu_dis_arch = amd64
-
 sysdefs = -DSOLARIS -DSPARC_WORKS -DAMD64

@@ -168,3 +168,4 @@
 ^build/linux/export-linux-x64/
 ^dist/
 ^nbproject/private/
+^src/share/tools/hsdis/bin/

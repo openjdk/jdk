@@ -244,7 +244,7 @@ assembler.hpp                           vm_version_<arch_model>.hpp
 
 assembler.inline.hpp                    assembler.hpp
 assembler.inline.hpp                    codeBuffer.hpp
-assembler.inline.hpp                    disassembler_<arch>.hpp
+assembler.inline.hpp                    disassembler.hpp
 assembler.inline.hpp                    threadLocalStorage.hpp
 
 assembler_<arch_model>.cpp              assembler_<arch_model>.inline.hpp
@@ -946,7 +946,7 @@ codeBlob.cpp                            allocation.inline.hpp
 codeBlob.cpp                            bytecode.hpp
 codeBlob.cpp                            codeBlob.hpp
 codeBlob.cpp                            codeCache.hpp
-codeBlob.cpp                            disassembler_<arch>.hpp
+codeBlob.cpp                            disassembler.hpp
 codeBlob.cpp                            forte.hpp
 codeBlob.cpp                            handles.inline.hpp
 codeBlob.cpp                            heap.hpp
@@ -968,7 +968,7 @@ codeBlob.hpp                            oopMap.hpp
 
 codeBuffer.cpp                          codeBuffer.hpp
 codeBuffer.cpp                          copy.hpp
-codeBuffer.cpp                          disassembler_<arch>.hpp
+codeBuffer.cpp                          disassembler.hpp
 
 codeBuffer.hpp                          assembler.hpp
 codeBuffer.hpp                          oopRecorder.hpp
@@ -1323,7 +1323,7 @@ debug.cpp                               codeCache.hpp
 debug.cpp                               collectedHeap.hpp
 debug.cpp                               compileBroker.hpp
 debug.cpp                               defaultStream.hpp
-debug.cpp                               disassembler_<arch>.hpp
+debug.cpp                               disassembler.hpp
 debug.cpp                               events.hpp
 debug.cpp                               frame.hpp
 debug.cpp                               heapDumper.hpp
@@ -1442,7 +1442,7 @@ deoptimization.hpp                      allocation.hpp
 deoptimization.hpp                      frame.inline.hpp
 
 depChecker_<arch>.cpp                   depChecker_<arch>.hpp
-depChecker_<arch>.cpp                   disassembler_<arch>.hpp
+depChecker_<arch>.cpp                   disassembler.hpp
 depChecker_<arch>.cpp                   hpi.hpp
 
 dependencies.cpp                        ciArrayKlass.hpp
@@ -1472,21 +1472,21 @@ dictionary.hpp                          instanceKlass.hpp
 dictionary.hpp                          oop.hpp
 dictionary.hpp                          systemDictionary.hpp
 
-disassemblerEnv.hpp                     globals.hpp
+disassembler_<arch>.hpp                 generate_platform_dependent_include
 
-disassembler_<arch>.cpp                 cardTableModRefBS.hpp
-disassembler_<arch>.cpp                 codeCache.hpp
-disassembler_<arch>.cpp                 collectedHeap.hpp
-disassembler_<arch>.cpp                 depChecker_<arch>.hpp
-disassembler_<arch>.cpp                 disassembler_<arch>.hpp
-disassembler_<arch>.cpp                 fprofiler.hpp
-disassembler_<arch>.cpp                 handles.inline.hpp
-disassembler_<arch>.cpp                 hpi.hpp
-disassembler_<arch>.cpp                 stubCodeGenerator.hpp
-disassembler_<arch>.cpp                 stubRoutines.hpp
+disassembler.cpp                        cardTableModRefBS.hpp
+disassembler.cpp                        codeCache.hpp
+disassembler.cpp                        collectedHeap.hpp
+disassembler.cpp                        depChecker_<arch>.hpp
+disassembler.cpp                        disassembler.hpp
+disassembler.cpp                        fprofiler.hpp
+disassembler.cpp                        handles.inline.hpp
+disassembler.cpp                        hpi.hpp
+disassembler.cpp                        stubCodeGenerator.hpp
+disassembler.cpp                        stubRoutines.hpp
 
-disassembler_<arch>.hpp                 disassemblerEnv.hpp
-disassembler_<arch>.hpp                 os_<os_family>.inline.hpp
+disassembler.hpp                        globals.hpp
+disassembler.hpp                        os_<os_family>.inline.hpp
 
 dtraceAttacher.cpp                      codeCache.hpp
 dtraceAttacher.cpp                      deoptimization.hpp
@@ -2909,7 +2909,7 @@ nmethod.cpp                             codeCache.hpp
 nmethod.cpp                             compileLog.hpp
 nmethod.cpp                             compiledIC.hpp
 nmethod.cpp                             compilerOracle.hpp
-nmethod.cpp                             disassembler_<arch>.hpp
+nmethod.cpp                             disassembler.hpp
 nmethod.cpp                             dtrace.hpp
 nmethod.cpp                             events.hpp
 nmethod.cpp                             jvmtiRedefineClassesTrace.hpp
@@ -3763,7 +3763,7 @@ statSampler.hpp                         perfData.hpp
 statSampler.hpp                         task.hpp
 
 stubCodeGenerator.cpp                   assembler_<arch_model>.inline.hpp
-stubCodeGenerator.cpp                   disassembler_<arch>.hpp
+stubCodeGenerator.cpp                   disassembler.hpp
 stubCodeGenerator.cpp                   forte.hpp
 stubCodeGenerator.cpp                   oop.inline.hpp
 stubCodeGenerator.cpp                   stubCodeGenerator.hpp
@@ -4530,7 +4530,7 @@ vmreg_<arch>.cpp                        vmreg.hpp
 vmreg_<arch>.hpp                        generate_platform_dependent_include
 
 vtableStubs.cpp                         allocation.inline.hpp
-vtableStubs.cpp                         disassembler_<arch>.hpp
+vtableStubs.cpp                         disassembler.hpp
 vtableStubs.cpp                         forte.hpp
 vtableStubs.cpp                         handles.inline.hpp
 vtableStubs.cpp                         instanceKlass.hpp

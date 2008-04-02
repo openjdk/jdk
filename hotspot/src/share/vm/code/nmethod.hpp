@@ -485,8 +485,8 @@ class nmethod : public CodeBlob {
   void verify_interrupt_point(address interrupt_point);
 
   // printing support
-  void print()                          const     PRODUCT_RETURN;
-  void print_code()                               PRODUCT_RETURN;
+  void print()                          const;
+  void print_code();
   void print_relocations()                        PRODUCT_RETURN;
   void print_pcs()                                PRODUCT_RETURN;
   void print_scopes()                             PRODUCT_RETURN;
@@ -495,7 +495,7 @@ class nmethod : public CodeBlob {
   void print_calls(outputStream* st)              PRODUCT_RETURN;
   void print_handler_table()                      PRODUCT_RETURN;
   void print_nul_chk_table()                      PRODUCT_RETURN;
-  void print_nmethod(bool print_code)             PRODUCT_RETURN;
+  void print_nmethod(bool print_code);
 
   void print_on(outputStream* st, const char* title) const;
 
@@ -505,7 +505,7 @@ class nmethod : public CodeBlob {
   void log_state_change(int state) const;
 
   // Prints a comment for one native instruction (reloc info, pc desc)
-  void print_code_comment_on(outputStream* st, int column, address begin, address end) PRODUCT_RETURN;
+  void print_code_comment_on(outputStream* st, int column, address begin, address end);
   static void print_statistics()                  PRODUCT_RETURN;
 
   // Compiler task identification.  Note that all OSR methods

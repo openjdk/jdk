@@ -12,6 +12,4 @@ lib_arch = i386
 
 compiler = sparcWorks
 
-gnu_dis_arch = i386
-
 sysdefs = -DSOLARIS -DSPARC_WORKS -DIA32
