@@ -1005,7 +1005,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     /**
      * Gets this component's locking object (the object that owns the thread
-     * sychronization monitor) for AWT component-tree and layout
+     * synchronization monitor) for AWT component-tree and layout
      * operations.
      * @return this component's locking object
      */
