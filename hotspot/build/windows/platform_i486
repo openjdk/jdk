@@ -10,7 +10,6 @@ os_arch = windows_x86
 
 os_arch_model = windows_x86_32
 
+lib_arch = i386
+
 compiler = visCPP
-
-gnu_dis_arch = i386
-
