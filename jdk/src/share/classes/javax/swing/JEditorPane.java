@@ -429,9 +429,8 @@ public class JEditorPane extends JTextComponent {
             // different url or POST method, load the new content
 
             int p = getAsynchronousLoadPriority(getDocument());
-            if ((postData == null) || (p < 0)) {
-                // Either we do not have POST data, or should submit the data
-                // synchronously.
+            if (p < 0) {
+                // open stream synchronously
                 InputStream in = getStream(page);
                 if (kit != null) {
                     Document doc = initializeModel(kit, page);
@@ -440,22 +439,13 @@ public class JEditorPane extends JTextComponent {
                     // view notifications slowing it down (i.e. best synchronous
                     // behavior) or set the model and start to feed it on a separate
                     // thread (best asynchronous behavior).
-                    synchronized(this) {
-                        if (loading != null) {
-                            // we are loading asynchronously, so we need to cancel
-                            // the old stream.
-                            loading.cancel();
-                            loading = null;
-                        }
-                    }
                     p = getAsynchronousLoadPriority(doc);
                     if (p >= 0) {
                         // load asynchronously
                         setDocument(doc);
                         synchronized(this) {
-                            loading = new PageStream(in);
-                            Thread pl = new PageLoader(doc, loading, p, loaded, page);
-                            pl.start();
+                            pageLoader = new PageLoader(doc, in, loaded, page);
+                            pageLoader.execute();
                         }
                         return;
                     }
@@ -464,11 +454,15 @@ public class JEditorPane extends JTextComponent {
                     reloaded = true;
                 }
             } else {
-                // We have POST data and should send it asynchronously.
-                // Send (and subsequentally read) data in separate thread.
+                // we may need to cancel background loading
+                if (pageLoader != null) {
+                    pageLoader.cancel(true);
+                }
+
+                // Do everything in a background thread.
                 // Model initialization is deferred to that thread, too.
-                Thread pl = new PageLoader(null, null, p, loaded, page);
-                pl.start();
+                pageLoader = new PageLoader(null, null, loaded, page);
+                pageLoader.execute();
                 return;
             }
         }
@@ -604,44 +598,38 @@ public class JEditorPane extends JTextComponent {
 
 
     /**
-     * Thread to load a stream into the text document model.
+     * Loads a stream into the text document model.
      */
-    class PageLoader extends Thread {
+    class PageLoader extends SwingWorker<URL, Object> {
 
         /**
          * Construct an asynchronous page loader.
          */
-        PageLoader(Document doc, InputStream in, int priority, URL old,
-                   URL page) {
-            setPriority(priority);
+        PageLoader(Document doc, InputStream in, URL old, URL page) {
             this.in = in;
             this.old = old;
             this.page = page;
             this.doc = doc;
         }
 
-        boolean pageLoaded = false;
-
         /**
          * Try to load the document, then scroll the view
          * to the reference (if specified).  When done, fire
          * a page property change event.
          */
-        public void run() {
+        protected URL doInBackground() {
+            boolean pageLoaded = false;
             try {
                 if (in == null) {
                     in = getStream(page);
                     if (kit == null) {
                         // We received document of unknown content type.
-                        UIManager.getLookAndFeel().provideErrorFeedback(
-                                JEditorPane.this);
-                        return;
-                    }
-                    // Access to <code>loading</code> should be synchronized.
-                    synchronized(JEditorPane.this) {
-                        in = loading = new PageStream(in);
+                        UIManager.getLookAndFeel().
+                                provideErrorFeedback(JEditorPane.this);
+                        return old;
                     }
                 }
+
                 if (doc == null) {
                     try {
                         SwingUtilities.invokeAndWait(new Runnable() {
@@ -653,11 +641,11 @@ public class JEditorPane extends JTextComponent {
                     } catch (InvocationTargetException ex) {
                         UIManager.getLookAndFeel().provideErrorFeedback(
                                                             JEditorPane.this);
-                        return;
+                        return old;
                     } catch (InterruptedException ex) {
                         UIManager.getLookAndFeel().provideErrorFeedback(
                                                             JEditorPane.this);
-                        return;
+                        return old;
                     }
                 }
 
@@ -682,16 +670,14 @@ public class JEditorPane extends JTextComponent {
             } catch (IOException ioe) {
                 UIManager.getLookAndFeel().provideErrorFeedback(JEditorPane.this);
             } finally {
-                synchronized(JEditorPane.this) {
-                    loading = null;
-                }
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        if (pageLoaded) {
-                            firePropertyChange("page", old, page);
+                if (pageLoaded) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            JEditorPane.this.firePropertyChange("page", old, page);
                         }
-                    }
-                });
+                    });
+                }
+                return (pageLoaded ? page : old);
             }
         }
 
@@ -716,51 +702,6 @@ public class JEditorPane extends JTextComponent {
          * and run.
          */
         Document doc;
-    }
-
-    static class PageStream extends FilterInputStream {
-
-        boolean canceled;
-
-        public PageStream(InputStream i) {
-            super(i);
-            canceled = false;
-        }
-
-        /**
-         * Cancel the loading of the stream by throwing
-         * an IOException on the next request.
-         */
-        public synchronized void cancel() {
-            canceled = true;
-        }
-
-        protected synchronized void checkCanceled() throws IOException {
-            if (canceled) {
-                throw new IOException("page canceled");
-            }
-        }
-
-        public int read() throws IOException {
-            checkCanceled();
-            return super.read();
-        }
-
-        public long skip(long n) throws IOException {
-            checkCanceled();
-            return super.skip(n);
-        }
-
-        public int available() throws IOException {
-            checkCanceled();
-            return super.available();
-        }
-
-        public void reset() throws IOException {
-            checkCanceled();
-            super.reset();
-        }
-
     }
 
     /**
@@ -1573,11 +1514,7 @@ public class JEditorPane extends JTextComponent {
 
     // --- variables ---------------------------------------
 
-    /**
-     * Stream currently loading asynchronously (potentially cancelable).
-     * Access to this variable should be synchronized.
-     */
-    PageStream loading;
+    private SwingWorker<URL, Object> pageLoader;
 
     /**
      * Current content binding of the editor.
