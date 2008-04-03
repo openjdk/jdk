@@ -36,7 +36,6 @@ const int VMRegImpl::register_count = ConcreteRegisterImpl::number_of_registers;
 // Register names
 const char *VMRegImpl::regName[ConcreteRegisterImpl::number_of_registers];
 
-#ifndef PRODUCT
 void VMRegImpl::print_on(outputStream* st) const {
   if( is_reg() ) {
     assert( VMRegImpl::regName[value()], "" );
@@ -48,4 +47,3 @@ void VMRegImpl::print_on(outputStream* st) const {
     st->print("BAD!");
   }
 }
-#endif // PRODUCT

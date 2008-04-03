@@ -707,7 +707,9 @@ nmethod::nmethod(
            " entry points must be same for static methods and vice versa");
   }
 
-  bool printnmethods = PrintNMethods || CompilerOracle::has_option_string(_method, "PrintNMethods");
+  bool printnmethods = PrintNMethods
+    || CompilerOracle::should_print(_method)
+    || CompilerOracle::has_option_string(_method, "PrintNMethods");
   if (printnmethods || PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers) {
     print_nmethod(printnmethods);
   }
@@ -798,7 +800,6 @@ void nmethod::print_on(outputStream* st, const char* title) const {
 }
 
 
-#ifndef PRODUCT
 void nmethod::print_nmethod(bool printmethod) {
   ttyLocker ttyl;  // keep the following output all in one block
   if (xtty != NULL) {
@@ -831,7 +832,6 @@ void nmethod::print_nmethod(bool printmethod) {
     xtty->tail("print_nmethod");
   }
 }
-#endif
 
 
 void nmethod::set_version(int v) {
@@ -1870,6 +1870,7 @@ void nmethod::check_store() {
   }
 }
 
+#endif // PRODUCT
 
 // Printing operations
 
@@ -1948,6 +1949,14 @@ void nmethod::print() const {
                                               oops_size());
 }
 
+void nmethod::print_code() {
+  HandleMark hm;
+  ResourceMark m;
+  Disassembler::decode(this);
+}
+
+
+#ifndef PRODUCT
 
 void nmethod::print_scopes() {
   // Find the first pc desc for all scopes in the code and print it.
@@ -1976,13 +1985,6 @@ void nmethod::print_dependencies() {
     }
     deps.log_dependency();  // put it into the xml log also
   }
-}
-
-
-void nmethod::print_code() {
-  HandleMark hm;
-  ResourceMark m;
-  Disassembler().decode(this);
 }
 
 
@@ -2021,6 +2023,7 @@ void nmethod::print_pcs() {
   }
 }
 
+#endif // PRODUCT
 
 const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
   RelocIterator iter(this, begin, end);
@@ -2055,7 +2058,6 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
   return have_one ? "other" : NULL;
 }
 
-
 // Return a the last scope in (begin..end]
 ScopeDesc* nmethod::scope_desc_in(address begin, address end) {
   PcDesc* p = pc_desc_near(begin+1);
@@ -2078,29 +2080,26 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
       address pc = base + om->offset();
       if (pc > begin) {
         if (pc <= end) {
-          st->fill_to(column);
-          if (st == tty) {
-            st->print("; OopMap ");
-            om->print();
-            tty->cr();
-          } else {
-            st->print_cr("; OopMap #%d offset:%d", i, om->offset());
-          }
+          st->move_to(column);
+          st->print("; ");
+          om->print_on(st);
         }
         break;
       }
     }
   }
+
+  // Print any debug info present at this pc.
   ScopeDesc* sd  = scope_desc_in(begin, end);
   if (sd != NULL) {
-    st->fill_to(column);
+    st->move_to(column);
     if (sd->bci() == SynchronizationEntryBCI) {
       st->print(";*synchronization entry");
     } else {
       if (sd->method().is_null()) {
-        tty->print("method is NULL");
+        st->print("method is NULL");
       } else if (sd->method()->is_native()) {
-        tty->print("method is native");
+        st->print("method is native");
       } else {
         address bcp  = sd->method()->bcp_from(sd->bci());
         Bytecodes::Code bc = Bytecodes::java_code_at(bcp);
@@ -2137,13 +2136,13 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
         }
       }
     }
-    st->cr();
+
     // Print all scopes
     for (;sd != NULL; sd = sd->sender()) {
-      st->fill_to(column);
+      st->move_to(column);
       st->print("; -");
       if (sd->method().is_null()) {
-        tty->print("method is NULL");
+        st->print("method is NULL");
       } else {
         sd->method()->print_short_name(st);
       }
@@ -2161,16 +2160,18 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
   const char* str = reloc_string_for(begin, end);
   if (str != NULL) {
     if (sd != NULL) st->cr();
-    st->fill_to(column);
+    st->move_to(column);
     st->print(";   {%s}", str);
   }
   int cont_offset = ImplicitExceptionTable(this).at(begin - instructions_begin());
   if (cont_offset != 0) {
-    st->fill_to(column);
+    st->move_to(column);
     st->print("; implicit exception: dispatches to " INTPTR_FORMAT, instructions_begin() + cont_offset);
   }
 
 }
+
+#ifndef PRODUCT
 
 void nmethod::print_value_on(outputStream* st) const {
   print_on(st, "nmethod");
