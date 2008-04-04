@@ -1122,6 +1122,12 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         }
         // Split through Phi (see original code in loopopts.cpp).
         assert(phase->C->have_alias_type(addr_t), "instance should have alias type");
+
+        // Do nothing here if Identity will find a value
+        // (to avoid infinite chain of value phis generation).
+        if ( !phase->eqv(this, this->Identity(phase)) )
+          return NULL;
+
         const Type* this_type = this->bottom_type();
         int this_index  = phase->C->get_alias_index(addr_t);
         int this_offset = addr_t->offset();
