@@ -1120,11 +1120,6 @@ public class JEditorPane extends JTextComponent {
      * current selection.  The replacement text will have the
      * attributes currently defined for input.  If the component is not
      * editable, beep and return.
-     * <p>
-     * This method is thread safe, although most Swing methods
-     * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
      *
      * @param content  the content to replace the selection with.  This
      *   value can be <code>null</code>
@@ -1395,11 +1390,6 @@ public class JEditorPane extends JTextComponent {
      * create a StringReader and call the read method.  In this case the model
      * would be replaced after it was initialized with the contents of the
      * string.
-     * <p>
-     * This method is thread safe, although most Swing methods
-     * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
      *
      * @param t the new text to be set; if <code>null</code> the old
      *    text will be deleted
