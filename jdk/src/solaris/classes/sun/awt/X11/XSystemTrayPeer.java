@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
         XClientMessageEvent xev = new XClientMessageEvent();
 
         try {
-            xev.set_type(XlibWrapper.ClientMessage);
+            xev.set_type(XConstants.ClientMessage);
             xev.set_window(win);
             xev.set_format(32);
             xev.set_message_type(_NET_SYSTEM_TRAY_OPCODE.getAtom());
@@ -144,7 +144,7 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
             XToolkit.awtLock();
             try {
                 XlibWrapper.XSendEvent(XToolkit.getDisplay(), win, false,
-                                       XlibWrapper.NoEventMask, xev.pData);
+                                       XConstants.NoEventMask, xev.pData);
             } finally {
                 XToolkit.awtUnlock();
             }

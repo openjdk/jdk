@@ -72,7 +72,7 @@ import sun.awt.image.SunVolatileImage;
 import sun.awt.image.ToolkitImage;
 import sun.java2d.pipe.Region;
 
-public class XComponentPeer extends XWindow implements ComponentPeer, DropTargetPeer, XConstants {
+public class XComponentPeer extends XWindow implements ComponentPeer, DropTargetPeer {
     /* FIX ME: these constants copied from java.awt.KeyboardFocusManager */
     static final int SNFH_FAILURE = 0;
     static final int SNFH_SUCCESS_HANDLED = 1;
@@ -718,7 +718,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
          * handleJavaMouseEvent() would be more suitable place to do this
          * but we want Swing to have this functionality also.
          */
-        if (xev.get_type() == ButtonPress) {
+        if (xev.get_type() == XConstants.ButtonPress) {
             final XWindowPeer parentXWindow = getParentTopLevel();
             Window parentWindow = (Window)parentXWindow.getTarget();
             if (parentXWindow.isFocusableWindow() && parentXWindow.isSimpleWindow() &&
@@ -841,7 +841,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
             XSetWindowAttributes xwa = new XSetWindowAttributes();
             xwa.set_cursor(xcursor);
 
-            long valuemask = XlibWrapper.CWCursor;
+            long valuemask = XConstants.CWCursor;
 
             XlibWrapper.XChangeWindowAttributes(XToolkit.getDisplay(),getWindow(),valuemask,xwa.pData);
             XlibWrapper.XFlush(XToolkit.getDisplay());
@@ -1342,20 +1342,20 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         enableLog.log(Level.FINEST, "Component is {1}, checking for disabled event {0}", new Object[] {e, (isEnabled()?"enabled":"disable")});
         if (!isEnabled()) {
             switch (e.get_type()) {
-              case ButtonPress:
-              case ButtonRelease:
-              case KeyPress:
-              case KeyRelease:
-              case EnterNotify:
-              case LeaveNotify:
-              case MotionNotify:
+              case XConstants.ButtonPress:
+              case XConstants.ButtonRelease:
+              case XConstants.KeyPress:
+              case XConstants.KeyRelease:
+              case XConstants.EnterNotify:
+              case XConstants.LeaveNotify:
+              case XConstants.MotionNotify:
                   enableLog.log(Level.FINER, "Event {0} is disable", new Object[] {e});
                   return true;
             }
         }
         switch(e.get_type()) {
-          case MapNotify:
-          case UnmapNotify:
+          case XConstants.MapNotify:
+          case XConstants.UnmapNotify:
               return true;
         }
         return super.isEventDisabled(e);

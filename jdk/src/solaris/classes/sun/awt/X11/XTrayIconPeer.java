@@ -98,7 +98,7 @@ public class XTrayIconPeer implements TrayIconPeer {
             parentXED = new XEventDispatcher() {
                 // It's executed under AWTLock.
                 public void dispatchEvent(XEvent ev) {
-                    if (isDisposed() || ev.get_type() != XlibWrapper.ConfigureNotify) {
+                    if (isDisposed() || ev.get_type() != XConstants.ConfigureNotify) {
                         return;
                     }
 
@@ -194,7 +194,7 @@ public class XTrayIconPeer implements TrayIconPeer {
                 XTrayIconPeer xtiPeer = XTrayIconPeer.this;
 
                 public void dispatchEvent(XEvent ev) {
-                    if (isDisposed() || ev.get_type() != XlibWrapper.ReparentNotify) {
+                    if (isDisposed() || ev.get_type() != XConstants.ReparentNotify) {
                         return;
                     }
 
@@ -214,7 +214,7 @@ public class XTrayIconPeer implements TrayIconPeer {
                     }
 
                     if (!isTrayIconDisplayed) {
-                        addXED(eframeParentID, parentXED, XlibWrapper.StructureNotifyMask);
+                        addXED(eframeParentID, parentXED, XConstants.StructureNotifyMask);
 
                         isTrayIconDisplayed = true;
                         XToolkit.awtLockNotifyAll();
@@ -222,7 +222,7 @@ public class XTrayIconPeer implements TrayIconPeer {
                 }
             };
 
-        addXED(getWindow(), eframeXED, XlibWrapper.StructureNotifyMask);
+        addXED(getWindow(), eframeXED, XConstants.StructureNotifyMask);
 
         XSystemTrayPeer.getPeerInstance().addTrayIcon(this); // throws AWTException
 

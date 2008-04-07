@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
         // Deny default processing of these events on the shell - proxy will take care of
         // them instead
         Long eventMask = (Long)params.get(EVENT_MASK);
-        params.add(EVENT_MASK, Long.valueOf(eventMask.longValue() & ~(FocusChangeMask | KeyPressMask | KeyReleaseMask)));
+        params.add(EVENT_MASK, Long.valueOf(eventMask.longValue() & ~(XConstants.FocusChangeMask | XConstants.KeyPressMask | XConstants.KeyReleaseMask)));
     }
 
     void postInit(XCreateWindowParams params) {
@@ -131,7 +131,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
                 int minHeight = minimumSize.height - insets.top - insets.bottom;
                 if (minWidth < 0) minWidth = 0;
                 if (minHeight < 0) minHeight = 0;
-                setSizeHints(XlibWrapper.PMinSize | (isLocationByPlatform()?0:(XlibWrapper.PPosition | XlibWrapper.USPosition)),
+                setSizeHints(XUtilConstants.PMinSize | (isLocationByPlatform()?0:(XUtilConstants.PPosition | XUtilConstants.USPosition)),
                              getX(), getY(), minWidth, minHeight);
                 if (isVisible()) {
                     Rectangle bounds = getShellBounds();
@@ -143,7 +143,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
                 }
             } else {
                 boolean isMinSizeSet = isMinSizeSet();
-                XWM.removeSizeHints(this, XlibWrapper.PMinSize);
+                XWM.removeSizeHints(this, XUtilConstants.PMinSize);
                 /* Some WMs need remap to redecorate the window */
                 if (isMinSizeSet && isShowing() && XWM.needRemap(this)) {
                     /*
@@ -365,7 +365,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
                 return;
             }
 
-            if ((getHints().get_flags() & (USPosition | PPosition)) != 0) {
+            if ((getHints().get_flags() & (XUtilConstants.USPosition | XUtilConstants.PPosition)) != 0) {
                 reshape(dimensions, SET_BOUNDS, false);
             } else {
                 reshape(dimensions, SET_SIZE, false);
@@ -841,10 +841,10 @@ abstract class XDecoratedPeer extends XWindowPeer {
                 setReparented(false);
             }
             winAttr.isResizable = resizable;
-            if ((fs & MWM_FUNC_ALL) != 0) {
-                fs &= ~(MWM_FUNC_RESIZE | MWM_FUNC_MAXIMIZE);
+            if ((fs & MWMConstants.MWM_FUNC_ALL) != 0) {
+                fs &= ~(MWMConstants.MWM_FUNC_RESIZE | MWMConstants.MWM_FUNC_MAXIMIZE);
             } else {
-                fs |= (MWM_FUNC_RESIZE | MWM_FUNC_MAXIMIZE);
+                fs |= (MWMConstants.MWM_FUNC_RESIZE | MWMConstants.MWM_FUNC_MAXIMIZE);
             }
             winAttr.functions = fs;
             XWM.setShellResizable(this);
@@ -855,10 +855,10 @@ abstract class XDecoratedPeer extends XWindowPeer {
                 setReparented(false);
             }
             winAttr.isResizable = resizable;
-            if ((fs & MWM_FUNC_ALL) != 0) {
-                fs |= (MWM_FUNC_RESIZE | MWM_FUNC_MAXIMIZE);
+            if ((fs & MWMConstants.MWM_FUNC_ALL) != 0) {
+                fs |= (MWMConstants.MWM_FUNC_RESIZE | MWMConstants.MWM_FUNC_MAXIMIZE);
             } else {
-                fs &= ~(MWM_FUNC_RESIZE | MWM_FUNC_MAXIMIZE);
+                fs &= ~(MWMConstants.MWM_FUNC_RESIZE | MWMConstants.MWM_FUNC_MAXIMIZE);
             }
             winAttr.functions = fs;
             XWM.setShellNotResizable(this, dimensions, dimensions.getBounds(), false);
@@ -936,10 +936,10 @@ abstract class XDecoratedPeer extends XWindowPeer {
     protected boolean isEventDisabled(XEvent e) {
         switch (e.get_type()) {
             // Do not generate MOVED/RESIZED events since we generate them by ourselves
-          case ConfigureNotify:
+          case XConstants.ConfigureNotify:
               return true;
-          case EnterNotify:
-          case LeaveNotify:
+          case XConstants.EnterNotify:
+          case XConstants.LeaveNotify:
               // Disable crossing event on outer borders of Frame so
               // we receive only one set of cross notifications(first set is from content window)
               return true;
@@ -964,7 +964,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
             if (winAttr.isResizable) {
                 //Fix for 4320050: Minimum size for java.awt.Frame is not being enforced.
                 //We need to update frame's minimum size, not to reset it
-                XWM.removeSizeHints(this, XlibWrapper.PMaxSize);
+                XWM.removeSizeHints(this, XUtilConstants.PMaxSize);
                 updateMinimumSize();
             }
         } else {
