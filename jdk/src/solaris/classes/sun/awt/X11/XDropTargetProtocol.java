@@ -317,7 +317,7 @@ abstract class XDropTargetProtocol {
 
     protected final void removeEmbedderRegistryEntry(long embedder) {
         synchronized (this) {
-            embedderRegistry.remove(new Long(embedder));
+            embedderRegistry.remove(Long.valueOf(embedder));
         }
     }
 }

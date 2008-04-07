@@ -383,11 +383,11 @@ public class XEmbedServerTester implements XEventDispatcher {
         try {
             XCreateWindowParams params =
                 new XCreateWindowParams(new Object[] {
-                    XBaseWindow.PARENT_WINDOW, new Long(reparent?XToolkit.getDefaultRootWindow():parent),
+                    XBaseWindow.PARENT_WINDOW, Long.valueOf(reparent?XToolkit.getDefaultRootWindow():parent),
                     XBaseWindow.BOUNDS, initialBounds,
                     XBaseWindow.EMBEDDED, Boolean.TRUE,
                     XBaseWindow.VISIBLE, Boolean.valueOf(mapped == XEmbedHelper.XEMBED_MAPPED),
-                    XBaseWindow.EVENT_MASK, new Long(VisibilityChangeMask | StructureNotifyMask |
+                    XBaseWindow.EVENT_MASK, Long.valueOf(VisibilityChangeMask | StructureNotifyMask |
                                                      SubstructureNotifyMask | KeyPressMask)});
             window = new XBaseWindow(params);
 

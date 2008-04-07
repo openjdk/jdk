@@ -7680,7 +7680,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
          */
         public Accessible getAccessibleRowDescription(int r) {
             if (r < 0 || r >= getAccessibleRowCount()) {
-                throw new IllegalArgumentException(new Integer(r).toString());
+                throw new IllegalArgumentException(Integer.toString(r));
             }
             if (rowDescription == null) {
                 return null;
@@ -7698,7 +7698,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
          */
         public void setAccessibleRowDescription(int r, Accessible a) {
             if (r < 0 || r >= getAccessibleRowCount()) {
-                throw new IllegalArgumentException(new Integer(r).toString());
+                throw new IllegalArgumentException(Integer.toString(r));
             }
             if (rowDescription == null) {
                 int numRows = getAccessibleRowCount();
@@ -7716,7 +7716,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
          */
         public Accessible getAccessibleColumnDescription(int c) {
             if (c < 0 || c >= getAccessibleColumnCount()) {
-                throw new IllegalArgumentException(new Integer(c).toString());
+                throw new IllegalArgumentException(Integer.toString(c));
             }
             if (columnDescription == null) {
                 return null;
@@ -7734,7 +7734,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
          */
         public void setAccessibleColumnDescription(int c, Accessible a) {
             if (c < 0 || c >= getAccessibleColumnCount()) {
-                throw new IllegalArgumentException(new Integer(c).toString());
+                throw new IllegalArgumentException(Integer.toString(c));
             }
             if (columnDescription == null) {
                 int numColumns = getAccessibleColumnCount();

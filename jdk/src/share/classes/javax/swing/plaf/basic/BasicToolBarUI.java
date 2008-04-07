@@ -178,7 +178,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
         dragWindow = null;
         dockingSource = null;
 
-        c.putClientProperty( FOCUSED_COMP_INDEX, new Integer( focusedCompIndex ) );
+        c.putClientProperty( FOCUSED_COMP_INDEX, Integer.valueOf( focusedCompIndex ) );
     }
 
     protected void installDefaults( )

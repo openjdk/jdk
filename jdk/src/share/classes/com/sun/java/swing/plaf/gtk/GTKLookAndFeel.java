@@ -336,7 +336,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         // populate the table with the values from basic.
         super.initComponentDefaults(table);
 
-        Integer zero =  new Integer(0);
+        Integer zero =  Integer.valueOf(0);
         Object zeroBorder = new sun.swing.SwingLazyValue(
             "javax.swing.plaf.BorderUIResource$EmptyBorderUIResource",
             new Object[] {zero, zero, zero, zero});
@@ -371,7 +371,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         int vProgWidth  =  22 - (progXThickness * 2);
         int vProgHeight =  80 - (progYThickness * 2);
 
-        Integer caretBlinkRate = new Integer(500);
+        Integer caretBlinkRate = Integer.valueOf(500);
         Insets zeroInsets = new InsetsUIResource(0, 0, 0, 0);
 
         Double defaultCaretAspectRatio = new Double(0.025);
@@ -540,7 +540,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         }
 
         Object[] defaults = new Object[] {
-            "ArrowButton.size", new Integer(13),
+            "ArrowButton.size", Integer.valueOf(13),
 
 
             "Button.defaultButtonFollowsFocus", Boolean.FALSE,
@@ -893,8 +893,8 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
 
 
             "ScrollBar.squareButtons", Boolean.FALSE,
-            "ScrollBar.thumbHeight", new Integer(14),
-            "ScrollBar.width", new Integer(16),
+            "ScrollBar.thumbHeight", Integer.valueOf(14),
+            "ScrollBar.width", Integer.valueOf(16),
             "ScrollBar.minimumThumbSize", new Dimension(8, 8),
             "ScrollBar.maximumThumbSize", new Dimension(4096, 4096),
             "ScrollBar.allowsAbsolutePositioning", Boolean.TRUE,
@@ -954,12 +954,12 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
 
 
             "Separator.insets", zeroInsets,
-            "Separator.thickness", new Integer(2),
+            "Separator.thickness", Integer.valueOf(2),
 
 
             "Slider.paintValue", Boolean.TRUE,
-            "Slider.thumbWidth", new Integer(30),
-            "Slider.thumbHeight", new Integer(14),
+            "Slider.thumbWidth", Integer.valueOf(30),
+            "Slider.thumbHeight", Integer.valueOf(14),
             "Slider.focusInputMap",
                     new UIDefaults.LazyInputMap(new Object[] {
                             "RIGHT", "positiveUnitIncrement",
@@ -1013,9 +1013,9 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
                     }),
 
 
-            "SplitPane.size", new Integer(7),
-            "SplitPane.oneTouchOffset", new Integer(2),
-            "SplitPane.oneTouchButtonSize", new Integer(5),
+            "SplitPane.size", Integer.valueOf(7),
+            "SplitPane.oneTouchOffset", Integer.valueOf(2),
+            "SplitPane.oneTouchButtonSize", Integer.valueOf(5),
             "SplitPane.supportsOneTouchButtons", Boolean.FALSE,
 
 
@@ -1223,13 +1223,13 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
 
             "ToolTip.font", new FontLazyValue(Region.TOOL_TIP),
 
-            "Tree.padding", new Integer(4),
+            "Tree.padding", Integer.valueOf(4),
             "Tree.background", tableBg,
             "Tree.drawHorizontalLines", Boolean.FALSE,
             "Tree.drawVerticalLines", Boolean.FALSE,
-            "Tree.rowHeight", new Integer(-1),
+            "Tree.rowHeight", Integer.valueOf(-1),
             "Tree.scrollsOnExpand", Boolean.FALSE,
-            "Tree.expanderSize", new Integer(10),
+            "Tree.expanderSize", Integer.valueOf(10),
             "Tree.repaintWholeRow", Boolean.TRUE,
             "Tree.closedIcon", null,
             "Tree.leafIcon", null,
@@ -1240,8 +1240,8 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             "Tree.collapsedIcon", new GTKStyle.GTKLazyValue(
                               "com.sun.java.swing.plaf.gtk.GTKIconFactory",
                               "getTreeCollapsedIcon"),
-            "Tree.leftChildIndent", new Integer(2),
-            "Tree.rightChildIndent", new Integer(12),
+            "Tree.leftChildIndent", Integer.valueOf(2),
+            "Tree.rightChildIndent", Integer.valueOf(12),
             "Tree.scrollsHorizontallyAndVertically", Boolean.FALSE,
             "Tree.drawsFocusBorder", Boolean.TRUE,
             "Tree.focusInputMap",
