@@ -329,7 +329,7 @@ final class XDropTargetRegistry {
 
         embedderProtocols = Collections.unmodifiableList(embedderProtocols);
 
-        Long lToplevel = new Long(embedder);
+        Long lToplevel = Long.valueOf(embedder);
         boolean isXEmbedServer = false;
         synchronized (this) {
             EmbeddedDropSiteEntry entry =

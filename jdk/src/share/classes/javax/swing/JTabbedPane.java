@@ -967,7 +967,7 @@ public class JTabbedPane extends JComponent
         // currently no IndexPropertyChangeEvent.  Once
         // IndexPropertyChangeEvents have been added this code should be
         // modified to use it.
-        putClientProperty("__index_to_remove__", new Integer(index));
+        putClientProperty("__index_to_remove__", Integer.valueOf(index));
 
         /* if the selected tab is after the removal */
         if (selected > index) {

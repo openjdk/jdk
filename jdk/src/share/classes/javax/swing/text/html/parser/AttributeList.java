@@ -132,7 +132,7 @@ class AttributeList implements DTDConstants, Serializable {
     static Hashtable attributeTypes = new Hashtable();
 
     static void defineAttributeType(String nm, int val) {
-        Integer num = new Integer(val);
+        Integer num = Integer.valueOf(val);
         attributeTypes.put(nm, num);
         attributeTypes.put(num, nm);
     }
@@ -154,11 +154,11 @@ class AttributeList implements DTDConstants, Serializable {
         defineAttributeType("NUTOKEN", NUTOKEN);
         defineAttributeType("NUTOKENS", NUTOKENS);
 
-        attributeTypes.put("fixed", new Integer(FIXED));
-        attributeTypes.put("required", new Integer(REQUIRED));
-        attributeTypes.put("current", new Integer(CURRENT));
-        attributeTypes.put("conref", new Integer(CONREF));
-        attributeTypes.put("implied", new Integer(IMPLIED));
+        attributeTypes.put("fixed", Integer.valueOf(FIXED));
+        attributeTypes.put("required", Integer.valueOf(REQUIRED));
+        attributeTypes.put("current", Integer.valueOf(CURRENT));
+        attributeTypes.put("conref", Integer.valueOf(CONREF));
+        attributeTypes.put("implied", Integer.valueOf(IMPLIED));
     }
 
     public static int name2type(String nm) {
@@ -167,6 +167,6 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     public static String type2name(int tp) {
-        return (String)attributeTypes.get(new Integer(tp));
+        return (String)attributeTypes.get(Integer.valueOf(tp));
     }
 }

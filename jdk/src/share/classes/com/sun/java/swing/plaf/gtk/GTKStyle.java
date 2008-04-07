@@ -851,7 +851,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
                 int focusLineWidth = getClassSpecificIntValue(context,
                         "focus-line-width", 0);
                 if (value == null && focusLineWidth > 0) {
-                    value = new Integer(16 + 2 * focusLineWidth);
+                    value = Integer.valueOf(16 + 2 * focusLineWidth);
                 }
             }
             return value;
@@ -975,12 +975,12 @@ class GTKStyle extends SynthStyle implements GTKConstants {
 
         private static void initIconTypeMap() {
             ICON_TYPE_MAP = new HashMap<String,Integer>();
-            ICON_TYPE_MAP.put("gtk-menu", new Integer(1));
-            ICON_TYPE_MAP.put("gtk-small-toolbar", new Integer(2));
-            ICON_TYPE_MAP.put("gtk-large-toolbar", new Integer(3));
-            ICON_TYPE_MAP.put("gtk-button", new Integer(4));
-            ICON_TYPE_MAP.put("gtk-dnd", new Integer(5));
-            ICON_TYPE_MAP.put("gtk-dialog", new Integer(6));
+            ICON_TYPE_MAP.put("gtk-menu", Integer.valueOf(1));
+            ICON_TYPE_MAP.put("gtk-small-toolbar", Integer.valueOf(2));
+            ICON_TYPE_MAP.put("gtk-large-toolbar", Integer.valueOf(3));
+            ICON_TYPE_MAP.put("gtk-button", Integer.valueOf(4));
+            ICON_TYPE_MAP.put("gtk-dnd", Integer.valueOf(5));
+            ICON_TYPE_MAP.put("gtk-dialog", Integer.valueOf(6));
         }
 
     }

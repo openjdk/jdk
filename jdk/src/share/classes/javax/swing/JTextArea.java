@@ -267,7 +267,7 @@ public class JTextArea extends JTextComponent {
         Document doc = getDocument();
         if (doc != null) {
             int old = getTabSize();
-            doc.putProperty(PlainDocument.tabSizeAttribute, new Integer(size));
+            doc.putProperty(PlainDocument.tabSizeAttribute, Integer.valueOf(size));
             firePropertyChange("tabSize", old, size);
         }
     }

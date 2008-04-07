@@ -1286,7 +1286,7 @@ public class MessageFormat extends Format {
                             characterIterators.add(
                                          createAttributedCharacterIterator(
                                          subIterator, Field.ARGUMENT,
-                                         new Integer(argumentNumber)));
+                                         Integer.valueOf(argumentNumber)));
                             last = result.length();
                         }
                         arg = null;
@@ -1296,7 +1296,7 @@ public class MessageFormat extends Format {
                         characterIterators.add(
                                  createAttributedCharacterIterator(
                                  arg, Field.ARGUMENT,
-                                 new Integer(argumentNumber)));
+                                 Integer.valueOf(argumentNumber)));
                         last = result.length();
                     }
                 }
