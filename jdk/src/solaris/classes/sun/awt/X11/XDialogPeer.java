@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
         } else {
             winAttr.decorations = winAttr.AWT_DECOR_NONE;
         }
-        winAttr.functions = MWM_FUNC_ALL;
+        winAttr.functions = MWMConstants.MWM_FUNC_ALL;
         winAttr.isResizable =  true; //target.isResizable();
         winAttr.initialResizability =  target.isResizable();
         winAttr.title = target.getTitle();
@@ -100,10 +100,10 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
     int getDecorations() {
         int d = super.getDecorations();
         // remove minimize and maximize buttons for dialogs
-        if ((d & MWM_DECOR_ALL) != 0) {
-            d |= (MWM_DECOR_MINIMIZE | MWM_DECOR_MAXIMIZE);
+        if ((d & MWMConstants.MWM_DECOR_ALL) != 0) {
+            d |= (MWMConstants.MWM_DECOR_MINIMIZE | MWMConstants.MWM_DECOR_MAXIMIZE);
         } else {
-            d &= ~(MWM_DECOR_MINIMIZE | MWM_DECOR_MAXIMIZE);
+            d &= ~(MWMConstants.MWM_DECOR_MINIMIZE | MWMConstants.MWM_DECOR_MAXIMIZE);
         }
         return d;
     }
@@ -111,10 +111,10 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
     int getFunctions() {
         int f = super.getFunctions();
         // remove minimize and maximize functions for dialogs
-        if ((f & MWM_FUNC_ALL) != 0) {
-            f |= (MWM_FUNC_MINIMIZE | MWM_FUNC_MAXIMIZE);
+        if ((f & MWMConstants.MWM_FUNC_ALL) != 0) {
+            f |= (MWMConstants.MWM_FUNC_MINIMIZE | MWMConstants.MWM_FUNC_MAXIMIZE);
         } else {
-            f &= ~(MWM_FUNC_MINIMIZE | MWM_FUNC_MAXIMIZE);
+            f &= ~(MWMConstants.MWM_FUNC_MINIMIZE | MWMConstants.MWM_FUNC_MAXIMIZE);
         }
         return f;
     }

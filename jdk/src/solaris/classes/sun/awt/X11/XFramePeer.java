@@ -37,7 +37,7 @@ import java.awt.peer.FramePeer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-class XFramePeer extends XDecoratedPeer implements FramePeer, XConstants {
+class XFramePeer extends XDecoratedPeer implements FramePeer {
     private static Logger log = Logger.getLogger("sun.awt.X11.XFramePeer");
     private static Logger stateLog = Logger.getLogger("sun.awt.X11.states");
     private static Logger insLog = Logger.getLogger("sun.awt.X11.insets.XFramePeer");
@@ -71,7 +71,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer, XConstants {
         } else {
             winAttr.decorations = winAttr.AWT_DECOR_NONE;
         }
-        winAttr.functions = MWM_FUNC_ALL;
+        winAttr.functions = MWMConstants.MWM_FUNC_ALL;
         winAttr.isResizable = true; // target.isResizable();
         winAttr.title = target.getTitle();
         winAttr.initialResizability = target.isResizable();
@@ -109,9 +109,9 @@ class XFramePeer extends XDecoratedPeer implements FramePeer, XConstants {
             state = winAttr.initialState;
         }
         if ((state & Frame.ICONIFIED) != 0) {
-            setInitialState(IconicState);
+            setInitialState(XUtilConstants.IconicState);
         } else {
-            setInitialState(NormalState);
+            setInitialState(XUtilConstants.NormalState);
         }
         setExtendedState(state);
     }
@@ -221,7 +221,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer, XConstants {
         XToolkit.awtLock();
         try {
             XSizeHints hints = getHints();
-            hints.set_flags(hints.get_flags() | (int)XlibWrapper.PMaxSize);
+            hints.set_flags(hints.get_flags() | (int)XUtilConstants.PMaxSize);
             if (b.width != Integer.MAX_VALUE) {
                 hints.set_max_width(b.width);
             } else {
@@ -344,7 +344,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer, XConstants {
         XToolkit.awtLock();
         try {
             XWMHints hints = getWMHints();
-            hints.set_flags((int)XlibWrapper.StateHint | hints.get_flags());
+            hints.set_flags((int)XUtilConstants.StateHint | hints.get_flags());
             hints.set_initial_state(wm_state);
             if (stateLog.isLoggable(Level.FINE)) stateLog.fine("Setting initial WM state on " + this + " to " + wm_state);
             XlibWrapper.XSetWMHints(XToolkit.getDisplay(), getWindow(), hints.pData);

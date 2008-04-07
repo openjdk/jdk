@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class  XMSelection {
         XToolkit.awtLock();
         try {
             long root = XlibWrapper.RootWindow(display,screen);
-            XlibWrapper.XSelectInput(display, root, XlibWrapper.StructureNotifyMask);
+            XlibWrapper.XSelectInput(display, root, XConstants.StructureNotifyMask);
             XToolkit.addEventDispatcher(root,
                     new XEventDispatcher() {
                         public void dispatchEvent(XEvent ev) {
@@ -130,7 +130,7 @@ public class  XMSelection {
             synchronized(this) {
                 setOwner(owner, screen);
                 if (log.isLoggable(Level.FINE)) log.fine("New Selection Owner for screen " + screen + " = " + owner );
-                XlibWrapper.XSelectInput(display, owner, XlibWrapper.StructureNotifyMask | eventMask);
+                XlibWrapper.XSelectInput(display, owner, XConstants.StructureNotifyMask | eventMask);
                 XToolkit.addEventDispatcher(owner,
                         new XEventDispatcher() {
                             public void dispatchEvent(XEvent ev) {
@@ -162,7 +162,7 @@ public class  XMSelection {
                     if (owner != 0) {
                         setOwner(owner, screen);
                         if (log.isLoggable(Level.FINE)) log.fine("Selection Owner for screen " + screen + " = " + owner );
-                        XlibWrapper.XSelectInput(display, owner, XlibWrapper.StructureNotifyMask | extra_mask);
+                        XlibWrapper.XSelectInput(display, owner, XConstants.StructureNotifyMask | extra_mask);
                         XToolkit.addEventDispatcher(owner,
                                 new XEventDispatcher() {
                                         public void dispatchEvent(XEvent ev) {
@@ -205,7 +205,7 @@ public class  XMSelection {
 
     static  boolean processRootEvent(XEvent xev, int screen) {
         switch (xev.get_type()) {
-            case XlibWrapper.ClientMessage: {
+            case XConstants.ClientMessage: {
                 return processClientMessage(xev, screen);
             }
         }
@@ -225,7 +225,7 @@ public class  XMSelection {
      */
 
     public XMSelection (String selname) {
-        this(selname, XlibWrapper.PropertyChangeMask);
+        this(selname, XConstants.PropertyChangeMask);
     }
 
 
@@ -319,11 +319,11 @@ public class  XMSelection {
 
     void dispatchSelectionEvent(XEvent xev, int screen) {
         if (log.isLoggable(Level.FINE)) log.fine("Event =" + xev);
-        if (xev.get_type() == XlibWrapper.DestroyNotify) {
+        if (xev.get_type() == XConstants.DestroyNotify) {
             XDestroyWindowEvent de = xev.get_xdestroywindow();
             dispatchOwnerDeath( de, screen);
         }
-        else if (xev.get_type() == XlibWrapper.PropertyNotify)  {
+        else if (xev.get_type() == XConstants.PropertyNotify)  {
             XPropertyEvent xpe = xev.get_xproperty();
             dispatchSelectionChanged( xpe, screen);
         }

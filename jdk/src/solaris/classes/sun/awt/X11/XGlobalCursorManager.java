@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,46 +229,46 @@ public final class XGlobalCursorManager extends GlobalCursorManager {
         int cursorType = 0;
         switch (type) {
           case Cursor.DEFAULT_CURSOR:
-              cursorType = XlibWrapper.XC_left_ptr;
+              cursorType = XCursorFontConstants.XC_left_ptr;
               break;
           case Cursor.CROSSHAIR_CURSOR:
-              cursorType = XlibWrapper.XC_crosshair;
+              cursorType = XCursorFontConstants.XC_crosshair;
               break;
           case Cursor.TEXT_CURSOR:
-              cursorType = XlibWrapper.XC_xterm;
+              cursorType = XCursorFontConstants.XC_xterm;
               break;
           case Cursor.WAIT_CURSOR:
-              cursorType = XlibWrapper.XC_watch;
+              cursorType = XCursorFontConstants.XC_watch;
               break;
           case Cursor.SW_RESIZE_CURSOR:
-              cursorType = XlibWrapper.XC_bottom_left_corner;
+              cursorType = XCursorFontConstants.XC_bottom_left_corner;
               break;
           case Cursor.NW_RESIZE_CURSOR:
-              cursorType = XlibWrapper.XC_top_left_corner;
+              cursorType = XCursorFontConstants.XC_top_left_corner;
               break;
           case Cursor.SE_RESIZE_CURSOR:
-              cursorType = XlibWrapper.XC_bottom_right_corner;
+              cursorType = XCursorFontConstants.XC_bottom_right_corner;
               break;
           case Cursor.NE_RESIZE_CURSOR:
-              cursorType = XlibWrapper.XC_top_right_corner;
+              cursorType = XCursorFontConstants.XC_top_right_corner;
               break;
           case Cursor.S_RESIZE_CURSOR:
-              cursorType = XlibWrapper.XC_bottom_side;
+              cursorType = XCursorFontConstants.XC_bottom_side;
               break;
           case Cursor.N_RESIZE_CURSOR:
-              cursorType = XlibWrapper.XC_top_side;
+              cursorType = XCursorFontConstants.XC_top_side;
               break;
           case Cursor.W_RESIZE_CURSOR:
-              cursorType = XlibWrapper.XC_left_side;
+              cursorType = XCursorFontConstants.XC_left_side;
               break;
           case Cursor.E_RESIZE_CURSOR:
-              cursorType = XlibWrapper.XC_right_side;
+              cursorType = XCursorFontConstants.XC_right_side;
               break;
           case Cursor.HAND_CURSOR:
-              cursorType = XlibWrapper.XC_hand2;
+              cursorType = XCursorFontConstants.XC_hand2;
               break;
           case Cursor.MOVE_CURSOR:
-              cursorType = XlibWrapper.XC_fleur;
+              cursorType = XCursorFontConstants.XC_fleur;
               break;
         }
 

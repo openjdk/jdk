@@ -50,7 +50,7 @@ import sun.awt.X11GraphicsDevice;
 import sun.awt.X11GraphicsEnvironment;
 
 class XWindowPeer extends XPanelPeer implements WindowPeer,
-                                                DisplayChangedListener, MWMConstants {
+                                                DisplayChangedListener {
 
     private static final Logger log = Logger.getLogger("sun.awt.X11.XWindowPeer");
     private static final Logger focusLog = Logger.getLogger("sun.awt.X11.focus.XWindowPeer");
@@ -133,9 +133,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         params.put(REPARENTED,
                    Boolean.valueOf(isOverrideRedirect() || isSimpleWindow()));
         super.preInit(params);
-        params.putIfNull(BIT_GRAVITY, Integer.valueOf(NorthWestGravity));
+        params.putIfNull(BIT_GRAVITY, Integer.valueOf(XConstants.NorthWestGravity));
 
-        savedState = WithdrawnState;
+        savedState = XUtilConstants.WithdrawnState;
         XA_NET_WM_STATE = XAtom.get("_NET_WM_STATE");
 
         winAttr = new XWindowAttributesData();
@@ -239,7 +239,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
                     // Set group leader
                     XWMHints hints = getWMHints();
-                    hints.set_flags(hints.get_flags() | (int)XlibWrapper.WindowGroupHint);
+                    hints.set_flags(hints.get_flags() | (int)XUtilConstants.WindowGroupHint);
                     hints.set_window_group(ownerWindow);
                     XlibWrapper.XSetWMHints(XToolkit.getDisplay(), getWindow(), hints.pData);
                 }
@@ -503,7 +503,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             Rectangle bounds = getBounds();
 
             XSizeHints hints = getHints();
-            setSizeHints(hints.get_flags() | XlibWrapper.PPosition | XlibWrapper.PSize,
+            setSizeHints(hints.get_flags() | XUtilConstants.PPosition | XUtilConstants.PSize,
                              bounds.x, bounds.y, bounds.width, bounds.height);
             XWM.setMotifDecor(this, false, 0, 0);
 
@@ -531,7 +531,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         XToolkit.awtLock();
         try {
             XWMHints hints = getWMHints();
-            hints.set_flags(hints.get_flags() | (int)XlibWrapper.InputHint);
+            hints.set_flags(hints.get_flags() | (int)XUtilConstants.InputHint);
             hints.set_input(false/*isNativelyNonFocusableWindow() ? (0):(1)*/);
             XlibWrapper.XSetWMHints(XToolkit.getDisplay(), getWindow(), hints.pData);
         }
@@ -821,12 +821,12 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         if (isEventDisabled(xev)) {
             return;
         }
-        if (xev.get_type() == XlibWrapper.FocusIn)
+        if (xev.get_type() == XConstants.FocusIn)
         {
             // If this window is non-focusable don't post any java focus event
             if (focusAllowedFor()) {
-                if (xfe.get_mode() == XlibWrapper.NotifyNormal // Normal notify
-                    || xfe.get_mode() == XlibWrapper.NotifyWhileGrabbed) // Alt-Tab notify
+                if (xfe.get_mode() == XConstants.NotifyNormal // Normal notify
+                    || xfe.get_mode() == XConstants.NotifyWhileGrabbed) // Alt-Tab notify
                 {
                     handleWindowFocusIn(xfe.get_serial());
                 }
@@ -834,8 +834,8 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
         else
         {
-            if (xfe.get_mode() == XlibWrapper.NotifyNormal // Normal notify
-                || xfe.get_mode() == XlibWrapper.NotifyWhileGrabbed) // Alt-Tab notify
+            if (xfe.get_mode() == XConstants.NotifyNormal // Normal notify
+                || xfe.get_mode() == XConstants.NotifyWhileGrabbed) // Alt-Tab notify
             {
                 // If this window is non-focusable don't post any java focus event
                 if (!isNativelyNonFocusableWindow()) {
@@ -1022,7 +1022,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             try {
                 Rectangle bounds = getBounds();
                 XSizeHints hints = getHints();
-                setSizeHints(hints.get_flags() & ~(USPosition | PPosition),
+                setSizeHints(hints.get_flags() & ~(XUtilConstants.USPosition | XUtilConstants.PPosition),
                              bounds.x, bounds.y, bounds.width, bounds.height);
             } finally {
                 XToolkit.awtUnlock();
@@ -1059,10 +1059,10 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                 XUnmapEvent unmap = new XUnmapEvent();
                 unmap.set_window(window);
                 unmap.set_event(XToolkit.getDefaultRootWindow());
-                unmap.set_type((int)XlibWrapper.UnmapNotify);
+                unmap.set_type((int)XConstants.UnmapNotify);
                 unmap.set_from_configure(false);
                 XlibWrapper.XSendEvent(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(),
-                        false, XlibWrapper.SubstructureNotifyMask | XlibWrapper.SubstructureRedirectMask,
+                        false, XConstants.SubstructureNotifyMask | XConstants.SubstructureRedirectMask,
                         unmap.pData);
                 unmap.dispose();
             }
@@ -1305,12 +1305,12 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                                          XWM.XA_WM_STATE);
             try {
                 int status = getter.execute();
-                if (status != XlibWrapper.Success || getter.getData() == 0) {
-                    return savedState = XlibWrapper.WithdrawnState;
+                if (status != XConstants.Success || getter.getData() == 0) {
+                    return savedState = XUtilConstants.WithdrawnState;
                 }
 
                 if (getter.getActualType() != XWM.XA_WM_STATE.getAtom() && getter.getActualFormat() != 32) {
-                    return savedState = XlibWrapper.WithdrawnState;
+                    return savedState = XUtilConstants.WithdrawnState;
                 }
                 savedState = (int)Native.getCard32(getter.getData());
             } finally {
@@ -1321,7 +1321,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     }
 
     boolean isWithdrawn() {
-        return getWMState() == XlibWrapper.WithdrawnState;
+        return getWMState() == XUtilConstants.WithdrawnState;
     }
 
     boolean hasDecorations(int decor) {
@@ -1818,14 +1818,14 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         if( rootPropertyEventDispatcher == null ) {
             rootPropertyEventDispatcher = new XEventDispatcher() {
                 public void dispatchEvent(XEvent ev) {
-                    if( ev.get_type() == PropertyNotify ) {
+                    if( ev.get_type() == XConstants.PropertyNotify ) {
                         handleRootPropertyNotify( ev );
                     }
                 }
             };
             XlibWrapper.XSelectInput( XToolkit.getDisplay(),
                                       XToolkit.getDefaultRootWindow(),
-                                      XlibWrapper.PropertyChangeMask);
+                                      XConstants.PropertyChangeMask);
             XToolkit.addEventDispatcher(XToolkit.getDefaultRootWindow(),
                                                 rootPropertyEventDispatcher);
         }
@@ -1860,7 +1860,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     public PropMwmHints getMWMHints() {
         if (mwm_hints == null) {
             mwm_hints = new PropMwmHints();
-            if (!XWM.XA_MWM_HINTS.getAtomData(getWindow(), mwm_hints.pData, PROP_MWM_HINTS_ELEMENTS)) {
+            if (!XWM.XA_MWM_HINTS.getAtomData(getWindow(), mwm_hints.pData, MWMConstants.PROP_MWM_HINTS_ELEMENTS)) {
                 mwm_hints.zero();
             }
         }
@@ -1870,7 +1870,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     public void setMWMHints(PropMwmHints hints) {
         mwm_hints = hints;
         if (hints != null) {
-            XWM.XA_MWM_HINTS.setAtomData(getWindow(), mwm_hints.pData, PROP_MWM_HINTS_ELEMENTS);
+            XWM.XA_MWM_HINTS.setAtomData(getWindow(), mwm_hints.pData, MWMConstants.PROP_MWM_HINTS_ELEMENTS);
         }
     }
 
@@ -1960,7 +1960,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                         new Object[] {xme, isGrabbed(), containsGlobal(xme.get_x_root(), xme.get_y_root())});
         }
         if (isGrabbed()) {
-            boolean dragging = (xme.get_state() & (Button1Mask | Button2Mask | Button3Mask)) != 0;
+            boolean dragging = (xme.get_state() & (XConstants.Button1Mask | XConstants.Button2Mask | XConstants.Button3Mask)) != 0;
             // When window is grabbed, all events are dispatched to
             // it.  Retarget them to the corresponding windows (notice
             // that XBaseWindow.dispatchEvent does the opposite
@@ -2014,12 +2014,12 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             try {
                 grabLog.log(Level.FINER, "  -  Grab event target {0} (press target {1})", new Object[] {target, pressTarget});
                 if (xbe.get_type() == XConstants.ButtonPress
-                    && xbe.get_button() == XlibWrapper.Button1)
+                    && xbe.get_button() == XConstants.Button1)
                 {
                     // need to keep it to retarget mouse release
                     pressTarget = target;
                 } else if (xbe.get_type() == XConstants.ButtonRelease
-                           && xbe.get_button() == XlibWrapper.Button1
+                           && xbe.get_button() == XConstants.Button1
                            && pressTarget != target)
                 {
                     // during grab we do receive mouse release on different component (not on the source
