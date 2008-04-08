@@ -108,7 +108,7 @@ class frame VALUE_OBJ_CLASS_SPEC {
   bool is_first_frame() const; // oldest frame? (has no sender)
   bool is_first_java_frame() const;              // same for Java frame
 
-  bool is_interpreted_frame_valid() const;       // performs sanity checks on interpreted frames.
+  bool is_interpreted_frame_valid(JavaThread* thread) const;       // performs sanity checks on interpreted frames.
 
   // tells whether this frame is marked for deoptimization
   bool should_be_deoptimized() const;
