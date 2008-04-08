@@ -1,5 +1,5 @@
 #
-# Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -87,8 +87,7 @@
 #     sign			Alias for sign-jar
 #	  sign-jar		Builds/signs sunjce_provider.jar (no install)
 #
-#     obfus			Builds/obfuscates/signs/installs
-#				sunjce_provider.jar
+#     obfus			Builds/obfuscates/signs sunjce_provider.jar
 #
 #     release			Builds all targets in preparation
 #				for workspace integration.
@@ -101,8 +100,25 @@
 BUILDDIR = ../../../..
 PACKAGE = com.sun.crypto.provider
 PRODUCT = sun
+
+#
+# The following is for when we need to do postprocessing
+# (signing/obfuscation) against a read-only build.  If the OUTPUTDIR
+# isn't writable, the build currently crashes out.
+#
+ifndef OPENJDK
+  ifdef ALT_JCE_BUILD_DIR
+    # =====================================================
+    # Where to place the output, in case we're building from a read-only
+    # build area.  (e.g. a release engineering build.)
+    JCE_BUILD_DIR=${ALT_JCE_BUILD_DIR}
+    IGNORE_WRITABLE_OUTPUTDIR_TEST=true
+  else
+    JCE_BUILD_DIR=${TEMPDIR}
+  endif
+endif
+
 include $(BUILDDIR)/common/Defs.gmk
-include $(BUILDDIR)/javax/crypto/Defs-jce.gmk
 
 #
 # Location for the newly built classfiles.
@@ -147,6 +163,8 @@ endif # OPENJDK
 #
 UNSIGNED_DIR = $(TEMPDIR)/unsigned
 
+include $(BUILDDIR)/javax/crypto/Defs-jce.gmk
+
 
 # =====================================================
 # Build the unsigned sunjce_provider.jar file.
@@ -184,43 +202,65 @@ ifndef OPENJDK
 # Sign the provider jar file.  Not needed for OpenJDK.
 #
 
-SIGNED_DIR = $(TEMPDIR)/signed
+SIGNED_DIR = $(JCE_BUILD_DIR)/signed
 
 sign: sign-jar
 
 sign-jar: $(SIGNED_DIR)/sunjce_provider.jar
 
+ifndef ALT_JCE_BUILD_DIR
 $(SIGNED_DIR)/sunjce_provider.jar: $(UNSIGNED_DIR)/sunjce_provider.jar
-	$(sign-file)
+else
+#
+# We have to remove the build dependency, otherwise, we'll try to rebuild it
+# which we can't do on a read-only filesystem.
+#
+$(SIGNED_DIR)/sunjce_provider.jar:
+	@if [ ! -r $(UNSIGNED_DIR)/sunjce_provider.jar ] ; then \
+	    $(ECHO) "Couldn't find $(UNSIGNED_DIR)/sunjce_provider.jar"; \
+	    exit 1; \
+	fi
+endif
+	$(call sign-file, $(UNSIGNED_DIR)/sunjce_provider.jar)
 
 # =====================================================
 # Obfuscate/sign/install the JDK build.  Not needed for OpenJDK.
 #
 
-OBFUS_DIR = $(TEMPDIR)/obfus
+OBFUS_DIR = $(JCE_BUILD_DIR)/obfus/sunjce
 
 CLOSED_DIR = $(BUILDDIR)/closed/com/sun/crypto/provider
 
 obfus: $(OBFUS_DIR)/sunjce_provider.jar
 	$(release-warning)
 
-$(OBFUS_DIR)/sunjce_provider.jar: build-jar $(JCE_MANIFEST_FILE)
+ifndef ALT_JCE_BUILD_DIR
+$(OBFUS_DIR)/sunjce_provider.jar: build-jar $(JCE_MANIFEST_FILE) \
+	    $(OBFUS_DIR)/sunjce.dox
+else
+$(OBFUS_DIR)/sunjce_provider.jar: $(JCE_MANIFEST_FILE) $(OBFUS_DIR)/sunjce.dox
+	@if [ ! -d $(CLASSDESTDIR) ] ; then \
+	    $(ECHO) "Couldn't find $(CLASSDESTDIR)"; \
+	    exit 1; \
+	fi
+endif
+	@$(ECHO) ">>>Obfuscating SunJCE Provider..."
 	$(presign)
 	$(preobfus)
-	@$(ECHO) ">>>Obfuscating Sun JCE Provider..."
 	$(prep-target)
 	$(CD) $(OBFUS_DIR); \
-	$(OBFUSCATOR) -fv \
-	    $(CURRENT_DIRECTORY)/$(CLOSED_DIR)/obfus/sunjce.dox
+	$(OBFUSCATOR) -fv sunjce.dox
 	@$(CD) $(OBFUS_DIR); $(java-vm-cleanup)
 	$(BOOT_JAR_CMD) cmf $(JCE_MANIFEST_FILE) $@ \
 	    -C $(OBFUS_DIR)/build com \
 	    $(JAR_JFLAGS)
 	$(sign-target)
-	$(MKDIR) -p $(dir $(JAR_DESTFILE))
-	$(RM) $(JAR_DESTFILE)
-	$(CP) $@ $(JAR_DESTFILE)
 	@$(java-vm-cleanup)
+
+$(OBFUS_DIR)/sunjce.dox: $(CLOSED_DIR)/obfus/sunjce.dox
+	@$(ECHO) ">>>Creating sunjce.dox"
+	$(prep-target)
+	$(SED) "s:@@TEMPDIR@@:$(ABS_TEMPDIR):" $< > $@
 
 #
 # The current obfuscator has a limitation in that it currently only
@@ -235,9 +275,9 @@ TARGET_CLASS_VERSION = 5
 #
 
 release: $(OBFUS_DIR)/sunjce_provider.jar
-	$(RM) $(RELEASE_DIR)/sunjce_provider.jar
-	$(MKDIR) -p $(RELEASE_DIR)
-	$(CP) $(OBFUS_DIR)/sunjce_provider.jar $(RELEASE_DIR)
+	$(RM) $(JCE_BUILD_DIR)/release/sunjce_provider.jar
+	$(MKDIR) -p $(JCE_BUILD_DIR)/release
+	$(CP) $(OBFUS_DIR)/sunjce_provider.jar $(JCE_BUILD_DIR)/release
 	$(release-warning)
 
 endif # OPENJDK
@@ -275,7 +315,7 @@ endif
 #
 
 clobber clean::
-	$(RM) -r $(JAR_DESTFILE) $(TEMPDIR)
+	$(RM) -r $(JAR_DESTFILE) $(TEMPDIR) $(JCE_BUILD_DIR)
 
 .PHONY: build-jar jar install-jar
 ifndef OPENJDK
