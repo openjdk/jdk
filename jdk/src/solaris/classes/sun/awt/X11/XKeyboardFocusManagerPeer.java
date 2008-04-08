@@ -96,12 +96,12 @@ public class XKeyboardFocusManagerPeer implements KeyboardFocusManagerPeer {
             Component focusOwner = activeWindow.getFocusOwner();
             if (focusLog.isLoggable(Level.FINE)) focusLog.fine("Clearing global focus owner " + focusOwner);
             if (focusOwner != null) {
-                XComponentPeer nativePeer = XComponentPeer.getNativeContainer(focusOwner);
-                if (nativePeer != null) {
+//                XComponentPeer nativePeer = XComponentPeer.getNativeContainer(focusOwner);
+//                if (nativePeer != null) {
                     FocusEvent fl = new CausedFocusEvent(focusOwner, FocusEvent.FOCUS_LOST, false, null,
                                                          CausedFocusEvent.Cause.CLEAR_GLOBAL_FOCUS_OWNER);
                     XWindow.sendEvent(fl);
-                }
+//                }
             }
         }
    }
