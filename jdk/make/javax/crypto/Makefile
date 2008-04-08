@@ -1,5 +1,5 @@
 #
-# Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@
 #	  sign-jar		Builds/signs jce.jar file (no install)
 #	  sign-policy		Builds/signs policy files (no install)
 #
-#     obfus			Builds/obfuscates/signs/installs jce.jar
+#     obfus			Builds/obfuscates/signs jce.jar
 #
 #     release			Builds all targets in preparation
 #				for workspace integration.
@@ -110,8 +110,24 @@ BUILDDIR = ../..
 PACKAGE = javax.crypto
 PRODUCT = sun
 
+#
+# The following is for when we need to do postprocessing
+# (signing/obfuscation) against a read-only build.  If the OUTPUTDIR
+# isn't writable, the build currently crashes out.
+#
+ifndef OPENJDK
+  ifdef ALT_JCE_BUILD_DIR
+    # =====================================================
+    # Where to place the output, in case we're building from a read-only
+    # build area.  (e.g. a release engineering build.)
+    JCE_BUILD_DIR=${ALT_JCE_BUILD_DIR}
+    IGNORE_WRITABLE_OUTPUTDIR_TEST=true
+  else
+    JCE_BUILD_DIR=${TEMPDIR}
+  endif
+endif
+
 include $(BUILDDIR)/common/Defs.gmk
-include Defs-jce.gmk
 
 #
 # Location for the newly built classfiles.
@@ -157,6 +173,8 @@ endif # OPENJDK
 # they will be placed in the appropriate areas.
 #
 UNSIGNED_DIR = $(TEMPDIR)/unsigned
+
+include Defs-jce.gmk
 
 
 # =====================================================
@@ -299,7 +317,7 @@ ifndef OPENJDK
 # Sign the various jar files.  Not needed for OpenJDK.
 #
 
-SIGNED_DIR		= $(TEMPDIR)/signed
+SIGNED_DIR		= $(JCE_BUILD_DIR)/signed
 SIGNED_POLICY_BUILDDIR	= $(SIGNED_DIR)/policy
 
 SIGNED_POLICY_FILES = \
@@ -312,60 +330,86 @@ sign-jar: $(SIGNED_DIR)/jce.jar
 
 sign-policy: $(SIGNED_POLICY_FILES)
 
+ifndef ALT_JCE_BUILD_DIR
 $(SIGNED_DIR)/jce.jar: $(UNSIGNED_DIR)/jce.jar
-	$(sign-file)
+else
+#
+# We have to remove the build dependency, otherwise, we'll try to rebuild it
+# which we can't do on a read-only filesystem.
+#
+$(SIGNED_DIR)/jce.jar:
+	@if [ ! -r $(UNSIGNED_DIR)/jce.jar ] ; then \
+	    $(ECHO) "Couldn't find $(UNSIGNED_DIR)/jce.jar"; \
+	    exit 1; \
+	fi
+endif
+	$(call sign-file, $(UNSIGNED_DIR)/jce.jar)
 
 $(SIGNED_POLICY_BUILDDIR)/unlimited/US_export_policy.jar:	\
-$(UNSIGNED_POLICY_BUILDDIR)/unlimited/US_export_policy.jar
-	$(sign-file)
+	    $(UNSIGNED_POLICY_BUILDDIR)/unlimited/US_export_policy.jar
+	$(call sign-file, $<)
 
 $(SIGNED_POLICY_BUILDDIR)/unlimited/local_policy.jar:		\
-$(UNSIGNED_POLICY_BUILDDIR)/unlimited/local_policy.jar
-	$(sign-file)
+	    $(UNSIGNED_POLICY_BUILDDIR)/unlimited/local_policy.jar
+	$(call sign-file, $<)
 
 $(SIGNED_POLICY_BUILDDIR)/limited/US_export_policy.jar:		\
-$(UNSIGNED_POLICY_BUILDDIR)/limited/US_export_policy.jar
-	$(sign-file)
+	    $(UNSIGNED_POLICY_BUILDDIR)/limited/US_export_policy.jar
+	$(call sign-file, $<)
 
 $(SIGNED_POLICY_BUILDDIR)/limited/local_policy.jar:		\
-$(UNSIGNED_POLICY_BUILDDIR)/limited/local_policy.jar
-	$(sign-file)
+	    $(UNSIGNED_POLICY_BUILDDIR)/limited/local_policy.jar
+	$(call sign-file, $<)
 
 
 # =====================================================
 # Obfuscate/sign/install the JDK build.  Not needed for OpenJDK.
 #
 
-OBFUS_DIR = $(TEMPDIR)/obfus
+OBFUS_DIR = $(JCE_BUILD_DIR)/obfus/jce
 
 CLOSED_DIR = $(BUILDDIR)/closed/javax/crypto
 
 obfus: $(OBFUS_DIR)/jce.jar
 	$(release-warning)
 
-$(OBFUS_DIR)/jce.jar: build-jar $(JCE_MANIFEST_FILE)
+ifndef ALT_JCE_BUILD_DIR
+$(OBFUS_DIR)/jce.jar: build-jar $(JCE_MANIFEST_FILE) $(OBFUS_DIR)/framework.dox
+else
+#
+# We have to remove the build dependency, otherwise, we'll try to rebuild it
+# which we can't do on a read-only filesystem.
+#
+$(OBFUS_DIR)/jce.jar: $(JCE_MANIFEST_FILE) $(OBFUS_DIR)/framework.dox
+	@if [ ! -d $(CLASSDESTDIR) ] ; then \
+	    $(ECHO) "Couldn't find $(CLASSDESTDIR)"; \
+	    exit 1; \
+	fi
+endif
+	@$(ECHO) ">>>Obfuscating JCE framework..."
 	$(presign)
 	$(preobfus)
-	@$(ECHO) ">>>Obfuscating JCE framework..."
 	$(prep-target)
 	$(CD) $(OBFUS_DIR); \
-	$(OBFUSCATOR) -fv \
-	    $(CURRENT_DIRECTORY)/$(CLOSED_DIR)/obfus/framework.dox
+	$(OBFUSCATOR) -fv framework.dox
 	@$(CD) $(OBFUS_DIR); $(java-vm-cleanup)
+	@#
 	@# The sun.security.internal classes are currently not obfuscated
 	@# due to an obfus problem. Manually copy them to the build directory
 	@# so that they are included in the jce.jar file.
+	@#
 	$(CP) -r $(CLASSDESTDIR)/sun $(OBFUS_DIR)/build
-	$(RM) $(UNSIGNED_DIR)/jce.jar
 	$(BOOT_JAR_CMD) cmf $(JCE_MANIFEST_FILE) $@	\
 	    -C $(OBFUS_DIR)/build javax			\
 	    -C $(OBFUS_DIR)/build sun			\
 	    $(JAR_JFLAGS)
 	$(sign-target)
-	$(MKDIR) -p $(dir $(JAR_DESTFILE))
-	$(RM) $(JAR_DESTFILE)
-	$(CP) $@ $(JAR_DESTFILE)
 	@$(java-vm-cleanup)
+
+$(OBFUS_DIR)/framework.dox: $(CLOSED_DIR)/obfus/framework.dox
+	@$(ECHO) ">>>Creating framework.dox"
+	$(prep-target)
+	$(SED) "s:@@TEMPDIR@@:$(ABS_TEMPDIR):" $< > $@
 
 #
 # The current obfuscator has a limitation in that it currently only
@@ -380,26 +424,27 @@ TARGET_CLASS_VERSION = 5
 # unlimited policy file distribution, etc.
 #
 
-release: $(OBFUS_DIR)/jce.jar sign-policy
+release: $(OBFUS_DIR)/jce.jar sign-policy $(CLOSED_DIR)/doc/COPYRIGHT.html \
+         $(CLOSED_DIR)/doc/README.txt
 	$(RM) -r \
-	    $(RELEASE_DIR)/UnlimitedJCEPolicy \
-	    $(RELEASE_DIR)/jce.jar \
-	    $(RELEASE_DIR)/US_export_policy.jar \
-	    $(RELEASE_DIR)/local_policy.jar \
-	    $(RELEASE_DIR)/UnlimitedJCEPolicy.zip
-	$(MKDIR) -p $(RELEASE_DIR)/UnlimitedJCEPolicy
-	$(CP) $(OBFUS_DIR)/jce.jar $(RELEASE_DIR)
-	$(CP) -r \
-	    $(SIGNED_POLICY_BUILDDIR)/limited/US_export_policy.jar \
-	    $(SIGNED_POLICY_BUILDDIR)/limited/local_policy.jar \
-	    $(RELEASE_DIR)
+	    $(JCE_BUILD_DIR)/release/UnlimitedJCEPolicy              \
+	    $(JCE_BUILD_DIR)/release/jce.jar                         \
+	    $(JCE_BUILD_DIR)/release/US_export_policy.jar            \
+	    $(JCE_BUILD_DIR)/release/local_policy.jar                \
+	    $(JCE_BUILD_DIR)/release/UnlimitedJCEPolicy.zip
+	$(MKDIR) -p $(JCE_BUILD_DIR)/release/UnlimitedJCEPolicy
+	$(CP) $(OBFUS_DIR)/jce.jar $(JCE_BUILD_DIR)/release
+	$(CP) \
+	    $(SIGNED_POLICY_BUILDDIR)/limited/US_export_policy.jar   \
+	    $(SIGNED_POLICY_BUILDDIR)/limited/local_policy.jar       \
+	    $(JCE_BUILD_DIR)/release
 	$(CP) \
 	    $(SIGNED_POLICY_BUILDDIR)/unlimited/US_export_policy.jar \
-	    $(SIGNED_POLICY_BUILDDIR)/unlimited/local_policy.jar \
-	    $(RELEASE_DIR)/UnlimitedJCEPolicy
-	$(CP) $(CLOSED_DIR)/doc/COPYRIGHT.html \
-	    $(CLOSED_DIR)/doc/README.txt $(RELEASE_DIR)/UnlimitedJCEPolicy
-	cd $(RELEASE_DIR) ; \
+	    $(SIGNED_POLICY_BUILDDIR)/unlimited/local_policy.jar     \
+	    $(CLOSED_DIR)/doc/COPYRIGHT.html                         \
+	    $(CLOSED_DIR)/doc/README.txt                             \
+	    $(JCE_BUILD_DIR)/release/UnlimitedJCEPolicy
+	cd $(JCE_BUILD_DIR)/release ; \
 	$(ZIPEXE) -qr UnlimitedJCEPolicy.zip UnlimitedJCEPolicy
 	$(release-warning)
 
@@ -478,7 +523,8 @@ endif
 
 clobber clean::
 	$(RM) -r $(JAR_DESTFILE) $(POLICY_DESTDIR)/US_export_policy.jar \
-	    $(POLICY_DESTDIR)/local_policy.jar $(DELETE_DIRS) $(TEMPDIR)
+	    $(POLICY_DESTDIR)/local_policy.jar $(DELETE_DIRS) $(TEMPDIR) \
+	    $(JCE_BUILD_DIR)
 
 .PHONY: build-jar jar build-policy unlimited limited install-jar \
 	install-limited install-unlimited

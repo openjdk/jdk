@@ -87,6 +87,9 @@ class EndEntityChecker {
     // the Microsoft Server-Gated-Cryptography EKU extension OID
     private final static String OID_EKU_MS_SGC = "1.3.6.1.4.1.311.10.3.3";
 
+    // the recognized extension OIDs
+    private final static String OID_SUBJECT_ALT_NAME = "2.5.29.17";
+
     private final static String NSCT_SSL_CLIENT =
                                 NetscapeCertTypeExtension.SSL_CLIENT;
 
@@ -171,6 +174,13 @@ class EndEntityChecker {
             throws CertificateException {
         // basic constraints irrelevant in EE certs
         exts.remove(SimpleValidator.OID_BASIC_CONSTRAINTS);
+
+        // If the subject field contains an empty sequence, the subjectAltName
+        // extension MUST be marked critical.
+        // We do not check the validity of the critical extension, just mark
+        // it recognizable here.
+        exts.remove(OID_SUBJECT_ALT_NAME);
+
         if (!exts.isEmpty()) {
             throw new CertificateException("Certificate contains unsupported "
                 + "critical extensions: " + exts);

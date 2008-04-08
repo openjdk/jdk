@@ -27,7 +27,7 @@
  * @summary test setNativeMethodPrefix
  * @author Robert Field, Sun Microsystems
  *
- * @run shell MakeJAR2.sh NativeMethodPrefixAgent NativeMethodPrefixApp 'Can-Retransform-Classes: true' 'Can-Set-Native-Method-Prefix: true'
+ * @run shell/timeout=240 MakeJAR2.sh NativeMethodPrefixAgent NativeMethodPrefixApp 'Can-Retransform-Classes: true' 'Can-Set-Native-Method-Prefix: true'
  * @run main/othervm -javaagent:NativeMethodPrefixAgent.jar NativeMethodPrefixApp
  */
 

@@ -46,6 +46,7 @@ allocate(jvmtiEnv * jvmtienv, size_t bytecount) {
     error = (*jvmtienv)->Allocate(jvmtienv,
                                   bytecount,
                                   (unsigned char**) &resultBuffer);
+    /* may be called from any phase */
     jplis_assert(error == JVMTI_ERROR_NONE);
     if ( error != JVMTI_ERROR_NONE ) {
         resultBuffer = NULL;
@@ -66,6 +67,7 @@ deallocate(jvmtiEnv * jvmtienv, void * buffer) {
 
     error = (*jvmtienv)->Deallocate(jvmtienv,
                                     (unsigned char*)buffer);
+    /* may be called from any phase */
     jplis_assert_msg(error == JVMTI_ERROR_NONE, "Can't deallocate memory");
     return;
 }
