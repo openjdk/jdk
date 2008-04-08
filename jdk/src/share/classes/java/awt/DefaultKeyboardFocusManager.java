@@ -155,12 +155,13 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                                    boolean clearOnFailure)
     {
         if (toFocus != vetoedComponent && toFocus.isShowing() && toFocus.isFocusable() &&
-            toFocus.requestFocus(false, CausedFocusEvent.Cause.ROLLBACK)) {
+            toFocus.requestFocus(false, CausedFocusEvent.Cause.ROLLBACK))
+        {
             return true;
         } else {
-            Component nextFocus = toFocus.preNextFocusHelper();
-            if (nextFocus != vetoedComponent
-                && Component.postNextFocusHelper(nextFocus, CausedFocusEvent.Cause.ROLLBACK))
+            Component nextFocus = toFocus.getNextFocusCandidate();
+            if (nextFocus != null && nextFocus != vetoedComponent &&
+                nextFocus.requestFocusInWindow(CausedFocusEvent.Cause.ROLLBACK))
             {
                 return true;
             } else if (clearOnFailure) {
@@ -504,9 +505,16 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                 {
                     // we should not accept focus on such component, so reject it.
                     dequeueKeyEvents(-1, newFocusOwner);
-                    if (KeyboardFocusManager.isAutoFocusTransferEnabled())
-                    {
-                        restoreFocus(fe, newFocusedWindow);
+                    if (KeyboardFocusManager.isAutoFocusTransferEnabled()) {
+                        // If FOCUS_GAINED is for a disposed component (however
+                        // it shouldn't happen) its toplevel parent is null. In this
+                        // case we have to try to restore focus in the current focused
+                        // window (for the details: 6607170).
+                        if (newFocusedWindow == null) {
+                            restoreFocus(fe, currentFocusedWindow);
+                        } else {
+                            restoreFocus(fe, newFocusedWindow);
+                        }
                     }
                     break;
                 }
