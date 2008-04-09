@@ -225,6 +225,34 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
   assert(_dilatation_factor >= 1.0, "from previous assert");
 }
 
+
+// The field "_initiating_occupancy" represents the occupancy percentage
+// at which we trigger a new collection cycle.  Unless explicitly specified
+// via CMSInitiating[Perm]OccupancyFraction (argument "io" below), it
+// is calculated by:
+//
+//   Let "f" be MinHeapFreeRatio in
+//
+//    _intiating_occupancy = 100-f +
+//                           f * (CMSTrigger[Perm]Ratio/100)
+//   where CMSTrigger[Perm]Ratio is the argument "tr" below.
+//
+// That is, if we assume the heap is at its desired maximum occupancy at the
+// end of a collection, we let CMSTrigger[Perm]Ratio of the (purported) free
+// space be allocated before initiating a new collection cycle.
+//
+void ConcurrentMarkSweepGeneration::init_initiating_occupancy(intx io, intx tr) {
+  assert(io <= 100 && tr >= 0 && tr <= 100, "Check the arguments");
+  if (io >= 0) {
+    _initiating_occupancy = (double)io / 100.0;
+  } else {
+    _initiating_occupancy = ((100 - MinHeapFreeRatio) +
+                             (double)(tr * MinHeapFreeRatio) / 100.0)
+                            / 100.0;
+  }
+}
+
+
 void ConcurrentMarkSweepGeneration::ref_processor_init() {
   assert(collector() != NULL, "no collector");
   collector()->ref_processor_init();
@@ -520,8 +548,8 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _verification_mark_bm(0, Mutex::leaf + 1, "CMS_verification_mark_bm_lock"),
   _completed_initialization(false),
   _collector_policy(cp),
-  _unload_classes(false),
-  _unloaded_classes_last_cycle(false),
+  _should_unload_classes(false),
+  _concurrent_cycles_since_last_unload(0),
   _sweep_estimate(CMS_SweepWeight, CMS_SweepPadding)
 {
   if (ExplicitGCInvokesConcurrentAndUnloadsClasses) {
@@ -642,26 +670,11 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
     }
   }
 
-  // "initiatingOccupancy" is the occupancy ratio at which we trigger
-  // a new collection cycle.  Unless explicitly specified via
-  // CMSTriggerRatio, it is calculated by:
-  //   Let "f" be MinHeapFreeRatio in
-  //
-  //    intiatingOccupancy = 100-f +
-  //                         f * (CMSTriggerRatio/100)
-  // That is, if we assume the heap is at its desired maximum occupancy at the
-  // end of a collection, we let CMSTriggerRatio of the (purported) free
-  // space be allocated before initiating a new collection cycle.
-  if (CMSInitiatingOccupancyFraction > 0) {
-    _initiatingOccupancy = (double)CMSInitiatingOccupancyFraction / 100.0;
-  } else {
-    _initiatingOccupancy = ((100 - MinHeapFreeRatio) +
-                           (double)(CMSTriggerRatio *
-                                    MinHeapFreeRatio) / 100.0)
-                           / 100.0;
-  }
+  _cmsGen ->init_initiating_occupancy(CMSInitiatingOccupancyFraction, CMSTriggerRatio);
+  _permGen->init_initiating_occupancy(CMSInitiatingPermOccupancyFraction, CMSTriggerPermRatio);
+
   // Clip CMSBootstrapOccupancy between 0 and 100.
-  _bootstrap_occupancy = ((double)MIN2((intx)100, MAX2((intx)0, CMSBootstrapOccupancy)))
+  _bootstrap_occupancy = ((double)MIN2((uintx)100, MAX2((uintx)0, CMSBootstrapOccupancy)))
                          /(double)100;
 
   _full_gcs_since_conc_gc = 0;
@@ -1413,7 +1426,8 @@ bool CMSCollector::shouldConcurrentCollect() {
     gclog_or_tty->print_cr("promotion_rate=%g", stats().promotion_rate());
     gclog_or_tty->print_cr("cms_allocation_rate=%g", stats().cms_allocation_rate());
     gclog_or_tty->print_cr("occupancy=%3.7f", _cmsGen->occupancy());
-    gclog_or_tty->print_cr("initiatingOccupancy=%3.7f", initiatingOccupancy());
+    gclog_or_tty->print_cr("initiatingOccupancy=%3.7f", _cmsGen->initiating_occupancy());
+    gclog_or_tty->print_cr("initiatingPermOccupancy=%3.7f", _permGen->initiating_occupancy());
   }
   // ------------------------------------------------------------------
 
@@ -1446,22 +1460,36 @@ bool CMSCollector::shouldConcurrentCollect() {
   // old gen want a collection cycle started. Each may use
   // an appropriate criterion for making this decision.
   // XXX We need to make sure that the gen expansion
-  // criterion dovetails well with this.
-  if (_cmsGen->shouldConcurrentCollect(initiatingOccupancy())) {
+  // criterion dovetails well with this. XXX NEED TO FIX THIS
+  if (_cmsGen->should_concurrent_collect()) {
     if (Verbose && PrintGCDetails) {
       gclog_or_tty->print_cr("CMS old gen initiated");
     }
     return true;
   }
 
-  if (cms_should_unload_classes() &&
-      _permGen->shouldConcurrentCollect(initiatingOccupancy())) {
-    if (Verbose && PrintGCDetails) {
-     gclog_or_tty->print_cr("CMS perm gen initiated");
+  // We start a collection if we believe an incremental collection may fail;
+  // this is not likely to be productive in practice because it's probably too
+  // late anyway.
+  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  assert(gch->collector_policy()->is_two_generation_policy(),
+         "You may want to check the correctness of the following");
+  if (gch->incremental_collection_will_fail()) {
+    if (PrintGCDetails && Verbose) {
+      gclog_or_tty->print("CMSCollector: collect because incremental collection will fail ");
     }
     return true;
   }
 
+  if (CMSClassUnloadingEnabled && _permGen->should_concurrent_collect()) {
+    bool res = update_should_unload_classes();
+    if (res) {
+      if (Verbose && PrintGCDetails) {
+        gclog_or_tty->print_cr("CMS perm gen initiated");
+      }
+      return true;
+    }
+  }
   return false;
 }
 
@@ -1471,32 +1499,36 @@ void CMSCollector::clear_expansion_cause() {
   _permGen->clear_expansion_cause();
 }
 
-bool ConcurrentMarkSweepGeneration::shouldConcurrentCollect(
-  double initiatingOccupancy) {
-  // We should be conservative in starting a collection cycle.  To
-  // start too eagerly runs the risk of collecting too often in the
-  // extreme.  To collect too rarely falls back on full collections,
-  // which works, even if not optimum in terms of concurrent work.
-  // As a work around for too eagerly collecting, use the flag
-  // UseCMSInitiatingOccupancyOnly.  This also has the advantage of
-  // giving the user an easily understandable way of controlling the
-  // collections.
-  // We want to start a new collection cycle if any of the following
-  // conditions hold:
-  // . our current occupancy exceeds the initiating occupancy, or
-  // . we recently needed to expand and have not since that expansion,
-  //   collected, or
-  // . we are not using adaptive free lists and linear allocation is
-  //   going to fail, or
-  // . (for old gen) incremental collection has already failed or
-  //   may soon fail in the near future as we may not be able to absorb
-  //   promotions.
-  assert_lock_strong(freelistLock());
+// We should be conservative in starting a collection cycle.  To
+// start too eagerly runs the risk of collecting too often in the
+// extreme.  To collect too rarely falls back on full collections,
+// which works, even if not optimum in terms of concurrent work.
+// As a work around for too eagerly collecting, use the flag
+// UseCMSInitiatingOccupancyOnly.  This also has the advantage of
+// giving the user an easily understandable way of controlling the
+// collections.
+// We want to start a new collection cycle if any of the following
+// conditions hold:
+// . our current occupancy exceeds the configured initiating occupancy
+//   for this generation, or
+// . we recently needed to expand this space and have not, since that
+//   expansion, done a collection of this generation, or
+// . the underlying space believes that it may be a good idea to initiate
+//   a concurrent collection (this may be based on criteria such as the
+//   following: the space uses linear allocation and linear allocation is
+//   going to fail, or there is believed to be excessive fragmentation in
+//   the generation, etc... or ...
+// [.(currently done by CMSCollector::shouldConcurrentCollect() only for
+//   the case of the old generation, not the perm generation; see CR 6543076):
+//   we may be approaching a point at which allocation requests may fail because
+//   we will be out of sufficient free space given allocation rate estimates.]
+bool ConcurrentMarkSweepGeneration::should_concurrent_collect() const {
 
-  if (occupancy() > initiatingOccupancy) {
+  assert_lock_strong(freelistLock());
+  if (occupancy() > initiating_occupancy()) {
     if (PrintGCDetails && Verbose) {
       gclog_or_tty->print(" %s: collect because of occupancy %f / %f  ",
-        short_name(), occupancy(), initiatingOccupancy);
+        short_name(), occupancy(), initiating_occupancy());
     }
     return true;
   }
@@ -1510,20 +1542,9 @@ bool ConcurrentMarkSweepGeneration::shouldConcurrentCollect(
     }
     return true;
   }
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  assert(gch->collector_policy()->is_two_generation_policy(),
-         "You may want to check the correctness of the following");
-  if (gch->incremental_collection_will_fail()) {
+  if (_cmsSpace->should_concurrent_collect()) {
     if (PrintGCDetails && Verbose) {
-      gclog_or_tty->print(" %s: collect because incremental collection will fail ",
-        short_name());
-    }
-    return true;
-  }
-  if (!_cmsSpace->adaptive_freelists() &&
-      _cmsSpace->linearAllocationWouldFail()) {
-    if (PrintGCDetails && Verbose) {
-      gclog_or_tty->print(" %s: collect because of linAB ",
+      gclog_or_tty->print(" %s: collect because cmsSpace says so ",
         short_name());
     }
     return true;
@@ -1970,8 +1991,9 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
          "Should have been NULL'd before baton was passed");
   reset(false /* == !asynch */);
   _cmsGen->reset_after_compaction();
+  _concurrent_cycles_since_last_unload = 0;
 
-  if (verifying() && !cms_should_unload_classes()) {
+  if (verifying() && !should_unload_classes()) {
     perm_gen_verify_bit_map()->clear_all();
   }
 
@@ -2098,6 +2120,7 @@ void CMSCollector::collect_in_background(bool clear_all_soft_refs) {
   {
     bool safepoint_check = Mutex::_no_safepoint_check_flag;
     MutexLockerEx hl(Heap_lock, safepoint_check);
+    FreelistLocker fll(this);
     MutexLockerEx x(CGC_lock, safepoint_check);
     if (_foregroundGCIsActive || !UseAsyncConcMarkSweepGC) {
       // The foreground collector is active or we're
@@ -2112,13 +2135,9 @@ void CMSCollector::collect_in_background(bool clear_all_soft_refs) {
       // a new cycle.
       clear_expansion_cause();
     }
-    _unloaded_classes_last_cycle = cms_should_unload_classes(); // ... from last cycle
-    // This controls class unloading in response to an explicit gc request.
-    // If ExplicitGCInvokesConcurrentAndUnloadsClasses is set, then
-    // we will unload classes even if CMSClassUnloadingEnabled is not set.
-    // See CR 6541037 and related CRs.
-    _unload_classes = _full_gc_requested                      // ... for this cycle
-                      && ExplicitGCInvokesConcurrentAndUnloadsClasses;
+    // Decide if we want to enable class unloading as part of the
+    // ensuing concurrent GC cycle.
+    update_should_unload_classes();
     _full_gc_requested = false;           // acks all outstanding full gc requests
     // Signal that we are about to start a collection
     gch->increment_total_full_collections();  // ... starting a collection cycle
@@ -3047,21 +3066,62 @@ void CMSCollector::verify_overflow_empty() const {
 }
 #endif // PRODUCT
 
+// Decide if we want to enable class unloading as part of the
+// ensuing concurrent GC cycle. We will collect the perm gen and
+// unload classes if it's the case that:
+// (1) an explicit gc request has been made and the flag
+//     ExplicitGCInvokesConcurrentAndUnloadsClasses is set, OR
+// (2) (a) class unloading is enabled at the command line, and
+//     (b) (i)   perm gen threshold has been crossed, or
+//         (ii)  old gen is getting really full, or
+//         (iii) the previous N CMS collections did not collect the
+//               perm gen
+// NOTE: Provided there is no change in the state of the heap between
+// calls to this method, it should have idempotent results. Moreover,
+// its results should be monotonically increasing (i.e. going from 0 to 1,
+// but not 1 to 0) between successive calls between which the heap was
+// not collected. For the implementation below, it must thus rely on
+// the property that concurrent_cycles_since_last_unload()
+// will not decrease unless a collection cycle happened and that
+// _permGen->should_concurrent_collect() and _cmsGen->is_too_full() are
+// themselves also monotonic in that sense. See check_monotonicity()
+// below.
+bool CMSCollector::update_should_unload_classes() {
+  _should_unload_classes = false;
+  // Condition 1 above
+  if (_full_gc_requested && ExplicitGCInvokesConcurrentAndUnloadsClasses) {
+    _should_unload_classes = true;
+  } else if (CMSClassUnloadingEnabled) { // Condition 2.a above
+    // Disjuncts 2.b.(i,ii,iii) above
+    _should_unload_classes = (concurrent_cycles_since_last_unload() >=
+                              CMSClassUnloadingMaxInterval)
+                           || _permGen->should_concurrent_collect()
+                           || _cmsGen->is_too_full();
+  }
+  return _should_unload_classes;
+}
+
+bool ConcurrentMarkSweepGeneration::is_too_full() const {
+  bool res = should_concurrent_collect();
+  res = res && (occupancy() > (double)CMSIsTooFullPercentage/100.0);
+  return res;
+}
+
 void CMSCollector::setup_cms_unloading_and_verification_state() {
   const  bool should_verify =    VerifyBeforeGC || VerifyAfterGC || VerifyDuringGC
                              || VerifyBeforeExit;
   const  int  rso           =    SharedHeap::SO_Symbols | SharedHeap::SO_Strings
                              |   SharedHeap::SO_CodeCache;
 
-  if (cms_should_unload_classes()) {   // Should unload classes this cycle
+  if (should_unload_classes()) {   // Should unload classes this cycle
     remove_root_scanning_option(rso);  // Shrink the root set appropriately
     set_verifying(should_verify);    // Set verification state for this cycle
     return;                            // Nothing else needs to be done at this time
   }
 
   // Not unloading classes this cycle
-  assert(!cms_should_unload_classes(), "Inconsitency!");
-  if ((!verifying() || cms_unloaded_classes_last_cycle()) && should_verify) {
+  assert(!should_unload_classes(), "Inconsitency!");
+  if ((!verifying() || unloaded_classes_last_cycle()) && should_verify) {
     // We were not verifying, or we _were_ unloading classes in the last cycle,
     // AND some verification options are enabled this cycle; in this case,
     // we must make sure that the deadness map is allocated if not already so,
@@ -4693,7 +4753,7 @@ void CMSCollector::checkpointRootsFinalWork(bool asynch,
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
-  if (cms_should_unload_classes()) {
+  if (should_unload_classes()) {
     CodeCache::gc_prologue();
   }
   assert(haveFreelistLocks(), "must have free list locks");
@@ -4753,7 +4813,7 @@ void CMSCollector::checkpointRootsFinalWork(bool asynch,
   verify_work_stacks_empty();
   verify_overflow_empty();
 
-  if (cms_should_unload_classes()) {
+  if (should_unload_classes()) {
     CodeCache::gc_epilogue();
   }
 
@@ -5623,7 +5683,7 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
     verify_work_stacks_empty();
   }
 
-  if (cms_should_unload_classes()) {
+  if (should_unload_classes()) {
     {
       TraceTime t("class unloading", PrintGCDetails, false, gclog_or_tty);
 
@@ -5726,7 +5786,7 @@ void CMSCollector::sweep(bool asynch) {
   // this cycle, we preserve the perm gen object "deadness" information
   // in the perm_gen_verify_bit_map. In order to do that we traverse
   // all blocks in perm gen and mark all dead objects.
-  if (verifying() && !cms_should_unload_classes()) {
+  if (verifying() && !should_unload_classes()) {
     assert(perm_gen_verify_bit_map()->sizeInBits() != 0,
            "Should have already been allocated");
     MarkDeadObjectsClosure mdo(this, _permGen->cmsSpace(),
@@ -5753,7 +5813,7 @@ void CMSCollector::sweep(bool asynch) {
     }
 
     // Now repeat for perm gen
-    if (cms_should_unload_classes()) {
+    if (should_unload_classes()) {
       CMSTokenSyncWithLocks ts(true, _permGen->freelistLock(),
                              bitMapLock());
       sweepWork(_permGen, asynch);
@@ -5775,7 +5835,7 @@ void CMSCollector::sweep(bool asynch) {
     // already have needed locks
     sweepWork(_cmsGen,  asynch);
 
-    if (cms_should_unload_classes()) {
+    if (should_unload_classes()) {
       sweepWork(_permGen, asynch);
     }
     // Update heap occupancy information which is used as
@@ -5937,6 +5997,11 @@ void CMSCollector::sweepWork(ConcurrentMarkSweepGeneration* gen,
   }
   gen->cmsSpace()->sweep_completed();
   gen->cmsSpace()->endSweepFLCensus(sweepCount());
+  if (should_unload_classes()) {                // unloaded classes this cycle,
+    _concurrent_cycles_since_last_unload = 0;   // ... reset count
+  } else {                                      // did not unload classes,
+    _concurrent_cycles_since_last_unload++;     // ... increment count
+  }
 }
 
 // Reset CMS data structures (for now just the marking bit map)
@@ -7194,7 +7259,7 @@ PushOrMarkClosure::PushOrMarkClosure(CMSCollector* collector,
   _revisitStack(revisitStack),
   _finger(finger),
   _parent(parent),
-  _should_remember_klasses(collector->cms_should_unload_classes())
+  _should_remember_klasses(collector->should_unload_classes())
 { }
 
 Par_PushOrMarkClosure::Par_PushOrMarkClosure(CMSCollector* collector,
@@ -7217,7 +7282,7 @@ Par_PushOrMarkClosure::Par_PushOrMarkClosure(CMSCollector* collector,
   _finger(finger),
   _global_finger_addr(global_finger_addr),
   _parent(parent),
-  _should_remember_klasses(collector->cms_should_unload_classes())
+  _should_remember_klasses(collector->should_unload_classes())
 { }
 
 
@@ -7360,7 +7425,7 @@ PushAndMarkClosure::PushAndMarkClosure(CMSCollector* collector,
   _mark_stack(mark_stack),
   _revisit_stack(revisit_stack),
   _concurrent_precleaning(concurrent_precleaning),
-  _should_remember_klasses(collector->cms_should_unload_classes())
+  _should_remember_klasses(collector->should_unload_classes())
 {
   assert(_ref_processor != NULL, "_ref_processor shouldn't be NULL");
 }
@@ -7422,7 +7487,7 @@ Par_PushAndMarkClosure::Par_PushAndMarkClosure(CMSCollector* collector,
   _bit_map(bit_map),
   _work_queue(work_queue),
   _revisit_stack(revisit_stack),
-  _should_remember_klasses(collector->cms_should_unload_classes())
+  _should_remember_klasses(collector->should_unload_classes())
 {
   assert(_ref_processor != NULL, "_ref_processor shouldn't be NULL");
 }
@@ -7944,7 +8009,7 @@ size_t SweepClosure::doLiveChunk(FreeChunk* fc) {
 
     #ifdef DEBUG
       if (oop(addr)->klass() != NULL &&
-          (   !_collector->cms_should_unload_classes()
+          (   !_collector->should_unload_classes()
            || oop(addr)->is_parsable())) {
         // Ignore mark word because we are running concurrent with mutators
         assert(oop(addr)->is_oop(true), "live block should be an oop");
@@ -7957,7 +8022,7 @@ size_t SweepClosure::doLiveChunk(FreeChunk* fc) {
   } else {
     // This should be an initialized object that's alive.
     assert(oop(addr)->klass() != NULL &&
-           (!_collector->cms_should_unload_classes()
+           (!_collector->should_unload_classes()
             || oop(addr)->is_parsable()),
            "Should be an initialized object");
     // Ignore mark word because we are running concurrent with mutators
