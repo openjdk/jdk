@@ -535,13 +535,16 @@ class CMSCollector: public CHeapObj {
   // In support of ExplicitGCInvokesConcurrent
   static   bool _full_gc_requested;
   unsigned int  _collection_count_start;
+
   // Should we unload classes this concurrent cycle?
-  // Set in response to a concurrent full gc request.
-  bool _unload_classes;
-  bool _unloaded_classes_last_cycle;
+  bool _should_unload_classes;
+  unsigned int  _concurrent_cycles_since_last_unload;
+  unsigned int concurrent_cycles_since_last_unload() const {
+    return _concurrent_cycles_since_last_unload;
+  }
   // Did we (allow) unload classes in the previous concurrent cycle?
-  bool cms_unloaded_classes_last_cycle() const {
-    return _unloaded_classes_last_cycle || CMSClassUnloadingEnabled;
+  bool unloaded_classes_last_cycle() const {
+    return concurrent_cycles_since_last_unload() == 0;
   }
 
   // Verification support
@@ -651,8 +654,6 @@ class CMSCollector: public CHeapObj {
   // number of full gc's since the last concurrent gc.
   uint   _full_gcs_since_conc_gc;
 
-  // if occupancy exceeds this, start a new gc cycle
-  double _initiatingOccupancy;
   // occupancy used for bootstrapping stats
   double _bootstrap_occupancy;
 
@@ -825,7 +826,6 @@ class CMSCollector: public CHeapObj {
 
   Mutex* bitMapLock()        const { return _markBitMap.lock();    }
   static CollectorState abstract_state() { return _collectorState;  }
-  double initiatingOccupancy() const { return _initiatingOccupancy; }
 
   bool should_abort_preclean() const; // Whether preclean should be aborted.
   size_t get_eden_used() const;
@@ -849,11 +849,10 @@ class CMSCollector: public CHeapObj {
   // In support of ExplicitGCInvokesConcurrent
   static void request_full_gc(unsigned int full_gc_count);
   // Should we unload classes in a particular concurrent cycle?
-  bool cms_should_unload_classes() const {
-    assert(!_unload_classes ||  ExplicitGCInvokesConcurrentAndUnloadsClasses,
-           "Inconsistency; see CR 6541037");
-    return _unload_classes || CMSClassUnloadingEnabled;
+  bool should_unload_classes() const {
+    return _should_unload_classes;
   }
+  bool update_should_unload_classes();
 
   void direct_allocated(HeapWord* start, size_t size);
 
@@ -1022,16 +1021,16 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
     _incremental_collection_failed = false;
   }
 
+  // accessors
+  void set_expansion_cause(CMSExpansionCause::Cause v) { _expansion_cause = v;}
+  CMSExpansionCause::Cause expansion_cause() const { return _expansion_cause; }
+
  private:
   // For parallel young-gen GC support.
   CMSParGCThreadState** _par_gc_thread_states;
 
   // Reason generation was expanded
   CMSExpansionCause::Cause _expansion_cause;
-
-  // accessors
-  void set_expansion_cause(CMSExpansionCause::Cause v) { _expansion_cause = v;}
-  CMSExpansionCause::Cause expansion_cause() { return _expansion_cause; }
 
   // In support of MinChunkSize being larger than min object size
   const double _dilatation_factor;
@@ -1044,6 +1043,10 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   };
 
   CollectionTypes _debug_collection_type;
+
+  // Fraction of current occupancy at which to start a CMS collection which
+  // will collect this generation (at least).
+  double _initiating_occupancy;
 
  protected:
   // Grow generation by specified size (returns false if unable to grow)
@@ -1059,6 +1062,10 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // Maximum available space in the generation (including uncommitted)
   // space.
   size_t max_available() const;
+
+  // getter and initializer for _initiating_occupancy field.
+  double initiating_occupancy() const { return _initiating_occupancy; }
+  void   init_initiating_occupancy(intx io, intx tr);
 
  public:
   ConcurrentMarkSweepGeneration(ReservedSpace rs, size_t initial_byte_size,
@@ -1103,7 +1110,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   size_t capacity() const;
   size_t used() const;
   size_t free() const;
-  double occupancy()      { return ((double)used())/((double)capacity()); }
+  double occupancy() const { return ((double)used())/((double)capacity()); }
   size_t contiguous_available() const;
   size_t unsafe_max_alloc_nogc() const;
 
@@ -1158,8 +1165,8 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
     bool younger_handles_promotion_failure) const;
 
   bool should_collect(bool full, size_t size, bool tlab);
-    // XXXPERM
-  bool shouldConcurrentCollect(double initiatingOccupancy); // XXXPERM
+  virtual bool should_concurrent_collect() const;
+  virtual bool is_too_full() const;
   void collect(bool   full,
                bool   clear_all_soft_refs,
                size_t size,
