@@ -1810,7 +1810,7 @@ public class Attr extends JCTree.Visitor {
             chk.earlyRefError(tree.pos(), sym.kind == VAR ? sym : thisSym(tree.pos(), env));
         }
         Env<AttrContext> env1 = env;
-        if (sym.kind != ERR && sym.owner != null && sym.owner != env1.enclClass.sym) {
+        if (sym.kind != ERR && sym.kind != TYP && sym.owner != null && sym.owner != env1.enclClass.sym) {
             // If the found symbol is inaccessible, then it is
             // accessed through an enclosing instance.  Locate this
             // enclosing instance:
