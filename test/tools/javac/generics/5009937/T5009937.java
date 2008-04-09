@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,19 @@
 
 /*
  * @test
- * @bug 4984158
- * @summary two inherited methods with same signature
- * @author gafter, Maurizio Cimadamore
+ * @bug 5009937
+ * @summary hiding versus generics versus binary compatibility
+ * @author Maurizio Cimadamore
  *
- * @compile -source 1.5 InheritanceConflict2.java
+ * @compile/fail/ref=T5009937.out -XDstdout -XDrawDiagnostics T5009937.java
  */
 
-package inheritance.conflict2;
+public class T5009937<X> {
+    static class A {
+        static void m(T5009937<String> l) {}
+    }
 
-class A<T> {
-    void f(String s) {}
-}
-
-class B<T> extends A<T> {
-    void f(T t) {}
-}
-
-class C extends B<String> {
-    void f(String s) {}
+    static class B extends A {
+        static void m(T5009937<Integer> l) {}
+    }
 }
