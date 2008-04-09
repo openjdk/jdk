@@ -420,40 +420,36 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
           case SNFH_SUCCESS_PROCEED:
               // Currently we just generate focus events like we deal with lightweight instead of calling
               // XSetInputFocus on native window
-              if (focusLog.isLoggable(Level.FINER)) focusLog.finer("Proceeding with request to " + lightweightChild + " in " + target);
+              if (focusLog.isLoggable(Level.FINER)) focusLog.finer("Proceeding with request to " +
+                  lightweightChild + " in " + target);
               /**
                * The problems with requests in non-focused window arise because shouldNativelyFocusHeavyweight
                * checks that native window is focused while appropriate WINDOW_GAINED_FOCUS has not yet
                * been processed - it is in EventQueue. Thus, SNFH allows native request and stores request record
-               * in requests list - and it breaks our requests sequence as first record on WGF should be the last focus
-               * owner which had focus before WLF. So, we should not add request record for such requests
+               * in requests list - and it breaks our requests sequence as first record on WGF should be the last
+               * focus owner which had focus before WLF. So, we should not add request record for such requests
                * but store this component in mostRecent - and return true as before for compatibility.
                */
               Window parentWindow = getContainingWindow(target);
-              if (parentWindow != null) {
-                  // and check that it is focused
-                  if (!parentWindow.isFocused()) {
-                      XWindowPeer wpeer = (XWindowPeer)parentWindow.getPeer();
-                      /*
-                       * Fix for 6314575.
-                       * Shouldn't restore focus on 'actualFocusedWindow'
-                       * when a component inside a Frame is requesting it.
-                       */
-                      wpeer.setActualFocusedWindow(null);
+              if (parentWindow == null) {
+                  return rejectFocusRequestHelper("WARNING: Parent window is null");
+              }
+              XWindowPeer wpeer = (XWindowPeer)parentWindow.getPeer();
+              if (wpeer == null) {
+                  return rejectFocusRequestHelper("WARNING: Parent window's peer is null");
+              }
+              /*
+               * Passing null 'actualFocusedWindow' as we don't want to restore focus on it
+               * when a component inside a Frame is requesting focus.
+               * See 6314575 for details.
+               */
+              boolean res = wpeer.requestWindowFocus(null);
 
-                      boolean res = wpeer.requestWindowFocus();
-                      if (focusLog.isLoggable(Level.FINER)) focusLog.finer("Requested window focus: " + res);
-                      // If parent window can be made focused and has been made focused(synchronously)
-                      // then we can proceed with children, otherwise we retreat.
-                      if (!(res && parentWindow.isFocused())) {
-                          focusLog.finer("Waiting for asynchronous processing of window focus request");
-                          KeyboardFocusManagerPeerImpl.removeLastFocusRequest(target);
-                          return false;
-                      }
-                  }
-              } else {
-                  if (focusLog.isLoggable(Level.FINER)) focusLog.finer("WARNING: Parent window is null");
-                  return false;
+              if (focusLog.isLoggable(Level.FINER)) focusLog.finer("Requested window focus: " + res);
+              // If parent window can be made focused and has been made focused(synchronously)
+              // then we can proceed with children, otherwise we retreat.
+              if (!(res && parentWindow.isFocused())) {
+                  return rejectFocusRequestHelper("Waiting for asynchronous processing of the request");
               }
 
               // NOTE: We simulate heavyweight behavior of Motif - component receives focus right
@@ -466,6 +462,12 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
               // Either lightweight or excessive request - all events are generated.
               return true;
         }
+        return false;
+    }
+
+    private boolean rejectFocusRequestHelper(String logMsg) {
+        if (focusLog.isLoggable(Level.FINER)) focusLog.finer(logMsg);
+        KeyboardFocusManagerPeerImpl.removeLastFocusRequest(target);
         return false;
     }
 

@@ -1013,16 +1013,6 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
     private void handleWmTakeFocus(XClientMessageEvent cl) {
         focusLog.log(Level.FINE, "WM_TAKE_FOCUS on {0}", new Object[]{this});
-        // A workaround to Metacity issue (see 6613426).
-        // The first check is to skip redundant WM_TAKE_FOCUS on click
-        // in a focused frame. The second check is to allow requesting focus
-        // on click in a frame when its owned window is currently focused.
-        if (this == getNativeFocusedWindowPeer() &&
-            target == XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow())
-        {
-            focusLog.fine("The window is already focused, skipping.");
-            return;
-        }
         requestWindowFocus(cl.get_data(1), true);
     }
 
@@ -1124,53 +1114,51 @@ abstract class XDecoratedPeer extends XWindowPeer {
         focusLog.fine("Request for decorated window focus");
         // If this is Frame or Dialog we can't assure focus request success - but we still can try
         // If this is Window and its owner Frame is active we can be sure request succedded.
-        Window win = (Window)target;
         Window focusedWindow = XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow();
         Window activeWindow = XWindowPeer.getDecoratedOwner(focusedWindow);
 
         focusLog.log(Level.FINER, "Current window is: active={0}, focused={1}",
-                     new Object[]{ Boolean.valueOf(win == activeWindow),
-                                   Boolean.valueOf(win == focusedWindow)});
+                     new Object[]{ Boolean.valueOf(target == activeWindow),
+                                   Boolean.valueOf(target == focusedWindow)});
 
         XWindowPeer toFocus = this;
         while (toFocus.nextTransientFor != null) {
             toFocus = toFocus.nextTransientFor;
         }
-
-        if (this == toFocus) {
-            if (focusAllowedFor()) {
-                if (win == activeWindow && win != focusedWindow) {
-                    // Happens when focus is on window child
-                    focusLog.fine("Focus is on child window - transfering it back");
-                    handleWindowFocusInSync(-1);
-                } else {
-                    focusLog.fine("Requesting focus to this window");
-                    if (timeProvided) {
-                        requestXFocus(time);
-                    } else {
-                        requestXFocus();
-                    }
-                }
-                return true;
-            } else {
-                return false;
-            }
-        }
-        else if (toFocus.focusAllowedFor()) {
-            focusLog.fine("Requesting focus to " + toFocus);
-            if (timeProvided) {
-                toFocus.requestXFocus(time);
-            } else {
-                toFocus.requestXFocus();
-            }
-            return false;
-        }
-        else
-        {
+        if (toFocus == null || !toFocus.focusAllowedFor()) {
             // This might change when WM will have property to determine focus policy.
             // Right now, because policy is unknown we can't be sure we succedded
             return false;
         }
+        if (this == toFocus) {
+            if (isWMStateNetHidden()) {
+                focusLog.fine("The window is unmapped, so rejecting the request");
+                return false;
+            }
+            if (target == activeWindow && target != focusedWindow) {
+                // Happens when an owned window is currently focused
+                focusLog.fine("Focus is on child window - transfering it back to the owner");
+                handleWindowFocusInSync(-1);
+                return true;
+            }
+            Window realNativeFocusedWindow = XWindowPeer.getNativeFocusedWindow();
+            focusLog.finest("Real native focused window: " + realNativeFocusedWindow +
+                            "\nKFM's focused window: " + focusedWindow);
+
+            // See 6522725, 6613426.
+            if (target == realNativeFocusedWindow) {
+                focusLog.fine("The window is already natively focused.");
+                return true;
+            }
+        }
+        focusLog.fine("Requesting focus to " + (this == toFocus ? "this window" : toFocus));
+
+        if (timeProvided) {
+            toFocus.requestXFocus(time);
+        } else {
+            toFocus.requestXFocus();
+        }
+        return (this == toFocus);
     }
 
     XWindowPeer actualFocusedWindow = null;
