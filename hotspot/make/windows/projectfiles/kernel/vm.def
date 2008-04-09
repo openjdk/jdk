@@ -1,0 +1,7 @@
+;
+; This .DEF file is a placeholder for one which is automatically
+; generated during the build process. See
+; make\windows\build_vm_def.sh and
+; make\windows\makefiles\makedeps.make (esp. the "-prelink"
+; options).
+;
