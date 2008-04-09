@@ -2257,6 +2257,9 @@ bool PhaseIdealLoop::is_valid_clone_loop_form( IdealLoopTree *loop, Node_List& p
 //
 bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 
+  if (!loop->_head->is_Loop()) {
+    return false;  }
+
   LoopNode *head  = loop->_head->as_Loop();
 
   if (head->is_partial_peel_loop() || head->partial_peel_has_failed()) {
