@@ -1878,8 +1878,10 @@ public class Attr extends JCTree.Visitor {
         boolean varArgs = env.info.varArgs;
         tree.sym = sym;
 
-        if (site.tag == TYPEVAR && !isType(sym) && sym.kind != ERR)
-            site = capture(site.getUpperBound());
+        if (site.tag == TYPEVAR && !isType(sym) && sym.kind != ERR) {
+            while (site.tag == TYPEVAR) site = site.getUpperBound();
+            site = capture(site);
+        }
 
         // If that symbol is a variable, ...
         if (sym.kind == VAR) {
