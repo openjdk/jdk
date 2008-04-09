@@ -63,6 +63,7 @@ endif
 # The following variables are defined in the generated flags.make file.
 BUILD_VERSION = -DHOTSPOT_RELEASE_VERSION="\"$(HS_BUILD_VER)\""
 JRE_VERSION   = -DJRE_RELEASE_VERSION="\"$(JRE_RELEASE_VER)\""
+HS_LIB_ARCH   = -DHOTSPOT_LIB_ARCH=\"$(LIBARCH)\"
 BUILD_TARGET  = -DHOTSPOT_BUILD_TARGET="\"$(TARGET)\""
 BUILD_USER    = -DHOTSPOT_BUILD_USER="\"$(HOTSPOT_BUILD_USER)\""
 VM_DISTRO     = -DHOTSPOT_VM_DISTRO="\"$(HOTSPOT_VM_DISTRO)\""
@@ -73,6 +74,7 @@ CPPFLAGS =           \
   ${BUILD_VERSION}   \
   ${BUILD_TARGET}    \
   ${BUILD_USER}      \
+  ${HS_LIB_ARCH}     \
   ${JRE_VERSION}     \
   ${VM_DISTRO}
 
