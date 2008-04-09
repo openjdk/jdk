@@ -129,7 +129,7 @@ public:
     return reg()->reg2stack();
   }
 
-  void print_on(outputStream* st) const PRODUCT_RETURN;
+  void print_on(outputStream* st) const;
   void print() const { print_on(tty); }
 };
 
@@ -193,7 +193,7 @@ class OopMap: public ResourceObj {
   }
 
   // Printing
-  void print_on(outputStream* st) const PRODUCT_RETURN;
+  void print_on(outputStream* st) const;
   void print() const { print_on(tty); }
 };
 
@@ -248,7 +248,7 @@ class OopMapSet : public ResourceObj {
                      OopClosure* value_fn, OopClosure* dead_fn);
 
   // Printing
-  void print_on(outputStream* st) const PRODUCT_RETURN;
+  void print_on(outputStream* st) const;
   void print() const { print_on(tty); }
 };
 
