@@ -1006,7 +1006,10 @@ public class Parser {
                     break loop;
                 case DOT:
                     S.nextToken();
+                    int oldmode = mode;
+                    mode &= ~NOPARAMS;
                     typeArgs = typeArgumentsOpt(EXPR);
+                    mode = oldmode;
                     if ((mode & EXPR) != 0) {
                         switch (S.token()) {
                         case CLASS:
