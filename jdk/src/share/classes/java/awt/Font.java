@@ -711,7 +711,7 @@ public class Font implements java.io.Serializable
                                 EBIDI_EMBEDDING, EJUSTIFICATION,
                                 EINPUT_METHOD_HIGHLIGHT, EINPUT_METHOD_UNDERLINE,
                                 ESWAP_COLORS, ENUMERIC_SHAPING, EKERNING,
-                                ELIGATURES, ETRACKING);
+                                ELIGATURES, ETRACKING, ESUPERSCRIPT);
 
     private static final int EXTRA_MASK =
             AttributeValues.getMask(ETRANSFORM, ESUPERSCRIPT, EWIDTH);
