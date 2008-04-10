@@ -86,8 +86,14 @@ class NotQueryExp extends QueryEval implements QueryExp {
     /**
      * Returns the string representing the object.
      */
+    @Override
     public String toString()  {
         return "not (" + exp + ")";
+    }
+
+    @Override
+    String toQueryString() {
+        return "not (" + Query.toString(exp) + ")";
     }
 
  }

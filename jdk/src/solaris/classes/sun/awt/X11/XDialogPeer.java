@@ -88,7 +88,8 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
         }
     }
 
-    private boolean isTargetUndecorated() {
+    @Override
+    boolean isTargetUndecorated() {
         if (undecorated != null) {
             return undecorated.booleanValue();
         } else {

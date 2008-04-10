@@ -119,7 +119,7 @@ abstract class AbstractLauncher extends ConnectorImpl implements LaunchingConnec
 
         String[] tokenArray = new String[tokenList.size()];
         for (int i = 0; i < tokenList.size(); i++) {
-            tokenArray[i] = (String)tokenList.get(i);
+            tokenArray[i] = tokenList.get(i);
         }
         return tokenArray;
     }

@@ -34,7 +34,7 @@ import java.util.Iterator;
 
 class BreakpointSpec extends EventRequestSpec {
     String methodId;
-    List methodArgs;
+    List<String> methodArgs;
     int lineNumber;
 
     BreakpointSpec(ReferenceTypeSpec refSpec, int lineNumber) {
@@ -45,7 +45,7 @@ class BreakpointSpec extends EventRequestSpec {
     }
 
     BreakpointSpec(ReferenceTypeSpec refSpec, String methodId,
-                   List methodArgs) throws MalformedMemberNameException {
+                   List<String> methodArgs) throws MalformedMemberNameException {
         super(refSpec);
         this.methodId = methodId;
         this.methodArgs = methodArgs;
@@ -83,7 +83,7 @@ class BreakpointSpec extends EventRequestSpec {
         return lineNumber;
     }
 
-    List methodArgs() {
+    List<String> methodArgs() {
         return methodArgs;
     }
 
@@ -146,14 +146,13 @@ class BreakpointSpec extends EventRequestSpec {
             buffer.append('.');
             buffer.append(methodId);
             if (methodArgs != null) {
-                Iterator iter = methodArgs.iterator();
                 boolean first = true;
                 buffer.append('(');
-                while (iter.hasNext()) {
+                for (String arg : methodArgs) {
                     if (!first) {
                         buffer.append(',');
                     }
-                    buffer.append((String)iter.next());
+                    buffer.append(arg);
                     first = false;
                 }
                 buffer.append(")");
@@ -176,12 +175,12 @@ class BreakpointSpec extends EventRequestSpec {
             location = method.location();
         } else {
             // let AbsentInformationException be thrown
-            List locs = refType.locationsOfLine(lineNumber());
+            List<Location> locs = refType.locationsOfLine(lineNumber());
             if (locs.size() == 0) {
                 throw new LineNotFoundException();
             }
             // TO DO: handle multiple locations
-            location = (Location)locs.get(0);
+            location = locs.get(0);
             if (location.method() == null) {
                 throw new LineNotFoundException();
             }
@@ -202,8 +201,8 @@ class BreakpointSpec extends EventRequestSpec {
      * and if the number of arguments in the method matches the
      * number of names passed
      */
-    private boolean compareArgTypes(Method method, List nameList) {
-        List argTypeNames = method.argumentTypeNames();
+    private boolean compareArgTypes(Method method, List<String> nameList) {
+        List<String> argTypeNames = method.argumentTypeNames();
 
         // If argument counts differ, we can stop here
         if (argTypeNames.size() != nameList.size()) {
@@ -213,8 +212,8 @@ class BreakpointSpec extends EventRequestSpec {
         // Compare each argument type's name
         int nTypes = argTypeNames.size();
         for (int i = 0; i < nTypes; ++i) {
-            String comp1 = (String)argTypeNames.get(i);
-            String comp2 = (String)nameList.get(i);
+            String comp1 = argTypeNames.get(i);
+            String comp2 = nameList.get(i);
             if (! comp1.equals(comp2)) {
                 /*
                  * We have to handle varargs.  EG, the
@@ -331,22 +330,17 @@ class BreakpointSpec extends EventRequestSpec {
         List<String> argTypeNames = null;
         if (methodArgs() != null) {
             argTypeNames = new ArrayList<String>(methodArgs().size());
-            Iterator iter = methodArgs().iterator();
-            while (iter.hasNext()) {
-                String name = (String)iter.next();
+            for (String name : methodArgs()) {
                 name = normalizeArgTypeName(name);
                 argTypeNames.add(name);
             }
         }
 
         // Check each method in the class for matches
-        Iterator iter = refType.methods().iterator();
         Method firstMatch = null;  // first method with matching name
         Method exactMatch = null;  // (only) method with same name & sig
         int matchCount = 0;        // > 1 implies overload
-        while (iter.hasNext()) {
-            Method candidate = (Method)iter.next();
-
+        for (Method candidate : refType.methods()) {
             if (candidate.name().equals(methodName())) {
                 matchCount++;
 

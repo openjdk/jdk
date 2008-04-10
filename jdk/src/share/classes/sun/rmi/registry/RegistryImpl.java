@@ -66,8 +66,10 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
 
     /* indicate compatibility with JDK 1.1.x version of class */
     private static final long serialVersionUID = 4666870661827494597L;
-    private Hashtable bindings = new Hashtable(101);
-    private static Hashtable allowedAccessCache = new Hashtable(3);
+    private Hashtable<String, Remote> bindings
+        = new Hashtable<String, Remote>(101);
+    private static Hashtable<InetAddress, InetAddress> allowedAccessCache
+        = new Hashtable<InetAddress, InetAddress>(3);
     private static RegistryImpl registry;
     private static ObjID id = new ObjID(ObjID.REGISTRY_ID);
 
@@ -119,7 +121,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
         throws RemoteException, NotBoundException
     {
         synchronized (bindings) {
-            Remote obj = (Remote)bindings.get(name);
+            Remote obj = bindings.get(name);
             if (obj == null)
                 throw new NotBoundException(name);
             return obj;
@@ -136,7 +138,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     {
         checkAccess("Registry.bind");
         synchronized (bindings) {
-            Remote curr = (Remote)bindings.get(name);
+            Remote curr = bindings.get(name);
             if (curr != null)
                 throw new AlreadyBoundException(name);
             bindings.put(name, obj);
@@ -153,7 +155,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     {
         checkAccess("Registry.unbind");
         synchronized (bindings) {
-            Remote obj = (Remote)bindings.get(name);
+            Remote obj = bindings.get(name);
             if (obj == null)
                 throw new NotBoundException(name);
             bindings.remove(name);
@@ -203,10 +205,9 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
             InetAddress clientHost;
 
             try {
-                clientHost = (InetAddress)
-                    java.security.AccessController.doPrivileged(
-                        new java.security.PrivilegedExceptionAction() {
-                        public Object run()
+                clientHost = java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedExceptionAction<InetAddress>() {
+                        public InetAddress run()
                             throws java.net.UnknownHostException
                         {
                             return InetAddress.getByName(clientHostName);
@@ -228,8 +229,8 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
                     final InetAddress finalClientHost = clientHost;
 
                     java.security.AccessController.doPrivileged(
-                        new java.security.PrivilegedExceptionAction() {
-                            public Object run() throws java.io.IOException {
+                        new java.security.PrivilegedExceptionAction<Void>() {
+                            public Void run() throws java.io.IOException {
                                 /*
                                  * if a ServerSocket can be bound to the client's
                                  * address then that address must be local

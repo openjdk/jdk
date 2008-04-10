@@ -32,9 +32,9 @@ class CommandNode extends AbstractCommandNode {
 
     void constrain(Context ctx) {
         if (components.size() == 3) {
-            Node out = (Node)components.get(0);
-            Node reply = (Node)components.get(1);
-            Node error = (Node)components.get(2);
+            Node out   = components.get(0);
+            Node reply = components.get(1);
+            Node error = components.get(2);
             if (!(out instanceof OutNode)) {
                 error("Expected 'Out' item, got: " + out);
             }
@@ -45,7 +45,7 @@ class CommandNode extends AbstractCommandNode {
                 error("Expected 'ErrorSet' item, got: " + error);
             }
         } else if (components.size() == 1) {
-            Node evt = (Node)components.get(0);
+            Node evt = components.get(0);
             if (!(evt instanceof EventNode)) {
                 error("Expected 'Event' item, got: " + evt);
             }

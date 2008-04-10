@@ -734,7 +734,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         } catch (CompletionFailure ex) {
             StringWriter out = new StringWriter();
             ex.printStackTrace(new PrintWriter(out));
-            log.error("proc.cant.access", ex.sym, ex.errmsg, out.toString());
+            log.error("proc.cant.access", ex.sym, ex.getDetailValue(), out.toString());
             return false;
         } catch (Throwable t) {
             throw new AnnotationProcessingError(t);
