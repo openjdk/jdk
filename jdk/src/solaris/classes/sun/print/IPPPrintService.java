@@ -621,17 +621,8 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 }
             }
         } else if (category == OrientationRequested.class) {
-            if (flavor == null ||
-                flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
-                flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
-                // Orientation is emulated in Pageable/Printable flavors
-                // so we report the 3 orientations as supported.
-                OrientationRequested []orientSup = new OrientationRequested[3];
-                orientSup[0] = OrientationRequested.PORTRAIT;
-                orientSup[1] = OrientationRequested.LANDSCAPE;
-                orientSup[2] = OrientationRequested.REVERSE_LANDSCAPE;
-                return orientSup;
-            }
+            boolean revPort = false;
+            OrientationRequested[] orientSup = null;
 
             AttributeClass attribClass = (getAttMap != null) ?
               (AttributeClass)getAttMap.get("orientation-requested-supported")
@@ -639,7 +630,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             if (attribClass != null) {
                 int[] orientArray = attribClass.getArrayOfIntValues();
                 if ((orientArray != null) && (orientArray.length > 0)) {
-                    OrientationRequested[] orientSup =
+                    orientSup =
                         new OrientationRequested[orientArray.length];
                     for (int i=0; i<orientArray.length; i++) {
                         switch (orientArray[i]) {
@@ -657,11 +648,32 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                         case 6:
                             orientSup[i] =
                                 OrientationRequested.REVERSE_PORTRAIT;
+                            revPort = true;
                             break;
                         }
                     }
-                    return orientSup;
                 }
+            }
+            if (flavor == null ||
+                flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
+                flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
+
+                if (revPort && flavor == null) {
+                    OrientationRequested []orSup = new OrientationRequested[4];
+                    orSup[0] = OrientationRequested.PORTRAIT;
+                    orSup[1] = OrientationRequested.LANDSCAPE;
+                    orSup[2] = OrientationRequested.REVERSE_LANDSCAPE;
+                    orSup[3] = OrientationRequested.REVERSE_PORTRAIT;
+                    return orSup;
+                } else {
+                    OrientationRequested []orSup = new OrientationRequested[3];
+                    orSup[0] = OrientationRequested.PORTRAIT;
+                    orSup[1] = OrientationRequested.LANDSCAPE;
+                    orSup[2] = OrientationRequested.REVERSE_LANDSCAPE;
+                    return orSup;
+                }
+            } else {
+                return orientSup;
             }
         } else if (category == PageRanges.class) {
            if (flavor == null ||
@@ -989,6 +1001,14 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
         if (supportedCats == null) {
             getSupportedAttributeCategories();
+        }
+
+        // It is safe to assume that Orientation is always supported
+        // and even if CUPS or an IPP device reports it as not,
+        // our renderer can do portrait, landscape and
+        // reverse landscape.
+        if (category == OrientationRequested.class) {
+            return true;
         }
 
         for (int i=0;i<supportedCats.length;i++) {
@@ -1602,7 +1622,13 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     public static boolean writeIPPRequest(OutputStream os,
                                            String operCode,
                                            AttributeClass[] attCl) {
-        OutputStreamWriter osw = new OutputStreamWriter(os);
+        OutputStreamWriter osw;
+        try {
+            osw = new OutputStreamWriter(os, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException exc) {
+            debug_println("UTF-8 not supported? Exception: "+exc);
+            return false;
+        }
         char[] opCode =  new char[2];
         opCode[0] =  (char)Byte.parseByte(operCode.substring(0,2), 16);
         opCode[1] =  (char)Byte.parseByte(operCode.substring(2,4), 16);
@@ -1690,7 +1716,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
                     // read value tag
                     response[0] = ois.readByte();
-                    while (response[0] >= AttributeClass.TAG_INT &&
+                    while (response[0] >= AttributeClass.TAG_UNSUPPORTED_VALUE &&
                            response[0] <= AttributeClass.TAG_MEMBER_ATTRNAME) {
                         // read name length
                         len  = ois.readShort();
@@ -1710,12 +1736,16 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                                 respList.add(responseMap);
                                 responseMap = new HashMap();
                             }
-                            AttributeClass ac =
-                                new AttributeClass(attribStr,
-                                                   valTagByte,
-                                                   outArray);
 
-                            responseMap.put(ac.getName(), ac);
+                            // exclude those that are unknown
+                            if (valTagByte >= AttributeClass.TAG_INT) {
+                                AttributeClass ac =
+                                    new AttributeClass(attribStr,
+                                                       valTagByte,
+                                                       outArray);
+
+                                responseMap.put(ac.getName(), ac);
+                            }
 
                             outObj = new ByteArrayOutputStream();
                             counter = 0; //reset counter
