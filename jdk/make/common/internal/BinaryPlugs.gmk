@@ -126,44 +126,10 @@ com/sun/media/sound/SimpleInputDeviceProvider\$$1.class \
 com/sun/media/sound/SimpleInputDeviceProvider\$$InputDeviceInfo.class \
 com/sun/media/sound/SimpleInputDeviceProvider.class
 
-PLUG_AWT_CLASS_NAMES = \
-java/awt/color/CMMException.class \
-java/awt/color/ColorSpace.class \
-java/awt/color/ICC_ColorSpace.class \
-java/awt/color/ICC_Profile\$$1.class \
-java/awt/color/ICC_Profile\$$2.class \
-java/awt/color/ICC_Profile\$$3.class \
-java/awt/color/ICC_Profile.class \
-java/awt/color/ICC_ProfileGray.class \
-java/awt/color/ICC_ProfileRGB.class \
-java/awt/image/BandedSampleModel.class \
-java/awt/image/ColorConvertOp.class \
-java/awt/image/ComponentSampleModel.class \
-java/awt/image/DataBuffer\$$1.class \
-java/awt/image/DataBuffer.class \
-java/awt/image/DataBufferByte.class \
-java/awt/image/DataBufferInt.class \
-java/awt/image/DataBufferShort.class \
-java/awt/image/DataBufferUShort.class \
-java/awt/image/MultiPixelPackedSampleModel.class \
-java/awt/image/Raster.class \
-java/awt/image/RenderedImage.class \
-java/awt/image/SampleModel.class \
-java/awt/image/SinglePixelPackedSampleModel.class \
-java/awt/image/WritableRaster.class \
-java/awt/image/WritableRenderedImage.class \
-java/awt/image/renderable/ContextualRenderedImageFactory.class \
-java/awt/image/renderable/ParameterBlock.class \
-java/awt/image/renderable/RenderContext.class \
-java/awt/image/renderable/RenderableImage.class \
-java/awt/image/renderable/RenderableImageOp.class \
-java/awt/image/renderable/RenderableImageProducer.class \
-java/awt/image/renderable/RenderedImageFactory.class
-
 # Class list temp files (used by both import and export of plugs)
 
 PLUG_TEMPDIR=$(ABS_TEMPDIR)/plugs
-PLUG_CLASS_AREAS = jmf sound awt
+PLUG_CLASS_AREAS = jmf sound
 PLUG_CLISTS = $(PLUG_CLASS_AREAS:%=$(PLUG_TEMPDIR)/%.clist)
 
 # Create jargs file command
@@ -186,19 +152,12 @@ $(PLUG_TEMPDIR)/sound.clist:
 	@for i in $(PLUG_SOUND_CLASS_NAMES) ; do \
 	  $(ECHO) "$$i" >> $@ ; \
 	done
-$(PLUG_TEMPDIR)/awt.clist:
-	@$(prep-target)
-	@for i in $(PLUG_AWT_CLASS_NAMES) ; do \
-	  $(ECHO) "$$i" >> $@ ; \
-	done
 $(PLUG_TEMPDIR)/all.clist: $(PLUG_CLISTS)
 	@$(prep-target)
 	$(CAT) $(PLUG_CLISTS) > $@
 $(PLUG_TEMPDIR)/jmf.jargs: $(PLUG_TEMPDIR)/jmf.clist
 	$(plug-create-jargs)
 $(PLUG_TEMPDIR)/sound.jargs: $(PLUG_TEMPDIR)/sound.clist
-	$(plug-create-jargs)
-$(PLUG_TEMPDIR)/awt.jargs: $(PLUG_TEMPDIR)/awt.clist
 	$(plug-create-jargs)
 $(PLUG_TEMPDIR)/all.jargs: $(PLUG_TEMPDIR)/all.clist
 	$(plug-create-jargs)
@@ -235,15 +194,12 @@ import-binary-plug-jmf-classes: $(PLUG_IMPORT_JARFILE) $(PLUG_TEMPDIR)/jmf.clist
 	$(call import-binary-plug-classes,$(PLUG_TEMPDIR)/jmf.clist)
 import-binary-plug-sound-classes: $(PLUG_IMPORT_JARFILE) $(PLUG_TEMPDIR)/sound.clist
 	$(call import-binary-plug-classes,$(PLUG_TEMPDIR)/sound.clist)
-import-binary-plug-awt-classes: $(PLUG_IMPORT_JARFILE) $(PLUG_TEMPDIR)/awt.clist
-	$(call import-binary-plug-classes,$(PLUG_TEMPDIR)/awt.clist)
 
 # Import all classes from the jar file
 
 import-binary-plug-jar: \
 	     import-binary-plug-jmf-classes \
-	     import-binary-plug-sound-classes \
-	     import-binary-plug-awt-classes
+	     import-binary-plug-sound-classes
 
 # Import native libraries
 
@@ -286,7 +242,6 @@ import-binary-plugs: \
 	import-binary-plug-jar \
         import-binary-plug-jmf-classes \
         import-binary-plug-sound-classes \
-	import-binary-plug-awt-classes \
         import-binary-plug-jsound-library
 
 else # !OPENJDK
