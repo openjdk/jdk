@@ -1359,16 +1359,25 @@ methodHandle ClassFileParser::parse_method(constantPoolHandle cp, bool is_interf
       // Parse additional attributes in code attribute
       cfs->guarantee_more(2, CHECK_(nullHandle));  // code_attributes_count
       u2 code_attributes_count = cfs->get_u2_fast();
-      unsigned int calculated_attribute_length = sizeof(max_stack) +
-                                                 sizeof(max_locals) +
-                                                 sizeof(code_length) +
-                                                 code_length +
-                                                 sizeof(exception_table_length) +
-                                                 sizeof(code_attributes_count) +
-                                                 exception_table_length*(sizeof(u2) /* start_pc */+
-                                                                         sizeof(u2) /* end_pc */  +
-                                                                         sizeof(u2) /* handler_pc */ +
-                                                                         sizeof(u2) /* catch_type_index */);
+
+      unsigned int calculated_attribute_length = 0;
+
+      if (_major_version > 45 || (_major_version == 45 && _minor_version > 2)) {
+        calculated_attribute_length =
+            sizeof(max_stack) + sizeof(max_locals) + sizeof(code_length);
+      } else {
+        // max_stack, locals and length are smaller in pre-version 45.2 classes
+        calculated_attribute_length = sizeof(u1) + sizeof(u1) + sizeof(u2);
+      }
+      calculated_attribute_length +=
+        code_length +
+        sizeof(exception_table_length) +
+        sizeof(code_attributes_count) +
+        exception_table_length *
+            ( sizeof(u2) +   // start_pc
+              sizeof(u2) +   // end_pc
+              sizeof(u2) +   // handler_pc
+              sizeof(u2) );  // catch_type_index
 
       while (code_attributes_count--) {
         cfs->guarantee_more(6, CHECK_(nullHandle));  // code_attribute_name_index, code_attribute_length
