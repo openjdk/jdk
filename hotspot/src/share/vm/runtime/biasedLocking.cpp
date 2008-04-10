@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -37,11 +36,13 @@ static void enable_biased_locking(klassOop k) {
 }
 
 class VM_EnableBiasedLocking: public VM_Operation {
+ private:
+  bool _is_cheap_allocated;
  public:
-  VM_EnableBiasedLocking()        {}
+  VM_EnableBiasedLocking(bool is_cheap_allocated) { _is_cheap_allocated = is_cheap_allocated; }
   VMOp_Type type() const          { return VMOp_EnableBiasedLocking; }
-  Mode evaluation_mode() const    { return _async_safepoint; }
-  bool is_cheap_allocated() const { return true; }
+  Mode evaluation_mode() const    { return _is_cheap_allocated ? _async_safepoint : _safepoint; }
+  bool is_cheap_allocated() const { return _is_cheap_allocated; }
 
   void doit() {
     // Iterate the system dictionary enabling biased locking for all
@@ -67,7 +68,7 @@ class EnableBiasedLockingTask : public PeriodicTask {
   virtual void task() {
     // Use async VM operation to avoid blocking the Watcher thread.
     // VM Thread will free C heap storage.
-    VM_EnableBiasedLocking *op = new VM_EnableBiasedLocking();
+    VM_EnableBiasedLocking *op = new VM_EnableBiasedLocking(true);
     VMThread::execute(op);
 
     // Reclaim our storage and disenroll ourself
@@ -89,7 +90,7 @@ void BiasedLocking::init() {
       EnableBiasedLockingTask* task = new EnableBiasedLockingTask(BiasedLockingStartupDelay);
       task->enroll();
     } else {
-      VM_EnableBiasedLocking op;
+      VM_EnableBiasedLocking op(false);
       VMThread::execute(&op);
     }
   }
