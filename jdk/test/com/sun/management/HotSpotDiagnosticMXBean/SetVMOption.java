@@ -31,11 +31,11 @@
  * @run main/othervm -XX:+PrintGCDetails SetVMOption
  */
 
+import java.lang.management.ManagementFactory;
 import java.util.*;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.VMOption;
 import com.sun.management.VMOption.Origin;
-import sun.management.ManagementFactory;
 import sun.misc.Version;
 
 public class SetVMOption {
@@ -44,10 +44,11 @@ public class SetVMOption {
     private static String BAD_VALUE = "yes";
     private static String NEW_VALUE = "false";
     private static String MANAGEMENT_SERVER = "ManagementServer";
-    private static HotSpotDiagnosticMXBean mbean =
-        ManagementFactory.getDiagnosticMXBean();
+    private static HotSpotDiagnosticMXBean mbean;
 
     public static void main(String[] args) throws Exception {
+        List<HotSpotDiagnosticMXBean> list =
+            ManagementFactory.getPlatformMXBeans(HotSpotDiagnosticMXBean.class);
 
         // The following test is transitional only and should be removed
         // once build 52 is promoted.
