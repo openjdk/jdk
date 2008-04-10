@@ -335,6 +335,38 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     }
 
 
+    IPPPrintService(String name, String uriStr, boolean isCups) {
+        if ((name == null) || (uriStr == null)){
+            throw new IllegalArgumentException("null uri or printer name");
+        }
+        printer = name;
+        supportedDocFlavors = null;
+        supportedCats = null;
+        mediaSizeNames = null;
+        customMediaSizeNames = null;
+        mediaTrays = null;
+        cps = null;
+        init = false;
+        defaultMediaIndex = -1;
+        try {
+            myURL =
+                new URL(uriStr.replaceFirst("ipp", "http"));
+        } catch (Exception e) {
+            IPPPrintService.debug_println(debugPrefix+
+                                          " IPPPrintService, myURL="+
+                                          myURL+" Exception= "+
+                                          e);
+        }
+
+        isCupsPrinter = isCups;
+        try {
+            myURI =  new URI(uriStr);
+            debug_println(debugPrefix+"IPPPrintService myURI : "+myURI);
+        } catch (java.net.URISyntaxException e) {
+            throw new IllegalArgumentException("invalid uri");
+        }
+    }
+
 
     /*
      * Initialize mediaSizeNames, mediaTrays and other attributes.
@@ -375,7 +407,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                     return;
                 } catch (Exception e) {
                     IPPPrintService.debug_println(debugPrefix+
-                                       " error creating CUPSPrinter");
+                                       " error creating CUPSPrinter e="+e);
                 }
             }
 
@@ -807,6 +839,18 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
                             docList.addAll(Arrays.asList(flavors));
 
+                            if (isCupsPrinter) {
+                            /*
+                              Always add Pageable and Printable for CUPS
+                              since it uses Filters to convert from Postscript
+                              to device printer language.
+                             */
+                                docList.add(
+                                        DocFlavor.SERVICE_FORMATTED.PAGEABLE);
+                                docList.add(
+                                        DocFlavor.SERVICE_FORMATTED.PRINTABLE);
+                            }
+
                             if (mimeType.equals("text/plain") &&
                                 addHostEncoding) {
                                 docList.add(Arrays.asList(textPlainHost));
@@ -820,11 +864,6 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                             } else if (mimeType.equals("image/jpeg")) {
                                 jpgImagesAdded = true;
                             } else if (mimeType.indexOf("postscript") != -1) {
-                                docList.add(
-                                      DocFlavor.SERVICE_FORMATTED.PAGEABLE);
-                                docList.add(
-                                      DocFlavor.SERVICE_FORMATTED.PRINTABLE);
-
                                 psSupported = true;
                             }
                             break;
@@ -841,7 +880,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 }
 
                 // check if we need to add image DocFlavors
-                if (psSupported) {
+                if (psSupported || isCupsPrinter) {
                     if (!jpgImagesAdded) {
                         docList.addAll(Arrays.asList(imageJPG));
                     }
@@ -1540,10 +1579,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             if (isCupsPrinter) {
                 try {
                     urlConnection = getIPPConnection(
-                                             new URL("http://"+
-                                                     CUPSPrinter.getServer()+":"+
-                                                     CUPSPrinter.getPort()+
-                                                     "/printers/"+printer+".ppd"));
+                                             new URL(myURL+".ppd"));
 
                    InputStream is = urlConnection.getInputStream();
                    if (is != null) {
@@ -1559,6 +1595,11 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                        }
                     }
                 } catch (java.io.IOException e) {
+                    debug_println(" isPostscript, e= "+e);
+                    /* if PPD is not found, this may be a raw printer
+                       and in this case it is assumed that it is a
+                       Postscript printer */
+                    // do nothing
                 }
             }
         }
