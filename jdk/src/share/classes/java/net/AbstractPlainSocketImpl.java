@@ -664,7 +664,6 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     abstract void socketSetOption(int cmd, boolean on, Object value)
         throws SocketException;
     abstract int socketGetOption(int opt, Object iaContainerObj) throws SocketException;
-    abstract int socketGetOption1(int opt, Object iaContainerObj, FileDescriptor fd) throws SocketException;
     abstract void socketSendUrgentData(int data)
         throws IOException;
 

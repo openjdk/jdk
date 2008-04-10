@@ -103,7 +103,7 @@ public class RemoteClass implements sun.rmi.rmic.RMIConstants {
      * in the array).
      */
     public ClassDefinition[] getRemoteInterfaces() {
-        return (ClassDefinition[]) remoteInterfaces.clone();
+        return remoteInterfaces.clone();
     }
 
     /**
@@ -118,7 +118,7 @@ public class RemoteClass implements sun.rmi.rmic.RMIConstants {
      * stub/skeleton protocol.
      */
     public Method[] getRemoteMethods() {
-        return (Method[]) remoteMethods.clone();
+        return remoteMethods.clone();
     }
 
     /**
@@ -204,8 +204,8 @@ public class RemoteClass implements sun.rmi.rmic.RMIConstants {
          * chain, add each directly-implemented interface that
          * somehow extends Remote to a list.
          */
-        Vector remotesImplemented =     // list of remote interfaces found
-            new Vector();
+        Vector<ClassDefinition> remotesImplemented = // list of remote interfaces found
+            new Vector<ClassDefinition>();
         for (ClassDefinition classDef = implClassDef;
              classDef != null;)
             {
@@ -307,13 +307,13 @@ public class RemoteClass implements sun.rmi.rmic.RMIConstants {
          * Now we collect the methods from all of the remote interfaces
          * into a hashtable.
          */
-        Hashtable methods = new Hashtable();
+        Hashtable<String, Method> methods = new Hashtable<String, Method>();
         boolean errors = false;
-        for (Enumeration enumeration = remotesImplemented.elements();
+        for (Enumeration<ClassDefinition> enumeration
+                 = remotesImplemented.elements();
              enumeration.hasMoreElements();)
             {
-                ClassDefinition interfaceDef =
-                    (ClassDefinition) enumeration.nextElement();
+                ClassDefinition interfaceDef = enumeration.nextElement();
                 if (!collectRemoteMethods(interfaceDef, methods))
                     errors = true;
             }
@@ -336,10 +336,10 @@ public class RemoteClass implements sun.rmi.rmic.RMIConstants {
          */
         String[] orderedKeys = new String[methods.size()];
         int count = 0;
-        for (Enumeration enumeration = methods.elements();
+        for (Enumeration<Method> enumeration = methods.elements();
              enumeration.hasMoreElements();)
             {
-                Method m = (Method) enumeration.nextElement();
+                Method m = enumeration.nextElement();
                 String key = m.getNameAndDescriptor();
                 int i;
                 for (i = count; i > 0; --i) {
@@ -353,7 +353,7 @@ public class RemoteClass implements sun.rmi.rmic.RMIConstants {
             }
         remoteMethods = new Method[methods.size()];
         for (int i = 0; i < remoteMethods.length; i++) {
-            remoteMethods[i] = (Method) methods.get(orderedKeys[i]);
+            remoteMethods[i] = methods.get(orderedKeys[i]);
             /***** <DEBUG> */
             if (env.verbose()) {
                 System.out.print("[found remote method <" + i + ">: " +
@@ -388,7 +388,7 @@ public class RemoteClass implements sun.rmi.rmic.RMIConstants {
      * or false if an error occurred.
      */
     private boolean collectRemoteMethods(ClassDefinition interfaceDef,
-                                         Hashtable table)
+                                         Hashtable<String, Method> table)
     {
         if (!interfaceDef.isInterface()) {
             throw new Error(
@@ -529,7 +529,7 @@ public class RemoteClass implements sun.rmi.rmic.RMIConstants {
                          * the new method (see bugid 4070653).
                          */
                         String key = newMethod.getNameAndDescriptor();
-                        Method oldMethod = (Method) table.get(key);
+                        Method oldMethod = table.get(key);
                         if (oldMethod != null) {
                             newMethod = newMethod.mergeWith(oldMethod);
                             if (newMethod == null) {
@@ -684,7 +684,7 @@ public class RemoteClass implements sun.rmi.rmic.RMIConstants {
          * methods that can be legally thrown in each of them.
          */
         public ClassDeclaration[] getExceptions() {
-            return (ClassDeclaration[]) exceptions.clone();
+            return exceptions.clone();
         }
 
         /**
@@ -789,7 +789,8 @@ public class RemoteClass implements sun.rmi.rmic.RMIConstants {
                                     getNameAndDescriptor());
                 }
 
-            Vector legalExceptions = new Vector();
+            Vector<ClassDeclaration> legalExceptions
+                = new Vector<ClassDeclaration>();
             try {
                 collectCompatibleExceptions(
                                             other.exceptions, exceptions, legalExceptions);
@@ -814,7 +815,7 @@ public class RemoteClass implements sun.rmi.rmic.RMIConstants {
          */
         private void collectCompatibleExceptions(ClassDeclaration[] from,
                                                  ClassDeclaration[] with,
-                                                 Vector list)
+                                                 Vector<ClassDeclaration> list)
             throws ClassNotFound
         {
             for (int i = 0; i < from.length; i++) {

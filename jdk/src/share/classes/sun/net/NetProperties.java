@@ -42,8 +42,8 @@ public class NetProperties {
     static private Properties props = new Properties();
     static {
         AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
+            new PrivilegedAction<Void>() {
+                public Void run() {
                     loadDefaultProperties();
                     return null;
                 }});

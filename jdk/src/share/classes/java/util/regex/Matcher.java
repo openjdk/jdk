@@ -249,7 +249,7 @@ public final class Matcher implements MatchResult {
         Matcher result = new Matcher(this.parentPattern, text.toString());
         result.first = this.first;
         result.last = this.last;
-        result.groups = (int[])(this.groups.clone());
+        result.groups = this.groups.clone();
         return result;
     }
 

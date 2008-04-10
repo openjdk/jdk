@@ -23,36 +23,49 @@
 
 /*
  * @test
- * @bug 4992438
- * @compile -source 1.5 Fairness.java
- * @run main Fairness
+ * @bug 4992438 6633113
  * @summary Checks that fairness setting is respected.
  */
 
 import java.util.concurrent.*;
+import java.util.concurrent.locks.*;
 
 public class Fairness {
     private static void testFairness(boolean fair,
                                      final BlockingQueue<Integer> q)
-        throws Exception
+        throws Throwable
     {
-        for (int i = 0; i < 3; i++) {
-            final Integer I = new Integer(i);
-            new Thread() { public void run() {
-                try { q.put(I); } catch (Exception e) {}
-            }}.start();
-            Thread.currentThread().sleep(100);
+        final ReentrantLock lock = new ReentrantLock();
+        final Condition ready = lock.newCondition();
+        final int threadCount = 10;
+        final Throwable[] badness = new Throwable[1];
+        lock.lock();
+        for (int i = 0; i < threadCount; i++) {
+            final Integer I = i;
+            Thread t = new Thread() { public void run() {
+                try {
+                    lock.lock();
+                    ready.signal();
+                    lock.unlock();
+                    q.put(I);
+                } catch (Throwable t) { badness[0] = t; }}};
+            t.start();
+            ready.await();
+            // Probably unnecessary, but should be bullet-proof
+            while (t.getState() == Thread.State.RUNNABLE)
+                Thread.yield();
         }
-        for (int i = 0; i < 3; i++) {
-            int j = q.take().intValue();
-            System.err.printf("%d%n",j);
+        for (int i = 0; i < threadCount; i++) {
+            int j = q.take();
             // Non-fair queues are lifo in our implementation
-            if (fair ? j != i : j != 2-i)
-                throw new Exception("No fair!");
+            if (fair ? j != i : j != threadCount - 1 - i)
+                throw new Error(String.format("fair=%b i=%d j=%d%n",
+                                              fair, i, j));
         }
+        if (badness[0] != null) throw new Error(badness[0]);
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Throwable {
         testFairness(false, new SynchronousQueue<Integer>());
         testFairness(false, new SynchronousQueue<Integer>(false));
         testFairness(true,  new SynchronousQueue<Integer>(true));

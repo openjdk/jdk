@@ -173,7 +173,7 @@ public class HashMap<K,V>
      * rehash).  This field is used to make iterators on Collection-views of
      * the HashMap fail-fast.  (See ConcurrentModificationException).
      */
-    transient volatile int modCount;
+    transient int modCount;
 
     /**
      * Constructs an empty <tt>HashMap</tt> with the specified initial

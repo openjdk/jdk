@@ -58,9 +58,8 @@ class Modifier {
      */
     static {
         sun.reflect.ReflectionFactory factory =
-            (sun.reflect.ReflectionFactory) AccessController.doPrivileged(
-                new ReflectionFactory.GetReflectionFactoryAction()
-            );
+            AccessController.doPrivileged(
+                new ReflectionFactory.GetReflectionFactoryAction());
         factory.setLangReflectAccess(new java.lang.reflect.ReflectAccess());
     }
 

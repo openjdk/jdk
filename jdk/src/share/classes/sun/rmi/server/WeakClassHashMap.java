@@ -69,7 +69,7 @@ public abstract class WeakClassHashMap<V> {
         synchronized (valueCell) {
             V value = null;
             if (valueCell.ref != null) {
-                value = (V) valueCell.ref.get();
+                value = valueCell.ref.get();
             }
             if (value == null) {
                 value = computeValue(remoteClass);

@@ -103,8 +103,7 @@ class InitSecContextToken extends InitialToken {
         apReq = new KrbApReq(apReqBytes, keys, addr);
         //debug("\nReceived AP-REQ and authenticated it.\n");
 
-        EncryptionKey sessionKey
-            = (EncryptionKey) apReq.getCreds().getSessionKey();
+        EncryptionKey sessionKey = apReq.getCreds().getSessionKey();
 
         /*
           System.out.println("\n\nSession key from service ticket is: " +

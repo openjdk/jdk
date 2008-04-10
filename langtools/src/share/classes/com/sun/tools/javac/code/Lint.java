@@ -194,7 +194,7 @@ public class Lint
             return map.get(option);
         }
 
-        private final String option;
+        public final String option;
     };
 
     /**

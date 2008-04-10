@@ -1299,16 +1299,16 @@ void SetJavaLauncherPlatformProps() {
     AddOption(pid_prop_str, NULL);
 #endif
 }
-void
-SetJavaw()
-{
-    /* noop on UNIX */
-    return;
-}
 
 jboolean
 IsJavaw()
 {
     /* noop on UNIX */
     return JNI_FALSE;
+}
+
+void
+InitLauncher(jboolean javaw)
+{
+    JLI_SetTraceLauncher();
 }

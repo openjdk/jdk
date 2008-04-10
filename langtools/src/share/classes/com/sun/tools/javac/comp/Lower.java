@@ -1835,6 +1835,7 @@ public class Lower extends TreeTranslator {
                                           + "" + rval.hashCode()),
                                       type,
                                       currentMethodSym);
+        rval = convert(rval,type);
         JCVariableDecl def = make.VarDef(var, (JCExpression)rval); // XXX cast
         JCTree built = builder.build(make.Ident(var));
         JCTree res = make.LetExpr(def, built);

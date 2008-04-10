@@ -1191,8 +1191,7 @@ class VirtualMachineImpl extends MirrorImpl
                 }
                 requests = new JDWP.VirtualMachine.DisposeObjects.Request[size];
                 for (int i = 0; i < requests.length; i++) {
-                    SoftObjectReference ref =
-                        (SoftObjectReference)batchedDisposeRequests.get(i);
+                    SoftObjectReference ref = batchedDisposeRequests.get(i);
                     if ((traceFlags & TRACE_OBJREFS) != 0) {
                         printTrace("Disposing object " + ref.key().longValue() +
                                    " (ref count = " + ref.count() + ")");
@@ -1436,7 +1435,7 @@ class VirtualMachineImpl extends MirrorImpl
        }
 
        ObjectReferenceImpl object() {
-           return (ObjectReferenceImpl)get();
+           return get();
        }
    }
 }

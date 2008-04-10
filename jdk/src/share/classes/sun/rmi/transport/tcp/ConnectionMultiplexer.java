@@ -49,7 +49,7 @@ final class ConnectionMultiplexer {
     static int logLevel = LogStream.parseLevel(getLogLevel());
 
     private static String getLogLevel() {
-        return (String) java.security.AccessController.doPrivileged(
+        return java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("sun.rmi.transport.tcp.multiplex.logLevel"));
     }
 
