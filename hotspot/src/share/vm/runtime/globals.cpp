@@ -68,18 +68,20 @@ void Flag::print_on(outputStream* st) {
   if (is_uintx()) st->print("%-16lu", get_uintx());
   if (is_ccstr()) {
     const char* cp = get_ccstr();
-    const char* eol;
-    while ((eol = strchr(cp, '\n')) != NULL) {
-      char format_buffer[FORMAT_BUFFER_LEN];
-      size_t llen = pointer_delta(eol, cp, sizeof(char));
-      jio_snprintf(format_buffer, FORMAT_BUFFER_LEN,
-                   "%%." SIZE_FORMAT "s", llen);
-      st->print(format_buffer, cp);
-      st->cr();
-      cp = eol+1;
-      st->print("%5s %-35s += ", "", name);
+    if (cp != NULL) {
+      const char* eol;
+      while ((eol = strchr(cp, '\n')) != NULL) {
+        char format_buffer[FORMAT_BUFFER_LEN];
+        size_t llen = pointer_delta(eol, cp, sizeof(char));
+        jio_snprintf(format_buffer, FORMAT_BUFFER_LEN,
+                     "%%." SIZE_FORMAT "s", llen);
+        st->print(format_buffer, cp);
+        st->cr();
+        cp = eol+1;
+        st->print("%5s %-35s += ", "", name);
+      }
+      st->print("%-16s", cp);
     }
-    st->print("%-16s", cp);
   }
   st->print(" %s", kind);
   st->cr();
@@ -94,18 +96,21 @@ void Flag::print_as_flag(outputStream* st) {
     st->print("-XX:%s=" UINTX_FORMAT, name, get_uintx());
   } else if (is_ccstr()) {
     st->print("-XX:%s=", name);
-    // Need to turn embedded '\n's back into separate arguments
-    // Not so efficient to print one character at a time,
-    // but the choice is to do the transformation to a buffer
-    // and print that.  And this need not be efficient.
-    for (const char* cp = get_ccstr(); *cp != '\0'; cp += 1) {
-      switch (*cp) {
-      default:
-        st->print("%c", *cp);
-        break;
-      case '\n':
-        st->print(" -XX:%s=", name);
-        break;
+    const char* cp = get_ccstr();
+    if (cp != NULL) {
+      // Need to turn embedded '\n's back into separate arguments
+      // Not so efficient to print one character at a time,
+      // but the choice is to do the transformation to a buffer
+      // and print that.  And this need not be efficient.
+      for (; *cp != '\0'; cp += 1) {
+        switch (*cp) {
+          default:
+            st->print("%c", *cp);
+            break;
+          case '\n':
+            st->print(" -XX:%s=", name);
+            break;
+        }
       }
     }
   } else {

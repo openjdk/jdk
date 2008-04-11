@@ -408,7 +408,7 @@ void Parse::do_multianewarray() {
     jint dim_con = find_int_con(length[j], -1);
     expand_fanout *= dim_con;
     expand_count  += expand_fanout; // count the level-J sub-arrays
-    if (dim_con < 0
+    if (dim_con <= 0
         || dim_con > expand_limit
         || expand_count > expand_limit) {
       expand_count = 0;
