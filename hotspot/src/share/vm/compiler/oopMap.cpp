@@ -505,8 +505,13 @@ bool OopMap::has_derived_pointer() const {
 #endif // COMPILER2
 }
 
+#endif //PRODUCT
 
-static void print_register_type(OopMapValue::oop_types x, VMReg optional, outputStream* st) {
+// Printing code is present in product build for -XX:+PrintAssembly.
+
+static
+void print_register_type(OopMapValue::oop_types x, VMReg optional,
+                         outputStream* st) {
   switch( x ) {
   case OopMapValue::oop_value:
     st->print("Oop");
@@ -544,10 +549,12 @@ void OopMapValue::print_on(outputStream* st) const {
 
 void OopMap::print_on(outputStream* st) const {
   OopMapValue omv;
+  st->print("OopMap{");
   for(OopMapStream oms((OopMap*)this); !oms.is_done(); oms.next()) {
     omv = oms.current();
     omv.print_on(st);
   }
+  st->print("off=%d}", (int) offset());
 }
 
 
@@ -558,12 +565,12 @@ void OopMapSet::print_on(outputStream* st) const {
 
   for( i = 0; i < len; i++) {
     OopMap* m = at(i);
-    st->print_cr("OopMap #%d offset:%p",i,m->offset());
+    st->print_cr("#%d ",i);
     m->print_on(st);
-    st->print_cr("\n");
+    st->cr();
   }
 }
-#endif // !PRODUCT
+
 
 
 //------------------------------DerivedPointerTable---------------------------
