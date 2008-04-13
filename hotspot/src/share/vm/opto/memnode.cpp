@@ -549,6 +549,10 @@ Node *MemNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
         adr = adr->in(AddPNode::Base);
         continue;
 
+      case Op_DecodeN:         // No change to NULL-ness, so peek thru
+        adr = adr->in(1);
+        continue;
+
       case Op_CastPP:
         // If the CastPP is useless, just peek on through it.
         if( ccp->type(adr) == ccp->type(adr->in(1)) ) {
@@ -605,6 +609,7 @@ Node *MemNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
       case Op_CastX2P:          // no null checks on native pointers
       case Op_Parm:             // 'this' pointer is not null
       case Op_LoadP:            // Loading from within a klass
+      case Op_LoadN:            // Loading from within a klass
       case Op_LoadKlass:        // Loading from within a klass
       case Op_ConP:             // Loading from a klass
       case Op_CreateEx:         // Sucking up the guts of an exception oop
@@ -669,7 +674,9 @@ void LoadNode::dump_spec(outputStream *st) const {
 
 //----------------------------LoadNode::make-----------------------------------
 // Polymorphic factory method:
-LoadNode *LoadNode::make( Compile *C, Node *ctl, Node *mem, Node *adr, const TypePtr* adr_type, const Type *rt, BasicType bt ) {
+Node *LoadNode::make( PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const TypePtr* adr_type, const Type *rt, BasicType bt ) {
+  Compile* C = gvn.C;
+
   // sanity check the alias category against the created node type
   assert(!(adr_type->isa_oopptr() &&
            adr_type->offset() == oopDesc::klass_offset_in_bytes()),
@@ -687,7 +694,25 @@ LoadNode *LoadNode::make( Compile *C, Node *ctl, Node *mem, Node *adr, const Typ
   case T_FLOAT:   return new (C, 3) LoadFNode(ctl, mem, adr, adr_type, rt              );
   case T_DOUBLE:  return new (C, 3) LoadDNode(ctl, mem, adr, adr_type, rt              );
   case T_ADDRESS: return new (C, 3) LoadPNode(ctl, mem, adr, adr_type, rt->is_ptr()    );
-  case T_OBJECT:  return new (C, 3) LoadPNode(ctl, mem, adr, adr_type, rt->is_oopptr());
+  case T_OBJECT:
+#ifdef _LP64
+    if (adr->bottom_type()->is_narrow()) {
+      const TypeNarrowOop* narrowtype;
+      if (rt->isa_narrowoop()) {
+        narrowtype = rt->is_narrowoop();
+        rt = narrowtype->make_oopptr();
+      } else {
+        narrowtype = rt->is_oopptr()->make_narrowoop();
+      }
+      Node* load  = gvn.transform(new (C, 3) LoadNNode(ctl, mem, adr, adr_type, narrowtype));
+
+      return new (C, 2) DecodeNNode(load, rt);
+    } else
+#endif
+      {
+        assert(!adr->bottom_type()->is_narrow(), "should have got back a narrow oop");
+        return new (C, 3) LoadPNode(ctl, mem, adr, adr_type, rt->is_oopptr());
+      }
   }
   ShouldNotReachHere();
   return (LoadNode*)NULL;
@@ -1743,7 +1768,9 @@ Node* LoadRangeNode::Identity( PhaseTransform *phase ) {
 //=============================================================================
 //---------------------------StoreNode::make-----------------------------------
 // Polymorphic factory method:
-StoreNode* StoreNode::make( Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, BasicType bt ) {
+StoreNode* StoreNode::make( PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, BasicType bt ) {
+  Compile* C = gvn.C;
+
   switch (bt) {
   case T_BOOLEAN:
   case T_BYTE:    return new (C, 4) StoreBNode(ctl, mem, adr, adr_type, val);
@@ -1754,7 +1781,27 @@ StoreNode* StoreNode::make( Compile *C, Node* ctl, Node* mem, Node* adr, const T
   case T_FLOAT:   return new (C, 4) StoreFNode(ctl, mem, adr, adr_type, val);
   case T_DOUBLE:  return new (C, 4) StoreDNode(ctl, mem, adr, adr_type, val);
   case T_ADDRESS:
-  case T_OBJECT:  return new (C, 4) StorePNode(ctl, mem, adr, adr_type, val);
+  case T_OBJECT:
+#ifdef _LP64
+    if (adr->bottom_type()->is_narrow() ||
+        (UseCompressedOops && val->bottom_type()->isa_klassptr() &&
+         adr->bottom_type()->isa_rawptr())) {
+      const TypePtr* type = val->bottom_type()->is_ptr();
+      Node* cp;
+      if (type->isa_oopptr()) {
+        const TypeNarrowOop* etype = type->is_oopptr()->make_narrowoop();
+        cp = gvn.transform(new (C, 2) EncodePNode(val, etype));
+      } else if (type == TypePtr::NULL_PTR) {
+        cp = gvn.transform(new (C, 1) ConNNode(TypeNarrowOop::NULL_PTR));
+      } else {
+        ShouldNotReachHere();
+      }
+      return new (C, 4) StoreNNode(ctl, mem, adr, adr_type, cp);
+    } else
+#endif
+      {
+        return new (C, 4) StorePNode(ctl, mem, adr, adr_type, val);
+      }
   }
   ShouldNotReachHere();
   return (StoreNode*)NULL;
@@ -2136,7 +2183,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
     Node* adr = new (C, 4) AddPNode(dest, dest, phase->MakeConX(offset));
     adr = phase->transform(adr);
     const TypePtr* atp = TypeRawPtr::BOTTOM;
-    mem = StoreNode::make(C, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT);
+    mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT);
     mem = phase->transform(mem);
     offset += BytesPerInt;
   }
@@ -2199,7 +2246,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
     Node* adr = new (C, 4) AddPNode(dest, dest, phase->MakeConX(done_offset));
     adr = phase->transform(adr);
     const TypePtr* atp = TypeRawPtr::BOTTOM;
-    mem = StoreNode::make(C, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT);
+    mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT);
     mem = phase->transform(mem);
     done_offset += BytesPerInt;
   }
@@ -2556,9 +2603,7 @@ int InitializeNode::captured_store_insertion_point(intptr_t start,
   assert(allocation() != NULL, "must be present");
 
   // no negatives, no header fields:
-  if (start < (intptr_t) sizeof(oopDesc))  return FAIL;
-  if (start < (intptr_t) sizeof(arrayOopDesc) &&
-      start < (intptr_t) allocation()->minimum_header_size())  return FAIL;
+  if (start < (intptr_t) allocation()->minimum_header_size())  return FAIL;
 
   // after a certain size, we bail out on tracking all the stores:
   intptr_t ti_limit = (TrackedInitializationLimit * HeapWordSize);
@@ -2895,14 +2940,14 @@ InitializeNode::coalesce_subword_stores(intptr_t header_size,
     if (!split) {
       ++new_long;
       off[nst] = offset;
-      st[nst++] = StoreNode::make(C, ctl, zmem, adr, atp,
+      st[nst++] = StoreNode::make(*phase, ctl, zmem, adr, atp,
                                   phase->longcon(con), T_LONG);
     } else {
       // Omit either if it is a zero.
       if (con0 != 0) {
         ++new_int;
         off[nst]  = offset;
-        st[nst++] = StoreNode::make(C, ctl, zmem, adr, atp,
+        st[nst++] = StoreNode::make(*phase, ctl, zmem, adr, atp,
                                     phase->intcon(con0), T_INT);
       }
       if (con1 != 0) {
@@ -2910,7 +2955,7 @@ InitializeNode::coalesce_subword_stores(intptr_t header_size,
         offset += BytesPerInt;
         adr = make_raw_address(offset, phase);
         off[nst]  = offset;
-        st[nst++] = StoreNode::make(C, ctl, zmem, adr, atp,
+        st[nst++] = StoreNode::make(*phase, ctl, zmem, adr, atp,
                                     phase->intcon(con1), T_INT);
       }
     }
@@ -3018,9 +3063,10 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
   Node* zmem = zero_memory();   // initially zero memory state
   Node* inits = zmem;           // accumulating a linearized chain of inits
   #ifdef ASSERT
-  intptr_t last_init_off = sizeof(oopDesc);  // previous init offset
-  intptr_t last_init_end = sizeof(oopDesc);  // previous init offset+size
-  intptr_t last_tile_end = sizeof(oopDesc);  // previous tile offset+size
+  intptr_t first_offset = allocation()->minimum_header_size();
+  intptr_t last_init_off = first_offset;  // previous init offset
+  intptr_t last_init_end = first_offset;  // previous init offset+size
+  intptr_t last_tile_end = first_offset;  // previous tile offset+size
   #endif
   intptr_t zeroes_done = header_size;
 
@@ -3155,7 +3201,8 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
 bool InitializeNode::stores_are_sane(PhaseTransform* phase) {
   if (is_complete())
     return true;                // stores could be anything at this point
-  intptr_t last_off = sizeof(oopDesc);
+  assert(allocation() != NULL, "must be present");
+  intptr_t last_off = allocation()->minimum_header_size();
   for (uint i = InitializeNode::RawStores; i < req(); i++) {
     Node* st = in(i);
     intptr_t st_off = get_store_offset(st, phase);

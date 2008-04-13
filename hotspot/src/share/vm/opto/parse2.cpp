@@ -67,12 +67,16 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type* *result2) {
   const Type*       elemtype = arytype->elem();
 
   if (UseUniqueSubclasses && result2 != NULL) {
-    const TypeInstPtr* toop = elemtype->isa_instptr();
+    const Type* el = elemtype;
+    if (elemtype->isa_narrowoop()) {
+      el = elemtype->is_narrowoop()->make_oopptr();
+    }
+    const TypeInstPtr* toop = el->isa_instptr();
     if (toop) {
       if (toop->klass()->as_instance_klass()->unique_concrete_subklass()) {
         // If we load from "AbstractClass[]" we must see "ConcreteSubClass".
         const Type* subklass = Type::get_const_type(toop->klass());
-        elemtype = subklass->join(elemtype);
+        elemtype = subklass->join(el);
       }
     }
   }

@@ -78,6 +78,20 @@ public:
 };
 
 
+//------------------------------ConNNode--------------------------------------
+// Simple narrow oop constants
+class ConNNode : public ConNode {
+public:
+  ConNNode( const TypeNarrowOop *t ) : ConNode(t) {}
+  virtual int Opcode() const;
+
+  static ConNNode* make( Compile *C, ciObject* con ) {
+    return new (C, 1) ConNNode( TypeNarrowOop::make_from_constant(con) );
+  }
+
+};
+
+
 //------------------------------ConLNode---------------------------------------
 // Simple long constants
 class ConLNode : public ConNode {
@@ -252,6 +266,41 @@ public:
   // No longer remove CheckCast after CCP as it gives me a place to hang
   // the proper address type - which is required to compute anti-deps.
   //virtual Node *Ideal_DU_postCCP( PhaseCCP * );
+};
+
+
+//------------------------------EncodeP--------------------------------
+// Encodes an oop pointers into its compressed form
+// Takes an extra argument which is the real heap base as a long which
+// may be useful for code generation in the backend.
+class EncodePNode : public TypeNode {
+ public:
+  EncodePNode(Node* value, const Type* type):
+    TypeNode(type, 2) {
+    init_req(0, NULL);
+    init_req(1, value);
+  }
+  virtual int Opcode() const;
+  virtual Node *Identity( PhaseTransform *phase );
+  virtual uint  ideal_reg() const { return Op_RegN; }
+
+  static Node* encode(PhaseGVN* phase, Node* value);
+};
+
+//------------------------------DecodeN--------------------------------
+// Converts a narrow oop into a real oop ptr.
+// Takes an extra argument which is the real heap base as a long which
+// may be useful for code generation in the backend.
+class DecodeNNode : public TypeNode {
+ public:
+  DecodeNNode(Node* value, const Type* type):
+    TypeNode(type, 2) {
+    init_req(0, NULL);
+    init_req(1, value);
+  }
+  virtual int Opcode() const;
+  virtual Node *Identity( PhaseTransform *phase );
+  virtual uint  ideal_reg() const { return Op_RegP; }
 };
 
 //------------------------------Conv2BNode-------------------------------------

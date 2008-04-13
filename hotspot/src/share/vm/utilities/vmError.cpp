@@ -332,11 +332,12 @@ void VMError::report(outputStream* st) {
 
      // VM version
      st->print_cr("#");
-     st->print_cr("# Java VM: %s (%s %s %s)",
+     st->print_cr("# Java VM: %s (%s %s %s %s)",
                    Abstract_VM_Version::vm_name(),
                    Abstract_VM_Version::vm_release(),
                    Abstract_VM_Version::vm_info_string(),
-                   Abstract_VM_Version::vm_platform_string()
+                   Abstract_VM_Version::vm_platform_string(),
+                   UseCompressedOops ? "compressed oops" : ""
                  );
 
   STEP(60, "(printing problematic frame)")

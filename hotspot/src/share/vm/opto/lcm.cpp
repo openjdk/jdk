@@ -110,6 +110,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     case Op_LoadI:
     case Op_LoadL:
     case Op_LoadP:
+    case Op_LoadN:
     case Op_LoadS:
     case Op_LoadKlass:
     case Op_LoadRange:
@@ -124,6 +125,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     case Op_StoreI:
     case Op_StoreL:
     case Op_StoreP:
+    case Op_StoreN:
       was_store = true;         // Memory op is a store op
       // Stores will have their address in slot 2 (memory in slot 1).
       // If the value being nul-checked is in another slot, it means we

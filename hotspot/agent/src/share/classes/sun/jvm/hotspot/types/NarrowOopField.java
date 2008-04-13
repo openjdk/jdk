@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,20 @@
  *
  */
 
-package sun.jvm.hotspot.debugger;
+package sun.jvm.hotspot.types;
 
-public class MachineDescriptionSPARC64Bit extends MachineDescriptionTwosComplement implements MachineDescription {
-  public long getAddressSize() {
-    return 8;
-  }
+import sun.jvm.hotspot.debugger.*;
 
+/** A specialization of Field which represents a field containing an
+    narrow oop value and which adds typechecked getValue() routines returning
+    OopHandles. */
 
-  public boolean isBigEndian() {
-    return true;
-  }
+public interface NarrowOopField extends OopField {
+  /** The field must be nonstatic and the type of the field must be an
+      oop type, or a WrongTypeException will be thrown. */
+  public OopHandle getValue(Address addr)     throws UnmappedAddressException, UnalignedAddressException, WrongTypeException;
 
-  public boolean isLP64() {
-    return true;
-  }
+  /** The field must be static and the type of the field must be an
+      oop type, or a WrongTypeException will be thrown. */
+  public OopHandle getValue()                 throws UnmappedAddressException, UnalignedAddressException, WrongTypeException;
 }

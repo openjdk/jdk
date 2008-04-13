@@ -47,7 +47,8 @@ public class Oop {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type  = db.lookupType("oopDesc");
     mark       = new CIntField(type.getCIntegerField("_mark"), 0);
-    klass      = new OopField(type.getOopField("_klass"), 0);
+    klass      = new OopField(type.getOopField("_metadata._klass"), 0);
+    compressedKlass  = new NarrowOopField(type.getOopField("_metadata._compressed_klass"), 0);
     headerSize = type.getSize();
   }
 
@@ -67,10 +68,11 @@ public class Oop {
   public OopHandle getHandle() { return handle; }
 
   private static long headerSize;
-  public  static long getHeaderSize() { return headerSize; }
+  public  static long getHeaderSize() { return headerSize; } // Header size in bytes.
 
   private static CIntField mark;
   private static OopField  klass;
+  private static NarrowOopField compressedKlass;
 
   public boolean isShared() {
     return CompactingPermGenGen.isShared(handle);
@@ -86,7 +88,13 @@ public class Oop {
 
   // Accessors for declared fields
   public Mark  getMark()   { return new Mark(getHandle()); }
-  public Klass getKlass()  { return (Klass) klass.getValue(this); }
+  public Klass getKlass() {
+    if (VM.getVM().isCompressedOopsEnabled()) {
+      return (Klass) compressedKlass.getValue(this);
+    } else {
+      return (Klass) klass.getValue(this);
+    }
+  }
 
   public boolean isA(Klass k) {
     return getKlass().isSubtypeOf(k);
@@ -120,7 +128,7 @@ public class Oop {
 
   // Align the object size.
   public static long alignObjectSize(long size) {
-    return VM.getVM().alignUp(size, VM.getVM().getMinObjAlignmentInBytes());
+    return VM.getVM().alignUp(size, VM.getVM().getMinObjAlignment());
   }
 
   // All vm's align longs, so pad out certain offsets.
@@ -163,7 +171,11 @@ public class Oop {
   void iterateFields(OopVisitor visitor, boolean doVMFields) {
     if (doVMFields) {
       visitor.doCInt(mark, true);
-      visitor.doOop(klass, true);
+      if (VM.getVM().isCompressedOopsEnabled()) {
+        visitor.doOop(compressedKlass, true);
+      } else {
+        visitor.doOop(klass, true);
+      }
     }
   }
 
@@ -219,6 +231,10 @@ public class Oop {
     if (handle == null) {
       return null;
     }
-    return handle.getOopHandleAt(klass.getOffset());
+    if (VM.getVM().isCompressedOopsEnabled()) {
+      return handle.getCompOopHandleAt(compressedKlass.getOffset());
+    } else {
+      return handle.getOopHandleAt(klass.getOffset());
+    }
   }
 };

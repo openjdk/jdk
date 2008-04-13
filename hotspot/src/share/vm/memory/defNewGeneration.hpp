@@ -24,6 +24,7 @@
 
 class EdenSpace;
 class ContiguousSpace;
+class ScanClosure;
 
 // DefNewGeneration is a young generation containing eden, from- and
 // to-space.
@@ -155,17 +156,21 @@ protected:
   protected:
     ScanWeakRefClosure* _cl;
     CardTableRS* _rs;
+    template <class T> void do_oop_work(T* p);
   public:
     KeepAliveClosure(ScanWeakRefClosure* cl);
-    void do_oop(oop* p);
+    virtual void do_oop(oop* p);
+    virtual void do_oop(narrowOop* p);
   };
 
   class FastKeepAliveClosure: public KeepAliveClosure {
   protected:
     HeapWord* _boundary;
+    template <class T> void do_oop_work(T* p);
   public:
     FastKeepAliveClosure(DefNewGeneration* g, ScanWeakRefClosure* cl);
-    void do_oop(oop* p);
+    virtual void do_oop(oop* p);
+    virtual void do_oop(narrowOop* p);
   };
 
   class EvacuateFollowersClosure: public VoidClosure {
@@ -206,7 +211,7 @@ protected:
   ContiguousSpace* from() const           { return _from_space;  }
   ContiguousSpace* to()   const           { return _to_space;    }
 
-  inline CompactibleSpace* first_compaction_space() const;
+  virtual CompactibleSpace* first_compaction_space() const;
 
   // Space enquiries
   size_t capacity() const;
@@ -226,8 +231,8 @@ protected:
 
   // Thread-local allocation buffers
   bool supports_tlab_allocation() const { return true; }
-  inline size_t tlab_capacity() const;
-  inline size_t unsafe_max_tlab_alloc() const;
+  size_t tlab_capacity() const;
+  size_t unsafe_max_tlab_alloc() const;
 
   // Grow the generation by the specified number of bytes.
   // The size of bytes is assumed to be properly aligned.
@@ -265,13 +270,13 @@ protected:
     return result;
   }
 
-  inline HeapWord* allocate(size_t word_size, bool is_tlab);
+  HeapWord* allocate(size_t word_size, bool is_tlab);
   HeapWord* allocate_from_space(size_t word_size);
 
-  inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
+  HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
   // Prologue & Epilogue
-  inline virtual void gc_prologue(bool full);
+  virtual void gc_prologue(bool full);
   virtual void gc_epilogue(bool full);
 
   // Doesn't require additional work during GC prologue and epilogue
@@ -307,7 +312,7 @@ protected:
                                 bool is_tlab,
                                 bool parallel = false);
 
-  oop copy_to_survivor_space(oop old, oop* from);
+  oop copy_to_survivor_space(oop old);
   int tenuring_threshold() { return _tenuring_threshold; }
 
   // Performance Counter support

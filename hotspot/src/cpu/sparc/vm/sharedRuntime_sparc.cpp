@@ -160,18 +160,24 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   map->set_callee_saved(VMRegImpl::stack2reg((o5_offset + 4)>>2), O5->as_VMReg());
 #endif /* _LP64 */
 
+
+#ifdef _LP64
+  int debug_offset = 0;
+#else
+  int debug_offset = 4;
+#endif
   // Save the G's
   __ stx(G1, SP, g1_offset+STACK_BIAS);
-  map->set_callee_saved(VMRegImpl::stack2reg((g1_offset + 4)>>2), G1->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg((g1_offset + debug_offset)>>2), G1->as_VMReg());
 
   __ stx(G3, SP, g3_offset+STACK_BIAS);
-  map->set_callee_saved(VMRegImpl::stack2reg((g3_offset + 4)>>2), G3->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg((g3_offset + debug_offset)>>2), G3->as_VMReg());
 
   __ stx(G4, SP, g4_offset+STACK_BIAS);
-  map->set_callee_saved(VMRegImpl::stack2reg((g4_offset + 4)>>2), G4->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg((g4_offset + debug_offset)>>2), G4->as_VMReg());
 
   __ stx(G5, SP, g5_offset+STACK_BIAS);
-  map->set_callee_saved(VMRegImpl::stack2reg((g5_offset + 4)>>2), G5->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg((g5_offset + debug_offset)>>2), G5->as_VMReg());
 
   // This is really a waste but we'll keep things as they were for now
   if (true) {
@@ -182,11 +188,11 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     map->set_callee_saved(VMRegImpl::stack2reg((o3_offset)>>2), O3->as_VMReg()->next());
     map->set_callee_saved(VMRegImpl::stack2reg((o4_offset)>>2), O4->as_VMReg()->next());
     map->set_callee_saved(VMRegImpl::stack2reg((o5_offset)>>2), O5->as_VMReg()->next());
-#endif /* _LP64 */
     map->set_callee_saved(VMRegImpl::stack2reg((g1_offset)>>2), G1->as_VMReg()->next());
     map->set_callee_saved(VMRegImpl::stack2reg((g3_offset)>>2), G3->as_VMReg()->next());
     map->set_callee_saved(VMRegImpl::stack2reg((g4_offset)>>2), G4->as_VMReg()->next());
     map->set_callee_saved(VMRegImpl::stack2reg((g5_offset)>>2), G5->as_VMReg()->next());
+#endif /* _LP64 */
   }
 
 
@@ -1217,7 +1223,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
     __ verify_oop(O0);
     __ verify_oop(G5_method);
-    __ ld_ptr(O0, oopDesc::klass_offset_in_bytes(), G3_scratch);
+    __ load_klass(O0, G3_scratch);
     __ verify_oop(G3_scratch);
 
 #if !defined(_LP64) && defined(COMPILER2)
@@ -1820,7 +1826,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     const Register temp_reg = G3_scratch;
     Address ic_miss(temp_reg, SharedRuntime::get_ic_miss_stub());
     __ verify_oop(O0);
-    __ ld_ptr(O0, oopDesc::klass_offset_in_bytes(), temp_reg);
+    __ load_klass(O0, temp_reg);
     __ cmp(temp_reg, G5_inline_cache_reg);
     __ brx(Assembler::equal, true, Assembler::pt, L);
     __ delayed()->nop();

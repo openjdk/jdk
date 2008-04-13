@@ -365,7 +365,7 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
     const intptr_t header   = arrayOopDesc::base_offset_in_bytes(T_OBJECT);
     for (jint i = 0; i < length_con; i++) {
       Node*    elem   = expand_multianewarray(array_klass_1, &lengths[1], ndimensions-1);
-      intptr_t offset = header + ((intptr_t)i << LogBytesPerWord);
+      intptr_t offset = header + ((intptr_t)i << LogBytesPerHeapOop);
       Node*    eaddr  = basic_plus_adr(array, offset);
       store_oop_to_array(control(), array, eaddr, adr_type, elem, elemtype, T_OBJECT);
     }

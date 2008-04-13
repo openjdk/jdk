@@ -104,16 +104,15 @@ void ParScanThreadState::scan_partial_array_and_push_remainder(oop old) {
     // must be removed.
     arrayOop(old)->set_length(end);
   }
+
   // process our set of indices (include header in first chunk)
-  oop* start_addr = start == 0 ? (oop*)obj : obj->obj_at_addr(start);
-  oop* end_addr   = obj->base() + end; // obj_at_addr(end) asserts end < length
-  MemRegion mr((HeapWord*)start_addr, (HeapWord*)end_addr);
+  // should make sure end is even (aligned to HeapWord in case of compressed oops)
   if ((HeapWord *)obj < young_old_boundary()) {
     // object is in to_space
-    obj->oop_iterate(&_to_space_closure, mr);
+    obj->oop_iterate_range(&_to_space_closure, start, end);
   } else {
     // object is in old generation
-    obj->oop_iterate(&_old_gen_closure, mr);
+    obj->oop_iterate_range(&_old_gen_closure, start, end);
   }
 }
 
@@ -319,7 +318,6 @@ void ParScanThreadStateSet::flush()
   }
 }
 
-
 ParScanClosure::ParScanClosure(ParNewGeneration* g,
                                ParScanThreadState* par_scan_state) :
   OopsInGenClosure(g), _par_scan_state(par_scan_state), _g(g)
@@ -328,11 +326,25 @@ ParScanClosure::ParScanClosure(ParNewGeneration* g,
   _boundary = _g->reserved().end();
 }
 
+void ParScanWithBarrierClosure::do_oop(oop* p)       { ParScanClosure::do_oop_work(p, true, false); }
+void ParScanWithBarrierClosure::do_oop(narrowOop* p) { ParScanClosure::do_oop_work(p, true, false); }
+
+void ParScanWithoutBarrierClosure::do_oop(oop* p)       { ParScanClosure::do_oop_work(p, false, false); }
+void ParScanWithoutBarrierClosure::do_oop(narrowOop* p) { ParScanClosure::do_oop_work(p, false, false); }
+
+void ParRootScanWithBarrierTwoGensClosure::do_oop(oop* p)       { ParScanClosure::do_oop_work(p, true, true); }
+void ParRootScanWithBarrierTwoGensClosure::do_oop(narrowOop* p) { ParScanClosure::do_oop_work(p, true, true); }
+
+void ParRootScanWithoutBarrierClosure::do_oop(oop* p)       { ParScanClosure::do_oop_work(p, false, true); }
+void ParRootScanWithoutBarrierClosure::do_oop(narrowOop* p) { ParScanClosure::do_oop_work(p, false, true); }
+
 ParScanWeakRefClosure::ParScanWeakRefClosure(ParNewGeneration* g,
                                              ParScanThreadState* par_scan_state)
   : ScanWeakRefClosure(g), _par_scan_state(par_scan_state)
-{
-}
+{}
+
+void ParScanWeakRefClosure::do_oop(oop* p)       { ParScanWeakRefClosure::do_oop_work(p); }
+void ParScanWeakRefClosure::do_oop(narrowOop* p) { ParScanWeakRefClosure::do_oop_work(p); }
 
 #ifdef WIN32
 #pragma warning(disable: 4786) /* identifier was truncated to '255' characters in the browser information */
@@ -475,51 +487,66 @@ ParNewGeneration(ReservedSpace rs, size_t initial_byte_size, int level)
 ParKeepAliveClosure::ParKeepAliveClosure(ParScanWeakRefClosure* cl) :
   DefNewGeneration::KeepAliveClosure(cl), _par_cl(cl) {}
 
-void
-// ParNewGeneration::
-ParKeepAliveClosure::do_oop(oop* p) {
-  // We never expect to see a null reference being processed
-  // as a weak reference.
-  assert (*p != NULL, "expected non-null ref");
-  assert ((*p)->is_oop(), "expected an oop while scanning weak refs");
+template <class T>
+void /*ParNewGeneration::*/ParKeepAliveClosure::do_oop_work(T* p) {
+#ifdef ASSERT
+  {
+    assert(!oopDesc::is_null(*p), "expected non-null ref");
+    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+    // We never expect to see a null reference being processed
+    // as a weak reference.
+    assert(obj->is_oop(), "expected an oop while scanning weak refs");
+  }
+#endif // ASSERT
 
   _par_cl->do_oop_nv(p);
 
   if (Universe::heap()->is_in_reserved(p)) {
-    _rs->write_ref_field_gc_par(p, *p);
+    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+    _rs->write_ref_field_gc_par(p, obj);
   }
 }
+
+void /*ParNewGeneration::*/ParKeepAliveClosure::do_oop(oop* p)       { ParKeepAliveClosure::do_oop_work(p); }
+void /*ParNewGeneration::*/ParKeepAliveClosure::do_oop(narrowOop* p) { ParKeepAliveClosure::do_oop_work(p); }
 
 // ParNewGeneration::
 KeepAliveClosure::KeepAliveClosure(ScanWeakRefClosure* cl) :
   DefNewGeneration::KeepAliveClosure(cl) {}
 
-void
-// ParNewGeneration::
-KeepAliveClosure::do_oop(oop* p) {
-  // We never expect to see a null reference being processed
-  // as a weak reference.
-  assert (*p != NULL, "expected non-null ref");
-  assert ((*p)->is_oop(), "expected an oop while scanning weak refs");
+template <class T>
+void /*ParNewGeneration::*/KeepAliveClosure::do_oop_work(T* p) {
+#ifdef ASSERT
+  {
+    assert(!oopDesc::is_null(*p), "expected non-null ref");
+    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+    // We never expect to see a null reference being processed
+    // as a weak reference.
+    assert(obj->is_oop(), "expected an oop while scanning weak refs");
+  }
+#endif // ASSERT
 
   _cl->do_oop_nv(p);
 
   if (Universe::heap()->is_in_reserved(p)) {
-    _rs->write_ref_field_gc_par(p, *p);
+    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+    _rs->write_ref_field_gc_par(p, obj);
   }
 }
 
-void ScanClosureWithParBarrier::do_oop(oop* p) {
-  oop obj = *p;
-  // Should we copy the obj?
-  if (obj != NULL) {
+void /*ParNewGeneration::*/KeepAliveClosure::do_oop(oop* p)       { KeepAliveClosure::do_oop_work(p); }
+void /*ParNewGeneration::*/KeepAliveClosure::do_oop(narrowOop* p) { KeepAliveClosure::do_oop_work(p); }
+
+template <class T> void ScanClosureWithParBarrier::do_oop_work(T* p) {
+  T heap_oop = oopDesc::load_heap_oop(p);
+  if (!oopDesc::is_null(heap_oop)) {
+    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
     if ((HeapWord*)obj < _boundary) {
       assert(!_g->to()->is_in_reserved(obj), "Scanning field twice?");
-      if (obj->is_forwarded()) {
-        *p = obj->forwardee();
-      } else {
-        *p = _g->DefNewGeneration::copy_to_survivor_space(obj, p);
-      }
+      oop new_obj = obj->is_forwarded()
+                      ? obj->forwardee()
+                      : _g->DefNewGeneration::copy_to_survivor_space(obj);
+      oopDesc::encode_store_heap_oop_not_null(p, new_obj);
     }
     if (_gc_barrier) {
       // If p points to a younger generation, mark the card.
@@ -529,6 +556,9 @@ void ScanClosureWithParBarrier::do_oop(oop* p) {
     }
   }
 }
+
+void ScanClosureWithParBarrier::do_oop(oop* p)       { ScanClosureWithParBarrier::do_oop_work(p); }
+void ScanClosureWithParBarrier::do_oop(narrowOop* p) { ScanClosureWithParBarrier::do_oop_work(p); }
 
 class ParNewRefProcTaskProxy: public AbstractGangTask {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;

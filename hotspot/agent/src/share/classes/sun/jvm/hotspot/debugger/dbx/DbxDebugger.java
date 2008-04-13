@@ -43,7 +43,9 @@ public interface DbxDebugger extends JVMDebugger {
   public long         readCInteger(long address, long numBytes, boolean isUnsigned)
     throws DebuggerException;
   public DbxAddress   readAddress(long address) throws DebuggerException;
+  public DbxAddress   readCompOopAddress(long address) throws DebuggerException;
   public DbxOopHandle readOopHandle(long address) throws DebuggerException;
+  public DbxOopHandle readCompOopHandle(long address) throws DebuggerException;
   public long[]       getThreadIntegerRegisterSet(int tid) throws DebuggerException;
   public Address      newAddress(long value) throws DebuggerException;
 

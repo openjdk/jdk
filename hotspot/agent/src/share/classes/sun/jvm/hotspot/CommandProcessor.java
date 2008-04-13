@@ -885,7 +885,12 @@ public class CommandProcessor {
                                         out.println("found at " + addr);
                                     }
                                 }
-
+                                public void visitCompOopAddress(Address addr) {
+                                    Address val = addr.getCompOopAddressAt(0);
+                                    if (AddressOps.equal(val, value)) {
+                                        out.println("found at " + addr);
+                                    }
+                                }
                                 public void epilogue() {
                                 }
                             };

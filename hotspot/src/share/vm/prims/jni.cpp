@@ -135,7 +135,10 @@ intptr_t jfieldIDWorkaround::encode_klass_hash(klassOop k, intptr_t offset) {
   if (offset <= small_offset_mask) {
     klassOop field_klass = k;
     klassOop super_klass = Klass::cast(field_klass)->super();
-    while (instanceKlass::cast(super_klass)->contains_field_offset(offset)) {
+    // With compressed oops the most super class with nonstatic fields would
+    // be the owner of fields embedded in the header.
+    while (instanceKlass::cast(super_klass)->has_nonstatic_fields() &&
+           instanceKlass::cast(super_klass)->contains_field_offset(offset)) {
       field_klass = super_klass;   // super contains the field also
       super_klass = Klass::cast(field_klass)->super();
     }

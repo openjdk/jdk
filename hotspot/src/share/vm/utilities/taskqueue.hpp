@@ -490,7 +490,31 @@ typedef oop Task;
 typedef GenericTaskQueue<Task>         OopTaskQueue;
 typedef GenericTaskQueueSet<Task>      OopTaskQueueSet;
 
-typedef oop* StarTask;
+
+#define COMPRESSED_OOP_MASK  1
+
+// This is a container class for either an oop* or a narrowOop*.
+// Both are pushed onto a task queue and the consumer will test is_narrow()
+// to determine which should be processed.
+class StarTask {
+  void*  _holder;        // either union oop* or narrowOop*
+ public:
+  StarTask(narrowOop *p) { _holder = (void *)((uintptr_t)p | COMPRESSED_OOP_MASK); }
+  StarTask(oop *p)       { _holder = (void*)p; }
+  StarTask()             { _holder = NULL; }
+  operator oop*()        { return (oop*)_holder; }
+  operator narrowOop*()  {
+    return (narrowOop*)((uintptr_t)_holder & ~COMPRESSED_OOP_MASK);
+  }
+
+  // Operators to preserve const/volatile in assignments required by gcc
+  void operator=(const volatile StarTask& t) volatile { _holder = t._holder; }
+
+  bool is_narrow() const {
+    return (((uintptr_t)_holder & COMPRESSED_OOP_MASK) != 0);
+  }
+};
+
 typedef GenericTaskQueue<StarTask>     OopStarTaskQueue;
 typedef GenericTaskQueueSet<StarTask>  OopStarTaskQueueSet;
 

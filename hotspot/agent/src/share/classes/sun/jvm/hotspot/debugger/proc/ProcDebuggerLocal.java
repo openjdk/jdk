@@ -53,8 +53,6 @@ import sun.jvm.hotspot.utilities.*;
  */
 
 public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
-
-
     protected static final int cacheSize = 16 * 1024 * 1024; // 16 MB
 
     //------------------------------------------------------------------------
@@ -337,10 +335,21 @@ public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
         return (value == 0 ? null : new ProcAddress(this, value));
     }
 
+    public ProcAddress readCompOopAddress(long address)
+    throws UnmappedAddressException, UnalignedAddressException {
+        long value = readCompOopAddressValue(address);
+        return (value == 0 ? null : new ProcAddress(this, value));
+    }
+
     /** From the ProcDebugger interface */
     public ProcOopHandle readOopHandle(long address)
     throws UnmappedAddressException, UnalignedAddressException, NotInHeapException {
-        long value = readAddressValue(address);
+        long   value = readAddressValue(address);
+        return (value == 0 ? null : new ProcOopHandle(this, value));
+    }
+
+    public ProcOopHandle readCompOopHandle(long address) {
+        long value = readCompOopAddressValue(address);
         return (value == 0 ? null : new ProcOopHandle(this, value));
     }
 

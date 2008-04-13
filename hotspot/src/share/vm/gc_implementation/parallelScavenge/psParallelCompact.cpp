@@ -81,14 +81,14 @@ bool   PSParallelCompact::_dwl_initialized = false;
 #endif  // #ifdef ASSERT
 
 #ifdef VALIDATE_MARK_SWEEP
-GrowableArray<oop*>*    PSParallelCompact::_root_refs_stack = NULL;
+GrowableArray<void*>*   PSParallelCompact::_root_refs_stack = NULL;
 GrowableArray<oop> *    PSParallelCompact::_live_oops = NULL;
 GrowableArray<oop> *    PSParallelCompact::_live_oops_moved_to = NULL;
 GrowableArray<size_t>*  PSParallelCompact::_live_oops_size = NULL;
 size_t                  PSParallelCompact::_live_oops_index = 0;
 size_t                  PSParallelCompact::_live_oops_index_at_perm = 0;
-GrowableArray<oop*>*    PSParallelCompact::_other_refs_stack = NULL;
-GrowableArray<oop*>*    PSParallelCompact::_adjusted_pointers = NULL;
+GrowableArray<void*>*   PSParallelCompact::_other_refs_stack = NULL;
+GrowableArray<void*>*   PSParallelCompact::_adjusted_pointers = NULL;
 bool                    PSParallelCompact::_pointer_tracking = false;
 bool                    PSParallelCompact::_root_tracking = true;
 
@@ -811,46 +811,23 @@ ParMarkBitMap       PSParallelCompact::_mark_bitmap;
 ParallelCompactData PSParallelCompact::_summary_data;
 
 PSParallelCompact::IsAliveClosure PSParallelCompact::_is_alive_closure;
+
+void PSParallelCompact::IsAliveClosure::do_object(oop p)   { ShouldNotReachHere(); }
+bool PSParallelCompact::IsAliveClosure::do_object_b(oop p) { return mark_bitmap()->is_marked(p); }
+
+void PSParallelCompact::KeepAliveClosure::do_oop(oop* p)       { PSParallelCompact::KeepAliveClosure::do_oop_work(p); }
+void PSParallelCompact::KeepAliveClosure::do_oop(narrowOop* p) { PSParallelCompact::KeepAliveClosure::do_oop_work(p); }
+
 PSParallelCompact::AdjustPointerClosure PSParallelCompact::_adjust_root_pointer_closure(true);
 PSParallelCompact::AdjustPointerClosure PSParallelCompact::_adjust_pointer_closure(false);
 
-void PSParallelCompact::KeepAliveClosure::do_oop(oop* p) {
-#ifdef VALIDATE_MARK_SWEEP
-  if (ValidateMarkSweep) {
-    if (!Universe::heap()->is_in_reserved(p)) {
-      _root_refs_stack->push(p);
-    } else {
-      _other_refs_stack->push(p);
-    }
-  }
-#endif
-  mark_and_push(_compaction_manager, p);
-}
+void PSParallelCompact::AdjustPointerClosure::do_oop(oop* p)       { adjust_pointer(p, _is_root); }
+void PSParallelCompact::AdjustPointerClosure::do_oop(narrowOop* p) { adjust_pointer(p, _is_root); }
 
-void PSParallelCompact::mark_and_follow(ParCompactionManager* cm,
-                                        oop* p) {
-  assert(Universe::heap()->is_in_reserved(p),
-         "we should only be traversing objects here");
-  oop m = *p;
-  if (m != NULL && mark_bitmap()->is_unmarked(m)) {
-    if (mark_obj(m)) {
-      m->follow_contents(cm);  // Follow contents of the marked object
-    }
-  }
-}
+void PSParallelCompact::FollowStackClosure::do_void() { follow_stack(_compaction_manager); }
 
-// Anything associated with this variable is temporary.
-
-void PSParallelCompact::mark_and_push_internal(ParCompactionManager* cm,
-                                               oop* p) {
-  // Push marked object, contents will be followed later
-  oop m = *p;
-  if (mark_obj(m)) {
-    // This thread marked the object and
-    // owns the subsequent processing of it.
-    cm->save_for_scanning(m);
-  }
-}
+void PSParallelCompact::MarkAndPushClosure::do_oop(oop* p)       { mark_and_push(_compaction_manager, p); }
+void PSParallelCompact::MarkAndPushClosure::do_oop(narrowOop* p) { mark_and_push(_compaction_manager, p); }
 
 void PSParallelCompact::post_initialize() {
   ParallelScavengeHeap* heap = gc_heap();
@@ -2751,23 +2728,6 @@ void PSParallelCompact::compact_serial(ParCompactionManager* cm) {
   young_gen->move_and_update(cm);
 }
 
-void PSParallelCompact::follow_root(ParCompactionManager* cm, oop* p) {
-  assert(!Universe::heap()->is_in_reserved(p),
-         "roots shouldn't be things within the heap");
-#ifdef VALIDATE_MARK_SWEEP
-  if (ValidateMarkSweep) {
-    guarantee(!_root_refs_stack->contains(p), "should only be in here once");
-    _root_refs_stack->push(p);
-  }
-#endif
-  oop m = *p;
-  if (m != NULL && mark_bitmap()->is_unmarked(m)) {
-    if (mark_obj(m)) {
-      m->follow_contents(cm);  // Follow contents of the marked object
-    }
-  }
-  follow_stack(cm);
-}
 
 void PSParallelCompact::follow_stack(ParCompactionManager* cm) {
   while(!cm->overflow_stack()->is_empty()) {
@@ -2807,7 +2767,7 @@ PSParallelCompact::revisit_weak_klass_link(ParCompactionManager* cm, Klass* k) {
 
 #ifdef VALIDATE_MARK_SWEEP
 
-void PSParallelCompact::track_adjusted_pointer(oop* p, oop newobj, bool isroot) {
+void PSParallelCompact::track_adjusted_pointer(void* p, bool isroot) {
   if (!ValidateMarkSweep)
     return;
 
@@ -2821,7 +2781,7 @@ void PSParallelCompact::track_adjusted_pointer(oop* p, oop newobj, bool isroot) 
     if (index != -1) {
       int l = _root_refs_stack->length();
       if (l > 0 && l - 1 != index) {
-        oop* last = _root_refs_stack->pop();
+        void* last = _root_refs_stack->pop();
         assert(last != p, "should be different");
         _root_refs_stack->at_put(index, last);
       } else {
@@ -2832,7 +2792,7 @@ void PSParallelCompact::track_adjusted_pointer(oop* p, oop newobj, bool isroot) 
 }
 
 
-void PSParallelCompact::check_adjust_pointer(oop* p) {
+void PSParallelCompact::check_adjust_pointer(void* p) {
   _adjusted_pointers->push(p);
 }
 
@@ -2840,7 +2800,8 @@ void PSParallelCompact::check_adjust_pointer(oop* p) {
 class AdjusterTracker: public OopClosure {
  public:
   AdjusterTracker() {};
-  void do_oop(oop* o)   { PSParallelCompact::check_adjust_pointer(o); }
+  void do_oop(oop* o)         { PSParallelCompact::check_adjust_pointer(o); }
+  void do_oop(narrowOop* o)   { PSParallelCompact::check_adjust_pointer(o); }
 };
 
 
@@ -2947,25 +2908,6 @@ void PSParallelCompact::print_new_location_of_heap_address(HeapWord* q) {
   tty->print_cr("Address " PTR_FORMAT " not found in live oop information from last GC", q);
 }
 #endif //VALIDATE_MARK_SWEEP
-
-void PSParallelCompact::adjust_pointer(oop* p, bool isroot) {
-  oop obj = *p;
-  VALIDATE_MARK_SWEEP_ONLY(oop saved_new_pointer = NULL);
-  if (obj != NULL) {
-    oop new_pointer = (oop) summary_data().calc_new_pointer(obj);
-    assert(new_pointer != NULL ||                     // is forwarding ptr?
-           obj->is_shared(),                          // never forwarded?
-           "should have a new location");
-    // Just always do the update unconditionally?
-    if (new_pointer != NULL) {
-      *p = new_pointer;
-      assert(Universe::heap()->is_in_reserved(new_pointer),
-             "should be in object space");
-      VALIDATE_MARK_SWEEP_ONLY(saved_new_pointer = new_pointer);
-    }
-  }
-  VALIDATE_MARK_SWEEP_ONLY(track_adjusted_pointer(p, saved_new_pointer, isroot));
-}
 
 // Update interior oops in the ranges of chunks [beg_chunk, end_chunk).
 void

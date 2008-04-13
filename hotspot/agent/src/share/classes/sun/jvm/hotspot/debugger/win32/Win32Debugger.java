@@ -45,7 +45,9 @@ public interface Win32Debugger extends JVMDebugger {
   public long         readCInteger(long address, long numBytes, boolean isUnsigned)
     throws DebuggerException;
   public Win32Address readAddress(long address) throws DebuggerException;
+  public Win32Address readCompOopAddress(long address) throws DebuggerException;
   public Win32OopHandle readOopHandle(long address) throws DebuggerException;
+  public Win32OopHandle readCompOopHandle(long address) throws DebuggerException;
   public void         writeJBoolean(long address, boolean value) throws DebuggerException;
   public void         writeJByte(long address, byte value) throws DebuggerException;
   public void         writeJChar(long address, char value) throws DebuggerException;

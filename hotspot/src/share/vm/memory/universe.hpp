@@ -180,10 +180,13 @@ class Universe: AllStatic {
 
   // The particular choice of collected heap.
   static CollectedHeap* _collectedHeap;
+  // Base address for oop-within-java-object materialization.
+  // NULL if using wide oops.  Doubles as heap oop null value.
+  static address        _heap_base;
 
   // array of dummy objects used with +FullGCAlot
   debug_only(static objArrayOop _fullgc_alot_dummy_array;)
- // index of next entry to clear
+  // index of next entry to clear
   debug_only(static int         _fullgc_alot_dummy_next;)
 
   // Compiler/dispatch support
@@ -322,6 +325,10 @@ class Universe: AllStatic {
 
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
+
+  // For UseCompressedOops
+  static address heap_base()       { return _heap_base; }
+  static address* heap_base_addr() { return &_heap_base; }
 
   // Historic gc information
   static size_t get_heap_capacity_at_last_gc()         { return _heap_capacity_at_last_gc; }

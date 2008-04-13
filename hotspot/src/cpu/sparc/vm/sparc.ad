@@ -544,11 +544,19 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
     assert(!UseInlineCaches, "expect vtable calls only if not using ICs");
     int entry_offset = instanceKlass::vtable_start_offset() + vtable_index*vtableEntry::size();
     int v_off = entry_offset*wordSize + vtableEntry::method_offset_in_bytes();
+    int klass_load_size;
+    if (UseCompressedOops) {
+      klass_load_size = 3*BytesPerInstWord; // see MacroAssembler::load_klass()
+    } else {
+      klass_load_size = 1*BytesPerInstWord;
+    }
     if( Assembler::is_simm13(v_off) ) {
-      return (3*BytesPerInstWord +           // ld_ptr, ld_ptr, ld_ptr
+      return klass_load_size +
+             (2*BytesPerInstWord +           // ld_ptr, ld_ptr
              NativeCall::instruction_size);  // call; delay slot
     } else {
-      return (5*BytesPerInstWord +           // ld_ptr, set_hi, set, ld_ptr, ld_ptr
+      return klass_load_size +
+             (4*BytesPerInstWord +           // set_hi, set, ld_ptr, ld_ptr
              NativeCall::instruction_size);  // call; delay slot
     }
   }
@@ -1591,7 +1599,13 @@ uint reloc_java_to_interp() {
 void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   st->print_cr("\nUEP:");
 #ifdef    _LP64
-  st->print_cr("\tLDX    [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check");
+  if (UseCompressedOops) {
+    st->print_cr("\tLDUW   [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check - compressed klass");
+    st->print_cr("\tSLL    R_G5,3,R_G5");
+    st->print_cr("\tADD    R_G5,R_G6_heap_base,R_G5");
+  } else {
+    st->print_cr("\tLDX    [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check");
+  }
   st->print_cr("\tCMP    R_G5,R_G3" );
   st->print   ("\tTne    xcc,R_G0+ST_RESERVED_FOR_USER_0+2");
 #else  // _LP64
@@ -1610,7 +1624,7 @@ void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   assert( G5_ic_reg != temp_reg, "conflicting registers" );
 
   // Load klass from reciever
-  __ ld_ptr(O0, oopDesc::klass_offset_in_bytes(), temp_reg);
+  __ load_klass(O0, temp_reg);
   // Compare against expected klass
   __ cmp(temp_reg, G5_ic_reg);
   // Branch to miss code, checks xcc or icc depending
@@ -1811,6 +1825,11 @@ bool Matcher::can_be_java_arg( int reg ) {
       reg == R_I3H_num ||
       reg == R_I4H_num ||
       reg == R_I5H_num ) return true;
+
+  if ((UseCompressedOops) && (reg == R_G6_num || reg == R_G6H_num)) {
+    return true;
+  }
+
 #else
   // 32-bit builds with longs-in-one-entry pass longs in G1 & G4.
   // Longs cannot be passed in O regs, because O regs become I regs
@@ -2474,7 +2493,13 @@ encode %{
       // get receiver klass (receiver already checked for non-null)
       // If we end up going thru a c2i adapter interpreter expects method in G5
       int off = __ offset();
-      __ ld_ptr(O0, oopDesc::klass_offset_in_bytes(), G3_scratch);
+      __ load_klass(O0, G3_scratch);
+      int klass_load_size;
+      if (UseCompressedOops) {
+        klass_load_size = 3*BytesPerInstWord;
+      } else {
+        klass_load_size = 1*BytesPerInstWord;
+      }
       int entry_offset = instanceKlass::vtable_start_offset() + vtable_index*vtableEntry::size();
       int v_off = entry_offset*wordSize + vtableEntry::method_offset_in_bytes();
       if( __ is_simm13(v_off) ) {
@@ -2484,7 +2509,8 @@ encode %{
         __ Assembler::sethi(v_off & ~0x3ff, G5_method);
         __ or3(G5_method, v_off & 0x3ff, G5_method);
         // ld_ptr, set_hi, set
-        assert(__ offset() - off == 3*BytesPerInstWord, "Unexpected instruction size(s)");
+        assert(__ offset() - off == klass_load_size + 2*BytesPerInstWord,
+               "Unexpected instruction size(s)");
         __ ld_ptr(G3, G5_method, G5_method);
       }
       // NOTE: for vtable dispatches, the vtable entry will never be null.
@@ -2860,12 +2886,12 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     int  count_offset = java_lang_String:: count_offset_in_bytes();
 
     // load str1 (jchar*) base address into tmp1_reg
-    __ ld_ptr(Address(str1_reg, 0,  value_offset), tmp1_reg);
+    __ load_heap_oop(Address(str1_reg, 0,  value_offset), tmp1_reg);
     __ ld(Address(str1_reg, 0, offset_offset), result_reg);
     __ add(tmp1_reg, arrayOopDesc::base_offset_in_bytes(T_CHAR), tmp1_reg);
     __    ld(Address(str1_reg, 0, count_offset), str1_reg); // hoisted
     __ sll(result_reg, exact_log2(sizeof(jchar)), result_reg);
-    __    ld_ptr(Address(str2_reg, 0,  value_offset), tmp2_reg); // hoisted
+    __    load_heap_oop(Address(str2_reg, 0,  value_offset), tmp2_reg); // hoisted
     __ add(result_reg, tmp1_reg, tmp1_reg);
 
     // load str2 (jchar*) base address into tmp2_reg
@@ -3016,6 +3042,7 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     MacroAssembler _masm(&cbuf);
     __ membar( Assembler::Membar_mask_bits(Assembler::StoreLoad) );
   %}
+
   enc_class enc_repl8b( iRegI src, iRegL dst ) %{
     MacroAssembler _masm(&cbuf);
     Register src_reg = reg_to_register_object($src$$reg);
@@ -3189,15 +3216,15 @@ frame %{
   c_return_value %{
     assert( ideal_reg >= Op_RegI && ideal_reg <= Op_RegL, "only return normal values" );
 #ifdef     _LP64
-    static int lo_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_O0_num,     R_O0_num,     R_F0_num,     R_F0_num, R_O0_num };
-    static int hi_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_O0H_num,    OptoReg::Bad, R_F1_num, R_O0H_num};
-    static int lo_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_I0_num,     R_I0_num,     R_F0_num,     R_F0_num, R_I0_num };
-    static int hi_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_I0H_num,    OptoReg::Bad, R_F1_num, R_I0H_num};
+    static int lo_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_O0_num,     R_O0_num,     R_O0_num,     R_F0_num,     R_F0_num, R_O0_num };
+    static int hi_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_O0H_num,    OptoReg::Bad, R_F1_num, R_O0H_num};
+    static int lo_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_I0_num,     R_I0_num,     R_I0_num,     R_F0_num,     R_F0_num, R_I0_num };
+    static int hi_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_I0H_num,    OptoReg::Bad, R_F1_num, R_I0H_num};
 #else  // !_LP64
-    static int lo_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_O0_num,     R_O0_num,     R_F0_num,     R_F0_num, R_G1_num };
-    static int hi_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_F1_num, R_G1H_num };
-    static int lo_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_I0_num,     R_I0_num,     R_F0_num,     R_F0_num, R_G1_num };
-    static int hi_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_F1_num, R_G1H_num };
+    static int lo_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_O0_num,     R_O0_num,     R_O0_num,     R_F0_num,     R_F0_num, R_G1_num };
+    static int hi_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_F1_num, R_G1H_num };
+    static int lo_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_I0_num,     R_I0_num,     R_I0_num,     R_F0_num,     R_F0_num, R_G1_num };
+    static int hi_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_F1_num, R_G1H_num };
 #endif
     return OptoRegPair( (is_outgoing?hi_out:hi_in)[ideal_reg],
                         (is_outgoing?lo_out:lo_in)[ideal_reg] );
@@ -3207,15 +3234,15 @@ frame %{
   return_value %{
     assert( ideal_reg >= Op_RegI && ideal_reg <= Op_RegL, "only return normal values" );
 #ifdef     _LP64
-    static int lo_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_O0_num,     R_O0_num,     R_F0_num,     R_F0_num, R_O0_num };
-    static int hi_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_O0H_num,    OptoReg::Bad, R_F1_num, R_O0H_num};
-    static int lo_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_I0_num,     R_I0_num,     R_F0_num,     R_F0_num, R_I0_num };
-    static int hi_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_I0H_num,    OptoReg::Bad, R_F1_num, R_I0H_num};
+    static int lo_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_O0_num,     R_O0_num,     R_O0_num,     R_F0_num,     R_F0_num, R_O0_num };
+    static int hi_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_O0H_num,    OptoReg::Bad, R_F1_num, R_O0H_num};
+    static int lo_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_I0_num,     R_I0_num,     R_I0_num,     R_F0_num,     R_F0_num, R_I0_num };
+    static int hi_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_I0H_num,    OptoReg::Bad, R_F1_num, R_I0H_num};
 #else  // !_LP64
-    static int lo_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_O0_num,     R_O0_num,     R_F0_num,     R_F0_num, R_G1_num };
-    static int hi_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_F1_num, R_G1H_num};
-    static int lo_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_I0_num,     R_I0_num,     R_F0_num,     R_F0_num, R_G1_num };
-    static int hi_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_F1_num, R_G1H_num};
+    static int lo_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_O0_num,     R_O0_num,     R_O0_num,     R_F0_num,     R_F0_num, R_G1_num };
+    static int hi_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_F1_num, R_G1H_num};
+    static int lo_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_I0_num,     R_I0_num,     R_I0_num,     R_F0_num,     R_F0_num, R_G1_num };
+    static int hi_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_F1_num, R_G1H_num};
 #endif
     return OptoRegPair( (is_outgoing?hi_out:hi_in)[ideal_reg],
                         (is_outgoing?lo_out:lo_in)[ideal_reg] );
@@ -3404,6 +3431,27 @@ operand immP_poll() %{
   match(ConP);
 
   // formats are generated automatically for constants and base registers
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Pointer Immediate
+operand immN()
+%{
+  match(ConN);
+
+  op_cost(10);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// NULL Pointer Immediate
+operand immN0()
+%{
+  predicate(n->get_narrowcon() == 0);
+  match(ConN);
+
+  op_cost(0);
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -3667,6 +3715,14 @@ operand l7RegP() %{
 operand o7RegI() %{
   constraint(ALLOC_IN_RC(o7_regI));
   match(iRegI);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand iRegN() %{
+  constraint(ALLOC_IN_RC(int_reg));
+  match(RegN);
 
   format %{ %}
   interface(REG_INTER);
@@ -5392,9 +5448,30 @@ instruct loadP(iRegP dst, memory mem) %{
   ins_pipe(iload_mem);
 %}
 
+// Load Compressed Pointer
+instruct loadN(iRegN dst, memory mem) %{
+   match(Set dst (LoadN mem));
+   ins_cost(MEMORY_REF_COST);
+   size(4);
+
+   format %{ "LDUW   $mem,$dst\t! compressed ptr" %}
+   ins_encode %{
+     Register base = as_Register($mem$$base);
+     Register index = as_Register($mem$$index);
+     Register dst = $dst$$Register;
+     if (index != G0) {
+       __ lduw(base, index, dst);
+     } else {
+       __ lduw(base, $mem$$disp, dst);
+     }
+   %}
+   ins_pipe(iload_mem);
+%}
+
 // Load Klass Pointer
 instruct loadKlass(iRegP dst, memory mem) %{
   match(Set dst (LoadKlass mem));
+  predicate(!n->in(MemNode::Address)->bottom_type()->is_narrow());
   ins_cost(MEMORY_REF_COST);
   size(4);
 
@@ -5406,6 +5483,30 @@ instruct loadKlass(iRegP dst, memory mem) %{
   opcode(Assembler::ldx_op3, 0, REGP_OP);
 #endif
   ins_encode( form3_mem_reg( mem, dst ) );
+  ins_pipe(iload_mem);
+%}
+
+// Load Klass Pointer
+instruct loadKlassComp(iRegP dst, memory mem) %{
+  match(Set dst (LoadKlass mem));
+  predicate(n->in(MemNode::Address)->bottom_type()->is_narrow());
+  ins_cost(MEMORY_REF_COST);
+
+  format %{ "LDUW   $mem,$dst\t! compressed klass ptr" %}
+
+  ins_encode %{
+     Register base = as_Register($mem$$base);
+     Register index = as_Register($mem$$index);
+     Register dst = $dst$$Register;
+     if (index != G0) {
+       __ lduw(base, index, dst);
+     } else {
+       __ lduw(base, $mem$$disp, dst);
+     }
+     // klass oop never null but this is generated for nonheader klass loads
+     // too which can be null.
+     __ decode_heap_oop(dst);
+  %}
   ins_pipe(iload_mem);
 %}
 
@@ -5506,6 +5607,24 @@ instruct loadConP_poll(iRegP dst, immP_poll src) %{
     __ sethi(polling_page, false );
   %}
   ins_pipe(loadConP_poll);
+%}
+
+instruct loadConN(iRegN dst, immN src) %{
+  match(Set dst src);
+  ins_cost(DEFAULT_COST * 2);
+  format %{ "SET    $src,$dst\t!ptr" %}
+  ins_encode %{
+    address con = (address)$src$$constant;
+    Register dst = $dst$$Register;
+    if (con == NULL) {
+      __ mov(G0, dst);
+    } else {
+      __ set_oop((jobject)$src$$constant, dst);
+      __ encode_heap_oop(dst);
+    }
+  %}
+  ins_pipe(loadConP);
+
 %}
 
 instruct loadConL(iRegL dst, immL src, o7RegL tmp) %{
@@ -5741,6 +5860,44 @@ instruct storeP0(memory dst, immP0 src) %{
   ins_pipe(istore_mem_zero);
 %}
 
+// Store Compressed Pointer
+instruct storeN(memory dst, iRegN src) %{
+   match(Set dst (StoreN dst src));
+   ins_cost(MEMORY_REF_COST);
+   size(4);
+
+   format %{ "STW    $src,$dst\t! compressed ptr" %}
+   ins_encode %{
+     Register base = as_Register($dst$$base);
+     Register index = as_Register($dst$$index);
+     Register src = $src$$Register;
+     if (index != G0) {
+       __ stw(src, base, index);
+     } else {
+       __ stw(src, base, $dst$$disp);
+     }
+   %}
+   ins_pipe(istore_mem_spORreg);
+%}
+
+instruct storeN0(memory dst, immN0 src) %{
+   match(Set dst (StoreN dst src));
+   ins_cost(MEMORY_REF_COST);
+   size(4);
+
+   format %{ "STW    $src,$dst\t! compressed ptr" %}
+   ins_encode %{
+     Register base = as_Register($dst$$base);
+     Register index = as_Register($dst$$index);
+     if (index != G0) {
+       __ stw(0, base, index);
+     } else {
+       __ stw(0, base, $dst$$disp);
+     }
+   %}
+   ins_pipe(istore_mem_zero);
+%}
+
 // Store Double
 instruct storeD( memory mem, regD src) %{
   match(Set mem (StoreD mem src));
@@ -5797,6 +5954,26 @@ instruct storeA8B(memory mem, regD src) %{
   ins_encode( form3_mem_reg( mem, src ) );
   ins_pipe(fstoreD_mem_reg);
 %}
+
+// Convert oop pointer into compressed form
+instruct encodeHeapOop(iRegN dst, iRegP src) %{
+  match(Set dst (EncodeP src));
+  format %{ "SRL    $src,3,$dst\t encodeHeapOop" %}
+  ins_encode %{
+    __ encode_heap_oop($src$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct decodeHeapOop(iRegP dst, iRegN src) %{
+  match(Set dst (DecodeN src));
+  format %{ "decode_heap_oop $src, $dst" %}
+  ins_encode %{
+    __ decode_heap_oop($src$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 
 // Store Zero into Aligned Packed Bytes
 instruct storeA8B0(memory mem, immI0 zero) %{
@@ -6434,17 +6611,27 @@ instruct compareAndSwapI_bool(iRegP mem_ptr, iRegI oldval, iRegI newval, iRegI r
 instruct compareAndSwapP_bool(iRegP mem_ptr, iRegP oldval, iRegP newval, iRegI res, o7RegI tmp1, flagsReg ccr ) %{
   match(Set res (CompareAndSwapP mem_ptr (Binary oldval newval)));
   effect( USE mem_ptr, KILL ccr, KILL tmp1);
-#ifdef _LP64
   format %{
             "MOV    $newval,O7\n\t"
-            "CASXA  [$mem_ptr],$oldval,O7\t! If $oldval==[$mem_ptr] Then store O7 into [$mem_ptr], set O7=[$mem_ptr] in any case\n\t"
+            "CASA_PTR  [$mem_ptr],$oldval,O7\t! If $oldval==[$mem_ptr] Then store O7 into [$mem_ptr], set O7=[$mem_ptr] in any case\n\t"
             "CMP    $oldval,O7\t\t! See if we made progress\n\t"
             "MOV    1,$res\n\t"
             "MOVne  xcc,R_G0,$res"
   %}
+#ifdef _LP64
   ins_encode( enc_casx(mem_ptr, oldval, newval),
               enc_lflags_ne_to_boolean(res) );
 #else
+  ins_encode( enc_casi(mem_ptr, oldval, newval),
+              enc_iflags_ne_to_boolean(res) );
+#endif
+  ins_pipe( long_memory_op );
+%}
+
+instruct compareAndSwapN_bool_comp(iRegP mem_ptr, iRegN oldval, iRegN newval, iRegI res, o7RegI tmp, flagsReg ccr ) %{
+  match(Set res (CompareAndSwapN mem_ptr (Binary oldval newval)));
+  effect( USE mem_ptr, KILL ccr, KILL tmp);
+
   format %{
             "MOV    $newval,O7\n\t"
             "CASA   [$mem_ptr],$oldval,O7\t! If $oldval==[$mem_ptr] Then store O7 into [$mem_ptr], set O7=[$mem_ptr] in any case\n\t"
@@ -6452,9 +6639,18 @@ instruct compareAndSwapP_bool(iRegP mem_ptr, iRegP oldval, iRegP newval, iRegI r
             "MOV    1,$res\n\t"
             "MOVne  icc,R_G0,$res"
   %}
-  ins_encode( enc_casi(mem_ptr, oldval, newval),
-              enc_iflags_ne_to_boolean(res) );
-#endif
+  ins_encode %{
+    Register Rmem = reg_to_register_object($mem_ptr$$reg);
+    Register Rold = reg_to_register_object($oldval$$reg);
+    Register Rnew = reg_to_register_object($newval$$reg);
+    Register Rres = reg_to_register_object($res$$reg);
+
+    __ cas(Rmem, Rold, Rnew);
+    __ cmp( Rold, Rnew );
+    __ mov(1, Rres);
+    __ movcc( Assembler::notEqual, false, Assembler::icc, G0, Rres );
+  %}
+
   ins_pipe( long_memory_op );
 %}
 
@@ -8607,6 +8803,17 @@ instruct partialSubtypeCheck_vs_zero( flagsRegP pcc, o1RegP sub, o2RegP super, i
   ins_pipe(partial_subtype_check_pipe);
 %}
 
+
+instruct compP_iRegN_immN0(flagsRegP pcc, iRegN op1, immN0 op2 ) %{
+  match(Set pcc (CmpN op1 op2));
+
+  size(4);
+  format %{ "CMP    $op1,$op2\t! ptr" %}
+  opcode(Assembler::subcc_op3, Assembler::arith_op);
+  ins_encode( form3_rs1_simm13_rd( op1, op2, R_G0 ) );
+  ins_pipe(ialu_cconly_reg_imm);
+%}
+
 // ============================================================================
 // inlined locking and unlocking
 
@@ -8648,9 +8855,10 @@ instruct clear_array(iRegX cnt, iRegP base, iRegX temp, Universe dummy, flagsReg
   ins_pipe(long_memory_op);
 %}
 
-instruct string_compare(o0RegP str1, o1RegP str2, g3RegP tmp1, g4RegP tmp2, notemp_iRegI result, flagsReg ccr) %{
+instruct string_compare(o0RegP str1, o1RegP str2, g3RegP tmp1, g4RegP tmp2, notemp_iRegI result,
+                        o7RegI tmp3, flagsReg ccr) %{
   match(Set result (StrComp str1 str2));
-  effect(USE_KILL str1, USE_KILL str2, KILL tmp1, KILL tmp2, KILL ccr);
+  effect(USE_KILL str1, USE_KILL str2, KILL tmp1, KILL tmp2, KILL ccr, KILL tmp3);
   ins_cost(300);
   format %{ "String Compare $str1,$str2 -> $result" %}
   ins_encode( enc_String_Compare(str1, str2, tmp1, tmp2, result) );

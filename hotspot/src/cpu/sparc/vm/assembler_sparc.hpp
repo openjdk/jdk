@@ -59,6 +59,7 @@ class BiasedLockingCounters;
 // This global always holds the current JavaThread pointer:
 
 REGISTER_DECLARATION(Register, G2_thread , G2);
+REGISTER_DECLARATION(Register, G6_heapbase , G6);
 
 // The following globals are part of the Java calling convention:
 
@@ -1975,6 +1976,29 @@ class MacroAssembler: public Assembler {
   inline void tstbool( Register s ) { tst(s); }
   inline void movbool( bool boolconst, Register d) { mov( (int) boolconst, d); }
 
+  // klass oop manipulations if compressed
+  void load_klass(Register  src_oop, Register dst);
+  void store_klass(Register dst_oop, Register s1);
+
+   // oop manipulations
+  void load_heap_oop(const Address& s, Register d, int offset = 0);
+  void load_heap_oop(Register s1, Register s2, Register d);
+  void load_heap_oop(Register s1, int simm13a, Register d);
+  void store_heap_oop(Register d, Register s1, Register s2);
+  void store_heap_oop(Register d, Register s1, int simm13a);
+  void store_heap_oop(Register d, const Address& a, int offset = 0);
+
+  void encode_heap_oop(Register src, Register dst);
+  void encode_heap_oop(Register r) {
+    encode_heap_oop(r, r);
+  }
+  void decode_heap_oop(Register src, Register dst);
+  void decode_heap_oop(Register r) {
+    decode_heap_oop(r, r);
+  }
+  void encode_heap_oop_not_null(Register r);
+  void decode_heap_oop_not_null(Register r);
+
   // Support for managing the JavaThread pointer (i.e.; the reference to
   // thread-local information).
   void get_thread();                                // load G2_thread
@@ -2049,6 +2073,9 @@ class MacroAssembler: public Assembler {
 
   void push_CPU_state();
   void pop_CPU_state();
+
+  // if heap base register is used - reinit it with the correct value
+  void reinit_heapbase();
 
   // Debugging
   void _verify_oop(Register reg, const char * msg, const char * file, int line);

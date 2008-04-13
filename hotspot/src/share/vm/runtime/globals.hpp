@@ -237,7 +237,6 @@ class CommandLineFlags {
 #define falseInTiered true
 #endif
 
-
 // develop flags are settable / visible only during development and are constant in the PRODUCT version
 // product flags are always settable / visible
 // notproduct flags are settable / visible only during development and are not declared in the PRODUCT version
@@ -286,7 +285,11 @@ class CommandLineFlags {
 // Note that when there is a need to support develop flags to be writeable,
 // it can be done in the same way as product_rw.
 
-#define RUNTIME_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct, manageable, product_rw) \
+#define RUNTIME_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct, manageable, product_rw, lp64_product) \
+                                                                            \
+  lp64_product(bool, UseCompressedOops, false,                              \
+            "Use 32-bit object references in 64-bit VM. "                   \
+            "lp64_product means flag is always constant in 32 bit VM")      \
                                                                             \
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
@@ -3209,6 +3212,12 @@ class CommandLineFlags {
 #define DECLARE_PD_DEVELOPER_FLAG(type, name, doc)      extern "C" type name;
 #define DECLARE_NOTPRODUCT_FLAG(type, name, value, doc)  extern "C" type name;
 #endif
+// Special LP64 flags, product only needed for now.
+#ifdef _LP64
+#define DECLARE_LP64_PRODUCT_FLAG(type, name, value, doc) extern "C" type name;
+#else
+#define DECLARE_LP64_PRODUCT_FLAG(type, name, value, doc) const type name = value;
+#endif // _LP64
 
 // Implementation macros
 #define MATERIALIZE_PRODUCT_FLAG(type, name, value, doc)   type name = value;
@@ -3225,7 +3234,12 @@ class CommandLineFlags {
 #define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, doc)     type name = pd_##name;
 #define MATERIALIZE_NOTPRODUCT_FLAG(type, name, value, doc) type name = value;
 #endif
+#ifdef _LP64
+#define MATERIALIZE_LP64_PRODUCT_FLAG(type, name, value, doc)   type name = value;
+#else
+#define MATERIALIZE_LP64_PRODUCT_FLAG(type, name, value, doc) /* flag is constant */
+#endif // _LP64
 
-RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)
+RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG, DECLARE_LP64_PRODUCT_FLAG)
 
 RUNTIME_OS_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG)

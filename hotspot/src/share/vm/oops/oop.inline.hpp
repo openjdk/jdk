@@ -25,7 +25,6 @@
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references
 
-
 inline void oopDesc::release_set_mark(markOop m) {
   OrderAccess::release_store_ptr(&_mark, m);
 }
@@ -34,17 +33,54 @@ inline markOop oopDesc::cas_set_mark(markOop new_mark, markOop old_mark) {
   return (markOop) Atomic::cmpxchg_ptr(new_mark, &_mark, old_mark);
 }
 
+inline klassOop oopDesc::klass() const {
+  if (UseCompressedOops) {
+    return (klassOop)decode_heap_oop_not_null(_metadata._compressed_klass);
+      // can be NULL in CMS, but isn't supported on CMS yet.
+  } else {
+    return _metadata._klass;
+  }
+}
+
+inline int oopDesc::klass_gap_offset_in_bytes() {
+  assert(UseCompressedOops, "only applicable to compressed headers");
+  return oopDesc::klass_offset_in_bytes() + sizeof(narrowOop);
+}
+
+inline oop* oopDesc::klass_addr() {
+  // Only used internally and with CMS and will not work with
+  // UseCompressedOops
+  assert(!UseCompressedOops, "only supported with uncompressed oops");
+  return (oop*) &_metadata._klass;
+}
+
+inline narrowOop* oopDesc::compressed_klass_addr() {
+  assert(UseCompressedOops, "only called by compressed oops");
+  return (narrowOop*) &_metadata._compressed_klass;
+}
+
 inline void oopDesc::set_klass(klassOop k) {
   // since klasses are promoted no store check is needed
   assert(Universe::is_bootstrapping() || k != NULL, "must be a real klassOop");
   assert(Universe::is_bootstrapping() || k->is_klass(), "not a klassOop");
-  oop_store_without_check((oop*) &_klass, (oop) k);
+  if (UseCompressedOops) {
+    // zero the gap when the klass is set, by zeroing the pointer sized
+    // part of the union.
+    _metadata._klass = NULL;
+    oop_store_without_check(compressed_klass_addr(), (oop)k);
+  } else {
+    oop_store_without_check(klass_addr(), (oop) k);
+  }
 }
 
 inline void oopDesc::set_klass_to_list_ptr(oop k) {
   // This is only to be used during GC, for from-space objects, so no
   // barrier is needed.
-  _klass = (klassOop)k;
+  if (UseCompressedOops) {
+    _metadata._compressed_klass = encode_heap_oop_not_null(k);
+  } else {
+    _metadata._klass = (klassOop)k;
+  }
 }
 
 inline void   oopDesc::init_mark()                 { set_mark(markOopDesc::prototype_for_object(this)); }
@@ -70,7 +106,7 @@ inline bool oopDesc::is_compiledICHolder()   const { return blueprint()->oop_is_
 
 inline void*     oopDesc::field_base(int offset)        const { return (void*)&((char*)this)[offset]; }
 
-inline oop*      oopDesc::obj_field_addr(int offset)    const { return (oop*)     field_base(offset); }
+template <class T> inline T* oopDesc::obj_field_addr(int offset) const { return (T*)field_base(offset); }
 inline jbyte*    oopDesc::byte_field_addr(int offset)   const { return (jbyte*)   field_base(offset); }
 inline jchar*    oopDesc::char_field_addr(int offset)   const { return (jchar*)   field_base(offset); }
 inline jboolean* oopDesc::bool_field_addr(int offset)   const { return (jboolean*)field_base(offset); }
@@ -79,9 +115,156 @@ inline jshort*   oopDesc::short_field_addr(int offset)  const { return (jshort*)
 inline jlong*    oopDesc::long_field_addr(int offset)   const { return (jlong*)   field_base(offset); }
 inline jfloat*   oopDesc::float_field_addr(int offset)  const { return (jfloat*)  field_base(offset); }
 inline jdouble*  oopDesc::double_field_addr(int offset) const { return (jdouble*) field_base(offset); }
+inline address*  oopDesc::address_field_addr(int offset) const { return (address*) field_base(offset); }
 
-inline oop oopDesc::obj_field(int offset) const                     { return *obj_field_addr(offset);             }
-inline void oopDesc::obj_field_put(int offset, oop value)           { oop_store(obj_field_addr(offset), value);   }
+
+// Functions for getting and setting oops within instance objects.
+// If the oops are compressed, the type passed to these overloaded functions
+// is narrowOop.  All functions are overloaded so they can be called by
+// template functions without conditionals (the compiler instantiates via
+// the right type and inlines the appopriate code).
+
+inline bool oopDesc::is_null(oop obj)       { return obj == NULL; }
+inline bool oopDesc::is_null(narrowOop obj) { return obj == 0; }
+
+// Algorithm for encoding and decoding oops from 64 bit pointers to 32 bit
+// offset from the heap base.  Saving the check for null can save instructions
+// in inner GC loops so these are separated.
+
+inline narrowOop oopDesc::encode_heap_oop_not_null(oop v) {
+  assert(!is_null(v), "oop value can never be zero");
+  address heap_base = Universe::heap_base();
+  uint64_t result = (uint64_t)(pointer_delta((void*)v, (void*)heap_base, 1) >> LogMinObjAlignmentInBytes);
+  assert((result & 0xffffffff00000000L) == 0, "narrow oop overflow");
+  return (narrowOop)result;
+}
+
+inline narrowOop oopDesc::encode_heap_oop(oop v) {
+  return (is_null(v)) ? (narrowOop)0 : encode_heap_oop_not_null(v);
+}
+
+inline oop oopDesc::decode_heap_oop_not_null(narrowOop v) {
+  assert(!is_null(v), "narrow oop value can never be zero");
+  address heap_base = Universe::heap_base();
+  return (oop)(void*)((uintptr_t)heap_base + ((uintptr_t)v << LogMinObjAlignmentInBytes));
+}
+
+inline oop oopDesc::decode_heap_oop(narrowOop v) {
+  return is_null(v) ? (oop)NULL : decode_heap_oop_not_null(v);
+}
+
+inline oop oopDesc::decode_heap_oop_not_null(oop v) { return v; }
+inline oop oopDesc::decode_heap_oop(oop v)  { return v; }
+
+// Load an oop out of the Java heap as is without decoding.
+// Called by GC to check for null before decoding.
+inline oop       oopDesc::load_heap_oop(oop* p)          { return *p; }
+inline narrowOop oopDesc::load_heap_oop(narrowOop* p)    { return *p; }
+
+// Load and decode an oop out of the Java heap into a wide oop.
+inline oop oopDesc::load_decode_heap_oop_not_null(oop* p)       { return *p; }
+inline oop oopDesc::load_decode_heap_oop_not_null(narrowOop* p) {
+  return decode_heap_oop_not_null(*p);
+}
+
+// Load and decode an oop out of the heap accepting null
+inline oop oopDesc::load_decode_heap_oop(oop* p) { return *p; }
+inline oop oopDesc::load_decode_heap_oop(narrowOop* p) {
+  return decode_heap_oop(*p);
+}
+
+// Store already encoded heap oop into the heap.
+inline void oopDesc::store_heap_oop(oop* p, oop v)                 { *p = v; }
+inline void oopDesc::store_heap_oop(narrowOop* p, narrowOop v)     { *p = v; }
+
+// Encode and store a heap oop.
+inline void oopDesc::encode_store_heap_oop_not_null(narrowOop* p, oop v) {
+  *p = encode_heap_oop_not_null(v);
+}
+inline void oopDesc::encode_store_heap_oop_not_null(oop* p, oop v) { *p = v; }
+
+// Encode and store a heap oop allowing for null.
+inline void oopDesc::encode_store_heap_oop(narrowOop* p, oop v) {
+  *p = encode_heap_oop(v);
+}
+inline void oopDesc::encode_store_heap_oop(oop* p, oop v) { *p = v; }
+
+// Store heap oop as is for volatile fields.
+inline void oopDesc::release_store_heap_oop(volatile oop* p, oop v) {
+  OrderAccess::release_store_ptr(p, v);
+}
+inline void oopDesc::release_store_heap_oop(volatile narrowOop* p,
+                                            narrowOop v) {
+  OrderAccess::release_store(p, v);
+}
+
+inline void oopDesc::release_encode_store_heap_oop_not_null(
+                                                volatile narrowOop* p, oop v) {
+  // heap oop is not pointer sized.
+  OrderAccess::release_store(p, encode_heap_oop_not_null(v));
+}
+
+inline void oopDesc::release_encode_store_heap_oop_not_null(
+                                                      volatile oop* p, oop v) {
+  OrderAccess::release_store_ptr(p, v);
+}
+
+inline void oopDesc::release_encode_store_heap_oop(volatile oop* p,
+                                                           oop v) {
+  OrderAccess::release_store_ptr(p, v);
+}
+inline void oopDesc::release_encode_store_heap_oop(
+                                                volatile narrowOop* p, oop v) {
+  OrderAccess::release_store(p, encode_heap_oop(v));
+}
+
+
+// These functions are only used to exchange oop fields in instances,
+// not headers.
+inline oop oopDesc::atomic_exchange_oop(oop exchange_value, volatile HeapWord *dest) {
+  if (UseCompressedOops) {
+    // encode exchange value from oop to T
+    narrowOop val = encode_heap_oop(exchange_value);
+    narrowOop old = (narrowOop)Atomic::xchg(val, (narrowOop*)dest);
+    // decode old from T to oop
+    return decode_heap_oop(old);
+  } else {
+    return (oop)Atomic::xchg_ptr(exchange_value, (oop*)dest);
+  }
+}
+
+inline oop oopDesc::atomic_compare_exchange_oop(oop exchange_value,
+                                                volatile HeapWord *dest,
+                                                oop compare_value) {
+  if (UseCompressedOops) {
+    // encode exchange and compare value from oop to T
+    narrowOop val = encode_heap_oop(exchange_value);
+    narrowOop cmp = encode_heap_oop(compare_value);
+
+    narrowOop old = (narrowOop) Atomic::cmpxchg(val, (narrowOop*)dest, cmp);
+    // decode old from T to oop
+    return decode_heap_oop(old);
+  } else {
+    return (oop)Atomic::cmpxchg_ptr(exchange_value, (oop*)dest, compare_value);
+  }
+}
+
+// In order to put or get a field out of an instance, must first check
+// if the field has been compressed and uncompress it.
+inline oop oopDesc::obj_field(int offset) const {
+  return UseCompressedOops ?
+    load_decode_heap_oop(obj_field_addr<narrowOop>(offset)) :
+    load_decode_heap_oop(obj_field_addr<oop>(offset));
+}
+inline void oopDesc::obj_field_put(int offset, oop value) {
+  UseCompressedOops ? oop_store(obj_field_addr<narrowOop>(offset), value) :
+                      oop_store(obj_field_addr<oop>(offset),       value);
+}
+inline void oopDesc::obj_field_raw_put(int offset, oop value) {
+  UseCompressedOops ?
+    encode_store_heap_oop(obj_field_addr<narrowOop>(offset), value) :
+    encode_store_heap_oop(obj_field_addr<oop>(offset),       value);
+}
 
 inline jbyte oopDesc::byte_field(int offset) const                  { return (jbyte) *byte_field_addr(offset);    }
 inline void oopDesc::byte_field_put(int offset, jbyte contents)     { *byte_field_addr(offset) = (jint) contents; }
@@ -107,8 +290,21 @@ inline void oopDesc::float_field_put(int offset, jfloat contents)   { *float_fie
 inline jdouble oopDesc::double_field(int offset) const              { return *double_field_addr(offset);     }
 inline void oopDesc::double_field_put(int offset, jdouble contents) { *double_field_addr(offset) = contents; }
 
-inline oop oopDesc::obj_field_acquire(int offset) const                     { return (oop)OrderAccess::load_ptr_acquire(obj_field_addr(offset)); }
-inline void oopDesc::release_obj_field_put(int offset, oop value)           { oop_store((volatile oop*)obj_field_addr(offset), value);           }
+inline address oopDesc::address_field(int offset) const              { return *address_field_addr(offset);     }
+inline void oopDesc::address_field_put(int offset, address contents) { *address_field_addr(offset) = contents; }
+
+inline oop oopDesc::obj_field_acquire(int offset) const {
+  return UseCompressedOops ?
+             decode_heap_oop((narrowOop)
+               OrderAccess::load_acquire(obj_field_addr<narrowOop>(offset)))
+           : decode_heap_oop((oop)
+               OrderAccess::load_ptr_acquire(obj_field_addr<oop>(offset)));
+}
+inline void oopDesc::release_obj_field_put(int offset, oop value) {
+  UseCompressedOops ?
+    oop_store((volatile narrowOop*)obj_field_addr<narrowOop>(offset), value) :
+    oop_store((volatile oop*)      obj_field_addr<oop>(offset),       value);
+}
 
 inline jbyte oopDesc::byte_field_acquire(int offset) const                  { return OrderAccess::load_acquire(byte_field_addr(offset));     }
 inline void oopDesc::release_byte_field_put(int offset, jbyte contents)     { OrderAccess::release_store(byte_field_addr(offset), contents); }
@@ -133,7 +329,6 @@ inline void oopDesc::release_float_field_put(int offset, jfloat contents)   { Or
 
 inline jdouble oopDesc::double_field_acquire(int offset) const              { return OrderAccess::load_acquire(double_field_addr(offset));     }
 inline void oopDesc::release_double_field_put(int offset, jdouble contents) { OrderAccess::release_store(double_field_addr(offset), contents); }
-
 
 inline int oopDesc::size_given_klass(Klass* klass)  {
   int lh = klass->layout_helper();
@@ -200,7 +395,7 @@ inline int oopDesc::size_given_klass(Klass* klass)  {
       // technique) we will need to suitably modify the assertion.
       assert((s == klass->oop_size(this)) ||
              (((UseParNewGC || UseParallelGC) &&
-                                           Universe::heap()->is_gc_active()) &&
+              Universe::heap()->is_gc_active()) &&
               (is_typeArray() ||
                (is_objArray() && is_forwarded()))),
              "wrong array object size");
@@ -224,52 +419,58 @@ inline bool oopDesc::is_parsable() {
   return blueprint()->oop_is_parsable(this);
 }
 
-
-inline void update_barrier_set(oop *p, oop v) {
+inline void update_barrier_set(void* p, oop v) {
   assert(oopDesc::bs() != NULL, "Uninitialized bs in oop!");
   oopDesc::bs()->write_ref_field(p, v);
 }
 
-
-inline void oop_store(oop* p, oop v) {
+template <class T> inline void oop_store(T* p, oop v) {
   if (always_do_update_barrier) {
-    oop_store((volatile oop*)p, v);
+    oop_store((volatile T*)p, v);
   } else {
-    *p = v;
+    oopDesc::encode_store_heap_oop(p, v);
     update_barrier_set(p, v);
   }
 }
 
-inline void oop_store(volatile oop* p, oop v) {
+template <class T> inline void oop_store(volatile T* p, oop v) {
   // Used by release_obj_field_put, so use release_store_ptr.
-  OrderAccess::release_store_ptr(p, v);
-  update_barrier_set((oop *)p, v);
+  oopDesc::release_encode_store_heap_oop(p, v);
+  update_barrier_set((void*)p, v);
 }
 
-inline void oop_store_without_check(oop* p, oop v) {
-  // XXX YSR FIX ME!!!
-  if (always_do_update_barrier) {
-   oop_store(p, v);
-  } else {
-    assert(!Universe::heap()->barrier_set()->write_ref_needs_barrier(p, v),
-           "oop store without store check failed");
-    *p = v;
-  }
-}
-
-// When it absolutely has to get there.
-inline void oop_store_without_check(volatile oop* p, oop v) {
+template <class T> inline void oop_store_without_check(T* p, oop v) {
   // XXX YSR FIX ME!!!
   if (always_do_update_barrier) {
     oop_store(p, v);
   } else {
-    assert(!Universe::heap()->barrier_set()->
-                      write_ref_needs_barrier((oop *)p, v),
+    assert(!Universe::heap()->barrier_set()->write_ref_needs_barrier(p, v),
            "oop store without store check failed");
-    OrderAccess::release_store_ptr(p, v);
+    oopDesc::encode_store_heap_oop(p, v);
   }
 }
 
+// When it absolutely has to get there.
+template <class T> inline void oop_store_without_check(volatile T* p, oop v) {
+  // XXX YSR FIX ME!!!
+  if (always_do_update_barrier) {
+    oop_store(p, v);
+  } else {
+    assert(!Universe::heap()->barrier_set()->write_ref_needs_barrier((T*)p, v),
+           "oop store without store check failed");
+    oopDesc::release_encode_store_heap_oop(p, v);
+  }
+}
+
+// Should replace *addr = oop assignments where addr type depends on UseCompressedOops
+// (without having to remember the function name this calls).
+inline void oop_store_raw(HeapWord* addr, oop value) {
+  if (UseCompressedOops) {
+    oopDesc::encode_store_heap_oop((narrowOop*)addr, value);
+  } else {
+    oopDesc::encode_store_heap_oop((oop*)addr, value);
+  }
+}
 
 // Used only for markSweep, scavenging
 inline bool oopDesc::is_gc_marked() const {
@@ -340,15 +541,17 @@ inline bool oopDesc::is_unlocked_oop() const {
   if (!Universe::heap()->is_in_reserved(this)) return false;
   return mark()->is_unlocked();
 }
-
-
 #endif // PRODUCT
 
 inline void oopDesc::follow_header() {
-  MarkSweep::mark_and_push((oop*)&_klass);
+  if (UseCompressedOops) {
+    MarkSweep::mark_and_push(compressed_klass_addr());
+  } else {
+    MarkSweep::mark_and_push(klass_addr());
+  }
 }
 
-inline void oopDesc::follow_contents() {
+inline void oopDesc::follow_contents(void) {
   assert (is_gc_marked(), "should be marked");
   blueprint()->oop_follow_contents(this);
 }
@@ -361,7 +564,6 @@ inline bool oopDesc::is_forwarded() const {
   // mark would point to a stack location and have the sentinel bit cleared
   return mark()->is_marked();
 }
-
 
 // Used by scavengers
 inline void oopDesc::forward_to(oop p) {
@@ -384,8 +586,9 @@ inline bool oopDesc::cas_forward_to(oop p, markOop compare) {
 // Note that the forwardee is not the same thing as the displaced_mark.
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
-inline oop oopDesc::forwardee() const           { return (oop) mark()->decode_pointer(); }
-
+inline oop oopDesc::forwardee() const {
+  return (oop) mark()->decode_pointer();
+}
 
 inline bool oopDesc::has_displaced_mark() const {
   return mark()->has_displaced_mark_helper();
@@ -432,16 +635,23 @@ inline intptr_t oopDesc::identity_hash() {
   }
 }
 
-
 inline void oopDesc::oop_iterate_header(OopClosure* blk) {
-  blk->do_oop((oop*)&_klass);
+  if (UseCompressedOops) {
+    blk->do_oop(compressed_klass_addr());
+  } else {
+    blk->do_oop(klass_addr());
+  }
 }
-
 
 inline void oopDesc::oop_iterate_header(OopClosure* blk, MemRegion mr) {
-  if (mr.contains(&_klass)) blk->do_oop((oop*)&_klass);
+  if (UseCompressedOops) {
+    if (mr.contains(compressed_klass_addr())) {
+      blk->do_oop(compressed_klass_addr());
+    }
+  } else {
+    if (mr.contains(klass_addr())) blk->do_oop(klass_addr());
+  }
 }
-
 
 inline int oopDesc::adjust_pointers() {
   debug_only(int check_size = size());
@@ -451,7 +661,11 @@ inline int oopDesc::adjust_pointers() {
 }
 
 inline void oopDesc::adjust_header() {
-  MarkSweep::adjust_pointer((oop*)&_klass);
+  if (UseCompressedOops) {
+    MarkSweep::adjust_pointer(compressed_klass_addr());
+  } else {
+    MarkSweep::adjust_pointer(klass_addr());
+  }
 }
 
 #define OOP_ITERATE_DEFN(OopClosureType, nv_suffix)                        \

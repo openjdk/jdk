@@ -1138,7 +1138,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // Allocation support
   HeapWord* allocate(size_t size, bool tlab);
   HeapWord* have_lock_and_allocate(size_t size, bool tlab);
-  oop       promote(oop obj, size_t obj_size, oop* ref);
+  oop       promote(oop obj, size_t obj_size);
   HeapWord* par_allocate(size_t size, bool tlab) {
     return allocate(size, tlab);
   }
@@ -1301,9 +1301,8 @@ class ASConcurrentMarkSweepGeneration : public ConcurrentMarkSweepGeneration {
 // This closure is used to check that a certain set of oops is empty.
 class FalseClosure: public OopClosure {
  public:
-  void do_oop(oop* p) {
-    guarantee(false, "Should be an empty set");
-  }
+  void do_oop(oop* p)       { guarantee(false, "Should be an empty set"); }
+  void do_oop(narrowOop* p) { guarantee(false, "Should be an empty set"); }
 };
 
 // This closure is used to do concurrent marking from the roots
@@ -1380,6 +1379,12 @@ class PushAndMarkVerifyClosure: public OopClosure {
   CMSBitMap*       _verification_bm;
   CMSBitMap*       _cms_bm;
   CMSMarkStack*    _mark_stack;
+ protected:
+  void do_oop(oop p);
+  template <class T> inline void do_oop_work(T *p) {
+    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+    do_oop(obj);
+  }
  public:
   PushAndMarkVerifyClosure(CMSCollector* cms_collector,
                            MemRegion span,
@@ -1387,6 +1392,7 @@ class PushAndMarkVerifyClosure: public OopClosure {
                            CMSBitMap* cms_bm,
                            CMSMarkStack*  mark_stack);
   void do_oop(oop* p);
+  void do_oop(narrowOop* p);
   // Deal with a stack overflow condition
   void handle_stack_overflow(HeapWord* lost);
 };

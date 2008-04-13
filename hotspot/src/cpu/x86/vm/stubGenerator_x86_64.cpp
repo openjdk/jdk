@@ -30,6 +30,7 @@
 // see the comment in stubRoutines.hpp
 
 #define __ _masm->
+#define TIMES_OOP (UseCompressedOops ? Address::times_4 : Address::times_8)
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -252,6 +253,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Load up thread register
     __ movq(r15_thread, thread);
+    __ reinit_heapbase();
 
 #ifdef ASSERT
     // make sure we have no pending exceptions
@@ -945,7 +947,7 @@ class StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::notZero, error);
 
     // make sure klass is 'reasonable'
-    __ movq(rax, Address(rax, oopDesc::klass_offset_in_bytes())); // get klass
+    __ load_klass(rax, rax);  // get klass
     __ testq(rax, rax);
     __ jcc(Assembler::zero, error); // if klass is NULL it is broken
     // Check if the klass is in the right area of memory
@@ -957,7 +959,7 @@ class StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::notZero, error);
 
     // make sure klass' klass is 'reasonable'
-    __ movq(rax, Address(rax, oopDesc::klass_offset_in_bytes()));
+    __ load_klass(rax, rax);
     __ testq(rax, rax);
     __ jcc(Assembler::zero, error); // if klass' klass is NULL it is broken
     // Check if the klass' klass is in the right area of memory
@@ -1001,6 +1003,7 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("call MacroAssembler::debug");
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, MacroAssembler::debug)));
     __ movq(rsp, r12);                           // restore rsp
+    __ reinit_heapbase();                        // r12 is heapbase
     __ popaq();                                  // pop registers
     __ ret(3 * wordSize);                        // pop caller saved stuff
 
@@ -1652,6 +1655,7 @@ class StubGenerator: public StubCodeGenerator {
   // Arguments:
   //   aligned - true => Input and output aligned on a HeapWord == 8-byte boundary
   //             ignored
+  //   is_oop  - true => oop array, so generate store check code
   //   name    - stub name string
   //
   // Inputs:
@@ -1665,9 +1669,9 @@ class StubGenerator: public StubCodeGenerator {
   //
   // Side Effects:
   //   disjoint_int_copy_entry is set to the no-overlap entry point
-  //   used by generate_conjoint_int_copy().
+  //   used by generate_conjoint_int_oop_copy().
   //
-  address generate_disjoint_int_copy(bool aligned, const char *name) {
+  address generate_disjoint_int_oop_copy(bool aligned, bool is_oop, const char *name) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1680,18 +1684,29 @@ class StubGenerator: public StubCodeGenerator {
     const Register qword_count = count;
     const Register end_from    = from; // source array end address
     const Register end_to      = to;   // destination array end address
+    const Register saved_to    = r11;  // saved destination array address
     // End pointers are inclusive, and if count is not zero they point
     // to the last unit copied:  end_to[0] := end_from[0]
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-    disjoint_int_copy_entry = __ pc();
+    (is_oop ? disjoint_oop_copy_entry : disjoint_int_copy_entry) = __ pc();
+
+    if (is_oop) {
+      // no registers are destroyed by this call
+      gen_write_ref_array_pre_barrier(/* dest */ c_rarg1, /* count */ c_rarg2);
+    }
+
     BLOCK_COMMENT("Entry:");
     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
 
     setup_arg_regs(); // from => rdi, to => rsi, count => rdx
                       // r9 and r10 may be used to save non-volatile registers
+
+    if (is_oop) {
+      __ movq(saved_to, to);
+    }
 
     // 'from', 'to' and 'count' are now valid
     __ movq(dword_count, count);
@@ -1718,6 +1733,10 @@ class StubGenerator: public StubCodeGenerator {
     __ movl(Address(end_to, 8), rax);
 
   __ BIND(L_exit);
+    if (is_oop) {
+      __ leaq(end_to, Address(saved_to, dword_count, Address::times_4, -4));
+      gen_write_ref_array_post_barrier(saved_to, end_to, rax);
+    }
     inc_counter_np(SharedRuntime::_jint_array_copy_ctr);
     restore_arg_regs();
     __ xorq(rax, rax); // return 0
@@ -1734,6 +1753,7 @@ class StubGenerator: public StubCodeGenerator {
   // Arguments:
   //   aligned - true => Input and output aligned on a HeapWord == 8-byte boundary
   //             ignored
+  //   is_oop  - true => oop array, so generate store check code
   //   name    - stub name string
   //
   // Inputs:
@@ -1745,12 +1765,12 @@ class StubGenerator: public StubCodeGenerator {
   // the hardware handle it.  The two dwords within qwords that span
   // cache line boundaries will still be loaded and stored atomicly.
   //
-  address generate_conjoint_int_copy(bool aligned, const char *name) {
+  address generate_conjoint_int_oop_copy(bool aligned, bool is_oop, const char *name) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
 
-    Label L_copy_32_bytes, L_copy_8_bytes, L_copy_2_bytes;
+    Label L_copy_32_bytes, L_copy_8_bytes, L_copy_2_bytes, L_exit;
     const Register from        = rdi;  // source array address
     const Register to          = rsi;  // destination array address
     const Register count       = rdx;  // elements count
@@ -1760,14 +1780,21 @@ class StubGenerator: public StubCodeGenerator {
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-    int_copy_entry = __ pc();
+    if (is_oop) {
+      // no registers are destroyed by this call
+      gen_write_ref_array_pre_barrier(/* dest */ c_rarg1, /* count */ c_rarg2);
+    }
+
+    (is_oop ? oop_copy_entry : int_copy_entry) = __ pc();
     BLOCK_COMMENT("Entry:");
     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
 
-    array_overlap_test(disjoint_int_copy_entry, Address::times_4);
+    array_overlap_test(is_oop ? disjoint_oop_copy_entry : disjoint_int_copy_entry,
+                       Address::times_4);
     setup_arg_regs(); // from => rdi, to => rsi, count => rdx
                       // r9 and r10 may be used to save non-volatile registers
 
+    assert_clean_int(count, rax); // Make sure 'count' is clean int.
     // 'from', 'to' and 'count' are now valid
     __ movq(dword_count, count);
     __ shrq(count, 1); // count => qword_count
@@ -1789,6 +1816,9 @@ class StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::notZero, L_copy_8_bytes);
 
     inc_counter_np(SharedRuntime::_jint_array_copy_ctr);
+    if (is_oop) {
+      __ jmp(L_exit);
+    }
     restore_arg_regs();
     __ xorq(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -1797,7 +1827,13 @@ class StubGenerator: public StubCodeGenerator {
     // Copy in 32-bytes chunks
     copy_32_bytes_backward(from, to, qword_count, rax, L_copy_32_bytes, L_copy_8_bytes);
 
-    inc_counter_np(SharedRuntime::_jint_array_copy_ctr);
+   inc_counter_np(SharedRuntime::_jint_array_copy_ctr);
+   __ bind(L_exit);
+     if (is_oop) {
+       Register end_to = rdx;
+       __ leaq(end_to, Address(to, dword_count, Address::times_4, -4));
+       gen_write_ref_array_post_barrier(to, end_to, rax);
+     }
     restore_arg_regs();
     __ xorq(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -1817,7 +1853,7 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg1   - destination array address
   //   c_rarg2   - element count, treated as ssize_t, can be zero
   //
-  // Side Effects:
+ // Side Effects:
   //   disjoint_oop_copy_entry or disjoint_long_copy_entry is set to the
   //   no-overlap entry point used by generate_conjoint_long_oop_copy().
   //
@@ -1857,7 +1893,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Copy from low to high addresses.  Use 'to' as scratch.
     __ leaq(end_from, Address(from, qword_count, Address::times_8, -8));
-    __ leaq(end_to,   Address(to, qword_count, Address::times_8, -8));
+    __ leaq(end_to,   Address(to,   qword_count, Address::times_8, -8));
     __ negq(qword_count);
     __ jmp(L_copy_32_bytes);
 
@@ -1923,11 +1959,14 @@ class StubGenerator: public StubCodeGenerator {
 
     address disjoint_copy_entry = NULL;
     if (is_oop) {
+      assert(!UseCompressedOops, "shouldn't be called for compressed oops");
       disjoint_copy_entry = disjoint_oop_copy_entry;
       oop_copy_entry  = __ pc();
+      array_overlap_test(disjoint_oop_copy_entry, Address::times_8);
     } else {
       disjoint_copy_entry = disjoint_long_copy_entry;
       long_copy_entry = __ pc();
+      array_overlap_test(disjoint_long_copy_entry, Address::times_8);
     }
     BLOCK_COMMENT("Entry:");
     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
@@ -1944,8 +1983,6 @@ class StubGenerator: public StubCodeGenerator {
       // No registers are destroyed by this call
       gen_write_ref_array_pre_barrier(to, saved_count);
     }
-
-    // Copy from high to low addresses.  Use rcx as scratch.
 
     __ jmp(L_copy_32_bytes);
 
@@ -2038,7 +2075,14 @@ class StubGenerator: public StubCodeGenerator {
       // Scan rcx words at [rdi] for occurance of rax
       // Set NZ/Z based on last compare
       __ movq(rax, super_klass);
-      __ repne_scan();
+      if (UseCompressedOops) {
+        // Compare against compressed form.  Don't need to uncompress because
+        // looks like orig rax is restored in popq below.
+        __ encode_heap_oop(rax);
+        __ repne_scanl();
+      } else {
+         __ repne_scanq();
+      }
 
       // Unspill the temp. registers:
       __ popq(rdi);
@@ -2115,7 +2159,7 @@ class StubGenerator: public StubCodeGenerator {
     // caller guarantees that the arrays really are different
     // otherwise, we would have to make conjoint checks
     { Label L;
-      array_overlap_test(L, Address::times_8);
+      array_overlap_test(L, TIMES_OOP);
       __ stop("checkcast_copy within a single array");
       __ bind(L);
     }
@@ -2160,12 +2204,11 @@ class StubGenerator: public StubCodeGenerator {
 #endif //ASSERT
 
     // Loop-invariant addresses.  They are exclusive end pointers.
-    Address end_from_addr(from, length, Address::times_8, 0);
-    Address   end_to_addr(to,   length, Address::times_8, 0);
+    Address end_from_addr(from, length, TIMES_OOP, 0);
+    Address   end_to_addr(to,   length, TIMES_OOP, 0);
     // Loop-variant addresses.  They assume post-incremented count < 0.
-    Address from_element_addr(end_from, count, Address::times_8, 0);
-    Address   to_element_addr(end_to,   count, Address::times_8, 0);
-    Address oop_klass_addr(rax_oop, oopDesc::klass_offset_in_bytes());
+    Address from_element_addr(end_from, count, TIMES_OOP, 0);
+    Address   to_element_addr(end_to,   count, TIMES_OOP, 0);
 
     gen_write_ref_array_pre_barrier(to, count);
 
@@ -2189,17 +2232,17 @@ class StubGenerator: public StubCodeGenerator {
     __ align(16);
 
     __ BIND(L_store_element);
-    __ movq(to_element_addr, rax_oop);  // store the oop
+    __ store_heap_oop(to_element_addr, rax_oop);  // store the oop
     __ incrementq(count);               // increment the count toward zero
     __ jcc(Assembler::zero, L_do_card_marks);
 
     // ======== loop entry is here ========
     __ BIND(L_load_element);
-    __ movq(rax_oop, from_element_addr); // load the oop
+    __ load_heap_oop(rax_oop, from_element_addr); // load the oop
     __ testq(rax_oop, rax_oop);
     __ jcc(Assembler::zero, L_store_element);
 
-    __ movq(r11_klass, oop_klass_addr); // query the object klass
+    __ load_klass(r11_klass, rax_oop);// query the object klass
     generate_type_check(r11_klass, ckoff, ckval, L_store_element);
     // ======== end loop ========
 
@@ -2425,15 +2468,14 @@ class StubGenerator: public StubCodeGenerator {
     // registers used as temp
     const Register r11_length    = r11; // elements count to copy
     const Register r10_src_klass = r10; // array klass
+    const Register r9_dst_klass  = r9;  // dest array klass
 
     //  if (length < 0) return -1;
     __ movl(r11_length, C_RARG4);       // length (elements count, 32-bits value)
     __ testl(r11_length, r11_length);
     __ jccb(Assembler::negative, L_failed_0);
 
-    Address src_klass_addr(src, oopDesc::klass_offset_in_bytes());
-    Address dst_klass_addr(dst, oopDesc::klass_offset_in_bytes());
-    __ movq(r10_src_klass, src_klass_addr);
+    __ load_klass(r10_src_klass, src);
 #ifdef ASSERT
     //  assert(src->klass() != NULL);
     BLOCK_COMMENT("assert klasses not null");
@@ -2443,7 +2485,8 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L1);
       __ stop("broken null klass");
       __ bind(L2);
-      __ cmpq(dst_klass_addr, 0);
+      __ load_klass(r9_dst_klass, dst);
+      __ cmpq(r9_dst_klass, 0);
       __ jcc(Assembler::equal, L1);     // this would be broken also
       BLOCK_COMMENT("assert done");
     }
@@ -2470,7 +2513,8 @@ class StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::equal, L_objArray);
 
     //  if (src->klass() != dst->klass()) return -1;
-    __ cmpq(r10_src_klass, dst_klass_addr);
+    __ load_klass(r9_dst_klass, dst);
+    __ cmpq(r10_src_klass, r9_dst_klass);
     __ jcc(Assembler::notEqual, L_failed);
 
     //  if (!src->is_Array()) return -1;
@@ -2559,17 +2603,18 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_plain_copy, L_checkcast_copy;
     //  test array classes for subtyping
-    __ cmpq(r10_src_klass, dst_klass_addr); // usual case is exact equality
+    __ load_klass(r9_dst_klass, dst);
+    __ cmpq(r10_src_klass, r9_dst_klass); // usual case is exact equality
     __ jcc(Assembler::notEqual, L_checkcast_copy);
 
     // Identically typed arrays can be copied without element-wise checks.
     arraycopy_range_checks(src, src_pos, dst, dst_pos, r11_length,
                            r10, L_failed);
 
-    __ leaq(from, Address(src, src_pos, Address::times_8,
+    __ leaq(from, Address(src, src_pos, TIMES_OOP,
                  arrayOopDesc::base_offset_in_bytes(T_OBJECT))); // src_addr
-    __ leaq(to,   Address(dst, dst_pos, Address::times_8,
-                 arrayOopDesc::base_offset_in_bytes(T_OBJECT))); // dst_addr
+    __ leaq(to,   Address(dst, dst_pos, TIMES_OOP,
+                  arrayOopDesc::base_offset_in_bytes(T_OBJECT))); // dst_addr
     __ movslq(count, r11_length); // length
   __ BIND(L_plain_copy);
     __ jump(RuntimeAddress(oop_copy_entry));
@@ -2579,7 +2624,7 @@ class StubGenerator: public StubCodeGenerator {
     {
       // assert(r11_length == C_RARG4); // will reload from here
       Register r11_dst_klass = r11;
-      __ movq(r11_dst_klass, dst_klass_addr);
+      __ load_klass(r11_dst_klass, dst);
 
       // Before looking at dst.length, make sure dst is also an objArray.
       __ cmpl(Address(r11_dst_klass, lh_offset), objArray_lh);
@@ -2593,13 +2638,13 @@ class StubGenerator: public StubCodeGenerator {
       __ movl(r11_length, C_RARG4);     // reload
       arraycopy_range_checks(src, src_pos, dst, dst_pos, r11_length,
                              rax, L_failed);
-      __ movl(r11_dst_klass, dst_klass_addr); // reload
+      __ load_klass(r11_dst_klass, dst); // reload
 #endif
 
       // Marshal the base address arguments now, freeing registers.
-      __ leaq(from, Address(src, src_pos, Address::times_8,
+      __ leaq(from, Address(src, src_pos, TIMES_OOP,
                    arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
-      __ leaq(to,   Address(dst, dst_pos, Address::times_8,
+      __ leaq(to,   Address(dst, dst_pos, TIMES_OOP,
                    arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
       __ movl(count, C_RARG4);          // length (reloaded)
       Register sco_temp = c_rarg3;      // this register is free now
@@ -2648,14 +2693,20 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_jshort_disjoint_arraycopy = generate_disjoint_short_copy(false, "jshort_disjoint_arraycopy");
     StubRoutines::_jshort_arraycopy          = generate_conjoint_short_copy(false, "jshort_arraycopy");
 
-    StubRoutines::_jint_disjoint_arraycopy   = generate_disjoint_int_copy(false, "jint_disjoint_arraycopy");
-    StubRoutines::_jint_arraycopy            = generate_conjoint_int_copy(false, "jint_arraycopy");
+    StubRoutines::_jint_disjoint_arraycopy   = generate_disjoint_int_oop_copy(false, false, "jint_disjoint_arraycopy");
+    StubRoutines::_jint_arraycopy            = generate_conjoint_int_oop_copy(false, false, "jint_arraycopy");
 
     StubRoutines::_jlong_disjoint_arraycopy  = generate_disjoint_long_oop_copy(false, false, "jlong_disjoint_arraycopy");
     StubRoutines::_jlong_arraycopy           = generate_conjoint_long_oop_copy(false, false, "jlong_arraycopy");
 
-    StubRoutines::_oop_disjoint_arraycopy    = generate_disjoint_long_oop_copy(false, true, "oop_disjoint_arraycopy");
-    StubRoutines::_oop_arraycopy             = generate_conjoint_long_oop_copy(false, true, "oop_arraycopy");
+
+    if (UseCompressedOops) {
+      StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_int_oop_copy(false, true, "oop_disjoint_arraycopy");
+      StubRoutines::_oop_arraycopy           = generate_conjoint_int_oop_copy(false, true, "oop_arraycopy");
+    } else {
+      StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_long_oop_copy(false, true, "oop_disjoint_arraycopy");
+      StubRoutines::_oop_arraycopy           = generate_conjoint_long_oop_copy(false, true, "oop_arraycopy");
+    }
 
     StubRoutines::_checkcast_arraycopy = generate_checkcast_copy("checkcast_arraycopy");
     StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy("unsafe_arraycopy");

@@ -36,16 +36,16 @@ PreservedMark*          MarkSweep::_preserved_marks = NULL;
 ReferenceProcessor*     MarkSweep::_ref_processor   = NULL;
 
 #ifdef VALIDATE_MARK_SWEEP
-GrowableArray<oop*>*    MarkSweep::_root_refs_stack = NULL;
+GrowableArray<void*>*   MarkSweep::_root_refs_stack = NULL;
 GrowableArray<oop> *    MarkSweep::_live_oops = NULL;
 GrowableArray<oop> *    MarkSweep::_live_oops_moved_to = NULL;
 GrowableArray<size_t>*  MarkSweep::_live_oops_size = NULL;
 size_t                  MarkSweep::_live_oops_index = 0;
 size_t                  MarkSweep::_live_oops_index_at_perm = 0;
-GrowableArray<oop*>*    MarkSweep::_other_refs_stack = NULL;
-GrowableArray<oop*>*    MarkSweep::_adjusted_pointers = NULL;
-bool                    MarkSweep::_pointer_tracking = false;
-bool                    MarkSweep::_root_tracking = true;
+GrowableArray<void*>*   MarkSweep::_other_refs_stack = NULL;
+GrowableArray<void*>*   MarkSweep::_adjusted_pointers = NULL;
+bool                         MarkSweep::_pointer_tracking = false;
+bool                         MarkSweep::_root_tracking = true;
 
 GrowableArray<HeapWord*>* MarkSweep::_cur_gc_live_oops = NULL;
 GrowableArray<HeapWord*>* MarkSweep::_cur_gc_live_oops_moved_to = NULL;
@@ -59,7 +59,6 @@ void MarkSweep::revisit_weak_klass_link(Klass* k) {
   _revisit_klass_stack->push(k);
 }
 
-
 void MarkSweep::follow_weak_klass_links() {
   // All klasses on the revisit stack are marked at this point.
   // Update and follow all subklass, sibling and implementor links.
@@ -69,44 +68,15 @@ void MarkSweep::follow_weak_klass_links() {
   follow_stack();
 }
 
+MarkSweep::FollowRootClosure  MarkSweep::follow_root_closure;
 
-void MarkSweep::mark_and_follow(oop* p) {
-  assert(Universe::heap()->is_in_reserved(p),
-         "we should only be traversing objects here");
-  oop m = *p;
-  if (m != NULL && !m->mark()->is_marked()) {
-    mark_object(m);
-    m->follow_contents();  // Follow contents of the marked object
-  }
-}
-
-void MarkSweep::_mark_and_push(oop* p) {
-  // Push marked object, contents will be followed later
-  oop m = *p;
-  mark_object(m);
-  _marking_stack->push(m);
-}
+void MarkSweep::FollowRootClosure::do_oop(oop* p)       { follow_root(p); }
+void MarkSweep::FollowRootClosure::do_oop(narrowOop* p) { follow_root(p); }
 
 MarkSweep::MarkAndPushClosure MarkSweep::mark_and_push_closure;
 
-void MarkSweep::follow_root(oop* p) {
-  assert(!Universe::heap()->is_in_reserved(p),
-         "roots shouldn't be things within the heap");
-#ifdef VALIDATE_MARK_SWEEP
-  if (ValidateMarkSweep) {
-    guarantee(!_root_refs_stack->contains(p), "should only be in here once");
-    _root_refs_stack->push(p);
-  }
-#endif
-  oop m = *p;
-  if (m != NULL && !m->mark()->is_marked()) {
-    mark_object(m);
-    m->follow_contents();  // Follow contents of the marked object
-  }
-  follow_stack();
-}
-
-MarkSweep::FollowRootClosure MarkSweep::follow_root_closure;
+void MarkSweep::MarkAndPushClosure::do_oop(oop* p)       { mark_and_push(p); }
+void MarkSweep::MarkAndPushClosure::do_oop(narrowOop* p) { mark_and_push(p); }
 
 void MarkSweep::follow_stack() {
   while (!_marking_stack->is_empty()) {
@@ -118,6 +88,7 @@ void MarkSweep::follow_stack() {
 
 MarkSweep::FollowStackClosure MarkSweep::follow_stack_closure;
 
+void MarkSweep::FollowStackClosure::do_void() { follow_stack(); }
 
 // We preserve the mark which should be replaced at the end and the location that it
 // will go.  Note that the object that this markOop belongs to isn't currently at that
@@ -141,6 +112,9 @@ void MarkSweep::preserve_mark(oop obj, markOop mark) {
 
 MarkSweep::AdjustPointerClosure MarkSweep::adjust_root_pointer_closure(true);
 MarkSweep::AdjustPointerClosure MarkSweep::adjust_pointer_closure(false);
+
+void MarkSweep::AdjustPointerClosure::do_oop(oop* p)       { adjust_pointer(p, _is_root); }
+void MarkSweep::AdjustPointerClosure::do_oop(narrowOop* p) { adjust_pointer(p, _is_root); }
 
 void MarkSweep::adjust_marks() {
   assert(_preserved_oop_stack == NULL ||
@@ -187,7 +161,7 @@ void MarkSweep::restore_marks() {
 
 #ifdef VALIDATE_MARK_SWEEP
 
-void MarkSweep::track_adjusted_pointer(oop* p, oop newobj, bool isroot) {
+void MarkSweep::track_adjusted_pointer(void* p, bool isroot) {
   if (!ValidateMarkSweep)
     return;
 
@@ -201,7 +175,7 @@ void MarkSweep::track_adjusted_pointer(oop* p, oop newobj, bool isroot) {
     if (index != -1) {
       int l = _root_refs_stack->length();
       if (l > 0 && l - 1 != index) {
-        oop* last = _root_refs_stack->pop();
+        void* last = _root_refs_stack->pop();
         assert(last != p, "should be different");
         _root_refs_stack->at_put(index, last);
       } else {
@@ -211,18 +185,16 @@ void MarkSweep::track_adjusted_pointer(oop* p, oop newobj, bool isroot) {
   }
 }
 
-
-void MarkSweep::check_adjust_pointer(oop* p) {
+void MarkSweep::check_adjust_pointer(void* p) {
   _adjusted_pointers->push(p);
 }
 
-
 class AdjusterTracker: public OopClosure {
  public:
-  AdjusterTracker() {};
-  void do_oop(oop* o)   { MarkSweep::check_adjust_pointer(o); }
+  AdjusterTracker() {}
+  void do_oop(oop* o)       { MarkSweep::check_adjust_pointer(o); }
+  void do_oop(narrowOop* o) { MarkSweep::check_adjust_pointer(o); }
 };
-
 
 void MarkSweep::track_interior_pointers(oop obj) {
   if (ValidateMarkSweep) {
@@ -234,7 +206,6 @@ void MarkSweep::track_interior_pointers(oop obj) {
   }
 }
 
-
 void MarkSweep::check_interior_pointers() {
   if (ValidateMarkSweep) {
     _pointer_tracking = false;
@@ -242,14 +213,12 @@ void MarkSweep::check_interior_pointers() {
   }
 }
 
-
 void MarkSweep::reset_live_oop_tracking(bool at_perm) {
   if (ValidateMarkSweep) {
     guarantee((size_t)_live_oops->length() == _live_oops_index, "should be at end of live oops");
     _live_oops_index = at_perm ? _live_oops_index_at_perm : 0;
   }
 }
-
 
 void MarkSweep::register_live_oop(oop p, size_t size) {
   if (ValidateMarkSweep) {
@@ -283,7 +252,6 @@ void MarkSweep::live_oop_moved_to(HeapWord* q, size_t size,
   }
 }
 
-
 void MarkSweep::compaction_complete() {
   if (RecordMarkSweepCompaction) {
     GrowableArray<HeapWord*>* _tmp_live_oops          = _cur_gc_live_oops;
@@ -298,7 +266,6 @@ void MarkSweep::compaction_complete() {
     _last_gc_live_oops_size     = _tmp_live_oops_size;
   }
 }
-
 
 void MarkSweep::print_new_location_of_heap_address(HeapWord* q) {
   if (!RecordMarkSweepCompaction) {
@@ -318,7 +285,7 @@ void MarkSweep::print_new_location_of_heap_address(HeapWord* q) {
       HeapWord* new_oop = _last_gc_live_oops_moved_to->at(i);
       size_t offset = (q - old_oop);
       tty->print_cr("Address " PTR_FORMAT, q);
-      tty->print_cr(" Was in oop " PTR_FORMAT ", size %d, at offset %d", old_oop, sz, offset);
+      tty->print_cr(" Was in oop " PTR_FORMAT ", size " SIZE_FORMAT ", at offset " SIZE_FORMAT, old_oop, sz, offset);
       tty->print_cr(" Now in oop " PTR_FORMAT ", actual address " PTR_FORMAT, new_oop, new_oop + offset);
       return;
     }
@@ -328,22 +295,15 @@ void MarkSweep::print_new_location_of_heap_address(HeapWord* q) {
 }
 #endif //VALIDATE_MARK_SWEEP
 
-MarkSweep::IsAliveClosure MarkSweep::is_alive;
+MarkSweep::IsAliveClosure   MarkSweep::is_alive;
 
-void MarkSweep::KeepAliveClosure::do_oop(oop* p) {
-#ifdef VALIDATE_MARK_SWEEP
-  if (ValidateMarkSweep) {
-    if (!Universe::heap()->is_in_reserved(p)) {
-      _root_refs_stack->push(p);
-    } else {
-      _other_refs_stack->push(p);
-    }
-  }
-#endif
-  mark_and_push(p);
-}
+void MarkSweep::IsAliveClosure::do_object(oop p)   { ShouldNotReachHere(); }
+bool MarkSweep::IsAliveClosure::do_object_b(oop p) { return p->is_gc_marked(); }
 
 MarkSweep::KeepAliveClosure MarkSweep::keep_alive;
+
+void MarkSweep::KeepAliveClosure::do_oop(oop* p)       { MarkSweep::KeepAliveClosure::do_oop_work(p); }
+void MarkSweep::KeepAliveClosure::do_oop(narrowOop* p) { MarkSweep::KeepAliveClosure::do_oop_work(p); }
 
 void marksweep_init() { /* empty */ }
 

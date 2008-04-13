@@ -789,7 +789,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   {
     __ verify_oop(holder);
-    __ movq(temp, Address(receiver, oopDesc::klass_offset_in_bytes()));
+    __ load_klass(temp, receiver);
     __ verify_oop(temp);
 
     __ cmpq(temp, Address(holder, compiledICHolderOopDesc::holder_klass_offset()));
@@ -1297,20 +1297,25 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   const Register ic_reg = rax;
   const Register receiver = j_rarg0;
+  const Register tmp = rdx;
 
   Label ok;
   Label exception_pending;
 
   __ verify_oop(receiver);
-  __ cmpq(ic_reg, Address(receiver, oopDesc::klass_offset_in_bytes()));
+  __ pushq(tmp); // spill (any other registers free here???)
+  __ load_klass(tmp, receiver);
+  __ cmpq(ic_reg, tmp);
   __ jcc(Assembler::equal, ok);
 
+  __ popq(tmp);
   __ jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
+
+  __ bind(ok);
+  __ popq(tmp);
 
   // Verified entry point must be aligned
   __ align(8);
-
-  __ bind(ok);
 
   int vep_offset = ((intptr_t)__ pc()) - start;
 
@@ -1663,6 +1668,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ andq(rsp, -16); // align stack as required by ABI
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
     __ movq(rsp, r12); // restore sp
+    __ reinit_heapbase();
     // Restore any method result value
     restore_native_result(masm, ret_type, stack_slots);
     __ bind(Continue);
@@ -1725,7 +1731,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ bind(done);
 
   }
-
   {
     SkipIfEqual skip(masm, &DTraceMethodProbes, false);
     save_native_result(masm, ret_type, stack_slots);
@@ -1829,6 +1834,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C)));
     __ movq(rsp, r12); // restore sp
+    __ reinit_heapbase();
 #ifdef ASSERT
     {
       Label L;
@@ -1859,6 +1865,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ andq(rsp, -16); // align stack as required by ABI
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages)));
   __ movq(rsp, r12); // restore sp
+  __ reinit_heapbase();
   restore_native_result(masm, ret_type, stack_slots);
   // and continue
   __ jmp(reguard_done);
@@ -1941,9 +1948,8 @@ void SharedRuntime::generate_deopt_blob() {
   map = RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words);
 
   // Normal deoptimization.  Save exec mode for unpack_frames.
-  __ movl(r12, Deoptimization::Unpack_deopt); // callee-saved
+  __ movl(r14, Deoptimization::Unpack_deopt); // callee-saved
   __ jmp(cont);
-
   int exception_offset = __ pc() - start;
 
   // Prolog for exception case
@@ -1955,7 +1961,7 @@ void SharedRuntime::generate_deopt_blob() {
   map = RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words);
 
   // Deopt during an exception.  Save exec mode for unpack_frames.
-  __ movl(r12, Deoptimization::Unpack_exception); // callee-saved
+  __ movl(r14, Deoptimization::Unpack_exception); // callee-saved
 
   __ bind(cont);
 
@@ -2088,7 +2094,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ set_last_Java_frame(noreg, rbp, NULL);
 
   __ movq(c_rarg0, r15_thread);
-  __ movl(c_rarg1, r12); // second arg: exec_mode
+  __ movl(c_rarg1, r14); // second arg: exec_mode
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames)));
 
   // Set an oopmap for the call site

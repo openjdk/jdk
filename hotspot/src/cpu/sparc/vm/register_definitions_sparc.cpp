@@ -131,6 +131,7 @@ REGISTER_DEFINITION(FloatRegister, Ftos_d2);
 
 
 REGISTER_DEFINITION(Register, G2_thread);
+REGISTER_DEFINITION(Register, G6_heapbase);
 REGISTER_DEFINITION(Register, G5_method);
 REGISTER_DEFINITION(Register, G5_megamorphic_method);
 REGISTER_DEFINITION(Register, G5_inline_cache_reg);

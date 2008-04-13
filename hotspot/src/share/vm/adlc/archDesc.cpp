@@ -867,6 +867,7 @@ const char *ArchDesc::reg_mask(InstructForm &inForm) {
   Form *form = (Form*)_globalNames[result];
   assert( form, "Result operand must be defined");
   OperandForm *oper = form->is_operand();
+  if (oper == NULL) form->dump();
   assert( oper, "Result must be an OperandForm");
   return reg_mask( *oper );
 }
@@ -908,6 +909,7 @@ const char *ArchDesc::getIdealType(const char *idealOp) {
   switch( last_char ) {
   case 'I':    return "TypeInt::INT";
   case 'P':    return "TypePtr::BOTTOM";
+  case 'N':    return "TypeNarrowOop::BOTTOM";
   case 'F':    return "Type::FLOAT";
   case 'D':    return "Type::DOUBLE";
   case 'L':    return "TypeLong::LONG";
@@ -944,7 +946,7 @@ void ArchDesc::initBaseOpTypes() {
   // Create InstructForm and assign type for each ideal instruction.
   for ( int j = _last_machine_leaf+1; j < _last_opcode; ++j) {
     char         *ident    = (char *)NodeClassNames[j];
-    if(!strcmp(ident, "ConI") || !strcmp(ident, "ConP") ||
+    if(!strcmp(ident, "ConI") || !strcmp(ident, "ConP") || !strcmp(ident, "ConN") ||
        !strcmp(ident, "ConF") || !strcmp(ident, "ConD") ||
        !strcmp(ident, "ConL") || !strcmp(ident, "Con" ) ||
        !strcmp(ident, "Bool") ) {
@@ -1109,6 +1111,7 @@ void ArchDesc::buildMustCloneMap(FILE *fp_hpp, FILE *fp_cpp) {
     if ( strcmp(idealName,"CmpI") == 0
          || strcmp(idealName,"CmpU") == 0
          || strcmp(idealName,"CmpP") == 0
+         || strcmp(idealName,"CmpN") == 0
          || strcmp(idealName,"CmpL") == 0
          || strcmp(idealName,"CmpD") == 0
          || strcmp(idealName,"CmpF") == 0
