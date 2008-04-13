@@ -903,8 +903,27 @@ void AwtComponent::Show()
 
 void AwtComponent::Hide()
 {
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    jobject peer = GetPeer(env);
+    BOOL oldValue = sm_suppressFocusAndActivation;
     m_visible = false;
+
+    // On disposal the focus owner actually loses focus at the moment of hiding.
+    // So, focus change suppression (if requested) should be made here.
+    if (GetHWnd() == sm_focusOwner &&
+        !JNU_CallMethodByName(env, NULL, peer, "isAutoFocusTransferOnDisposal", "()Z").z)
+   {
+        sm_suppressFocusAndActivation = TRUE;
+        // The native system may autotransfer focus on hiding to the parent
+        // of the component. Nevertheless this focus change won't be posted
+        // to the Java level, we're better to avoid this. Anyway, after
+        // the disposal focus should be requested to the right component.
+        ::SetFocus(NULL);
+        sm_focusOwner = NULL;
+    }
     ::ShowWindow(GetHWnd(), SW_HIDE);
+
+    sm_suppressFocusAndActivation = oldValue;
 }
 
 BOOL

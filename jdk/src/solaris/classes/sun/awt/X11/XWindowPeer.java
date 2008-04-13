@@ -582,13 +582,21 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     }
 
     /*
-     * Converts native focused X window id into Java peer.
+     * Retrives real native focused window and converts it into Java peer.
      */
     static XWindowPeer getNativeFocusedWindowPeer() {
         XBaseWindow baseWindow = XToolkit.windowToXWindow(xGetInputFocus());
         return (baseWindow instanceof XWindowPeer) ? (XWindowPeer)baseWindow :
                (baseWindow instanceof XFocusProxyWindow) ?
                ((XFocusProxyWindow)baseWindow).getOwner() : null;
+    }
+
+    /*
+     * Retrives real native focused window and converts it into Java window.
+     */
+    static Window getNativeFocusedWindow() {
+        XWindowPeer peer = getNativeFocusedWindowPeer();
+        return peer != null ? (Window)peer.target : null;
     }
 
     boolean isFocusableWindow() {
@@ -1252,7 +1260,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         return res;
     }
 
-    private boolean isWMStateNetHidden() {
+    protected boolean isWMStateNetHidden() {
         XNETProtocol protocol = XWM.getWM().getNETProtocol();
         return (protocol != null && protocol.isWMStateNetHidden(this));
     }
@@ -1740,6 +1748,11 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         return window;
     }
 
+    public boolean requestWindowFocus(XWindowPeer actualFocusedWindow) {
+        setActualFocusedWindow(actualFocusedWindow);
+        return requestWindowFocus();
+    }
+
     public boolean requestWindowFocus() {
         return requestWindowFocus(0, false);
     }
@@ -1748,25 +1761,25 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         focusLog.fine("Request for window focus");
         // If this is Frame or Dialog we can't assure focus request success - but we still can try
         // If this is Window and its owner Frame is active we can be sure request succedded.
-        Window win = (Window) target;
-        Window owner = XWindowPeer.getDecoratedOwner(win);
+        Window ownerWindow  = XWindowPeer.getDecoratedOwner((Window)target);
+        Window focusedWindow = XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow();
+        Window activeWindow = XWindowPeer.getDecoratedOwner(focusedWindow);
 
-        final Window activeWindow =
-                XWindowPeer.getDecoratedOwner(XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow());
-        if (activeWindow == owner) {
+        if (isWMStateNetHidden()) {
+            focusLog.fine("The window is unmapped, so rejecting the request");
+            return false;
+        }
+        if (activeWindow == ownerWindow) {
             focusLog.fine("Parent window is active - generating focus for this window");
             handleWindowFocusInSync(-1);
             return true;
-        } else {
-            focusLog.fine("Parent window is not active");
         }
-        ComponentPeer peer = ComponentAccessor.getPeer(owner);
-        if (peer instanceof XDecoratedPeer) {
-            XDecoratedPeer wpeer = (XDecoratedPeer) peer;
-            if (wpeer.requestWindowFocus(this, time, timeProvided)) {
-                focusLog.fine("Parent window accepted focus request - generating focus for this window");
-                return true;
-            }
+        focusLog.fine("Parent window is not active");
+
+        XDecoratedPeer wpeer = (XDecoratedPeer)ComponentAccessor.getPeer(ownerWindow);
+        if (wpeer != null && wpeer.requestWindowFocus(this, time, timeProvided)) {
+            focusLog.fine("Parent window accepted focus request - generating focus for this window");
+            return true;
         }
         focusLog.fine("Denied - parent window is not active and didn't accept focus request");
         return false;
