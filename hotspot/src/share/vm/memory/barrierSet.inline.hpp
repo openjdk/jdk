@@ -26,7 +26,7 @@
 // performance-critical calls when when the barrier is the most common
 // card-table kind.
 
-void BarrierSet::write_ref_field(oop* field, oop new_val) {
+void BarrierSet::write_ref_field(void* field, oop new_val) {
   if (kind() == CardTableModRef) {
     ((CardTableModRefBS*)this)->inline_write_ref_field(field, new_val);
   } else {

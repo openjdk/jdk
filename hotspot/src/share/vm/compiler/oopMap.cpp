@@ -169,11 +169,8 @@ void OopMap::set_value(VMReg reg) {
 }
 
 
-void OopMap::set_dead(VMReg reg) {
-  // At this time, we only need dead entries in our OopMap when ZapDeadCompiledLocals is active.
-  if (ZapDeadCompiledLocals) {
-    set_xxx(reg, OopMapValue::dead_value, VMRegImpl::Bad());
-  }
+void OopMap::set_narrowoop(VMReg reg) {
+  set_xxx(reg, OopMapValue::narrowoop_value, VMRegImpl::Bad());
 }
 
 
@@ -305,7 +302,9 @@ OopMap* OopMapSet::find_map_at_offset(int pc_offset) const {
 }
 
 class DoNothingClosure: public OopClosure {
-public: void do_oop(oop* p) {}
+ public:
+  void do_oop(oop* p)       {}
+  void do_oop(narrowOop* p) {}
 };
 static DoNothingClosure do_nothing;
 
@@ -349,23 +348,21 @@ static void trace_codeblob_maps(const frame *fr, const RegisterMap *reg_map) {
 
 void OopMapSet::oops_do(const frame *fr, const RegisterMap* reg_map, OopClosure* f) {
   // add derived oops to a table
-  all_do(fr, reg_map, f, add_derived_oop, &do_nothing, &do_nothing);
+  all_do(fr, reg_map, f, add_derived_oop, &do_nothing);
 }
 
 
 void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
                        OopClosure* oop_fn, void derived_oop_fn(oop*, oop*),
-                       OopClosure* value_fn, OopClosure* dead_fn) {
+                       OopClosure* value_fn) {
   CodeBlob* cb = fr->cb();
-  {
-    assert(cb != NULL, "no codeblob");
-  }
+  assert(cb != NULL, "no codeblob");
 
   NOT_PRODUCT(if (TraceCodeBlobStacks) trace_codeblob_maps(fr, reg_map);)
 
   OopMapSet* maps = cb->oop_maps();
-  OopMap* map  = cb->oop_map_for_return_address(fr->pc());
-  assert(map != NULL, " no ptr map found");
+  OopMap* map = cb->oop_map_for_return_address(fr->pc());
+  assert(map != NULL, "no ptr map found");
 
   // handle derived pointers first (otherwise base pointer may be
   // changed before derived pointer offset has been collected)
@@ -393,8 +390,8 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
     }
   }
 
-  // We want dead, value and oop oop_types
-  int mask = OopMapValue::oop_value | OopMapValue::value_value | OopMapValue::dead_value;
+  // We want coop, value and oop oop_types
+  int mask = OopMapValue::oop_value | OopMapValue::value_value | OopMapValue::narrowoop_value;
   {
     for (OopMapStream oms(map,mask); !oms.is_done(); oms.next()) {
       omv = oms.current();
@@ -402,11 +399,15 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
       if ( loc != NULL ) {
         if ( omv.type() == OopMapValue::oop_value ) {
 #ifdef ASSERT
-          if (COMPILER2_PRESENT(!DoEscapeAnalysis &&) !Universe::heap()->is_in_or_null(*loc)) {
+          if (COMPILER2_PRESENT(!DoEscapeAnalysis &&)
+             (((uintptr_t)loc & (sizeof(*loc)-1)) != 0) ||
+             !Universe::heap()->is_in_or_null(*loc)) {
             tty->print_cr("# Found non oop pointer.  Dumping state at failure");
             // try to dump out some helpful debugging information
             trace_codeblob_maps(fr, reg_map);
             omv.print();
+            tty->print_cr("register r");
+            omv.reg()->print();
             tty->print_cr("loc = %p *loc = %p\n", loc, (address)*loc);
             // do the real assert.
             assert(Universe::heap()->is_in_or_null(*loc), "found non oop pointer");
@@ -415,8 +416,17 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
           oop_fn->do_oop(loc);
         } else if ( omv.type() == OopMapValue::value_value ) {
           value_fn->do_oop(loc);
-        } else if ( omv.type() == OopMapValue::dead_value ) {
-          dead_fn->do_oop(loc);
+        } else if ( omv.type() == OopMapValue::narrowoop_value ) {
+          narrowOop *nl = (narrowOop*)loc;
+#ifndef VM_LITTLE_ENDIAN
+          if (!omv.reg()->is_stack()) {
+            // compressed oops in registers only take up 4 bytes of an
+            // 8 byte register but they are in the wrong part of the
+            // word so adjust loc to point at the right place.
+            nl = (narrowOop*)((address)nl + 4);
+          }
+#endif
+          oop_fn->do_oop(nl);
         }
       }
     }
@@ -519,8 +529,8 @@ void print_register_type(OopMapValue::oop_types x, VMReg optional,
   case OopMapValue::value_value:
     st->print("Value" );
     break;
-  case OopMapValue::dead_value:
-    st->print("Dead" );
+  case OopMapValue::narrowoop_value:
+    tty->print("NarrowOop" );
     break;
   case OopMapValue::callee_saved_value:
     st->print("Callers_" );

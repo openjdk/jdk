@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,34 @@
  *
  */
 
-package sun.jvm.hotspot.debugger;
+package sun.jvm.hotspot.oops;
 
-public class MachineDescriptionSPARC64Bit extends MachineDescriptionTwosComplement implements MachineDescription {
-  public long getAddressSize() {
-    return 8;
+import sun.jvm.hotspot.debugger.*;
+
+// The class for an oop field simply provides access to the value.
+public class NarrowOopField extends OopField {
+  public NarrowOopField(FieldIdentifier id, long offset, boolean isVMField) {
+    super(id, offset, isVMField);
   }
 
-
-  public boolean isBigEndian() {
-    return true;
+  public NarrowOopField(sun.jvm.hotspot.types.OopField vmField, long startOffset) {
+    super(new NamedFieldIdentifier(vmField.getName()), vmField.getOffset() + startOffset, true);
   }
 
-  public boolean isLP64() {
-    return true;
+  public NarrowOopField(InstanceKlass holder, int fieldArrayIndex) {
+    super(holder, fieldArrayIndex);
+  }
+
+  public Oop getValue(Oop obj) {
+    return obj.getHeap().newOop(getValueAsOopHandle(obj));
+  }
+
+  /** Debugging support */
+  public OopHandle getValueAsOopHandle(Oop obj) {
+    return obj.getHandle().getCompOopHandleAt(getOffset());
+  }
+
+  public void setValue(Oop obj) throws MutationException {
+    // Fix this: setOopAt is missing in Address
   }
 }

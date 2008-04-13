@@ -520,16 +520,12 @@ void java_lang_Thread::compute_offsets() {
 
 
 JavaThread* java_lang_Thread::thread(oop java_thread) {
-  return (JavaThread*) java_thread->obj_field(_eetop_offset);
+  return (JavaThread*)java_thread->address_field(_eetop_offset);
 }
 
 
 void java_lang_Thread::set_thread(oop java_thread, JavaThread* thread) {
-  // We are storing a JavaThread* (malloc'ed data) into a long field in the thread
-  // object. The store has to be 64-bit wide so we use a pointer store, but we
-  // cannot call oopDesc::obj_field_put since it includes a write barrier!
-  oop* addr = java_thread->obj_field_addr(_eetop_offset);
-  *addr = (oop) thread;
+  java_thread->address_field_put(_eetop_offset, (address)thread);
 }
 
 
@@ -1038,8 +1034,8 @@ class BacktraceBuilder: public StackObj {
     if (_dirty && _methods != NULL) {
       BarrierSet* bs = Universe::heap()->barrier_set();
       assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
-      bs->write_ref_array(MemRegion((HeapWord*)_methods->obj_at_addr(0),
-                                    _methods->length() * HeapWordsPerOop));
+      bs->write_ref_array(MemRegion((HeapWord*)_methods->base(),
+                                    _methods->array_size()));
       _dirty = false;
     }
   }
@@ -1083,8 +1079,9 @@ class BacktraceBuilder: public StackObj {
       method = mhandle();
     }
 
-    // _methods->obj_at_put(_index, method);
-    *_methods->obj_at_addr(_index) = method;
+     _methods->obj_at_put(_index, method);
+    // bad for UseCompressedOops
+    // *_methods->obj_at_addr(_index) = method;
     _bcis->ushort_at_put(_index, bci);
     _index++;
     _dirty = true;
@@ -1973,39 +1970,30 @@ BasicType java_lang_boxing_object::set_value(oop box, jvalue* value) {
 
 
 // Support for java_lang_ref_Reference
-
-void java_lang_ref_Reference::set_referent(oop ref, oop value) {
-  ref->obj_field_put(referent_offset, value);
-}
-
-oop* java_lang_ref_Reference::referent_addr(oop ref) {
-  return ref->obj_field_addr(referent_offset);
-}
-
-void java_lang_ref_Reference::set_next(oop ref, oop value) {
-  ref->obj_field_put(next_offset, value);
-}
-
-oop* java_lang_ref_Reference::next_addr(oop ref) {
-  return ref->obj_field_addr(next_offset);
-}
-
-void java_lang_ref_Reference::set_discovered(oop ref, oop value) {
-  ref->obj_field_put(discovered_offset, value);
-}
-
-oop* java_lang_ref_Reference::discovered_addr(oop ref) {
-  return ref->obj_field_addr(discovered_offset);
-}
-
-oop* java_lang_ref_Reference::pending_list_lock_addr() {
+oop java_lang_ref_Reference::pending_list_lock() {
   instanceKlass* ik = instanceKlass::cast(SystemDictionary::reference_klass());
-  return (oop*)(((char *)ik->start_of_static_fields()) + static_lock_offset);
+  char *addr = (((char *)ik->start_of_static_fields()) + static_lock_offset);
+  if (UseCompressedOops) {
+    return oopDesc::load_decode_heap_oop((narrowOop *)addr);
+  } else {
+    return oopDesc::load_decode_heap_oop((oop*)addr);
+  }
 }
 
-oop* java_lang_ref_Reference::pending_list_addr() {
+HeapWord *java_lang_ref_Reference::pending_list_addr() {
   instanceKlass* ik = instanceKlass::cast(SystemDictionary::reference_klass());
-  return (oop *)(((char *)ik->start_of_static_fields()) + static_pending_offset);
+  char *addr = (((char *)ik->start_of_static_fields()) + static_pending_offset);
+  // XXX This might not be HeapWord aligned, almost rather be char *.
+  return (HeapWord*)addr;
+}
+
+oop java_lang_ref_Reference::pending_list() {
+  char *addr = (char *)pending_list_addr();
+  if (UseCompressedOops) {
+    return oopDesc::load_decode_heap_oop((narrowOop *)addr);
+  } else {
+    return oopDesc::load_decode_heap_oop((oop*)addr);
+  }
 }
 
 
@@ -2291,8 +2279,11 @@ oop java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(
 // Invoked before SystemDictionary::initialize, so pre-loaded classes
 // are not available to determine the offset_of_static_fields.
 void JavaClasses::compute_hard_coded_offsets() {
-  const int x = wordSize;
-  const int header = instanceOopDesc::header_size_in_bytes();
+  const int x = heapOopSize;
+  // Objects don't get allocated in the gap in the header with compressed oops
+  // for these special classes because hard coded offsets can't be conditional
+  // so base_offset_in_bytes() is wrong here, allocate after the header.
+  const int header = sizeof(instanceOopDesc);
 
   // Do the String Class
   java_lang_String::value_offset  = java_lang_String::hc_value_offset  * x + header;

@@ -35,6 +35,7 @@ uint ConNode::hash() const {
 
 //------------------------------make-------------------------------------------
 ConNode *ConNode::make( Compile* C, const Type *t ) {
+  if (t->isa_narrowoop()) return new (C, 1) ConNNode( t->is_narrowoop() );
   switch( t->basic_type() ) {
   case T_INT:       return new (C, 1) ConINode( t->is_int() );
   case T_ARRAY:     return new (C, 1) ConPNode( t->is_aryptr() );
@@ -461,7 +462,8 @@ static bool can_cause_alias(Node *n, PhaseTransform *phase) {
     possible_alias = n->is_Phi() ||
         opc == Op_CheckCastPP ||
         opc == Op_StorePConditional ||
-        opc == Op_CompareAndSwapP;
+        opc == Op_CompareAndSwapP ||
+        opc == Op_CompareAndSwapN;
   }
   return possible_alias;
 }
@@ -548,6 +550,41 @@ const Type *CheckCastPPNode::Value( PhaseTransform *phase ) const {
 Node *CheckCastPPNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return (in(0) && remove_dead_region(phase, can_reshape)) ? this : NULL;
 }
+
+
+Node* DecodeNNode::Identity(PhaseTransform* phase) {
+  const Type *t = phase->type( in(1) );
+  if( t == Type::TOP ) return in(1);
+
+  if (in(1)->Opcode() == Op_EncodeP) {
+    // (DecodeN (EncodeP p)) -> p
+    return in(1)->in(1);
+  }
+  return this;
+}
+
+Node* EncodePNode::Identity(PhaseTransform* phase) {
+  const Type *t = phase->type( in(1) );
+  if( t == Type::TOP ) return in(1);
+
+  if (in(1)->Opcode() == Op_DecodeN) {
+    // (EncodeP (DecodeN p)) -> p
+    return in(1)->in(1);
+  }
+  return this;
+}
+
+
+Node* EncodePNode::encode(PhaseGVN* phase, Node* value) {
+  const Type* newtype = value->bottom_type();
+  if (newtype == TypePtr::NULL_PTR) {
+    return phase->transform(new (phase->C, 1) ConNNode(TypeNarrowOop::NULL_PTR));
+  } else {
+    return phase->transform(new (phase->C, 2) EncodePNode(value,
+                                                          newtype->is_oopptr()->make_narrowoop()));
+  }
+}
+
 
 //=============================================================================
 //------------------------------Identity---------------------------------------

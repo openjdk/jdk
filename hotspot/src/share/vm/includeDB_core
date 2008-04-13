@@ -191,7 +191,6 @@ array.hpp                               allocation.inline.hpp
 arrayKlass.cpp                          arrayKlass.hpp
 arrayKlass.cpp                          arrayKlassKlass.hpp
 arrayKlass.cpp                          arrayOop.hpp
-arrayKlass.cpp                          collectedHeap.hpp
 arrayKlass.cpp                          collectedHeap.inline.hpp
 arrayKlass.cpp                          gcLocker.hpp
 arrayKlass.cpp                          instanceKlass.hpp
@@ -211,6 +210,7 @@ arrayKlass.hpp                          universe.hpp
 arrayKlassKlass.cpp                     arrayKlassKlass.hpp
 arrayKlassKlass.cpp                     handles.inline.hpp
 arrayKlassKlass.cpp                     javaClasses.hpp
+arrayKlassKlass.cpp                     markSweep.inline.hpp
 arrayKlassKlass.cpp                     oop.inline.hpp
 
 arrayKlassKlass.hpp                     arrayKlass.hpp
@@ -250,7 +250,7 @@ assembler.inline.hpp                    threadLocalStorage.hpp
 assembler_<arch_model>.cpp              assembler_<arch_model>.inline.hpp
 assembler_<arch_model>.cpp              biasedLocking.hpp
 assembler_<arch_model>.cpp              cardTableModRefBS.hpp
-assembler_<arch_model>.cpp              collectedHeap.hpp
+assembler_<arch_model>.cpp              collectedHeap.inline.hpp
 assembler_<arch_model>.cpp              interfaceSupport.hpp
 assembler_<arch_model>.cpp              interpreter.hpp
 assembler_<arch_model>.cpp              objectMonitor.hpp
@@ -331,9 +331,8 @@ bitMap.hpp                              top.hpp
 bitMap.inline.hpp                       atomic.hpp
 bitMap.inline.hpp                       bitMap.hpp
 
-blockOffsetTable.cpp                    blockOffsetTable.hpp
 blockOffsetTable.cpp                    blockOffsetTable.inline.hpp
-blockOffsetTable.cpp                    collectedHeap.hpp
+blockOffsetTable.cpp                    collectedHeap.inline.hpp
 blockOffsetTable.cpp                    iterator.hpp
 blockOffsetTable.cpp                    java.hpp
 blockOffsetTable.cpp                    oop.inline.hpp
@@ -990,6 +989,7 @@ codeCache.cpp                           methodOop.hpp
 codeCache.cpp                           mutexLocker.hpp
 codeCache.cpp                           nmethod.hpp
 codeCache.cpp                           objArrayOop.hpp
+codeCache.cpp                           oop.inline.hpp
 codeCache.cpp                           pcDesc.hpp
 codeCache.cpp                           resourceArea.hpp
 
@@ -1124,7 +1124,7 @@ compiledICHolderKlass.cpp               collectedHeap.inline.hpp
 compiledICHolderKlass.cpp               compiledICHolderKlass.hpp
 compiledICHolderKlass.cpp               handles.inline.hpp
 compiledICHolderKlass.cpp               javaClasses.hpp
-compiledICHolderKlass.cpp               markSweep.hpp
+compiledICHolderKlass.cpp               markSweep.inline.hpp
 compiledICHolderKlass.cpp               oop.inline.hpp
 compiledICHolderKlass.cpp               oop.inline2.hpp
 compiledICHolderKlass.cpp               permGen.hpp
@@ -1192,6 +1192,7 @@ constMethodKlass.cpp                    constMethodOop.hpp
 constMethodKlass.cpp                    gcLocker.hpp
 constMethodKlass.cpp                    handles.inline.hpp
 constMethodKlass.cpp                    interpreter.hpp
+constMethodKlass.cpp                    markSweep.inline.hpp
 constMethodKlass.cpp                    oop.inline.hpp
 constMethodKlass.cpp                    oop.inline2.hpp
 constMethodKlass.cpp                    resourceArea.hpp
@@ -1210,6 +1211,8 @@ constantPoolKlass.cpp                   collectedHeap.inline.hpp
 constantPoolKlass.cpp                   constantPoolKlass.hpp
 constantPoolKlass.cpp                   constantPoolOop.hpp
 constantPoolKlass.cpp                   handles.inline.hpp
+constantPoolKlass.cpp                   javaClasses.hpp
+constantPoolKlass.cpp                   markSweep.inline.hpp
 constantPoolKlass.cpp                   oop.inline.hpp
 constantPoolKlass.cpp                   oop.inline2.hpp
 constantPoolKlass.cpp                   oopFactory.hpp
@@ -1261,7 +1264,8 @@ cpCacheKlass.cpp                        collectedHeap.hpp
 cpCacheKlass.cpp                        constantPoolOop.hpp
 cpCacheKlass.cpp                        cpCacheKlass.hpp
 cpCacheKlass.cpp                        handles.inline.hpp
-cpCacheKlass.cpp                        markSweep.hpp
+cpCacheKlass.cpp                        javaClasses.hpp
+cpCacheKlass.cpp                        markSweep.inline.hpp
 cpCacheKlass.cpp                        oop.inline.hpp
 cpCacheKlass.cpp                        permGen.hpp
 
@@ -1273,7 +1277,6 @@ cpCacheOop.cpp                          cpCacheOop.hpp
 cpCacheOop.cpp                          handles.inline.hpp
 cpCacheOop.cpp                          interpreter.hpp
 cpCacheOop.cpp                          jvmtiRedefineClassesTrace.hpp
-cpCacheOop.cpp                          markSweep.hpp
 cpCacheOop.cpp                          markSweep.inline.hpp
 cpCacheOop.cpp                          objArrayOop.hpp
 cpCacheOop.cpp                          oop.inline.hpp
@@ -1385,7 +1388,6 @@ debug_<arch>.cpp                        top.hpp
 
 defNewGeneration.cpp                    collectorCounters.hpp
 defNewGeneration.cpp                    copy.hpp
-defNewGeneration.cpp                    defNewGeneration.hpp
 defNewGeneration.cpp                    defNewGeneration.inline.hpp
 defNewGeneration.cpp                    gcLocker.inline.hpp
 defNewGeneration.cpp                    gcPolicyCounters.hpp
@@ -1397,7 +1399,6 @@ defNewGeneration.cpp                    iterator.hpp
 defNewGeneration.cpp                    java.hpp
 defNewGeneration.cpp                    oop.inline.hpp
 defNewGeneration.cpp                    referencePolicy.hpp
-defNewGeneration.cpp                    space.hpp
 defNewGeneration.cpp                    space.inline.hpp
 defNewGeneration.cpp                    thread_<os_family>.inline.hpp
 
@@ -1406,6 +1407,7 @@ defNewGeneration.hpp                    cSpaceCounters.hpp
 defNewGeneration.hpp                    generation.inline.hpp
 defNewGeneration.hpp                    generationCounters.hpp
 
+defNewGeneration.inline.hpp             cardTableRS.hpp
 defNewGeneration.inline.hpp             defNewGeneration.hpp
 defNewGeneration.inline.hpp             space.hpp
 
@@ -1956,6 +1958,7 @@ instanceKlass.cpp                       javaClasses.hpp
 instanceKlass.cpp                       jvmti.h
 instanceKlass.cpp                       jvmtiExport.hpp
 instanceKlass.cpp                       jvmtiRedefineClassesTrace.hpp
+instanceKlass.cpp                       markSweep.inline.hpp
 instanceKlass.cpp                       methodOop.hpp
 instanceKlass.cpp                       mutexLocker.hpp
 instanceKlass.cpp                       objArrayKlassKlass.hpp
@@ -1991,6 +1994,7 @@ instanceKlassKlass.cpp                  instanceKlassKlass.hpp
 instanceKlassKlass.cpp                  instanceRefKlass.hpp
 instanceKlassKlass.cpp                  javaClasses.hpp
 instanceKlassKlass.cpp                  jvmtiExport.hpp
+instanceKlassKlass.cpp                  markSweep.inline.hpp
 instanceKlassKlass.cpp                  objArrayKlassKlass.hpp
 instanceKlassKlass.cpp                  objArrayOop.hpp
 instanceKlassKlass.cpp                  oop.inline.hpp
@@ -2012,7 +2016,7 @@ instanceRefKlass.cpp                    genCollectedHeap.hpp
 instanceRefKlass.cpp                    genOopClosures.inline.hpp
 instanceRefKlass.cpp                    instanceRefKlass.hpp
 instanceRefKlass.cpp                    javaClasses.hpp
-instanceRefKlass.cpp                    markSweep.hpp
+instanceRefKlass.cpp                    markSweep.inline.hpp
 instanceRefKlass.cpp                    oop.inline.hpp
 instanceRefKlass.cpp                    preserveException.hpp
 instanceRefKlass.cpp                    systemDictionary.hpp
@@ -2492,7 +2496,7 @@ klassKlass.cpp                          instanceKlass.hpp
 klassKlass.cpp                          instanceOop.hpp
 klassKlass.cpp                          klassKlass.hpp
 klassKlass.cpp                          klassOop.hpp
-klassKlass.cpp                          markSweep.hpp
+klassKlass.cpp                          markSweep.inline.hpp
 klassKlass.cpp                          methodKlass.hpp
 klassKlass.cpp                          objArrayKlass.hpp
 klassKlass.cpp                          oop.inline.hpp
@@ -2519,7 +2523,7 @@ klassVtable.cpp                         instanceKlass.hpp
 klassVtable.cpp                         jvmtiRedefineClassesTrace.hpp
 klassVtable.cpp                         klassOop.hpp
 klassVtable.cpp                         klassVtable.hpp
-klassVtable.cpp                         markSweep.hpp
+klassVtable.cpp                         markSweep.inline.hpp
 klassVtable.cpp                         methodOop.hpp
 klassVtable.cpp                         objArrayOop.hpp
 klassVtable.cpp                         oop.inline.hpp
@@ -2632,6 +2636,9 @@ markOop.inline.hpp                      klassOop.hpp
 markOop.inline.hpp                      markOop.hpp
 
 markSweep.cpp                           compileBroker.hpp
+
+markSweep.hpp                           collectedHeap.hpp
+
 memRegion.cpp                           globals.hpp
 memRegion.cpp                           memRegion.hpp
 
@@ -2731,7 +2738,7 @@ methodDataKlass.cpp                     collectedHeap.inline.hpp
 methodDataKlass.cpp                     gcLocker.hpp
 methodDataKlass.cpp                     handles.inline.hpp
 methodDataKlass.cpp                     klassOop.hpp
-methodDataKlass.cpp                     markSweep.hpp
+methodDataKlass.cpp                     markSweep.inline.hpp
 methodDataKlass.cpp                     methodDataKlass.hpp
 methodDataKlass.cpp                     methodDataOop.hpp
 methodDataKlass.cpp                     oop.inline.hpp
@@ -2746,7 +2753,6 @@ methodDataOop.cpp                       bytecodeStream.hpp
 methodDataOop.cpp                       deoptimization.hpp
 methodDataOop.cpp                       handles.inline.hpp
 methodDataOop.cpp                       linkResolver.hpp
-methodDataOop.cpp                       markSweep.hpp
 methodDataOop.cpp                       markSweep.inline.hpp
 methodDataOop.cpp                       methodDataOop.hpp
 methodDataOop.cpp                       oop.inline.hpp
@@ -2764,7 +2770,7 @@ methodKlass.cpp                         handles.inline.hpp
 methodKlass.cpp                         interpreter.hpp
 methodKlass.cpp                         javaClasses.hpp
 methodKlass.cpp                         klassOop.hpp
-methodKlass.cpp                         markSweep.hpp
+methodKlass.cpp                         markSweep.inline.hpp
 methodKlass.cpp                         methodDataOop.hpp
 methodKlass.cpp                         methodKlass.hpp
 methodKlass.cpp                         oop.inline.hpp
@@ -2941,6 +2947,7 @@ objArrayKlass.cpp                       systemDictionary.hpp
 objArrayKlass.cpp                       universe.inline.hpp
 objArrayKlass.cpp                       vmSymbols.hpp
 
+
 objArrayKlass.hpp                       arrayKlass.hpp
 objArrayKlass.hpp                       instanceKlass.hpp
 objArrayKlass.hpp                       specialized_oop_closures.hpp
@@ -2948,6 +2955,7 @@ objArrayKlass.hpp                       specialized_oop_closures.hpp
 objArrayKlassKlass.cpp                  collectedHeap.inline.hpp
 objArrayKlassKlass.cpp                  instanceKlass.hpp
 objArrayKlassKlass.cpp                  javaClasses.hpp
+objArrayKlassKlass.cpp                  markSweep.inline.hpp
 objArrayKlassKlass.cpp                  objArrayKlassKlass.hpp
 objArrayKlassKlass.cpp                  oop.inline.hpp
 objArrayKlassKlass.cpp                  oop.inline2.hpp
@@ -2956,6 +2964,7 @@ objArrayKlassKlass.cpp                  systemDictionary.hpp
 objArrayKlassKlass.hpp                  arrayKlassKlass.hpp
 objArrayKlassKlass.hpp                  objArrayKlass.hpp
 
+objArrayOop.cpp                         objArrayKlass.hpp
 objArrayOop.cpp                         objArrayOop.hpp
 objArrayOop.cpp                         oop.inline.hpp
 
@@ -3005,7 +3014,6 @@ oop.inline.hpp                          generation.hpp
 oop.inline.hpp                          klass.hpp
 oop.inline.hpp                          klassOop.hpp
 oop.inline.hpp                          markOop.inline.hpp
-oop.inline.hpp                          markSweep.hpp
 oop.inline.hpp                          markSweep.inline.hpp
 oop.inline.hpp                          oop.hpp
 oop.inline.hpp                          os.hpp
@@ -4536,6 +4544,7 @@ vtableStubs.cpp                         handles.inline.hpp
 vtableStubs.cpp                         instanceKlass.hpp
 vtableStubs.cpp                         jvmtiExport.hpp
 vtableStubs.cpp                         klassVtable.hpp
+vtableStubs.cpp                         oop.inline.hpp
 vtableStubs.cpp                         mutexLocker.hpp
 vtableStubs.cpp                         resourceArea.hpp
 vtableStubs.cpp                         sharedRuntime.hpp

@@ -452,8 +452,7 @@ public:
   // gen; return the new location of obj if successful.  Otherwise, return NULL.
   oop handle_failed_promotion(Generation* gen,
                               oop obj,
-                              size_t obj_size,
-                              oop* ref);
+                              size_t obj_size);
 
 private:
   // Accessor for memory state verification support

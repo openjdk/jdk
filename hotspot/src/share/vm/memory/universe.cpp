@@ -99,6 +99,7 @@ size_t          Universe::_heap_capacity_at_last_gc;
 size_t          Universe::_heap_used_at_last_gc;
 
 CollectedHeap*  Universe::_collectedHeap = NULL;
+address         Universe::_heap_base = NULL;
 
 
 void Universe::basic_type_classes_do(void f(klassOop)) {
@@ -464,7 +465,7 @@ void Universe::init_self_patching_vtbl_list(void** list, int count) {
 
 class FixupMirrorClosure: public ObjectClosure {
  public:
-  void do_object(oop obj) {
+  virtual void do_object(oop obj) {
     if (obj->is_klass()) {
       EXCEPTION_MARK;
       KlassHandle k(THREAD, klassOop(obj));
@@ -667,7 +668,7 @@ jint universe_init() {
          "LogHeapWordSize is incorrect.");
   guarantee(sizeof(oop) >= sizeof(HeapWord), "HeapWord larger than oop?");
   guarantee(sizeof(oop) % sizeof(HeapWord) == 0,
-         "oop size is not not a multiple of HeapWord size");
+            "oop size is not not a multiple of HeapWord size");
   TraceTime timer("Genesis", TraceStartupTime);
   GC_locker::lock();  // do not allow gc during bootstrapping
   JavaClasses::compute_hard_coded_offsets();
@@ -758,6 +759,15 @@ jint Universe::initialize_heap() {
   jint status = Universe::heap()->initialize();
   if (status != JNI_OK) {
     return status;
+  }
+  if (UseCompressedOops) {
+    // Subtract a page because something can get allocated at heap base.
+    // This also makes implicit null checking work, because the
+    // memory+1 page below heap_base needs to cause a signal.
+    // See needs_explicit_null_check.
+    // Only set the heap base for compressed oops because it indicates
+    // compressed oops for pstack code.
+    Universe::_heap_base = Universe::heap()->base() - os::vm_page_size();
   }
 
   // We will never reach the CATCH below since Exceptions::_throw will cause

@@ -61,7 +61,7 @@ public:
          unused_value =0,       // powers of 2, for masking OopMapStream
          oop_value = 1,
          value_value = 2,
-         dead_value = 4,
+         narrowoop_value = 4,
          callee_saved_value = 8,
          derived_oop_value= 16,
          stack_obj = 32 };
@@ -90,14 +90,14 @@ public:
   // Querying
   bool is_oop()               { return mask_bits(value(), type_mask_in_place) == oop_value; }
   bool is_value()             { return mask_bits(value(), type_mask_in_place) == value_value; }
-  bool is_dead()              { return mask_bits(value(), type_mask_in_place) == dead_value; }
+  bool is_narrowoop()           { return mask_bits(value(), type_mask_in_place) == narrowoop_value; }
   bool is_callee_saved()      { return mask_bits(value(), type_mask_in_place) == callee_saved_value; }
   bool is_derived_oop()       { return mask_bits(value(), type_mask_in_place) == derived_oop_value; }
   bool is_stack_obj()         { return mask_bits(value(), type_mask_in_place) == stack_obj; }
 
   void set_oop()              { set_value((value() & register_mask_in_place) | oop_value); }
   void set_value()            { set_value((value() & register_mask_in_place) | value_value); }
-  void set_dead()             { set_value((value() & register_mask_in_place) | dead_value); }
+  void set_narrowoop()          { set_value((value() & register_mask_in_place) | narrowoop_value); }
   void set_callee_saved()     { set_value((value() & register_mask_in_place) | callee_saved_value); }
   void set_derived_oop()      { set_value((value() & register_mask_in_place) | derived_oop_value); }
   void set_stack_obj()        { set_value((value() & register_mask_in_place) | stack_obj); }
@@ -176,6 +176,7 @@ class OopMap: public ResourceObj {
   // slots to hold 4-byte values like ints and floats in the LP64 build.
   void set_oop  ( VMReg local);
   void set_value( VMReg local);
+  void set_narrowoop(VMReg local);
   void set_dead ( VMReg local);
   void set_callee_saved( VMReg local, VMReg caller_machine_register );
   void set_derived_oop ( VMReg local, VMReg derived_from_local_register );
@@ -245,7 +246,7 @@ class OopMapSet : public ResourceObj {
   static void all_do(const frame* fr, const RegisterMap* reg_map,
                      OopClosure* oop_fn,
                      void derived_oop_fn(oop* base, oop* derived),
-                     OopClosure* value_fn, OopClosure* dead_fn);
+                     OopClosure* value_fn);
 
   // Printing
   void print_on(outputStream* st) const;

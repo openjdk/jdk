@@ -2341,7 +2341,7 @@ void ClassFileParser::java_lang_Class_fix_post(int* next_nonstatic_oop_offset_pt
   // Incrementing next_nonstatic_oop_offset here advances the
   // location where the real java fields are placed.
   const int extra = java_lang_Class::number_of_fake_oop_fields;
-  (*next_nonstatic_oop_offset_ptr) += (extra * wordSize);
+  (*next_nonstatic_oop_offset_ptr) += (extra * heapOopSize);
 }
 
 
@@ -2647,7 +2647,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
                                   align_object_offset(vtable_size) +
                                   align_object_offset(itable_size)) * wordSize;
     next_static_double_offset   = next_static_oop_offset +
-                                  (fac.static_oop_count * oopSize);
+                                  (fac.static_oop_count * heapOopSize);
     if ( fac.static_double_count &&
          (Universe::field_type_should_be_aligned(T_DOUBLE) ||
           Universe::field_type_should_be_aligned(T_LONG)) ) {
@@ -2687,6 +2687,14 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     int nonstatic_byte_count   = fac.nonstatic_byte_count;
     int nonstatic_oop_count    = fac.nonstatic_oop_count;
 
+    bool super_has_nonstatic_fields =
+            (super_klass() != NULL && super_klass->has_nonstatic_fields());
+    bool has_nonstatic_fields  =  super_has_nonstatic_fields ||
+            ((nonstatic_double_count + nonstatic_word_count +
+              nonstatic_short_count + nonstatic_byte_count +
+              nonstatic_oop_count) != 0);
+
+
     // Prepare list of oops for oop maps generation.
     u2* nonstatic_oop_offsets;
     u2* nonstatic_oop_length;
@@ -2703,7 +2711,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
       java_lang_Class_fix_post(&next_nonstatic_field_offset);
       nonstatic_oop_offsets[0] = (u2)first_nonstatic_field_offset;
       int fake_oop_count       = (( next_nonstatic_field_offset -
-                                    first_nonstatic_field_offset ) / oopSize);
+                                    first_nonstatic_field_offset ) / heapOopSize);
       nonstatic_oop_length [0] = (u2)fake_oop_count;
       nonstatic_oop_map_count  = 1;
       nonstatic_oop_count     -= fake_oop_count;
@@ -2715,7 +2723,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
 #ifndef PRODUCT
     if( PrintCompactFieldsSavings ) {
       next_nonstatic_double_offset = next_nonstatic_field_offset +
-                                     (nonstatic_oop_count * oopSize);
+                                     (nonstatic_oop_count * heapOopSize);
       if ( nonstatic_double_count > 0 ) {
         next_nonstatic_double_offset = align_size_up(next_nonstatic_double_offset, BytesPerLong);
       }
@@ -2749,7 +2757,15 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
          class_name() == vmSymbols::java_lang_ref_SoftReference() ||
          class_name() == vmSymbols::java_lang_StackTraceElement() ||
          class_name() == vmSymbols::java_lang_String() ||
-         class_name() == vmSymbols::java_lang_Throwable()) ) {
+         class_name() == vmSymbols::java_lang_Throwable() ||
+         class_name() == vmSymbols::java_lang_Boolean() ||
+         class_name() == vmSymbols::java_lang_Character() ||
+         class_name() == vmSymbols::java_lang_Float() ||
+         class_name() == vmSymbols::java_lang_Double() ||
+         class_name() == vmSymbols::java_lang_Byte() ||
+         class_name() == vmSymbols::java_lang_Short() ||
+         class_name() == vmSymbols::java_lang_Integer() ||
+         class_name() == vmSymbols::java_lang_Long())) {
       allocation_style = 0;     // Allocate oops first
       compact_fields   = false; // Don't compact fields
     }
@@ -2758,7 +2774,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
       // Fields order: oops, longs/doubles, ints, shorts/chars, bytes
       next_nonstatic_oop_offset    = next_nonstatic_field_offset;
       next_nonstatic_double_offset = next_nonstatic_oop_offset +
-                                     (nonstatic_oop_count * oopSize);
+                                      (nonstatic_oop_count * heapOopSize);
     } else if( allocation_style == 1 ) {
       // Fields order: longs/doubles, ints, shorts/chars, bytes, oops
       next_nonstatic_double_offset = next_nonstatic_field_offset;
@@ -2775,8 +2791,18 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     int nonstatic_short_space_offset;
     int nonstatic_byte_space_offset;
 
-    if( nonstatic_double_count > 0 ) {
-      int offset = next_nonstatic_double_offset;
+    bool compact_into_header = (UseCompressedOops &&
+                                allocation_style == 1 && compact_fields &&
+                                !super_has_nonstatic_fields);
+
+    if( compact_into_header || nonstatic_double_count > 0 ) {
+      int offset;
+      // Pack something in with the header if no super klass has done so.
+      if (compact_into_header) {
+        offset = oopDesc::klass_gap_offset_in_bytes();
+      } else {
+        offset = next_nonstatic_double_offset;
+      }
       next_nonstatic_double_offset = align_size_up(offset, BytesPerLong);
       if( compact_fields && offset != next_nonstatic_double_offset ) {
         // Allocate available fields into the gap before double field.
@@ -2804,12 +2830,13 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
         }
         // Allocate oop field in the gap if there are no other fields for that.
         nonstatic_oop_space_offset = offset;
-        if( length >= oopSize && nonstatic_oop_count > 0 &&
+        if(!compact_into_header && length >= heapOopSize &&
+            nonstatic_oop_count > 0 &&
             allocation_style != 0 ) { // when oop fields not first
           nonstatic_oop_count      -= 1;
           nonstatic_oop_space_count = 1; // Only one will fit
-          length -= oopSize;
-          offset += oopSize;
+          length -= heapOopSize;
+          offset += heapOopSize;
         }
       }
     }
@@ -2828,9 +2855,9 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
       next_nonstatic_oop_offset = next_nonstatic_byte_offset + nonstatic_byte_count;
       if( nonstatic_oop_count > 0 ) {
         notaligned_offset = next_nonstatic_oop_offset;
-        next_nonstatic_oop_offset = align_size_up(next_nonstatic_oop_offset, oopSize);
+        next_nonstatic_oop_offset = align_size_up(next_nonstatic_oop_offset, heapOopSize);
       }
-      notaligned_offset = next_nonstatic_oop_offset + (nonstatic_oop_count * oopSize);
+      notaligned_offset = next_nonstatic_oop_offset + (nonstatic_oop_count * heapOopSize);
     }
     next_nonstatic_type_offset = align_size_up(notaligned_offset, wordSize );
     nonstatic_field_size = nonstatic_field_size + ((next_nonstatic_type_offset
@@ -2846,7 +2873,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
       switch (atype) {
         case STATIC_OOP:
           real_offset = next_static_oop_offset;
-          next_static_oop_offset += oopSize;
+          next_static_oop_offset += heapOopSize;
           break;
         case STATIC_BYTE:
           real_offset = next_static_byte_offset;
@@ -2868,16 +2895,16 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
         case NONSTATIC_OOP:
           if( nonstatic_oop_space_count > 0 ) {
             real_offset = nonstatic_oop_space_offset;
-            nonstatic_oop_space_offset += oopSize;
+            nonstatic_oop_space_offset += heapOopSize;
             nonstatic_oop_space_count  -= 1;
           } else {
             real_offset = next_nonstatic_oop_offset;
-            next_nonstatic_oop_offset += oopSize;
+            next_nonstatic_oop_offset += heapOopSize;
           }
           // Update oop maps
           if( nonstatic_oop_map_count > 0 &&
               nonstatic_oop_offsets[nonstatic_oop_map_count - 1] ==
-              (u2)(real_offset - nonstatic_oop_length[nonstatic_oop_map_count - 1] * oopSize) ) {
+              (u2)(real_offset - nonstatic_oop_length[nonstatic_oop_map_count - 1] * heapOopSize) ) {
             // Extend current oop map
             nonstatic_oop_length[nonstatic_oop_map_count - 1] += 1;
           } else {
@@ -2970,6 +2997,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     //this_klass->set_super(super_klass());
     this_klass->set_class_loader(class_loader());
     this_klass->set_nonstatic_field_size(nonstatic_field_size);
+    this_klass->set_has_nonstatic_fields(has_nonstatic_fields);
     this_klass->set_static_oop_field_size(fac.static_oop_count);
     cp->set_pool_holder(this_klass());
     this_klass->set_constants(cp());
@@ -3128,7 +3156,7 @@ int ClassFileParser::compute_oop_map_size(instanceKlassHandle super, int nonstat
       OopMapBlock* first_map = super->start_of_nonstatic_oop_maps();
       OopMapBlock* last_map = first_map + map_size - 1;
 
-      int next_offset = last_map->offset() + (last_map->length() * oopSize);
+      int next_offset = last_map->offset() + (last_map->length() * heapOopSize);
       if (next_offset == first_nonstatic_oop_offset) {
         // There is no gap bettwen superklass's last oop field and first
         // local oop field, merge maps.

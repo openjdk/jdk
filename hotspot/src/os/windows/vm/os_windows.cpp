@@ -3116,7 +3116,7 @@ jint os::init_2(void) {
   // as reserve size, since on a 64-bit platform we'll run into that more
   // often than running out of virtual memory space.  We can use the
   // lower value of the two calculations as the os_thread_limit.
-  size_t max_address_space = ((size_t)1 << (BitsPerOop - 1)) - (200 * K * K);
+  size_t max_address_space = ((size_t)1 << (BitsPerWord - 1)) - (200 * K * K);
   win32::_os_thread_limit = (intx)(max_address_space / actual_reserve_size);
 
   // at exit methods are called in the reverse order of their registration.

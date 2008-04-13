@@ -37,7 +37,7 @@ class Argument VALUE_OBJ_CLASS_SPEC {
 #else
     n_int_register_parameters_c   = 6, // rdi, rsi, rdx, rcx, r8, r9 (c_rarg0, c_rarg1, ...)
     n_float_register_parameters_c = 8,  // xmm0 - xmm7 (c_farg0, c_farg1, ... )
-#endif
+#endif  // _WIN64
     n_int_register_parameters_j   = 6, // j_rarg0, j_rarg1, ...
     n_float_register_parameters_j = 8  // j_farg0, j_farg1, ...
   };
@@ -77,7 +77,7 @@ REGISTER_DECLARATION(XMMRegister, c_farg5, xmm5);
 REGISTER_DECLARATION(XMMRegister, c_farg6, xmm6);
 REGISTER_DECLARATION(XMMRegister, c_farg7, xmm7);
 
-#endif
+#endif  // _WIN64
 
 // Symbolically name the register arguments used by the Java calling convention.
 // We have control over the convention for java so we can do what we please.
@@ -105,7 +105,7 @@ REGISTER_DECLARATION(Register, j_rarg4, rsi);
 #else
 REGISTER_DECLARATION(Register, j_rarg3, c_rarg4);
 REGISTER_DECLARATION(Register, j_rarg4, c_rarg5);
-#endif /* _WIN64 */
+#endif // _WIN64
 REGISTER_DECLARATION(Register, j_rarg5, c_rarg0);
 
 REGISTER_DECLARATION(XMMRegister, j_farg0, xmm0);
@@ -120,7 +120,8 @@ REGISTER_DECLARATION(XMMRegister, j_farg7, xmm7);
 REGISTER_DECLARATION(Register, rscratch1, r10);  // volatile
 REGISTER_DECLARATION(Register, rscratch2, r11);  // volatile
 
-REGISTER_DECLARATION(Register, r15_thread, r15); // callee-saved
+REGISTER_DECLARATION(Register, r12_heapbase, r12); // callee-saved
+REGISTER_DECLARATION(Register, r15_thread, r15);   // callee-saved
 
 #endif // _LP64
 
@@ -785,7 +786,8 @@ class Assembler : public AbstractAssembler  {
   void rep_movl();
   void rep_movq();
   void rep_set();
-  void repne_scan();
+  void repne_scanl();
+  void repne_scanq();
   void setb(Condition cc, Register dst);
 
   void clflush(Address adr);
@@ -1099,6 +1101,17 @@ class MacroAssembler : public Assembler {
   void movbool(Address dst, Register src);
   void testbool(Register dst);
 
+  // oop manipulations
+  void load_klass(Register dst, Register src);
+  void store_klass(Register dst, Register src);
+
+  void load_heap_oop(Register dst, Address src);
+  void store_heap_oop(Address dst, Register src);
+  void encode_heap_oop(Register r);
+  void decode_heap_oop(Register r);
+  void encode_heap_oop_not_null(Register r);
+  void decode_heap_oop_not_null(Register r);
+
   // Stack frame creation/removal
   void enter();
   void leave();
@@ -1249,6 +1262,9 @@ class MacroAssembler : public Assembler {
   // only if +VerifyOops
   void verify_oop(Register reg, const char* s = "broken oop");
   void verify_oop_addr(Address addr, const char * s = "broken oop addr");
+
+  // if heap base register is used - reinit it with the correct value
+  void reinit_heapbase();
 
   // only if +VerifyFPU
   void verify_FPU(int stack_depth, const char* s = "illegal FPU state") {}

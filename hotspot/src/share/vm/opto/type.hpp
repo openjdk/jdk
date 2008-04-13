@@ -41,6 +41,7 @@ class   TypeD;
 class   TypeF;
 class   TypeInt;
 class   TypeLong;
+class   TypeNarrowOop;
 class   TypeAry;
 class   TypeTuple;
 class   TypePtr;
@@ -64,6 +65,7 @@ public:
     Int,                        // Integer range (lo-hi)
     Long,                       // Long integer range (lo-hi)
     Half,                       // Placeholder half of doubleword
+    NarrowOop,                  // Compressed oop pointer
 
     Tuple,                      // Method signature or object layout
     Array,                      // Array types
@@ -188,6 +190,11 @@ public:
   // Currently, it also works around limitations involving interface types.
   virtual const Type *filter( const Type *kills ) const;
 
+  // Returns true if this pointer points at memory which contains a
+  // compressed oop references.  In 32-bit builds it's non-virtual
+  // since we don't support compressed oops at all in the mode.
+  LP64_ONLY(virtual) bool is_narrow() const { return false; }
+
   // Convenience access
   float getf() const;
   double getd() const;
@@ -204,15 +211,18 @@ public:
   const TypeAry    *is_ary() const;              // Array, NOT array pointer
   const TypePtr    *is_ptr() const;              // Asserts it is a ptr type
   const TypePtr    *isa_ptr() const;             // Returns NULL if not ptr type
-  const TypeRawPtr *is_rawptr() const;           // NOT Java oop
-  const TypeOopPtr *isa_oopptr() const;          // Returns NULL if not ptr type
-  const TypeKlassPtr *isa_klassptr() const; // Returns NULL if not KlassPtr
-  const TypeKlassPtr *is_klassptr() const; // assert if not KlassPtr
-  const TypeOopPtr  *is_oopptr() const;          // Java-style GC'd pointer
-  const TypeInstPtr *isa_instptr() const;        // Returns NULL if not InstPtr
-  const TypeInstPtr *is_instptr() const;         // Instance
-  const TypeAryPtr *isa_aryptr() const;          // Returns NULL if not AryPtr
-  const TypeAryPtr *is_aryptr() const;           // Array oop
+  const TypeRawPtr *isa_rawptr() const;          // NOT Java oop
+  const TypeRawPtr *is_rawptr() const;           // Asserts is rawptr
+  const TypeNarrowOop  *is_narrowoop() const;        // Java-style GC'd pointer
+  const TypeNarrowOop  *isa_narrowoop() const;       // Returns NULL if not oop ptr type
+  const TypeOopPtr   *isa_oopptr() const;        // Returns NULL if not oop ptr type
+  const TypeOopPtr   *is_oopptr() const;         // Java-style GC'd pointer
+  const TypeKlassPtr *isa_klassptr() const;      // Returns NULL if not KlassPtr
+  const TypeKlassPtr *is_klassptr() const;       // assert if not KlassPtr
+  const TypeInstPtr  *isa_instptr() const;       // Returns NULL if not InstPtr
+  const TypeInstPtr  *is_instptr() const;        // Instance
+  const TypeAryPtr   *isa_aryptr() const;        // Returns NULL if not AryPtr
+  const TypeAryPtr   *is_aryptr() const;         // Array oop
   virtual bool      is_finite() const;           // Has a finite value
   virtual bool      is_nan()    const;           // Is not a number (NaN)
 
@@ -540,6 +550,7 @@ public:
 // Otherwise the _base will indicate which subset of pointers is affected,
 // and the class will be inherited from.
 class TypePtr : public Type {
+  friend class TypeNarrowOop;
 public:
   enum PTR { TopPTR, AnyNull, Constant, Null, NotNull, BotPTR, lastPTR };
 protected:
@@ -701,6 +712,15 @@ public:
 
   virtual const TypePtr *add_offset( int offset ) const;
 
+  // returns the equivalent compressed version of this pointer type
+  virtual const TypeNarrowOop* make_narrowoop() const;
+
+#ifdef _LP64
+  virtual bool is_narrow() const {
+    return (UseCompressedOops && _offset != 0);
+  }
+#endif
+
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
 
@@ -822,6 +842,12 @@ public:
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
 
+#ifdef _LP64
+  virtual bool is_narrow() const {
+    return (UseCompressedOops && klass() != NULL && _offset != 0);
+  }
+#endif
+
   // Convenience common pre-built types.
   static const TypeAryPtr *RANGE;
   static const TypeAryPtr *OOPS;
@@ -874,11 +900,73 @@ public:
   virtual const Type    *xmeet( const Type *t ) const;
   virtual const Type    *xdual() const;      // Compute dual right now.
 
+#ifdef _LP64
+  // Perm objects don't use compressed references, except for static fields
+  // which are currently compressed
+  virtual bool is_narrow() const {
+    if (UseCompressedOops && _offset != 0 && _klass->is_instance_klass()) {
+      ciInstanceKlass* ik = _klass->as_instance_klass();
+      return ik != NULL && ik->get_field_by_offset(_offset, true) != NULL;
+    }
+    return false;
+  }
+#endif
+
   // Convenience common pre-built types.
   static const TypeKlassPtr* OBJECT; // Not-null object klass or below
   static const TypeKlassPtr* OBJECT_OR_NULL; // Maybe-null version of same
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const; // Specialized per-Type dumping
+#endif
+};
+
+//------------------------------TypeNarrowOop----------------------------------------
+// A compressed reference to some kind of Oop.  This type wraps around
+// a preexisting TypeOopPtr and forwards most of it's operations to
+// the underlying type.  It's only real purpose is to track the
+// oopness of the compressed oop value when we expose the conversion
+// between the normal and the compressed form.
+class TypeNarrowOop : public Type {
+protected:
+  const TypePtr* _ooptype;
+
+  TypeNarrowOop( const TypePtr* ooptype): Type(NarrowOop),
+    _ooptype(ooptype) {
+    assert(ooptype->offset() == 0 ||
+           ooptype->offset() == OffsetBot ||
+           ooptype->offset() == OffsetTop, "no real offsets");
+  }
+public:
+  virtual bool eq( const Type *t ) const;
+  virtual int  hash() const;             // Type specific hashing
+  virtual bool singleton(void) const;    // TRUE if type is a singleton
+
+  virtual const Type *xmeet( const Type *t ) const;
+  virtual const Type *xdual() const;    // Compute dual right now.
+
+  virtual intptr_t get_con() const;
+
+  // Do not allow interface-vs.-noninterface joins to collapse to top.
+  virtual const Type *filter( const Type *kills ) const;
+
+  virtual bool empty(void) const;        // TRUE if type is vacuous
+
+  static const TypeNarrowOop *make( const TypePtr* type);
+
+  static const TypeNarrowOop* make_from_constant(ciObject* con) {
+    return make(TypeOopPtr::make_from_constant(con));
+  }
+
+  // returns the equivalent oopptr type for this compressed pointer
+  virtual const TypePtr *make_oopptr() const {
+    return _ooptype;
+  }
+
+  static const TypeNarrowOop *BOTTOM;
+  static const TypeNarrowOop *NULL_PTR;
+
+#ifndef PRODUCT
+  virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif
 };
 
@@ -1002,6 +1090,10 @@ inline const TypeOopPtr *Type::isa_oopptr() const {
   return (_base >= OopPtr && _base <= KlassPtr) ? (TypeOopPtr*)this : NULL;
 }
 
+inline const TypeRawPtr *Type::isa_rawptr() const {
+  return (_base == RawPtr) ? (TypeRawPtr*)this : NULL;
+}
+
 inline const TypeRawPtr *Type::is_rawptr() const {
   assert( _base == RawPtr, "Not a raw pointer" );
   return (TypeRawPtr*)this;
@@ -1023,6 +1115,17 @@ inline const TypeAryPtr *Type::isa_aryptr() const {
 inline const TypeAryPtr *Type::is_aryptr() const {
   assert( _base == AryPtr, "Not an array pointer" );
   return (TypeAryPtr*)this;
+}
+
+inline const TypeNarrowOop *Type::is_narrowoop() const {
+  // OopPtr is the first and KlassPtr the last, with no non-oops between.
+  assert(_base == NarrowOop, "Not a narrow oop" ) ;
+  return (TypeNarrowOop*)this;
+}
+
+inline const TypeNarrowOop *Type::isa_narrowoop() const {
+  // OopPtr is the first and KlassPtr the last, with no non-oops between.
+  return (_base == NarrowOop) ? (TypeNarrowOop*)this : NULL;
 }
 
 inline const TypeKlassPtr *Type::isa_klassptr() const {

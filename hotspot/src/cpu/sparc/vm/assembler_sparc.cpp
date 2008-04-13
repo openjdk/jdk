@@ -1779,7 +1779,7 @@ void MacroAssembler::verify_oop_subroutine() {
 
   // Check the klassOop of this object for being in the right area of memory.
   // Cannot do the load in the delay above slot in case O0 is null
-  ld_ptr(Address(O0_obj, 0, oopDesc::klass_offset_in_bytes()), O0_obj);
+  load_klass(O0_obj, O0_obj);
   // assert((klass & klass_mask) == klass_bits);
   if( Universe::verify_klass_mask() != Universe::verify_oop_mask() )
     set(Universe::verify_klass_mask(), O2_mask);
@@ -1788,8 +1788,9 @@ void MacroAssembler::verify_oop_subroutine() {
   and3(O0_obj, O2_mask, O4_temp);
   cmp(O4_temp, O3_bits);
   brx(notEqual, false, pn, fail);
+  delayed()->nop();
   // Check the klass's klass
-  delayed()->ld_ptr(Address(O0_obj, 0, oopDesc::klass_offset_in_bytes()), O0_obj);
+  load_klass(O0_obj, O0_obj);
   and3(O0_obj, O2_mask, O4_temp);
   cmp(O4_temp, O3_bits);
   brx(notEqual, false, pn, fail);
@@ -2588,8 +2589,9 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg, R
   and3(mark_reg, markOopDesc::biased_lock_mask_in_place, temp_reg);
   cmp(temp_reg, markOopDesc::biased_lock_pattern);
   brx(Assembler::notEqual, false, Assembler::pn, cas_label);
+  delayed()->nop();
 
-  delayed()->ld_ptr(Address(obj_reg, 0, oopDesc::klass_offset_in_bytes()), temp_reg);
+  load_klass(obj_reg, temp_reg);
   ld_ptr(Address(temp_reg, 0, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()), temp_reg);
   or3(G2_thread, temp_reg, temp_reg);
   xor3(mark_reg, temp_reg, temp_reg);
@@ -2668,7 +2670,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg, R
   //
   // FIXME: due to a lack of registers we currently blow away the age
   // bits in this situation. Should attempt to preserve them.
-  ld_ptr(Address(obj_reg, 0, oopDesc::klass_offset_in_bytes()), temp_reg);
+  load_klass(obj_reg, temp_reg);
   ld_ptr(Address(temp_reg, 0, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()), temp_reg);
   or3(G2_thread, temp_reg, temp_reg);
   casx_under_lock(mark_addr.base(), mark_reg, temp_reg,
@@ -2700,7 +2702,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg, R
   //
   // FIXME: due to a lack of registers we currently blow away the age
   // bits in this situation. Should attempt to preserve them.
-  ld_ptr(Address(obj_reg, 0, oopDesc::klass_offset_in_bytes()), temp_reg);
+  load_klass(obj_reg, temp_reg);
   ld_ptr(Address(temp_reg, 0, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()), temp_reg);
   casx_under_lock(mark_addr.base(), mark_reg, temp_reg,
                   (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
@@ -3406,7 +3408,7 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   // set klass to intArrayKlass
   set((intptr_t)Universe::intArrayKlassObj_addr(), t2);
   ld_ptr(t2, 0, t2);
-  st_ptr(t2, top, oopDesc::klass_offset_in_bytes());
+  store_klass(t2, top);
   sub(t1, typeArrayOopDesc::header_size(T_INT), t1);
   add(t1, ThreadLocalAllocBuffer::alignment_reserve(), t1);
   sll_ptr(t1, log2_intptr(HeapWordSize/sizeof(jint)), t1);
@@ -3532,5 +3534,141 @@ void MacroAssembler::bang_stack_size(Register Rsize, Register Rtsp,
   for (int i = 0; i< StackShadowPages-1; i++) {
     set((-i*offset)+STACK_BIAS, Rscratch);
     st(G0, Rtsp, Rscratch);
+  }
+}
+
+void MacroAssembler::load_klass(Register s, Register d) {
+  // The number of bytes in this code is used by
+  // MachCallDynamicJavaNode::ret_addr_offset()
+  // if this changes, change that.
+  if (UseCompressedOops) {
+    lduw(s, oopDesc::klass_offset_in_bytes(), d);
+    decode_heap_oop_not_null(d);
+  } else {
+    ld_ptr(s, oopDesc::klass_offset_in_bytes(), d);
+  }
+}
+
+// ??? figure out src vs. dst!
+void MacroAssembler::store_klass(Register d, Register s1) {
+  if (UseCompressedOops) {
+    assert(s1 != d, "not enough registers");
+    encode_heap_oop_not_null(d);
+    // Zero out entire klass field first.
+    st_ptr(G0, s1, oopDesc::klass_offset_in_bytes());
+    st(d, s1, oopDesc::klass_offset_in_bytes());
+  } else {
+    st_ptr(d, s1, oopDesc::klass_offset_in_bytes());
+  }
+}
+
+void MacroAssembler::load_heap_oop(const Address& s, Register d, int offset) {
+  if (UseCompressedOops) {
+    lduw(s, d, offset);
+    decode_heap_oop(d);
+  } else {
+    ld_ptr(s, d, offset);
+  }
+}
+
+void MacroAssembler::load_heap_oop(Register s1, Register s2, Register d) {
+   if (UseCompressedOops) {
+    lduw(s1, s2, d);
+    decode_heap_oop(d, d);
+  } else {
+    ld_ptr(s1, s2, d);
+  }
+}
+
+void MacroAssembler::load_heap_oop(Register s1, int simm13a, Register d) {
+   if (UseCompressedOops) {
+    lduw(s1, simm13a, d);
+    decode_heap_oop(d, d);
+  } else {
+    ld_ptr(s1, simm13a, d);
+  }
+}
+
+void MacroAssembler::store_heap_oop(Register d, Register s1, Register s2) {
+  if (UseCompressedOops) {
+    assert(s1 != d && s2 != d, "not enough registers");
+    encode_heap_oop(d);
+    st(d, s1, s2);
+  } else {
+    st_ptr(d, s1, s2);
+  }
+}
+
+void MacroAssembler::store_heap_oop(Register d, Register s1, int simm13a) {
+  if (UseCompressedOops) {
+    assert(s1 != d, "not enough registers");
+    encode_heap_oop(d);
+    st(d, s1, simm13a);
+  } else {
+    st_ptr(d, s1, simm13a);
+  }
+}
+
+void MacroAssembler::store_heap_oop(Register d, const Address& a, int offset) {
+  if (UseCompressedOops) {
+    assert(a.base() != d, "not enough registers");
+    encode_heap_oop(d);
+    st(d, a, offset);
+  } else {
+    st_ptr(d, a, offset);
+  }
+}
+
+
+void MacroAssembler::encode_heap_oop(Register src, Register dst) {
+  assert (UseCompressedOops, "must be compressed");
+  Label done;
+  if (src == dst) {
+    // optimize for frequent case src == dst
+    bpr(rc_nz, true, Assembler::pt, src, done);
+    delayed() -> sub(src, G6_heapbase, dst); // annuled if not taken
+    bind(done);
+    srlx(src, LogMinObjAlignmentInBytes, dst);
+  } else {
+    bpr(rc_z, false, Assembler::pn, src, done);
+    delayed() -> mov(G0, dst);
+    // could be moved before branch, and annulate delay,
+    // but may add some unneeded work decoding null
+    sub(src, G6_heapbase, dst);
+    srlx(dst, LogMinObjAlignmentInBytes, dst);
+    bind(done);
+  }
+}
+
+
+void MacroAssembler::encode_heap_oop_not_null(Register r) {
+  assert (UseCompressedOops, "must be compressed");
+  sub(r, G6_heapbase, r);
+  srlx(r, LogMinObjAlignmentInBytes, r);
+}
+
+// Same algorithm as oops.inline.hpp decode_heap_oop.
+void  MacroAssembler::decode_heap_oop(Register src, Register dst) {
+  assert (UseCompressedOops, "must be compressed");
+  Label done;
+  sllx(src, LogMinObjAlignmentInBytes, dst);
+  bpr(rc_nz, true, Assembler::pt, dst, done);
+  delayed() -> add(dst, G6_heapbase, dst); // annuled if not taken
+  bind(done);
+}
+
+void  MacroAssembler::decode_heap_oop_not_null(Register r) {
+  // Do not add assert code to this unless you change vtableStubs_sparc.cpp
+  // pd_code_size_limit.
+  assert (UseCompressedOops, "must be compressed");
+  sllx(r, LogMinObjAlignmentInBytes, r);
+  add(r, G6_heapbase, r);
+}
+
+void MacroAssembler::reinit_heapbase() {
+  if (UseCompressedOops) {
+    // call indirectly to solve generation ordering problem
+    Address base(G6_heapbase, (address)Universe::heap_base_addr());
+    load_ptr_contents(base, G6_heapbase);
   }
 }

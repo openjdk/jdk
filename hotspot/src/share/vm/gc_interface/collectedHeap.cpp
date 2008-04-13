@@ -35,7 +35,6 @@ int CollectedHeap::_fire_out_of_memory_count = 0;
 CollectedHeap::CollectedHeap() :
   _reserved(), _barrier_set(NULL), _is_gc_active(false),
   _total_collections(0), _total_full_collections(0),
-  _max_heap_capacity(0),
   _gc_cause(GCCause::_no_gc), _gc_lastcause(GCCause::_no_gc) {
   NOT_PRODUCT(_promotion_failure_alot_count = 0;)
   NOT_PRODUCT(_promotion_failure_alot_gc_number = 0;)

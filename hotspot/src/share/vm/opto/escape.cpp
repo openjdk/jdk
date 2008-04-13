@@ -1749,15 +1749,28 @@ void ConnectionGraph::record_for_escape_analysis(Node *n, PhaseTransform *phase)
       add_node(n, PointsToNode::JavaObject, PointsToNode::GlobalEscape, true);
       break;
     }
+    case Op_ConN:
+    {
+      // assume all narrow oop constants globally escape except for null
+      PointsToNode::EscapeState es;
+      if (phase->type(n) == TypeNarrowOop::NULL_PTR)
+        es = PointsToNode::NoEscape;
+      else
+        es = PointsToNode::GlobalEscape;
+
+      add_node(n, PointsToNode::JavaObject, es, true);
+      break;
+    }
     case Op_LoadKlass:
     {
       add_node(n, PointsToNode::JavaObject, PointsToNode::GlobalEscape, true);
       break;
     }
     case Op_LoadP:
+    case Op_LoadN:
     {
       const Type *t = phase->type(n);
-      if (t->isa_ptr() == NULL) {
+      if (!t->isa_narrowoop() && t->isa_ptr() == NULL) {
         _processed.set(n->_idx);
         return;
       }
@@ -1847,8 +1860,12 @@ void ConnectionGraph::record_for_escape_analysis(Node *n, PhaseTransform *phase)
       break;
     }
     case Op_StoreP:
+    case Op_StoreN:
     {
       const Type *adr_type = phase->type(n->in(MemNode::Address));
+      if (adr_type->isa_narrowoop()) {
+        adr_type = adr_type->is_narrowoop()->make_oopptr();
+      }
       if (adr_type->isa_oopptr()) {
         add_node(n, PointsToNode::UnknownType, PointsToNode::UnknownEscape, false);
       } else {
@@ -1870,8 +1887,12 @@ void ConnectionGraph::record_for_escape_analysis(Node *n, PhaseTransform *phase)
     }
     case Op_StorePConditional:
     case Op_CompareAndSwapP:
+    case Op_CompareAndSwapN:
     {
       const Type *adr_type = phase->type(n->in(MemNode::Address));
+      if (adr_type->isa_narrowoop()) {
+        adr_type = adr_type->is_narrowoop()->make_oopptr();
+      }
       if (adr_type->isa_oopptr()) {
         add_node(n, PointsToNode::UnknownType, PointsToNode::UnknownEscape, false);
       } else {
@@ -1927,6 +1948,8 @@ void ConnectionGraph::build_connection_graph(Node *n, PhaseTransform *phase) {
     }
     case Op_CastPP:
     case Op_CheckCastPP:
+    case Op_EncodeP:
+    case Op_DecodeN:
     {
       int ti = n->in(1)->_idx;
       if (_nodes->adr_at(ti)->node_type() == PointsToNode::JavaObject) {

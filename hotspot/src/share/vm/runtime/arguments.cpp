@@ -1163,6 +1163,31 @@ void Arguments::set_ergonomics_flags() {
       no_shared_spaces();
     }
   }
+
+#ifdef _LP64
+  // Compressed Headers do not work with CMS, which uses a bit in the klass
+  // field offset to determine free list chunk markers.
+  // Check that UseCompressedOops can be set with the max heap size allocated
+  // by ergonomics.
+  if (!UseConcMarkSweepGC && MaxHeapSize <= (32*G - os::vm_page_size())) {
+    if (FLAG_IS_DEFAULT(UseCompressedOops)) {
+      FLAG_SET_ERGO(bool, UseCompressedOops, true);
+    }
+  } else {
+    if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
+      // If specified, give a warning
+      if (UseConcMarkSweepGC){
+        warning("Compressed Oops does not work with CMS");
+      } else {
+        warning(
+          "Max heap size too large for Compressed Oops");
+      }
+      FLAG_SET_DEFAULT(UseCompressedOops, false);
+    }
+  }
+  // Also checks that certain machines are slower with compressed oops
+  // in vm_version initialization code.
+#endif // _LP64
 }
 
 void Arguments::set_parallel_gc_flags() {

@@ -185,6 +185,12 @@ CFLAGS += $(GAMMADIR)/src/os_cpu/solaris_${Platform_arch}/vm/solaris_${Platform_
 # no more exceptions
 CFLAGS/NOEX=-features=no%except
 
+
+# avoid compilation problems arising from fact that C++ compiler tries 
+# to search for external template definition by just compiling additional
+# source files in th same context
+CFLAGS +=  -template=no%extdef
+
 # Reduce code bloat by reverting back to 5.0 behavior for static initializers
 CFLAGS += -features=no%split_init
 

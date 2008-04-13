@@ -1031,6 +1031,10 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,ta->klass(),false,offset, ta->instance_id());
     }
     // Arrays of known objects become arrays of unknown objects.
+    if (ta->elem()->isa_narrowoop() && ta->elem() != TypeNarrowOop::BOTTOM) {
+      const TypeAry *tary = TypeAry::make(TypeNarrowOop::BOTTOM, ta->size());
+      tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,NULL,false,offset, ta->instance_id());
+    }
     if (ta->elem()->isa_oopptr() && ta->elem() != TypeInstPtr::BOTTOM) {
       const TypeAry *tary = TypeAry::make(TypeInstPtr::BOTTOM, ta->size());
       tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,NULL,false,offset, ta->instance_id());
@@ -1069,7 +1073,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     }
     // Canonicalize the holder of this field
     ciInstanceKlass *k = to->klass()->as_instance_klass();
-    if (offset >= 0 && offset < oopDesc::header_size() * wordSize) {
+    if (offset >= 0 && offset < instanceOopDesc::base_offset_in_bytes()) {
       // First handle header references such as a LoadKlassNode, even if the
       // object's klass is unloaded at compile time (4965979).
       tj = to = TypeInstPtr::make(TypePtr::BotPTR, env()->Object_klass(), false, NULL, offset, to->instance_id());
@@ -1310,7 +1314,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
 
     // Check for final instance fields.
     const TypeInstPtr* tinst = flat->isa_instptr();
-    if (tinst && tinst->offset() >= oopDesc::header_size() * wordSize) {
+    if (tinst && tinst->offset() >= instanceOopDesc::base_offset_in_bytes()) {
       ciInstanceKlass *k = tinst->klass()->as_instance_klass();
       ciField* field = k->get_field_by_offset(tinst->offset(), false);
       // Set field() and is_rewritable() attributes.
@@ -1731,6 +1735,8 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
           starts_bundle = '+';
       }
 
+      if (WizardMode) n->dump();
+
       if( !n->is_Region() &&    // Dont print in the Assembly
           !n->is_Phi() &&       // a few noisely useless nodes
           !n->is_Proj() &&
@@ -1755,6 +1761,8 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
       // then back up and print it
       if (valid_bundle_info(n) && node_bundling(n)->use_unconditional_delay()) {
         assert(delay != NULL, "no unconditional delay instruction");
+        if (WizardMode) delay->dump();
+
         if (node_bundling(delay)->starts_bundle())
           starts_bundle = '+';
         if (pcs && n->_idx < pc_limit)
@@ -1819,7 +1827,7 @@ struct Final_Reshape_Counts : public StackObj {
 static bool oop_offset_is_sane(const TypeInstPtr* tp) {
   ciInstanceKlass *k = tp->klass()->as_instance_klass();
   // Make sure the offset goes inside the instance layout.
-  return (uint)tp->offset() < (uint)(oopDesc::header_size() + k->nonstatic_field_size())*wordSize;
+  return k->contains_field_offset(tp->offset());
   // Note that OffsetBot and OffsetTop are very negative.
 }
 
@@ -1946,7 +1954,9 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_CompareAndSwapI:
   case Op_CompareAndSwapL:
   case Op_CompareAndSwapP:
+  case Op_CompareAndSwapN:
   case Op_StoreP:
+  case Op_StoreN:
   case Op_LoadB:
   case Op_LoadC:
   case Op_LoadI:
@@ -1956,6 +1966,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_LoadPLocked:
   case Op_LoadLLocked:
   case Op_LoadP:
+  case Op_LoadN:
   case Op_LoadRange:
   case Op_LoadS: {
   handle_mem:

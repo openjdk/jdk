@@ -691,24 +691,47 @@ class java_lang_ref_Reference: AllStatic {
   static int number_of_fake_oop_fields;
 
   // Accessors
-  static oop referent(oop ref)        { return *referent_addr(ref); }
-  static void set_referent(oop ref, oop value);
-  static oop* referent_addr(oop ref);
-
-  static oop next(oop ref)            { return *next_addr(ref); }
-  static void set_next(oop ref, oop value);
-  static oop* next_addr(oop ref);
-
-  static oop discovered(oop ref)      { return *discovered_addr(ref); }
-  static void set_discovered(oop ref, oop value);
-  static oop* discovered_addr(oop ref);
-
+  static oop referent(oop ref) {
+    return ref->obj_field(referent_offset);
+  }
+  static void set_referent(oop ref, oop value) {
+    ref->obj_field_put(referent_offset, value);
+  }
+  static void set_referent_raw(oop ref, oop value) {
+    ref->obj_field_raw_put(referent_offset, value);
+  }
+  static HeapWord* referent_addr(oop ref) {
+    return ref->obj_field_addr<HeapWord>(referent_offset);
+  }
+  static oop next(oop ref) {
+    return ref->obj_field(next_offset);
+  }
+  static void set_next(oop ref, oop value) {
+    ref->obj_field_put(next_offset, value);
+  }
+  static void set_next_raw(oop ref, oop value) {
+    ref->obj_field_raw_put(next_offset, value);
+  }
+  static HeapWord* next_addr(oop ref) {
+    return ref->obj_field_addr<HeapWord>(next_offset);
+  }
+  static oop discovered(oop ref) {
+    return ref->obj_field(discovered_offset);
+  }
+  static void set_discovered(oop ref, oop value) {
+    ref->obj_field_put(discovered_offset, value);
+  }
+  static void set_discovered_raw(oop ref, oop value) {
+    ref->obj_field_raw_put(discovered_offset, value);
+  }
+  static HeapWord* discovered_addr(oop ref) {
+    return ref->obj_field_addr<HeapWord>(discovered_offset);
+  }
   // Accessors for statics
-  static oop  pending_list_lock()     { return *pending_list_lock_addr(); }
-  static oop  pending_list()          { return *pending_list_addr(); }
+  static oop  pending_list_lock();
+  static oop  pending_list();
 
-  static oop* pending_list_lock_addr();
-  static oop* pending_list_addr();
+  static HeapWord*  pending_list_addr();
 };
 
 

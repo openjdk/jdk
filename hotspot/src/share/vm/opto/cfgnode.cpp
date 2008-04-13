@@ -848,7 +848,7 @@ const Type *PhiNode::Value( PhaseTransform *phase ) const {
   // Until we have harmony between classes and interfaces in the type
   // lattice, we must tread carefully around phis which implicitly
   // convert the one to the other.
-  const TypeInstPtr* ttip = _type->isa_instptr();
+  const TypeInstPtr* ttip = _type->isa_narrowoop() ? _type->isa_narrowoop()->make_oopptr()->isa_instptr() :_type->isa_instptr();
   bool is_intf = false;
   if (ttip != NULL) {
     ciKlass* k = ttip->klass();
@@ -867,7 +867,7 @@ const Type *PhiNode::Value( PhaseTransform *phase ) const {
       // of all the input types.  The lattice is not distributive in
       // such cases.  Ward off asserts in type.cpp by refusing to do
       // meets between interfaces and proper classes.
-      const TypeInstPtr* tiip = ti->isa_instptr();
+      const TypeInstPtr* tiip = ti->isa_narrowoop() ? ti->is_narrowoop()->make_oopptr()->isa_instptr() : ti->isa_instptr();
       if (tiip) {
         bool ti_is_intf = false;
         ciKlass* k = tiip->klass();
@@ -924,12 +924,15 @@ const Type *PhiNode::Value( PhaseTransform *phase ) const {
     // class-typed Phi and an interface flows in, it's possible that the meet &
     // join report an interface back out.  This isn't possible but happens
     // because the type system doesn't interact well with interfaces.
-    const TypeInstPtr *jtip = jt->isa_instptr();
+    const TypeInstPtr *jtip = jt->isa_narrowoop() ? jt->isa_narrowoop()->make_oopptr()->isa_instptr() : jt->isa_instptr();
     if( jtip && ttip ) {
       if( jtip->is_loaded() &&  jtip->klass()->is_interface() &&
-          ttip->is_loaded() && !ttip->klass()->is_interface() )
+          ttip->is_loaded() && !ttip->klass()->is_interface() ) {
         // Happens in a CTW of rt.jar, 320-341, no extra flags
-        { assert(ft == ttip->cast_to_ptr_type(jtip->ptr()), ""); jt = ft; }
+        assert(ft == ttip->cast_to_ptr_type(jtip->ptr()) ||
+               ft->isa_narrowoop() && ft->isa_narrowoop()->make_oopptr() == ttip->cast_to_ptr_type(jtip->ptr()), "");
+        jt = ft;
+      }
     }
     if (jt != ft && jt->base() == ft->base()) {
       if (jt->isa_int() &&

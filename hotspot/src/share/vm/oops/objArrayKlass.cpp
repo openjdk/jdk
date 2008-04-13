@@ -80,6 +80,56 @@ oop objArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
   return h_array();
 }
 
+// Either oop or narrowOop depending on UseCompressedOops.
+template <class T> void objArrayKlass::do_copy(arrayOop s, T* src,
+                               arrayOop d, T* dst, int length, TRAPS) {
+
+  const size_t word_len = objArrayOopDesc::array_size(length);
+
+  // For performance reasons, we assume we are using a card marking write
+  // barrier. The assert will fail if this is not the case.
+  BarrierSet* bs = Universe::heap()->barrier_set();
+  assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
+
+  if (s == d) {
+    // since source and destination are equal we do not need conversion checks.
+    assert(length > 0, "sanity check");
+    Copy::conjoint_oops_atomic(src, dst, length);
+  } else {
+    // We have to make sure all elements conform to the destination array
+    klassOop bound = objArrayKlass::cast(d->klass())->element_klass();
+    klassOop stype = objArrayKlass::cast(s->klass())->element_klass();
+    if (stype == bound || Klass::cast(stype)->is_subtype_of(bound)) {
+      // elements are guaranteed to be subtypes, so no check necessary
+      Copy::conjoint_oops_atomic(src, dst, length);
+    } else {
+      // slow case: need individual subtype checks
+      // note: don't use obj_at_put below because it includes a redundant store check
+      T* from = src;
+      T* end = from + length;
+      for (T* p = dst; from < end; from++, p++) {
+        // XXX this is going to be slow.
+        T element = *from;
+        if (oopDesc::is_null(element) ||
+            Klass::cast(oopDesc::decode_heap_oop_not_null(element)->klass())->is_subtype_of(bound)) {
+          *p = *from;
+        } else {
+          // We must do a barrier to cover the partial copy.
+          const size_t pd = pointer_delta(p, dst, (size_t)heapOopSize);
+          // pointer delta is scaled to number of elements (length field in
+          // objArrayOop) which we assume is 32 bit.
+          assert(pd == (size_t)(int)pd, "length field overflow");
+          const size_t done_word_len = objArrayOopDesc::array_size((int)pd);
+          bs->write_ref_array(MemRegion((HeapWord*)dst, done_word_len));
+          THROW(vmSymbols::java_lang_ArrayStoreException());
+          return;
+        }
+      }
+    }
+  }
+  bs->write_ref_array(MemRegion((HeapWord*)dst, word_len));
+}
+
 void objArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,
                                int dst_pos, int length, TRAPS) {
   assert(s->is_objArray(), "must be obj array");
@@ -105,48 +155,15 @@ void objArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,
   if (length==0) {
     return;
   }
-
-  oop* const src = objArrayOop(s)->obj_at_addr(src_pos);
-  oop* const dst = objArrayOop(d)->obj_at_addr(dst_pos);
-  const size_t word_len = length * HeapWordsPerOop;
-
-  // For performance reasons, we assume we are using a card marking write
-  // barrier. The assert will fail if this is not the case.
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
-
-  if (s == d) {
-    // since source and destination are equal we do not need conversion checks.
-    assert(length > 0, "sanity check");
-    Copy::conjoint_oops_atomic(src, dst, length);
+  if (UseCompressedOops) {
+    narrowOop* const src = objArrayOop(s)->obj_at_addr<narrowOop>(src_pos);
+    narrowOop* const dst = objArrayOop(d)->obj_at_addr<narrowOop>(dst_pos);
+    do_copy<narrowOop>(s, src, d, dst, length, CHECK);
   } else {
-    // We have to make sure all elements conform to the destination array
-    klassOop bound = objArrayKlass::cast(d->klass())->element_klass();
-    klassOop stype = objArrayKlass::cast(s->klass())->element_klass();
-    if (stype == bound || Klass::cast(stype)->is_subtype_of(bound)) {
-      // elements are guaranteed to be subtypes, so no check necessary
-      Copy::conjoint_oops_atomic(src, dst, length);
-    } else {
-      // slow case: need individual subtype checks
-      // note: don't use obj_at_put below because it includes a redundant store check
-      oop* from = src;
-      oop* end = from + length;
-      for (oop* p = dst; from < end; from++, p++) {
-        oop element = *from;
-        if (element == NULL || Klass::cast(element->klass())->is_subtype_of(bound)) {
-          *p = element;
-        } else {
-          // We must do a barrier to cover the partial copy.
-          const size_t done_word_len = pointer_delta(p, dst, oopSize) *
-                                       HeapWordsPerOop;
-          bs->write_ref_array(MemRegion((HeapWord*)dst, done_word_len));
-          THROW(vmSymbols::java_lang_ArrayStoreException());
-          return;
-        }
-      }
-    }
+    oop* const src = objArrayOop(s)->obj_at_addr<oop>(src_pos);
+    oop* const dst = objArrayOop(d)->obj_at_addr<oop>(dst_pos);
+    do_copy<oop> (s, src, d, dst, length, CHECK);
   }
-  bs->write_ref_array(MemRegion((HeapWord*)dst, word_len));
 }
 
 
@@ -242,48 +259,74 @@ bool objArrayKlass::compute_is_subtype_of(klassOop k) {
   return element_klass()->klass_part()->is_subtype_of(oak->element_klass());
 }
 
-
 void objArrayKlass::initialize(TRAPS) {
   Klass::cast(bottom_klass())->initialize(THREAD);  // dispatches to either instanceKlass or typeArrayKlass
 }
 
+#define ObjArrayKlass_SPECIALIZED_OOP_ITERATE(T, a, p, do_oop) \
+{                                   \
+  T* p         = (T*)(a)->base();   \
+  T* const end = p + (a)->length(); \
+  while (p < end) {                 \
+    do_oop;                         \
+    p++;                            \
+  }                                 \
+}
+
+#define ObjArrayKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(T, a, p, low, high, do_oop) \
+{                                   \
+  T* const l = (T*)(low);           \
+  T* const h = (T*)(high);          \
+  T* p       = (T*)(a)->base();     \
+  T* end     = p + (a)->length();   \
+  if (p < l) p = l;                 \
+  if (end > h) end = h;             \
+  while (p < end) {                 \
+    do_oop;                         \
+    ++p;                            \
+  }                                 \
+}
+
+#define ObjArrayKlass_OOP_ITERATE(a, p, do_oop)      \
+  if (UseCompressedOops) {                           \
+    ObjArrayKlass_SPECIALIZED_OOP_ITERATE(narrowOop, \
+      a, p, do_oop)                                  \
+  } else {                                           \
+    ObjArrayKlass_SPECIALIZED_OOP_ITERATE(oop,       \
+      a, p, do_oop)                                  \
+  }
+
+#define ObjArrayKlass_BOUNDED_OOP_ITERATE(a, p, low, high, do_oop) \
+  if (UseCompressedOops) {                                   \
+    ObjArrayKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(narrowOop, \
+      a, p, low, high, do_oop)                               \
+  } else {                                                   \
+    ObjArrayKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(oop,       \
+      a, p, low, high, do_oop)                               \
+  }
 
 void objArrayKlass::oop_follow_contents(oop obj) {
   assert (obj->is_array(), "obj must be array");
-  arrayOop a = arrayOop(obj);
+  objArrayOop a = objArrayOop(obj);
   a->follow_header();
-  oop* base      = (oop*)a->base(T_OBJECT);
-  oop* const end = base + a->length();
-  while (base < end) {
-    if (*base != NULL)
-      // we call mark_and_follow here to avoid excessive marking stack usage
-      MarkSweep::mark_and_follow(base);
-    base++;
-  }
+  ObjArrayKlass_OOP_ITERATE( \
+    a, p, \
+    /* we call mark_and_follow here to avoid excessive marking stack usage */ \
+    MarkSweep::mark_and_follow(p))
 }
 
 #ifndef SERIALGC
 void objArrayKlass::oop_follow_contents(ParCompactionManager* cm,
                                         oop obj) {
   assert (obj->is_array(), "obj must be array");
-  arrayOop a = arrayOop(obj);
+  objArrayOop a = objArrayOop(obj);
   a->follow_header(cm);
-  oop* base      = (oop*)a->base(T_OBJECT);
-  oop* const end = base + a->length();
-  while (base < end) {
-    if (*base != NULL)
-      // we call mark_and_follow here to avoid excessive marking stack usage
-      PSParallelCompact::mark_and_follow(cm, base);
-    base++;
-  }
+  ObjArrayKlass_OOP_ITERATE( \
+    a, p, \
+    /* we call mark_and_follow here to avoid excessive marking stack usage */ \
+    PSParallelCompact::mark_and_follow(cm, p))
 }
 #endif // SERIALGC
-
-#define invoke_closure_on(base, closure, nv_suffix) {                                  \
-  if (*(base) != NULL) {                                                               \
-    (closure)->do_oop##nv_suffix(base);                                                \
-  }                                                                                    \
-}
 
 #define ObjArrayKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)           \
                                                                                 \
@@ -298,21 +341,7 @@ int objArrayKlass::oop_oop_iterate##nv_suffix(oop obj,                          
   if (closure->do_header()) {                                                   \
     a->oop_iterate_header(closure);                                             \
   }                                                                             \
-  oop* base               = a->base();                                          \
-  oop* const end          = base + a->length();                                 \
-  const intx field_offset = PrefetchFieldsAhead;                                \
-  if (field_offset > 0) {                                                       \
-    while (base < end) {                                                        \
-      prefetch_beyond(base, end, field_offset, closure->prefetch_style());      \
-      invoke_closure_on(base, closure, nv_suffix);                              \
-      base++;                                                                   \
-    }                                                                           \
-  } else {                                                                      \
-    while (base < end) {                                                        \
-      invoke_closure_on(base, closure, nv_suffix);                              \
-      base++;                                                                   \
-    }                                                                           \
-  }                                                                             \
+  ObjArrayKlass_OOP_ITERATE(a, p, (closure)->do_oop##nv_suffix(p))              \
   return size;                                                                  \
 }
 
@@ -330,28 +359,43 @@ int objArrayKlass::oop_oop_iterate##nv_suffix##_m(oop obj,                      
   if (closure->do_header()) {                                                   \
     a->oop_iterate_header(closure, mr);                                         \
   }                                                                             \
-  oop* bottom = (oop*)mr.start();                                               \
-  oop* top    = (oop*)mr.end();                                                 \
-  oop* base = a->base();                                                        \
-  oop* end    = base + a->length();                                             \
-  if (base < bottom) {                                                          \
-    base = bottom;                                                              \
-  }                                                                             \
-  if (end > top) {                                                              \
-    end = top;                                                                  \
-  }                                                                             \
-  const intx field_offset = PrefetchFieldsAhead;                                \
-  if (field_offset > 0) {                                                       \
-    while (base < end) {                                                        \
-      prefetch_beyond(base, end, field_offset, closure->prefetch_style());      \
-      invoke_closure_on(base, closure, nv_suffix);                              \
-      base++;                                                                   \
+  ObjArrayKlass_BOUNDED_OOP_ITERATE(                                            \
+    a, p, mr.start(), mr.end(), (closure)->do_oop##nv_suffix(p))                \
+  return size;                                                                  \
+}
+
+// Like oop_oop_iterate but only iterates over a specified range and only used
+// for objArrayOops.
+#define ObjArrayKlass_OOP_OOP_ITERATE_DEFN_r(OopClosureType, nv_suffix)         \
+                                                                                \
+int objArrayKlass::oop_oop_iterate_range##nv_suffix(oop obj,                    \
+                                                  OopClosureType* closure,      \
+                                                  int start, int end) {         \
+  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::oa); \
+  assert(obj->is_array(), "obj must be array");                                 \
+  objArrayOop a  = objArrayOop(obj);                                            \
+  /* Get size before changing pointers. */                                      \
+  /* Don't call size() or oop_size() since that is a virtual call */            \
+  int size = a->object_size();                                                  \
+  if (UseCompressedOops) {                                                      \
+    HeapWord* low = start == 0 ? (HeapWord*)a : (HeapWord*)a->obj_at_addr<narrowOop>(start);\
+    /* this might be wierd if end needs to be aligned on HeapWord boundary */   \
+    HeapWord* high = (HeapWord*)((narrowOop*)a->base() + end);                  \
+    MemRegion mr(low, high);                                                    \
+    if (closure->do_header()) {                                                 \
+      a->oop_iterate_header(closure, mr);                                       \
     }                                                                           \
+    ObjArrayKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(narrowOop,                    \
+      a, p, low, high, (closure)->do_oop##nv_suffix(p))                         \
   } else {                                                                      \
-    while (base < end) {                                                        \
-      invoke_closure_on(base, closure, nv_suffix);                              \
-      base++;                                                                   \
+    HeapWord* low = start == 0 ? (HeapWord*)a : (HeapWord*)a->obj_at_addr<oop>(start);  \
+    HeapWord* high = (HeapWord*)((oop*)a->base() + end);                        \
+    MemRegion mr(low, high);                                                    \
+    if (closure->do_header()) {                                                 \
+      a->oop_iterate_header(closure, mr);                                       \
     }                                                                           \
+    ObjArrayKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(oop,                          \
+      a, p, low, high, (closure)->do_oop##nv_suffix(p))                         \
   }                                                                             \
   return size;                                                                  \
 }
@@ -360,6 +404,8 @@ ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayKlass_OOP_OOP_ITERATE_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_3(ObjArrayKlass_OOP_OOP_ITERATE_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayKlass_OOP_OOP_ITERATE_DEFN_m)
 ALL_OOP_OOP_ITERATE_CLOSURES_3(ObjArrayKlass_OOP_OOP_ITERATE_DEFN_m)
+ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayKlass_OOP_OOP_ITERATE_DEFN_r)
+ALL_OOP_OOP_ITERATE_CLOSURES_3(ObjArrayKlass_OOP_OOP_ITERATE_DEFN_r)
 
 int objArrayKlass::oop_adjust_pointers(oop obj) {
   assert(obj->is_objArray(), "obj must be obj array");
@@ -368,12 +414,7 @@ int objArrayKlass::oop_adjust_pointers(oop obj) {
   // Don't call size() or oop_size() since that is a virtual call.
   int size = a->object_size();
   a->adjust_header();
-  oop* base      = a->base();
-  oop* const end = base + a->length();
-  while (base < end) {
-    MarkSweep::adjust_pointer(base);
-    base++;
-  }
+  ObjArrayKlass_OOP_ITERATE(a, p, MarkSweep::adjust_pointer(p))
   return size;
 }
 
@@ -381,51 +422,27 @@ int objArrayKlass::oop_adjust_pointers(oop obj) {
 void objArrayKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
   assert(!pm->depth_first(), "invariant");
   assert(obj->is_objArray(), "obj must be obj array");
-  // Compute oop range
-  oop* curr = objArrayOop(obj)->base();
-  oop* end = curr + objArrayOop(obj)->length();
-  //  assert(align_object_size(end - (oop*)obj) == oop_size(obj), "checking size");
-  assert(align_object_size(pointer_delta(end, obj, sizeof(oop*)))
-                                  == oop_size(obj), "checking size");
-
-  // Iterate over oops
-  while (curr < end) {
-    if (PSScavenge::should_scavenge(*curr)) {
-      pm->claim_or_forward_breadth(curr);
-    }
-    ++curr;
-  }
+  ObjArrayKlass_OOP_ITERATE( \
+    objArrayOop(obj), p, \
+    if (PSScavenge::should_scavenge(p)) { \
+      pm->claim_or_forward_breadth(p); \
+    })
 }
 
 void objArrayKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(pm->depth_first(), "invariant");
   assert(obj->is_objArray(), "obj must be obj array");
-  // Compute oop range
-  oop* curr = objArrayOop(obj)->base();
-  oop* end = curr + objArrayOop(obj)->length();
-  //  assert(align_object_size(end - (oop*)obj) == oop_size(obj), "checking size");
-  assert(align_object_size(pointer_delta(end, obj, sizeof(oop*)))
-                                  == oop_size(obj), "checking size");
-
-  // Iterate over oops
-  while (curr < end) {
-    if (PSScavenge::should_scavenge(*curr)) {
-      pm->claim_or_forward_depth(curr);
-    }
-    ++curr;
-  }
+  ObjArrayKlass_OOP_ITERATE( \
+    objArrayOop(obj), p, \
+    if (PSScavenge::should_scavenge(p)) { \
+      pm->claim_or_forward_depth(p); \
+    })
 }
 
 int objArrayKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   assert (obj->is_objArray(), "obj must be obj array");
   objArrayOop a = objArrayOop(obj);
-
-  oop* const base = a->base();
-  oop* const beg_oop = base;
-  oop* const end_oop = base + a->length();
-  for (oop* cur_oop = beg_oop; cur_oop < end_oop; ++cur_oop) {
-    PSParallelCompact::adjust_pointer(cur_oop);
-  }
+  ObjArrayKlass_OOP_ITERATE(a, p, PSParallelCompact::adjust_pointer(p))
   return a->object_size();
 }
 
@@ -433,13 +450,9 @@ int objArrayKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
                                        HeapWord* beg_addr, HeapWord* end_addr) {
   assert (obj->is_objArray(), "obj must be obj array");
   objArrayOop a = objArrayOop(obj);
-
-  oop* const base = a->base();
-  oop* const beg_oop = MAX2((oop*)beg_addr, base);
-  oop* const end_oop = MIN2((oop*)end_addr, base + a->length());
-  for (oop* cur_oop = beg_oop; cur_oop < end_oop; ++cur_oop) {
-    PSParallelCompact::adjust_pointer(cur_oop);
-  }
+  ObjArrayKlass_BOUNDED_OOP_ITERATE( \
+     a, p, beg_addr, end_addr, \
+     PSParallelCompact::adjust_pointer(p))
   return a->object_size();
 }
 #endif // SERIALGC
@@ -509,3 +522,4 @@ void objArrayKlass::oop_verify_old_oop(oop obj, oop* p, bool allow_dirty) {
   RememberedSet::verify_old_oop(obj, p, allow_dirty, true);
   */
 }
+void objArrayKlass::oop_verify_old_oop(oop obj, narrowOop* p, bool allow_dirty) {}

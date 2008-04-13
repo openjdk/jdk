@@ -1169,6 +1169,12 @@ intptr_t Node::get_ptr() const {
   return ((ConPNode*)this)->type()->is_ptr()->get_con();
 }
 
+// Get a narrow oop constant from a ConNNode.
+intptr_t Node::get_narrowcon() const {
+  assert( Opcode() == Op_ConN, "" );
+  return ((ConNNode*)this)->type()->is_narrowoop()->get_con();
+}
+
 // Get a long constant from a ConNode.
 // Return a default value if there is no apparent constant here.
 const TypeLong* Node::find_long_type() const {

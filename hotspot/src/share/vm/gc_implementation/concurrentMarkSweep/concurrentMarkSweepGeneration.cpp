@@ -1226,7 +1226,7 @@ CMSCollector::allocation_limit_reached(Space* space, HeapWord* top,
   return NULL;
 }
 
-oop ConcurrentMarkSweepGeneration::promote(oop obj, size_t obj_size, oop* ref) {
+oop ConcurrentMarkSweepGeneration::promote(oop obj, size_t obj_size) {
   assert(obj_size == (size_t)obj->size(), "bad obj_size passed in");
   // allocate, copy and if necessary update promoinfo --
   // delegate to underlying space.
@@ -1238,7 +1238,7 @@ oop ConcurrentMarkSweepGeneration::promote(oop obj, size_t obj_size, oop* ref) {
   }
 #endif  // #ifndef PRODUCT
 
-  oop res = _cmsSpace->promote(obj, obj_size, ref);
+  oop res = _cmsSpace->promote(obj, obj_size);
   if (res == NULL) {
     // expand and retry
     size_t s = _cmsSpace->expansionSpaceRequired(obj_size);  // HeapWords
@@ -1249,7 +1249,7 @@ oop ConcurrentMarkSweepGeneration::promote(oop obj, size_t obj_size, oop* ref) {
     assert(next_gen() == NULL, "assumption, based upon which no attempt "
                                "is made to pass on a possibly failing "
                                "promotion to next generation");
-    res = _cmsSpace->promote(obj, obj_size, ref);
+    res = _cmsSpace->promote(obj, obj_size);
   }
   if (res != NULL) {
     // See comment in allocate() about when objects should
@@ -3922,13 +3922,15 @@ void CMSConcMarkingTask::do_scan_and_mark(int i, CompactibleFreeListSpace* sp) {
 }
 
 class Par_ConcMarkingClosure: public OopClosure {
+ private:
   CMSCollector* _collector;
   MemRegion     _span;
   CMSBitMap*    _bit_map;
   CMSMarkStack* _overflow_stack;
   CMSMarkStack* _revisit_stack;     // XXXXXX Check proper use
   OopTaskQueue* _work_queue;
-
+ protected:
+  DO_OOP_WORK_DEFN
  public:
   Par_ConcMarkingClosure(CMSCollector* collector, OopTaskQueue* work_queue,
                          CMSBitMap* bit_map, CMSMarkStack* overflow_stack):
@@ -3937,8 +3939,8 @@ class Par_ConcMarkingClosure: public OopClosure {
     _work_queue(work_queue),
     _bit_map(bit_map),
     _overflow_stack(overflow_stack) { }   // need to initialize revisit stack etc.
-
-  void do_oop(oop* p);
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
   void trim_queue(size_t max);
   void handle_stack_overflow(HeapWord* lost);
 };
@@ -3947,11 +3949,9 @@ class Par_ConcMarkingClosure: public OopClosure {
 // the salient assumption here is that stolen oops must
 // always be initialized, so we do not need to check for
 // uninitialized objects before scanning here.
-void Par_ConcMarkingClosure::do_oop(oop* p) {
-  oop    this_oop = *p;
-  assert(this_oop->is_oop_or_null(),
-         "expected an oop or NULL");
-  HeapWord* addr = (HeapWord*)this_oop;
+void Par_ConcMarkingClosure::do_oop(oop obj) {
+  assert(obj->is_oop_or_null(), "expected an oop or NULL");
+  HeapWord* addr = (HeapWord*)obj;
   // Check if oop points into the CMS generation
   // and is not marked
   if (_span.contains(addr) && !_bit_map->isMarked(addr)) {
@@ -3970,7 +3970,7 @@ void Par_ConcMarkingClosure::do_oop(oop* p) {
         }
       )
       if (simulate_overflow ||
-          !(_work_queue->push(this_oop) || _overflow_stack->par_push(this_oop))) {
+          !(_work_queue->push(obj) || _overflow_stack->par_push(obj))) {
         // stack overflow
         if (PrintCMSStatistics != 0) {
           gclog_or_tty->print_cr("CMS marking stack overflow (benign) at "
@@ -3986,6 +3986,9 @@ void Par_ConcMarkingClosure::do_oop(oop* p) {
     } // Else, some other thread got there first
   }
 }
+
+void Par_ConcMarkingClosure::do_oop(oop* p)       { Par_ConcMarkingClosure::do_oop_work(p); }
+void Par_ConcMarkingClosure::do_oop(narrowOop* p) { Par_ConcMarkingClosure::do_oop_work(p); }
 
 void Par_ConcMarkingClosure::trim_queue(size_t max) {
   while (_work_queue->size() > max) {
@@ -4086,8 +4089,8 @@ void CMSConcMarkingTask::coordinator_yield() {
   //
   // Tony 2006.06.29
   for (unsigned i = 0; i < CMSCoordinatorYieldSleepCount &&
-                       ConcurrentMarkSweepThread::should_yield() &&
-                       !CMSCollector::foregroundGCIsActive(); ++i) {
+                   ConcurrentMarkSweepThread::should_yield() &&
+                   !CMSCollector::foregroundGCIsActive(); ++i) {
     os::sleep(Thread::current(), 1, false);
     ConcurrentMarkSweepThread::acknowledge_yield_request();
   }
@@ -6048,8 +6051,8 @@ void CMSCollector::reset(bool asynch) {
 
         // See the comment in coordinator_yield()
         for (unsigned i = 0; i < CMSYieldSleepCount &&
-                        ConcurrentMarkSweepThread::should_yield() &&
-                        !CMSCollector::foregroundGCIsActive(); ++i) {
+                         ConcurrentMarkSweepThread::should_yield() &&
+                         !CMSCollector::foregroundGCIsActive(); ++i) {
           os::sleep(Thread::current(), 1, false);
           ConcurrentMarkSweepThread::acknowledge_yield_request();
         }
@@ -6362,18 +6365,18 @@ MarkRefsIntoClosure::MarkRefsIntoClosure(
     assert(_bitMap->covers(_span), "_bitMap/_span mismatch");
 }
 
-void MarkRefsIntoClosure::do_oop(oop* p) {
+void MarkRefsIntoClosure::do_oop(oop obj) {
   // if p points into _span, then mark corresponding bit in _markBitMap
-  oop thisOop = *p;
-  if (thisOop != NULL) {
-    assert(thisOop->is_oop(), "expected an oop");
-    HeapWord* addr = (HeapWord*)thisOop;
-    if (_span.contains(addr)) {
-      // this should be made more efficient
-      _bitMap->mark(addr);
-    }
+  assert(obj->is_oop(), "expected an oop");
+  HeapWord* addr = (HeapWord*)obj;
+  if (_span.contains(addr)) {
+    // this should be made more efficient
+    _bitMap->mark(addr);
   }
 }
+
+void MarkRefsIntoClosure::do_oop(oop* p)       { MarkRefsIntoClosure::do_oop_work(p); }
+void MarkRefsIntoClosure::do_oop(narrowOop* p) { MarkRefsIntoClosure::do_oop_work(p); }
 
 // A variant of the above, used for CMS marking verification.
 MarkRefsIntoVerifyClosure::MarkRefsIntoVerifyClosure(
@@ -6387,22 +6390,22 @@ MarkRefsIntoVerifyClosure::MarkRefsIntoVerifyClosure(
     assert(_verification_bm->covers(_span), "_verification_bm/_span mismatch");
 }
 
-void MarkRefsIntoVerifyClosure::do_oop(oop* p) {
+void MarkRefsIntoVerifyClosure::do_oop(oop obj) {
   // if p points into _span, then mark corresponding bit in _markBitMap
-  oop this_oop = *p;
-  if (this_oop != NULL) {
-    assert(this_oop->is_oop(), "expected an oop");
-    HeapWord* addr = (HeapWord*)this_oop;
-    if (_span.contains(addr)) {
-      _verification_bm->mark(addr);
-      if (!_cms_bm->isMarked(addr)) {
-        oop(addr)->print();
-        gclog_or_tty->print_cr(" ("INTPTR_FORMAT" should have been marked)", addr);
-        fatal("... aborting");
-      }
+  assert(obj->is_oop(), "expected an oop");
+  HeapWord* addr = (HeapWord*)obj;
+  if (_span.contains(addr)) {
+    _verification_bm->mark(addr);
+    if (!_cms_bm->isMarked(addr)) {
+      oop(addr)->print();
+      gclog_or_tty->print_cr(" (" INTPTR_FORMAT " should have been marked)", addr);
+      fatal("... aborting");
     }
   }
 }
+
+void MarkRefsIntoVerifyClosure::do_oop(oop* p)       { MarkRefsIntoVerifyClosure::do_oop_work(p); }
+void MarkRefsIntoVerifyClosure::do_oop(narrowOop* p) { MarkRefsIntoVerifyClosure::do_oop_work(p); }
 
 //////////////////////////////////////////////////
 // MarkRefsIntoAndScanClosure
@@ -6438,13 +6441,13 @@ MarkRefsIntoAndScanClosure::MarkRefsIntoAndScanClosure(MemRegion span,
 // The marks are made in the marking bit map and the marking stack is
 // used for keeping the (newly) grey objects during the scan.
 // The parallel version (Par_...) appears further below.
-void MarkRefsIntoAndScanClosure::do_oop(oop* p) {
-  oop this_oop = *p;
-  if (this_oop != NULL) {
-    assert(this_oop->is_oop(), "expected an oop");
-    HeapWord* addr = (HeapWord*)this_oop;
-    assert(_mark_stack->isEmpty(), "post-condition (eager drainage)");
-    assert(_collector->overflow_list_is_empty(), "should be empty");
+void MarkRefsIntoAndScanClosure::do_oop(oop obj) {
+  if (obj != NULL) {
+    assert(obj->is_oop(), "expected an oop");
+    HeapWord* addr = (HeapWord*)obj;
+    assert(_mark_stack->isEmpty(), "pre-condition (eager drainage)");
+    assert(_collector->overflow_list_is_empty(),
+           "overflow list should be empty");
     if (_span.contains(addr) &&
         !_bit_map->isMarked(addr)) {
       // mark bit map (object is now grey)
@@ -6452,7 +6455,7 @@ void MarkRefsIntoAndScanClosure::do_oop(oop* p) {
       // push on marking stack (stack should be empty), and drain the
       // stack by applying this closure to the oops in the oops popped
       // from the stack (i.e. blacken the grey objects)
-      bool res = _mark_stack->push(this_oop);
+      bool res = _mark_stack->push(obj);
       assert(res, "Should have space to push on empty stack");
       do {
         oop new_oop = _mark_stack->pop();
@@ -6488,6 +6491,9 @@ void MarkRefsIntoAndScanClosure::do_oop(oop* p) {
   }
 }
 
+void MarkRefsIntoAndScanClosure::do_oop(oop* p)       { MarkRefsIntoAndScanClosure::do_oop_work(p); }
+void MarkRefsIntoAndScanClosure::do_oop(narrowOop* p) { MarkRefsIntoAndScanClosure::do_oop_work(p); }
+
 void MarkRefsIntoAndScanClosure::do_yield_work() {
   assert(ConcurrentMarkSweepThread::cms_thread_has_cms_token(),
          "CMS thread should hold CMS token");
@@ -6506,9 +6512,11 @@ void MarkRefsIntoAndScanClosure::do_yield_work() {
   _collector->icms_wait();
 
   // See the comment in coordinator_yield()
-  for (unsigned i = 0; i < CMSYieldSleepCount &&
-                       ConcurrentMarkSweepThread::should_yield() &&
-                       !CMSCollector::foregroundGCIsActive(); ++i) {
+  for (unsigned i = 0;
+       i < CMSYieldSleepCount &&
+       ConcurrentMarkSweepThread::should_yield() &&
+       !CMSCollector::foregroundGCIsActive();
+       ++i) {
     os::sleep(Thread::current(), 1, false);
     ConcurrentMarkSweepThread::acknowledge_yield_request();
   }
@@ -6545,13 +6553,12 @@ Par_MarkRefsIntoAndScanClosure::Par_MarkRefsIntoAndScanClosure(
 // the scan phase whence they are also available for stealing by parallel
 // threads. Since the marking bit map is shared, updates are
 // synchronized (via CAS).
-void Par_MarkRefsIntoAndScanClosure::do_oop(oop* p) {
-  oop this_oop = *p;
-  if (this_oop != NULL) {
+void Par_MarkRefsIntoAndScanClosure::do_oop(oop obj) {
+  if (obj != NULL) {
     // Ignore mark word because this could be an already marked oop
     // that may be chained at the end of the overflow list.
-    assert(this_oop->is_oop(true /* ignore mark word */), "expected an oop");
-    HeapWord* addr = (HeapWord*)this_oop;
+    assert(obj->is_oop(), "expected an oop");
+    HeapWord* addr = (HeapWord*)obj;
     if (_span.contains(addr) &&
         !_bit_map->isMarked(addr)) {
       // mark bit map (object will become grey):
@@ -6565,13 +6572,16 @@ void Par_MarkRefsIntoAndScanClosure::do_oop(oop* p) {
         // queue to an appropriate length by applying this closure to
         // the oops in the oops popped from the stack (i.e. blacken the
         // grey objects)
-        bool res = _work_queue->push(this_oop);
+        bool res = _work_queue->push(obj);
         assert(res, "Low water mark should be less than capacity?");
         trim_queue(_low_water_mark);
       } // Else, another thread claimed the object
     }
   }
 }
+
+void Par_MarkRefsIntoAndScanClosure::do_oop(oop* p)       { Par_MarkRefsIntoAndScanClosure::do_oop_work(p); }
+void Par_MarkRefsIntoAndScanClosure::do_oop(narrowOop* p) { Par_MarkRefsIntoAndScanClosure::do_oop_work(p); }
 
 // This closure is used to rescan the marked objects on the dirty cards
 // in the mod union table and the card table proper.
@@ -6675,8 +6685,8 @@ void ScanMarkedObjectsAgainCarefullyClosure::do_yield_work() {
 
   // See the comment in coordinator_yield()
   for (unsigned i = 0; i < CMSYieldSleepCount &&
-                       ConcurrentMarkSweepThread::should_yield() &&
-                       !CMSCollector::foregroundGCIsActive(); ++i) {
+                   ConcurrentMarkSweepThread::should_yield() &&
+                   !CMSCollector::foregroundGCIsActive(); ++i) {
     os::sleep(Thread::current(), 1, false);
     ConcurrentMarkSweepThread::acknowledge_yield_request();
   }
@@ -6928,13 +6938,13 @@ void MarkFromRootsClosure::scanOopsInOop(HeapWord* ptr) {
   assert(_markStack->isEmpty(),
          "should drain stack to limit stack usage");
   // convert ptr to an oop preparatory to scanning
-  oop this_oop = oop(ptr);
+  oop obj = oop(ptr);
   // Ignore mark word in verification below, since we
   // may be running concurrent with mutators.
-  assert(this_oop->is_oop(true), "should be an oop");
+  assert(obj->is_oop(true), "should be an oop");
   assert(_finger <= ptr, "_finger runneth ahead");
   // advance the finger to right end of this object
-  _finger = ptr + this_oop->size();
+  _finger = ptr + obj->size();
   assert(_finger > ptr, "we just incremented it above");
   // On large heaps, it may take us some time to get through
   // the marking phase (especially if running iCMS). During
@@ -6980,7 +6990,7 @@ void MarkFromRootsClosure::scanOopsInOop(HeapWord* ptr) {
                                       _span, _bitMap, _markStack,
                                       _revisitStack,
                                       _finger, this);
-  bool res = _markStack->push(this_oop);
+  bool res = _markStack->push(obj);
   assert(res, "Empty non-zero size stack should have space for single push");
   while (!_markStack->isEmpty()) {
     oop new_oop = _markStack->pop();
@@ -7052,13 +7062,13 @@ void Par_MarkFromRootsClosure::scan_oops_in_oop(HeapWord* ptr) {
   assert(_work_queue->size() == 0,
          "should drain stack to limit stack usage");
   // convert ptr to an oop preparatory to scanning
-  oop this_oop = oop(ptr);
+  oop obj = oop(ptr);
   // Ignore mark word in verification below, since we
   // may be running concurrent with mutators.
-  assert(this_oop->is_oop(true), "should be an oop");
+  assert(obj->is_oop(true), "should be an oop");
   assert(_finger <= ptr, "_finger runneth ahead");
   // advance the finger to right end of this object
-  _finger = ptr + this_oop->size();
+  _finger = ptr + obj->size();
   assert(_finger > ptr, "we just incremented it above");
   // On large heaps, it may take us some time to get through
   // the marking phase (especially if running iCMS). During
@@ -7106,7 +7116,7 @@ void Par_MarkFromRootsClosure::scan_oops_in_oop(HeapWord* ptr) {
                                       _revisit_stack,
                                       _finger,
                                       gfa, this);
-  bool res = _work_queue->push(this_oop);   // overflow could occur here
+  bool res = _work_queue->push(obj);   // overflow could occur here
   assert(res, "Will hold once we use workqueues");
   while (true) {
     oop new_oop;
@@ -7176,15 +7186,15 @@ void MarkFromRootsVerifyClosure::do_bit(size_t offset) {
   assert(_mark_stack->isEmpty(),
          "should drain stack to limit stack usage");
   // convert addr to an oop preparatory to scanning
-  oop this_oop = oop(addr);
-  assert(this_oop->is_oop(), "should be an oop");
+  oop obj = oop(addr);
+  assert(obj->is_oop(), "should be an oop");
   assert(_finger <= addr, "_finger runneth ahead");
   // advance the finger to right end of this object
-  _finger = addr + this_oop->size();
+  _finger = addr + obj->size();
   assert(_finger > addr, "we just incremented it above");
   // Note: the finger doesn't advance while we drain
   // the stack below.
-  bool res = _mark_stack->push(this_oop);
+  bool res = _mark_stack->push(obj);
   assert(res, "Empty non-zero size stack should have space for single push");
   while (!_mark_stack->isEmpty()) {
     oop new_oop = _mark_stack->pop();
@@ -7207,6 +7217,8 @@ PushAndMarkVerifyClosure::PushAndMarkVerifyClosure(
   _mark_stack(mark_stack)
 { }
 
+void PushAndMarkVerifyClosure::do_oop(oop* p)       { PushAndMarkVerifyClosure::do_oop_work(p); }
+void PushAndMarkVerifyClosure::do_oop(narrowOop* p) { PushAndMarkVerifyClosure::do_oop_work(p); }
 
 // Upon stack overflow, we discard (part of) the stack,
 // remembering the least address amongst those discarded
@@ -7219,20 +7231,20 @@ void PushAndMarkVerifyClosure::handle_stack_overflow(HeapWord* lost) {
   _mark_stack->expand(); // expand the stack if possible
 }
 
-void PushAndMarkVerifyClosure::do_oop(oop* p) {
-  oop    this_oop = *p;
-  assert(this_oop->is_oop_or_null(), "expected an oop or NULL");
-  HeapWord* addr = (HeapWord*)this_oop;
+void PushAndMarkVerifyClosure::do_oop(oop obj) {
+  assert(obj->is_oop_or_null(), "expected an oop or NULL");
+  HeapWord* addr = (HeapWord*)obj;
   if (_span.contains(addr) && !_verification_bm->isMarked(addr)) {
     // Oop lies in _span and isn't yet grey or black
     _verification_bm->mark(addr);            // now grey
     if (!_cms_bm->isMarked(addr)) {
       oop(addr)->print();
-      gclog_or_tty->print_cr(" ("INTPTR_FORMAT" should have been marked)", addr);
+      gclog_or_tty->print_cr(" (" INTPTR_FORMAT " should have been marked)",
+                             addr);
       fatal("... aborting");
     }
 
-    if (!_mark_stack->push(this_oop)) { // stack overflow
+    if (!_mark_stack->push(obj)) { // stack overflow
       if (PrintCMSStatistics != 0) {
         gclog_or_tty->print_cr("CMS marking stack overflow (benign) at "
                                SIZE_FORMAT, _mark_stack->capacity());
@@ -7285,7 +7297,6 @@ Par_PushOrMarkClosure::Par_PushOrMarkClosure(CMSCollector* collector,
   _should_remember_klasses(collector->should_unload_classes())
 { }
 
-
 void CMSCollector::lower_restart_addr(HeapWord* low) {
   assert(_span.contains(low), "Out of bounds addr");
   if (_restart_addr == NULL) {
@@ -7321,12 +7332,10 @@ void Par_PushOrMarkClosure::handle_stack_overflow(HeapWord* lost) {
   _overflow_stack->expand(); // expand the stack if possible
 }
 
-
-void PushOrMarkClosure::do_oop(oop* p) {
-  oop    thisOop = *p;
+void PushOrMarkClosure::do_oop(oop obj) {
   // Ignore mark word because we are running concurrent with mutators.
-  assert(thisOop->is_oop_or_null(true), "expected an oop or NULL");
-  HeapWord* addr = (HeapWord*)thisOop;
+  assert(obj->is_oop_or_null(true), "expected an oop or NULL");
+  HeapWord* addr = (HeapWord*)obj;
   if (_span.contains(addr) && !_bitMap->isMarked(addr)) {
     // Oop lies in _span and isn't yet grey or black
     _bitMap->mark(addr);            // now grey
@@ -7342,7 +7351,7 @@ void PushOrMarkClosure::do_oop(oop* p) {
           simulate_overflow = true;
         }
       )
-      if (simulate_overflow || !_markStack->push(thisOop)) { // stack overflow
+      if (simulate_overflow || !_markStack->push(obj)) { // stack overflow
         if (PrintCMSStatistics != 0) {
           gclog_or_tty->print_cr("CMS marking stack overflow (benign) at "
                                  SIZE_FORMAT, _markStack->capacity());
@@ -7358,11 +7367,13 @@ void PushOrMarkClosure::do_oop(oop* p) {
   }
 }
 
-void Par_PushOrMarkClosure::do_oop(oop* p) {
-  oop    this_oop = *p;
+void PushOrMarkClosure::do_oop(oop* p)       { PushOrMarkClosure::do_oop_work(p); }
+void PushOrMarkClosure::do_oop(narrowOop* p) { PushOrMarkClosure::do_oop_work(p); }
+
+void Par_PushOrMarkClosure::do_oop(oop obj) {
   // Ignore mark word because we are running concurrent with mutators.
-  assert(this_oop->is_oop_or_null(true), "expected an oop or NULL");
-  HeapWord* addr = (HeapWord*)this_oop;
+  assert(obj->is_oop_or_null(true), "expected an oop or NULL");
+  HeapWord* addr = (HeapWord*)obj;
   if (_whole_span.contains(addr) && !_bit_map->isMarked(addr)) {
     // Oop lies in _span and isn't yet grey or black
     // We read the global_finger (volatile read) strictly after marking oop
@@ -7391,7 +7402,7 @@ void Par_PushOrMarkClosure::do_oop(oop* p) {
       }
     )
     if (simulate_overflow ||
-        !(_work_queue->push(this_oop) || _overflow_stack->par_push(this_oop))) {
+        !(_work_queue->push(obj) || _overflow_stack->par_push(obj))) {
       // stack overflow
       if (PrintCMSStatistics != 0) {
         gclog_or_tty->print_cr("CMS marking stack overflow (benign) at "
@@ -7408,6 +7419,8 @@ void Par_PushOrMarkClosure::do_oop(oop* p) {
   }
 }
 
+void Par_PushOrMarkClosure::do_oop(oop* p)       { Par_PushOrMarkClosure::do_oop_work(p); }
+void Par_PushOrMarkClosure::do_oop(narrowOop* p) { Par_PushOrMarkClosure::do_oop_work(p); }
 
 PushAndMarkClosure::PushAndMarkClosure(CMSCollector* collector,
                                        MemRegion span,
@@ -7432,16 +7445,11 @@ PushAndMarkClosure::PushAndMarkClosure(CMSCollector* collector,
 
 // Grey object rescan during pre-cleaning and second checkpoint phases --
 // the non-parallel version (the parallel version appears further below.)
-void PushAndMarkClosure::do_oop(oop* p) {
-  oop    this_oop = *p;
-  // Ignore mark word verification. If during concurrent precleaning
-  // the object monitor may be locked. If during the checkpoint
-  // phases, the object may already have been reached by a  different
-  // path and may be at the end of the global overflow list (so
-  // the mark word may be NULL).
-  assert(this_oop->is_oop_or_null(true/* ignore mark word */),
+void PushAndMarkClosure::do_oop(oop obj) {
+  // If _concurrent_precleaning, ignore mark word verification
+  assert(obj->is_oop_or_null(_concurrent_precleaning),
          "expected an oop or NULL");
-  HeapWord* addr = (HeapWord*)this_oop;
+  HeapWord* addr = (HeapWord*)obj;
   // Check if oop points into the CMS generation
   // and is not marked
   if (_span.contains(addr) && !_bit_map->isMarked(addr)) {
@@ -7456,7 +7464,7 @@ void PushAndMarkClosure::do_oop(oop* p) {
         simulate_overflow = true;
       }
     )
-    if (simulate_overflow || !_mark_stack->push(this_oop)) {
+    if (simulate_overflow || !_mark_stack->push(obj)) {
       if (_concurrent_precleaning) {
          // During precleaning we can just dirty the appropriate card
          // in the mod union table, thus ensuring that the object remains
@@ -7468,7 +7476,7 @@ void PushAndMarkClosure::do_oop(oop* p) {
       } else {
          // During the remark phase, we need to remember this oop
          // in the overflow list.
-         _collector->push_on_overflow_list(this_oop);
+         _collector->push_on_overflow_list(obj);
          _collector->_ser_pmc_remark_ovflw++;
       }
     }
@@ -7492,10 +7500,12 @@ Par_PushAndMarkClosure::Par_PushAndMarkClosure(CMSCollector* collector,
   assert(_ref_processor != NULL, "_ref_processor shouldn't be NULL");
 }
 
+void PushAndMarkClosure::do_oop(oop* p)       { PushAndMarkClosure::do_oop_work(p); }
+void PushAndMarkClosure::do_oop(narrowOop* p) { PushAndMarkClosure::do_oop_work(p); }
+
 // Grey object rescan during second checkpoint phase --
 // the parallel version.
-void Par_PushAndMarkClosure::do_oop(oop* p) {
-  oop    this_oop = *p;
+void Par_PushAndMarkClosure::do_oop(oop obj) {
   // In the assert below, we ignore the mark word because
   // this oop may point to an already visited object that is
   // on the overflow stack (in which case the mark word has
@@ -7507,9 +7517,9 @@ void Par_PushAndMarkClosure::do_oop(oop* p) {
   // value, by the time we get to examined this failing assert in
   // the debugger, is_oop_or_null(false) may subsequently start
   // to hold.
-  assert(this_oop->is_oop_or_null(true),
+  assert(obj->is_oop_or_null(true),
          "expected an oop or NULL");
-  HeapWord* addr = (HeapWord*)this_oop;
+  HeapWord* addr = (HeapWord*)obj;
   // Check if oop points into the CMS generation
   // and is not marked
   if (_span.contains(addr) && !_bit_map->isMarked(addr)) {
@@ -7527,13 +7537,16 @@ void Par_PushAndMarkClosure::do_oop(oop* p) {
           simulate_overflow = true;
         }
       )
-      if (simulate_overflow || !_work_queue->push(this_oop)) {
-        _collector->par_push_on_overflow_list(this_oop);
+      if (simulate_overflow || !_work_queue->push(obj)) {
+        _collector->par_push_on_overflow_list(obj);
         _collector->_par_pmc_remark_ovflw++; //  imprecise OK: no need to CAS
       }
     } // Else, some other thread got there first
   }
 }
+
+void Par_PushAndMarkClosure::do_oop(oop* p)       { Par_PushAndMarkClosure::do_oop_work(p); }
+void Par_PushAndMarkClosure::do_oop(narrowOop* p) { Par_PushAndMarkClosure::do_oop_work(p); }
 
 void PushAndMarkClosure::remember_klass(Klass* k) {
   if (!_revisit_stack->push(oop(k))) {
@@ -8228,9 +8241,8 @@ bool CMSIsAliveClosure::do_object_b(oop obj) {
 }
 
 // CMSKeepAliveClosure: the serial version
-void CMSKeepAliveClosure::do_oop(oop* p) {
-  oop this_oop = *p;
-  HeapWord* addr = (HeapWord*)this_oop;
+void CMSKeepAliveClosure::do_oop(oop obj) {
+  HeapWord* addr = (HeapWord*)obj;
   if (_span.contains(addr) &&
       !_bit_map->isMarked(addr)) {
     _bit_map->mark(addr);
@@ -8242,26 +8254,28 @@ void CMSKeepAliveClosure::do_oop(oop* p) {
         simulate_overflow = true;
       }
     )
-    if (simulate_overflow || !_mark_stack->push(this_oop)) {
-      _collector->push_on_overflow_list(this_oop);
+    if (simulate_overflow || !_mark_stack->push(obj)) {
+      _collector->push_on_overflow_list(obj);
       _collector->_ser_kac_ovflw++;
     }
   }
 }
 
+void CMSKeepAliveClosure::do_oop(oop* p)       { CMSKeepAliveClosure::do_oop_work(p); }
+void CMSKeepAliveClosure::do_oop(narrowOop* p) { CMSKeepAliveClosure::do_oop_work(p); }
+
 // CMSParKeepAliveClosure: a parallel version of the above.
 // The work queues are private to each closure (thread),
 // but (may be) available for stealing by other threads.
-void CMSParKeepAliveClosure::do_oop(oop* p) {
-  oop this_oop = *p;
-  HeapWord* addr = (HeapWord*)this_oop;
+void CMSParKeepAliveClosure::do_oop(oop obj) {
+  HeapWord* addr = (HeapWord*)obj;
   if (_span.contains(addr) &&
       !_bit_map->isMarked(addr)) {
     // In general, during recursive tracing, several threads
     // may be concurrently getting here; the first one to
     // "tag" it, claims it.
     if (_bit_map->par_mark(addr)) {
-      bool res = _work_queue->push(this_oop);
+      bool res = _work_queue->push(obj);
       assert(res, "Low water mark should be much less than capacity");
       // Do a recursive trim in the hope that this will keep
       // stack usage lower, but leave some oops for potential stealers
@@ -8269,6 +8283,9 @@ void CMSParKeepAliveClosure::do_oop(oop* p) {
     } // Else, another thread got there first
   }
 }
+
+void CMSParKeepAliveClosure::do_oop(oop* p)       { CMSParKeepAliveClosure::do_oop_work(p); }
+void CMSParKeepAliveClosure::do_oop(narrowOop* p) { CMSParKeepAliveClosure::do_oop_work(p); }
 
 void CMSParKeepAliveClosure::trim_queue(uint max) {
   while (_work_queue->size() > max) {
@@ -8285,9 +8302,8 @@ void CMSParKeepAliveClosure::trim_queue(uint max) {
   }
 }
 
-void CMSInnerParMarkAndPushClosure::do_oop(oop* p) {
-  oop this_oop = *p;
-  HeapWord* addr = (HeapWord*)this_oop;
+void CMSInnerParMarkAndPushClosure::do_oop(oop obj) {
+  HeapWord* addr = (HeapWord*)obj;
   if (_span.contains(addr) &&
       !_bit_map->isMarked(addr)) {
     if (_bit_map->par_mark(addr)) {
@@ -8299,13 +8315,16 @@ void CMSInnerParMarkAndPushClosure::do_oop(oop* p) {
           simulate_overflow = true;
         }
       )
-      if (simulate_overflow || !_work_queue->push(this_oop)) {
-        _collector->par_push_on_overflow_list(this_oop);
+      if (simulate_overflow || !_work_queue->push(obj)) {
+        _collector->par_push_on_overflow_list(obj);
         _collector->_par_kac_ovflw++;
       }
     } // Else another thread got there already
   }
 }
+
+void CMSInnerParMarkAndPushClosure::do_oop(oop* p)       { CMSInnerParMarkAndPushClosure::do_oop_work(p); }
+void CMSInnerParMarkAndPushClosure::do_oop(narrowOop* p) { CMSInnerParMarkAndPushClosure::do_oop_work(p); }
 
 //////////////////////////////////////////////////////////////////
 //  CMSExpansionCause                /////////////////////////////
@@ -8337,12 +8356,12 @@ void CMSDrainMarkingStackClosure::do_void() {
   while (!_mark_stack->isEmpty() ||
          // if stack is empty, check the overflow list
          _collector->take_from_overflow_list(num, _mark_stack)) {
-    oop this_oop = _mark_stack->pop();
-    HeapWord* addr = (HeapWord*)this_oop;
+    oop obj = _mark_stack->pop();
+    HeapWord* addr = (HeapWord*)obj;
     assert(_span.contains(addr), "Should be within span");
     assert(_bit_map->isMarked(addr), "Should be marked");
-    assert(this_oop->is_oop(), "Should be an oop");
-    this_oop->oop_iterate(_keep_alive);
+    assert(obj->is_oop(), "Should be an oop");
+    obj->oop_iterate(_keep_alive);
   }
 }
 
