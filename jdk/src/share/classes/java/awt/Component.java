@@ -634,6 +634,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     private PropertyChangeSupport changeSupport;
 
+    private transient final Object changeSupportLock = new Object();
+    private Object getChangeSupportLock() {
+        return changeSupportLock;
+    }
+
     boolean isPacked = false;
 
     /**
@@ -935,24 +940,26 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     public GraphicsConfiguration getGraphicsConfiguration() {
         synchronized(getTreeLock()) {
-            GraphicsConfiguration gc = graphicsConfig;
-            Component parent = getParent();
-            while ((gc == null) && (parent != null)) {
-                gc = parent.getGraphicsConfiguration();
-                parent = parent.getParent();
+            if (graphicsConfig != null) {
+                return graphicsConfig;
+            } else if (getParent() != null) {
+                return getParent().getGraphicsConfiguration();
+            } else {
+                return null;
             }
-            return gc;
         }
     }
 
     final GraphicsConfiguration getGraphicsConfiguration_NoClientCode() {
-        GraphicsConfiguration gc = this.graphicsConfig;
-        Component par = this.parent;
-        while ((gc == null) && (par != null)) {
-            gc = par.getGraphicsConfiguration_NoClientCode();
-            par = par.parent;
+        GraphicsConfiguration graphicsConfig = this.graphicsConfig;
+        Container parent = this.parent;
+        if (graphicsConfig != null) {
+            return graphicsConfig;
+        } else if (parent != null) {
+            return parent.getGraphicsConfiguration_NoClientCode();
+        } else {
+            return null;
         }
-        return gc;
     }
 
     /**
@@ -4602,7 +4609,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
                                              e.isPopupTrigger(),
                                              e.getScrollType(),
                                              e.getScrollAmount(),
-                                             e.getWheelRotation());
+                                             e.getWheelRotation(),
+                                             e.getPreciseWheelRotation());
                 ((AWTEvent)e).copyPrivateDataInto(newMWE);
                 // When dispatching a wheel event to
                 // ancestor, there is no need trying to find descendant
@@ -6484,7 +6492,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 // will need some help.
                 Container parent = this.parent;
                 if (parent != null && parent.peer instanceof LightweightPeer) {
-                    nativeInLightFixer = new NativeInLightFixer();
+                    relocateComponent();
                 }
             }
             invalidate();
@@ -6593,10 +6601,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 if (inputContext != null) {
                     inputContext.removeNotify(this);
                 }
-            }
-
-            if (nativeInLightFixer != null) {
-                nativeInLightFixer.uninstall();
             }
 
             ComponentPeer p = peer;
@@ -7836,15 +7840,17 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getPropertyChangeListeners
      * @see #addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)
      */
-    public synchronized void addPropertyChangeListener(
+    public void addPropertyChangeListener(
                                                        PropertyChangeListener listener) {
-        if (listener == null) {
-            return;
+        synchronized (getChangeSupportLock()) {
+            if (listener == null) {
+                return;
+            }
+            if (changeSupport == null) {
+                changeSupport = new PropertyChangeSupport(this);
+            }
+            changeSupport.addPropertyChangeListener(listener);
         }
-        if (changeSupport == null) {
-            changeSupport = new PropertyChangeSupport(this);
-        }
-        changeSupport.addPropertyChangeListener(listener);
     }
 
     /**
@@ -7860,12 +7866,14 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getPropertyChangeListeners
      * @see #removePropertyChangeListener(java.lang.String,java.beans.PropertyChangeListener)
      */
-    public synchronized void removePropertyChangeListener(
+    public void removePropertyChangeListener(
                                                           PropertyChangeListener listener) {
-        if (listener == null || changeSupport == null) {
-            return;
+        synchronized (getChangeSupportLock()) {
+            if (listener == null || changeSupport == null) {
+                return;
+            }
+            changeSupport.removePropertyChangeListener(listener);
         }
-        changeSupport.removePropertyChangeListener(listener);
     }
 
     /**
@@ -7882,11 +7890,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see      java.beans.PropertyChangeSupport#getPropertyChangeListeners
      * @since    1.4
      */
-    public synchronized PropertyChangeListener[] getPropertyChangeListeners() {
-        if (changeSupport == null) {
-            return new PropertyChangeListener[0];
+    public PropertyChangeListener[] getPropertyChangeListeners() {
+        synchronized (getChangeSupportLock()) {
+            if (changeSupport == null) {
+                return new PropertyChangeListener[0];
+            }
+            return changeSupport.getPropertyChangeListeners();
         }
-        return changeSupport.getPropertyChangeListeners();
     }
 
     /**
@@ -7920,16 +7930,18 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getPropertyChangeListeners(java.lang.String)
      * @see #addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)
      */
-    public synchronized void addPropertyChangeListener(
+    public void addPropertyChangeListener(
                                                        String propertyName,
                                                        PropertyChangeListener listener) {
-        if (listener == null) {
-            return;
+        synchronized (getChangeSupportLock()) {
+            if (listener == null) {
+                return;
+            }
+            if (changeSupport == null) {
+                changeSupport = new PropertyChangeSupport(this);
+            }
+            changeSupport.addPropertyChangeListener(propertyName, listener);
         }
-        if (changeSupport == null) {
-            changeSupport = new PropertyChangeSupport(this);
-        }
-        changeSupport.addPropertyChangeListener(propertyName, listener);
     }
 
     /**
@@ -7948,13 +7960,15 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getPropertyChangeListeners(java.lang.String)
      * @see #removePropertyChangeListener(java.beans.PropertyChangeListener)
      */
-    public synchronized void removePropertyChangeListener(
+    public void removePropertyChangeListener(
                                                           String propertyName,
                                                           PropertyChangeListener listener) {
-        if (listener == null || changeSupport == null) {
-            return;
+        synchronized (getChangeSupportLock()) {
+            if (listener == null || changeSupport == null) {
+                return;
+            }
+            changeSupport.removePropertyChangeListener(propertyName, listener);
         }
-        changeSupport.removePropertyChangeListener(propertyName, listener);
     }
 
     /**
@@ -7971,12 +7985,14 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getPropertyChangeListeners
      * @since 1.4
      */
-    public synchronized PropertyChangeListener[] getPropertyChangeListeners(
+    public PropertyChangeListener[] getPropertyChangeListeners(
                                                                             String propertyName) {
-        if (changeSupport == null) {
-            return new PropertyChangeListener[0];
+        synchronized (getChangeSupportLock()) {
+            if (changeSupport == null) {
+                return new PropertyChangeListener[0];
+            }
+            return changeSupport.getPropertyChangeListeners(propertyName);
         }
-        return changeSupport.getPropertyChangeListeners(propertyName);
     }
 
     /**
@@ -7991,7 +8007,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     protected void firePropertyChange(String propertyName,
                                       Object oldValue, Object newValue) {
-        PropertyChangeSupport changeSupport = this.changeSupport;
+        PropertyChangeSupport changeSupport;
+        synchronized (getChangeSupportLock()) {
+            changeSupport = this.changeSupport;
+        }
         if (changeSupport == null ||
             (oldValue != null && newValue != null && oldValue.equals(newValue))) {
             return;
@@ -8491,8 +8510,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
         setComponentOrientation(orientation);
     }
 
-    transient NativeInLightFixer nativeInLightFixer;
-
     /**
      * Checks that this component meets the prerequesites to be focus owner:
      * - it is enabled, visible, focusable
@@ -8518,188 +8535,25 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * This odd class is to help out a native component that has been
-     * embedded in a lightweight component.  Moving lightweight
-     * components around and changing their visibility is not seen
-     * by the native window system.  This is a feature for lightweights,
-     * but a problem for native components that depend upon the
-     * lightweights.  An instance of this class listens to the lightweight
-     * parents of an associated native component (the outer class).
-     *
-     * @author  Timothy Prinzing
+     * Fix the location of the HW component in a LW container hierarchy.
      */
-    final class NativeInLightFixer implements ComponentListener, ContainerListener {
-
-        NativeInLightFixer() {
-            lightParents = new Vector();
-            install(parent);
-        }
-
-        void install(Container parent) {
-            lightParents.clear();
-            Container p = parent;
-            boolean isLwParentsVisible = true;
-            // stash a reference to the components that are being observed so that
-            // we can reliably remove ourself as a listener later.
-            for (; p.peer instanceof LightweightPeer; p = p.parent) {
-
-                // register listeners and stash a reference
-                p.addComponentListener(this);
-                p.addContainerListener(this);
-                lightParents.addElement(p);
-                isLwParentsVisible &= p.isVisible();
+    final void relocateComponent() {
+        synchronized (getTreeLock()) {
+            if (peer == null) {
+                return;
             }
-            // register with the native host (native parent of associated native)
-            // to get notified if the top-level lightweight is removed.
-            nativeHost = p;
-            p.addContainerListener(this);
-
-            // kick start the fixup.  Since the event isn't looked at
-            // we can simulate movement notification.
-            componentMoved(null);
-            if (!isLwParentsVisible) {
-                synchronized (getTreeLock()) {
-                    if (peer != null) {
-                        peer.hide();
-                    }
-                }
-            }
-        }
-
-        void uninstall() {
-            if (nativeHost != null) {
-                removeReferences();
-            }
-        }
-
-        // --- ComponentListener -------------------------------------------
-
-        /**
-         * Invoked when one of the lightweight parents has been resized.
-         * This doesn't change the position of the native child so it
-         * is ignored.
-         */
-        public void componentResized(ComponentEvent e) {
-        }
-
-        /**
-         * Invoked when one of the lightweight parents has been moved.
-         * The native peer must be told of the new position which is
-         * relative to the native container that is hosting the
-         * lightweight components.
-         */
-        public void componentMoved(ComponentEvent e) {
-            synchronized (getTreeLock()) {
-                int nativeX = x;
-                int nativeY = y;
-                for(Component c = parent; (c != null) &&
-                        (c.peer instanceof LightweightPeer);
-                    c = c.parent) {
-
-                    nativeX += c.x;
-                    nativeY += c.y;
-                }
-                if (peer != null) {
-                    peer.setBounds(nativeX, nativeY, width, height,
-                                   ComponentPeer.SET_LOCATION);
-                }
-            }
-        }
-
-        /**
-         * Invoked when a lightweight parent component has been
-         * shown.  The associated native component must also be
-         * shown if it hasn't had an overriding hide done on it.
-         */
-        public void componentShown(ComponentEvent e) {
-            if (shouldShow()) {
-                synchronized (getTreeLock()) {
-                    if (peer != null) {
-                        peer.show();
-                    }
-                }
-            }
-        }
-
-        /**
-         * Invoked when one of the lightweight parents become visible.
-         * Returns true if component and all its lightweight
-         * parents are visible.
-         */
-        private boolean shouldShow() {
-            boolean isLwParentsVisible = visible;
-            for (int i = lightParents.size() - 1;
-                 i >= 0 && isLwParentsVisible;
-                 i--)
+            int nativeX = x;
+            int nativeY = y;
+            for (Component cont = getContainer();
+                    cont != null && cont.isLightweight();
+                    cont = cont.getContainer())
             {
-                isLwParentsVisible &=
-                    ((Container) lightParents.elementAt(i)).isVisible();
+                nativeX += cont.x;
+                nativeY += cont.y;
             }
-            return isLwParentsVisible;
+            peer.setBounds(nativeX, nativeY, width, height,
+                    ComponentPeer.SET_LOCATION);
         }
-
-        /**
-         * Invoked when component has been hidden.
-         */
-        public void componentHidden(ComponentEvent e) {
-            if (visible) {
-                synchronized (getTreeLock()) {
-                    if (peer != null) {
-                        peer.hide();
-                    }
-                }
-            }
-        }
-
-        // --- ContainerListener ------------------------------------
-
-        /**
-         * Invoked when a component has been added to a lightweight
-         * parent.  This doesn't effect the native component.
-         */
-        public void componentAdded(ContainerEvent e) {
-        }
-
-        /**
-         * Invoked when a lightweight parent has been removed.
-         * This means the services of this listener are no longer
-         * required and it should remove all references (ie
-         * registered listeners).
-         */
-        public void componentRemoved(ContainerEvent e) {
-            Component c = e.getChild();
-            if (c == Component.this) {
-                removeReferences();
-            } else {
-                int n = lightParents.size();
-                for (int i = 0; i < n; i++) {
-                    Container p = (Container) lightParents.elementAt(i);
-                    if (p == c) {
-                        removeReferences();
-                        break;
-                    }
-                }
-            }
-        }
-
-        /**
-         * Removes references to this object so it can be
-         * garbage collected.
-         */
-        void removeReferences() {
-            int n = lightParents.size();
-            for (int i = 0; i < n; i++) {
-                Container c = (Container) lightParents.elementAt(i);
-                c.removeComponentListener(this);
-                c.removeContainerListener(this);
-            }
-            nativeHost.removeContainerListener(this);
-            lightParents.clear();
-            nativeHost = null;
-        }
-
-        Vector lightParents;
-        Container nativeHost;
     }
 
     /**
@@ -9453,6 +9307,19 @@ public abstract class Component implements ImageObserver, MenuContainer,
     // ************************** MIXING CODE *******************************
 
     /**
+     * Check whether we can trust the current bounds of the component.
+     * The return value of false indicates that the container of the
+     * component is invalid, and therefore needs to be layed out, which would
+     * probably mean changing the bounds of its children.
+     * Null-layout of the container or absence of the container mean
+     * the bounds of the component are final and can be trusted.
+     */
+    private boolean areBoundsValid() {
+        Container cont = getContainer();
+        return cont == null || cont.isValid() || cont.getLayout() == null;
+    }
+
+    /**
      * Applies the shape to the component
      * @param shape Shape to be applied to the component
      */
@@ -9475,7 +9342,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 // to modify the object outside of the mixing code.
                 this.compoundShape = shape;
 
-                if (isValid()) {
+                if (areBoundsValid()) {
                     Point compAbsolute = getLocationOnWindow();
 
                     if (mixingLog.isLoggable(Level.FINER)) {
@@ -9602,7 +9469,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     void applyCurrentShape() {
         checkTreeLock();
-        if (!isValid()) {
+        if (!areBoundsValid()) {
             return; // Because applyCompoundShape() ignores such components anyway
         }
         if (mixingLog.isLoggable(Level.FINE)) {

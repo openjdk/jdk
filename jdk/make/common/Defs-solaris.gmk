@@ -45,13 +45,13 @@
 include $(JDK_MAKE_SHARED_DIR)/Defs.gmk
 
 ifndef PLATFORM_SRC
-PLATFORM_SRC = $(JDK_TOPDIR)/src/solaris
+PLATFORM_SRC = $(BUILDDIR)/../src/solaris
 endif # PLATFORM_SRC
 
 # Platform specific closed sources
 ifndef OPENJDK
   ifndef CLOSED_PLATFORM_SRC
-    CLOSED_PLATFORM_SRC = $(JDK_TOPDIR)/src/closed/solaris
+    CLOSED_PLATFORM_SRC = $(BUILDDIR)/../src/closed/solaris
   endif
 endif
 

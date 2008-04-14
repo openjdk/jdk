@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,7 @@ public class TrustManagerFactory {
      * @exception NoSuchAlgorithmException if no Provider supports a
      *          TrustManagerFactorySpi implementation for the
      *          specified algorithm.
+     * @exception NullPointerException if algorithm is null.
      *
      * @see java.security.Provider
      */
@@ -171,6 +172,7 @@ public class TrustManagerFactory {
      *          registered in the security provider list.
      *
      * @throws IllegalArgumentException if the provider name is null or empty.
+     * @throws NullPointerException if algorithm is null.
      *
      * @see java.security.Provider
      */
@@ -208,6 +210,7 @@ public class TrustManagerFactory {
      *          from the specified Provider object.
      *
      * @throws IllegalArgumentException if the provider is null.
+     * @throws NullPointerException if algorithm is null.
      *
      * @see java.security.Provider
      */
@@ -273,6 +276,8 @@ public class TrustManagerFactory {
 
     /**
      * Returns one trust manager for each type of trust material.
+     *
+     * @throws IllegalStateException if the factory is not initialized.
      *
      * @return the trust managers
      */

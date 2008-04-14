@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,20 +31,23 @@
 package sun.awt.X11;
 
 import sun.misc.Unsafe;
-import java.util.regex.*;
+import java.awt.Insets;
 import java.awt.Frame;
 import java.awt.Rectangle;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import java.awt.Insets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Class incapsulating knowledge about window managers in general
  * Descendants should provide some information about specific window manager.
  */
-class XWM implements MWMConstants, XUtilConstants {
+final class XWM implements MWMConstants, XUtilConstants
+{
 
     private final static Logger log = Logger.getLogger("sun.awt.X11.XWM");
     private final static Logger insLog = Logger.getLogger("sun.awt.X11.insets.XWM");
@@ -1026,21 +1029,21 @@ class XWM implements MWMConstants, XUtilConstants {
 /*****************************************************************************\
  * Protocols support
  */
-    HashMap<Class<?>, Collection<XProtocol>> protocolsMap = new HashMap<Class<?>, Collection<XProtocol>>();
+    private HashMap<Class<?>, Collection<?>> protocolsMap = new HashMap<Class<?>, Collection<?>>();
     /**
      * Returns all protocols supporting given protocol interface
      */
-    Collection<XProtocol> getProtocols(Class protocolInterface) {
-        Collection<XProtocol> res = protocolsMap.get(protocolInterface);
+    <T> Collection<T> getProtocols(Class<T> protocolInterface) {
+        Collection<T> res = (Collection<T>) protocolsMap.get(protocolInterface);
         if (res != null) {
-            return (Collection<XProtocol>)res;
+            return res;
         } else {
-            return new LinkedList<XProtocol>();
+            return new LinkedList<T>();
         }
     }
 
-    void addProtocol(Class protocolInterface, XProtocol protocol) {
-        Collection<XProtocol> protocols = getProtocols(protocolInterface);
+    private <T> void addProtocol(Class<T> protocolInterface, T protocol) {
+        Collection<T> protocols = getProtocols(protocolInterface);
         protocols.add(protocol);
         protocolsMap.put(protocolInterface, protocols);
     }
@@ -1085,9 +1088,7 @@ class XWM implements MWMConstants, XUtilConstants {
               }
               /* FALLTROUGH */
           case Frame.MAXIMIZED_BOTH:
-              Iterator iter = getProtocols(XStateProtocol.class).iterator();
-              while (iter.hasNext()) {
-                  XStateProtocol proto = (XStateProtocol)iter.next();
+              for (XStateProtocol proto : getProtocols(XStateProtocol.class)) {
                   if (proto.supportsState(state)) {
                       return true;
                   }
@@ -1105,10 +1106,8 @@ class XWM implements MWMConstants, XUtilConstants {
 
 
     int getExtendedState(XWindowPeer window) {
-        Iterator iter = getProtocols(XStateProtocol.class).iterator();
         int state = 0;
-        while (iter.hasNext()) {
-            XStateProtocol proto = (XStateProtocol)iter.next();
+        for (XStateProtocol proto : getProtocols(XStateProtocol.class)) {
             state |= proto.getState(window);
         }
         if (state != 0) {
@@ -1127,18 +1126,17 @@ class XWM implements MWMConstants, XUtilConstants {
 
     /*
      * Check if property change is a window state protocol message.
-     * If it is - return the new state as Integer, otherwise return null
      */
-    Integer isStateChange(XDecoratedPeer window, XPropertyEvent e) {
+    boolean isStateChange(XDecoratedPeer window, XPropertyEvent e) {
         if (!window.isShowing()) {
             stateLog.finer("Window is not showing");
-            return null;
+            return false;
         }
 
         int wm_state = window.getWMState();
         if (wm_state == XlibWrapper.WithdrawnState) {
             stateLog.finer("WithdrawnState");
-            return null;
+            return false;
         } else {
             stateLog.finer("Window WM_STATE is " + wm_state);
         }
@@ -1147,26 +1145,26 @@ class XWM implements MWMConstants, XUtilConstants {
             is_state_change = true;
         }
 
-        Iterator iter = getProtocols(XStateProtocol.class).iterator();
-        while (iter.hasNext()) {
-            XStateProtocol proto = (XStateProtocol)iter.next();
+        for (XStateProtocol proto : getProtocols(XStateProtocol.class)) {
             is_state_change |= proto.isStateChange(e);
+            stateLog.finest(proto + ": is state changed = " + is_state_change);
         }
-        int res = 0;
+        return is_state_change;
+    }
 
-        if (is_state_change) {
-            if (wm_state == XlibWrapper.IconicState) {
-                res = Frame.ICONIFIED;
-            } else {
-                res = Frame.NORMAL;
-            }
-            res |= getExtendedState(window);
-        }
-        if (is_state_change) {
-            return Integer.valueOf(res);
+    /*
+     * Returns current state (including extended) of a given window.
+     */
+    int getState(XDecoratedPeer window) {
+        int res = 0;
+        final int wm_state = window.getWMState();
+        if (wm_state == XlibWrapper.IconicState) {
+            res = Frame.ICONIFIED;
         } else {
-            return null;
+            res = Frame.NORMAL;
         }
+        res |= getExtendedState(window);
+        return res;
     }
 
 /*****************************************************************************\
@@ -1180,9 +1178,7 @@ class XWM implements MWMConstants, XUtilConstants {
      * in XLayerProtocol
      */
     void setLayer(XWindowPeer window, int layer) {
-        Iterator iter = getProtocols(XLayerProtocol.class).iterator();
-        while (iter.hasNext()) {
-            XLayerProtocol proto = (XLayerProtocol)iter.next();
+        for (XLayerProtocol proto : getProtocols(XLayerProtocol.class)) {
             if (proto.supportsLayer(layer)) {
                 proto.setLayer(window, layer);
             }
@@ -1191,9 +1187,7 @@ class XWM implements MWMConstants, XUtilConstants {
     }
 
     void setExtendedState(XWindowPeer window, int state) {
-        Iterator iter = getProtocols(XStateProtocol.class).iterator();
-        while (iter.hasNext()) {
-            XStateProtocol proto = (XStateProtocol)iter.next();
+        for (XStateProtocol proto : getProtocols(XStateProtocol.class)) {
             if (proto.supportsState(state)) {
                 proto.setState(window, state);
                 break;
@@ -1239,9 +1233,7 @@ class XWM implements MWMConstants, XUtilConstants {
     void unshadeKludge(XDecoratedPeer window) {
         assert(window.isShowing());
 
-        Iterator iter = getProtocols(XStateProtocol.class).iterator();
-        while (iter.hasNext()) {
-            XStateProtocol proto = (XStateProtocol)iter.next();
+        for (XStateProtocol proto : getProtocols(XStateProtocol.class)) {
             proto.unshadeKludge(window);
         }
         XToolkit.XSync();
