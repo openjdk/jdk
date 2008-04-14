@@ -621,8 +621,14 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
      */
     private InputStream getInputStream(URL url) throws IOException {
         if ("file".equals(url.getProtocol())) {
-            String path = url.getFile().replace('/', File.separatorChar);
-            return new FileInputStream(path);
+            try {
+                File path = new File(url.toURI());
+                return new FileInputStream(path);
+            } catch (IOException ioe) {
+                throw ioe;
+            } catch (Exception ex) {
+                throw new IOException(ex.getMessage(), ex);
+            }
         } else {
             return url.openStream();
         }

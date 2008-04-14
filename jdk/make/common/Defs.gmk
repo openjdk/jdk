@@ -41,7 +41,15 @@
 SUN_MAKE_TEST:sh = echo "ERROR: PLEASE USE GNU VERSION OF MAKE"; exit 33
 
 ifndef JDK_TOPDIR
-  JDK_TOPDIR=$(BUILDDIR)/..
+  ifdef BUILDDIR
+    JDK_TOPDIR=$(BUILDDIR)/..
+  else
+    JDK_TOPDIR:=$(error "ERROR: Cannot define top of jdk repository")
+  endif
+endif
+ifndef BUILDDIR
+  # Hack, due to deploy repository using this file.
+  BUILDDIR=$(JDK_TOPDIR)/make
 endif
 ifndef JDK_MAKE_SHARED_DIR
   JDK_MAKE_SHARED_DIR=$(JDK_TOPDIR)/make/common/shared
@@ -59,13 +67,13 @@ include $(JDK_TOPDIR)/make/common/CancelImplicits.gmk
 # there yet.
 #
 ifndef SHARE_SRC
-  SHARE_SRC    = $(JDK_TOPDIR)/src/share
+  SHARE_SRC    = $(BUILDDIR)/../src/share
 endif
 
 # Files that cannot be included in the OpenJDK distribution are
 # collected under a parent directory which contains just those files.
 ifndef CLOSED_SRC
-  CLOSED_SRC  = $(JDK_TOPDIR)/src/closed
+  CLOSED_SRC  = $(BUILDDIR)/../src/closed
 endif
 
 # If we have no closed directory, force it to an openjdk build
@@ -169,14 +177,6 @@ ifdef OPENJDK
     BINARY_PLUGS_JARFILE = $(ALT_BINARY_PLUGS_JARFILE)
   endif
 endif # OPENJDK
-
-# Default output directory
-ifdef OPENJDK
-_OUTPUTDIR=$(JDK_TOPDIR)/build/$(PLATFORM)-$(ARCH)$(OPENJDK_SUFFIX)
-else
-_OUTPUTDIR=$(JDK_TOPDIR)/build/$(PLATFORM)-$(ARCH)
-endif
-
 
 #
 # Get platform definitions

@@ -1,5 +1,5 @@
 #
-# Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -92,8 +92,25 @@ BUILDDIR = ../../..
 PACKAGE = sun.security.mscapi
 LIBRARY = sunmscapi
 PRODUCT = sun
+
+#
+# The following is for when we need to do postprocessing
+# (signing/obfuscation) against a read-only build.  If the OUTPUTDIR
+# isn't writable, the build currently crashes out.
+#
+ifndef OPENJDK
+  ifdef ALT_JCE_BUILD_DIR
+    # =====================================================
+    # Where to place the output, in case we're building from a read-only
+    # build area.  (e.g. a release engineering build.)
+    JCE_BUILD_DIR=${ALT_JCE_BUILD_DIR}
+    IGNORE_WRITABLE_OUTPUTDIR_TEST=true
+  else
+    JCE_BUILD_DIR=${TEMPDIR}
+  endif
+endif
+
 include $(BUILDDIR)/common/Defs.gmk
-include $(BUILDDIR)/javax/crypto/Defs-jce.gmk
 
 CPLUSPLUSLIBRARY=true
 
@@ -163,6 +180,8 @@ all: build-jar install-prebuilt
 	$(build-warning)
 endif
 
+include $(BUILDDIR)/javax/crypto/Defs-jce.gmk
+
 
 # =====================================================
 # Build the unsigned sunmscapi.jar file.
@@ -200,14 +219,26 @@ ifndef OPENJDK
 # Sign the provider jar file.  Not needed for OpenJDK.
 #
 
-SIGNED_DIR = $(TEMPDIR)/signed
+SIGNED_DIR = $(JCE_BUILD_DIR)/signed
 
 sign: sign-jar
 
 sign-jar: $(SIGNED_DIR)/sunmscapi.jar
 
+ifndef ALT_JCE_BUILD_DIR
 $(SIGNED_DIR)/sunmscapi.jar: $(UNSIGNED_DIR)/sunmscapi.jar
-	$(sign-file)
+else
+#
+# We have to remove the build dependency, otherwise, we'll try to rebuild it
+# which we can't do on a read-only filesystem.
+#
+$(SIGNED_DIR)/sunmscapi.jar:
+	@if [ ! -r $(UNSIGNED_DIR)/sunmscapi.jar ] ; then \
+	    $(ECHO) "Couldn't find $(UNSIGNED_DIR)/sunmscapi.jar"; \
+	    exit 1; \
+	fi
+endif
+	$(call sign-file, $(UNSIGNED_DIR)/sunmscapi.jar)
 
 
 # =====================================================
@@ -215,9 +246,9 @@ $(SIGNED_DIR)/sunmscapi.jar: $(UNSIGNED_DIR)/sunmscapi.jar
 #
 
 release: $(SIGNED_DIR)/sunmscapi.jar
-	$(RM) $(RELEASE_DIR)/sunmscapi.jar
-	$(MKDIR) -p $(RELEASE_DIR)
-	$(CP) $(SIGNED_DIR)/sunmscapi.jar $(RELEASE_DIR)
+	$(RM) $(JCE_BUILD_DIR)/release/sunmscapi.jar
+	$(MKDIR) -p $(JCE_BUILD_DIR)/release
+	$(CP) $(SIGNED_DIR)/sunmscapi.jar $(JCE_BUILD_DIR)/release
 	$(release-warning)
 
 endif # OPENJDK
@@ -255,7 +286,7 @@ endif
 #
 
 clobber clean::
-	$(RM) -r $(JAR_DESTFILE) $(TEMPDIR)
+	$(RM) -r $(JAR_DESTFILE) $(TEMPDIR) $(JCE_BUILD_DIR)
 
 .PHONY: build-jar jar install-jar
 ifndef OPENJDK

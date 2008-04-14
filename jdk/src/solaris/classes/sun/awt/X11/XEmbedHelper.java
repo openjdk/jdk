@@ -58,7 +58,6 @@ public class XEmbedHelper {
     final static int XEMBED_REGISTER_ACCELERATOR =    12;
     final static int XEMBED_UNREGISTER_ACCELERATOR=   13;
     final static int XEMBED_ACTIVATE_ACCELERATOR  =   14;
-    final static int _SUN_XEMBED_START = 1119;
 
     final static int NON_STANDARD_XEMBED_GTK_GRAB_KEY = 108;
     final static int NON_STANDARD_XEMBED_GTK_UNGRAB_KEY = 109;
@@ -151,8 +150,6 @@ public class XEmbedHelper {
               return "NON_STANDARD_XEMBED_GTK_UNGRAB_KEY";
           case NON_STANDARD_XEMBED_GTK_GRAB_KEY:
               return "NON_STANDARD_XEMBED_GTK_GRAB_KEY";
-          case _SUN_XEMBED_START:
-              return "XEMBED_START";
           case XConstants.KeyPress | XEmbedServerTester.SYSTEM_EVENT_MASK:
               return "KeyPress";
           case XConstants.MapNotify | XEmbedServerTester.SYSTEM_EVENT_MASK:

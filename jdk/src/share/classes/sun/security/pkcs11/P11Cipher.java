@@ -72,7 +72,7 @@ final class P11Cipher extends CipherSpi {
 
         // DEC: return the length of trailing padding bytes given the specified
         // padded data
-        int unpad(byte[] paddedData, int ofs, int len)
+        int unpad(byte[] paddedData, int len)
                 throws BadPaddingException;
     }
 
@@ -94,14 +94,17 @@ final class P11Cipher extends CipherSpi {
             return padLen;
         }
 
-        public int unpad(byte[] paddedData, int ofs, int len)
+        public int unpad(byte[] paddedData, int len)
                 throws BadPaddingException {
-            byte padValue = paddedData[ofs + len - 1];
+            if (len < 1 || len > paddedData.length) {
+                throw new BadPaddingException("Invalid pad array length!");
+            }
+            byte padValue = paddedData[len - 1];
             if (padValue < 1 || padValue > blockSize) {
                 throw new BadPaddingException("Invalid pad value!");
             }
             // sanity check padding bytes
-            int padStartIndex = ofs + len - padValue;
+            int padStartIndex = len - padValue;
             for (int i = padStartIndex; i < len; i++) {
                 if (paddedData[i] != padValue) {
                     throw new BadPaddingException("Invalid pad bytes!");
@@ -712,7 +715,7 @@ final class P11Cipher extends CipherSpi {
                     }
                     k += token.p11.C_DecryptFinal(session.id(), 0, padBuffer, k,
                             padBuffer.length - k);
-                    int actualPadLen = paddingObj.unpad(padBuffer, 0, k);
+                    int actualPadLen = paddingObj.unpad(padBuffer, k);
                     k -= actualPadLen;
                     System.arraycopy(padBuffer, 0, out, outOfs, k);
                 } else {
@@ -781,7 +784,7 @@ final class P11Cipher extends CipherSpi {
                     }
                     k += token.p11.C_DecryptFinal(session.id(),
                             0, padBuffer, k, padBuffer.length - k);
-                    int actualPadLen = paddingObj.unpad(padBuffer, 0, k);
+                    int actualPadLen = paddingObj.unpad(padBuffer, k);
                     k -= actualPadLen;
                     outArray = padBuffer;
                     outOfs = 0;
@@ -814,7 +817,8 @@ final class P11Cipher extends CipherSpi {
         if (errorCode == CKR_BUFFER_TOO_SMALL) {
             throw (ShortBufferException)
                     (new ShortBufferException().initCause(e));
-        } else if (errorCode == CKR_DATA_LEN_RANGE) {
+        } else if (errorCode == CKR_DATA_LEN_RANGE ||
+                   errorCode == CKR_ENCRYPTED_DATA_LEN_RANGE) {
             throw (IllegalBlockSizeException)
                     (new IllegalBlockSizeException(e.toString()).initCause(e));
         }
