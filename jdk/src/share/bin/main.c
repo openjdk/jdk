@@ -64,8 +64,6 @@ main(int argc, char ** argv)
     margv = argv;
 #endif /* JAVAW */
 
-    JLI_SetTraceLauncher();
-
     return JLI_Launch(margc, margv,
                    sizeof(const_jargs) / sizeof(char *), const_jargs,
                    sizeof(const_appclasspath) / sizeof(char *), const_appclasspath,

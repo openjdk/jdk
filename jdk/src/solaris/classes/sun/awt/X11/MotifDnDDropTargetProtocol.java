@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -933,7 +933,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
 
         XSelection selection = XSelection.getSelection(selectionAtom);
         if (selection == null) {
-            selection = new XSelection(selectionAtom, null);
+            selection = new XSelection(selectionAtom);
         }
 
         return selection.getData(format, time_stamp);
@@ -1056,7 +1056,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         // the original structure can be freed before this
         // SunDropTargetEvent is dispatched.
         if (xclient != null) {
-            int size = new XClientMessageEvent(nativeCtxt).getSize();
+            int size = XClientMessageEvent.getSize();
 
             nativeCtxt = unsafe.allocateMemory(size + 4 * Native.getLongSize());
 

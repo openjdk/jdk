@@ -78,7 +78,7 @@ public class PerformanceLogger {
 
     private static boolean perfLoggingOn = false;
     private static boolean useNanoTime = false;
-    private static Vector times;
+    private static Vector<TimeData> times;
     private static String logFileName = null;
     private static Writer logWriter = null;
 
@@ -104,8 +104,8 @@ public class PerformanceLogger {
             if (logFileName != null) {
                 if (logWriter == null) {
                     java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                        public Object run() {
+                    new java.security.PrivilegedAction<Void>() {
+                        public Void run() {
                             try {
                                 File logFile = new File(logFileName);
                                 logFile.createNewFile();
@@ -124,7 +124,7 @@ public class PerformanceLogger {
                 logWriter = new OutputStreamWriter(System.out);
             }
         }
-        times = new Vector(10);
+        times = new Vector<TimeData>(10);
         // Reserve predefined slots
         for (int i = 0; i <= LAST_RESERVED; ++i) {
             times.add(new TimeData("Time " + i + " not set", 0));
@@ -207,7 +207,7 @@ public class PerformanceLogger {
      */
     public static long getStartTime() {
         if (loggingEnabled()) {
-            return ((TimeData)times.get(START_INDEX)).getTime();
+            return times.get(START_INDEX).getTime();
         } else {
             return 0;
         }
@@ -253,7 +253,7 @@ public class PerformanceLogger {
      */
     public static long getTimeAtIndex(int index) {
         if (loggingEnabled()) {
-            return ((TimeData)times.get(index)).getTime();
+            return times.get(index).getTime();
         } else {
             return 0;
         }
@@ -264,7 +264,7 @@ public class PerformanceLogger {
      */
     public static String getMessageAtIndex(int index) {
         if (loggingEnabled()) {
-            return ((TimeData)times.get(index)).getMessage();
+            return times.get(index).getMessage();
         } else {
             return null;
         }
@@ -278,7 +278,7 @@ public class PerformanceLogger {
             try {
                 synchronized(times) {
                     for (int i = 0; i < times.size(); ++i) {
-                        TimeData td = (TimeData)times.get(i);
+                        TimeData td = times.get(i);
                         if (td != null) {
                             writer.write(i + " " + td.getMessage() + ": " +
                                          td.getTime() + "\n");

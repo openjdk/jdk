@@ -25,13 +25,9 @@
 
 package com.sun.tools.javac.code;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import javax.lang.model.element.*;
-import javax.lang.model.type.ReferenceType;
-import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.util.*;
@@ -1272,8 +1268,14 @@ public abstract class Symbol implements Element {
         private static final long serialVersionUID = 0;
         public Symbol sym;
 
-        /** A localized string describing the failure.
+        /** A diagnostic object describing the failure
          */
+        public JCDiagnostic diag;
+
+        /** A localized string describing the failure.
+         * @deprecated Use {@code getDetail()} or {@code getMessage()}
+         */
+        @Deprecated
         public String errmsg;
 
         public CompletionFailure(Symbol sym, String errmsg) {
@@ -1282,8 +1284,26 @@ public abstract class Symbol implements Element {
 //          this.printStackTrace();//DEBUG
         }
 
+        public CompletionFailure(Symbol sym, JCDiagnostic diag) {
+            this.sym = sym;
+            this.diag = diag;
+//          this.printStackTrace();//DEBUG
+        }
+
+        public JCDiagnostic getDiagnostic() {
+            return diag;
+        }
+
+        @Override
         public String getMessage() {
-            return errmsg;
+            if (diag != null)
+                return diag.getMessage(null);
+            else
+                return errmsg;
+        }
+
+        public Object getDetailValue() {
+            return (diag != null ? diag : errmsg);
         }
 
         @Override

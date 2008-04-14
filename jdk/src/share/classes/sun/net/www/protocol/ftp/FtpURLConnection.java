@@ -215,12 +215,11 @@ public class FtpURLConnection extends URLConnection {
         Proxy p = null;
         if (instProxy == null) { // no per connection proxy specified
             /**
-             * Do we have to use a proxie?
+             * Do we have to use a proxy?
              */
-            ProxySelector sel = (ProxySelector)
-                java.security.AccessController.doPrivileged(
-                        new java.security.PrivilegedAction() {
-                            public Object run() {
+            ProxySelector sel = java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<ProxySelector>() {
+                    public ProxySelector run() {
                                 return ProxySelector.getDefault();
                             }
                             });

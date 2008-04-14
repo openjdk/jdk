@@ -212,36 +212,47 @@ import sun.security.action.GetPropertyAction;
  *
  * <h4>Terminology</h4>
  *
- * <p> The name of this class is taken from the terms used in <a
- * href="http://www.ietf.org/rfc/rfc2278.txt""><i>RFC&nbsp;2278</i></a>.  In that
- * document a <i>charset</i> is defined as the combination of a coded character
- * set and a character-encoding scheme.
+ * <p> The name of this class is taken from the terms used in
+ * <a href="http://www.ietf.org/rfc/rfc2278.txt"><i>RFC&nbsp;2278</i></a>.
+ * In that document a <i>charset</i> is defined as the combination of
+ * one or more coded character sets and a character-encoding scheme.
+ * (This definition is confusing; some other software systems define
+ * <i>charset</i> as a synonym for <i>coded character set</i>.)
  *
  * <p> A <i>coded character set</i> is a mapping between a set of abstract
  * characters and a set of integers.  US-ASCII, ISO&nbsp;8859-1,
- * JIS&nbsp;X&nbsp;0201, and full Unicode, which is the same as
- * ISO&nbsp;10646-1, are examples of coded character sets.
+ * JIS&nbsp;X&nbsp;0201, and Unicode are examples of coded character sets.
  *
- * <p> A <i>character-encoding scheme</i> is a mapping between a coded
- * character set and a set of octet (eight-bit byte) sequences.  UTF-8, UCS-2,
- * UTF-16, ISO&nbsp;2022, and EUC are examples of character-encoding schemes.
- * Encoding schemes are often associated with a particular coded character set;
- * UTF-8, for example, is used only to encode Unicode.  Some schemes, however,
- * are associated with multiple character sets; EUC, for example, can be used
- * to encode characters in a variety of Asian character sets.
+ * <p> Some standards have defined a <i>character set</i> to be simply a
+ * set of abstract characters without an associated assigned numbering.
+ * An alphabet is an example of such a character set.  However, the subtle
+ * distinction between <i>character set</i> and <i>coded character set</i>
+ * is rarely used in practice; the former has become a short form for the
+ * latter, including in the Java API specification.
+ *
+ * <p> A <i>character-encoding scheme</i> is a mapping between one or more
+ * coded character sets and a set of octet (eight-bit byte) sequences.
+ * UTF-8, UTF-16, ISO&nbsp;2022, and EUC are examples of
+ * character-encoding schemes.  Encoding schemes are often associated with
+ * a particular coded character set; UTF-8, for example, is used only to
+ * encode Unicode.  Some schemes, however, are associated with multiple
+ * coded character sets; EUC, for example, can be used to encode
+ * characters in a variety of Asian coded character sets.
  *
  * <p> When a coded character set is used exclusively with a single
- * character-encoding scheme then the corresponding charset is usually named
- * for the character set; otherwise a charset is usually named for the encoding
- * scheme and, possibly, the locale of the character sets that it supports.
- * Hence <tt>US-ASCII</tt> is the name of the charset for US-ASCII while
+ * character-encoding scheme then the corresponding charset is usually
+ * named for the coded character set; otherwise a charset is usually named
+ * for the encoding scheme and, possibly, the locale of the coded
+ * character sets that it supports.  Hence <tt>US-ASCII</tt> is both the
+ * name of a coded character set and of the charset that encodes it, while
  * <tt>EUC-JP</tt> is the name of the charset that encodes the
  * JIS&nbsp;X&nbsp;0201, JIS&nbsp;X&nbsp;0208, and JIS&nbsp;X&nbsp;0212
- * character sets.
+ * coded character sets for the Japanese language.
  *
  * <p> The native character encoding of the Java programming language is
- * UTF-16.  A charset in the Java platform therefore defines a mapping between
- * sequences of sixteen-bit UTF-16 code units and sequences of bytes. </p>
+ * UTF-16.  A charset in the Java platform therefore defines a mapping
+ * between sequences of sixteen-bit UTF-16 code units (that is, sequences
+ * of chars) and sequences of bytes. </p>
  *
  *
  * @author Mark Reinhold

@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,12 @@ abstract class WObjectPeer {
         initIDs();
     }
 
-    long      pData;    // The Windows handle for the native widget.
-    Object    target;   // The associated AWT object.
+    // The Windows handle for the native widget.
+    long pData;
+    // if the native peer has been destroyed
+    boolean destroyed = false;
+    // The associated AWT object.
+    Object target;
 
     private volatile boolean disposed;
 

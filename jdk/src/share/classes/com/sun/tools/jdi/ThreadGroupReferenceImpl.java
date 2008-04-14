@@ -86,30 +86,22 @@ public class ThreadGroupReferenceImpl extends ObjectReferenceImpl
     }
 
     public void suspend() {
-        List threads = threads();
-        Iterator iter = threads.iterator();
-        while (iter.hasNext()) {
-                ((ThreadReference)iter.next()).suspend();
+        for (ThreadReference thread : threads()) {
+            thread.suspend();
         }
 
-        List groups = threadGroups();
-        iter = groups.iterator();
-        while (iter.hasNext()) {
-                ((ThreadGroupReference)iter.next()).suspend();
+        for (ThreadGroupReference threadGroup : threadGroups()) {
+            threadGroup.suspend();
         }
     }
 
     public void resume() {
-        List threads = threads();
-        Iterator iter = threads.iterator();
-        while (iter.hasNext()) {
-                ((ThreadReference)iter.next()).resume();
+        for (ThreadReference thread : threads()) {
+            thread.resume();
         }
 
-        List groups = threadGroups();
-        iter = groups.iterator();
-        while (iter.hasNext()) {
-                ((ThreadGroupReference)iter.next()).resume();
+        for (ThreadGroupReference threadGroup : threadGroups()) {
+            threadGroup.resume();
         }
     }
 
