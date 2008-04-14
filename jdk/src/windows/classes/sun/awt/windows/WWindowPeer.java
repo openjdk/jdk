@@ -434,6 +434,97 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer {
      private native void nativeGrab();
      private native void nativeUngrab();
 
+     private final boolean hasWarningWindow() {
+         return ((Window)target).getWarningString() != null;
+     }
+
+     boolean isTargetUndecorated() {
+         return true;
+     }
+
+     // These are the peer bounds. They get updated at:
+     //    1. the WWindowPeer.setBounds() method.
+     //    2. the native code (on WM_SIZE/WM_MOVE)
+     private volatile int sysX = 0;
+     private volatile int sysY = 0;
+     private volatile int sysW = 0;
+     private volatile int sysH = 0;
+
+     Rectangle constrainBounds(int x, int y, int width, int height) {
+         // We don't restrict the setBounds() operation if the code is trusted.
+         if (!hasWarningWindow()) {
+             return new Rectangle(x, y, width, height);
+         }
+
+         int newX = x;
+         int newY = y;
+         int newW = width;
+         int newH = height;
+
+         GraphicsConfiguration gc = ((Window)target).getGraphicsConfiguration();
+         Rectangle sB = gc.getBounds();
+         Insets sIn = ((Window)target).getToolkit().getScreenInsets(gc);
+
+         int screenW = sB.width - sIn.left - sIn.right;
+         int screenH = sB.height - sIn.top - sIn.bottom;
+
+         // If it's undecorated or is not currently visible
+         if (!((Window)target).isVisible() || isTargetUndecorated()) {
+             // Now check each point is within the visible part of the screen
+             int screenX = sB.x + sIn.left;
+             int screenY = sB.y + sIn.top;
+
+             // First make sure the size is withing the visible part of the screen
+             if (newW > screenW) {
+                 newW = screenW;
+             }
+
+             if (newH > screenH) {
+                 newH = screenH;
+             }
+
+             // Tweak the location if needed
+             if (newX < screenX) {
+                 newX = screenX;
+             } else if (newX + newW > screenX + screenW) {
+                 newX = screenX + screenW - newW;
+             }
+
+             if (newY < screenY) {
+                 newY = screenY;
+             } else if (newY + newH > screenY + screenH) {
+                 newY = screenY + screenH - newH;
+             }
+         } else {
+             int maxW = Math.max(screenW, sysW);
+             int maxH = Math.max(screenH, sysH);
+
+             // Make sure the size is withing the visible part of the screen
+             // OR less that the current size of the window.
+             if (newW > maxW) {
+                 newW = maxW;
+             }
+
+             if (newH > maxH) {
+                 newH = maxH;
+             }
+         }
+
+         return new Rectangle(newX, newY, newW, newH);
+     }
+
+     @Override
+     public void setBounds(int x, int y, int width, int height, int op) {
+         Rectangle newBounds = constrainBounds(x, y, width, height);
+
+         sysX = newBounds.x;
+         sysY = newBounds.y;
+         sysW = newBounds.width;
+         sysH = newBounds.height;
+
+         super.setBounds(newBounds.x, newBounds.y, newBounds.width, newBounds.height, op);
+     }
+
     /*
      * The method maps the list of the active windows to the window's AppContext,
      * then the method registers ActiveWindowListener, GuiDisposedListener listeners;

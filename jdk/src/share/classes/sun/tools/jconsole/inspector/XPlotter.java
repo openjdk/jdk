@@ -22,7 +22,9 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package sun.tools.jconsole.inspector;
+
 import sun.tools.jconsole.Plotter;
 import javax.swing.JTable;
 import java.awt.Graphics;

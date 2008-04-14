@@ -88,9 +88,9 @@ VOID ShowNTError(LPSTR,NTSTATUS);
 
 VOID
 InitUnicodeString(
-        PUNICODE_STRING DestinationString,
+    PUNICODE_STRING DestinationString,
     PCWSTR SourceString OPTIONAL
-    );
+);
 
 jobject BuildTicket(JNIEnv *env, PUCHAR encodedTicket, ULONG encodedTicketSize);
 
@@ -108,215 +108,215 @@ jobject BuildKerberosTime(JNIEnv *env, PLARGE_INTEGER kerbtime);
  */
 
 JNIEXPORT jint JNICALL JNI_OnLoad(
-                JavaVM  *jvm,
-                void    *reserved) {
+        JavaVM  *jvm,
+        void    *reserved) {
 
-        jclass cls;
-        JNIEnv *env;
+    jclass cls;
+    JNIEnv *env;
 
-        if ((*jvm)->GetEnv(jvm, (void **)&env, JNI_VERSION_1_2)) {
-                return JNI_EVERSION; /* JNI version not supported */
-        }
+    if ((*jvm)->GetEnv(jvm, (void **)&env, JNI_VERSION_1_2)) {
+        return JNI_EVERSION; /* JNI version not supported */
+    }
 
-        cls = (*env)->FindClass(env,"sun/security/krb5/internal/Ticket");
+    cls = (*env)->FindClass(env,"sun/security/krb5/internal/Ticket");
 
-        if (cls == NULL) {
-                printf("Couldn't find Ticket\n");
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Found Ticket\n");
-        #endif /* DEBUG */
+    if (cls == NULL) {
+        printf("Couldn't find Ticket\n");
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Found Ticket\n");
+    #endif /* DEBUG */
 
-        ticketClass = (*env)->NewWeakGlobalRef(env,cls);
-        if (ticketClass == NULL) {
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Made NewWeakGlobalRef\n");
-        #endif /* DEBUG */
+    ticketClass = (*env)->NewWeakGlobalRef(env,cls);
+    if (ticketClass == NULL) {
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Made NewWeakGlobalRef\n");
+    #endif /* DEBUG */
 
-        cls = (*env)->FindClass(env, "sun/security/krb5/PrincipalName");
+    cls = (*env)->FindClass(env, "sun/security/krb5/PrincipalName");
 
-        if (cls == NULL) {
-                printf("Couldn't find PrincipalName\n");
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Found PrincipalName\n");
-        #endif /* DEBUG */
+    if (cls == NULL) {
+        printf("Couldn't find PrincipalName\n");
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Found PrincipalName\n");
+    #endif /* DEBUG */
 
-        principalNameClass = (*env)->NewWeakGlobalRef(env,cls);
-        if (principalNameClass == NULL) {
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Made NewWeakGlobalRef\n");
-        #endif /* DEBUG */
+    principalNameClass = (*env)->NewWeakGlobalRef(env,cls);
+    if (principalNameClass == NULL) {
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Made NewWeakGlobalRef\n");
+    #endif /* DEBUG */
 
-        cls = (*env)->FindClass(env,"sun/security/util/DerValue");
+    cls = (*env)->FindClass(env,"sun/security/util/DerValue");
 
-        if (cls == NULL) {
-                printf("Couldn't find DerValue\n");
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Found DerValue\n");
-        #endif /* DEBUG */
+    if (cls == NULL) {
+        printf("Couldn't find DerValue\n");
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Found DerValue\n");
+    #endif /* DEBUG */
 
-        derValueClass = (*env)->NewWeakGlobalRef(env,cls);
-        if (derValueClass == NULL) {
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Made NewWeakGlobalRef\n");
-        #endif /* DEBUG */
+    derValueClass = (*env)->NewWeakGlobalRef(env,cls);
+    if (derValueClass == NULL) {
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Made NewWeakGlobalRef\n");
+    #endif /* DEBUG */
 
-        cls = (*env)->FindClass(env,"sun/security/krb5/EncryptionKey");
+    cls = (*env)->FindClass(env,"sun/security/krb5/EncryptionKey");
 
-        if (cls == NULL) {
-                printf("Couldn't find EncryptionKey\n");
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Found EncryptionKey\n");
-        #endif /* DEBUG */
+    if (cls == NULL) {
+        printf("Couldn't find EncryptionKey\n");
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Found EncryptionKey\n");
+    #endif /* DEBUG */
 
-        encryptionKeyClass = (*env)->NewWeakGlobalRef(env,cls);
-        if (encryptionKeyClass == NULL) {
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Made NewWeakGlobalRef\n");
-        #endif /* DEBUG */
+    encryptionKeyClass = (*env)->NewWeakGlobalRef(env,cls);
+    if (encryptionKeyClass == NULL) {
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Made NewWeakGlobalRef\n");
+    #endif /* DEBUG */
 
-        cls = (*env)->FindClass(env,"sun/security/krb5/internal/TicketFlags");
+    cls = (*env)->FindClass(env,"sun/security/krb5/internal/TicketFlags");
 
-        if (cls == NULL) {
-                printf("Couldn't find TicketFlags\n");
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Found TicketFlags\n");
-        #endif /* DEBUG */
+    if (cls == NULL) {
+        printf("Couldn't find TicketFlags\n");
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Found TicketFlags\n");
+    #endif /* DEBUG */
 
-        ticketFlagsClass = (*env)->NewWeakGlobalRef(env,cls);
-        if (ticketFlagsClass == NULL) {
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Made NewWeakGlobalRef\n");
-        #endif /* DEBUG */
+    ticketFlagsClass = (*env)->NewWeakGlobalRef(env,cls);
+    if (ticketFlagsClass == NULL) {
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Made NewWeakGlobalRef\n");
+    #endif /* DEBUG */
 
-        cls = (*env)->FindClass(env,"sun/security/krb5/internal/KerberosTime");
+    cls = (*env)->FindClass(env,"sun/security/krb5/internal/KerberosTime");
 
-        if (cls == NULL) {
-                printf("Couldn't find KerberosTime\n");
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Found KerberosTime\n");
-        #endif /* DEBUG */
+    if (cls == NULL) {
+        printf("Couldn't find KerberosTime\n");
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Found KerberosTime\n");
+    #endif /* DEBUG */
 
-        kerberosTimeClass = (*env)->NewWeakGlobalRef(env,cls);
-        if (kerberosTimeClass == NULL) {
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Made NewWeakGlobalRef\n");
-        #endif /* DEBUG */
+    kerberosTimeClass = (*env)->NewWeakGlobalRef(env,cls);
+    if (kerberosTimeClass == NULL) {
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Made NewWeakGlobalRef\n");
+    #endif /* DEBUG */
 
-        cls = (*env)->FindClass(env,"java/lang/String");
+    cls = (*env)->FindClass(env,"java/lang/String");
 
-        if (cls == NULL) {
-                printf("Couldn't find String\n");
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Found String\n");
-        #endif /* DEBUG */
+    if (cls == NULL) {
+        printf("Couldn't find String\n");
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Found String\n");
+    #endif /* DEBUG */
 
-        javaLangStringClass = (*env)->NewWeakGlobalRef(env,cls);
-        if (javaLangStringClass == NULL) {
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Made NewWeakGlobalRef\n");
-        #endif /* DEBUG */
+    javaLangStringClass = (*env)->NewWeakGlobalRef(env,cls);
+    if (javaLangStringClass == NULL) {
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Made NewWeakGlobalRef\n");
+    #endif /* DEBUG */
 
-        derValueConstructor = (*env)->GetMethodID(env, derValueClass,
-                                                "<init>", "([B)V");
-        if (derValueConstructor == 0) {
-                printf("Couldn't find DerValue constructor\n");
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Found DerValue constructor\n");
-        #endif /* DEBUG */
+    derValueConstructor = (*env)->GetMethodID(env, derValueClass,
+                                            "<init>", "([B)V");
+    if (derValueConstructor == 0) {
+        printf("Couldn't find DerValue constructor\n");
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Found DerValue constructor\n");
+    #endif /* DEBUG */
 
-        ticketConstructor = (*env)->GetMethodID(env, ticketClass,
-                                "<init>", "(Lsun/security/util/DerValue;)V");
-        if (ticketConstructor == 0) {
-                printf("Couldn't find Ticket constructor\n");
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Found Ticket constructor\n");
-        #endif /* DEBUG */
+    ticketConstructor = (*env)->GetMethodID(env, ticketClass,
+                            "<init>", "(Lsun/security/util/DerValue;)V");
+    if (ticketConstructor == 0) {
+        printf("Couldn't find Ticket constructor\n");
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Found Ticket constructor\n");
+    #endif /* DEBUG */
 
-        principalNameConstructor = (*env)->GetMethodID(env, principalNameClass,
-                                        "<init>", "([Ljava/lang/String;)V");
-        if (principalNameConstructor == 0) {
-                printf("Couldn't find PrincipalName constructor\n");
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Found PrincipalName constructor\n");
-        #endif /* DEBUG */
+    principalNameConstructor = (*env)->GetMethodID(env, principalNameClass,
+                                    "<init>", "([Ljava/lang/String;)V");
+    if (principalNameConstructor == 0) {
+        printf("Couldn't find PrincipalName constructor\n");
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Found PrincipalName constructor\n");
+    #endif /* DEBUG */
 
-        encryptionKeyConstructor = (*env)->GetMethodID(env, encryptionKeyClass,
-                                                "<init>", "(I[B)V");
-        if (encryptionKeyConstructor == 0) {
-                printf("Couldn't find EncryptionKey constructor\n");
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Found EncryptionKey constructor\n");
-        #endif /* DEBUG */
+    encryptionKeyConstructor = (*env)->GetMethodID(env, encryptionKeyClass,
+                                            "<init>", "(I[B)V");
+    if (encryptionKeyConstructor == 0) {
+        printf("Couldn't find EncryptionKey constructor\n");
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Found EncryptionKey constructor\n");
+    #endif /* DEBUG */
 
-        ticketFlagsConstructor = (*env)->GetMethodID(env, ticketFlagsClass,
-                                                "<init>", "(I[B)V");
-        if (ticketFlagsConstructor == 0) {
-                printf("Couldn't find TicketFlags constructor\n");
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Found TicketFlags constructor\n");
-        #endif /* DEBUG */
+    ticketFlagsConstructor = (*env)->GetMethodID(env, ticketFlagsClass,
+                                            "<init>", "(I[B)V");
+    if (ticketFlagsConstructor == 0) {
+        printf("Couldn't find TicketFlags constructor\n");
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Found TicketFlags constructor\n");
+    #endif /* DEBUG */
 
-        kerberosTimeConstructor = (*env)->GetMethodID(env, kerberosTimeClass,
-                                        "<init>", "(Ljava/lang/String;)V");
-        if (kerberosTimeConstructor == 0) {
-                printf("Couldn't find KerberosTime constructor\n");
-                return JNI_ERR;
-        }
-        #ifdef DEBUG
-        printf("Found KerberosTime constructor\n");
-        #endif /* DEBUG */
+    kerberosTimeConstructor = (*env)->GetMethodID(env, kerberosTimeClass,
+                                    "<init>", "(Ljava/lang/String;)V");
+    if (kerberosTimeConstructor == 0) {
+        printf("Couldn't find KerberosTime constructor\n");
+        return JNI_ERR;
+    }
+    #ifdef DEBUG
+    printf("Found KerberosTime constructor\n");
+    #endif /* DEBUG */
 
-        // load the setRealm method in PrincipalName
-        setRealmMethod = (*env)->GetMethodID(env, principalNameClass,
-                                        "setRealm", "(Ljava/lang/String;)V");
-        if (setRealmMethod == 0) {
-                printf("Couldn't find setRealm in PrincipalName\n");
-                return JNI_ERR;
-        }
+    // load the setRealm method in PrincipalName
+    setRealmMethod = (*env)->GetMethodID(env, principalNameClass,
+                                    "setRealm", "(Ljava/lang/String;)V");
+    if (setRealmMethod == 0) {
+        printf("Couldn't find setRealm in PrincipalName\n");
+        return JNI_ERR;
+    }
 
-        #ifdef DEBUG
-        printf("Finished OnLoad processing\n");
-        #endif /* DEBUG */
+    #ifdef DEBUG
+    printf("Finished OnLoad processing\n");
+    #endif /* DEBUG */
 
-        return JNI_VERSION_1_2;
+    return JNI_VERSION_1_2;
 }
 
 /*
@@ -325,38 +325,38 @@ JNIEXPORT jint JNICALL JNI_OnLoad(
  */
 
 JNIEXPORT void JNICALL JNI_OnUnload(
-                JavaVM  *jvm,
-                void    *reserved) {
+        JavaVM  *jvm,
+        void    *reserved) {
 
-        JNIEnv *env;
+    JNIEnv *env;
 
-        if ((*jvm)->GetEnv(jvm, (void **)&env, JNI_VERSION_1_2)) {
-                return; /* Nothing else we can do */
-        }
+    if ((*jvm)->GetEnv(jvm, (void **)&env, JNI_VERSION_1_2)) {
+        return; /* Nothing else we can do */
+    }
 
-        if (ticketClass != NULL) {
-                (*env)->DeleteWeakGlobalRef(env,ticketClass);
-        }
-        if (derValueClass != NULL) {
-                (*env)->DeleteWeakGlobalRef(env,derValueClass);
-        }
-        if (principalNameClass != NULL) {
-                (*env)->DeleteWeakGlobalRef(env,principalNameClass);
-        }
-        if (encryptionKeyClass != NULL) {
-                (*env)->DeleteWeakGlobalRef(env,encryptionKeyClass);
-        }
-        if (ticketFlagsClass != NULL) {
-                (*env)->DeleteWeakGlobalRef(env,ticketFlagsClass);
-        }
-        if (kerberosTimeClass != NULL) {
-                (*env)->DeleteWeakGlobalRef(env,kerberosTimeClass);
-        }
-        if (javaLangStringClass != NULL) {
-                (*env)->DeleteWeakGlobalRef(env,javaLangStringClass);
-        }
+    if (ticketClass != NULL) {
+        (*env)->DeleteWeakGlobalRef(env,ticketClass);
+    }
+    if (derValueClass != NULL) {
+        (*env)->DeleteWeakGlobalRef(env,derValueClass);
+    }
+    if (principalNameClass != NULL) {
+        (*env)->DeleteWeakGlobalRef(env,principalNameClass);
+    }
+    if (encryptionKeyClass != NULL) {
+        (*env)->DeleteWeakGlobalRef(env,encryptionKeyClass);
+    }
+    if (ticketFlagsClass != NULL) {
+        (*env)->DeleteWeakGlobalRef(env,ticketFlagsClass);
+    }
+    if (kerberosTimeClass != NULL) {
+        (*env)->DeleteWeakGlobalRef(env,kerberosTimeClass);
+    }
+    if (javaLangStringClass != NULL) {
+        (*env)->DeleteWeakGlobalRef(env,javaLangStringClass);
+    }
 
-        return;
+    return;
 }
 
 /*
@@ -365,31 +365,31 @@ JNIEXPORT void JNICALL JNI_OnUnload(
  * Signature: ()Lsun/security/krb5/Credentials;
  */
 JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativeCreds(
-                JNIEnv *env,
-                jclass krbcredsClass) {
+        JNIEnv *env,
+        jclass krbcredsClass) {
 
-        KERB_QUERY_TKT_CACHE_REQUEST CacheRequest;
-        PKERB_RETRIEVE_TKT_RESPONSE TktCacheResponse = NULL;
-        PKERB_RETRIEVE_TKT_REQUEST pTicketRequest = NULL;
-        PKERB_RETRIEVE_TKT_RESPONSE pTicketResponse = NULL;
-        NTSTATUS Status, SubStatus;
-        ULONG requestSize = 0;
-        ULONG responseSize = 0;
-        ULONG rspSize = 0;
-        HANDLE LogonHandle = NULL;
-        ULONG PackageId;
-        jobject ticket, clientPrincipal, targetPrincipal, encryptionKey;
-        jobject ticketFlags, startTime, endTime, krbCreds = NULL;
-        jobject authTime, renewTillTime, hostAddresses = NULL;
-        KERB_EXTERNAL_TICKET *msticket;
-        int ignore_cache = 0;
-        FILETIME Now, EndTime, LocalEndTime;
+    KERB_QUERY_TKT_CACHE_REQUEST CacheRequest;
+    PKERB_RETRIEVE_TKT_RESPONSE TktCacheResponse = NULL;
+    PKERB_RETRIEVE_TKT_REQUEST pTicketRequest = NULL;
+    PKERB_RETRIEVE_TKT_RESPONSE pTicketResponse = NULL;
+    NTSTATUS Status, SubStatus;
+    ULONG requestSize = 0;
+    ULONG responseSize = 0;
+    ULONG rspSize = 0;
+    HANDLE LogonHandle = NULL;
+    ULONG PackageId;
+    jobject ticket, clientPrincipal, targetPrincipal, encryptionKey;
+    jobject ticketFlags, startTime, endTime, krbCreds = NULL;
+    jobject authTime, renewTillTime, hostAddresses = NULL;
+    KERB_EXTERNAL_TICKET *msticket;
+    int ignore_cache = 0;
+    FILETIME Now, EndTime, LocalEndTime;
 
-        while (TRUE) {
+    while (TRUE) {
 
         if (krbcredsConstructor == 0) {
-                krbcredsConstructor = (*env)->GetMethodID(env, krbcredsClass, "<init>",
-        "(Lsun/security/krb5/internal/Ticket;Lsun/security/krb5/PrincipalName;Lsun/security/krb5/PrincipalName;Lsun/security/krb5/EncryptionKey;Lsun/security/krb5/internal/TicketFlags;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/HostAddresses;)V");
+            krbcredsConstructor = (*env)->GetMethodID(env, krbcredsClass, "<init>",
+                    "(Lsun/security/krb5/internal/Ticket;Lsun/security/krb5/PrincipalName;Lsun/security/krb5/PrincipalName;Lsun/security/krb5/EncryptionKey;Lsun/security/krb5/internal/TicketFlags;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/HostAddresses;)V");
             if (krbcredsConstructor == 0) {
                 printf("Couldn't find sun.security.krb5.Credentials constructor\n");
                 break;
@@ -510,88 +510,88 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
             msticket = &(pTicketResponse->Ticket);
         }
 
-/*
+        /*
 
-typedef struct _KERB_RETRIEVE_TKT_RESPONSE {
-    KERB_EXTERNAL_TICKET Ticket;
-} KERB_RETRIEVE_TKT_RESPONSE, *PKERB_RETRIEVE_TKT_RESPONSE;
+        typedef struct _KERB_RETRIEVE_TKT_RESPONSE {
+            KERB_EXTERNAL_TICKET Ticket;
+        } KERB_RETRIEVE_TKT_RESPONSE, *PKERB_RETRIEVE_TKT_RESPONSE;
 
-typedef struct _KERB_EXTERNAL_TICKET {
-    PKERB_EXTERNAL_NAME ServiceName;
-    PKERB_EXTERNAL_NAME TargetName;
-    PKERB_EXTERNAL_NAME ClientName;
-    UNICODE_STRING DomainName;
-    UNICODE_STRING TargetDomainName;
-    UNICODE_STRING AltTargetDomainName;
-    KERB_CRYPTO_KEY SessionKey;
-    ULONG TicketFlags;
-    ULONG Flags;
-    LARGE_INTEGER KeyExpirationTime;
-    LARGE_INTEGER StartTime;
-    LARGE_INTEGER EndTime;
-    LARGE_INTEGER RenewUntil;
-    LARGE_INTEGER TimeSkew;
-    ULONG EncodedTicketSize;
-    PUCHAR EncodedTicket; <========== Here's the good stuff
-} KERB_EXTERNAL_TICKET, *PKERB_EXTERNAL_TICKET;
+        typedef struct _KERB_EXTERNAL_TICKET {
+            PKERB_EXTERNAL_NAME ServiceName;
+            PKERB_EXTERNAL_NAME TargetName;
+            PKERB_EXTERNAL_NAME ClientName;
+            UNICODE_STRING DomainName;
+            UNICODE_STRING TargetDomainName;
+            UNICODE_STRING AltTargetDomainName;
+            KERB_CRYPTO_KEY SessionKey;
+            ULONG TicketFlags;
+            ULONG Flags;
+            LARGE_INTEGER KeyExpirationTime;
+            LARGE_INTEGER StartTime;
+            LARGE_INTEGER EndTime;
+            LARGE_INTEGER RenewUntil;
+            LARGE_INTEGER TimeSkew;
+            ULONG EncodedTicketSize;
+            PUCHAR EncodedTicket; <========== Here's the good stuff
+        } KERB_EXTERNAL_TICKET, *PKERB_EXTERNAL_TICKET;
 
-typedef struct _KERB_EXTERNAL_NAME {
-    SHORT NameType;
-    USHORT NameCount;
-    UNICODE_STRING Names[ANYSIZE_ARRAY];
-} KERB_EXTERNAL_NAME, *PKERB_EXTERNAL_NAME;
+        typedef struct _KERB_EXTERNAL_NAME {
+            SHORT NameType;
+            USHORT NameCount;
+            UNICODE_STRING Names[ANYSIZE_ARRAY];
+        } KERB_EXTERNAL_NAME, *PKERB_EXTERNAL_NAME;
 
-typedef struct _LSA_UNICODE_STRING {
-    USHORT Length;
-    USHORT MaximumLength;
-    PWSTR  Buffer;
-} LSA_UNICODE_STRING, *PLSA_UNICODE_STRING;
+        typedef struct _LSA_UNICODE_STRING {
+            USHORT Length;
+            USHORT MaximumLength;
+            PWSTR  Buffer;
+        } LSA_UNICODE_STRING, *PLSA_UNICODE_STRING;
 
-typedef LSA_UNICODE_STRING UNICODE_STRING, *PUNICODE_STRING;
+        typedef LSA_UNICODE_STRING UNICODE_STRING, *PUNICODE_STRING;
 
-typedef struct KERB_CRYPTO_KEY {
-    LONG KeyType;
-    ULONG Length;
-    PUCHAR Value;
-} KERB_CRYPTO_KEY, *PKERB_CRYPTO_KEY;
+        typedef struct KERB_CRYPTO_KEY {
+            LONG KeyType;
+            ULONG Length;
+            PUCHAR Value;
+        } KERB_CRYPTO_KEY, *PKERB_CRYPTO_KEY;
 
-*/
+        */
         // Build a com.sun.security.krb5.Ticket
         ticket = BuildTicket(env, msticket->EncodedTicket,
                                 msticket->EncodedTicketSize);
         if (ticket == NULL) {
-                break;
+            break;
         }
         // OK, have a Ticket, now need to get the client name
         clientPrincipal = BuildPrincipal(env, msticket->ClientName,
                                 msticket->TargetDomainName); // mdu
         if (clientPrincipal == NULL) {
-                break;
+            break;
         }
 
         // and the "name" of tgt
         targetPrincipal = BuildPrincipal(env, msticket->ServiceName,
                         msticket->DomainName);
         if (targetPrincipal == NULL) {
-                break;
+            break;
         }
 
         // Get the encryption key
         encryptionKey = BuildEncryptionKey(env, &(msticket->SessionKey));
         if (encryptionKey == NULL) {
-                break;
+            break;
         }
 
         // and the ticket flags
         ticketFlags = BuildTicketFlags(env, &(msticket->TicketFlags));
         if (ticketFlags == NULL) {
-                break;
+            break;
         }
 
         // Get the start time
         startTime = BuildKerberosTime(env, &(msticket->StartTime));
         if (startTime == NULL) {
-                break;
+            break;
         }
 
         /*
@@ -604,13 +604,13 @@ typedef struct KERB_CRYPTO_KEY {
         // and the end time
         endTime = BuildKerberosTime(env, &(msticket->EndTime));
         if (endTime == NULL) {
-                break;
+            break;
         }
 
         // Get the renew till time
         renewTillTime = BuildKerberosTime(env, &(msticket->RenewUntil));
         if (renewTillTime == NULL) {
-                break;
+            break;
         }
 
         // and now go build a KrbCreds object
@@ -630,87 +630,87 @@ typedef struct KERB_CRYPTO_KEY {
                 hostAddresses);
 
         break;
-        } // end of WHILE
+    } // end of WHILE
 
-        // clean up resources
-        if (TktCacheResponse != NULL) {
-                LsaFreeReturnBuffer(TktCacheResponse);
-        }
-        if (pTicketRequest) {
-                LocalFree(pTicketRequest);
-        }
-        if (pTicketResponse != NULL) {
-                LsaFreeReturnBuffer(pTicketResponse);
-        }
+    // clean up resources
+    if (TktCacheResponse != NULL) {
+        LsaFreeReturnBuffer(TktCacheResponse);
+    }
+    if (pTicketRequest) {
+        LocalFree(pTicketRequest);
+    }
+    if (pTicketResponse != NULL) {
+        LsaFreeReturnBuffer(pTicketResponse);
+    }
 
-        return krbCreds;
+    return krbCreds;
 }
 
 static NTSTATUS
 ConstructTicketRequest(UNICODE_STRING DomainName,
                 PKERB_RETRIEVE_TKT_REQUEST *outRequest, ULONG *outSize)
 {
-        NTSTATUS Status;
-        UNICODE_STRING TargetPrefix;
-        USHORT TargetSize;
-        ULONG RequestSize;
-        ULONG Length;
-        PKERB_RETRIEVE_TKT_REQUEST pTicketRequest = NULL;
+    NTSTATUS Status;
+    UNICODE_STRING TargetPrefix;
+    USHORT TargetSize;
+    ULONG RequestSize;
+    ULONG Length;
+    PKERB_RETRIEVE_TKT_REQUEST pTicketRequest = NULL;
 
-        *outRequest = NULL;
-        *outSize = 0;
+    *outRequest = NULL;
+    *outSize = 0;
 
-        //
-        // Set up the "krbtgt/" target prefix into a UNICODE_STRING so we
-        // can easily concatenate it later.
-        //
+    //
+    // Set up the "krbtgt/" target prefix into a UNICODE_STRING so we
+    // can easily concatenate it later.
+    //
 
-        TargetPrefix.Buffer = L"krbtgt/";
-        Length = (ULONG)wcslen(TargetPrefix.Buffer) * sizeof(WCHAR);
-        TargetPrefix.Length = (USHORT)Length;
-        TargetPrefix.MaximumLength = TargetPrefix.Length;
+    TargetPrefix.Buffer = L"krbtgt/";
+    Length = (ULONG)wcslen(TargetPrefix.Buffer) * sizeof(WCHAR);
+    TargetPrefix.Length = (USHORT)Length;
+    TargetPrefix.MaximumLength = TargetPrefix.Length;
 
-        //
-        // We will need to concatenate the "krbtgt/" prefix and the
-        // Logon Session's DnsDomainName into our request's target name.
-        //
-        // Therefore, first compute the necessary buffer size for that.
-        //
-        // Note that we might theoretically have integer overflow.
-        //
+    //
+    // We will need to concatenate the "krbtgt/" prefix and the
+    // Logon Session's DnsDomainName into our request's target name.
+    //
+    // Therefore, first compute the necessary buffer size for that.
+    //
+    // Note that we might theoretically have integer overflow.
+    //
 
-        TargetSize = TargetPrefix.Length + DomainName.Length;
+    TargetSize = TargetPrefix.Length + DomainName.Length;
 
-        //
-        // The ticket request buffer needs to be a single buffer.  That buffer
-        // needs to include the buffer for the target name.
-        //
+    //
+    // The ticket request buffer needs to be a single buffer.  That buffer
+    // needs to include the buffer for the target name.
+    //
 
-        RequestSize = sizeof (*pTicketRequest) + TargetSize;
+    RequestSize = sizeof (*pTicketRequest) + TargetSize;
 
-        //
-        // Allocate the request buffer and make sure it's zero-filled.
-        //
+    //
+    // Allocate the request buffer and make sure it's zero-filled.
+    //
 
-        pTicketRequest = (PKERB_RETRIEVE_TKT_REQUEST)
-                        LocalAlloc(LMEM_ZEROINIT, RequestSize);
-        if (!pTicketRequest)
-            return GetLastError();
+    pTicketRequest = (PKERB_RETRIEVE_TKT_REQUEST)
+                    LocalAlloc(LMEM_ZEROINIT, RequestSize);
+    if (!pTicketRequest)
+        return GetLastError();
 
-        //
-        // Concatenate the target prefix with the previous reponse's
-        // target domain.
-        //
+    //
+    // Concatenate the target prefix with the previous reponse's
+    // target domain.
+    //
 
-        pTicketRequest->TargetName.Length = 0;
-        pTicketRequest->TargetName.MaximumLength = TargetSize;
-        pTicketRequest->TargetName.Buffer = (PWSTR) (pTicketRequest + 1);
-        Status = ConcatenateUnicodeStrings(&(pTicketRequest->TargetName),
-                                        TargetPrefix,
-                                        DomainName);
-        *outRequest = pTicketRequest;
-        *outSize    = RequestSize;
-        return Status;
+    pTicketRequest->TargetName.Length = 0;
+    pTicketRequest->TargetName.MaximumLength = TargetSize;
+    pTicketRequest->TargetName.Buffer = (PWSTR) (pTicketRequest + 1);
+    Status = ConcatenateUnicodeStrings(&(pTicketRequest->TargetName),
+                                    TargetPrefix,
+                                    DomainName);
+    *outRequest = pTicketRequest;
+    *outSize    = RequestSize;
+    return Status;
 }
 
 DWORD
@@ -720,22 +720,22 @@ ConcatenateUnicodeStrings(
     UNICODE_STRING Source2
     )
 {
-        //
-        // The buffers for Source1 and Source2 cannot overlap pTarget's
-        // buffer.  Source1.Length + Source2.Length must be <= 0xFFFF,
-        // otherwise we overflow...
-        //
+    //
+    // The buffers for Source1 and Source2 cannot overlap pTarget's
+    // buffer.  Source1.Length + Source2.Length must be <= 0xFFFF,
+    // otherwise we overflow...
+    //
 
-        USHORT TotalSize = Source1.Length + Source2.Length;
-        PBYTE buffer = (PBYTE) pTarget->Buffer;
+    USHORT TotalSize = Source1.Length + Source2.Length;
+    PBYTE buffer = (PBYTE) pTarget->Buffer;
 
-        if (TotalSize > pTarget->MaximumLength)
-            return ERROR_INSUFFICIENT_BUFFER;
+    if (TotalSize > pTarget->MaximumLength)
+        return ERROR_INSUFFICIENT_BUFFER;
 
-        pTarget->Length = TotalSize;
-        memcpy(buffer, Source1.Buffer, Source1.Length);
-        memcpy(buffer + Source1.Length, Source2.Buffer, Source2.Length);
-        return ERROR_SUCCESS;
+    pTarget->Length = TotalSize;
+    memcpy(buffer, Source1.Buffer, Source1.Length);
+    memcpy(buffer + Source1.Length, Source2.Buffer, Source2.Length);
+    return ERROR_SUCCESS;
 }
 
 BOOL
@@ -783,27 +783,27 @@ ShowLastError(
         DWORD dwError
         )
 {
-   #define MAX_MSG_SIZE 256
+    #define MAX_MSG_SIZE 256
 
-   static WCHAR szMsgBuf[MAX_MSG_SIZE];
-   DWORD dwRes;
+    static WCHAR szMsgBuf[MAX_MSG_SIZE];
+    DWORD dwRes;
 
-   printf("Error calling function %s: %lu\n", szAPI, dwError);
+    printf("Error calling function %s: %lu\n", szAPI, dwError);
 
-   dwRes = FormatMessage (
-      FORMAT_MESSAGE_FROM_SYSTEM,
-      NULL,
-      dwError,
-      0,
-      szMsgBuf,
-      MAX_MSG_SIZE,
-      NULL);
-   if (0 == dwRes) {
-      printf("FormatMessage failed with %d\n", GetLastError());
-      // ExitProcess(EXIT_FAILURE);
-   } else {
-      printf("%S",szMsgBuf);
-   }
+    dwRes = FormatMessage (
+            FORMAT_MESSAGE_FROM_SYSTEM,
+            NULL,
+            dwError,
+            0,
+            szMsgBuf,
+            MAX_MSG_SIZE,
+            NULL);
+    if (0 == dwRes) {
+        printf("FormatMessage failed with %d\n", GetLastError());
+        // ExitProcess(EXIT_FAILURE);
+    } else {
+        printf("%S",szMsgBuf);
+    }
 }
 
 VOID
@@ -831,189 +831,189 @@ InitUnicodeString(
         Length = (ULONG)wcslen( SourceString ) * sizeof( WCHAR );
         DestinationString->Length = (USHORT)Length;
         DestinationString->MaximumLength = (USHORT)(Length + sizeof(UNICODE_NULL));
-        }
+    }
     else {
         DestinationString->MaximumLength = 0;
         DestinationString->Length = 0;
-        }
+    }
 }
 
 jobject BuildTicket(JNIEnv *env, PUCHAR encodedTicket, ULONG encodedTicketSize) {
 
-        /* To build a Ticket, we first need to build a DerValue out of the EncodedTicket.
-         * But before we can do that, we need to make a byte array out of the ET.
-         */
+    /* To build a Ticket, we first need to build a DerValue out of the EncodedTicket.
+     * But before we can do that, we need to make a byte array out of the ET.
+     */
 
-        jobject derValue, ticket;
-        jbyteArray ary;
+    jobject derValue, ticket;
+    jbyteArray ary;
 
-        ary = (*env)->NewByteArray(env,encodedTicketSize);
-        if ((*env)->ExceptionOccurred(env)) {
-                return (jobject) NULL;
-        }
+    ary = (*env)->NewByteArray(env,encodedTicketSize);
+    if ((*env)->ExceptionOccurred(env)) {
+        return (jobject) NULL;
+    }
 
-        (*env)->SetByteArrayRegion(env, ary, (jsize) 0, encodedTicketSize,
-                                        (jbyte *)encodedTicket);
-        if ((*env)->ExceptionOccurred(env)) {
-                (*env)->DeleteLocalRef(env, ary);
-                return (jobject) NULL;
-        }
-
-        derValue = (*env)->NewObject(env, derValueClass, derValueConstructor, ary);
-        if ((*env)->ExceptionOccurred(env)) {
-                (*env)->DeleteLocalRef(env, ary);
-                return (jobject) NULL;
-        }
-
+    (*env)->SetByteArrayRegion(env, ary, (jsize) 0, encodedTicketSize,
+                                    (jbyte *)encodedTicket);
+    if ((*env)->ExceptionOccurred(env)) {
         (*env)->DeleteLocalRef(env, ary);
-        ticket = (*env)->NewObject(env, ticketClass, ticketConstructor, derValue);
-        if ((*env)->ExceptionOccurred(env)) {
-                (*env)->DeleteLocalRef(env, derValue);
-                return (jobject) NULL;
-        }
+        return (jobject) NULL;
+    }
+
+    derValue = (*env)->NewObject(env, derValueClass, derValueConstructor, ary);
+    if ((*env)->ExceptionOccurred(env)) {
+        (*env)->DeleteLocalRef(env, ary);
+        return (jobject) NULL;
+    }
+
+    (*env)->DeleteLocalRef(env, ary);
+    ticket = (*env)->NewObject(env, ticketClass, ticketConstructor, derValue);
+    if ((*env)->ExceptionOccurred(env)) {
         (*env)->DeleteLocalRef(env, derValue);
-        return ticket;
+        return (jobject) NULL;
+    }
+    (*env)->DeleteLocalRef(env, derValue);
+    return ticket;
 }
 
 // mdu
 jobject BuildPrincipal(JNIEnv *env, PKERB_EXTERNAL_NAME principalName,
                                 UNICODE_STRING domainName) {
 
-        /*
-         * To build the Principal, we need to get the names out of
-         * this goofy MS structure
-         */
-        jobject principal = NULL;
-        jobject realmStr = NULL;
-        jobjectArray stringArray;
-        jstring tempString;
-        int nameCount,i;
-        PUNICODE_STRING scanner;
-        WCHAR *realm;
-        ULONG realmLen;
+    /*
+     * To build the Principal, we need to get the names out of
+     * this goofy MS structure
+     */
+    jobject principal = NULL;
+    jobject realmStr = NULL;
+    jobjectArray stringArray;
+    jstring tempString;
+    int nameCount,i;
+    PUNICODE_STRING scanner;
+    WCHAR *realm;
+    ULONG realmLen;
 
-        realm = (WCHAR *) LocalAlloc(LMEM_ZEROINIT,
-                ((domainName.Length)*sizeof(WCHAR) + sizeof(UNICODE_NULL)));
-        wcsncpy(realm, domainName.Buffer, domainName.Length/sizeof(WCHAR));
+    realm = (WCHAR *) LocalAlloc(LMEM_ZEROINIT,
+            ((domainName.Length)*sizeof(WCHAR) + sizeof(UNICODE_NULL)));
+    wcsncpy(realm, domainName.Buffer, domainName.Length/sizeof(WCHAR));
 
-        #ifdef DEBUG
-        printf("Principal domain is %S\n", realm);
-        printf("Name type is %x\n", principalName->NameType);
-        printf("Name count is %x\n", principalName->NameCount);
-        #endif
+    #ifdef DEBUG
+    printf("Principal domain is %S\n", realm);
+    printf("Name type is %x\n", principalName->NameType);
+    printf("Name count is %x\n", principalName->NameCount);
+    #endif
 
-        nameCount = principalName->NameCount;
-        stringArray = (*env)->NewObjectArray(env, nameCount,
-                                javaLangStringClass, NULL);
-        if (stringArray == NULL) {
-            printf("Can't allocate String array for Principal\n");
-            LocalFree(realm);
-            return principal;
-        }
-
-        for (i=0; i<nameCount; i++) {
-            // get the principal name
-            scanner = &(principalName->Names[i]);
-
-            // OK, got a Char array, so construct a String
-            tempString = (*env)->NewString(env, (const jchar*)scanner->Buffer,
-                                scanner->Length/sizeof(WCHAR));
-            // Set the String into the StringArray
-            (*env)->SetObjectArrayElement(env, stringArray, i, tempString);
-
-            // Do I have to worry about storage reclamation here?
-        }
-        principal = (*env)->NewObject(env, principalNameClass,
-                        principalNameConstructor, stringArray);
-
-        // now set the realm in the principal
-        realmLen = (ULONG)wcslen((PWCHAR)realm);
-        realmStr = (*env)->NewString(env, (PWCHAR)realm, (USHORT)realmLen);
-        (*env)->CallVoidMethod(env, principal, setRealmMethod, realmStr);
-
-        // free local resources
+    nameCount = principalName->NameCount;
+    stringArray = (*env)->NewObjectArray(env, nameCount,
+                            javaLangStringClass, NULL);
+    if (stringArray == NULL) {
+        printf("Can't allocate String array for Principal\n");
         LocalFree(realm);
-
         return principal;
+    }
+
+    for (i=0; i<nameCount; i++) {
+        // get the principal name
+        scanner = &(principalName->Names[i]);
+
+        // OK, got a Char array, so construct a String
+        tempString = (*env)->NewString(env, (const jchar*)scanner->Buffer,
+                            scanner->Length/sizeof(WCHAR));
+        // Set the String into the StringArray
+        (*env)->SetObjectArrayElement(env, stringArray, i, tempString);
+
+        // Do I have to worry about storage reclamation here?
+    }
+    principal = (*env)->NewObject(env, principalNameClass,
+                    principalNameConstructor, stringArray);
+
+    // now set the realm in the principal
+    realmLen = (ULONG)wcslen((PWCHAR)realm);
+    realmStr = (*env)->NewString(env, (PWCHAR)realm, (USHORT)realmLen);
+    (*env)->CallVoidMethod(env, principal, setRealmMethod, realmStr);
+
+    // free local resources
+    LocalFree(realm);
+
+    return principal;
 }
 
 jobject BuildEncryptionKey(JNIEnv *env, PKERB_CRYPTO_KEY cryptoKey) {
-        // First, need to build a byte array
-        jbyteArray ary;
-        jobject encryptionKey = NULL;
+    // First, need to build a byte array
+    jbyteArray ary;
+    jobject encryptionKey = NULL;
 
-        ary = (*env)->NewByteArray(env,cryptoKey->Length);
-        (*env)->SetByteArrayRegion(env, ary, (jsize) 0, cryptoKey->Length,
-                                        (jbyte *)cryptoKey->Value);
-        if ((*env)->ExceptionOccurred(env)) {
-                (*env)->DeleteLocalRef(env, ary);
-        } else {
-                encryptionKey = (*env)->NewObject(env, encryptionKeyClass,
-                        encryptionKeyConstructor, cryptoKey->KeyType, ary);
-        }
+    ary = (*env)->NewByteArray(env,cryptoKey->Length);
+    (*env)->SetByteArrayRegion(env, ary, (jsize) 0, cryptoKey->Length,
+                                    (jbyte *)cryptoKey->Value);
+    if ((*env)->ExceptionOccurred(env)) {
+        (*env)->DeleteLocalRef(env, ary);
+    } else {
+        encryptionKey = (*env)->NewObject(env, encryptionKeyClass,
+                encryptionKeyConstructor, cryptoKey->KeyType, ary);
+    }
 
-        return encryptionKey;
+    return encryptionKey;
 }
 
 jobject BuildTicketFlags(JNIEnv *env, PULONG flags) {
-        jobject ticketFlags = NULL;
-        jbyteArray ary;
-        /*
-         * mdu: Convert the bytes to nework byte order before copying
-         * them to a Java byte array.
-         */
-        ULONG nlflags = htonl(*flags);
+    jobject ticketFlags = NULL;
+    jbyteArray ary;
+    /*
+     * mdu: Convert the bytes to nework byte order before copying
+     * them to a Java byte array.
+     */
+    ULONG nlflags = htonl(*flags);
 
-        ary = (*env)->NewByteArray(env, sizeof(*flags));
-        (*env)->SetByteArrayRegion(env, ary, (jsize) 0, sizeof(*flags),
-                                        (jbyte *)&nlflags);
-        if ((*env)->ExceptionOccurred(env)) {
-                (*env)->DeleteLocalRef(env, ary);
-        } else {
-                ticketFlags = (*env)->NewObject(env, ticketFlagsClass,
-                        ticketFlagsConstructor, sizeof(*flags)*8, ary);
-        }
+    ary = (*env)->NewByteArray(env, sizeof(*flags));
+    (*env)->SetByteArrayRegion(env, ary, (jsize) 0, sizeof(*flags),
+                                    (jbyte *)&nlflags);
+    if ((*env)->ExceptionOccurred(env)) {
+        (*env)->DeleteLocalRef(env, ary);
+    } else {
+        ticketFlags = (*env)->NewObject(env, ticketFlagsClass,
+                ticketFlagsConstructor, sizeof(*flags)*8, ary);
+    }
 
-        return ticketFlags;
+    return ticketFlags;
 }
 
 jobject BuildKerberosTime(JNIEnv *env, PLARGE_INTEGER kerbtime) {
-        jobject kerberosTime = NULL;
-        jstring stringTime = NULL;
-        SYSTEMTIME systemTime;
-        WCHAR timeString[16];
-        WCHAR month[3];
-        WCHAR day[3];
-        WCHAR hour[3];
-        WCHAR minute[3];
-        WCHAR second[3];
+    jobject kerberosTime = NULL;
+    jstring stringTime = NULL;
+    SYSTEMTIME systemTime;
+    WCHAR timeString[16];
+    WCHAR month[3];
+    WCHAR day[3];
+    WCHAR hour[3];
+    WCHAR minute[3];
+    WCHAR second[3];
 
-        if (FileTimeToSystemTime((FILETIME *)kerbtime, &systemTime)) {
-// XXX Cannot use %02.2ld, because the leading 0 is ignored for integers.
-// So, print them to strings, and then print them to the master string with a
-// format pattern that makes it two digits and prefix with a 0 if necessary.
-                swprintf( (wchar_t *)month, L"%2.2d", systemTime.wMonth);
-                swprintf( (wchar_t *)day, L"%2.2d", systemTime.wDay);
-                swprintf( (wchar_t *)hour, L"%2.2d", systemTime.wHour);
-                swprintf( (wchar_t *)minute, L"%2.2d", systemTime.wMinute);
-                swprintf( (wchar_t *)second, L"%2.2d", systemTime.wSecond);
-                swprintf( (wchar_t *)timeString,
-                                L"%ld%02.2s%02.2s%02.2s%02.2s%02.2sZ",
+    if (FileTimeToSystemTime((FILETIME *)kerbtime, &systemTime)) {
+        // XXX Cannot use %02.2ld, because the leading 0 is ignored for integers.
+        // So, print them to strings, and then print them to the master string with a
+        // format pattern that makes it two digits and prefix with a 0 if necessary.
+        swprintf( (wchar_t *)month, L"%2.2d", systemTime.wMonth);
+        swprintf( (wchar_t *)day, L"%2.2d", systemTime.wDay);
+        swprintf( (wchar_t *)hour, L"%2.2d", systemTime.wHour);
+        swprintf( (wchar_t *)minute, L"%2.2d", systemTime.wMinute);
+        swprintf( (wchar_t *)second, L"%2.2d", systemTime.wSecond);
+        swprintf( (wchar_t *)timeString,
+                L"%ld%02.2s%02.2s%02.2s%02.2s%02.2sZ",
                 systemTime.wYear,
                 month,
                 day,
                 hour,
                 minute,
                 second );
-                #ifdef DEBUG
-                printf("%S\n", (wchar_t *)timeString);
-                #endif /* DEBUG */
-                stringTime = (*env)->NewString(env, timeString,
-                                (sizeof(timeString)/sizeof(WCHAR))-1);
-                if (stringTime != NULL) { // everything's OK so far
-                        kerberosTime = (*env)->NewObject(env, kerberosTimeClass,
-                                kerberosTimeConstructor, stringTime);
-                }
+        #ifdef DEBUG
+        printf("%S\n", (wchar_t *)timeString);
+        #endif /* DEBUG */
+        stringTime = (*env)->NewString(env, timeString,
+                (sizeof(timeString)/sizeof(WCHAR))-1);
+        if (stringTime != NULL) { // everything's OK so far
+            kerberosTime = (*env)->NewObject(env, kerberosTimeClass,
+                    kerberosTimeConstructor, stringTime);
         }
-        return kerberosTime;
+    }
+    return kerberosTime;
 }

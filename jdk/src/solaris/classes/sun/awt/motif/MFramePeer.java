@@ -503,4 +503,9 @@ class MFramePeer extends MWindowPeer implements FramePeer, MInputMethodControl {
     public Rectangle getBoundsPrivate() {
         return getBounds();
     }
+
+    @Override
+    final boolean isTargetUndecorated() {
+        return ((Frame)target).isUndecorated();
+    }
 }

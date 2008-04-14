@@ -36,6 +36,8 @@
 #include <tchar.h>
 #include <fcntl.h>
 
+#include "jni_util.h"
+
 #define SECURITY_WIN32
 #include "sspi.h"
 #include "issperr.h"
@@ -52,7 +54,7 @@ static INITIALIZE_SECURITY_CONTEXT_FN pInitializeSecurityContext;
 static COMPLETE_AUTH_TOKEN_FN pCompleteAuthToken;
 static DELETE_SECURITY_CONTEXT_FN pDeleteSecurityContext;
 
-static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle, SecBufferDesc OutBuffDesc);
+static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle);
 
 static jfieldID ntlm_ctxHandleID;
 static jfieldID ntlm_crdHandleID;
@@ -117,22 +119,36 @@ JNIEXPORT jlong JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_getCrede
 {
     SEC_WINNT_AUTH_IDENTITY   AuthId;
     SEC_WINNT_AUTH_IDENTITY * pAuthId;
-    CHAR        *pUser = 0;
-    CHAR        *pDomain = 0;
-    CHAR        *pPassword = 0;
+    const CHAR        *pUser = 0;
+    const CHAR        *pDomain = 0;
+    const CHAR        *pPassword = 0;
     CredHandle      *pCred;
     TimeStamp            ltime;
     jboolean         isCopy;
     SECURITY_STATUS      ss;
 
     if (user != 0) {
-        pUser = (CHAR *)(*env)->GetStringUTFChars(env, user, &isCopy);
+        pUser = JNU_GetStringPlatformChars(env, user, &isCopy);
+        if (pUser == NULL)
+            return 0;  // pending Exception
     }
     if (domain != 0) {
-        pDomain = (CHAR *)(*env)->GetStringUTFChars(env, domain, &isCopy);
+        pDomain = JNU_GetStringPlatformChars(env, domain, &isCopy);
+        if (pDomain == NULL) {
+            if (pUser != NULL)
+                JNU_ReleaseStringPlatformChars(env, user, pUser);
+            return 0;  // pending Exception
+        }
     }
     if (password != 0) {
-        pPassword = (CHAR *)(*env)->GetStringUTFChars(env, password, &isCopy);
+        pPassword = JNU_GetStringPlatformChars(env, password, &isCopy);
+        if (pPassword == NULL) {
+            if(pUser != NULL)
+                JNU_ReleaseStringPlatformChars(env, user, pUser);
+            if(pDomain != NULL)
+                JNU_ReleaseStringPlatformChars(env, domain, pDomain);
+            return 0;  // pending Exception
+        }
     }
     pCred = (CredHandle *)malloc(sizeof (CredHandle));
 
@@ -167,6 +183,14 @@ JNIEXPORT jlong JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_getCrede
         pCred, &ltime
         );
 
+    /* Release resources held by JNU_GetStringPlatformChars */
+    if (pUser != NULL)
+        JNU_ReleaseStringPlatformChars(env, user, pUser);
+    if (pPassword != NULL)
+        JNU_ReleaseStringPlatformChars(env, password, pPassword);
+    if (pDomain != NULL)
+        JNU_ReleaseStringPlatformChars(env, domain, pDomain);
+
     if (ss == 0) {
         return (jlong) pCred;
     } else {
@@ -181,7 +205,6 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_get
     VOID        *pInput = 0;
     DWORD            inputLen;
     CHAR         buffOut[512];
-    DWORD        pcbBuffOut;
     jboolean         isCopy;
     SECURITY_STATUS      ss;
     SecBufferDesc        OutBuffDesc;
@@ -247,7 +270,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_get
     }
 
     if (ss < 0) {
-        endSequence (pCred, pCtx, OutBuffDesc);
+        endSequence (pCred, pCtx);
         return 0;
     }
 
@@ -255,7 +278,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_get
         ss = pCompleteAuthToken( pCtx, &OutBuffDesc );
 
         if (ss < 0) {
-            endSequence (pCred, pCtx, OutBuffDesc);
+            endSequence (pCred, pCtx);
             return 0;
         }
     }
@@ -265,24 +288,22 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_get
         (*env)->SetByteArrayRegion(env, ret, 0, OutSecBuff.cbBuffer,
                 OutSecBuff.pvBuffer);
         if (lastToken != 0) // 2nd stage
-            endSequence (pCred, pCtx, OutBuffDesc);
+            endSequence (pCred, pCtx);
         result = ret;
     }
 
     if ((ss != SEC_I_CONTINUE_NEEDED) && (ss == SEC_I_COMPLETE_AND_CONTINUE)) {
-        endSequence (pCred, pCtx, OutBuffDesc);
+        endSequence (pCred, pCtx);
     }
 
     return result;
 }
 
-static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle, SecBufferDesc OutBuffDesc) {
+static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle) {
     if (credHand != 0) {
         pFreeCredentialsHandle (credHand);
         free (credHand);
     }
-
-    pFreeContextBuffer (&OutBuffDesc);
 
     if (ctxHandle != 0) {
         pDeleteSecurityContext(ctxHandle);

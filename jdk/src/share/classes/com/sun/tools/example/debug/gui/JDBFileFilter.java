@@ -201,11 +201,11 @@ public class JDBFileFilter extends FileFilter {
             if(description == null || isExtensionListInDescription()) {
                 fullDescription = description==null ? "(" : description + " (";
                 // build the description from the extension list
-                Enumeration extensions = filters.keys();
+                Enumeration<String> extensions = filters.keys();
                 if(extensions != null) {
-                    fullDescription += "." + (String) extensions.nextElement();
+                    fullDescription += "." + extensions.nextElement();
                     while (extensions.hasMoreElements()) {
-                        fullDescription += ", " + (String) extensions.nextElement();
+                        fullDescription += ", " + extensions.nextElement();
                     }
                 }
                 fullDescription += ")";

@@ -173,7 +173,7 @@ public class Check {
      *  @param ex         The failure to report.
      */
     public Type completionError(DiagnosticPosition pos, CompletionFailure ex) {
-        log.error(pos, "cant.access", ex.sym, ex.errmsg);
+        log.error(pos, "cant.access", ex.sym, ex.getDetailValue());
         if (ex instanceof ClassReader.BadClassFile) throw new Abort();
         else return syms.errType;
     }

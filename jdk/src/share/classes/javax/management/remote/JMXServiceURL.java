@@ -30,6 +30,7 @@ package javax.management.remote;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 
+import java.beans.ConstructorProperties;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -274,6 +275,7 @@ public class JMXServiceURL implements Serializable {
      * is not possible to find the local host name, or if
      * <code>port</code> is negative.
      */
+    @ConstructorProperties({"protocol", "host", "port", "URLPath"})
     public JMXServiceURL(String protocol, String host, int port,
                          String urlPath)
             throws MalformedURLException {

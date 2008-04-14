@@ -56,10 +56,8 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
     public String toString() {
         String string = "event set, policy:" + suspendPolicy +
                         ", count:" + this.size() + " = {";
-        Iterator iter = this.iterator();
         boolean first = true;
-        while (iter.hasNext()) {
-            Event event = (Event)iter.next();
+        for (Event event : this) {
             if (!first) {
                 string += ", ";
             }
@@ -787,9 +785,7 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
     }
 
     private ThreadReference eventThread() {
-        Iterator iter = this.iterator();
-        while (iter.hasNext()) {
-            Event event = (Event)iter.next();
+        for (Event event : this) {
             if (event instanceof ThreadedEventImpl) {
                 return ((ThreadedEventImpl)event).thread();
             }
@@ -846,7 +842,7 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
         }
 
         public Event nextEvent() {
-            return (Event)next();
+            return next();
         }
 
         public void remove() {

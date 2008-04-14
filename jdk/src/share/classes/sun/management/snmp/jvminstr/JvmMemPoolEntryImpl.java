@@ -26,7 +26,6 @@ package sun.management.snmp.jvminstr;
 
 // java imports
 //
-import java.io.Serializable;
 import java.util.Map;
 
 // jmx imports
@@ -36,9 +35,7 @@ import com.sun.jmx.snmp.SnmpDefinitions;
 
 // jdmk imports
 //
-import com.sun.jmx.snmp.agent.SnmpMib;
 
-import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.lang.management.MemoryType;
 import java.lang.management.MemoryPoolMXBean;
@@ -73,7 +70,9 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
         "jvmMemPoolEntry.getCollectionUsage";
     final static MemoryUsage ZEROS = new MemoryUsage(0,0,0,0);
 
-
+    final String entryMemoryTag;
+    final String entryPeakMemoryTag;
+    final String entryCollectMemoryTag;
 
     MemoryUsage getMemoryUsage() {
         try {
@@ -81,17 +80,17 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
 
             if (m != null) {
                 final MemoryUsage cached = (MemoryUsage)
-                    m.get(memoryTag);
+                    m.get(entryMemoryTag);
                 if (cached != null) {
-                    log.debug("getMemoryUsage",
-                          "jvmMemPoolEntry.getUsage found in cache.");
+                    log.debug("getMemoryUsage",entryMemoryTag+
+                          " found in cache.");
                     return cached;
                 }
 
                 MemoryUsage u = pool.getUsage();
                 if (u == null) u = ZEROS;
 
-                m.put(memoryTag,u);
+                m.put(entryMemoryTag,u);
                 return u;
             }
             // Should never come here.
@@ -113,18 +112,18 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
 
             if (m != null) {
                 final MemoryUsage cached = (MemoryUsage)
-                    m.get(peakMemoryTag);
+                    m.get(entryPeakMemoryTag);
                 if (cached != null) {
                     if (log.isDebugOn())
                         log.debug("getPeakMemoryUsage",
-                              peakMemoryTag + " found in cache.");
+                              entryPeakMemoryTag + " found in cache.");
                     return cached;
                 }
 
                 MemoryUsage u = pool.getPeakUsage();
                 if (u == null) u = ZEROS;
 
-                m.put(peakMemoryTag,u);
+                m.put(entryPeakMemoryTag,u);
                 return u;
             }
             // Should never come here.
@@ -146,18 +145,18 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
 
             if (m != null) {
                 final MemoryUsage cached = (MemoryUsage)
-                    m.get(collectMemoryTag);
+                    m.get(entryCollectMemoryTag);
                 if (cached != null) {
                     if (log.isDebugOn())
                         log.debug("getCollectMemoryUsage",
-                                  collectMemoryTag + " found in cache.");
+                                  entryCollectMemoryTag + " found in cache.");
                     return cached;
                 }
 
                 MemoryUsage u = pool.getCollectionUsage();
                 if (u == null) u = ZEROS;
 
-                m.put(collectMemoryTag,u);
+                m.put(entryCollectMemoryTag,u);
                 return u;
             }
             // Should never come here.
@@ -179,9 +178,12 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
     /**
      * Constructor for the "JvmMemPoolEntry" group.
      */
-    public JvmMemPoolEntryImpl(MemoryPoolMXBean mp, int index) {
+    public JvmMemPoolEntryImpl(MemoryPoolMXBean mp, final int index) {
         this.pool=mp;
         this.jvmMemPoolIndex = index;
+        this.entryMemoryTag = memoryTag + "." + index;
+        this.entryPeakMemoryTag = peakMemoryTag + "." + index;
+        this.entryCollectMemoryTag = collectMemoryTag + "." + index;
     }
 
     /**
