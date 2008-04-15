@@ -817,6 +817,12 @@ public:
   // for the transformations to happen.
   bool has_special_unique_user() const;
 
+  // Skip Proj and CatchProj nodes chains. Check for Null and Top.
+  Node* find_exact_control(Node* ctrl);
+
+  // Check if 'this' node dominates or equal to 'sub'.
+  bool dominates(Node* sub, Node_List &nlist);
+
 protected:
   bool remove_dead_region(PhaseGVN *phase, bool can_reshape);
 public:
