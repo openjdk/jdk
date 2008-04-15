@@ -38,6 +38,7 @@ include $(GAMMADIR)/make/scm.make
 
 NAWK	= /usr/xpg4/bin/awk
 RM	= rm -f
+HG	= hg
 CS_TOP	= ../..
 
 CSDIRS	= $(CS_TOP)/src $(CS_TOP)/make
@@ -141,13 +142,17 @@ TAGS.clean:  nametable.clean
 
 # .nametable.files and .nametable.files.tmp are used to determine if any files
 # were added to/deleted from/renamed in the workspace.  If not, then there's
-# normally no need to run find.  To force a 'find':  gmake nametable.clean.
+# normally no need to rebuild the cscope database. To force a rebuild of
+# the cscope database: gmake nametable.clean.
 .nametable.files:  .nametable.files.tmp
-	cmp -s $@ $< || cp $< $@
+	( cmp -s $@ $< ) || ( cp $< $@ )
+	-$(RM) $<
 
-.nametable.files.tmp:  $(CS_TOP)/Codemgr_wsdata/nametable
-	$(NAWK) \
-	'{ if (sub("( [a-z0-9]{2,8}){4}$$", "")) print $$0; }' $< > $@
+# `hg status' is slightly faster than `hg fstatus'. Both are
+# quite a bit slower on an NFS mounted file system, so this is
+# really geared towards repos on local file systems.
+.nametable.files.tmp:
+	-$(HG) fstatus -acmn > $@
 
 nametable.clean:
 	-$(RM) .nametable.files .nametable.files.tmp
