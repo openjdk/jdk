@@ -234,6 +234,7 @@ int AwtComponent::sm_wheelRotationAmount = 0;
 
 AwtComponent::AwtComponent()
 {
+    m_mouseButtonClickAllowed = 0;
     m_callbacksEnabled = FALSE;
     m_hwnd = NULL;
 
@@ -246,7 +247,6 @@ AwtComponent::AwtComponent()
     m_nextControlID = 1;
     m_childList = NULL;
     m_myControlID = 0;
-    m_mouseDragState = 0;
     m_hdwp = NULL;
     m_validationNestCount = 0;
 
@@ -2514,9 +2514,11 @@ MsgRouting AwtComponent::WmMouseDown(UINT flags, int x, int y, int button)
         lastClickX = x;
         lastClickY = y;
     }
+    /*
+     *Set appropriate bit of the mask on WM_MOUSE_DOWN message.
+     */
+    m_mouseButtonClickAllowed |= GetButtonMK(button);
     lastTime = now;
-    // it's needed only if WM_LBUTTONUP doesn't come for some reason
-    m_mouseDragState &= ~GetButtonMK(button);
 
     MSG msg;
     InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
@@ -2554,14 +2556,17 @@ MsgRouting AwtComponent::WmMouseUp(UINT flags, int x, int y, int button)
                    (GetButton(button) == java_awt_event_MouseEvent_BUTTON3 ?
                     TRUE : FALSE), GetButton(button), &msg);
     /*
-     * If no movement, then report a click following the button release
+     * If no movement, then report a click following the button release.
+     * When WM_MOUSEUP comes to a window without previous WM_MOUSEDOWN,
+     * spurous MOUSE_CLICK is about to happen. See 6430553.
      */
-    if (!(m_mouseDragState & GetButtonMK(button))) { // No up-button in the drag-state
+    if ((m_mouseButtonClickAllowed & GetButtonMK(button)) != 0) { //CLICK allowed
         SendMouseEvent(java_awt_event_MouseEvent_MOUSE_CLICKED,
                        TimeHelper::getMessageTimeUTC(), x, y, GetJavaModifiers(),
                        clickCount, JNI_FALSE, GetButton(button));
     }
-    m_mouseDragState &= ~GetButtonMK(button); // Exclude the up-button from the drag-state
+    // Exclude button from allowed to generate CLICK messages
+    m_mouseButtonClickAllowed &= ~GetButtonMK(button);
 
     if ((flags & ALL_MK_BUTTONS) == 0) {
         // only update if all buttons have been released
@@ -2605,7 +2610,8 @@ MsgRouting AwtComponent::WmMouseMove(UINT flags, int x, int y)
             SendMouseEvent(java_awt_event_MouseEvent_MOUSE_DRAGGED, TimeHelper::getMessageTimeUTC(), x, y,
                            GetJavaModifiers(), 0, JNI_FALSE,
                            java_awt_event_MouseEvent_NOBUTTON, &msg);
-            m_mouseDragState = flags;
+            //dragging means no more CLICKs until next WM_MOUSE_DOWN/WM_MOUSE_UP message sequence
+            m_mouseButtonClickAllowed = 0;
         } else {
             MSG msg;
             InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
