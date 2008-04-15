@@ -2844,7 +2844,15 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
     /**
      *  Utility method for parsing unicode escape sequences.
      */
-    private int u() {
+    private int cursor() {
+        return cursor;
+    }
+
+    private void setcursor(int pos) {
+        cursor = pos;
+    }
+
+    private int uxxxx() {
         int n = 0;
         for (int i = 0; i < 4; i++) {
             int ch = read();
@@ -2852,6 +2860,20 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 throw error("Illegal Unicode escape sequence");
             }
             n = n * 16 + ASCII.toDigit(ch);
+        }
+        return n;
+    }
+
+    private int u() {
+        int n = uxxxx();
+        if (Character.isHighSurrogate((char)n)) {
+            int cur = cursor();
+            if (read() == '\\' && read() == 'u') {
+                int n2 = uxxxx();
+                if (Character.isLowSurrogate((char)n2))
+                    return Character.toCodePoint((char)n, (char)n2);
+            }
+            setcursor(cur);
         }
         return n;
     }
