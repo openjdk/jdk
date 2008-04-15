@@ -103,12 +103,14 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         return defaultFont;
     }
 
-    /*
-     * Keeps all buttons which were pressed at the time of the last mouse
-     * drag until all buttons will be released, contains state as bit masks
-     * Button1Mask, Button2Mask, Button3Mask
-     */
-    private int mouseDragState = 0;
+    /* A bitmask keeps the button's numbers as Button1Mask, Button2Mask, Button3Mask
+     * which are allowed to
+     * generate the CLICK event after the RELEASE has happened.
+     * There are conditions that must be true for that sending CLICK event:
+     * 1) button was initially PRESSED
+     * 2) no movement or drag has happened until RELEASE
+    */
+    private int mouseButtonClickAllowed = 0;
 
     native int getNativeColor(Color clr, GraphicsConfiguration gc);
     native void getWMInsets(long window, long left, long top, long right, long bottom, long border);
@@ -660,6 +662,8 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         }
 
         if (type == XConstants.ButtonPress) {
+            //Allow this mouse button to generate CLICK event on next ButtonRelease
+            mouseButtonClickAllowed |= getButtonMask(lbutton);
             XWindow lastWindow = (lastWindowRef != null) ? ((XWindow)lastWindowRef.get()):(null);
             /*
                multiclick checking
@@ -715,8 +719,8 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
 
             postEventToEventQueue(me);
 
-            if (((mouseDragState & getButtonMask(lbutton)) == 0) && // No up-button in the drag-state
-                (type == XConstants.ButtonRelease))
+            if ((type == XConstants.ButtonRelease) &&
+                ((mouseButtonClickAllowed & getButtonMask(lbutton)) != 0) ) // No up-button in the drag-state
             {
                 postEventToEventQueue(me = new MouseEvent((Component)getEventSource(),
                                                      MouseEvent.MOUSE_CLICKED,
@@ -743,7 +747,11 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             }
         }
 
-        mouseDragState &= ~getButtonMask(lbutton); // Exclude the up-button from the drag-state
+        /* Update the state variable AFTER the CLICKED event post. */
+        if (type == XConstants.ButtonRelease) {
+            /* Exclude this mouse button from allowed list.*/
+            mouseButtonClickAllowed &= ~getButtonMask(lbutton);
+        }
     }
 
     public void handleMotionNotify(XEvent xev) {
@@ -776,7 +784,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
                Math.abs(lastY - y) < AWT_MULTICLICK_SMUDGE))) {
           clickCount = 0;
           lastWindowRef = null;
-          mouseDragState = mouseKeyState;
+          mouseButtonClickAllowed = 0;
           lastTime = 0;
           lastX = 0;
           lastY = 0;
