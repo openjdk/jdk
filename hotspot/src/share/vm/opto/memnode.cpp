@@ -241,36 +241,91 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
 }
 
 // Helper function for proving some simple control dominations.
-// Attempt to prove that control input 'dom' dominates (or equals) 'sub'.
+// Attempt to prove that all control inputs of 'dom' dominate 'sub'.
 // Already assumes that 'dom' is available at 'sub', and that 'sub'
 // is not a constant (dominated by the method's StartNode).
 // Used by MemNode::find_previous_store to prove that the
 // control input of a memory operation predates (dominates)
 // an allocation it wants to look past.
-bool MemNode::detect_dominating_control(Node* dom, Node* sub) {
-  if (dom == NULL)      return false;
-  if (dom->is_Proj())   dom = dom->in(0);
-  if (dom->is_Start())  return true; // anything inside the method
-  if (dom->is_Root())   return true; // dom 'controls' a constant
-  int cnt = 20;                      // detect cycle or too much effort
-  while (sub != NULL) {              // walk 'sub' up the chain to 'dom'
-    if (--cnt < 0)   return false;   // in a cycle or too complex
-    if (sub == dom)  return true;
-    if (sub->is_Start())  return false;
-    if (sub->is_Root())   return false;
-    Node* up = sub->in(0);
-    if (sub == up && sub->is_Region()) {
-      for (uint i = 1; i < sub->req(); i++) {
-        Node* in = sub->in(i);
-        if (in != NULL && !in->is_top() && in != sub) {
-          up = in; break;            // take any path on the way up to 'dom'
+bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
+  if (dom == NULL || dom->is_top() || sub == NULL || sub->is_top())
+    return false; // Conservative answer for dead code
+
+  // Check 'dom'.
+  dom = dom->find_exact_control(dom);
+  if (dom == NULL || dom->is_top())
+    return false; // Conservative answer for dead code
+
+  if (dom->is_Start() || dom->is_Root() || dom == sub)
+    return true;
+
+  // 'dom' dominates 'sub' if its control edge and control edges
+  // of all its inputs dominate or equal to sub's control edge.
+
+  // Currently 'sub' is either Allocate, Initialize or Start nodes.
+  assert(sub->is_Allocate() || sub->is_Initialize() || sub->is_Start(), "expecting only these nodes");
+
+  // Get control edge of 'sub'.
+  sub = sub->find_exact_control(sub->in(0));
+  if (sub == NULL || sub->is_top())
+    return false; // Conservative answer for dead code
+
+  assert(sub->is_CFG(), "expecting control");
+
+  if (sub == dom)
+    return true;
+
+  if (sub->is_Start() || sub->is_Root())
+    return false;
+
+  {
+    // Check all control edges of 'dom'.
+
+    ResourceMark rm;
+    Arena* arena = Thread::current()->resource_area();
+    Node_List nlist(arena);
+    Unique_Node_List dom_list(arena);
+
+    dom_list.push(dom);
+    bool only_dominating_controls = false;
+
+    for (uint next = 0; next < dom_list.size(); next++) {
+      Node* n = dom_list.at(next);
+      if (!n->is_CFG() && n->pinned()) {
+        // Check only own control edge for pinned non-control nodes.
+        n = n->find_exact_control(n->in(0));
+        if (n == NULL || n->is_top())
+          return false; // Conservative answer for dead code
+        assert(n->is_CFG(), "expecting control");
+      }
+      if (n->is_Start() || n->is_Root()) {
+        only_dominating_controls = true;
+      } else if (n->is_CFG()) {
+        if (n->dominates(sub, nlist))
+          only_dominating_controls = true;
+        else
+          return false;
+      } else {
+        // First, own control edge.
+        Node* m = n->find_exact_control(n->in(0));
+        if (m == NULL)
+          continue;
+        if (m->is_top())
+          return false; // Conservative answer for dead code
+        dom_list.push(m);
+
+        // Now, the rest of edges.
+        uint cnt = n->req();
+        for (uint i = 1; i < cnt; i++) {
+          m = n->find_exact_control(n->in(i));
+          if (m == NULL || m->is_top())
+            continue;
+          dom_list.push(m);
         }
       }
     }
-    if (sub == up)  return false;    // some kind of tight cycle
-    sub = up;
+    return only_dominating_controls;
   }
-  return false;
 }
 
 //---------------------detect_ptr_independence---------------------------------
@@ -291,9 +346,9 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
     return (a1 != a2);
   } else if (a1 != NULL) {                  // one allocation a1
     // (Note:  p2->is_Con implies p2->in(0)->is_Root, which dominates.)
-    return detect_dominating_control(p2->in(0), a1->in(0));
+    return all_controls_dominate(p2, a1);
   } else { //(a2 != NULL)                   // one allocation a2
-    return detect_dominating_control(p1->in(0), a2->in(0));
+    return all_controls_dominate(p1, a2);
   }
   return false;
 }
@@ -379,8 +434,7 @@ Node* MemNode::find_previous_store(PhaseTransform* phase) {
         known_identical = true;
       else if (alloc != NULL)
         known_independent = true;
-      else if (ctrl != NULL &&
-               detect_dominating_control(ctrl, st_alloc->in(0)))
+      else if (all_controls_dominate(this, st_alloc))
         known_independent = true;
 
       if (known_independent) {
@@ -1068,7 +1122,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node*    base   = AddPNode::Ideal_base_and_offset(address, phase, ignore);
     if (base != NULL
         && phase->type(base)->higher_equal(TypePtr::NOTNULL)
-        && detect_dominating_control(base->in(0), phase->C->start())) {
+        && all_controls_dominate(base, phase->C->start())) {
       // A method-invariant, non-null address (constant or 'this' argument).
       set_req(MemNode::Control, NULL);
     }
@@ -2489,7 +2543,7 @@ bool InitializeNode::detect_init_independence(Node* n,
     // must have preceded the init, or else be equal to the init.
     // Even after loop optimizations (which might change control edges)
     // a store is never pinned *before* the availability of its inputs.
-    if (!MemNode::detect_dominating_control(ctl, this->in(0)))
+    if (!MemNode::all_controls_dominate(n, this))
       return false;                  // failed to prove a good control
 
   }
