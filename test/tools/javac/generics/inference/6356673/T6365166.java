@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,20 @@
  * have any questions.
  */
 
-/*
+/**
  * @test
- * @bug 4984158
- * @summary two inherited methods with same signature
- * @author gafter, Maurizio Cimadamore
+ * @bug     6365166
+ * @summary javac (generic) unable to resolve methods
+ * @author Maurizio Cimadamore
  *
- * @compile -source 1.5 InheritanceConflict2.java
+ * @compile T6365166.java
  */
 
-package inheritance.conflict2;
+import java.util.*;
 
-class A<T> {
-    void f(String s) {}
+public class T6365166 {
+    static <A> void add(List<? super A> l, List<A> la) {
+        l.addAll(la); //doesn't compile - but it should
+    }
 }
 
-class B<T> extends A<T> {
-    void f(T t) {}
-}
-
-class C extends B<String> {
-    void f(String s) {}
-}

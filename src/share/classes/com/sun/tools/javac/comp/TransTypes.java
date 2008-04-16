@@ -690,13 +690,15 @@ public class TransTypes extends TreeTranslator {
 
     public void visitSelect(JCFieldAccess tree) {
         Type t = tree.selected.type;
-        if (t.isCompound() || (t.tag == TYPEVAR && t.getUpperBound().isCompound())) {
+        while (t.tag == TYPEVAR)
+            t = t.getUpperBound();
+        if (t.isCompound()) {
             if ((tree.sym.flags() & IPROXY) != 0) {
                 tree.sym = ((MethodSymbol)tree.sym).
                     implemented((TypeSymbol)tree.sym.owner, types);
             }
             tree.selected = cast(
-                translate(tree.selected, erasure(t)),
+                translate(tree.selected, erasure(tree.selected.type)),
                 erasure(tree.sym.owner.type));
         } else
             tree.selected = translate(tree.selected, erasure(t));
