@@ -23,23 +23,23 @@
 
 /*
  * @test
- * @bug 4984158
- * @summary two inherited methods with same signature
- * @author gafter, Maurizio Cimadamore
+ * @bug 6559182
+ * @summary Cast from a raw type with non-generic supertype to a raw type fails unexpectedly
+ * @author Maurizio Cimadamore
  *
- * @compile -source 1.5 InheritanceConflict2.java
+ * @compile Casting5.java
  */
 
-package inheritance.conflict2;
+class Casting5 {
+    static interface Super<P> {}
+    static class Y implements Super<Integer>{}
+    static interface X extends Super<Double>{}
+    static class S<L> extends Y {}
+    static interface T<L> extends X {}
 
-class A<T> {
-    void f(String s) {}
-}
-
-class B<T> extends A<T> {
-    void f(T t) {}
-}
-
-class C extends B<String> {
-    void f(String s) {}
+    public static void main(String... args) {
+        S s = null; // same if I use S<Byte>
+        T t = null; // same if I use T<Byte>
+        t = (T) s;
+    }
 }

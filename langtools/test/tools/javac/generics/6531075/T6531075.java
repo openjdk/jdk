@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,44 @@
 
 /*
  * @test
- * @bug 4984158
- * @summary two inherited methods with same signature
- * @author gafter, Maurizio Cimadamore
+ * @bug 6531075
  *
- * @compile -source 1.5 InheritanceConflict2.java
+ * @summary Missing synthetic casts when accessing fields/methods of intersection types including type variables
+ * @author Maurizio Cimadamore
+ *
  */
 
-package inheritance.conflict2;
 
-class A<T> {
-    void f(String s) {}
-}
+public class T6531075 {
 
-class B<T> extends A<T> {
-    void f(T t) {}
-}
+    static class A {
+        void a() {}
+    }
 
-class C extends B<String> {
-    void f(String s) {}
+    static interface I{
+        void i();
+    }
+
+    static class E extends A implements I{
+        public void i() {}
+    }
+
+    static class C<W extends A & I, T extends W>{
+        T t;
+        W w;
+        C(W w, T t) {
+            this.w = w;
+            this.t = t;
+        }
+    }
+
+    public static void main(String... args) {
+        C<E,E> c = new C<E,E>(new E(), new E());
+        testMemberMethods(c);
+    }
+
+    static void testMemberMethods(C<?, ?> arg) {
+        arg.t.a();
+        arg.t.i();
+    }
 }

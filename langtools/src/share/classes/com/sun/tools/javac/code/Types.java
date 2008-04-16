@@ -1499,46 +1499,67 @@ public class Types {
      * type parameters in t are deleted.
      */
     public Type erasure(Type t) {
+        return erasure(t, false);
+    }
+    //where
+    private Type erasure(Type t, boolean recurse) {
         if (t.tag <= lastBaseTag)
             return t; /* fast special case */
         else
-            return erasure.visit(t);
+            return erasure.visit(t, recurse);
     }
     // where
-        private UnaryVisitor<Type> erasure = new UnaryVisitor<Type>() {
-            public Type visitType(Type t, Void ignored) {
+        private SimpleVisitor<Type, Boolean> erasure = new SimpleVisitor<Type, Boolean>() {
+            public Type visitType(Type t, Boolean recurse) {
                 if (t.tag <= lastBaseTag)
                     return t; /*fast special case*/
                 else
-                    return t.map(erasureFun);
+                    return t.map(recurse ? erasureRecFun : erasureFun);
             }
 
             @Override
-            public Type visitWildcardType(WildcardType t, Void ignored) {
-                return erasure(upperBound(t));
+            public Type visitWildcardType(WildcardType t, Boolean recurse) {
+                return erasure(upperBound(t), recurse);
             }
 
             @Override
-            public Type visitClassType(ClassType t, Void ignored) {
-                return t.tsym.erasure(Types.this);
+            public Type visitClassType(ClassType t, Boolean recurse) {
+                Type erased = t.tsym.erasure(Types.this);
+                if (recurse) {
+                    erased = new ErasedClassType(erased.getEnclosingType(),erased.tsym);
+                }
+                return erased;
             }
 
             @Override
-            public Type visitTypeVar(TypeVar t, Void ignored) {
-                return erasure(t.bound);
+            public Type visitTypeVar(TypeVar t, Boolean recurse) {
+                return erasure(t.bound, recurse);
             }
 
             @Override
-            public Type visitErrorType(ErrorType t, Void ignored) {
+            public Type visitErrorType(ErrorType t, Boolean recurse) {
                 return t;
             }
         };
+
     private Mapping erasureFun = new Mapping ("erasure") {
             public Type apply(Type t) { return erasure(t); }
         };
 
+    private Mapping erasureRecFun = new Mapping ("erasureRecursive") {
+        public Type apply(Type t) { return erasureRecursive(t); }
+    };
+
     public List<Type> erasure(List<Type> ts) {
         return Type.map(ts, erasureFun);
+    }
+
+    public Type erasureRecursive(Type t) {
+        return erasure(t, true);
+    }
+
+    public List<Type> erasureRecursive(List<Type> ts) {
+        return Type.map(ts, erasureRecFun);
     }
     // </editor-fold>
 
@@ -1626,14 +1647,13 @@ public class Types {
                     if (t.supertype_field == null) {
                         List<Type> actuals = classBound(t).allparams();
                         List<Type> formals = t.tsym.type.allparams();
-                        if (actuals.isEmpty()) {
-                            if (formals.isEmpty())
-                                // Should not happen.  See comments below in interfaces
-                                t.supertype_field = supertype;
-                            else
-                                t.supertype_field = erasure(supertype);
-                        } else {
+                        if (t.hasErasedSupertypes()) {
+                            t.supertype_field = erasureRecursive(supertype);
+                        } else if (formals.nonEmpty()) {
                             t.supertype_field = subst(supertype, formals, actuals);
+                        }
+                        else {
+                            t.supertype_field = supertype;
                         }
                     }
                 }
@@ -1708,17 +1728,14 @@ public class Types {
                         assert t != t.tsym.type : t.toString();
                         List<Type> actuals = t.allparams();
                         List<Type> formals = t.tsym.type.allparams();
-                        if (actuals.isEmpty()) {
-                            if (formals.isEmpty()) {
-                                // In this case t is not generic (nor raw).
-                                // So this should not happen.
-                                t.interfaces_field = interfaces;
-                            } else {
-                                t.interfaces_field = erasure(interfaces);
-                            }
-                        } else {
+                        if (t.hasErasedSupertypes()) {
+                            t.interfaces_field = erasureRecursive(interfaces);
+                        } else if (formals.nonEmpty()) {
                             t.interfaces_field =
                                 upperBounds(subst(interfaces, formals, actuals));
+                        }
+                        else {
+                            t.interfaces_field = interfaces;
                         }
                     }
                 }

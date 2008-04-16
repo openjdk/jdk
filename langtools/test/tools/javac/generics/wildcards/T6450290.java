@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,22 @@
 
 /*
  * @test
- * @bug 4984158
- * @summary two inherited methods with same signature
- * @author gafter, Maurizio Cimadamore
- *
- * @compile -source 1.5 InheritanceConflict2.java
+ * @bug 6450290
+ * @summary Capture of nested wildcards causes type error
+ * @author Maurizio Cimadamore
+ * @compile/fail T6450290.java
  */
 
-package inheritance.conflict2;
+public class T6450290 {
+    static class Box<X extends Box<?,?>, T extends X> {
+        T value;
+        Box<X, T> same;
+    }
 
-class A<T> {
-    void f(String s) {}
-}
-
-class B<T> extends A<T> {
-    void f(T t) {}
-}
-
-class C extends B<String> {
-    void f(String s) {}
+    static class A extends Box<A,A> {}
+    static class B extends Box<B,B> {}
+    public static void main(String[] args) {
+        Box<?,?> b = new Box<Box<A,A>,Box<A,A>>();
+        b.value.same = new Box<B,B>(); //javac misses this bad assignment
+    }
 }
