@@ -947,6 +947,7 @@ void CodeComments::print_block_comment(outputStream* stream, intptr_t offset) {
   if (_comments != NULL) {
     CodeComment* c = _comments->find(offset);
     while (c && c->offset() == offset) {
+      stream->bol();
       stream->print("  ;; ");
       stream->print_cr(c->comment());
       c = c->next();

@@ -888,10 +888,11 @@ bool methodOopDesc::load_signature_classes(methodHandle m, TRAPS) {
       symbolHandle name (THREAD, sym);
       klassOop klass = SystemDictionary::resolve_or_null(name, class_loader,
                                              protection_domain, THREAD);
-      // We are loading classes eagerly. If a ClassNotFoundException was generated,
-      // be sure to ignore it.
+      // We are loading classes eagerly. If a ClassNotFoundException or
+      // a LinkageError was generated, be sure to ignore it.
       if (HAS_PENDING_EXCEPTION) {
-        if (PENDING_EXCEPTION->is_a(SystemDictionary::classNotFoundException_klass())) {
+        if (PENDING_EXCEPTION->is_a(SystemDictionary::classNotFoundException_klass()) ||
+            PENDING_EXCEPTION->is_a(SystemDictionary::linkageError_klass())) {
           CLEAR_PENDING_EXCEPTION;
         } else {
           return false;

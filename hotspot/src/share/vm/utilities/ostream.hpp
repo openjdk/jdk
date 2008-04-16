@@ -59,6 +59,7 @@ class outputStream : public ResourceObj {
    int  indentation() const    { return _indentation; }
    void set_indentation(int i) { _indentation = i;    }
    void fill_to(int col);
+   void move_to(int col, int slop = 6, int min_space = 2);
 
    // sizing
    int width()    const { return _width;    }
@@ -78,7 +79,7 @@ class outputStream : public ResourceObj {
    void print_raw_cr(const char* str)         { write(str, strlen(str)); cr(); }
    void print_raw_cr(const char* str, int len){ write(str,         len); cr(); }
    void put(char ch);
-   void sp();
+   void sp(int count = 1);
    void cr();
    void bol() { if (_position > 0)  cr(); }
 

@@ -2480,6 +2480,10 @@ bool os::can_commit_large_page_memory() {
   return false;
 }
 
+bool os::can_execute_large_page_memory() {
+  return false;
+}
+
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 

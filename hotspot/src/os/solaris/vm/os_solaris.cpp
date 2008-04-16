@@ -3089,6 +3089,8 @@ bool os::large_page_init() {
   if (UseISM) {
     // ISM disables MPSS to be compatible with old JDK behavior
     UseMPSS = false;
+    _page_sizes[0] = _large_page_size;
+    _page_sizes[1] = vm_page_size();
   }
 
   UseMPSS = UseMPSS &&
@@ -3175,6 +3177,10 @@ size_t os::large_page_size() {
 // MPSS allows application to commit large page memory on demand; with ISM
 // the entire memory region must be allocated as shared memory.
 bool os::can_commit_large_page_memory() {
+  return UseISM ? false : true;
+}
+
+bool os::can_execute_large_page_memory() {
   return UseISM ? false : true;
 }
 
@@ -4385,61 +4391,52 @@ static address resolve_symbol(const char *name) {
 // threads. Calling thr_setprio is meaningless in this case.
 //
 bool isT2_libthread() {
-  int i, rslt;
   static prheader_t * lwpArray = NULL;
   static int lwpSize = 0;
   static int lwpFile = -1;
   lwpstatus_t * that;
-  int aslwpcount;
   char lwpName [128];
   bool isT2 = false;
 
 #define ADR(x)  ((uintptr_t)(x))
 #define LWPINDEX(ary,ix)   ((lwpstatus_t *)(((ary)->pr_entsize * (ix)) + (ADR((ary) + 1))))
 
-  aslwpcount = 0;
-  lwpSize = 16*1024;
-  lwpArray = ( prheader_t *)NEW_C_HEAP_ARRAY (char, lwpSize);
-  lwpFile = open ("/proc/self/lstatus", O_RDONLY, 0);
-  if (lwpArray == NULL) {
-      if ( ThreadPriorityVerbose ) warning ("Couldn't allocate T2 Check array\n");
-      return(isT2);
-  }
+  lwpFile = open("/proc/self/lstatus", O_RDONLY, 0);
   if (lwpFile < 0) {
-      if ( ThreadPriorityVerbose ) warning ("Couldn't open /proc/self/lstatus\n");
-      return(isT2);
+      if (ThreadPriorityVerbose) warning ("Couldn't open /proc/self/lstatus\n");
+      return false;
   }
+  lwpSize = 16*1024;
   for (;;) {
     lseek (lwpFile, 0, SEEK_SET);
-    rslt = read (lwpFile, lwpArray, lwpSize);
-    if ((lwpArray->pr_nent * lwpArray->pr_entsize) <= lwpSize) {
+    lwpArray = (prheader_t *)NEW_C_HEAP_ARRAY(char, lwpSize);
+    if (read(lwpFile, lwpArray, lwpSize) < 0) {
+      if (ThreadPriorityVerbose) warning("Error reading /proc/self/lstatus\n");
       break;
     }
-    FREE_C_HEAP_ARRAY(char, lwpArray);
+    if ((lwpArray->pr_nent * lwpArray->pr_entsize) <= lwpSize) {
+       // We got a good snapshot - now iterate over the list.
+      int aslwpcount = 0;
+      for (int i = 0; i < lwpArray->pr_nent; i++ ) {
+        that = LWPINDEX(lwpArray,i);
+        if (that->pr_flags & PR_ASLWP) {
+          aslwpcount++;
+        }
+      }
+      if (aslwpcount == 0) isT2 = true;
+      break;
+    }
     lwpSize = lwpArray->pr_nent * lwpArray->pr_entsize;
-    lwpArray = ( prheader_t *)NEW_C_HEAP_ARRAY (char, lwpSize);
-    if (lwpArray == NULL) {
-        if ( ThreadPriorityVerbose ) warning ("Couldn't allocate T2 Check array\n");
-        return(isT2);
-    }
+    FREE_C_HEAP_ARRAY(char, lwpArray);  // retry.
   }
-
-  // We got a good snapshot - now iterate over the list.
-  for (i = 0; i < lwpArray->pr_nent; i++ ) {
-    that = LWPINDEX(lwpArray,i);
-    if (that->pr_flags & PR_ASLWP) {
-      aslwpcount++;
-    }
-  }
-  if ( aslwpcount == 0 ) isT2 = true;
 
   FREE_C_HEAP_ARRAY(char, lwpArray);
   close (lwpFile);
-  if ( ThreadPriorityVerbose ) {
-    if ( isT2 ) tty->print_cr("We are running with a T2 libthread\n");
+  if (ThreadPriorityVerbose) {
+    if (isT2) tty->print_cr("We are running with a T2 libthread\n");
     else tty->print_cr("We are not running with a T2 libthread\n");
   }
-  return (isT2);
+  return isT2;
 }
 
 

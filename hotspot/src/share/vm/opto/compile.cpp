@@ -456,7 +456,15 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   }
   TraceTime t1("Total compilation time", &_t_totalCompilation, TimeCompiler, TimeCompiler2);
   TraceTime t2(NULL, &_t_methodCompilation, TimeCompiler, false);
-  set_print_assembly(PrintOptoAssembly || _method->should_print_assembly());
+  bool print_opto_assembly = PrintOptoAssembly || _method->has_option("PrintOptoAssembly");
+  if (!print_opto_assembly) {
+    bool print_assembly = (PrintAssembly || _method->should_print_assembly());
+    if (print_assembly && !Disassembler::can_decode()) {
+      tty->print_cr("PrintAssembly request changed to PrintOptoAssembly");
+      print_opto_assembly = true;
+    }
+  }
+  set_print_assembly(print_opto_assembly);
 #endif
 
   if (ProfileTraps) {

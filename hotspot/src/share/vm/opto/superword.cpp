@@ -65,6 +65,11 @@ void SuperWord::transform_loop(IdealLoopTree* lpt) {
   Node *cl_exit = cl->loopexit();
   if (cl_exit->in(0) != lpt->_head) return;
 
+  // Make sure the are no extra control users of the loop backedge
+  if (cl->back_control()->outcnt() != 1) {
+    return;
+  }
+
   // Check for pre-loop ending with CountedLoopEnd(Bool(Cmp(x,Opaque1(limit))))
   CountedLoopEndNode* pre_end = get_pre_loop_end(cl);
   if (pre_end == NULL) return;
