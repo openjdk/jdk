@@ -2516,9 +2516,13 @@ bool os::can_commit_large_page_memory() {
   return false;
 }
 
+bool os::can_execute_large_page_memory() {
+  return true;
+}
+
 char* os::reserve_memory_special(size_t bytes) {
   DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
-  char * res = (char *)VirtualAlloc(NULL, bytes, flag, PAGE_READWRITE);
+  char * res = (char *)VirtualAlloc(NULL, bytes, flag, PAGE_EXECUTE_READWRITE);
   return res;
 }
 

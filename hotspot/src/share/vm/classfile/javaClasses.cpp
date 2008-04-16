@@ -1015,7 +1015,6 @@ class BacktraceBuilder: public StackObj {
   typeArrayOop    _bcis;
   int             _index;
   bool            _dirty;
-  bool            _done;
   No_Safepoint_Verifier _nsv;
 
  public:
@@ -1029,12 +1028,10 @@ class BacktraceBuilder: public StackObj {
   };
 
   // constructor for new backtrace
-  BacktraceBuilder(TRAPS): _methods(NULL), _bcis(NULL), _head(NULL) {
+  BacktraceBuilder(TRAPS): _methods(NULL), _bcis(NULL), _head(NULL), _dirty(false) {
     expand(CHECK);
     _backtrace = _head;
     _index = 0;
-    _dirty = false;
-    _done = false;
   }
 
   void flush() {

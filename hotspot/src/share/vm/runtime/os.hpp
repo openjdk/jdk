@@ -228,6 +228,7 @@ class os: AllStatic {
   static bool   large_page_init();
   static size_t large_page_size();
   static bool   can_commit_large_page_memory();
+  static bool   can_execute_large_page_memory();
 
   // OS interface to polling page
   static address get_polling_page()             { return _polling_page; }

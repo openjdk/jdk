@@ -1253,7 +1253,10 @@ public:
   // Support for interprocedural escape analysis, from Thomas Kotzmann.
   enum EscapeFlag {
     estimated    = 1 << 0,
-    return_local = 1 << 1
+    return_local = 1 << 1,
+    return_allocated = 1 << 2,
+    allocated_escapes = 1 << 3,
+    unknown_modified = 1 << 4
   };
 
   intx eflags()                                  { return _eflags; }
