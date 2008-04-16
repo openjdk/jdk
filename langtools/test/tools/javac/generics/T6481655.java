@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,19 @@
 
 /*
  * @test
- * @bug 4984158
- * @summary two inherited methods with same signature
- * @author gafter, Maurizio Cimadamore
- *
- * @compile -source 1.5 InheritanceConflict2.java
+ * @bug     6481655
+ * @summary Parser confused by combination of parens and explicit type args
+ * @author Maurizio Cimadamore
  */
 
-package inheritance.conflict2;
+public class T6481655 {
 
-class A<T> {
-    void f(String s) {}
-}
+    public static <T> T getT(T t) {
+        return t;
+    }
 
-class B<T> extends A<T> {
-    void f(T t) {}
-}
-
-class C extends B<String> {
-    void f(String s) {}
+    public static void main(String... s) {
+        T6481655.<String>getT("");
+        (T6481655.<String>getT("")).getClass();
+    }
 }

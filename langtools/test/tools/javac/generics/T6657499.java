@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,22 @@
 
 /*
  * @test
- * @bug 4984158
- * @summary two inherited methods with same signature
- * @author gafter, Maurizio Cimadamore
  *
- * @compile -source 1.5 InheritanceConflict2.java
+ * @bug 6657499
+ * @summary generics: javac 1.6.0 fails to compile class with inner class
+ * @author Maurizio Cimadamore
+ *
  */
 
-package inheritance.conflict2;
-
-class A<T> {
-    void f(String s) {}
-}
-
-class B<T> extends A<T> {
-    void f(T t) {}
-}
-
-class C extends B<String> {
-    void f(String s) {}
+public class T6657499<T> {
+    T t;
+    public T test() {
+        class Local {private T t;};
+        class Local2 {T m() {return t;}};
+        T t3 = new Local().t;
+        return new Local2().m();
+    }
+    public static void main(String[] args) {
+        String s = new T6657499<String>().test();
+    }
 }
