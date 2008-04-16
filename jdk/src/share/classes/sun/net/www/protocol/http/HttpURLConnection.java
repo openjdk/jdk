@@ -75,6 +75,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
     private static Logger logger = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
 
+    static String HTTP_CONNECT = "CONNECT";
+
     static final String version;
     public static final String userAgent;
 
@@ -266,6 +268,20 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     /* If we decide we want to reuse a client, we put it here */
     private HttpClient reuseClient = null;
 
+    /* Tunnel states */
+    enum TunnelState {
+        /* No tunnel */
+        NONE,
+
+        /* Setting up a tunnel */
+        SETUP,
+
+        /* Tunnel has been successfully setup */
+        TUNNELING
+    }
+
+    private TunnelState tunnelState = TunnelState.NONE;
+
     /* Redefine timeouts from java.net.URLConnection as we nee -1 to mean
      * not set. This is to ensure backward compatibility.
      */
@@ -338,7 +354,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
          * others that have been set
          */
         // send any pre-emptive authentication
-        if (http.usingProxy) {
+        if (http.usingProxy && tunnelState() != TunnelState.TUNNELING) {
             setPreemptiveProxyAuthentication(requests);
         }
         if (!setRequests) {
@@ -1404,11 +1420,17 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             String raw = auth.raw();
             if (proxyAuthentication.isAuthorizationStale (raw)) {
                 /* we can retry with the current credentials */
-                requests.set (proxyAuthentication.getHeaderName(),
-                              proxyAuthentication.getHeaderValue(
-                                                     url, method));
+                String value;
+                if (tunnelState() == TunnelState.SETUP &&
+                      proxyAuthentication instanceof DigestAuthentication) {
+                    value = ((DigestAuthentication)proxyAuthentication)
+                            .getHeaderValue(connectRequestURI(url), HTTP_CONNECT);
+                } else {
+                    value = proxyAuthentication.getHeaderValue(url, method);
+                }
+                requests.set(proxyAuthentication.getHeaderName(), value);
                 currentProxyCredentials = proxyAuthentication;
-                return  proxyAuthentication;
+                return proxyAuthentication;
             } else {
                 proxyAuthentication.removeFromCache();
             }
@@ -1416,6 +1438,24 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         proxyAuthentication = getHttpProxyAuthentication(auth);
         currentProxyCredentials = proxyAuthentication;
         return  proxyAuthentication;
+    }
+
+    /**
+     * Returns the tunnel state.
+     *
+     * @return  the state
+     */
+    TunnelState tunnelState() {
+        return tunnelState;
+    }
+
+    /**
+     * Set the tunneling status.
+     *
+     * @param  the state
+     */
+    void setTunnelState(TunnelState tunnelState) {
+        this.tunnelState = tunnelState;
     }
 
     /**
@@ -1437,6 +1477,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         boolean inNegotiateProxy = false;
 
         try {
+            /* Actively setting up a tunnel */
+            setTunnelState(TunnelState.SETUP);
+
             do {
                 if (!checkReuseConnection()) {
                     proxiedConnect(url, proxyHost, proxyPort, false);
@@ -1512,11 +1555,13 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 }
 
                 if (respCode == HTTP_OK) {
+                    setTunnelState(TunnelState.TUNNELING);
                     break;
                 }
                 // we don't know how to deal with other response code
                 // so disconnect and report error
                 disconnectInternal();
+                setTunnelState(TunnelState.NONE);
                 break;
             } while (retryTunnel < maxRedirects);
 
@@ -1538,6 +1583,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         responses.reset();
     }
 
+    static String connectRequestURI(URL url) {
+        String host = url.getHost();
+        int port = url.getPort();
+        port = port != -1 ? port : url.getDefaultPort();
+
+        return host + ":" + port;
+    }
+
     /**
      * send a CONNECT request for establishing a tunnel to proxy server
      */
@@ -1551,8 +1604,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         // otherwise, there may have 2 http methods in headers
         if (setRequests) requests.set(0, null, null);
 
-        requests.prepend("CONNECT " + url.getHost() + ":"
-                         + (port != -1 ? port : url.getDefaultPort())
+        requests.prepend(HTTP_CONNECT + " " + connectRequestURI(url)
                          + " " + httpVersion, null);
         requests.setIfNotSet("User-Agent", userAgent);
 
@@ -1583,9 +1635,17 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             = AuthenticationInfo.getProxyAuth(http.getProxyHostUsed(),
                                               http.getProxyPortUsed());
         if (pauth != null && pauth.supportsPreemptiveAuthorization()) {
+            String value;
+            if (tunnelState() == TunnelState.SETUP &&
+                    pauth instanceof DigestAuthentication) {
+                value = ((DigestAuthentication)pauth)
+                        .getHeaderValue(connectRequestURI(url), HTTP_CONNECT);
+            } else {
+                value = pauth.getHeaderValue(url, method);
+            }
+
             // Sets "Proxy-authorization"
-            requests.set(pauth.getHeaderName(),
-                                 pauth.getHeaderValue(url,method));
+            requests.set(pauth.getHeaderName(), value);
             currentProxyCredentials = pauth;
         }
     }
