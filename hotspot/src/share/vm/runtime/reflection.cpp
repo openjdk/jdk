@@ -500,7 +500,8 @@ bool Reflection::verify_field_access(klassOop current_class,
     if (!protected_restriction) {
       // See if current_class is a subclass of field_class
       if (Klass::cast(current_class)->is_subclass_of(field_class)) {
-        if (current_class == resolved_class ||
+        if (access.is_static() || // static fields are ok, see 6622385
+            current_class == resolved_class ||
             field_class == resolved_class ||
             Klass::cast(current_class)->is_subclass_of(resolved_class) ||
             Klass::cast(resolved_class)->is_subclass_of(current_class)) {
