@@ -26,6 +26,8 @@
 package sun.management;
 
 import java.lang.management.OperatingSystemMXBean;
+import java.lang.management.ManagementFactory;
+import javax.management.ObjectName;
 import sun.misc.Unsafe;
 
 /**
@@ -71,4 +73,9 @@ public class OperatingSystemImpl implements OperatingSystemMXBean {
              return -1.0;
         }
     }
+    public ObjectName getObjectName() {
+        return Util.newObjectName(ManagementFactory.OPERATING_SYSTEM_MXBEAN_NAME);
+    }
+
 }
+

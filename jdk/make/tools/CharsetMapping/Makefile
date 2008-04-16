@@ -1,5 +1,5 @@
 #
-# Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,39 +24,20 @@
 #
 
 #
-# Create all the build tools
+# Makefile for building the charsetmapping tool
 #
 
-BUILDDIR = ..
+BUILDDIR = ../..
+PACKAGE = build.tools.charsetmapping
+PRODUCT = tools
+PROGRAM = charsetmapping
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS =                   \
-  addjsum                   \
-  auto_multi                \
-  buildmetaindex            \
-  commentchecker            \
-  compile_font_config       \
-  compile_properties        \
-  dir_diff                  \
-  dtdbuilder                \
-  fontchecker               \
-  generate_break_iterator   \
-  GenerateCharacter         \
-  generatecurrencydata      \
-  hasher_classes            \
-  jarreorder                \
-  jarsplit                  \
-  javazic                   \
-  jdwpgen                   \
-  makeclasslist             \
-  strip_properties          \
-  winver                    \
-  CharsetMapping
+BUILDTOOL_SOURCE_ROOT = $(BUILDDIR)/tools/src
+BUILDTOOL_MAIN        = $(PKGDIR)/GenerateMapping.java
 
-all build clean clobber::
-	$(SUBDIRS-loop)
-
-clean clobber::
-	$(RM) -r $(BUILDTOOLCLASSDIR)
-	$(RM) -r $(BUILDTOOLJARDIR)
+#
+# Build tool jar rules.
+#
+include $(BUILDDIR)/common/BuildToolJar.gmk
 
