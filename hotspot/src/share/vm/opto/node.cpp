@@ -1017,6 +1017,101 @@ bool Node::has_special_unique_user() const {
   return false;
 };
 
+//--------------------------find_exact_control---------------------------------
+// Skip Proj and CatchProj nodes chains. Check for Null and Top.
+Node* Node::find_exact_control(Node* ctrl) {
+  if (ctrl == NULL && this->is_Region())
+    ctrl = this->as_Region()->is_copy();
+
+  if (ctrl != NULL && ctrl->is_CatchProj()) {
+    if (ctrl->as_CatchProj()->_con == CatchProjNode::fall_through_index)
+      ctrl = ctrl->in(0);
+    if (ctrl != NULL && !ctrl->is_top())
+      ctrl = ctrl->in(0);
+  }
+
+  if (ctrl != NULL && ctrl->is_Proj())
+    ctrl = ctrl->in(0);
+
+  return ctrl;
+}
+
+//--------------------------dominates------------------------------------------
+// Helper function for MemNode::all_controls_dominate().
+// Check if 'this' control node dominates or equal to 'sub' control node.
+bool Node::dominates(Node* sub, Node_List &nlist) {
+  assert(this->is_CFG(), "expecting control");
+  assert(sub != NULL && sub->is_CFG(), "expecting control");
+
+  Node* orig_sub = sub;
+  nlist.clear();
+  bool this_dominates = false;
+  uint region_input = 0;
+  while (sub != NULL) {        // walk 'sub' up the chain to 'this'
+    if (sub == this) {
+      if (nlist.size() == 0) {
+        // No Region nodes except loops were visited before and the EntryControl
+        // path was taken for loops: it did not walk in a cycle.
+        return true;
+      } else if (!this_dominates) {
+        // Region nodes were visited. Continue walk up to Start or Root
+        // to make sure that it did not walk in a cycle.
+        this_dominates = true; // first time meet
+      } else {
+        return false;          // already met before: walk in a cycle
+      }
+    }
+    if (sub->is_Start() || sub->is_Root())
+      return this_dominates;
+
+    Node* up = sub->find_exact_control(sub->in(0));
+    if (up == NULL || up->is_top())
+      return false; // Conservative answer for dead code
+
+    if (sub == up && sub->is_Loop()) {
+      up = sub->in(0); // in(LoopNode::EntryControl);
+    } else if (sub == up && sub->is_Region()) {
+      uint i = 1;
+      if (nlist.size() == 0) {
+        // No Region nodes (except Loops) were visited before.
+        // Take first valid path on the way up to 'this'.
+      } else if (nlist.at(nlist.size() - 1) == sub) {
+        // This Region node was just visited. Take other path.
+        i = region_input + 1;
+        nlist.pop();
+      } else {
+        // Was this Region node visited before?
+        uint size = nlist.size();
+        for (uint j = 0; j < size; j++) {
+          if (nlist.at(j) == sub) {
+            return false; // The Region node was visited before. Give up.
+          }
+        }
+        // The Region node was not visited before.
+        // Take first valid path on the way up to 'this'.
+      }
+      for (; i < sub->req(); i++) {
+        Node* in = sub->in(i);
+        if (in != NULL && !in->is_top() && in != sub) {
+          break;
+        }
+      }
+      if (i < sub->req()) {
+        nlist.push(sub);
+        up = sub->in(i);
+        region_input = i;
+      }
+    }
+    if (sub == up)
+      return false;    // some kind of tight cycle
+    if (orig_sub == up)
+      return false;    // walk in a cycle
+
+    sub = up;
+  }
+  return false;
+}
+
 //------------------------------remove_dead_region-----------------------------
 // This control node is dead.  Follow the subgraph below it making everything
 // using it dead as well.  This will happen normally via the usual IterGVN

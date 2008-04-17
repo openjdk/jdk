@@ -70,7 +70,7 @@ public:
   static Node *optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGVN *phase);
   static Node *optimize_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGVN *phase);
   // This one should probably be a phase-specific function:
-  static bool detect_dominating_control(Node* dom, Node* sub);
+  static bool all_controls_dominate(Node* dom, Node* sub);
 
   // Is this Node a MemNode or some descendent?  Default is YES.
   virtual Node *Ideal_DU_postCCP( PhaseCCP *ccp );
