@@ -231,12 +231,14 @@ classes : $(CLASSES_INIT) .delete.classlist .compile.classlist
 
 .compile.classlist : $(JAVA_SOURCE_LIST)
 	@$(MKDIR) -p $(CLASSDESTDIR)
-	@if [ `$(CAT) $(JAVA_SOURCE_LIST) | $(WC) -l` -ge 1 ] ; then \
-	  $(ECHO) "# Java sources to be compiled: (listed in file $(JAVA_SOURCE_LIST))"; \
-	  $(CAT) $(JAVA_SOURCE_LIST); \
+	@$(RM) $<.filtered
+	@$(CAT) $< | $(NAWK) 'length>0' | $(SORT) -u > $<.filtered
+	@if [ `$(CAT) $<.filtered | $(WC) -l` -ge 1 ] ; then \
+	  $(ECHO) "# Java sources to be compiled: (listed in file $<)"; \
+	  $(CAT) $<.filtered; \
 	  $(ECHO) "# Running javac:"; \
-	  $(ECHO) $(JAVAC_CMD) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$(JAVA_SOURCE_LIST); \
-	  $(JAVAC_CMD) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$(JAVA_SOURCE_LIST); \
+	  $(ECHO) $(JAVAC_CMD) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$<.filtered; \
+	  $(JAVAC_CMD) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$<.filtered; \
 	fi
 	@$(java-vm-cleanup)
 
