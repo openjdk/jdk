@@ -273,6 +273,28 @@ SMARTCARDIO_JAVADOCHEADER      = "Java Smart Card I/O"
 # SMARTCARDIO_PKGS is located in NON_CORE_PKGS.gmk
 
 #
+# Variables used by TRACING target
+#
+
+TRACING_SOURCEPATH  = $(TOPDIR)/src/share/classes
+TRACING_DOCDIR	 = $(DOCSDIR)/jre/api/tracing
+
+TRACING_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)			    \
+		   -encoding ascii			            \
+                   -nodeprecatedlist                                \
+                   -d $(TRACING_DOCDIR)				    \
+                   -sourcepath $(TRACING_SOURCEPATH)                \
+                   -windowtitle $(TRACING_WINDOWTITLE)              \
+                   -doctitle $(TRACING_DOCTITLE)                    \
+                   -header $(TRACING_JAVADOCHEADER)                 \
+                   -linkoffline ../../../../../api $(DOCSDIR)/api/
+
+TRACING_WINDOWTITLE = "Tracing"
+TRACING_DOCTITLE    = "Java$(TRADEMARK) Platform Tracing"
+TRACING_JAVADOCHEADER      = "Platform Tracing"
+# TRACING_PKGS is located in NON_CORE_PKGS.gmk
+
+#
 # Variables used by HTTPSERVER target
 #
 
@@ -420,6 +442,7 @@ ALL_OTHER_TARGETS = \
     jaasdocs \
     jgssdocs \
     smartcardiodocs \
+    tracingdocs \
     httpserverdocs  \
     mgmtdocs \
     attachdocs \
@@ -584,6 +607,14 @@ smartcardiodocs:
 	$(MKDIR) -p $(SMARTCARDIO_DOCDIR)
 	$(JAVADOC_CMD) $(SMARTCARDIO_JAVADOCFLAGS)                     \
 		   $(SMARTCARDIO_PKGS)
+
+.PHONY: tracingdocs
+tracingdocs:
+	@# ######## api-tracing ############################
+	$(RM) -r $(DTRACE_DOCDIR)
+	$(MKDIR) -p $(DTRACE_DOCDIR)
+	$(JAVADOC) $(DTRACE_JAVADOCFLAGS)                     \
+		   $(DTRACE_PKGS)
 
 .PHONY: httpserverdocs
 httpserverdocs:
