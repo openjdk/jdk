@@ -1,4 +1,6 @@
 #
+# @(#)mapfile-vers-debug	1.18 07/10/25 16:47:35
+#
 
 #
 # Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
@@ -75,6 +77,11 @@ SUNWprivate_1.1 {
                 JVM_DesiredAssertionStatus;
                 JVM_DisableCompiler;
                 JVM_DoPrivileged;
+                JVM_DTraceGetVersion;
+                JVM_DTraceActivate;
+                JVM_DTraceIsProbeEnabled;
+                JVM_DTraceIsSupported;
+                JVM_DTraceDispose;
                 JVM_DumpAllStacks;
                 JVM_DumpThreads;
                 JVM_EnableCompiler;

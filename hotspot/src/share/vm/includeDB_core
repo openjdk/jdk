@@ -1497,6 +1497,30 @@ dtraceAttacher.cpp                      resourceArea.hpp
 dtraceAttacher.cpp                      vmThread.hpp
 dtraceAttacher.cpp                      vm_operations.hpp
 
+dtraceJSDT.cpp                          allocation.hpp
+dtraceJSDT.cpp                          codeBlob.hpp
+dtraceJSDT.cpp                          dtraceJSDT.hpp
+dtraceJSDT.cpp                          exceptions.hpp
+dtraceJSDT.cpp                          globalDefinitions.hpp
+dtraceJSDT.cpp                          javaClasses.hpp
+dtraceJSDT.cpp                          jniHandles.hpp
+dtraceJSDT.cpp                          jvm.h
+dtraceJSDT.cpp                          os.hpp
+dtraceJSDT.cpp                          utf8.hpp
+
+dtraceJSDT.hpp                          nativeInst_<arch>.hpp
+dtraceJSDT.hpp                          nmethod.hpp
+
+dtraceJSDT_<os_family>.cpp              allocation.hpp
+dtraceJSDT_<os_family>.cpp              codeBlob.hpp
+dtraceJSDT_<os_family>.cpp              dtraceJSDT.hpp
+dtraceJSDT_<os_family>.cpp              globalDefinitions.hpp
+dtraceJSDT_<os_family>.cpp              javaClasses.hpp
+dtraceJSDT_<os_family>.cpp              jniHandles.hpp
+dtraceJSDT_<os_family>.cpp              jvm.h
+dtraceJSDT_<os_family>.cpp              os.hpp
+dtraceJSDT_<os_family>.cpp              signature.hpp
+
 // dump is jck optional, put cpp deps in includeDB_features
 
 events.cpp                              allocation.inline.hpp
@@ -2400,6 +2424,7 @@ jvm.cpp                                 classLoader.hpp
 jvm.cpp                                 collectedHeap.inline.hpp
 jvm.cpp                                 copy.hpp
 jvm.cpp                                 defaultStream.hpp
+jvm.cpp                                 dtraceJSDT.hpp
 jvm.cpp                                 events.hpp
 jvm.cpp                                 handles.inline.hpp
 jvm.cpp                                 histogram.hpp
