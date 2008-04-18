@@ -80,14 +80,6 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
         super.setVisible(vis);
     }
 
-    protected Insets guessInsets() {
-        if (isTargetUndecorated()) {
-            return new Insets(0, 0, 0, 0);
-        } else {
-            return super.guessInsets();
-        }
-    }
-
     @Override
     boolean isTargetUndecorated() {
         if (undecorated != null) {

@@ -40,9 +40,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
     private static final Logger log = Logger.getLogger("sun.awt.X11.XDecoratedPeer");
     private static final Logger insLog = Logger.getLogger("sun.awt.X11.insets.XDecoratedPeer");
     private static final Logger focusLog = Logger.getLogger("sun.awt.X11.focus.XDecoratedPeer");
-    private final static Logger iconLog = Logger.getLogger("sun.awt.X11.icon.XDecoratedPeer");
-
-    private static XAtom resize_request = new XAtom("_SUN_AWT_RESIZE_REQUEST", false);
+    private static final Logger iconLog = Logger.getLogger("sun.awt.X11.icon.XDecoratedPeer");
 
     // Set to true when we get the first ConfigureNotify after being
     // reparented - indicates that WM has adopted the top-level.
@@ -73,14 +71,11 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
     void preInit(XCreateWindowParams params) {
         super.preInit(params);
-        if (!resize_request.isInterned()) {
-            resize_request.intern(false);
-        }
         winAttr.initialFocus = true;
 
-        currentInsets = new Insets(0,0,0,0); // replacemenet for wdata->top, left, bottom, right
-
+        currentInsets = new Insets(0,0,0,0);
         applyGuessedInsets();
+
         Rectangle bounds = (Rectangle)params.get(BOUNDS);
         dimensions = new WindowDimensions(bounds, getRealInsets(), false);
         params.put(BOUNDS, dimensions.getClientRect());
@@ -98,7 +93,10 @@ abstract class XDecoratedPeer extends XWindowPeer {
         // happen after the X window is created.
         initResizability();
         updateSizeHints(dimensions);
+        XWM.requestWMExtents(getWindow());
+
         content = XContentWindow.createContent(this);
+
         if (warningWindow != null) {
             warningWindow.toFront();
         }
@@ -120,7 +118,6 @@ abstract class XDecoratedPeer extends XWindowPeer {
         super.updateMinimumSize();
         updateMinSizeHints();
     }
-
 
     private void updateMinSizeHints() {
         if (isResizable()) {
@@ -238,21 +235,57 @@ abstract class XDecoratedPeer extends XWindowPeer {
         return false;
     }
 
-    Insets difference(Insets i1, Insets i2) {
+    private static Insets difference(Insets i1, Insets i2) {
         return new Insets(i1.top-i2.top, i1.left - i2.left, i1.bottom-i2.bottom, i1.right-i2.right);
     }
 
-    void add(Insets i1, Insets i2) {
-        i1.left += i2.left;
-        i1.top += i2.top;
-        i1.right += i2.right;
-        i1.bottom += i2.bottom;
-    }
-    boolean isNull(Insets i) {
+    private static boolean isNull(Insets i) {
         return (i == null) || ((i.left | i.top | i.right | i.bottom) == 0);
     }
-    Insets copy(Insets i) {
+
+    private static Insets copy(Insets i) {
         return new Insets(i.top, i.left, i.bottom, i.right);
+    }
+
+    // insets which we get from WM (e.g from _NET_FRAME_EXTENTS)
+    private Insets wm_set_insets;
+
+    private Insets getWMSetInsets(XAtom changedAtom) {
+        if (isEmbedded()) {
+            return null;
+        }
+
+        if (wm_set_insets != null) {
+            return wm_set_insets;
+        }
+
+        if (changedAtom == null) {
+            wm_set_insets = XWM.getInsetsFromExtents(getWindow());
+        } else {
+            wm_set_insets = XWM.getInsetsFromProp(getWindow(), changedAtom);
+        }
+
+        insLog.log(Level.FINER, "FRAME_EXTENTS: {0}", new Object[]{wm_set_insets});
+
+        if (wm_set_insets != null) {
+            wm_set_insets = copy(wm_set_insets);
+        }
+        return wm_set_insets;
+    }
+
+    private void resetWMSetInsets() {
+        wm_set_insets = null;
+    }
+
+    public void handlePropertyNotify(XEvent xev) {
+        super.handlePropertyNotify(xev);
+
+        XPropertyEvent ev = xev.get_xproperty();
+        if (ev.get_atom() == XWM.XA_KDE_NET_WM_FRAME_STRUT.getAtom()
+            || ev.get_atom() == XWM.XA_NET_FRAME_EXTENTS.getAtom())
+        {
+            getWMSetInsets(XAtom.get(ev.get_atom()));
+        }
     }
 
     long reparent_serial = 0;
@@ -337,34 +370,29 @@ abstract class XDecoratedPeer extends XWindowPeer {
             Insets correction = difference(correctWM, currentInsets);
             insLog.log(Level.FINEST, "Corrention {0}", new Object[] {correction});
             if (!isNull(correction)) {
-                /*
-                 * Actual insets account for menubar/warning label,
-                 * so we can't assign directly but must adjust them.
-                 */
-                add(currentInsets, correction);
+                currentInsets = copy(correctWM);
                 applyGuessedInsets();
 
                 //Fix for 6318109: PIT: Min Size is not honored properly when a
                 //smaller size is specified in setSize(), XToolkit
                 //update minimum size hints
                 updateMinSizeHints();
-
-                /*
-                 * If this window has been sized by a pack() we need
-                 * to keep the interior geometry intact.  Since pack()
-                 * computed width and height with wrong insets, we
-                 * must adjust the target dimensions appropriately.
-                 */
             }
             if (insLog.isLoggable(Level.FINER)) insLog.finer("Dimensions before reparent: " + dimensions);
 
             dimensions.setInsets(getRealInsets());
             insets_corrected = true;
 
-            if (isMaximized()) {
+            if (isMaximized() || isNull(correction)) {
                 return;
             }
 
+            /*
+             * If this window has been sized by a pack() we need
+             * to keep the interior geometry intact.  Since pack()
+             * computed width and height with wrong insets, we
+             * must adjust the target dimensions appropriately.
+             */
             if ((getHints().get_flags() & (XUtilConstants.USPosition | XUtilConstants.PPosition)) != 0) {
                 reshape(dimensions, SET_BOUNDS, false);
             } else {
@@ -384,10 +412,10 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
 
     protected Insets guessInsets() {
-        if (isEmbedded()) {
+        if (isEmbedded() || isTargetUndecorated()) {
             return new Insets(0, 0, 0, 0);
         } else {
-            if (currentInsets.top > 0) {
+            if (!isNull(currentInsets)) {
                 /* insets were set on wdata by System Properties */
                 return copy(currentInsets);
             } else {
@@ -403,7 +431,6 @@ abstract class XDecoratedPeer extends XWindowPeer {
     private void applyGuessedInsets() {
         Insets guessed = guessInsets();
         currentInsets = copy(guessed);
-        insets = copy(currentInsets);
     }
 
     public void revalidate() {
@@ -416,16 +443,18 @@ abstract class XDecoratedPeer extends XWindowPeer {
     }
 
     Insets getRealInsets() {
-        if (isNull(insets)) {
+        if (isNull(currentInsets)) {
             applyGuessedInsets();
         }
-        return insets;
+        return currentInsets;
     }
 
     public Insets getInsets() {
         Insets in = copy(getRealInsets());
         in.top += getMenuBarHeight() + getWarningWindowHeight();
-        if (insLog.isLoggable(Level.FINEST)) insLog.log(Level.FINEST, "Get insets returns {0}", new Object[] {in});
+        if (insLog.isLoggable(Level.FINEST)) {
+            insLog.log(Level.FINEST, "Get insets returns {0}", new Object[] {in});
+        }
         return in;
     }
 
@@ -835,7 +864,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
     public void setResizable(boolean resizable) {
         int fs = winAttr.functions;
         if (!isResizable() && resizable) {
-            insets = currentInsets = new Insets(0, 0, 0, 0);
+            currentInsets = new Insets(0, 0, 0, 0);
             resetWMSetInsets();
             if (!isEmbedded()) {
                 setReparented(false);
@@ -849,7 +878,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
             winAttr.functions = fs;
             XWM.setShellResizable(this);
         } else if (isResizable() && !resizable) {
-            insets = currentInsets = new Insets(0, 0, 0, 0);
+            currentInsets = new Insets(0, 0, 0, 0);
             resetWMSetInsets();
             if (!isEmbedded()) {
                 setReparented(false);
@@ -1004,10 +1033,6 @@ abstract class XDecoratedPeer extends XWindowPeer {
             } else if (cl.get_data(0) == wm_take_focus.getAtom()) {
                 handleWmTakeFocus(cl);
             }
-        } else if (cl.get_message_type() == resize_request.getAtom()) {
-            reshape((int)cl.get_data(0), (int)cl.get_data(1),
-                    (int)cl.get_data(2), (int)cl.get_data(3),
-                    (int)cl.get_data(4), true);
         }
     }
 

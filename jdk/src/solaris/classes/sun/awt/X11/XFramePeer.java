@@ -87,14 +87,6 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         setupState(true);
     }
 
-    protected Insets guessInsets() {
-        if (isTargetUndecorated()) {
-            return new Insets(0, 0, 0, 0);
-        } else {
-            return super.guessInsets();
-        }
-    }
-
     @Override
     boolean isTargetUndecorated() {
         if (undecorated != null) {
