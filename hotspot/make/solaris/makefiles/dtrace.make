@@ -193,10 +193,16 @@ $(DTRACE.o): $(DTRACE).d $(JVMOFFS).h $(JVMOFFS)Index.h $(DTraced_Files)
 
 .PHONY: dtraceCheck
 
+SYSTEM_DTRACE_H = /usr/include/dtrace.h
 SYSTEM_DTRACE_PROG = /usr/sbin/dtrace
 PATCH_DTRACE_PROG = /opt/SUNWdtrd/sbin/dtrace
 systemDtraceFound := $(wildcard ${SYSTEM_DTRACE_PROG})
 patchDtraceFound := $(wildcard ${PATCH_DTRACE_PROG})
+systemDtraceHdrFound := $(wildcard $(SYSTEM_DTRACE_H))
+
+ifneq ("$(systemDtraceHdrFound)", "") 
+CFLAGS += -DHAVE_DTRACE_H
+endif
 
 ifneq ("$(patchDtraceFound)", "")
 DTRACE_PROG=$(PATCH_DTRACE_PROG)

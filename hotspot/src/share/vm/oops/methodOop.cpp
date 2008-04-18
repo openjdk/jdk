@@ -672,9 +672,6 @@ void methodOopDesc::link_method(methodHandle h_method, TRAPS) {
 }
 
 address methodOopDesc::make_adapters(methodHandle mh, TRAPS) {
-  // If running -Xint we need no adapters.
-  if (Arguments::mode() == Arguments::_int) return NULL;
-
   // Adapters for compiled code are made eagerly here.  They are fairly
   // small (generally < 100 bytes) and quick to make (and cached and shared)
   // so making them eagerly shouldn't be too expensive.
