@@ -48,6 +48,7 @@ import java.util.logging.Level;
 import java.util.Map;
 import java.util.Set;
 
+import java.util.Vector;
 import javax.management.Attribute;
 import javax.management.AttributeChangeNotification;
 import javax.management.AttributeChangeNotificationFilter;
@@ -131,8 +132,6 @@ public class RequiredModelMBean
     /* handle, name, or reference for instance on which the actual invoke
      * and operations will be executed */
     private Object managedResource = null;
-
-    private static final String currClass = "RequiredModelMBean";
 
     /* records the registering in MBeanServer */
     private boolean registered = false;
@@ -2488,10 +2487,13 @@ public class RequiredModelMBean
         }
 
         if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
+            Vector<String> enabledAttrs = currFilter.getEnabledAttributes();
+            String s = (enabledAttrs.size() > 1) ?
+                        "[" + enabledAttrs.firstElement() + ", ...]" :
+                        enabledAttrs.toString();
             MODELMBEAN_LOGGER.logp(Level.FINER,
                     RequiredModelMBean.class.getName(), mth,
-                "Set attribute change filter to " +
-                currFilter.getEnabledAttributes().firstElement());
+                "Set attribute change filter to " + s);
         }
 
         attributeBroadcaster.addNotificationListener(inlistener,currFilter,
