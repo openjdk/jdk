@@ -65,7 +65,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     static XAtom wm_delete_window;
     static XAtom wm_take_focus;
 
-    Insets insets = new Insets( 0, 0, 0, 0 );
     XWindowAttributesData winAttr;
     private boolean cachedFocusableWindow;
     XWarningWindow warningWindow;
@@ -139,7 +138,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         XA_NET_WM_STATE = XAtom.get("_NET_WM_STATE");
 
         winAttr = new XWindowAttributesData();
-        insets = new Insets(0,0,0,0);
 
         params.put(OVERRIDE_REDIRECT, Boolean.valueOf(isOverrideRedirect()));
 
@@ -260,7 +258,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
         setSaveUnder(true);
 
-        XWM.requestWMExtents(getWindow());
         updateIconImages();
     }
 
@@ -541,9 +538,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     }
 
     public Insets getInsets() {
-        Insets in = (Insets)(insets.clone());
-        in.top += getWarningWindowHeight();
-        return in;
+        return new Insets(getWarningWindowHeight(), 0, 0, 0);
     }
 
     // NOTE: This method may be called by privileged threads.
@@ -1002,7 +997,8 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
         return ret;
     }
-    private boolean isDesktopWindow( long wi ) {
+
+    private static boolean isDesktopWindow( long wi ) {
         return XWM.getWM().isDesktopWindow( wi );
     }
 
@@ -1176,10 +1172,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             // State has changed, invalidate saved value
             stateChanged = true;
             stateChanged(ev.get_time(), savedState, getWMState());
-        } else if (ev.get_atom() == XWM.XA_KDE_NET_WM_FRAME_STRUT.getAtom()
-                   || ev.get_atom() == XWM.XA_NET_FRAME_EXTENTS.getAtom())
-        {
-            getWMSetInsets(XAtom.get(ev.get_atom()));
         }
     }
 
@@ -1887,37 +1879,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
-    private Insets wm_set_insets;
-    public Insets getWMSetInsets(XAtom changedAtom) {
-        if (isEmbedded()) {
-            return null;
-        }
-
-        if (wm_set_insets != null) {
-            return wm_set_insets;
-        }
-
-        if (changedAtom == null) {
-            wm_set_insets = XWM.getInsetsFromExtents(getWindow());
-        } else {
-            wm_set_insets = XWM.getInsetsFromProp(getWindow(), changedAtom);
-        }
-
-        insLog.log(Level.FINER, "FRAME_EXTENTS: {0}", new Object[]{wm_set_insets});
-
-        if (wm_set_insets != null) {
-            handleWMSetInsets(wm_set_insets);
-        }
-        return wm_set_insets;
-    }
-
-    protected void handleWMSetInsets(Insets newInsets) {
-        wm_set_insets = (Insets)newInsets.clone();
-    }
-
-    public void resetWMSetInsets() {
-        wm_set_insets = null;
-    }
     protected synchronized void updateDropTarget() {
         if (dropTargetCount > 0) {
             long window = getWindow();
