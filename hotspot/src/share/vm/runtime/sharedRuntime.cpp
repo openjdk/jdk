@@ -1748,11 +1748,6 @@ int AdapterHandlerLibrary::get_create_adapter_index(methodHandle method) {
   // _fingerprints array (it is not safe for concurrent readers and a single
   // writer: this can be fixed if it becomes a problem).
 
-  // Shouldn't be here if running -Xint
-  if (Arguments::mode() == Arguments::_int) {
-    ShouldNotReachHere();
-  }
-
   // Get the address of the ic_miss handlers before we grab the
   // AdapterHandlerLibrary_lock. This fixes bug 6236259 which
   // was caused by the initialization of the stubs happening
@@ -1996,6 +1991,64 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
   }
   return nm;
 }
+
+#ifdef HAVE_DTRACE_H
+// Create a dtrace nmethod for this method.  The wrapper converts the
+// java compiled calling convention to the native convention, makes a dummy call
+// (actually nops for the size of the call instruction, which become a trap if
+// probe is enabled). The returns to the caller. Since this all looks like a
+// leaf no thread transition is needed.
+
+nmethod *AdapterHandlerLibrary::create_dtrace_nmethod(methodHandle method) {
+  ResourceMark rm;
+  nmethod* nm = NULL;
+
+  if (PrintCompilation) {
+    ttyLocker ttyl;
+    tty->print("---   n%s  ");
+    method->print_short_name(tty);
+    if (method->is_static()) {
+      tty->print(" (static)");
+    }
+    tty->cr();
+  }
+
+  {
+    // perform the work while holding the lock, but perform any printing
+    // outside the lock
+    MutexLocker mu(AdapterHandlerLibrary_lock);
+    // See if somebody beat us to it
+    nm = method->code();
+    if (nm) {
+      return nm;
+    }
+
+    // Improve alignment slightly
+    u_char* buf = (u_char*)
+        (((intptr_t)_buffer + CodeEntryAlignment-1) & ~(CodeEntryAlignment-1));
+    CodeBuffer buffer(buf, AdapterHandlerLibrary_size);
+    // Need a few relocation entries
+    double locs_buf[20];
+    buffer.insts()->initialize_shared_locs(
+        (relocInfo*)locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
+    MacroAssembler _masm(&buffer);
+
+    // Generate the compiled-to-native wrapper code
+    nm = SharedRuntime::generate_dtrace_nmethod(&_masm, method);
+  }
+  return nm;
+}
+
+// the dtrace method needs to convert java lang string to utf8 string.
+void SharedRuntime::get_utf(oopDesc* src, address dst) {
+  typeArrayOop jlsValue  = java_lang_String::value(src);
+  int          jlsOffset = java_lang_String::offset(src);
+  int          jlsLen    = java_lang_String::length(src);
+  jchar*       jlsPos    = (jlsLen == 0) ? NULL :
+                                           jlsValue->char_at_addr(jlsOffset);
+  (void) UNICODE::as_utf8(jlsPos, jlsLen, (char *)dst, max_dtrace_string_size);
+}
+#endif // ndef HAVE_DTRACE_H
 
 // -------------------------------------------------------------------------
 // Java-Java calling convention
