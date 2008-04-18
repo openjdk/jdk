@@ -3188,6 +3188,9 @@ class CommandLineFlags {
   product(bool, RelaxAccessControlCheck, false,                             \
           "Relax the access control checks in the verifier")                \
                                                                             \
+  diagnostic(bool, PrintDTraceDOF, false,                                   \
+             "Print the DTrace DOF passed to the system for JSDT probes")   \
+                                                                            \
   product(bool, UseVMInterruptibleIO, true,                                 \
           "(Unstable, Solaris-specific) Thread interrupt before or with "   \
           "EINTR for I/O operations results in OS_INTRPT")
