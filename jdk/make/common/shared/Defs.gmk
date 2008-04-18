@@ -1,5 +1,5 @@
 #
-# Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -451,11 +451,20 @@ endif
 # Check for spaces and null value
 OUTPUTDIR:=$(call AltCheckSpaces,OUTPUTDIR)
 OUTPUTDIR:=$(call AltCheckValue,OUTPUTDIR)
+
+#
+# When signing the JCE framework and provider, we could be using built
+# bits on a read-only filesystem.  If so, this test will fail and crash
+# the build.
+#
+ifndef IGNORE_WRITABLE_OUTPUTDIR_TEST
 # Create the output directory and make sure it exists and is writable
 _create_outputdir:=$(shell $(MKDIR) -p "$(OUTPUTDIR)" > $(DEV_NULL) 2>&1)
 ifeq ($(call WriteDirExists,$(OUTPUTDIR),/dev/null),/dev/null)
   _outputdir_error:=$(error "ERROR: OUTPUTDIR '$(OUTPUTDIR)' not created or not writable")
 endif
+endif
+
 # Define absolute path if needed and check for spaces and null value
 ifndef ABS_OUTPUTDIR
   ABS_OUTPUTDIR:=$(call FullPath,$(OUTPUTDIR))

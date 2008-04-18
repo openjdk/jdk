@@ -64,7 +64,8 @@ class Flag {
     }
 
     VMOption getVMOption() {
-        return new VMOption(name, value.toString(), writeable, origin);
+        String val = value == null ? "" : value.toString();
+        return new VMOption(name, val, writeable, origin);
     }
 
     static Flag getFlag(String name) {
