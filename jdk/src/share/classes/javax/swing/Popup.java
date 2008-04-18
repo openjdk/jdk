@@ -229,7 +229,14 @@ public class Popup {
             // Popups are typically transient and most likely won't benefit
             // from true double buffering.  Turn it off here.
             getRootPane().setUseTrueDoubleBuffering(false);
-            setAlwaysOnTop(true);
+            java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<Object>() {
+                        public Object run() {
+                            setAlwaysOnTop(true);
+                            return null;
+                        }
+                    }
+            );
         }
 
         public void update(Graphics g) {
