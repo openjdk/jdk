@@ -63,7 +63,7 @@ SUBDIRS = jar security javazic misc net audio $(RENDER_SUBDIR) image \
           $(HEADLESS_SUBDIR) $(DGA_SUBDIR) \
 	  font jpeg cmm applet rmi beans $(JDBC_SUBDIR) \
 	  jawt text nio launcher management $(ORG_SUBDIR) \
-          native2ascii serialver tools jconsole
+          native2ascii serialver tools jconsole tracing
 
 all build clean clobber::
 	$(SUBDIRS-loop)
