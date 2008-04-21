@@ -611,10 +611,10 @@ smartcardiodocs:
 .PHONY: tracingdocs
 tracingdocs:
 	@# ######## api-tracing ############################
-	$(RM) -r $(DTRACE_DOCDIR)
-	$(MKDIR) -p $(DTRACE_DOCDIR)
-	$(JAVADOC) $(DTRACE_JAVADOCFLAGS)                     \
-		   $(DTRACE_PKGS)
+	$(RM) -r $(TRACING_DOCDIR)
+	$(MKDIR) -p $(TRACING_DOCDIR)
+	$(JAVADOC) $(TRACING_JAVADOCFLAGS)                     \
+		   $(TRACING_PKGS)
 
 .PHONY: httpserverdocs
 httpserverdocs:
