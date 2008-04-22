@@ -52,6 +52,8 @@ int Abstract_VM_Version::_vm_major_version = 0;
 int Abstract_VM_Version::_vm_minor_version = 0;
 int Abstract_VM_Version::_vm_build_number = 0;
 bool Abstract_VM_Version::_initialized = false;
+int Abstract_VM_Version::_parallel_worker_threads = 0;
+bool Abstract_VM_Version::_parallel_worker_threads_initialized = false;
 
 void Abstract_VM_Version::initialize() {
   if (_initialized) {
@@ -209,4 +211,44 @@ void VM_Version_init() {
     os::print_cpu_info(tty);
   }
 #endif
+}
+
+unsigned int Abstract_VM_Version::nof_parallel_worker_threads(
+                                                      unsigned int num,
+                                                      unsigned int den,
+                                                      unsigned int switch_pt) {
+  if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
+    assert(ParallelGCThreads == 0, "Default ParallelGCThreads is not 0");
+    // For very large machines, there are diminishing returns
+    // for large numbers of worker threads.  Instead of
+    // hogging the whole system, use a fraction of the workers for every
+    // processor after the first 8.  For example, on a 72 cpu machine
+    // and a chosen fraction of 5/8
+    // use 8 + (72 - 8) * (5/8) == 48 worker threads.
+    unsigned int ncpus = (unsigned int) os::active_processor_count();
+    return (ncpus <= switch_pt) ?
+           ncpus :
+          (switch_pt + ((ncpus - switch_pt) * num) / den);
+  } else {
+    return ParallelGCThreads;
+  }
+}
+
+unsigned int Abstract_VM_Version::calc_parallel_worker_threads() {
+  return nof_parallel_worker_threads(5, 8, 8);
+}
+
+
+// Does not set the _initialized flag since it is
+// a global flag.
+unsigned int Abstract_VM_Version::parallel_worker_threads() {
+  if (!_parallel_worker_threads_initialized) {
+    if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
+      _parallel_worker_threads = VM_Version::calc_parallel_worker_threads();
+    } else {
+      _parallel_worker_threads = ParallelGCThreads;
+    }
+    _parallel_worker_threads_initialized = true;
+  }
+  return _parallel_worker_threads;
 }

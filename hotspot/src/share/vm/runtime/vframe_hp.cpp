@@ -190,7 +190,7 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
     // Casting away const
     frame& fr = (frame&) _fr;
     MonitorInfo* info = new MonitorInfo(fr.compiled_synchronized_native_monitor_owner(nm),
-                                        fr.compiled_synchronized_native_monitor(nm));
+                                        fr.compiled_synchronized_native_monitor(nm), false);
     monitors->push(info);
     return monitors;
   }
@@ -202,7 +202,7 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
   for (int index = 0; index < monitors->length(); index++) {
     MonitorValue* mv = monitors->at(index);
     StackValue *owner_sv = create_stack_value(mv->owner()); // it is an oop
-    result->push(new MonitorInfo(owner_sv->get_obj()(), resolve_monitor_lock(mv->basic_lock())));
+    result->push(new MonitorInfo(owner_sv->get_obj()(), resolve_monitor_lock(mv->basic_lock()), mv->eliminated()));
   }
   return result;
 }
