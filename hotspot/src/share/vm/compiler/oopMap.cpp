@@ -506,27 +506,27 @@ bool OopMap::has_derived_pointer() const {
 }
 
 
-void print_register_type(OopMapValue::oop_types x, VMReg optional) {
+static void print_register_type(OopMapValue::oop_types x, VMReg optional, outputStream* st) {
   switch( x ) {
   case OopMapValue::oop_value:
-    tty->print("Oop");
+    st->print("Oop");
     break;
   case OopMapValue::value_value:
-    tty->print("Value" );
+    st->print("Value" );
     break;
   case OopMapValue::dead_value:
-    tty->print("Dead" );
+    st->print("Dead" );
     break;
   case OopMapValue::callee_saved_value:
-    tty->print("Callers_" );
-    optional->print();
+    st->print("Callers_" );
+    optional->print_on(st);
     break;
   case OopMapValue::derived_oop_value:
-    tty->print("Derived_oop_" );
-    optional->print();
+    st->print("Derived_oop_" );
+    optional->print_on(st);
     break;
   case OopMapValue::stack_obj:
-    tty->print("Stack");
+    st->print("Stack");
     break;
   default:
     ShouldNotReachHere();
@@ -534,11 +534,11 @@ void print_register_type(OopMapValue::oop_types x, VMReg optional) {
 }
 
 
-void OopMapValue::print() const {
-  reg()->print();
-  tty->print("=");
-  print_register_type(type(),content_reg());
-  tty->print(" ");
+void OopMapValue::print_on(outputStream* st) const {
+  reg()->print_on(st);
+  st->print("=");
+  print_register_type(type(),content_reg(),st);
+  st->print(" ");
 }
 
 

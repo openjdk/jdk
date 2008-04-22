@@ -36,6 +36,12 @@ class Abstract_VM_Version: AllStatic {
   static int          _vm_minor_version;
   static int          _vm_build_number;
   static bool         _initialized;
+  static int          _parallel_worker_threads;
+  static bool         _parallel_worker_threads_initialized;
+
+  static unsigned int nof_parallel_worker_threads(unsigned int num,
+                                                  unsigned int dem,
+                                                  unsigned int switch_pt);
  public:
   static void initialize();
 
@@ -69,4 +75,13 @@ class Abstract_VM_Version: AllStatic {
   // subclasses should define new versions to hide this one as needed.  Note
   // that the O/S may support more sizes, but at most this many are used.
   static uint page_size_count() { return 2; }
+
+  // Returns the number of parallel threads to be used for VM
+  // work.  If that number has not been calculated, do so and
+  // save it.  Returns ParallelGCThreads if it is set on the
+  // command line.
+  static unsigned int parallel_worker_threads();
+  // Calculates and returns the number of parallel threads.  May
+  // be VM version specific.
+  static unsigned int calc_parallel_worker_threads();
 };

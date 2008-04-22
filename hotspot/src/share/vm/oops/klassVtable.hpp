@@ -259,7 +259,7 @@ class klassItable : public ResourceObj {
   itableMethodEntry* method_entry(int i) { assert(0 <= i && i <= _size_method_table, "index out of bounds");
                                            return &((itableMethodEntry*)method_start())[i]; }
 
-  int nof_interfaces()                   { return _size_offset_table; }
+  int size_offset_table()                { return _size_offset_table; }
 
   // Initialization
   void initialize_itable(bool checkconstraints, TRAPS);

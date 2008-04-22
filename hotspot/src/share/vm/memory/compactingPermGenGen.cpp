@@ -26,9 +26,27 @@
 #include "incls/_compactingPermGenGen.cpp.incl"
 
 
-// Recursively adjust all pointers in an object and all objects by
-// referenced it.  Clear marks on objects in order to prevent visiting
-// any object twice.
+// An ObjectClosure helper: Recursively adjust all pointers in an object
+// and all objects by referenced it. Clear marks on objects in order to
+// prevent visiting any object twice. This helper is used when the
+// RedefineClasses() API has been called.
+
+class AdjustSharedObjectClosure : public ObjectClosure {
+public:
+  void do_object(oop obj) {
+    if (obj->is_shared_readwrite()) {
+      if (obj->mark()->is_marked()) {
+        obj->init_mark();         // Don't revisit this object.
+        obj->adjust_pointers();   // Adjust this object's references.
+      }
+    }
+  }
+};
+
+
+// An OopClosure helper: Recursively adjust all pointers in an object
+// and all objects by referenced it. Clear marks on objects in order
+// to prevent visiting any object twice.
 
 class RecursiveAdjustSharedObjectClosure : public OopClosure {
 public:
@@ -274,15 +292,34 @@ CompactingPermGenGen::CompactingPermGenGen(ReservedSpace rs,
 // objects in the space will page in more objects than we need.
 // Instead, use the system dictionary as strong roots into the read
 // write space.
+//
+// If a RedefineClasses() call has been made, then we have to iterate
+// over the entire shared read-write space in order to find all the
+// objects that need to be forwarded. For example, it is possible for
+// an nmethod to be found and marked in GC phase-1 only for the nmethod
+// to be freed by the time we reach GC phase-3. The underlying method
+// is still marked, but we can't (easily) find it in GC phase-3 so we
+// blow up in GC phase-4. With RedefineClasses() we want replaced code
+// (EMCP or obsolete) to go away (i.e., be collectible) once it is no
+// longer being executed by any thread so we keep minimal attachments
+// to the replaced code. However, we can't guarantee when those EMCP
+// or obsolete methods will be collected so they may still be out there
+// even after we've severed our minimal attachments.
 
 void CompactingPermGenGen::pre_adjust_pointers() {
   if (spec()->enable_shared_spaces()) {
-    RecursiveAdjustSharedObjectClosure blk;
-    Universe::oops_do(&blk);
-    StringTable::oops_do(&blk);
-    SystemDictionary::always_strong_classes_do(&blk);
-    TraversePlaceholdersClosure tpc;
-    SystemDictionary::placeholders_do(&tpc);
+    if (JvmtiExport::has_redefined_a_class()) {
+      // RedefineClasses() requires a brute force approach
+      AdjustSharedObjectClosure blk;
+      rw_space()->object_iterate(&blk);
+    } else {
+      RecursiveAdjustSharedObjectClosure blk;
+      Universe::oops_do(&blk);
+      StringTable::oops_do(&blk);
+      SystemDictionary::always_strong_classes_do(&blk);
+      TraversePlaceholdersClosure tpc;
+      SystemDictionary::placeholders_do(&tpc);
+    }
   }
 }
 

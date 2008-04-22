@@ -159,7 +159,8 @@ void SuperWord::find_adjacent_refs() {
   Node_List memops;
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
-    if (n->is_Mem() && in_bb(n)) {
+    if (n->is_Mem() && in_bb(n) &&
+        is_java_primitive(n->as_Mem()->memory_type())) {
       int align = memory_alignment(n->as_Mem(), 0);
       if (align != bottom_align) {
         memops.push(n);
@@ -182,8 +183,8 @@ void SuperWord::find_adjacent_refs() {
 
 #ifndef PRODUCT
   if (TraceSuperWord)
-    tty->print_cr("\noffset = %d iv_adjustment = %d  elt_align = %d",
-                  offset, iv_adjustment, align_to_ref_p.memory_size());
+    tty->print_cr("\noffset = %d iv_adjustment = %d  elt_align = %d scale = %d iv_stride = %d",
+                  offset, iv_adjustment, align_to_ref_p.memory_size(), align_to_ref_p.scale_in_bytes(), iv_stride());
 #endif
 
   // Set alignment relative to "align_to_ref"
@@ -570,7 +571,7 @@ void SuperWord::set_alignment(Node* s1, Node* s2, int align) {
 int SuperWord::data_size(Node* s) {
   const Type* t = velt_type(s);
   BasicType  bt = t->array_element_basic_type();
-  int bsize = type2aelembytes[bt];
+  int bsize = type2aelembytes(bt);
   assert(bsize != 0, "valid size");
   return bsize;
 }
@@ -1542,7 +1543,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   Node *pre_opaq1 = pre_end->limit();
   assert(pre_opaq1->Opcode() == Op_Opaque1, "");
   Opaque1Node *pre_opaq = (Opaque1Node*)pre_opaq1;
-  Node *pre_limit = pre_opaq->in(1);
+  Node *lim0 = pre_opaq->in(1);
 
   // Where we put new limit calculations
   Node *pre_ctrl = pre_end->loopnode()->in(LoopNode::EntryControl);
@@ -1554,64 +1555,116 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
 
   SWPointer align_to_ref_p(align_to_ref, this);
 
-  // Let l0 == original pre_limit, l == new pre_limit, V == v_align
+  // Given:
+  //     lim0 == original pre loop limit
+  //     V == v_align (power of 2)
+  //     invar == extra invariant piece of the address expression
+  //     e == k [ +/- invar ]
   //
-  // For stride > 0
-  //   Need l such that l > l0 && (l+k)%V == 0
-  //   Find n such that l = (l0 + n)
-  //   (l0 + n + k) % V == 0
-  //   n = [V - (l0 + k)%V]%V
-  //   new limit = l0 + [V - (l0 + k)%V]%V
-  // For stride < 0
-  //   Need l such that l < l0 && (l+k)%V == 0
-  //   Find n such that l = (l0 - n)
-  //   (l0 - n + k) % V == 0
-  //   n = (l0 + k)%V
-  //   new limit = l0 - (l0 + k)%V
+  // When reassociating expressions involving '%' the basic rules are:
+  //     (a - b) % k == 0   =>  a % k == b % k
+  // and:
+  //     (a + b) % k == 0   =>  a % k == (k - b) % k
+  //
+  // For stride > 0 && scale > 0,
+  //   Derive the new pre-loop limit "lim" such that the two constraints:
+  //     (1) lim = lim0 + N           (where N is some positive integer < V)
+  //     (2) (e + lim) % V == 0
+  //   are true.
+  //
+  //   Substituting (1) into (2),
+  //     (e + lim0 + N) % V == 0
+  //   solve for N:
+  //     N = (V - (e + lim0)) % V
+  //   substitute back into (1), so that new limit
+  //     lim = lim0 + (V - (e + lim0)) % V
+  //
+  // For stride > 0 && scale < 0
+  //   Constraints:
+  //     lim = lim0 + N
+  //     (e - lim) % V == 0
+  //   Solving for lim:
+  //     (e - lim0 - N) % V == 0
+  //     N = (e - lim0) % V
+  //     lim = lim0 + (e - lim0) % V
+  //
+  // For stride < 0 && scale > 0
+  //   Constraints:
+  //     lim = lim0 - N
+  //     (e + lim) % V == 0
+  //   Solving for lim:
+  //     (e + lim0 - N) % V == 0
+  //     N = (e + lim0) % V
+  //     lim = lim0 - (e + lim0) % V
+  //
+  // For stride < 0 && scale < 0
+  //   Constraints:
+  //     lim = lim0 - N
+  //     (e - lim) % V == 0
+  //   Solving for lim:
+  //     (e - lim0 + N) % V == 0
+  //     N = (V - (e - lim0)) % V
+  //     lim = lim0 - (V - (e - lim0)) % V
 
+  int stride   = iv_stride();
+  int scale    = align_to_ref_p.scale_in_bytes();
   int elt_size = align_to_ref_p.memory_size();
   int v_align  = vector_width_in_bytes() / elt_size;
   int k        = align_to_ref_p.offset_in_bytes() / elt_size;
 
   Node *kn   = _igvn.intcon(k);
-  Node *limk = new (_phase->C, 3) AddINode(pre_limit, kn);
-  _phase->_igvn.register_new_node_with_optimizer(limk);
-  _phase->set_ctrl(limk, pre_ctrl);
+
+  Node *e = kn;
   if (align_to_ref_p.invar() != NULL) {
+    // incorporate any extra invariant piece producing k +/- invar >>> log2(elt)
     Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
     Node* aref     = new (_phase->C, 3) URShiftINode(align_to_ref_p.invar(), log2_elt);
     _phase->_igvn.register_new_node_with_optimizer(aref);
     _phase->set_ctrl(aref, pre_ctrl);
-    if (!align_to_ref_p.negate_invar()) {
-      limk = new (_phase->C, 3) AddINode(limk, aref);
+    if (align_to_ref_p.negate_invar()) {
+      e = new (_phase->C, 3) SubINode(e, aref);
     } else {
-      limk = new (_phase->C, 3) SubINode(limk, aref);
+      e = new (_phase->C, 3) AddINode(e, aref);
     }
-    _phase->_igvn.register_new_node_with_optimizer(limk);
-    _phase->set_ctrl(limk, pre_ctrl);
+    _phase->_igvn.register_new_node_with_optimizer(e);
+    _phase->set_ctrl(e, pre_ctrl);
   }
-  Node* va_msk = _igvn.intcon(v_align - 1);
-  Node* n      = new (_phase->C, 3) AndINode(limk, va_msk);
-  _phase->_igvn.register_new_node_with_optimizer(n);
-  _phase->set_ctrl(n, pre_ctrl);
-  Node* newlim;
-  if (iv_stride() > 0) {
-    Node* va  = _igvn.intcon(v_align);
-    Node* adj = new (_phase->C, 3) SubINode(va, n);
-    _phase->_igvn.register_new_node_with_optimizer(adj);
-    _phase->set_ctrl(adj, pre_ctrl);
-    Node* adj2 = new (_phase->C, 3) AndINode(adj, va_msk);
-    _phase->_igvn.register_new_node_with_optimizer(adj2);
-    _phase->set_ctrl(adj2, pre_ctrl);
-    newlim = new (_phase->C, 3) AddINode(pre_limit, adj2);
+
+  // compute e +/- lim0
+  if (scale < 0) {
+    e = new (_phase->C, 3) SubINode(e, lim0);
   } else {
-    newlim = new (_phase->C, 3) SubINode(pre_limit, n);
+    e = new (_phase->C, 3) AddINode(e, lim0);
   }
-  _phase->_igvn.register_new_node_with_optimizer(newlim);
-  _phase->set_ctrl(newlim, pre_ctrl);
+  _phase->_igvn.register_new_node_with_optimizer(e);
+  _phase->set_ctrl(e, pre_ctrl);
+
+  if (stride * scale > 0) {
+    // compute V - (e +/- lim0)
+    Node* va  = _igvn.intcon(v_align);
+    e = new (_phase->C, 3) SubINode(va, e);
+    _phase->_igvn.register_new_node_with_optimizer(e);
+    _phase->set_ctrl(e, pre_ctrl);
+  }
+  // compute N = (exp) % V
+  Node* va_msk = _igvn.intcon(v_align - 1);
+  Node* N = new (_phase->C, 3) AndINode(e, va_msk);
+  _phase->_igvn.register_new_node_with_optimizer(N);
+  _phase->set_ctrl(N, pre_ctrl);
+
+  //   substitute back into (1), so that new limit
+  //     lim = lim0 + N
+  Node* lim;
+  if (stride < 0) {
+    lim = new (_phase->C, 3) SubINode(lim0, N);
+  } else {
+    lim = new (_phase->C, 3) AddINode(lim0, N);
+  }
+  _phase->_igvn.register_new_node_with_optimizer(lim);
+  _phase->set_ctrl(lim, pre_ctrl);
   Node* constrained =
-    (iv_stride() > 0) ? (Node*) new (_phase->C,3) MinINode(newlim, orig_limit)
-                      : (Node*) new (_phase->C,3) MaxINode(newlim, orig_limit);
+    (stride > 0) ? (Node*) new (_phase->C,3) MinINode(lim, orig_limit)
+                 : (Node*) new (_phase->C,3) MaxINode(lim, orig_limit);
   _phase->_igvn.register_new_node_with_optimizer(constrained);
   _phase->set_ctrl(constrained, pre_ctrl);
   _igvn.hash_delete(pre_opaq);

@@ -735,7 +735,7 @@ klassItable::klassItable(instanceKlassHandle klass) {
     }
   }
 
-  // This lenght of the itable was either zero, or it has not yet been initialized.
+  // The length of the itable was either zero, or it has not yet been initialized.
   _table_offset      = 0;
   _size_offset_table = 0;
   _size_method_table = 0;
@@ -870,16 +870,19 @@ static int initialize_count = 0;
 
 // Initialization
 void klassItable::initialize_itable(bool checkconstraints, TRAPS) {
-  // Cannot be setup doing bootstrapping
-  if (Universe::is_bootstrapping()) return;
+  // Cannot be setup doing bootstrapping, interfaces don't have
+  // itables, and klass with only ones entry have empty itables
+  if (Universe::is_bootstrapping() ||
+      _klass->is_interface() ||
+      _klass->itable_length() == itableOffsetEntry::size()) return;
 
-  int num_interfaces = nof_interfaces();
+  // There's alway an extra itable entry so we can null-terminate it.
+  guarantee(size_offset_table() >= 1, "too small");
+  int num_interfaces = size_offset_table() - 1;
   if (num_interfaces > 0) {
-    if (TraceItables) tty->print_cr("%3d: Initializing itables for %s", ++initialize_count, _klass->name()->as_C_string());
+    if (TraceItables) tty->print_cr("%3d: Initializing itables for %s", ++initialize_count,
+                                    _klass->name()->as_C_string());
 
-    // In debug mode, we got an extra NULL/NULL entry
-    debug_only(num_interfaces--);
-    assert(num_interfaces > 0, "to few interfaces in offset itable");
 
     // Interate through all interfaces
     int i;
@@ -890,12 +893,10 @@ void klassItable::initialize_itable(bool checkconstraints, TRAPS) {
       initialize_itable_for_interface(ioe->offset(), interf_h, checkconstraints, CHECK);
     }
 
-#ifdef ASSERT
-    // Check that the last entry is empty
-    itableOffsetEntry* ioe = offset_entry(i);
-    assert(ioe->interface_klass() == NULL && ioe->offset() == 0, "terminator entry missing");
-#endif
   }
+  // Check that the last entry is empty
+  itableOffsetEntry* ioe = offset_entry(size_offset_table() - 1);
+  guarantee(ioe->interface_klass() == NULL && ioe->offset() == 0, "terminator entry missing");
 }
 
 
@@ -972,7 +973,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
   }
 }
 
-// Update entry for specic methodOop
+// Update entry for specific methodOop
 void klassItable::initialize_with_method(methodOop m) {
   itableMethodEntry* ime = method_entry(0);
   for(int i = 0; i < _size_method_table; i++) {
@@ -1085,12 +1086,8 @@ int klassItable::compute_itable_size(objArrayHandle transitive_interfaces) {
   CountInterfacesClosure cic;
   visit_all_interfaces(transitive_interfaces(), &cic);
 
-  // Add one extra entry in debug mode, so we can null-terminate the table
-  int nof_methods    = cic.nof_methods();
-  int nof_interfaces = cic.nof_interfaces();
-  debug_only(if (nof_interfaces > 0) nof_interfaces++);
-
-  int itable_size = calc_itable_size(nof_interfaces, nof_methods);
+  // There's alway an extra itable entry so we can null-terminate it.
+  int itable_size = calc_itable_size(cic.nof_interfaces() + 1, cic.nof_methods());
 
   // Statistics
   update_stats(itable_size * HeapWordSize);
@@ -1110,8 +1107,8 @@ void klassItable::setup_itable_offset_table(instanceKlassHandle klass) {
   int nof_methods    = cic.nof_methods();
   int nof_interfaces = cic.nof_interfaces();
 
-  // Add one extra entry in debug mode, so we can null-terminate the table
-  debug_only(if (nof_interfaces > 0) nof_interfaces++);
+  // Add one extra entry so we can null-terminate the table
+  nof_interfaces++;
 
   assert(compute_itable_size(objArrayHandle(klass->transitive_interfaces())) ==
          calc_itable_size(nof_interfaces, nof_methods),
