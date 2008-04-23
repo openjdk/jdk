@@ -80,7 +80,8 @@ $(LocaleDataMetaInfo_Dest):$(LocaleDataMetaInfo_Src) $(LOCALEGEN_SH)
 	@$(ECHO) $(subst .java,'\n',$(Euro_Resources_java)) >> $@.tmp.euro;	
 	@$(ECHO) $(subst .properties,'\n',$(NonEuro_Resources_properties)) > $@.tmp.noneuro;
 	@$(ECHO) $(subst .java,'\n',$(NonEuro_Resources_java)) >> $@.tmp.noneuro;
-	NAWK=$(NAWK) SED=$(SED) $(SH) $(LOCALEGEN_SH) $(RESOURCE_NAMES) $@.tmp.euro \
+	NAWK="$(NAWK)" SED="$(SED)" SORT="$(SORT)" \
+	     $(SH) $(LOCALEGEN_SH) $(RESOURCE_NAMES) $@.tmp.euro \
 		$@.tmp.noneuro $< $@
 	@$(RM) $@.tmp.euro $@.tmp.noneuro;
 	

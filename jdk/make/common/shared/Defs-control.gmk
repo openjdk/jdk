@@ -69,9 +69,8 @@ endif
 # Get shared platform settings
 include $(JDK_MAKE_SHARED_DIR)/Platform.gmk
 
-# Default output directory
+# Default directory immediately above the "build" output directory (OUTPUTDIR)
 BUILD_PARENT_DIRECTORY=$(TOPDIR)
-_OUTPUTDIR=$(TOPDIR)/build/$(PLATFORM)-$(ARCH)
 
 # Get platform specific settings
 include $(JDK_MAKE_SHARED_DIR)/Defs.gmk

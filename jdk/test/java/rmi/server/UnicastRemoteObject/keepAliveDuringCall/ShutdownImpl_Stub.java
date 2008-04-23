@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,37 +29,37 @@ public final class ShutdownImpl_Stub
     implements Shutdown
 {
     private static final long serialVersionUID = 2;
-    
+
     private static java.lang.reflect.Method $method_shutdown_0;
-    
+
     static {
-	try {
-	    $method_shutdown_0 = Shutdown.class.getMethod("shutdown", new java.lang.Class[] {});
-	} catch (java.lang.NoSuchMethodException e) {
-	    throw new java.lang.NoSuchMethodError(
-		"stub class initialization failed");
-	}
+        try {
+            $method_shutdown_0 = Shutdown.class.getMethod("shutdown", new java.lang.Class[] {});
+        } catch (java.lang.NoSuchMethodException e) {
+            throw new java.lang.NoSuchMethodError(
+                "stub class initialization failed");
+        }
     }
-    
+
     // constructors
     public ShutdownImpl_Stub(java.rmi.server.RemoteRef ref) {
-	super(ref);
+        super(ref);
     }
-    
+
     // methods from remote interfaces
-    
+
     // implementation of shutdown()
     public void shutdown()
-	throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
     {
-	try {
-	    ref.invoke(this, $method_shutdown_0, null, -7207851917985848402L);
-	} catch (java.lang.RuntimeException e) {
-	    throw e;
-	} catch (java.rmi.RemoteException e) {
-	    throw e;
-	} catch (java.lang.Exception e) {
-	    throw new java.rmi.UnexpectedException("undeclared checked exception", e);
-	}
+        try {
+            ref.invoke(this, $method_shutdown_0, null, -7207851917985848402L);
+        } catch (java.lang.RuntimeException e) {
+            throw e;
+        } catch (java.rmi.RemoteException e) {
+            throw e;
+        } catch (java.lang.Exception e) {
+            throw new java.rmi.UnexpectedException("undeclared checked exception", e);
+        }
     }
 }

@@ -1298,7 +1298,7 @@ public class Types {
                     return t;
 
                 Type st = supertype(t);
-                if (st.tag == CLASS || st.tag == ERROR) {
+                if (st.tag == CLASS || st.tag == TYPEVAR || st.tag == ERROR) {
                     Type x = asSuper(st, sym);
                     if (x != null)
                         return x;
@@ -1320,7 +1320,10 @@ public class Types {
 
             @Override
             public Type visitTypeVar(TypeVar t, Symbol sym) {
-                return asSuper(t.bound, sym);
+                if (t.tsym == sym)
+                    return t;
+                else
+                    return asSuper(t.bound, sym);
             }
 
             @Override

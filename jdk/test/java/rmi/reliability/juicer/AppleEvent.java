@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@ import java.util.Date;
 
 /**
  * The AppleEvent class is simply an object to be passed to a
- * remote object exported by an applet.  The intent is to verify 
+ * remote object exported by an applet.  The intent is to verify
  * proper object serialization of arrays.
  */
 public class AppleEvent implements Serializable {
@@ -39,24 +39,24 @@ public class AppleEvent implements Serializable {
     private final Date when;
 
     public AppleEvent(int what) {
-	this.what = what;
-	this.when = new Date();
+        this.what = what;
+        this.when = new Date();
     }
 
     public String toString() {
-	String desc = "[";
-	switch (what) {
-	case BUY:
-	    desc += "BUY";
-	    break;
-	case EAT:
-	    desc += "EAT";
-	    break;
-	case THROW:
-	    desc += "THROW";
-	    break;
-	}
-	desc += " @ " + when + "]";
-	return desc;
+        String desc = "[";
+        switch (what) {
+        case BUY:
+            desc += "BUY";
+            break;
+        case EAT:
+            desc += "EAT";
+            break;
+        case THROW:
+            desc += "THROW";
+            break;
+        }
+        desc += " @ " + when + "]";
+        return desc;
     }
 }
