@@ -563,6 +563,26 @@ Node* DecodeNNode::Identity(PhaseTransform* phase) {
   return this;
 }
 
+const Type *DecodeNNode::Value( PhaseTransform *phase ) const {
+  if (phase->type( in(1) ) == TypeNarrowOop::NULL_PTR) {
+    return TypePtr::NULL_PTR;
+  }
+  return bottom_type();
+}
+
+Node* DecodeNNode::decode(PhaseGVN* phase, Node* value) {
+  if (value->Opcode() == Op_EncodeP) {
+    // (DecodeN (EncodeP p)) -> p
+    return value->in(1);
+  }
+  const Type* newtype = value->bottom_type();
+  if (newtype == TypeNarrowOop::NULL_PTR) {
+    return phase->transform(new (phase->C, 1) ConPNode(TypePtr::NULL_PTR));
+  } else {
+    return phase->transform(new (phase->C, 2) DecodeNNode(value, newtype->is_narrowoop()->make_oopptr()));
+  }
+}
+
 Node* EncodePNode::Identity(PhaseTransform* phase) {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return in(1);
@@ -574,14 +594,26 @@ Node* EncodePNode::Identity(PhaseTransform* phase) {
   return this;
 }
 
+const Type *EncodePNode::Value( PhaseTransform *phase ) const {
+  if (phase->type( in(1) ) == TypePtr::NULL_PTR) {
+    return TypeNarrowOop::NULL_PTR;
+  }
+  return bottom_type();
+}
 
 Node* EncodePNode::encode(PhaseGVN* phase, Node* value) {
+  if (value->Opcode() == Op_DecodeN) {
+    // (EncodeP (DecodeN p)) -> p
+    return value->in(1);
+  }
   const Type* newtype = value->bottom_type();
   if (newtype == TypePtr::NULL_PTR) {
     return phase->transform(new (phase->C, 1) ConNNode(TypeNarrowOop::NULL_PTR));
+  } else if (newtype->isa_oopptr()) {
+    return phase->transform(new (phase->C, 2) EncodePNode(value, newtype->is_oopptr()->make_narrowoop()));
   } else {
-    return phase->transform(new (phase->C, 2) EncodePNode(value,
-                                                          newtype->is_oopptr()->make_narrowoop()));
+    ShouldNotReachHere();
+    return NULL; // to make C++ compiler happy.
   }
 }
 

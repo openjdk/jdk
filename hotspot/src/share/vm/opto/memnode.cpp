@@ -754,13 +754,12 @@ Node *LoadNode::make( PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const Type
       const TypeNarrowOop* narrowtype;
       if (rt->isa_narrowoop()) {
         narrowtype = rt->is_narrowoop();
-        rt = narrowtype->make_oopptr();
       } else {
         narrowtype = rt->is_oopptr()->make_narrowoop();
       }
       Node* load  = gvn.transform(new (C, 3) LoadNNode(ctl, mem, adr, adr_type, narrowtype));
 
-      return new (C, 2) DecodeNNode(load, rt);
+      return DecodeNNode::decode(&gvn, load);
     } else
 #endif
       {
@@ -1841,15 +1840,7 @@ StoreNode* StoreNode::make( PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, cons
         (UseCompressedOops && val->bottom_type()->isa_klassptr() &&
          adr->bottom_type()->isa_rawptr())) {
       const TypePtr* type = val->bottom_type()->is_ptr();
-      Node* cp;
-      if (type->isa_oopptr()) {
-        const TypeNarrowOop* etype = type->is_oopptr()->make_narrowoop();
-        cp = gvn.transform(new (C, 2) EncodePNode(val, etype));
-      } else if (type == TypePtr::NULL_PTR) {
-        cp = gvn.transform(new (C, 1) ConNNode(TypeNarrowOop::NULL_PTR));
-      } else {
-        ShouldNotReachHere();
-      }
+      Node* cp = EncodePNode::encode(&gvn, val);
       return new (C, 4) StoreNNode(ctl, mem, adr, adr_type, cp);
     } else
 #endif
