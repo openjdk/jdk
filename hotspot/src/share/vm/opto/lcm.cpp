@@ -629,6 +629,10 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
         // of the phi to be scheduled first. The select() method breaks
         // ties in scheduling by worklist order.
         delay.push(m);
+      } else if (m->is_Mach() && m->as_Mach()->ideal_Opcode() == Op_CreateEx) {
+        // Force the CreateEx to the top of the list so it's processed
+        // first and ends up at the start of the block.
+        worklist.insert(0, m);
       } else {
         worklist.push(m);         // Then on to worklist!
       }
