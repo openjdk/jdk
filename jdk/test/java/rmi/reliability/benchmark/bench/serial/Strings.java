@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,20 +45,20 @@ public class Strings implements Benchmark {
      * Arguments: <string length> <# batches> <# cycles per batch>
      */
     public long run(String[] args) throws Exception {
-	int slen = Integer.parseInt(args[0]);
-	int nbatches = Integer.parseInt(args[1]);
-	int ncycles = Integer.parseInt(args[2]);
-	String[] strs = genStrings(slen, ncycles);
-	StreamBuffer sbuf = new StreamBuffer();
-	ObjectOutputStream oout = 
-	    new ObjectOutputStream(sbuf.getOutputStream());
-	ObjectInputStream oin = 
-	    new ObjectInputStream(sbuf.getInputStream());
-	
-	doReps(oout, oin, sbuf, strs, 1, ncycles);	// warmup
+        int slen = Integer.parseInt(args[0]);
+        int nbatches = Integer.parseInt(args[1]);
+        int ncycles = Integer.parseInt(args[2]);
+        String[] strs = genStrings(slen, ncycles);
+        StreamBuffer sbuf = new StreamBuffer();
+        ObjectOutputStream oout =
+            new ObjectOutputStream(sbuf.getOutputStream());
+        ObjectInputStream oin =
+            new ObjectInputStream(sbuf.getInputStream());
 
-	long start = System.currentTimeMillis();
-	doReps(oout, oin, sbuf, strs, nbatches, ncycles);
+        doReps(oout, oin, sbuf, strs, 1, ncycles);      // warmup
+
+        long start = System.currentTimeMillis();
+        doReps(oout, oin, sbuf, strs, nbatches, ncycles);
         return System.currentTimeMillis() - start;
     }
 
@@ -66,16 +66,16 @@ public class Strings implements Benchmark {
      * Generate nstrings random strings, each of length len.
      */
     String[] genStrings(int len, int nstrings) {
-	String[] strs = new String[nstrings];
-	char[] ca = new char[len];
-	Random rand = new Random(System.currentTimeMillis());
-	for (int i = 0; i < nstrings; i++) {
-	    for (int j = 0; j < len; j++) {
-		ca[j] = (char) rand.nextInt();
-	    }
-	    strs[i] = new String(ca);
-	}
-	return strs;
+        String[] strs = new String[nstrings];
+        char[] ca = new char[len];
+        Random rand = new Random(System.currentTimeMillis());
+        for (int i = 0; i < nstrings; i++) {
+            for (int j = 0; j < len; j++) {
+                ca[j] = (char) rand.nextInt();
+            }
+            strs[i] = new String(ca);
+        }
+        return strs;
     }
 
     /**
@@ -83,20 +83,19 @@ public class Strings implements Benchmark {
      * for each batch.
      */
     void doReps(ObjectOutputStream oout, ObjectInputStream oin,
-	        StreamBuffer sbuf, String[] strs, int nbatches, int ncycles)
-	throws Exception
+                StreamBuffer sbuf, String[] strs, int nbatches, int ncycles)
+        throws Exception
     {
-	for (int i = 0; i < nbatches; i++) {
-	    sbuf.reset();
-	    oout.reset();
-	    for (int j = 0; j < ncycles; j++) {
-		oout.writeObject(strs[j]);
-	    }
-	    oout.flush();
-	    for (int j = 0; j < ncycles; j++) {
-		oin.readObject();
-	    }
-	}
+        for (int i = 0; i < nbatches; i++) {
+            sbuf.reset();
+            oout.reset();
+            for (int j = 0; j < ncycles; j++) {
+                oout.writeObject(strs[j]);
+            }
+            oout.flush();
+            for (int j = 0; j < ncycles; j++) {
+                oin.readObject();
+            }
+        }
     }
 }
-

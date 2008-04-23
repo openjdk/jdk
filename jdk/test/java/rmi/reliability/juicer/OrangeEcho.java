@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,11 +26,11 @@ import java.rmi.RemoteException;
 
 /**
  * Represents one remote party of the deep 2-party recursion implemented by
- * this RMI reliability test. An OrangeEcho instance recursively calls back 
+ * this RMI reliability test. An OrangeEcho instance recursively calls back
  * to it's caller, an Orange instance.
  * The recursion stops when it reaches a given 'level'.
  */
 public interface OrangeEcho extends Remote {
     int[] recurse(Orange orange, int[] message, int level)
-	throws RemoteException;
+        throws RemoteException;
 }

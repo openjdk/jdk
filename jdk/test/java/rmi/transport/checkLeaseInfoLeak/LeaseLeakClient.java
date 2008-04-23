@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,24 +25,24 @@ import java.rmi.*;
 import java.rmi.server.*;
 import java.rmi.registry.*;
 
-public class LeaseLeakClient { 
+public class LeaseLeakClient {
     public static void main(String args[]) {
-	TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
-	
-	try {
-	    LeaseLeak leaseLeak = null;
-	    
-	    // put a reference on a remote object.
-	    Registry registry = 
-		java.rmi.registry.LocateRegistry.getRegistry(
-	            TestLibrary.REGISTRY_PORT);
-	    leaseLeak = (LeaseLeak) registry.lookup("/LeaseLeak");
-	    leaseLeak.ping();
-	    
-	} catch(Exception e) {
-	    System.err.println("LeaseLeakClient Error: "+e.getMessage());
-	    e.printStackTrace();
-	    throw new RuntimeException(e.getMessage());
-	}
+        TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
+
+        try {
+            LeaseLeak leaseLeak = null;
+
+            // put a reference on a remote object.
+            Registry registry =
+                java.rmi.registry.LocateRegistry.getRegistry(
+                    TestLibrary.REGISTRY_PORT);
+            leaseLeak = (LeaseLeak) registry.lookup("/LeaseLeak");
+            leaseLeak.ping();
+
+        } catch(Exception e) {
+            System.err.println("LeaseLeakClient Error: "+e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
+        }
     }
 }

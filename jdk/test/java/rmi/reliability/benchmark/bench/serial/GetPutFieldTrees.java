@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,19 +39,19 @@ import java.io.Serializable;
  * GetField()/PutField() API.
  */
 public class GetPutFieldTrees implements Benchmark {
-    
+
     static class Node implements Serializable {
         boolean z;
-	byte b;
-	char c;
-	short s;
-	int i;
-	float f;
-	long j;
-	double d;
-	String str = "bodega";
+        byte b;
+        char c;
+        short s;
+        int i;
+        float f;
+        long j;
+        double d;
+        String str = "bodega";
         Object parent, left, right;
-        
+
         Node(Object parent, int depth) {
             this.parent = parent;
             if (depth > 0) {
@@ -76,19 +76,19 @@ public class GetPutFieldTrees implements Benchmark {
             fields.put("right", right);
             out.writeFields();
         }
-        
-        private void readObject(ObjectInputStream in) 
+
+        private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException
         {
             ObjectInputStream.GetField fields = in.readFields();
-	    z = fields.get("z", false);
-	    b = fields.get("b", (byte) 0);
-	    c = fields.get("c", (char) 0);
-	    s = fields.get("s", (short) 0);
-	    i = fields.get("i", (int) 0);
-	    f = fields.get("f", (float) 0.0);
-	    j = fields.get("j", (long) 0);
-	    d = fields.get("d", (double) 0.0);
+            z = fields.get("z", false);
+            b = fields.get("b", (byte) 0);
+            c = fields.get("c", (char) 0);
+            s = fields.get("s", (short) 0);
+            i = fields.get("i", (int) 0);
+            f = fields.get("f", (float) 0.0);
+            j = fields.get("j", (long) 0);
+            d = fields.get("d", (double) 0.0);
             str = (String) fields.get("str", null);
             parent = fields.get("parent", null);
             left = fields.get("left", null);
@@ -104,20 +104,20 @@ public class GetPutFieldTrees implements Benchmark {
      * Arguments: <tree depth> <# batches> <# cycles per batch>
      */
     public long run(String[] args) throws Exception {
-	int depth = Integer.parseInt(args[0]);
-	int nbatches = Integer.parseInt(args[1]);
-	int ncycles = Integer.parseInt(args[2]);
-	Node[] trees = genTrees(depth, ncycles);
-	StreamBuffer sbuf = new StreamBuffer();
-	ObjectOutputStream oout = 
-	    new ObjectOutputStream(sbuf.getOutputStream());
-	ObjectInputStream oin = 
-	    new ObjectInputStream(sbuf.getInputStream());
-	
-	doReps(oout, oin, sbuf, trees, 1);	// warmup
+        int depth = Integer.parseInt(args[0]);
+        int nbatches = Integer.parseInt(args[1]);
+        int ncycles = Integer.parseInt(args[2]);
+        Node[] trees = genTrees(depth, ncycles);
+        StreamBuffer sbuf = new StreamBuffer();
+        ObjectOutputStream oout =
+            new ObjectOutputStream(sbuf.getOutputStream());
+        ObjectInputStream oin =
+            new ObjectInputStream(sbuf.getInputStream());
 
-	long start = System.currentTimeMillis();
-	doReps(oout, oin, sbuf, trees, nbatches);
+        doReps(oout, oin, sbuf, trees, 1);      // warmup
+
+        long start = System.currentTimeMillis();
+        doReps(oout, oin, sbuf, trees, nbatches);
         return System.currentTimeMillis() - start;
     }
 
@@ -125,33 +125,32 @@ public class GetPutFieldTrees implements Benchmark {
      * Generate object trees.
      */
     Node[] genTrees(int depth, int ntrees) {
-	Node[] trees = new Node[ntrees];
-	for (int i = 0; i < ntrees; i++) {
-	    trees[i] = new Node(null, depth);
-	}
-	return trees;
+        Node[] trees = new Node[ntrees];
+        for (int i = 0; i < ntrees; i++) {
+            trees[i] = new Node(null, depth);
+        }
+        return trees;
     }
 
     /**
-     * Run benchmark for given number of batches, with each batch containing 
+     * Run benchmark for given number of batches, with each batch containing
      * the given number of cycles.
      */
     void doReps(ObjectOutputStream oout, ObjectInputStream oin,
-	        StreamBuffer sbuf, Node[] trees, int nbatches)
-	throws Exception
+                StreamBuffer sbuf, Node[] trees, int nbatches)
+        throws Exception
     {
-	int ncycles = trees.length;
-	for (int i = 0; i < nbatches; i++) {
-	    sbuf.reset();
-	    oout.reset();
-	    for (int j = 0; j < ncycles; j++) {
-		oout.writeObject(trees[j]);
-	    }
-	    oout.flush();
-	    for (int j = 0; j < ncycles; j++) {
-		oin.readObject();
-	    }
-	}
+        int ncycles = trees.length;
+        for (int i = 0; i < nbatches; i++) {
+            sbuf.reset();
+            oout.reset();
+            for (int j = 0; j < ncycles; j++) {
+                oout.writeObject(trees[j]);
+            }
+            oout.flush();
+            for (int j = 0; j < ncycles; j++) {
+                oin.readObject();
+            }
+        }
     }
 }
-
