@@ -282,6 +282,7 @@ class EncodePNode : public TypeNode {
   }
   virtual int Opcode() const;
   virtual Node *Identity( PhaseTransform *phase );
+  virtual const Type *Value( PhaseTransform *phase ) const;
   virtual uint  ideal_reg() const { return Op_RegN; }
 
   static Node* encode(PhaseGVN* phase, Node* value);
@@ -300,7 +301,10 @@ class DecodeNNode : public TypeNode {
   }
   virtual int Opcode() const;
   virtual Node *Identity( PhaseTransform *phase );
+  virtual const Type *Value( PhaseTransform *phase ) const;
   virtual uint  ideal_reg() const { return Op_RegP; }
+
+  static Node* decode(PhaseGVN* phase, Node* value);
 };
 
 //------------------------------Conv2BNode-------------------------------------

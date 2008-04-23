@@ -5957,19 +5957,41 @@ instruct storeA8B(memory mem, regD src) %{
 
 // Convert oop pointer into compressed form
 instruct encodeHeapOop(iRegN dst, iRegP src) %{
+  predicate(n->bottom_type()->is_narrowoop()->make_oopptr()->ptr() != TypePtr::NotNull);
   match(Set dst (EncodeP src));
-  format %{ "SRL    $src,3,$dst\t encodeHeapOop" %}
+  format %{ "encode_heap_oop $src, $dst" %}
   ins_encode %{
     __ encode_heap_oop($src$$Register, $dst$$Register);
   %}
   ins_pipe(ialu_reg);
 %}
 
+instruct encodeHeapOop_not_null(iRegN dst, iRegP src) %{
+  predicate(n->bottom_type()->is_narrowoop()->make_oopptr()->ptr() == TypePtr::NotNull);
+  match(Set dst (EncodeP src));
+  format %{ "encode_heap_oop_not_null $src, $dst" %}
+  ins_encode %{
+    __ encode_heap_oop_not_null($src$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 instruct decodeHeapOop(iRegP dst, iRegN src) %{
+  predicate(n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull);
   match(Set dst (DecodeN src));
   format %{ "decode_heap_oop $src, $dst" %}
   ins_encode %{
     __ decode_heap_oop($src$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct decodeHeapOop_not_null(iRegP dst, iRegN src) %{
+  predicate(n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull);
+  match(Set dst (DecodeN src));
+  format %{ "decode_heap_oop_not_null $src, $dst" %}
+  ins_encode %{
+    __ decode_heap_oop_not_null($src$$Register, $dst$$Register);
   %}
   ins_pipe(ialu_reg);
 %}
