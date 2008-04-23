@@ -620,14 +620,34 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
      * start up time noticeably for the new launcher. -- DAC
      */
     private InputStream getInputStream(URL url) throws IOException {
-        if ("file".equals(url.getProtocol())) {
+        if ("file".equalsIgnoreCase(url.getProtocol())) {
+            // Compatibility notes:
+            //
+            // Code changed from
+            //   String path = url.getFile().replace('/', File.separatorChar);
+            //   return new FileInputStream(path);
+            //
+            // The original implementation would search for "/tmp/a%20b"
+            // when url is "file:///tmp/a%20b". This is incorrect. The
+            // current codes fix this bug and searches for "/tmp/a b".
+            // For compatibility reasons, when the file "/tmp/a b" does
+            // not exist, the file named "/tmp/a%20b" will be tried.
+            //
+            // This also means that if both file exists, the behavior of
+            // this method is changed, and the current codes choose the
+            // correct one.
             try {
-                File path = new File(url.toURI());
-                return new FileInputStream(path);
-            } catch (IOException ioe) {
-                throw ioe;
-            } catch (Exception ex) {
-                throw new IOException(ex.getMessage(), ex);
+                return url.openStream();
+            } catch (Exception e) {
+                String file = url.getPath();
+                if (url.getHost().length() > 0) {  // For Windows UNC
+                    file = "//" + url.getHost() + file;
+                }
+                if (debugConfig != null) {
+                    debugConfig.println("cannot read " + url +
+                            ", try " + file);
+                }
+                return new FileInputStream(file);
             }
         } else {
             return url.openStream();
