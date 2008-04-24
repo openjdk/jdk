@@ -488,10 +488,14 @@ public class ScrollPaneLayout
         Dimension viewSize = null;
         Component view = null;
 
-        if (viewport !=  null) {
+        if (viewport != null) {
             extentSize = viewport.getPreferredSize();
             view = viewport.getView();
-            viewSize  = view.getPreferredSize();
+            if (view != null) {
+                viewSize = view.getPreferredSize();
+            } else {
+                viewSize = new Dimension(0, 0);
+            }
         }
 
         /* If there's a viewport add its preferredSize.
