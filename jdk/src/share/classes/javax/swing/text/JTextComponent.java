@@ -1349,11 +1349,6 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * This is the method that is used by the default implementation
      * of the action for inserting content that gets bound to the
      * keymap actions.
-     * <p>
-     * This method is thread safe, although most Swing methods
-     * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
      *
      * @param content  the content to replace the selection with
      */
@@ -1687,12 +1682,8 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * or empty, has the effect of simply deleting the old text.
      * When text has been inserted, the resulting caret location
      * is determined by the implementation of the caret class.
-     * <p>
-     * This method is thread safe, although most Swing methods
-     * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
      *
+     * <p>
      * Note that text is not a bound property, so no <code>PropertyChangeEvent
      * </code> is fired when it changes. To listen for changes to the text,
      * use <code>DocumentListener</code>.
