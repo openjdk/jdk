@@ -135,7 +135,7 @@ inline narrowOop oopDesc::encode_heap_oop_not_null(oop v) {
   assert(!is_null(v), "oop value can never be zero");
   address heap_base = Universe::heap_base();
   uint64_t result = (uint64_t)(pointer_delta((void*)v, (void*)heap_base, 1) >> LogMinObjAlignmentInBytes);
-  assert((result & 0xffffffff00000000L) == 0, "narrow oop overflow");
+  assert((result & 0xffffffff00000000ULL) == 0, "narrow oop overflow");
   return (narrowOop)result;
 }
 
