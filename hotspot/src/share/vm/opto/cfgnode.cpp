@@ -2019,6 +2019,28 @@ Node *CreateExNode::Identity( PhaseTransform *phase ) {
 }
 
 //=============================================================================
+//------------------------------Value------------------------------------------
+// Check for being unreachable.
+const Type *NeverBranchNode::Value( PhaseTransform *phase ) const {
+  if (!in(0) || in(0)->is_top()) return Type::TOP;
+  return bottom_type();
+}
+
+//------------------------------Ideal------------------------------------------
+// Check for no longer being part of a loop
+Node *NeverBranchNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  if (can_reshape && !in(0)->is_Loop()) {
+    // Dead code elimination can sometimes delete this projection so
+    // if it's not there, there's nothing to do.
+    Node* fallthru = proj_out(0);
+    if (fallthru != NULL) {
+      phase->is_IterGVN()->subsume_node(fallthru, in(0));
+    }
+    return phase->C->top();
+  }
+  return NULL;
+}
+
 #ifndef PRODUCT
 void NeverBranchNode::format( PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("%s", Name());
