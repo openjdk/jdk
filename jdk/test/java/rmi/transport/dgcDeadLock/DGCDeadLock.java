@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998-1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,7 +46,7 @@
  * was attempting to lock.
  *
  * This test causes the above conditions to occur and waits to see if
- * a given set of remote calls finishes "quickly enough."  
+ * a given set of remote calls finishes "quickly enough."
  */
 
 import java.rmi.*;
@@ -60,98 +60,98 @@ public class DGCDeadLock implements Runnable {
     static DGCDeadLock test = new DGCDeadLock();
 
     static {
-	System.setProperty("sun.rmi.transport.cleanInterval", "50");
+        System.setProperty("sun.rmi.transport.cleanInterval", "50");
     }
 
     static public void main(String[] args) {
 
-	JavaVM testImplVM = null;
-    
-	System.err.println("\nregression test for 4118056\n");
-	TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
+        JavaVM testImplVM = null;
+
+        System.err.println("\nregression test for 4118056\n");
+        TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
 
         try {
-	    String options = " -Djava.security.policy=" + 
-		TestParams.defaultPolicy +
-		" -Djava.rmi.dgc.leaseValue=500000" + 
-		"  -Dsun.rmi.dgc.checkInterval=" + 
-		(HOLD_TARGET_TIME - 5000) + "";
+            String options = " -Djava.security.policy=" +
+                TestParams.defaultPolicy +
+                " -Djava.rmi.dgc.leaseValue=500000" +
+                "  -Dsun.rmi.dgc.checkInterval=" +
+                (HOLD_TARGET_TIME - 5000) + "";
 
-	    testImplVM = new JavaVM("TestImpl", options, "");
-	    testImplVM.start();
+            testImplVM = new JavaVM("TestImpl", options, "");
+            testImplVM.start();
 
-	    synchronized (test) {
-		Thread t = new Thread(test);
-		t.setDaemon(true);
-		t.start();
+            synchronized (test) {
+                Thread t = new Thread(test);
+                t.setDaemon(true);
+                t.start();
 
-		// wait for the remote calls to take place
-		test.wait(TEST_FAIL_TIME);
-	    }
+                // wait for the remote calls to take place
+                test.wait(TEST_FAIL_TIME);
+            }
 
-	    if (!finished) {
-		TestLibrary.bomb("Test failed, had exception or exercise" + 
-					   " routines took too long to " + 
-					   "execute");
-	    }
-	    System.err.println("Test passed, exercises " + 
-			       "finished in time.");
+            if (!finished) {
+                TestLibrary.bomb("Test failed, had exception or exercise" +
+                                           " routines took too long to " +
+                                           "execute");
+            }
+            System.err.println("Test passed, exercises " +
+                               "finished in time.");
 
         } catch (Exception e) {
-	    testImplVM = null;
-	    TestLibrary.bomb("test failed", e);
+            testImplVM = null;
+            TestLibrary.bomb("test failed", e);
         }
     }
 
     public void run() {
-	try {
-	    String echo = null;
+        try {
+            String echo = null;
 
-	    // give the test remote object time to initialize.
-	    Thread.currentThread().sleep(8000);
+            // give the test remote object time to initialize.
+            Thread.currentThread().sleep(8000);
 
-	    // create a test client
-	    Test foo = (Test) Naming.lookup("rmi://:" + 
-					    TestLibrary.REGISTRY_PORT + 
-					    "/Foo");
-	    echo = foo.echo("Hello world");
-	    System.err.println("Test object created.");
+            // create a test client
+            Test foo = (Test) Naming.lookup("rmi://:" +
+                                            TestLibrary.REGISTRY_PORT +
+                                            "/Foo");
+            echo = foo.echo("Hello world");
+            System.err.println("Test object created.");
 
-	    /* give TestImpl time to lock the target in the 
-	     * object table and any dirtys finish.
-	     */
-	    Thread.currentThread().sleep(5000);
+            /* give TestImpl time to lock the target in the
+             * object table and any dirtys finish.
+             */
+            Thread.currentThread().sleep(5000);
 
-	    //unreference "Foo"
-	    foo = null;
+            //unreference "Foo"
+            foo = null;
 
-	    //garbage collect and finalize foo
-	    Runtime.getRuntime().gc();  
-	    Runtime.getRuntime().runFinalization();  
-	    
-	    //import "Bar"
-	    Test bar = (Test) Naming.lookup("rmi://:" + 
-					    TestLibrary.REGISTRY_PORT + 
-					    "/Bar");
-	    
-	    /* infinite loop to show the liveness of Client,
-	     * if we have deadlock remote call will not return
-	     */
-	    try {
-		for (int i = 0; i < 500; i++) {  
-		    echo = bar.echo("Remote call" + i);
-		    Thread.sleep(10);
-		}
+            //garbage collect and finalize foo
+            Runtime.getRuntime().gc();
+            Runtime.getRuntime().runFinalization();
 
-		// flag exercises finished
-		finished = true;
+            //import "Bar"
+            Test bar = (Test) Naming.lookup("rmi://:" +
+                                            TestLibrary.REGISTRY_PORT +
+                                            "/Bar");
 
-	    } catch (RemoteException e) {
-	    }
-	    
-	} catch (Exception e) {
-	    TestLibrary.bomb("test failed", e);
-	} finally {
-	}
+            /* infinite loop to show the liveness of Client,
+             * if we have deadlock remote call will not return
+             */
+            try {
+                for (int i = 0; i < 500; i++) {
+                    echo = bar.echo("Remote call" + i);
+                    Thread.sleep(10);
+                }
+
+                // flag exercises finished
+                finished = true;
+
+            } catch (RemoteException e) {
+            }
+
+        } catch (Exception e) {
+            TestLibrary.bomb("test failed", e);
+        } finally {
+        }
     }
 }

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,8 +37,8 @@ import java.util.HashMap;
 /**
  * Benchmark server implementation.
  */
-public class BenchServerImpl 
-    extends UnicastRemoteObject implements BenchServer 
+public class BenchServerImpl
+    extends UnicastRemoteObject implements BenchServer
 {
     HashMap implTable = new HashMap();
 
@@ -47,52 +47,51 @@ public class BenchServerImpl
      */
     public BenchServerImpl() throws RemoteException {
     }
-    
+
     /**
-     * Uses the given remote object factory to create a new remote object on 
+     * Uses the given remote object factory to create a new remote object on
      * the server side.
      */
-    public Remote create(BenchServer.RemoteObjectFactory factory) 
-	throws RemoteException 
+    public Remote create(BenchServer.RemoteObjectFactory factory)
+        throws RemoteException
     {
-	Remote impl = factory.create();
-	implTable.put(RemoteObject.toStub(impl), new WeakReference(impl));
-	return impl;
+        Remote impl = factory.create();
+        implTable.put(RemoteObject.toStub(impl), new WeakReference(impl));
+        return impl;
     }
-    
+
     /**
-     * Unexports the specified remote object.  Returns true if successful, 
+     * Unexports the specified remote object.  Returns true if successful,
      * false otherwise.
      */
     public boolean unexport(Remote obj, boolean force) throws RemoteException {
-	WeakReference iref = (WeakReference) implTable.get(obj);
-	if (iref == null)
-	    return false;
-	Remote impl = (Remote) iref.get();
-	if (impl == null)
-	    return false;
-	return UnicastRemoteObject.unexportObject(impl, force);
+        WeakReference iref = (WeakReference) implTable.get(obj);
+        if (iref == null)
+            return false;
+        Remote impl = (Remote) iref.get();
+        if (impl == null)
+            return false;
+        return UnicastRemoteObject.unexportObject(impl, force);
     }
-    
+
     /**
      * Execute given task.
      */
     public Object execute(BenchServer.Task task) throws Exception {
-	return task.execute();
+        return task.execute();
     }
-    
+
     /**
      * Invoke the garbage collector.
      */
     public void gc() throws RemoteException {
-	System.gc();
+        System.gc();
     }
-    
+
     /**
      * Terminate the server.
      */
     public void terminate(int delay) throws RemoteException {
-	System.exit(0);
+        System.exit(0);
     }
 }
-

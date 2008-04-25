@@ -265,7 +265,9 @@ ifdef BUILD_NUMBER
   FULL_VERSION = $(RELEASE)-$(BUILD_NUMBER)
 else
   BUILD_NUMBER = b00
-  USER_RELEASE_SUFFIX := $(shell echo $(USER)_`date '+%d_%b_%Y_%H_%M' | tr "A-Z" "a-z"`)
+  BUILD_DATE := $(shell $(DATE) '+%Y_%m_%d_%H_%M')
+  CLEAN_USERNAME := $(shell $(ECHO) "$(USER)" | $(TR) -d -c '[:alnum:]')
+  USER_RELEASE_SUFFIX := $(shell $(ECHO) "$(CLEAN_USERNAME)_$(BUILD_DATE)" | $(TR) '[:upper:]' '[:lower:]' )
   FULL_VERSION = $(RELEASE)-$(USER_RELEASE_SUFFIX)-$(BUILD_NUMBER)
 endif
 

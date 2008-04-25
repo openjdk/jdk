@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -51,123 +51,123 @@ public class DGCAckFailure implements ReturnRemote {
     private static final long TIMEOUT = 20000;
 
     public Object returnRemote() {
-	return new Wrapper(this);
+        return new Wrapper(this);
     }
 
     public static void main(String[] args) throws Exception {
 
-	System.setProperty("sun.rmi.dgc.ackTimeout", "10000");
+        System.setProperty("sun.rmi.dgc.ackTimeout", "10000");
 
-	/*
-	 * Set a socket factory that has a hook for shutting down all client
-	 * output (writes from client-created sockets and new connection
-	 * attempts).  We then use this hook right before a remote stub gets
-	 * deserialized, so that the client will not be able to send a DGC
-	 * dirty call, or a DGC acknowledgment.  Without the DGC ack, we
-	 * hope that the RMI runtime will still eventually allow the remote
-	 * object to be garbage collected.
-	 */
-	RMISocketFactory.setSocketFactory(new TestSF());
-	System.err.println("test socket factory set");
+        /*
+         * Set a socket factory that has a hook for shutting down all client
+         * output (writes from client-created sockets and new connection
+         * attempts).  We then use this hook right before a remote stub gets
+         * deserialized, so that the client will not be able to send a DGC
+         * dirty call, or a DGC acknowledgment.  Without the DGC ack, we
+         * hope that the RMI runtime will still eventually allow the remote
+         * object to be garbage collected.
+         */
+        RMISocketFactory.setSocketFactory(new TestSF());
+        System.err.println("test socket factory set");
 
-	Remote impl = new DGCAckFailure();
-	ReferenceQueue refQueue = new ReferenceQueue();
-	Reference weakRef = new WeakReference(impl, refQueue);
-	ReturnRemote stub =
-	    (ReturnRemote) UnicastRemoteObject.exportObject(impl);
-	System.err.println("remote object exported; stub = " + stub);
+        Remote impl = new DGCAckFailure();
+        ReferenceQueue refQueue = new ReferenceQueue();
+        Reference weakRef = new WeakReference(impl, refQueue);
+        ReturnRemote stub =
+            (ReturnRemote) UnicastRemoteObject.exportObject(impl);
+        System.err.println("remote object exported; stub = " + stub);
 
-	try {
-	    Object wrappedStub = stub.returnRemote();
-	    System.err.println("invocation returned: " + wrappedStub);
+        try {
+            Object wrappedStub = stub.returnRemote();
+            System.err.println("invocation returned: " + wrappedStub);
 
-	    impl = null;
-	    stub = null;	// in case 4114579 ever gets fixed
-	    System.err.println("strong references to impl cleared");
+            impl = null;
+            stub = null;        // in case 4114579 ever gets fixed
+            System.err.println("strong references to impl cleared");
 
-	    System.err.println("waiting for weak reference notification:");
-	    Reference ref = null;
-	    for (int i = 0; i < 6; i++) {
-		System.gc();
-		ref = refQueue.remove(TIMEOUT / 5);
-		if (ref != null) {
-		    break;
-		}
-	    }
-	    if (ref == weakRef) {
-		System.err.println("TEST PASSED");
-	    } else {
-		throw new RuntimeException("TEST FAILED: " +
-		    "timed out, remote object not garbage collected");
-	    }
-	} finally {
-	    try {
-		UnicastRemoteObject.unexportObject((Remote) weakRef.get(),
-						   true);
-	    } catch (Exception e) {
-	    }
-	}
+            System.err.println("waiting for weak reference notification:");
+            Reference ref = null;
+            for (int i = 0; i < 6; i++) {
+                System.gc();
+                ref = refQueue.remove(TIMEOUT / 5);
+                if (ref != null) {
+                    break;
+                }
+            }
+            if (ref == weakRef) {
+                System.err.println("TEST PASSED");
+            } else {
+                throw new RuntimeException("TEST FAILED: " +
+                    "timed out, remote object not garbage collected");
+            }
+        } finally {
+            try {
+                UnicastRemoteObject.unexportObject((Remote) weakRef.get(),
+                                                   true);
+            } catch (Exception e) {
+            }
+        }
     }
 
     private static class Wrapper implements Serializable {
-	private final Remote obj;
-	Wrapper(Remote obj) { this.obj = obj; }
+        private final Remote obj;
+        Wrapper(Remote obj) { this.obj = obj; }
 
-	private void readObject(ObjectInputStream in)
-	    throws IOException, ClassNotFoundException
-	{
-	    TestSF.shutdownClientOutput();
-	    System.err.println(
-		"Wrapper.readObject: SHUTTING DOWN CLIENT OUTPUT");
-	    in.defaultReadObject();
-	}
+        private void readObject(ObjectInputStream in)
+            throws IOException, ClassNotFoundException
+        {
+            TestSF.shutdownClientOutput();
+            System.err.println(
+                "Wrapper.readObject: SHUTTING DOWN CLIENT OUTPUT");
+            in.defaultReadObject();
+        }
 
-	public String toString() { return "Wrapper[" + obj + "]"; }
+        public String toString() { return "Wrapper[" + obj + "]"; }
     }
 
     private static class TestSF extends RMISocketFactory {
 
-	private static volatile boolean shutdown = false;
-	static void shutdownClientOutput() { shutdown = true; }
+        private static volatile boolean shutdown = false;
+        static void shutdownClientOutput() { shutdown = true; }
 
-	public Socket createSocket(String host, int port) throws IOException {
-	    if (shutdown) {
-		IOException e = new java.net.ConnectException(
-		    "test socket factory rejecting client connection");
-		System.err.println(e);
-//		e.printStackTrace();
-		throw e;
-	    } else {
-		return new TestSocket(host, port);
-	    }
-	}
+        public Socket createSocket(String host, int port) throws IOException {
+            if (shutdown) {
+                IOException e = new java.net.ConnectException(
+                    "test socket factory rejecting client connection");
+                System.err.println(e);
+//              e.printStackTrace();
+                throw e;
+            } else {
+                return new TestSocket(host, port);
+            }
+        }
 
-	public ServerSocket createServerSocket(int port) throws IOException {
-	    return new ServerSocket(port);
-	}
+        public ServerSocket createServerSocket(int port) throws IOException {
+            return new ServerSocket(port);
+        }
 
-	private static class TestSocket extends Socket {
-	    TestSocket(String host, int port) throws IOException {
-		super(host, port);
-	    }
-	    public OutputStream getOutputStream() throws IOException {
-		return new TestOutputStream(super.getOutputStream());
-	    }
-	}
+        private static class TestSocket extends Socket {
+            TestSocket(String host, int port) throws IOException {
+                super(host, port);
+            }
+            public OutputStream getOutputStream() throws IOException {
+                return new TestOutputStream(super.getOutputStream());
+            }
+        }
 
-	private static class TestOutputStream extends FilterOutputStream {
-	    TestOutputStream(OutputStream out) { super(out); }
-	    public void write(int b) throws IOException {
-		if (shutdown) {
-		    IOException e = new IOException(
-			"connection broken by test socket factory");
-		    System.err.println(e);
-//		    e.printStackTrace();
-		    throw e;
-		} else {
-		    super.write(b);
-		}
-	    }
-	}
+        private static class TestOutputStream extends FilterOutputStream {
+            TestOutputStream(OutputStream out) { super(out); }
+            public void write(int b) throws IOException {
+                if (shutdown) {
+                    IOException e = new IOException(
+                        "connection broken by test socket factory");
+                    System.err.println(e);
+//                  e.printStackTrace();
+                    throw e;
+                } else {
+                    super.write(b);
+                }
+            }
+        }
     }
 }
