@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6683472
+ * @bug 6683472 6687298
  * @summary Transformed fonts using drawString and TextLayout should be in
  *          the same position.
  */
@@ -44,14 +44,15 @@ public class RotTransText  {
 
         Graphics2D g2d = bi.createGraphics();
 
-        g2d.setColor(Color.white);
-        g2d.fillRect(0, 0, wid, hgt);
-
         int x=130, y=130;
         String s = "Text";
 
         int xt=90, yt=50;
         for (int angle=0;angle<360;angle+=30) {
+
+            g2d.setColor(Color.white);
+            g2d.fillRect(0, 0, wid, hgt);
+
             AffineTransform aff = AffineTransform.getTranslateInstance(50,90);
             aff.rotate(angle * Math.PI/180.0);
 
@@ -69,19 +70,26 @@ public class RotTransText  {
             fnt = fnt.deriveFont(attrMap);
             TextLayout tl = new TextLayout(s, fnt, frc);
             tl.draw(g2d, (float)x, (float)y);
-        }
-        // Test BI: should be no blue: only red and white.
-        int red = Color.red.getRGB();
-        int blue = Color.blue.getRGB();
-        int white = Color.white.getRGB();
-        for (int px=0;px<wid;px++) {
-            for (int py=0;py<hgt;py++) {
-                int rgb = bi.getRGB(px, py);
-                if (rgb == blue || ( rgb != red && rgb != white)) {
-                    throw new RuntimeException
-                        ("Unexpected color : " + Integer.toHexString(rgb) +
-                         " at x=" + x + " y="+ y);
+
+            // Test BI: should be minimal blue relative to red.
+            int redCount = 0;
+            int blueCount = 0;
+            int red = Color.red.getRGB();
+            int blue = Color.blue.getRGB();
+            for (int px=0;px<wid;px++) {
+                for (int py=0;py<hgt;py++) {
+                    int rgb = bi.getRGB(px, py);
+                    if (rgb == red) {
+                        redCount++;
+                    } else if (rgb == blue) {
+                        blueCount++;
+                    }
                 }
+            }
+            if (redCount == 0 || (blueCount/(double)redCount) > 0.1) {
+                throw new
+                    RuntimeException("Ratio of blue to red is too great: " +
+                                     (blueCount/(double)redCount));
             }
         }
     }
