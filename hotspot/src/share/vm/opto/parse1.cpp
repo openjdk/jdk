@@ -1836,7 +1836,7 @@ PhiNode *Parse::ensure_phi(int idx, bool nocreate) {
 
   PhiNode* phi = PhiNode::make(region, o, t);
   gvn().set_type(phi, t);
-  if (DoEscapeAnalysis) record_for_igvn(phi);
+  if (C->do_escape_analysis()) record_for_igvn(phi);
   map->set_req(idx, phi);
   return phi;
 }

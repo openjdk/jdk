@@ -2672,6 +2672,22 @@ void Assembler::movlpd(XMMRegister dst, Address src) {
   emit_sse_operand(dst, src);
 }
 
+void Assembler::cvtdq2pd(XMMRegister dst, XMMRegister src) {
+  assert(VM_Version::supports_sse2(), "");
+
+  emit_byte(0xF3);
+  emit_byte(0x0F);
+  emit_byte(0xE6);
+  emit_sse_operand(dst, src);
+}
+
+void Assembler::cvtdq2ps(XMMRegister dst, XMMRegister src) {
+  assert(VM_Version::supports_sse2(), "");
+
+  emit_byte(0x0F);
+  emit_byte(0x5B);
+  emit_sse_operand(dst, src);
+}
 
 emit_sse_instruction(andps,  sse,  0,    0x54, XMMRegister, XMMRegister);
 emit_sse_instruction(andpd,  sse2, 0x66, 0x54, XMMRegister, XMMRegister);

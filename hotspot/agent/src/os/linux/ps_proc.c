@@ -291,10 +291,10 @@ static void process_cleanup(struct ps_prochandle* ph) {
 }
 
 static ps_prochandle_ops process_ops = {
-  release:  process_cleanup,
-  p_pread:  process_read_data,
-  p_pwrite: process_write_data,
-  get_lwp_regs: process_get_lwp_regs
+  .release=  process_cleanup,
+  .p_pread=  process_read_data,
+  .p_pwrite= process_write_data,
+  .get_lwp_regs= process_get_lwp_regs
 };
 
 // attach to the process. One and only one exposed stuff

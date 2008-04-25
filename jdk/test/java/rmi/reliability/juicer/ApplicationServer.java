@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,7 @@ import java.util.logging.Level;
  * stress test of RMI.
  */
 public class ApplicationServer implements Runnable {
-    
+
     /** number of remote Apple objects to export */
     private static final Logger logger = Logger.getLogger("reliability.orange");
     private static final int LOOKUP_ATTEMPTS = 5;
@@ -58,102 +58,102 @@ public class ApplicationServer implements Runnable {
      * them with server.
      */
     public void run() {
-	try {
-	    int i = 0;
+        try {
+            int i = 0;
 
-	    /*
-	     * Locate apple user object in registry.  The lookup will
-	     * occur until it is successful or fails LOOKUP_ATTEMPTS times.
-	     * These repeated attempts allow the ApplicationServer
-	     * to be started before the AppleUserImpl.
-	     */
-	    Exception exc = null;
-	    for (i = 0; i < LOOKUP_ATTEMPTS; i++) {
-	        try {
-		    Registry registry = LocateRegistry.getRegistry(
-			registryHost, 2006);
-		    user = (AppleUser) registry.lookup("AppleUser");
-		    user.startTest();
-		    break; //successfully obtained AppleUser
-	        } catch (Exception e) {
-		    exc = e;
-		    Thread.sleep(10000); //sleep 10 seconds and try again
-		}
-	    }
-	    if (user == null) {
-	        logger.log(Level.SEVERE, "Failed to lookup AppleUser:", exc);
-		return;
-	    }
-
-	    /*
-	     * Create and export apple implementations.
-	     */
-	    try {
-		for (i = 0; i < numApples; i++) {
-		    apples[i] = new AppleImpl("AppleImpl #" + (i + 1));
-		}
-	    } catch (RemoteException e) {
-	        logger.log(Level.SEVERE, 
-		    "Failed to create AppleImpl #" + (i + 1) + ":", e);
-		user.reportException(e);
-		return;
-	    }
-
-	    /*
-	     * Hand apple objects to apple user.
-	     */
-	    try {
-		for (i = 0; i < numApples; i++) {
-		    user.useApple(apples[i]);
+            /*
+             * Locate apple user object in registry.  The lookup will
+             * occur until it is successful or fails LOOKUP_ATTEMPTS times.
+             * These repeated attempts allow the ApplicationServer
+             * to be started before the AppleUserImpl.
+             */
+            Exception exc = null;
+            for (i = 0; i < LOOKUP_ATTEMPTS; i++) {
+                try {
+                    Registry registry = LocateRegistry.getRegistry(
+                        registryHost, 2006);
+                    user = (AppleUser) registry.lookup("AppleUser");
+                    user.startTest();
+                    break; //successfully obtained AppleUser
+                } catch (Exception e) {
+                    exc = e;
+                    Thread.sleep(10000); //sleep 10 seconds and try again
                 }
-	    } catch (RemoteException e) {
-	        logger.log(Level.SEVERE, 
-		    "Failed to register callbacks for " + apples[i] + ":", e);
-		user.reportException(e);
-		return;
-	    }
-	} catch (Exception e) {
-	    logger.log(Level.SEVERE, "Unexpected exception:", e);
-	}
+            }
+            if (user == null) {
+                logger.log(Level.SEVERE, "Failed to lookup AppleUser:", exc);
+                return;
+            }
+
+            /*
+             * Create and export apple implementations.
+             */
+            try {
+                for (i = 0; i < numApples; i++) {
+                    apples[i] = new AppleImpl("AppleImpl #" + (i + 1));
+                }
+            } catch (RemoteException e) {
+                logger.log(Level.SEVERE,
+                    "Failed to create AppleImpl #" + (i + 1) + ":", e);
+                user.reportException(e);
+                return;
+            }
+
+            /*
+             * Hand apple objects to apple user.
+             */
+            try {
+                for (i = 0; i < numApples; i++) {
+                    user.useApple(apples[i]);
+                }
+            } catch (RemoteException e) {
+                logger.log(Level.SEVERE,
+                    "Failed to register callbacks for " + apples[i] + ":", e);
+                user.reportException(e);
+                return;
+            }
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Unexpected exception:", e);
+        }
     }
 
     private static void usage() {
-	System.err.println("Usage: ApplicationServer [-numApples <numApples>]");
-	System.err.println("                         [-registryHost <host>]");
-	System.err.println("  numApples  The number of apples (threads) to use.");
-	System.err.println("             The default is 10 apples.");
-	System.err.println("  host       The host running rmiregistry " +
-					 "which contains AppleUser.");
-	System.err.println("             The default is \"localhost\".");
-	System.err.println();
+        System.err.println("Usage: ApplicationServer [-numApples <numApples>]");
+        System.err.println("                         [-registryHost <host>]");
+        System.err.println("  numApples  The number of apples (threads) to use.");
+        System.err.println("             The default is 10 apples.");
+        System.err.println("  host       The host running rmiregistry " +
+                                         "which contains AppleUser.");
+        System.err.println("             The default is \"localhost\".");
+        System.err.println();
     }
 
     public static void main(String[] args) {
         int num = DEFAULT_NUMAPPLES;
         String host = DEFAULT_REGISTRYHOST;
 
-	// parse command line args
-	try {
+        // parse command line args
+        try {
             for (int i = 0; i < args.length ; i++ ) {
-		String arg = args[i];
-		if (arg.equals("-numApples")) {
+                String arg = args[i];
+                if (arg.equals("-numApples")) {
                     i++;
                     num = Integer.parseInt(args[i]);
-		} else if (arg.equals("-registryHost")) {
+                } else if (arg.equals("-registryHost")) {
                     i++;
                     host = args[i];
-		} else {
+                } else {
                     usage();
-		}
+                }
             }
-	} catch (Throwable t) {
+        } catch (Throwable t) {
             usage();
-	    throw new RuntimeException("TEST FAILED: Bad argument");
-	}
+            throw new RuntimeException("TEST FAILED: Bad argument");
+        }
 
-	// start the client server
-	Thread server = new Thread(new ApplicationServer(num,host));
-	server.start();
-	// main should exit once all exported remote objects are gc'd
+        // start the client server
+        Thread server = new Thread(new ApplicationServer(num,host));
+        server.start();
+        // main should exit once all exported remote objects are gc'd
     }
 }

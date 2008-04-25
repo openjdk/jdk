@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2000 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,4 +27,3 @@ public interface CallbackInterface extends Remote {
     public void inc() throws RemoteException;
     public int getNumDeactivated() throws RemoteException;
 }
-

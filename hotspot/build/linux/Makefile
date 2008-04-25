@@ -80,6 +80,11 @@ ifneq ("$(filter $(LP64_ARCH),$(BUILDARCH))","")
   MFLAGS += " LP64=1 "
 endif
 
+# pass USE_SUNCC further, through MFLAGS
+ifdef USE_SUNCC
+  MFLAGS += " USE_SUNCC=1 "
+endif
+
 # The following renders pathnames in generated Makefiles valid on
 # machines other than the machine containing the build tree.
 #

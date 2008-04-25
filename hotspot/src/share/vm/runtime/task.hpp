@@ -113,13 +113,3 @@ class PeriodicTask: public CHeapObj {
   // The task to perform at each period
   virtual void task() = 0;
 };
-
-class TimeMillisUpdateTask : public PeriodicTask {
- private:
-  static TimeMillisUpdateTask* _task;
- public:
-  TimeMillisUpdateTask(int interval) : PeriodicTask(interval) {}
-  void task();
-  static void engage();
-  static void disengage();
-};

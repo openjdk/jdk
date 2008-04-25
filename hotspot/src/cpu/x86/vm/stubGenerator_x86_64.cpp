@@ -2832,6 +2832,13 @@ class StubGenerator: public StubCodeGenerator {
                                                 throw_AbstractMethodError),
                                false);
 
+    StubRoutines::_throw_IncompatibleClassChangeError_entry =
+      generate_throw_exception("IncompatibleClassChangeError throw_exception",
+                               CAST_FROM_FN_PTR(address,
+                                                SharedRuntime::
+                                                throw_IncompatibleClassChangeError),
+                               false);
+
     StubRoutines::_throw_ArithmeticException_entry =
       generate_throw_exception("ArithmeticException throw_exception",
                                CAST_FROM_FN_PTR(address,

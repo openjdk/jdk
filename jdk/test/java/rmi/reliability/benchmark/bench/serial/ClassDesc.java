@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -89,41 +89,40 @@ public class ClassDesc implements Benchmark {
     static class Dummy48 extends Dummy47 { Dummy48 i48; }
     static class Dummy49 extends Dummy48 { Dummy49 i49; }
     static class Dummy50 extends Dummy49 { Dummy50 i50; }
-    
+
     /**
      * Write and read class descriptors to/from a stream.
      * Arguments: <# cycles>
      */
     public long run(String[] args) throws Exception {
-	int ncycles = Integer.parseInt(args[0]);
-	StreamBuffer sbuf = new StreamBuffer();
-	ObjectOutputStream oout = 
-	    new ObjectOutputStream(sbuf.getOutputStream());
-	ObjectInputStream oin = 
-	    new ObjectInputStream(sbuf.getInputStream());
-	ObjectStreamClass desc = ObjectStreamClass.lookup(Dummy50.class);
-	
-	doReps(oout, oin, sbuf, desc, 1);	// warmup
+        int ncycles = Integer.parseInt(args[0]);
+        StreamBuffer sbuf = new StreamBuffer();
+        ObjectOutputStream oout =
+            new ObjectOutputStream(sbuf.getOutputStream());
+        ObjectInputStream oin =
+            new ObjectInputStream(sbuf.getInputStream());
+        ObjectStreamClass desc = ObjectStreamClass.lookup(Dummy50.class);
 
-	long start = System.currentTimeMillis();
-	doReps(oout, oin, sbuf, desc, ncycles);
+        doReps(oout, oin, sbuf, desc, 1);       // warmup
+
+        long start = System.currentTimeMillis();
+        doReps(oout, oin, sbuf, desc, ncycles);
         return System.currentTimeMillis() - start;
     }
-    
+
     /**
      * Run benchmark for given number of cycles.
      */
     void doReps(ObjectOutputStream oout, ObjectInputStream oin,
-	        StreamBuffer sbuf, ObjectStreamClass desc, int ncycles)
-	throws Exception
+                StreamBuffer sbuf, ObjectStreamClass desc, int ncycles)
+        throws Exception
     {
-	for (int i = 0; i < ncycles; i++) {
-	    sbuf.reset();
-	    oout.reset();
-	    oout.writeObject(desc);
-	    oout.flush();
-	    oin.readObject();
-	}
+        for (int i = 0; i < ncycles; i++) {
+            sbuf.reset();
+            oout.reset();
+            oout.writeObject(desc);
+            oout.flush();
+            oin.readObject();
+        }
     }
 }
-
