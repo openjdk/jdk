@@ -217,7 +217,12 @@ public class FileFontStrike extends PhysicalStrike {
          * "maximumSizeForGetImageWithAdvance".
          * This should be no greater than OutlineTextRender.THRESHOLD.
          */
-        getImageWithAdvance = at.getScaleY() <= 48.0;
+        double maxSz = 48.0;
+        getImageWithAdvance =
+            Math.abs(at.getScaleX()) <= maxSz &&
+            Math.abs(at.getScaleY()) <= maxSz &&
+            Math.abs(at.getShearX()) <= maxSz &&
+            Math.abs(at.getShearY()) <= maxSz;
 
         /* Some applications request advance frequently during layout.
          * If we are not getting and caching the image with the advance,
