@@ -105,13 +105,21 @@ ZIP_VER    :=$(call GetVersion,"$(_ZIP_VER)")
 UNZIP_VER  :=$(call GetVersion,"$(_UNZIP_VER)")
 BOOT_VER   :=$(call GetVersion,"$(_BOOT_VER)")
 
-REQUIRED_ANT_VER      := 1.6.3
-_ANT_VER              :=$(shell $(ANT) -version 2>&1 )
-ANT_VER               :=$(call GetVersion,"$(_ANT_VER)")
+REQUIRED_ANT_VER := 1.6.3
+ifeq ($(ANT_HOME),)
+  _ANT_VER:=$(shell JAVACMD="$(BOOTDIR)/bin/java" $(ANT) -version 2>&1 )
+else
+  _ANT_VER:=$(shell JAVACMD="$(BOOTDIR)/bin/java" ANT_HOME="$(ANT_HOME)" $(ANT) -version 2>&1 )
+endif
+ANT_VER:=$(call GetVersion,"$(_ANT_VER)")
 
-REQUIRED_FINDBUGS_VER := 1.1
-_FINDBUGS_VER         :=$(shell $(FINDBUGS) -version 2>&1 )
-FINDBUGS_VER          :=$(call GetVersion,"$(_FINDBUGS_VER)")
+REQUIRED_FINDBUGS_VER := 1.2
+ifeq ($(FINDBUGS_HOME),)
+  _FINDBUGS_VER:=$(shell $(FINDBUGS) -javahome "$(BOOTDIR)" -textui -version 2>&1 )
+else
+  _FINDBUGS_VER:=$(shell FINDBUGS_HOME="$(FINDBUGS_HOME)" $(FINDBUGS) -javahome "$(BOOTDIR)" -textui -version 2>&1 )
+endif
+FINDBUGS_VER:=$(call GetVersion,"$(_FINDBUGS_VER)")
 
 ifdef ALT_BINDIR
   ALT_BINDIR_VERSION := $(shell $(ALT_BINDIR)/java$(EXE_SUFFIX) -version 2>&1  | $(NAWK) -F'"' '{ print $$2 }')

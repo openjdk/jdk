@@ -512,6 +512,24 @@ JDK_CUPS_HEADERS_PATH=$(JDK_DEVTOOLS_DIR)/share/cups/include
   endif
 endif
 
+# Utilities ant and findbugs
+ifeq ($(ANT_HOME),)
+  ANT_HOME := $(call DirExists,/usr/share/ant,$(JDK_DEVTOOLS_DIR)/share/ant/latest,)
+endif
+ifeq ($(ANT_HOME),)
+  ANT = ant
+else
+  ANT = $(ANT_HOME)/bin/ant
+endif
+ifeq ($(FINDBUGS_HOME),)
+  FINDBUGS_HOME := $(call DirExists,/usr/share/findbugs,$(JDK_DEVTOOLS_DIR)/share/findbugs/latest,)
+endif
+ifeq ($(FINDBUGS_HOME),)
+  FINDBUGS = findbugs
+else
+  FINDBUGS = $(FINDBUGS_HOME)/bin/findbugs
+endif
+
 ifdef ALT_COPYRIGHT_YEAR
   COPYRIGHT_YEAR = $(ALT_COPYRIGHT_YEAR)
 else

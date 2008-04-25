@@ -45,6 +45,10 @@ package java.lang.management;
  *    <tt>java.lang:type=MemoryManager</tt>}<tt>,name=</tt><i>manager's name</i>
  * </blockquote>
  *
+ * It can be obtained by calling the
+ * {@link PlatformManagedObject#getObjectName} method.
+ *
+ * @see ManagementFactory#getPlatformMXBeans(Class)
  * @see MemoryMXBean
  *
  * @see <a href="../../../javax/management/package-summary.html">
@@ -55,7 +59,7 @@ package java.lang.management;
  * @author  Mandy Chung
  * @since   1.5
  */
-public interface MemoryManagerMXBean {
+public interface MemoryManagerMXBean extends PlatformManagedObject {
     /**
      * Returns the name representing this memory manager.
      *

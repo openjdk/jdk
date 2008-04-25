@@ -415,17 +415,8 @@ public class Repository {
         boolean to_default_domain = false;
 
         // Set domain to default if domain is empty and not already set
-        if (dom.length() == 0) {
-             try {
-                name = new ObjectName(domain + name.toString());
-            } catch (MalformedObjectNameException e) {
-                if (MBEANSERVER_LOGGER.isLoggable(Level.FINEST)) {
-                    MBEANSERVER_LOGGER.logp(Level.FINEST,
-                            Repository.class.getName(), "addMBean",
-                            "Unexpected MalformedObjectNameException", e);
-                }
-            }
-        }
+        if (dom.length() == 0)
+            name = Util.newObjectName(domain + name.toString());
 
         // Do we have default domain ?
         if (dom == domain) {
