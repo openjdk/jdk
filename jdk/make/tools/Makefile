@@ -50,7 +50,8 @@ SUBDIRS =                   \
   jdwpgen                   \
   makeclasslist             \
   strip_properties          \
-  winver
+  winver                    \
+  CharsetMapping
 
 all build clean clobber::
 	$(SUBDIRS-loop)

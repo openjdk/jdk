@@ -203,6 +203,10 @@ public class Log {
      */
     private char[] buf = null;
 
+    /** The length of useful data in buf
+     */
+    private int bufLen = 0;
+
     /** The position in the buffer at which last error was reported
      */
     private int bp;
@@ -256,6 +260,7 @@ public class Log {
      */
     protected void setBuf(char[] newBuf) {
         buf = newBuf;
+        bufLen = buf.length;
         bp = 0;
         lineStart = 0;
         line = 1;
@@ -324,7 +329,7 @@ public class Log {
             return;
 
         int lineEnd = lineStart;
-        while (lineEnd < buf.length && buf[lineEnd] != CR && buf[lineEnd] != LF)
+        while (lineEnd < bufLen && buf[lineEnd] != CR && buf[lineEnd] != LF)
             lineEnd++;
         if (lineEnd - lineStart == 0)
             return;
@@ -336,12 +341,15 @@ public class Log {
         writer.flush();
     }
 
-    protected static char[] getCharContent(JavaFileObject fileObject) throws IOException {
+    protected void initBuf(JavaFileObject fileObject) throws IOException {
         CharSequence cs = fileObject.getCharContent(true);
         if (cs instanceof CharBuffer) {
-            return JavacFileManager.toArray((CharBuffer)cs);
+            CharBuffer cb = (CharBuffer) cs;
+            buf = JavacFileManager.toArray(cb);
+            bufLen = cb.limit();
         } else {
-            return cs.toString().toCharArray();
+            buf = cs.toString().toCharArray();
+            bufLen = buf.length;
         }
     }
 
@@ -353,7 +361,7 @@ public class Log {
             return false;
         try {
             if (buf == null) {
-                buf = getCharContent(currentSource());
+                initBuf(currentSource());
                 lineStart = 0;
                 line = 1;
             } else if (lineStart > pos) { // messages don't come in order
@@ -361,10 +369,10 @@ public class Log {
                 line = 1;
             }
             bp = lineStart;
-            while (bp < buf.length && bp < pos) {
+            while (bp < bufLen && bp < pos) {
                 switch (buf[bp++]) {
                 case CR:
-                    if (bp < buf.length && buf[bp] == LF) bp++;
+                    if (bp < bufLen && buf[bp] == LF) bp++;
                     line++;
                     lineStart = bp;
                     break;
@@ -374,7 +382,7 @@ public class Log {
                     break;
                 }
             }
-            return bp <= buf.length;
+            return bp <= bufLen;
         } catch (IOException e) {
             //e.printStackTrace();
             // FIXME: include e.getLocalizedMessage() in error message
@@ -704,7 +712,7 @@ public class Log {
         if (findLine(pos)) {
             int column = 0;
             for (bp = lineStart; bp < pos; bp++) {
-                if (bp >= buf.length)
+                if (bp >= bufLen)
                     return 0;
                 if (buf[bp] == '\t')
                     column = (column / TabInc * TabInc) + TabInc;

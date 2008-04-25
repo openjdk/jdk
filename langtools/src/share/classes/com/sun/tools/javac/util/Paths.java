@@ -38,13 +38,8 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Iterator;
 import java.util.StringTokenizer;
-import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.Options;
-import com.sun.tools.javac.util.Position;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
@@ -70,7 +65,10 @@ public class Paths {
     protected static final Context.Key<Paths> pathsKey =
         new Context.Key<Paths>();
 
-    /** Get the Paths instance for this context. */
+    /** Get the Paths instance for this context.
+     *  @param context the context
+     *  @return the Paths instance for this context
+     */
     public static Paths instance(Context context) {
         Paths instance = context.get(pathsKey);
         if (instance == null)
@@ -89,7 +87,7 @@ public class Paths {
 
     private static boolean NON_BATCH_MODE = System.getProperty("nonBatchMode") != null;// TODO: Use -XD compiler switch for this.
     private static Map<File, PathEntry> pathExistanceCache = new ConcurrentHashMap<File, PathEntry>();
-    private static Map<File, java.util.List<String>> manifestEntries = new ConcurrentHashMap<File, java.util.List<String>>();
+    private static Map<File, java.util.List<File>> manifestEntries = new ConcurrentHashMap<File, java.util.List<File>>();
     private static Map<File, Boolean> isDirectory = new ConcurrentHashMap<File, Boolean>();
     private static Lock lock = new ReentrantLock();
 
@@ -369,13 +367,13 @@ public class Paths {
         // filenames, but if we do, we should redo all path-related code.
         private void addJarClassPath(File jarFile, boolean warn) {
             try {
-                java.util.List<String> manifestsList = manifestEntries.get(jarFile);
+                java.util.List<File> manifestsList = manifestEntries.get(jarFile);
                 if (!NON_BATCH_MODE) {
                     lock.lock();
                     try {
                         if (manifestsList != null) {
-                            for (String entr : manifestsList) {
-                                addFile(new File(entr), warn);
+                            for (File entr : manifestsList) {
+                                addFile(entr, warn);
                             }
                             return;
                         }
@@ -386,7 +384,7 @@ public class Paths {
                 }
 
                 if (!NON_BATCH_MODE) {
-                    manifestsList = new ArrayList<String>();
+                    manifestsList = new ArrayList<File>();
                     manifestEntries.put(jarFile, manifestsList);
                 }
 
@@ -412,7 +410,7 @@ public class Paths {
                         if (!NON_BATCH_MODE) {
                             lock.lock();
                             try {
-                                manifestsList.add(elt);
+                                manifestsList.add(f);
                             }
                             finally {
                                 lock.unlock();
