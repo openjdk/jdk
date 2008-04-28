@@ -1981,10 +1981,6 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
 #endif
     break;
   }
-  case Op_If:
-  case Op_CountedLoopEnd:
-    fpu._tests.push(n);         // Collect CFG split points
-    break;
 
   case Op_AddP: {               // Assert sane base pointers
     const Node *addp = n->in(AddPNode::Address);
@@ -2083,10 +2079,12 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   default:
     assert( !n->is_Call(), "" );
     assert( !n->is_Mem(), "" );
-    if( n->is_If() || n->is_PCTable() )
-      fpu._tests.push(n);       // Collect CFG split points
     break;
   }
+
+  // Collect CFG split points
+  if (n->is_MultiBranch())
+    fpu._tests.push(n);
 }
 
 //------------------------------final_graph_reshaping_walk---------------------
@@ -2165,19 +2163,18 @@ bool Compile::final_graph_reshaping() {
 
   // Check for unreachable (from below) code (i.e., infinite loops).
   for( uint i = 0; i < fpu._tests.size(); i++ ) {
-    Node *n = fpu._tests[i];
-    assert( n->is_PCTable() || n->is_If(), "either PCTables or IfNodes" );
-    // Get number of CFG targets; 2 for IfNodes or _size for PCTables.
+    MultiBranchNode *n = fpu._tests[i]->as_MultiBranch();
+    // Get number of CFG targets.
     // Note that PCTables include exception targets after calls.
-    uint expected_kids = n->is_PCTable() ? n->as_PCTable()->_size : 2;
-    if (n->outcnt() != expected_kids) {
+    uint required_outcnt = n->required_outcnt();
+    if (n->outcnt() != required_outcnt) {
       // Check for a few special cases.  Rethrow Nodes never take the
       // 'fall-thru' path, so expected kids is 1 less.
       if (n->is_PCTable() && n->in(0) && n->in(0)->in(0)) {
         if (n->in(0)->in(0)->is_Call()) {
           CallNode *call = n->in(0)->in(0)->as_Call();
           if (call->entry_point() == OptoRuntime::rethrow_stub()) {
-            expected_kids--;      // Rethrow always has 1 less kid
+            required_outcnt--;      // Rethrow always has 1 less kid
           } else if (call->req() > TypeFunc::Parms &&
                      call->is_CallDynamicJava()) {
             // Check for null receiver. In such case, the optimizer has
@@ -2187,7 +2184,7 @@ bool Compile::final_graph_reshaping() {
             Node *arg0 = call->in(TypeFunc::Parms);
             if (arg0->is_Type() &&
                 arg0->as_Type()->type()->higher_equal(TypePtr::NULL_PTR)) {
-              expected_kids--;
+              required_outcnt--;
             }
           } else if (call->entry_point() == OptoRuntime::new_array_Java() &&
                      call->req() > TypeFunc::Parms+1 &&
@@ -2198,13 +2195,13 @@ bool Compile::final_graph_reshaping() {
             Node *arg1 = call->in(TypeFunc::Parms+1);
             if (arg1->is_Type() &&
                 arg1->as_Type()->type()->join(TypeInt::POS)->empty()) {
-              expected_kids--;
+              required_outcnt--;
             }
           }
         }
       }
-      // Recheck with a better notion of 'expected_kids'
-      if (n->outcnt() != expected_kids) {
+      // Recheck with a better notion of 'required_outcnt'
+      if (n->outcnt() != required_outcnt) {
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
       }
