@@ -2278,18 +2278,16 @@ private static class VerticalSliderThumbIcon implements Icon, Serializable, UIRe
     }
 
     public void paintIcon( Component c, Graphics g, int x, int y ) {
-        JSlider slider = (JSlider)c;
-
-        boolean leftToRight = MetalUtils.isLeftToRight(slider);
+        boolean leftToRight = MetalUtils.isLeftToRight(c);
 
         g.translate( x, y );
 
         // Draw the frame
-        if ( slider.hasFocus() ) {
+        if ( c.hasFocus() ) {
             g.setColor( MetalLookAndFeel.getPrimaryControlInfo() );
         }
         else {
-            g.setColor( slider.isEnabled() ? MetalLookAndFeel.getPrimaryControlInfo() :
+            g.setColor( c.isEnabled() ? MetalLookAndFeel.getPrimaryControlInfo() :
                                              MetalLookAndFeel.getControlDarkShadow() );
         }
 
@@ -2309,7 +2307,7 @@ private static class VerticalSliderThumbIcon implements Icon, Serializable, UIRe
         }
 
         // Fill in the background
-        if ( slider.hasFocus() ) {
+        if ( c.hasFocus() ) {
             g.setColor( c.getForeground() );
         }
         else {
@@ -2338,8 +2336,8 @@ private static class VerticalSliderThumbIcon implements Icon, Serializable, UIRe
 
         // Draw the bumps
         int offset = (leftToRight) ? 2 : 8;
-        if ( slider.isEnabled() ) {
-            if ( slider.hasFocus() ) {
+        if ( c.isEnabled() ) {
+            if ( c.hasFocus() ) {
                 primaryBumps.paintIcon( c, g, offset, 2 );
             }
             else {
@@ -2348,8 +2346,8 @@ private static class VerticalSliderThumbIcon implements Icon, Serializable, UIRe
         }
 
         // Draw the highlight
-        if ( slider.isEnabled() ) {
-            g.setColor( slider.hasFocus() ? MetalLookAndFeel.getPrimaryControl()
+        if ( c.isEnabled() ) {
+            g.setColor( c.hasFocus() ? MetalLookAndFeel.getPrimaryControl()
                         : MetalLookAndFeel.getControlHighlight() );
             if (leftToRight) {
                 g.drawLine( 1, 1, 8, 1 );
@@ -2389,16 +2387,14 @@ private static class HorizontalSliderThumbIcon implements Icon, Serializable, UI
     }
 
     public void paintIcon( Component c, Graphics g, int x, int y ) {
-        JSlider slider = (JSlider)c;
-
         g.translate( x, y );
 
         // Draw the frame
-        if ( slider.hasFocus() ) {
+        if ( c.hasFocus() ) {
             g.setColor( MetalLookAndFeel.getPrimaryControlInfo() );
         }
         else {
-            g.setColor( slider.isEnabled() ? MetalLookAndFeel.getPrimaryControlInfo() :
+            g.setColor( c.isEnabled() ? MetalLookAndFeel.getPrimaryControlInfo() :
                                              MetalLookAndFeel.getControlDarkShadow() );
         }
 
@@ -2409,7 +2405,7 @@ private static class HorizontalSliderThumbIcon implements Icon, Serializable, UI
         g.drawLine(  7,15 , 14,8 );  // right slant
 
         // Fill in the background
-        if ( slider.hasFocus() ) {
+        if ( c.hasFocus() ) {
             g.setColor( c.getForeground() );
         }
         else {
@@ -2425,8 +2421,8 @@ private static class HorizontalSliderThumbIcon implements Icon, Serializable, UI
         g.drawLine( 7,14 ,  7,14 );
 
         // Draw the bumps
-        if ( slider.isEnabled() ) {
-            if ( slider.hasFocus() ) {
+        if ( c.isEnabled() ) {
+            if ( c.hasFocus() ) {
                 primaryBumps.paintIcon( c, g, 2, 2 );
             }
             else {
@@ -2435,8 +2431,8 @@ private static class HorizontalSliderThumbIcon implements Icon, Serializable, UI
         }
 
         // Draw the highlight
-        if ( slider.isEnabled() ) {
-            g.setColor( slider.hasFocus() ? MetalLookAndFeel.getPrimaryControl()
+        if ( c.isEnabled() ) {
+            g.setColor( c.hasFocus() ? MetalLookAndFeel.getPrimaryControl()
                         : MetalLookAndFeel.getControlHighlight() );
             g.drawLine( 1, 1, 13, 1 );
             g.drawLine( 1, 1, 1, 8 );
