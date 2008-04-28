@@ -584,7 +584,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
 
       const Type *field_type;
       // The next code is taken from Parse::do_get_xxx().
-      if (basic_elem_type == T_OBJECT) {
+      if (basic_elem_type == T_OBJECT || basic_elem_type == T_ARRAY) {
         if (!elem_type->is_loaded()) {
           field_type = TypeInstPtr::BOTTOM;
         } else if (field != NULL && field->is_constant()) {
@@ -596,6 +596,10 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
           assert(field_type != NULL, "field singleton type must be consistent");
         } else {
           field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
+        }
+        if (UseCompressedOops) {
+          field_type = field_type->is_oopptr()->make_narrowoop();
+          basic_elem_type = T_NARROWOOP;
         }
       } else {
         field_type = Type::get_const_basic_type(basic_elem_type);
@@ -658,6 +662,13 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
         }
 #endif
         return false;
+      }
+      if (UseCompressedOops && field_type->isa_narrowoop()) {
+        // Enable "DecodeN(EncodeP(Allocate)) --> Allocate" transformation
+        // to be able scalar replace the allocation.
+        _igvn.set_delay_transform(false);
+        field_val = DecodeNNode::decode(&_igvn, field_val);
+        _igvn.set_delay_transform(true);
       }
       sfpt->add_req(field_val);
     }

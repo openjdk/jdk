@@ -913,11 +913,12 @@ class StubGenerator: public StubCodeGenerator {
   // Stack after saving c_rarg3:
   //    [tos + 0]: saved c_rarg3
   //    [tos + 1]: saved c_rarg2
-  //    [tos + 2]: saved flags
-  //    [tos + 3]: return address
-  //  * [tos + 4]: error message (char*)
-  //  * [tos + 5]: object to verify (oop)
-  //  * [tos + 6]: saved rax - saved by caller and bashed
+  //    [tos + 2]: saved r12 (several TemplateTable methods use it)
+  //    [tos + 3]: saved flags
+  //    [tos + 4]: return address
+  //  * [tos + 5]: error message (char*)
+  //  * [tos + 6]: object to verify (oop)
+  //  * [tos + 7]: saved rax - saved by caller and bashed
   //  * = popped on exit
   address generate_verify_oop() {
     StubCodeMark mark(this, "StubRoutines", "verify_oop");
@@ -928,12 +929,24 @@ class StubGenerator: public StubCodeGenerator {
     __ pushfq();
     __ incrementl(ExternalAddress((address) StubRoutines::verify_oop_count_addr()));
 
+    __ pushq(r12);
+
     // save c_rarg2 and c_rarg3
     __ pushq(c_rarg2);
     __ pushq(c_rarg3);
 
+    enum {
+           // After previous pushes.
+           oop_to_verify = 6 * wordSize,
+           saved_rax     = 7 * wordSize,
+
+           // Before the call to MacroAssembler::debug(), see below.
+           return_addr   = 16 * wordSize,
+           error_msg     = 17 * wordSize
+    };
+
     // get object
-    __ movq(rax, Address(rsp, 5 * wordSize));
+    __ movq(rax, Address(rsp, oop_to_verify));
 
     // make sure object is 'reasonable'
     __ testq(rax, rax);
@@ -945,6 +958,9 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(c_rarg3, (int64_t) Universe::verify_oop_bits());
     __ cmpq(c_rarg2, c_rarg3);
     __ jcc(Assembler::notZero, error);
+
+    // set r12 to heapbase for load_klass()
+    __ reinit_heapbase();
 
     // make sure klass is 'reasonable'
     __ load_klass(rax, rax);  // get klass
@@ -971,40 +987,45 @@ class StubGenerator: public StubCodeGenerator {
 
     // return if everything seems ok
     __ bind(exit);
-    __ movq(rax, Address(rsp, 6 * wordSize));    // get saved rax back
-    __ popq(c_rarg3);                              // restore c_rarg3
-    __ popq(c_rarg2);                              // restore c_rarg2
+    __ movq(rax, Address(rsp, saved_rax));       // get saved rax back
+    __ popq(c_rarg3);                            // restore c_rarg3
+    __ popq(c_rarg2);                            // restore c_rarg2
+    __ popq(r12);                                // restore r12
     __ popfq();                                  // restore flags
     __ ret(3 * wordSize);                        // pop caller saved stuff
 
     // handle errors
     __ bind(error);
-    __ movq(rax, Address(rsp, 6 * wordSize));    // get saved rax back
-    __ popq(c_rarg3);                              // get saved c_rarg3 back
-    __ popq(c_rarg2);                              // get saved c_rarg2 back
+    __ movq(rax, Address(rsp, saved_rax));       // get saved rax back
+    __ popq(c_rarg3);                            // get saved c_rarg3 back
+    __ popq(c_rarg2);                            // get saved c_rarg2 back
+    __ popq(r12);                                // get saved r12 back
     __ popfq();                                  // get saved flags off stack --
                                                  // will be ignored
 
     __ pushaq();                                 // push registers
                                                  // (rip is already
                                                  // already pushed)
-    // debug(char* msg, int64_t regs[])
+    // debug(char* msg, int64_t pc, int64_t regs[])
     // We've popped the registers we'd saved (c_rarg3, c_rarg2 and flags), and
     // pushed all the registers, so now the stack looks like:
     //     [tos +  0] 16 saved registers
     //     [tos + 16] return address
-    //     [tos + 17] error message (char*)
+    //   * [tos + 17] error message (char*)
+    //   * [tos + 18] object to verify (oop)
+    //   * [tos + 19] saved rax - saved by caller and bashed
+    //   * = popped on exit
 
-    __ movq(c_rarg0, Address(rsp, 17 * wordSize)); // pass address of error message
-    __ movq(c_rarg1, rsp);                         // pass address of regs on stack
+    __ movq(c_rarg0, Address(rsp, error_msg));   // pass address of error message
+    __ movq(c_rarg1, Address(rsp, return_addr)); // pass return address
+    __ movq(c_rarg2, rsp);                       // pass address of regs on stack
     __ movq(r12, rsp);                           // remember rsp
     __ subq(rsp, frame::arg_reg_save_area_bytes);// windows
     __ andq(rsp, -16);                           // align stack as required by ABI
     BLOCK_COMMENT("call MacroAssembler::debug");
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, MacroAssembler::debug)));
     __ movq(rsp, r12);                           // restore rsp
-    __ reinit_heapbase();                        // r12 is heapbase
-    __ popaq();                                  // pop registers
+    __ popaq();                                  // pop registers (includes r12)
     __ ret(3 * wordSize);                        // pop caller saved stuff
 
     return start;
@@ -1038,7 +1059,7 @@ class StubGenerator: public StubCodeGenerator {
     assert_different_registers(Rtmp, Rint);
     __ movslq(Rtmp, Rint);
     __ cmpq(Rtmp, Rint);
-    __ jccb(Assembler::equal, L);
+    __ jcc(Assembler::equal, L);
     __ stop("high 32-bits of int value are not 0");
     __ bind(L);
 #endif

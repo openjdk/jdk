@@ -2229,6 +2229,8 @@ JRT_END
 #ifndef PRODUCT
 bool AdapterHandlerLibrary::contains(CodeBlob* b) {
 
+  if (_handlers == NULL) return false;
+
   for (int i = 0 ; i < _handlers->length() ; i++) {
     AdapterHandlerEntry* a = get_entry(i);
     if ( a != NULL && b == CodeCache::find_blob(a->get_i2c_entry()) ) return true;

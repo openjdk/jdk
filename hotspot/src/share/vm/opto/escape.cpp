@@ -215,6 +215,10 @@ void ConnectionGraph::PointsTo(VectorSet &ptset, Node * n, PhaseTransform *phase
   VectorSet visited(Thread::current()->resource_area());
   GrowableArray<uint>  worklist;
 
+#ifdef ASSERT
+  Node *orig_n = n;
+#endif
+
   n = n->uncast();
   PointsToNode  npt = _nodes->at_grow(n->_idx);
 
@@ -223,8 +227,14 @@ void ConnectionGraph::PointsTo(VectorSet &ptset, Node * n, PhaseTransform *phase
     ptset.set(n->_idx);
     return;
   }
-  assert(npt._node != NULL, "unregistered node");
-
+#ifdef ASSERT
+  if (npt._node == NULL) {
+    if (orig_n != n)
+      orig_n->dump();
+    n->dump();
+    assert(npt._node != NULL, "unregistered node");
+  }
+#endif
   worklist.push(n->_idx);
   while(worklist.length() > 0) {
     int ni = worklist.pop();
@@ -266,7 +276,7 @@ void ConnectionGraph::remove_deferred(uint ni, GrowableArray<uint>* deferred_edg
   PointsToNode *ptn = ptnode_adr(ni);
 
   // Mark current edges as visited and move deferred edges to separate array.
-  for (; i < ptn->edge_count(); i++) {
+  while (i < ptn->edge_count()) {
     uint t = ptn->edge_target(i);
 #ifdef ASSERT
     assert(!visited->test_set(t), "expecting no duplications");
@@ -276,6 +286,8 @@ void ConnectionGraph::remove_deferred(uint ni, GrowableArray<uint>* deferred_edg
     if (ptn->edge_type(i) == PointsToNode::DeferredEdge) {
       ptn->remove_edge(t, PointsToNode::DeferredEdge);
       deferred_edges->append(t);
+    } else {
+      i++;
     }
   }
   for (int next = 0; next < deferred_edges->length(); ++next) {
@@ -1716,6 +1728,8 @@ void ConnectionGraph::record_for_escape_analysis(Node *n, PhaseTransform *phase)
     }
     case Op_CastPP:
     case Op_CheckCastPP:
+    case Op_EncodeP:
+    case Op_DecodeN:
     {
       add_node(n, PointsToNode::LocalVar, PointsToNode::UnknownEscape, false);
       int ti = n->in(1)->_idx;
@@ -1743,12 +1757,6 @@ void ConnectionGraph::record_for_escape_analysis(Node *n, PhaseTransform *phase)
       add_node(n, PointsToNode::JavaObject, es, true);
       break;
     }
-    case Op_CreateEx:
-    {
-      // assume that all exception objects globally escape
-      add_node(n, PointsToNode::JavaObject, PointsToNode::GlobalEscape, true);
-      break;
-    }
     case Op_ConN:
     {
       // assume all narrow oop constants globally escape except for null
@@ -1759,6 +1767,12 @@ void ConnectionGraph::record_for_escape_analysis(Node *n, PhaseTransform *phase)
         es = PointsToNode::GlobalEscape;
 
       add_node(n, PointsToNode::JavaObject, es, true);
+      break;
+    }
+    case Op_CreateEx:
+    {
+      // assume that all exception objects globally escape
+      add_node(n, PointsToNode::JavaObject, PointsToNode::GlobalEscape, true);
       break;
     }
     case Op_LoadKlass:
@@ -1976,10 +1990,11 @@ void ConnectionGraph::build_connection_graph(Node *n, PhaseTransform *phase) {
       break;
     }
     case Op_LoadP:
+    case Op_LoadN:
     {
       const Type *t = phase->type(n);
 #ifdef ASSERT
-      if (t->isa_ptr() == NULL)
+      if (!t->isa_narrowoop() && t->isa_ptr() == NULL)
         assert(false, "Op_LoadP");
 #endif
 
@@ -2060,11 +2075,16 @@ void ConnectionGraph::build_connection_graph(Node *n, PhaseTransform *phase) {
       break;
     }
     case Op_StoreP:
+    case Op_StoreN:
     case Op_StorePConditional:
     case Op_CompareAndSwapP:
+    case Op_CompareAndSwapN:
     {
       Node *adr = n->in(MemNode::Address);
       const Type *adr_type = phase->type(adr);
+      if (adr_type->isa_narrowoop()) {
+        adr_type = adr_type->is_narrowoop()->make_oopptr();
+      }
 #ifdef ASSERT
       if (!adr_type->isa_oopptr())
         assert(phase->type(adr) == TypeRawPtr::NOTNULL, "Op_StoreP");
