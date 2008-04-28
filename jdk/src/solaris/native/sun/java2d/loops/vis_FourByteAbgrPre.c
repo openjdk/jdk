@@ -181,6 +181,7 @@ void ADD_SUFF(FourByteAbgrPreDrawGlyphListAA)(SurfaceDataRasInfo * pRasInfo,
     d_half = vis_to_double_dup((1 << (16 + 6)) | (1 << 6));
 
     srcG_f = vis_to_float(argbcolor);
+    ARGB2ABGR_FL(srcG_f);
 
     for (glyphCounter = 0; glyphCounter < totalGlyphs; glyphCounter++) {
         const jubyte *pixels;
@@ -238,8 +239,33 @@ void ADD_SUFF(FourByteAbgrPreDrawGlyphListAA)(SurfaceDataRasInfo * pRasInfo,
             mlib_u8  *src = (void*)pixels;
             mlib_s32 *dst, *dst_end;
             mlib_u8  *dst8;
+            mlib_u8* dst_start = dstBase;
 
-            ADD_SUFF(FourByteAbgrPreToIntArgbConvert)(dstBase, pbuff, width, 1,
+            /*
+             * Typically the inner loop here works on Argb input data, an
+             * Argb color, and produces ArgbPre output data.  To use that
+             * standard approach we would need a FourByteAbgrPre to IntArgb
+             * converter for the front end and an IntArgbPre to FourByteAbgrPre
+             * converter for the back end.  The converter exists for the
+             * front end, but it is a workaround implementation that uses a 2
+             * stage conversion and an intermediate buffer that is allocated
+             * on every call.  The converter for the back end doesn't really
+             * exist, but we could reuse the IntArgb to FourByteAbgr converter
+             * to do the same work - at the cost of swapping the components as
+             * we copy the data back.  All of this is more work than we really
+             * need so we use an alternate procedure:
+             * - Copy the data into an int-aligned temporary buffer (if needed)
+             * - Convert the data from FourByteAbgrPre to IntAbgr by using the
+             * IntArgbPre to IntArgb converter in the int-aligned buffer.
+             * - Swap the color data to Abgr so that the inner loop goes from
+             * IntAbgr data to IntAbgrPre data
+             * - Simply copy the IntAbgrPre data back into place.
+             */
+            if (((mlib_s32)dstBase) & 3) {
+                COPY_NA(dstBase, pbuff, width*sizeof(mlib_s32));
+                dst_start = pbuff;
+            }
+            ADD_SUFF(IntArgbPreToIntArgbConvert)(dst_start, pbuff, width, 1,
                                                       pRasInfo, pRasInfo,
                                                       pPrim, pCompInfo);
 
@@ -283,9 +309,7 @@ void ADD_SUFF(FourByteAbgrPreDrawGlyphListAA)(SurfaceDataRasInfo * pRasInfo,
                 dst++;
             }
 
-            ADD_SUFF(IntArgbToFourByteAbgrPreConvert)(pbuff, dstBase, width, 1,
-                                                      pRasInfo, pRasInfo,
-                                                      pPrim, pCompInfo);
+            COPY_NA(pbuff, dstBase, width*sizeof(mlib_s32));
 
             src = (void*)pixels;
             dst8 = (void*)dstBase;
