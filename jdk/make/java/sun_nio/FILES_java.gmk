@@ -33,6 +33,7 @@ FILES_java = \
     sun/nio/cs/AbstractCharsetProvider.java \
     sun/nio/cs/HistoricallyNamedCharset.java \
     sun/nio/cs/Surrogate.java \
+    sun/nio/cs/CharsetMapping.java \
     sun/nio/cs/SingleByteEncoder.java \
     sun/nio/cs/SingleByteDecoder.java \
     sun/nio/cs/UnicodeEncoder.java \
