@@ -1573,6 +1573,11 @@ public class BasicSliderUI extends SliderUI{
 
             // Clicked in the Thumb area?
             if (thumbRect.contains(currentMouseX, currentMouseY)) {
+                if (UIManager.getBoolean("Slider.onlyLeftMouseButtonDrag")
+                        && !SwingUtilities.isLeftMouseButton(e)) {
+                    return;
+                }
+
                 switch (slider.getOrientation()) {
                 case JSlider.VERTICAL:
                     offset = currentMouseY - thumbRect.y;
@@ -1584,6 +1589,11 @@ public class BasicSliderUI extends SliderUI{
                 isDragging = true;
                 return;
             }
+
+            if (!SwingUtilities.isLeftMouseButton(e)) {
+                return;
+            }
+
             isDragging = false;
             slider.setValueIsAdjusting(true);
 
