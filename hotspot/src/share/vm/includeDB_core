@@ -3181,6 +3181,7 @@ os_<os_family>.cpp                      events.hpp
 os_<os_family>.cpp                      extendedPC.hpp
 os_<os_family>.cpp                      filemap.hpp
 os_<os_family>.cpp                      globals.hpp
+os_<os_family>.cpp                      growableArray.hpp
 os_<os_family>.cpp                      hpi.hpp
 os_<os_family>.cpp                      icBuffer.hpp
 os_<os_family>.cpp                      interfaceSupport.hpp

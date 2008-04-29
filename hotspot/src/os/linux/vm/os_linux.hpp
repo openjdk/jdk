@@ -59,6 +59,8 @@ class Linux {
   static bool _is_NPTL;
   static bool _supports_fast_thread_cpu_time;
 
+  static GrowableArray<int>* _cpu_to_node;
+
  protected:
 
   static julong _physical_memory;
@@ -79,8 +81,9 @@ class Linux {
   static void set_is_LinuxThreads()           { _is_NPTL = false; }
   static void set_is_floating_stack()         { _is_floating_stack = true; }
 
+  static void rebuild_cpu_to_node_map();
+  static GrowableArray<int>* cpu_to_node()    { return _cpu_to_node; }
  public:
-
   static void init_thread_fpu_state();
   static int  get_fpu_control_word();
   static void set_fpu_control_word(int fpu_control);
@@ -143,6 +146,7 @@ class Linux {
   static bool is_floating_stack()             { return _is_floating_stack; }
 
   static void libpthread_init();
+  static void libnuma_init();
 
   // Minimum stack size a thread can be created with (allowing
   // the VM to completely create the thread and enter user code)
@@ -229,6 +233,38 @@ class Linux {
 
     #undef SR_SUSPENDED
   };
+
+private:
+  typedef int (*sched_getcpu_func_t)(void);
+  typedef int (*numa_node_to_cpus_func_t)(int node, unsigned long *buffer, int bufferlen);
+  typedef int (*numa_max_node_func_t)(void);
+  typedef int (*numa_available_func_t)(void);
+  typedef int (*numa_tonode_memory_func_t)(void *start, size_t size, int node);
+
+
+  static sched_getcpu_func_t _sched_getcpu;
+  static numa_node_to_cpus_func_t _numa_node_to_cpus;
+  static numa_max_node_func_t _numa_max_node;
+  static numa_available_func_t _numa_available;
+  static numa_tonode_memory_func_t _numa_tonode_memory;
+
+  static void set_sched_getcpu(sched_getcpu_func_t func) { _sched_getcpu = func; }
+  static void set_numa_node_to_cpus(numa_node_to_cpus_func_t func) { _numa_node_to_cpus = func; }
+  static void set_numa_max_node(numa_max_node_func_t func) { _numa_max_node = func; }
+  static void set_numa_available(numa_available_func_t func) { _numa_available = func; }
+  static void set_numa_tonode_memory(numa_tonode_memory_func_t func) { _numa_tonode_memory = func; }
+
+public:
+  static int sched_getcpu()  { return _sched_getcpu != NULL ? _sched_getcpu() : -1; }
+  static int numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen) {
+    return _numa_node_to_cpus != NULL ? _numa_node_to_cpus(node, buffer, bufferlen) : -1;
+  }
+  static int numa_max_node() { return _numa_max_node != NULL ? _numa_max_node() : -1; }
+  static int numa_available() { return _numa_available != NULL ? _numa_available() : -1; }
+  static int numa_tonode_memory(void *start, size_t size, int node) {
+    return _numa_tonode_memory != NULL ? _numa_tonode_memory(start, size, node) : -1;
+  }
+  static int get_node_by_cpu(int cpu_id);
 };
 
 

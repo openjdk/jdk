@@ -33,6 +33,7 @@ class JavaThread;
 class Event;
 class DLL;
 class FileHandle;
+template<class E> class GrowableArray;
 
 // %%%%% Moved ThreadState, START_FN, OSThread to new osThread.hpp. -- Rose
 
@@ -206,7 +207,9 @@ class os: AllStatic {
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // NUMA-specific interface
-  static void   numa_make_local(char *addr, size_t bytes);
+  static bool   numa_has_static_binding();
+  static bool   numa_has_group_homing();
+  static void   numa_make_local(char *addr, size_t bytes, int lgrp_hint);
   static void   numa_make_global(char *addr, size_t bytes);
   static size_t numa_get_groups_num();
   static size_t numa_get_leaf_groups(int *ids, size_t size);
