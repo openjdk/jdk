@@ -290,7 +290,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
 
         Object unselectedTabBackground = new UIDefaults.LazyValue() {
             public Object createValue(UIDefaults table) {
-                Color c = (Color)table.getColor("control");
+                Color c = table.getColor("control");
                 return new ColorUIResource(Math.max((int)(c.getRed()*.85),0),
                                            Math.max((int)(c.getGreen()*.85),0),
                                            Math.max((int)(c.getBlue()*.85),0));
@@ -299,7 +299,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
 
         Object unselectedTabForeground = new UIDefaults.LazyValue() {
             public Object createValue(UIDefaults table) {
-                Color c = (Color)table.getColor("controlText");
+                Color c = table.getColor("controlText");
                 return new ColorUIResource(Math.max((int)(c.getRed()*.85),0),
                                            Math.max((int)(c.getGreen()*.85),0),
                                            Math.max((int)(c.getBlue()*.85),0));
@@ -308,7 +308,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
 
         Object unselectedTabShadow = new UIDefaults.LazyValue() {
             public Object createValue(UIDefaults table) {
-                Color c = (Color)table.getColor("control");
+                Color c = table.getColor("control");
                 Color base = new Color(Math.max((int)(c.getRed()*.85),0),
                                        Math.max((int)(c.getGreen()*.85),0),
                                        Math.max((int)(c.getBlue()*.85),0));
@@ -318,7 +318,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
 
         Object unselectedTabHighlight = new UIDefaults.LazyValue() {
             public Object createValue(UIDefaults table) {
-                Color c = (Color)table.getColor("control");
+                Color c = table.getColor("control");
                 Color base = new Color(Math.max((int)(c.getRed()*.85),0),
                                        Math.max((int)(c.getGreen()*.85),0),
                                        Math.max((int)(c.getBlue()*.85),0));
