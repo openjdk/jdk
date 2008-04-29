@@ -105,10 +105,19 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type* *result2) {
   if (GenerateRangeChecks && need_range_check) {
     // Range is constant in array-oop, so we can use the original state of mem
     Node* len = load_array_length(ary);
-    // Test length vs index (standard trick using unsigned compare)
-    Node* chk = _gvn.transform( new (C, 3) CmpUNode(idx, len) );
-    BoolTest::mask btest = BoolTest::lt;
-    Node* tst = _gvn.transform( new (C, 2) BoolNode(chk, btest) );
+    Node* tst;
+    if (sizetype->_hi <= 0) {
+      // If the greatest array bound is negative, we can conclude that we're
+      // compiling unreachable code, but the unsigned compare trick used below
+      // only works with non-negative lengths.  Instead, hack "tst" to be zero so
+      // the uncommon_trap path will always be taken.
+      tst = _gvn.intcon(0);
+    } else {
+      // Test length vs index (standard trick using unsigned compare)
+      Node* chk = _gvn.transform( new (C, 3) CmpUNode(idx, len) );
+      BoolTest::mask btest = BoolTest::lt;
+      tst = _gvn.transform( new (C, 2) BoolNode(chk, btest) );
+    }
     // Branch to failure if out of bounds
     { BuildCutout unless(this, tst, PROB_MAX);
       if (C->allow_range_check_smearing()) {
