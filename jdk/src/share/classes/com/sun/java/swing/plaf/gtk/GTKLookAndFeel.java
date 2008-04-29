@@ -982,7 +982,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
                              "LEFT", "positiveUnitIncrement",
                           "KP_LEFT", "positiveUnitIncrement",
                          }),
-
+            "Slider.onlyLeftMouseButtonDrag", Boolean.FALSE,
 
             "Spinner.ancestorInputMap",
                new UIDefaults.LazyInputMap(new Object[] {
