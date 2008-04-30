@@ -260,6 +260,7 @@ public class Win32GraphicsEnvironment
         try {
             while (!found && parser.hasMoreTokens()) {
                 String newPath = parser.nextToken();
+                boolean ujr = newPath.equals(jreFontDirName);
                 File theFile = new File(newPath, fontFileName);
                 if (theFile.canRead()) {
                     found = true;
@@ -267,11 +268,11 @@ public class Win32GraphicsEnvironment
                     if (defer) {
                         FontManager.registerDeferredFont(fontFileName, path,
                                                          nativeNames,
-                                                         fontFormat, true,
+                                                         fontFormat, ujr,
                                                          fontRank);
                     } else {
                         FontManager.registerFontFile(path, nativeNames,
-                                                     fontFormat, true,
+                                                     fontFormat, ujr,
                                                      fontRank);
                     }
                     break;

@@ -244,9 +244,11 @@ public final class FontManager {
                osName = System.getProperty("os.name", "unknownOS");
                isSolaris = osName.startsWith("SunOS");
 
-               if (isSolaris) {
-                   String t2kStr= System.getProperty("sun.java2d.font.scaler");
+               String t2kStr = System.getProperty("sun.java2d.font.scaler");
+               if (t2kStr != null) {
                    useT2K = "t2k".equals(t2kStr);
+               }
+               if (isSolaris) {
                    String version = System.getProperty("os.version", "unk");
                    isSolaris8 = version.equals("5.8");
                    isSolaris9 = version.equals("5.9");
