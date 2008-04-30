@@ -45,9 +45,9 @@ class java_lang_String : AllStatic {
  private:
   enum {
     hc_value_offset  = 0,
-    hc_offset_offset = 1,
-    hc_count_offset  = 2,
-    hc_hash_offset   = 3
+    hc_offset_offset = 1
+    //hc_count_offset = 2  -- not a word-scaled offset
+    //hc_hash_offset  = 3  -- not a word-scaled offset
   };
 
   static int value_offset;
@@ -149,6 +149,9 @@ class java_lang_Class : AllStatic {
   // Conversion
   static klassOop as_klassOop(oop java_class);
   // Testing
+  static bool is_instance(oop obj) {
+    return obj != NULL && obj->klass() == SystemDictionary::class_klass();
+  }
   static bool is_primitive(oop java_class);
   static BasicType primitive_type(oop java_class);
   static oop primitive_mirror(BasicType t);
@@ -651,13 +654,16 @@ class java_lang_boxing_object: AllStatic {
   };
   static int value_offset;
 
-  static oop initialize_and_allocate(klassOop klass, TRAPS);
+  static oop initialize_and_allocate(BasicType type, TRAPS);
  public:
   // Allocation. Returns a boxed value, or NULL for invalid type.
   static oop create(BasicType type, jvalue* value, TRAPS);
   // Accessors. Returns the basic type being boxed, or T_ILLEGAL for invalid oop.
   static BasicType get_value(oop box, jvalue* value);
   static BasicType set_value(oop box, jvalue* value);
+  static BasicType basic_type(oop box);
+  static bool is_instance(oop box)                 { return basic_type(box) != T_ILLEGAL; }
+  static bool is_instance(oop box, BasicType type) { return basic_type(box) == type; }
 
   static int value_offset_in_bytes() { return value_offset; }
 
@@ -921,6 +927,7 @@ class JavaClasses : AllStatic {
  private:
   static bool check_offset(const char *klass_name, int offset, const char *field_name, const char* field_sig) PRODUCT_RETURN0;
   static bool check_static_offset(const char *klass_name, int hardcoded_offset, const char *field_name, const char* field_sig) PRODUCT_RETURN0;
+  static bool check_constant(const char *klass_name, int constant, const char *field_name, const char* field_sig) PRODUCT_RETURN0;
  public:
   static void compute_hard_coded_offsets();
   static void compute_offsets();
