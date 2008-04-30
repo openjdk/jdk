@@ -111,7 +111,7 @@ public class KrbCredInfo {
      * @exception RealmException if an error occurs while parsing a Realm object.
      */
     public KrbCredInfo(DerValue encoding)
-        throws Asn1Exception, IOException, RealmException{
+            throws Asn1Exception, IOException, RealmException{
         if (encoding.getTag() != DerValue.tag_Sequence) {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
         }
@@ -160,25 +160,25 @@ public class KrbCredInfo {
         Vector<DerValue> v = new Vector<DerValue> ();
         v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x00), key.asn1Encode()));
         if (prealm != null)
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x01), prealm.asn1Encode()));
+            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x01), prealm.asn1Encode()));
         if (pname != null)
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x02), pname.asn1Encode()));
+            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x02), pname.asn1Encode()));
         if (flags != null)
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x03), flags.asn1Encode()));
+            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x03), flags.asn1Encode()));
         if (authtime != null)
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x04), authtime.asn1Encode()));
+            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x04), authtime.asn1Encode()));
         if (starttime != null)
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x05), starttime.asn1Encode()));
+            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x05), starttime.asn1Encode()));
         if (endtime != null)
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x06), endtime.asn1Encode()));
+            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x06), endtime.asn1Encode()));
         if (renewTill != null)
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x07), renewTill.asn1Encode()));
+            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x07), renewTill.asn1Encode()));
         if (srealm != null)
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x08), srealm.asn1Encode()));
+            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x08), srealm.asn1Encode()));
         if (sname != null)
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x09), sname.asn1Encode()));
+            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x09), sname.asn1Encode()));
         if (caddr != null)
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x0A), caddr.asn1Encode()));
+            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x0A), caddr.asn1Encode()));
         DerValue der[] = new DerValue[v.size()];
         v.copyInto(der);
         DerOutputStream out = new DerOutputStream();

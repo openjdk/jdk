@@ -731,7 +731,8 @@ class Socket implements java.io.Closeable {
      * then this method will continue to return the connected address
      * after the socket is closed.
      *
-     * @return a <code>SocketAddress</code> reprensenting the remote endpoint of this
+
+     * @return a <code>SocketAddress</code> representing the remote endpoint of this
      *         socket, or <code>null</code> if it is not connected yet.
      * @see #getInetAddress()
      * @see #getPort()
@@ -847,9 +848,9 @@ class Socket implements java.io.Closeable {
         final Socket s = this;
         InputStream is = null;
         try {
-            is = (InputStream)
-                AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() throws IOException {
+            is = AccessController.doPrivileged(
+                new PrivilegedExceptionAction<InputStream>() {
+                    public InputStream run() throws IOException {
                         return impl.getInputStream();
                     }
                 });
@@ -887,9 +888,9 @@ class Socket implements java.io.Closeable {
         final Socket s = this;
         OutputStream os = null;
         try {
-            os = (OutputStream)
-                AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() throws IOException {
+            os = AccessController.doPrivileged(
+                new PrivilegedExceptionAction<OutputStream>() {
+                    public OutputStream run() throws IOException {
                         return impl.getOutputStream();
                     }
                 });

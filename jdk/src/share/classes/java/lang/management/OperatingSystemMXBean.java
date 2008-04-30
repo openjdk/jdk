@@ -44,10 +44,14 @@ package java.lang.management;
  *      <tt>java.lang:type=OperatingSystem</tt>}
  * </blockquote>
  *
+ * It can be obtained by calling the
+ * {@link PlatformManagedObject#getObjectName} method.
+ *
  * <p> This interface defines several convenient methods for accessing
  * system properties about the operating system on which the Java
  * virtual machine is running.
  *
+ * @see ManagementFactory#getPlatformMXBeans(Class)
  * @see <a href="../../../javax/management/package-summary.html">
  *      JMX Specification.</a>
  * @see <a href="package-summary.html#examples">
@@ -56,7 +60,7 @@ package java.lang.management;
  * @author  Mandy Chung
  * @since   1.5
  */
-public interface OperatingSystemMXBean {
+public interface OperatingSystemMXBean extends PlatformManagedObject {
     /**
      * Returns the operating system name.
      * This method is equivalent to <tt>System.getProperty("os.name")</tt>.

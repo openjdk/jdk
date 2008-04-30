@@ -143,11 +143,41 @@ Handle java_lang_String::create_from_platform_dependent_str(const char* str, TRA
   jstring js = NULL;
   { JavaThread* thread = (JavaThread*)THREAD;
     assert(thread->is_Java_thread(), "must be java thread");
-    ThreadToNativeFromVM ttn(thread);
     HandleMark hm(thread);
+    ThreadToNativeFromVM ttn(thread);
     js = (_to_java_string_fn)(thread->jni_environment(), str);
   }
   return Handle(THREAD, JNIHandles::resolve(js));
+}
+
+// Converts a Java String to a native C string that can be used for
+// native OS calls.
+char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
+
+  typedef char* (*to_platform_string_fn_t)(JNIEnv*, jstring, bool*);
+  static to_platform_string_fn_t _to_platform_string_fn = NULL;
+
+  if (_to_platform_string_fn == NULL) {
+    void *lib_handle = os::native_java_library();
+    _to_platform_string_fn = CAST_TO_FN_PTR(to_platform_string_fn_t, hpi::dll_lookup(lib_handle, "GetStringPlatformChars"));
+    if (_to_platform_string_fn == NULL) {
+      fatal("GetStringPlatformChars missing");
+    }
+  }
+
+  char *native_platform_string;
+  { JavaThread* thread = (JavaThread*)THREAD;
+    assert(thread->is_Java_thread(), "must be java thread");
+    JNIEnv *env = thread->jni_environment();
+    jstring js = (jstring) JNIHandles::make_local(env, java_string());
+    bool is_copy;
+    HandleMark hm(thread);
+    ThreadToNativeFromVM ttn(thread);
+    native_platform_string = (_to_platform_string_fn)(env, js, &is_copy);
+    assert(is_copy == JNI_TRUE, "is_copy value changed");
+    JNIHandles::destroy_local(js);
+  }
+  return native_platform_string;
 }
 
 Handle java_lang_String::char_converter(Handle java_string, jchar from_char, jchar to_char, TRAPS) {

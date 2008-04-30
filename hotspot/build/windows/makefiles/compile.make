@@ -44,6 +44,10 @@ CPP=cl.exe
 #   /Od       Disable all optimizations
 #
 # NOTE: Normally following any of the above with a '-' will turn off that flag
+#
+# 6655385: For VS2003/2005 we now specify /Oy- (disable frame pointer
+# omission.)  This has little to no effect on performance while vastly
+# improving the quality of crash log stack traces involving jvm.dll.
 
 # These are always used in all compiles
 CPP_FLAGS=/nologo /W3 /WX
@@ -141,14 +145,14 @@ DEBUG_OPT_OPTION     = /Od
 !endif
 
 !if "$(COMPILER_NAME)" == "VS2003"
-PRODUCT_OPT_OPTION   = /O2
-FASTDEBUG_OPT_OPTION = /O2
+PRODUCT_OPT_OPTION   = /O2 /Oy-
+FASTDEBUG_OPT_OPTION = /O2 /Oy-
 DEBUG_OPT_OPTION     = /Od
 !endif
 
 !if "$(COMPILER_NAME)" == "VS2005"
-PRODUCT_OPT_OPTION   = /O2
-FASTDEBUG_OPT_OPTION = /O2
+PRODUCT_OPT_OPTION   = /O2 /Oy-
+FASTDEBUG_OPT_OPTION = /O2 /Oy-
 DEBUG_OPT_OPTION     = /Od
 GX_OPTION = /EHsc
 # This VS2005 compiler has /GS as a default and requires bufferoverflowU.lib 
@@ -165,8 +169,8 @@ CPP_FLAGS=$(CPP_FLAGS) /D _CRT_SECURE_NO_DEPRECATE
 
 # Compile for space above time.
 !if "$(Variant)" == "kernel"
-PRODUCT_OPT_OPTION   = /O1
-FASTDEBUG_OPT_OPTION = /O1
+PRODUCT_OPT_OPTION   = /O1 /Oy-
+FASTDEBUG_OPT_OPTION = /O1 /Oy-
 DEBUG_OPT_OPTION     = /Od
 !endif
 

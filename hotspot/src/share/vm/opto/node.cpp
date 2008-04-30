@@ -812,8 +812,7 @@ int Node::disconnect_inputs(Node *n) {
 Node* Node::uncast() const {
   // Should be inline:
   //return is_ConstraintCast() ? uncast_helper(this) : (Node*) this;
-  if (is_ConstraintCast() ||
-      (is_Type() && req() == 2 && Opcode() == Op_CheckCastPP))
+  if (is_ConstraintCast() || is_CheckCastPP())
     return uncast_helper(this);
   else
     return (Node*) this;
@@ -827,7 +826,7 @@ Node* Node::uncast_helper(const Node* p) {
       break;
     } else if (p->is_ConstraintCast()) {
       p = p->in(1);
-    } else if (p->is_Type() && p->Opcode() == Op_CheckCastPP) {
+    } else if (p->is_CheckCastPP()) {
       p = p->in(1);
     } else {
       break;
@@ -1017,6 +1016,101 @@ bool Node::has_special_unique_user() const {
   }
   return false;
 };
+
+//--------------------------find_exact_control---------------------------------
+// Skip Proj and CatchProj nodes chains. Check for Null and Top.
+Node* Node::find_exact_control(Node* ctrl) {
+  if (ctrl == NULL && this->is_Region())
+    ctrl = this->as_Region()->is_copy();
+
+  if (ctrl != NULL && ctrl->is_CatchProj()) {
+    if (ctrl->as_CatchProj()->_con == CatchProjNode::fall_through_index)
+      ctrl = ctrl->in(0);
+    if (ctrl != NULL && !ctrl->is_top())
+      ctrl = ctrl->in(0);
+  }
+
+  if (ctrl != NULL && ctrl->is_Proj())
+    ctrl = ctrl->in(0);
+
+  return ctrl;
+}
+
+//--------------------------dominates------------------------------------------
+// Helper function for MemNode::all_controls_dominate().
+// Check if 'this' control node dominates or equal to 'sub' control node.
+bool Node::dominates(Node* sub, Node_List &nlist) {
+  assert(this->is_CFG(), "expecting control");
+  assert(sub != NULL && sub->is_CFG(), "expecting control");
+
+  Node* orig_sub = sub;
+  nlist.clear();
+  bool this_dominates = false;
+  uint region_input = 0;
+  while (sub != NULL) {        // walk 'sub' up the chain to 'this'
+    if (sub == this) {
+      if (nlist.size() == 0) {
+        // No Region nodes except loops were visited before and the EntryControl
+        // path was taken for loops: it did not walk in a cycle.
+        return true;
+      } else if (!this_dominates) {
+        // Region nodes were visited. Continue walk up to Start or Root
+        // to make sure that it did not walk in a cycle.
+        this_dominates = true; // first time meet
+      } else {
+        return false;          // already met before: walk in a cycle
+      }
+    }
+    if (sub->is_Start() || sub->is_Root())
+      return this_dominates;
+
+    Node* up = sub->find_exact_control(sub->in(0));
+    if (up == NULL || up->is_top())
+      return false; // Conservative answer for dead code
+
+    if (sub == up && sub->is_Loop()) {
+      up = sub->in(0); // in(LoopNode::EntryControl);
+    } else if (sub == up && sub->is_Region()) {
+      uint i = 1;
+      if (nlist.size() == 0) {
+        // No Region nodes (except Loops) were visited before.
+        // Take first valid path on the way up to 'this'.
+      } else if (nlist.at(nlist.size() - 1) == sub) {
+        // This Region node was just visited. Take other path.
+        i = region_input + 1;
+        nlist.pop();
+      } else {
+        // Was this Region node visited before?
+        uint size = nlist.size();
+        for (uint j = 0; j < size; j++) {
+          if (nlist.at(j) == sub) {
+            return false; // The Region node was visited before. Give up.
+          }
+        }
+        // The Region node was not visited before.
+        // Take first valid path on the way up to 'this'.
+      }
+      for (; i < sub->req(); i++) {
+        Node* in = sub->in(i);
+        if (in != NULL && !in->is_top() && in != sub) {
+          break;
+        }
+      }
+      if (i < sub->req()) {
+        nlist.push(sub);
+        up = sub->in(i);
+        region_input = i;
+      }
+    }
+    if (sub == up)
+      return false;    // some kind of tight cycle
+    if (orig_sub == up)
+      return false;    // walk in a cycle
+
+    sub = up;
+  }
+  return false;
+}
 
 //------------------------------remove_dead_region-----------------------------
 // This control node is dead.  Follow the subgraph below it making everything
@@ -1462,96 +1556,47 @@ void Node::dump_out() const {
 }
 
 //------------------------------dump_nodes-------------------------------------
-
-// Helper class  for dump_nodes. Wraps an old and new VectorSet.
-class OldNewVectorSet : public StackObj {
-   Arena*    _node_arena;
-   VectorSet _old_vset, _new_vset;
-   VectorSet* select(Node* n) {
-     return _node_arena->contains(n) ? &_new_vset : &_old_vset;
-   }
-  public:
-  OldNewVectorSet(Arena* node_arena, ResourceArea* area) :
-     _node_arena(node_arena),
-     _old_vset(area), _new_vset(area) {}
-
-  void set(Node* n)      { select(n)->set(n->_idx); }
-  bool test_set(Node* n) { return select(n)->test_set(n->_idx) != 0; }
-  bool test(Node* n)     { return select(n)->test(n->_idx) != 0; }
-  void del(Node* n)      { (*select(n)) >>= n->_idx; }
-};
-
-
 static void dump_nodes(const Node* start, int d, bool only_ctrl) {
   Node* s = (Node*)start; // remove const
   if (NotANode(s)) return;
 
+  uint depth = (uint)ABS(d);
+  int direction = d;
   Compile* C = Compile::current();
-  ResourceArea *area = Thread::current()->resource_area();
-  Node_Stack      stack(area, MIN2((uint)ABS(d), C->unique() >> 1));
-  OldNewVectorSet visited(C->node_arena(), area);
-  OldNewVectorSet on_stack(C->node_arena(), area);
+  GrowableArray <Node *> nstack(C->unique());
 
-  visited.set(s);
-  on_stack.set(s);
-  stack.push(s, 0);
-  if (d < 0) s->dump();
+  nstack.append(s);
+  int begin = 0;
+  int end = 0;
+  for(uint i = 0; i < depth; i++) {
+    end = nstack.length();
+    for(int j = begin; j < end; j++) {
+      Node* tp  = nstack.at(j);
+      uint limit = direction > 0 ? tp->len() : tp->outcnt();
+      for(uint k = 0; k < limit; k++) {
+        Node* n = direction > 0 ? tp->in(k) : tp->raw_out(k);
 
-  // Do a depth first walk over edges
-  while (stack.is_nonempty()) {
-    Node* tp  = stack.node();
-    uint  idx = stack.index();
-    uint  limit = d > 0 ? tp->len() : tp->outcnt();
-    if (idx >= limit) {
-      // no more arcs to visit
-      if (d > 0) tp->dump();
-      on_stack.del(tp);
-      stack.pop();
-    } else {
-      // process the "idx"th arc
-      stack.set_index(idx + 1);
-      Node* n = d > 0 ? tp->in(idx) : tp->raw_out(idx);
+        if (NotANode(n))  continue;
+        // do not recurse through top or the root (would reach unrelated stuff)
+        if (n->is_Root() || n->is_top())  continue;
+        if (only_ctrl && !n->is_CFG()) continue;
 
-      if (NotANode(n))  continue;
-      // do not recurse through top or the root (would reach unrelated stuff)
-      if (n->is_Root() || n->is_top())  continue;
-      if (only_ctrl && !n->is_CFG()) continue;
-
-      if (!visited.test_set(n)) {  // forward arc
-        // Limit depth
-        if (stack.size() < (uint)ABS(d)) {
-          if (d < 0) n->dump();
-          stack.push(n, 0);
-          on_stack.set(n);
-        }
-      } else {  // back or cross arc
-        if (on_stack.test(n)) {  // back arc
-          // print loop if there are no phis or regions in the mix
-          bool found_loop_breaker = false;
-          int k;
-          for (k = stack.size() - 1; k >= 0; k--) {
-            Node* m = stack.node_at(k);
-            if (m->is_Phi() || m->is_Region() || m->is_Root() || m->is_Start()) {
-              found_loop_breaker = true;
-              break;
-            }
-            if (m == n) // Found loop head
-              break;
-          }
-          assert(k >= 0, "n must be on stack");
-
-          if (!found_loop_breaker) {
-            tty->print("# %s LOOP FOUND:", only_ctrl ? "CONTROL" : "DATA");
-            for (int i = stack.size() - 1; i >= k; i--) {
-              Node* m = stack.node_at(i);
-              bool mnew = C->node_arena()->contains(m);
-              tty->print(" %s%d:%s", (mnew? "": "o"), m->_idx, m->Name());
-              if (i != 0) tty->print(d > 0? " <-": " ->");
-            }
-            tty->cr();
-          }
+        bool on_stack = nstack.contains(n);
+        if (!on_stack) {
+          nstack.append(n);
         }
       }
+    }
+    begin = end;
+  }
+  end = nstack.length();
+  if (direction > 0) {
+    for(int j = end-1; j >= 0; j--) {
+      nstack.at(j)->dump();
+    }
+  } else {
+    for(int j = 0; j < end; j++) {
+      nstack.at(j)->dump();
     }
   }
 }

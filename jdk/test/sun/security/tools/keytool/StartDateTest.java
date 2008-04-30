@@ -52,15 +52,15 @@ public class StartDateTest {
         cal.setTime(getIssueDate());
         System.out.println(cal);
         if (cal.get(Calendar.YEAR) != year + 1) {
-            throw new Exception("Function #1 check fails");
+            throw new Exception("Function check #1 fails");
         }
 
         run("-keystore jks -storetype jks -storepass changeit -keypass changeit -alias me " +
                 "-selfcert -startdate +1m");
         cal.setTime(getIssueDate());
         System.out.println(cal);
-        if (cal.get(Calendar.MONTH) != month + 1) {
-            throw new Exception("Function #1 check fails");
+        if (cal.get(Calendar.MONTH) != (month + 1) % 12) {
+            throw new Exception("Function check #2 fails");
         }
 
         new File("jks").delete();

@@ -25,6 +25,8 @@
 
 package com.sun.management;
 
+import java.lang.management.PlatformManagedObject;
+
 /**
  * Diagnostic management interface for the HotSpot Virtual Machine.
  * The diagnostic MBean is registered to the platform MBeanServer
@@ -35,8 +37,13 @@ package com.sun.management;
  * <blockquote>
  *    <tt>com.sun.management:type=HotSpotDiagnostic</tt>
  * </blockquote>
+.*
+ * It can be obtained by calling the
+ * {@link PlatformManagedObject#getObjectName} method.
+ *
+ * @see ManagementFactory#getPlatformMXBeans(Class)
  */
-public interface HotSpotDiagnosticMXBean {
+public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
     /**
      * Dumps the heap to the <tt>outputFile</tt> file in the same
      * format as the hprof heap dump.

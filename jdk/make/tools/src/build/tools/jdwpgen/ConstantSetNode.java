@@ -98,7 +98,7 @@ class ConstantSetNode extends AbstractNamedNode {
         if (constantMap == null) {
             return "";
         }
-        String com = (String) constantMap.get(key);
+        String com = constantMap.get(key);
         if(com == null){
             return "";
         } else {

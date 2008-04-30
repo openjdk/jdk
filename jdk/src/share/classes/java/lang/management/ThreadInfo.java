@@ -26,6 +26,7 @@
 package java.lang.management;
 
 import javax.management.openmbean.CompositeData;
+import sun.management.ManagementFactoryHelper;
 import sun.management.ThreadInfoCompositeData;
 import static java.lang.Thread.State.*;
 
@@ -220,12 +221,9 @@ public class ThreadInfo {
                             LockInfo[] lockedSynchronizers) {
         this.threadId = t.getId();
         this.threadName = t.getName();
-        this.threadState =
-            sun.management.ManagementFactory.toThreadState(state);
-        this.suspended =
-            sun.management.ManagementFactory.isThreadSuspended(state);
-        this.inNative =
-            sun.management.ManagementFactory.isThreadRunningNative(state);
+        this.threadState = ManagementFactoryHelper.toThreadState(state);
+        this.suspended = ManagementFactoryHelper.isThreadSuspended(state);
+        this.inNative = ManagementFactoryHelper.isThreadRunningNative(state);
         this.blockedCount = blockedCount;
         this.blockedTime = blockedTime;
         this.waitedCount = waitedCount;

@@ -73,7 +73,7 @@ public class StringValueExp implements ValueExp   {
      * Returns the string representing the object.
      */
     public String toString()  {
-        return "'" + val + "'";
+        return "'" + val.replace("'", "''") + "'";
     }
 
 

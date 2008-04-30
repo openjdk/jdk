@@ -84,6 +84,9 @@ TREEAPI_PKGS 	 = com.sun.source.tree \
 
 SMARTCARDIO_PKGS = javax.smartcardio
 
+TRACING_PKGS     = com.sun.tracing         \
+                   com.sun.tracing.dtrace
+
 # non-core packages in rt.jar
 NON_CORE_PKGS    = $(DOMAPI_PKGS) \
                    $(MGMT_PKGS) \
@@ -91,4 +94,5 @@ NON_CORE_PKGS    = $(DOMAPI_PKGS) \
                    $(JGSS_PKGS) \
                    $(OLD_JSSE_PKGS) \
                    $(HTTPSERVER_PKGS) \
-                   $(SMARTCARDIO_PKGS)
+                   $(SMARTCARDIO_PKGS) \
+                   $(TRACING_PKGS)

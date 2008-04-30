@@ -10098,6 +10098,7 @@ instruct convD2L_reg_reg(rRegL dst, regD src, rFlagsReg cr)
 
 instruct convI2F_reg_reg(regF dst, rRegI src)
 %{
+  predicate(!UseXmmI2F);
   match(Set dst (ConvI2F src));
 
   format %{ "cvtsi2ssl $dst, $src\t# i2f" %}
@@ -10118,6 +10119,7 @@ instruct convI2F_reg_mem(regF dst, memory src)
 
 instruct convI2D_reg_reg(regD dst, rRegI src)
 %{
+  predicate(!UseXmmI2D);
   match(Set dst (ConvI2D src));
 
   format %{ "cvtsi2sdl $dst, $src\t# i2d" %}
@@ -10133,6 +10135,34 @@ instruct convI2D_reg_mem(regD dst, memory src)
   format %{ "cvtsi2sdl $dst, $src\t# i2d" %}
   opcode(0xF2, 0x0F, 0x2A);
   ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
+  ins_pipe(pipe_slow); // XXX
+%}
+
+instruct convXI2F_reg(regF dst, rRegI src)
+%{
+  predicate(UseXmmI2F);
+  match(Set dst (ConvI2F src));
+
+  format %{ "movdl $dst, $src\n\t"
+            "cvtdq2psl $dst, $dst\t# i2f" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ cvtdq2ps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow); // XXX
+%}
+
+instruct convXI2D_reg(regD dst, rRegI src)
+%{
+  predicate(UseXmmI2D);
+  match(Set dst (ConvI2D src));
+
+  format %{ "movdl $dst, $src\n\t"
+            "cvtdq2pdl $dst, $dst\t# i2d" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ cvtdq2pd($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 

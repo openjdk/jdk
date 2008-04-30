@@ -67,16 +67,6 @@ ifeq ($(PLATFORM),windows)
   UTILS_DEVTOOL_PATH=$(DEVTOOLS_PATH)
 endif
 
-# Utilities ant and findbugs
-ifndef ANT_HOME
-  ANT_HOME = $(JDK_DEVTOOLS_DIR)/share/ant/latest
-endif
-ANT = $(ANT_HOME)/bin/ant
-ifndef FINDBUGS_HOME
-  FINDBUGS_HOME = $(JDK_DEVTOOLS_DIR)/share/findbugs/latest
-endif
-FINDBUGS = $(FINDBUGS_HOME)/bin/findbugs
-
 # Utilities
 ADB            = $(UTILS_COMMAND_PATH)adb
 AR             = $(UTILS_CCS_BIN_PATH)ar

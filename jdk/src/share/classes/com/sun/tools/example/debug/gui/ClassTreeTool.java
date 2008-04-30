@@ -124,9 +124,7 @@ public class ClassTreeTool extends JPanel {
         public void sessionStart(EventObject e) {
             // Get system classes and any others loaded before attaching.
             try {
-                Iterator iter = runtime.allClasses().iterator();
-                while (iter.hasNext()) {
-                    ReferenceType type = ((ReferenceType)iter.next());
+                for (ReferenceType type : runtime.allClasses()) {
                     root.addClass(type);
                 }
             } catch (VMDisconnectedException ee) {

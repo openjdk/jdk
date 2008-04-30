@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2000 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,16 +45,15 @@ public class ClassLoading implements Benchmark {
      * Arguments: <# reps>
      */
     public long run(String[] args) throws Exception {
-	int reps = Integer.parseInt(args[0]);
-	CodeSource csrc = getClass().getProtectionDomain().getCodeSource();
-	String url = "jar:" + csrc.getLocation().toString() + ALTROOT;
-	
-	long start = System.currentTimeMillis();
-	for (int i = 0; i < reps; i++)
-	    RMIClassLoader.loadClass(url, CLASSNAME);
-	long time = System.currentTimeMillis() - start;
-	
-	return time;
+        int reps = Integer.parseInt(args[0]);
+        CodeSource csrc = getClass().getProtectionDomain().getCodeSource();
+        String url = "jar:" + csrc.getLocation().toString() + ALTROOT;
+
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < reps; i++)
+            RMIClassLoader.loadClass(url, CLASSNAME);
+        long time = System.currentTimeMillis() - start;
+
+        return time;
     }
 }
-
