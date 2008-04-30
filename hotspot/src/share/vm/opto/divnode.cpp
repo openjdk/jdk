@@ -421,7 +421,7 @@ const Type *DivFNode::Value( PhaseTransform *phase ) const {
 
   // x/x == 1, we ignore 0/0.
   // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
-  // does not work for variables because of NaN's
+  // Does not work for variables because of NaN's
   if( phase->eqv( in(1), in(2) ) && t1->base() == Type::FloatCon)
     if (!g_isnan(t1->getf()) && g_isfinite(t1->getf()) && t1->getf() != 0.0) // could be negative ZERO or NaN
       return TypeF::ONE;
@@ -491,7 +491,7 @@ Node *DivFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //=============================================================================
 //------------------------------Value------------------------------------------
 // An DivDNode divides its inputs.  The third input is a Control input, used to
-// prvent hoisting the divide above an unsafe test.
+// prevent hoisting the divide above an unsafe test.
 const Type *DivDNode::Value( PhaseTransform *phase ) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(1) );
@@ -872,56 +872,32 @@ const Type *ModFNode::Value( PhaseTransform *phase ) const {
       (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
     return bot;
 
-  // If either is a NaN, return an input NaN
-  if( g_isnan(t1->getf()) )    return t1;
-  if( g_isnan(t2->getf()) )    return t2;
-
-  // It is not worth trying to constant fold this stuff!
-  return Type::FLOAT;
-
-  /*
-  // If dividend is infinity or divisor is zero, or both, the result is NaN
-  if( !g_isfinite(t1->getf()) || ((t2->getf() == 0.0) || (jint_cast(t2->getf()) == 0x80000000)) )
-
-  // X MOD infinity = X
-  if( !g_isfinite(t2->getf()) && !g_isnan(t2->getf()) ) return t1;
-  // 0 MOD finite = dividend (positive or negative zero)
-  // Not valid for: NaN MOD any; any MOD nan; 0 MOD 0; or for 0 MOD NaN
-  // NaNs are handled previously.
-  if( !(t2->getf() == 0.0) && !((int)t2->getf() == 0x80000000)) {
-    if (((t1->getf() == 0.0) || ((int)t1->getf() == 0x80000000)) && g_isfinite(t2->getf()) ) {
-      return t1;
-    }
+  // If either number is not a constant, we know nothing.
+  if ((t1->base() != Type::FloatCon) || (t2->base() != Type::FloatCon)) {
+    return Type::FLOAT;         // note: x%x can be either NaN or 0
   }
-  // X MOD X is 0
-  // Does not work for variables because of NaN's
-  if( phase->eqv( in(1), in(2) ) && t1->base() == Type::FloatCon)
-    if (!g_isnan(t1->getf()) && (t1->getf() != 0.0) && ((int)t1->getf() != 0x80000000)) {
-      if(t1->getf() < 0.0) {
-        float result = jfloat_cast(0x80000000);
-        return TypeF::make( result );
-      }
-      else
-        return TypeF::ZERO;
-    }
 
-  // If both numbers are not constants, we know nothing.
-  if( (t1->base() != Type::FloatCon) || (t2->base() != Type::FloatCon) )
+  float f1 = t1->getf();
+  float f2 = t2->getf();
+  jint  x1 = jint_cast(f1);     // note:  *(int*)&f1, not just (int)f1
+  jint  x2 = jint_cast(f2);
+
+  // If either is a NaN, return an input NaN
+  if (g_isnan(f1))    return t1;
+  if (g_isnan(f2))    return t2;
+
+  // If an operand is infinity or the divisor is +/- zero, punt.
+  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jint)
     return Type::FLOAT;
 
   // We must be modulo'ing 2 float constants.
   // Make sure that the sign of the fmod is equal to the sign of the dividend
-  float result = (float)fmod( t1->getf(), t2->getf() );
-  float dividend = t1->getf();
-  if( (dividend < 0.0) || ((int)dividend == 0x80000000) ) {
-    if( result > 0.0 )
-      result = 0.0 - result;
-    else if( result == 0.0 ) {
-      result = jfloat_cast(0x80000000);
-    }
+  jint xr = jint_cast(fmod(f1, f2));
+  if ((x1 ^ xr) < 0) {
+    xr ^= min_jint;
   }
-  return TypeF::make( result );
-  */
+
+  return TypeF::make(jfloat_cast(xr));
 }
 
 
@@ -940,33 +916,32 @@ const Type *ModDNode::Value( PhaseTransform *phase ) const {
       (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
     return bot;
 
-  // If either is a NaN, return an input NaN
-  if( g_isnan(t1->getd()) )    return t1;
-  if( g_isnan(t2->getd()) )    return t2;
-  // X MOD infinity = X
-  if( !g_isfinite(t2->getd())) return t1;
-  // 0 MOD finite = dividend (positive or negative zero)
-  // Not valid for: NaN MOD any; any MOD nan; 0 MOD 0; or for 0 MOD NaN
-  // NaNs are handled previously.
-  if( !(t2->getd() == 0.0) ) {
-    if( t1->getd() == 0.0 && g_isfinite(t2->getd()) ) {
-      return t1;
-    }
+  // If either number is not a constant, we know nothing.
+  if ((t1->base() != Type::DoubleCon) || (t2->base() != Type::DoubleCon)) {
+    return Type::DOUBLE;        // note: x%x can be either NaN or 0
   }
 
-  // X MOD X is 0
-  // does not work for variables because of NaN's
-  if( phase->eqv( in(1), in(2) ) && t1->base() == Type::DoubleCon )
-    if (!g_isnan(t1->getd()) && t1->getd() != 0.0)
-      return TypeD::ZERO;
+  double f1 = t1->getd();
+  double f2 = t2->getd();
+  jlong  x1 = jlong_cast(f1);   // note:  *(long*)&f1, not just (long)f1
+  jlong  x2 = jlong_cast(f2);
 
+  // If either is a NaN, return an input NaN
+  if (g_isnan(f1))    return t1;
+  if (g_isnan(f2))    return t2;
 
-  // If both numbers are not constants, we know nothing.
-  if( (t1->base() != Type::DoubleCon) || (t2->base() != Type::DoubleCon) )
+  // If an operand is infinity or the divisor is +/- zero, punt.
+  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jlong)
     return Type::DOUBLE;
 
   // We must be modulo'ing 2 double constants.
-  return TypeD::make( fmod( t1->getd(), t2->getd() ) );
+  // Make sure that the sign of the fmod is equal to the sign of the dividend
+  jlong xr = jlong_cast(fmod(f1, f2));
+  if ((x1 ^ xr) < 0) {
+    xr ^= min_jlong;
+  }
+
+  return TypeD::make(jdouble_cast(xr));
 }
 
 //=============================================================================
