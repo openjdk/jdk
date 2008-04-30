@@ -780,7 +780,8 @@ public class AVA implements DerEncoder {
              * Implementations MAY escape other characters.
              *
              * NOTE: this implementation also recognizes "=" and "#" as
-             * characters which need escaping.
+             * characters which need escaping, and null which is escaped as
+             * '\00' (see RFC 4514).
              *
              * If a character to be escaped is one of the list shown above, then
              * it is prefixed by a backslash ('\' ASCII 92).
@@ -804,6 +805,10 @@ public class AVA implements DerEncoder {
 
                     // append printable/escaped char
                     sbuffer.append(c);
+
+                } else if (c == '\u0000') {
+                    // escape null character
+                    sbuffer.append("\\00");
 
                 } else if (debug != null && Debug.isOn("ava")) {
 

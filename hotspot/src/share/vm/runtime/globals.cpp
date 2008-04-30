@@ -205,6 +205,18 @@ bool CommandLineFlagsEx::is_default(CommandLineFlag flag) {
   return (f->origin == DEFAULT);
 }
 
+bool CommandLineFlagsEx::is_ergo(CommandLineFlag flag) {
+  assert((size_t)flag < Flag::numFlags, "bad command line flag index");
+  Flag* f = &Flag::flags[flag];
+  return (f->origin == ERGONOMIC);
+}
+
+bool CommandLineFlagsEx::is_cmdline(CommandLineFlag flag) {
+  assert((size_t)flag < Flag::numFlags, "bad command line flag index");
+  Flag* f = &Flag::flags[flag];
+  return (f->origin == COMMAND_LINE);
+}
+
 bool CommandLineFlags::wasSetOnCmdline(const char* name, bool* value) {
   Flag* result = Flag::find_flag((char*)name, strlen(name));
   if (result == NULL) return false;

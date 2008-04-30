@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,89 @@
 
 /*
  * @test
- * @bug 6207928 6328220 6378321
+ * @bug 6207928 6328220 6378321 6625723
  * @summary Recursive lock invariant sanity checks
  * @author Martin Buchholz
  */
 
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 
 // I am the Cownt, and I lahve to cownt.
 public class Count {
-    private static void realMain(String[] args) throws Throwable {
-        final ReentrantLock rl = new ReentrantLock();
-        final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+    final Random rnd = new Random();
+
+    void lock(Lock lock) {
+        try {
+            switch (rnd.nextInt(4)) {
+            case 0: lock.lock(); break;
+            case 1: lock.lockInterruptibly(); break;
+            case 2: check(lock.tryLock()); break;
+            case 3: check(lock.tryLock(45, TimeUnit.MINUTES)); break;
+            }
+        } catch (Throwable t) { unexpected(t); }
+    }
+
+    void test(String[] args) throws Throwable {
+        for (boolean fair : new boolean[] { true, false })
+            for (boolean serialClone : new boolean[] { true, false }) {
+                testReentrantLocks(fair, serialClone);
+                testConcurrentReadLocks(fair, serialClone);
+            }
+    }
+
+    void testConcurrentReadLocks(final boolean fair,
+                                 final boolean serialClone) throws Throwable {
+        final int nThreads = 10;
+        final CyclicBarrier barrier = new CyclicBarrier(nThreads);
+        final ExecutorService es = Executors.newFixedThreadPool(nThreads);
+        final ReentrantReadWriteLock rwl = serialClone ?
+            serialClone(new ReentrantReadWriteLock(fair)) :
+            new ReentrantReadWriteLock(fair);
+        for (int i = 0; i < nThreads; i++) {
+            es.submit(new Runnable() { public void run() {
+                try {
+                    int n = 5;
+                    for (int i = 0; i < n; i++) {
+                        barrier.await();
+                        equal(rwl.getReadHoldCount(), i);
+                        equal(rwl.getWriteHoldCount(), 0);
+                        check(! rwl.isWriteLocked());
+                        equal(rwl.getReadLockCount(), nThreads * i);
+                        barrier.await();
+                        lock(rwl.readLock());
+                    }
+                    for (int i = 0; i < n; i++) {
+                        rwl.readLock().unlock();
+                        barrier.await();
+                        equal(rwl.getReadHoldCount(), n-i-1);
+                        equal(rwl.getReadLockCount(), nThreads*(n-i-1));
+                        equal(rwl.getWriteHoldCount(), 0);
+                        check(! rwl.isWriteLocked());
+                        barrier.await();
+                    }
+                    THROWS(IllegalMonitorStateException.class,
+                           new F(){void f(){rwl.readLock().unlock();}},
+                           new F(){void f(){rwl.writeLock().unlock();}});
+                    barrier.await();
+                } catch (Throwable t) { unexpected(t); }}});}
+        es.shutdown();
+        check(es.awaitTermination(10, TimeUnit.SECONDS));
+    }
+
+    void testReentrantLocks(final boolean fair,
+                            final boolean serialClone) throws Throwable {
+        final ReentrantLock rl = serialClone ?
+            serialClone(new ReentrantLock(fair)) :
+            new ReentrantLock(fair);
+        final ReentrantReadWriteLock rwl = serialClone ?
+            serialClone(new ReentrantReadWriteLock(fair)) :
+            new ReentrantReadWriteLock(fair);
         final int depth = 10;
+        equal(rl.isFair(), fair);
+        equal(rwl.isFair(), fair);
         check(! rl.isLocked());
         check(! rwl.isWriteLocked());
         check(! rl.isHeldByCurrentThread());
@@ -50,28 +118,11 @@ public class Count {
             equal(rwl.getReadHoldCount(), i);
             equal(rwl.getWriteHoldCount(), i);
             equal(rwl.writeLock().getHoldCount(), i);
-            switch (i%4) {
-            case 0:
-                rl.lock();
-                rwl.writeLock().lock();
-                rwl.readLock().lock();
-                break;
-            case 1:
-                rl.lockInterruptibly();
-                rwl.writeLock().lockInterruptibly();
-                rwl.readLock().lockInterruptibly();
-                break;
-            case 2:
-                check(rl.tryLock());
-                check(rwl.writeLock().tryLock());
-                check(rwl.readLock().tryLock());
-                break;
-            case 3:
-                check(rl.tryLock(454, TimeUnit.MILLISECONDS));
-                check(rwl.writeLock().tryLock(454, TimeUnit.NANOSECONDS));
-                check(rwl.readLock().tryLock(454, TimeUnit.HOURS));
-                break;
-            }
+            equal(rl.isLocked(), i > 0);
+            equal(rwl.isWriteLocked(), i > 0);
+            lock(rl);
+            lock(rwl.writeLock());
+            lock(rwl.readLock());
         }
 
         for (int i = depth; i > 0; i--) {
@@ -95,20 +146,48 @@ public class Count {
             rwl.writeLock().unlock();
             rl.unlock();
         }
+        THROWS(IllegalMonitorStateException.class,
+               new F(){void f(){rl.unlock();}},
+               new F(){void f(){rwl.readLock().unlock();}},
+               new F(){void f(){rwl.writeLock().unlock();}});
     }
 
     //--------------------- Infrastructure ---------------------------
-    static volatile int passed = 0, failed = 0;
-    static void pass() {passed++;}
-    static void fail() {failed++; Thread.dumpStack();}
-    static void fail(String msg) {System.out.println(msg); fail();}
-    static void unexpected(Throwable t) {failed++; t.printStackTrace();}
-    static void check(boolean cond) {if (cond) pass(); else fail();}
-    static void equal(Object x, Object y) {
+    volatile int passed = 0, failed = 0;
+    void pass() {passed++;}
+    void fail() {failed++; Thread.dumpStack();}
+    void fail(String msg) {System.err.println(msg); fail();}
+    void unexpected(Throwable t) {failed++; t.printStackTrace();}
+    void check(boolean cond) {if (cond) pass(); else fail();}
+    void equal(Object x, Object y) {
         if (x == null ? y == null : x.equals(y)) pass();
         else fail(x + " not equal to " + y);}
     public static void main(String[] args) throws Throwable {
-        try {realMain(args);} catch (Throwable t) {unexpected(t);}
+        new Count().instanceMain(args);}
+    void instanceMain(String[] args) throws Throwable {
+        try {test(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
+    abstract class F {abstract void f() throws Throwable;}
+    void THROWS(Class<? extends Throwable> k, F... fs) {
+        for (F f : fs)
+            try {f.f(); fail("Expected " + k.getName() + " not thrown");}
+            catch (Throwable t) {
+                if (k.isAssignableFrom(t.getClass())) pass();
+                else unexpected(t);}}
+
+    static byte[] serializedForm(Object obj) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            new ObjectOutputStream(baos).writeObject(obj);
+            return baos.toByteArray();
+        } catch (IOException e) { throw new RuntimeException(e); }}
+    static Object readObject(byte[] bytes)
+        throws IOException, ClassNotFoundException {
+        InputStream is = new ByteArrayInputStream(bytes);
+        return new ObjectInputStream(is).readObject();}
+    @SuppressWarnings("unchecked")
+    static <T> T serialClone(T obj) {
+        try { return (T) readObject(serializedForm(obj)); }
+        catch (Exception e) { throw new RuntimeException(e); }}
 }

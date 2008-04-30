@@ -48,7 +48,7 @@ echo '-->' $OUT
 # Header
 #
 
-$SHELL addNotices.sh "$COPYRIGHT_YEARS" > $OUT
+$SH ./addNotices.sh "$COPYRIGHT_YEARS" > $OUT
 
 cat <<__END__ >>$OUT
 

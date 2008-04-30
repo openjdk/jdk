@@ -77,7 +77,7 @@ public class CommandInterpreter {
             while (ti.hasNext()) {
                 tlist.add(ti.nextThread());
             }
-            threads = (ThreadReference[])tlist.toArray(new ThreadReference[tlist.size()]);
+            threads = tlist.toArray(new ThreadReference[tlist.size()]);
         }
         return threads;
     }
@@ -146,11 +146,9 @@ public class CommandInterpreter {
     // Command: classes
 
     private void commandClasses() throws NoSessionException {
-        List list = runtime.allClasses();
         OutputSink out = env.getOutputSink();
         //out.println("** classes list **");
-        for (int i = 0 ; i < list.size() ; i++) {
-            ReferenceType refType = (ReferenceType)list.get(i);
+        for (ReferenceType refType : runtime.allClasses()) {
             out.println(refType.name());
         }
         out.show();
@@ -167,16 +165,16 @@ public class CommandInterpreter {
         String idClass = t.nextToken();
         ReferenceType cls = findClass(idClass);
         if (cls != null) {
-            List methods = cls.allMethods();
+            List<Method> methods = cls.allMethods();
             OutputSink out = env.getOutputSink();
             for (int i = 0; i < methods.size(); i++) {
-                Method method = (Method)methods.get(i);
+                Method method = methods.get(i);
                 out.print(method.declaringType().name() + " " +
                             method.name() + "(");
-                Iterator it = method.argumentTypeNames().iterator();
+                Iterator<String> it = method.argumentTypeNames().iterator();
                 if (it.hasNext()) {
                     while (true) {
-                        out.print((String)it.next());
+                        out.print(it.next());
                         if (!it.hasNext()) {
                             break;
                         }
@@ -193,10 +191,10 @@ public class CommandInterpreter {
     }
 
     private ReferenceType findClass(String pattern) throws NoSessionException {
-        List results = runtime.findClassesMatchingPattern(pattern);
+        List<ReferenceType> results = runtime.findClassesMatchingPattern(pattern);
         if (results.size() > 0) {
             //### Should handle multiple results sensibly.
-            return (ReferenceType)results.get(0);
+            return results.get(0);
         }
         return null;
     }
@@ -235,11 +233,11 @@ public class CommandInterpreter {
 
     private int printThreadGroup(OutputSink out, ThreadGroupReference tg, int iThread) {
         out.println("Group " + tg.name() + ":");
-        List tlist = tg.threads();
+        List<ThreadReference> tlist = tg.threads();
         int maxId = 0;
         int maxName = 0;
         for (int i = 0 ; i < tlist.size() ; i++) {
-            ThreadReference thr = (ThreadReference)tlist.get(i);
+            ThreadReference thr = tlist.get(i);
             int len = Utils.description(thr).length();
             if (len > maxId)
                 maxId = len;
@@ -254,7 +252,7 @@ public class CommandInterpreter {
         String maxNumString = String.valueOf(iThread + tlist.size());
         int maxNumDigits = maxNumString.length();
         for (int i = 0 ; i < tlist.size() ; i++) {
-            ThreadReference thr = (ThreadReference)tlist.get(i);
+            ThreadReference thr = tlist.get(i);
             char buf[] = new char[80];
             for (int j = 0; j < 79; j++) {
                 buf[j] = ' ';
@@ -283,9 +281,7 @@ public class CommandInterpreter {
             sbOut.setLength(79);
             out.println(sbOut.toString());
         }
-        List tglist = tg.threadGroups();
-        for (int ig = 0; ig < tglist.size(); ig++) {
-            ThreadGroupReference tg0 = (ThreadGroupReference)tglist.get(ig);
+        for (ThreadGroupReference tg0 : tg.threadGroups()) {
             if (!tg.equals(tg0)) {  // TODO ref mgt
                 iThread += printThreadGroup(out, tg0, iThread + tlist.size());
             }
@@ -733,7 +729,7 @@ public class CommandInterpreter {
             if (token.toLowerCase().equals("all")) {
                 ThreadIterator it = allThreads();
                 while (it.hasNext()) {
-                    ThreadReference thread = (ThreadReference)it.next();
+                    ThreadReference thread = it.next();
                     out.println(thread.name() + ": ");
                     dumpStack(thread, showPC);
                 }
@@ -755,7 +751,7 @@ public class CommandInterpreter {
         //env.failure("Target VM must be in interrupted state.");
         //env.failure("Current thread isn't suspended.");
         //### Should handle extremely long stack traces sensibly for user.
-        List stack = null;
+        List<StackFrame> stack = null;
         try {
             stack = thread.frames();
         } catch (IncompatibleThreadStateException e) {
@@ -772,7 +768,7 @@ public class CommandInterpreter {
             OutputSink out = env.getOutputSink();
             int nFrames = stack.size();
             for (int i = frameIndex; i < nFrames; i++) {
-                StackFrame frame = (StackFrame)stack.get(i);
+                StackFrame frame = stack.get(i);
                 Location loc = frame.location();
                 Method meth = loc.method();
                 out.print("  [" + (i + 1) + "] ");
@@ -780,7 +776,7 @@ public class CommandInterpreter {
                 out.print('.');
                 out.print(meth.name());
                 out.print(" (");
-                if (meth instanceof Method && ((Method)meth).isNative()) {
+                if (meth.isNative()) {
                     out.print("native method");
                 } else if (loc.lineNumber() != -1) {
                     try {
@@ -806,14 +802,13 @@ public class CommandInterpreter {
 
     private void listEventRequests() throws NoSessionException {
         // Print set breakpoints
-        Iterator iter = runtime.eventRequestSpecs().iterator();
-        if (!iter.hasNext()) {
+        List<EventRequestSpec> specs = runtime.eventRequestSpecs();
+        if (specs.isEmpty()) {
             env.notice("No breakpoints/watchpoints/exceptions set.");
         } else {
             OutputSink out = env.getOutputSink();
             out.println("Current breakpoints/watchpoints/exceptions set:");
-            while (iter.hasNext()) {
-                EventRequestSpec  bp = (EventRequestSpec)iter.next();
+            for (EventRequestSpec bp : specs) {
                 out.println("\t" + bp);
             }
             out.show();
@@ -926,13 +921,13 @@ public class CommandInterpreter {
         //### need 'clear all'
         BreakpointSpec bpSpec = parseBreakpointSpec(t.nextToken());
         if (bpSpec != null) {
-            Iterator iter = runtime.eventRequestSpecs().iterator();
-            if (!iter.hasNext()) {
+            List<EventRequestSpec> specs = runtime.eventRequestSpecs();
+
+            if (specs.isEmpty()) {
                 env.notice("No breakpoints set.");
             } else {
-                List<BreakpointSpec> toDelete = new ArrayList<BreakpointSpec>();
-                while (iter.hasNext()) {
-                    BreakpointSpec spec = (BreakpointSpec)iter.next();
+                List<EventRequestSpec> toDelete = new ArrayList<EventRequestSpec>();
+                for (EventRequestSpec spec : specs) {
                     if (spec.equals(bpSpec)) {
                         toDelete.add(spec);
                     }
@@ -941,7 +936,7 @@ public class CommandInterpreter {
                 if (toDelete.size() <= 1) {
                     env.notice("No matching breakpoint set.");
                 }
-                for (BreakpointSpec spec : toDelete) {
+                for (EventRequestSpec spec : toDelete) {
                     runtime.delete(spec);
                 }
             }
@@ -988,7 +983,7 @@ public class CommandInterpreter {
                 lineno = Integer.valueOf(id).intValue();
             } catch (NumberFormatException nfe) {
                 // It isn't -- see if it's a method name.
-                List meths = refType.methodsByName(id);
+                List<Method> meths = refType.methodsByName(id);
                 if (meths == null || meths.size() == 0) {
                     env.failure(id +
                                 " is not a valid line number or " +
@@ -1001,7 +996,7 @@ public class CommandInterpreter {
                                 refType.name());
                     return;
                 }
-                loc = ((Method)meths.get(0)).location();
+                loc = meths.get(0).location();
                 lineno = loc.lineNumber();
             }
         }
@@ -1121,7 +1116,7 @@ public class CommandInterpreter {
             return;
         }
 
-        List vars;
+        List<LocalVariable> vars;
         try {
             vars = frame.visibleVariables();
             if (vars == null || vars.size() == 0) {
@@ -1136,15 +1131,13 @@ public class CommandInterpreter {
 
         OutputSink out = env.getOutputSink();
         out.println("Method arguments:");
-        for (Iterator it = vars.iterator(); it.hasNext(); ) {
-            LocalVariable var = (LocalVariable)it.next();
+        for (LocalVariable var : vars) {
             if (var.isArgument()) {
                 printVar(out, var, frame);
             }
         }
         out.println("Local variables:");
-        for (Iterator it = vars.iterator(); it.hasNext(); ) {
-            LocalVariable var = (LocalVariable)it.next();
+        for (LocalVariable var : vars) {
             if (!var.isArgument()) {
                 printVar(out, var, frame);
             }
@@ -1245,8 +1238,7 @@ public class CommandInterpreter {
     private void dump(OutputSink out,
                       ObjectReference obj, ReferenceType refType,
                       ReferenceType refTypeBase) {
-        for (Iterator it = refType.fields().iterator(); it.hasNext(); ) {
-            Field field = (Field)it.next();
+        for (Field field : refType.fields()) {
             out.print("    ");
             if (!refType.equals(refTypeBase)) {
                 out.print(refType.name() + ".");
@@ -1261,9 +1253,8 @@ public class CommandInterpreter {
                 dump(out, obj, sup, refTypeBase);
             }
         } else if (refType instanceof InterfaceType) {
-            List sups = ((InterfaceType)refType).superinterfaces();
-            for (Iterator it = sups.iterator(); it.hasNext(); ) {
-                dump(out, obj, (ReferenceType)it.next(), refTypeBase);
+            for (InterfaceType sup : ((InterfaceType)refType).superinterfaces()) {
+                dump(out, obj, sup, refTypeBase);
             }
         }
     }

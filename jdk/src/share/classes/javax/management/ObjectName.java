@@ -26,6 +26,7 @@
 package javax.management;
 
 import com.sun.jmx.mbeanserver.GetPropertyAction;
+import com.sun.jmx.mbeanserver.Util;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -222,7 +223,8 @@ import javax.management.QueryExp;
  * @since 1.5
  */
 @SuppressWarnings("serial") // don't complain serialVersionUID not constant
-public class ObjectName implements Comparable<ObjectName>, QueryExp {
+public class ObjectName extends ToQueryString
+        implements Comparable<ObjectName>, QueryExp {
 
     /**
      * A structure recording property structure and
@@ -1385,12 +1387,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
             throws NullPointerException {
         if (name.getClass().equals(ObjectName.class))
             return name;
-        try {
-            return new ObjectName(name.getSerializedNameString());
-        } catch (MalformedObjectNameException e) {
-            throw new IllegalArgumentException("Unexpected: " + e);
-            // can't happen
-        }
+        return Util.newObjectName(name.getSerializedNameString());
     }
 
     /**
@@ -1779,8 +1776,14 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      *
      * @return a string representation of this object name.
      */
+    @Override
     public String toString()  {
         return getSerializedNameString();
+    }
+
+    @Override
+    String toQueryString() {
+        return "LIKE " + Query.value(toString());
     }
 
     /**
@@ -1943,14 +1946,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      *
      * @since 1.6
      */
-    public static final ObjectName WILDCARD;
-    static {
-        try {
-            WILDCARD = new ObjectName("*:*");
-        } catch (MalformedObjectNameException e) {
-            throw new Error("Can't initialize wildcard name", e);
-        }
-    }
+    public static final ObjectName WILDCARD = Util.newObjectName("*:*");
 
     // Category : Utilities <===================================
 

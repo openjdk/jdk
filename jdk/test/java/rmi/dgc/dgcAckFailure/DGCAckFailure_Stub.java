@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,38 +29,38 @@ public final class DGCAckFailure_Stub
     implements ReturnRemote
 {
     private static final long serialVersionUID = 2;
-    
+
     private static java.lang.reflect.Method $method_returnRemote_0;
-    
+
     static {
-	try {
-	    $method_returnRemote_0 = ReturnRemote.class.getMethod("returnRemote", new java.lang.Class[] {});
-	} catch (java.lang.NoSuchMethodException e) {
-	    throw new java.lang.NoSuchMethodError(
-		"stub class initialization failed");
-	}
+        try {
+            $method_returnRemote_0 = ReturnRemote.class.getMethod("returnRemote", new java.lang.Class[] {});
+        } catch (java.lang.NoSuchMethodException e) {
+            throw new java.lang.NoSuchMethodError(
+                "stub class initialization failed");
+        }
     }
-    
+
     // constructors
     public DGCAckFailure_Stub(java.rmi.server.RemoteRef ref) {
-	super(ref);
+        super(ref);
     }
-    
+
     // methods from remote interfaces
-    
+
     // implementation of returnRemote()
     public java.lang.Object returnRemote()
-	throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
     {
-	try {
-	    Object $result = ref.invoke(this, $method_returnRemote_0, null, -8981544221566403070L);
-	    return ((java.lang.Object) $result);
-	} catch (java.lang.RuntimeException e) {
-	    throw e;
-	} catch (java.rmi.RemoteException e) {
-	    throw e;
-	} catch (java.lang.Exception e) {
-	    throw new java.rmi.UnexpectedException("undeclared checked exception", e);
-	}
+        try {
+            Object $result = ref.invoke(this, $method_returnRemote_0, null, -8981544221566403070L);
+            return ((java.lang.Object) $result);
+        } catch (java.lang.RuntimeException e) {
+            throw e;
+        } catch (java.rmi.RemoteException e) {
+            throw e;
+        } catch (java.lang.Exception e) {
+            throw new java.rmi.UnexpectedException("undeclared checked exception", e);
+        }
     }
 }

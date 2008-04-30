@@ -198,6 +198,10 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     public Log log;
 
+    /** Factory for creating diagnostic objects
+     */
+    JCDiagnostic.Factory diagFactory;
+
     /** The tree factory module.
      */
     protected TreeMaker make;
@@ -304,6 +308,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
         names = Name.Table.instance(context);
         log = Log.instance(context);
+        diagFactory = JCDiagnostic.Factory.instance(context);
         reader = ClassReader.instance(context);
         make = TreeMaker.instance(context);
         writer = ClassWriter.instance(context);
@@ -318,7 +323,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             syms = Symtab.instance(context);
         } catch (CompletionFailure ex) {
             // inlined Check.completionError as it is not initialized yet
-            log.error("cant.access", ex.sym, ex.errmsg);
+            log.error("cant.access", ex.sym, ex.getDetailValue());
             if (ex instanceof ClassReader.BadClassFile)
                 throw new Abort();
         }
@@ -683,16 +688,16 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                                                  JavaFileObject.Kind.SOURCE);
             if (isPkgInfo) {
                 if (enter.getEnv(tree.packge) == null) {
-                    String msg
-                        = log.getLocalizedString("file.does.not.contain.package",
+                    JCDiagnostic diag =
+                        diagFactory.fragment("file.does.not.contain.package",
                                                  c.location());
-                    throw new ClassReader.BadClassFile(c, filename, msg);
+                    throw reader.new BadClassFile(c, filename, diag);
                 }
             } else {
-                throw new
-                    ClassReader.BadClassFile(c, filename, log.
-                                             getLocalizedString("file.doesnt.contain.class",
-                                                                c.fullname));
+                JCDiagnostic diag =
+                        diagFactory.fragment("file.doesnt.contain.class",
+                                            c.getQualifiedName());
+                throw reader.new BadClassFile(c, filename, diag);
             }
         }
 
@@ -997,7 +1002,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 annotationProcessingOccurred = c.annotationProcessingOccurred = true;
             return c;
         } catch (CompletionFailure ex) {
-            log.error("cant.access", ex.sym, ex.errmsg);
+            log.error("cant.access", ex.sym, ex.getDetailValue());
             return this;
 
         }

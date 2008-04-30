@@ -281,6 +281,13 @@ endif
 # Get platform specific settings
 include $(BUILDDIR)/common/shared/Defs-$(PLATFORM).gmk
 
+# Components
+ifdef ALT_LANGTOOLS_DIST
+  LANGTOOLS_DIST :=$(call FullPath,$(ALT_LANGTOOLS_DIST))
+else
+  LANGTOOLS_DIST =
+endif
+
 # These are the same on all platforms but require the above platform include 1st
 
 # BOOTDIR: Bootstrap JDK, previous released JDK.

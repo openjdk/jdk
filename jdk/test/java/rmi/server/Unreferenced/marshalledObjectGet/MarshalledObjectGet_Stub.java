@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,10 +29,10 @@ public final class MarshalledObjectGet_Stub
     implements java.rmi.Remote
 {
     private static final long serialVersionUID = 2;
-    
+
     // constructors
     public MarshalledObjectGet_Stub(java.rmi.server.RemoteRef ref) {
-	super(ref);
+        super(ref);
     }
-    
+
 }

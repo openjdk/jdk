@@ -23,24 +23,24 @@
 # have any questions.
 #
 
+BUILD_PARENT_DIRECTORY=.
+
 ifndef TOPDIR
-  TOPDIR:=$(shell \
-    if [ -r ./j2se/make/Makefile -o -r ./jdk/make/Makefile ]; then \
-      echo "."; \
-    else \
-      echo "../.."; \
-    fi)
+  TOPDIR:=.
 endif
 
 ifndef CONTROL_TOPDIR
-  CONTROL_TOPDIR=$(TOPDIR)/control
-  CONTROL_TOPDIR:=$(shell \
-    if [ -r $(TOPDIR)/control/make/Makefile ]; then \
-      echo "$(TOPDIR)/control"; \
-    else \
-      echo "$(TOPDIR)"; \
-    fi)
+  CONTROL_TOPDIR=$(TOPDIR)
 endif
+
+# Openjdk sources (only used if SKIP_OPENJDK_BUILD!=true)
+OPENJDK_SOURCETREE=$(TOPDIR)/openjdk
+OPENJDK_BUILDDIR:=$(shell \
+  if [ -r $(OPENJDK_SOURCETREE)/Makefile ]; then \
+    echo "$(OPENJDK_SOURCETREE)"; \
+  else \
+    echo "."; \
+  fi)
 
 ifndef JDK_TOPDIR
   JDK_TOPDIR=$(TOPDIR)/jdk
@@ -55,6 +55,7 @@ include ./make/Defs-internal.gmk
 
 all::
 	@$(ECHO) $(PLATFORM) $(ARCH) $(RELEASE) build started: `$(DATE) '+%y-%m-%d %H:%M'`
+	$(MKDIR) -p $(OUTPUTDIR)
 
 # Rules for sanity checks
 include ./make/sanity-rules.gmk
@@ -81,11 +82,24 @@ include ./make/deploy-rules.gmk
 
 all:: setup build
 
-setup:
+setup: openjdk_check
 	$(MKDIR) -p $(OUTPUTDIR)/j2sdk-image
-	$(MKDIR) -p $(ABS_OUTPUTDIR)/j2sdk-image
-	$(MKDIR) -p $(OUTPUTDIR)-fastdebug/j2sdk-image
-	$(MKDIR) -p $(ABS_OUTPUTDIR)-fastdebug/j2sdk-image
+
+# Check on whether we really can build the openjdk, need source etc.
+openjdk_check: FRC
+ifneq ($(SKIP_OPENJDK_BUILD), true)
+	@$(ECHO) " "
+	@$(ECHO) "================================================="
+	@if [ ! -r $(OPENJDK_BUILDDIR)/Makefile ] ; then \
+	    $(ECHO) "ERROR: No openjdk source tree available at: $(OPENJDK_BUILDDIR)"; \
+	    exit 1; \
+	else \
+	    $(ECHO) "OpenJDK will be built after JDK is built"; \
+	    $(ECHO) "  OPENJDK_BUILDDIR=$(OPENJDK_BUILDDIR)"; \
+	fi
+	@$(ECHO) "================================================="
+	@$(ECHO) " "
+endif
 
 build:: sanity 
 
@@ -143,7 +157,7 @@ endif
 
 COMMON_DEBUG_FLAGS= \
 	DEBUG_NAME=$(DEBUG_NAME) \
-	ALT_OUTPUTDIR=$(_OUTPUTDIR)-$(DEBUG_NAME) \
+	ALT_OUTPUTDIR=$(ABS_OUTPUTDIR)-$(DEBUG_NAME) \
 	NO_DOCS=true
 
 product_build: setup
@@ -190,46 +204,64 @@ ifneq ($(SKIP_COMPARE_IMAGES), true)
   all :: compare-image
 endif
 
-ifeq ($(SKIP_OPENJDK_BUILD), false)
+ifneq ($(SKIP_OPENJDK_BUILD), true)
+  all :: openjdk_build
+endif
+
+# If we have bundle rules, we have a chance here to do a complete cycle
+#   build, of production and open build.
+# FIXUP: We should create the openjdk source bundle and build that?
+#   But how do we reliable create or get at a formal openjdk source tree?
+#   The one we have needs to be trimmed of built bits and closed dirs.
+#   The repositories might not be available.
+#   The openjdk source bundle is probably not available.
+
+ifneq ($(SKIP_OPENJDK_BUILD), true)
   ifeq ($(BUILD_JDK), true)
     ifeq ($(BUNDLE_RULES_AVAILABLE), true)
-      # If we have bundle rules, we have a chance here to do a complete cycle
-      #   build, of closed and open build.
-      # FIXUP: We should create the openjdk source bundle and build that?
-      ABS_OPENJDK_PLUGS=$(ABS_OUTPUTDIR)/$(OPENJDK_BINARY_PLUGS_INAME)
-      ABS_OPENJDK_OUTPUTDIR=$(ABS_OUTPUTDIR)/openjdk
-      OPENJDK_BUILD_NAME_PREFIX \
-	= $(J2SDK_NAME)-$(JDK_MKTG_UNDERSCORE_VERSION)-$(MILESTONE)
-      OPENJDK_BUILD_NAME_SUFFIX \
-	= $(BUILD_NUMBER)-$(PLATFORM)-$(ARCH)-$(BUNDLE_DATE)
-      OPENJDK_BUILD_NAME \
-	= $(OPENJDK_BUILD_NAME_PREFIX)-openjdk-$(OPENJDK_BUILD_NAME_SUFFIX)
-      OPENJDK_BUILD_BINARY_ZIP \
-	= $(ABS_BIN_BUNDLEDIR)/$(OPENJDK_BUILD_NAME).zip
-  all :: openjdk-build
-  openjdk-build:
+
+OPENJDK_PLUGS=$(ABS_OUTPUTDIR)/$(OPENJDK_BINARY_PLUGS_INAME)
+OPENJDK_OUTPUTDIR=$(ABS_OUTPUTDIR)/open-output
+OPENJDK_BUILD_NAME \
+  = openjdk-$(JDK_MINOR_VERSION)-$(BUILD_NUMBER)-$(PLATFORM)-$(ARCH)-$(BUNDLE_DATE)
+OPENJDK_BUILD_BINARY_ZIP=$(ABS_BIN_BUNDLEDIR)/$(OPENJDK_BUILD_NAME).zip
+BUILT_IMAGE=$(ABS_OUTPUTDIR)/j2sdk-image
+ifeq ($(PLATFORM)$(ARCH_DATA_MODEL),solaris64)
+  OPENJDK_BOOTDIR=$(BOOTDIR)
+  OPENJDK_IMPORTJDK=$(JDK_IMPORT_PATH)
+else
+  OPENJDK_BOOTDIR=$(BUILT_IMAGE)
+  OPENJDK_IMPORTJDK=$(BUILT_IMAGE)
+endif
+
+openjdk_build:
 	@$(ECHO) " "
 	@$(ECHO) "================================================="
 	@$(ECHO) "Starting openjdk build"
+	@$(ECHO) " Using: ALT_JDK_DEVTOOLS_DIR=$(JDK_DEVTOOLS_DIR)"
 	@$(ECHO) "================================================="
 	@$(ECHO) " "
-	$(RM) -r $(ABS_OPENJDK_OUTPUTDIR)
-	$(MKDIR) -p $(ABS_OPENJDK_OUTPUTDIR)
-	$(MAKE) OPENJDK=true \
-	  BUILD_LANGTOOLS=$(BUILD_LANGTOOLS) \
-	  BUILD_CORBA=$(BUILD_CORBA) \
-	  BUILD_JAXP=$(BUILD_JAXP) \
-	  BUILD_JAXWS=$(BUILD_JAXWS) \
-	  BUILD_HOTSPOT=$(BUILD_HOTSPOT) \
-	  ALT_OUTPUTDIR=$(ABS_OPENJDK_OUTPUTDIR) \
-	  ALT_BINARY_PLUGS_PATH=$(ABS_OUTPUTDIR)/$(OPENJDK_BINARY_PLUGS_INAME) \
-	  ALT_BOOTDIR=$(ABS_OUTPUTDIR)/j2sdk-image \
-	  ALT_JDK_IMPORT_PATH=$(ABS_OUTPUTDIR)/j2sdk-image \
-		product_build
+	$(RM) -r $(OPENJDK_OUTPUTDIR)
+	$(MKDIR) -p $(OPENJDK_OUTPUTDIR)
+	($(CD) $(OPENJDK_BUILDDIR) && $(MAKE) \
+	  OPENJDK=true \
+	  ALT_JDK_DEVTOOLS_DIR=$(JDK_DEVTOOLS_DIR) \
+	  ALT_OUTPUTDIR=$(OPENJDK_OUTPUTDIR) \
+	  ALT_BINARY_PLUGS_PATH=$(OPENJDK_PLUGS) \
+	  ALT_BOOTDIR=$(OPENJDK_BOOTDIR) \
+	  ALT_JDK_IMPORT_PATH=$(OPENJDK_IMPORTJDK) \
+		product_build )
 	$(RM) $(OPENJDK_BUILD_BINARY_ZIP)
-	( $(CD) $(ABS_OPENJDK_OUTPUTDIR)/j2sdk-image && \
+	( $(CD) $(OPENJDK_OUTPUTDIR)/j2sdk-image && \
 	  $(ZIPEXE) -q -r $(OPENJDK_BUILD_BINARY_ZIP) .)
-	$(RM) -r $(ABS_OPENJDK_OUTPUTDIR)
+	$(RM) -r $(OPENJDK_OUTPUTDIR)
+	@$(ECHO) " "
+	@$(ECHO) "================================================="
+	@$(ECHO) "Finished openjdk build"
+	@$(ECHO) " Binary Bundle: $(OPENJDK_BUILD_BINARY_ZIP)"
+	@$(ECHO) "================================================="
+	@$(ECHO) " "
+    
     endif
   endif
 endif
@@ -432,11 +464,11 @@ endif
 # Cycle build. Build the jdk, use it to build the jdk again.
 ################################################################
   
-ABS_BOOTJDK_OUTPUTDIR=$(ABS_OUTPUTDIR)/bootjdk
+ABS_BOOTDIR_OUTPUTDIR=$(ABS_OUTPUTDIR)/bootjdk
   
 boot_cycle:
-	$(MAKE) ALT_OUTPUTDIR=$(ABS_BOOTJDK_OUTPUTDIR) product_build
-	$(MAKE) ALT_BOOTDIR=$(ABS_BOOTJDK_OUTPUTDIR)/j2sdk-image product_build
+	$(MAKE) ALT_OUTPUTDIR=$(ABS_BOOTDIR_OUTPUTDIR) product_build
+	$(MAKE) ALT_BOOTDIR=$(ABS_BOOTDIR_OUTPUTDIR)/j2sdk-image product_build
 
 ################################################################
 # JPRT rule to build
@@ -452,7 +484,6 @@ include ./make/jprt.gmk
 	fastdebug_build debug_build product_build setup \
         dev dev-build dev-sanity dev-clobber
 
-# FIXUP: Old j2se targets
-j2se_fastdebug_only: jdk_fastdebug_only
-j2se_only: jdk_only
+# Force target
+FRC:
 

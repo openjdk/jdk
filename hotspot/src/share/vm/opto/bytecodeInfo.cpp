@@ -79,8 +79,20 @@ static void print_indent(int depth) {
   for (int i = depth; i != 0; --i) tty->print("  ");
 }
 
+static bool is_init_with_ea(ciMethod* callee_method,
+                            ciMethod* caller_method, Compile* C) {
+  // True when EA is ON and a java constructor is called or
+  // a super constructor is called from an inlined java constructor.
+  return DoEscapeAnalysis && EliminateAllocations &&
+         ( callee_method->is_initializer() ||
+           (caller_method->is_initializer() &&
+            caller_method != C->method() &&
+            caller_method->holder()->is_subclass_of(callee_method->holder()))
+         );
+}
+
 // positive filter: should send be inlined?  returns NULL, if yes, or rejection msg
-const char* InlineTree::shouldInline(ciMethod* callee_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result) const {
+const char* InlineTree::shouldInline(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result) const {
   // Allows targeted inlining
   if(callee_method->should_inline()) {
     *wci_result = *(WarmCallInfo::always_hot());
@@ -97,7 +109,8 @@ const char* InlineTree::shouldInline(ciMethod* callee_method, int caller_bci, ci
   int size     = callee_method->code_size();
 
   // Check for too many throws (and not too huge)
-  if(callee_method->interpreter_throwout_count() > InlineThrowCount && size < InlineThrowMaxSize ) {
+  if(callee_method->interpreter_throwout_count() > InlineThrowCount &&
+     size < InlineThrowMaxSize ) {
     wci_result->set_profit(wci_result->profit() * 100);
     if (PrintInlining && Verbose) {
       print_indent(inline_depth());
@@ -114,8 +127,12 @@ const char* InlineTree::shouldInline(ciMethod* callee_method, int caller_bci, ci
   int invoke_count     = method()->interpreter_invocation_count();
   assert( invoke_count != 0, "Require invokation count greater than zero");
   int freq = call_site_count/invoke_count;
+
   // bump the max size if the call is frequent
-  if ((freq >= InlineFrequencyRatio) || (call_site_count >= InlineFrequencyCount)) {
+  if ((freq >= InlineFrequencyRatio) ||
+      (call_site_count >= InlineFrequencyCount) ||
+      is_init_with_ea(callee_method, caller_method, C)) {
+
     max_size = C->freq_inline_size();
     if (size <= max_size && TraceFrequencyInlining) {
       print_indent(inline_depth());
@@ -126,7 +143,8 @@ const char* InlineTree::shouldInline(ciMethod* callee_method, int caller_bci, ci
     }
   } else {
     // Not hot.  Check for medium-sized pre-existing nmethod at cold sites.
-    if (callee_method->has_compiled_code() && callee_method->instructions_size() > InlineSmallCode/4)
+    if (callee_method->has_compiled_code() &&
+        callee_method->instructions_size() > InlineSmallCode/4)
       return "already compiled into a medium method";
   }
   if (size > max_size) {
@@ -139,7 +157,7 @@ const char* InlineTree::shouldInline(ciMethod* callee_method, int caller_bci, ci
 
 
 // negative filter: should send NOT be inlined?  returns NULL, ok to inline, or rejection msg
-const char* InlineTree::shouldNotInline(ciMethod *callee_method, WarmCallInfo* wci_result) const {
+const char* InlineTree::shouldNotInline(ciMethod *callee_method, ciMethod* caller_method, WarmCallInfo* wci_result) const {
   // negative filter: should send NOT be inlined?  returns NULL (--> inline) or rejection msg
   if (!UseOldInlining) {
     const char* fail = NULL;
@@ -204,9 +222,23 @@ const char* InlineTree::shouldNotInline(ciMethod *callee_method, WarmCallInfo* w
 
   // use frequency-based objections only for non-trivial methods
   if (callee_method->code_size() <= MaxTrivialSize) return NULL;
-  if (UseInterpreter && !CompileTheWorld) { // don't use counts with -Xcomp or CTW
-    if (!callee_method->has_compiled_code() && !callee_method->was_executed_more_than(0)) return "never executed";
-    if (!callee_method->was_executed_more_than(MIN2(MinInliningThreshold, CompileThreshold >> 1))) return "executed < MinInliningThreshold times";
+
+  // don't use counts with -Xcomp or CTW
+  if (UseInterpreter && !CompileTheWorld) {
+
+    if (!callee_method->has_compiled_code() &&
+        !callee_method->was_executed_more_than(0)) {
+      return "never executed";
+    }
+
+    if (is_init_with_ea(callee_method, caller_method, C)) {
+
+      // Escape Analysis: inline all executed constructors
+
+    } else if (!callee_method->was_executed_more_than(MIN2(MinInliningThreshold,
+                                                           CompileThreshold >> 1))) {
+      return "executed < MinInliningThreshold times";
+    }
   }
 
   if (callee_method->should_not_inline()) {
@@ -219,8 +251,7 @@ const char* InlineTree::shouldNotInline(ciMethod *callee_method, WarmCallInfo* w
 //-----------------------------try_to_inline-----------------------------------
 // return NULL if ok, reason for not inlining otherwise
 // Relocated from "InliningClosure::try_to_inline"
-const char* InlineTree::try_to_inline(ciMethod* callee_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result) {
-  ciMethod* caller_method = method();
+const char* InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result) {
 
   // Old algorithm had funny accumulating BC-size counters
   if (UseOldInlining && ClipInlining
@@ -229,25 +260,47 @@ const char* InlineTree::try_to_inline(ciMethod* callee_method, int caller_bci, c
   }
 
   const char *msg = NULL;
-  if ((msg = shouldInline(callee_method, caller_bci, profile, wci_result)) != NULL) return msg;
-  if ((msg = shouldNotInline(callee_method,                   wci_result)) != NULL) return msg;
+  if ((msg = shouldInline(callee_method, caller_method, caller_bci,
+                          profile, wci_result)) != NULL) {
+    return msg;
+  }
+  if ((msg = shouldNotInline(callee_method, caller_method,
+                             wci_result)) != NULL) {
+    return msg;
+  }
 
   bool is_accessor = InlineAccessors && callee_method->is_accessor();
 
   // suppress a few checks for accessors and trivial methods
   if (!is_accessor && callee_method->code_size() > MaxTrivialSize) {
-    // don't inline into giant methods
-    if (C->unique() > (uint)NodeCountInliningCutoff) return "NodeCountInliningCutoff";
 
-    // don't inline unreached call sites
-    if (profile.count() == 0)                        return "call site not reached";
+    // don't inline into giant methods
+    if (C->unique() > (uint)NodeCountInliningCutoff) {
+      return "NodeCountInliningCutoff";
+    }
+
+    if ((!UseInterpreter || CompileTheWorld) &&
+        is_init_with_ea(callee_method, caller_method, C)) {
+
+      // Escape Analysis stress testing when running Xcomp or CTW:
+      // inline constructors even if they are not reached.
+
+    } else if (profile.count() == 0) {
+      // don't inline unreached call sites
+      return "call site not reached";
+    }
   }
 
-  if (!C->do_inlining() && InlineAccessors && !is_accessor) return "not an accessor";
-
-  if( inline_depth() > MaxInlineLevel )           return "inlining too deep";
+  if (!C->do_inlining() && InlineAccessors && !is_accessor) {
+    return "not an accessor";
+  }
+  if( inline_depth() > MaxInlineLevel ) {
+    return "inlining too deep";
+  }
   if( method() == callee_method &&
-      inline_depth() > MaxRecursiveInlineLevel )  return "recursively inlining too deep";
+      inline_depth() > MaxRecursiveInlineLevel ) {
+    return "recursively inlining too deep";
+  }
 
   int size = callee_method->code_size();
 
@@ -336,7 +389,7 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
 
   // Check if inlining policy says no.
   WarmCallInfo wci = *(initial_wci);
-  failure_msg = try_to_inline(callee_method, caller_bci, profile, &wci);
+  failure_msg = try_to_inline(callee_method, caller_method, caller_bci, profile, &wci);
   if (failure_msg != NULL && C->log() != NULL) {
     C->log()->begin_elem("inline_fail reason='");
     C->log()->text("%s", failure_msg);

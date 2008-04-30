@@ -33,7 +33,6 @@
 
 // property name tagging windows disabled by modality
 static LPCTSTR ModalBlockerProp = TEXT("SunAwtModalBlockerProp");
-static LPCTSTR ModalSaveWSEXProp = TEXT("SunAwtModalSaveWSEXProp");
 static LPCTSTR ModalDialogPeerProp = TEXT("SunAwtModalDialogPeerProp");
 
 #ifndef WH_MOUSE_LL
@@ -62,6 +61,12 @@ public:
     static jclass wwindowPeerCls;
     /* long[] getActiveWindowHandles() method in WWindowPeer */
     static jmethodID getActiveWindowsMID;
+
+    // The coordinates at the peer.
+    static jfieldID sysXID;
+    static jfieldID sysYID;
+    static jfieldID sysWID;
+    static jfieldID sysHID;
 
     AwtWindow();
     virtual ~AwtWindow();

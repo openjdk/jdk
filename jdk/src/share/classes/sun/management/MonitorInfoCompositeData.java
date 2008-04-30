@@ -81,7 +81,7 @@ public class MonitorInfoCompositeData extends LazyCompositeData {
                                             values);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newInternalError(e);
+            throw new AssertionError(e);
         }
     }
 
@@ -95,7 +95,7 @@ public class MonitorInfoCompositeData extends LazyCompositeData {
             monitorInfoItemNames = (String[]) s.toArray(new String[0]);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newInternalError(e);
+            throw new AssertionError(e);
         }
     }
 

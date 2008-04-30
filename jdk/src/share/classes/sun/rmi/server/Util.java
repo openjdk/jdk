@@ -67,7 +67,7 @@ public final class Util {
 
     /** "server" package log level */
     static final int logLevel = LogStream.parseLevel(
-        (String) AccessController.doPrivileged(
+        AccessController.doPrivileged(
             new GetPropertyAction("sun.rmi.server.logLevel")));
 
     /** server reference log */
@@ -76,13 +76,13 @@ public final class Util {
 
     /** cached value of property java.rmi.server.ignoreStubClasses */
     private static final boolean ignoreStubClasses =
-        ((Boolean) AccessController.doPrivileged(
-            new GetBooleanAction("java.rmi.server.ignoreStubClasses"))).
+        AccessController.doPrivileged(
+            new GetBooleanAction("java.rmi.server.ignoreStubClasses")).
             booleanValue();
 
     /** cache of  impl classes that have no corresponding stub class */
-    private static final Map withoutStubs =
-        Collections.synchronizedMap(new WeakHashMap(11));
+    private static final Map<Class<?>, Void> withoutStubs =
+        Collections.synchronizedMap(new WeakHashMap<Class<?>, Void>(11));
 
     /** parameter types for stub constructor */
     private static final Class[] stubConsParamTypes = { RemoteRef.class };
@@ -207,9 +207,9 @@ public final class Util {
      * @throws  NullPointerException if remoteClass is null
      */
     private static Class[] getRemoteInterfaces(Class remoteClass) {
-        ArrayList list = new ArrayList();
+        ArrayList<Class<?>> list = new ArrayList<Class<?>>();
         getRemoteInterfaces(list, remoteClass);
-        return (Class []) list.toArray(new Class[list.size()]);
+        return list.toArray(new Class<?>[list.size()]);
     }
 
     /**
@@ -220,7 +220,7 @@ public final class Util {
      *          any illegal remote interfaces
      * @throws  NullPointerException if the specified class or list is null
      */
-    private static void getRemoteInterfaces(ArrayList list, Class cl) {
+    private static void getRemoteInterfaces(ArrayList<Class<?>> list, Class cl) {
         Class superclass = cl.getSuperclass();
         if (superclass != null) {
             getRemoteInterfaces(list, superclass);
@@ -254,7 +254,7 @@ public final class Util {
      * @throws IllegalArgumentException if m is an illegal remote method
      */
     private static void checkMethod(Method m) {
-        Class[] ex = m.getExceptionTypes();
+        Class<?>[] ex = m.getExceptionTypes();
         for (int i = 0; i < ex.length; i++) {
             if (ex[i].isAssignableFrom(RemoteException.class))
                 return;
@@ -283,7 +283,7 @@ public final class Util {
          * pickle methods
          */
         try {
-            Class stubcl =
+            Class<?> stubcl =
                 Class.forName(stubname, false, remoteClass.getClassLoader());
             Constructor cons = stubcl.getConstructor(stubConsParamTypes);
             return (RemoteStub) cons.newInstance(new Object[] { ref });
