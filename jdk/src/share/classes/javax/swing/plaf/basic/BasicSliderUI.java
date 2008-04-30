@@ -552,20 +552,28 @@ public class BasicSliderUI extends SliderUI{
         contentRect.height = focusRect.height - (focusInsets.top + focusInsets.bottom);
     }
 
+    private int getTickSpacing() {
+        int majorTickSpacing = slider.getMajorTickSpacing();
+        int minorTickSpacing = slider.getMinorTickSpacing();
+
+        int result;
+
+        if (minorTickSpacing > 0) {
+            result = minorTickSpacing;
+        } else if (majorTickSpacing > 0) {
+            result = majorTickSpacing;
+        } else {
+            result = 0;
+        }
+
+        return result;
+    }
+
     protected void calculateThumbLocation() {
         if ( slider.getSnapToTicks() ) {
             int sliderValue = slider.getValue();
             int snappedValue = sliderValue;
-            int majorTickSpacing = slider.getMajorTickSpacing();
-            int minorTickSpacing = slider.getMinorTickSpacing();
-            int tickSpacing = 0;
-
-            if ( minorTickSpacing > 0 ) {
-                tickSpacing = minorTickSpacing;
-            }
-            else if ( majorTickSpacing > 0 ) {
-                tickSpacing = majorTickSpacing;
-            }
+            int tickSpacing = getTickSpacing();
 
             if ( tickSpacing != 0 ) {
                 // If it's not on a tick, change the value
@@ -1273,28 +1281,34 @@ public class BasicSliderUI extends SliderUI{
 
     public void scrollByBlock(int direction)    {
         synchronized(slider)    {
-
-            int oldValue = slider.getValue();
             int blockIncrement =
                 (slider.getMaximum() - slider.getMinimum()) / 10;
-            if (blockIncrement <= 0 &&
-                slider.getMaximum() > slider.getMinimum()) {
-
+            if (blockIncrement == 0) {
                 blockIncrement = 1;
             }
 
+            if (slider.getSnapToTicks()) {
+                int tickSpacing = getTickSpacing();
+
+                if (blockIncrement < tickSpacing) {
+                    blockIncrement = tickSpacing;
+                }
+            }
+
             int delta = blockIncrement * ((direction > 0) ? POSITIVE_SCROLL : NEGATIVE_SCROLL);
-            slider.setValue(oldValue + delta);
+            slider.setValue(slider.getValue() + delta);
         }
     }
 
     public void scrollByUnit(int direction) {
         synchronized(slider)    {
+            int delta = ((direction > 0) ? POSITIVE_SCROLL : NEGATIVE_SCROLL);
 
-            int oldValue = slider.getValue();
-            int delta = 1 * ((direction > 0) ? POSITIVE_SCROLL : NEGATIVE_SCROLL);
+            if (slider.getSnapToTicks()) {
+                delta *= getTickSpacing();
+            }
 
-            slider.setValue(oldValue + delta);
+            slider.setValue(slider.getValue() + delta);
         }
     }
 
