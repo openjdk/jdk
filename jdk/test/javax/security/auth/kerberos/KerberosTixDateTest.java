@@ -25,6 +25,7 @@
  * @test
  * @bug 6659990
  * @summary test the immutability of the Date fields in KerberosTicket class.
+ * @ignore Must set up KDC and setup Kerberos configuration file
  */
 
 import java.net.InetAddress;
