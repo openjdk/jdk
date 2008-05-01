@@ -1419,7 +1419,8 @@ PhiNode::LoopSafety PhiNode::simple_data_loop_check(Node *in) const {
     // Check inputs of phi's inputs also.
     // It is much less expensive then full graph walk.
     uint cnt = in->req();
-    for (uint i = 1; i < cnt; ++i) {
+    uint i = (in->is_Proj() && !in->is_CFG())  ? 0 : 1;
+    for (; i < cnt; ++i) {
       Node* m = in->in(i);
       if (m == (Node*)this)
         return UnsafeLoop; // Unsafe loop
@@ -1467,7 +1468,8 @@ bool PhiNode::is_unsafe_data_reference(Node *in) const {
   while (nstack.size() != 0) {
     Node* n = nstack.pop();
     uint cnt = n->req();
-    for (uint i = 1; i < cnt; i++) { // Only data paths
+    uint i = (n->is_Proj() && !n->is_CFG()) ? 0 : 1;
+    for (; i < cnt; i++) {
       Node* m = n->in(i);
       if (m == (Node*)this) {
         return true;    // Data loop
@@ -2017,6 +2019,28 @@ Node *CreateExNode::Identity( PhaseTransform *phase ) {
 }
 
 //=============================================================================
+//------------------------------Value------------------------------------------
+// Check for being unreachable.
+const Type *NeverBranchNode::Value( PhaseTransform *phase ) const {
+  if (!in(0) || in(0)->is_top()) return Type::TOP;
+  return bottom_type();
+}
+
+//------------------------------Ideal------------------------------------------
+// Check for no longer being part of a loop
+Node *NeverBranchNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  if (can_reshape && !in(0)->is_Loop()) {
+    // Dead code elimination can sometimes delete this projection so
+    // if it's not there, there's nothing to do.
+    Node* fallthru = proj_out(0);
+    if (fallthru != NULL) {
+      phase->is_IterGVN()->subsume_node(fallthru, in(0));
+    }
+    return phase->C->top();
+  }
+  return NULL;
+}
+
 #ifndef PRODUCT
 void NeverBranchNode::format( PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("%s", Name());

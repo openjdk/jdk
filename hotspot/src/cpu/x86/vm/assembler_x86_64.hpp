@@ -1111,6 +1111,8 @@ class MacroAssembler : public Assembler {
   void decode_heap_oop(Register r);
   void encode_heap_oop_not_null(Register r);
   void decode_heap_oop_not_null(Register r);
+  void encode_heap_oop_not_null(Register dst, Register src);
+  void decode_heap_oop_not_null(Register dst, Register src);
 
   // Stack frame creation/removal
   void enter();
