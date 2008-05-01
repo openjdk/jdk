@@ -3647,6 +3647,12 @@ void MacroAssembler::encode_heap_oop_not_null(Register r) {
   srlx(r, LogMinObjAlignmentInBytes, r);
 }
 
+void MacroAssembler::encode_heap_oop_not_null(Register src, Register dst) {
+  assert (UseCompressedOops, "must be compressed");
+  sub(src, G6_heapbase, dst);
+  srlx(dst, LogMinObjAlignmentInBytes, dst);
+}
+
 // Same algorithm as oops.inline.hpp decode_heap_oop.
 void  MacroAssembler::decode_heap_oop(Register src, Register dst) {
   assert (UseCompressedOops, "must be compressed");
@@ -3663,6 +3669,14 @@ void  MacroAssembler::decode_heap_oop_not_null(Register r) {
   assert (UseCompressedOops, "must be compressed");
   sllx(r, LogMinObjAlignmentInBytes, r);
   add(r, G6_heapbase, r);
+}
+
+void  MacroAssembler::decode_heap_oop_not_null(Register src, Register dst) {
+  // Do not add assert code to this unless you change vtableStubs_sparc.cpp
+  // pd_code_size_limit.
+  assert (UseCompressedOops, "must be compressed");
+  sllx(src, LogMinObjAlignmentInBytes, dst);
+  add(dst, G6_heapbase, dst);
 }
 
 void MacroAssembler::reinit_heapbase() {

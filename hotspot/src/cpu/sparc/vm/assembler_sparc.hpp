@@ -1998,6 +1998,8 @@ class MacroAssembler: public Assembler {
   }
   void encode_heap_oop_not_null(Register r);
   void decode_heap_oop_not_null(Register r);
+  void encode_heap_oop_not_null(Register src, Register dst);
+  void decode_heap_oop_not_null(Register src, Register dst);
 
   // Support for managing the JavaThread pointer (i.e.; the reference to
   // thread-local information).

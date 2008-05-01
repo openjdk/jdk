@@ -4150,7 +4150,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
   if (oop_result->is_valid()) {
     movq(oop_result, Address(r15_thread, JavaThread::vm_result_offset()));
     movptr(Address(r15_thread, JavaThread::vm_result_offset()), NULL_WORD);
-    verify_oop(oop_result);
+    verify_oop(oop_result, "broken oop in call_VM_base");
   }
 }
 
@@ -4689,6 +4689,10 @@ void MacroAssembler::warn(const char* msg) {
   popq(r12);
 }
 
+#ifndef PRODUCT
+extern "C" void findpc(intptr_t x);
+#endif
+
 void MacroAssembler::debug(char* msg, int64_t pc, int64_t regs[]) {
   // In order to get locks to work, we need to fake a in_VM state
   if (ShowMessageBoxOnError ) {
@@ -4707,6 +4711,11 @@ void MacroAssembler::debug(char* msg, int64_t pc, int64_t regs[]) {
     if (os::message_box(msg, "Execution stopped, print registers?")) {
       ttyLocker ttyl;
       tty->print_cr("rip = 0x%016lx", pc);
+#ifndef PRODUCT
+      tty->cr();
+      findpc(pc);
+      tty->cr();
+#endif
       tty->print_cr("rax = 0x%016lx", regs[15]);
       tty->print_cr("rbx = 0x%016lx", regs[12]);
       tty->print_cr("rcx = 0x%016lx", regs[14]);
@@ -5187,7 +5196,7 @@ void MacroAssembler::encode_heap_oop(Register r) {
   bind(ok);
   popq(rscratch1);
 #endif
-  verify_oop(r);
+  verify_oop(r, "broken oop in encode_heap_oop");
   testq(r, r);
   cmovq(Assembler::equal, r, r12_heapbase);
   subq(r, r12_heapbase);
@@ -5203,9 +5212,26 @@ void MacroAssembler::encode_heap_oop_not_null(Register r) {
   stop("null oop passed to encode_heap_oop_not_null");
   bind(ok);
 #endif
-  verify_oop(r);
+  verify_oop(r, "broken oop in encode_heap_oop_not_null");
   subq(r, r12_heapbase);
   shrq(r, LogMinObjAlignmentInBytes);
+}
+
+void MacroAssembler::encode_heap_oop_not_null(Register dst, Register src) {
+  assert (UseCompressedOops, "should be compressed");
+#ifdef ASSERT
+  Label ok;
+  testq(src, src);
+  jcc(Assembler::notEqual, ok);
+  stop("null oop passed to encode_heap_oop_not_null2");
+  bind(ok);
+#endif
+  verify_oop(src, "broken oop in encode_heap_oop_not_null2");
+  if (dst != src) {
+    movq(dst, src);
+  }
+  subq(dst, r12_heapbase);
+  shrq(dst, LogMinObjAlignmentInBytes);
 }
 
 void  MacroAssembler::decode_heap_oop(Register r) {
@@ -5232,7 +5258,7 @@ void  MacroAssembler::decode_heap_oop(Register r) {
    leaq(r, Address(r12_heapbase, r, Address::times_8, 0));
 #endif
   bind(done);
-  verify_oop(r);
+  verify_oop(r, "broken oop in decode_heap_oop");
 }
 
 void  MacroAssembler::decode_heap_oop_not_null(Register r) {
@@ -5241,6 +5267,14 @@ void  MacroAssembler::decode_heap_oop_not_null(Register r) {
   // vtableStubs also counts instructions in pd_code_size_limit.
   assert(Address::times_8 == LogMinObjAlignmentInBytes, "decode alg wrong");
   leaq(r, Address(r12_heapbase, r, Address::times_8, 0));
+}
+
+void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
+  assert (UseCompressedOops, "should only be used for compressed headers");
+  // Cannot assert, unverified entry point counts instructions (see .ad file)
+  // vtableStubs also counts instructions in pd_code_size_limit.
+  assert(Address::times_8 == LogMinObjAlignmentInBytes, "decode alg wrong");
+  leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
 }
 
 Assembler::Condition MacroAssembler::negate_condition(Assembler::Condition cond) {

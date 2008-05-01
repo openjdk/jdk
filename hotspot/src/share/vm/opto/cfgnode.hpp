@@ -244,6 +244,8 @@ public:
   MultiBranchNode( uint required ) : MultiNode(required) {
     init_class_id(Class_MultiBranch);
   }
+  // returns required number of users to be well formed.
+  virtual int required_outcnt() const = 0;
 };
 
 //------------------------------IfNode-----------------------------------------
@@ -333,6 +335,7 @@ public:
   virtual const Type *bottom_type() const { return TypeTuple::IFBOTH; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual int required_outcnt() const { return 2; }
   virtual const RegMask &out_RegMask() const;
   void dominated_by(Node* prev_dom, PhaseIterGVN* igvn);
   int is_range_check(Node* &range, Node* &index, jint &offset);
@@ -391,6 +394,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *bottom_type() const;
   virtual bool pinned() const { return true; }
+  virtual int required_outcnt() const { return _size; }
 };
 
 //------------------------------JumpNode---------------------------------------
@@ -504,7 +508,9 @@ public:
   virtual int Opcode() const;
   virtual bool pinned() const { return true; };
   virtual const Type *bottom_type() const { return TypeTuple::IFBOTH; }
-
+  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual int required_outcnt() const { return 2; }
   virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const { }
   virtual uint size(PhaseRegAlloc *ra_) const { return 0; }
 #ifndef PRODUCT

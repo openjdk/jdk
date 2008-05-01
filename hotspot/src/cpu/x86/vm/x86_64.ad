@@ -6080,7 +6080,8 @@ instruct loadKlassComp(rRegP dst, memory mem)
   predicate(n->in(MemNode::Address)->bottom_type()->is_narrow());
 
   ins_cost(125); // XXX
-  format %{ "movl    $dst, $mem\t# compressed class" %}
+  format %{ "movl    $dst, $mem\t# compressed class\n\t"
+            "decode_heap_oop $dst,$dst" %}
   ins_encode %{
     Address addr = build_address($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
     Register dst = as_Register($dst$$reg);
@@ -6349,7 +6350,7 @@ instruct loadConF(regF dst, immF src)
 instruct loadConN0(rRegN dst, immN0 src, rFlagsReg cr) %{
   match(Set dst src);
   effect(KILL cr);
-  format %{ "xorq    $dst, $src\t# compressed ptr" %}
+  format %{ "xorq    $dst, $src\t# compressed NULL ptr" %}
   ins_encode %{
     Register dst = $dst$$Register;
     __ xorq(dst, dst);
@@ -6361,7 +6362,8 @@ instruct loadConN(rRegN dst, immN src) %{
   match(Set dst src);
 
   ins_cost(125);
-  format %{ "movl    $dst, $src\t# compressed ptr" %}
+  format %{ "movq    $dst, $src\t# compressed ptr\n\t"
+            "encode_heap_oop_not_null $dst,$dst" %}
   ins_encode %{
     address con = (address)$src$$constant;
     Register dst = $dst$$Register;
@@ -6996,6 +6998,7 @@ instruct castP2X(rRegL dst, rRegP src)
 
 // Convert oop pointer into compressed form
 instruct encodeHeapOop(rRegN dst, rRegP src, rFlagsReg cr) %{
+  predicate(n->bottom_type()->is_narrowoop()->make_oopptr()->ptr() != TypePtr::NotNull);
   match(Set dst (EncodeP src));
   effect(KILL cr);
   format %{ "encode_heap_oop $dst,$src" %}
@@ -7010,7 +7013,21 @@ instruct encodeHeapOop(rRegN dst, rRegP src, rFlagsReg cr) %{
   ins_pipe(ialu_reg_long);
 %}
 
+instruct encodeHeapOop_not_null(rRegN dst, rRegP src, rFlagsReg cr) %{
+  predicate(n->bottom_type()->is_narrowoop()->make_oopptr()->ptr() == TypePtr::NotNull);
+  match(Set dst (EncodeP src));
+  effect(KILL cr);
+  format %{ "encode_heap_oop_not_null $dst,$src" %}
+  ins_encode %{
+    Register s = $src$$Register;
+    Register d = $dst$$Register;
+    __ encode_heap_oop_not_null(d, s);
+  %}
+  ins_pipe(ialu_reg_long);
+%}
+
 instruct decodeHeapOop(rRegP dst, rRegN src, rFlagsReg cr) %{
+  predicate(n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull);
   match(Set dst (DecodeN src));
   effect(KILL cr);
   format %{ "decode_heap_oop $dst,$src" %}
@@ -7021,6 +7038,18 @@ instruct decodeHeapOop(rRegP dst, rRegN src, rFlagsReg cr) %{
       __ movq(d, s);
     }
     __ decode_heap_oop(d);
+  %}
+  ins_pipe(ialu_reg_long);
+%}
+
+instruct decodeHeapOop_not_null(rRegP dst, rRegN src) %{
+  predicate(n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull);
+  match(Set dst (DecodeN src));
+  format %{ "decode_heap_oop_not_null $dst,$src" %}
+  ins_encode %{
+    Register s = $src$$Register;
+    Register d = $dst$$Register;
+    __ decode_heap_oop_not_null(d, s);
   %}
   ins_pipe(ialu_reg_long);
 %}
