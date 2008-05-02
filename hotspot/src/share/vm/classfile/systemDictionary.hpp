@@ -64,12 +64,133 @@ class LoaderConstraintTable;
 class HashtableBucket;
 class ResolutionErrorTable;
 
+// Certain classes are preloaded, such as java.lang.Object and java.lang.String.
+// They are all "well-known", in the sense that no class loader is allowed
+// to provide a different definition.
+//
+// These klasses must all have names defined in vmSymbols.
+
+#define WK_KLASS_ENUM_NAME(kname)    kname##_knum
+
+// Each well-known class has a short klass name (like object_klass),
+// a vmSymbol name (like java_lang_Object), and a flag word
+// that makes some minor distinctions, like whether the klass
+// is preloaded, optional, release-specific, etc.
+// The order of these definitions is significant; it is the order in which
+// preloading is actually performed by initialize_preloaded_classes.
+
+#define WK_KLASSES_DO(template)                                               \
+  /* well-known classes */                                                    \
+  template(object_klass,                 java_lang_Object,               Pre) \
+  template(string_klass,                 java_lang_String,               Pre) \
+  template(class_klass,                  java_lang_Class,                Pre) \
+  template(cloneable_klass,              java_lang_Cloneable,            Pre) \
+  template(classloader_klass,            java_lang_ClassLoader,          Pre) \
+  template(serializable_klass,           java_io_Serializable,           Pre) \
+  template(system_klass,                 java_lang_System,               Pre) \
+  template(throwable_klass,              java_lang_Throwable,            Pre) \
+  template(error_klass,                  java_lang_Error,                Pre) \
+  template(threaddeath_klass,            java_lang_ThreadDeath,          Pre) \
+  template(exception_klass,              java_lang_Exception,            Pre) \
+  template(runtime_exception_klass,      java_lang_RuntimeException,     Pre) \
+  template(protectionDomain_klass,       java_security_ProtectionDomain, Pre) \
+  template(AccessControlContext_klass,   java_security_AccessControlContext, Pre) \
+  template(classNotFoundException_klass, java_lang_ClassNotFoundException, Pre) \
+  template(noClassDefFoundError_klass,   java_lang_NoClassDefFoundError, Pre) \
+  template(linkageError_klass,           java_lang_LinkageError,         Pre) \
+  template(ClassCastException_klass,     java_lang_ClassCastException,   Pre) \
+  template(ArrayStoreException_klass,    java_lang_ArrayStoreException,  Pre) \
+  template(virtualMachineError_klass,    java_lang_VirtualMachineError,  Pre) \
+  template(OutOfMemoryError_klass,       java_lang_OutOfMemoryError,     Pre) \
+  template(StackOverflowError_klass,     java_lang_StackOverflowError,   Pre) \
+  template(IllegalMonitorStateException_klass, java_lang_IllegalMonitorStateException, Pre) \
+  template(reference_klass,              java_lang_ref_Reference,        Pre) \
+                                                                              \
+  /* Preload ref klasses and set reference types */                           \
+  template(soft_reference_klass,         java_lang_ref_SoftReference,    Pre) \
+  template(weak_reference_klass,         java_lang_ref_WeakReference,    Pre) \
+  template(final_reference_klass,        java_lang_ref_FinalReference,   Pre) \
+  template(phantom_reference_klass,      java_lang_ref_PhantomReference, Pre) \
+  template(finalizer_klass,              java_lang_ref_Finalizer,        Pre) \
+                                                                              \
+  template(thread_klass,                 java_lang_Thread,               Pre) \
+  template(threadGroup_klass,            java_lang_ThreadGroup,          Pre) \
+  template(properties_klass,             java_util_Properties,           Pre) \
+  template(reflect_accessible_object_klass, java_lang_reflect_AccessibleObject, Pre) \
+  template(reflect_field_klass,          java_lang_reflect_Field,        Pre) \
+  template(reflect_method_klass,         java_lang_reflect_Method,       Pre) \
+  template(reflect_constructor_klass,    java_lang_reflect_Constructor,  Pre) \
+                                                                              \
+  /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */ \
+  /* Universe::is_gte_jdk14x_version() is not set up by this point. */        \
+  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */               \
+  template(reflect_magic_klass,          sun_reflect_MagicAccessorImpl,  Opt) \
+  template(reflect_method_accessor_klass, sun_reflect_MethodAccessorImpl, Opt_Only_JDK14NewRef) \
+  template(reflect_constructor_accessor_klass, sun_reflect_ConstructorAccessorImpl, Opt_Only_JDK14NewRef) \
+  template(reflect_delegating_classloader_klass, sun_reflect_DelegatingClassLoader, Opt) \
+  template(reflect_constant_pool_klass,  sun_reflect_ConstantPool,       Opt_Only_JDK15) \
+  template(reflect_unsafe_static_field_accessor_impl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15) \
+                                                                              \
+  template(vector_klass,                 java_util_Vector,               Pre) \
+  template(hashtable_klass,              java_util_Hashtable,            Pre) \
+  template(stringBuffer_klass,           java_lang_StringBuffer,         Pre) \
+                                                                              \
+  /* It's NULL in non-1.4 JDKs. */                                            \
+  template(stackTraceElement_klass,      java_lang_StackTraceElement,    Opt) \
+  /* Universe::is_gte_jdk14x_version() is not set up by this point. */        \
+  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */               \
+  template(java_nio_Buffer_klass,        java_nio_Buffer,                Opt) \
+                                                                              \
+  /* If this class isn't present, it won't be referenced. */                  \
+  template(sun_misc_AtomicLongCSImpl_klass, sun_misc_AtomicLongCSImpl,   Opt) \
+                                                                              \
+  template(sun_jkernel_DownloadManager_klass, sun_jkernel_DownloadManager, Opt_Kernel) \
+                                                                              \
+  /* Preload boxing klasses */                                                \
+  template(boolean_klass,                java_lang_Boolean,              Pre) \
+  template(char_klass,                   java_lang_Character,            Pre) \
+  template(float_klass,                  java_lang_Float,                Pre) \
+  template(double_klass,                 java_lang_Double,               Pre) \
+  template(byte_klass,                   java_lang_Byte,                 Pre) \
+  template(short_klass,                  java_lang_Short,                Pre) \
+  template(int_klass,                    java_lang_Integer,              Pre) \
+  template(long_klass,                   java_lang_Long,                 Pre) \
+  /*end*/
+
+
 class SystemDictionary : AllStatic {
   friend class VMStructs;
   friend class CompactingPermGenGen;
   NOT_PRODUCT(friend class instanceKlassKlass;)
 
  public:
+  enum WKID {
+    NO_WKID = 0,
+
+    #define WK_KLASS_ENUM(name, ignore_s, ignore_o) WK_KLASS_ENUM_NAME(name),
+    WK_KLASSES_DO(WK_KLASS_ENUM)
+    #undef WK_KLASS_ENUM
+
+    WKID_LIMIT,
+
+    FIRST_WKID = NO_WKID + 1
+  };
+
+  enum InitOption {
+    Pre,                        // preloaded; error if not present
+
+    // Order is significant.  Options before this point require resolve_or_fail.
+    // Options after this point will use resolve_or_null instead.
+
+    Opt,                        // preload tried; NULL if not present
+    Opt_Only_JDK14NewRef,       // preload tried; use only with NewReflection
+    Opt_Only_JDK15,             // preload tried; use only with JDK1.5+
+    Opt_Kernel,                 // preload tried only #ifdef KERNEL
+    OPTION_LIMIT,
+    CEIL_LG_OPTION_LIMIT = 4    // OPTION_LIMIT <= (1<<CEIL_LG_OPTION_LIMIT)
+  };
+
+
   // Returns a class with a given class name and class loader.  Loads the
   // class if needed. If not found a NoClassDefFoundError or a
   // ClassNotFoundException is thrown, depending on the value on the
@@ -122,6 +243,9 @@ public:
                                                Handle class_loader,
                                                Handle protection_domain,
                                                TRAPS);
+
+  // If the given name is known to vmSymbols, return the well-know klass:
+  static klassOop find_well_known_klass(symbolOop class_name);
 
   // Lookup an instance or array class that has already been loaded
   // either into the given class loader, or else into another class
@@ -235,85 +359,34 @@ public:
     return k;
   }
 
+  static klassOop check_klass_Pre(klassOop k) { return check_klass(k); }
+  static klassOop check_klass_Opt(klassOop k) { return k; }
+  static klassOop check_klass_Opt_Kernel(klassOop k) { return k; } //== Opt
+  static klassOop check_klass_Opt_Only_JDK15(klassOop k) {
+    assert(JDK_Version::is_gte_jdk15x_version(), "JDK 1.5 only");
+    return k;
+  }
+  static klassOop check_klass_Opt_Only_JDK14NewRef(klassOop k) {
+    assert(JDK_Version::is_gte_jdk14x_version() && UseNewReflection, "JDK 1.4 only");
+    // despite the optional loading, if you use this it must be present:
+    return check_klass(k);
+  }
+
+  static bool initialize_wk_klass(WKID id, int init_opt, TRAPS);
+  static void initialize_wk_klasses_until(WKID limit_id, WKID &start_id, TRAPS);
+  static void initialize_wk_klasses_through(WKID end_id, WKID &start_id, TRAPS) {
+    int limit = (int)end_id + 1;
+    initialize_wk_klasses_until((WKID) limit, start_id, THREAD);
+  }
+
 public:
-  static klassOop object_klass()            { return check_klass(_object_klass); }
-  static klassOop string_klass()            { return check_klass(_string_klass); }
-  static klassOop class_klass()             { return check_klass(_class_klass); }
-  static klassOop cloneable_klass()         { return check_klass(_cloneable_klass); }
-  static klassOop classloader_klass()       { return check_klass(_classloader_klass); }
-  static klassOop serializable_klass()      { return check_klass(_serializable_klass); }
-  static klassOop system_klass()            { return check_klass(_system_klass); }
+  #define WK_KLASS_DECLARE(name, ignore_symbol, option) \
+    static klassOop name() { return check_klass_##option(_well_known_klasses[WK_KLASS_ENUM_NAME(name)]); }
+  WK_KLASSES_DO(WK_KLASS_DECLARE);
+  #undef WK_KLASS_DECLARE
 
-  static klassOop throwable_klass()         { return check_klass(_throwable_klass); }
-  static klassOop error_klass()             { return check_klass(_error_klass); }
-  static klassOop threaddeath_klass()       { return check_klass(_threaddeath_klass); }
-  static klassOop exception_klass()         { return check_klass(_exception_klass); }
-  static klassOop runtime_exception_klass() { return check_klass(_runtime_exception_klass); }
-  static klassOop classNotFoundException_klass() { return check_klass(_classNotFoundException_klass); }
-  static klassOop noClassDefFoundError_klass()   { return check_klass(_noClassDefFoundError_klass); }
-  static klassOop linkageError_klass()       { return check_klass(_linkageError_klass); }
-  static klassOop ClassCastException_klass() { return check_klass(_classCastException_klass); }
-  static klassOop ArrayStoreException_klass() { return check_klass(_arrayStoreException_klass); }
-  static klassOop virtualMachineError_klass()  { return check_klass(_virtualMachineError_klass); }
-  static klassOop OutOfMemoryError_klass()  { return check_klass(_outOfMemoryError_klass); }
-  static klassOop StackOverflowError_klass() { return check_klass(_StackOverflowError_klass); }
-  static klassOop IllegalMonitorStateException_klass() { return check_klass(_illegalMonitorStateException_klass); }
-  static klassOop protectionDomain_klass()  { return check_klass(_protectionDomain_klass); }
-  static klassOop AccessControlContext_klass() { return check_klass(_AccessControlContext_klass); }
-  static klassOop reference_klass()         { return check_klass(_reference_klass); }
-  static klassOop soft_reference_klass()    { return check_klass(_soft_reference_klass); }
-  static klassOop weak_reference_klass()    { return check_klass(_weak_reference_klass); }
-  static klassOop final_reference_klass()   { return check_klass(_final_reference_klass); }
-  static klassOop phantom_reference_klass() { return check_klass(_phantom_reference_klass); }
-  static klassOop finalizer_klass()         { return check_klass(_finalizer_klass); }
-
-  static klassOop thread_klass()            { return check_klass(_thread_klass); }
-  static klassOop threadGroup_klass()       { return check_klass(_threadGroup_klass); }
-  static klassOop properties_klass()        { return check_klass(_properties_klass); }
-  static klassOop reflect_accessible_object_klass() { return check_klass(_reflect_accessible_object_klass); }
-  static klassOop reflect_field_klass()     { return check_klass(_reflect_field_klass); }
-  static klassOop reflect_method_klass()    { return check_klass(_reflect_method_klass); }
-  static klassOop reflect_constructor_klass() { return check_klass(_reflect_constructor_klass); }
-  static klassOop reflect_method_accessor_klass() {
-    assert(JDK_Version::is_gte_jdk14x_version() && UseNewReflection, "JDK 1.4 only");
-    return check_klass(_reflect_method_accessor_klass);
-  }
-  static klassOop reflect_constructor_accessor_klass() {
-    assert(JDK_Version::is_gte_jdk14x_version() && UseNewReflection, "JDK 1.4 only");
-    return check_klass(_reflect_constructor_accessor_klass);
-  }
-  // NOTE: needed too early in bootstrapping process to have checks based on JDK version
-  static klassOop reflect_magic_klass()     { return _reflect_magic_klass; }
-  static klassOop reflect_delegating_classloader_klass() { return _reflect_delegating_classloader_klass; }
-  static klassOop reflect_constant_pool_klass() {
-    assert(JDK_Version::is_gte_jdk15x_version(), "JDK 1.5 only");
-    return _reflect_constant_pool_klass;
-  }
-  static klassOop reflect_unsafe_static_field_accessor_impl_klass() {
-    assert(JDK_Version::is_gte_jdk15x_version(), "JDK 1.5 only");
-    return _reflect_unsafe_static_field_accessor_impl_klass;
-  }
-
-  static klassOop vector_klass()            { return check_klass(_vector_klass); }
-  static klassOop hashtable_klass()         { return check_klass(_hashtable_klass); }
-  static klassOop stringBuffer_klass()      { return check_klass(_stringBuffer_klass); }
-  static klassOop stackTraceElement_klass() { return check_klass(_stackTraceElement_klass); }
-
-  static klassOop java_nio_Buffer_klass()   { return check_klass(_java_nio_Buffer_klass); }
-
-  static klassOop sun_misc_AtomicLongCSImpl_klass() { return _sun_misc_AtomicLongCSImpl_klass; }
-
-  // To support incremental JRE downloads (KERNEL JRE). Null if not present.
-  static klassOop sun_jkernel_DownloadManager_klass() { return _sun_jkernel_DownloadManager_klass; }
-
-  static klassOop boolean_klass()           { return check_klass(_boolean_klass); }
-  static klassOop char_klass()              { return check_klass(_char_klass); }
-  static klassOop float_klass()             { return check_klass(_float_klass); }
-  static klassOop double_klass()            { return check_klass(_double_klass); }
-  static klassOop byte_klass()              { return check_klass(_byte_klass); }
-  static klassOop short_klass()             { return check_klass(_short_klass); }
-  static klassOop int_klass()               { return check_klass(_int_klass); }
-  static klassOop long_klass()              { return check_klass(_long_klass); }
+  // Local definition for direct access to the private array:
+  #define WK_KLASS(name) _well_known_klasses[WK_KLASS_ENUM_NAME(name)]
 
   static klassOop box_klass(BasicType t) {
     assert((uint)t < T_VOID+1, "range check");
@@ -335,8 +408,8 @@ public:
   // Tells whether ClassLoader.checkPackageAccess is present
   static bool has_checkPackageAccess()      { return _has_checkPackageAccess; }
 
-  static bool class_klass_loaded()          { return _class_klass != NULL; }
-  static bool cloneable_klass_loaded()      { return _cloneable_klass != NULL; }
+  static bool class_klass_loaded()          { return WK_KLASS(class_klass) != NULL; }
+  static bool cloneable_klass_loaded()      { return WK_KLASS(cloneable_klass) != NULL; }
 
   // Returns default system loader
   static oop java_system_loader();
@@ -498,80 +571,12 @@ private:
                                 instanceKlassHandle k, Handle loader, TRAPS);
 
   // Variables holding commonly used klasses (preloaded)
-  static klassOop _object_klass;
-  static klassOop _string_klass;
-  static klassOop _class_klass;
-  static klassOop _cloneable_klass;
-  static klassOop _classloader_klass;
-  static klassOop _serializable_klass;
-  static klassOop _system_klass;
-
-  static klassOop _throwable_klass;
-  static klassOop _error_klass;
-  static klassOop _threaddeath_klass;
-  static klassOop _exception_klass;
-  static klassOop _runtime_exception_klass;
-  static klassOop _classNotFoundException_klass;
-  static klassOop _noClassDefFoundError_klass;
-  static klassOop _linkageError_klass;
-  static klassOop _classCastException_klass;
-  static klassOop _arrayStoreException_klass;
-  static klassOop _virtualMachineError_klass;
-  static klassOop _outOfMemoryError_klass;
-  static klassOop _StackOverflowError_klass;
-  static klassOop _illegalMonitorStateException_klass;
-  static klassOop _protectionDomain_klass;
-  static klassOop _AccessControlContext_klass;
-  static klassOop _reference_klass;
-  static klassOop _soft_reference_klass;
-  static klassOop _weak_reference_klass;
-  static klassOop _final_reference_klass;
-  static klassOop _phantom_reference_klass;
-  static klassOop _finalizer_klass;
-
-  static klassOop _thread_klass;
-  static klassOop _threadGroup_klass;
-  static klassOop _properties_klass;
-  static klassOop _reflect_accessible_object_klass;
-  static klassOop _reflect_field_klass;
-  static klassOop _reflect_method_klass;
-  static klassOop _reflect_constructor_klass;
-  // 1.4 reflection implementation
-  static klassOop _reflect_magic_klass;
-  static klassOop _reflect_method_accessor_klass;
-  static klassOop _reflect_constructor_accessor_klass;
-  static klassOop _reflect_delegating_classloader_klass;
-  // 1.5 annotations implementation
-  static klassOop _reflect_constant_pool_klass;
-  static klassOop _reflect_unsafe_static_field_accessor_impl_klass;
-
-  static klassOop _stringBuffer_klass;
-  static klassOop _vector_klass;
-  static klassOop _hashtable_klass;
-
-  static klassOop _stackTraceElement_klass;
-
-  static klassOop _java_nio_Buffer_klass;
-
-  static klassOop _sun_misc_AtomicLongCSImpl_klass;
-
-  // KERNEL JRE support.
-  static klassOop _sun_jkernel_DownloadManager_klass;
+  static klassOop _well_known_klasses[];
 
   // Lazily loaded klasses
   static volatile klassOop _abstract_ownable_synchronizer_klass;
 
-  // Box klasses
-  static klassOop _boolean_klass;
-  static klassOop _char_klass;
-  static klassOop _float_klass;
-  static klassOop _double_klass;
-  static klassOop _byte_klass;
-  static klassOop _short_klass;
-  static klassOop _int_klass;
-  static klassOop _long_klass;
-
-  // table of same
+  // table of box klasses (int_klass, etc.)
   static klassOop _box_klasses[T_VOID+1];
 
   static oop  _java_system_loader;
