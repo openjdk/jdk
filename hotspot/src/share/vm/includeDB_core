@@ -718,6 +718,11 @@ ciObjArray.cpp                          ciNullObject.hpp
 ciObjArray.cpp                          ciUtilities.hpp
 ciObjArray.cpp                          objArrayOop.hpp
 
+ciObjArray.cpp                          ciObjArray.hpp
+ciObjArray.cpp                          ciNullObject.hpp
+ciObjArray.cpp                          ciUtilities.hpp
+ciObjArray.cpp                          objArrayOop.hpp
+
 ciObjArrayKlass.cpp                     ciInstanceKlass.hpp
 ciObjArrayKlass.cpp                     ciObjArrayKlass.hpp
 ciObjArrayKlass.cpp                     ciObjArrayKlassKlass.hpp
@@ -1662,6 +1667,7 @@ frame_<arch>.inline.hpp                 generate_platform_dependent_include
 
 gcLocker.cpp                            gcLocker.inline.hpp
 gcLocker.cpp                            sharedHeap.hpp
+gcLocker.cpp                            resourceArea.hpp
 
 gcLocker.hpp                            collectedHeap.hpp
 gcLocker.hpp                            genCollectedHeap.hpp
@@ -3094,13 +3100,14 @@ oopMap.cpp                              scopeDesc.hpp
 oopMap.cpp                              signature.hpp
 
 oopMap.hpp                              allocation.hpp
+oopMapCache.cpp                         jvmtiRedefineClassesTrace.hpp
 oopMap.hpp                              compressedStream.hpp
 oopMap.hpp                              growableArray.hpp
 oopMap.hpp                              vmreg.hpp
 
 oopMapCache.cpp                         allocation.inline.hpp
-oopMapCache.cpp                         handles.inline.hpp
 oopMapCache.cpp                         jvmtiRedefineClassesTrace.hpp
+oopMapCache.cpp                         handles.inline.hpp
 oopMapCache.cpp                         oop.inline.hpp
 oopMapCache.cpp                         oopMapCache.hpp
 oopMapCache.cpp                         resourceArea.hpp
@@ -3207,6 +3214,7 @@ os_<os_family>.cpp                      events.hpp
 os_<os_family>.cpp                      extendedPC.hpp
 os_<os_family>.cpp                      filemap.hpp
 os_<os_family>.cpp                      globals.hpp
+os_<os_family>.cpp                      growableArray.hpp
 os_<os_family>.cpp                      hpi.hpp
 os_<os_family>.cpp                      icBuffer.hpp
 os_<os_family>.cpp                      interfaceSupport.hpp
@@ -3348,6 +3356,10 @@ permGen.cpp                             java.hpp
 permGen.cpp                             oop.inline.hpp
 permGen.cpp                             permGen.hpp
 permGen.cpp                             universe.hpp
+permGen.cpp                             gcLocker.hpp
+permGen.cpp                             gcLocker.inline.hpp
+permGen.cpp                             vmGCOperations.hpp
+permGen.cpp                             vmThread.hpp
 
 permGen.hpp                             gcCause.hpp
 permGen.hpp                             generation.hpp

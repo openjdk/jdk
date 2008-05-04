@@ -46,9 +46,11 @@ void MutableNUMASpace::mangle_unused_area() {
   for (int i = 0; i < lgrp_spaces()->length(); i++) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
     MutableSpace *s = ls->space();
-    HeapWord *top = MAX2((HeapWord*)round_down((intptr_t)s->top(), page_size()), s->bottom());
-    if (top < s->end()) {
-      ls->add_invalid_region(MemRegion(top, s->end()));
+    if (!os::numa_has_static_binding()) {
+      HeapWord *top = MAX2((HeapWord*)round_down((intptr_t)s->top(), page_size()), s->bottom());
+      if (top < s->end()) {
+        ls->add_invalid_region(MemRegion(top, s->end()));
+      }
     }
     s->mangle_unused_area();
   }
@@ -70,32 +72,36 @@ void MutableNUMASpace::ensure_parsability() {
                                     area_touched_words);
         }
 #endif
-        MemRegion invalid;
-        HeapWord *crossing_start = (HeapWord*)round_to((intptr_t)s->top(), os::vm_page_size());
-        HeapWord *crossing_end = (HeapWord*)round_to((intptr_t)(s->top() + area_touched_words),
-                                                     os::vm_page_size());
-        if (crossing_start != crossing_end) {
-          // If object header crossed a small page boundary we mark the area
-          // as invalid rounding it to a page_size().
-          HeapWord *start = MAX2((HeapWord*)round_down((intptr_t)s->top(), page_size()), s->bottom());
-          HeapWord *end = MIN2((HeapWord*)round_to((intptr_t)(s->top() + area_touched_words), page_size()),
-                               s->end());
-          invalid = MemRegion(start, end);
-        }
+        if (!os::numa_has_static_binding()) {
+          MemRegion invalid;
+          HeapWord *crossing_start = (HeapWord*)round_to((intptr_t)s->top(), os::vm_page_size());
+          HeapWord *crossing_end = (HeapWord*)round_to((intptr_t)(s->top() + area_touched_words),
+                                                       os::vm_page_size());
+          if (crossing_start != crossing_end) {
+            // If object header crossed a small page boundary we mark the area
+            // as invalid rounding it to a page_size().
+            HeapWord *start = MAX2((HeapWord*)round_down((intptr_t)s->top(), page_size()), s->bottom());
+            HeapWord *end = MIN2((HeapWord*)round_to((intptr_t)(s->top() + area_touched_words), page_size()),
+                                 s->end());
+            invalid = MemRegion(start, end);
+          }
 
-        ls->add_invalid_region(invalid);
+          ls->add_invalid_region(invalid);
+        }
         s->set_top(s->end());
       }
     } else {
+      if (!os::numa_has_static_binding()) {
 #ifdef ASSERT
-      MemRegion invalid(s->top(), s->end());
-      ls->add_invalid_region(invalid);
-#else
-      if (ZapUnusedHeapArea) {
         MemRegion invalid(s->top(), s->end());
         ls->add_invalid_region(invalid);
-      } else break;
+#else
+        if (ZapUnusedHeapArea) {
+          MemRegion invalid(s->top(), s->end());
+          ls->add_invalid_region(invalid);
+        } else break;
 #endif
+      }
     }
   }
 }
@@ -194,7 +200,7 @@ bool MutableNUMASpace::update_layout(bool force) {
 }
 
 // Bias region towards the first-touching lgrp. Set the right page sizes.
-void MutableNUMASpace::bias_region(MemRegion mr) {
+void MutableNUMASpace::bias_region(MemRegion mr, int lgrp_id) {
   HeapWord *start = (HeapWord*)round_to((intptr_t)mr.start(), page_size());
   HeapWord *end = (HeapWord*)round_down((intptr_t)mr.end(), page_size());
   if (end > start) {
@@ -202,9 +208,13 @@ void MutableNUMASpace::bias_region(MemRegion mr) {
     assert((intptr_t)aligned_region.start()     % page_size() == 0 &&
            (intptr_t)aligned_region.byte_size() % page_size() == 0, "Bad alignment");
     assert(region().contains(aligned_region), "Sanity");
-    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size());
+    // First we tell the OS which page size we want in the given range. The underlying
+    // large page can be broken down if we require small pages.
     os::realign_memory((char*)aligned_region.start(), aligned_region.byte_size(), page_size());
-    os::numa_make_local((char*)aligned_region.start(), aligned_region.byte_size());
+    // Then we uncommit the pages in the range.
+    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size());
+    // And make them local/first-touch biased.
+    os::numa_make_local((char*)aligned_region.start(), aligned_region.byte_size(), lgrp_id);
   }
 }
 
@@ -233,10 +243,12 @@ void MutableNUMASpace::update() {
     initialize(region(), true);
   } else {
     bool should_initialize = false;
-    for (int i = 0; i < lgrp_spaces()->length(); i++) {
-      if (!lgrp_spaces()->at(i)->invalid_region().is_empty()) {
-        should_initialize = true;
-        break;
+    if (!os::numa_has_static_binding()) {
+      for (int i = 0; i < lgrp_spaces()->length(); i++) {
+        if (!lgrp_spaces()->at(i)->invalid_region().is_empty()) {
+          should_initialize = true;
+          break;
+        }
       }
     }
 
@@ -472,8 +484,8 @@ void MutableNUMASpace::initialize(MemRegion mr, bool clear_space) {
       intersection = MemRegion(new_region.start(), new_region.start());
     }
     select_tails(new_region, intersection, &bottom_region, &top_region);
-    bias_region(bottom_region);
-    bias_region(top_region);
+    bias_region(bottom_region, lgrp_spaces()->at(0)->lgrp_id());
+    bias_region(top_region, lgrp_spaces()->at(lgrp_spaces()->length() - 1)->lgrp_id());
   }
 
   // Check if the space layout has changed significantly?
@@ -545,21 +557,36 @@ void MutableNUMASpace::initialize(MemRegion mr, bool clear_space) {
       intersection = MemRegion(new_region.start(), new_region.start());
     }
 
-    MemRegion invalid_region = ls->invalid_region().intersection(new_region);
-    if (!invalid_region.is_empty()) {
-      merge_regions(new_region, &intersection, &invalid_region);
-      free_region(invalid_region);
+    if (!os::numa_has_static_binding()) {
+      MemRegion invalid_region = ls->invalid_region().intersection(new_region);
+      // Invalid region is a range of memory that could've possibly
+      // been allocated on the other node. That's relevant only on Solaris where
+      // there is no static memory binding.
+      if (!invalid_region.is_empty()) {
+        merge_regions(new_region, &intersection, &invalid_region);
+        free_region(invalid_region);
+        ls->set_invalid_region(MemRegion());
+      }
     }
+
     select_tails(new_region, intersection, &bottom_region, &top_region);
-    free_region(bottom_region);
-    free_region(top_region);
+
+    if (!os::numa_has_static_binding()) {
+      // If that's a system with the first-touch policy then it's enough
+      // to free the pages.
+      free_region(bottom_region);
+      free_region(top_region);
+    } else {
+      // In a system with static binding we have to change the bias whenever
+      // we reshape the heap.
+      bias_region(bottom_region, ls->lgrp_id());
+      bias_region(top_region, ls->lgrp_id());
+    }
 
     // If we clear the region, we would mangle it in debug. That would cause page
     // allocation in a different place. Hence setting the top directly.
     s->initialize(new_region, false);
     s->set_top(s->bottom());
-
-    ls->set_invalid_region(MemRegion());
 
     set_adaptation_cycles(samples_count());
   }
@@ -575,7 +602,7 @@ void MutableNUMASpace::set_top(HeapWord* value) {
     HeapWord *top = MAX2((HeapWord*)round_down((intptr_t)s->top(), page_size()), s->bottom());
 
     if (s->contains(value)) {
-      if (top < value && top < s->end()) {
+      if (!os::numa_has_static_binding() && top < value && top < s->end()) {
         ls->add_invalid_region(MemRegion(top, value));
       }
       s->set_top(value);
@@ -584,10 +611,10 @@ void MutableNUMASpace::set_top(HeapWord* value) {
         if (found_top) {
             s->set_top(s->bottom());
         } else {
-            if (top < s->end()) {
-              ls->add_invalid_region(MemRegion(top, s->end()));
-            }
-            s->set_top(s->end());
+          if (!os::numa_has_static_binding() && top < s->end()) {
+            ls->add_invalid_region(MemRegion(top, s->end()));
+          }
+          s->set_top(s->end());
         }
     }
   }
@@ -601,11 +628,23 @@ void MutableNUMASpace::clear() {
   }
 }
 
+/*
+   Linux supports static memory binding, therefore the most part of the
+   logic dealing with the possible invalid page allocation is effectively
+   disabled. Besides there is no notion of the home node in Linux. A
+   thread is allowed to migrate freely. Although the scheduler is rather
+   reluctant to move threads between the nodes. We check for the current
+   node every allocation. And with a high probability a thread stays on
+   the same node for some time allowing local access to recently allocated
+   objects.
+ */
+
 HeapWord* MutableNUMASpace::allocate(size_t size) {
-  int lgrp_id = Thread::current()->lgrp_id();
-  if (lgrp_id == -1) {
+  Thread* thr = Thread::current();
+  int lgrp_id = thr->lgrp_id();
+  if (lgrp_id == -1 || !os::numa_has_group_homing()) {
     lgrp_id = os::numa_get_group_id();
-    Thread::current()->set_lgrp_id(lgrp_id);
+    thr->set_lgrp_id(lgrp_id);
   }
 
   int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
@@ -628,22 +667,22 @@ HeapWord* MutableNUMASpace::allocate(size_t size) {
       MutableSpace::set_top(s->top());
     }
   }
-  // Make the page allocation happen here.
-  if (p != NULL) {
+  // Make the page allocation happen here if there is no static binding..
+  if (p != NULL && !os::numa_has_static_binding()) {
     for (HeapWord *i = p; i < p + size; i += os::vm_page_size() >> LogHeapWordSize) {
       *(int*)i = 0;
     }
   }
-
   return p;
 }
 
 // This version is lock-free.
 HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
-  int lgrp_id = Thread::current()->lgrp_id();
-  if (lgrp_id == -1) {
+  Thread* thr = Thread::current();
+  int lgrp_id = thr->lgrp_id();
+  if (lgrp_id == -1 || !os::numa_has_group_homing()) {
     lgrp_id = os::numa_get_group_id();
-    Thread::current()->set_lgrp_id(lgrp_id);
+    thr->set_lgrp_id(lgrp_id);
   }
 
   int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
@@ -670,8 +709,8 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
     }
   }
 
-  // Make the page allocation happen here.
-  if (p != NULL) {
+  // Make the page allocation happen here if there is no static binding.
+  if (p != NULL && !os::numa_has_static_binding() ) {
     for (HeapWord *i = p; i < p + size; i += os::vm_page_size() >> LogHeapWordSize) {
       *(int*)i = 0;
     }

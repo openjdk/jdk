@@ -279,7 +279,9 @@ SUNWprivate_1.1 {
                 jio_snprintf;
                 jio_vfprintf;
                 jio_vsnprintf;
-		fork1;
+                fork1;
+                numa_warn;
+                numa_error;
 
                 # Needed because there is no JVM interface for this.
                 sysThreadAvailableStackWithSlack;

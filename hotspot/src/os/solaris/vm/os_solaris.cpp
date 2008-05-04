@@ -2602,7 +2602,7 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
 // Tell the OS to make the range local to the first-touching LWP
-void os::numa_make_local(char *addr, size_t bytes) {
+void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint) {
   assert((intptr_t)addr % os::vm_page_size() == 0, "Address should be page-aligned.");
   if (madvise(addr, bytes, MADV_ACCESS_LWP) < 0) {
     debug_only(warning("MADV_ACCESS_LWP failed."));
