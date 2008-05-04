@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -51,81 +51,81 @@ public class HandshakeTimeout {
 
     public static void main(String[] args) throws Exception {
 
-	System.setProperty("sun.rmi.transport.tcp.handshakeTimeout",
-			   String.valueOf(TIMEOUT / 2));
+        System.setProperty("sun.rmi.transport.tcp.handshakeTimeout",
+                           String.valueOf(TIMEOUT / 2));
 
-	/*
-	 * Listen on port, but never process connections made to it.
-	 */
-	ServerSocket serverSocket = new ServerSocket(PORT);
+        /*
+         * Listen on port, but never process connections made to it.
+         */
+        ServerSocket serverSocket = new ServerSocket(PORT);
 
-	/*
-	 * Attempt RMI call to port in separate thread.
-	 */
-	Registry registry = LocateRegistry.getRegistry(PORT);
-	Connector connector = new Connector(registry);
-	Thread t = new Thread(connector);
-	t.setDaemon(true);
-	t.start();
+        /*
+         * Attempt RMI call to port in separate thread.
+         */
+        Registry registry = LocateRegistry.getRegistry(PORT);
+        Connector connector = new Connector(registry);
+        Thread t = new Thread(connector);
+        t.setDaemon(true);
+        t.start();
 
-	/*
-	 * Wait for call attempt to finished, and analyze result.
-	 */
-	t.join(TIMEOUT);
-	synchronized (connector) {
-	    if (connector.success) {
-		throw new RuntimeException(
-		    "TEST FAILED: remote call succeeded??");
-	    }
-	    if (connector.exception == null) {
-		throw new RuntimeException(
-		    "TEST FAILED: remote call did not time out");
-	    } else {
-		System.err.println("remote call failed with exception:");
-		connector.exception.printStackTrace();
-		System.err.println();
+        /*
+         * Wait for call attempt to finished, and analyze result.
+         */
+        t.join(TIMEOUT);
+        synchronized (connector) {
+            if (connector.success) {
+                throw new RuntimeException(
+                    "TEST FAILED: remote call succeeded??");
+            }
+            if (connector.exception == null) {
+                throw new RuntimeException(
+                    "TEST FAILED: remote call did not time out");
+            } else {
+                System.err.println("remote call failed with exception:");
+                connector.exception.printStackTrace();
+                System.err.println();
 
-		if (connector.exception instanceof MarshalException) {
-		    System.err.println(
-			"TEST FAILED: MarshalException thrown, expecting " +
-			"java.rmi.ConnectException or ConnectIOException");
-		} else if (connector.exception instanceof ConnectException ||
-			   connector.exception instanceof ConnectIOException)
-		{
-		    System.err.println(
-			"TEST PASSED: java.rmi.ConnectException or " +
-			"ConnectIOException thrown");
-		} else {
-		    throw new RuntimeException(
-			"TEST FAILED: unexpected Exception thrown",
-			connector.exception);
-		}
-	    }
-	}
+                if (connector.exception instanceof MarshalException) {
+                    System.err.println(
+                        "TEST FAILED: MarshalException thrown, expecting " +
+                        "java.rmi.ConnectException or ConnectIOException");
+                } else if (connector.exception instanceof ConnectException ||
+                           connector.exception instanceof ConnectIOException)
+                {
+                    System.err.println(
+                        "TEST PASSED: java.rmi.ConnectException or " +
+                        "ConnectIOException thrown");
+                } else {
+                    throw new RuntimeException(
+                        "TEST FAILED: unexpected Exception thrown",
+                        connector.exception);
+                }
+            }
+        }
     }
 
     private static class Connector implements Runnable {
 
-	private final Registry registry;
+        private final Registry registry;
 
-	boolean success = false;
+        boolean success = false;
         Exception exception = null;
 
-	Connector(Registry registry) {
-	    this.registry = registry;
-	}
+        Connector(Registry registry) {
+            this.registry = registry;
+        }
 
-	public void run() {
-	    try {
-		registry.lookup("Dale Cooper");
-		synchronized (this) {
-		    success = true;
-		}
-	    } catch (Exception e) {
-		synchronized (this) {
-		    exception = e;
-		}
-	    }
-	}
+        public void run() {
+            try {
+                registry.lookup("Dale Cooper");
+                synchronized (this) {
+                    success = true;
+                }
+            } catch (Exception e) {
+                synchronized (this) {
+                    exception = e;
+                }
+            }
+        }
     }
 }

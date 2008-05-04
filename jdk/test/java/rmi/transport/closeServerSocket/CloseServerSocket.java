@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,80 +50,80 @@ public class CloseServerSocket implements Remote {
     private CloseServerSocket() { }
 
     public static void main(String[] args) throws Exception {
-	System.err.println("\nRegression test for bug 4457683\n");
+        System.err.println("\nRegression test for bug 4457683\n");
 
-	verifyPortFree(PORT);
-	Registry registry = LocateRegistry.createRegistry(PORT);
-	System.err.println("- exported registry: " + registry);
-	verifyPortInUse(PORT);
-	UnicastRemoteObject.unexportObject(registry, true);
-	System.err.println("- unexported registry");
-	Thread.sleep(1);	// work around BindException (bug?)
-	verifyPortFree(PORT);
+        verifyPortFree(PORT);
+        Registry registry = LocateRegistry.createRegistry(PORT);
+        System.err.println("- exported registry: " + registry);
+        verifyPortInUse(PORT);
+        UnicastRemoteObject.unexportObject(registry, true);
+        System.err.println("- unexported registry");
+        Thread.sleep(1);        // work around BindException (bug?)
+        verifyPortFree(PORT);
 
-	/*
-	 * The follow portion of this test is disabled temporarily
-	 * because 4457683 was partially backed out because of
-	 * 6269166; for now, only server sockets originally opened for
-	 * exports on non-anonymous ports will be closed when all of
-	 * the corresponding remote objects have been exported.  A
-	 * separate bug will be filed to represent the remainder of
-	 * 4457683 for anonymous-port exports.
-	 */
+        /*
+         * The follow portion of this test is disabled temporarily
+         * because 4457683 was partially backed out because of
+         * 6269166; for now, only server sockets originally opened for
+         * exports on non-anonymous ports will be closed when all of
+         * the corresponding remote objects have been exported.  A
+         * separate bug will be filed to represent the remainder of
+         * 4457683 for anonymous-port exports.
+         */
 
-//	SSF ssf = new SSF();
-//	Remote impl = new CloseServerSocket();
-//	Remote stub = UnicastRemoteObject.exportObject(impl, 0, null, ssf);
-//	System.err.println("- exported object: " + stub);
-//	UnicastRemoteObject.unexportObject(impl, true);
-//	System.err.println("- unexported object");
-//	synchronized (ssf) {
-//	    if (!ssf.serverSocketClosed) {
-//		throw new RuntimeException("TEST FAILED: " +
-//					   "server socket not closed");
-//	    }
-//	}
+//      SSF ssf = new SSF();
+//      Remote impl = new CloseServerSocket();
+//      Remote stub = UnicastRemoteObject.exportObject(impl, 0, null, ssf);
+//      System.err.println("- exported object: " + stub);
+//      UnicastRemoteObject.unexportObject(impl, true);
+//      System.err.println("- unexported object");
+//      synchronized (ssf) {
+//          if (!ssf.serverSocketClosed) {
+//              throw new RuntimeException("TEST FAILED: " +
+//                                         "server socket not closed");
+//          }
+//      }
 
-	System.err.println("TEST PASSED");
+        System.err.println("TEST PASSED");
     }
 
     private static void verifyPortFree(int port) throws IOException {
-	ServerSocket ss = new ServerSocket(PORT);
-	ss.close();
-	System.err.println("- port " + port + " is free");
+        ServerSocket ss = new ServerSocket(PORT);
+        ss.close();
+        System.err.println("- port " + port + " is free");
     }
 
     private static void verifyPortInUse(int port) throws IOException {
-	try {
-	    verifyPortFree(port);
-	} catch (BindException e) {
-	    System.err.println("- port " + port + " is in use");
-	    return;
-	}
+        try {
+            verifyPortFree(port);
+        } catch (BindException e) {
+            System.err.println("- port " + port + " is in use");
+            return;
+        }
     }
 
     private static class SSF implements RMIServerSocketFactory {
-	boolean serverSocketClosed = false;
-	SSF() { };
+        boolean serverSocketClosed = false;
+        SSF() { };
 
-	public ServerSocket createServerSocket(int port) throws IOException {
-	    return new SS(port);
-	}
+        public ServerSocket createServerSocket(int port) throws IOException {
+            return new SS(port);
+        }
 
-	private class SS extends ServerSocket {
-	    SS(int port) throws IOException {
-		super(port);
-		System.err.println("- created server socket: " + this);
-	    };
+        private class SS extends ServerSocket {
+            SS(int port) throws IOException {
+                super(port);
+                System.err.println("- created server socket: " + this);
+            };
 
-	    public void close() throws IOException {
-		synchronized (SSF.this) {
-		    serverSocketClosed = true;
-		    SSF.this.notifyAll();
-		}
-		System.err.println("- closing server socket: " + this);
-		super.close();
-	    }
-	}
+            public void close() throws IOException {
+                synchronized (SSF.this) {
+                    serverSocketClosed = true;
+                    SSF.this.notifyAll();
+                }
+                System.err.println("- closing server socket: " + this);
+                super.close();
+            }
+        }
     }
 }

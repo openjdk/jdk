@@ -206,7 +206,7 @@ GrowableArray<MonitorInfo*>* interpretedVFrame::monitors() const {
   for (BasicObjectLock* current = (fr().previous_monitor_in_interpreter_frame(fr().interpreter_frame_monitor_begin()));
        current >= fr().interpreter_frame_monitor_end();
        current = fr().previous_monitor_in_interpreter_frame(current)) {
-    result->push(new MonitorInfo(current->obj(), current->lock()));
+    result->push(new MonitorInfo(current->obj(), current->lock(), false));
   }
   return result;
 }

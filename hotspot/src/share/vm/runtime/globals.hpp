@@ -344,12 +344,6 @@ class CommandLineFlags {
   product(bool, ForceTimeHighResolution, false,                             \
           "Using high time resolution(For Win32 only)")                     \
                                                                             \
-  product(bool, CacheTimeMillis, false,                                     \
-          "Cache os::javaTimeMillis with CacheTimeMillisGranularity")       \
-                                                                            \
-  diagnostic(uintx, CacheTimeMillisGranularity, 50,                         \
-          "Granularity for CacheTimeMillis")                                \
-                                                                            \
   develop(bool, TraceItables, false,                                        \
           "Trace initialization and use of itables")                        \
                                                                             \
@@ -586,7 +580,7 @@ class CommandLineFlags {
   develop(bool, ZapJNIHandleArea, trueInDebug,                              \
           "Zap freed JNI handle space with 0xFEFEFEFE")                     \
                                                                             \
-  develop(bool, ZapUnusedHeapArea, trueInDebug,                             \
+  develop(bool, ZapUnusedHeapArea, false,                                   \
           "Zap unused heap space with 0xBAADBABE")                          \
                                                                             \
   develop(bool, PrintVMMessages, true,                                      \
@@ -948,6 +942,12 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseXmmRegToRegMoveAll, false,                               \
           "Copy all XMM register bits when moving value between registers") \
+                                                                            \
+  product(bool, UseXmmI2D, false,                                           \
+          "Use SSE2 CVTDQ2PD instruction to convert Integer to Double")     \
+                                                                            \
+  product(bool, UseXmmI2F, false,                                           \
+          "Use SSE2 CVTDQ2PS instruction to convert Integer to Float")      \
                                                                             \
   product(intx, FieldsAllocationStyle, 1,                                   \
           "0 - type based with oops first, 1 - with oops last")             \
@@ -1793,6 +1793,9 @@ class CommandLineFlags {
   product(uintx, CMSYieldSleepCount, 0,                                     \
           "number of times a GC thread (minus the coordinator) "            \
           "will sleep while yielding before giving up and resuming GC")     \
+                                                                            \
+  notproduct(bool, PrintFlagsFinal, false,                                  \
+          "Print all command line flags after argument processing")         \
                                                                             \
   /* gc tracing */                                                          \
   manageable(bool, PrintGC, false,                                          \

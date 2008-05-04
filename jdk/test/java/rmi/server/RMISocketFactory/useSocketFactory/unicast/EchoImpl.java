@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998-1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,44 +33,44 @@ public class EchoImpl
     private static final byte[] pattern = { (byte) 'A' };
 
     public EchoImpl(String protocol) throws RemoteException {
-	super(0,
-	      new MultiSocketFactory.ClientFactory(protocol, pattern),
-	      new MultiSocketFactory.ServerFactory(protocol, pattern));
+        super(0,
+              new MultiSocketFactory.ClientFactory(protocol, pattern),
+              new MultiSocketFactory.ServerFactory(protocol, pattern));
     }
-    
+
     public byte[] echoNot(byte[] data) {
-	byte[] result = new byte[data.length];
-	for (int i = 0; i < data.length; i++)
-	    result[i] = (byte) ~data[i];
-	return result;
+        byte[] result = new byte[data.length];
+        for (int i = 0; i < data.length; i++)
+            result[i] = (byte) ~data[i];
+        return result;
     }
 
     public static void main(String[] args) {
-	/*
-	 * The following line is required with the JDK 1.2 VM so that the
-	 * VM can exit gracefully when this test completes.  Otherwise, the
-	 * conservative garbage collector will find a handle to the server
-	 * object on the native stack and not clear the weak reference to
-	 * it in the RMI runtime's object table.
-	 */
-	Object dummy = new Object();
-	
-	TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
-	
-	try {
-	    String protocol = "";
-	    if (args.length >= 1)
-		protocol = args[0];
+        /*
+         * The following line is required with the JDK 1.2 VM so that the
+         * VM can exit gracefully when this test completes.  Otherwise, the
+         * conservative garbage collector will find a handle to the server
+         * object on the native stack and not clear the weak reference to
+         * it in the RMI runtime's object table.
+         */
+        Object dummy = new Object();
 
-	    System.out.println("EchoServer: creating remote object");
-	    EchoImpl impl = new EchoImpl(protocol);
-	    System.out.println("EchoServer: binding in registry");
-	    Naming.rebind("//:" + TestLibrary.REGISTRY_PORT +
-			  "/EchoServer", impl);
-	    System.out.println("EchoServer ready.");
-	} catch (Exception e) {
-	    System.err.println("EXCEPTION OCCURRED:");
-	    e.printStackTrace();
-	}
+        TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
+
+        try {
+            String protocol = "";
+            if (args.length >= 1)
+                protocol = args[0];
+
+            System.out.println("EchoServer: creating remote object");
+            EchoImpl impl = new EchoImpl(protocol);
+            System.out.println("EchoServer: binding in registry");
+            Naming.rebind("//:" + TestLibrary.REGISTRY_PORT +
+                          "/EchoServer", impl);
+            System.out.println("EchoServer ready.");
+        } catch (Exception e) {
+            System.err.println("EXCEPTION OCCURRED:");
+            e.printStackTrace();
+        }
     }
 }

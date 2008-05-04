@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@
 #define JAR_ERROR2      "Error: Unable to access jarfile %s"
 #define JAR_ERROR3      "Error: Invalid or corrupt jarfile %s"
 
-#define CLS_ERROR1      "Error: Could not find the main class.\n" JNI_ERROR
+#define CLS_ERROR1      "Error: Could not find the main class %s.\n" JNI_ERROR
 #define CLS_ERROR2      "Error: Failed to load Main Class: %s\n%s"
 #define CLS_ERROR3      "Error: No main method found in specified class.\n" GEN_ERROR
 #define CLS_ERROR4      "Error: Main method not public\n" GEN_ERROR

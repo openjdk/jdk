@@ -26,12 +26,15 @@
 package sun.management;
 
 import java.lang.management.ThreadMXBean;
+import java.lang.management.ManagementFactory;
 
 import java.lang.management.ThreadInfo;
 import java.lang.management.LockInfo;
 import java.lang.management.MonitorInfo;
 import java.util.Map;
 import java.util.HashMap;
+
+import javax.management.ObjectName;
 
 /**
  * Implementation class for the thread subsystem.
@@ -102,7 +105,7 @@ class ThreadImpl implements ThreadMXBean {
     }
 
     public long[] getAllThreadIds() {
-        ManagementFactory.checkMonitorAccess();
+        Util.checkMonitorAccess();
 
         Thread[] threads = getThreads();
         int length = threads.length;
@@ -156,7 +159,7 @@ class ThreadImpl implements ThreadMXBean {
                 "Invalid maxDepth parameter: " + maxDepth);
         }
 
-        ManagementFactory.checkMonitorAccess();
+        Util.checkMonitorAccess();
 
         ThreadInfo[] infos = new ThreadInfo[ids.length];
         if (maxDepth == Integer.MAX_VALUE) {
@@ -175,7 +178,7 @@ class ThreadImpl implements ThreadMXBean {
                 "Thread contention monitoring is not supported");
         }
 
-        ManagementFactory.checkControlAccess();
+        Util.checkControlAccess();
 
         synchronized (this) {
             if (contentionMonitoringEnabled != enable) {
@@ -297,7 +300,7 @@ class ThreadImpl implements ThreadMXBean {
                 "Thread CPU time measurement is not supported");
         }
 
-        ManagementFactory.checkControlAccess();
+        Util.checkControlAccess();
         synchronized (this) {
             if (cpuTimeEnabled != enable) {
                 // update VM of the state change
@@ -308,7 +311,7 @@ class ThreadImpl implements ThreadMXBean {
     }
 
     public long[] findMonitorDeadlockedThreads() {
-        ManagementFactory.checkMonitorAccess();
+        Util.checkMonitorAccess();
 
         Thread[] threads = findMonitorDeadlockedThreads0();
         if (threads == null) {
@@ -329,7 +332,7 @@ class ThreadImpl implements ThreadMXBean {
                 "Monitoring of Synchronizer Usage is not supported.");
         }
 
-        ManagementFactory.checkMonitorAccess();
+        Util.checkMonitorAccess();
 
         Thread[] threads = findDeadlockedThreads0();
         if (threads == null) {
@@ -345,7 +348,7 @@ class ThreadImpl implements ThreadMXBean {
     }
 
     public void resetPeakThreadCount() {
-        ManagementFactory.checkControlAccess();
+        Util.checkControlAccess();
         resetPeakThreadCount0();
     }
 
@@ -373,7 +376,7 @@ class ThreadImpl implements ThreadMXBean {
                 "Monitoring of Synchronizer Usage is not supported.");
         }
 
-        ManagementFactory.checkMonitorAccess();
+        Util.checkMonitorAccess();
         return dumpThreads0(ids, lockedMonitors, lockedSynchronizers);
     }
 
@@ -388,7 +391,7 @@ class ThreadImpl implements ThreadMXBean {
                 "Monitoring of Synchronizer Usage is not supported.");
         }
 
-        ManagementFactory.checkMonitorAccess();
+        Util.checkMonitorAccess();
         return dumpThreads0(null, lockedMonitors, lockedSynchronizers);
     }
 
@@ -410,4 +413,10 @@ class ThreadImpl implements ThreadMXBean {
 
     // tid == 0 to reset contention times for all threads
     private static native void resetContentionTimes0(long tid);
+
+    public ObjectName getObjectName() {
+        return Util.newObjectName(ManagementFactory.THREAD_MXBEAN_NAME);
+    }
+
 }
+

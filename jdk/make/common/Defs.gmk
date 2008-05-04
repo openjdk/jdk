@@ -32,6 +32,13 @@
 #          So when it includes other files, it must use JDK_TOPDIR.
 #
 
+# Check for strange explicit settings (change to empty or true)
+ifdef OPENJDK
+  ifneq ($(OPENJDK),true)
+    x:=$(error "OPENJDK (if defined) can only be set to true")
+  endif
+endif
+
 #
 # On Solaris, the 'make' utility from Sun will not work with these makefiles.
 #    This little rule is only understood by Sun's make, and is harmless
@@ -85,19 +92,6 @@ CLOSED_SRC_DIR_EXISTS := $(shell \
   fi)
 ifeq ($(CLOSED_SRC_DIR_EXISTS), false)
   OPENJDK = true
-endif
-
-# Check for strange explicit settings (change to empty or true)
-ifdef OPENJDK
-  ifeq ($(OPENJDK),false)
-    # Silently treat as not defined
-    OPENJDK =
-  else
-    ifneq ($(OPENJDK),true)
-      dummy := $(warning "WARNING: OPENKJDK=$(OPENJDK) being treated as true")
-      OPENJDK = true
-    endif
-  endif
 endif
 
 # Define where closed directories are
@@ -309,6 +303,8 @@ BUILDTOOLCLASSDIR   = $(OUTPUTDIR)/btclasses
 # for build tool jar files
 BUILDTOOLJARDIR     = $(OUTPUTDIR)/btjars
 ABS_BUILDTOOLJARDIR = $(ABS_OUTPUTDIR)/btjars
+# for generated tool class files
+BUILDTOOLBINDIR     = $(OUTPUTDIR)/btbins
 # for generated java source files
 GENSRCDIR           = $(OUTPUTDIR)/gensrc
 # for generated C source files (not javah)
