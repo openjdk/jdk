@@ -157,6 +157,19 @@ public class Infer {
                     if (isSubClass(bs.head, that.hibounds))
                         that.inst = types.fromUnknownFun.apply(bs.head);
                 }
+                if (that.inst == null) {
+                    int classCount = 0, interfaceCount = 0;
+                    for (Type t : that.hibounds) {
+                        if (t.tag == CLASS) {
+                            if (t.isInterface())
+                                interfaceCount++;
+                            else
+                                classCount++;
+                        }
+                    }
+                    if ((that.hibounds.size() == classCount + interfaceCount) && classCount == 1)
+                        that.inst = types.makeCompoundType(that.hibounds);
+                }
                 if (that.inst == null || !types.isSubtypeUnchecked(that.inst, that.hibounds, warn))
                     throw ambiguousNoInstanceException
                         .setMessage("no.unique.maximal.instance.exists",
@@ -194,14 +207,14 @@ public class Infer {
             if (that.lobounds.isEmpty())
                 that.inst = syms.botType;
             else if (that.lobounds.tail.isEmpty())
-                that.inst = that.lobounds.head;
+                that.inst = that.lobounds.head.isPrimitive() ? syms.errType : that.lobounds.head;
             else {
                 that.inst = types.lub(that.lobounds);
-                if (that.inst == null)
+            }
+            if (that.inst == null || that.inst == syms.errType)
                     throw ambiguousNoInstanceException
                         .setMessage("no.unique.minimal.instance.exists",
                                     that.qtype, that.lobounds);
-            }
             // VGJ: sort of inlined maximizeInst() below.  Adding
             // bounds can cause lobounds that are above hibounds.
             if (that.hibounds.isEmpty())

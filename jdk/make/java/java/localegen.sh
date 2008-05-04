@@ -29,7 +29,7 @@
 # This script is to generate the supported locale list string and replace the
 # LocaleDataMetaInfo-XLocales.java in <ws>/src/share/classes/sun/util
 # 
-# NAWK & SED is passed in as environment variables.
+# SORT, NAWK & SED is passed in as environment variables.
 #
 
 # A list of resource base name list;
@@ -47,7 +47,7 @@ OUTPUT_FILE=$5
 localelist=
 getlocalelist() {
     localelist=""
-    localelist=`$NAWK -F$1_ '{print $2}' $2 | sort`
+    localelist=`$NAWK -F$1_ '{print $2}' $2 | $SORT`
 }
 
 sed_script="$SED -e \"s@^#warn .*@// -- This file was mechanically generated: Do not edit! -- //@\" " 

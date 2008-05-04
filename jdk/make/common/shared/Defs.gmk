@@ -1,5 +1,5 @@
 #
-# Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -265,7 +265,9 @@ ifdef BUILD_NUMBER
   FULL_VERSION = $(RELEASE)-$(BUILD_NUMBER)
 else
   BUILD_NUMBER = b00
-  USER_RELEASE_SUFFIX := $(shell echo $(USER)_`date '+%d_%b_%Y_%H_%M' | tr "A-Z" "a-z"`)
+  BUILD_DATE := $(shell $(DATE) '+%Y_%m_%d_%H_%M')
+  CLEAN_USERNAME := $(shell $(ECHO) "$(USER)" | $(TR) -d -c '[:alnum:]')
+  USER_RELEASE_SUFFIX := $(shell $(ECHO) "$(CLEAN_USERNAME)_$(BUILD_DATE)" | $(TR) '[:upper:]' '[:lower:]' )
   FULL_VERSION = $(RELEASE)-$(USER_RELEASE_SUFFIX)-$(BUILD_NUMBER)
 endif
 
@@ -449,11 +451,20 @@ endif
 # Check for spaces and null value
 OUTPUTDIR:=$(call AltCheckSpaces,OUTPUTDIR)
 OUTPUTDIR:=$(call AltCheckValue,OUTPUTDIR)
+
+#
+# When signing the JCE framework and provider, we could be using built
+# bits on a read-only filesystem.  If so, this test will fail and crash
+# the build.
+#
+ifndef IGNORE_WRITABLE_OUTPUTDIR_TEST
 # Create the output directory and make sure it exists and is writable
 _create_outputdir:=$(shell $(MKDIR) -p "$(OUTPUTDIR)" > $(DEV_NULL) 2>&1)
 ifeq ($(call WriteDirExists,$(OUTPUTDIR),/dev/null),/dev/null)
   _outputdir_error:=$(error "ERROR: OUTPUTDIR '$(OUTPUTDIR)' not created or not writable")
 endif
+endif
+
 # Define absolute path if needed and check for spaces and null value
 ifndef ABS_OUTPUTDIR
   ABS_OUTPUTDIR:=$(call FullPath,$(OUTPUTDIR))
@@ -501,6 +512,24 @@ JDK_CUPS_HEADERS_PATH=$(JDK_DEVTOOLS_DIR)/share/cups/include
          echo "$(_CUPS_HEADERS_PATH)";\
       fi)
   endif
+endif
+
+# Utilities ant and findbugs
+ifeq ($(ANT_HOME),)
+  ANT_HOME := $(call DirExists,/usr/share/ant,$(JDK_DEVTOOLS_DIR)/share/ant/latest,)
+endif
+ifeq ($(ANT_HOME),)
+  ANT = ant
+else
+  ANT = $(ANT_HOME)/bin/ant
+endif
+ifeq ($(FINDBUGS_HOME),)
+  FINDBUGS_HOME := $(call DirExists,/usr/share/findbugs,$(JDK_DEVTOOLS_DIR)/share/findbugs/latest,)
+endif
+ifeq ($(FINDBUGS_HOME),)
+  FINDBUGS = findbugs
+else
+  FINDBUGS = $(FINDBUGS_HOME)/bin/findbugs
 endif
 
 ifdef ALT_COPYRIGHT_YEAR

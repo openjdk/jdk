@@ -19,7 +19,7 @@
 // Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
 // CA 95054 USA or visit www.sun.com if you need additional information or
 // have any questions.
-//  
+//
 //
 
 // NOTE: DO NOT CHANGE THIS COPYRIGHT TO NEW STYLE - IT WILL BREAK makeDeps!
@@ -46,13 +46,13 @@
 // as dependencies.  Header files named H.inline.hpp generally contain
 // bodies for inline functions declared in H.hpp.
 //
-// NOTE: Files that use the token "generate_platform_dependent_include" 
+// NOTE: Files that use the token "generate_platform_dependent_include"
 // are expected to contain macro references like <os>, <arch_model>, ... and
 // makedeps has a dependency on these platform files looking like:
-// foo_<macro>.trailing_string 
+// foo_<macro>.trailing_string
 // (where "trailing_string" can be any legal filename strings but typically
 // is "hpp" or "inline.hpp").
-// 
+//
 // The dependency in makedeps (and enforced) is that an underscore
 // will precedure the macro invocation. Note that this restriction
 // is only enforced on filenames that have the dependency token
@@ -147,12 +147,6 @@ allocation.hpp                          globalDefinitions.hpp
 allocation.hpp                          globals.hpp
 
 allocation.inline.hpp                   os.hpp
-
-allocationStats.cpp                     allocationStats.hpp
-
-allocationStats.hpp                     allocation.hpp
-allocationStats.hpp                     gcUtil.hpp
-allocationStats.hpp                     globalDefinitions.hpp
 
 aprofiler.cpp                           aprofiler.hpp
 aprofiler.cpp                           collectedHeap.inline.hpp
@@ -719,6 +713,11 @@ ciNullObject.hpp                        ciUtilities.hpp
 ciObjArray.hpp                          ciArray.hpp
 ciObjArray.hpp                          ciClassList.hpp
 ciObjArray.hpp                          objArrayOop.hpp
+
+ciObjArray.cpp                          ciObjArray.hpp
+ciObjArray.cpp                          ciNullObject.hpp
+ciObjArray.cpp                          ciUtilities.hpp
+ciObjArray.cpp                          objArrayOop.hpp
 
 ciObjArrayKlass.cpp                     ciInstanceKlass.hpp
 ciObjArrayKlass.cpp                     ciObjArrayKlass.hpp
@@ -1935,7 +1934,7 @@ icache_<arch>.hpp                       generate_platform_dependent_include
 
 init.cpp                                bytecodes.hpp
 init.cpp                                collectedHeap.hpp
-init.cpp				handles.inline.hpp
+init.cpp                                handles.inline.hpp
 init.cpp                                icBuffer.hpp
 init.cpp                                icache.hpp
 init.cpp                                init.hpp
@@ -3068,6 +3067,7 @@ oopMap.hpp                              vmreg.hpp
 
 oopMapCache.cpp                         allocation.inline.hpp
 oopMapCache.cpp                         handles.inline.hpp
+oopMapCache.cpp                         jvmtiRedefineClassesTrace.hpp
 oopMapCache.cpp                         oop.inline.hpp
 oopMapCache.cpp                         oopMapCache.hpp
 oopMapCache.cpp                         resourceArea.hpp

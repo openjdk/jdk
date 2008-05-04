@@ -390,11 +390,6 @@ void before_exit(JavaThread * thread) {
   StatSampler::disengage();
   StatSampler::destroy();
 
-  // shut down the TimeMillisUpdateTask
-  if (CacheTimeMillis) {
-    TimeMillisUpdateTask::disengage();
-  }
-
 #ifndef SERIALGC
   // stop CMS threads
   if (UseConcMarkSweepGC) {

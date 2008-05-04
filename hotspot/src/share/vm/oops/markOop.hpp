@@ -357,4 +357,7 @@ class markOopDesc: public oopDesc {
 
   // Recover address of oop from encoded form used in mark
   inline void* decode_pointer() { if (UseBiasedLocking && has_bias_pattern()) return NULL; return clear_lock_bits(); }
+
+  // see the definition in markOop.cpp for the gory details
+  bool should_not_be_cached() const;
 };

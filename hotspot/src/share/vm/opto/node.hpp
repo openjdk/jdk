@@ -91,6 +91,7 @@ class Node_List;
 class Node_Stack;
 class NullCheckNode;
 class OopMap;
+class ParmNode;
 class PCTableNode;
 class PhaseCCP;
 class PhaseGVN;
@@ -105,6 +106,7 @@ class RegMask;
 class RegionNode;
 class RootNode;
 class SafePointNode;
+class SafePointScalarObjectNode;
 class StartNode;
 class State;
 class StoreNode;
@@ -557,6 +559,7 @@ public:
       DEFINE_CLASS_ID(JumpProj,  Proj, 1)
       DEFINE_CLASS_ID(IfTrue,    Proj, 2)
       DEFINE_CLASS_ID(IfFalse,   Proj, 3)
+      DEFINE_CLASS_ID(Parm,      Proj, 4)
 
     DEFINE_CLASS_ID(Region, Node, 3)
       DEFINE_CLASS_ID(Loop, Region, 0)
@@ -573,6 +576,7 @@ public:
       DEFINE_CLASS_ID(ConstraintCast, Type, 1)
       DEFINE_CLASS_ID(CheckCastPP, Type, 2)
       DEFINE_CLASS_ID(CMove, Type, 3)
+      DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
 
     DEFINE_CLASS_ID(Mem,   Node, 6)
       DEFINE_CLASS_ID(Load,  Mem, 0)
@@ -712,12 +716,14 @@ public:
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
+  DEFINE_CLASS_QUERY(Parm)
   DEFINE_CLASS_QUERY(PCTable)
   DEFINE_CLASS_QUERY(Phi)
   DEFINE_CLASS_QUERY(Proj)
   DEFINE_CLASS_QUERY(Region)
   DEFINE_CLASS_QUERY(Root)
   DEFINE_CLASS_QUERY(SafePoint)
+  DEFINE_CLASS_QUERY(SafePointScalarObject)
   DEFINE_CLASS_QUERY(Start)
   DEFINE_CLASS_QUERY(Store)
   DEFINE_CLASS_QUERY(Sub)
@@ -810,6 +816,12 @@ public:
   // unique users of specific nodes. Such nodes should be put on IGVN worklist
   // for the transformations to happen.
   bool has_special_unique_user() const;
+
+  // Skip Proj and CatchProj nodes chains. Check for Null and Top.
+  Node* find_exact_control(Node* ctrl);
+
+  // Check if 'this' node dominates or equal to 'sub'.
+  bool dominates(Node* sub, Node_List &nlist);
 
 protected:
   bool remove_dead_region(PhaseGVN *phase, bool can_reshape);
@@ -1322,7 +1334,6 @@ public:
 // Inline definition of Compile::record_for_igvn must be deferred to this point.
 inline void Compile::record_for_igvn(Node* n) {
   _for_igvn->push(n);
-  record_for_escape_analysis(n);
 }
 
 //------------------------------Node_Stack-------------------------------------
@@ -1381,7 +1392,7 @@ public:
     _inode_top->indx = i;
   }
   uint size_max() const { return (uint)pointer_delta(_inode_max, _inodes,  sizeof(INode)); } // Max size
-  uint size() const { return (uint)pointer_delta(_inode_top, _inodes,  sizeof(INode)) + 1; } // Current size
+  uint size() const { return (uint)pointer_delta((_inode_top+1), _inodes,  sizeof(INode)); } // Current size
   bool is_nonempty() const { return (_inode_top >= _inodes); }
   bool is_empty() const { return (_inode_top < _inodes); }
   void clear() { _inode_top = _inodes - 1; } // retain storage

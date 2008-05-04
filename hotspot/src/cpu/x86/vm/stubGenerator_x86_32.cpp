@@ -1416,8 +1416,8 @@ class StubGenerator: public StubCodeGenerator {
     // ======== end loop ========
 
     // It was a real error; we must depend on the caller to finish the job.
-    // Register rdx = -1 * number of *remaining* oops, r14 = *total* oops.
-    // Emit GC store barriers for the oops we have copied (r14 + rdx),
+    // Register "count" = -1 * number of *remaining* oops, length_arg = *total* oops.
+    // Emit GC store barriers for the oops we have copied (length_arg + count),
     // and report their number to the caller.
     __ addl(count, length_arg);         // transfers = (length - remaining)
     __ movl(rax, count);                // save the value
@@ -1430,6 +1430,7 @@ class StubGenerator: public StubCodeGenerator {
     // Come here on success only.
     __ BIND(L_do_card_marks);
     __ movl(count, length_arg);
+    __ movl(to, to_arg);                // reload
     gen_write_ref_array_post_barrier(to, count);
     __ xorl(rax, rax);                  // return 0 on success
 
@@ -2151,6 +2152,7 @@ class StubGenerator: public StubCodeGenerator {
     // These entry points require SharedInfo::stack0 to be set up in non-core builds
     // and need to be relocatable, so they each fabricate a RuntimeStub internally.
     StubRoutines::_throw_AbstractMethodError_entry         = generate_throw_exception("AbstractMethodError throw_exception",          CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError),  false);
+    StubRoutines::_throw_IncompatibleClassChangeError_entry= generate_throw_exception("IncompatibleClassChangeError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError),  false);
     StubRoutines::_throw_ArithmeticException_entry         = generate_throw_exception("ArithmeticException throw_exception",          CAST_FROM_FN_PTR(address, SharedRuntime::throw_ArithmeticException),  true);
     StubRoutines::_throw_NullPointerException_entry        = generate_throw_exception("NullPointerException throw_exception",         CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException), true);
     StubRoutines::_throw_NullPointerException_at_call_entry= generate_throw_exception("NullPointerException at call throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call), false);

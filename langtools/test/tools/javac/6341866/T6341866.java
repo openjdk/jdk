@@ -186,7 +186,7 @@ public class T6341866 {
     }
 
     static void error(String msg) {
-        System.err.println(msg);
+        System.err.println("ERROR: " + msg);
     }
 
     static File services(Class<?> service) {

@@ -66,9 +66,9 @@ public:
     }
   }
   static VMReg Bad() { return (VMReg) (intptr_t) BAD; }
-  bool is_valid() { return ((intptr_t) this) != BAD; }
-  bool is_stack() { return (intptr_t) this >= (intptr_t) stack0; }
-  bool is_reg() { return is_valid() && !is_stack(); }
+  bool is_valid() const { return ((intptr_t) this) != BAD; }
+  bool is_stack() const { return (intptr_t) this >= (intptr_t) stack0; }
+  bool is_reg()   const { return is_valid() && !is_stack(); }
 
   // A concrete register is a value that returns true for is_reg() and is
   // also a register you could use in the assembler. On machines with
@@ -96,7 +96,8 @@ public:
 
   intptr_t value() const         {return (intptr_t) this; }
 
-  void print();
+  void print_on(outputStream* st) const PRODUCT_RETURN;
+  void print() const { print_on(tty); }
 
   // bias a stack slot.
   // Typically used to adjust a virtual frame slots by amounts that are offset by

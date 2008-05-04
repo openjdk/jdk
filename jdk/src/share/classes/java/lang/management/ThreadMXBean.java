@@ -46,6 +46,9 @@ import java.util.Map;
  *           <tt>java.lang:type=Threading</tt>}
  * </blockquote>
  *
+ * It can be obtained by calling the
+ * {@link PlatformManagedObject#getObjectName} method.
+ *
  * <h4>Thread ID</h4>
  * Thread ID is a positive long value returned by calling the
  * {@link java.lang.Thread#getId} method for a thread.
@@ -108,6 +111,7 @@ import java.util.Map;
  * {@link #findDeadlockedThreads} methods to find deadlocks in
  * the running application.
  *
+ * @see ManagementFactory#getPlatformMXBeans(Class)
  * @see <a href="../../../javax/management/package-summary.html">
  *      JMX Specification.</a>
  * @see <a href="package-summary.html#examples">
@@ -117,7 +121,7 @@ import java.util.Map;
  * @since   1.5
  */
 
-public interface ThreadMXBean {
+public interface ThreadMXBean extends PlatformManagedObject {
     /**
      * Returns the current number of live threads including both
      * daemon and non-daemon threads.

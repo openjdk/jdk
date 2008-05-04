@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998-1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4118600 
+ * @bug 4118600
  * @summary RMI UnmarshallException, interaction on stopping a thread.
  *
  * @bug 4177704
@@ -35,7 +35,7 @@
  * @build CheckUnmarshall PoisonPill RuntimeExceptionParameter
  * @build CheckUnmarshalOnStopThread
  * @build CheckUnmarshalOnStopThread_Stub
- * @run main/othervm/timeout=480 CheckUnmarshalOnStopThread 
+ * @run main/othervm/timeout=480 CheckUnmarshalOnStopThread
  */
 
 import java.rmi.*;
@@ -44,7 +44,7 @@ import java.io.*;
 import java.rmi.registry.*;
 
 /**
- * Description for 4118600: 
+ * Description for 4118600:
  *
  * If an rmi call thread is stopped while unmarshalling a return
  * value), java.lang.ThreadDeath will be thrown during
@@ -77,8 +77,8 @@ import java.rmi.registry.*;
  * occur.  This test is only written to track UnmarshalExceptions;
  * success/failure does not depend on other types of problems.
  *
- * Description for 4177704: 
- * 
+ * Description for 4177704:
+ *
  * Similar situation as for 4177704 except that instead of just
  * ensuring that RMI properly handles Errors, the second part of the
  * test ensures that RMI deals with RuntimeExceptions correctly.
@@ -88,110 +88,110 @@ import java.rmi.registry.*;
  * parameters.  An object that throws a RuntimeException in its
  * writeObject method helps to carry out this part of the test.
  */
-public class CheckUnmarshalOnStopThread 
-    extends UnicastRemoteObject 
-    implements CheckUnmarshal 
+public class CheckUnmarshalOnStopThread
+    extends UnicastRemoteObject
+    implements CheckUnmarshal
 {
     final static int RUNTIME_PILL = 1;
     public static int typeToThrow = 0;
 
     /*
-     * remote object implementation 
+     * remote object implementation
      */
 
     CheckUnmarshalOnStopThread() throws RemoteException { }
 
     public PoisonPill getPoisonPill() throws RemoteException {
-	return new PoisonPill(new Integer(0));
+        return new PoisonPill(new Integer(0));
     }
 
     public Object ping() throws RemoteException {
-	return (Object) new Integer(0);
+        return (Object) new Integer(0);
     }
 
     public void passRuntimeExceptionParameter(
-        RuntimeExceptionParameter rep) throws RemoteException 
+        RuntimeExceptionParameter rep) throws RemoteException
     {
-	// will never be called
+        // will never be called
     }
 
     public static void main(String [] args) {
 
-	Object dummy = new Object();
-	CheckUnmarshal cu = null;
-	CheckUnmarshalOnStopThread cuonst = null;
+        Object dummy = new Object();
+        CheckUnmarshal cu = null;
+        CheckUnmarshalOnStopThread cuonst = null;
 
-	System.err.println("\nregression test for bugs: " + 
-			   "4118600 and 4177704\n");
+        System.err.println("\nregression test for bugs: " +
+                           "4118600 and 4177704\n");
 
-	try {
-	    cuonst = new CheckUnmarshalOnStopThread();
-	    cu = (CheckUnmarshal) UnicastRemoteObject.toStub(cuonst);
+        try {
+            cuonst = new CheckUnmarshalOnStopThread();
+            cu = (CheckUnmarshal) UnicastRemoteObject.toStub(cuonst);
 
-	    // make sure that RMI will free connections appropriately
-	    // under several situations:
+            // make sure that RMI will free connections appropriately
+            // under several situations:
 
-	    // when Errors are thrown during parameter unmarshalling
-	    System.err.println("testing to see if RMI will handle errors");
-	    ensureConnectionsAreFreed(cu, true);
+            // when Errors are thrown during parameter unmarshalling
+            System.err.println("testing to see if RMI will handle errors");
+            ensureConnectionsAreFreed(cu, true);
 
-	    // when RuntimeExceptions are thrown during parameter unmarshalling
-	    System.err.println("testing to see if RMI will handle " + 
-			       "runtime exceptions");
-	    typeToThrow = RUNTIME_PILL;
-	    ensureConnectionsAreFreed(cu, true);
+            // when RuntimeExceptions are thrown during parameter unmarshalling
+            System.err.println("testing to see if RMI will handle " +
+                               "runtime exceptions");
+            typeToThrow = RUNTIME_PILL;
+            ensureConnectionsAreFreed(cu, true);
 
-	    // when RuntimeExceptions are thrown during parameter marshalling
-	    System.err.println("testing to see if RMI will handle " + 
-			       "runtime exceptions thrown during " + 
-			       "parameter marshalling");
-	    ensureConnectionsAreFreed(cu, false);
+            // when RuntimeExceptions are thrown during parameter marshalling
+            System.err.println("testing to see if RMI will handle " +
+                               "runtime exceptions thrown during " +
+                               "parameter marshalling");
+            ensureConnectionsAreFreed(cu, false);
 
-	    System.err.println
-		("\nsuccess: CheckUnmarshalOnStopThread test passed ");
+            System.err.println
+                ("\nsuccess: CheckUnmarshalOnStopThread test passed ");
 
-	} catch (Exception e) {
-	    TestLibrary.bomb(e);
-	} finally {
-	    cu = null;
-	    deactivate(cuonst);
-	}
+        } catch (Exception e) {
+            TestLibrary.bomb(e);
+        } finally {
+            cu = null;
+            deactivate(cuonst);
+        }
     }
-    
-    static void ensureConnectionsAreFreed(CheckUnmarshal cu, boolean getPill) 
-	throws Exception
+
+    static void ensureConnectionsAreFreed(CheckUnmarshal cu, boolean getPill)
+        throws Exception
     {
-	// invoke a remote call that will corrupt a call connection
-	// that will not be freed (if the bug is not fixed)
+        // invoke a remote call that will corrupt a call connection
+        // that will not be freed (if the bug is not fixed)
 
-	for (int i = 0 ; i < 250 ; i++) {
-	    try {
-		Object test = cu.ping();
-		if (getPill) {
-		    cu.getPoisonPill();
-		} else {
-		    cu.passRuntimeExceptionParameter(
-		        new RuntimeExceptionParameter());
-		}
-	    } catch (Error e) {
-		// expect an Error from call unmarshalling, ignore it
-	    } catch (RuntimeException e) {
-		// " RuntimeException "
-	    }
-	}
+        for (int i = 0 ; i < 250 ; i++) {
+            try {
+                Object test = cu.ping();
+                if (getPill) {
+                    cu.getPoisonPill();
+                } else {
+                    cu.passRuntimeExceptionParameter(
+                        new RuntimeExceptionParameter());
+                }
+            } catch (Error e) {
+                // expect an Error from call unmarshalling, ignore it
+            } catch (RuntimeException e) {
+                // " RuntimeException "
+            }
+        }
 
-	System.err.println("remote calls passed, received no " + 
-			   "unmarshal exceptions\n\n");
+        System.err.println("remote calls passed, received no " +
+                           "unmarshal exceptions\n\n");
     }
 
     static void deactivate(RemoteServer r) {
-	// make sure that the object goes away
-	try {
-	    System.err.println("deactivating object.");
-	    UnicastRemoteObject.unexportObject(r, true);
-	} catch (Exception e) {
-	    e.getMessage();
-	    e.printStackTrace();
-	}
+        // make sure that the object goes away
+        try {
+            System.err.println("deactivating object.");
+            UnicastRemoteObject.unexportObject(r, true);
+        } catch (Exception e) {
+            e.getMessage();
+            e.printStackTrace();
+        }
     }
 }

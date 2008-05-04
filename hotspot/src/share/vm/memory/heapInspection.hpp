@@ -98,8 +98,9 @@ class KlassInfoTable: public StackObj {
   };
   KlassInfoTable(int size, HeapWord* ref);
   ~KlassInfoTable();
-  void record_instance(const oop obj);
+  bool record_instance(const oop obj);
   void iterate(KlassInfoClosure* cic);
+  bool allocation_failed() { return _buckets == NULL; }
 };
 
 class KlassInfoHisto : public StackObj {

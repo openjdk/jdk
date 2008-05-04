@@ -26,6 +26,8 @@
 package sun.management;
 
 import java.lang.management.CompilationMXBean;
+import java.lang.management.ManagementFactory;
+import javax.management.ObjectName;
 
 /**
  * Implementation class for the compilation subsystem.
@@ -46,7 +48,7 @@ class CompilationImpl implements CompilationMXBean {
         this.jvm = vm;
         this.name = jvm.getCompilerName();
         if (name == null) {
-            throw new InternalError("Null compiler name");
+            throw new AssertionError("Null compiler name");
         }
     }
 
@@ -66,5 +68,10 @@ class CompilationImpl implements CompilationMXBean {
 
         return jvm.getTotalCompileTime();
     }
+
+    public ObjectName getObjectName() {
+        return Util.newObjectName(ManagementFactory.COMPILATION_MXBEAN_NAME);
+    }
+
 
 }

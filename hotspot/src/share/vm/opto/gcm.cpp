@@ -448,9 +448,9 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   ResourceArea *area = Thread::current()->resource_area();
   Node_List worklist_mem(area);     // prior memory state to store
   Node_List worklist_store(area);   // possible-def to explore
+  Node_List worklist_visited(area); // visited mergemem nodes
   Node_List non_early_stores(area); // all relevant stores outside of early
   bool must_raise_LCA = false;
-  DEBUG_ONLY(VectorSet should_not_repeat(area));
 
 #ifdef TRACK_PHI_INPUTS
   // %%% This extra checking fails because MergeMem nodes are not GVNed.
@@ -479,8 +479,8 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
 
   Node* initial_mem = load->in(MemNode::Memory);
   worklist_store.push(initial_mem);
+  worklist_visited.push(initial_mem);
   worklist_mem.push(NULL);
-  DEBUG_ONLY(should_not_repeat.test_set(initial_mem->_idx));
   while (worklist_store.size() > 0) {
     // Examine a nearby store to see if it might interfere with our load.
     Node* mem   = worklist_mem.pop();
@@ -494,18 +494,20 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
         || op == Op_MergeMem    // internal node of tree we are searching
         ) {
       mem = store;   // It's not a possibly interfering store.
+      if (store == initial_mem)
+        initial_mem = NULL;  // only process initial memory once
+
       for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
         store = mem->fast_out(i);
         if (store->is_MergeMem()) {
           // Be sure we don't get into combinatorial problems.
           // (Allow phis to be repeated; they can merge two relevant states.)
-          uint i = worklist_store.size();
-          for (; i > 0; i--) {
-            if (worklist_store.at(i-1) == store)  break;
+          uint j = worklist_visited.size();
+          for (; j > 0; j--) {
+            if (worklist_visited.at(j-1) == store)  break;
           }
-          if (i > 0)  continue; // already on work list; do not repeat
-          DEBUG_ONLY(int repeated = should_not_repeat.test_set(store->_idx));
-          assert(!repeated, "do not walk merges twice");
+          if (j > 0)  continue; // already on work list; do not repeat
+          worklist_visited.push(store);
         }
         worklist_mem.push(mem);
         worklist_store.push(store);

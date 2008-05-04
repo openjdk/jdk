@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,7 +20,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
- 
+
 /* @test
  * @bug 4179055
  * @summary Some java apps need to have access to read "accessClassInPackage.sun.rmi.server"
@@ -55,151 +55,151 @@ import java.util.StringTokenizer;
  *
  * The test causes the activation system to need to create each of
  * these classes in turn.  The test will fail if the activation system
- * does not allow these classes to be created.  
+ * does not allow these classes to be created.
  */
 public class StubClassesPermitted
     extends Activatable implements Runnable, CanCreateStubs
 {
     public static boolean sameGroup = false;
-    
+
     private static CanCreateStubs canCreateStubs = null;
     private static Registry registry = null;
 
-    public static void main(String args[]) {  
+    public static void main(String args[]) {
 
-	sameGroup = true;
-	
-	RMID rmid = null;
+        sameGroup = true;
 
-	System.err.println("\nRegression test for bug/rfe 4179055\n");
-	    
-	try {
-	    TestLibrary.suggestSecurityManager("java.lang.SecurityManager");
+        RMID rmid = null;
 
-	    registry = java.rmi.registry.LocateRegistry.
-		createRegistry(TestLibrary.REGISTRY_PORT);
+        System.err.println("\nRegression test for bug/rfe 4179055\n");
 
-	    // must run with java.lang.SecurityManager or the test
-	    // result will be nullified if running with a build where
-	    // 4180392 has not been fixed.
-	    String smClassName = 
-		System.getSecurityManager().getClass().getName();
-	    if (!smClassName.equals("java.lang.SecurityManager")) {
-		TestLibrary.bomb("Test must run with java.lang.SecurityManager");
-	    }
+        try {
+            TestLibrary.suggestSecurityManager("java.lang.SecurityManager");
 
-	    // start an rmid.
-  	    RMID.removeLog();
-  	    rmid = RMID.createRMID();
-  	    rmid.start();
+            registry = java.rmi.registry.LocateRegistry.
+                createRegistry(TestLibrary.REGISTRY_PORT);
 
-	    //rmid.addOptions(new String[] {"-C-Djava.rmi.server.logCalls=true"});
+            // must run with java.lang.SecurityManager or the test
+            // result will be nullified if running with a build where
+            // 4180392 has not been fixed.
+            String smClassName =
+                System.getSecurityManager().getClass().getName();
+            if (!smClassName.equals("java.lang.SecurityManager")) {
+                TestLibrary.bomb("Test must run with java.lang.SecurityManager");
+            }
 
-	    // Ensure that activation groups run with the correct
-	    // security manager.
-	    //
-	    Properties p = new Properties();
-	    p.put("java.security.policy", 
-		  TestParams.defaultGroupPolicy);
-	    p.put("java.security.manager", 
-		  "java.lang.SecurityManager");
+            // start an rmid.
+            RMID.removeLog();
+            rmid = RMID.createRMID();
+            rmid.start();
 
-	    // This action causes the following classes to be created
-	    // in this VM (RMI must permit the creation of these classes):
-	    //
-	    // sun.rmi.server.Activation$ActivationSystemImpl_Stub
-	    // sun.rmi.server.Activation$ActivationMonitorImpl_Stub
-	    //
-  	    System.err.println("Create activation group, in a new VM");
-  	    ActivationGroupDesc groupDesc =
-  		new ActivationGroupDesc(p, null);
-  	    ActivationSystem system = ActivationGroup.getSystem();
-  	    ActivationGroupID groupID = system.registerGroup(groupDesc);
-	    
-	    System.err.println("register activatable");
-	    // Fix for: 4271615: make sure activation group runs in a new VM
-	    ActivationDesc desc = new ActivationDesc 
-		(groupID, "StubClassesPermitted", null, null);
-	    canCreateStubs = (CanCreateStubs) Activatable.register(desc);
+            //rmid.addOptions(new String[] {"-C-Djava.rmi.server.logCalls=true"});
 
-	    // ensure registry stub can be passed in a remote call
-	    System.err.println("getting the registry");
-	    registry = canCreateStubs.getRegistry();
+            // Ensure that activation groups run with the correct
+            // security manager.
+            //
+            Properties p = new Properties();
+            p.put("java.security.policy",
+                  TestParams.defaultGroupPolicy);
+            p.put("java.security.manager",
+                  "java.lang.SecurityManager");
 
-	    // make sure a client cant load just any sun.* class, just
-	    // as a sanity check, try to create a class we are not
-	    // allowed to access but which was passed in a remote call
-	    try {
-		System.err.println("accessing forbidden class");
-		Object secureRandom = canCreateStubs.getForbiddenClass();
-		
-		TestLibrary.bomb("test allowed to access forbidden class," + 
-				 " sun.security.provider.SecureRandom");
-	    } catch (java.security.AccessControlException e) {
+            // This action causes the following classes to be created
+            // in this VM (RMI must permit the creation of these classes):
+            //
+            // sun.rmi.server.Activation$ActivationSystemImpl_Stub
+            // sun.rmi.server.Activation$ActivationMonitorImpl_Stub
+            //
+            System.err.println("Create activation group, in a new VM");
+            ActivationGroupDesc groupDesc =
+                new ActivationGroupDesc(p, null);
+            ActivationSystem system = ActivationGroup.getSystem();
+            ActivationGroupID groupID = system.registerGroup(groupDesc);
 
-		// Make sure we received a *local* AccessControlException
-		ByteArrayOutputStream bout = new ByteArrayOutputStream();
-		PrintStream ps = new PrintStream(bout);
-		e.printStackTrace(ps);
-		ps.flush();
-		String trace = new String(bout.toByteArray());
-		if ((trace.indexOf("exceptionReceivedFromServer") >= 0) ||
-		    trace.equals(""))
+            System.err.println("register activatable");
+            // Fix for: 4271615: make sure activation group runs in a new VM
+            ActivationDesc desc = new ActivationDesc
+                (groupID, "StubClassesPermitted", null, null);
+            canCreateStubs = (CanCreateStubs) Activatable.register(desc);
+
+            // ensure registry stub can be passed in a remote call
+            System.err.println("getting the registry");
+            registry = canCreateStubs.getRegistry();
+
+            // make sure a client cant load just any sun.* class, just
+            // as a sanity check, try to create a class we are not
+            // allowed to access but which was passed in a remote call
+            try {
+                System.err.println("accessing forbidden class");
+                Object secureRandom = canCreateStubs.getForbiddenClass();
+
+                TestLibrary.bomb("test allowed to access forbidden class," +
+                                 " sun.security.provider.SecureRandom");
+            } catch (java.security.AccessControlException e) {
+
+                // Make sure we received a *local* AccessControlException
+                ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                PrintStream ps = new PrintStream(bout);
+                e.printStackTrace(ps);
+                ps.flush();
+                String trace = new String(bout.toByteArray());
+                if ((trace.indexOf("exceptionReceivedFromServer") >= 0) ||
+                    trace.equals(""))
                 {
-		    throw e;
-		}
-		System.err.println("received expected local access control exception");
-	    }
+                    throw e;
+                }
+                System.err.println("received expected local access control exception");
+            }
 
-	    // make sure that an ActivationGroupID can be passed in a
-	    // remote call; this is slightly more inclusive than
-	    // just passing a reference to the activation system
-	    System.err.println("returning group desc");
-	    canCreateStubs.returnGroupID();
-		    
-	    // Clean up object
-	    System.err.println
-		("Deactivate object via method call");
-	    canCreateStubs.shutdown();
+            // make sure that an ActivationGroupID can be passed in a
+            // remote call; this is slightly more inclusive than
+            // just passing a reference to the activation system
+            System.err.println("returning group desc");
+            canCreateStubs.returnGroupID();
 
-	    System.err.println
-		("\nsuccess: StubClassesPermitted test passed ");
-	    
-	} catch (Exception e) {
-	    TestLibrary.bomb("\nfailure: unexpected exception ", e);
-	} finally {
-	    try {
-		Thread.sleep(4000);
-	    } catch (InterruptedException e) {
-	    }
-	    
-	    canCreateStubs = null;
-	    ActivationLibrary.rmidCleanup(rmid);
-	    System.err.println("rmid shut down");
-	}
+            // Clean up object
+            System.err.println
+                ("Deactivate object via method call");
+            canCreateStubs.shutdown();
+
+            System.err.println
+                ("\nsuccess: StubClassesPermitted test passed ");
+
+        } catch (Exception e) {
+            TestLibrary.bomb("\nfailure: unexpected exception ", e);
+        } finally {
+            try {
+                Thread.sleep(4000);
+            } catch (InterruptedException e) {
+            }
+
+            canCreateStubs = null;
+            ActivationLibrary.rmidCleanup(rmid);
+            System.err.println("rmid shut down");
+        }
     }
-    
+
     static ActivationGroupID GroupID = null;
 
     /**
-     * implementation of CanCreateStubs 
+     * implementation of CanCreateStubs
      */
     public StubClassesPermitted
-	(ActivationID id, MarshalledObject mo) throws RemoteException 
+        (ActivationID id, MarshalledObject mo) throws RemoteException
     {
-	// register/export anonymously
-	super(id, 0);
+        // register/export anonymously
+        super(id, 0);
 
-	// obtain reference to the test registry
-	registry = java.rmi.registry.LocateRegistry.
-	    getRegistry(TestLibrary.REGISTRY_PORT);
+        // obtain reference to the test registry
+        registry = java.rmi.registry.LocateRegistry.
+            getRegistry(TestLibrary.REGISTRY_PORT);
     }
-    
+
     /**
      * Spawns a thread to deactivate the object.
      */
     public void shutdown() throws Exception {
-	(new Thread(this,"StubClassesPermitted")).start();
+        (new Thread(this,"StubClassesPermitted")).start();
     }
 
     /**
@@ -209,7 +209,7 @@ public class StubClassesPermitted
      * unexport the object forcibly.
      */
     public void run() {
-	ActivationLibrary.deactivate(this, getID());
+        ActivationLibrary.deactivate(this, getID());
     }
 
     /**
@@ -217,12 +217,12 @@ public class StubClassesPermitted
      * the stub for it can be deserialized in the test client VM.
      */
     public Registry getRegistry() throws RemoteException {
-	if (sameGroup) {
-	    System.out.println("in same group");
-	} else {
-	    System.out.println("not in same group");
-	}
-	return registry;
+        if (sameGroup) {
+            System.out.println("in same group");
+        } else {
+            System.out.println("not in same group");
+        }
+        return registry;
     }
 
     /**
@@ -232,8 +232,8 @@ public class StubClassesPermitted
      * can be resolved in a remote call.
      */
     public Object getForbiddenClass() throws RemoteException {
-	System.err.println("creating sun class");
-	return new sun.security.provider.SecureRandom();
+        System.err.println("creating sun class");
+        return new sun.security.provider.SecureRandom();
     }
 
     /**
@@ -242,6 +242,6 @@ public class StubClassesPermitted
      * system implementation).
      */
     public ActivationGroupID returnGroupID() throws RemoteException {
-	return ActivationGroup.currentGroupID();
+        return ActivationGroup.currentGroupID();
     }
 }

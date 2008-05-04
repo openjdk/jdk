@@ -465,12 +465,12 @@ public class Attr extends JCTree.Visitor {
                 types.setBounds(a, List.of(syms.objectType));
             }
         }
+    }
+
+    void attribBounds(List<JCTypeParameter> typarams, Env<AttrContext> env) {
         for (JCTypeParameter tvar : typarams)
             chk.checkNonCyclic(tvar.pos(), (TypeVar)tvar.type);
         attribStats(typarams, env);
-    }
-
-    void attribBounds(List<JCTypeParameter> typarams) {
         for (JCTypeParameter typaram : typarams) {
             Type bound = typaram.type.getUpperBound();
             if (bound != null && bound.tsym instanceof ClassSymbol) {
@@ -581,7 +581,7 @@ public class Attr extends JCTree.Visitor {
         try {
             chk.checkDeprecatedAnnotation(tree.pos(), m);
 
-            attribBounds(tree.typarams);
+            attribBounds(tree.typarams, env);
 
             // If we override any other methods, check that we do so properly.
             // JLS ???
@@ -1609,17 +1609,10 @@ public class Attr extends JCTree.Visitor {
                               tree.getTag() - JCTree.ASGOffset,
                               owntype,
                               operand);
-            if (types.isSameType(operator.type.getReturnType(), syms.stringType)) {
-                // String assignment; make sure the lhs is a string
-                chk.checkType(tree.lhs.pos(),
-                              owntype,
-                              syms.stringType);
-            } else {
-                chk.checkDivZero(tree.rhs.pos(), operator, operand);
-                chk.checkCastable(tree.rhs.pos(),
-                                  operator.type.getReturnType(),
-                                  owntype);
-            }
+            chk.checkDivZero(tree.rhs.pos(), operator, operand);
+            chk.checkCastable(tree.rhs.pos(),
+                              operator.type.getReturnType(),
+                              owntype);
         }
         result = check(tree, owntype, VAL, pkind, pt);
     }
@@ -2206,7 +2199,7 @@ public class Attr extends JCTree.Visitor {
                 (env.tree.getTag() != JCTree.ASSIGN ||
                  TreeInfo.skipParens(((JCAssign) env.tree).lhs) != tree)) {
 
-                if (!onlyWarning || isNonStaticEnumField(v)) {
+                if (!onlyWarning || isStaticEnumField(v)) {
                     log.error(tree.pos(), "illegal.forward.ref");
                 } else if (useBeforeDeclarationWarning) {
                     log.warning(tree.pos(), "forward.ref", v);
@@ -2240,7 +2233,7 @@ public class Attr extends JCTree.Visitor {
             // initializer expressions of an enum constant e to refer
             // to itself or to an enum constant of the same type that
             // is declared to the right of e."
-            if (isNonStaticEnumField(v)) {
+            if (isStaticEnumField(v)) {
                 ClassSymbol enclClass = env.info.scope.owner.enclClass();
 
                 if (enclClass == null || enclClass.owner == null)
@@ -2261,8 +2254,14 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        private boolean isNonStaticEnumField(VarSymbol v) {
-            return Flags.isEnum(v.owner) && Flags.isStatic(v) && !Flags.isConstant(v);
+        /** Is the given symbol a static, non-constant field of an Enum?
+         *  Note: enum literals should not be regarded as such
+         */
+        private boolean isStaticEnumField(VarSymbol v) {
+            return Flags.isEnum(v.owner) &&
+                   Flags.isStatic(v) &&
+                   !Flags.isConstant(v) &&
+                   v.name != names._class;
         }
 
         /** Can the given symbol be the owner of code which forms part
@@ -2514,6 +2513,7 @@ public class Attr extends JCTree.Visitor {
                     log.error(tree.bounds.tail.head.pos(),
                               "type.var.may.not.be.followed.by.other.bounds");
                     tree.bounds = List.of(tree.bounds.head);
+                    a.bound = bs.head;
                 }
             } else {
                 // if first bound was a class or interface, accept only interfaces
@@ -2687,7 +2687,7 @@ public class Attr extends JCTree.Visitor {
         chk.validateAnnotations(tree.mods.annotations, c);
 
         // Validate type parameters, supertype and interfaces.
-        attribBounds(tree.typarams);
+        attribBounds(tree.typarams, env);
         chk.validateTypeParams(tree.typarams);
         chk.validate(tree.extending);
         chk.validate(tree.implementing);

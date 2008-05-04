@@ -126,7 +126,7 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
                                             threadInfoItemValues);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newInternalError(e);
+            throw new AssertionError(e);
         }
     }
 
@@ -209,7 +209,7 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
                                   v5ItemTypes);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newInternalError(e);
+            throw new AssertionError(e);
         }
 
         // Each CompositeData object has its CompositeType associated
