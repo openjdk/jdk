@@ -435,23 +435,22 @@ class CMSStats VALUE_OBJ_CLASS_SPEC {
 // if the object is "live" (reachable). Used in weak
 // reference processing.
 class CMSIsAliveClosure: public BoolObjectClosure {
-  MemRegion  _span;
+  const MemRegion  _span;
   const CMSBitMap* _bit_map;
 
   friend class CMSCollector;
- protected:
-  void set_span(MemRegion span) { _span = span; }
  public:
-  CMSIsAliveClosure(CMSBitMap* bit_map):
-    _bit_map(bit_map) { }
-
   CMSIsAliveClosure(MemRegion span,
                     CMSBitMap* bit_map):
     _span(span),
-    _bit_map(bit_map) { }
+    _bit_map(bit_map) {
+    assert(!span.is_empty(), "Empty span could spell trouble");
+  }
+
   void do_object(oop obj) {
     assert(false, "not to be invoked");
   }
+
   bool do_object_b(oop obj);
 };
 
@@ -600,7 +599,7 @@ class CMSCollector: public CHeapObj {
   // ("Weak") Reference processing support
   ReferenceProcessor*            _ref_processor;
   CMSIsAliveClosure              _is_alive_closure;
-      // keep this textually after _markBitMap; c'tor dependency
+      // keep this textually after _markBitMap and _span; c'tor dependency
 
   ConcurrentMarkSweepThread*     _cmsThread;   // the thread doing the work
   ModUnionClosure    _modUnionClosure;
