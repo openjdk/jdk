@@ -520,7 +520,10 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
                  -1 /* lock-free */, "No_lock" /* dummy */),
   _modUnionClosure(&_modUnionTable),
   _modUnionClosurePar(&_modUnionTable),
-  _is_alive_closure(&_markBitMap),
+  // Adjust my span to cover old (cms) gen and perm gen
+  _span(cmsGen->reserved()._union(permGen->reserved())),
+  // Construct the is_alive_closure with _span & markBitMap
+  _is_alive_closure(_span, &_markBitMap),
   _restart_addr(NULL),
   _overflow_list(NULL),
   _preserved_oop_stack(NULL),
@@ -571,11 +574,6 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   // For use by dirty card to oop closures.
   _cmsGen->cmsSpace()->set_collector(this);
   _permGen->cmsSpace()->set_collector(this);
-
-  // Adjust my span to cover old (cms) gen and perm gen
-  _span = _cmsGen->reserved()._union(_permGen->reserved());
-  // Initialize the span of is_alive_closure
-  _is_alive_closure.set_span(_span);
 
   // Allocate MUT and marking bit map
   {
@@ -5496,7 +5494,7 @@ class CMSRefProcTaskProxy: public AbstractGangTask {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
   CMSCollector*          _collector;
   CMSBitMap*             _mark_bit_map;
-  MemRegion              _span;
+  const MemRegion        _span;
   OopTaskQueueSet*       _task_queues;
   ParallelTaskTerminator _term;
   ProcessTask&           _task;
@@ -5513,7 +5511,10 @@ public:
     _collector(collector), _span(span), _mark_bit_map(mark_bit_map),
     _task_queues(task_queues),
     _term(total_workers, task_queues)
-    { }
+    {
+      assert(_collector->_span.equals(_span) && !_span.is_empty(),
+             "Inconsistency in _span");
+    }
 
   OopTaskQueueSet* task_queues() { return _task_queues; }
 
@@ -5530,11 +5531,12 @@ public:
 };
 
 void CMSRefProcTaskProxy::work(int i) {
+  assert(_collector->_span.equals(_span), "Inconsistency in _span");
   CMSParKeepAliveClosure par_keep_alive(_collector, _span,
                                         _mark_bit_map, work_queue(i));
   CMSParDrainMarkingStackClosure par_drain_stack(_collector, _span,
                                                  _mark_bit_map, work_queue(i));
-  CMSIsAliveClosure is_alive_closure(_mark_bit_map);
+  CMSIsAliveClosure is_alive_closure(_span, _mark_bit_map);
   _task.work(i, is_alive_closure, par_keep_alive, par_drain_stack);
   if (_task.marks_oops_alive()) {
     do_work_steal(i, &par_drain_stack, &par_keep_alive,
