@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package javax.swing.colorchooser;
 
 import java.awt.*;
-import java.io.Serializable;
 import javax.swing.*;
-import javax.swing.event.*;
 
 /**
  * This is the abstract superclass for color choosers.  If you want to add
@@ -53,17 +51,6 @@ public abstract class AbstractColorChooserPanel extends JPanel {
      *
      */
     private JColorChooser chooser;
-
-    /**
-     *
-     */
-    private ChangeListener colorListener;
-
-    /**
-     *
-     */
-    private boolean dirty  = true;
-
 
     /**
       * Invoked automatically when the model's state changes.
@@ -157,8 +144,6 @@ public abstract class AbstractColorChooserPanel extends JPanel {
         chooser = enclosingChooser;
         buildChooser();
         updateChooser();
-        colorListener = new ModelListener();
-        getColorSelectionModel().addChangeListener(colorListener);
     }
 
     /**
@@ -166,7 +151,6 @@ public abstract class AbstractColorChooserPanel extends JPanel {
      * If override this, be sure to call <code>super</code>.
      */
   public void uninstallChooserPanel(JColorChooser enclosingChooser) {
-        getColorSelectionModel().removeChangeListener(colorListener);
         chooser = null;
     }
 
@@ -192,10 +176,6 @@ public abstract class AbstractColorChooserPanel extends JPanel {
      * @param g  the <code>Graphics</code> object
      */
     public void paint(Graphics g) {
-        if (dirty) {
-            updateChooser();
-            dirty = false;
-        }
         super.paint(g);
     }
 
@@ -221,19 +201,5 @@ public abstract class AbstractColorChooserPanel extends JPanel {
             } catch (NumberFormatException nfe) {}
         }
         return defaultValue;
-    }
-
-    /**
-     *
-     */
-    class ModelListener implements ChangeListener, Serializable {
-        public void stateChanged(ChangeEvent e) {
-          if (isShowing()) {  // isVisible
-                updateChooser();
-                dirty = false;
-            } else {
-                dirty = true;
-            }
-        }
     }
 }
