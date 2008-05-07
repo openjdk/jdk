@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.awt.event.*;
 import java.awt.image.VolatileImage;
 import java.awt.peer.ComponentPeer;
 import java.applet.Applet;
+import java.beans.Transient;
 import javax.swing.plaf.ViewportUI;
 
 import javax.swing.event.*;
@@ -1257,6 +1258,7 @@ public class JViewport extends JComponent implements Accessible
      *
      * @return a <code>Dimension</code> object giving the size of the view
      */
+    @Transient
     public Dimension getExtentSize() {
         return getSize();
     }
