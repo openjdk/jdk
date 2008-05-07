@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,9 @@ import java.awt.event.*;
 import java.awt.image.*;
 import java.text.*;
 import java.awt.geom.*;
-import java.beans.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.Transient;
 import java.util.Enumeration;
 import java.util.Vector;
 import java.io.Serializable;
@@ -645,6 +647,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @see #setDisabledIcon
      * @see javax.swing.LookAndFeel#getDisabledIcon
      */
+    @Transient
     public Icon getDisabledIcon() {
         if (disabledIcon == null) {
             disabledIcon = UIManager.getLookAndFeel().getDisabledIcon(this, getIcon());

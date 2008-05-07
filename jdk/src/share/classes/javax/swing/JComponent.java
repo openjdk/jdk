@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,10 @@ import java.awt.Graphics2D;
 import java.awt.peer.LightweightPeer;
 import java.awt.dnd.DropTarget;
 import java.awt.font.FontRenderContext;
-import java.beans.*;
+import java.beans.PropertyChangeListener;
+import java.beans.VetoableChangeListener;
+import java.beans.VetoableChangeSupport;
+import java.beans.Transient;
 
 import java.applet.Applet;
 
@@ -1634,6 +1637,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #setPreferredSize
      * @see ComponentUI
      */
+    @Transient
     public Dimension getPreferredSize() {
         if (isPreferredSizeSet()) {
             return super.getPreferredSize();
@@ -1675,6 +1679,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #setMaximumSize
      * @see ComponentUI
      */
+    @Transient
     public Dimension getMaximumSize() {
         if (isMaximumSizeSet()) {
             return super.getMaximumSize();
@@ -1714,6 +1719,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #setMinimumSize
      * @see ComponentUI
      */
+    @Transient
     public Dimension getMinimumSize() {
         if (isMinimumSizeSet()) {
             return super.getMinimumSize();
