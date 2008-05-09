@@ -893,6 +893,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   /*******************************************************************/   \
                                                                           \
   declare_unsigned_integer_type(size_t)                                   \
+  declare_integer_type(ssize_t)                                           \
   declare_unsigned_integer_type(const size_t)                             \
   declare_integer_type(intx)                                              \
   declare_integer_type(intptr_t)                                          \
