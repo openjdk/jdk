@@ -62,10 +62,10 @@ void MutableNUMASpace::ensure_parsability() {
   for (int i = 0; i < lgrp_spaces()->length(); i++) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
     MutableSpace *s = ls->space();
-    if (!s->contains(top())) {
+    if (s->top() < top()) { // For all spaces preceeding the one containing top()
       if (s->free_in_words() > 0) {
         SharedHeap::fill_region_with_object(MemRegion(s->top(), s->end()));
-        size_t area_touched_words = pointer_delta(s->end(), s->top(), sizeof(HeapWordSize));
+        size_t area_touched_words = pointer_delta(s->end(), s->top());
 #ifndef ASSERT
         if (!ZapUnusedHeapArea) {
           area_touched_words = MIN2((size_t)align_object_size(typeArrayOopDesc::header_size(T_INT)),
@@ -88,7 +88,6 @@ void MutableNUMASpace::ensure_parsability() {
 
           ls->add_invalid_region(invalid);
         }
-        s->set_top(s->end());
       }
     } else {
       if (!os::numa_has_static_binding()) {
@@ -99,8 +98,12 @@ void MutableNUMASpace::ensure_parsability() {
         if (ZapUnusedHeapArea) {
           MemRegion invalid(s->top(), s->end());
           ls->add_invalid_region(invalid);
-        } else break;
+        } else {
+          return;
+        }
 #endif
+      } else {
+          return;
       }
     }
   }
@@ -658,9 +661,12 @@ HeapWord* MutableNUMASpace::allocate(size_t size) {
   MutableSpace *s = lgrp_spaces()->at(i)->space();
   HeapWord *p = s->allocate(size);
 
-  if (p != NULL && s->free_in_words() < (size_t)oopDesc::header_size()) {
-    s->set_top(s->top() - size);
-    p = NULL;
+  if (p != NULL) {
+    size_t remainder = s->free_in_words();
+    if (remainder < (size_t)oopDesc::header_size() && remainder > 0) {
+      s->set_top(s->top() - size);
+      p = NULL;
+    }
   }
   if (p != NULL) {
     if (top() < s->top()) { // Keep _top updated.
@@ -693,11 +699,14 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   }
   MutableSpace *s = lgrp_spaces()->at(i)->space();
   HeapWord *p = s->cas_allocate(size);
-  if (p != NULL && s->free_in_words() < (size_t)oopDesc::header_size()) {
-    if (s->cas_deallocate(p, size)) {
-      // We were the last to allocate and created a fragment less than
-      // a minimal object.
-      p = NULL;
+  if (p != NULL) {
+    size_t remainder = pointer_delta(s->end(), p);
+    if (remainder < (size_t)oopDesc::header_size() && remainder > 0) {
+      if (s->cas_deallocate(p, size)) {
+        // We were the last to allocate and created a fragment less than
+        // a minimal object.
+        p = NULL;
+      }
     }
   }
   if (p != NULL) {
@@ -738,6 +747,9 @@ void MutableNUMASpace::print_on(outputStream* st) const {
     st->print("    lgrp %d", ls->lgrp_id());
     ls->space()->print_on(st);
     if (NUMAStats) {
+      for (int i = 0; i < lgrp_spaces()->length(); i++) {
+        lgrp_spaces()->at(i)->accumulate_statistics(page_size());
+      }
       st->print("    local/remote/unbiased/uncommitted: %dK/%dK/%dK/%dK, large/small pages: %d/%d\n",
                 ls->space_stats()->_local_space / K,
                 ls->space_stats()->_remote_space / K,
