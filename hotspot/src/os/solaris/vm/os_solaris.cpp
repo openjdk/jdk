@@ -122,6 +122,13 @@ struct memcntl_mha {
 # define  MADV_ACCESS_MANY        8       /* many processes to access heavily */
 #endif
 
+#ifndef LGRP_RSRC_CPU
+# define LGRP_RSRC_CPU           0       /* CPU resources */
+#endif
+#ifndef LGRP_RSRC_MEM
+# define LGRP_RSRC_MEM           1       /* memory resources */
+#endif
+
 // Some more macros from sys/mman.h that are not present in Solaris 8.
 
 #ifndef MAX_MEMINFO_CNT
@@ -2640,8 +2647,13 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
        return 1;
      }
      if (!r) {
+       // That's a leaf node.
        assert (bottom <= cur, "Sanity check");
-       ids[bottom++] = ids[cur];
+       // Check if the node has memory
+       if (Solaris::lgrp_resources(Solaris::lgrp_cookie(), ids[cur],
+                                   NULL, 0, LGRP_RSRC_MEM) > 0) {
+         ids[bottom++] = ids[cur];
+       }
      }
      top += r;
      cur++;
@@ -2664,11 +2676,20 @@ bool os::numa_topology_changed() {
 
 // Get the group id of the current LWP.
 int os::numa_get_group_id() {
-  int lgrp_id = os::Solaris::lgrp_home(P_LWPID, P_MYID);
+  int lgrp_id = Solaris::lgrp_home(P_LWPID, P_MYID);
   if (lgrp_id == -1) {
     return 0;
   }
-  return lgrp_id;
+  const int size = os::numa_get_groups_num();
+  int *ids = (int*)alloca(size * sizeof(int));
+
+  // Get the ids of all lgroups with memory; r is the count.
+  int r = Solaris::lgrp_resources(Solaris::lgrp_cookie(), lgrp_id,
+                                  (Solaris::lgrp_id_t*)ids, size, LGRP_RSRC_MEM);
+  if (r <= 0) {
+    return 0;
+  }
+  return ids[os::random() % r];
 }
 
 // Request information about the page.
@@ -4353,6 +4374,7 @@ os::Solaris::lgrp_init_func_t os::Solaris::_lgrp_init;
 os::Solaris::lgrp_fini_func_t os::Solaris::_lgrp_fini;
 os::Solaris::lgrp_root_func_t os::Solaris::_lgrp_root;
 os::Solaris::lgrp_children_func_t os::Solaris::_lgrp_children;
+os::Solaris::lgrp_resources_func_t os::Solaris::_lgrp_resources;
 os::Solaris::lgrp_nlgrps_func_t os::Solaris::_lgrp_nlgrps;
 os::Solaris::lgrp_cookie_stale_func_t os::Solaris::_lgrp_cookie_stale;
 os::Solaris::lgrp_cookie_t os::Solaris::_lgrp_cookie = 0;
@@ -4555,6 +4577,7 @@ void os::Solaris::liblgrp_init() {
     os::Solaris::set_lgrp_fini(CAST_TO_FN_PTR(lgrp_fini_func_t, dlsym(handle, "lgrp_fini")));
     os::Solaris::set_lgrp_root(CAST_TO_FN_PTR(lgrp_root_func_t, dlsym(handle, "lgrp_root")));
     os::Solaris::set_lgrp_children(CAST_TO_FN_PTR(lgrp_children_func_t, dlsym(handle, "lgrp_children")));
+    os::Solaris::set_lgrp_resources(CAST_TO_FN_PTR(lgrp_resources_func_t, dlsym(handle, "lgrp_resources")));
     os::Solaris::set_lgrp_nlgrps(CAST_TO_FN_PTR(lgrp_nlgrps_func_t, dlsym(handle, "lgrp_nlgrps")));
     os::Solaris::set_lgrp_cookie_stale(CAST_TO_FN_PTR(lgrp_cookie_stale_func_t,
                                        dlsym(handle, "lgrp_cookie_stale")));
