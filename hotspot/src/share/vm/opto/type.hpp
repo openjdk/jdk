@@ -442,6 +442,7 @@ public:
 
   // Check for single integer
   int is_con() const { return _lo==_hi; }
+  bool is_con(int i) const { return is_con() && _lo == i; }
   jlong get_con() const { assert( is_con(), "" ); return _lo; }
 
   virtual bool        is_finite() const;  // Has a finite value

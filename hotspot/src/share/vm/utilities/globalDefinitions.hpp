@@ -890,7 +890,7 @@ inline int log2_long(jlong x) {
     i++; p *= 2;
   }
   // p = 2^(i+1) && x < p (i.e., 2^i <= x < 2^(i+1))
-  // (if p = 0 then overflow occured and i = 31)
+  // (if p = 0 then overflow occured and i = 63)
   return i;
 }
 
