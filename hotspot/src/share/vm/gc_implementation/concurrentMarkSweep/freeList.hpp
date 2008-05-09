@@ -38,6 +38,7 @@ class Mutex;
 
 class FreeList VALUE_OBJ_CLASS_SPEC {
   friend class CompactibleFreeListSpace;
+  friend class VMStructs;
   friend class printTreeCensusClosure;
   FreeChunk*    _head;          // List of free chunks
   FreeChunk*    _tail;          // Tail of list of free chunks
