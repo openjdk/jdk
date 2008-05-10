@@ -25,7 +25,7 @@
  * @test
  * @bug     6207984 6272521 6192552 6269713 6197726 6260652 5073546 4137464
  *          4155650 4216399 4294891 6282555 6318622 6355327 6383475 6420753
- *          6431845 4802633 6570566 6570575 6570631 6570924 6691185
+ *          6431845 4802633 6570566 6570575 6570631 6570924 6691185 6691215
  * @summary Run many tests on many Collection and Map implementations
  * @author  Martin Buchholz
  */
@@ -247,6 +247,13 @@ public class MOAT {
         testEmptySet(m.keySet());
         testEmptySet(m.entrySet());
         testEmptyCollection(m.values());
+
+        try { check(! m.containsValue(null)); }
+        catch (NullPointerException _) { /* OK */ }
+        try { check(! m.containsKey(null)); }
+        catch (NullPointerException _) { /* OK */ }
+        check(! m.containsValue(1));
+        check(! m.containsKey(1));
     }
 
     private static void testImmutableMap(final Map<Integer,Integer> m) {
