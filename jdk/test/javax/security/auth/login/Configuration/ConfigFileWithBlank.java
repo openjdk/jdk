@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,26 +21,30 @@
  * have any questions.
  */
 
-package com.sun.tracing;
-
-import java.lang.annotation.Target;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.ElementType;
-
-/**
- * An annotation used to override the name of a probe.
- * <p>
- * This annotation can be added to a method in a user-defined {@code Provider}
- * interface, to set the name that will be used for the generated probe
- * associated with that method.  Without this annotation, the name will be the
- * name of the method.
- * <p>
- * @since 1.7
+/*
+ * @test
+ * @bug 6675606
+ * @summary javax.security.auth.login.Configuration does not recognize path with spaces
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface ProbeName {
-    String value();
-}
 
+import java.io.File;
+import java.io.FileOutputStream;
+import javax.security.auth.login.*;
+
+import java.net.URI;
+import java.security.URIParameter;
+
+public class ConfigFileWithBlank {
+    public static void main(String[] args) throws Exception {
+        File f = new File("a b c");
+        FileOutputStream fos = new FileOutputStream(f);
+        fos.write("".getBytes());
+        fos.close();
+        System.err.println(f.toURI());
+        try {
+            Configuration.getInstance("JavaLoginConfig", new URIParameter(f.toURI()));
+        } finally {
+            f.delete();
+        }
+    }
+}

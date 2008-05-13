@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,26 +21,34 @@
  * have any questions.
  */
 
-package com.sun.tracing;
-
-import java.lang.annotation.Target;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.ElementType;
-
-/**
- * An annotation used to override the name of a probe.
- * <p>
- * This annotation can be added to a method in a user-defined {@code Provider}
- * interface, to set the name that will be used for the generated probe
- * associated with that method.  Without this annotation, the name will be the
- * name of the method.
- * <p>
- * @since 1.7
+/*
+ * @test
+ * @bug 6689000
+ * @summary Changes in 6675606 causing regression test failures on windows-i586
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface ProbeName {
-    String value();
-}
 
+import com.sun.security.auth.login.*;
+import java.io.*;
+import java.net.URL;
+
+public class IllegalURL {
+    public static void main(String[] args) throws Exception {
+        FileOutputStream fos = new FileOutputStream("x.conf");
+        fos.close();
+        use("file:" + System.getProperty("user.dir") + "/x.conf");
+        use("file:x.conf");
+        System.out.println("Test passed");
+    }
+
+    static void use(String f) throws Exception {
+        System.out.println("Testing " + f  + "...");
+        System.setProperty("java.security.auth.login.config", f);
+        try {
+            new FileInputStream(new URL(f).getFile().replace('/', File.separatorChar));
+        } catch (Exception e) {
+            System.out.println("Even old implementation does not support it. Ignored.");
+            return;
+        }
+        new ConfigFile();
+    }
+}
