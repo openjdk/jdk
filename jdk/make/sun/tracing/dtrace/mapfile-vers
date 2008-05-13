@@ -1,0 +1,19 @@
+#
+#ident "@(#)mapfile-vers	1.1 07/08/14"
+# 
+# Copyright 2006 Sun Microsystems, Inc. All rights reserved.
+# SUN PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+#
+
+# Define library interface.
+
+SUNWprivate_1.1 {
+    global:
+        Java_sun_tracing_dtrace_JVM_isSupported0;
+        Java_sun_tracing_dtrace_JVM_activate0;
+        Java_sun_tracing_dtrace_JVM_dispose0;
+        Java_sun_tracing_dtrace_JVM_isEnabled0;
+        Java_sun_tracing_dtrace_JVM_defineClass0;
+    local:
+        *;
+};

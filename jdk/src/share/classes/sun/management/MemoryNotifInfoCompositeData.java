@@ -69,7 +69,7 @@ public class MemoryNotifInfoCompositeData extends LazyCompositeData {
                                             memoryNotifInfoItemValues);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newInternalError(e);
+            throw new AssertionError(e);
         }
     }
 
@@ -80,7 +80,7 @@ public class MemoryNotifInfoCompositeData extends LazyCompositeData {
                 MappedMXBeanType.toOpenType(MemoryNotificationInfo.class);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newInternalError(e);
+            throw new AssertionError(e);
         }
     }
 
