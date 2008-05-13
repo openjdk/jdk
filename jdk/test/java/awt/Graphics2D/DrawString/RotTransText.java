@@ -38,11 +38,23 @@ public class RotTransText  {
 
     public static void main(String[] args) {
 
+        testIt(false);
+        testIt(true);
+
+    }
+
+    public static void testIt(boolean fmOn) {
+
         int wid=400, hgt=400;
         BufferedImage bi =
             new BufferedImage(wid, hgt, BufferedImage.TYPE_INT_RGB);
 
         Graphics2D g2d = bi.createGraphics();
+
+        if (fmOn) {
+            g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
+                                 RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        }
 
         int x=130, y=130;
         String s = "Text";
