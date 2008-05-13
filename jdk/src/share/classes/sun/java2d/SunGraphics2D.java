@@ -2805,6 +2805,9 @@ public final class SunGraphics2D
         }
 
         if (font.hasLayoutAttributes()) {
+            if (str.length() == 0) {
+                return;
+            }
             new TextLayout(str, font, getFontRenderContext()).draw(this, x, y);
             return;
         }
@@ -2831,6 +2834,9 @@ public final class SunGraphics2D
         }
 
         if (font.hasLayoutAttributes()) {
+            if (str.length() == 0) {
+                return;
+            }
             new TextLayout(str, font, getFontRenderContext()).draw(this, x, y);
             return;
         }
@@ -2856,6 +2862,9 @@ public final class SunGraphics2D
         if (iterator == null) {
             throw new NullPointerException("AttributedCharacterIterator is null");
         }
+        if (iterator.getBeginIndex() == iterator.getEndIndex()) {
+            return; /* nothing to draw */
+        }
         TextLayout tl = new TextLayout(iterator, getFontRenderContext());
         tl.draw(this, (float) x, (float) y);
     }
@@ -2864,6 +2873,9 @@ public final class SunGraphics2D
                            float x, float y) {
         if (iterator == null) {
             throw new NullPointerException("AttributedCharacterIterator is null");
+        }
+        if (iterator.getBeginIndex() == iterator.getEndIndex()) {
+            return; /* nothing to draw */
         }
         TextLayout tl = new TextLayout(iterator, getFontRenderContext());
         tl.draw(this, x, y);
@@ -2900,6 +2912,9 @@ public final class SunGraphics2D
             throw new ArrayIndexOutOfBoundsException("bad offset/length");
         }
         if (font.hasLayoutAttributes()) {
+            if (data.length == 0) {
+                return;
+            }
             new TextLayout(new String(data, offset, length),
                            font, getFontRenderContext()).draw(this, x, y);
             return;
@@ -2934,6 +2949,9 @@ public final class SunGraphics2D
             chData[i] = (char)(data[i+offset] & 0xff);
         }
         if (font.hasLayoutAttributes()) {
+            if (data.length == 0) {
+                return;
+            }
             new TextLayout(new String(chData),
                            font, getFontRenderContext()).draw(this, x, y);
             return;
