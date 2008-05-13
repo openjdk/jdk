@@ -1626,6 +1626,8 @@ Java_sun_awt_X11GraphicsEnvironment_getXineramaCenterPoint(JNIEnv *env,
 
 #define BIT_DEPTH_MULTI java_awt_DisplayMode_BIT_DEPTH_MULTI
 
+typedef Status
+    (*XRRQueryVersionType) (Display *dpy, int *major_versionp, int *minor_versionp);
 typedef XRRScreenConfiguration*
     (*XRRGetScreenInfoType)(Display *dpy, Drawable root);
 typedef void
@@ -1650,6 +1652,7 @@ typedef Status
                                      short rate,
                                      Time timestamp);
 
+static XRRQueryVersionType               awt_XRRQueryVersion;
 static XRRGetScreenInfoType              awt_XRRGetScreenInfo;
 static XRRFreeScreenConfigInfoType       awt_XRRFreeScreenConfigInfo;
 static XRRConfigRatesType                awt_XRRConfigRates;
@@ -1672,11 +1675,48 @@ static XRRSetScreenConfigAndRateType     awt_XRRSetScreenConfigAndRate;
 static jboolean
 X11GD_InitXrandrFuncs(JNIEnv *env)
 {
+    int rr_maj_ver = 0, rr_min_ver = 0;
+
     void *pLibRandR = dlopen("libXrandr.so.2", RTLD_LAZY | RTLD_LOCAL);
     if (pLibRandR == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
                       "X11GD_InitXrandrFuncs: Could not open libXrandr.so.2");
         return JNI_FALSE;
+    }
+
+    LOAD_XRANDR_FUNC(XRRQueryVersion);
+
+    if (!(*awt_XRRQueryVersion)(awt_display, &rr_maj_ver, &rr_min_ver)) {
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+                      "X11GD_InitXrandrFuncs: XRRQueryVersion returned an error status");
+        dlclose(pLibRandR);
+        return JNI_FALSE;
+    }
+
+    if (usingXinerama) {
+        /*
+         * We can proceed as long as this is RANDR 1.2 or above.
+         * As of Xorg server 1.3 onwards the Xinerama backend may actually be
+         * a fake one provided by RANDR itself. See Java bug 6636469 for info.
+         */
+        if (!(rr_maj_ver > 1 || (rr_maj_ver == 1 && rr_min_ver >= 2))) {
+            J2dRlsTraceLn2(J2D_TRACE_INFO, "X11GD_InitXrandrFuncs: Can't use Xrandr. "
+                           "Xinerama is active and Xrandr version is %d.%d",
+                           rr_maj_ver, rr_min_ver);
+            dlclose(pLibRandR);
+            return JNI_FALSE;
+        }
+
+        /*
+         * REMIND: Fullscreen mode doesn't work quite right with multi-monitor
+         * setups and RANDR 1.2. So for now we also require a single screen.
+         */
+        if (awt_numScreens > 1 ) {
+            J2dRlsTraceLn(J2D_TRACE_INFO, "X11GD_InitXrandrFuncs: Can't use Xrandr. "
+                          "Multiple screens in use");
+            dlclose(pLibRandR);
+            return JNI_FALSE;
+        }
     }
 
     LOAD_XRANDR_FUNC(XRRGetScreenInfo);
@@ -1813,15 +1853,6 @@ Java_sun_awt_X11GraphicsDevice_initXrandrExtension
 #else
     int opcode = 0, firstEvent = 0, firstError = 0;
     jboolean ret;
-
-    if (usingXinerama) {
-        /*
-         * REMIND: we'll just punt if Xinerama is enabled; we can remove this
-         * restriction in the future if we find Xinerama and XRandR playing
-         * well together...
-         */
-        return JNI_FALSE;
-    }
 
     AWT_LOCK();
     ret = (jboolean)XQueryExtension(awt_display, "RANDR",
