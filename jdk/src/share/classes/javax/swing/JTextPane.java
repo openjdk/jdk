@@ -167,11 +167,6 @@ public class JTextPane extends JEditorPane {
      * current selection.  The replacement text will have the
      * attributes currently defined for input at the point of
      * insertion.  If the document is not editable, beep and return.
-     * <p>
-     * This method is thread safe, although most Swing methods
-     * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
      *
      * @param content  the content to replace the selection with
      */
@@ -229,11 +224,6 @@ public class JTextPane extends JEditorPane {
      * a value of <code>0.75</code> will cause 75 percent of the
      * component to be above the baseline, and 25 percent of the
      * component to be below the baseline.
-     * <p>
-     * This method is thread safe, although most Swing methods
-     * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
      *
      * @param c    the component to insert
      */
@@ -252,11 +242,6 @@ public class JTextPane extends JEditorPane {
      * current position of the caret.  This is represented in
      * the associated document as an attribute of one character
      * of content.
-     * <p>
-     * This method is thread safe, although most Swing methods
-     * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
      *
      * @param g    the icon to insert
      * @see Icon
@@ -320,11 +305,6 @@ public class JTextPane extends JEditorPane {
      * through the logical style assigned to the paragraph, which
      * in term may resolve through some hierarchy completely
      * independent of the element hierarchy in the document.
-     * <p>
-     * This method is thread safe, although most Swing methods
-     * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
      *
      * @param s  the logical style to assign to the paragraph,
      *          or <code>null</code> for no style
@@ -367,11 +347,6 @@ public class JTextPane extends JEditorPane {
      * is no selection, the attributes are applied to
      * the input attribute set which defines the attributes
      * for any new text that gets inserted.
-     * <p>
-     * This method is thread safe, although most Swing methods
-     * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
      *
      * @param attr the attributes
      * @param replace if true, then replace the existing attributes first
@@ -412,11 +387,6 @@ public class JTextPane extends JEditorPane {
      * to the paragraphs that intersect the selection.
      * If there is no selection, the attributes are applied
      * to the paragraph at the current caret position.
-     * <p>
-     * This method is thread safe, although most Swing methods
-     * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
      *
      * @param attr the non-<code>null</code> attributes
      * @param replace if true, replace the existing attributes first
