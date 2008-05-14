@@ -83,7 +83,7 @@ class NumericValueExp extends QueryEval implements ValueExp {
      * <p>The <b>serialVersionUID</b> of this class is <code>-4679739485102359104L</code>.
      */
     private static final ObjectStreamField[] serialPersistentFields;
-    private Number val = new Double(0);
+    private Number val = 0.0;
 
     private static boolean compat = false;
     static {
@@ -213,11 +213,11 @@ class NumericValueExp extends QueryEval implements ValueExp {
         }
         if (isLong)
         {
-          this.val = new Long(longVal);
+          this.val = longVal;
         }
         else
         {
-          this.val = new Double(doubleVal);
+          this.val = doubleVal;
         }
       }
       else
