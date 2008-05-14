@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,14 @@ package sun.awt.X11;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.*;
 
 import java.awt.Point;
 
-import sun.awt.dnd.SunDropTargetContextPeer;
-import sun.awt.dnd.SunDropTargetEvent;
 
 /**
  * The class responsible for registration/deregistration of drop sites.
@@ -179,11 +175,11 @@ final class XDropTargetRegistry {
 
                         if (status == 0 ||
                             (XToolkit.saved_error != null &&
-                             XToolkit.saved_error.get_error_code() != XlibWrapper.Success)) {
+                             XToolkit.saved_error.get_error_code() != XConstants.Success)) {
                             continue;
                         }
 
-                        if (wattr.get_map_state() != XlibWrapper.IsUnmapped
+                        if (wattr.get_map_state() != XConstants.IsUnmapped
                             && dest_x < wattr.get_width()
                             && dest_y < wattr.get_height()) {
                             return window;
@@ -233,7 +229,7 @@ final class XDropTargetRegistry {
 
                 if (status == 0 ||
                     (XToolkit.saved_error != null &&
-                     XToolkit.saved_error.get_error_code() != XlibWrapper.Success)) {
+                     XToolkit.saved_error.get_error_code() != XConstants.Success)) {
                     throw new XException("XGetWindowAttributes failed");
                 }
 
@@ -243,14 +239,14 @@ final class XDropTargetRegistry {
                 wattr.dispose();
             }
 
-            if ((event_mask & XlibWrapper.PropertyChangeMask) == 0) {
+            if ((event_mask & XConstants.PropertyChangeMask) == 0) {
                 XToolkit.WITH_XERROR_HANDLER(XToolkit.IgnoreBadWindowHandler);
                 XlibWrapper.XSelectInput(XToolkit.getDisplay(), embedder,
-                                         event_mask | XlibWrapper.PropertyChangeMask);
+                                         event_mask | XConstants.PropertyChangeMask);
                 XToolkit.RESTORE_XERROR_HANDLER();
 
                 if (XToolkit.saved_error != null &&
-                    XToolkit.saved_error.get_error_code() != XlibWrapper.Success) {
+                    XToolkit.saved_error.get_error_code() != XConstants.Success) {
                     throw new XException("XSelectInput failed");
                 }
             }
@@ -329,7 +325,7 @@ final class XDropTargetRegistry {
 
         embedderProtocols = Collections.unmodifiableList(embedderProtocols);
 
-        Long lToplevel = new Long(embedder);
+        Long lToplevel = Long.valueOf(embedder);
         boolean isXEmbedServer = false;
         synchronized (this) {
             EmbeddedDropSiteEntry entry =
@@ -397,14 +393,14 @@ final class XDropTargetRegistry {
             long event_mask = entry.getEventMask();
 
             /* Restore the original event mask for the embedder. */
-            if ((event_mask & XlibWrapper.PropertyChangeMask) == 0) {
+            if ((event_mask & XConstants.PropertyChangeMask) == 0) {
                 XToolkit.WITH_XERROR_HANDLER(XToolkit.IgnoreBadWindowHandler);
                 XlibWrapper.XSelectInput(XToolkit.getDisplay(), embedder,
                                          event_mask);
                 XToolkit.RESTORE_XERROR_HANDLER();
 
                 if (XToolkit.saved_error != null &&
-                    XToolkit.saved_error.get_error_code() != XlibWrapper.Success) {
+                    XToolkit.saved_error.get_error_code() != XConstants.Success) {
                     throw new XException("XSelectInput failed");
                 }
             }

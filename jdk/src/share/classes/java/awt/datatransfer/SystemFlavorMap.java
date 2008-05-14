@@ -298,7 +298,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
                     while (continueLine(line)) {
                         String nextLine = in.readLine();
                         if (nextLine == null) {
-                            nextLine = new String("");
+                            nextLine = "";
                         }
                         String loppedLine =
                             line.substring(0, line.length() - 1);
@@ -313,7 +313,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
                         }
                         nextLine = nextLine.substring(startIndex,
                                                       nextLine.length());
-                        line = new String(loppedLine+nextLine);
+                        line = loppedLine+nextLine;
                     }
 
                     // Find start of key

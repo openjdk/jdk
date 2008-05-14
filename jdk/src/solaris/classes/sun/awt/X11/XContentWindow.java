@@ -43,7 +43,7 @@ import sun.awt.ComponentAccessor;
  * It should always be located at (- left inset, - top inset) in the associated
  * decorated window.  So coordinates in it would be the same as java coordinates.
  */
-public final class XContentWindow extends XWindow implements XConstants {
+public final class XContentWindow extends XWindow {
     private static Logger insLog = Logger.getLogger("sun.awt.X11.insets.XContentWindow");
 
     static XContentWindow createContent(XDecoratedPeer parentFrame) {
@@ -76,10 +76,10 @@ public final class XContentWindow extends XWindow implements XConstants {
 
     void preInit(XCreateWindowParams params) {
         super.preInit(params);
-        params.putIfNull(BIT_GRAVITY, Integer.valueOf(NorthWestGravity));
+        params.putIfNull(BIT_GRAVITY, Integer.valueOf(XConstants.NorthWestGravity));
         Long eventMask = (Long)params.get(EVENT_MASK);
         if (eventMask != null) {
-            eventMask = eventMask & ~(StructureNotifyMask);
+            eventMask = eventMask & ~(XConstants.StructureNotifyMask);
             params.put(EVENT_MASK, eventMask);
         }
     }
@@ -90,15 +90,15 @@ public final class XContentWindow extends XWindow implements XConstants {
     protected boolean isEventDisabled(XEvent e) {
         switch (e.get_type()) {
           // Override parentFrame to receive MouseEnter/Exit
-          case EnterNotify:
-          case LeaveNotify:
+          case XConstants.EnterNotify:
+          case XConstants.LeaveNotify:
               return false;
           // We handle ConfigureNotify specifically in XDecoratedPeer
-          case ConfigureNotify:
+          case XConstants.ConfigureNotify:
               return true;
           // We don't want SHOWN/HIDDEN on content window since it will duplicate XDecoratedPeer
-          case MapNotify:
-          case UnmapNotify:
+          case XConstants.MapNotify:
+          case XConstants.UnmapNotify:
               return true;
           default:
               return super.isEventDisabled(e) || parentFrame.isEventDisabled(e);

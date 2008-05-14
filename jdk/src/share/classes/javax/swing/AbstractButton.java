@@ -2050,14 +2050,14 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
                     null, AccessibleState.SELECTED);
                 accessibleContext.firePropertyChange(
                     AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
-                    new Integer(0), new Integer(1));
+                    Integer.valueOf(0), Integer.valueOf(1));
             } else {
                 accessibleContext.firePropertyChange(
                     AccessibleContext.ACCESSIBLE_STATE_PROPERTY,
                     AccessibleState.SELECTED, null);
                 accessibleContext.firePropertyChange(
                     AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
-                    new Integer(1), new Integer(0));
+                    Integer.valueOf(1), Integer.valueOf(0));
             }
         }
     }
@@ -2555,9 +2555,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
          */
         public Number getCurrentAccessibleValue() {
             if (isSelected()) {
-                return new Integer(1);
+                return Integer.valueOf(1);
             } else {
-                return new Integer(0);
+                return Integer.valueOf(0);
             }
         }
 
@@ -2586,7 +2586,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
          * @return an Integer of 0.
          */
         public Number getMinimumAccessibleValue() {
-            return new Integer(0);
+            return Integer.valueOf(0);
         }
 
         /**
@@ -2595,7 +2595,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
          * @return An Integer of 1.
          */
         public Number getMaximumAccessibleValue() {
-            return new Integer(1);
+            return Integer.valueOf(1);
         }
 
 
