@@ -775,9 +775,9 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
                 accessibleContext.firePropertyChange(
                         AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
                         (oldModel== null
-                         ? null : new Integer(oldModel.getValue())),
+                         ? null : Integer.valueOf(oldModel.getValue())),
                         (newModel== null
-                         ? null : new Integer(newModel.getValue())));
+                         ? null : Integer.valueOf(newModel.getValue())));
             }
 
             if (model != null) {
@@ -850,8 +850,8 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
         if (accessibleContext != null) {
             accessibleContext.firePropertyChange(
                     AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
-                    new Integer(oldValue),
-                    new Integer(brm.getValue()));
+                    Integer.valueOf(oldValue),
+                    Integer.valueOf(brm.getValue()));
         }
     }
 
@@ -1087,7 +1087,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
          * @return the current value of this object
          */
         public Number getCurrentAccessibleValue() {
-            return new Integer(getValue());
+            return Integer.valueOf(getValue());
         }
 
         /**
@@ -1110,7 +1110,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
          * @return the minimum value of this object
          */
         public Number getMinimumAccessibleValue() {
-            return new Integer(getMinimum());
+            return Integer.valueOf(getMinimum());
         }
 
         /**
@@ -1120,7 +1120,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
          */
         public Number getMaximumAccessibleValue() {
             // TIGER - 4422362
-            return new Integer(model.getMaximum() - model.getExtent());
+            return Integer.valueOf(model.getMaximum() - model.getExtent());
         }
 
     } // AccessibleJProgressBar

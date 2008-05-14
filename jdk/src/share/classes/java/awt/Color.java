@@ -51,6 +51,7 @@ import java.awt.color.ColorSpace;
  * http://www.w3.org/pub/WWW/Graphics/Color/sRGB.html
  * </A>.
  * <p>
+ * @version     10 Feb 1997
  * @author      Sami Shaio
  * @author      Arthur van Hoff
  * @see         ColorSpace
@@ -1176,23 +1177,32 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Creates and returns a {@link PaintContext} used to generate a solid
-     * color pattern.  This enables a <code>Color</code> object to be used
-     * as an argument to any method requiring an object implementing the
-     * {@link Paint} interface.
-     * The same <code>PaintContext</code> is returned, regardless of
-     * whether or not <code>r</code>, <code>r2d</code>,
-     * <code>xform</code>, or <code>hints</code> are <code>null</code>.
-     * @param cm the specified <code>ColorModel</code>
-     * @param r the specified {@link Rectangle}
-     * @param r2d the specified {@link Rectangle2D}
-     * @param xform the specified {@link AffineTransform}
-     * @param hints the specified {@link RenderingHints}
-     * @return a <code>PaintContext</code> that is used to generate a
-     *          solid color pattern.
+     * Creates and returns a {@link PaintContext} used to
+     * generate a solid color field pattern.
+     * See the {@link Paint#createContext specification} of the
+     * method in the {@link Paint} interface for information
+     * on null parameter handling.
+     *
+     * @param cm the preferred {@link ColorModel} which represents the most convenient
+     *           format for the caller to receive the pixel data, or {@code null}
+     *           if there is no preference.
+     * @param r the device space bounding box
+     *                     of the graphics primitive being rendered.
+     * @param r2d the user space bounding box
+     *                   of the graphics primitive being rendered.
+     * @param xform the {@link AffineTransform} from user
+     *              space into device space.
+     * @param hints the set of hints that the context object can use to
+     *              choose between rendering alternatives.
+     * @return the {@code PaintContext} for
+     *         generating color patterns.
      * @see Paint
      * @see PaintContext
-     * @see Graphics2D#setPaint
+     * @see ColorModel
+     * @see Rectangle
+     * @see Rectangle2D
+     * @see AffineTransform
+     * @see RenderingHints
      */
     public synchronized PaintContext createContext(ColorModel cm, Rectangle r,
                                                    Rectangle2D r2d,

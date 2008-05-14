@@ -178,7 +178,7 @@ class Metacity implements SynthConstants {
                         name = child.getNodeName();
                         Object value = null;
                         if ("distance".equals(name)) {
-                            value = new Integer(getIntAttr(child, "value", 0));
+                            value = Integer.valueOf(getIntAttr(child, "value", 0));
                         } else if ("border".equals(name)) {
                             value = new Insets(getIntAttr(child, "top", 0),
                                                getIntAttr(child, "left", 0),
@@ -808,7 +808,7 @@ class Metacity implements SynthConstants {
     protected void setFrameGeometry(JComponent titlePane, Map gm) {
         this.frameGeometry = gm;
         if (getInt("top_height") == 0 && titlePane != null) {
-            gm.put("top_height", new Integer(titlePane.getHeight()));
+            gm.put("top_height", Integer.valueOf(titlePane.getHeight()));
         }
     }
 

@@ -141,7 +141,7 @@ public final class XSelection {
         long selection = selectionAtom.getAtom();
 
         // ICCCM prescribes that CurrentTime should not be used for SetSelectionOwner.
-        if (time == XlibWrapper.CurrentTime) {
+        if (time == XConstants.CurrentTime) {
             time = XToolkit.getCurrentServerTime();
         }
 
@@ -199,7 +199,7 @@ public final class XSelection {
             WindowPropertyGetter targetsGetter =
                 new WindowPropertyGetter(XWindow.getXAWTRootWindow().getWindow(),
                                          selectionPropertyAtom, 0, MAX_LENGTH,
-                                         true, XlibWrapper.AnyPropertyType);
+                                         true, XConstants.AnyPropertyType);
 
             try {
                 XToolkit.awtLock();
@@ -274,7 +274,7 @@ public final class XSelection {
                 new WindowPropertyGetter(XWindow.getXAWTRootWindow().getWindow(),
                                          selectionPropertyAtom, 0, MAX_LENGTH,
                                          false, // don't delete to handle INCR properly.
-                                         XlibWrapper.AnyPropertyType);
+                                         XConstants.AnyPropertyType);
 
             try {
                 XToolkit.awtLock();
@@ -353,7 +353,7 @@ public final class XSelection {
                             new WindowPropertyGetter(XWindow.getXAWTRootWindow().getWindow(),
                                                      selectionPropertyAtom,
                                                      0, MAX_LENGTH, false,
-                                                     XlibWrapper.AnyPropertyType);
+                                                     XConstants.AnyPropertyType);
 
                         try {
                             XToolkit.awtLock();
@@ -520,7 +520,7 @@ public final class XSelection {
             try {
                 XlibWrapper.XChangeProperty(XToolkit.getDisplay(), requestor, property,
                                             format, dataFormat,
-                                            XlibWrapper.PropModeReplace,
+                                            XConstants.PropModeReplace,
                                             nativeDataPtr, count);
             } finally {
                 XToolkit.awtUnlock();
@@ -543,14 +543,14 @@ public final class XSelection {
         boolean conversionSucceeded = false;
 
         if (ownershipTime != 0 &&
-            (requestTime == XlibWrapper.CurrentTime || requestTime >= ownershipTime))
+            (requestTime == XConstants.CurrentTime || requestTime >= ownershipTime))
         {
             // Handle MULTIPLE requests as per ICCCM.
             if (format == XDataTransferer.MULTIPLE_ATOM.getAtom()) {
                 conversionSucceeded = handleMultipleRequest(requestor, property);
             } else {
                 // Support for obsolete clients as per ICCCM.
-                if (property == XlibWrapper.None) {
+                if (property == XConstants.None) {
                     property = format;
                 }
 
@@ -564,12 +564,12 @@ public final class XSelection {
 
         if (!conversionSucceeded) {
             // None property indicates conversion failure.
-            property = XlibWrapper.None;
+            property = XConstants.None;
         }
 
         XSelectionEvent xse = new XSelectionEvent();
         try {
-            xse.set_type(XlibWrapper.SelectionNotify);
+            xse.set_type(XConstants.SelectionNotify);
             xse.set_send_event(true);
             xse.set_requestor(requestor);
             xse.set_selection(selectionAtom.getAtom());
@@ -580,7 +580,7 @@ public final class XSelection {
             XToolkit.awtLock();
             try {
                 XlibWrapper.XSendEvent(XToolkit.getDisplay(), requestor, false,
-                                       XlibWrapper.NoEventMask, xse.pData);
+                                       XConstants.NoEventMask, xse.pData);
             } finally {
                 XToolkit.awtUnlock();
             }
@@ -590,7 +590,7 @@ public final class XSelection {
     }
 
     private boolean handleMultipleRequest(final long requestor, long property) {
-        if (XlibWrapper.None == property) {
+        if (XConstants.None == property) {
             // The property cannot be None for a MULTIPLE request.
             return false;
         }
@@ -601,7 +601,7 @@ public final class XSelection {
         WindowPropertyGetter wpg =
                 new WindowPropertyGetter(requestor, XAtom.get(property),
                                          0, MAX_LENGTH, false,
-                                         XlibWrapper.AnyPropertyType);
+                                         XConstants.AnyPropertyType);
         try {
             wpg.execute();
 
@@ -629,7 +629,7 @@ public final class XSelection {
                                                     property,
                                                     wpg.getActualType(),
                                                     wpg.getActualFormat(),
-                                                    XlibWrapper.PropModeReplace,
+                                                                XConstants.PropModeReplace,
                                                     wpg.getData(),
                                                     wpg.getNumberOfItems());
                     } finally {
@@ -673,7 +673,7 @@ public final class XSelection {
             try {
                 XlibWrapper.XChangeProperty(XToolkit.getDisplay(), requestor,
                                             property, XAtom.XA_ATOM, dataFormat,
-                                            XlibWrapper.PropModeReplace,
+                                            XConstants.PropModeReplace,
                                             nativeDataPtr, count);
             } finally {
                 XToolkit.awtUnlock();
@@ -712,7 +712,7 @@ public final class XSelection {
     private static class SelectionEventHandler implements XEventDispatcher {
         public void dispatchEvent(XEvent ev) {
             switch (ev.get_type()) {
-            case XlibWrapper.SelectionNotify: {
+            case XConstants.SelectionNotify: {
                 XToolkit.awtLock();
                 try {
                     XSelectionEvent xse = ev.get_xselection();
@@ -733,7 +733,7 @@ public final class XSelection {
                 }
                 break;
             }
-            case XlibWrapper.SelectionRequest: {
+            case XConstants.SelectionRequest: {
                 XSelectionRequestEvent xsre = ev.get_xselectionrequest();
                 long atom = xsre.get_selection();
                 XSelection selection = XSelection.getSelection(XAtom.get(atom));
@@ -743,7 +743,7 @@ public final class XSelection {
                 }
                 break;
             }
-            case XlibWrapper.SelectionClear: {
+            case XConstants.SelectionClear: {
                 XSelectionClearEvent xsce = ev.get_xselectionclear();
                 long atom = xsce.get_selection();
                 XSelection selection = XSelection.getSelection(XAtom.get(atom));
@@ -793,7 +793,7 @@ public final class XSelection {
                                                      wattr.pData);
                     XlibWrapper.XSelectInput(XToolkit.getDisplay(), requestor,
                                              wattr.get_your_event_mask() |
-                                             XlibWrapper.PropertyChangeMask);
+                                             XConstants.PropertyChangeMask);
                 } finally {
                     XToolkit.awtUnlock();
                 }
@@ -805,10 +805,10 @@ public final class XSelection {
 
         public void dispatchEvent(XEvent ev) {
             switch (ev.get_type()) {
-            case XlibWrapper.PropertyNotify:
+            case XConstants.PropertyNotify:
                 XPropertyEvent xpe = ev.get_xproperty();
                 if (xpe.get_window() == requestor &&
-                    xpe.get_state() == XlibWrapper.PropertyDelete &&
+                    xpe.get_state() == XConstants.PropertyDelete &&
                     xpe.get_atom() == property) {
 
                     int count = data.length - offset;
@@ -834,7 +834,7 @@ public final class XSelection {
                         XlibWrapper.XChangeProperty(XToolkit.getDisplay(),
                                                     requestor, property,
                                                     target, format,
-                                                    XlibWrapper.PropModeReplace,
+                                                    XConstants.PropModeReplace,
                                                     nativeDataPtr, count);
                     } finally {
                         XToolkit.awtUnlock();
@@ -853,9 +853,9 @@ public final class XSelection {
     private static class IncrementalTransferHandler implements XEventDispatcher {
         public void dispatchEvent(XEvent ev) {
             switch (ev.get_type()) {
-            case XlibWrapper.PropertyNotify:
+            case XConstants.PropertyNotify:
                 XPropertyEvent xpe = ev.get_xproperty();
-                if (xpe.get_state() == XlibWrapper.PropertyNewValue &&
+                if (xpe.get_state() == XConstants.PropertyNewValue &&
                     xpe.get_atom() == selectionPropertyAtom.getAtom()) {
                     XToolkit.awtLock();
                     try {

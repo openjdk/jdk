@@ -173,23 +173,24 @@ public class NumberFormatter extends InternationalFormatter {
      */
     private Object convertValueToValueClass(Object value, Class valueClass) {
         if (valueClass != null && (value instanceof Number)) {
+            Number numberValue = (Number)value;
             if (valueClass == Integer.class) {
-                return new Integer(((Number)value).intValue());
+                return Integer.valueOf(numberValue.intValue());
             }
             else if (valueClass == Long.class) {
-                return new Long(((Number)value).longValue());
+                return Long.valueOf(numberValue.longValue());
             }
             else if (valueClass == Float.class) {
-                return new Float(((Number)value).floatValue());
+                return Float.valueOf(numberValue.floatValue());
             }
             else if (valueClass == Double.class) {
-                return new Double(((Number)value).doubleValue());
+                return Double.valueOf(numberValue.doubleValue());
             }
             else if (valueClass == Byte.class) {
-                return new Byte(((Number)value).byteValue());
+                return Byte.valueOf(numberValue.byteValue());
             }
             else if (valueClass == Short.class) {
-                return new Short(((Number)value).shortValue());
+                return Short.valueOf(numberValue.shortValue());
             }
         }
         return value;

@@ -1285,7 +1285,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
     int lastIndex = -1;
     File editFile = null;
-    int editX = 20;
 
     private int getEditIndex() {
         return lastIndex;
@@ -1315,7 +1314,9 @@ public class FilePane extends JPanel implements PropertyChangeListener {
      * @param index visual index of the file to be edited
      */
     private void editFileName(int index) {
-        File currentDirectory = getFileChooser().getCurrentDirectory();
+        JFileChooser chooser = getFileChooser();
+        File currentDirectory = chooser.getCurrentDirectory();
+
         if (readOnly || !canWrite(currentDirectory)) {
             return;
         }
@@ -1332,9 +1333,15 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                 editCell.setNextFocusableComponent(list);
             }
             list.add(editCell);
-            editCell.setText(getFileChooser().getName(editFile));
+            editCell.setText(chooser.getName(editFile));
             ComponentOrientation orientation = list.getComponentOrientation();
             editCell.setComponentOrientation(orientation);
+
+            Icon icon = chooser.getIcon(editFile);
+
+            // PENDING - grab padding (4) below from defaults table.
+            int editX = icon == null ? 20 : icon.getIconWidth() + 4;
+
             if (orientation.isLeftToRight()) {
                 editCell.setBounds(editX + r.x, r.y, r.width - editX, r.height);
             } else {
@@ -1458,11 +1465,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             Icon icon = getFileChooser().getIcon(file);
             if (icon != null) {
                 setIcon(icon);
-
-                if (isSelected) {
-                    // PENDING - grab padding (4) below from defaults table.
-                    editX = icon.getIconWidth() + 4;
-                }
             } else {
                 if (getFileChooser().getFileSystemView().isTraversable(file)) {
                     setText(fileName+File.separator);

@@ -2660,9 +2660,26 @@ public class Container extends Component {
         synchronized (getTreeLock()) {
             int ncomponents = this.ncomponents;
             Component component[] = this.component;
-            for (int i = ncomponents-1 ; i >= 0 ; i--) {
-                if( component[i] != null )
-                component[i].removeNotify();
+            for (int i = ncomponents - 1; i >= 0; i--) {
+                if( component[i] != null ) {
+                    // Fix for 6607170.
+                    // We want to suppress focus change on disposal
+                    // of the focused component. But because of focus
+                    // is asynchronous, we should suppress focus change
+                    // on every component in case it receives native focus
+                    // in the process of disposal.
+                    component[i].setAutoFocusTransferOnDisposal(false);
+                    component[i].removeNotify();
+                    component[i].setAutoFocusTransferOnDisposal(true);
+                }
+            }
+            // If some of the children had focus before disposal then it still has.
+            // Auto-transfer focus to the next (or previous) component if auto-transfer
+            // is enabled.
+            if (containsFocus() && KeyboardFocusManager.isAutoFocusTransferEnabledFor(this)) {
+                if (!transferFocus(false)) {
+                    transferFocusBackward(true);
+                }
             }
             if ( dispatcher != null ) {
                 dispatcher.dispose();

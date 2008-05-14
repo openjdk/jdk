@@ -99,7 +99,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
             new WindowPropertyGetter(embedder,
                                      MotifDnDConstants.XA_MOTIF_DRAG_RECEIVER_INFO,
                                      0, 0xFFFF, false,
-                                     XlibWrapper.AnyPropertyType);
+                                     XConstants.AnyPropertyType);
 
         try {
             status = wpg.execute(XToolkit.IgnoreBadWindowHandler);
@@ -118,7 +118,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
              *     CARD32       heap_offset B32;
              * } xmDragReceiverInfoStruct;
              */
-            if (status == (int)XlibWrapper.Success && wpg.getData() != 0 &&
+            if (status == (int)XConstants.Success && wpg.getData() != 0 &&
                 wpg.getActualType() != 0 && wpg.getActualFormat() == 8 &&
                 wpg.getNumberOfItems() >=
                 MotifDnDConstants.MOTIF_RECEIVER_INFO_SIZE) {
@@ -166,12 +166,12 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
             XlibWrapper.XChangeProperty(XToolkit.getDisplay(), embedder,
                                         MotifDnDConstants.XA_MOTIF_DRAG_RECEIVER_INFO.getAtom(),
                                         MotifDnDConstants.XA_MOTIF_DRAG_RECEIVER_INFO.getAtom(),
-                                        8, XlibWrapper.PropModeReplace,
+                                        8, XConstants.PropModeReplace,
                                         data, dataSize);
             XToolkit.RESTORE_XERROR_HANDLER();
 
             if (XToolkit.saved_error != null &&
-                XToolkit.saved_error.get_error_code() != XlibWrapper.Success) {
+                XToolkit.saved_error.get_error_code() != XConstants.Success) {
                 throw new XException("Cannot write Motif receiver info property");
             }
         } finally {
@@ -201,7 +201,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
                 new WindowPropertyGetter(embedder,
                                          MotifDnDConstants.XA_MOTIF_DRAG_RECEIVER_INFO,
                                          0, 0xFFFF, false,
-                                         XlibWrapper.AnyPropertyType);
+                                         XConstants.AnyPropertyType);
 
             try {
                 status = wpg.execute(XToolkit.IgnoreBadWindowHandler);
@@ -220,7 +220,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
                  *     CARD32   heap_offset B32;
                  * } xmDragReceiverInfoStruct;
                  */
-                if (status == (int)XlibWrapper.Success && wpg.getData() != 0 &&
+                if (status == (int)XConstants.Success && wpg.getData() != 0 &&
                     wpg.getActualType() != 0 && wpg.getActualFormat() == 8 &&
                     wpg.getNumberOfItems() >=
                     MotifDnDConstants.MOTIF_RECEIVER_INFO_SIZE) {
@@ -240,12 +240,12 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
                     XlibWrapper.XChangeProperty(XToolkit.getDisplay(), embedder,
                                                 MotifDnDConstants.XA_MOTIF_DRAG_RECEIVER_INFO.getAtom(),
                                                 MotifDnDConstants.XA_MOTIF_DRAG_RECEIVER_INFO.getAtom(),
-                                                8, XlibWrapper.PropModeReplace,
+                                                8, XConstants.PropModeReplace,
                                                 data, dataSize);
                     XToolkit.RESTORE_XERROR_HANDLER();
 
                     if (XToolkit.saved_error != null &&
-                        XToolkit.saved_error.get_error_code() != XlibWrapper.Success) {
+                        XToolkit.saved_error.get_error_code() != XConstants.Success) {
                         throw new XException("Cannot write Motif receiver info property");
                     }
                 }
@@ -273,7 +273,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
             new WindowPropertyGetter(embedded,
                                      MotifDnDConstants.XA_MOTIF_DRAG_RECEIVER_INFO,
                                      0, 0xFFFF, false,
-                                     XlibWrapper.AnyPropertyType);
+                                     XConstants.AnyPropertyType);
 
         try {
             status = wpg.execute(XToolkit.IgnoreBadWindowHandler);
@@ -292,7 +292,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
              *     CARD32       heap_offset B32;
              * } xmDragReceiverInfoStruct;
              */
-            if (status == (int)XlibWrapper.Success && wpg.getData() != 0 &&
+            if (status == (int)XConstants.Success && wpg.getData() != 0 &&
                 wpg.getActualType() != 0 && wpg.getActualFormat() == 8 &&
                 wpg.getNumberOfItems() >=
                 MotifDnDConstants.MOTIF_RECEIVER_INFO_SIZE) {
@@ -322,12 +322,12 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
             new WindowPropertyGetter(window,
                                      MotifDnDConstants.XA_MOTIF_DRAG_RECEIVER_INFO,
                                      0, 0xFFFF, false,
-                                     XlibWrapper.AnyPropertyType);
+                                     XConstants.AnyPropertyType);
 
         try {
             int status = wpg.execute(XToolkit.IgnoreBadWindowHandler);
 
-            if (status == (int)XlibWrapper.Success && wpg.getData() != 0 &&
+            if (status == (int)XConstants.Success && wpg.getData() != 0 &&
                 wpg.getActualType() != 0 && wpg.getActualFormat() == 8 &&
                 wpg.getNumberOfItems() >=
                 MotifDnDConstants.MOTIF_RECEIVER_INFO_SIZE) {
@@ -377,7 +377,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
             try {
                 int status = wpg.execute(XToolkit.IgnoreBadWindowHandler);
 
-                if (status == XlibWrapper.Success && wpg.getData() != 0 &&
+                if (status == XConstants.Success && wpg.getData() != 0 &&
                     wpg.getActualType() ==
                     MotifDnDConstants.XA_MOTIF_DRAG_INITIATOR_INFO.getAtom() &&
                     wpg.getActualFormat() == 8 &&
@@ -420,7 +420,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
 
             if (status == 0 ||
                 (XToolkit.saved_error != null &&
-                 XToolkit.saved_error.get_error_code() != XlibWrapper.Success)) {
+                 XToolkit.saved_error.get_error_code() != XConstants.Success)) {
                 throw new XException("XGetWindowAttributes failed");
             }
 
@@ -432,12 +432,12 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         XToolkit.WITH_XERROR_HANDLER(XToolkit.IgnoreBadWindowHandler);
         XlibWrapper.XSelectInput(XToolkit.getDisplay(), source_win,
                                  source_win_mask |
-                                 XlibWrapper.StructureNotifyMask);
+                                 XConstants.StructureNotifyMask);
 
         XToolkit.RESTORE_XERROR_HANDLER();
 
         if (XToolkit.saved_error != null &&
-            XToolkit.saved_error.get_error_code() != XlibWrapper.Success) {
+            XToolkit.saved_error.get_error_code() != XConstants.Success) {
             throw new XException("XSelectInput failed");
         }
 
@@ -590,7 +590,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
             XClientMessageEvent dummy = new XClientMessageEvent();
 
             try {
-                dummy.set_type(XlibWrapper.ClientMessage);
+                dummy.set_type(XConstants.ClientMessage);
                 dummy.set_window(xclient.get_window());
                 dummy.set_format(32);
                 dummy.set_message_type(0);
@@ -600,7 +600,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
                 dummy.set_data(3, 0);
                 dummy.set_data(4, 0);
                 XlibWrapper.XSendEvent(XToolkit.getDisplay(),
-                                       proxy, false, XlibWrapper.NoEventMask,
+                                       proxy, false, XConstants.NoEventMask,
                                        dummy.pData);
             } finally {
                 dummy.dispose();
@@ -821,7 +821,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         XClientMessageEvent msg = new XClientMessageEvent();
 
         try {
-            msg.set_type(XlibWrapper.ClientMessage);
+            msg.set_type(XConstants.ClientMessage);
             msg.set_window(MotifDnDConstants.Swapper.getInt(data + 12, eventByteOrder));
             msg.set_format(8);
             msg.set_message_type(MotifDnDConstants.XA_MOTIF_DRAG_AND_DROP_MESSAGE.getAtom());
@@ -878,7 +878,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
             try {
                 XlibWrapper.XSendEvent(XToolkit.getDisplay(),
                                        msg.get_window(),
-                                       false, XlibWrapper.NoEventMask,
+                                       false, XConstants.NoEventMask,
                                        msg.pData);
             } finally {
                 XToolkit.awtUnlock();

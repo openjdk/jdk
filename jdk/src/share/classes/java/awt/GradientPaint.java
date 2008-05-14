@@ -53,6 +53,7 @@ import java.awt.image.ColorModel;
  *
  * @see Paint
  * @see Graphics2D#setPaint
+ * @version 10 Feb 1997
  */
 
 public class GradientPaint implements Paint {
@@ -223,19 +224,32 @@ public class GradientPaint implements Paint {
     }
 
     /**
-     * Creates and returns a context used to generate the color pattern.
-     * @param cm {@link ColorModel} that receives
-     * the <code>Paint</code> data. This is used only as a hint.
-     * @param deviceBounds the device space bounding box of the
-     * graphics primitive being rendered
-     * @param userBounds the user space bounding box of the
-     * graphics primitive being rendered
+     * Creates and returns a {@link PaintContext} used to
+     * generate a linear color gradient pattern.
+     * See the {@link Paint#createContext specification} of the
+     * method in the {@link Paint} interface for information
+     * on null parameter handling.
+     *
+     * @param cm the preferred {@link ColorModel} which represents the most convenient
+     *           format for the caller to receive the pixel data, or {@code null}
+     *           if there is no preference.
+     * @param deviceBounds the device space bounding box
+     *                     of the graphics primitive being rendered.
+     * @param userBounds the user space bounding box
+     *                   of the graphics primitive being rendered.
      * @param xform the {@link AffineTransform} from user
-     *     space into device space
-     * @param hints the hints that the context object uses to choose
-     * between rendering alternatives
-     * @return the {@link PaintContext} that generates color patterns.
+     *              space into device space.
+     * @param hints the set of hints that the context object can use to
+     *              choose between rendering alternatives.
+     * @return the {@code PaintContext} for
+     *         generating color patterns.
+     * @see Paint
      * @see PaintContext
+     * @see ColorModel
+     * @see Rectangle
+     * @see Rectangle2D
+     * @see AffineTransform
+     * @see RenderingHints
      */
     public PaintContext createContext(ColorModel cm,
                                       Rectangle deviceBounds,
