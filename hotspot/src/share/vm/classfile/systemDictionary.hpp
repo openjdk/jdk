@@ -386,7 +386,7 @@ public:
   #undef WK_KLASS_DECLARE
 
   // Local definition for direct access to the private array:
-  #define WK_KLASS(name) _well_known_klasses[WK_KLASS_ENUM_NAME(name)]
+  #define WK_KLASS(name) _well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)]
 
   static klassOop box_klass(BasicType t) {
     assert((uint)t < T_VOID+1, "range check");
