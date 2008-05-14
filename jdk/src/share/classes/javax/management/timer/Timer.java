@@ -344,13 +344,11 @@ public class Timer extends NotificationBroadcasterSupport
         //
         if (isActive == true) {
 
-            TimerAlarmClock alarmClock;
-
             for (Object[] obj : timerTable.values()) {
 
                 // Stop all the TimerAlarmClock.
                 //
-                alarmClock = (TimerAlarmClock)obj[ALARM_CLOCK_INDEX];
+                TimerAlarmClock alarmClock = (TimerAlarmClock)obj[ALARM_CLOCK_INDEX];
                 if (alarmClock != null) {
 //                     alarmClock.interrupt();
 //                     try {
@@ -364,7 +362,6 @@ public class Timer extends NotificationBroadcasterSupport
 //                     //
 
                     alarmClock.cancel();
-                    alarmClock = null;
                 }
             }
 
@@ -458,8 +455,7 @@ public class Timer extends NotificationBroadcasterSupport
 
         // Create and add the timer notification into the timer table.
         //
-        Integer notifID = null;
-        notifID = new Integer(++counterID);
+        Integer notifID = new Integer(++counterID);
 
         // The sequenceNumber and the timeStamp attributes are updated
         // when the notification is emitted by the timer.
@@ -486,8 +482,8 @@ public class Timer extends NotificationBroadcasterSupport
 
         obj[TIMER_NOTIF_INDEX] = (Object)notif;
         obj[TIMER_DATE_INDEX] = (Object)d;
-        obj[TIMER_PERIOD_INDEX] = (Object) new Long(period);
-        obj[TIMER_NB_OCCUR_INDEX] = (Object) new Long(nbOccurences);
+        obj[TIMER_PERIOD_INDEX] = (Object) period;
+        obj[TIMER_NB_OCCUR_INDEX] = (Object) nbOccurences;
         obj[ALARM_CLOCK_INDEX] = (Object)alarmClock;
         obj[FIXED_RATE_INDEX] = Boolean.valueOf(fixedRate);
 
@@ -678,7 +674,6 @@ public class Timer extends NotificationBroadcasterSupport
 //             // Remove the reference on the TimerAlarmClock.
 //             //
             alarmClock.cancel();
-            alarmClock = null;
         }
 
         // Remove the timer notification from the timer table.
@@ -755,7 +750,6 @@ public class Timer extends NotificationBroadcasterSupport
                   //
 //             }
             alarmClock.cancel();
-            alarmClock = null;
         }
 
         // Remove all the timer notifications from the timer table.
@@ -906,8 +900,7 @@ public class Timer extends NotificationBroadcasterSupport
 
         Object[] obj = timerTable.get(id);
         if (obj != null) {
-            Long period = (Long)obj[TIMER_PERIOD_INDEX];
-            return (new Long(period.longValue()));
+            return (Long)obj[TIMER_PERIOD_INDEX];
         }
         return null;
     }
@@ -924,8 +917,7 @@ public class Timer extends NotificationBroadcasterSupport
 
         Object[] obj = timerTable.get(id);
         if (obj != null) {
-            Long nbOccurences = (Long)obj[TIMER_NB_OCCUR_INDEX];
-            return (new Long(nbOccurences.longValue()));
+            return (Long)obj[TIMER_NB_OCCUR_INDEX];
         }
         return null;
     }
@@ -1096,7 +1088,7 @@ public class Timer extends NotificationBroadcasterSupport
             if ((nbOccurences.longValue() == 0) || (nbOccurences.longValue() > 1)) {
 
                 date.setTime(date.getTime() + period.longValue());
-                obj[TIMER_NB_OCCUR_INDEX] = new Long(java.lang.Math.max(0L, (nbOccurences.longValue() - 1)));
+                obj[TIMER_NB_OCCUR_INDEX] = Long.valueOf(java.lang.Math.max(0L, (nbOccurences.longValue() - 1)));
                 nbOccurences = (Long)obj[TIMER_NB_OCCUR_INDEX];
 
                 if (isActive == true) {
@@ -1146,9 +1138,6 @@ public class Timer extends NotificationBroadcasterSupport
 //                         // Ignore...
 //                     }
                     alarmClock.cancel();
-                    // Remove the reference on the TimerAlarmClock.
-                    //
-                    alarmClock = null;
                 }
                 timerTable.remove(notifID);
             }
@@ -1165,10 +1154,6 @@ public class Timer extends NotificationBroadcasterSupport
 //                 }
 
                    alarmClock.cancel();
-
-                // Remove the reference on the TimerAlarmClock.
-                //
-                alarmClock = null;
             }
             timerTable.remove(notifID);
         }

@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import javax.management.Attribute;
@@ -122,7 +123,7 @@ public class RelationService extends NotificationBroadcasterSupport
     // Internal counter to provide sequence numbers for notifications sent by:
     // - the Relation Service
     // - a relation handled by the Relation Service
-    private Long myNtfSeqNbrCounter = new Long(0);
+    private final AtomicLong atomicSeqNo = new AtomicLong();
 
     // ObjectName used to register the Relation Service in the MBean Server
     private ObjectName myObjName = null;
@@ -256,19 +257,6 @@ public class RelationService extends NotificationBroadcasterSupport
         return;
     }
 
-    // Returns internal counter to be used for Sequence Numbers of
-    // notifications to be raised by:
-    // - a relation handled by this Relation Service (when updated)
-    // - the Relation Service
-    private Long getNotificationSequenceNumber() {
-        Long result = null;
-        synchronized(myNtfSeqNbrCounter) {
-            result = new Long(myNtfSeqNbrCounter.longValue() + 1);
-            myNtfSeqNbrCounter = new Long(result.longValue());
-        }
-        return result;
-    }
-
     //
     // Relation type handling
     //
@@ -369,7 +357,7 @@ public class RelationService extends NotificationBroadcasterSupport
      * @return ArrayList of relation type names (Strings)
      */
     public List<String> getAllRelationTypeNames() {
-        ArrayList<String> result = null;
+        ArrayList<String> result;
         synchronized(myRelType2ObjMap) {
             result = new ArrayList<String>(myRelType2ObjMap.keySet());
         }
@@ -684,7 +672,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // Can throw InstanceNotFoundException (but detected above)
         // No MBeanException as no exception raised by this method, and no
         // ReflectionException
-        String relId = null;
+        String relId;
         try {
             relId = (String)(myMBeanServer.getAttribute(relationObjectName,
                                                         "RelationId"));
@@ -707,7 +695,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // Can throw InstanceNotFoundException (but detected above)
         // No MBeanException as no exception raised by this method, no
         // ReflectionException
-        ObjectName relServObjName = null;
+        ObjectName relServObjName;
         try {
             relServObjName = (ObjectName)
                 (myMBeanServer.getAttribute(relationObjectName,
@@ -737,7 +725,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // Can throw InstanceNotFoundException (but detected above)
         // No MBeanException as no exception raised by this method, no
         // ReflectionException
-        String relTypeName = null;
+        String relTypeName;
         try {
             relTypeName = (String)(myMBeanServer.getAttribute(relationObjectName,
                                                               "RelationTypeName"));
@@ -758,7 +746,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // Can throw InstanceNotFoundException (but detected above)
         // No MBeanException as no exception raised by this method, no
         // ReflectionException
-        RoleList roleList = null;
+        RoleList roleList;
         try {
             roleList = (RoleList)(myMBeanServer.invoke(relationObjectName,
                                                        "retrieveAllRoles",
@@ -912,7 +900,7 @@ public class RelationService extends NotificationBroadcasterSupport
      * @return ArrayList of String
      */
     public List<String> getAllRelationIds() {
-        List<String> result = null;
+        List<String> result;
         synchronized(myRelId2ObjMap) {
             result = new ArrayList<String>(myRelId2ObjMap.keySet());
         }
@@ -948,7 +936,7 @@ public class RelationService extends NotificationBroadcasterSupport
         RELATION_LOGGER.entering(RelationService.class.getName(),
                 "checkRoleReading", new Object[] {roleName, relationTypeName});
 
-        Integer result = null;
+        Integer result;
 
         // Can throw a RelationTypeNotFoundException
         RelationType relType = getRelationType(relationTypeName);
@@ -965,7 +953,7 @@ public class RelationService extends NotificationBroadcasterSupport
                                    false);
 
         } catch (RoleInfoNotFoundException exc) {
-            result = new Integer(RoleStatus.NO_ROLE_WITH_NAME);
+            result = Integer.valueOf(RoleStatus.NO_ROLE_WITH_NAME);
         }
 
         RELATION_LOGGER.exiting(RelationService.class.getName(),
@@ -1021,13 +1009,13 @@ public class RelationService extends NotificationBroadcasterSupport
             writeChkFlag = false;
         }
 
-        RoleInfo roleInfo = null;
+        RoleInfo roleInfo;
         try {
             roleInfo = relType.getRoleInfo(roleName);
         } catch (RoleInfoNotFoundException exc) {
             RELATION_LOGGER.exiting(RelationService.class.getName(),
                     "checkRoleWriting");
-            return new Integer(RoleStatus.NO_ROLE_WITH_NAME);
+            return Integer.valueOf(RoleStatus.NO_ROLE_WITH_NAME);
         }
 
         Integer result = checkRoleInt(2,
@@ -1436,7 +1424,7 @@ public class RelationService extends NotificationBroadcasterSupport
 
         // Relation id to relation type name map
         // First retrieves the relation type name
-        String relTypeName = null;
+        String relTypeName;
         synchronized(myRelId2RelTypeMap) {
             relTypeName = myRelId2RelTypeMap.get(relationId);
             myRelId2RelTypeMap.remove(relationId);
@@ -1641,7 +1629,7 @@ public class RelationService extends NotificationBroadcasterSupport
 
                 // List of relation ids of interest regarding the selected
                 // relation type
-                List<String> relIdList = null;
+                List<String> relIdList;
                 if (relationTypeName == null) {
                     // Considers all relations
                     relIdList = new ArrayList<String>(allRelIdSet);
@@ -1655,7 +1643,7 @@ public class RelationService extends NotificationBroadcasterSupport
                     for (String currRelId : allRelIdSet) {
 
                         // Retrieves its relation type
-                        String currRelTypeName = null;
+                        String currRelTypeName;
                         synchronized(myRelId2RelTypeMap) {
                             currRelTypeName =
                                 myRelId2RelTypeMap.get(currRelId);
@@ -1952,7 +1940,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // Can throw a RelationNotFoundException
         Object relObj = getRelation(relationId);
 
-        RoleResult result = null;
+        RoleResult result;
 
         if (relObj instanceof RelationSupport) {
             // Internal relation
@@ -2022,7 +2010,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // Can throw a RelationNotFoundException
         Object relObj = getRelation(relationId);
 
-        RoleResult result = null;
+        RoleResult result;
 
         if (relObj instanceof RelationSupport) {
             // Internal relation
@@ -2073,7 +2061,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // Can throw a RelationNotFoundException
         Object relObj = getRelation(relationId);
 
-        Integer result = null;
+        Integer result;
 
         if (relObj instanceof RelationSupport) {
             // Internal relation
@@ -2268,7 +2256,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // Can throw a RelationNotFoundException
         Object relObj = getRelation(relationId);
 
-        RoleResult result = null;
+        RoleResult result;
 
         if (relObj instanceof RelationSupport) {
             // Internal relation
@@ -2390,7 +2378,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // Can throw a RelationNotFoundException
         Object relObj = getRelation(relationId);
 
-        String result = null;
+        String result;
 
         if (relObj instanceof RelationSupport) {
             // Internal relation
@@ -2473,7 +2461,7 @@ public class RelationService extends NotificationBroadcasterSupport
 
                 // Note: do both tests as a relation can be an MBean and be
                 //       itself referenced in another relation :)
-                String relId = null;
+                String relId;
                 synchronized(myRelMBeanObjName2RelIdMap){
                     relId = myRelMBeanObjName2RelIdMap.get(mbeanName);
                 }
@@ -2510,9 +2498,6 @@ public class RelationService extends NotificationBroadcasterSupport
 
         RELATION_LOGGER.entering(RelationService.class.getName(),
                 "getNotificationInfo");
-
-        MBeanNotificationInfo[] ntfInfoArray =
-            new MBeanNotificationInfo[1];
 
         String ntfClass = "javax.management.relation.RelationNotification";
 
@@ -2615,7 +2600,7 @@ public class RelationService extends NotificationBroadcasterSupport
                 "getRelationType", relationTypeName);
 
         // No null relation type accepted, so can use get()
-        RelationType relType = null;
+        RelationType relType;
         synchronized(myRelType2ObjMap) {
             relType = (myRelType2ObjMap.get(relationTypeName));
         }
@@ -2659,7 +2644,7 @@ public class RelationService extends NotificationBroadcasterSupport
                 "getRelation", relationId);
 
         // No null relation  accepted, so can use get()
-        Object rel = null;
+        Object rel;
         synchronized(myRelId2ObjMap) {
             rel = myRelId2ObjMap.get(relationId);
         }
@@ -3077,7 +3062,7 @@ public class RelationService extends NotificationBroadcasterSupport
                 // Retrieves corresponding role info
                 // Can throw a RoleInfoNotFoundException to be converted into a
                 // RoleNotFoundException
-                RoleInfo roleInfo = null;
+                RoleInfo roleInfo;
                 try {
                     roleInfo = relType.getRoleInfo(currRoleName);
                 } catch (RoleInfoNotFoundException exc) {
@@ -3227,7 +3212,7 @@ public class RelationService extends NotificationBroadcasterSupport
         if (!(roleName.equals(expName))) {
             RELATION_LOGGER.exiting(RelationService.class.getName(),
                     "checkRoleInt");
-            return new Integer(RoleStatus.NO_ROLE_WITH_NAME);
+            return Integer.valueOf(RoleStatus.NO_ROLE_WITH_NAME);
         }
 
         // Checks read access if required
@@ -3572,7 +3557,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // Relation type name
         // Note: do not use getRelationTypeName() as if it is a relation MBean
         //       it is already unregistered.
-        String relTypeName = null;
+        String relTypeName;
         synchronized(myRelId2RelTypeMap) {
             relTypeName = (myRelId2RelTypeMap.get(relationId));
         }
@@ -3609,7 +3594,7 @@ public class RelationService extends NotificationBroadcasterSupport
         }
 
         // Sequence number
-        Long seqNbr = getNotificationSequenceNumber();
+        Long seqNo = atomicSeqNo.incrementAndGet();
 
         // Timestamp
         Date currDate = new Date();
@@ -3625,7 +3610,7 @@ public class RelationService extends NotificationBroadcasterSupport
             // Creation or removal
             ntf = new RelationNotification(ntfType,
                                            this,
-                                           seqNbr.longValue(),
+                                           seqNo.longValue(),
                                            timeStamp,
                                            message,
                                            relationId,
@@ -3640,7 +3625,7 @@ public class RelationService extends NotificationBroadcasterSupport
                 // Update
                 ntf = new RelationNotification(ntfType,
                                                this,
-                                               seqNbr.longValue(),
+                                               seqNo.longValue(),
                                                timeStamp,
                                                message,
                                                relationId,
@@ -3732,7 +3717,7 @@ public class RelationService extends NotificationBroadcasterSupport
             //
             // Shall not throw RelationTypeNotFoundException or
             // RoleInfoNotFoundException
-            RoleInfo currRoleInfo = null;
+            RoleInfo currRoleInfo;
             try {
                 currRoleInfo = getRoleInfo(currRelTypeName,
                                            currRoleName);
