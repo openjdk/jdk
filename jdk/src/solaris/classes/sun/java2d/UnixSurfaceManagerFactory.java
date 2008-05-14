@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,23 @@
  * have any questions.
  */
 
+
 package sun.java2d;
 
 import java.awt.GraphicsConfiguration;
-import java.awt.image.BufferedImage;
-import sun.awt.X11GraphicsConfig;
+
 import sun.awt.image.SunVolatileImage;
-import sun.awt.image.SurfaceManager;
 import sun.awt.image.VolatileSurfaceManager;
 import sun.java2d.opengl.GLXGraphicsConfig;
 import sun.java2d.opengl.GLXVolatileSurfaceManager;
 import sun.java2d.x11.X11VolatileSurfaceManager;
 
 /**
- * This is a factory class with static methods for creating a
- * platform-specific instance of a particular SurfaceManager.  Each platform
- * (Windows, Unix, etc.) has its own specialized SurfaceManagerFactory.
+ * The SurfaceManagerFactory that creates VolatileSurfaceManager
+ * implementations for the Unix volatile images.
  */
-public class SurfaceManagerFactory {
+public class UnixSurfaceManagerFactory extends SurfaceManagerFactory {
+
     /**
      * Creates a new instance of a VolatileSurfaceManager given any
      * arbitrary SunVolatileImage.  An optional context Object can be supplied
@@ -51,9 +50,8 @@ public class SurfaceManagerFactory {
      * specific VolatileSurfaceManager based on the GraphicsConfiguration
      * under which the SunVolatileImage was created.
      */
-    public static VolatileSurfaceManager
-        createVolatileManager(SunVolatileImage vImg,
-                              Object context)
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage vImg,
+                                                        Object context)
     {
         GraphicsConfiguration gc = vImg.getGraphicsConfig();
         if (gc instanceof GLXGraphicsConfig) {
@@ -62,4 +60,5 @@ public class SurfaceManagerFactory {
             return new X11VolatileSurfaceManager(vImg, context);
         }
     }
+
 }

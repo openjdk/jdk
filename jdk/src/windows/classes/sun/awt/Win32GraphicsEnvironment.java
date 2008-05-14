@@ -42,6 +42,8 @@ import sun.awt.windows.WPrinterJob;
 import sun.awt.windows.WToolkit;
 import sun.font.FontManager;
 import sun.java2d.SunGraphicsEnvironment;
+import sun.java2d.SurfaceManagerFactory;
+import sun.java2d.WindowsSurfaceManagerFactory;
 import sun.java2d.windows.WindowsFlags;
 
 /**
@@ -64,6 +66,9 @@ public class Win32GraphicsEnvironment
         WindowsFlags.initFlags();
         initDisplayWrapper();
         eudcFontFileName = getEUDCFontFile();
+
+        // Install correct surface manager factory.
+        SurfaceManagerFactory.setInstance(new WindowsSurfaceManagerFactory());
     }
 
     /**
