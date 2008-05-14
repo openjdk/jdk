@@ -30,70 +30,86 @@
 #include "incls/_divnode.cpp.incl"
 #include <math.h>
 
-// Implement the integer constant divide -> long multiply transform found in
-//   "Division by Invariant Integers using Multiplication"
-//     by Granlund and Montgomery
-static Node *transform_int_divide_to_long_multiply( PhaseGVN *phase, Node *dividend, int divisor ) {
+//----------------------magic_int_divide_constants-----------------------------
+// Compute magic multiplier and shift constant for converting a 32 bit divide
+// by constant into a multiply/shift/add series. Return false if calculations
+// fail.
+//
+// Borrowed almost verbatum from Hacker's Delight by Henry S. Warren, Jr. with
+// minor type name and parameter changes.
+static bool magic_int_divide_constants(jint d, jint &M, jint &s) {
+  int32_t p;
+  uint32_t ad, anc, delta, q1, r1, q2, r2, t;
+  const uint32_t two31 = 0x80000000L;     // 2**31.
+
+  ad = ABS(d);
+  if (d == 0 || d == 1) return false;
+  t = two31 + ((uint32_t)d >> 31);
+  anc = t - 1 - t%ad;     // Absolute value of nc.
+  p = 31;                 // Init. p.
+  q1 = two31/anc;         // Init. q1 = 2**p/|nc|.
+  r1 = two31 - q1*anc;    // Init. r1 = rem(2**p, |nc|).
+  q2 = two31/ad;          // Init. q2 = 2**p/|d|.
+  r2 = two31 - q2*ad;     // Init. r2 = rem(2**p, |d|).
+  do {
+    p = p + 1;
+    q1 = 2*q1;            // Update q1 = 2**p/|nc|.
+    r1 = 2*r1;            // Update r1 = rem(2**p, |nc|).
+    if (r1 >= anc) {      // (Must be an unsigned
+      q1 = q1 + 1;        // comparison here).
+      r1 = r1 - anc;
+    }
+    q2 = 2*q2;            // Update q2 = 2**p/|d|.
+    r2 = 2*r2;            // Update r2 = rem(2**p, |d|).
+    if (r2 >= ad) {       // (Must be an unsigned
+      q2 = q2 + 1;        // comparison here).
+      r2 = r2 - ad;
+    }
+    delta = ad - r2;
+  } while (q1 < delta || (q1 == delta && r1 == 0));
+
+  M = q2 + 1;
+  if (d < 0) M = -M;      // Magic number and
+  s = p - 32;             // shift amount to return.
+
+  return true;
+}
+
+//--------------------------transform_int_divide-------------------------------
+// Convert a division by constant divisor into an alternate Ideal graph.
+// Return NULL if no transformation occurs.
+static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor ) {
 
   // Check for invalid divisors
-  assert( divisor != 0 && divisor != min_jint && divisor != 1,
-    "bad divisor for transforming to long multiply" );
+  assert( divisor != 0 && divisor != min_jint,
+          "bad divisor for transforming to long multiply" );
 
-  // Compute l = ceiling(log2(d))
-  //   presumes d is more likely small
   bool d_pos = divisor >= 0;
-  int d = d_pos ? divisor : -divisor;
-  unsigned ud = (unsigned)d;
+  jint d = d_pos ? divisor : -divisor;
   const int N = 32;
-  int l = log2_intptr(d-1)+1;
-  int sh_post = l;
-
-  const uint64_t U1 = (uint64_t)1;
-
-  // Cliff pointed out how to prevent overflow (from the paper)
-  uint64_t m_low  =  (((U1 << l) - ud) << N)                  / ud + (U1 << N);
-  uint64_t m_high = ((((U1 << l) - ud) << N) + (U1 << (l+1))) / ud + (U1 << N);
-
-  // Reduce to lowest terms
-  for ( ; sh_post > 0; sh_post-- ) {
-    uint64_t m_low_1  = m_low  >> 1;
-    uint64_t m_high_1 = m_high >> 1;
-    if ( m_low_1 >= m_high_1 )
-      break;
-    m_low  = m_low_1;
-    m_high = m_high_1;
-  }
 
   // Result
-  Node *q;
+  Node *q = NULL;
 
-  // division by +/- 1
   if (d == 1) {
-    // Filtered out as identity above
-    if (d_pos)
-      return NULL;
-
-    // Just negate the value
-    else {
+    // division by +/- 1
+    if (!d_pos) {
+      // Just negate the value
       q = new (phase->C, 3) SubINode(phase->intcon(0), dividend);
     }
-  }
-
-  // division by +/- a power of 2
-  else if ( is_power_of_2(d) ) {
+  } else if ( is_power_of_2(d) ) {
+    // division by +/- a power of 2
 
     // See if we can simply do a shift without rounding
     bool needs_rounding = true;
     const Type *dt = phase->type(dividend);
     const TypeInt *dti = dt->isa_int();
-
-    // we don't need to round a positive dividend
-    if (dti && dti->_lo >= 0)
+    if (dti && dti->_lo >= 0) {
+      // we don't need to round a positive dividend
       needs_rounding = false;
-
-    // An AND mask of sufficient size clears the low bits and
-    // I can avoid rounding.
-    else if( dividend->Opcode() == Op_AndI ) {
+    } else if( dividend->Opcode() == Op_AndI ) {
+      // An AND mask of sufficient size clears the low bits and
+      // I can avoid rounding.
       const TypeInt *andconi = phase->type( dividend->in(2) )->isa_int();
       if( andconi && andconi->is_con(-d) ) {
         dividend = dividend->in(1);
@@ -102,47 +118,271 @@ static Node *transform_int_divide_to_long_multiply( PhaseGVN *phase, Node *divid
     }
 
     // Add rounding to the shift to handle the sign bit
-    if( needs_rounding ) {
-      Node *t1 = phase->transform(new (phase->C, 3) RShiftINode(dividend, phase->intcon(l - 1)));
-      Node *t2 = phase->transform(new (phase->C, 3) URShiftINode(t1, phase->intcon(N - l)));
-      dividend = phase->transform(new (phase->C, 3) AddINode(dividend, t2));
+    int l = log2_intptr(d-1)+1;
+    if (needs_rounding) {
+      // Divide-by-power-of-2 can be made into a shift, but you have to do
+      // more math for the rounding.  You need to add 0 for positive
+      // numbers, and "i-1" for negative numbers.  Example: i=4, so the
+      // shift is by 2.  You need to add 3 to negative dividends and 0 to
+      // positive ones.  So (-7+3)>>2 becomes -1, (-4+3)>>2 becomes -1,
+      // (-2+3)>>2 becomes 0, etc.
+
+      // Compute 0 or -1, based on sign bit
+      Node *sign = phase->transform(new (phase->C, 3) RShiftINode(dividend, phase->intcon(N - 1)));
+      // Mask sign bit to the low sign bits
+      Node *round = phase->transform(new (phase->C, 3) URShiftINode(sign, phase->intcon(N - l)));
+      // Round up before shifting
+      dividend = phase->transform(new (phase->C, 3) AddINode(dividend, round));
     }
 
+    // Shift for division
     q = new (phase->C, 3) RShiftINode(dividend, phase->intcon(l));
 
-    if (!d_pos)
+    if (!d_pos) {
       q = new (phase->C, 3) SubINode(phase->intcon(0), phase->transform(q));
+    }
+  } else {
+    // Attempt the jint constant divide -> multiply transform found in
+    //   "Division by Invariant Integers using Multiplication"
+    //     by Granlund and Montgomery
+    // See also "Hacker's Delight", chapter 10 by Warren.
+
+    jint magic_const;
+    jint shift_const;
+    if (magic_int_divide_constants(d, magic_const, shift_const)) {
+      Node *magic = phase->longcon(magic_const);
+      Node *dividend_long = phase->transform(new (phase->C, 2) ConvI2LNode(dividend));
+
+      // Compute the high half of the dividend x magic multiplication
+      Node *mul_hi = phase->transform(new (phase->C, 3) MulLNode(dividend_long, magic));
+
+      if (magic_const < 0) {
+        mul_hi = phase->transform(new (phase->C, 3) RShiftLNode(mul_hi, phase->intcon(N)));
+        mul_hi = phase->transform(new (phase->C, 2) ConvL2INode(mul_hi));
+
+        // The magic multiplier is too large for a 32 bit constant. We've adjusted
+        // it down by 2^32, but have to add 1 dividend back in after the multiplication.
+        // This handles the "overflow" case described by Granlund and Montgomery.
+        mul_hi = phase->transform(new (phase->C, 3) AddINode(dividend, mul_hi));
+
+        // Shift over the (adjusted) mulhi
+        if (shift_const != 0) {
+          mul_hi = phase->transform(new (phase->C, 3) RShiftINode(mul_hi, phase->intcon(shift_const)));
+        }
+      } else {
+        // No add is required, we can merge the shifts together.
+        mul_hi = phase->transform(new (phase->C, 3) RShiftLNode(mul_hi, phase->intcon(N + shift_const)));
+        mul_hi = phase->transform(new (phase->C, 2) ConvL2INode(mul_hi));
+      }
+
+      // Get a 0 or -1 from the sign of the dividend.
+      Node *addend0 = mul_hi;
+      Node *addend1 = phase->transform(new (phase->C, 3) RShiftINode(dividend, phase->intcon(N-1)));
+
+      // If the divisor is negative, swap the order of the input addends;
+      // this has the effect of negating the quotient.
+      if (!d_pos) {
+        Node *temp = addend0; addend0 = addend1; addend1 = temp;
+      }
+
+      // Adjust the final quotient by subtracting -1 (adding 1)
+      // from the mul_hi.
+      q = new (phase->C, 3) SubINode(addend0, addend1);
+    }
   }
 
-  // division by something else
-  else if (m_high < (U1 << (N-1))) {
-    Node *t1 = phase->transform(new (phase->C, 2) ConvI2LNode(dividend));
-    Node *t2 = phase->transform(new (phase->C, 3) MulLNode(t1, phase->longcon(m_high)));
-    Node *t3 = phase->transform(new (phase->C, 3) RShiftLNode(t2, phase->intcon(sh_post+N)));
-    Node *t4 = phase->transform(new (phase->C, 2) ConvL2INode(t3));
-    Node *t5 = phase->transform(new (phase->C, 3) RShiftINode(dividend, phase->intcon(N-1)));
+  return q;
+}
 
-    q = new (phase->C, 3) SubINode(d_pos ? t4 : t5, d_pos ? t5 : t4);
+//---------------------magic_long_divide_constants-----------------------------
+// Compute magic multiplier and shift constant for converting a 64 bit divide
+// by constant into a multiply/shift/add series. Return false if calculations
+// fail.
+//
+// Borrowed almost verbatum from Hacker's Delight by Henry S. Warren, Jr. with
+// minor type name and parameter changes.  Adjusted to 64 bit word width.
+static bool magic_long_divide_constants(jlong d, jlong &M, jint &s) {
+  int64_t p;
+  uint64_t ad, anc, delta, q1, r1, q2, r2, t;
+  const uint64_t two63 = 0x8000000000000000LL;     // 2**63.
+
+  ad = ABS(d);
+  if (d == 0 || d == 1) return false;
+  t = two63 + ((uint64_t)d >> 63);
+  anc = t - 1 - t%ad;     // Absolute value of nc.
+  p = 63;                 // Init. p.
+  q1 = two63/anc;         // Init. q1 = 2**p/|nc|.
+  r1 = two63 - q1*anc;    // Init. r1 = rem(2**p, |nc|).
+  q2 = two63/ad;          // Init. q2 = 2**p/|d|.
+  r2 = two63 - q2*ad;     // Init. r2 = rem(2**p, |d|).
+  do {
+    p = p + 1;
+    q1 = 2*q1;            // Update q1 = 2**p/|nc|.
+    r1 = 2*r1;            // Update r1 = rem(2**p, |nc|).
+    if (r1 >= anc) {      // (Must be an unsigned
+      q1 = q1 + 1;        // comparison here).
+      r1 = r1 - anc;
+    }
+    q2 = 2*q2;            // Update q2 = 2**p/|d|.
+    r2 = 2*r2;            // Update r2 = rem(2**p, |d|).
+    if (r2 >= ad) {       // (Must be an unsigned
+      q2 = q2 + 1;        // comparison here).
+      r2 = r2 - ad;
+    }
+    delta = ad - r2;
+  } while (q1 < delta || (q1 == delta && r1 == 0));
+
+  M = q2 + 1;
+  if (d < 0) M = -M;      // Magic number and
+  s = p - 64;             // shift amount to return.
+
+  return true;
+}
+
+//---------------------long_by_long_mulhi--------------------------------------
+// Generate ideal node graph for upper half of a 64 bit x 64 bit multiplication
+static Node *long_by_long_mulhi( PhaseGVN *phase, Node *dividend, jlong magic_const) {
+  // If the architecture supports a 64x64 mulhi, there is
+  // no need to synthesize it in ideal nodes.
+  if (Matcher::has_match_rule(Op_MulHiL)) {
+    Node *v = phase->longcon(magic_const);
+    return new (phase->C, 3) MulHiLNode(dividend, v);
   }
 
-  // This handles that case where m_high is >= 2**(N-1). In that case,
-  // we subtract out 2**N from the multiply and add it in later as
-  // "dividend" in the equation (t5). This case computes the same result
-  // as the immediately preceeding case, save that rounding and overflow
-  // are accounted for.
-  else {
-    Node *t1 = phase->transform(new (phase->C, 2) ConvI2LNode(dividend));
-    Node *t2 = phase->transform(new (phase->C, 3) MulLNode(t1, phase->longcon(m_high - (U1 << N))));
-    Node *t3 = phase->transform(new (phase->C, 3) RShiftLNode(t2, phase->intcon(N)));
-    Node *t4 = phase->transform(new (phase->C, 2) ConvL2INode(t3));
-    Node *t5 = phase->transform(new (phase->C, 3) AddINode(dividend, t4));
-    Node *t6 = phase->transform(new (phase->C, 3) RShiftINode(t5, phase->intcon(sh_post)));
-    Node *t7 = phase->transform(new (phase->C, 3) RShiftINode(dividend, phase->intcon(N-1)));
+  const int N = 64;
 
-    q = new (phase->C, 3) SubINode(d_pos ? t6 : t7, d_pos ? t7 : t6);
+  Node *u_hi = phase->transform(new (phase->C, 3) RShiftLNode(dividend, phase->intcon(N / 2)));
+  Node *u_lo = phase->transform(new (phase->C, 3) AndLNode(dividend, phase->longcon(0xFFFFFFFF)));
+
+  Node *v_hi = phase->longcon(magic_const >> N/2);
+  Node *v_lo = phase->longcon(magic_const & 0XFFFFFFFF);
+
+  Node *hihi_product = phase->transform(new (phase->C, 3) MulLNode(u_hi, v_hi));
+  Node *hilo_product = phase->transform(new (phase->C, 3) MulLNode(u_hi, v_lo));
+  Node *lohi_product = phase->transform(new (phase->C, 3) MulLNode(u_lo, v_hi));
+  Node *lolo_product = phase->transform(new (phase->C, 3) MulLNode(u_lo, v_lo));
+
+  Node *t1 = phase->transform(new (phase->C, 3) URShiftLNode(lolo_product, phase->intcon(N / 2)));
+  Node *t2 = phase->transform(new (phase->C, 3) AddLNode(hilo_product, t1));
+  Node *t3 = phase->transform(new (phase->C, 3) RShiftLNode(t2, phase->intcon(N / 2)));
+  Node *t4 = phase->transform(new (phase->C, 3) AndLNode(t2, phase->longcon(0xFFFFFFFF)));
+  Node *t5 = phase->transform(new (phase->C, 3) AddLNode(t4, lohi_product));
+  Node *t6 = phase->transform(new (phase->C, 3) RShiftLNode(t5, phase->intcon(N / 2)));
+  Node *t7 = phase->transform(new (phase->C, 3) AddLNode(t3, hihi_product));
+
+  return new (phase->C, 3) AddLNode(t7, t6);
+}
+
+
+//--------------------------transform_long_divide------------------------------
+// Convert a division by constant divisor into an alternate Ideal graph.
+// Return NULL if no transformation occurs.
+static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divisor ) {
+  // Check for invalid divisors
+  assert( divisor != 0L && divisor != min_jlong,
+          "bad divisor for transforming to long multiply" );
+
+  bool d_pos = divisor >= 0;
+  jlong d = d_pos ? divisor : -divisor;
+  const int N = 64;
+
+  // Result
+  Node *q = NULL;
+
+  if (d == 1) {
+    // division by +/- 1
+    if (!d_pos) {
+      // Just negate the value
+      q = new (phase->C, 3) SubLNode(phase->longcon(0), dividend);
+    }
+  } else if ( is_power_of_2_long(d) ) {
+
+    // division by +/- a power of 2
+
+    // See if we can simply do a shift without rounding
+    bool needs_rounding = true;
+    const Type *dt = phase->type(dividend);
+    const TypeLong *dtl = dt->isa_long();
+
+    if (dtl && dtl->_lo > 0) {
+      // we don't need to round a positive dividend
+      needs_rounding = false;
+    } else if( dividend->Opcode() == Op_AndL ) {
+      // An AND mask of sufficient size clears the low bits and
+      // I can avoid rounding.
+      const TypeLong *andconl = phase->type( dividend->in(2) )->isa_long();
+      if( andconl && andconl->is_con(-d)) {
+        dividend = dividend->in(1);
+        needs_rounding = false;
+      }
+    }
+
+    // Add rounding to the shift to handle the sign bit
+    int l = log2_long(d-1)+1;
+    if (needs_rounding) {
+      // Divide-by-power-of-2 can be made into a shift, but you have to do
+      // more math for the rounding.  You need to add 0 for positive
+      // numbers, and "i-1" for negative numbers.  Example: i=4, so the
+      // shift is by 2.  You need to add 3 to negative dividends and 0 to
+      // positive ones.  So (-7+3)>>2 becomes -1, (-4+3)>>2 becomes -1,
+      // (-2+3)>>2 becomes 0, etc.
+
+      // Compute 0 or -1, based on sign bit
+      Node *sign = phase->transform(new (phase->C, 3) RShiftLNode(dividend, phase->intcon(N - 1)));
+      // Mask sign bit to the low sign bits
+      Node *round = phase->transform(new (phase->C, 3) URShiftLNode(sign, phase->intcon(N - l)));
+      // Round up before shifting
+      dividend = phase->transform(new (phase->C, 3) AddLNode(dividend, round));
+    }
+
+    // Shift for division
+    q = new (phase->C, 3) RShiftLNode(dividend, phase->intcon(l));
+
+    if (!d_pos) {
+      q = new (phase->C, 3) SubLNode(phase->longcon(0), phase->transform(q));
+    }
+  } else {
+    // Attempt the jlong constant divide -> multiply transform found in
+    //   "Division by Invariant Integers using Multiplication"
+    //     by Granlund and Montgomery
+    // See also "Hacker's Delight", chapter 10 by Warren.
+
+    jlong magic_const;
+    jint shift_const;
+    if (magic_long_divide_constants(d, magic_const, shift_const)) {
+      // Compute the high half of the dividend x magic multiplication
+      Node *mul_hi = phase->transform(long_by_long_mulhi(phase, dividend, magic_const));
+
+      // The high half of the 128-bit multiply is computed.
+      if (magic_const < 0) {
+        // The magic multiplier is too large for a 64 bit constant. We've adjusted
+        // it down by 2^64, but have to add 1 dividend back in after the multiplication.
+        // This handles the "overflow" case described by Granlund and Montgomery.
+        mul_hi = phase->transform(new (phase->C, 3) AddLNode(dividend, mul_hi));
+      }
+
+      // Shift over the (adjusted) mulhi
+      if (shift_const != 0) {
+        mul_hi = phase->transform(new (phase->C, 3) RShiftLNode(mul_hi, phase->intcon(shift_const)));
+      }
+
+      // Get a 0 or -1 from the sign of the dividend.
+      Node *addend0 = mul_hi;
+      Node *addend1 = phase->transform(new (phase->C, 3) RShiftLNode(dividend, phase->intcon(N-1)));
+
+      // If the divisor is negative, swap the order of the input addends;
+      // this has the effect of negating the quotient.
+      if (!d_pos) {
+        Node *temp = addend0; addend0 = addend1; addend1 = temp;
+      }
+
+      // Adjust the final quotient by subtracting -1 (adding 1)
+      // from the mul_hi.
+      q = new (phase->C, 3) SubLNode(addend0, addend1);
+    }
   }
 
-  return (q);
+  return q;
 }
 
 //=============================================================================
@@ -164,7 +404,7 @@ Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const TypeInt *ti = t->isa_int();
   if( !ti ) return NULL;
   if( !ti->is_con() ) return NULL;
-  int i = ti->get_con();        // Get divisor
+  jint i = ti->get_con();       // Get divisor
 
   if (i == 0) return NULL;      // Dividing by zero constant does not idealize
 
@@ -173,7 +413,7 @@ Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Dividing by MININT does not optimize as a power-of-2 shift.
   if( i == min_jint ) return NULL;
 
-  return transform_int_divide_to_long_multiply( phase, in(1), i );
+  return transform_int_divide( phase, in(1), i );
 }
 
 //------------------------------Value------------------------------------------
@@ -255,85 +495,22 @@ Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
 
   const Type *t = phase->type( in(2) );
-  if( t == TypeLong::ONE )       // Identity?
+  if( t == TypeLong::ONE )      // Identity?
     return NULL;                // Skip it
 
-  const TypeLong *ti = t->isa_long();
-  if( !ti ) return NULL;
-  if( !ti->is_con() ) return NULL;
-  jlong i = ti->get_con();      // Get divisor
-  if( i ) set_req(0, NULL);     // Dividing by a not-zero constant; no faulting
+  const TypeLong *tl = t->isa_long();
+  if( !tl ) return NULL;
+  if( !tl->is_con() ) return NULL;
+  jlong l = tl->get_con();      // Get divisor
+
+  if (l == 0) return NULL;      // Dividing by zero constant does not idealize
+
+  set_req(0,NULL);              // Dividing by a not-zero constant; no faulting
 
   // Dividing by MININT does not optimize as a power-of-2 shift.
-  if( i == min_jlong ) return NULL;
+  if( l == min_jlong ) return NULL;
 
-  // Check for negative power of 2 divisor, if so, negate it and set a flag
-  // to indicate result needs to be negated.  Note that negating the dividend
-  // here does not work when it has the value MININT
-  Node *dividend = in(1);
-  bool negate_res = false;
-  if (is_power_of_2_long(-i)) {
-    i = -i;                     // Flip divisor
-    negate_res = true;
-  }
-
-  // Check for power of 2
-  if (!is_power_of_2_long(i))   // Is divisor a power of 2?
-    return NULL;                // Not a power of 2
-
-  // Compute number of bits to shift
-  int log_i = log2_long(i);
-
-  // See if we can simply do a shift without rounding
-  bool needs_rounding = true;
-  const Type *dt = phase->type(dividend);
-  const TypeLong *dtl = dt->isa_long();
-
-  if (dtl && dtl->_lo > 0) {
-    // we don't need to round a positive dividend
-    needs_rounding = false;
-  } else if( dividend->Opcode() == Op_AndL ) {
-    // An AND mask of sufficient size clears the low bits and
-    // I can avoid rounding.
-    const TypeLong *andconi = phase->type( dividend->in(2) )->isa_long();
-    if( andconi &&
-        andconi->is_con() &&
-        andconi->get_con() == -i ) {
-      dividend = dividend->in(1);
-      needs_rounding = false;
-    }
-  }
-
-  if (!needs_rounding) {
-    Node *result = new (phase->C, 3) RShiftLNode(dividend, phase->intcon(log_i));
-    if (negate_res) {
-      result = phase->transform(result);
-      result = new (phase->C, 3) SubLNode(phase->longcon(0), result);
-    }
-    return result;
-  }
-
-  // Divide-by-power-of-2 can be made into a shift, but you have to do
-  // more math for the rounding.  You need to add 0 for positive
-  // numbers, and "i-1" for negative numbers.  Example: i=4, so the
-  // shift is by 2.  You need to add 3 to negative dividends and 0 to
-  // positive ones.  So (-7+3)>>2 becomes -1, (-4+3)>>2 becomes -1,
-  // (-2+3)>>2 becomes 0, etc.
-
-  // Compute 0 or -1, based on sign bit
-  Node *sign = phase->transform(new (phase->C, 3) RShiftLNode(dividend,phase->intcon(63)));
-  // Mask sign bit to the low sign bits
-  Node *round = phase->transform(new (phase->C, 3) AndLNode(sign,phase->longcon(i-1)));
-  // Round up before shifting
-  Node *sum = phase->transform(new (phase->C, 3) AddLNode(dividend,round));
-  // Shift for division
-  Node *result = new (phase->C, 3) RShiftLNode(sum, phase->intcon(log_i));
-  if (negate_res) {
-    result = phase->transform(result);
-    result = new (phase->C, 3) SubLNode(phase->longcon(0), result);
-  }
-
-  return result;
+  return transform_long_divide( phase, in(1), l );
 }
 
 //------------------------------Value------------------------------------------
@@ -615,10 +792,10 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       hook->init_req(0, x);       // Add a use to x to prevent him from dying
       // Generate code to reduce X rapidly to nearly 2^k-1.
       for( int i = 0; i < trip_count; i++ ) {
-          Node *xl = phase->transform( new (phase->C, 3) AndINode(x,divisor) );
-          Node *xh = phase->transform( new (phase->C, 3) RShiftINode(x,phase->intcon(k)) ); // Must be signed
-          x = phase->transform( new (phase->C, 3) AddINode(xh,xl) );
-          hook->set_req(0, x);
+        Node *xl = phase->transform( new (phase->C, 3) AndINode(x,divisor) );
+        Node *xh = phase->transform( new (phase->C, 3) RShiftINode(x,phase->intcon(k)) ); // Must be signed
+        x = phase->transform( new (phase->C, 3) AddINode(xh,xl) );
+        hook->set_req(0, x);
       }
 
       // Generate sign-fixup code.  Was original value positive?
@@ -675,18 +852,21 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   hook->init_req(0, in(1));
 
   // Divide using the transform from DivI to MulL
-  Node *divide = phase->transform( transform_int_divide_to_long_multiply( phase, in(1), pos_con ) );
+  Node *result = transform_int_divide( phase, in(1), pos_con );
+  if (result != NULL) {
+    Node *divide = phase->transform(result);
 
-  // Re-multiply, using a shift if this is a power of two
-  Node *mult = NULL;
+    // Re-multiply, using a shift if this is a power of two
+    Node *mult = NULL;
 
-  if( log2_con >= 0 )
-    mult = phase->transform( new (phase->C, 3) LShiftINode( divide, phase->intcon( log2_con ) ) );
-  else
-    mult = phase->transform( new (phase->C, 3) MulINode( divide, phase->intcon( pos_con ) ) );
+    if( log2_con >= 0 )
+      mult = phase->transform( new (phase->C, 3) LShiftINode( divide, phase->intcon( log2_con ) ) );
+    else
+      mult = phase->transform( new (phase->C, 3) MulINode( divide, phase->intcon( pos_con ) ) );
 
-  // Finally, subtract the multiplied divided value from the original
-  Node *result = new (phase->C, 3) SubINode( in(1), mult );
+    // Finally, subtract the multiplied divided value from the original
+    result = new (phase->C, 3) SubINode( in(1), mult );
+  }
 
   // Now remove the bogus extra edges used to keep things alive
   if (can_reshape) {
@@ -748,73 +928,126 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Get the modulus
   const Type *t = phase->type( in(2) );
   if( t == Type::TOP ) return NULL;
-  const TypeLong *ti = t->is_long();
+  const TypeLong *tl = t->is_long();
 
   // Check for useless control input
   // Check for excluding mod-zero case
-  if( in(0) && (ti->_hi < 0 || ti->_lo > 0) ) {
+  if( in(0) && (tl->_hi < 0 || tl->_lo > 0) ) {
     set_req(0, NULL);        // Yank control input
     return this;
   }
 
   // See if we are MOD'ing by 2^k or 2^k-1.
-  if( !ti->is_con() ) return NULL;
-  jlong con = ti->get_con();
-  bool m1 = false;
-  if( !is_power_of_2_long(con) ) {      // Not 2^k
-    if( !is_power_of_2_long(con+1) ) // Not 2^k-1?
-      return NULL;              // No interesting mod hacks
-    m1 = true;                  // Found 2^k-1
-    con++;                      // Convert to 2^k form
-  }
-  uint k = log2_long(con);       // Extract k
+  if( !tl->is_con() ) return NULL;
+  jlong con = tl->get_con();
+
+  Node *hook = new (phase->C, 1) Node(1);
 
   // Expand mod
-  if( !m1 ) {                   // Case 2^k
-  } else {                      // Case 2^k-1
+  if( con >= 0 && con < max_jlong && is_power_of_2_long(con+1) ) {
+    uint k = log2_long(con);       // Extract k
+
     // Basic algorithm by David Detlefs.  See fastmod_long.java for gory details.
     // Used to help a popular random number generator which does a long-mod
     // of 2^31-1 and shows up in SpecJBB and SciMark.
     static int unroll_factor[] = { 999, 999, 61, 30, 20, 15, 12, 10, 8, 7, 6, 6, 5, 5, 4, 4, 4, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 /*past here we assume 1 forever*/};
     int trip_count = 1;
     if( k < ARRAY_SIZE(unroll_factor)) trip_count = unroll_factor[k];
-    if( trip_count > 4 ) return NULL; // Too much unrolling
-    if (ConditionalMoveLimit == 0) return NULL;  // cmov is required
 
-    Node *x = in(1);            // Value being mod'd
-    Node *divisor = in(2);      // Also is mask
+    // If the unroll factor is not too large, and if conditional moves are
+    // ok, then use this case
+    if( trip_count <= 5 && ConditionalMoveLimit != 0 ) {
+      Node *x = in(1);            // Value being mod'd
+      Node *divisor = in(2);      // Also is mask
 
-    Node *hook = new (phase->C, 1) Node(x);
-    // Generate code to reduce X rapidly to nearly 2^k-1.
-    for( int i = 0; i < trip_count; i++ ) {
+      hook->init_req(0, x);       // Add a use to x to prevent him from dying
+      // Generate code to reduce X rapidly to nearly 2^k-1.
+      for( int i = 0; i < trip_count; i++ ) {
         Node *xl = phase->transform( new (phase->C, 3) AndLNode(x,divisor) );
         Node *xh = phase->transform( new (phase->C, 3) RShiftLNode(x,phase->intcon(k)) ); // Must be signed
         x = phase->transform( new (phase->C, 3) AddLNode(xh,xl) );
         hook->set_req(0, x);    // Add a use to x to prevent him from dying
-    }
-    // Generate sign-fixup code.  Was original value positive?
-    // long hack_res = (i >= 0) ? divisor : CONST64(1);
-    Node *cmp1 = phase->transform( new (phase->C, 3) CmpLNode( in(1), phase->longcon(0) ) );
-    Node *bol1 = phase->transform( new (phase->C, 2) BoolNode( cmp1, BoolTest::ge ) );
-    Node *cmov1= phase->transform( new (phase->C, 4) CMoveLNode(bol1, phase->longcon(1), divisor, TypeLong::LONG) );
-    // if( x >= hack_res ) x -= divisor;
-    Node *sub  = phase->transform( new (phase->C, 3) SubLNode( x, divisor ) );
-    Node *cmp2 = phase->transform( new (phase->C, 3) CmpLNode( x, cmov1 ) );
-    Node *bol2 = phase->transform( new (phase->C, 2) BoolNode( cmp2, BoolTest::ge ) );
-    // Convention is to not transform the return value of an Ideal
-    // since Ideal is expected to return a modified 'this' or a new node.
-    Node *cmov2= new (phase->C, 4) CMoveLNode(bol2, x, sub, TypeLong::LONG);
-    // cmov2 is now the mod
+      }
 
-    // Now remove the bogus extra edges used to keep things alive
-    if (can_reshape) {
-      phase->is_IterGVN()->remove_dead_node(hook);
-    } else {
-      hook->set_req(0, NULL);   // Just yank bogus edge during Parse phase
+      // Generate sign-fixup code.  Was original value positive?
+      // long hack_res = (i >= 0) ? divisor : CONST64(1);
+      Node *cmp1 = phase->transform( new (phase->C, 3) CmpLNode( in(1), phase->longcon(0) ) );
+      Node *bol1 = phase->transform( new (phase->C, 2) BoolNode( cmp1, BoolTest::ge ) );
+      Node *cmov1= phase->transform( new (phase->C, 4) CMoveLNode(bol1, phase->longcon(1), divisor, TypeLong::LONG) );
+      // if( x >= hack_res ) x -= divisor;
+      Node *sub  = phase->transform( new (phase->C, 3) SubLNode( x, divisor ) );
+      Node *cmp2 = phase->transform( new (phase->C, 3) CmpLNode( x, cmov1 ) );
+      Node *bol2 = phase->transform( new (phase->C, 2) BoolNode( cmp2, BoolTest::ge ) );
+      // Convention is to not transform the return value of an Ideal
+      // since Ideal is expected to return a modified 'this' or a new node.
+      Node *cmov2= new (phase->C, 4) CMoveLNode(bol2, x, sub, TypeLong::LONG);
+      // cmov2 is now the mod
+
+      // Now remove the bogus extra edges used to keep things alive
+      if (can_reshape) {
+        phase->is_IterGVN()->remove_dead_node(hook);
+      } else {
+        hook->set_req(0, NULL);   // Just yank bogus edge during Parse phase
+      }
+      return cmov2;
     }
-    return cmov2;
   }
-  return NULL;
+
+  // Fell thru, the unroll case is not appropriate. Transform the modulo
+  // into a long multiply/int multiply/subtract case
+
+  // Cannot handle mod 0, and min_jint isn't handled by the transform
+  if( con == 0 || con == min_jlong ) return NULL;
+
+  // Get the absolute value of the constant; at this point, we can use this
+  jlong pos_con = (con >= 0) ? con : -con;
+
+  // integer Mod 1 is always 0
+  if( pos_con == 1 ) return new (phase->C, 1) ConLNode(TypeLong::ZERO);
+
+  int log2_con = -1;
+
+  // If this is a power of two, they maybe we can mask it
+  if( is_power_of_2_long(pos_con) ) {
+    log2_con = log2_long(pos_con);
+
+    const Type *dt = phase->type(in(1));
+    const TypeLong *dtl = dt->isa_long();
+
+    // See if this can be masked, if the dividend is non-negative
+    if( dtl && dtl->_lo >= 0 )
+      return ( new (phase->C, 3) AndLNode( in(1), phase->longcon( pos_con-1 ) ) );
+  }
+
+  // Save in(1) so that it cannot be changed or deleted
+  hook->init_req(0, in(1));
+
+  // Divide using the transform from DivI to MulL
+  Node *result = transform_long_divide( phase, in(1), pos_con );
+  if (result != NULL) {
+    Node *divide = phase->transform(result);
+
+    // Re-multiply, using a shift if this is a power of two
+    Node *mult = NULL;
+
+    if( log2_con >= 0 )
+      mult = phase->transform( new (phase->C, 3) LShiftLNode( divide, phase->intcon( log2_con ) ) );
+    else
+      mult = phase->transform( new (phase->C, 3) MulLNode( divide, phase->longcon( pos_con ) ) );
+
+    // Finally, subtract the multiplied divided value from the original
+    result = new (phase->C, 3) SubLNode( in(1), mult );
+  }
+
+  // Now remove the bogus extra edges used to keep things alive
+  if (can_reshape) {
+    phase->is_IterGVN()->remove_dead_node(hook);
+  } else {
+    hook->set_req(0, NULL);       // Just yank bogus edge during Parse phase
+  }
+
+  // return the value
+  return result;
 }
 
 //------------------------------Value------------------------------------------

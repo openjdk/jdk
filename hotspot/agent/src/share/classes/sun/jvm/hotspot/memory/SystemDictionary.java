@@ -29,27 +29,21 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
-import sun.jvm.hotspot.types.OopField; // resolve ambiguity with oops.OopField
-
-// following needed for on-the-fly field construction:
-import sun.jvm.hotspot.types.basic.BasicOopField;
-import sun.jvm.hotspot.types.basic.BasicTypeDataBase;
 
 public class SystemDictionary {
   private static AddressField dictionaryField;
   private static AddressField sharedDictionaryField;
   private static AddressField placeholdersField;
   private static AddressField loaderConstraintTableField;
-  private static OopField javaSystemLoaderField;
+  private static sun.jvm.hotspot.types.OopField javaSystemLoaderField;
   private static int nofBuckets;
 
-  private static OopField wellKnownKlasses;
-  private static OopField objectKlassField;
-  private static OopField classLoaderKlassField;
-  private static OopField stringKlassField;
-  private static OopField systemKlassField;
-  private static OopField threadKlassField;
-  private static OopField threadGroupKlassField;
+  private static sun.jvm.hotspot.types.OopField objectKlassField;
+  private static sun.jvm.hotspot.types.OopField classLoaderKlassField;
+  private static sun.jvm.hotspot.types.OopField stringKlassField;
+  private static sun.jvm.hotspot.types.OopField systemKlassField;
+  private static sun.jvm.hotspot.types.OopField threadKlassField;
+  private static sun.jvm.hotspot.types.OopField threadGroupKlassField;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -69,20 +63,22 @@ public class SystemDictionary {
     javaSystemLoaderField = type.getOopField("_java_system_loader");
     nofBuckets = db.lookupIntConstant("SystemDictionary::_nof_buckets").intValue();
 
-    wellKnownKlasses = type.getOopField("_well_known_klasses[0]");
-    objectKlassField = findWellKnownKlass("object_klass", type, db);
-    classLoaderKlassField = findWellKnownKlass("classloader_klass", type, db);
-    stringKlassField = findWellKnownKlass("string_klass", type, db);
-    systemKlassField = findWellKnownKlass("system_klass", type, db);
-    threadKlassField = findWellKnownKlass("thread_klass", type, db);
-    threadGroupKlassField = findWellKnownKlass("threadGroup_klass", type, db);
+    objectKlassField = type.getOopField(WK_KLASS("object_klass"));
+    classLoaderKlassField = type.getOopField(WK_KLASS("classloader_klass"));
+    stringKlassField = type.getOopField(WK_KLASS("string_klass"));
+    systemKlassField = type.getOopField(WK_KLASS("system_klass"));
+    threadKlassField = type.getOopField(WK_KLASS("thread_klass"));
+    threadGroupKlassField = type.getOopField(WK_KLASS("threadGroup_klass"));
   }
 
-  private static OopField findWellKnownKlass(String indexName, Type type, TypeDataBase db) {
-    Address wkk = wellKnownKlasses.getStaticFieldAddress();
-    int index = db.lookupIntConstant("SystemDictionary::#"+indexName).intValue();
-    return new BasicOopField((BasicTypeDataBase)db, type, indexName, type,
-                             true, index * db.getAddressSize(), wkk);
+  // This WK functions must follow the definitions in systemDictionary.hpp:
+  private static String WK_KLASS(String name) {
+      //#define WK_KLASS(name) _well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)]
+      return ("_well_known_klasses[SystemDictionary::"+WK_KLASS_ENUM_NAME(name)+"]");
+  }
+  private static String WK_KLASS_ENUM_NAME(String kname) {
+      //#define WK_KLASS_ENUM_NAME(kname)    kname##_knum
+      return (kname+"_knum");
   }
 
   public Dictionary dictionary() {

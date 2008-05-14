@@ -453,7 +453,40 @@ static inline uint64_t cast_uint64_t(size_t x)
       static_field(SystemDictionary,            _shared_dictionary,                            Dictionary*)                          \
       static_field(SystemDictionary,            _system_loader_lock_obj,                       oop)                                  \
       static_field(SystemDictionary,            _loader_constraints,                           LoaderConstraintTable*)               \
-      static_field(SystemDictionary,            _well_known_klasses[0],                        klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(object_klass),                        klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(string_klass),                        klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(class_klass),                         klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(cloneable_klass),                     klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(classloader_klass),                   klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(serializable_klass),                  klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(system_klass),                        klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(throwable_klass),                     klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(threaddeath_klass),                   klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(error_klass),                         klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(exception_klass),                     klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(runtime_exception_klass),             klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(classNotFoundException_klass),        klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(noClassDefFoundError_klass),          klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(linkageError_klass),                  klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(ClassCastException_klass),            klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(ArrayStoreException_klass),           klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(virtualMachineError_klass),           klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(OutOfMemoryError_klass),              klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(StackOverflowError_klass),            klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(protectionDomain_klass),              klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(AccessControlContext_klass),          klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(reference_klass),                     klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(soft_reference_klass),                klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(weak_reference_klass),                klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(final_reference_klass),               klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(phantom_reference_klass),             klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(finalizer_klass),                     klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(thread_klass),                        klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(threadGroup_klass),                   klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(properties_klass),                    klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(stringBuffer_klass),                  klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(vector_klass),                        klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(hashtable_klass),                     klassOop)                             \
       static_field(SystemDictionary,            _box_klasses[0],                               klassOop)                             \
       static_field(SystemDictionary,            _java_system_loader,                           oop)                                  \
                                                                                                                                      \
@@ -1367,13 +1400,6 @@ static inline uint64_t cast_uint64_t(size_t x)
                                                                           \
   declare_constant(SystemDictionary::_loader_constraint_size)             \
   declare_constant(SystemDictionary::_nof_buckets)                        \
-  /* these #foo numbers are enums used to index _well_known_klasses: */   \
-  declare_preprocessor_constant("SystemDictionary::#object_klass",       SystemDictionary::WK_KLASS_ENUM_NAME(object_klass)) \
-  declare_preprocessor_constant("SystemDictionary::#classloader_klass",  SystemDictionary::WK_KLASS_ENUM_NAME(classloader_klass)) \
-  declare_preprocessor_constant("SystemDictionary::#string_klass",       SystemDictionary::WK_KLASS_ENUM_NAME(string_klass)) \
-  declare_preprocessor_constant("SystemDictionary::#system_klass",       SystemDictionary::WK_KLASS_ENUM_NAME(system_klass)) \
-  declare_preprocessor_constant("SystemDictionary::#thread_klass",       SystemDictionary::WK_KLASS_ENUM_NAME(thread_klass)) \
-  declare_preprocessor_constant("SystemDictionary::#threadGroup_klass",  SystemDictionary::WK_KLASS_ENUM_NAME(threadGroup_klass)) \
                                                                           \
   /***********************************/                                   \
   /* LoaderConstraintTable constants */                                   \

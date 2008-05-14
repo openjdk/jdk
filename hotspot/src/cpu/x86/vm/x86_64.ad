@@ -8075,6 +8075,18 @@ instruct mulL_mem_imm(rRegL dst, memory src, immL32 imm, rFlagsReg cr)
   ins_pipe(ialu_reg_mem_alu0);
 %}
 
+instruct mulHiL_rReg(rdx_RegL dst, no_rax_RegL src, rax_RegL rax, rFlagsReg cr)
+%{
+  match(Set dst (MulHiL src rax));
+  effect(USE_KILL rax, KILL cr);
+
+  ins_cost(300);
+  format %{ "imulq   RDX:RAX, RAX, $src\t# mulhi" %}
+  opcode(0xF7, 0x5); /* Opcode F7 /5 */
+  ins_encode(REX_reg_wide(src), OpcP, reg_opc(src));
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
 instruct divI_rReg(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
                    rFlagsReg cr)
 %{
