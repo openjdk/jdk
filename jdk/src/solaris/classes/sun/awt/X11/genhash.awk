@@ -1,4 +1,4 @@
-# Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ BEGIN {   FS=";";
          if( $1 != "0x0000" ) {
              ndx =  toupper($1);
              sub(/0X/, "", ndx);
-             printf("        keysym2UCSHash.put( (long)%s, (char)%s); // %s --> %s \n",
-                        $4, $1, $3, unic[ndx]);
+             printf("        keysym2UCSHash.put( (long)%s, (char)%s); // %s -->%s\n",
+                        $4, $1, $3, (unic[ndx]=="" ? "" : " " unic[ndx]));
          }
      }
 /tojava/ { sub(/tojava /, ""); sub(/tojava$/, ""); print}    

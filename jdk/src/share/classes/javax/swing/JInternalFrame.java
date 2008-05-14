@@ -1285,7 +1285,7 @@ public class JInternalFrame extends JComponent implements
      *     description: Specifies what desktop layer is used.
      */
     public void setLayer(int layer) {
-      this.setLayer(new Integer(layer));
+      this.setLayer(Integer.valueOf(layer));
     }
 
     /**
@@ -2092,7 +2092,7 @@ public class JInternalFrame extends JComponent implements
          * have a value
          */
         public Number getCurrentAccessibleValue() {
-            return new Integer(getLayer());
+            return Integer.valueOf(getLayer());
         }
 
         /**
@@ -2116,7 +2116,7 @@ public class JInternalFrame extends JComponent implements
          * have a minimum value
          */
         public Number getMinimumAccessibleValue() {
-            return new Integer(Integer.MIN_VALUE);
+            return Integer.MIN_VALUE;
         }
 
         /**
@@ -2126,7 +2126,7 @@ public class JInternalFrame extends JComponent implements
          * have a maximum value
          */
         public Number getMaximumAccessibleValue() {
-            return new Integer(Integer.MAX_VALUE);
+            return Integer.MAX_VALUE;
         }
 
     } // AccessibleJInternalFrame

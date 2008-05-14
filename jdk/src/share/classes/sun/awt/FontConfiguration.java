@@ -1956,7 +1956,7 @@ public abstract class FontConfiguration {
             /*Init these tables to allow componentFontNameID, fontfileNameIDs
               to start from "1".
             */
-            componentFontNameIDs.put("", new Short((short)0));
+            componentFontNameIDs.put("", Short.valueOf((short)0));
 
             fontfileNameIDs = new HashMap<String, Short>();
             filenames = new HashMap<Short, Short>();

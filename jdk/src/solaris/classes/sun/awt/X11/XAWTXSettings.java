@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ class XAWTXSettings extends XSettings implements XMSelectionListener {
             try {
                 int status = getter.execute(XToolkit.IgnoreBadWindowHandler);
 
-                if (status != XlibWrapper.Success || getter.getData() == 0) {
+                if (status != XConstants.Success || getter.getData() == 0) {
                     if (log.isLoggable(Level.FINE)) log.fine("OH OH : getter failed  status = " + status );
                     settings = null;
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ public class XEmbeddingContainer extends XEmbedHelper implements XEventDispatche
     }
     public void dispatchEvent(XEvent xev) {
         switch(xev.get_type()) {
-          case XlibWrapper.ClientMessage:
+          case XConstants.ClientMessage:
               handleClientMessage(xev);
               break;
         }
@@ -149,7 +149,7 @@ public class XEmbeddingContainer extends XEmbedHelper implements XEventDispatche
         ke.set_window(child);
         XToolkit.awtLock();
         try {
-            XlibWrapper.XSendEvent(XToolkit.getDisplay(), child, false, XlibWrapper.NoEventMask, data);
+            XlibWrapper.XSendEvent(XToolkit.getDisplay(), child, false, XConstants.NoEventMask, data);
         }
         finally {
             XToolkit.awtUnlock();

@@ -436,6 +436,7 @@ SplashInitPlatform(Splash * splash) {
             break;
         }
     case PseudoColor: {
+            int availableColors;
             int numColors;
             int numComponents[3];
             unsigned long colorIndex[SPLASH_COLOR_MAP_SIZE];
@@ -444,9 +445,20 @@ SplashInitPlatform(Splash * splash) {
             int depth = XDefaultDepthOfScreen(splash->screen);
             int scale = 65535 / MAX_COLOR_VALUE;
 
-            numColors = GetNumAvailableColors(splash->display, splash->screen,
+            availableColors = GetNumAvailableColors(splash->display, splash->screen,
                     splash->visual->map_entries);
-            numColors = quantizeColors(numColors, numComponents);
+            numColors = quantizeColors(availableColors, numComponents);
+            if (numColors > availableColors) {
+                // Could not allocate the color cells. Most probably
+                // the pool got exhausted. Disable the splash screen.
+                XCloseDisplay(splash->display);
+                splash->isVisible = -1;
+                splash->display = NULL;
+                splash->screen = NULL;
+                splash->visual = NULL;
+                fprintf(stderr, "Warning: unable to initialize the splashscreen. Not enough available color cells.\n");
+                return;
+            }
             splash->cmap = AllocColors(splash->display, splash->screen,
                     numColors, colorIndex);
             for (i = 0; i < numColors; i++) {
