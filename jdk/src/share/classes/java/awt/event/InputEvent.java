@@ -208,17 +208,32 @@ public abstract class InputEvent extends ComponentEvent {
     /**
      * Constructs an InputEvent object with the specified source component,
      * modifiers, and type.
-     * <p>Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior. This method throws an
+     * <p> This method throws an
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
      *
      * @param source the object where the event originated
-     * @param id the event type
-     * @param when the time the event occurred
-     * @param modifiers represents the modifier keys and mouse buttons down
-     *                  while the event occurred
+     * @param id           the integer that identifies the event type.
+     *                     It is allowed to pass as parameter any value that
+     *                     allowed for some subclass of {@code InputEvent} class.
+     *                     Passing in the value different from those values result
+     *                     in unspecified behavior
+     * @param when         a long int that gives the time the event occurred.
+     *                     Passing negative or zero value
+     *                     is not recommended
+     * @param modifiers    the modifier keys down during event (e.g. shift, ctrl,
+     *                     alt, meta)
+     *                     Passing negative parameter is not recommended.
+     *                     Zero value means no modifiers.
+     *                     Either extended _DOWN_MASK or old _MASK modifiers
+     *                     should be used, but both models should not be mixed
+     *                     in one event. Use of the extended modifiers is
+     *                     preferred
      * @throws IllegalArgumentException if <code>source</code> is null
+     * @see #getSource()
+     * @see #getID()
+     * @see #getWhen()
+     * @see #getModifiers()
      */
     InputEvent(Component source, int id, long when, int modifiers) {
         super(source, id);
@@ -285,7 +300,8 @@ public abstract class InputEvent extends ComponentEvent {
     }
 
     /**
-     * Returns the timestamp of when this event occurred.
+     * Returns the difference in milliseconds between the timestamp of when this event occurred and
+     * midnight, January 1, 1970 UTC.
      */
     public long getWhen() {
         return when;
@@ -358,7 +374,12 @@ public abstract class InputEvent extends ComponentEvent {
      * Returns a String describing the extended modifier keys and
      * mouse buttons, such as "Shift", "Button1", or "Ctrl+Shift".
      * These strings can be localized by changing the
-     * awt.properties file.
+     * <code>awt.properties</code> file.
+     * <p>
+     * Note that passing negative parameter is incorrect,
+     * and will cause the returning an unspecified string.
+     * Zero parameter means that no modifiers were passed and will
+     * cause the returning an empty string.
      *
      * @param modifiers a modifier mask describing the extended
        *                modifier keys and mouse buttons for the event

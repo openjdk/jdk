@@ -45,6 +45,10 @@ import java.awt.Component;
  * (<code>ContainerAdapter</code> objects implement the
  * <code>ContainerListener</code> interface.) Each such listener object
  * gets this <code>ContainerEvent</code> when the event occurs.
+ * <p>
+ * An unspecified behavior will be caused if the {@code id} parameter
+ * of any particular {@code ContainerEvent} instance is not
+ * in the range from {@code CONTAINER_FIRST} to {@code CONTAINER_LAST}.
  *
  * @see ContainerAdapter
  * @see ContainerListener
@@ -92,16 +96,20 @@ public class ContainerEvent extends ComponentEvent {
 
     /**
      * Constructs a <code>ContainerEvent</code> object.
-     * <p>Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior. This method throws an
+     * <p> This method throws an
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
      *
-     * @param source the <code>Component</code> object (container)
+     * @param source The <code>Component</code> object (container)
      *               that originated the event
-     * @param id     an integer indicating the type of event
+     * @param id     An integer indicating the type of event.
+     *                     For information on allowable values, see
+     *                     the class description for {@link ContainerEvent}
      * @param child  the component that was added or removed
      * @throws IllegalArgumentException if <code>source</code> is null
+     * @see #getContainer()
+     * @see #getID()
+     * @see #getChild()
      */
     public ContainerEvent(Component source, int id, Component child) {
         super(source, id);

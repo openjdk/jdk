@@ -657,7 +657,7 @@ public class FileFontStrike extends PhysicalStrike {
              * we first obtain this information, then the image, and never
              * will access this value again.
              */
-            Integer key = new Integer(glyphCode);
+            Integer key = Integer.valueOf(glyphCode);
             Point2D.Float value = null;
             ConcurrentHashMap<Integer, Point2D.Float> glyphMetricsMap = null;
             if (glyphMetricsMapRef != null) {
@@ -724,7 +724,7 @@ public class FileFontStrike extends PhysicalStrike {
             boundsMap = new ConcurrentHashMap<Integer, Rectangle2D.Float>();
         }
 
-        Integer key = new Integer(glyphCode);
+        Integer key = Integer.valueOf(glyphCode);
         Rectangle2D.Float bounds = boundsMap.get(key);
 
         if (bounds == null) {

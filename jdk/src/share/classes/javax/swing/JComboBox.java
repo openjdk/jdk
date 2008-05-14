@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,9 @@
  */
 package javax.swing;
 
-import java.beans.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.Transient;
 import java.util.*;
 
 import java.awt.*;
@@ -636,6 +638,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      *                  or -1 if no item is selected or if
      *                  the currently selected item is not in the list
      */
+    @Transient
     public int getSelectedIndex() {
         Object sObject = dataModel.getSelectedItem();
         int i,c;
