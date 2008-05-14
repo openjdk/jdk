@@ -650,7 +650,7 @@ static void xinerama_init_linux()
         if (XineramaQueryScreens != NULL) {
             DTRACE_PRINTLN("calling XineramaQueryScreens func on Linux");
             xinInfo = (*XineramaQueryScreens)(awt_display, &locNumScr);
-            if (xinInfo != NULL) {
+            if (xinInfo != NULL && locNumScr > XScreenCount(awt_display)) {
                 int32_t idx;
                 DTRACE_PRINTLN("Enabling Xinerama support");
                 usingXinerama = True;
@@ -701,7 +701,8 @@ static void xinerama_init_solaris()
         if (XineramaSolarisFunc != NULL) {
             DTRACE_PRINTLN("calling XineramaGetInfo func on Solaris");
             if ((*XineramaSolarisFunc)(awt_display, 0, &fbrects[0],
-                                       &fbhints[0], &locNumScr) != 0)
+                                       &fbhints[0], &locNumScr) != 0 &&
+                locNumScr > XScreenCount(awt_display))
             {
                 DTRACE_PRINTLN("Enabling Xinerama support");
                 usingXinerama = True;
