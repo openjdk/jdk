@@ -3052,10 +3052,24 @@ public abstract class Component implements ImageObserver, MenuContainer,
             // services.  Additionally, the request is restricted to
             // the bounds of the component.
             if (parent != null) {
-                int px = this.x + ((x < 0) ? 0 : x);
-                int py = this.y + ((y < 0) ? 0 : y);
+                if (x < 0) {
+                    width += x;
+                    x = 0;
+                }
+                if (y < 0) {
+                    height += y;
+                    y = 0;
+                }
+
                 int pwidth = (width > this.width) ? this.width : width;
                 int pheight = (height > this.height) ? this.height : height;
+
+                if (pwidth <= 0 || pheight <= 0) {
+                    return;
+                }
+
+                int px = this.x + x;
+                int py = this.y + y;
                 parent.repaint(tm, px, py, pwidth, pheight);
             }
         } else {
