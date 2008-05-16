@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 
 package sun.awt.X11;
 
-public interface XProtocolConstants {
+final public class XProtocolConstants {
+
+    private XProtocolConstants(){}
+
     /* Reply codes */
     public static final int X_Reply = 1 ; /* Normal reply */
     public static final int X_Error = 0 ; /* Error */

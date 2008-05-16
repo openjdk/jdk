@@ -28,22 +28,16 @@
  * @author Mark Davidson
  */
 
-import java.beans.BeanInfo;
-import java.beans.EventSetDescriptor;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
 import java.util.EventListener;
 
 public class Test4896879 {
-    public static void main(String[] args) throws IntrospectionException {
+    public static void main(String[] args) {
         test(A.class);
         test(B.class);
     }
 
-    private static void test(Class type) throws IntrospectionException {
-        BeanInfo info = Introspector.getBeanInfo(type);
-        EventSetDescriptor[] descriptors = info.getEventSetDescriptors();
-        if (descriptors.length != 0) {
+    private static void test(Class type) {
+        if (BeanUtils.getEventSetDescriptors(type).length != 0) {
             throw new Error("Should not have any EventSetDescriptors");
         }
     }

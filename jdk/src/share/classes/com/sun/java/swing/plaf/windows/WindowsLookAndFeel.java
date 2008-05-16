@@ -299,9 +299,9 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         initResourceBundle(table);
 
         // *** Shared Fonts
-        Integer twelve = new Integer(12);
-        Integer fontPlain = new Integer(Font.PLAIN);
-        Integer fontBold = new Integer(Font.BOLD);
+        Integer twelve = Integer.valueOf(12);
+        Integer fontPlain = Integer.valueOf(Font.PLAIN);
+        Integer fontBold = Integer.valueOf(Font.BOLD);
 
         Object dialogPlain12 = new SwingLazyValue(
                                "javax.swing.plaf.FontUIResource",
@@ -522,19 +522,19 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
                                                        toolkit);
         Object WindowBorderWidth      = new DesktopProperty(
                                                        "win.frame.sizingBorderWidth",
-                                                       new Integer(1),
+                                                       Integer.valueOf(1),
                                                        toolkit);
         Object TitlePaneHeight        = new DesktopProperty(
                                                        "win.frame.captionHeight",
-                                                       new Integer(18),
+                                                       Integer.valueOf(18),
                                                        toolkit);
         Object TitleButtonWidth       = new DesktopProperty(
                                                        "win.frame.captionButtonWidth",
-                                                       new Integer(16),
+                                                       Integer.valueOf(16),
                                                        toolkit);
         Object TitleButtonHeight      = new DesktopProperty(
                                                        "win.frame.captionButtonHeight",
-                                                       new Integer(16),
+                                                       Integer.valueOf(16),
                                                        toolkit);
         Object InactiveTextColor      = new DesktopProperty(
                                                        "win.text.grayedTextColor",
@@ -567,7 +567,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         Object IconFont = ControlFont;
 
         Object scrollBarWidth = new DesktopProperty("win.scrollbar.width",
-                                                    new Integer(16), toolkit);
+                                                    Integer.valueOf(16), toolkit);
 
         Object menuBarHeight = new DesktopProperty("win.menu.height",
                                                    null, toolkit);
@@ -673,12 +673,12 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "Button.disabledForeground", InactiveTextColor,
             "Button.disabledShadow", ControlHighlightColor,
             "Button.focus", black,
-            "Button.dashedRectGapX", new XPValue(new Integer(3), new Integer(5)),
-            "Button.dashedRectGapY", new XPValue(new Integer(3), new Integer(4)),
-            "Button.dashedRectGapWidth", new XPValue(new Integer(6), new Integer(10)),
-            "Button.dashedRectGapHeight", new XPValue(new Integer(6), new Integer(8)),
-            "Button.textShiftOffset", new XPValue(new Integer(0),
-                                                  new Integer(1)),
+            "Button.dashedRectGapX", new XPValue(Integer.valueOf(3), Integer.valueOf(5)),
+            "Button.dashedRectGapY", new XPValue(Integer.valueOf(3), Integer.valueOf(4)),
+            "Button.dashedRectGapWidth", new XPValue(Integer.valueOf(6), Integer.valueOf(10)),
+            "Button.dashedRectGapHeight", new XPValue(Integer.valueOf(6), Integer.valueOf(8)),
+            "Button.textShiftOffset", new XPValue(Integer.valueOf(0),
+                                                  Integer.valueOf(1)),
             // W2K keyboard navigation hidding.
             "Button.showMnemonics", showMnemonics,
             "Button.focusInputMap",
@@ -780,7 +780,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
                }),
 
             // DesktopIcon
-            "DesktopIcon.width", new Integer(160),
+            "DesktopIcon.width", Integer.valueOf(160),
 
             "EditorPane.font", ControlFont,
             "EditorPane.background", WindowBackgroundColor,
@@ -814,9 +814,9 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
                                                                "icons/NewFolder.gif"),
             "FileChooser.useSystemExtensionHiding", Boolean.TRUE,
 
-            "FileChooser.lookInLabelMnemonic", new Integer(KeyEvent.VK_I),
-            "FileChooser.fileNameLabelMnemonic", new Integer(KeyEvent.VK_N),
-            "FileChooser.filesOfTypeLabelMnemonic", new Integer(KeyEvent.VK_T),
+            "FileChooser.lookInLabelMnemonic", Integer.valueOf(KeyEvent.VK_I),
+            "FileChooser.fileNameLabelMnemonic", Integer.valueOf(KeyEvent.VK_N),
+            "FileChooser.filesOfTypeLabelMnemonic", Integer.valueOf(KeyEvent.VK_T),
             "FileChooser.usesSingleFilePane", Boolean.TRUE,
             "FileChooser.noPlacesBar", new DesktopProperty("win.comdlg.noPlacesBar",
                                                            Boolean.FALSE, toolkit),
@@ -1021,10 +1021,10 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "Menu.selectionBackground", SelectionBackgroundColor,
             "Menu.acceleratorForeground", MenuTextColor,
             "Menu.acceleratorSelectionForeground", SelectionTextColor,
-            "Menu.menuPopupOffsetX", new Integer(0),
-            "Menu.menuPopupOffsetY", new Integer(0),
-            "Menu.submenuPopupOffsetX", new Integer(-4),
-            "Menu.submenuPopupOffsetY", new Integer(-3),
+            "Menu.menuPopupOffsetX", Integer.valueOf(0),
+            "Menu.menuPopupOffsetY", Integer.valueOf(0),
+            "Menu.submenuPopupOffsetX", Integer.valueOf(-4),
+            "Menu.submenuPopupOffsetY", Integer.valueOf(-3),
             "Menu.crossMenuMnemonic", Boolean.FALSE,
             "Menu.preserveTopLevelSelection", Boolean.TRUE,
 
@@ -1184,8 +1184,8 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "ProgressBar.highlight", ControlHighlightColor,
             "ProgressBar.selectionForeground", ControlBackgroundColor,
             "ProgressBar.selectionBackground", SelectionBackgroundColor,
-            "ProgressBar.cellLength", new Integer(7),
-            "ProgressBar.cellSpacing", new Integer(2),
+            "ProgressBar.cellLength", Integer.valueOf(7),
+            "ProgressBar.cellSpacing", Integer.valueOf(2),
             "ProgressBar.indeterminateInsets", new Insets(3, 3, 3, 3),
 
             // *** RootPane.
@@ -1292,7 +1292,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "SplitPane.highlight", ControlHighlightColor,
             "SplitPane.shadow", ControlShadowColor,
             "SplitPane.darkShadow", ControlDarkShadowColor,
-            "SplitPane.dividerSize", new Integer(5),
+            "SplitPane.dividerSize", Integer.valueOf(5),
             "SplitPane.ancestorInputMap",
                new UIDefaults.LazyInputMap(new Object[] {
                         "UP", "negativeIncrement",
@@ -1496,7 +1496,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "ToggleButton.light", ControlLightColor,
             "ToggleButton.highlight", ControlHighlightColor,
             "ToggleButton.focus", ControlTextColor,
-            "ToggleButton.textShiftOffset", new Integer(1),
+            "ToggleButton.textShiftOffset", Integer.valueOf(1),
             "ToggleButton.focusInputMap",
               new UIDefaults.LazyInputMap(new Object[] {
                             "SPACE", "pressed",
@@ -1548,8 +1548,8 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "Tree.background", WindowBackgroundColor,
             "Tree.foreground", WindowTextColor,
             "Tree.hash", gray,
-            "Tree.leftChildIndent", new Integer(8),
-            "Tree.rightChildIndent", new Integer(11),
+            "Tree.leftChildIndent", Integer.valueOf(8),
+            "Tree.rightChildIndent", Integer.valueOf(11),
             "Tree.textForeground", WindowTextColor,
             "Tree.textBackground", WindowBackgroundColor,
             "Tree.selectionForeground", SelectionTextColor,
@@ -2488,18 +2488,18 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         private int direction;
 
         XPDLUValue(int xpdlu, int classicdlu, int direction) {
-            super(new Integer(xpdlu), new Integer(classicdlu));
+            super(Integer.valueOf(xpdlu), Integer.valueOf(classicdlu));
             this.direction = direction;
         }
 
         public Object getXPValue(UIDefaults table) {
             int px = dluToPixels(((Integer)xpValue).intValue(), direction);
-            return new Integer(px);
+            return Integer.valueOf(px);
         }
 
         public Object getClassicValue(UIDefaults table) {
             int px = dluToPixels(((Integer)classicValue).intValue(), direction);
-            return new Integer(px);
+            return Integer.valueOf(px);
         }
     }
 

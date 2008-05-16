@@ -1899,8 +1899,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                     // assistive technologies listening for such events.
                     comp.getAccessibleContext().firePropertyChange(
                         AccessibleContext.ACCESSIBLE_HYPERTEXT_OFFSET,
-                        new Integer(kit.prevHypertextOffset),
-                        new Integer(e.getDot()));
+                        Integer.valueOf(kit.prevHypertextOffset),
+                        Integer.valueOf(e.getDot()));
                 }
             }
         }

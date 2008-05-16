@@ -1,7 +1,7 @@
 // This is a generated file: do not edit! Edit keysym2ucs.h if necessary.
 
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1495,6 +1495,7 @@ public class XKeysym {
 
         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Multi_key),     new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_COMPOSE, java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Mode_switch),     new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_ALT_GRAPH, java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+        keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_ISO_Level3_Shift),     new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_ALT_GRAPH, java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
 
             /* Editing block */
         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Redo),     new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_AGAIN, java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 
 package sun.awt.X11;
 
-public interface XConstants {
+final public class XConstants {
+
+    private XConstants(){}
+
     public static final int X_PROTOCOL = 11 ; /* current protocol version */
     public static final int X_PROTOCOL_REVISION = 0 ; /* current minor version */
 
@@ -292,9 +295,9 @@ public interface XConstants {
     public static final int RevertToParent = 2 ;
 
     /* Used in XEventsQueued */
-    int QueuedAlready = 0;
-    int QueuedAfterReading = 1;
-    int QueuedAfterFlush = 2;
+    public static final int QueuedAlready = 0;
+    public static final int QueuedAfterReading = 1;
+    public static final int QueuedAfterFlush = 2;
 
 
     /*****************************************************************
