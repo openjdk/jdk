@@ -1364,6 +1364,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
                         "LEFT", "positiveUnitIncrement",
                      "KP_LEFT", "positiveUnitIncrement",
                  }),
+            "Slider.onlyLeftMouseButtonDrag", Boolean.TRUE,
 
             // *** Spinner
             "Spinner.font", monospacedPlain12,

@@ -313,13 +313,12 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
                 return null;
             }
             return Win32ShellFolder2.getSystemIcon(iconType);
-        } else if (key.startsWith("shell32Icon ")) {
-            int i;
-            String name = key.substring(key.indexOf(" ")+1);
+        } else if (key.startsWith("shell32Icon ") || key.startsWith("shell32LargeIcon ")) {
+            String name = key.substring(key.indexOf(" ") + 1);
             try {
-                i = Integer.parseInt(name);
+                int i = Integer.parseInt(name);
                 if (i >= 0) {
-                    return Win32ShellFolder2.getShell32Icon(i);
+                    return Win32ShellFolder2.getShell32Icon(i, key.startsWith("shell32LargeIcon "));
                 }
             } catch (NumberFormatException ex) {
             }

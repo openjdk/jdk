@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package javax.swing;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.beans.*;
+import java.beans.Transient;
 import java.util.*;
 import javax.swing.event.*;
 import javax.swing.plaf.*;
@@ -563,6 +563,7 @@ public class JTabbedPane extends JComponent
      * @return the index of the selected tab
      * @see #setSelectedIndex
      */
+    @Transient
     public int getSelectedIndex() {
         return model.getSelectedIndex();
     }
@@ -648,6 +649,7 @@ public class JTabbedPane extends JComponent
      * @return the component corresponding to the selected tab
      * @see #setSelectedComponent
      */
+    @Transient
     public Component getSelectedComponent() {
         int index = getSelectedIndex();
         if (index == -1) {
