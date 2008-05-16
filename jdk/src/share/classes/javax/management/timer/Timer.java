@@ -455,7 +455,7 @@ public class Timer extends NotificationBroadcasterSupport
 
         // Create and add the timer notification into the timer table.
         //
-        Integer notifID = new Integer(++counterID);
+        Integer notifID = Integer.valueOf(++counterID);
 
         // The sequenceNumber and the timeStamp attributes are updated
         // when the notification is emitted by the timer.

@@ -3221,7 +3221,7 @@ public class RelationService extends NotificationBroadcasterSupport
             if (!isReadable) {
                 RELATION_LOGGER.exiting(RelationService.class.getName(),
                         "checkRoleInt");
-                return new Integer(RoleStatus.ROLE_NOT_READABLE);
+                return Integer.valueOf(RoleStatus.ROLE_NOT_READABLE);
             } else {
                 // End of check :)
                 RELATION_LOGGER.exiting(RelationService.class.getName(),
