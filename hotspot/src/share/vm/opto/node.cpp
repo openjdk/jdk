@@ -1043,6 +1043,9 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
   assert(this->is_CFG(), "expecting control");
   assert(sub != NULL && sub->is_CFG(), "expecting control");
 
+  // detect dead cycle without regions
+  int iterations_without_region_limit = DominatorSearchLimit;
+
   Node* orig_sub = sub;
   nlist.clear();
   bool this_dominates = false;
@@ -1057,6 +1060,7 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
         // Region nodes were visited. Continue walk up to Start or Root
         // to make sure that it did not walk in a cycle.
         this_dominates = true; // first time meet
+        iterations_without_region_limit = DominatorSearchLimit; // Reset
       } else {
         return false;          // already met before: walk in a cycle
       }
@@ -1069,19 +1073,20 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
       return false; // Conservative answer for dead code
 
     if (sub == up && sub->is_Loop()) {
-      up = sub->in(0); // in(LoopNode::EntryControl);
-    } else if (sub == up && sub->is_Region()) {
+      up = sub->in(1); // in(LoopNode::EntryControl);
+    } else if (sub == up && sub->is_Region() && sub->req() == 3) {
+      iterations_without_region_limit = DominatorSearchLimit; // Reset
       uint i = 1;
-      if (nlist.size() == 0) {
+      uint size = nlist.size();
+      if (size == 0) {
         // No Region nodes (except Loops) were visited before.
         // Take first valid path on the way up to 'this'.
-      } else if (nlist.at(nlist.size() - 1) == sub) {
+      } else if (nlist.at(size - 1) == sub) {
         // This Region node was just visited. Take other path.
         i = region_input + 1;
         nlist.pop();
       } else {
         // Was this Region node visited before?
-        uint size = nlist.size();
         for (uint j = 0; j < size; j++) {
           if (nlist.at(j) == sub) {
             return false; // The Region node was visited before. Give up.
@@ -1104,8 +1109,9 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
     }
     if (sub == up)
       return false;    // some kind of tight cycle
-    if (orig_sub == up)
-      return false;    // walk in a cycle
+
+    if (--iterations_without_region_limit < 0)
+      return false;    // dead cycle
 
     sub = up;
   }
