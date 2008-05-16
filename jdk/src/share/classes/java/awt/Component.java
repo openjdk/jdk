@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import java.io.ObjectInputStream;
 import java.io.IOException;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.beans.Transient;
 import java.awt.event.InputMethodListener;
 import java.awt.event.InputMethodEvent;
 import java.awt.im.InputContext;
@@ -1102,6 +1103,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #setVisible
      * @since JDK1.0
      */
+    @Transient
     public boolean isVisible() {
         return isVisible_NoClientCode();
     }
@@ -1536,6 +1538,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @beaninfo
      *       bound: true
      */
+    @Transient
     public Color getForeground() {
         Color foreground = this.foreground;
         if (foreground != null) {
@@ -1590,6 +1593,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #setBackground
      * @since JDK1.0
      */
+    @Transient
     public Color getBackground() {
         Color background = this.background;
         if (background != null) {
@@ -1649,6 +1653,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #setFont
      * @since JDK1.0
      */
+    @Transient
     public Font getFont() {
         return getFont_NoClientCode();
     }
