@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,9 @@ import java.awt.event.*;
 import java.awt.image.*;
 import java.text.*;
 import java.awt.geom.*;
-import java.beans.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.Transient;
 import java.util.Enumeration;
 import java.util.Vector;
 import java.io.Serializable;
@@ -645,6 +647,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @see #setDisabledIcon
      * @see javax.swing.LookAndFeel#getDisabledIcon
      */
+    @Transient
     public Icon getDisabledIcon() {
         if (disabledIcon == null) {
             disabledIcon = UIManager.getLookAndFeel().getDisabledIcon(this, getIcon());
@@ -2047,14 +2050,14 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
                     null, AccessibleState.SELECTED);
                 accessibleContext.firePropertyChange(
                     AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
-                    new Integer(0), new Integer(1));
+                    Integer.valueOf(0), Integer.valueOf(1));
             } else {
                 accessibleContext.firePropertyChange(
                     AccessibleContext.ACCESSIBLE_STATE_PROPERTY,
                     AccessibleState.SELECTED, null);
                 accessibleContext.firePropertyChange(
                     AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
-                    new Integer(1), new Integer(0));
+                    Integer.valueOf(1), Integer.valueOf(0));
             }
         }
     }
@@ -2552,9 +2555,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
          */
         public Number getCurrentAccessibleValue() {
             if (isSelected()) {
-                return new Integer(1);
+                return Integer.valueOf(1);
             } else {
-                return new Integer(0);
+                return Integer.valueOf(0);
             }
         }
 
@@ -2583,7 +2586,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
          * @return an Integer of 0.
          */
         public Number getMinimumAccessibleValue() {
-            return new Integer(0);
+            return Integer.valueOf(0);
         }
 
         /**
@@ -2592,7 +2595,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
          * @return An Integer of 1.
          */
         public Number getMaximumAccessibleValue() {
-            return new Integer(1);
+            return Integer.valueOf(1);
         }
 
 

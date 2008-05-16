@@ -99,7 +99,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
                   return;
             }
             if (log.isLoggable(Level.FINE)) log.fine("Requesting state on " + window + " for " + state);
-            req.set_type((int)XlibWrapper.ClientMessage);
+            req.set_type((int)XConstants.ClientMessage);
             req.set_window(window.getWindow());
             req.set_message_type(XA_NET_WM_STATE.getAtom());
             req.set_format(32);
@@ -109,7 +109,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
                 XlibWrapper.XSendEvent(XToolkit.getDisplay(),
                         XlibWrapper.RootWindow(XToolkit.getDisplay(), window.getScreenNumber()),
                         false,
-                        XlibWrapper.SubstructureRedirectMask | XlibWrapper.SubstructureNotifyMask,
+                        XConstants.SubstructureRedirectMask | XConstants.SubstructureNotifyMask,
                         req.pData);
             }
             finally {
@@ -183,7 +183,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
         if (window.isShowing()) {
             XClientMessageEvent req = new XClientMessageEvent();
             try {
-                req.set_type((int)XlibWrapper.ClientMessage);
+                req.set_type((int)XConstants.ClientMessage);
                 req.set_window(window.getWindow());
                 req.set_message_type(XA_NET_WM_STATE.getAtom());
                 req.set_format(32);
@@ -195,7 +195,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
                     XlibWrapper.XSendEvent(XToolkit.getDisplay(),
                                            XlibWrapper.RootWindow(XToolkit.getDisplay(), window.getScreenNumber()),
                                            false,
-                                           XlibWrapper.SubstructureRedirectMask | XlibWrapper.SubstructureNotifyMask,
+                                           XConstants.SubstructureRedirectMask | XConstants.SubstructureNotifyMask,
                                            req.pData);
                 }
                 finally {

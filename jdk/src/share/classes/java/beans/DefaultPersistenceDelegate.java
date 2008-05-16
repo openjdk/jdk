@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,53 +164,19 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
         return new Expression(oldInstance, oldInstance.getClass(), "new", constructorArgs);
     }
 
-    private Method findMethod(Class type, String property) throws IntrospectionException {
+    private Method findMethod(Class type, String property) {
         if (property == null) {
             throw new IllegalArgumentException("Property name is null");
         }
-        BeanInfo info = Introspector.getBeanInfo(type);
-        for (PropertyDescriptor pd : info.getPropertyDescriptors()) {
-            if (property.equals(pd.getName())) {
-                Method method = pd.getReadMethod();
-                if (method != null) {
-                    return method;
-                }
-                throw new IllegalStateException("Could not find getter for the property " + property);
-            }
+        PropertyDescriptor pd = getPropertyDescriptor(type, property);
+        if (pd == null) {
+            throw new IllegalStateException("Could not find property by the name " + property);
         }
-        throw new IllegalStateException("Could not find property by the name " + property);
-    }
-
-    // This is a workaround for a bug in the introspector.
-    // PropertyDescriptors are not shared amongst subclasses.
-    private boolean isTransient(Class type, PropertyDescriptor pd) {
-        if (type == null) {
-            return false;
+        Method method = pd.getReadMethod();
+        if (method == null) {
+            throw new IllegalStateException("Could not find getter for the property " + property);
         }
-        // This code was mistakenly deleted - it may be fine and
-        // is more efficient than the code below. This should
-        // all disappear anyway when property descriptors are shared
-        // by the introspector.
-        /*
-        Method getter = pd.getReadMethod();
-        Class declaringClass = getter.getDeclaringClass();
-        if (declaringClass == type) {
-            return Boolean.TRUE.equals(pd.getValue("transient"));
-        }
-        */
-        String pName = pd.getName();
-        BeanInfo info = MetaData.getBeanInfo(type);
-        PropertyDescriptor[] propertyDescriptors = info.getPropertyDescriptors();
-        for (int i = 0; i < propertyDescriptors.length; ++i ) {
-            PropertyDescriptor pd2 = propertyDescriptors[i];
-            if (pName.equals(pd2.getName())) {
-                Object value = pd2.getValue("transient");
-                if (value != null) {
-                    return Boolean.TRUE.equals(value);
-                }
-            }
-        }
-        return isTransient(type.getSuperclass(), pd);
+        return method;
     }
 
     private static boolean equals(Object o1, Object o2) {
@@ -221,7 +187,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
         Method getter = pd.getReadMethod();
         Method setter = pd.getWriteMethod();
 
-        if (getter != null && setter != null && !isTransient(type, pd)) {
+        if (getter != null && setter != null) {
             Expression oldGetExp = new Expression(oldInstance, getter.getName(), new Object[]{});
             Expression newGetExp = new Expression(newInstance, getter.getName(), new Object[]{});
             Object oldValue = oldGetExp.getValue();
@@ -254,14 +220,19 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
 
     // Write out the properties of this instance.
     private void initBean(Class type, Object oldInstance, Object newInstance, Encoder out) {
-        // System.out.println("initBean: " + oldInstance);
-        BeanInfo info = MetaData.getBeanInfo(type);
-
+        BeanInfo info;
+        try {
+            info = Introspector.getBeanInfo(type);
+        } catch (IntrospectionException exception) {
+            return;
+        }
         // Properties
-        PropertyDescriptor[] propertyDescriptors = info.getPropertyDescriptors();
-        for (int i = 0; i < propertyDescriptors.length; ++i ) {
+        for (PropertyDescriptor d : info.getPropertyDescriptors()) {
+            if (d.isTransient()) {
+                continue;
+            }
             try {
-                doProperty(type, propertyDescriptors[i], oldInstance, newInstance, out);
+                doProperty(type, d, oldInstance, newInstance, out);
             }
             catch (Exception e) {
                 out.getExceptionListener().exceptionThrown(e);
@@ -295,9 +266,10 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
         if (!java.awt.Component.class.isAssignableFrom(type)) {
             return; // Just handle the listeners of Components for now.
         }
-        EventSetDescriptor[] eventSetDescriptors = info.getEventSetDescriptors();
-        for (int e = 0; e < eventSetDescriptors.length; e++) {
-            EventSetDescriptor d = eventSetDescriptors[e];
+        for (EventSetDescriptor d : info.getEventSetDescriptors()) {
+            if (d.isTransient()) {
+                continue;
+            }
             Class listenerType = d.getListenerType();
 
 
@@ -407,5 +379,16 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
         if (oldInstance.getClass() == type) { // !type.isInterface()) {
             initBean(type, oldInstance, newInstance, out);
         }
+    }
+
+    private static PropertyDescriptor getPropertyDescriptor(Class type, String property) {
+        try {
+            for (PropertyDescriptor pd : Introspector.getBeanInfo(type).getPropertyDescriptors()) {
+                if (property.equals(pd.getName()))
+                    return pd;
+            }
+        } catch (IntrospectionException exception) {
+        }
+        return null;
     }
 }

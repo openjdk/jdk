@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import sun.awt.*;
 import java.util.logging.*;
 import java.util.*;
 
-public class XBaseWindow implements XConstants, XUtilConstants {
+public class XBaseWindow {
     private static final Logger log = Logger.getLogger("sun.awt.X11.XBaseWindow");
     private static final Logger insLog = Logger.getLogger("sun.awt.X11.insets.XBaseWindow");
     private static final Logger eventLog = Logger.getLogger("sun.awt.X11.event.XBaseWindow");
@@ -148,7 +148,7 @@ public class XBaseWindow implements XConstants, XUtilConstants {
         Long eventMask = (Long)params.get(EVENT_MASK);
         if (eventMask != null) {
             long mask = eventMask.longValue();
-            mask |= SubstructureNotifyMask;
+            mask |= XConstants.SubstructureNotifyMask;
             params.put(EVENT_MASK, mask);
         }
 
@@ -281,10 +281,10 @@ public class XBaseWindow implements XConstants, XUtilConstants {
         }
         params.putIfNull(PARENT_WINDOW, Long.valueOf(XToolkit.getDefaultRootWindow()));
         params.putIfNull(BOUNDS, new Rectangle(DEF_LOCATION, DEF_LOCATION, MIN_SIZE, MIN_SIZE));
-        params.putIfNull(DEPTH, Integer.valueOf((int)XlibWrapper.CopyFromParent));
-        params.putIfNull(VISUAL, Long.valueOf(XlibWrapper.CopyFromParent));
-        params.putIfNull(VISUAL_CLASS, Integer.valueOf((int)XlibWrapper.InputOnly));
-        params.putIfNull(VALUE_MASK, Long.valueOf(XlibWrapper.CWEventMask));
+        params.putIfNull(DEPTH, Integer.valueOf((int)XConstants.CopyFromParent));
+        params.putIfNull(VISUAL, Long.valueOf(XConstants.CopyFromParent));
+        params.putIfNull(VISUAL_CLASS, Integer.valueOf((int)XConstants.InputOnly));
+        params.putIfNull(VALUE_MASK, Long.valueOf(XConstants.CWEventMask));
         Rectangle bounds = (Rectangle)params.get(BOUNDS);
         bounds.width = Math.max(MIN_SIZE, bounds.width);
         bounds.height = Math.max(MIN_SIZE, bounds.height);
@@ -293,7 +293,7 @@ public class XBaseWindow implements XConstants, XUtilConstants {
         long eventMask = eventMaskObj != null ? eventMaskObj.longValue() : 0;
         // We use our own synthetic grab see XAwtState.getGrabWindow()
         // (see X vol. 1, 8.3.3.2)
-        eventMask |= PropertyChangeMask | OwnerGrabButtonMask;
+        eventMask |= XConstants.PropertyChangeMask | XConstants.OwnerGrabButtonMask;
         params.put(EVENT_MASK, Long.valueOf(eventMask));
     }
 
@@ -312,23 +312,23 @@ public class XBaseWindow implements XConstants, XUtilConstants {
 
                 Long eventMask = (Long)params.get(EVENT_MASK);
                 xattr.set_event_mask(eventMask.longValue());
-                value_mask |= XlibWrapper.CWEventMask;
+                value_mask |= XConstants.CWEventMask;
 
                 Long border_pixel = (Long)params.get(BORDER_PIXEL);
                 if (border_pixel != null) {
                     xattr.set_border_pixel(border_pixel.longValue());
-                    value_mask |= XlibWrapper.CWBorderPixel;
+                    value_mask |= XConstants.CWBorderPixel;
                 }
 
                 Long colormap = (Long)params.get(COLORMAP);
                 if (colormap != null) {
                     xattr.set_colormap(colormap.longValue());
-                    value_mask |= XlibWrapper.CWColormap;
+                    value_mask |= XConstants.CWColormap;
                 }
                 Long background_pixmap = (Long)params.get(BACKGROUND_PIXMAP);
                 if (background_pixmap != null) {
                     xattr.set_background_pixmap(background_pixmap.longValue());
-                    value_mask |= XlibWrapper.CWBackPixmap;
+                    value_mask |= XConstants.CWBackPixmap;
                 }
 
                 Long parentWindow = (Long)params.get(PARENT_WINDOW);
@@ -339,25 +339,25 @@ public class XBaseWindow implements XConstants, XUtilConstants {
                 Boolean overrideRedirect = (Boolean)params.get(OVERRIDE_REDIRECT);
                 if (overrideRedirect != null) {
                     xattr.set_override_redirect(overrideRedirect.booleanValue());
-                    value_mask |= XlibWrapper.CWOverrideRedirect;
+                    value_mask |= XConstants.CWOverrideRedirect;
                 }
 
                 Boolean saveUnder = (Boolean)params.get(SAVE_UNDER);
                 if (saveUnder != null) {
                     xattr.set_save_under(saveUnder.booleanValue());
-                    value_mask |= XlibWrapper.CWSaveUnder;
+                    value_mask |= XConstants.CWSaveUnder;
                 }
 
                 Integer backingStore = (Integer)params.get(BACKING_STORE);
                 if (backingStore != null) {
                     xattr.set_backing_store(backingStore.intValue());
-                    value_mask |= XlibWrapper.CWBackingStore;
+                    value_mask |= XConstants.CWBackingStore;
                 }
 
                 Integer bitGravity = (Integer)params.get(BIT_GRAVITY);
                 if (bitGravity != null) {
                     xattr.set_bit_gravity(bitGravity.intValue());
-                    value_mask |= XlibWrapper.CWBitGravity;
+                    value_mask |= XConstants.CWBitGravity;
                 }
 
                 if (log.isLoggable(Level.FINE)) {
@@ -487,25 +487,25 @@ public class XBaseWindow implements XConstants, XUtilConstants {
             // Note: if PPosition is not set in flags this means that
             // we want to reset PPosition in hints.  This is necessary
             // for locationByPlatform functionality
-            if ((flags & XlibWrapper.PPosition) != 0) {
+            if ((flags & XUtilConstants.PPosition) != 0) {
                 hints.set_x(x);
                 hints.set_y(y);
             }
-            if ((flags & XlibWrapper.PSize) != 0) {
+            if ((flags & XUtilConstants.PSize) != 0) {
                 hints.set_width(width);
                 hints.set_height(height);
-            } else if ((hints.get_flags() & XlibWrapper.PSize) != 0) {
-                flags |= XlibWrapper.PSize;
+            } else if ((hints.get_flags() & XUtilConstants.PSize) != 0) {
+                flags |= XUtilConstants.PSize;
             }
-            if ((flags & XlibWrapper.PMinSize) != 0) {
+            if ((flags & XUtilConstants.PMinSize) != 0) {
                 hints.set_min_width(width);
                 hints.set_min_height(height);
-            } else if ((hints.get_flags() & XlibWrapper.PMinSize) != 0) {
-                flags |= XlibWrapper.PMinSize;
+            } else if ((hints.get_flags() & XUtilConstants.PMinSize) != 0) {
+                flags |= XUtilConstants.PMinSize;
                 //Fix for 4320050: Minimum size for java.awt.Frame is not being enforced.
                 //We don't need to reset minimum size if it's already set
             }
-            if ((flags & XlibWrapper.PMaxSize) != 0) {
+            if ((flags & XUtilConstants.PMaxSize) != 0) {
                 if (maxBounds != null) {
                     if (maxBounds.width != Integer.MAX_VALUE) {
                         hints.set_max_width(maxBounds.width);
@@ -521,8 +521,8 @@ public class XBaseWindow implements XConstants, XUtilConstants {
                     hints.set_max_width(width);
                     hints.set_max_height(height);
                 }
-            } else if ((hints.get_flags() & XlibWrapper.PMaxSize) != 0) {
-                flags |= XlibWrapper.PMaxSize;
+            } else if ((hints.get_flags() & XUtilConstants.PMaxSize) != 0) {
+                flags |= XUtilConstants.PMaxSize;
                 if (maxBounds != null) {
                     if (maxBounds.width != Integer.MAX_VALUE) {
                         hints.set_max_width(maxBounds.width);
@@ -538,9 +538,9 @@ public class XBaseWindow implements XConstants, XUtilConstants {
                     // Leave intact
                 }
             }
-            flags |= XlibWrapper.PWinGravity;
+            flags |= XUtilConstants.PWinGravity;
             hints.set_flags(flags);
-            hints.set_win_gravity((int)XlibWrapper.NorthWestGravity);
+            hints.set_win_gravity((int)XConstants.NorthWestGravity);
             if (insLog.isLoggable(Level.FINER)) insLog.finer("Setting hints, resulted flags " + XlibWrapper.hintsToString(flags) +
                                                              ", values " + hints);
             XlibWrapper.XSetWMNormalHints(XToolkit.getDisplay(), getWindow(), hints.pData);
@@ -552,7 +552,7 @@ public class XBaseWindow implements XConstants, XUtilConstants {
     public boolean isMinSizeSet() {
         XSizeHints hints = getHints();
         long flags = hints.get_flags();
-        return ((flags & XlibWrapper.PMinSize) == XlibWrapper.PMinSize);
+        return ((flags & XUtilConstants.PMinSize) == XUtilConstants.PMinSize);
     }
 
     /**
@@ -837,29 +837,29 @@ public class XBaseWindow implements XConstants, XUtilConstants {
             //6273031: PIT. Choice drop down does not close once it is right clicked to show a popup menu
             //remember previous window having grab and if it's not null ungrab it.
             XBaseWindow prevGrabWindow = XAwtState.getGrabWindow();
-            final int eventMask = (int) (ButtonPressMask | ButtonReleaseMask
-                | EnterWindowMask | LeaveWindowMask | PointerMotionMask
-                | ButtonMotionMask);
+            final int eventMask = (int) (XConstants.ButtonPressMask | XConstants.ButtonReleaseMask
+                | XConstants.EnterWindowMask | XConstants.LeaveWindowMask | XConstants.PointerMotionMask
+                | XConstants.ButtonMotionMask);
             final int ownerEvents = 1;
 
             int ptrGrab = XlibWrapper.XGrabPointer(XToolkit.getDisplay(),
-                getContentWindow(), ownerEvents, eventMask, GrabModeAsync,
-                GrabModeAsync, None, (XWM.isMotif() ? XToolkit.arrowCursor : None),
-                CurrentTime);
+                getContentWindow(), ownerEvents, eventMask, XConstants.GrabModeAsync,
+                XConstants.GrabModeAsync, XConstants.None, (XWM.isMotif() ? XToolkit.arrowCursor : XConstants.None),
+                XConstants.CurrentTime);
             // Check grab results to be consistent with X server grab
-            if (ptrGrab != GrabSuccess) {
-                XlibWrapper.XUngrabPointer(XToolkit.getDisplay(), CurrentTime);
+            if (ptrGrab != XConstants.GrabSuccess) {
+                XlibWrapper.XUngrabPointer(XToolkit.getDisplay(), XConstants.CurrentTime);
                 XAwtState.setGrabWindow(null);
                 grabLog.fine("    Grab Failure - mouse");
                 return false;
             }
 
             int keyGrab = XlibWrapper.XGrabKeyboard(XToolkit.getDisplay(),
-                getContentWindow(), ownerEvents, GrabModeAsync, GrabModeAsync,
-                CurrentTime);
-            if (keyGrab != GrabSuccess) {
-                XlibWrapper.XUngrabPointer(XToolkit.getDisplay(), CurrentTime);
-                XlibWrapper.XUngrabKeyboard(XToolkit.getDisplay(), CurrentTime);
+                getContentWindow(), ownerEvents, XConstants.GrabModeAsync, XConstants.GrabModeAsync,
+                XConstants.CurrentTime);
+            if (keyGrab != XConstants.GrabSuccess) {
+                XlibWrapper.XUngrabPointer(XToolkit.getDisplay(), XConstants.CurrentTime);
+                XlibWrapper.XUngrabKeyboard(XToolkit.getDisplay(), XConstants.CurrentTime);
                 XAwtState.setGrabWindow(null);
                 grabLog.fine("    Grab Failure - keyboard");
                 return false;
@@ -882,8 +882,8 @@ public class XBaseWindow implements XConstants, XUtilConstants {
             grabLog.log(Level.FINE, "UnGrab input on {0}", new Object[] {grabWindow});
             if (grabWindow != null) {
                 grabWindow.ungrabInputImpl();
-                XlibWrapper.XUngrabPointer(XToolkit.getDisplay(), CurrentTime);
-                XlibWrapper.XUngrabKeyboard(XToolkit.getDisplay(), CurrentTime);
+                XlibWrapper.XUngrabPointer(XToolkit.getDisplay(), XConstants.CurrentTime);
+                XlibWrapper.XUngrabKeyboard(XToolkit.getDisplay(), XConstants.CurrentTime);
                 XAwtState.setGrabWindow(null);
                 // we need to call XFlush() here to force ungrab
                 // see 6384219 for details
@@ -979,15 +979,15 @@ public class XBaseWindow implements XConstants, XUtilConstants {
      */
     public void handleButtonPressRelease(XEvent xev) {
         XButtonEvent xbe = xev.get_xbutton();
-        final int buttonState = xbe.get_state() & (Button1Mask | Button2Mask
-            | Button3Mask | Button4Mask | Button5Mask);
+        final int buttonState = xbe.get_state() & (XConstants.Button1Mask | XConstants.Button2Mask
+            | XConstants.Button3Mask | XConstants.Button4Mask | XConstants.Button5Mask);
         switch (xev.get_type()) {
-        case ButtonPress:
+        case XConstants.ButtonPress:
             if (buttonState == 0) {
                 XAwtState.setAutoGrabWindow(this);
             }
             break;
-        case ButtonRelease:
+        case XConstants.ButtonRelease:
             if (isFullRelease(buttonState, xbe.get_button())) {
                 XAwtState.setAutoGrabWindow(null);
             }
@@ -1012,30 +1012,30 @@ public class XBaseWindow implements XConstants, XUtilConstants {
      */
     static boolean isFullRelease(int buttonState, int button) {
         switch (button) {
-        case Button1:
-            return buttonState == Button1Mask;
-        case Button2:
-            return buttonState == Button2Mask;
-        case Button3:
-            return buttonState == Button3Mask;
-        case Button4:
-            return buttonState == Button4Mask;
-        case Button5:
-            return buttonState == Button5Mask;
+        case XConstants.Button1:
+            return buttonState == XConstants.Button1Mask;
+        case XConstants.Button2:
+            return buttonState == XConstants.Button2Mask;
+        case XConstants.Button3:
+            return buttonState == XConstants.Button3Mask;
+        case XConstants.Button4:
+            return buttonState == XConstants.Button4Mask;
+        case XConstants.Button5:
+            return buttonState == XConstants.Button5Mask;
         }
         return buttonState == 0;
     }
 
     static boolean isGrabbedEvent(XEvent ev, XBaseWindow target) {
         switch (ev.get_type()) {
-          case ButtonPress:
-          case ButtonRelease:
-          case MotionNotify:
-          case KeyPress:
-          case KeyRelease:
+          case XConstants.ButtonPress:
+          case XConstants.ButtonRelease:
+          case XConstants.MotionNotify:
+          case XConstants.KeyPress:
+          case XConstants.KeyRelease:
               return true;
-          case LeaveNotify:
-          case EnterNotify:
+          case XConstants.LeaveNotify:
+          case XConstants.EnterNotify:
               // We shouldn't dispatch this events to the grabbed components (see 6317481)
               // But this logic is important if the grabbed component is top-level (see realSync)
               return (target instanceof XWindowPeer);
@@ -1067,53 +1067,53 @@ public class XBaseWindow implements XConstants, XUtilConstants {
 
         switch (type)
         {
-          case VisibilityNotify:
+          case XConstants.VisibilityNotify:
               handleVisibilityEvent(xev);
               break;
-          case ClientMessage:
+          case XConstants.ClientMessage:
               handleClientMessage(xev);
               break;
-          case Expose :
-          case GraphicsExpose :
+          case XConstants.Expose :
+          case XConstants.GraphicsExpose :
               handleExposeEvent(xev);
               break;
-          case ButtonPress:
-          case ButtonRelease:
+          case XConstants.ButtonPress:
+          case XConstants.ButtonRelease:
               handleButtonPressRelease(xev);
               break;
 
-          case MotionNotify:
+          case XConstants.MotionNotify:
               handleMotionNotify(xev);
               break;
-          case KeyPress:
+          case XConstants.KeyPress:
               handleKeyPress(xev);
               break;
-          case KeyRelease:
+          case XConstants.KeyRelease:
               handleKeyRelease(xev);
               break;
-          case EnterNotify:
-          case LeaveNotify:
+          case XConstants.EnterNotify:
+          case XConstants.LeaveNotify:
               handleXCrossingEvent(xev);
               break;
-          case ConfigureNotify:
+          case XConstants.ConfigureNotify:
               handleConfigureNotifyEvent(xev);
               break;
-          case MapNotify:
+          case XConstants.MapNotify:
               handleMapNotifyEvent(xev);
               break;
-          case UnmapNotify:
+          case XConstants.UnmapNotify:
               handleUnmapNotifyEvent(xev);
               break;
-          case ReparentNotify:
+          case XConstants.ReparentNotify:
               handleReparentNotifyEvent(xev);
               break;
-          case PropertyNotify:
+          case XConstants.PropertyNotify:
               handlePropertyNotify(xev);
               break;
-          case DestroyNotify:
+          case XConstants.DestroyNotify:
               handleDestroyNotify(xev);
               break;
-          case CreateNotify:
+          case XConstants.CreateNotify:
               handleCreateNotify(xev);
               break;
         }

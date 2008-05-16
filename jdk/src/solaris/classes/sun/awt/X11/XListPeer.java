@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,14 +55,15 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
     public final static int     DEFAULT_VISIBLE_ROWS = 4; // From java.awt.List,
     public final static int     HORIZ_SCROLL_AMT = 10;
 
-    final static int
-        PAINT_VSCROLL = 2,
-        PAINT_HSCROLL = 4,
-        PAINT_ITEMS = 8,
-        PAINT_FOCUS = 16,
-        PAINT_BACKGROUND = 32,
-        PAINT_HIDEFOCUS = 64,
-        PAINT_ALL = PAINT_VSCROLL | PAINT_HSCROLL | PAINT_ITEMS | PAINT_FOCUS | PAINT_BACKGROUND;
+    private final static int    PAINT_VSCROLL = 2;
+    private final static int    PAINT_HSCROLL = 4;
+    private final static int    PAINT_ITEMS = 8;
+    private final static int    PAINT_FOCUS = 16;
+    private final static int    PAINT_BACKGROUND = 32;
+    private final static int    PAINT_HIDEFOCUS = 64;
+    private final static int    PAINT_ALL =
+        PAINT_VSCROLL | PAINT_HSCROLL | PAINT_ITEMS | PAINT_FOCUS | PAINT_BACKGROUND;
+    private final static int    COPY_AREA = 128;
 
     XVerticalScrollbar       vsb;
     XHorizontalScrollbar     hsb;
@@ -363,35 +364,6 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         }
     }
 
-    Area getItemsArea(int firstItem, int lastItem) {
-        firstItem = Math.max(getFirstVisibleItem(), firstItem);
-        lastItem = Math.min(lastItem, getLastVisibleItem());
-        if (lastItem < getFirstVisibleItem()) {
-            return new Area();
-        }
-        if (firstItem <= lastItem) {
-            int startY = getItemY(firstItem);
-            int endY = getItemY(lastItem) + getItemHeight();
-            // Account for focus rectangle, instead should be called twice - before change
-            // of focusIndex and after
-            startY -= 2;
-            endY += 2;
-            // x is 0 since we need to account for focus rectangle,
-            // the same with width
-            return new Area(new Rectangle(0, startY, getItemWidth() + 3, endY-startY+1));
-        } else {
-            return new Area();
-        }
-    }
-
-    Rectangle getItemRect(int item) {
-        return new Rectangle(MARGIN, getItemY(item), getItemWidth(), getItemHeight());
-    }
-
-    Area getItemArea(int item) {
-        return new Area(getItemRect(item));
-    }
-
     public void repaintScrollbarRequest(XScrollbar scrollbar) {
         Graphics g = getGraphics();
         if (scrollbar == hsb)  {
@@ -411,14 +383,36 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         repaint(getFirstVisibleItem(), getLastVisibleItem(), PAINT_ALL);
     }
 
-    public void repaint(int options) {
+    private void repaint(int options) {
         repaint(getFirstVisibleItem(), getLastVisibleItem(), options);
     }
 
-    public void repaint(int firstItem, int lastItem, int options) {
+    private void repaint(int firstItem, int lastItem, int options) {
+        repaint(firstItem, lastItem, options, null, null);
+    }
+
+    /**
+     * In most cases the entire area of the component doesn't have
+     * to be repainted. The method repaints the particular areas of
+     * the component. The areas to repaint is specified by the option
+     * parameter. The possible values of the option parameter are:
+     * PAINT_VSCROLL, PAINT_HSCROLL, PAINT_ITEMS, PAINT_FOCUS,
+     * PAINT_HIDEFOCUS, PAINT_BACKGROUND, PAINT_ALL, COPY_AREA.
+     *
+     * Note that the COPY_AREA value initiates copy of a source area
+     * of the component by a distance by means of the copyArea method
+     * of the Graphics class.
+     *
+     * @param firstItem the position of the first item of the range to repaint
+     * @param lastItem the position of the last item of the range to repaint
+     * @param options specifies the particular area of the component to repaint
+     * @param source the area of the component to copy
+     * @param distance the distance to copy the source area
+     */
+    private void repaint(int firstItem, int lastItem, int options, Rectangle source, Point distance) {
         Graphics g = getGraphics();
         try {
-            painter.paint(g, firstItem, lastItem, options);
+            painter.paint(g, firstItem, lastItem, options, source, distance);
         } finally {
             g.dispose();
         }
@@ -1449,35 +1443,29 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         }
         vsb.setValue(vsb.getValue() + y);
 
+        Rectangle source = null;
+        Point distance = null;
+        int firstItem = 0, lastItem = 0;
+        int options = PAINT_HIDEFOCUS | PAINT_ITEMS | PAINT_VSCROLL | PAINT_FOCUS;
         if (y > 0) {
-            // Fixed 6308295: XAWTduplicate list item is displayed
-            // Window resizing leads to the buffer flushing
-            // That's why the repainting with the PAINT_HIDEFOCUS option is the repainting with PAINT_ALL option
-            // So we should do only the repainting instead of the copy area
-            if (y < itemsInWin && painter.isBuffer()) {
-                if (log.isLoggable(Level.FINEST)) {
-                    log.finest("Copying " + "" + MARGIN + "," + ( MARGIN + pixelsToScroll)
-                               + "," +  (width - SCROLLBAR_AREA) + "," +  (h * (itemsInWin - y)-1) +
-                               "," + 0 + "," + (-pixelsToScroll));
-                }
-                // Unpaint focus before copying
-                repaint(PAINT_HIDEFOCUS);
-                painter.copyArea(MARGIN, MARGIN + pixelsToScroll, width - SCROLLBAR_AREA, h * (itemsInWin - y - 1)-1, 0, -pixelsToScroll);
+            if (y < itemsInWin) {
+                source = new Rectangle(MARGIN, MARGIN + pixelsToScroll, width - SCROLLBAR_AREA, h * (itemsInWin - y - 1)-1);
+                distance = new Point(0, -pixelsToScroll);
+                options |= COPY_AREA;
             }
-            repaint(vsb.getValue() + (itemsInWin - y)-1, (vsb.getValue() + itemsInWin) - 1, PAINT_ITEMS | PAINT_VSCROLL | PAINT_FOCUS);
-        } else if (y < 0 && painter.isBuffer()) {
+            firstItem = vsb.getValue() + itemsInWin - y - 1;
+            lastItem = vsb.getValue() + itemsInWin - 1;
+
+        } else if (y < 0) {
             if (y + itemsInWindow() > 0) {
-                if (log.isLoggable(Level.FINEST)) {
-                    log.finest("Copying " + MARGIN + "," + MARGIN +"," +
-                               (width - SCROLLBAR_AREA) + "," +
-                               (h * (itemsInWin + y)) + "," + "0" +"," +(-pixelsToScroll));
-                }
-                repaint(PAINT_HIDEFOCUS);
-                painter.copyArea(MARGIN, MARGIN, width - SCROLLBAR_AREA, h * (itemsInWin + y), 0, -pixelsToScroll);
+                source = new Rectangle(MARGIN, MARGIN, width - SCROLLBAR_AREA, h * (itemsInWin + y));
+                distance = new Point(0, -pixelsToScroll);
+                options |= COPY_AREA;
             }
-            int e = Math.min(getLastVisibleItem(), vsb.getValue() + -y);
-            repaint(vsb.getValue(), e, PAINT_ITEMS | PAINT_VSCROLL | PAINT_FOCUS);
+            firstItem = vsb.getValue();
+            lastItem = Math.min(getLastVisibleItem(), vsb.getValue() + -y);
         }
+        repaint(firstItem, lastItem, options, source, distance);
     }
 
     /**
@@ -1491,12 +1479,17 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         int h = height - (SCROLLBAR_AREA + (2 * MARGIN));
         hsb.setValue(hsb.getValue() + x);
 
-        if (x < 0 && painter.isBuffer()) {
-            painter.copyArea(MARGIN + SPACE, MARGIN, w + x, h, -x, 0);
-        } else if (x > 0 && painter.isBuffer()) {
-            painter.copyArea(MARGIN + SPACE + x, MARGIN, w - x, h, -x, 0);
+        Rectangle source = null;
+        Point distance = null;
+        if (x < 0) {
+            source = new Rectangle(MARGIN + SPACE, MARGIN, w + x, h);
+            distance = new Point(-x, 0);
+        } else if (x > 0) {
+            source = new Rectangle(MARGIN + SPACE + x, MARGIN, w - x, h);
+            distance = new Point(-x, 0);
         }
-        repaint(vsb.getValue(), lastItemDisplayed(), PAINT_ITEMS | PAINT_HSCROLL);
+        int options = COPY_AREA | PAINT_ITEMS | PAINT_HSCROLL;
+        repaint(vsb.getValue(), lastItemDisplayed(), options, source, distance);
     }
 
     /**
@@ -1677,7 +1670,6 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
      * Since we can't guarantee the sequence, use awtLock.
      */
     class ListPainter {
-        // TODO: use VolatileImage
         VolatileImage buffer;
         Color[] colors;
 
@@ -1746,6 +1738,11 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         }
 
         private void paint(Graphics listG, int firstItem, int lastItem, int options) {
+            paint(listG, firstItem, lastItem, options, null, null);
+        }
+
+        private void paint(Graphics listG, int firstItem, int lastItem, int options,
+                           Rectangle source, Point distance) {
             if (log.isLoggable(Level.FINER)) log.finer("Repaint from " + firstItem + " to " + lastItem + " options " + options);
             if (firstItem > lastItem) {
                 int t = lastItem;
@@ -1773,17 +1770,34 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
                       invalidate();
                       options = PAINT_ALL;
                       continue;
+                  case VolatileImage.IMAGE_RESTORED:
+                      options = PAINT_ALL;
                 }
                 Graphics g = localBuffer.createGraphics();
 
+                // Note that the order of the following painting operations
+                // should not be modified
                 try {
                     g.setFont(getFont());
+
+                    // hiding the focus rectangle must be done prior to copying
+                    // area and so this is the first action to be performed
+                    if ((options & (PAINT_HIDEFOCUS)) != 0) {
+                        paintFocus(g, PAINT_HIDEFOCUS);
+                    }
+                    /*
+                     * The shift of the component contents occurs while someone
+                     * scrolls the component, the only purpose of the shift is to
+                     * increase the painting performance. The shift should be done
+                     * prior to painting any area (except hiding focus) and actually
+                     * it should never be done jointly with erase background.
+                     */
+                    if ((options & COPY_AREA) != 0) {
+                        g.copyArea(source.x, source.y, source.width, source.height,
+                            distance.x, distance.y);
+                    }
                     if ((options & PAINT_BACKGROUND) != 0) {
-                        g.setColor(SystemColor.window);
-                        g.fillRect(0, 0, width, height);
-                        g.setColor(getListBackground());
-                        g.fillRect(0, 0, listWidth, listHeight);
-                        draw3DRect(g, getSystemColors(), 0, 0, listWidth - 1, listHeight - 1, false);
+                        paintBackground(g);
                         // Since we made full erase update items
                         firstItem = getFirstVisibleItem();
                         lastItem = getLastVisibleItem();
@@ -1799,14 +1813,22 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
                         g.setClip(getHScrollBarRec());
                         paintHorScrollbar(g, true);
                     }
-                    if ((options & (PAINT_FOCUS|PAINT_HIDEFOCUS)) != 0) {
-                        paintFocus(g, options);
+                    if ((options & (PAINT_FOCUS)) != 0) {
+                        paintFocus(g, PAINT_FOCUS);
                     }
                 } finally {
                     g.dispose();
                 }
             } while (localBuffer.contentsLost());
             listG.drawImage(localBuffer, 0, 0, null);
+        }
+
+        private void paintBackground(Graphics g) {
+            g.setColor(SystemColor.window);
+            g.fillRect(0, 0, width, height);
+            g.setColor(getListBackground());
+            g.fillRect(0, 0, listWidth, listHeight);
+            draw3DRect(g, getSystemColors(), 0, 0, listWidth - 1, listHeight - 1, false);
         }
 
         private void paintItems(Graphics g, int firstItem, int lastItem, int options) {
@@ -1931,54 +1953,6 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
                 prevFocusRect = rect;
             }
             g.setClip(clip);
-        }
-
-        public void copyArea(int x, int y, int width, int height, int dx, int dy) {
-            if (log.isLoggable(Level.FINER)) log.finer("Copying area " + x + ", " + y + " " + width +
-                                                       "x" + height + ", (" + dx + "," + dy + ")");
-            VolatileImage localBuffer = null;
-            do {
-                XToolkit.awtLock();
-                try {
-                    if (createBuffer()) {
-                        // Newly created buffer should be painted over at full
-                        repaint(PAINT_ALL);
-                        return;
-                    }
-                    localBuffer = buffer;
-                } finally {
-                    XToolkit.awtUnlock();
-                }
-                switch (localBuffer.validate(getGraphicsConfiguration())) {
-                  case VolatileImage.IMAGE_INCOMPATIBLE:
-                      invalidate();
-                  case VolatileImage.IMAGE_RESTORED:
-                      // Since we've lost the content we can't just scroll - we should paint again
-                      repaint(PAINT_ALL);
-                      return;
-                }
-                Graphics g = localBuffer.createGraphics();
-                try {
-                    g.copyArea(x, y, width, height, dx, dy);
-                } finally {
-                    g.dispose();
-                }
-            } while (localBuffer.contentsLost());
-            Graphics listG = getGraphics();
-            listG.setClip(x, y, width, height);
-            listG.drawImage(localBuffer, 0, 0, null);
-            listG.dispose();
-        }
-
-        public boolean isBuffer() {
-            boolean isBuffer;
-            XToolkit.awtLock();
-            try {
-                isBuffer = (buffer != null);
-            } finally {
-                XToolkit.awtUnlock();
-            }
-            return isBuffer;
         }
     }
 }
