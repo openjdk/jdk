@@ -1,5 +1,6 @@
 /*
- * Copyright 2001-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * @(#)BinaryTreeDictionary.java
+ * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +23,37 @@
  *
  */
 
-package sun.jvm.hotspot.bugspot;
+package sun.jvm.hotspot.memory;
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.util.*;
+import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.runtime.*;
 
-import sun.jvm.hotspot.ui.*;
+public class BinaryTreeDictionary extends VMObject {
+   static {
+      VM.registerVMInitializedObserver(new Observer() {
+         public void update(Observable o, Object data) {
+            initialize(VM.getVM().getTypeDataBase());
+         }
+      });
+   }
 
-/** The main class for the BugSpot debugger. */
+   private static synchronized void initialize(TypeDataBase db) {
+      Type type = db.lookupType("BinaryTreeDictionary");
+      totalSizeField = type.getCIntegerField("_totalSize");
+   }
 
-public class Main {
-  public static void main(String[] args) {
-    JFrame frame = new JFrame("BugSpot");
-    frame.setSize(800, 600);
-    BugSpot db = new BugSpot();
-    db.setMDIMode(true);
-    db.build();
-    frame.setJMenuBar(db.getMenuBar());
-    frame.getContentPane().add(db);
-    frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+   // Fields
+   private static CIntegerField totalSizeField;
 
-    GraphicsUtilities.reshapeToAspectRatio(frame,
-                                           4.0f/3.0f, 0.85f, Toolkit.getDefaultToolkit().getScreenSize());
-    GraphicsUtilities.centerInContainer(frame,
-                                        Toolkit.getDefaultToolkit().getScreenSize());
-    frame.setVisible(true);
-  }
+   // Accessors
+   public long size() {
+      return totalSizeField.getValue(addr);
+   }
+
+   // Constructor
+   public BinaryTreeDictionary(Address addr) {
+      super(addr);
+   }
 }

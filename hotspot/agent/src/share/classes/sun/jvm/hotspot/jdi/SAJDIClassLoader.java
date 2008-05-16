@@ -78,7 +78,7 @@ class SAJDIClassLoader extends URLClassLoader {
         this(parent);
         this.classPathSet = true;
         try {
-            addURL(new File(classPath).toURL());
+            addURL(new File(classPath).toURI().toURL());
         } catch(MalformedURLException mue) {
             throw new RuntimeException(mue);
         }
