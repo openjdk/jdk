@@ -358,15 +358,28 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
              * See 6343810.
              */
             while (1) {
-                fd_set wr, ex;
+#ifndef USE_SELECT
+                {
+fprintf(stdout,"\nNATIVE: fd = %d] ", fd);
+                    struct pollfd pfd;
+                    pfd.fd = fd;
+                    pfd.events = POLLOUT;
 
-                FD_ZERO(&wr);
-                FD_SET(fd, &wr);
-                FD_ZERO(&ex);
-                FD_SET(fd, &ex);
+                    connect_rv = NET_Poll(&pfd, 1, -1);
+                }
+#else
+                {
+                    fd_set wr, ex;
 
-                errno = 0;
-                connect_rv = NET_Select(fd+1, 0, &wr, &ex, 0);
+                    FD_ZERO(&wr);
+                    FD_SET(fd, &wr);
+                    FD_ZERO(&ex);
+                    FD_SET(fd, &ex);
+
+                    connect_rv = NET_Select(fd+1, 0, &wr, &ex, 0);
+                }
+#endif
+
                 if (connect_rv == JVM_IO_ERR) {
                     if (errno == EINTR) {
                         continue;
