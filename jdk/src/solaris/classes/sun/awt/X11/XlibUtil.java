@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ public class XlibUtil
                 int status = xtc.execute(XToolkit.IgnoreBadWindowHandler);
                 if ((status != 0) &&
                     ((XToolkit.saved_error == null) ||
-                     (XToolkit.saved_error.get_error_code() == XlibWrapper.Success)))
+                     (XToolkit.saved_error.get_error_code() == XConstants.Success)))
                 {
                     translated = new Point(xtc.get_dest_x(), xtc.get_dest_y());
                 }
@@ -351,7 +351,7 @@ public class XlibUtil
             XToolkit.RESTORE_XERROR_HANDLER();
             if ((status != 0) &&
                 ((XToolkit.saved_error == null) ||
-                 (XToolkit.saved_error.get_error_code() == XlibWrapper.Success)))
+                 (XToolkit.saved_error.get_error_code() == XConstants.Success)))
             {
                 return wattr.get_map_state();
             }
@@ -362,7 +362,7 @@ public class XlibUtil
             XToolkit.awtUnlock();
         }
 
-        return XlibWrapper.IsUnmapped;
+        return XConstants.IsUnmapped;
     }
 
     /**

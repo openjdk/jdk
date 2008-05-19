@@ -1247,7 +1247,7 @@ public class Check {
                 for (Type t2 = sup;
                      t2.tag == CLASS;
                      t2 = types.supertype(t2)) {
-                    for (Scope.Entry e2 = t1.tsym.members().lookup(s1.name);
+                    for (Scope.Entry e2 = t2.tsym.members().lookup(s1.name);
                          e2.scope != null;
                          e2 = e2.next()) {
                         Symbol s2 = e2.sym;
@@ -1394,6 +1394,16 @@ public class Check {
             while (e.scope != null) {
                 if (m.overrides(e.sym, origin, types, false))
                     checkOverride(tree, m, (MethodSymbol)e.sym, origin);
+                else if (e.sym.isInheritedIn(origin, types) && !m.isConstructor()) {
+                    Type er1 = m.erasure(types);
+                    Type er2 = e.sym.erasure(types);
+                    if (types.isSameType(er1,er2)) {
+                            log.error(TreeInfo.diagnosticPositionFor(m, tree),
+                                    "name.clash.same.erasure.no.override",
+                                    m, m.location(),
+                                    e.sym, e.sym.location());
+                    }
+                }
                 e = e.next();
             }
         }

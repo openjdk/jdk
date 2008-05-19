@@ -74,6 +74,7 @@ confirmingTLSSet(   jvmtiEnv *      jvmtienv,
                                     jvmtienv,
                                     thread,
                                     newValue);
+    check_phase_ret_blob(error, error);
 
 #if JPLISASSERT_ENABLEASSERTIONS
     assertTLSValue( jvmtienv,
@@ -96,6 +97,7 @@ assertTLSValue( jvmtiEnv *      jvmtienv,
                                 jvmtienv,
                                 thread,
                                 &test);
+    check_phase_ret(error);
     jplis_assert(error == JVMTI_ERROR_NONE);
     jplis_assert(test == expected);
 }
@@ -111,6 +113,7 @@ tryToAcquireReentrancyToken(    jvmtiEnv *  jvmtienv,
                                 jvmtienv,
                                 thread,
                                 &storedValue);
+    check_phase_ret_false(error);
     jplis_assert(error == JVMTI_ERROR_NONE);
     if ( error == JVMTI_ERROR_NONE ) {
         /* if this thread is already inside, just return false and short-circuit */

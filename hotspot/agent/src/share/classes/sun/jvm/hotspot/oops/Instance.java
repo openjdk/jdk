@@ -40,13 +40,24 @@ public class Instance extends Oop {
         }
       });
   }
+  private static long typeSize;
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type = db.lookupType("instanceOopDesc");
+    typeSize = type.getSize();
   }
 
   Instance(OopHandle handle, ObjectHeap heap) {
     super(handle, heap);
+  }
+
+  // Returns header size in bytes.
+  public static long getHeaderSize() {
+    if (VM.getVM().isCompressedOopsEnabled()) {
+      return typeSize - VM.getVM().getIntSize();
+    } else {
+      return typeSize;
+    }
   }
 
   public boolean isInstance()          { return true; }

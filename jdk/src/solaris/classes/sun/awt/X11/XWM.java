@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
  * Class incapsulating knowledge about window managers in general
  * Descendants should provide some information about specific window manager.
  */
-final class XWM implements MWMConstants, XUtilConstants
+final class XWM
 {
 
     private final static Logger log = Logger.getLogger("sun.awt.X11.XWM");
@@ -274,12 +274,12 @@ final class XWM implements MWMConstants, XUtilConstants
             }
 
             winmgr_running = false;
-            substruct.set_event_mask(XlibWrapper.SubstructureRedirectMask);
+            substruct.set_event_mask(XConstants.SubstructureRedirectMask);
 
             XToolkit.WITH_XERROR_HANDLER(DetectWMHandler);
             XlibWrapper.XChangeWindowAttributes(XToolkit.getDisplay(),
                                                 XToolkit.getDefaultRootWindow(),
-                                                XlibWrapper.CWEventMask,
+                                                XConstants.CWEventMask,
                                                 substruct.pData);
             XToolkit.RESTORE_XERROR_HANDLER();
 
@@ -291,7 +291,7 @@ final class XWM implements MWMConstants, XUtilConstants
                 substruct.set_event_mask(0);
                 XlibWrapper.XChangeWindowAttributes(XToolkit.getDisplay(),
                                                     XToolkit.getDefaultRootWindow(),
-                                                    XlibWrapper.CWEventMask,
+                                                    XConstants.CWEventMask,
                                                     substruct.pData);
                 if (insLog.isLoggable(Level.FINE)) {
                     insLog.finer("It looks like there is no WM thus NO_WM");
@@ -322,7 +322,7 @@ final class XWM implements MWMConstants, XUtilConstants
                                      XAtom.XA_STRING);
         try {
             int status = getter.execute(XToolkit.IgnoreBadWindowHandler);
-            if (status != XlibWrapper.Success || getter.getData() == 0) {
+            if (status != XConstants.Success || getter.getData() == 0) {
                 return 0;
             }
 
@@ -411,7 +411,7 @@ final class XWM implements MWMConstants, XUtilConstants
                                      false, XA_DT_SM_WINDOW_INFO);
         try {
             int status = getter.execute();
-            if (status != XlibWrapper.Success || getter.getData() == 0) {
+            if (status != XConstants.Success || getter.getData() == 0) {
                 log.finer("Getting of _DT_SM_WINDOW_INFO is not successfull");
                 return false;
             }
@@ -442,7 +442,7 @@ final class XWM implements MWMConstants, XUtilConstants
                 status = getter2.execute(XToolkit.IgnoreBadWindowHandler);
 
 
-                if (status != XlibWrapper.Success || getter2.getData() == 0) {
+                if (status != XConstants.Success || getter2.getData() == 0) {
                     log.finer("Getting of _DT_SM_STATE_INFO is not successfull");
                     return false;
                 }
@@ -480,18 +480,18 @@ final class XWM implements MWMConstants, XUtilConstants
         WindowPropertyGetter getter =
             new WindowPropertyGetter(XToolkit.getDefaultRootWindow(),
                                      XA_MOTIF_WM_INFO, 0,
-                                     PROP_MOTIF_WM_INFO_ELEMENTS,
+                                     MWMConstants.PROP_MOTIF_WM_INFO_ELEMENTS,
                                      false, XA_MOTIF_WM_INFO);
         try {
             int status = getter.execute();
 
-            if (status != XlibWrapper.Success || getter.getData() == 0) {
+            if (status != XConstants.Success || getter.getData() == 0) {
                 return false;
             }
 
             if (getter.getActualType() != XA_MOTIF_WM_INFO.getAtom()
                 || getter.getActualFormat() != 32
-                || getter.getNumberOfItems() != PROP_MOTIF_WM_INFO_ELEMENTS
+                || getter.getNumberOfItems() != MWMConstants.PROP_MOTIF_WM_INFO_ELEMENTS
                 || getter.getBytesAfter() != 0)
             {
                 return false;
@@ -516,7 +516,7 @@ final class XWM implements MWMConstants, XUtilConstants
                                                  0, 1, false,
                                                  XA_WM_STATE);
                     try {
-                        if (state_getter.execute() == XlibWrapper.Success &&
+                        if (state_getter.execute() == XConstants.Success &&
                             state_getter.getData() != 0 &&
                             state_getter.getActualType() == XA_WM_STATE.getAtom())
                         {
@@ -577,7 +577,7 @@ final class XWM implements MWMConstants, XUtilConstants
     static XToolkit.XErrorHandler VerifyChangePropertyHandler = new XToolkit.XErrorHandler() {
             public int handleError(long display, XErrorEvent err) {
                 XToolkit.XERROR_SAVE(err);
-                if (err.get_request_code() == XlibWrapper.X_ChangeProperty) {
+                if (err.get_request_code() == XProtocolConstants.X_ChangeProperty) {
                     return 0;
                 } else {
                     return XToolkit.SAVED_ERROR_HANDLER(display, err);
@@ -621,11 +621,11 @@ final class XWM implements MWMConstants, XUtilConstants
             XlibWrapper.XChangePropertyS(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(),
                                          XA_ICEWM_WINOPTHINT.getAtom(),
                                          XA_ICEWM_WINOPTHINT.getAtom(),
-                                         8, XlibWrapper.PropModeReplace,
+                                         8, XConstants.PropModeReplace,
                                          new String(opt));
             XToolkit.RESTORE_XERROR_HANDLER();
 
-            if (XToolkit.saved_error != null && XToolkit.saved_error.get_error_code() != XlibWrapper.Success) {
+            if (XToolkit.saved_error != null && XToolkit.saved_error.get_error_code() != XConstants.Success) {
                 log.finer("Erorr getting XA_ICEWM_WINOPTHINT property");
                 return false;
             }
@@ -654,7 +654,7 @@ final class XWM implements MWMConstants, XUtilConstants
                                      true, XA_ICEWM_WINOPTHINT);
         try {
             int status = getter.execute();
-            boolean res = (status == XlibWrapper.Success && getter.getActualType() != 0);
+            boolean res = (status == XConstants.Success && getter.getActualType() != 0);
             log.finer("Status getting XA_ICEWM_WINOPTHINT: " + !res);
             return !res || isNetWMName("IceWM");
         } finally {
@@ -686,8 +686,8 @@ final class XWM implements MWMConstants, XUtilConstants
     static XToolkit.XErrorHandler DetectWMHandler = new XToolkit.XErrorHandler() {
             public int handleError(long display, XErrorEvent err) {
                 XToolkit.XERROR_SAVE(err);
-                if (err.get_request_code() == XlibWrapper.X_ChangeWindowAttributes
-                    && err.get_error_code() == XlibWrapper.BadAccess)
+                if (err.get_request_code() == XProtocolConstants.X_ChangeWindowAttributes
+                    && err.get_error_code() == XConstants.BadAccess)
                 {
                     winmgr_running = true;
                     return 0;
@@ -804,7 +804,7 @@ final class XWM implements MWMConstants, XUtilConstants
      * XXX: Why do we need this in the first place???
      */
     static void removeSizeHints(XDecoratedPeer window, long mask) {
-        mask &= PMaxSize | PMinSize;
+        mask &= XUtilConstants.PMaxSize | XUtilConstants.PMinSize;
 
         XToolkit.awtLock();
         try {
@@ -830,13 +830,13 @@ final class XWM implements MWMConstants, XUtilConstants
      * rest of the code.
      */
     static int normalizeMotifDecor(int decorations) {
-        if ((decorations & MWM_DECOR_ALL) == 0) {
+        if ((decorations & MWMConstants.MWM_DECOR_ALL) == 0) {
             return decorations;
         }
-        int d = MWM_DECOR_BORDER | MWM_DECOR_RESIZEH
-            | MWM_DECOR_TITLE
-            | MWM_DECOR_MENU | MWM_DECOR_MINIMIZE
-            | MWM_DECOR_MAXIMIZE;
+        int d = MWMConstants.MWM_DECOR_BORDER | MWMConstants.MWM_DECOR_RESIZEH
+            | MWMConstants.MWM_DECOR_TITLE
+            | MWMConstants.MWM_DECOR_MENU | MWMConstants.MWM_DECOR_MINIMIZE
+            | MWMConstants.MWM_DECOR_MAXIMIZE;
         d &= ~decorations;
         return d;
     }
@@ -848,14 +848,14 @@ final class XWM implements MWMConstants, XUtilConstants
      * rest of the code.
      */
     static int normalizeMotifFunc(int functions) {
-        if ((functions & MWM_FUNC_ALL) == 0) {
+        if ((functions & MWMConstants.MWM_FUNC_ALL) == 0) {
             return functions;
         }
-        int f = MWM_FUNC_RESIZE |
-                MWM_FUNC_MOVE |
-                MWM_FUNC_MAXIMIZE |
-                MWM_FUNC_MINIMIZE |
-                MWM_FUNC_CLOSE;
+        int f = MWMConstants.MWM_FUNC_RESIZE |
+                MWMConstants.MWM_FUNC_MOVE |
+                MWMConstants.MWM_FUNC_MAXIMIZE |
+                MWMConstants.MWM_FUNC_MINIMIZE |
+                MWMConstants.MWM_FUNC_CLOSE;
         f &= ~functions;
         return f;
     }
@@ -872,15 +872,15 @@ final class XWM implements MWMConstants, XUtilConstants
         XAtomList decorDel = new XAtomList();
         decorations = normalizeMotifDecor(decorations);
         if (insLog.isLoggable(Level.FINER)) insLog.finer("Setting OL_DECOR to " + Integer.toBinaryString(decorations));
-        if ((decorations & MWM_DECOR_TITLE) == 0) {
+        if ((decorations & MWMConstants.MWM_DECOR_TITLE) == 0) {
             decorDel.add(XA_OL_DECOR_HEADER);
         }
-        if ((decorations & (MWM_DECOR_RESIZEH | MWM_DECOR_MAXIMIZE)) == 0) {
+        if ((decorations & (MWMConstants.MWM_DECOR_RESIZEH | MWMConstants.MWM_DECOR_MAXIMIZE)) == 0) {
             decorDel.add(XA_OL_DECOR_RESIZE);
         }
-        if ((decorations & (MWM_DECOR_MENU |
-                            MWM_DECOR_MAXIMIZE |
-                            MWM_DECOR_MINIMIZE)) == 0)
+        if ((decorations & (MWMConstants.MWM_DECOR_MENU |
+                            MWMConstants.MWM_DECOR_MAXIMIZE |
+                            MWMConstants.MWM_DECOR_MINIMIZE)) == 0)
         {
             decorDel.add(XA_OL_DECOR_CLOSE);
         }
@@ -898,19 +898,21 @@ final class XWM implements MWMConstants, XUtilConstants
      */
     static void setMotifDecor(XWindowPeer window, boolean resizable, int decorations, int functions) {
         /* Apparently some WMs don't implement MWM_*_ALL semantic correctly */
-        if ((decorations & MWM_DECOR_ALL) != 0
-            && (decorations != MWM_DECOR_ALL))
+        if ((decorations & MWMConstants.MWM_DECOR_ALL) != 0
+            && (decorations != MWMConstants.MWM_DECOR_ALL))
         {
             decorations = normalizeMotifDecor(decorations);
         }
-        if ((functions & MWM_FUNC_ALL) != 0
-            && (functions != MWM_FUNC_ALL))
+        if ((functions & MWMConstants.MWM_FUNC_ALL) != 0
+            && (functions != MWMConstants.MWM_FUNC_ALL))
         {
             functions = normalizeMotifFunc(functions);
         }
 
         PropMwmHints hints = window.getMWMHints();
-        hints.set_flags(hints.get_flags() | MWM_HINTS_FUNCTIONS | MWM_HINTS_DECORATIONS);
+        hints.set_flags(hints.get_flags() |
+                        MWMConstants.MWM_HINTS_FUNCTIONS |
+                        MWMConstants.MWM_HINTS_DECORATIONS);
         hints.set_functions(functions);
         hints.set_decorations(decorations);
 
@@ -950,10 +952,10 @@ final class XWM implements MWMConstants, XUtilConstants
         boolean resizable = window.isResizable();
 
         if (!resizable) {
-            if ((decorations & MWM_DECOR_ALL) != 0) {
-                decorations |= MWM_DECOR_RESIZEH | MWM_DECOR_MAXIMIZE;
+            if ((decorations & MWMConstants.MWM_DECOR_ALL) != 0) {
+                decorations |= MWMConstants.MWM_DECOR_RESIZEH | MWMConstants.MWM_DECOR_MAXIMIZE;
             } else {
-                decorations &= ~(MWM_DECOR_RESIZEH | MWM_DECOR_MAXIMIZE);
+                decorations &= ~(MWMConstants.MWM_DECOR_RESIZEH | MWMConstants.MWM_DECOR_MAXIMIZE);
             }
         }
         setMotifDecor(window, resizable, decorations, functions);
@@ -988,7 +990,7 @@ final class XWM implements MWMConstants, XUtilConstants
             /* REMINDER: will need to revisit when setExtendedStateBounds is added */
             //Fix for 4320050: Minimum size for java.awt.Frame is not being enforced.
             //We need to update frame's minimum size, not to reset it
-            removeSizeHints(window, PMaxSize);
+            removeSizeHints(window, XUtilConstants.PMaxSize);
             window.updateMinimumSize();
 
             /* Restore decorations */
@@ -1134,7 +1136,7 @@ final class XWM implements MWMConstants, XUtilConstants
         }
 
         int wm_state = window.getWMState();
-        if (wm_state == XlibWrapper.WithdrawnState) {
+        if (wm_state == XUtilConstants.WithdrawnState) {
             stateLog.finer("WithdrawnState");
             return false;
         } else {
@@ -1158,7 +1160,7 @@ final class XWM implements MWMConstants, XUtilConstants
     int getState(XDecoratedPeer window) {
         int res = 0;
         final int wm_state = window.getWMState();
-        if (wm_state == XlibWrapper.IconicState) {
+        if (wm_state == XUtilConstants.IconicState) {
             res = Frame.ICONIFIED;
         } else {
             res = Frame.NORMAL;
@@ -1397,7 +1399,7 @@ final class XWM implements MWMConstants, XUtilConstants
             new WindowPropertyGetter(window, atom,
                                      0, 4, false, XAtom.XA_CARDINAL);
         try {
-            if (getter.execute() != XlibWrapper.Success
+            if (getter.execute() != XConstants.Success
                 || getter.getData() == 0
                 || getter.getActualType() != XAtom.XA_CARDINAL
                 || getter.getActualFormat() != 32)
@@ -1426,7 +1428,7 @@ final class XWM implements MWMConstants, XUtilConstants
 
         XClientMessageEvent msg = new XClientMessageEvent();
         msg.zero();
-        msg.set_type(XlibWrapper.ClientMessage);
+        msg.set_type(XConstants.ClientMessage);
         msg.set_display(XToolkit.getDisplay());
         msg.set_window(window);
         msg.set_format(32);
@@ -1436,13 +1438,15 @@ final class XWM implements MWMConstants, XUtilConstants
             if (net_protocol != null && net_protocol.active()) {
                 msg.set_message_type(XA_NET_REQUEST_FRAME_EXTENTS.getAtom());
                 XlibWrapper.XSendEvent(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(),
-                                       false, XlibWrapper.SubstructureRedirectMask | XlibWrapper.SubstructureNotifyMask,
+                                       false,
+                                       XConstants.SubstructureRedirectMask | XConstants.SubstructureNotifyMask,
                                        msg.getPData());
             }
             if (getWMID() == XWM.KDE2_WM) {
                 msg.set_message_type(XA_KDE_NET_WM_FRAME_STRUT.getAtom());
                 XlibWrapper.XSendEvent(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(),
-                                       false, XlibWrapper.SubstructureRedirectMask | XlibWrapper.SubstructureNotifyMask,
+                                       false,
+                                       XConstants.SubstructureRedirectMask | XConstants.SubstructureNotifyMask,
                                        msg.getPData());
             }
             // XXX: should we wait for response? XIfEvent() would be useful here :)

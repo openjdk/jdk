@@ -37,18 +37,19 @@ constantPoolCacheOop constantPoolCacheKlass::allocate(int length, TRAPS) {
   int size = constantPoolCacheOopDesc::object_size(length);
   KlassHandle klass (THREAD, as_klassOop());
   constantPoolCacheOop cache = (constantPoolCacheOop)
-    CollectedHeap::permanent_array_allocate(klass, size, length, CHECK_NULL);
+    CollectedHeap::permanent_obj_allocate(klass, size, CHECK_NULL);
+  cache->set_length(length);
   cache->set_constant_pool(NULL);
   return cache;
 }
 
-
 klassOop constantPoolCacheKlass::create_klass(TRAPS) {
   constantPoolCacheKlass o;
-  KlassHandle klassklass(THREAD, Universe::arrayKlassKlassObj());
-  arrayKlassHandle k = base_create_array_klass(o.vtbl_value(), header_size(), klassklass, CHECK_NULL);
-  KlassHandle super (THREAD, k->super());
-  complete_create_array_klass(k, super, CHECK_NULL);
+  KlassHandle h_this_klass(THREAD, Universe::klassKlassObj());
+  KlassHandle k = base_create_klass(h_this_klass, header_size(), o.vtbl_value(), CHECK_NULL);
+  // Make sure size calculation is right
+  assert(k()->size() == align_object_size(header_size()), "wrong size for object");
+  java_lang_Class::create_mirror(k, CHECK_NULL); // Allocate mirror
   return k();
 }
 
@@ -183,7 +184,7 @@ void constantPoolCacheKlass::oop_print_on(oop obj, outputStream* st) {
   assert(obj->is_constantPoolCache(), "obj must be constant pool cache");
   constantPoolCacheOop cache = (constantPoolCacheOop)obj;
   // super print
-  arrayKlass::oop_print_on(obj, st);
+  Klass::oop_print_on(obj, st);
   // print constant pool cache entries
   for (int i = 0; i < cache->length(); i++) cache->entry_at(i)->print(st, i);
 }
@@ -194,7 +195,7 @@ void constantPoolCacheKlass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->is_constantPoolCache(), "obj must be constant pool cache");
   constantPoolCacheOop cache = (constantPoolCacheOop)obj;
   // super verify
-  arrayKlass::oop_verify_on(obj, st);
+  Klass::oop_verify_on(obj, st);
   // print constant pool cache entries
   for (int i = 0; i < cache->length(); i++) cache->entry_at(i)->verify(st);
 }

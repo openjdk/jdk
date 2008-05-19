@@ -22,7 +22,8 @@
  *
  */
 
-class constantPoolCacheKlass: public arrayKlass {
+class constantPoolCacheKlass: public Klass {
+  juint    _alloc_size;        // allocation profiling support
  public:
   // Dispatched klass operations
   bool oop_is_constantPoolCache() const          { return true; }
@@ -41,8 +42,8 @@ class constantPoolCacheKlass: public arrayKlass {
   }
 
   // Sizing
-  static int header_size()                       { return oopDesc::header_size() + sizeof(constantPoolCacheKlass)/HeapWordSize; }
-  int object_size() const                        { return arrayKlass::object_size(header_size()); }
+  static int header_size()       { return oopDesc::header_size() + sizeof(constantPoolCacheKlass)/HeapWordSize; }
+  int object_size() const        { return align_object_size(header_size()); }
 
   // Garbage collection
   void oop_follow_contents(oop obj);
@@ -54,6 +55,10 @@ class constantPoolCacheKlass: public arrayKlass {
   // Iterators
   int oop_oop_iterate(oop obj, OopClosure* blk);
   int oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr);
+
+  // Allocation profiling support
+  juint alloc_size() const              { return _alloc_size; }
+  void set_alloc_size(juint n)          { _alloc_size = n; }
 
 #ifndef PRODUCT
  public:

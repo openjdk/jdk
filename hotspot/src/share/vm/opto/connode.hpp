@@ -78,6 +78,20 @@ public:
 };
 
 
+//------------------------------ConNNode--------------------------------------
+// Simple narrow oop constants
+class ConNNode : public ConNode {
+public:
+  ConNNode( const TypeNarrowOop *t ) : ConNode(t) {}
+  virtual int Opcode() const;
+
+  static ConNNode* make( Compile *C, ciObject* con ) {
+    return new (C, 1) ConNNode( TypeNarrowOop::make_from_constant(con) );
+  }
+
+};
+
+
 //------------------------------ConLNode---------------------------------------
 // Simple long constants
 class ConLNode : public ConNode {
@@ -225,10 +239,7 @@ public:
 // cast pointer to pointer (different type)
 class CastPPNode: public ConstraintCastNode {
 public:
-  CastPPNode (Node *n, const Type *t ): ConstraintCastNode(n, t) {
-    // Only CastPP is safe.  CastII can cause optimizer loops.
-    init_flags(Flag_is_dead_loop_safe);
-  }
+  CastPPNode (Node *n, const Type *t ): ConstraintCastNode(n, t) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
   virtual Node *Ideal_DU_postCCP( PhaseCCP * );
@@ -240,10 +251,10 @@ class CheckCastPPNode: public TypeNode {
 public:
   CheckCastPPNode( Node *c, Node *n, const Type *t ) : TypeNode(t,2) {
     init_class_id(Class_CheckCastPP);
-    init_flags(Flag_is_dead_loop_safe);
     init_req(0, c);
     init_req(1, n);
   }
+
   virtual Node *Identity( PhaseTransform *phase );
   virtual const Type *Value( PhaseTransform *phase ) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
@@ -252,6 +263,45 @@ public:
   // No longer remove CheckCast after CCP as it gives me a place to hang
   // the proper address type - which is required to compute anti-deps.
   //virtual Node *Ideal_DU_postCCP( PhaseCCP * );
+};
+
+
+//------------------------------EncodeP--------------------------------
+// Encodes an oop pointers into its compressed form
+// Takes an extra argument which is the real heap base as a long which
+// may be useful for code generation in the backend.
+class EncodePNode : public TypeNode {
+ public:
+  EncodePNode(Node* value, const Type* type):
+    TypeNode(type, 2) {
+    init_req(0, NULL);
+    init_req(1, value);
+  }
+  virtual int Opcode() const;
+  virtual Node *Identity( PhaseTransform *phase );
+  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual uint  ideal_reg() const { return Op_RegN; }
+
+  static Node* encode(PhaseGVN* phase, Node* value);
+};
+
+//------------------------------DecodeN--------------------------------
+// Converts a narrow oop into a real oop ptr.
+// Takes an extra argument which is the real heap base as a long which
+// may be useful for code generation in the backend.
+class DecodeNNode : public TypeNode {
+ public:
+  DecodeNNode(Node* value, const Type* type):
+    TypeNode(type, 2) {
+    init_req(0, NULL);
+    init_req(1, value);
+  }
+  virtual int Opcode() const;
+  virtual Node *Identity( PhaseTransform *phase );
+  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual uint  ideal_reg() const { return Op_RegP; }
+
+  static Node* decode(PhaseGVN* phase, Node* value);
 };
 
 //------------------------------Conv2BNode-------------------------------------

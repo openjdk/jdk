@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,12 @@ import javax.swing.colorchooser.*;
 import javax.swing.event.*;
 import javax.swing.border.*;
 import javax.swing.plaf.*;
-import java.util.*;
 import java.awt.*;
-import java.awt.image.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.Serializable;
 
 import sun.swing.DefaultLookup;
-import sun.swing.UIAction;
 
 /**
  * Provides the basic look and feel for a JColorChooser.
@@ -212,9 +208,24 @@ public class BasicColorChooserUI extends ColorChooserUI
     protected void uninstallListeners() {
         chooser.removePropertyChangeListener( propertyChangeListener );
         chooser.getSelectionModel().removeChangeListener(previewListener);
+        previewListener = null;
         previewPanel.removeMouseListener(getHandler());
     }
 
+    private void selectionChanged(ColorSelectionModel model) {
+        if (this.previewPanel != null) {
+            this.previewPanel.setForeground(model.getSelectedColor());
+            this.previewPanel.repaint();
+        }
+        AbstractColorChooserPanel[] panels = this.chooser.getChooserPanels();
+        if (panels != null) {
+            for (AbstractColorChooserPanel panel : panels) {
+                if (panel != null) {
+                    panel.updateChooser();
+                }
+            }
+        }
+    }
 
     private class Handler implements ChangeListener, MouseListener,
             PropertyChangeListener {
@@ -222,11 +233,7 @@ public class BasicColorChooserUI extends ColorChooserUI
         // ChangeListener
         //
         public void stateChanged(ChangeEvent evt) {
-            ColorSelectionModel model = (ColorSelectionModel)evt.getSource();
-            if (previewPanel != null) {
-                previewPanel.setForeground(model.getSelectedColor());
-                previewPanel.repaint();
-            }
+            selectionChanged((ColorSelectionModel) evt.getSource());
         }
 
         //
@@ -302,13 +309,19 @@ public class BasicColorChooserUI extends ColorChooserUI
                     newPanels[i].installChooserPanel(chooser);
                 }
             }
-
-            if (prop == JColorChooser.PREVIEW_PANEL_PROPERTY) {
+            else if (prop == JColorChooser.PREVIEW_PANEL_PROPERTY) {
                 if (evt.getNewValue() != previewPanel) {
                     installPreviewPanel();
                 }
             }
-            if (prop == "componentOrientation") {
+            else if (prop == JColorChooser.SELECTION_MODEL_PROPERTY) {
+                ColorSelectionModel oldModel = (ColorSelectionModel) evt.getOldValue();
+                oldModel.removeChangeListener(previewListener);
+                ColorSelectionModel newModel = (ColorSelectionModel) evt.getNewValue();
+                newModel.addChangeListener(previewListener);
+                selectionChanged(newModel);
+            }
+            else if (prop == "componentOrientation") {
                 ComponentOrientation o =
                     (ComponentOrientation)evt.getNewValue();
                 JColorChooser cc = (JColorChooser)evt.getSource();

@@ -2140,7 +2140,7 @@ public final class FontManager {
 
     private static void addLCIDMapEntry(Map<String, Short> map,
                                         String key, short value) {
-        map.put(key, new Short(value));
+        map.put(key, Short.valueOf(value));
     }
 
     private static synchronized void createLCIDMap() {

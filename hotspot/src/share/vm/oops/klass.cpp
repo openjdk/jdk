@@ -182,7 +182,7 @@ jint Klass::array_layout_helper(BasicType etype) {
   assert(etype >= T_BOOLEAN && etype <= T_OBJECT, "valid etype");
   // Note that T_ARRAY is not allowed here.
   int  hsize = arrayOopDesc::base_offset_in_bytes(etype);
-  int  esize = type2aelembytes[etype];
+  int  esize = type2aelembytes(etype);
   bool isobj = (etype == T_OBJECT);
   int  tag   =  isobj ? _lh_array_tag_obj_value : _lh_array_tag_type_value;
   int lh = array_layout_helper(tag, hsize, etype, exact_log2(esize));
@@ -542,11 +542,10 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
 
 void Klass::oop_verify_old_oop(oop obj, oop* p, bool allow_dirty) {
   /* $$$ I think this functionality should be handled by verification of
-
   RememberedSet::verify_old_oop(obj, p, allow_dirty, false);
-
   the card table. */
 }
+void Klass::oop_verify_old_oop(oop obj, narrowOop* p, bool allow_dirty) { }
 
 #ifndef PRODUCT
 

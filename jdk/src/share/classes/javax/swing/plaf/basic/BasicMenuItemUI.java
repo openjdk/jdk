@@ -146,7 +146,7 @@ public class BasicMenuItemUI extends MenuItemUI
             menuItem.setMargin(UIManager.getInsets(prefix + ".margin"));
         }
 
-        LookAndFeel.installProperty(menuItem, "iconTextGap", new Integer(4));
+        LookAndFeel.installProperty(menuItem, "iconTextGap", Integer.valueOf(4));
         defaultTextIconGap = menuItem.getIconTextGap();
 
         LookAndFeel.installBorder(menuItem, prefix + ".border");

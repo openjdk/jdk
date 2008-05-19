@@ -35,13 +35,6 @@ public interface MachineDescription extends Serializable {
       able to traverse arrays of pointers or oops. */
   public long getAddressSize();
 
-  /** Returns the size of an address in bytes. Currently needed to be
-      able to traverse arrays of pointers or oops. (FIXME: since we're
-      already reading the Java primitive types' sizes from the remote
-      VM, it would be nice to remove this routine, using a similar
-      mechanism to how the TypeDataBase deals with primitive types.) */
-  public long getOopSize();
-
   /** Returns the maximum value of the C integer type with the given
       size in bytes and signedness. Throws IllegalArgumentException if
       the size in bytes is not legal for a C type (or can not be

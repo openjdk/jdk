@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2001-2003 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -60,80 +60,80 @@ public class RuntimeThreadInheritanceLeak implements Remote {
 
     public static void main(String[] args) {
 
-	System.err.println("\nRegression test for bug 4404702\n");
+        System.err.println("\nRegression test for bug 4404702\n");
 
-	/*
-	 * HACK: Work around the fact that java.util.logging.LogManager's
-	 * (singleton) construction also has this bug-- it will register a
-	 * "shutdown hook", i.e. a thread, which will inherit and pin the
-	 * current thread's context class loader for the lifetime of the VM--
-	 * by causing the LogManager to be initialized now, instead of by
-	 * RMI when our special context class loader is set.
-	 */
-	java.util.logging.LogManager.getLogManager();
+        /*
+         * HACK: Work around the fact that java.util.logging.LogManager's
+         * (singleton) construction also has this bug-- it will register a
+         * "shutdown hook", i.e. a thread, which will inherit and pin the
+         * current thread's context class loader for the lifetime of the VM--
+         * by causing the LogManager to be initialized now, instead of by
+         * RMI when our special context class loader is set.
+         */
+        java.util.logging.LogManager.getLogManager();
 
-	/*
-	 * HACK: Work around the fact that the non-native, thread-based
-	 * SecureRandom seed generator (ThreadedSeedGenerator) seems to
-	 * have this bug too (which had been causing this test to fail
-	 * when run with jtreg on Windows XP-- see 4910382).
-	 */
-	(new java.security.SecureRandom()).nextInt();
+        /*
+         * HACK: Work around the fact that the non-native, thread-based
+         * SecureRandom seed generator (ThreadedSeedGenerator) seems to
+         * have this bug too (which had been causing this test to fail
+         * when run with jtreg on Windows XP-- see 4910382).
+         */
+        (new java.security.SecureRandom()).nextInt();
 
-	RuntimeThreadInheritanceLeak obj = new RuntimeThreadInheritanceLeak();
+        RuntimeThreadInheritanceLeak obj = new RuntimeThreadInheritanceLeak();
 
-	try {
-	    ClassLoader loader = URLClassLoader.newInstance(new URL[0]);
-	    ReferenceQueue refQueue = new ReferenceQueue();
-	    Reference loaderRef = new WeakReference(loader, refQueue);
-	    System.err.println("created loader: " + loader);
+        try {
+            ClassLoader loader = URLClassLoader.newInstance(new URL[0]);
+            ReferenceQueue refQueue = new ReferenceQueue();
+            Reference loaderRef = new WeakReference(loader, refQueue);
+            System.err.println("created loader: " + loader);
 
-	    Thread.currentThread().setContextClassLoader(loader);
-	    UnicastRemoteObject.exportObject(obj);
-	    Thread.currentThread().setContextClassLoader(
-		ClassLoader.getSystemClassLoader());
-	    System.err.println(
-		"exported remote object with loader as context class loader");
+            Thread.currentThread().setContextClassLoader(loader);
+            UnicastRemoteObject.exportObject(obj);
+            Thread.currentThread().setContextClassLoader(
+                ClassLoader.getSystemClassLoader());
+            System.err.println(
+                "exported remote object with loader as context class loader");
 
-	    loader = null;
-	    System.err.println("nulled strong reference to loader");
+            loader = null;
+            System.err.println("nulled strong reference to loader");
 
-	    UnicastRemoteObject.unexportObject(obj, true);
-	    System.err.println("unexported remote object");
+            UnicastRemoteObject.unexportObject(obj, true);
+            System.err.println("unexported remote object");
 
-	    /*
-	     * HACK: Work around the fact that the sun.misc.GC daemon thread
-	     * also has this bug-- it will have inherited our loader as its
-	     * context class loader-- by giving it a chance to pass away.
-	     */
-	    Thread.sleep(2000);
-	    System.gc();
+            /*
+             * HACK: Work around the fact that the sun.misc.GC daemon thread
+             * also has this bug-- it will have inherited our loader as its
+             * context class loader-- by giving it a chance to pass away.
+             */
+            Thread.sleep(2000);
+            System.gc();
 
-	    System.err.println(
-		"waiting to be notified of loader being weakly reachable...");
-	    Reference dequeued = refQueue.remove(TIMEOUT);
-	    if (dequeued == null) {
-		System.err.println(
-		    "TEST FAILED: loader not deteced weakly reachable");
-		dumpThreads();
-		throw new RuntimeException(
-		    "TEST FAILED: loader not detected weakly reachable");
-	    }
+            System.err.println(
+                "waiting to be notified of loader being weakly reachable...");
+            Reference dequeued = refQueue.remove(TIMEOUT);
+            if (dequeued == null) {
+                System.err.println(
+                    "TEST FAILED: loader not deteced weakly reachable");
+                dumpThreads();
+                throw new RuntimeException(
+                    "TEST FAILED: loader not detected weakly reachable");
+            }
 
-	    System.err.println(
-		"TEST PASSED: loader detected weakly reachable");
-	    dumpThreads();
+            System.err.println(
+                "TEST PASSED: loader detected weakly reachable");
+            dumpThreads();
 
-	} catch (RuntimeException e) {
-	    throw e;
-	} catch (Exception e) {
-	    throw new RuntimeException("TEST FAILED: unexpected exception", e);
-	} finally {
-	    try {
-		UnicastRemoteObject.unexportObject(obj, true);
-	    } catch (RemoteException e) {
-	    }
-	}
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("TEST FAILED: unexpected exception", e);
+        } finally {
+            try {
+                UnicastRemoteObject.unexportObject(obj, true);
+            } catch (RemoteException e) {
+            }
+        }
     }
 
     /**
@@ -141,19 +141,19 @@ public class RuntimeThreadInheritanceLeak implements Remote {
      * including their context class loaders.
      **/
     private static void dumpThreads() {
-	System.err.println(
-	    "current live threads and their context class loaders:");
-	Map threads = Thread.getAllStackTraces();
-	for (Iterator iter = threads.entrySet().iterator(); iter.hasNext();) {
-	    Map.Entry e = (Map.Entry) iter.next();
-	    Thread t = (Thread) e.getKey();
-	    System.err.println("  thread: " + t);
-	    System.err.println("  context class loader: " +
-			       t.getContextClassLoader());	    
-	    StackTraceElement[] trace = (StackTraceElement[]) e.getValue();
-	    for (int i = 0; i < trace.length; i++) {
-		System.err.println("    " + trace[i]);
-	    }
-	}
+        System.err.println(
+            "current live threads and their context class loaders:");
+        Map threads = Thread.getAllStackTraces();
+        for (Iterator iter = threads.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry e = (Map.Entry) iter.next();
+            Thread t = (Thread) e.getKey();
+            System.err.println("  thread: " + t);
+            System.err.println("  context class loader: " +
+                               t.getContextClassLoader());
+            StackTraceElement[] trace = (StackTraceElement[]) e.getValue();
+            for (int i = 0; i < trace.length; i++) {
+                System.err.println("    " + trace[i]);
+            }
+        }
     }
 }

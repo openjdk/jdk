@@ -35,17 +35,19 @@ class ciInstanceKlass : public ciKlass {
   friend class ciBytecodeStream;
 
 private:
-  bool                   _is_shared;
-
   jobject                _loader;
   jobject                _protection_domain;
 
+  bool                   _is_shared;
   bool                   _is_initialized;
   bool                   _is_linked;
   bool                   _has_finalizer;
   bool                   _has_subklass;
+  bool                   _has_nonstatic_fields;
+
   ciFlags                _flags;
   jint                   _nonstatic_field_size;
+  jint                   _nonstatic_oop_map_size;
 
   // Lazy fields get filled in only upon request.
   ciInstanceKlass*       _super;
@@ -57,6 +59,8 @@ private:
   enum { implementors_limit = instanceKlass::implementors_limit };
   ciInstanceKlass*       _implementors[implementors_limit];
   jint                   _nof_implementors;
+
+  GrowableArray<ciField*>* _non_static_fields;
 
 protected:
   ciInstanceKlass(KlassHandle h_k);
@@ -129,6 +133,12 @@ public:
   jint                   nonstatic_field_size()  {
     assert(is_loaded(), "must be loaded");
     return _nonstatic_field_size; }
+  jint                   has_nonstatic_fields()  {
+    assert(is_loaded(), "must be loaded");
+    return _has_nonstatic_fields; }
+  jint                   nonstatic_oop_map_size()  {
+    assert(is_loaded(), "must be loaded");
+    return _nonstatic_oop_map_size; }
   ciInstanceKlass*       super();
   jint                   nof_implementors()  {
     assert(is_loaded(), "must be loaded");
@@ -138,6 +148,9 @@ public:
 
   ciInstanceKlass* get_canonical_holder(int offset);
   ciField* get_field_by_offset(int field_offset, bool is_static);
+
+  GrowableArray<ciField*>* non_static_fields();
+
   // total number of nonstatic fields (including inherited):
   int nof_nonstatic_fields() {
     if (_nonstatic_fields == NULL)
@@ -155,8 +168,7 @@ public:
   bool has_finalizable_subclass();
 
   bool contains_field_offset(int offset) {
-      return (offset/wordSize) >= instanceOopDesc::header_size()
-             && (offset/wordSize)-instanceOopDesc::header_size() < nonstatic_field_size();
+    return instanceOopDesc::contains_field_offset(offset, nonstatic_field_size());
   }
 
   // Get the instance of java.lang.Class corresponding to

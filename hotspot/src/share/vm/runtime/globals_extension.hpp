@@ -41,6 +41,11 @@
   #define RUNTIME_PD_DEVELOP_FLAG_MEMBER(type, name, doc)      FLAG_MEMBER(name),
   #define RUNTIME_NOTPRODUCT_FLAG_MEMBER(type, name, value, doc) FLAG_MEMBER(name),
 #endif
+#ifdef _LP64
+#define RUNTIME_LP64_PRODUCT_FLAG_MEMBER(type, name, value, doc)    FLAG_MEMBER(name),
+#else
+#define RUNTIME_LP64_PRODUCT_FLAG_MEMBER(type, name, value, doc)    /* flag is constant */
+#endif // _LP64
 
 #define C1_PRODUCT_FLAG_MEMBER(type, name, value, doc)         FLAG_MEMBER(name),
 #define C1_PD_PRODUCT_FLAG_MEMBER(type, name, doc)             FLAG_MEMBER(name),
@@ -71,7 +76,9 @@
 typedef enum {
  RUNTIME_FLAGS(RUNTIME_DEVELOP_FLAG_MEMBER, RUNTIME_PD_DEVELOP_FLAG_MEMBER, RUNTIME_PRODUCT_FLAG_MEMBER,
                RUNTIME_PD_PRODUCT_FLAG_MEMBER, RUNTIME_DIAGNOSTIC_FLAG_MEMBER,
-               RUNTIME_NOTPRODUCT_FLAG_MEMBER, RUNTIME_MANAGEABLE_FLAG_MEMBER, RUNTIME_PRODUCT_RW_FLAG_MEMBER)
+               RUNTIME_NOTPRODUCT_FLAG_MEMBER, RUNTIME_MANAGEABLE_FLAG_MEMBER,
+               RUNTIME_PRODUCT_RW_FLAG_MEMBER,
+               RUNTIME_LP64_PRODUCT_FLAG_MEMBER)
  RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_MEMBER, RUNTIME_PD_DEVELOP_FLAG_MEMBER, RUNTIME_PRODUCT_FLAG_MEMBER,
                RUNTIME_PD_PRODUCT_FLAG_MEMBER, RUNTIME_DIAGNOSTIC_FLAG_MEMBER,
                RUNTIME_NOTPRODUCT_FLAG_MEMBER)
@@ -116,6 +123,11 @@ typedef enum {
   #define C1_PD_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, doc)           FLAG_MEMBER_WITH_TYPE(name,type),
   #define C1_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)    FLAG_MEMBER_WITH_TYPE(name,type),
 #endif
+#ifdef _LP64
+#define RUNTIME_LP64_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)    FLAG_MEMBER_WITH_TYPE(name,type),
+#else
+#define RUNTIME_LP64_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)    /* flag is constant */
+#endif // _LP64
 
 
 #define C2_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)         FLAG_MEMBER_WITH_TYPE(name,type),
@@ -137,7 +149,8 @@ typedef enum {
                RUNTIME_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
                RUNTIME_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE,
                RUNTIME_MANAGEABLE_FLAG_MEMBER_WITH_TYPE,
-               RUNTIME_PRODUCT_RW_FLAG_MEMBER_WITH_TYPE)
+               RUNTIME_PRODUCT_RW_FLAG_MEMBER_WITH_TYPE,
+               RUNTIME_LP64_PRODUCT_FLAG_MEMBER_WITH_TYPE)
 RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_MEMBER_WITH_TYPE, RUNTIME_PD_DEVELOP_FLAG_MEMBER_WITH_TYPE,
                RUNTIME_PRODUCT_FLAG_MEMBER_WITH_TYPE, RUNTIME_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE,
                RUNTIME_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
@@ -154,6 +167,8 @@ RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_MEMBER_WITH_TYPE, RUNTIME_PD_DEVELOP_FLAG_
 } CommandLineFlagWithType;
 
 #define FLAG_IS_DEFAULT(name)         (CommandLineFlagsEx::is_default(FLAG_MEMBER(name)))
+#define FLAG_IS_ERGO(name)            (CommandLineFlagsEx::is_ergo(FLAG_MEMBER(name)))
+#define FLAG_IS_CMDLINE(name)         (CommandLineFlagsEx::is_cmdline(FLAG_MEMBER(name)))
 
 #define FLAG_SET_DEFAULT(name, value) ((name) = (value))
 
@@ -171,4 +186,6 @@ class CommandLineFlagsEx : CommandLineFlags {
   static void ccstrAtPut(CommandLineFlagWithType flag, ccstr value, FlagValueOrigin origin);
 
   static bool is_default(CommandLineFlag flag);
+  static bool is_ergo(CommandLineFlag flag);
+  static bool is_cmdline(CommandLineFlag flag);
 };

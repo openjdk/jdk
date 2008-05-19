@@ -65,16 +65,18 @@ public:
     assert(_promotion_manager != NULL, "Sanity");
   }
 
-  void do_oop(oop* p) {
-    assert (*p != NULL, "expected non-null ref");
-    assert ((*p)->is_oop(), "expected an oop while scanning weak refs");
+  template <class T> void do_oop_work(T* p) {
+    assert (!oopDesc::is_null(*p), "expected non-null ref");
+    assert ((oopDesc::load_decode_heap_oop_not_null(p))->is_oop(),
+            "expected an oop while scanning weak refs");
 
-    oop obj = oop(*p);
     // Weak refs may be visited more than once.
-    if (PSScavenge::should_scavenge(obj, _to_space)) {
+    if (PSScavenge::should_scavenge(p, _to_space)) {
       PSScavenge::copy_and_push_safe_barrier(_promotion_manager, p);
     }
   }
+  virtual void do_oop(oop* p)       { PSKeepAliveClosure::do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) { PSKeepAliveClosure::do_oop_work(p); }
 };
 
 class PSEvacuateFollowersClosure: public VoidClosure {
@@ -83,7 +85,7 @@ class PSEvacuateFollowersClosure: public VoidClosure {
  public:
   PSEvacuateFollowersClosure(PSPromotionManager* pm) : _promotion_manager(pm) {}
 
-  void do_void() {
+  virtual void do_void() {
     assert(_promotion_manager != NULL, "Sanity");
     _promotion_manager->drain_stacks(true);
     guarantee(_promotion_manager->stacks_empty(),

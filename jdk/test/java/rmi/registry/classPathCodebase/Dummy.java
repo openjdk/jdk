@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,12 +36,12 @@ public class Dummy
     }
 
     public void writeExternal(java.io.ObjectOutput out)
-	throws java.io.IOException
+        throws java.io.IOException
     {
     }
 
     public void readExternal(java.io.ObjectInput in)
-	throws java.io.IOException, ClassNotFoundException
+        throws java.io.IOException, ClassNotFoundException
     {
     }
 }

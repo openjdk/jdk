@@ -882,6 +882,14 @@ klassOop ClassHierarchyWalker::find_witness_in(DepChange& changes,
   // Must not move the class hierarchy during this check:
   assert_locked_or_safepoint(Compile_lock);
 
+  int nof_impls = instanceKlass::cast(context_type)->nof_implementors();
+  if (nof_impls > 1) {
+    // Avoid this case: *I.m > { A.m, C }; B.m > C
+    // %%% Until this is fixed more systematically, bail out.
+    // See corresponding comment in find_witness_anywhere.
+    return context_type;
+  }
+
   assert(!is_participant(new_type), "only old classes are participants");
   if (participants_hide_witnesses) {
     // If the new type is a subtype of a participant, we are done.
@@ -1491,9 +1499,12 @@ bool DepChange::ContextStream::next() {
     // fall through:
     _change_type = Change_new_sub;
   case Change_new_sub:
-    _klass = instanceKlass::cast(_klass)->super();
-    if (_klass != NULL) {
-      return true;
+    // 6598190: brackets workaround Sun Studio C++ compiler bug 6629277
+    {
+      _klass = instanceKlass::cast(_klass)->super();
+      if (_klass != NULL) {
+        return true;
+      }
     }
     // else set up _ti_limit and fall through:
     _ti_limit = (_ti_base == NULL) ? 0 : _ti_base->length();

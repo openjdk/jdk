@@ -89,7 +89,7 @@ class markOopDesc: public oopDesc {
   enum { age_bits                 = 4,
          lock_bits                = 2,
          biased_lock_bits         = 1,
-         max_hash_bits            = BitsPerOop - age_bits - lock_bits - biased_lock_bits,
+         max_hash_bits            = BitsPerWord - age_bits - lock_bits - biased_lock_bits,
          hash_bits                = max_hash_bits > 31 ? 31 : max_hash_bits,
          epoch_bits               = 2
   };
@@ -357,4 +357,7 @@ class markOopDesc: public oopDesc {
 
   // Recover address of oop from encoded form used in mark
   inline void* decode_pointer() { if (UseBiasedLocking && has_bias_pattern()) return NULL; return clear_lock_bits(); }
+
+  // see the definition in markOop.cpp for the gory details
+  bool should_not_be_cached() const;
 };

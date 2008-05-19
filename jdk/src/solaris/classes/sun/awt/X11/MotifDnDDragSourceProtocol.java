@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
 
     private static final Unsafe unsafe = XlibWrapper.unsafe;
 
-    private long targetEnterServerTime = XlibWrapper.CurrentTime;
+    private long targetEnterServerTime = XConstants.CurrentTime;
 
     protected MotifDnDDragSourceProtocol(XDragSourceProtocolListener listener) {
         super(listener);
@@ -86,7 +86,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
 
         if (!MotifDnDConstants.MotifDnDSelection.setOwner(contents, formatMap,
                                                           formats,
-                                                          XlibWrapper.CurrentTime)) {
+                                                          XConstants.CurrentTime)) {
             cleanup();
             throw new InvalidDnDOperationException("Cannot acquire selection ownership");
         }
@@ -137,7 +137,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
         long time = t;
 
         /* Discard events from the previous receiver. */
-        if (targetEnterServerTime == XlibWrapper.CurrentTime ||
+        if (targetEnterServerTime == XConstants.CurrentTime ||
             time < targetEnterServerTime) {
             return true;
         }
@@ -181,7 +181,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
             new WindowPropertyGetter(window,
                                      MotifDnDConstants.XA_MOTIF_DRAG_RECEIVER_INFO,
                                      0, 0xFFFF, false,
-                                     XlibWrapper.AnyPropertyType);
+                                     XConstants.AnyPropertyType);
 
         try {
             int status = wpg.execute(XToolkit.IgnoreBadWindowHandler);
@@ -200,7 +200,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
              *     CARD32       heap_offset B32;
              * } xmDragReceiverInfoStruct;
              */
-            if (status == (int)XlibWrapper.Success && wpg.getData() != 0 &&
+            if (status == (int)XConstants.Success && wpg.getData() != 0 &&
                 wpg.getActualType() != 0 && wpg.getActualFormat() == 8 &&
                 wpg.getNumberOfItems() >=
                 MotifDnDConstants.MOTIF_RECEIVER_INFO_SIZE) {
@@ -243,7 +243,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type(XlibWrapper.ClientMessage);
+            msg.set_type(XConstants.ClientMessage);
             msg.set_window(getTargetWindow());
             msg.set_format(8);
             msg.set_message_type(MotifDnDConstants.XA_MOTIF_DRAG_AND_DROP_MESSAGE.getAtom());
@@ -267,7 +267,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
 
             XlibWrapper.XSendEvent(XToolkit.getDisplay(),
                                    getTargetProxyWindow(),
-                                   false, XlibWrapper.NoEventMask,
+                                   false, XConstants.NoEventMask,
                                    msg.pData);
         } finally {
             msg.dispose();
@@ -281,7 +281,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type(XlibWrapper.ClientMessage);
+            msg.set_type(XConstants.ClientMessage);
             msg.set_window(getTargetWindow());
             msg.set_format(8);
             msg.set_message_type(MotifDnDConstants.XA_MOTIF_DRAG_AND_DROP_MESSAGE.getAtom());
@@ -305,7 +305,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
 
             XlibWrapper.XSendEvent(XToolkit.getDisplay(),
                                    getTargetProxyWindow(),
-                                   false, XlibWrapper.NoEventMask,
+                                   false, XConstants.NoEventMask,
                                    msg.pData);
         } finally {
             msg.dispose();
@@ -318,7 +318,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type(XlibWrapper.ClientMessage);
+            msg.set_type(XConstants.ClientMessage);
             msg.set_window(getTargetWindow());
             msg.set_format(8);
             msg.set_message_type(MotifDnDConstants.XA_MOTIF_DRAG_AND_DROP_MESSAGE.getAtom());
@@ -336,7 +336,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
 
             XlibWrapper.XSendEvent(XToolkit.getDisplay(),
                                    getTargetProxyWindow(),
-                                   false, XlibWrapper.NoEventMask,
+                                   false, XConstants.NoEventMask,
                                    msg.pData);
         } finally {
             msg.dispose();
@@ -356,7 +356,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type(XlibWrapper.ClientMessage);
+            msg.set_type(XConstants.ClientMessage);
             msg.set_window(getTargetWindow());
             msg.set_format(8);
             msg.set_message_type(MotifDnDConstants.XA_MOTIF_DRAG_AND_DROP_MESSAGE.getAtom());
@@ -382,7 +382,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
 
             XlibWrapper.XSendEvent(XToolkit.getDisplay(),
                                    getTargetProxyWindow(),
-                                   false, XlibWrapper.NoEventMask,
+                                   false, XConstants.NoEventMask,
                                    msg.pData);
         } finally {
             msg.dispose();
@@ -397,12 +397,12 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
 
     public void cleanupTargetInfo() {
         super.cleanupTargetInfo();
-        targetEnterServerTime = XlibWrapper.CurrentTime;
+        targetEnterServerTime = XConstants.CurrentTime;
     }
 
     public void dispatchEvent(XEvent ev) {
         switch (ev.get_type()) {
-        case XlibWrapper.SelectionRequest:
+        case XConstants.SelectionRequest:
             XSelectionRequestEvent xsre = ev.get_xselectionrequest();
             long atom = xsre.get_selection();
 

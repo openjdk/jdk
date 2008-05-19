@@ -106,18 +106,18 @@ public:
   // closure application.
   void younger_refs_iterate(Generation* g, OopsInGenClosure* blk);
 
-  void inline_write_ref_field_gc(oop* field, oop new_val) {
+  void inline_write_ref_field_gc(void* field, oop new_val) {
     jbyte* byte = _ct_bs.byte_for(field);
     *byte = youngergen_card;
   }
-  void write_ref_field_gc_work(oop* field, oop new_val) {
+  void write_ref_field_gc_work(void* field, oop new_val) {
     inline_write_ref_field_gc(field, new_val);
   }
 
   // Override.  Might want to devirtualize this in the same fashion as
   // above.  Ensures that the value of the card for field says that it's
   // a younger card in the current collection.
-  virtual void write_ref_field_gc_par(oop* field, oop new_val);
+  virtual void write_ref_field_gc_par(void* field, oop new_val);
 
   void resize_covered_region(MemRegion new_region);
 
@@ -126,7 +126,7 @@ public:
   }
 
   void verify();
-  void verify_empty(MemRegion mr);
+  void verify_aligned_region_empty(MemRegion mr);
 
   void clear(MemRegion mr) { _ct_bs.clear(mr); }
   void clear_into_younger(Generation* gen, bool clear_perm);

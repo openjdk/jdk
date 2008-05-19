@@ -29,7 +29,6 @@ class ConcurrentMarkSweepGeneration;
 class CMSPermGen:  public PermGen {
   friend class VMStructs;
 
-  HeapWord* mem_allocate_work(size_t size);
  protected:
   // The "generation" view.
   ConcurrentMarkSweepGeneration* _gen;

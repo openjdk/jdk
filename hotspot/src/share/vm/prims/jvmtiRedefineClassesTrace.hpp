@@ -64,7 +64,7 @@
 //    0x01000000 |   16777216 - impl details: nmethod evolution info
 //    0x02000000 |   33554432 - impl details: annotation updates
 //    0x04000000 |   67108864 - impl details: StackMapTable updates
-//    0x08000000 |  134217728 - unused
+//    0x08000000 |  134217728 - impl details: OopMapCache updates
 //    0x10000000 |  268435456 - unused
 //    0x20000000 |  536870912 - unused
 //    0x40000000 | 1073741824 - unused

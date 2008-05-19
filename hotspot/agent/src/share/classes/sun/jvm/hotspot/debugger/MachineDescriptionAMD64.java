@@ -29,10 +29,6 @@ public class MachineDescriptionAMD64 extends MachineDescriptionTwosComplement im
     return 8;
   }
 
-  public long getOopSize() {
-    return 8;
-  }
-
   public boolean isLP64() {
     return true;
   }

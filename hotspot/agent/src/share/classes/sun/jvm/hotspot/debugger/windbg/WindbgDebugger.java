@@ -45,7 +45,9 @@ public interface WindbgDebugger extends JVMDebugger {
   public long         readCInteger(long address, long numBytes, boolean isUnsigned)
     throws DebuggerException;
   public WindbgAddress readAddress(long address) throws DebuggerException;
+  public WindbgAddress readCompOopAddress(long address) throws DebuggerException;
   public WindbgOopHandle readOopHandle(long address) throws DebuggerException;
+  public WindbgOopHandle readCompOopHandle(long address) throws DebuggerException;
 
   // The returned array of register contents is guaranteed to be in
   // the same order as in the DbxDebugger for Solaris/x86 or amd64; that is,

@@ -1810,7 +1810,7 @@ public class Attr extends JCTree.Visitor {
             chk.earlyRefError(tree.pos(), sym.kind == VAR ? sym : thisSym(tree.pos(), env));
         }
         Env<AttrContext> env1 = env;
-        if (sym.kind != ERR && sym.owner != null && sym.owner != env1.enclClass.sym) {
+        if (sym.kind != ERR && sym.kind != TYP && sym.owner != null && sym.owner != env1.enclClass.sym) {
             // If the found symbol is inaccessible, then it is
             // accessed through an enclosing instance.  Locate this
             // enclosing instance:
@@ -1878,8 +1878,10 @@ public class Attr extends JCTree.Visitor {
         boolean varArgs = env.info.varArgs;
         tree.sym = sym;
 
-        if (site.tag == TYPEVAR && !isType(sym) && sym.kind != ERR)
-            site = capture(site.getUpperBound());
+        if (site.tag == TYPEVAR && !isType(sym) && sym.kind != ERR) {
+            while (site.tag == TYPEVAR) site = site.getUpperBound();
+            site = capture(site);
+        }
 
         // If that symbol is a variable, ...
         if (sym.kind == VAR) {
@@ -2199,7 +2201,7 @@ public class Attr extends JCTree.Visitor {
                 (env.tree.getTag() != JCTree.ASSIGN ||
                  TreeInfo.skipParens(((JCAssign) env.tree).lhs) != tree)) {
 
-                if (!onlyWarning || isNonStaticEnumField(v)) {
+                if (!onlyWarning || isStaticEnumField(v)) {
                     log.error(tree.pos(), "illegal.forward.ref");
                 } else if (useBeforeDeclarationWarning) {
                     log.warning(tree.pos(), "forward.ref", v);
@@ -2233,7 +2235,7 @@ public class Attr extends JCTree.Visitor {
             // initializer expressions of an enum constant e to refer
             // to itself or to an enum constant of the same type that
             // is declared to the right of e."
-            if (isNonStaticEnumField(v)) {
+            if (isStaticEnumField(v)) {
                 ClassSymbol enclClass = env.info.scope.owner.enclClass();
 
                 if (enclClass == null || enclClass.owner == null)
@@ -2254,8 +2256,14 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        private boolean isNonStaticEnumField(VarSymbol v) {
-            return Flags.isEnum(v.owner) && Flags.isStatic(v) && !Flags.isConstant(v);
+        /** Is the given symbol a static, non-constant field of an Enum?
+         *  Note: enum literals should not be regarded as such
+         */
+        private boolean isStaticEnumField(VarSymbol v) {
+            return Flags.isEnum(v.owner) &&
+                   Flags.isStatic(v) &&
+                   !Flags.isConstant(v) &&
+                   v.name != names._class;
         }
 
         /** Can the given symbol be the owner of code which forms part

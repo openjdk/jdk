@@ -117,7 +117,7 @@ public final class FontResolver {
                 Font2D font2D = FontManager.getFont2D(font);
                 if (font2D.hasSupplementaryChars()) {
                     fonts.add(font);
-                    indices.add(new Integer(i));
+                    indices.add(Integer.valueOf(i));
                 }
             }
 

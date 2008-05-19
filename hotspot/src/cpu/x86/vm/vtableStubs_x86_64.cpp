@@ -56,7 +56,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
   // get receiver klass
   address npe_addr = __ pc();
-  __ movq(rax, Address(j_rarg0, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rax, j_rarg0);
 
   // compute entry offset (in words)
   int entry_offset =
@@ -131,7 +131,7 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   // get receiver klass (also an implicit null-check)
   address npe_addr = __ pc();
 
-  __ movq(rbx, Address(j_rarg0, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rbx, j_rarg0);
 
   // If we take a trap while this arg is on the stack we will not
   // be able to walk the stack properly. This is not an issue except
@@ -153,7 +153,7 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
     // Round up to align_object_offset boundary
     __ round_to_q(rbx, BytesPerLong);
   }
-  Label hit, next, entry;
+  Label hit, next, entry, throw_icce;
 
   __ jmpb(entry);
 
@@ -162,22 +162,13 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
 
   __ bind(entry);
 
-#ifdef ASSERT
-    // Check that the entry is non-null
-  if (DebugVtables) {
-    Label L;
-    __ pushq(rbx);
-    __ movq(rbx, Address(rbx, itableOffsetEntry::interface_offset_in_bytes()));
-    __ testq(rbx, rbx);
-    __ jcc(Assembler::notZero, L);
-    __ stop("null entry point found in itable's offset table");
-    __ bind(L);
-    __ popq(rbx);
-  }
-#endif
-
-  __ cmpq(rax, Address(rbx, itableOffsetEntry::interface_offset_in_bytes()));
-  __ jcc(Assembler::notEqual, next);
+  // If the entry is NULL then we've reached the end of the table
+  // without finding the expected interface, so throw an exception
+  __ movq(j_rarg1, Address(rbx, itableOffsetEntry::interface_offset_in_bytes()));
+  __ testq(j_rarg1, j_rarg1);
+  __ jcc(Assembler::zero, throw_icce);
+  __ cmpq(rax, j_rarg1);
+  __ jccb(Assembler::notEqual, next);
 
   // We found a hit, move offset into j_rarg1
   __ movl(j_rarg1, Address(rbx, itableOffsetEntry::offset_offset_in_bytes()));
@@ -190,7 +181,7 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   // Get methodOop and entrypoint for compiler
 
   // Get klass pointer again
-  __ movq(rax, Address(j_rarg0, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rax, j_rarg0);
 
   const Register method = rbx;
   __ movq(method, Address(rax, j_rarg1, Address::times_1, method_offset));
@@ -203,23 +194,31 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
 
 
 #ifdef ASSERT
-    if (DebugVtables) {
-      Label L2;
-      __ cmpq(method, (int)NULL);
-      __ jcc(Assembler::equal, L2);
-      __ cmpq(Address(method, methodOopDesc::from_compiled_offset()), (int)NULL_WORD);
-      __ jcc(Assembler::notZero, L2);
-      __ stop("compiler entrypoint is null");
-      __ bind(L2);
-    }
+  if (DebugVtables) {
+    Label L2;
+    __ cmpq(method, (int)NULL);
+    __ jcc(Assembler::equal, L2);
+    __ cmpq(Address(method, methodOopDesc::from_compiled_offset()), (int)NULL_WORD);
+    __ jcc(Assembler::notZero, L2);
+    __ stop("compiler entrypoint is null");
+    __ bind(L2);
+  }
 #endif // ASSERT
 
-    // rbx: methodOop
-    // j_rarg0: receiver
-    address ame_addr = __ pc();
-    __ jmp(Address(method, methodOopDesc::from_compiled_offset()));
+  // rbx: methodOop
+  // j_rarg0: receiver
+  address ame_addr = __ pc();
+  __ jmp(Address(method, methodOopDesc::from_compiled_offset()));
+
+  __ bind(throw_icce);
+  // Restore saved register
+  __ popq(j_rarg1);
+  __ jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
 
   __ flush();
+
+  guarantee(__ pc() <= s->code_end(), "overflowed buffer");
+
   s->set_exception_points(npe_addr, ame_addr);
   return s;
 }
@@ -227,10 +226,12 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
 int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
   if (is_vtable_stub) {
     // Vtable stub size
-    return (DebugVtables ? 512 : 24) + (CountCompiledCalls ? 13 : 0);
+    return (DebugVtables ? 512 : 24) + (CountCompiledCalls ? 13 : 0) +
+           (UseCompressedOops ? 16 : 0);  // 1 leaq can be 3 bytes + 1 long
   } else {
     // Itable stub size
-    return (DebugVtables ? 636 : 64) + (CountCompiledCalls ? 13 : 0);
+    return (DebugVtables ? 636 : 72) + (CountCompiledCalls ? 13 : 0) +
+           (UseCompressedOops ? 32 : 0);  // 2 leaqs
   }
 }
 
