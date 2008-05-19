@@ -85,7 +85,7 @@ public final class GlyphLayout {
     private GVData _gvdata;
 
     // cached glyph layout data for reuse
-    private static GlyphLayout cache;  // reusable
+    private static volatile GlyphLayout cache;  // reusable
 
     private LayoutEngineFactory _lef;  // set when get is called, unset when done is called
     private TextRecord _textRecord;    // the text we're working on, used by iterators
