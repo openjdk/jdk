@@ -791,17 +791,39 @@ void instanceKlass::do_local_static_fields_impl(instanceKlassHandle this_oop, vo
 }
 
 
+static int compare_fields_by_offset(int* a, int* b) {
+  return a[0] - b[0];
+}
+
 void instanceKlass::do_nonstatic_fields(FieldClosure* cl) {
-  fieldDescriptor fd;
   instanceKlass* super = superklass();
   if (super != NULL) {
     super->do_nonstatic_fields(cl);
   }
+  fieldDescriptor fd;
   int length = fields()->length();
+  // In DebugInfo nonstatic fields are sorted by offset.
+  int* fields_sorted = NEW_C_HEAP_ARRAY(int, 2*(length+1));
+  int j = 0;
   for (int i = 0; i < length; i += next_offset) {
     fd.initialize(as_klassOop(), i);
-    if (!(fd.is_static())) cl->do_field(&fd);
+    if (!fd.is_static()) {
+      fields_sorted[j + 0] = fd.offset();
+      fields_sorted[j + 1] = i;
+      j += 2;
+    }
   }
+  if (j > 0) {
+    length = j;
+    // _sort_Fn is defined in growableArray.hpp.
+    qsort(fields_sorted, length/2, 2*sizeof(int), (_sort_Fn)compare_fields_by_offset);
+    for (int i = 0; i < length; i += 2) {
+      fd.initialize(as_klassOop(), fields_sorted[i + 1]);
+      assert(!fd.is_static() && fd.offset() == fields_sorted[i], "only nonstatic fields");
+      cl->do_field(&fd);
+    }
+  }
+  FREE_C_HEAP_ARRAY(int, fields_sorted);
 }
 
 
@@ -950,7 +972,6 @@ jmethodID instanceKlass::jmethod_id_for_impl(instanceKlassHandle ik_h, methodHan
     // These allocations will have to be freed if they are unused.
 
     // Allocate a new array of methods.
-    jmethodID* to_dealloc_jmeths = NULL;
     jmethodID* new_jmeths = NULL;
     if (length <= idnum) {
       // A new array will be needed (unless some other thread beats us to it)
@@ -961,7 +982,6 @@ jmethodID instanceKlass::jmethod_id_for_impl(instanceKlassHandle ik_h, methodHan
     }
 
     // Allocate a new method ID.
-    jmethodID to_dealloc_id = NULL;
     jmethodID new_id = NULL;
     if (method_h->is_old() && !method_h->is_obsolete()) {
       // The method passed in is old (but not obsolete), we need to use the current version
@@ -975,40 +995,51 @@ jmethodID instanceKlass::jmethod_id_for_impl(instanceKlassHandle ik_h, methodHan
       new_id = JNIHandles::make_jmethod_id(method_h);
     }
 
-    {
+    if (Threads::number_of_threads() == 0 || SafepointSynchronize::is_at_safepoint()) {
+      // No need and unsafe to lock the JmethodIdCreation_lock at safepoint.
+      id = get_jmethod_id(ik_h, idnum, new_id, new_jmeths);
+    } else {
       MutexLocker ml(JmethodIdCreation_lock);
-
-      // We must not go to a safepoint while holding this lock.
-      debug_only(No_Safepoint_Verifier nosafepoints;)
-
-      // Retry lookup after we got the lock
-      jmeths = ik_h->methods_jmethod_ids_acquire();
-      if (jmeths == NULL || (length = (size_t)jmeths[0]) <= idnum) {
-        if (jmeths != NULL) {
-          // We have grown the array: copy the existing entries, and delete the old array
-          for (size_t index = 0; index < length; index++) {
-            new_jmeths[index+1] = jmeths[index+1];
-          }
-          to_dealloc_jmeths = jmeths; // using the new jmeths, deallocate the old one
-        }
-        ik_h->release_set_methods_jmethod_ids(jmeths = new_jmeths);
-      } else {
-        id = jmeths[idnum+1];
-        to_dealloc_jmeths = new_jmeths; // using the old jmeths, deallocate the new one
-      }
-      if (id == NULL) {
-        id = new_id;
-        jmeths[idnum+1] = id;  // install the new method ID
-      } else {
-        to_dealloc_id = new_id; // the new id wasn't used, mark it for deallocation
-      }
+      id = get_jmethod_id(ik_h, idnum, new_id, new_jmeths);
     }
+  }
+  return id;
+}
 
-    // Free up unneeded or no longer needed resources
-    FreeHeap(to_dealloc_jmeths);
-    if (to_dealloc_id != NULL) {
-      JNIHandles::destroy_jmethod_id(to_dealloc_id);
+
+jmethodID instanceKlass::get_jmethod_id(instanceKlassHandle ik_h, size_t idnum,
+                                        jmethodID new_id, jmethodID* new_jmeths) {
+  // Retry lookup after we got the lock or ensured we are at safepoint
+  jmethodID* jmeths = ik_h->methods_jmethod_ids_acquire();
+  jmethodID  id                = NULL;
+  jmethodID  to_dealloc_id     = NULL;
+  jmethodID* to_dealloc_jmeths = NULL;
+  size_t     length;
+
+  if (jmeths == NULL || (length = (size_t)jmeths[0]) <= idnum) {
+    if (jmeths != NULL) {
+      // We have grown the array: copy the existing entries, and delete the old array
+      for (size_t index = 0; index < length; index++) {
+        new_jmeths[index+1] = jmeths[index+1];
+      }
+      to_dealloc_jmeths = jmeths; // using the new jmeths, deallocate the old one
     }
+    ik_h->release_set_methods_jmethod_ids(jmeths = new_jmeths);
+  } else {
+    id = jmeths[idnum+1];
+    to_dealloc_jmeths = new_jmeths; // using the old jmeths, deallocate the new one
+  }
+  if (id == NULL) {
+    id = new_id;
+    jmeths[idnum+1] = id;  // install the new method ID
+  } else {
+    to_dealloc_id = new_id; // the new id wasn't used, mark it for deallocation
+  }
+
+  // Free up unneeded or no longer needed resources
+  FreeHeap(to_dealloc_jmeths);
+  if (to_dealloc_id != NULL) {
+    JNIHandles::destroy_jmethod_id(to_dealloc_id);
   }
   return id;
 }
@@ -1224,218 +1255,298 @@ bool instanceKlass::is_dependent_nmethod(nmethod* nm) {
 #endif //PRODUCT
 
 
-void instanceKlass::follow_static_fields() {
-  oop* start = start_of_static_fields();
-  oop* end   = start + static_oop_field_size();
-  while (start < end) {
-    if (*start != NULL) {
-      assert(Universe::heap()->is_in_closed_subset(*start),
-             "should be in heap");
-      MarkSweep::mark_and_push(start);
-    }
-    start++;
+#ifdef ASSERT
+template <class T> void assert_is_in(T *p) {
+  T heap_oop = oopDesc::load_heap_oop(p);
+  if (!oopDesc::is_null(heap_oop)) {
+    oop o = oopDesc::decode_heap_oop_not_null(heap_oop);
+    assert(Universe::heap()->is_in(o), "should be in heap");
   }
+}
+template <class T> void assert_is_in_closed_subset(T *p) {
+  T heap_oop = oopDesc::load_heap_oop(p);
+  if (!oopDesc::is_null(heap_oop)) {
+    oop o = oopDesc::decode_heap_oop_not_null(heap_oop);
+    assert(Universe::heap()->is_in_closed_subset(o), "should be in closed");
+  }
+}
+template <class T> void assert_is_in_reserved(T *p) {
+  T heap_oop = oopDesc::load_heap_oop(p);
+  if (!oopDesc::is_null(heap_oop)) {
+    oop o = oopDesc::decode_heap_oop_not_null(heap_oop);
+    assert(Universe::heap()->is_in_reserved(o), "should be in reserved");
+  }
+}
+template <class T> void assert_nothing(T *p) {}
+
+#else
+template <class T> void assert_is_in(T *p) {}
+template <class T> void assert_is_in_closed_subset(T *p) {}
+template <class T> void assert_is_in_reserved(T *p) {}
+template <class T> void assert_nothing(T *p) {}
+#endif // ASSERT
+
+//
+// Macros that iterate over areas of oops which are specialized on type of
+// oop pointer either narrow or wide, depending on UseCompressedOops
+//
+// Parameters are:
+//   T         - type of oop to point to (either oop or narrowOop)
+//   start_p   - starting pointer for region to iterate over
+//   count     - number of oops or narrowOops to iterate over
+//   do_oop    - action to perform on each oop (it's arbitrary C code which
+//               makes it more efficient to put in a macro rather than making
+//               it a template function)
+//   assert_fn - assert function which is template function because performance
+//               doesn't matter when enabled.
+#define InstanceKlass_SPECIALIZED_OOP_ITERATE( \
+  T, start_p, count, do_oop,                \
+  assert_fn)                                \
+{                                           \
+  T* p         = (T*)(start_p);             \
+  T* const end = p + (count);               \
+  while (p < end) {                         \
+    (assert_fn)(p);                         \
+    do_oop;                                 \
+    ++p;                                    \
+  }                                         \
+}
+
+#define InstanceKlass_SPECIALIZED_OOP_REVERSE_ITERATE( \
+  T, start_p, count, do_oop,                \
+  assert_fn)                                \
+{                                           \
+  T* const start = (T*)(start_p);           \
+  T*       p     = start + (count);         \
+  while (start < p) {                       \
+    --p;                                    \
+    (assert_fn)(p);                         \
+    do_oop;                                 \
+  }                                         \
+}
+
+#define InstanceKlass_SPECIALIZED_BOUNDED_OOP_ITERATE( \
+  T, start_p, count, low, high,             \
+  do_oop, assert_fn)                        \
+{                                           \
+  T* const l = (T*)(low);                   \
+  T* const h = (T*)(high);                  \
+  assert(mask_bits((intptr_t)l, sizeof(T)-1) == 0 && \
+         mask_bits((intptr_t)h, sizeof(T)-1) == 0,   \
+         "bounded region must be properly aligned"); \
+  T* p       = (T*)(start_p);               \
+  T* end     = p + (count);                 \
+  if (p < l) p = l;                         \
+  if (end > h) end = h;                     \
+  while (p < end) {                         \
+    (assert_fn)(p);                         \
+    do_oop;                                 \
+    ++p;                                    \
+  }                                         \
+}
+
+
+// The following macros call specialized macros, passing either oop or
+// narrowOop as the specialization type.  These test the UseCompressedOops
+// flag.
+#define InstanceKlass_OOP_ITERATE(start_p, count,    \
+                                  do_oop, assert_fn) \
+{                                                    \
+  if (UseCompressedOops) {                           \
+    InstanceKlass_SPECIALIZED_OOP_ITERATE(narrowOop, \
+      start_p, count,                                \
+      do_oop, assert_fn)                             \
+  } else {                                           \
+    InstanceKlass_SPECIALIZED_OOP_ITERATE(oop,       \
+      start_p, count,                                \
+      do_oop, assert_fn)                             \
+  }                                                  \
+}
+
+#define InstanceKlass_BOUNDED_OOP_ITERATE(start_p, count, low, high,    \
+                                          do_oop, assert_fn) \
+{                                                            \
+  if (UseCompressedOops) {                                   \
+    InstanceKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(narrowOop, \
+      start_p, count,                                        \
+      low, high,                                             \
+      do_oop, assert_fn)                                     \
+  } else {                                                   \
+    InstanceKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(oop,       \
+      start_p, count,                                        \
+      low, high,                                             \
+      do_oop, assert_fn)                                     \
+  }                                                          \
+}
+
+#define InstanceKlass_OOP_MAP_ITERATE(obj, do_oop, assert_fn)            \
+{                                                                        \
+  /* Compute oopmap block range. The common case                         \
+     is nonstatic_oop_map_size == 1. */                                  \
+  OopMapBlock* map           = start_of_nonstatic_oop_maps();            \
+  OopMapBlock* const end_map = map + nonstatic_oop_map_size();           \
+  if (UseCompressedOops) {                                               \
+    while (map < end_map) {                                              \
+      InstanceKlass_SPECIALIZED_OOP_ITERATE(narrowOop,                   \
+        obj->obj_field_addr<narrowOop>(map->offset()), map->length(),    \
+        do_oop, assert_fn)                                               \
+      ++map;                                                             \
+    }                                                                    \
+  } else {                                                               \
+    while (map < end_map) {                                              \
+      InstanceKlass_SPECIALIZED_OOP_ITERATE(oop,                         \
+        obj->obj_field_addr<oop>(map->offset()), map->length(),          \
+        do_oop, assert_fn)                                               \
+      ++map;                                                             \
+    }                                                                    \
+  }                                                                      \
+}
+
+#define InstanceKlass_OOP_MAP_REVERSE_ITERATE(obj, do_oop, assert_fn)    \
+{                                                                        \
+  OopMapBlock* const start_map = start_of_nonstatic_oop_maps();          \
+  OopMapBlock* map             = start_map + nonstatic_oop_map_size();   \
+  if (UseCompressedOops) {                                               \
+    while (start_map < map) {                                            \
+      --map;                                                             \
+      InstanceKlass_SPECIALIZED_OOP_REVERSE_ITERATE(narrowOop,           \
+        obj->obj_field_addr<narrowOop>(map->offset()), map->length(),    \
+        do_oop, assert_fn)                                               \
+    }                                                                    \
+  } else {                                                               \
+    while (start_map < map) {                                            \
+      --map;                                                             \
+      InstanceKlass_SPECIALIZED_OOP_REVERSE_ITERATE(oop,                 \
+        obj->obj_field_addr<oop>(map->offset()), map->length(),          \
+        do_oop, assert_fn)                                               \
+    }                                                                    \
+  }                                                                      \
+}
+
+#define InstanceKlass_BOUNDED_OOP_MAP_ITERATE(obj, low, high, do_oop,    \
+                                              assert_fn)                 \
+{                                                                        \
+  /* Compute oopmap block range. The common case is                      \
+     nonstatic_oop_map_size == 1, so we accept the                       \
+     usually non-existent extra overhead of examining                    \
+     all the maps. */                                                    \
+  OopMapBlock* map           = start_of_nonstatic_oop_maps();            \
+  OopMapBlock* const end_map = map + nonstatic_oop_map_size();           \
+  if (UseCompressedOops) {                                               \
+    while (map < end_map) {                                              \
+      InstanceKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(narrowOop,           \
+        obj->obj_field_addr<narrowOop>(map->offset()), map->length(),    \
+        low, high,                                                       \
+        do_oop, assert_fn)                                               \
+      ++map;                                                             \
+    }                                                                    \
+  } else {                                                               \
+    while (map < end_map) {                                              \
+      InstanceKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(oop,                 \
+        obj->obj_field_addr<oop>(map->offset()), map->length(),          \
+        low, high,                                                       \
+        do_oop, assert_fn)                                               \
+      ++map;                                                             \
+    }                                                                    \
+  }                                                                      \
+}
+
+void instanceKlass::follow_static_fields() {
+  InstanceKlass_OOP_ITERATE( \
+    start_of_static_fields(), static_oop_field_size(), \
+    MarkSweep::mark_and_push(p), \
+    assert_is_in_closed_subset)
 }
 
 #ifndef SERIALGC
 void instanceKlass::follow_static_fields(ParCompactionManager* cm) {
-  oop* start = start_of_static_fields();
-  oop* end   = start + static_oop_field_size();
-  while (start < end) {
-    if (*start != NULL) {
-      assert(Universe::heap()->is_in(*start), "should be in heap");
-      PSParallelCompact::mark_and_push(cm, start);
-    }
-    start++;
-  }
+  InstanceKlass_OOP_ITERATE( \
+    start_of_static_fields(), static_oop_field_size(), \
+    PSParallelCompact::mark_and_push(cm, p), \
+    assert_is_in)
 }
 #endif // SERIALGC
 
-
 void instanceKlass::adjust_static_fields() {
-  oop* start = start_of_static_fields();
-  oop* end   = start + static_oop_field_size();
-  while (start < end) {
-    MarkSweep::adjust_pointer(start);
-    start++;
-  }
+  InstanceKlass_OOP_ITERATE( \
+    start_of_static_fields(), static_oop_field_size(), \
+    MarkSweep::adjust_pointer(p), \
+    assert_nothing)
 }
 
 #ifndef SERIALGC
 void instanceKlass::update_static_fields() {
-  oop* const start = start_of_static_fields();
-  oop* const beg_oop = start;
-  oop* const end_oop = start + static_oop_field_size();
-  for (oop* cur_oop = beg_oop; cur_oop < end_oop; ++cur_oop) {
-    PSParallelCompact::adjust_pointer(cur_oop);
-  }
+  InstanceKlass_OOP_ITERATE( \
+    start_of_static_fields(), static_oop_field_size(), \
+    PSParallelCompact::adjust_pointer(p), \
+    assert_nothing)
 }
 
-void
-instanceKlass::update_static_fields(HeapWord* beg_addr, HeapWord* end_addr) {
-  oop* const start = start_of_static_fields();
-  oop* const beg_oop = MAX2((oop*)beg_addr, start);
-  oop* const end_oop = MIN2((oop*)end_addr, start + static_oop_field_size());
-  for (oop* cur_oop = beg_oop; cur_oop < end_oop; ++cur_oop) {
-    PSParallelCompact::adjust_pointer(cur_oop);
-  }
+void instanceKlass::update_static_fields(HeapWord* beg_addr, HeapWord* end_addr) {
+  InstanceKlass_BOUNDED_OOP_ITERATE( \
+    start_of_static_fields(), static_oop_field_size(), \
+    beg_addr, end_addr, \
+    PSParallelCompact::adjust_pointer(p), \
+    assert_nothing )
 }
 #endif // SERIALGC
 
 void instanceKlass::oop_follow_contents(oop obj) {
-  assert (obj!=NULL, "can't follow the content of NULL object");
+  assert(obj != NULL, "can't follow the content of NULL object");
   obj->follow_header();
-  OopMapBlock* map     = start_of_nonstatic_oop_maps();
-  OopMapBlock* end_map = map + nonstatic_oop_map_size();
-  while (map < end_map) {
-    oop* start = obj->obj_field_addr(map->offset());
-    oop* end   = start + map->length();
-    while (start < end) {
-      if (*start != NULL) {
-        assert(Universe::heap()->is_in_closed_subset(*start),
-               "should be in heap");
-        MarkSweep::mark_and_push(start);
-      }
-      start++;
-    }
-    map++;
-  }
+  InstanceKlass_OOP_MAP_ITERATE( \
+    obj, \
+    MarkSweep::mark_and_push(p), \
+    assert_is_in_closed_subset)
 }
 
 #ifndef SERIALGC
 void instanceKlass::oop_follow_contents(ParCompactionManager* cm,
                                         oop obj) {
-  assert (obj!=NULL, "can't follow the content of NULL object");
+  assert(obj != NULL, "can't follow the content of NULL object");
   obj->follow_header(cm);
-  OopMapBlock* map     = start_of_nonstatic_oop_maps();
-  OopMapBlock* end_map = map + nonstatic_oop_map_size();
-  while (map < end_map) {
-    oop* start = obj->obj_field_addr(map->offset());
-    oop* end   = start + map->length();
-    while (start < end) {
-      if (*start != NULL) {
-        assert(Universe::heap()->is_in(*start), "should be in heap");
-        PSParallelCompact::mark_and_push(cm, start);
-      }
-      start++;
-    }
-    map++;
-  }
+  InstanceKlass_OOP_MAP_ITERATE( \
+    obj, \
+    PSParallelCompact::mark_and_push(cm, p), \
+    assert_is_in)
 }
 #endif // SERIALGC
-
-#define invoke_closure_on(start, closure, nv_suffix) {                          \
-  oop obj = *(start);                                                           \
-  if (obj != NULL) {                                                            \
-    assert(Universe::heap()->is_in_closed_subset(obj), "should be in heap");    \
-    (closure)->do_oop##nv_suffix(start);                                        \
-  }                                                                             \
-}
 
 // closure's do_header() method dicates whether the given closure should be
 // applied to the klass ptr in the object header.
 
-#define InstanceKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)           \
-                                                                                \
-int instanceKlass::oop_oop_iterate##nv_suffix(oop obj,                          \
-                                              OopClosureType* closure) {        \
-  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::ik); \
-  /* header */                                                                  \
-  if (closure->do_header()) {                                                   \
-    obj->oop_iterate_header(closure);                                           \
-  }                                                                             \
-  /* instance variables */                                                      \
-  OopMapBlock* map     = start_of_nonstatic_oop_maps();                         \
-  OopMapBlock* const end_map = map + nonstatic_oop_map_size();                  \
-  const intx field_offset    = PrefetchFieldsAhead;                             \
-  if (field_offset > 0) {                                                       \
-    while (map < end_map) {                                                     \
-      oop* start = obj->obj_field_addr(map->offset());                          \
-      oop* const end   = start + map->length();                                 \
-      while (start < end) {                                                     \
-        prefetch_beyond(start, (oop*)end, field_offset,                         \
-                        closure->prefetch_style());                             \
-        SpecializationStats::                                                   \
-          record_do_oop_call##nv_suffix(SpecializationStats::ik);               \
-        invoke_closure_on(start, closure, nv_suffix);                           \
-        start++;                                                                \
-      }                                                                         \
-      map++;                                                                    \
-    }                                                                           \
-  } else {                                                                      \
-    while (map < end_map) {                                                     \
-      oop* start = obj->obj_field_addr(map->offset());                          \
-      oop* const end   = start + map->length();                                 \
-      while (start < end) {                                                     \
-        SpecializationStats::                                                   \
-          record_do_oop_call##nv_suffix(SpecializationStats::ik);               \
-        invoke_closure_on(start, closure, nv_suffix);                           \
-        start++;                                                                \
-      }                                                                         \
-      map++;                                                                    \
-    }                                                                           \
-  }                                                                             \
-  return size_helper();                                                         \
+#define InstanceKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)   \
+                                                                        \
+int instanceKlass::oop_oop_iterate##nv_suffix(oop obj,                  \
+                                              OopClosureType* closure) {\
+  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::ik);\
+  /* header */                                                          \
+  if (closure->do_header()) {                                           \
+    obj->oop_iterate_header(closure);                                   \
+  }                                                                     \
+  InstanceKlass_OOP_MAP_ITERATE(                                        \
+    obj,                                                                \
+    SpecializationStats::                                               \
+      record_do_oop_call##nv_suffix(SpecializationStats::ik);           \
+    (closure)->do_oop##nv_suffix(p),                                    \
+    assert_is_in_closed_subset)                                         \
+  return size_helper();                                                 \
 }
 
-#define InstanceKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix)         \
-                                                                                \
-int instanceKlass::oop_oop_iterate##nv_suffix##_m(oop obj,                      \
-                                                  OopClosureType* closure,      \
-                                                  MemRegion mr) {               \
-  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::ik); \
-  /* header */                                                                  \
-  if (closure->do_header()) {                                                   \
-    obj->oop_iterate_header(closure, mr);                                       \
-  }                                                                             \
-  /* instance variables */                                                      \
-  OopMapBlock* map     = start_of_nonstatic_oop_maps();                         \
-  OopMapBlock* const end_map = map + nonstatic_oop_map_size();                  \
-  HeapWord* bot = mr.start();                                                   \
-  HeapWord* top = mr.end();                                                     \
-  oop* start = obj->obj_field_addr(map->offset());                              \
-  HeapWord* end = MIN2((HeapWord*)(start + map->length()), top);                \
-  /* Find the first map entry that extends onto mr. */                          \
-  while (map < end_map && end <= bot) {                                         \
-    map++;                                                                      \
-    start = obj->obj_field_addr(map->offset());                                 \
-    end = MIN2((HeapWord*)(start + map->length()), top);                        \
-  }                                                                             \
-  if (map != end_map) {                                                         \
-    /* The current map's end is past the start of "mr".  Skip up to the first   \
-       entry on "mr". */                                                        \
-    while ((HeapWord*)start < bot) {                                            \
-      start++;                                                                  \
-    }                                                                           \
-    const intx field_offset = PrefetchFieldsAhead;                              \
-    for (;;) {                                                                  \
-      if (field_offset > 0) {                                                   \
-        while ((HeapWord*)start < end) {                                        \
-          prefetch_beyond(start, (oop*)end, field_offset,                       \
-                          closure->prefetch_style());                           \
-          invoke_closure_on(start, closure, nv_suffix);                         \
-          start++;                                                              \
-        }                                                                       \
-      } else {                                                                  \
-        while ((HeapWord*)start < end) {                                        \
-          invoke_closure_on(start, closure, nv_suffix);                         \
-          start++;                                                              \
-        }                                                                       \
-      }                                                                         \
-      /* Go to the next map. */                                                 \
-      map++;                                                                    \
-      if (map == end_map) {                                                     \
-        break;                                                                  \
-      }                                                                         \
-      /* Otherwise,  */                                                         \
-      start = obj->obj_field_addr(map->offset());                               \
-      if ((HeapWord*)start >= top) {                                            \
-        break;                                                                  \
-      }                                                                         \
-      end = MIN2((HeapWord*)(start + map->length()), top);                      \
-    }                                                                           \
-  }                                                                             \
-  return size_helper();                                                         \
+#define InstanceKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix) \
+                                                                        \
+int instanceKlass::oop_oop_iterate##nv_suffix##_m(oop obj,              \
+                                                  OopClosureType* closure, \
+                                                  MemRegion mr) {          \
+  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::ik);\
+  if (closure->do_header()) {                                            \
+    obj->oop_iterate_header(closure, mr);                                \
+  }                                                                      \
+  InstanceKlass_BOUNDED_OOP_MAP_ITERATE(                                 \
+    obj, mr.start(), mr.end(),                                           \
+    (closure)->do_oop##nv_suffix(p),                                     \
+    assert_is_in_closed_subset)                                          \
+  return size_helper();                                                  \
 }
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_DEFN)
@@ -1443,56 +1554,28 @@ ALL_OOP_OOP_ITERATE_CLOSURES_3(InstanceKlass_OOP_OOP_ITERATE_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_DEFN_m)
 ALL_OOP_OOP_ITERATE_CLOSURES_3(InstanceKlass_OOP_OOP_ITERATE_DEFN_m)
 
-
 void instanceKlass::iterate_static_fields(OopClosure* closure) {
-  oop* start = start_of_static_fields();
-  oop* end   = start + static_oop_field_size();
-  while (start < end) {
-    assert(Universe::heap()->is_in_reserved_or_null(*start), "should be in heap");
-    closure->do_oop(start);
-    start++;
-  }
+    InstanceKlass_OOP_ITERATE( \
+      start_of_static_fields(), static_oop_field_size(), \
+      closure->do_oop(p), \
+      assert_is_in_reserved)
 }
 
 void instanceKlass::iterate_static_fields(OopClosure* closure,
                                           MemRegion mr) {
-  oop* start = start_of_static_fields();
-  oop* end   = start + static_oop_field_size();
-  // I gather that the the static fields of reference types come first,
-  // hence the name of "oop_field_size", and that is what makes this safe.
-  assert((intptr_t)mr.start() ==
-         align_size_up((intptr_t)mr.start(), sizeof(oop)) &&
-         (intptr_t)mr.end() == align_size_up((intptr_t)mr.end(), sizeof(oop)),
-         "Memregion must be oop-aligned.");
-  if ((HeapWord*)start < mr.start()) start = (oop*)mr.start();
-  if ((HeapWord*)end   > mr.end())   end   = (oop*)mr.end();
-  while (start < end) {
-    invoke_closure_on(start, closure,_v);
-    start++;
-  }
+  InstanceKlass_BOUNDED_OOP_ITERATE( \
+    start_of_static_fields(), static_oop_field_size(), \
+    mr.start(), mr.end(), \
+    (closure)->do_oop_v(p), \
+    assert_is_in_closed_subset)
 }
-
 
 int instanceKlass::oop_adjust_pointers(oop obj) {
   int size = size_helper();
-
-  // Compute oopmap block range. The common case is nonstatic_oop_map_size == 1.
-  OopMapBlock* map     = start_of_nonstatic_oop_maps();
-  OopMapBlock* const end_map = map + nonstatic_oop_map_size();
-  // Iterate over oopmap blocks
-  while (map < end_map) {
-    // Compute oop range for this block
-    oop* start = obj->obj_field_addr(map->offset());
-    oop* end   = start + map->length();
-    // Iterate over oops
-    while (start < end) {
-      assert(Universe::heap()->is_in_or_null(*start), "should be in heap");
-      MarkSweep::adjust_pointer(start);
-      start++;
-    }
-    map++;
-  }
-
+  InstanceKlass_OOP_MAP_ITERATE( \
+    obj, \
+    MarkSweep::adjust_pointer(p), \
+    assert_is_in)
   obj->adjust_header();
   return size;
 }
@@ -1500,132 +1583,66 @@ int instanceKlass::oop_adjust_pointers(oop obj) {
 #ifndef SERIALGC
 void instanceKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
   assert(!pm->depth_first(), "invariant");
-  // Compute oopmap block range. The common case is nonstatic_oop_map_size == 1.
-  OopMapBlock* start_map = start_of_nonstatic_oop_maps();
-  OopMapBlock* map       = start_map + nonstatic_oop_map_size();
-
-  // Iterate over oopmap blocks
-  while (start_map < map) {
-    --map;
-    // Compute oop range for this block
-    oop* start = obj->obj_field_addr(map->offset());
-    oop* curr  = start + map->length();
-    // Iterate over oops
-    while (start < curr) {
-      --curr;
-      if (PSScavenge::should_scavenge(*curr)) {
-        assert(Universe::heap()->is_in(*curr), "should be in heap");
-        pm->claim_or_forward_breadth(curr);
-      }
-    }
-  }
+  InstanceKlass_OOP_MAP_REVERSE_ITERATE( \
+    obj, \
+    if (PSScavenge::should_scavenge(p)) { \
+      pm->claim_or_forward_breadth(p); \
+    }, \
+    assert_nothing )
 }
 
 void instanceKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(pm->depth_first(), "invariant");
-  // Compute oopmap block range. The common case is nonstatic_oop_map_size == 1.
-  OopMapBlock* start_map = start_of_nonstatic_oop_maps();
-  OopMapBlock* map       = start_map + nonstatic_oop_map_size();
-
-  // Iterate over oopmap blocks
-  while (start_map < map) {
-    --map;
-    // Compute oop range for this block
-    oop* start = obj->obj_field_addr(map->offset());
-    oop* curr  = start + map->length();
-    // Iterate over oops
-    while (start < curr) {
-      --curr;
-      if (PSScavenge::should_scavenge(*curr)) {
-        assert(Universe::heap()->is_in(*curr), "should be in heap");
-        pm->claim_or_forward_depth(curr);
-      }
-    }
-  }
+  InstanceKlass_OOP_MAP_REVERSE_ITERATE( \
+    obj, \
+    if (PSScavenge::should_scavenge(p)) { \
+      pm->claim_or_forward_depth(p); \
+    }, \
+    assert_nothing )
 }
 
 int instanceKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
-  // Compute oopmap block range.  The common case is nonstatic_oop_map_size==1.
-  OopMapBlock* map           = start_of_nonstatic_oop_maps();
-  OopMapBlock* const end_map = map + nonstatic_oop_map_size();
-  // Iterate over oopmap blocks
-  while (map < end_map) {
-    // Compute oop range for this oopmap block.
-    oop* const map_start = obj->obj_field_addr(map->offset());
-    oop* const beg_oop = map_start;
-    oop* const end_oop = map_start + map->length();
-    for (oop* cur_oop = beg_oop; cur_oop < end_oop; ++cur_oop) {
-      PSParallelCompact::adjust_pointer(cur_oop);
-    }
-    ++map;
-  }
-
+  InstanceKlass_OOP_MAP_ITERATE( \
+    obj, \
+    PSParallelCompact::adjust_pointer(p), \
+    assert_nothing)
   return size_helper();
 }
 
 int instanceKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
                                        HeapWord* beg_addr, HeapWord* end_addr) {
-  // Compute oopmap block range.  The common case is nonstatic_oop_map_size==1.
-  OopMapBlock* map           = start_of_nonstatic_oop_maps();
-  OopMapBlock* const end_map = map + nonstatic_oop_map_size();
-  // Iterate over oopmap blocks
-  while (map < end_map) {
-    // Compute oop range for this oopmap block.
-    oop* const map_start = obj->obj_field_addr(map->offset());
-    oop* const beg_oop = MAX2((oop*)beg_addr, map_start);
-    oop* const end_oop = MIN2((oop*)end_addr, map_start + map->length());
-    for (oop* cur_oop = beg_oop; cur_oop < end_oop; ++cur_oop) {
-      PSParallelCompact::adjust_pointer(cur_oop);
-    }
-    ++map;
-  }
-
+  InstanceKlass_BOUNDED_OOP_MAP_ITERATE( \
+    obj, beg_addr, end_addr, \
+    PSParallelCompact::adjust_pointer(p), \
+    assert_nothing)
   return size_helper();
 }
 
 void instanceKlass::copy_static_fields(PSPromotionManager* pm) {
   assert(!pm->depth_first(), "invariant");
-  // Compute oop range
-  oop* start = start_of_static_fields();
-  oop* end   = start + static_oop_field_size();
-  // Iterate over oops
-  while (start < end) {
-    if (PSScavenge::should_scavenge(*start)) {
-      assert(Universe::heap()->is_in(*start), "should be in heap");
-      pm->claim_or_forward_breadth(start);
-    }
-    start++;
-  }
+  InstanceKlass_OOP_ITERATE( \
+    start_of_static_fields(), static_oop_field_size(), \
+    if (PSScavenge::should_scavenge(p)) { \
+      pm->claim_or_forward_breadth(p); \
+    }, \
+    assert_nothing )
 }
 
 void instanceKlass::push_static_fields(PSPromotionManager* pm) {
   assert(pm->depth_first(), "invariant");
-  // Compute oop range
-  oop* start = start_of_static_fields();
-  oop* end   = start + static_oop_field_size();
-  // Iterate over oops
-  while (start < end) {
-    if (PSScavenge::should_scavenge(*start)) {
-      assert(Universe::heap()->is_in(*start), "should be in heap");
-      pm->claim_or_forward_depth(start);
-    }
-    start++;
-  }
+  InstanceKlass_OOP_ITERATE( \
+    start_of_static_fields(), static_oop_field_size(), \
+    if (PSScavenge::should_scavenge(p)) { \
+      pm->claim_or_forward_depth(p); \
+    }, \
+    assert_nothing )
 }
 
 void instanceKlass::copy_static_fields(ParCompactionManager* cm) {
-  // Compute oop range
-  oop* start = start_of_static_fields();
-  oop* end   = start + static_oop_field_size();
-  // Iterate over oops
-  while (start < end) {
-    if (*start != NULL) {
-      assert(Universe::heap()->is_in(*start), "should be in heap");
-      // *start = (oop) cm->summary_data()->calc_new_pointer(*start);
-      PSParallelCompact::adjust_pointer(start);
-    }
-    start++;
-  }
+  InstanceKlass_OOP_ITERATE( \
+    start_of_static_fields(), static_oop_field_size(), \
+    PSParallelCompact::adjust_pointer(p), \
+    assert_is_in)
 }
 #endif // SERIALGC
 
@@ -1656,17 +1673,14 @@ void instanceKlass::follow_weak_klass_links(
   Klass::follow_weak_klass_links(is_alive, keep_alive);
 }
 
-
 void instanceKlass::remove_unshareable_info() {
   Klass::remove_unshareable_info();
   init_implementor();
 }
 
-
 static void clear_all_breakpoints(methodOop m) {
   m->clear_all_breakpoints();
 }
-
 
 void instanceKlass::release_C_heap_structures() {
   // Deallocate oop map cache
@@ -2016,28 +2030,29 @@ void instanceKlass::oop_print_value_on(oop obj, outputStream* st) {
   obj->print_address_on(st);
 }
 
-#endif
+#endif // ndef PRODUCT
 
 const char* instanceKlass::internal_name() const {
   return external_name();
 }
 
-
-
 // Verification
 
 class VerifyFieldClosure: public OopClosure {
- public:
-  void do_oop(oop* p) {
+ protected:
+  template <class T> void do_oop_work(T* p) {
     guarantee(Universe::heap()->is_in_closed_subset(p), "should be in heap");
-    if (!(*p)->is_oop_or_null()) {
-      tty->print_cr("Failed: %p -> %p",p,(address)*p);
+    oop obj = oopDesc::load_decode_heap_oop(p);
+    if (!obj->is_oop_or_null()) {
+      tty->print_cr("Failed: " PTR_FORMAT " -> " PTR_FORMAT, p, (address)obj);
       Universe::print();
       guarantee(false, "boom");
     }
   }
+ public:
+  virtual void do_oop(oop* p)       { VerifyFieldClosure::do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) { VerifyFieldClosure::do_oop_work(p); }
 };
-
 
 void instanceKlass::oop_verify_on(oop obj, outputStream* st) {
   Klass::oop_verify_on(obj, st);
@@ -2079,26 +2094,28 @@ void instanceKlass::verify_class_klass_nonstatic_oop_maps(klassOop k) {
   }
 }
 
-#endif
+#endif // ndef PRODUCT
+
+// JNIid class for jfieldIDs only
+// Note to reviewers:
+// These JNI functions are just moved over to column 1 and not changed
+// in the compressed oops workspace.
+JNIid::JNIid(klassOop holder, int offset, JNIid* next) {
+  _holder = holder;
+  _offset = offset;
+  _next = next;
+  debug_only(_is_static_field_id = false;)
+}
 
 
-/* JNIid class for jfieldIDs only */
- JNIid::JNIid(klassOop holder, int offset, JNIid* next) {
-   _holder = holder;
-   _offset = offset;
-   _next = next;
-   debug_only(_is_static_field_id = false;)
- }
-
-
- JNIid* JNIid::find(int offset) {
-   JNIid* current = this;
-   while (current != NULL) {
-     if (current->offset() == offset) return current;
-     current = current->next();
-   }
-   return NULL;
- }
+JNIid* JNIid::find(int offset) {
+  JNIid* current = this;
+  while (current != NULL) {
+    if (current->offset() == offset) return current;
+    current = current->next();
+  }
+  return NULL;
+}
 
 void JNIid::oops_do(OopClosure* f) {
   for (JNIid* cur = this; cur != NULL; cur = cur->next()) {
@@ -2107,40 +2124,40 @@ void JNIid::oops_do(OopClosure* f) {
 }
 
 void JNIid::deallocate(JNIid* current) {
-   while (current != NULL) {
-     JNIid* next = current->next();
-     delete current;
-     current = next;
-   }
- }
+  while (current != NULL) {
+    JNIid* next = current->next();
+    delete current;
+    current = next;
+  }
+}
 
 
- void JNIid::verify(klassOop holder) {
-   int first_field_offset  = instanceKlass::cast(holder)->offset_of_static_fields();
-   int end_field_offset;
-   end_field_offset = first_field_offset + (instanceKlass::cast(holder)->static_field_size() * wordSize);
+void JNIid::verify(klassOop holder) {
+  int first_field_offset  = instanceKlass::cast(holder)->offset_of_static_fields();
+  int end_field_offset;
+  end_field_offset = first_field_offset + (instanceKlass::cast(holder)->static_field_size() * wordSize);
 
-   JNIid* current = this;
-   while (current != NULL) {
-     guarantee(current->holder() == holder, "Invalid klass in JNIid");
- #ifdef ASSERT
-     int o = current->offset();
-     if (current->is_static_field_id()) {
-       guarantee(o >= first_field_offset  && o < end_field_offset,  "Invalid static field offset in JNIid");
-     }
- #endif
-     current = current->next();
-   }
- }
+  JNIid* current = this;
+  while (current != NULL) {
+    guarantee(current->holder() == holder, "Invalid klass in JNIid");
+#ifdef ASSERT
+    int o = current->offset();
+    if (current->is_static_field_id()) {
+      guarantee(o >= first_field_offset  && o < end_field_offset,  "Invalid static field offset in JNIid");
+    }
+#endif
+    current = current->next();
+  }
+}
 
 
 #ifdef ASSERT
-  void instanceKlass::set_init_state(ClassState state) {
-    bool good_state = as_klassOop()->is_shared() ? (_init_state <= state)
-                                                 : (_init_state < state);
-    assert(good_state || state == allocated, "illegal state transition");
-    _init_state = state;
-  }
+void instanceKlass::set_init_state(ClassState state) {
+  bool good_state = as_klassOop()->is_shared() ? (_init_state <= state)
+                                               : (_init_state < state);
+  assert(good_state || state == allocated, "illegal state transition");
+  _init_state = state;
+}
 #endif
 
 
@@ -2149,9 +2166,9 @@ void JNIid::deallocate(JNIid* current) {
 // Add an information node that contains weak references to the
 // interesting parts of the previous version of the_class.
 void instanceKlass::add_previous_version(instanceKlassHandle ikh,
-       BitMap * emcp_methods, int emcp_method_count) {
+       BitMap* emcp_methods, int emcp_method_count) {
   assert(Thread::current()->is_VM_thread(),
-    "only VMThread can add previous versions");
+         "only VMThread can add previous versions");
 
   if (_previous_versions == NULL) {
     // This is the first previous version so make some space.
@@ -2165,12 +2182,20 @@ void instanceKlass::add_previous_version(instanceKlassHandle ikh,
   RC_TRACE(0x00000100, ("adding previous version ref for %s @%d, EMCP_cnt=%d",
     ikh->external_name(), _previous_versions->length(), emcp_method_count));
   constantPoolHandle cp_h(ikh->constants());
-  jweak cp_ref = JNIHandles::make_weak_global(cp_h);
+  jobject cp_ref;
+  if (cp_h->is_shared()) {
+    // a shared ConstantPool requires a regular reference; a weak
+    // reference would be collectible
+    cp_ref = JNIHandles::make_global(cp_h);
+  } else {
+    cp_ref = JNIHandles::make_weak_global(cp_h);
+  }
   PreviousVersionNode * pv_node = NULL;
   objArrayOop old_methods = ikh->methods();
 
   if (emcp_method_count == 0) {
-    pv_node = new PreviousVersionNode(cp_ref, NULL);
+    // non-shared ConstantPool gets a weak reference
+    pv_node = new PreviousVersionNode(cp_ref, !cp_h->is_shared(), NULL);
     RC_TRACE(0x00000400,
       ("add: all methods are obsolete; flushing any EMCP weak refs"));
   } else {
@@ -2190,7 +2215,8 @@ void instanceKlass::add_previous_version(instanceKlassHandle ikh,
         }
       }
     }
-    pv_node = new PreviousVersionNode(cp_ref, method_refs);
+    // non-shared ConstantPool gets a weak reference
+    pv_node = new PreviousVersionNode(cp_ref, !cp_h->is_shared(), method_refs);
   }
 
   _previous_versions->append(pv_node);
@@ -2208,7 +2234,7 @@ void instanceKlass::add_previous_version(instanceKlassHandle ikh,
     // check the previous versions array for a GC'ed weak refs
     pv_node = _previous_versions->at(i);
     cp_ref = pv_node->prev_constant_pool();
-    assert(cp_ref != NULL, "weak cp ref was unexpectedly cleared");
+    assert(cp_ref != NULL, "cp ref was unexpectedly cleared");
     if (cp_ref == NULL) {
       delete pv_node;
       _previous_versions->remove_at(i);
@@ -2281,7 +2307,7 @@ void instanceKlass::add_previous_version(instanceKlassHandle ikh,
           // check the previous versions array for a GC'ed weak refs
           pv_node = _previous_versions->at(j);
           cp_ref = pv_node->prev_constant_pool();
-          assert(cp_ref != NULL, "weak cp ref was unexpectedly cleared");
+          assert(cp_ref != NULL, "cp ref was unexpectedly cleared");
           if (cp_ref == NULL) {
             delete pv_node;
             _previous_versions->remove_at(j);
@@ -2379,8 +2405,8 @@ bool instanceKlass::has_previous_version() const {
     // been GC'ed
     PreviousVersionNode * pv_node = _previous_versions->at(i);
 
-    jweak cp_ref = pv_node->prev_constant_pool();
-    assert(cp_ref != NULL, "weak reference was unexpectedly cleared");
+    jobject cp_ref = pv_node->prev_constant_pool();
+    assert(cp_ref != NULL, "cp reference was unexpectedly cleared");
     if (cp_ref == NULL) {
       continue;  // robustness
     }
@@ -2440,10 +2466,11 @@ void instanceKlass::set_methods_annotations_of(int idnum, typeArrayOop anno, obj
 
 // Construct a PreviousVersionNode entry for the array hung off
 // the instanceKlass.
-PreviousVersionNode::PreviousVersionNode(jweak prev_constant_pool,
-  GrowableArray<jweak>* prev_EMCP_methods) {
+PreviousVersionNode::PreviousVersionNode(jobject prev_constant_pool,
+  bool prev_cp_is_weak, GrowableArray<jweak>* prev_EMCP_methods) {
 
   _prev_constant_pool = prev_constant_pool;
+  _prev_cp_is_weak = prev_cp_is_weak;
   _prev_EMCP_methods = prev_EMCP_methods;
 }
 
@@ -2451,7 +2478,11 @@ PreviousVersionNode::PreviousVersionNode(jweak prev_constant_pool,
 // Destroy a PreviousVersionNode
 PreviousVersionNode::~PreviousVersionNode() {
   if (_prev_constant_pool != NULL) {
-    JNIHandles::destroy_weak_global(_prev_constant_pool);
+    if (_prev_cp_is_weak) {
+      JNIHandles::destroy_weak_global(_prev_constant_pool);
+    } else {
+      JNIHandles::destroy_global(_prev_constant_pool);
+    }
   }
 
   if (_prev_EMCP_methods != NULL) {
@@ -2471,8 +2502,8 @@ PreviousVersionInfo::PreviousVersionInfo(PreviousVersionNode *pv_node) {
   _prev_constant_pool_handle = constantPoolHandle();  // NULL handle
   _prev_EMCP_method_handles = NULL;
 
-  jweak cp_ref = pv_node->prev_constant_pool();
-  assert(cp_ref != NULL, "weak constant pool ref was unexpectedly cleared");
+  jobject cp_ref = pv_node->prev_constant_pool();
+  assert(cp_ref != NULL, "constant pool ref was unexpectedly cleared");
   if (cp_ref == NULL) {
     return;  // robustness
   }

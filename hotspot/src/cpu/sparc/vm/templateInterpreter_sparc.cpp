@@ -591,7 +591,10 @@ address InterpreterGenerator::generate_accessor_entry(void) {
   address entry = __ pc();
   Label slow_path;
 
-  if ( UseFastAccessorMethods) {
+
+  // XXX: for compressed oops pointer loading and decoding doesn't fit in
+  // delay slot and damages G1
+  if ( UseFastAccessorMethods && !UseCompressedOops ) {
     // Check if we need to reach a safepoint and generate full interpreter
     // frame if so.
     Address sync_state(G3_scratch, SafepointSynchronize::address_of_state());
@@ -953,6 +956,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // Back from jni method Lmethod in this frame is DEAD, DEAD, DEAD
 
   __ restore_thread(L7_thread_cache); // restore G2_thread
+  __ reinit_heapbase();
 
   // must we block?
 

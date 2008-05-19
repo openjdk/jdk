@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,9 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.IOException;
 
-import java.beans.*;
-
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.Transient;
 
 /**
  * Provides a scrollable view of a lightweight component.
@@ -822,6 +823,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @return the <code>horizontalScrollBar</code> property
      * @see #setHorizontalScrollBar
      */
+    @Transient
     public JScrollBar getHorizontalScrollBar() {
         return horizontalScrollBar;
     }
@@ -880,6 +882,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @return the <code>verticalScrollBar</code> property
      * @see #setVerticalScrollBar
      */
+    @Transient
     public JScrollBar getVerticalScrollBar() {
         return verticalScrollBar;
     }
@@ -1012,6 +1015,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @return the <code>rowHeader</code> property
      * @see #setRowHeader
      */
+    @Transient
     public JViewport getRowHeader() {
         return rowHeader;
     }
@@ -1081,6 +1085,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @return the <code>columnHeader</code> property
      * @see #setColumnHeader
      */
+    @Transient
     public JViewport getColumnHeader() {
         return columnHeader;
     }

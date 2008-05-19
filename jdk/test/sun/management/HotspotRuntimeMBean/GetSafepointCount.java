@@ -37,7 +37,7 @@ import sun.management.*;
 public class GetSafepointCount {
 
     private static HotspotRuntimeMBean mbean =
-        (HotspotRuntimeMBean)ManagementFactory.getHotspotRuntimeMBean();
+        (HotspotRuntimeMBean)ManagementFactoryHelper.getHotspotRuntimeMBean();
 
     private static final long NUM_THREAD_DUMPS = 5;
 

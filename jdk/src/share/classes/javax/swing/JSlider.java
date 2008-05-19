@@ -485,9 +485,9 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
                 accessibleContext.firePropertyChange(
                                                     AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
                                                     (oldModel == null
-                                                     ? null : new Integer(oldModel.getValue())),
+                                                     ? null : Integer.valueOf(oldModel.getValue())),
                                                     (newModel == null
-                                                     ? null : new Integer(newModel.getValue())));
+                                                     ? null : Integer.valueOf(newModel.getValue())));
             }
         }
 
@@ -538,8 +538,8 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
         if (accessibleContext != null) {
             accessibleContext.firePropertyChange(
                                                 AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
-                                                new Integer(oldValue),
-                                                new Integer(m.getValue()));
+                                                Integer.valueOf(oldValue),
+                                                Integer.valueOf(m.getValue()));
         }
     }
 
@@ -581,7 +581,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
     public void setMinimum(int minimum) {
         int oldMin = getModel().getMinimum();
         getModel().setMinimum(minimum);
-        firePropertyChange( "minimum", new Integer( oldMin ), new Integer( minimum ) );
+        firePropertyChange( "minimum", Integer.valueOf( oldMin ), Integer.valueOf( minimum ) );
     }
 
 
@@ -622,7 +622,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
     public void setMaximum(int maximum) {
         int oldMax = getModel().getMaximum();
         getModel().setMaximum(maximum);
-        firePropertyChange( "maximum", new Integer( oldMax ), new Integer( maximum ) );
+        firePropertyChange( "maximum", Integer.valueOf( oldMax ), Integer.valueOf( maximum ) );
     }
 
 
@@ -989,7 +989,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
 
             void createLabels() {
                 for ( int labelIndex = start; labelIndex <= getMaximum(); labelIndex += increment ) {
-                    put( new Integer( labelIndex ), new LabelUIResource( ""+labelIndex, JLabel.CENTER ) );
+                    put( Integer.valueOf( labelIndex ), new LabelUIResource( ""+labelIndex, JLabel.CENTER ) );
                 }
             }
         }
@@ -1463,7 +1463,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
          * @return The current value of this object.
          */
         public Number getCurrentAccessibleValue() {
-            return new Integer(getValue());
+            return Integer.valueOf(getValue());
         }
 
         /**
@@ -1486,7 +1486,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
          * @return The minimum value of this object.
          */
         public Number getMinimumAccessibleValue() {
-            return new Integer(getMinimum());
+            return Integer.valueOf(getMinimum());
         }
 
         /**
@@ -1497,7 +1497,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
         public Number getMaximumAccessibleValue() {
             // TIGER - 4422362
             BoundedRangeModel model = JSlider.this.getModel();
-            return new Integer(model.getMaximum() - model.getExtent());
+            return Integer.valueOf(model.getMaximum() - model.getExtent());
         }
     } // AccessibleJSlider
 }

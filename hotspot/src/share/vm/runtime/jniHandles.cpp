@@ -206,9 +206,10 @@ private:
   int _count;
 public:
   CountHandleClosure(): _count(0) {}
-  void do_oop(oop* unused) {
+  virtual void do_oop(oop* unused) {
     _count++;
   }
+  virtual void do_oop(narrowOop* unused) { ShouldNotReachHere(); }
   int count() { return _count; }
 };
 
@@ -230,9 +231,10 @@ void JNIHandles::print_on(outputStream* st) {
 
 class VerifyHandleClosure: public OopClosure {
 public:
-  void do_oop(oop* root) {
+  virtual void do_oop(oop* root) {
     (*root)->verify();
   }
+  virtual void do_oop(narrowOop* root) { ShouldNotReachHere(); }
 };
 
 void JNIHandles::verify() {

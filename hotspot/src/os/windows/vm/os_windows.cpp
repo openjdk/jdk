@@ -621,7 +621,12 @@ julong os::physical_memory() {
 }
 
 julong os::allocatable_physical_memory(julong size) {
+#ifdef _LP64
+  return size;
+#else
+  // Limit to 1400m because of the 2gb address space wall
   return MIN2(size, (julong)1400*M);
+#endif
 }
 
 // VC6 lacks DWORD_PTR
@@ -732,20 +737,13 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-jlong os::timeofday() {
-  FILETIME wt;
-  GetSystemTimeAsFileTime(&wt);
-  return windows_to_java_time(wt);
-}
-
-
-// Must return millis since Jan 1 1970 for JVM_CurrentTimeMillis
-// _use_global_time is only set if CacheTimeMillis is true
 jlong os::javaTimeMillis() {
   if (UseFakeTimers) {
     return fake_time++;
   } else {
-    return (_use_global_time ? read_global_time() : timeofday());
+    FILETIME wt;
+    GetSystemTimeAsFileTime(&wt);
+    return windows_to_java_time(wt);
   }
 }
 
@@ -2518,9 +2516,13 @@ bool os::can_commit_large_page_memory() {
   return false;
 }
 
+bool os::can_execute_large_page_memory() {
+  return true;
+}
+
 char* os::reserve_memory_special(size_t bytes) {
   DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
-  char * res = (char *)VirtualAlloc(NULL, bytes, flag, PAGE_READWRITE);
+  char * res = (char *)VirtualAlloc(NULL, bytes, flag, PAGE_EXECUTE_READWRITE);
   return res;
 }
 
@@ -2579,7 +2581,7 @@ bool os::unguard_memory(char* addr, size_t bytes) {
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
 void os::free_memory(char *addr, size_t bytes)         { }
 void os::numa_make_global(char *addr, size_t bytes)    { }
-void os::numa_make_local(char *addr, size_t bytes)     { }
+void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 bool os::numa_topology_changed()                       { return false; }
 size_t os::numa_get_groups_num()                       { return 1; }
 int os::numa_get_group_id()                            { return 0; }
@@ -3114,7 +3116,7 @@ jint os::init_2(void) {
   // as reserve size, since on a 64-bit platform we'll run into that more
   // often than running out of virtual memory space.  We can use the
   // lower value of the two calculations as the os_thread_limit.
-  size_t max_address_space = ((size_t)1 << (BitsPerOop - 1)) - (200 * K * K);
+  size_t max_address_space = ((size_t)1 << (BitsPerWord - 1)) - (200 * K * K);
   win32::_os_thread_limit = (intx)(max_address_space / actual_reserve_size);
 
   // at exit methods are called in the reverse order of their registration.

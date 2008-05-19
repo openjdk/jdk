@@ -27,6 +27,7 @@ class BoxLockNode : public Node {
 public:
   const int _slot;
   RegMask   _inmask;
+  bool _is_eliminated;    // indicates this lock was safely eliminated
 
   BoxLockNode( int lock );
   virtual int Opcode() const;
@@ -41,6 +42,10 @@ public:
   virtual uint ideal_reg() const { return Op_RegP; }
 
   static OptoReg::Name stack_slot(Node* box_node);
+
+  bool is_eliminated()  { return _is_eliminated; }
+  // mark lock as eliminated.
+  void set_eliminated() { _is_eliminated = true; }
 
 #ifndef PRODUCT
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;

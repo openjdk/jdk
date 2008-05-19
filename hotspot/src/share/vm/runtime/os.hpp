@@ -33,6 +33,7 @@ class JavaThread;
 class Event;
 class DLL;
 class FileHandle;
+template<class E> class GrowableArray;
 
 // %%%%% Moved ThreadState, START_FN, OSThread to new osThread.hpp. -- Rose
 
@@ -66,9 +67,6 @@ class os: AllStatic {
   static address            _polling_page;
   static volatile int32_t * _mem_serialize_page;
   static uintptr_t          _serialize_page_mask;
-  static volatile jlong     _global_time;
-  static volatile int       _global_time_lock;
-  static bool               _use_global_time;
   static size_t             _page_sizes[page_sizes_max];
 
   static void init_page_sizes(size_t default_page_size) {
@@ -88,11 +86,6 @@ class os: AllStatic {
   static bool getenv(const char* name, char* buffer, int len);
   static bool have_special_privileges();
 
-  static jlong  timeofday();
-  static void   enable_global_time()   { _use_global_time = true; }
-  static void   disable_global_time()  { _use_global_time = false; }
-  static jlong  read_global_time();
-  static void   update_global_time();
   static jlong  javaTimeMillis();
   static jlong  javaTimeNanos();
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);
@@ -214,7 +207,9 @@ class os: AllStatic {
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // NUMA-specific interface
-  static void   numa_make_local(char *addr, size_t bytes);
+  static bool   numa_has_static_binding();
+  static bool   numa_has_group_homing();
+  static void   numa_make_local(char *addr, size_t bytes, int lgrp_hint);
   static void   numa_make_global(char *addr, size_t bytes);
   static size_t numa_get_groups_num();
   static size_t numa_get_leaf_groups(int *ids, size_t size);
@@ -236,6 +231,7 @@ class os: AllStatic {
   static bool   large_page_init();
   static size_t large_page_size();
   static bool   can_commit_large_page_memory();
+  static bool   can_execute_large_page_memory();
 
   // OS interface to polling page
   static address get_polling_page()             { return _polling_page; }

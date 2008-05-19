@@ -35,6 +35,7 @@ class GenCollectedHeap : public SharedHeap {
   friend class CMSCollector;
   friend class GenMarkSweep;
   friend class VM_GenCollectForAllocation;
+  friend class VM_GenCollectForPermanentAllocation;
   friend class VM_GenCollectFull;
   friend class VM_GenCollectFullConcurrent;
   friend class VM_GC_HeapInspection;
@@ -452,8 +453,7 @@ public:
   // gen; return the new location of obj if successful.  Otherwise, return NULL.
   oop handle_failed_promotion(Generation* gen,
                               oop obj,
-                              size_t obj_size,
-                              oop* ref);
+                              size_t obj_size);
 
 private:
   // Accessor for memory state verification support

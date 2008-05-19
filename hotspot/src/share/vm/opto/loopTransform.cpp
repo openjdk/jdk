@@ -1513,7 +1513,8 @@ void IdealLoopTree::adjust_loop_exit_prob( PhaseIdealLoop *phase ) {
              (bol->in(1)->Opcode() == Op_StoreLConditional ) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapI ) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapL ) ||
-             (bol->in(1)->Opcode() == Op_CompareAndSwapP )))
+             (bol->in(1)->Opcode() == Op_CompareAndSwapP ) ||
+             (bol->in(1)->Opcode() == Op_CompareAndSwapN )))
           return;               // Allocation loops RARELY take backedge
         // Find the OTHER exit path from the IF
         Node* ex = iff->proj_out(1-test_con);
@@ -1714,6 +1715,7 @@ void IdealLoopTree::iteration_split( PhaseIdealLoop *phase, Node_List &old_new )
   // Gate unrolling, RCE and peeling efforts.
   if( !_child &&                // If not an inner loop, do not split
       !_irreducible &&
+      _allow_optimizations &&
       !tail()->is_top() ) {     // Also ignore the occasional dead backedge
     if (!_has_call) {
       iteration_split_impl( phase, old_new );

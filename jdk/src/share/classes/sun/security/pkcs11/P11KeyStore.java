@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,10 +156,10 @@ final class P11KeyStore extends KeyStoreSpi {
         // CKA_CLASS - entry type
         private CK_ATTRIBUTE type = null;
 
-        // CKA_LABEL of cert
+        // CKA_LABEL of cert and secret key
         private String label = null;
 
-        // CKA_ID - of private key/cert
+        // CKA_ID of the private key/cert pair
         private byte[] id = null;
 
         // CKA_TRUSTED - true if cert is trusted
@@ -871,10 +871,8 @@ final class P11KeyStore extends KeyStoreSpi {
         if ((token.tokenInfo.flags & CKF_PROTECTED_AUTHENTICATION_PATH) == 0) {
             token.provider.login(null, handler);
         } else {
-
             // token supports protected authentication path
             // (external pin-pad, for example)
-
             if (handler != null &&
                 !token.config.getKeyStoreCompatibilityMode()) {
                 throw new LoginException("can not specify password if token " +
@@ -1130,19 +1128,14 @@ final class P11KeyStore extends KeyStoreSpi {
                 SecretKey skey = ske.getSecretKey();
 
                 try {
-                    // first see if the key already exists.
-                    // if so, update the CKA_LABEL
-                    if (!updateSkey(alias)) {
+                    // first check if the key already exists
+                    AliasInfo aliasInfo = aliasMap.get(alias);
 
-                        // key entry does not exist.
-                        // delete existing entry for alias and
-                        // create new secret key entry
-                        // (new entry might be a secret key
-                        // session object converted into a token object)
-
+                    if (aliasInfo != null) {
                         engineDeleteEntry(alias);
-                        storeSkey(alias, ske);
                     }
+                    storeSkey(alias, ske);
+
                 } catch (PKCS11Exception pe) {
                     throw new KeyStoreException(pe);
                 }
@@ -1396,41 +1389,6 @@ final class P11KeyStore extends KeyStoreSpi {
         }
     }
 
-    /**
-     * return true if update occurred
-     */
-    private boolean updateSkey(String alias)
-                throws KeyStoreException, PKCS11Exception {
-
-        Session session = null;
-        try {
-            session = token.getOpSession();
-
-            // first update existing secret key CKA_LABEL
-
-            THandle h = getTokenObject(session, ATTR_CLASS_SKEY, null, alias);
-            if (h.type != ATTR_CLASS_SKEY) {
-                if (debug != null) {
-                    debug.println("did not find secret key " +
-                        "with CKA_LABEL [" + alias + "]");
-                }
-                return false;
-            }
-            CK_ATTRIBUTE[] attrs = new CK_ATTRIBUTE[] {
-                                new CK_ATTRIBUTE(CKA_LABEL, alias) };
-            token.p11.C_SetAttributeValue(session.id(), h.handle, attrs);
-
-            if (debug != null) {
-                debug.println("updateSkey set new alias [" +
-                                alias +
-                                "] for secret key entry");
-            }
-
-            return true;
-        } finally {
-            token.releaseSession(session);
-        }
-    }
 
     /**
      * XXX  On ibutton, when you C_SetAttribute(CKA_ID) for a private key
@@ -1526,30 +1484,6 @@ final class P11KeyStore extends KeyStoreSpi {
                 debug.println("updatePkey set new alias [" +
                                 alias +
                                 "] for private key entry");
-            }
-        } finally {
-            token.releaseSession(session);
-        }
-    }
-
-    private void updateP11Skey(String alias, P11Key key)
-                throws PKCS11Exception {
-
-        Session session = null;
-        try {
-            session = token.getOpSession();
-
-            // session key - convert to token key and set CKA_LABEL
-
-            CK_ATTRIBUTE[] attrs = new CK_ATTRIBUTE[] {
-                                ATTR_TOKEN_TRUE,
-                                new CK_ATTRIBUTE(CKA_LABEL, alias) };
-            token.p11.C_CopyObject(session.id(), key.keyID, attrs);
-            if (debug != null) {
-                    debug.println("updateP11Skey copied secret session key " +
-                                "for [" +
-                                alias +
-                                "] to token entry");
             }
         } finally {
             token.releaseSession(session);
@@ -1689,48 +1623,26 @@ final class P11KeyStore extends KeyStoreSpi {
                 throws PKCS11Exception, KeyStoreException {
 
         SecretKey skey = ske.getSecretKey();
-        long keyType = CKK_GENERIC_SECRET;
-
-        if (skey instanceof P11Key && this.token == ((P11Key)skey).token) {
-            updateP11Skey(alias, (P11Key)skey);
-            return;
-        }
-
-        if ("AES".equalsIgnoreCase(skey.getAlgorithm())) {
-            keyType = CKK_AES;
-        } else if ("Blowfish".equalsIgnoreCase(skey.getAlgorithm())) {
-            keyType = CKK_BLOWFISH;
-        } else if ("DES".equalsIgnoreCase(skey.getAlgorithm())) {
-            keyType = CKK_DES;
-        } else if ("DESede".equalsIgnoreCase(skey.getAlgorithm())) {
-            keyType = CKK_DES3;
-        } else if ("RC4".equalsIgnoreCase(skey.getAlgorithm()) ||
-                    "ARCFOUR".equalsIgnoreCase(skey.getAlgorithm())) {
-            keyType = CKK_RC4;
-        }
-
+        // No need to specify CKA_CLASS, CKA_KEY_TYPE, CKA_VALUE since
+        // they are handled in P11SecretKeyFactory.createKey() method.
         CK_ATTRIBUTE[] attrs = new CK_ATTRIBUTE[] {
-                ATTR_SKEY_TOKEN_TRUE,
-                ATTR_CLASS_SKEY,
-                ATTR_PRIVATE_TRUE,
-                new CK_ATTRIBUTE(CKA_KEY_TYPE, keyType),
-                new CK_ATTRIBUTE(CKA_LABEL, alias),
-                new CK_ATTRIBUTE(CKA_VALUE, skey.getEncoded()) };
-        attrs = token.getAttributes
-                (TemplateManager.O_IMPORT, CKO_SECRET_KEY, keyType, attrs);
-
-        // create the new entry
-        Session session = null;
+            ATTR_SKEY_TOKEN_TRUE,
+            ATTR_PRIVATE_TRUE,
+            new CK_ATTRIBUTE(CKA_LABEL, alias),
+        };
         try {
-            session = token.getOpSession();
-            token.p11.C_CreateObject(session.id(), attrs);
-            if (debug != null) {
-                debug.println("storeSkey created token secret key for [" +
-                                alias +
-                                "]");
-            }
-        } finally {
-            token.releaseSession(session);
+            P11SecretKeyFactory.convertKey(token, skey, null, attrs);
+        } catch (InvalidKeyException ike) {
+            // re-throw KeyStoreException to match javadoc
+            throw new KeyStoreException("Cannot convert to PKCS11 keys", ike);
+        }
+
+        // update global alias map
+        aliasMap.put(alias, new AliasInfo(alias));
+
+        if (debug != null) {
+            debug.println("storeSkey created token secret key for [" +
+                          alias + "]");
         }
     }
 
@@ -2492,7 +2404,8 @@ final class P11KeyStore extends KeyStoreSpi {
             // if there are duplicates (either between secret keys,
             // or between a secret key and another object),
             // throw an exception
-            HashSet<String> sKeySet = new HashSet<String>();
+            HashMap<String, AliasInfo> sKeyMap =
+                    new HashMap<String, AliasInfo>();
 
             attrs = new CK_ATTRIBUTE[] {
                 ATTR_SKEY_TOKEN_TRUE,
@@ -2507,8 +2420,8 @@ final class P11KeyStore extends KeyStoreSpi {
 
                     // there is a CKA_LABEL
                     String cka_label = new String(attrs[0].getCharArray());
-                    if (!sKeySet.contains(cka_label)) {
-                        sKeySet.add(cka_label);
+                    if (sKeyMap.get(cka_label) == null) {
+                        sKeyMap.put(cka_label, new AliasInfo(cka_label));
                     } else {
                         throw new KeyStoreException("invalid KeyStore state: " +
                                 "found multiple secret keys sharing same " +
@@ -2523,7 +2436,7 @@ final class P11KeyStore extends KeyStoreSpi {
             ArrayList<AliasInfo> matchedCerts =
                                 mapPrivateKeys(pkeyIDs, certMap);
             boolean sharedLabel = mapCerts(matchedCerts, certMap);
-            mapSecretKeys(sKeySet);
+            mapSecretKeys(sKeyMap);
 
             return sharedLabel;
 
@@ -2547,7 +2460,7 @@ final class P11KeyStore extends KeyStoreSpi {
                         HashMap<String, HashSet<AliasInfo>> certMap)
                 throws PKCS11Exception, CertificateException {
 
-        // global alias map
+        // reset global alias map
         aliasMap = new HashMap<String, AliasInfo>();
 
         // list of matched certs that we will return
@@ -2722,18 +2635,17 @@ final class P11KeyStore extends KeyStoreSpi {
      * If the secret key shares a CKA_LABEL with another entry,
      * throw an exception
      */
-    private void mapSecretKeys(HashSet<String> sKeySet)
+    private void mapSecretKeys(HashMap<String, AliasInfo> sKeyMap)
                 throws KeyStoreException {
-        for (String label : sKeySet) {
-            if (!aliasMap.containsKey(label)) {
-                aliasMap.put(label, new AliasInfo(label));
-            } else {
+        for (String label : sKeyMap.keySet()) {
+            if (aliasMap.containsKey(label)) {
                 throw new KeyStoreException("invalid KeyStore state: " +
                         "found secret key sharing CKA_LABEL [" +
                         label +
                         "] with another token object");
             }
         }
+        aliasMap.putAll(sKeyMap);
     }
 
     private void dumpTokenMap() {

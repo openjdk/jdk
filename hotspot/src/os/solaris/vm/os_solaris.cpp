@@ -122,6 +122,13 @@ struct memcntl_mha {
 # define  MADV_ACCESS_MANY        8       /* many processes to access heavily */
 #endif
 
+#ifndef LGRP_RSRC_CPU
+# define LGRP_RSRC_CPU           0       /* CPU resources */
+#endif
+#ifndef LGRP_RSRC_MEM
+# define LGRP_RSRC_MEM           1       /* memory resources */
+#endif
+
 // Some more macros from sys/mman.h that are not present in Solaris 8.
 
 #ifndef MAX_MEMINFO_CNT
@@ -1691,17 +1698,12 @@ jlong getTimeMillis() {
   return (jlong)(nanotime / NANOSECS_PER_MILLISECS);
 }
 
-jlong os::timeofday() {
+// Must return millis since Jan 1 1970 for JVM_CurrentTimeMillis
+jlong os::javaTimeMillis() {
   timeval t;
   if (gettimeofday( &t, NULL) == -1)
-    fatal1("timeofday: gettimeofday (%s)", strerror(errno));
+    fatal1("os::javaTimeMillis: gettimeofday (%s)", strerror(errno));
   return jlong(t.tv_sec) * 1000  +  jlong(t.tv_usec) / 1000;
-}
-
-// Must return millis since Jan 1 1970 for JVM_CurrentTimeMillis
-// _use_global_time is only set if CacheTimeMillis is true
-jlong os::javaTimeMillis() {
-  return (_use_global_time ? read_global_time() : timeofday());
 }
 
 jlong os::javaTimeNanos() {
@@ -2607,7 +2609,7 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
 // Tell the OS to make the range local to the first-touching LWP
-void os::numa_make_local(char *addr, size_t bytes) {
+void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint) {
   assert((intptr_t)addr % os::vm_page_size() == 0, "Address should be page-aligned.");
   if (madvise(addr, bytes, MADV_ACCESS_LWP) < 0) {
     debug_only(warning("MADV_ACCESS_LWP failed."));
@@ -2645,8 +2647,13 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
        return 1;
      }
      if (!r) {
+       // That's a leaf node.
        assert (bottom <= cur, "Sanity check");
-       ids[bottom++] = ids[cur];
+       // Check if the node has memory
+       if (Solaris::lgrp_resources(Solaris::lgrp_cookie(), ids[cur],
+                                   NULL, 0, LGRP_RSRC_MEM) > 0) {
+         ids[bottom++] = ids[cur];
+       }
      }
      top += r;
      cur++;
@@ -2669,11 +2676,20 @@ bool os::numa_topology_changed() {
 
 // Get the group id of the current LWP.
 int os::numa_get_group_id() {
-  int lgrp_id = os::Solaris::lgrp_home(P_LWPID, P_MYID);
+  int lgrp_id = Solaris::lgrp_home(P_LWPID, P_MYID);
   if (lgrp_id == -1) {
     return 0;
   }
-  return lgrp_id;
+  const int size = os::numa_get_groups_num();
+  int *ids = (int*)alloca(size * sizeof(int));
+
+  // Get the ids of all lgroups with memory; r is the count.
+  int r = Solaris::lgrp_resources(Solaris::lgrp_cookie(), lgrp_id,
+                                  (Solaris::lgrp_id_t*)ids, size, LGRP_RSRC_MEM);
+  if (r <= 0) {
+    return 0;
+  }
+  return ids[os::random() % r];
 }
 
 // Request information about the page.
@@ -2785,16 +2801,15 @@ char* os::Solaris::mmap_chunk(char *addr, size_t size, int flags, int prot) {
   return b;
 }
 
-char*
-os::reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
-  char* addr = NULL;
-  int   flags;
+char* os::Solaris::anon_mmap(char* requested_addr, size_t bytes, size_t alignment_hint, bool fixed) {
+  char* addr = requested_addr;
+  int flags = MAP_PRIVATE | MAP_NORESERVE;
 
-  flags = MAP_PRIVATE | MAP_NORESERVE;
-  if (requested_addr != NULL) {
-      flags |= MAP_FIXED;
-      addr = requested_addr;
-  } else if (has_map_align && alignment_hint > (size_t) vm_page_size()) {
+  assert(!(fixed && (alignment_hint > 0)), "alignment hint meaningless with fixed mmap");
+
+  if (fixed) {
+    flags |= MAP_FIXED;
+  } else if (has_map_align && (alignment_hint > (size_t) vm_page_size())) {
     flags |= MAP_ALIGN;
     addr = (char*) alignment_hint;
   }
@@ -2802,11 +2817,14 @@ os::reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
   // Map uncommitted pages PROT_NONE so we fail early if we touch an
   // uncommitted page. Otherwise, the read/write might succeed if we
   // have enough swap space to back the physical page.
-  addr = Solaris::mmap_chunk(addr, bytes, flags, PROT_NONE);
+  return mmap_chunk(addr, bytes, flags, PROT_NONE);
+}
+
+char* os::reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
+  char* addr = Solaris::anon_mmap(requested_addr, bytes, alignment_hint, (requested_addr != NULL));
 
   guarantee(requested_addr == NULL || requested_addr == addr,
             "OS failed to return requested mmap address.");
-
   return addr;
 }
 
@@ -2832,6 +2850,31 @@ char* os::attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   // in one of the methods further up the call chain.  See bug 5044738.
   assert(bytes % os::vm_page_size() == 0, "reserving unexpected size block");
 
+  // Since snv_84, Solaris attempts to honor the address hint - see 5003415.
+  // Give it a try, if the kernel honors the hint we can return immediately.
+  char* addr = Solaris::anon_mmap(requested_addr, bytes, 0, false);
+  volatile int err = errno;
+  if (addr == requested_addr) {
+    return addr;
+  } else if (addr != NULL) {
+    unmap_memory(addr, bytes);
+  }
+
+  if (PrintMiscellaneous && Verbose) {
+    char buf[256];
+    buf[0] = '\0';
+    if (addr == NULL) {
+      jio_snprintf(buf, sizeof(buf), ": %s", strerror(err));
+    }
+    warning("attempt_reserve_memory_at: couldn't reserve %d bytes at "
+            PTR_FORMAT ": reserve_memory_helper returned " PTR_FORMAT
+            "%s", bytes, requested_addr, addr, buf);
+  }
+
+  // Address hint method didn't work.  Fall back to the old method.
+  // In theory, once SNV becomes our oldest supported platform, this
+  // code will no longer be needed.
+  //
   // Repeatedly allocate blocks until the block is allocated at the
   // right spot. Give up after max_tries.
   int i;
@@ -3067,6 +3110,8 @@ bool os::large_page_init() {
   if (UseISM) {
     // ISM disables MPSS to be compatible with old JDK behavior
     UseMPSS = false;
+    _page_sizes[0] = _large_page_size;
+    _page_sizes[1] = vm_page_size();
   }
 
   UseMPSS = UseMPSS &&
@@ -3153,6 +3198,10 @@ size_t os::large_page_size() {
 // MPSS allows application to commit large page memory on demand; with ISM
 // the entire memory region must be allocated as shared memory.
 bool os::can_commit_large_page_memory() {
+  return UseISM ? false : true;
+}
+
+bool os::can_execute_large_page_memory() {
   return UseISM ? false : true;
 }
 
@@ -4325,6 +4374,7 @@ os::Solaris::lgrp_init_func_t os::Solaris::_lgrp_init;
 os::Solaris::lgrp_fini_func_t os::Solaris::_lgrp_fini;
 os::Solaris::lgrp_root_func_t os::Solaris::_lgrp_root;
 os::Solaris::lgrp_children_func_t os::Solaris::_lgrp_children;
+os::Solaris::lgrp_resources_func_t os::Solaris::_lgrp_resources;
 os::Solaris::lgrp_nlgrps_func_t os::Solaris::_lgrp_nlgrps;
 os::Solaris::lgrp_cookie_stale_func_t os::Solaris::_lgrp_cookie_stale;
 os::Solaris::lgrp_cookie_t os::Solaris::_lgrp_cookie = 0;
@@ -4363,61 +4413,52 @@ static address resolve_symbol(const char *name) {
 // threads. Calling thr_setprio is meaningless in this case.
 //
 bool isT2_libthread() {
-  int i, rslt;
   static prheader_t * lwpArray = NULL;
   static int lwpSize = 0;
   static int lwpFile = -1;
   lwpstatus_t * that;
-  int aslwpcount;
   char lwpName [128];
   bool isT2 = false;
 
 #define ADR(x)  ((uintptr_t)(x))
 #define LWPINDEX(ary,ix)   ((lwpstatus_t *)(((ary)->pr_entsize * (ix)) + (ADR((ary) + 1))))
 
-  aslwpcount = 0;
-  lwpSize = 16*1024;
-  lwpArray = ( prheader_t *)NEW_C_HEAP_ARRAY (char, lwpSize);
-  lwpFile = open ("/proc/self/lstatus", O_RDONLY, 0);
-  if (lwpArray == NULL) {
-      if ( ThreadPriorityVerbose ) warning ("Couldn't allocate T2 Check array\n");
-      return(isT2);
-  }
+  lwpFile = open("/proc/self/lstatus", O_RDONLY, 0);
   if (lwpFile < 0) {
-      if ( ThreadPriorityVerbose ) warning ("Couldn't open /proc/self/lstatus\n");
-      return(isT2);
+      if (ThreadPriorityVerbose) warning ("Couldn't open /proc/self/lstatus\n");
+      return false;
   }
+  lwpSize = 16*1024;
   for (;;) {
     lseek (lwpFile, 0, SEEK_SET);
-    rslt = read (lwpFile, lwpArray, lwpSize);
-    if ((lwpArray->pr_nent * lwpArray->pr_entsize) <= lwpSize) {
+    lwpArray = (prheader_t *)NEW_C_HEAP_ARRAY(char, lwpSize);
+    if (read(lwpFile, lwpArray, lwpSize) < 0) {
+      if (ThreadPriorityVerbose) warning("Error reading /proc/self/lstatus\n");
       break;
     }
-    FREE_C_HEAP_ARRAY(char, lwpArray);
+    if ((lwpArray->pr_nent * lwpArray->pr_entsize) <= lwpSize) {
+       // We got a good snapshot - now iterate over the list.
+      int aslwpcount = 0;
+      for (int i = 0; i < lwpArray->pr_nent; i++ ) {
+        that = LWPINDEX(lwpArray,i);
+        if (that->pr_flags & PR_ASLWP) {
+          aslwpcount++;
+        }
+      }
+      if (aslwpcount == 0) isT2 = true;
+      break;
+    }
     lwpSize = lwpArray->pr_nent * lwpArray->pr_entsize;
-    lwpArray = ( prheader_t *)NEW_C_HEAP_ARRAY (char, lwpSize);
-    if (lwpArray == NULL) {
-        if ( ThreadPriorityVerbose ) warning ("Couldn't allocate T2 Check array\n");
-        return(isT2);
-    }
+    FREE_C_HEAP_ARRAY(char, lwpArray);  // retry.
   }
-
-  // We got a good snapshot - now iterate over the list.
-  for (i = 0; i < lwpArray->pr_nent; i++ ) {
-    that = LWPINDEX(lwpArray,i);
-    if (that->pr_flags & PR_ASLWP) {
-      aslwpcount++;
-    }
-  }
-  if ( aslwpcount == 0 ) isT2 = true;
 
   FREE_C_HEAP_ARRAY(char, lwpArray);
   close (lwpFile);
-  if ( ThreadPriorityVerbose ) {
-    if ( isT2 ) tty->print_cr("We are running with a T2 libthread\n");
+  if (ThreadPriorityVerbose) {
+    if (isT2) tty->print_cr("We are running with a T2 libthread\n");
     else tty->print_cr("We are not running with a T2 libthread\n");
   }
-  return (isT2);
+  return isT2;
 }
 
 
@@ -4536,6 +4577,7 @@ void os::Solaris::liblgrp_init() {
     os::Solaris::set_lgrp_fini(CAST_TO_FN_PTR(lgrp_fini_func_t, dlsym(handle, "lgrp_fini")));
     os::Solaris::set_lgrp_root(CAST_TO_FN_PTR(lgrp_root_func_t, dlsym(handle, "lgrp_root")));
     os::Solaris::set_lgrp_children(CAST_TO_FN_PTR(lgrp_children_func_t, dlsym(handle, "lgrp_children")));
+    os::Solaris::set_lgrp_resources(CAST_TO_FN_PTR(lgrp_resources_func_t, dlsym(handle, "lgrp_resources")));
     os::Solaris::set_lgrp_nlgrps(CAST_TO_FN_PTR(lgrp_nlgrps_func_t, dlsym(handle, "lgrp_nlgrps")));
     os::Solaris::set_lgrp_cookie_stale(CAST_TO_FN_PTR(lgrp_cookie_stale_func_t,
                                        dlsym(handle, "lgrp_cookie_stale")));

@@ -28,64 +28,68 @@ inline PSPromotionManager* PSPromotionManager::manager_array(int index) {
   return _manager_array[index];
 }
 
-inline void PSPromotionManager::claim_or_forward_internal_depth(oop* p) {
-  if (p != NULL) {
-    oop o = *p;
+template <class T>
+inline void PSPromotionManager::claim_or_forward_internal_depth(T* p) {
+  if (p != NULL) { // XXX: error if p != NULL here
+    oop o = oopDesc::load_decode_heap_oop_not_null(p);
     if (o->is_forwarded()) {
       o = o->forwardee();
-
       // Card mark
       if (PSScavenge::is_obj_in_young((HeapWord*) o)) {
         PSScavenge::card_table()->inline_write_ref_field_gc(p, o);
       }
-      *p = o;
+      oopDesc::encode_store_heap_oop_not_null(p, o);
     } else {
       push_depth(p);
     }
   }
 }
 
-inline void PSPromotionManager::claim_or_forward_internal_breadth(oop* p) {
-  if (p != NULL) {
-    oop o = *p;
+template <class T>
+inline void PSPromotionManager::claim_or_forward_internal_breadth(T* p) {
+  if (p != NULL) { // XXX: error if p != NULL here
+    oop o = oopDesc::load_decode_heap_oop_not_null(p);
     if (o->is_forwarded()) {
       o = o->forwardee();
     } else {
       o = copy_to_survivor_space(o, false);
     }
-
     // Card mark
     if (PSScavenge::is_obj_in_young((HeapWord*) o)) {
       PSScavenge::card_table()->inline_write_ref_field_gc(p, o);
     }
-    *p = o;
+    oopDesc::encode_store_heap_oop_not_null(p, o);
   }
 }
 
 inline void PSPromotionManager::flush_prefetch_queue() {
   assert(!depth_first(), "invariant");
-  for (int i=0; i<_prefetch_queue.length(); i++) {
-    claim_or_forward_internal_breadth(_prefetch_queue.pop());
+  for (int i = 0; i < _prefetch_queue.length(); i++) {
+    claim_or_forward_internal_breadth((oop*)_prefetch_queue.pop());
   }
 }
 
-inline void PSPromotionManager::claim_or_forward_depth(oop* p) {
+template <class T>
+inline void PSPromotionManager::claim_or_forward_depth(T* p) {
   assert(depth_first(), "invariant");
-  assert(PSScavenge::should_scavenge(*p, true), "revisiting object?");
-  assert(Universe::heap()->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  assert(PSScavenge::should_scavenge(p, true), "revisiting object?");
+  assert(Universe::heap()->kind() == CollectedHeap::ParallelScavengeHeap,
+         "Sanity");
   assert(Universe::heap()->is_in(p), "pointer outside heap");
 
   claim_or_forward_internal_depth(p);
 }
 
-inline void PSPromotionManager::claim_or_forward_breadth(oop* p) {
+template <class T>
+inline void PSPromotionManager::claim_or_forward_breadth(T* p) {
   assert(!depth_first(), "invariant");
-  assert(PSScavenge::should_scavenge(*p, true), "revisiting object?");
-  assert(Universe::heap()->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  assert(PSScavenge::should_scavenge(p, true), "revisiting object?");
+  assert(Universe::heap()->kind() == CollectedHeap::ParallelScavengeHeap,
+         "Sanity");
   assert(Universe::heap()->is_in(p), "pointer outside heap");
 
   if (UsePrefetchQueue) {
-    claim_or_forward_internal_breadth(_prefetch_queue.push_and_pop(p));
+    claim_or_forward_internal_breadth((T*)_prefetch_queue.push_and_pop(p));
   } else {
     // This option is used for testing.  The use of the prefetch
     // queue can delay the processing of the objects and thus
@@ -106,12 +110,16 @@ inline void PSPromotionManager::claim_or_forward_breadth(oop* p) {
   }
 }
 
-inline void PSPromotionManager::process_popped_location_depth(oop* p) {
+inline void PSPromotionManager::process_popped_location_depth(StarTask p) {
   if (is_oop_masked(p)) {
     assert(PSChunkLargeArrays, "invariant");
     oop const old = unmask_chunked_array_oop(p);
     process_array_chunk(old);
   } else {
-    PSScavenge::copy_and_push_safe_barrier(this, p);
+    if (p.is_narrow()) {
+      PSScavenge::copy_and_push_safe_barrier(this, (narrowOop*)p);
+    } else {
+      PSScavenge::copy_and_push_safe_barrier(this, (oop*)p);
+    }
   }
 }

@@ -82,6 +82,9 @@ class ParkEvent ;
 // *in that order*.  If their implementations change such that these
 // assumptions are violated, a whole lot of code will break.
 
+// The default length of monitor name is choosen to be 64 to avoid false sharing.
+static const int MONITOR_NAME_LEN = 64;
+
 class Monitor : public CHeapObj {
 
  public:
@@ -126,9 +129,8 @@ class Monitor : public CHeapObj {
   volatile intptr_t _WaitLock [1] ;      // Protects _WaitSet
   ParkEvent * volatile  _WaitSet ;       // LL of ParkEvents
   volatile bool     _snuck;              // Used for sneaky locking (evil).
-  const char * _name;                    // Name of mutex
   int NotifyCount ;                      // diagnostic assist
-  double pad [8] ;                       // avoid false sharing
+  char _name[MONITOR_NAME_LEN];          // Name of mutex
 
   // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
 #ifndef PRODUCT
@@ -170,7 +172,7 @@ class Monitor : public CHeapObj {
    int  ILocked () ;
 
  protected:
-   static void ClearMonitor (Monitor * m) ;
+   static void ClearMonitor (Monitor * m, const char* name = NULL) ;
    Monitor() ;
 
  public:

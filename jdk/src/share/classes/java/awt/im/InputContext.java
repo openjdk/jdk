@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.awt.im;
 import java.awt.Component;
 import java.util.Locale;
 import java.awt.AWTEvent;
+import java.beans.Transient;
 import java.lang.Character.Subset;
 import sun.awt.im.InputMethodContext;
 
@@ -231,6 +232,7 @@ public class InputContext {
      * @see #setCompositionEnabled
      * @since 1.3
      */
+    @Transient
     public boolean isCompositionEnabled() {
         // real implementation is in sun.awt.im.InputContext
         return false;

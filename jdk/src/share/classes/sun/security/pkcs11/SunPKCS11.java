@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -601,14 +601,26 @@ public final class SunPKCS11 extends AuthProvider {
         // XXX attributes for Ciphers (supported modes, padding)
         d(CIP, "ARCFOUR",                       P11Cipher,      s("RC4"),
                 m(CKM_RC4));
-        // XXX only CBC/NoPadding for block ciphers
         d(CIP, "DES/CBC/NoPadding",             P11Cipher,
                 m(CKM_DES_CBC));
+        d(CIP, "DES/CBC/PKCS5Padding",          P11Cipher,
+                m(CKM_DES_CBC_PAD, CKM_DES_CBC));
+        d(CIP, "DES/ECB",                       P11Cipher,      s("DES"),
+                m(CKM_DES_ECB));
+
         d(CIP, "DESede/CBC/NoPadding",          P11Cipher,
                 m(CKM_DES3_CBC));
+        d(CIP, "DESede/CBC/PKCS5Padding",       P11Cipher,
+                m(CKM_DES3_CBC_PAD, CKM_DES3_CBC));
+        d(CIP, "DESede/ECB",                    P11Cipher,      s("DESede"),
+                m(CKM_DES3_ECB));
         d(CIP, "AES/CBC/NoPadding",             P11Cipher,
                 m(CKM_AES_CBC));
-        d(CIP, "Blowfish/CBC/NoPadding",        P11Cipher,
+        d(CIP, "AES/CBC/PKCS5Padding",          P11Cipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC));
+        d(CIP, "AES/ECB",                       P11Cipher,      s("AES"),
+                m(CKM_AES_ECB));
+        d(CIP, "Blowfish/CBC",                  P11Cipher,
                 m(CKM_BLOWFISH_CBC));
 
         // XXX RSA_X_509, RSA_OAEP not yet supported
@@ -708,9 +720,13 @@ public final class SunPKCS11 extends AuthProvider {
     }
 
     private boolean hasValidToken() {
+        /* Commented out to work with Solaris softtoken impl which
+           returns 0-value flags, e.g. both REMOVABLE_DEVICE and
+           TOKEN_PRESENT are false, when it can't access the token.
         if (removable == false) {
             return true;
         }
+        */
         Token token = this.token;
         return (token != null) && token.isValid();
     }
@@ -740,7 +756,7 @@ public final class SunPKCS11 extends AuthProvider {
         if (slotInfo == null) {
             slotInfo = p11.C_GetSlotInfo(slotID);
         }
-        if ((slotInfo.flags & CKF_TOKEN_PRESENT) == 0) {
+        if (removable && (slotInfo.flags & CKF_TOKEN_PRESENT) == 0) {
             createPoller();
             return;
         }

@@ -34,13 +34,14 @@
 
 class SymbolHashMap;
 
-class constantPoolOopDesc : public arrayOopDesc {
+class constantPoolOopDesc : public oopDesc {
   friend class VMStructs;
   friend class BytecodeInterpreter;  // Directly extracts an oop in the pool for fast instanceof/checkcast
  private:
   typeArrayOop         _tags; // the tag array describing the constant pool's contents
   constantPoolCacheOop _cache;         // the cache holding interpreter runtime information
   klassOop             _pool_holder;   // the corresponding class
+  int                  _length; // number of elements in the array
   // only set to non-zero if constant pool is merged by RedefineClasses
   int                  _orig_length;
 
@@ -330,6 +331,14 @@ class constantPoolOopDesc : public arrayOopDesc {
   bool klass_name_at_matches(instanceKlassHandle k, int which);
 
   // Sizing
+  int length() const                   { return _length; }
+  void set_length(int length)          { _length = length; }
+
+  // Tells whether index is within bounds.
+  bool is_within_bounds(int index) const {
+    return 0 <= index && index < length();
+  }
+
   static int header_size()             { return sizeof(constantPoolOopDesc)/HeapWordSize; }
   static int object_size(int length)   { return align_object_size(header_size() + length); }
   int object_size()                    { return object_size(length()); }

@@ -1210,9 +1210,9 @@ public class BufferedImage extends java.awt.Image
      *          <code>BufferedImage</code>.
      */
     public String toString() {
-        return new String("BufferedImage@"+Integer.toHexString(hashCode())
-                          +": type = "+imageType
-                          +" "+colorModel+" "+raster);
+        return "BufferedImage@"+Integer.toHexString(hashCode())
+            +": type = "+imageType
+            +" "+colorModel+" "+raster;
     }
 
     /**

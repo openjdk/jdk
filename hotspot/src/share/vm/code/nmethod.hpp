@@ -140,6 +140,9 @@ class nmethod : public CodeBlob {
   int _exception_offset;
   // All deoptee's will resume execution at this location described by this offset
   int _deoptimize_offset;
+#ifdef HAVE_DTRACE_H
+  int _trap_offset;
+#endif // def HAVE_DTRACE_H
   int _stub_offset;
   int _consts_offset;
   int _scopes_data_offset;
@@ -211,6 +214,15 @@ class nmethod : public CodeBlob {
           ByteSize basic_lock_sp_offset,       /* synchronized natives only */
           OopMapSet* oop_maps);
 
+#ifdef HAVE_DTRACE_H
+  // For native wrappers
+  nmethod(methodOop method,
+          int nmethod_size,
+          CodeOffsets* offsets,
+          CodeBuffer *code_buffer,
+          int frame_size);
+#endif // def HAVE_DTRACE_H
+
   // Creation support
   nmethod(methodOop method,
           int nmethod_size,
@@ -271,6 +283,22 @@ class nmethod : public CodeBlob {
                                      ByteSize receiver_sp_offset,
                                      ByteSize basic_lock_sp_offset,
                                      OopMapSet* oop_maps);
+
+#ifdef HAVE_DTRACE_H
+  // The method we generate for a dtrace probe has to look
+  // like an nmethod as far as the rest of the system is concerned
+  // which is somewhat unfortunate.
+  static nmethod* new_dtrace_nmethod(methodHandle method,
+                                     CodeBuffer *code_buffer,
+                                     int vep_offset,
+                                     int trap_offset,
+                                     int frame_complete,
+                                     int frame_size);
+
+  int trap_offset() const      { return _trap_offset; }
+  address trap_address() const { return code_begin() + _trap_offset; }
+
+#endif // def HAVE_DTRACE_H
 
   // accessors
   methodOop method() const                        { return _method; }
@@ -485,8 +513,8 @@ class nmethod : public CodeBlob {
   void verify_interrupt_point(address interrupt_point);
 
   // printing support
-  void print()                          const     PRODUCT_RETURN;
-  void print_code()                               PRODUCT_RETURN;
+  void print()                          const;
+  void print_code();
   void print_relocations()                        PRODUCT_RETURN;
   void print_pcs()                                PRODUCT_RETURN;
   void print_scopes()                             PRODUCT_RETURN;
@@ -495,7 +523,7 @@ class nmethod : public CodeBlob {
   void print_calls(outputStream* st)              PRODUCT_RETURN;
   void print_handler_table()                      PRODUCT_RETURN;
   void print_nul_chk_table()                      PRODUCT_RETURN;
-  void print_nmethod(bool print_code)             PRODUCT_RETURN;
+  void print_nmethod(bool print_code);
 
   void print_on(outputStream* st, const char* title) const;
 
@@ -505,7 +533,7 @@ class nmethod : public CodeBlob {
   void log_state_change(int state) const;
 
   // Prints a comment for one native instruction (reloc info, pc desc)
-  void print_code_comment_on(outputStream* st, int column, address begin, address end) PRODUCT_RETURN;
+  void print_code_comment_on(outputStream* st, int column, address begin, address end);
   static void print_statistics()                  PRODUCT_RETURN;
 
   // Compiler task identification.  Note that all OSR methods

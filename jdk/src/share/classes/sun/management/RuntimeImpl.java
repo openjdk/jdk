@@ -26,6 +26,7 @@
 package sun.management;
 
 import java.lang.management.RuntimeMXBean;
+import java.lang.management.ManagementFactory;
 
 import java.util.List;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.OpenType;
 import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.OpenDataException;
+import javax.management.ObjectName;
 
 /**
  * Implementation class for the runtime subsystem.
@@ -104,12 +106,12 @@ class RuntimeImpl implements RuntimeMXBean {
             throw new UnsupportedOperationException(
                 "Boot class path mechanism is not supported");
         }
-        ManagementFactory.checkMonitorAccess();
+        Util.checkMonitorAccess();
         return jvm.getBootClassPath();
     }
 
     public List<String> getInputArguments() {
-        ManagementFactory.checkMonitorAccess();
+        Util.checkMonitorAccess();
         return jvm.getVmArguments();
     }
 
@@ -145,4 +147,9 @@ class RuntimeImpl implements RuntimeMXBean {
 
         return map;
     }
+
+    public ObjectName getObjectName() {
+        return Util.newObjectName(ManagementFactory.RUNTIME_MXBEAN_NAME);
+    }
+
 }

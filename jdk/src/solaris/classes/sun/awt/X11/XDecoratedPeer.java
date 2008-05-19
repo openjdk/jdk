@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
     private static final Logger log = Logger.getLogger("sun.awt.X11.XDecoratedPeer");
     private static final Logger insLog = Logger.getLogger("sun.awt.X11.insets.XDecoratedPeer");
     private static final Logger focusLog = Logger.getLogger("sun.awt.X11.focus.XDecoratedPeer");
-    private final static Logger iconLog = Logger.getLogger("sun.awt.X11.icon.XDecoratedPeer");
-
-    private static XAtom resize_request = new XAtom("_SUN_AWT_RESIZE_REQUEST", false);
+    private static final Logger iconLog = Logger.getLogger("sun.awt.X11.icon.XDecoratedPeer");
 
     // Set to true when we get the first ConfigureNotify after being
     // reparented - indicates that WM has adopted the top-level.
@@ -73,14 +71,11 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
     void preInit(XCreateWindowParams params) {
         super.preInit(params);
-        if (!resize_request.isInterned()) {
-            resize_request.intern(false);
-        }
         winAttr.initialFocus = true;
 
-        currentInsets = new Insets(0,0,0,0); // replacemenet for wdata->top, left, bottom, right
-
+        currentInsets = new Insets(0,0,0,0);
         applyGuessedInsets();
+
         Rectangle bounds = (Rectangle)params.get(BOUNDS);
         dimensions = new WindowDimensions(bounds, getRealInsets(), false);
         params.put(BOUNDS, dimensions.getClientRect());
@@ -89,7 +84,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
         // Deny default processing of these events on the shell - proxy will take care of
         // them instead
         Long eventMask = (Long)params.get(EVENT_MASK);
-        params.add(EVENT_MASK, Long.valueOf(eventMask.longValue() & ~(FocusChangeMask | KeyPressMask | KeyReleaseMask)));
+        params.add(EVENT_MASK, Long.valueOf(eventMask.longValue() & ~(XConstants.FocusChangeMask | XConstants.KeyPressMask | XConstants.KeyReleaseMask)));
     }
 
     void postInit(XCreateWindowParams params) {
@@ -98,7 +93,10 @@ abstract class XDecoratedPeer extends XWindowPeer {
         // happen after the X window is created.
         initResizability();
         updateSizeHints(dimensions);
+        XWM.requestWMExtents(getWindow());
+
         content = XContentWindow.createContent(this);
+
         if (warningWindow != null) {
             warningWindow.toFront();
         }
@@ -121,7 +119,6 @@ abstract class XDecoratedPeer extends XWindowPeer {
         updateMinSizeHints();
     }
 
-
     private void updateMinSizeHints() {
         if (isResizable()) {
             Dimension minimumSize = getTargetMinimumSize();
@@ -131,7 +128,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
                 int minHeight = minimumSize.height - insets.top - insets.bottom;
                 if (minWidth < 0) minWidth = 0;
                 if (minHeight < 0) minHeight = 0;
-                setSizeHints(XlibWrapper.PMinSize | (isLocationByPlatform()?0:(XlibWrapper.PPosition | XlibWrapper.USPosition)),
+                setSizeHints(XUtilConstants.PMinSize | (isLocationByPlatform()?0:(XUtilConstants.PPosition | XUtilConstants.USPosition)),
                              getX(), getY(), minWidth, minHeight);
                 if (isVisible()) {
                     Rectangle bounds = getShellBounds();
@@ -143,7 +140,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
                 }
             } else {
                 boolean isMinSizeSet = isMinSizeSet();
-                XWM.removeSizeHints(this, XlibWrapper.PMinSize);
+                XWM.removeSizeHints(this, XUtilConstants.PMinSize);
                 /* Some WMs need remap to redecorate the window */
                 if (isMinSizeSet && isShowing() && XWM.needRemap(this)) {
                     /*
@@ -238,21 +235,57 @@ abstract class XDecoratedPeer extends XWindowPeer {
         return false;
     }
 
-    Insets difference(Insets i1, Insets i2) {
+    private static Insets difference(Insets i1, Insets i2) {
         return new Insets(i1.top-i2.top, i1.left - i2.left, i1.bottom-i2.bottom, i1.right-i2.right);
     }
 
-    void add(Insets i1, Insets i2) {
-        i1.left += i2.left;
-        i1.top += i2.top;
-        i1.right += i2.right;
-        i1.bottom += i2.bottom;
-    }
-    boolean isNull(Insets i) {
+    private static boolean isNull(Insets i) {
         return (i == null) || ((i.left | i.top | i.right | i.bottom) == 0);
     }
-    Insets copy(Insets i) {
+
+    private static Insets copy(Insets i) {
         return new Insets(i.top, i.left, i.bottom, i.right);
+    }
+
+    // insets which we get from WM (e.g from _NET_FRAME_EXTENTS)
+    private Insets wm_set_insets;
+
+    private Insets getWMSetInsets(XAtom changedAtom) {
+        if (isEmbedded()) {
+            return null;
+        }
+
+        if (wm_set_insets != null) {
+            return wm_set_insets;
+        }
+
+        if (changedAtom == null) {
+            wm_set_insets = XWM.getInsetsFromExtents(getWindow());
+        } else {
+            wm_set_insets = XWM.getInsetsFromProp(getWindow(), changedAtom);
+        }
+
+        insLog.log(Level.FINER, "FRAME_EXTENTS: {0}", new Object[]{wm_set_insets});
+
+        if (wm_set_insets != null) {
+            wm_set_insets = copy(wm_set_insets);
+        }
+        return wm_set_insets;
+    }
+
+    private void resetWMSetInsets() {
+        wm_set_insets = null;
+    }
+
+    public void handlePropertyNotify(XEvent xev) {
+        super.handlePropertyNotify(xev);
+
+        XPropertyEvent ev = xev.get_xproperty();
+        if (ev.get_atom() == XWM.XA_KDE_NET_WM_FRAME_STRUT.getAtom()
+            || ev.get_atom() == XWM.XA_NET_FRAME_EXTENTS.getAtom())
+        {
+            getWMSetInsets(XAtom.get(ev.get_atom()));
+        }
     }
 
     long reparent_serial = 0;
@@ -337,35 +370,30 @@ abstract class XDecoratedPeer extends XWindowPeer {
             Insets correction = difference(correctWM, currentInsets);
             insLog.log(Level.FINEST, "Corrention {0}", new Object[] {correction});
             if (!isNull(correction)) {
-                /*
-                 * Actual insets account for menubar/warning label,
-                 * so we can't assign directly but must adjust them.
-                 */
-                add(currentInsets, correction);
+                currentInsets = copy(correctWM);
                 applyGuessedInsets();
 
                 //Fix for 6318109: PIT: Min Size is not honored properly when a
                 //smaller size is specified in setSize(), XToolkit
                 //update minimum size hints
                 updateMinSizeHints();
-
-                /*
-                 * If this window has been sized by a pack() we need
-                 * to keep the interior geometry intact.  Since pack()
-                 * computed width and height with wrong insets, we
-                 * must adjust the target dimensions appropriately.
-                 */
             }
             if (insLog.isLoggable(Level.FINER)) insLog.finer("Dimensions before reparent: " + dimensions);
 
             dimensions.setInsets(getRealInsets());
             insets_corrected = true;
 
-            if (isMaximized()) {
+            if (isMaximized() || isNull(correction)) {
                 return;
             }
 
-            if ((getHints().get_flags() & (USPosition | PPosition)) != 0) {
+            /*
+             * If this window has been sized by a pack() we need
+             * to keep the interior geometry intact.  Since pack()
+             * computed width and height with wrong insets, we
+             * must adjust the target dimensions appropriately.
+             */
+            if ((getHints().get_flags() & (XUtilConstants.USPosition | XUtilConstants.PPosition)) != 0) {
                 reshape(dimensions, SET_BOUNDS, false);
             } else {
                 reshape(dimensions, SET_SIZE, false);
@@ -384,10 +412,10 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
 
     protected Insets guessInsets() {
-        if (isEmbedded()) {
+        if (isEmbedded() || isTargetUndecorated()) {
             return new Insets(0, 0, 0, 0);
         } else {
-            if (currentInsets.top > 0) {
+            if (!isNull(currentInsets)) {
                 /* insets were set on wdata by System Properties */
                 return copy(currentInsets);
             } else {
@@ -403,7 +431,6 @@ abstract class XDecoratedPeer extends XWindowPeer {
     private void applyGuessedInsets() {
         Insets guessed = guessInsets();
         currentInsets = copy(guessed);
-        insets = copy(currentInsets);
     }
 
     public void revalidate() {
@@ -416,16 +443,18 @@ abstract class XDecoratedPeer extends XWindowPeer {
     }
 
     Insets getRealInsets() {
-        if (isNull(insets)) {
+        if (isNull(currentInsets)) {
             applyGuessedInsets();
         }
-        return insets;
+        return currentInsets;
     }
 
     public Insets getInsets() {
         Insets in = copy(getRealInsets());
         in.top += getMenuBarHeight() + getWarningWindowHeight();
-        if (insLog.isLoggable(Level.FINEST)) insLog.log(Level.FINEST, "Get insets returns {0}", new Object[] {in});
+        if (insLog.isLoggable(Level.FINEST)) {
+            insLog.log(Level.FINEST, "Get insets returns {0}", new Object[] {in});
+        }
         return in;
     }
 
@@ -835,30 +864,30 @@ abstract class XDecoratedPeer extends XWindowPeer {
     public void setResizable(boolean resizable) {
         int fs = winAttr.functions;
         if (!isResizable() && resizable) {
-            insets = currentInsets = new Insets(0, 0, 0, 0);
+            currentInsets = new Insets(0, 0, 0, 0);
             resetWMSetInsets();
             if (!isEmbedded()) {
                 setReparented(false);
             }
             winAttr.isResizable = resizable;
-            if ((fs & MWM_FUNC_ALL) != 0) {
-                fs &= ~(MWM_FUNC_RESIZE | MWM_FUNC_MAXIMIZE);
+            if ((fs & MWMConstants.MWM_FUNC_ALL) != 0) {
+                fs &= ~(MWMConstants.MWM_FUNC_RESIZE | MWMConstants.MWM_FUNC_MAXIMIZE);
             } else {
-                fs |= (MWM_FUNC_RESIZE | MWM_FUNC_MAXIMIZE);
+                fs |= (MWMConstants.MWM_FUNC_RESIZE | MWMConstants.MWM_FUNC_MAXIMIZE);
             }
             winAttr.functions = fs;
             XWM.setShellResizable(this);
         } else if (isResizable() && !resizable) {
-            insets = currentInsets = new Insets(0, 0, 0, 0);
+            currentInsets = new Insets(0, 0, 0, 0);
             resetWMSetInsets();
             if (!isEmbedded()) {
                 setReparented(false);
             }
             winAttr.isResizable = resizable;
-            if ((fs & MWM_FUNC_ALL) != 0) {
-                fs |= (MWM_FUNC_RESIZE | MWM_FUNC_MAXIMIZE);
+            if ((fs & MWMConstants.MWM_FUNC_ALL) != 0) {
+                fs |= (MWMConstants.MWM_FUNC_RESIZE | MWMConstants.MWM_FUNC_MAXIMIZE);
             } else {
-                fs &= ~(MWM_FUNC_RESIZE | MWM_FUNC_MAXIMIZE);
+                fs &= ~(MWMConstants.MWM_FUNC_RESIZE | MWMConstants.MWM_FUNC_MAXIMIZE);
             }
             winAttr.functions = fs;
             XWM.setShellNotResizable(this, dimensions, dimensions.getBounds(), false);
@@ -936,10 +965,10 @@ abstract class XDecoratedPeer extends XWindowPeer {
     protected boolean isEventDisabled(XEvent e) {
         switch (e.get_type()) {
             // Do not generate MOVED/RESIZED events since we generate them by ourselves
-          case ConfigureNotify:
+          case XConstants.ConfigureNotify:
               return true;
-          case EnterNotify:
-          case LeaveNotify:
+          case XConstants.EnterNotify:
+          case XConstants.LeaveNotify:
               // Disable crossing event on outer borders of Frame so
               // we receive only one set of cross notifications(first set is from content window)
               return true;
@@ -964,7 +993,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
             if (winAttr.isResizable) {
                 //Fix for 4320050: Minimum size for java.awt.Frame is not being enforced.
                 //We need to update frame's minimum size, not to reset it
-                XWM.removeSizeHints(this, XlibWrapper.PMaxSize);
+                XWM.removeSizeHints(this, XUtilConstants.PMaxSize);
                 updateMinimumSize();
             }
         } else {
@@ -1004,10 +1033,6 @@ abstract class XDecoratedPeer extends XWindowPeer {
             } else if (cl.get_data(0) == wm_take_focus.getAtom()) {
                 handleWmTakeFocus(cl);
             }
-        } else if (cl.get_message_type() == resize_request.getAtom()) {
-            reshape((int)cl.get_data(0), (int)cl.get_data(1),
-                    (int)cl.get_data(2), (int)cl.get_data(3),
-                    (int)cl.get_data(4), true);
         }
     }
 
@@ -1114,53 +1139,51 @@ abstract class XDecoratedPeer extends XWindowPeer {
         focusLog.fine("Request for decorated window focus");
         // If this is Frame or Dialog we can't assure focus request success - but we still can try
         // If this is Window and its owner Frame is active we can be sure request succedded.
-        Window win = (Window)target;
         Window focusedWindow = XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow();
         Window activeWindow = XWindowPeer.getDecoratedOwner(focusedWindow);
 
         focusLog.log(Level.FINER, "Current window is: active={0}, focused={1}",
-                     new Object[]{ Boolean.valueOf(win == activeWindow),
-                                   Boolean.valueOf(win == focusedWindow)});
+                     new Object[]{ Boolean.valueOf(target == activeWindow),
+                                   Boolean.valueOf(target == focusedWindow)});
 
         XWindowPeer toFocus = this;
         while (toFocus.nextTransientFor != null) {
             toFocus = toFocus.nextTransientFor;
         }
-
-        if (this == toFocus) {
-            if (focusAllowedFor()) {
-                if (win == activeWindow && win != focusedWindow) {
-                    // Happens when focus is on window child
-                    focusLog.fine("Focus is on child window - transfering it back");
-                    handleWindowFocusInSync(-1);
-                } else {
-                    focusLog.fine("Requesting focus to this window");
-                    if (timeProvided) {
-                        requestXFocus(time);
-                    } else {
-                        requestXFocus();
-                    }
-                }
-                return true;
-            } else {
-                return false;
-            }
-        }
-        else if (toFocus.focusAllowedFor()) {
-            focusLog.fine("Requesting focus to " + toFocus);
-            if (timeProvided) {
-                toFocus.requestXFocus(time);
-            } else {
-                toFocus.requestXFocus();
-            }
-            return false;
-        }
-        else
-        {
+        if (toFocus == null || !toFocus.focusAllowedFor()) {
             // This might change when WM will have property to determine focus policy.
             // Right now, because policy is unknown we can't be sure we succedded
             return false;
         }
+        if (this == toFocus) {
+            if (isWMStateNetHidden()) {
+                focusLog.fine("The window is unmapped, so rejecting the request");
+                return false;
+            }
+            if (target == activeWindow && target != focusedWindow) {
+                // Happens when an owned window is currently focused
+                focusLog.fine("Focus is on child window - transfering it back to the owner");
+                handleWindowFocusInSync(-1);
+                return true;
+            }
+            Window realNativeFocusedWindow = XWindowPeer.getNativeFocusedWindow();
+            focusLog.finest("Real native focused window: " + realNativeFocusedWindow +
+                            "\nKFM's focused window: " + focusedWindow);
+
+            // See 6522725, 6613426.
+            if (target == realNativeFocusedWindow) {
+                focusLog.fine("The window is already natively focused.");
+                return true;
+            }
+        }
+        focusLog.fine("Requesting focus to " + (this == toFocus ? "this window" : toFocus));
+
+        if (timeProvided) {
+            toFocus.requestXFocus(time);
+        } else {
+            toFocus.requestXFocus();
+        }
+        return (this == toFocus);
     }
 
     XWindowPeer actualFocusedWindow = null;

@@ -40,6 +40,7 @@ SUBDIRS =                   \
   dir_diff                  \
   dtdbuilder                \
   fontchecker               \
+  freetypecheck             \
   generate_break_iterator   \
   GenerateCharacter         \
   generatecurrencydata      \
@@ -50,7 +51,8 @@ SUBDIRS =                   \
   jdwpgen                   \
   makeclasslist             \
   strip_properties          \
-  winver
+  winver                    \
+  CharsetMapping
 
 all build clean clobber::
 	$(SUBDIRS-loop)
@@ -58,4 +60,5 @@ all build clean clobber::
 clean clobber::
 	$(RM) -r $(BUILDTOOLCLASSDIR)
 	$(RM) -r $(BUILDTOOLJARDIR)
+	$(RM) -r $(BUILDTOOLBINDIR)
 

@@ -281,7 +281,7 @@ public class TableColumn extends Object implements Serializable {
 
     private void firePropertyChange(String propertyName, int oldValue, int newValue) {
         if (oldValue != newValue) {
-            firePropertyChange(propertyName, new Integer(oldValue), new Integer(newValue));
+            firePropertyChange(propertyName, Integer.valueOf(oldValue), Integer.valueOf(newValue));
         }
     }
 

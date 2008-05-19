@@ -83,11 +83,7 @@ class RTFGenerator extends Object
     static public final String defaultFontFamily = "Helvetica";
 
     /* constants so we can avoid allocating objects in inner loops */
-    /* these should all be final, but javac seems to be a bit buggy */
-    static protected Integer One, Zero;
-    static protected Boolean False;
-    static protected Float ZeroPointZero;
-    static private Object MagicToken;
+    final static private Object MagicToken;
 
     /* An array of character-keyword pairs. This could be done
        as a dictionary (and lookup would be quicker), but that
@@ -98,11 +94,7 @@ class RTFGenerator extends Object
     static protected CharacterKeywordPair[] textKeywords;
 
     static {
-        One = new Integer(1);
-        Zero = new Integer(0);
-        False = Boolean.valueOf(false);
         MagicToken = new Object();
-        ZeroPointZero = new Float(0);
 
         Dictionary textKeywordDictionary = RTFReader.textKeywords;
         Enumeration keys = textKeywordDictionary.keys();
@@ -142,7 +134,7 @@ static public void writeDocument(Document d, OutputStream to)
 public RTFGenerator(OutputStream to)
 {
     colorTable = new Hashtable();
-    colorTable.put(defaultRTFColor, new Integer(0));
+    colorTable.put(defaultRTFColor, Integer.valueOf(0));
     colorCount = 1;
 
     fontTable = new Hashtable();
@@ -693,7 +685,7 @@ protected void resetParagraphAttributes(MutableAttributeSet currentAttributes)
 {
     writeControlWord("pard");
 
-    currentAttributes.addAttribute(StyleConstants.Alignment,       Zero);
+    currentAttributes.addAttribute(StyleConstants.Alignment, Integer.valueOf(0));
 
     int wordIndex;
     int wordCount = RTFAttributes.attributes.length;

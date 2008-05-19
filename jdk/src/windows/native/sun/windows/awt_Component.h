@@ -707,13 +707,6 @@ protected:
     BOOL     m_backgroundColorSet;
     BOOL     m_visible;         /* copy of Component.visible */
 
-    /*
-     * Keeps all buttons which were pressed at the time of the last mouse
-     * drag until all buttons will be released, contains state as bit masks
-     * MK_LBUTTON, MK_MBUTTON, MK_RBUTTON
-     */
-    UINT     m_mouseDragState;
-
     static BOOL sm_suppressFocusAndActivation;
     static HWND sm_realFocusOpposite;
 
@@ -725,6 +718,15 @@ protected:
     static UINT sm_95WheelSupport;
 
 private:
+    /* A bitmask keeps the button's numbers as MK_LBUTTON, MK_MBUTTON, MK_RBUTTON
+     * which are allowed to
+     * generate the CLICK event after the RELEASE has happened.
+     * There are conditions that must be true for that sending CLICK event:
+     * 1) button was initially PRESSED
+     * 2) no movement or drag has happened until RELEASE
+    */
+    UINT m_mouseButtonClickAllowed;
+
     BOOL m_bSubclassed;
 
     COLORREF m_colorForeground;

@@ -92,7 +92,17 @@ public class FindInHeapPanel extends JPanel {
           iterated += addressSize;
           updateProgressBar();
         }
+        public void visitCompOopAddress(Address addr) {
+          if (error) return;
 
+          Address val = addr.getCompOopAddressAt(0);
+          if (AddressOps.equal(val, value)) {
+            error = reportResult(addr);
+          }
+          iterated += addressSize;
+          updateProgressBar();
+
+        }
         public void epilogue() {
           iterated = 0;
           updateProgressBar();

@@ -35,6 +35,7 @@ uint ConNode::hash() const {
 
 //------------------------------make-------------------------------------------
 ConNode *ConNode::make( Compile* C, const Type *t ) {
+  if (t->isa_narrowoop()) return new (C, 1) ConNNode( t->is_narrowoop() );
   switch( t->basic_type() ) {
   case T_INT:       return new (C, 1) ConINode( t->is_int() );
   case T_ARRAY:     return new (C, 1) ConPNode( t->is_aryptr() );
@@ -461,7 +462,8 @@ static bool can_cause_alias(Node *n, PhaseTransform *phase) {
     possible_alias = n->is_Phi() ||
         opc == Op_CheckCastPP ||
         opc == Op_StorePConditional ||
-        opc == Op_CompareAndSwapP;
+        opc == Op_CompareAndSwapP ||
+        opc == Op_CompareAndSwapN;
   }
   return possible_alias;
 }
@@ -548,6 +550,73 @@ const Type *CheckCastPPNode::Value( PhaseTransform *phase ) const {
 Node *CheckCastPPNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return (in(0) && remove_dead_region(phase, can_reshape)) ? this : NULL;
 }
+
+
+Node* DecodeNNode::Identity(PhaseTransform* phase) {
+  const Type *t = phase->type( in(1) );
+  if( t == Type::TOP ) return in(1);
+
+  if (in(1)->Opcode() == Op_EncodeP) {
+    // (DecodeN (EncodeP p)) -> p
+    return in(1)->in(1);
+  }
+  return this;
+}
+
+const Type *DecodeNNode::Value( PhaseTransform *phase ) const {
+  if (phase->type( in(1) ) == TypeNarrowOop::NULL_PTR) {
+    return TypePtr::NULL_PTR;
+  }
+  return bottom_type();
+}
+
+Node* DecodeNNode::decode(PhaseGVN* phase, Node* value) {
+  if (value->Opcode() == Op_EncodeP) {
+    // (DecodeN (EncodeP p)) -> p
+    return value->in(1);
+  }
+  const Type* newtype = value->bottom_type();
+  if (newtype == TypeNarrowOop::NULL_PTR) {
+    return phase->transform(new (phase->C, 1) ConPNode(TypePtr::NULL_PTR));
+  } else {
+    return phase->transform(new (phase->C, 2) DecodeNNode(value, newtype->is_narrowoop()->make_oopptr()));
+  }
+}
+
+Node* EncodePNode::Identity(PhaseTransform* phase) {
+  const Type *t = phase->type( in(1) );
+  if( t == Type::TOP ) return in(1);
+
+  if (in(1)->Opcode() == Op_DecodeN) {
+    // (EncodeP (DecodeN p)) -> p
+    return in(1)->in(1);
+  }
+  return this;
+}
+
+const Type *EncodePNode::Value( PhaseTransform *phase ) const {
+  if (phase->type( in(1) ) == TypePtr::NULL_PTR) {
+    return TypeNarrowOop::NULL_PTR;
+  }
+  return bottom_type();
+}
+
+Node* EncodePNode::encode(PhaseGVN* phase, Node* value) {
+  if (value->Opcode() == Op_DecodeN) {
+    // (EncodeP (DecodeN p)) -> p
+    return value->in(1);
+  }
+  const Type* newtype = value->bottom_type();
+  if (newtype == TypePtr::NULL_PTR) {
+    return phase->transform(new (phase->C, 1) ConNNode(TypeNarrowOop::NULL_PTR));
+  } else if (newtype->isa_oopptr()) {
+    return phase->transform(new (phase->C, 2) EncodePNode(value, newtype->is_oopptr()->make_narrowoop()));
+  } else {
+    ShouldNotReachHere();
+    return NULL; // to make C++ compiler happy.
+  }
+}
+
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
@@ -982,34 +1051,9 @@ Node *ConvL2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new (phase->C, 3) AddINode(add1,add2);
   }
 
-  // Fold up with a prior LoadL: LoadL->ConvL2I ==> LoadI
-  // Requires we understand the 'endianess' of Longs.
-  if( andl_op == Op_LoadL ) {
-    Node *adr = andl->in(MemNode::Address);
-    // VM_LITTLE_ENDIAN is #defined appropriately in the Makefiles
-#ifndef VM_LITTLE_ENDIAN
-    // The transformation can cause problems on BIG_ENDIAN architectures
-    // where the jint is not the same address as the jlong. Specifically, we
-    // will fail to insert an anti-dependence in GCM between the LoadI and a
-    // subsequent StoreL because different memory offsets provoke
-    // flatten_alias_type() into indicating two different types.  See bug
-    // 4755222.
-
-    // Node *base = adr->is_AddP() ? adr->in(AddPNode::Base) : adr;
-    // adr = phase->transform( new (phase->C, 4) AddPNode(base,adr,phase->MakeConX(sizeof(jint))));
-    return NULL;
-#else
-    if (phase->C->alias_type(andl->adr_type())->is_volatile()) {
-      // Picking up the low half by itself bypasses the atomic load and we could
-      // end up with more than one non-atomic load.  See bugs 4432655 and 4526490.
-      // We could go to the trouble of iterating over andl's output edges and
-      // punting only if there's more than one real use, but we don't bother.
-      return NULL;
-    }
-    return new (phase->C, 3) LoadINode(andl->in(MemNode::Control),andl->in(MemNode::Memory),adr,((LoadLNode*)andl)->raw_adr_type());
-#endif
-  }
-
+  // Disable optimization: LoadL->ConvL2I ==> LoadI.
+  // It causes problems (sizes of Load and Store nodes do not match)
+  // in objects initialization code and Escape Analysis.
   return NULL;
 }
 

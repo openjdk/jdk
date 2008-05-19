@@ -66,9 +66,9 @@ public:
     }
   }
   static VMReg Bad() { return (VMReg) (intptr_t) BAD; }
-  bool is_valid() { return ((intptr_t) this) != BAD; }
-  bool is_stack() { return (intptr_t) this >= (intptr_t) stack0; }
-  bool is_reg() { return is_valid() && !is_stack(); }
+  bool is_valid() const { return ((intptr_t) this) != BAD; }
+  bool is_stack() const { return (intptr_t) this >= (intptr_t) stack0; }
+  bool is_reg()   const { return is_valid() && !is_stack(); }
 
   // A concrete register is a value that returns true for is_reg() and is
   // also a register you could use in the assembler. On machines with
@@ -96,7 +96,8 @@ public:
 
   intptr_t value() const         {return (intptr_t) this; }
 
-  void print();
+  void print_on(outputStream* st) const;
+  void print() const { print_on(tty); }
 
   // bias a stack slot.
   // Typically used to adjust a virtual frame slots by amounts that are offset by
@@ -155,22 +156,22 @@ public:
     _first = ptr;
   }
   // Return true if single register, even if the pair is really just adjacent stack slots
-  bool is_single_reg() {
+  bool is_single_reg() const {
     return (_first->is_valid()) && (_first->value() + 1 == _second->value());
   }
 
   // Return true if single stack based "register" where the slot alignment matches input alignment
-  bool is_adjacent_on_stack(int alignment) {
+  bool is_adjacent_on_stack(int alignment) const {
     return (_first->is_stack() && (_first->value() + 1 == _second->value()) && ((_first->value() & (alignment-1)) == 0));
   }
 
   // Return true if single stack based "register" where the slot alignment matches input alignment
-  bool is_adjacent_aligned_on_stack(int alignment) {
+  bool is_adjacent_aligned_on_stack(int alignment) const {
     return (_first->is_stack() && (_first->value() + 1 == _second->value()) && ((_first->value() & (alignment-1)) == 0));
   }
 
   // Return true if single register but adjacent stack slots do not count
-  bool is_single_phys_reg() {
+  bool is_single_phys_reg() const {
     return (_first->is_reg() && (_first->value() + 1 == _second->value()));
   }
 
