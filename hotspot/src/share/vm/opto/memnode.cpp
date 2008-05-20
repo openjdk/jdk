@@ -256,7 +256,7 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
   if (dom == NULL || dom->is_top())
     return false; // Conservative answer for dead code
 
-  if (dom->is_Start() || dom->is_Root() || dom == sub)
+  if (dom->is_Con() || dom->is_Start() || dom->is_Root() || dom == sub)
     return true;
 
   // 'dom' dominates 'sub' if its control edge and control edges
@@ -298,7 +298,7 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
           return false; // Conservative answer for dead code
         assert(n->is_CFG(), "expecting control");
       }
-      if (n->is_Start() || n->is_Root()) {
+      if (n->is_Con() || n->is_Start() || n->is_Root()) {
         only_dominating_controls = true;
       } else if (n->is_CFG()) {
         if (n->dominates(sub, nlist))
@@ -308,12 +308,11 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
       } else {
         // First, own control edge.
         Node* m = n->find_exact_control(n->in(0));
-        if (m == NULL)
-          continue;
-        if (m->is_top())
-          return false; // Conservative answer for dead code
-        dom_list.push(m);
-
+        if (m != NULL) {
+          if (m->is_top())
+            return false; // Conservative answer for dead code
+          dom_list.push(m);
+        }
         // Now, the rest of edges.
         uint cnt = n->req();
         for (uint i = 1; i < cnt; i++) {
