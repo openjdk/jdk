@@ -329,7 +329,7 @@ class Par_PushOrMarkClosure: public OopClosure {
 class CMSKeepAliveClosure: public OopClosure {
  private:
   CMSCollector* _collector;
-  MemRegion     _span;
+  const MemRegion _span;
   CMSMarkStack* _mark_stack;
   CMSBitMap*    _bit_map;
  protected:
@@ -340,7 +340,9 @@ class CMSKeepAliveClosure: public OopClosure {
     _collector(collector),
     _span(span),
     _bit_map(bit_map),
-    _mark_stack(mark_stack) { }
+    _mark_stack(mark_stack) {
+    assert(!_span.is_empty(), "Empty span could spell trouble");
+  }
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p)       { CMSKeepAliveClosure::do_oop_work(p); }
