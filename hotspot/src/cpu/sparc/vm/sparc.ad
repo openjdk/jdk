@@ -5471,7 +5471,6 @@ instruct loadN(iRegN dst, memory mem) %{
 // Load Klass Pointer
 instruct loadKlass(iRegP dst, memory mem) %{
   match(Set dst (LoadKlass mem));
-  predicate(!n->in(MemNode::Address)->bottom_type()->is_ptr_to_narrowoop());
   ins_cost(MEMORY_REF_COST);
   size(4);
 
@@ -5490,6 +5489,7 @@ instruct loadKlass(iRegP dst, memory mem) %{
 instruct loadNKlass(iRegN dst, memory mem) %{
   match(Set dst (LoadNKlass mem));
   ins_cost(MEMORY_REF_COST);
+  size(4);
 
   format %{ "LDUW   $mem,$dst\t! compressed klass ptr" %}
 
