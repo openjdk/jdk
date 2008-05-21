@@ -880,7 +880,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
         Node *m = n->in(i);          // Get input
         int op = m->Opcode();
         assert((op == Op_BoxLock) == jvms->is_monitor_use(i), "boxes only at monitor sites");
-        if( op == Op_ConI || op == Op_ConP ||
+        if( op == Op_ConI || op == Op_ConP || op == Op_ConN ||
             op == Op_ConF || op == Op_ConD || op == Op_ConL
             // || op == Op_BoxLock  // %%%% enable this and remove (+++) in chaitin.cpp
             ) {
@@ -1723,6 +1723,14 @@ void Matcher::find_shared( Node *n ) {
         const TypePtr* tp = tn->type()->is_ptr();
         if (tp->_ptr == TypePtr::AnyNull) {
           tn->set_type(TypePtr::NULL_PTR);
+        }
+        break;
+      }
+      case Op_ConN: {  // Convert narrow pointers above the centerline to NUL
+        TypeNode *tn = n->as_Type(); // Constants derive from type nodes
+        const TypePtr* tp = tn->type()->is_narrowoop()->make_oopptr();
+        if (tp->_ptr == TypePtr::AnyNull) {
+          tn->set_type(TypeNarrowOop::NULL_PTR);
         }
         break;
       }

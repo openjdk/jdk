@@ -578,8 +578,11 @@ Node* DecodeNNode::decode(PhaseGVN* phase, Node* value) {
   const Type* newtype = value->bottom_type();
   if (newtype == TypeNarrowOop::NULL_PTR) {
     return phase->transform(new (phase->C, 1) ConPNode(TypePtr::NULL_PTR));
-  } else {
+  } else if (newtype->isa_narrowoop()) {
     return phase->transform(new (phase->C, 2) DecodeNNode(value, newtype->is_narrowoop()->make_oopptr()));
+  } else {
+    ShouldNotReachHere();
+    return NULL; // to make C++ compiler happy.
   }
 }
 
@@ -617,6 +620,9 @@ Node* EncodePNode::encode(PhaseGVN* phase, Node* value) {
   }
 }
 
+Node *EncodePNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
+  return MemNode::Ideal_common_DU_postCCP(ccp, this, in(1));
+}
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
