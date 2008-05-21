@@ -70,11 +70,6 @@ public:
     else
       return new (C, 1) ConPNode( TypeRawPtr::make(con) );
   }
-
-  static ConPNode* make( Compile *C, ciObject* con ) {
-    return new (C, 1) ConPNode( TypeOopPtr::make_from_constant(con) );
-  }
-
 };
 
 
@@ -84,11 +79,6 @@ class ConNNode : public ConNode {
 public:
   ConNNode( const TypeNarrowOop *t ) : ConNode(t) {}
   virtual int Opcode() const;
-
-  static ConNNode* make( Compile *C, ciObject* con ) {
-    return new (C, 1) ConNNode( TypeNarrowOop::make_from_constant(con) );
-  }
-
 };
 
 
@@ -210,7 +200,14 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------ConstraintCastNode-------------------------------------
+//------------------------------CMoveNNode-------------------------------------
+class CMoveNNode : public CMoveNode {
+public:
+  CMoveNNode( Node *c, Node *bol, Node *left, Node *right, const Type* t ) : CMoveNode(bol,left,right,t) { init_req(Control,c); }
+  virtual int Opcode() const;
+};
+
+//------------------------------ConstraintCastNode-----------------------------
 // cast to a different range
 class ConstraintCastNode: public TypeNode {
 public:
@@ -282,7 +279,7 @@ class EncodePNode : public TypeNode {
   virtual const Type *Value( PhaseTransform *phase ) const;
   virtual uint  ideal_reg() const { return Op_RegN; }
 
-  static Node* encode(PhaseGVN* phase, Node* value);
+  static Node* encode(PhaseTransform* phase, Node* value);
   virtual Node *Ideal_DU_postCCP( PhaseCCP *ccp );
 };
 
@@ -302,7 +299,7 @@ class DecodeNNode : public TypeNode {
   virtual const Type *Value( PhaseTransform *phase ) const;
   virtual uint  ideal_reg() const { return Op_RegP; }
 
-  static Node* decode(PhaseGVN* phase, Node* value);
+  static Node* decode(PhaseTransform* phase, Node* value);
 };
 
 //------------------------------Conv2BNode-------------------------------------

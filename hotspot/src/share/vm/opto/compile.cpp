@@ -1968,6 +1968,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_LoadC:
   case Op_LoadI:
   case Op_LoadKlass:
+  case Op_LoadNKlass:
   case Op_LoadL:
   case Op_LoadL_unaligned:
   case Op_LoadPLocked:
@@ -1997,6 +1998,38 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
             "Base pointers must match" );
     break;
   }
+
+#ifdef _LP64
+  case Op_CmpP:
+    if( n->in(1)->Opcode() == Op_DecodeN ) {
+      Compile* C = Compile::current();
+      Node* in2 = NULL;
+      if( n->in(2)->Opcode() == Op_DecodeN ) {
+        in2 = n->in(2)->in(1);
+      } else if ( n->in(2)->Opcode() == Op_ConP ) {
+        const Type* t = n->in(2)->bottom_type();
+        if (t == TypePtr::NULL_PTR) {
+          Node *in1 = n->in(1);
+          uint i = 0;
+          for (; i < in1->outcnt(); i++) {
+            if (in1->raw_out(i)->is_AddP())
+              break;
+          }
+          if (i >= in1->outcnt()) {
+            // Don't replace CmpP(o ,null) if 'o' is used in AddP
+            // to generate implicit NULL check.
+            in2 = ConNode::make(C, TypeNarrowOop::NULL_PTR);
+          }
+        } else if (t->isa_oopptr()) {
+          in2 = ConNode::make(C, t->is_oopptr()->make_narrowoop());
+        }
+      }
+      if( in2 != NULL ) {
+        Node* cmpN = new (C, 3) CmpNNode(n->in(1)->in(1), in2);
+        n->replace_by( cmpN );
+      }
+    }
+#endif
 
   case Op_ModI:
     if (UseDivMod) {

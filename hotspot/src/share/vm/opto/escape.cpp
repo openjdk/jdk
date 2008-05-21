@@ -417,11 +417,18 @@ static Node* get_addp_base(Node *addp) {
   //       | |
   //       AddP  ( base == address )
   //
+  // case #8. narrow Klass's field reference.
+  //      LoadNKlass
+  //       |
+  //      DecodeN
+  //       | |
+  //       AddP  ( base == address )
+  //
   Node *base = addp->in(AddPNode::Base)->uncast();
   if (base->is_top()) { // The AddP case #3 and #6.
     base = addp->in(AddPNode::Address)->uncast();
     assert(base->Opcode() == Op_ConP || base->Opcode() == Op_ThreadLocal ||
-           base->Opcode() == Op_CastX2P ||
+           base->Opcode() == Op_CastX2P || base->Opcode() == Op_DecodeN ||
            (base->is_Mem() && base->bottom_type() == TypeRawPtr::NOTNULL) ||
            (base->is_Proj() && base->in(0)->is_Allocate()), "sanity");
   }
@@ -1573,6 +1580,7 @@ void ConnectionGraph::process_call_result(ProjNode *resproj, PhaseTransform *pha
       if (k->Opcode() == Op_LoadKlass) {
         kt = k->as_Load()->type()->isa_klassptr();
       } else {
+        // Also works for DecodeN(LoadNKlass).
         kt = k->as_Type()->type()->isa_klassptr();
       }
       assert(kt != NULL, "TypeKlassPtr  required.");
@@ -1811,6 +1819,7 @@ void ConnectionGraph::record_for_escape_analysis(Node *n, PhaseTransform *phase)
       break;
     }
     case Op_LoadKlass:
+    case Op_LoadNKlass:
     {
       add_node(n, PointsToNode::JavaObject, PointsToNode::GlobalEscape, true);
       break;
@@ -2025,6 +2034,7 @@ void ConnectionGraph::build_connection_graph(Node *n, PhaseTransform *phase) {
       break;
     }
     case Op_LoadKlass:
+    case Op_LoadNKlass:
     {
       assert(false, "Op_LoadKlass");
       break;

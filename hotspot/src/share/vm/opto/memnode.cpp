@@ -671,11 +671,13 @@ Node *MemNode::Ideal_common_DU_postCCP( PhaseCCP *ccp, Node* n, Node* adr ) {
       case Op_LoadP:            // Loading from within a klass
       case Op_LoadN:            // Loading from within a klass
       case Op_LoadKlass:        // Loading from within a klass
+      case Op_LoadNKlass:       // Loading from within a klass
       case Op_ConP:             // Loading from a klass
       case Op_ConN:             // Loading from a klass
       case Op_CreateEx:         // Sucking up the guts of an exception oop
       case Op_Con:              // Reading from TLS
       case Op_CMoveP:           // CMoveP is pinned
+      case Op_CMoveN:           // CMoveN is pinned
         break;                  // No progress
 
       case Op_Proj:             // Direct call to an allocation routine
@@ -1610,8 +1612,35 @@ Node *LoadSNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //=============================================================================
+//----------------------------LoadKlassNode::make------------------------------
+// Polymorphic factory method:
+Node *LoadKlassNode::make( PhaseGVN& gvn, Node *mem, Node *adr, const TypePtr* at, const TypeKlassPtr *tk ) {
+  Compile* C = gvn.C;
+  Node *ctl = NULL;
+  // sanity check the alias category against the created node type
+  const TypeOopPtr *adr_type = adr->bottom_type()->isa_oopptr();
+  assert(adr_type != NULL, "expecting TypeOopPtr");
+#ifdef _LP64
+  if (adr_type->is_ptr_to_narrowoop()) {
+    const TypeNarrowOop* narrowtype = tk->is_oopptr()->make_narrowoop();
+    Node* load_klass = gvn.transform(new (C, 3) LoadNKlassNode(ctl, mem, adr, at, narrowtype));
+    return DecodeNNode::decode(&gvn, load_klass);
+  } else
+#endif
+  {
+    assert(!adr_type->is_ptr_to_narrowoop(), "should have got back a narrow oop");
+    return new (C, 3) LoadKlassNode(ctl, mem, adr, at, tk);
+  }
+  ShouldNotReachHere();
+  return (LoadKlassNode*)NULL;
+}
+
 //------------------------------Value------------------------------------------
 const Type *LoadKlassNode::Value( PhaseTransform *phase ) const {
+  return klass_value_common(phase);
+}
+
+const Type *LoadNode::klass_value_common( PhaseTransform *phase ) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(MemNode::Memory) );
   if (t1 == Type::TOP)  return Type::TOP;
@@ -1743,6 +1772,10 @@ const Type *LoadKlassNode::Value( PhaseTransform *phase ) const {
 // To clean up reflective code, simplify k.java_mirror.as_klass to plain k.
 // Also feed through the klass in Allocate(...klass...)._klass.
 Node* LoadKlassNode::Identity( PhaseTransform *phase ) {
+  return klass_identity_common(phase);
+}
+
+Node* LoadNode::klass_identity_common(PhaseTransform *phase ) {
   Node* x = LoadNode::Identity(phase);
   if (x != this)  return x;
 
@@ -1799,6 +1832,34 @@ Node* LoadKlassNode::Identity( PhaseTransform *phase ) {
   }
 
   return this;
+}
+
+
+//------------------------------Value------------------------------------------
+const Type *LoadNKlassNode::Value( PhaseTransform *phase ) const {
+  const Type *t = klass_value_common(phase);
+
+  if (t == TypePtr::NULL_PTR) {
+    return TypeNarrowOop::NULL_PTR;
+  }
+  if (t != Type::TOP && !t->isa_narrowoop()) {
+    assert(t->is_oopptr(), "sanity");
+    t = t->is_oopptr()->make_narrowoop();
+  }
+  return t;
+}
+
+//------------------------------Identity---------------------------------------
+// To clean up reflective code, simplify k.java_mirror.as_klass to narrow k.
+// Also feed through the klass in Allocate(...klass...)._klass.
+Node* LoadNKlassNode::Identity( PhaseTransform *phase ) {
+  Node *x = klass_identity_common(phase);
+
+  const Type *t = phase->type( x );
+  if( t == Type::TOP ) return x;
+  if( t->isa_narrowoop()) return x;
+
+  return EncodePNode::encode(phase, x);
 }
 
 //------------------------------Value-----------------------------------------

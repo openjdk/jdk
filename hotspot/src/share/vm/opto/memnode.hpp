@@ -161,6 +161,10 @@ public:
   // then call the virtual add() to set the type.
   virtual const Type *Value( PhaseTransform *phase ) const;
 
+  // Common methods for LoadKlass and LoadNKlass nodes.
+  const Type *klass_value_common( PhaseTransform *phase ) const;
+  Node *klass_identity_common( PhaseTransform *phase );
+
   virtual uint ideal_reg() const;
   virtual const Type *bottom_type() const;
   // Following method is copied from TypeNode:
@@ -362,13 +366,34 @@ public:
 // Load a Klass from an object
 class LoadKlassNode : public LoadPNode {
 public:
-  LoadKlassNode( Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeKlassPtr *tk = TypeKlassPtr::OBJECT )
+  LoadKlassNode( Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeKlassPtr *tk )
     : LoadPNode(c,mem,adr,at,tk) {}
   virtual int Opcode() const;
   virtual const Type *Value( PhaseTransform *phase ) const;
   virtual Node *Identity( PhaseTransform *phase );
   virtual bool depends_only_on_test() const { return true; }
+
+  // Polymorphic factory method:
+  static Node* make( PhaseGVN& gvn, Node *mem, Node *adr, const TypePtr* at,
+                     const TypeKlassPtr *tk = TypeKlassPtr::OBJECT );
 };
+
+//------------------------------LoadNKlassNode---------------------------------
+// Load a narrow Klass from an object.
+class LoadNKlassNode : public LoadNNode {
+public:
+  LoadNKlassNode( Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeNarrowOop *tk )
+    : LoadNNode(c,mem,adr,at,tk) {}
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegN; }
+  virtual int store_Opcode() const { return Op_StoreN; }
+  virtual BasicType memory_type() const { return T_NARROWOOP; }
+
+  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual Node *Identity( PhaseTransform *phase );
+  virtual bool depends_only_on_test() const { return true; }
+};
+
 
 //------------------------------LoadSNode--------------------------------------
 // Load a short (16bits signed) from memory
