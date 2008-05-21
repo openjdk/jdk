@@ -113,6 +113,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     case Op_LoadN:
     case Op_LoadS:
     case Op_LoadKlass:
+    case Op_LoadNKlass:
     case Op_LoadRange:
     case Op_LoadD_unaligned:
     case Op_LoadL_unaligned:

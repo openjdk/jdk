@@ -896,7 +896,7 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   Node* sourcea       = basic_plus_adr(string_object, string_object, value_offset);
   Node* source        = make_load(no_ctrl, sourcea, source_type, T_OBJECT, string_type->add_offset(value_offset));
 
-  Node* target = _gvn.transform(ConPNode::make(C, target_array));
+  Node* target = _gvn.transform( makecon(TypeOopPtr::make_from_constant(target_array)) );
   jint target_length = target_array->length();
   const TypeAry* target_array_type = TypeAry::make(TypeInt::CHAR, TypeInt::make(0, target_length, Type::WidenMin));
   const TypeAryPtr* target_type = TypeAryPtr::make(TypePtr::BotPTR, target_array_type, target_array->klass(), true, Type::OffsetBot);
@@ -2454,7 +2454,7 @@ Node* LibraryCallKit::load_klass_from_mirror_common(Node* mirror,
   if (region == NULL)  never_see_null = true;
   Node* p = basic_plus_adr(mirror, offset);
   const TypeKlassPtr*  kls_type = TypeKlassPtr::OBJECT_OR_NULL;
-  Node* kls = _gvn.transform(new (C, 3) LoadKlassNode(0, immutable_memory(), p, TypeRawPtr::BOTTOM, kls_type));
+  Node* kls = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), p, TypeRawPtr::BOTTOM, kls_type) );
   _sp += nargs; // any deopt will start just before call to enclosing method
   Node* null_ctl = top();
   kls = null_check_oop(kls, &null_ctl, never_see_null);
@@ -2634,7 +2634,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
       phi->add_req(makecon(TypeInstPtr::make(env()->Object_klass()->java_mirror())));
     // If we fall through, it's a plain class.  Get its _super.
     p = basic_plus_adr(kls, Klass::super_offset_in_bytes() + sizeof(oopDesc));
-    kls = _gvn.transform(new (C, 3) LoadKlassNode(0, immutable_memory(), p, TypeRawPtr::BOTTOM, TypeKlassPtr::OBJECT_OR_NULL));
+    kls = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), p, TypeRawPtr::BOTTOM, TypeKlassPtr::OBJECT_OR_NULL) );
     null_ctl = top();
     kls = null_check_oop(kls, &null_ctl);
     if (null_ctl != top()) {
@@ -2720,7 +2720,7 @@ bool LibraryCallKit::inline_native_subtype_check() {
     args[which_arg] = _gvn.transform(arg);
 
     Node* p = basic_plus_adr(arg, class_klass_offset);
-    Node* kls = new (C, 3) LoadKlassNode(0, immutable_memory(), p, adr_type, kls_type);
+    Node* kls = LoadKlassNode::make(_gvn, immutable_memory(), p, adr_type, kls_type);
     klasses[which_arg] = _gvn.transform(kls);
   }
 
@@ -4388,7 +4388,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
       // (At this point we can assume disjoint_bases, since types differ.)
       int ek_offset = objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc);
       Node* p1 = basic_plus_adr(dest_klass, ek_offset);
-      Node* n1 = new (C, 3) LoadKlassNode(0, immutable_memory(), p1, TypeRawPtr::BOTTOM);
+      Node* n1 = LoadKlassNode::make(_gvn, immutable_memory(), p1, TypeRawPtr::BOTTOM);
       Node* dest_elem_klass = _gvn.transform(n1);
       Node* cv = generate_checkcast_arraycopy(adr_type,
                                               dest_elem_klass,

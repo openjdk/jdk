@@ -490,7 +490,12 @@ class Assembler : public AbstractAssembler  {
     imm64_operand  = 0,          // embedded 64-bit immediate operand
     disp32_operand = 1,          // embedded 32-bit displacement
     call32_operand = 2,          // embedded 32-bit self-relative displacement
+#ifndef AMD64
     _WhichOperand_limit = 3
+#else
+     narrow_oop_operand = 3,     // embedded 32-bit immediate narrow oop
+    _WhichOperand_limit = 4
+#endif
   };
 
   public:
@@ -1113,6 +1118,8 @@ class MacroAssembler : public Assembler {
   void decode_heap_oop_not_null(Register r);
   void encode_heap_oop_not_null(Register dst, Register src);
   void decode_heap_oop_not_null(Register dst, Register src);
+
+  void set_narrow_oop(Register dst, jobject obj);
 
   // Stack frame creation/removal
   void enter();

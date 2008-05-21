@@ -1768,6 +1768,7 @@ void Matcher::find_shared( Node *n ) {
       case Op_LoadF:
       case Op_LoadI:
       case Op_LoadKlass:
+      case Op_LoadNKlass:
       case Op_LoadL:
       case Op_LoadS:
       case Op_LoadP:
@@ -1899,6 +1900,7 @@ void Matcher::find_shared( Node *n ) {
       case Op_CMoveF:
       case Op_CMoveI:
       case Op_CMoveL:
+      case Op_CMoveN:
       case Op_CMoveP: {
         // Restructure into a binary tree for Matching.  It's possible that
         // we could move this code up next to the graph reshaping for IfNodes

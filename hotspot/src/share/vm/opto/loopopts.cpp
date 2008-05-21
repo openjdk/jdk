@@ -464,6 +464,7 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     case T_FLOAT:
     case T_DOUBLE:
     case T_ADDRESS:             // (RawPtr)
+    case T_NARROWOOP:
       cost++;
       break;
     case T_OBJECT: {            // Base oops are OK, but not derived oops

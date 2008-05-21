@@ -1523,6 +1523,21 @@ Address MacroAssembler::constant_oop_address(jobject obj, Register d) {
   return Address(d, address(obj), oop_Relocation::spec(oop_index));
 }
 
+void  MacroAssembler::set_narrow_oop(jobject obj, Register d) {
+  assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int oop_index = oop_recorder()->find_index(obj);
+  RelocationHolder rspec = oop_Relocation::spec(oop_index);
+
+  assert_not_delayed();
+  // Relocation with special format (see relocInfo_sparc.hpp).
+  relocate(rspec, 1);
+  // Assembler::sethi(0x3fffff, d);
+  emit_long( op(branch_op) | rd(d) | op2(sethi_op2) | hi22(0x3fffff) );
+  // Don't add relocation for 'add'. Do patching during 'sethi' processing.
+  add(d, 0x3ff, d);
+
+}
+
 
 void MacroAssembler::align(int modulus) {
   while (offset() % modulus != 0) nop();
@@ -3537,28 +3552,26 @@ void MacroAssembler::bang_stack_size(Register Rsize, Register Rtsp,
   }
 }
 
-void MacroAssembler::load_klass(Register s, Register d) {
+void MacroAssembler::load_klass(Register src_oop, Register klass) {
   // The number of bytes in this code is used by
   // MachCallDynamicJavaNode::ret_addr_offset()
   // if this changes, change that.
   if (UseCompressedOops) {
-    lduw(s, oopDesc::klass_offset_in_bytes(), d);
-    decode_heap_oop_not_null(d);
+    lduw(src_oop, oopDesc::klass_offset_in_bytes(), klass);
+    decode_heap_oop_not_null(klass);
   } else {
-    ld_ptr(s, oopDesc::klass_offset_in_bytes(), d);
+    ld_ptr(src_oop, oopDesc::klass_offset_in_bytes(), klass);
   }
 }
 
-// ??? figure out src vs. dst!
-void MacroAssembler::store_klass(Register d, Register s1) {
+void MacroAssembler::store_klass(Register klass, Register dst_oop) {
   if (UseCompressedOops) {
-    assert(s1 != d, "not enough registers");
-    encode_heap_oop_not_null(d);
-    // Zero out entire klass field first.
-    st_ptr(G0, s1, oopDesc::klass_offset_in_bytes());
-    st(d, s1, oopDesc::klass_offset_in_bytes());
+    assert(dst_oop != klass, "not enough registers");
+    encode_heap_oop_not_null(klass);
+    sllx(klass, BitsPerInt, klass);
+    stx(klass, dst_oop, oopDesc::klass_offset_in_bytes());
   } else {
-    st_ptr(d, s1, oopDesc::klass_offset_in_bytes());
+    st_ptr(klass, dst_oop, oopDesc::klass_offset_in_bytes());
   }
 }
 

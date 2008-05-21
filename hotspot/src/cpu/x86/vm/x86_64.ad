@@ -6063,7 +6063,6 @@ instruct loadN(rRegN dst, memory mem)
 instruct loadKlass(rRegP dst, memory mem)
 %{
   match(Set dst (LoadKlass mem));
-  predicate(!n->in(MemNode::Address)->bottom_type()->is_ptr_to_narrowoop());
 
   ins_cost(125); // XXX
   format %{ "movq    $dst, $mem\t# class" %}
@@ -6072,23 +6071,17 @@ instruct loadKlass(rRegP dst, memory mem)
   ins_pipe(ialu_reg_mem); // XXX
 %}
 
-// Load Klass Pointer
-instruct loadKlassComp(rRegP dst, memory mem, rFlagsReg cr)
+// Load narrow Klass Pointer
+instruct loadNKlass(rRegN dst, memory mem)
 %{
-  match(Set dst (LoadKlass mem));
-  predicate(n->in(MemNode::Address)->bottom_type()->is_ptr_to_narrowoop());
-  effect(KILL cr);
+  match(Set dst (LoadNKlass mem));
 
   ins_cost(125); // XXX
-  format %{ "movl    $dst, $mem\t# compressed class\n\t"
-            "decode_heap_oop $dst,$dst" %}
+  format %{ "movl    $dst, $mem\t# compressed klass ptr\n\t" %}
   ins_encode %{
     Address addr = build_address($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
     Register dst = as_Register($dst$$reg);
     __ movl(dst, addr);
-    // klass is never null in the header but this is generated for all
-    // klass loads not just the _klass field in the header.
-    __ decode_heap_oop(dst);
   %}
   ins_pipe(ialu_reg_mem); // XXX
 %}
@@ -6358,21 +6351,18 @@ instruct loadConN0(rRegN dst, immN0 src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct loadConN(rRegN dst, immN src, rFlagsReg cr) %{
+instruct loadConN(rRegN dst, immN src) %{
   match(Set dst src);
-  effect(KILL cr);
 
   ins_cost(125);
-  format %{ "movq    $dst, $src\t# compressed ptr\n\t"
-            "encode_heap_oop_not_null $dst,$dst" %}
+  format %{ "movl    $dst, $src\t# compressed ptr" %}
   ins_encode %{
     address con = (address)$src$$constant;
     Register dst = $dst$$Register;
     if (con == NULL) {
       ShouldNotReachHere();
     } else {
-      __ movoop(dst, (jobject)$src$$constant);
-      __ encode_heap_oop_not_null(dst);
+      __ set_narrow_oop(dst, (jobject)$src$$constant);
     }
   %}
   ins_pipe(ialu_reg_fat); // XXX
@@ -6639,7 +6629,7 @@ instruct storeN(memory mem, rRegN src)
   match(Set mem (StoreN mem src));
 
   ins_cost(125); // XXX
-  format %{ "movl    $mem, $src\t# ptr" %}
+  format %{ "movl    $mem, $src\t# compressed ptr" %}
   ins_encode %{
     Address addr = build_address($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
     Register src = as_Register($src$$reg);
@@ -7140,6 +7130,30 @@ instruct cmovI_memU(cmpOpU cop, rFlagsRegU cr, rRegI dst, memory src)
   opcode(0x0F, 0x40);
   ins_encode(REX_reg_mem(dst, src), enc_cmov(cop), reg_mem(dst, src));
   ins_pipe(pipe_cmov_mem);
+%}
+
+// Conditional move
+instruct cmovN_reg(rRegN dst, rRegN src, rFlagsReg cr, cmpOp cop)
+%{
+  match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
+
+  ins_cost(200); // XXX
+  format %{ "cmovl$cop $dst, $src\t# signed, compressed ptr" %}
+  opcode(0x0F, 0x40);
+  ins_encode(REX_reg_reg(dst, src), enc_cmov(cop), reg_reg(dst, src));
+  ins_pipe(pipe_cmov_reg);
+%}
+
+// Conditional move
+instruct cmovN_regU(rRegN dst, rRegN src, rFlagsRegU cr, cmpOpU cop)
+%{
+  match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
+
+  ins_cost(200); // XXX
+  format %{ "cmovl$cop $dst, $src\t# unsigned, compressed ptr" %}
+  opcode(0x0F, 0x40);
+  ins_encode(REX_reg_reg(dst, src), enc_cmov(cop), reg_reg(dst, src));
+  ins_pipe(pipe_cmov_reg);
 %}
 
 // Conditional move
@@ -11055,12 +11069,48 @@ instruct testP_reg_mem(rFlagsReg cr, memory op, immP0 zero)
   ins_pipe(ialu_cr_reg_imm);
 %}
 
+
+instruct compN_rReg(rFlagsRegU cr, rRegN op1, rRegN op2)
+%{
+  match(Set cr (CmpN op1 op2));
+
+  format %{ "cmpl    $op1, $op2\t# compressed ptr" %}
+  ins_encode %{ __ cmpl(as_Register($op1$$reg), as_Register($op2$$reg)); %}
+  ins_pipe(ialu_cr_reg_reg);
+%}
+
+instruct compN_rReg_mem(rFlagsRegU cr, rRegN src, memory mem)
+%{
+  match(Set cr (CmpN src (LoadN mem)));
+
+  ins_cost(500); // XXX
+  format %{ "cmpl    $src, mem\t# compressed ptr" %}
+  ins_encode %{
+    Address adr = build_address($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
+    __ cmpl(as_Register($src$$reg), adr);
+  %}
+  ins_pipe(ialu_cr_reg_mem);
+%}
+
 instruct testN_reg(rFlagsReg cr, rRegN src, immN0 zero) %{
   match(Set cr (CmpN src zero));
 
-  format %{ "testl   $src, $src" %}
+  format %{ "testl   $src, $src\t# compressed ptr" %}
   ins_encode %{ __ testl($src$$Register, $src$$Register); %}
   ins_pipe(ialu_cr_reg_imm);
+%}
+
+instruct testN_reg_mem(rFlagsReg cr, memory mem, immN0 zero)
+%{
+  match(Set cr (CmpN (LoadN mem) zero));
+
+  ins_cost(500); // XXX
+  format %{ "testl   $mem, 0xffffffff\t# compressed ptr" %}
+  ins_encode %{
+    Address addr = build_address($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
+    __ cmpl(addr, (int)0xFFFFFFFF);
+  %}
+  ins_pipe(ialu_cr_reg_mem);
 %}
 
 // Yanked all unsigned pointer compare operations.
