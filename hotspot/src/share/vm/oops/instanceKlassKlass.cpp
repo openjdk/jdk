@@ -581,7 +581,7 @@ void instanceKlassKlass::oop_print_on(oop obj, outputStream* st) {
   OopMapBlock* map     = ik->start_of_nonstatic_oop_maps();
   OopMapBlock* end_map = map + ik->nonstatic_oop_map_size();
   while (map < end_map) {
-    st->print("%d-%d ", map->offset(), map->offset() + oopSize*(map->length() - 1));
+    st->print("%d-%d ", map->offset(), map->offset() + heapOopSize*(map->length() - 1));
     map++;
   }
   st->cr();
