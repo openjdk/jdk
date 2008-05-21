@@ -985,7 +985,7 @@ static FT_Outline* getFTOutline(JNIEnv* env, jobject font2D,
 
     FT_Outline_Translate(&ftglyph->outline,
                          FloatToF26Dot6(xpos),
-                         FloatToF26Dot6(ypos));
+                         -FloatToF26Dot6(ypos));
 
     return &ftglyph->outline;
 }
