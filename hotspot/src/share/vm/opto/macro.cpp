@@ -1282,12 +1282,6 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
   }
   rawmem = make_store(control, rawmem, object, oopDesc::mark_offset_in_bytes(), mark_node, T_ADDRESS);
 
-  if (UseCompressedOops) {
-    Node *zeronode = makecon(TypeInt::ZERO);
-    // store uncompressed 0 into klass ptr to zero out gap.  The gap is
-    // used for primitive fields and has to be zeroed.
-    rawmem = make_store(control, rawmem, object, oopDesc::klass_gap_offset_in_bytes(), zeronode, T_INT);
-  }
   rawmem = make_store(control, rawmem, object, oopDesc::klass_offset_in_bytes(), klass_node, T_OBJECT);
   int header_size = alloc->minimum_header_size();  // conservatively small
 

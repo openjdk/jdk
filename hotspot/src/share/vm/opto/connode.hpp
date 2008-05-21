@@ -283,6 +283,7 @@ class EncodePNode : public TypeNode {
   virtual uint  ideal_reg() const { return Op_RegN; }
 
   static Node* encode(PhaseGVN* phase, Node* value);
+  virtual Node *Ideal_DU_postCCP( PhaseCCP *ccp );
 };
 
 //------------------------------DecodeN--------------------------------

@@ -2168,7 +2168,7 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
     // (They don't if CAS fails, but it isn't worth checking.)
     pre_barrier(control(), base, adr, alias_idx, newval, value_type, T_OBJECT);
 #ifdef _LP64
-    if (adr->bottom_type()->is_narrow()) {
+    if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       cas = _gvn.transform(new (C, 5) CompareAndSwapNNode(control(), mem, adr,
                                                            EncodePNode::encode(&_gvn, newval),
                                                            EncodePNode::encode(&_gvn, oldval)));
@@ -2838,6 +2838,8 @@ bool LibraryCallKit::inline_native_newArray() {
   _sp += nargs;  // set original stack for use by uncommon_trap
   mirror = do_null_check(mirror, T_OBJECT);
   _sp -= nargs;
+  // If mirror or obj is dead, only null-path is taken.
+  if (stopped())  return true;
 
   enum { _normal_path = 1, _slow_path = 2, PATH_LIMIT };
   RegionNode* result_reg = new(C, PATH_LIMIT) RegionNode(PATH_LIMIT);
@@ -3827,24 +3829,22 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
   if (!stopped()) {
     // Copy the fastest available way.
     // (No need for PreserveJVMState, since we're using it all up now.)
+    // TODO: generate fields/elements copies for small objects instead.
     Node* src  = obj;
     Node* dest = raw_obj;
-    Node* end  = dest;
     Node* size = _gvn.transform(alloc_siz);
 
     // Exclude the header.
     int base_off = instanceOopDesc::base_offset_in_bytes();
     if (UseCompressedOops) {
-      // copy the header gap though.
-      Node* sptr = basic_plus_adr(src,  base_off);
-      Node* dptr = basic_plus_adr(dest, base_off);
-      Node* sval = make_load(control(), sptr, TypeInt::INT, T_INT, raw_adr_type);
-      store_to_memory(control(), dptr, sval, T_INT, raw_adr_type);
-      base_off += sizeof(int);
+      assert(base_off % BytesPerLong != 0, "base with compressed oops");
+      // With compressed oops base_offset_in_bytes is 12 which creates
+      // the gap since countx is rounded by 8 bytes below.
+      // Copy klass and the gap.
+      base_off = instanceOopDesc::klass_offset_in_bytes();
     }
     src  = basic_plus_adr(src,  base_off);
     dest = basic_plus_adr(dest, base_off);
-    end  = basic_plus_adr(end,  size);
 
     // Compute the length also, if needed:
     Node* countx = size;

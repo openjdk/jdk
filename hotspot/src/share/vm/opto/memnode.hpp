@@ -72,7 +72,8 @@ public:
   // This one should probably be a phase-specific function:
   static bool all_controls_dominate(Node* dom, Node* sub);
 
-  // Is this Node a MemNode or some descendent?  Default is YES.
+  // Find any cast-away of null-ness and keep its control.
+  static  Node *Ideal_common_DU_postCCP( PhaseCCP *ccp, Node* n, Node* adr );
   virtual Node *Ideal_DU_postCCP( PhaseCCP *ccp );
 
   virtual const class TypePtr *adr_type() const;  // returns bottom_type of address
@@ -149,6 +150,9 @@ public:
   // If the load is from Field memory and the pointer is non-null, we can
   // zero out the control input.
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+
+  // Split instance field load through Phi.
+  Node* split_through_phi(PhaseGVN *phase);
 
   // Recover original value from boxed values
   Node *eliminate_autobox(PhaseGVN *phase);

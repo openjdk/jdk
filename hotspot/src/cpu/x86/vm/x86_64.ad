@@ -6044,10 +6044,9 @@ instruct loadP(rRegP dst, memory mem)
 %}
 
 // Load Compressed Pointer
-instruct loadN(rRegN dst, memory mem, rFlagsReg cr)
+instruct loadN(rRegN dst, memory mem)
 %{
    match(Set dst (LoadN mem));
-   effect(KILL cr);
 
    ins_cost(125); // XXX
    format %{ "movl    $dst, $mem\t# compressed ptr" %}
@@ -6064,7 +6063,7 @@ instruct loadN(rRegN dst, memory mem, rFlagsReg cr)
 instruct loadKlass(rRegP dst, memory mem)
 %{
   match(Set dst (LoadKlass mem));
-  predicate(!n->in(MemNode::Address)->bottom_type()->is_narrow());
+  predicate(!n->in(MemNode::Address)->bottom_type()->is_ptr_to_narrowoop());
 
   ins_cost(125); // XXX
   format %{ "movq    $dst, $mem\t# class" %}
@@ -6074,10 +6073,11 @@ instruct loadKlass(rRegP dst, memory mem)
 %}
 
 // Load Klass Pointer
-instruct loadKlassComp(rRegP dst, memory mem)
+instruct loadKlassComp(rRegP dst, memory mem, rFlagsReg cr)
 %{
   match(Set dst (LoadKlass mem));
-  predicate(n->in(MemNode::Address)->bottom_type()->is_narrow());
+  predicate(n->in(MemNode::Address)->bottom_type()->is_ptr_to_narrowoop());
+  effect(KILL cr);
 
   ins_cost(125); // XXX
   format %{ "movl    $dst, $mem\t# compressed class\n\t"
@@ -6358,8 +6358,9 @@ instruct loadConN0(rRegN dst, immN0 src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct loadConN(rRegN dst, immN src) %{
+instruct loadConN(rRegN dst, immN src, rFlagsReg cr) %{
   match(Set dst src);
+  effect(KILL cr);
 
   ins_cost(125);
   format %{ "movq    $dst, $src\t# compressed ptr\n\t"
@@ -6633,10 +6634,9 @@ instruct storeImmP(memory mem, immP31 src)
 %}
 
 // Store Compressed Pointer
-instruct storeN(memory mem, rRegN src, rFlagsReg cr)
+instruct storeN(memory mem, rRegN src)
 %{
   match(Set mem (StoreN mem src));
-  effect(KILL cr);
 
   ins_cost(125); // XXX
   format %{ "movl    $mem, $src\t# ptr" %}

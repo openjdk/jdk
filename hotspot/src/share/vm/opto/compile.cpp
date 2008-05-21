@@ -368,7 +368,12 @@ void Compile::init_scratch_buffer_blob() {
   BufferBlob* blob = BufferBlob::create("Compile::scratch_buffer", size);
   // Record the buffer blob for next time.
   set_scratch_buffer_blob(blob);
-  guarantee(scratch_buffer_blob() != NULL, "Need BufferBlob for code generation");
+  // Have we run out of code space?
+  if (scratch_buffer_blob() == NULL) {
+    // Let CompilerBroker disable further compilations.
+    record_failure("Not enough space for scratch buffer in CodeCache");
+    return;
+  }
 
   // Initialize the relocation buffers
   relocInfo* locs_buf = (relocInfo*) blob->instructions_end() - MAX_locs_size;
@@ -1065,6 +1070,8 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       // No constant oop pointers (such as Strings); they alias with
       // unknown strings.
       tj = to = TypeInstPtr::make(TypePtr::BotPTR,to->klass(),false,0,offset);
+    } else if( to->is_instance_field() ) {
+      tj = to; // Keep NotNull and klass_is_exact for instance type
     } else if( ptr == TypePtr::NotNull || to->klass_is_exact() ) {
       // During the 2nd round of IterGVN, NotNull castings are removed.
       // Make sure the Bottom and NotNull variants alias the same.
@@ -1084,7 +1091,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     } else {
       ciInstanceKlass *canonical_holder = k->get_canonical_holder(offset);
       if (!k->equals(canonical_holder) || tj->offset() != offset) {
-        tj = to = TypeInstPtr::make(TypePtr::BotPTR, canonical_holder, false, NULL, offset, to->instance_id());
+        tj = to = TypeInstPtr::make(to->ptr(), canonical_holder, false, NULL, offset, to->instance_id());
       }
     }
   }

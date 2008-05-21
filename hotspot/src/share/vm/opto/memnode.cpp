@@ -133,7 +133,9 @@ Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGV
     PhiNode *mphi = result->as_Phi();
     assert(mphi->bottom_type() == Type::MEMORY, "memory phi required");
     const TypePtr *t = mphi->adr_type();
-    if (t == TypePtr::BOTTOM || t == TypeRawPtr::BOTTOM) {
+    if (t == TypePtr::BOTTOM || t == TypeRawPtr::BOTTOM ||
+        t->isa_oopptr() && !t->is_oopptr()->is_instance() &&
+        t->is_oopptr()->cast_to_instance(t_oop->instance_id()) == t_oop) {
       // clone the Phi with our address type
       result = mphi->split_out_instance(t_adr, igvn);
     } else {
@@ -263,7 +265,10 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
   // of all its inputs dominate or equal to sub's control edge.
 
   // Currently 'sub' is either Allocate, Initialize or Start nodes.
-  assert(sub->is_Allocate() || sub->is_Initialize() || sub->is_Start(), "expecting only these nodes");
+  // Or Region for the check in LoadNode::Ideal();
+  // 'sub' should have sub->in(0) != NULL.
+  assert(sub->is_Allocate() || sub->is_Initialize() || sub->is_Start() ||
+         sub->is_Region(), "expecting only these nodes");
 
   // Get control edge of 'sub'.
   sub = sub->find_exact_control(sub->in(0));
@@ -576,6 +581,9 @@ bool MemNode::adr_phi_is_loop_invariant(Node* adr_phi, Node* cast) {
 // Find any cast-away of null-ness and keep its control.  Null cast-aways are
 // going away in this pass and we need to make this memory op depend on the
 // gating null check.
+Node *MemNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
+  return Ideal_common_DU_postCCP(ccp, this, in(MemNode::Address));
+}
 
 // I tried to leave the CastPP's in.  This makes the graph more accurate in
 // some sense; we get to keep around the knowledge that an oop is not-null
@@ -585,15 +593,14 @@ bool MemNode::adr_phi_is_loop_invariant(Node* adr_phi, Node* cast) {
 // some of the more trivial cases in the optimizer.  Removing more useless
 // Phi's started allowing Loads to illegally float above null checks.  I gave
 // up on this approach.  CNC 10/20/2000
-Node *MemNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
-  Node *ctr = in(MemNode::Control);
-  Node *mem = in(MemNode::Memory);
-  Node *adr = in(MemNode::Address);
+// This static method may be called not from MemNode (EncodePNode calls it).
+// Only the control edge of the node 'n' might be updated.
+Node *MemNode::Ideal_common_DU_postCCP( PhaseCCP *ccp, Node* n, Node* adr ) {
   Node *skipped_cast = NULL;
   // Need a null check?  Regular static accesses do not because they are
   // from constant addresses.  Array ops are gated by the range check (which
   // always includes a NULL check).  Just check field ops.
-  if( !ctr ) {
+  if( n->in(MemNode::Control) == NULL ) {
     // Scan upwards for the highest location we can place this memory op.
     while( true ) {
       switch( adr->Opcode() ) {
@@ -618,10 +625,10 @@ Node *MemNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
         }
         // CastPP is going away in this pass!  We need this memory op to be
         // control-dependent on the test that is guarding the CastPP.
-        ccp->hash_delete(this);
-        set_req(MemNode::Control, adr->in(0));
-        ccp->hash_insert(this);
-        return this;
+        ccp->hash_delete(n);
+        n->set_req(MemNode::Control, adr->in(0));
+        ccp->hash_insert(n);
+        return n;
 
       case Op_Phi:
         // Attempt to float above a Phi to some dominating point.
@@ -652,10 +659,10 @@ Node *MemNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
           adr = adr->in(1);
           continue;
         }
-        ccp->hash_delete(this);
-        set_req(MemNode::Control, adr->in(0));
-        ccp->hash_insert(this);
-        return this;
+        ccp->hash_delete(n);
+        n->set_req(MemNode::Control, adr->in(0));
+        ccp->hash_insert(n);
+        return n;
 
         // List of "safe" opcodes; those that implicitly block the memory
         // op below any null check.
@@ -665,6 +672,7 @@ Node *MemNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
       case Op_LoadN:            // Loading from within a klass
       case Op_LoadKlass:        // Loading from within a klass
       case Op_ConP:             // Loading from a klass
+      case Op_ConN:             // Loading from a klass
       case Op_CreateEx:         // Sucking up the guts of an exception oop
       case Op_Con:              // Reading from TLS
       case Op_CMoveP:           // CMoveP is pinned
@@ -676,8 +684,8 @@ Node *MemNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
         {
           assert(adr->as_Proj()->_con == TypeFunc::Parms, "must be return value");
           const Node* call = adr->in(0);
-          if (call->is_CallStaticJava()) {
-            const CallStaticJavaNode* call_java = call->as_CallStaticJava();
+          if (call->is_CallJava()) {
+            const CallJavaNode* call_java = call->as_CallJava();
             const TypeTuple *r = call_java->tf()->range();
             assert(r->cnt() > TypeFunc::Parms, "must return value");
             const Type* ret_type = r->field_at(TypeFunc::Parms);
@@ -749,7 +757,7 @@ Node *LoadNode::make( PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const Type
   case T_ADDRESS: return new (C, 3) LoadPNode(ctl, mem, adr, adr_type, rt->is_ptr()    );
   case T_OBJECT:
 #ifdef _LP64
-    if (adr->bottom_type()->is_narrow()) {
+    if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       const TypeNarrowOop* narrowtype;
       if (rt->isa_narrowoop()) {
         narrowtype = rt->is_narrowoop();
@@ -761,10 +769,10 @@ Node *LoadNode::make( PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const Type
       return DecodeNNode::decode(&gvn, load);
     } else
 #endif
-      {
-        assert(!adr->bottom_type()->is_narrow(), "should have got back a narrow oop");
-        return new (C, 3) LoadPNode(ctl, mem, adr, adr_type, rt->is_oopptr());
-      }
+    {
+      assert(!adr->bottom_type()->is_ptr_to_narrowoop(), "should have got back a narrow oop");
+      return new (C, 3) LoadPNode(ctl, mem, adr, adr_type, rt->is_oopptr());
+    }
   }
   ShouldNotReachHere();
   return (LoadNode*)NULL;
@@ -1118,6 +1126,127 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
   return NULL;
 }
 
+//------------------------------split_through_phi------------------------------
+// Split instance field load through Phi.
+Node *LoadNode::split_through_phi(PhaseGVN *phase) {
+  Node* mem     = in(MemNode::Memory);
+  Node* address = in(MemNode::Address);
+  const TypePtr *addr_t = phase->type(address)->isa_ptr();
+  const TypeOopPtr *t_oop = addr_t->isa_oopptr();
+
+  assert(mem->is_Phi() && (t_oop != NULL) &&
+         t_oop->is_instance_field(), "invalide conditions");
+
+  Node *region = mem->in(0);
+  if (region == NULL) {
+    return NULL; // Wait stable graph
+  }
+  uint cnt = mem->req();
+  for( uint i = 1; i < cnt; i++ ) {
+    Node *in = mem->in(i);
+    if( in == NULL ) {
+      return NULL; // Wait stable graph
+    }
+  }
+  // Check for loop invariant.
+  if (cnt == 3) {
+    for( uint i = 1; i < cnt; i++ ) {
+      Node *in = mem->in(i);
+      Node* m = MemNode::optimize_memory_chain(in, addr_t, phase);
+      if (m == mem) {
+        set_req(MemNode::Memory, mem->in(cnt - i)); // Skip this phi.
+        return this;
+      }
+    }
+  }
+  // Split through Phi (see original code in loopopts.cpp).
+  assert(phase->C->have_alias_type(addr_t), "instance should have alias type");
+
+  // Do nothing here if Identity will find a value
+  // (to avoid infinite chain of value phis generation).
+  if ( !phase->eqv(this, this->Identity(phase)) )
+    return NULL;
+
+  // Skip the split if the region dominates some control edge of the address.
+  if (cnt == 3 && !MemNode::all_controls_dominate(address, region))
+    return NULL;
+
+  const Type* this_type = this->bottom_type();
+  int this_index  = phase->C->get_alias_index(addr_t);
+  int this_offset = addr_t->offset();
+  int this_iid    = addr_t->is_oopptr()->instance_id();
+  int wins = 0;
+  PhaseIterGVN *igvn = phase->is_IterGVN();
+  Node *phi = new (igvn->C, region->req()) PhiNode(region, this_type, NULL, this_iid, this_index, this_offset);
+  for( uint i = 1; i < region->req(); i++ ) {
+    Node *x;
+    Node* the_clone = NULL;
+    if( region->in(i) == phase->C->top() ) {
+      x = phase->C->top();      // Dead path?  Use a dead data op
+    } else {
+      x = this->clone();        // Else clone up the data op
+      the_clone = x;            // Remember for possible deletion.
+      // Alter data node to use pre-phi inputs
+      if( this->in(0) == region ) {
+        x->set_req( 0, region->in(i) );
+      } else {
+        x->set_req( 0, NULL );
+      }
+      for( uint j = 1; j < this->req(); j++ ) {
+        Node *in = this->in(j);
+        if( in->is_Phi() && in->in(0) == region )
+          x->set_req( j, in->in(i) ); // Use pre-Phi input for the clone
+      }
+    }
+    // Check for a 'win' on some paths
+    const Type *t = x->Value(igvn);
+
+    bool singleton = t->singleton();
+
+    // See comments in PhaseIdealLoop::split_thru_phi().
+    if( singleton && t == Type::TOP ) {
+      singleton &= region->is_Loop() && (i != LoopNode::EntryControl);
+    }
+
+    if( singleton ) {
+      wins++;
+      x = igvn->makecon(t);
+    } else {
+      // We now call Identity to try to simplify the cloned node.
+      // Note that some Identity methods call phase->type(this).
+      // Make sure that the type array is big enough for
+      // our new node, even though we may throw the node away.
+      // (This tweaking with igvn only works because x is a new node.)
+      igvn->set_type(x, t);
+      Node *y = x->Identity(igvn);
+      if( y != x ) {
+        wins++;
+        x = y;
+      } else {
+        y = igvn->hash_find(x);
+        if( y ) {
+          wins++;
+          x = y;
+        } else {
+          // Else x is a new node we are keeping
+          // We do not need register_new_node_with_optimizer
+          // because set_type has already been called.
+          igvn->_worklist.push(x);
+        }
+      }
+    }
+    if (x != the_clone && the_clone != NULL)
+      igvn->remove_dead_node(the_clone);
+    phi->set_req(i, x);
+  }
+  if( wins > 0 ) {
+    // Record Phi
+    igvn->register_new_node_with_optimizer(phi);
+    return phi;
+  }
+  igvn->remove_dead_node(phi);
+  return NULL;
+}
 
 //------------------------------Ideal------------------------------------------
 // If the load is from Field memory and the pointer is non-null, we can
@@ -1175,112 +1304,9 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     const TypeOopPtr *t_oop = addr_t->isa_oopptr();
     if (can_reshape && opt_mem->is_Phi() &&
         (t_oop != NULL) && t_oop->is_instance_field()) {
-      assert(t_oop->offset() != Type::OffsetBot && t_oop->offset() != Type::OffsetTop, "");
-      Node *region = opt_mem->in(0);
-      uint cnt = opt_mem->req();
-      for( uint i = 1; i < cnt; i++ ) {
-        Node *in = opt_mem->in(i);
-        if( in == NULL ) {
-          region = NULL; // Wait stable graph
-          break;
-        }
-      }
-      if (region != NULL) {
-        // Check for loop invariant.
-        if (cnt == 3) {
-          for( uint i = 1; i < cnt; i++ ) {
-            Node *in = opt_mem->in(i);
-            Node* m = MemNode::optimize_memory_chain(in, addr_t, phase);
-            if (m == opt_mem) {
-              set_req(MemNode::Memory, opt_mem->in(cnt - i)); // Skip this phi.
-              return this;
-            }
-          }
-        }
-        // Split through Phi (see original code in loopopts.cpp).
-        assert(phase->C->have_alias_type(addr_t), "instance should have alias type");
-
-        // Do nothing here if Identity will find a value
-        // (to avoid infinite chain of value phis generation).
-        if ( !phase->eqv(this, this->Identity(phase)) )
-          return NULL;
-
-        const Type* this_type = this->bottom_type();
-        int this_index  = phase->C->get_alias_index(addr_t);
-        int this_offset = addr_t->offset();
-        int this_iid    = addr_t->is_oopptr()->instance_id();
-        int wins = 0;
-        PhaseIterGVN *igvn = phase->is_IterGVN();
-        Node *phi = new (igvn->C, region->req()) PhiNode(region, this_type, NULL, this_iid, this_index, this_offset);
-        for( uint i = 1; i < region->req(); i++ ) {
-          Node *x;
-          Node* the_clone = NULL;
-          if( region->in(i) == phase->C->top() ) {
-            x = phase->C->top();      // Dead path?  Use a dead data op
-          } else {
-            x = this->clone();        // Else clone up the data op
-            the_clone = x;            // Remember for possible deletion.
-            // Alter data node to use pre-phi inputs
-            if( this->in(0) == region ) {
-              x->set_req( 0, region->in(i) );
-            } else {
-              x->set_req( 0, NULL );
-            }
-            for( uint j = 1; j < this->req(); j++ ) {
-              Node *in = this->in(j);
-              if( in->is_Phi() && in->in(0) == region )
-                x->set_req( j, in->in(i) ); // Use pre-Phi input for the clone
-            }
-          }
-          // Check for a 'win' on some paths
-          const Type *t = x->Value(igvn);
-
-          bool singleton = t->singleton();
-
-          // See comments in PhaseIdealLoop::split_thru_phi().
-          if( singleton && t == Type::TOP ) {
-            singleton &= region->is_Loop() && (i != LoopNode::EntryControl);
-          }
-
-          if( singleton ) {
-            wins++;
-            x = igvn->makecon(t);
-          } else {
-            // We now call Identity to try to simplify the cloned node.
-            // Note that some Identity methods call phase->type(this).
-            // Make sure that the type array is big enough for
-            // our new node, even though we may throw the node away.
-            // (This tweaking with igvn only works because x is a new node.)
-            igvn->set_type(x, t);
-            Node *y = x->Identity(igvn);
-            if( y != x ) {
-              wins++;
-              x = y;
-            } else {
-              y = igvn->hash_find(x);
-              if( y ) {
-                wins++;
-                x = y;
-              } else {
-                // Else x is a new node we are keeping
-                // We do not need register_new_node_with_optimizer
-                // because set_type has already been called.
-                igvn->_worklist.push(x);
-              }
-            }
-          }
-          if (x != the_clone && the_clone != NULL)
-            igvn->remove_dead_node(the_clone);
-          phi->set_req(i, x);
-        }
-        if( wins > 0 ) {
-          // Record Phi
-          igvn->register_new_node_with_optimizer(phi);
-          return phi;
-        } else {
-          igvn->remove_dead_node(phi);
-        }
-      }
+      // Split instance field load through Phi.
+      Node* result = split_through_phi(phase);
+      if (result != NULL) return result;
     }
   }
 
@@ -1835,7 +1861,7 @@ StoreNode* StoreNode::make( PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, cons
   case T_ADDRESS:
   case T_OBJECT:
 #ifdef _LP64
-    if (adr->bottom_type()->is_narrow() ||
+    if (adr->bottom_type()->is_ptr_to_narrowoop() ||
         (UseCompressedOops && val->bottom_type()->isa_klassptr() &&
          adr->bottom_type()->isa_rawptr())) {
       const TypePtr* type = val->bottom_type()->is_ptr();

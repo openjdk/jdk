@@ -1049,51 +1049,80 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
   Node* orig_sub = sub;
   nlist.clear();
   bool this_dominates = false;
-  uint region_input = 0;
+  bool result = false; // Conservative answer
+
   while (sub != NULL) {        // walk 'sub' up the chain to 'this'
     if (sub == this) {
       if (nlist.size() == 0) {
         // No Region nodes except loops were visited before and the EntryControl
         // path was taken for loops: it did not walk in a cycle.
-        return true;
-      } else if (!this_dominates) {
+        result = true;
+        break;
+      } else if (this_dominates) {
+        result = false;          // already met before: walk in a cycle
+        break;
+      } else {
         // Region nodes were visited. Continue walk up to Start or Root
         // to make sure that it did not walk in a cycle.
         this_dominates = true; // first time meet
         iterations_without_region_limit = DominatorSearchLimit; // Reset
-      } else {
-        return false;          // already met before: walk in a cycle
-      }
+     }
     }
-    if (sub->is_Start() || sub->is_Root())
-      return this_dominates;
-
+    if (sub->is_Start() || sub->is_Root()) {
+      result = this_dominates;
+      break;
+    }
     Node* up = sub->find_exact_control(sub->in(0));
-    if (up == NULL || up->is_top())
-      return false; // Conservative answer for dead code
-
-    if (sub == up && sub->is_Loop()) {
+    if (up == NULL || up->is_top()) {
+      result = false; // Conservative answer for dead code
+      break;
+    }
+    if (sub == up && (sub->is_Loop() || sub->is_Region() && sub->req() != 3)) {
+      // Take first valid path on the way up to 'this'.
       up = sub->in(1); // in(LoopNode::EntryControl);
-    } else if (sub == up && sub->is_Region() && sub->req() == 3) {
+    } else if (sub == up && sub->is_Region()) {
+      assert(sub->req() == 3, "sanity");
       iterations_without_region_limit = DominatorSearchLimit; // Reset
+
+      // Try both paths for such Regions.
+      // It is not accurate without regions dominating information.
+      // With such information the other path should be checked for
+      // the most dominating Region which was visited before.
+      bool region_was_visited_before = false;
       uint i = 1;
       uint size = nlist.size();
       if (size == 0) {
-        // No Region nodes (except Loops) were visited before.
+        // No such Region nodes were visited before.
         // Take first valid path on the way up to 'this'.
-      } else if (nlist.at(size - 1) == sub) {
-        // This Region node was just visited. Take other path.
-        i = region_input + 1;
-        nlist.pop();
       } else {
         // Was this Region node visited before?
-        for (uint j = 0; j < size; j++) {
-          if (nlist.at(j) == sub) {
-            return false; // The Region node was visited before. Give up.
+        intptr_t ni;
+        int j = size - 1;
+        for (; j >= 0; j--) {
+          ni = (intptr_t)nlist.at(j);
+          if ((Node*)(ni & ~1) == sub) {
+            if ((ni & 1) != 0) {
+              break; // Visited 2 paths. Give up.
+            } else {
+              // The Region node was visited before only once.
+              nlist.remove(j);
+              region_was_visited_before = true;
+              for (; i < sub->req(); i++) {
+                Node* in = sub->in(i);
+                if (in != NULL && !in->is_top() && in != sub) {
+                  break;
+                }
+              }
+              i++; // Take other path.
+              break;
+            }
           }
         }
+        if (j >= 0 && (ni & 1) != 0) {
+          result = false; // Visited 2 paths. Give up.
+          break;
+        }
         // The Region node was not visited before.
-        // Take first valid path on the way up to 'this'.
       }
       for (; i < sub->req(); i++) {
         Node* in = sub->in(i);
@@ -1102,20 +1131,26 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
         }
       }
       if (i < sub->req()) {
-        nlist.push(sub);
         up = sub->in(i);
-        region_input = i;
+        if (region_was_visited_before && sub != up) {
+          // Set 0 bit to indicate that both paths were taken.
+          nlist.push((Node*)((intptr_t)sub + 1));
+        } else {
+          nlist.push(sub);
+        }
       }
     }
-    if (sub == up)
-      return false;    // some kind of tight cycle
-
-    if (--iterations_without_region_limit < 0)
-      return false;    // dead cycle
-
+    if (sub == up) {
+      result = false;    // some kind of tight cycle
+      break;
+    }
+    if (--iterations_without_region_limit < 0) {
+      result = false;    // dead cycle
+      break;
+    }
     sub = up;
   }
-  return false;
+  return result;
 }
 
 //------------------------------remove_dead_region-----------------------------
