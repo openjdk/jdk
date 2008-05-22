@@ -26,8 +26,6 @@
 
 package sun.tools.javap;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -36,14 +34,14 @@ public class Tables implements Constants {
     /**
      * Define mnemocodes table.
      */
-  static  Hashtable mnemocodes = new Hashtable(301, 0.5f);
+  static  Hashtable<String,Integer> mnemocodes = new Hashtable<String,Integer>(301, 0.5f);
   static  String opcExtNamesTab[]=new String[128];
   static  String opcPrivExtNamesTab[]=new String[128];
   static  void defineNonPriv(int opc, String mnem) {
-        mnemocodes.put(opcExtNamesTab[opc]=mnem, new Integer(opc_nonpriv*256+opc));
+        mnemocodes.put(opcExtNamesTab[opc]=mnem, opc_nonpriv*256+opc);
   }
   static  void definePriv(int opc, String mnem) {
-        mnemocodes.put(opcPrivExtNamesTab[opc]="priv_"+mnem, new Integer(opc_priv*256+opc));
+        mnemocodes.put(opcPrivExtNamesTab[opc]="priv_"+mnem, opc_priv*256+opc);
   }
   static  void defineExt(int opc, String mnem) {
         defineNonPriv(opc, mnem);
@@ -51,28 +49,28 @@ public class Tables implements Constants {
   }
   static { int k;
         for (k=0; k<opc_wide; k++) {
-                mnemocodes.put(opcNamesTab[k], new Integer(k));
+                mnemocodes.put(opcNamesTab[k], k);
         }
         for (k=opc_wide+1; k<opcNamesTab.length; k++) {
-                mnemocodes.put(opcNamesTab[k], new Integer(k));
+                mnemocodes.put(opcNamesTab[k], k);
         }
-        mnemocodes.put("invokenonvirtual", new Integer(opc_invokespecial));
+        mnemocodes.put("invokenonvirtual", opc_invokespecial);
 
-        mnemocodes.put("iload_w", new Integer(opc_iload_w));
-        mnemocodes.put("lload_w", new Integer(opc_lload_w));
-        mnemocodes.put("fload_w", new Integer(opc_fload_w));
-        mnemocodes.put("dload_w", new Integer(opc_dload_w));
-        mnemocodes.put("aload_w", new Integer(opc_aload_w));
-        mnemocodes.put("istore_w", new Integer(opc_istore_w));
-        mnemocodes.put("lstore_w", new Integer(opc_lstore_w));
-        mnemocodes.put("fstore_w", new Integer(opc_fstore_w));
-        mnemocodes.put("dstore_w", new Integer(opc_dstore_w));
-        mnemocodes.put("astore_w", new Integer(opc_astore_w));
-        mnemocodes.put("ret_w", new Integer(opc_ret_w));
-        mnemocodes.put("iinc_w", new Integer(opc_iinc_w));
+        mnemocodes.put("iload_w", opc_iload_w);
+        mnemocodes.put("lload_w", opc_lload_w);
+        mnemocodes.put("fload_w", opc_fload_w);
+        mnemocodes.put("dload_w", opc_dload_w);
+        mnemocodes.put("aload_w", opc_aload_w);
+        mnemocodes.put("istore_w", opc_istore_w);
+        mnemocodes.put("lstore_w", opc_lstore_w);
+        mnemocodes.put("fstore_w", opc_fstore_w);
+        mnemocodes.put("dstore_w", opc_dstore_w);
+        mnemocodes.put("astore_w", opc_astore_w);
+        mnemocodes.put("ret_w", opc_ret_w);
+        mnemocodes.put("iinc_w", opc_iinc_w);
 
-        mnemocodes.put("nonpriv", new Integer(opc_nonpriv));
-        mnemocodes.put("priv", new Integer(opc_priv));
+        mnemocodes.put("nonpriv", opc_nonpriv);
+        mnemocodes.put("priv", opc_priv);
 
         defineExt(0, "load_ubyte");
         defineExt(1, "load_byte");
@@ -183,7 +181,7 @@ public class Tables implements Constants {
   }
 
   public static int opcode(String mnem) {
-        Integer Val=(Integer)(mnemocodes.get(mnem));
+        Integer Val=mnemocodes.get(mnem);
         if (Val == null) return -1;
         return Val.intValue();
   }
@@ -191,7 +189,7 @@ public class Tables implements Constants {
     /**
      * Initialized keyword and token Hashtables
      */
-  static Vector keywordNames = new Vector(40);
+  static Vector<String> keywordNames = new Vector<String>(40);
   private static void defineKeywordName(String id, int token) {
 
         if (token>=keywordNames.size()) {
@@ -202,7 +200,7 @@ public class Tables implements Constants {
   public static String keywordName(int token) {
         if (token==-1) return "EOF";
         if (token>=keywordNames.size()) return null;
-        return (String)keywordNames.elementAt(token);
+        return keywordNames.elementAt(token);
   }
   static {
         defineKeywordName("ident", IDENT);
@@ -217,15 +215,15 @@ public class Tables implements Constants {
         defineKeywordName("RBRACE", RBRACE);
   }
 
-  static Hashtable keywords = new Hashtable(40);
+  static Hashtable<String,Integer> keywords = new Hashtable<String,Integer>(40);
   public static int keyword(String idValue) {
-        Integer Val=(Integer)(keywords.get(idValue));
-        if (Val == null) return IDENT;
-        return Val.intValue();
+        Integer val=keywords.get(idValue);
+        if (val == null) return IDENT;
+        return val.intValue();
   }
 
   private static void defineKeyword(String id, int token) {
-        keywords.put(id, new Integer(token));
+        keywords.put(id, token);
         defineKeywordName(id, token);
   }
   static {
@@ -275,8 +273,8 @@ public class Tables implements Constants {
    /**
      * Define tag table.
      */
-  private static Vector tagNames = new Vector(10);
-  private static Hashtable Tags = new Hashtable(10);
+  private static Vector<String> tagNames = new Vector<String>(10);
+  private static Hashtable<String,Integer> Tags = new Hashtable<String,Integer>(10);
   static {
         defineTag("Asciz",CONSTANT_UTF8);
         defineTag("int",CONSTANT_INTEGER);
@@ -291,7 +289,7 @@ public class Tables implements Constants {
         defineTag("NameAndType",CONSTANT_NAMEANDTYPE);
   }
   private static void defineTag(String id, int val) {
-        Tags.put(id, new Integer(val));
+        Tags.put(id, val);
         if (val>=tagNames.size()) {
                 tagNames.setSize(val+1);
         }
@@ -299,10 +297,10 @@ public class Tables implements Constants {
   }
   public static String tagName(int tag) {
         if (tag>=tagNames.size()) return null;
-        return (String)tagNames.elementAt(tag);
+        return tagNames.elementAt(tag);
   }
   public static int tagValue(String idValue) {
-        Integer Val=(Integer)(Tags.get(idValue));
+        Integer Val=Tags.get(idValue);
         if (Val == null) return 0;
         return Val.intValue();
   }
@@ -310,8 +308,8 @@ public class Tables implements Constants {
    /**
      * Define type table. These types used in "newarray" instruction only.
      */
-  private static Vector typeNames = new Vector(10);
-  private static Hashtable Types = new Hashtable(10);
+  private static Vector<String> typeNames = new Vector<String>(10);
+  private static Hashtable<String,Integer> Types = new Hashtable<String,Integer>(10);
   static {
         defineType("int",T_INT);
         defineType("long",T_LONG);
@@ -324,28 +322,28 @@ public class Tables implements Constants {
         defineType("short",T_SHORT);
   }
   private static void defineType(String id, int val) {
-        Types.put(id, new Integer(val));
+        Types.put(id, val);
         if (val>=typeNames.size()) {
                 typeNames.setSize(val+1);
         }
         typeNames.setElementAt(id, val);
   }
   public static int typeValue(String idValue) {
-        Integer Val=(Integer)(Types.get(idValue));
+        Integer Val=Types.get(idValue);
         if (Val == null) return -1;
         return Val.intValue();
   }
   public static String typeName(int type) {
         if (type>=typeNames.size()) return null;
-        return (String)typeNames.elementAt(type);
+        return typeNames.elementAt(type);
   }
 
    /**
      * Define MapTypes table.
      * These constants used in stackmap tables only.
      */
-  private static Vector mapTypeNames = new Vector(10);
-  private static Hashtable MapTypes = new Hashtable(10);
+  private static Vector<String> mapTypeNames = new Vector<String>(10);
+  private static Hashtable<String,Integer> MapTypes = new Hashtable<String,Integer>(10);
   static {
         defineMapType("bogus",             ITEM_Bogus);
         defineMapType("int",               ITEM_Integer);
@@ -358,20 +356,20 @@ public class Tables implements Constants {
         defineMapType("uninitialized",     ITEM_NewObject);
   }
   private static void defineMapType(String id, int val) {
-        MapTypes.put(id, new Integer(val));
+        MapTypes.put(id, val);
         if (val>=mapTypeNames.size()) {
                 mapTypeNames.setSize(val+1);
         }
         mapTypeNames.setElementAt(id, val);
   }
   public static int mapTypeValue(String idValue) {
-        Integer Val=(Integer)(MapTypes.get(idValue));
+        Integer Val=MapTypes.get(idValue);
         if (Val == null) return -1;
         return Val.intValue();
   }
   public static String mapTypeName(int type) {
         if (type>=mapTypeNames.size()) return null;
-        return (String)mapTypeNames.elementAt(type);
+        return mapTypeNames.elementAt(type);
   }
 
 }
