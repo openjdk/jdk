@@ -750,7 +750,7 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      * @return the Descriptor for the new MBeanInfo.
      */
     Descriptor getDescriptor(MBeanInfo info, boolean immutableInfo) {
-        ImmutableDescriptor desc = null;
+        ImmutableDescriptor desc;
         if (info == null ||
             info.getDescriptor() == null ||
             info.getDescriptor().getFieldNames().length == 0) {

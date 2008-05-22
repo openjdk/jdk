@@ -269,7 +269,7 @@ public class ServerNotifForwarder {
                 ", the maxNotifications is " + maxNotifications);
         }
 
-        NotificationResult nr = null;
+        NotificationResult nr;
         final long t = Math.min(connectionTimeout, timeout);
         try {
             nr = notifBuffer.fetchNotifications(bufferFilter,
@@ -322,7 +322,7 @@ public class ServerNotifForwarder {
 
     private Integer getListenerID() {
         synchronized(listenerCounterLock) {
-            return new Integer(listenerCounter++);
+            return listenerCounter++;
         }
     }
 
@@ -336,7 +336,7 @@ public class ServerNotifForwarder {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             AccessControlContext acc = AccessController.getContext();
-            ObjectInstance oi = null;
+            ObjectInstance oi;
             try {
                 oi = AccessController.doPrivileged(
                     new PrivilegedExceptionAction<ObjectInstance>() {
