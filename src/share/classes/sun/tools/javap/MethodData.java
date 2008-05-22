@@ -43,14 +43,14 @@ public class MethodData {
     int descriptor_index;
     int attributes_count;
     byte[] code;
-    Vector exception_table = new Vector(0);
-    Vector lin_num_tb = new Vector(0);
-    Vector loc_var_tb = new Vector(0);
+    Vector<TrapData> exception_table = new Vector<TrapData>(0);
+    Vector<LineNumData> lin_num_tb = new Vector<LineNumData>(0);
+    Vector<LocVarData> loc_var_tb = new Vector<LocVarData>(0);
     StackMapTableData[] stackMapTable;
     StackMapData[] stackMap;
     int[] exc_index_table=null;
-    Vector attrs=new Vector(0);
-    Vector code_attrs=new Vector(0);
+    Vector<AttrData> attrs=new Vector<AttrData>(0);
+    Vector<AttrData> code_attrs=new Vector<AttrData>(0);
     int max_stack,  max_locals;
     boolean isSynthetic=false;
     boolean isDeprecated=false;
@@ -165,7 +165,7 @@ public class MethodData {
      */
     void readExceptionTable (DataInputStream in) throws IOException {
         int exception_table_len=in.readUnsignedShort();
-        exception_table=new Vector(exception_table_len);
+        exception_table=new Vector<TrapData>(exception_table_len);
         for (int l = 0; l < exception_table_len; l++) {
             exception_table.addElement(new TrapData(in, l));
         }
@@ -177,7 +177,7 @@ public class MethodData {
     void readLineNumTable (DataInputStream in) throws IOException {
         int attr_len = in.readInt(); // attr_length
         int lin_num_tb_len = in.readUnsignedShort();
-        lin_num_tb=new Vector(lin_num_tb_len);
+        lin_num_tb=new Vector<LineNumData>(lin_num_tb_len);
         for (int l = 0; l < lin_num_tb_len; l++) {
             lin_num_tb.addElement(new LineNumData(in));
         }
@@ -189,7 +189,7 @@ public class MethodData {
     void readLocVarTable (DataInputStream in) throws IOException {
         int attr_len=in.readInt(); // attr_length
         int loc_var_tb_len = in.readUnsignedShort();
-        loc_var_tb = new Vector(loc_var_tb_len);
+        loc_var_tb = new Vector<LocVarData>(loc_var_tb_len);
         for (int l = 0; l < loc_var_tb_len; l++) {
             loc_var_tb.addElement(new LocVarData(in));
         }
@@ -237,7 +237,7 @@ public class MethodData {
      */
     public String[] getAccess(){
 
-        Vector v = new Vector();
+        Vector<String> v = new Vector<String>();
         if ((access & ACC_PUBLIC)   !=0) v.addElement("public");
         if ((access & ACC_PRIVATE)   !=0) v.addElement("private");
         if ((access & ACC_PROTECTED)   !=0) v.addElement("protected");
