@@ -1011,8 +1011,21 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                         Assert.that(addr.andWithMask(VM.getVM().getAddressSize() - 1) == null,
                                     "Address " + addr + "should have been aligned");
                       }
-                      // Check contents
                       OopHandle handle = addr.getOopHandleAt(0);
+                      addAnnotation(addr, handle);
+                    }
+
+                    public void visitCompOopAddress(Address addr) {
+                      if (Assert.ASSERTS_ENABLED) {
+                        Assert.that(addr.andWithMask(VM.getVM().getAddressSize() - 1) == null,
+                                    "Address " + addr + "should have been aligned");
+                      }
+                      OopHandle handle = addr.getCompOopHandleAt(0);
+                      addAnnotation(addr, handle);
+                    }
+
+                    public void addAnnotation(Address addr, OopHandle handle) {
+                      // Check contents
                       String anno = "null oop";
                       if (handle != null) {
                         // Find location

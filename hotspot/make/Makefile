@@ -85,6 +85,9 @@ C1_VM_TARGETS=product1 fastdebug1 optimized1 jvmg1
 C2_VM_TARGETS=product  fastdebug  optimized  jvmg
 KERNEL_VM_TARGETS=productkernel fastdebugkernel optimizedkernel jvmgkernel
 
+# JDK directory list
+JDK_DIRS=bin include jre lib demo
+
 all:           all_product all_fastdebug
 all_product:   product product1 productkernel docs export_product
 all_fastdebug: fastdebug fastdebug1 fastdebugkernel docs export_fastdebug
@@ -341,7 +344,7 @@ copy_product_jdk:
 	$(RM) -r $(JDK_IMAGE_DIR)
 	$(MKDIR) -p $(JDK_IMAGE_DIR)
 	($(CD) $(JDK_IMPORT_PATH) && \
-	 $(TAR) -cf - bin include jre lib) | \
+	 $(TAR) -cf - $(JDK_DIRS)) | \
 	 ($(CD) $(JDK_IMAGE_DIR) && $(TAR) -xf -)
 
 copy_fastdebug_jdk:
@@ -349,11 +352,11 @@ copy_fastdebug_jdk:
 	$(MKDIR) -p $(JDK_IMAGE_DIR)/fastdebug
 	if [ -d $(JDK_IMPORT_PATH)/fastdebug ] ; then \
 	  ($(CD) $(JDK_IMPORT_PATH)/fastdebug && \
-	   $(TAR) -cf - bin include jre lib) | \
+	   $(TAR) -cf - $(JDK_DIRS)) | \
 	   ($(CD) $(JDK_IMAGE_DIR)/fastdebug && $(TAR) -xf -) ; \
 	else \
 	  ($(CD) $(JDK_IMPORT_PATH) && \
-	   $(TAR) -cf - bin include jre lib) | \
+	   $(TAR) -cf - $(JDK_DIRS)) | \
 	   ($(CD) $(JDK_IMAGE_DIR)/fastdebug && $(TAR) -xf -) ; \
 	fi
 
@@ -362,15 +365,15 @@ copy_debug_jdk:
 	$(MKDIR) -p $(JDK_IMAGE_DIR)/debug
 	if [ -d $(JDK_IMPORT_PATH)/debug ] ; then \
 	  ($(CD) $(JDK_IMPORT_PATH)/debug && \
-	   $(TAR) -cf - bin include jre lib) | \
+	   $(TAR) -cf - $(JDK_DIRS)) | \
 	   ($(CD) $(JDK_IMAGE_DIR)/debug && $(TAR) -xf -) ; \
 	elif [ -d $(JDK_IMPORT_PATH)/fastdebug ] ; then \
 	  ($(CD) $(JDK_IMPORT_PATH)/fastdebug && \
-	   $(TAR) -cf - bin include jre lib) | \
+	   $(TAR) -cf - $(JDK_DIRS)) | \
 	   ($(CD) $(JDK_IMAGE_DIR)/debug && $(TAR) -xf -) ; \
 	else \
 	  ($(CD) $(JDK_IMPORT_PATH) && \
-	   $(TAR) -cf - bin include jre lib) | \
+	   $(TAR) -cf - $(JDK_DIRS)) | \
 	   ($(CD) $(JDK_IMAGE_DIR)/debug && $(TAR) -xf -) ; \
 	fi
 

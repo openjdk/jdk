@@ -69,6 +69,9 @@ void VM_ParallelGCFailedPermanentAllocation::doit() {
 
   GCCauseSetter gccs(heap, _gc_cause);
   _result = heap->failed_permanent_mem_allocate(_size);
+  if (_result == NULL && GC_locker::is_active_and_needs_gc()) {
+    set_gc_locked();
+  }
   notify_gc_end();
 }
 

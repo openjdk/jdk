@@ -1,0 +1,499 @@
+/*
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ *
+ */
+
+/* hsdis.c -- dump a range of addresses as native instructions
+   This implements the plugin protocol required by the
+   HotSpot PrintAssembly option.
+*/
+
+#include "hsdis.h"
+
+#include <sysdep.h>
+#include <libiberty.h>
+#include <bfd.h>
+#include <dis-asm.h>
+
+#ifndef bool
+#define bool int
+#define true 1
+#define false 0
+#endif /*bool*/
+
+/* short names for stuff in hsdis.h */
+typedef decode_instructions_event_callback_ftype  event_callback_t;
+typedef decode_instructions_printf_callback_ftype printf_callback_t;
+
+/* disassemble_info.application_data object */
+struct hsdis_app_data {
+  /* the arguments to decode_instructions */
+  uintptr_t start; uintptr_t end;
+  event_callback_t  event_callback;  void* event_stream;
+  printf_callback_t printf_callback; void* printf_stream;
+  bool losing;
+
+  /* the architecture being disassembled */
+  const char* arch_name;
+  const bfd_arch_info_type* arch_info;
+
+  /* the disassembler we are going to use: */
+  disassembler_ftype      dfn;
+  struct disassemble_info dinfo; /* the actual struct! */
+
+  char mach_option[64];
+  char insn_options[256];
+};
+
+#define DECL_APP_DATA(dinfo) \
+  struct hsdis_app_data* app_data = (struct hsdis_app_data*) (dinfo)->application_data
+
+#define DECL_EVENT_CALLBACK(app_data) \
+  event_callback_t  event_callback = (app_data)->event_callback; \
+  void*             event_stream   = (app_data)->event_stream
+
+#define DECL_PRINTF_CALLBACK(app_data) \
+  printf_callback_t  printf_callback = (app_data)->printf_callback; \
+  void*              printf_stream   = (app_data)->printf_stream
+
+
+static void print_help(struct hsdis_app_data* app_data,
+                       const char* msg, const char* arg);
+static void setup_app_data(struct hsdis_app_data* app_data,
+                           const char* options);
+static const char* format_insn_close(const char* close,
+                                     disassemble_info* dinfo,
+                                     char* buf, size_t bufsize);
+
+void*
+#ifdef DLL_ENTRY
+  DLL_ENTRY
+#endif
+decode_instructions(void* start_pv, void* end_pv,
+                    event_callback_t  event_callback_arg,  void* event_stream_arg,
+                    printf_callback_t printf_callback_arg, void* printf_stream_arg,
+                    const char* options) {
+  struct hsdis_app_data app_data;
+  memset(&app_data, 0, sizeof(app_data));
+  app_data.start = (uintptr_t) start_pv;
+  app_data.end   = (uintptr_t) end_pv;
+  app_data.event_callback  = event_callback_arg;
+  app_data.event_stream    = event_stream_arg;
+  app_data.printf_callback = printf_callback_arg;
+  app_data.printf_stream   = printf_stream_arg;
+
+  setup_app_data(&app_data, options);
+  char buf[128];
+
+  {
+    /* now reload everything from app_data: */
+    DECL_EVENT_CALLBACK(&app_data);
+    DECL_PRINTF_CALLBACK(&app_data);
+    uintptr_t start = app_data.start;
+    uintptr_t end   = app_data.end;
+    uintptr_t p     = start;
+
+    (*event_callback)(event_stream, "insns", (void*)start);
+
+    (*event_callback)(event_stream, "mach name='%s'",
+                      (void*) app_data.arch_info->printable_name);
+    if (app_data.dinfo.bytes_per_line != 0) {
+      (*event_callback)(event_stream, "format bytes-per-line='%p'/",
+                        (void*)(intptr_t) app_data.dinfo.bytes_per_line);
+    }
+
+    while (p < end && !app_data.losing) {
+      (*event_callback)(event_stream, "insn", (void*) p);
+
+      /* reset certain state, so we can read it with confidence */
+      app_data.dinfo.insn_info_valid    = 0;
+      app_data.dinfo.branch_delay_insns = 0;
+      app_data.dinfo.data_size          = 0;
+      app_data.dinfo.insn_type          = 0;
+
+      int size = (*app_data.dfn)((bfd_vma) p, &app_data.dinfo);
+
+      if (size > 0)  p += size;
+      else           app_data.losing = true;
+
+      const char* insn_close = format_insn_close("/insn", &app_data.dinfo,
+                                                 buf, sizeof(buf));
+      (*event_callback)(event_stream, insn_close, (void*) p);
+
+      /* follow each complete insn by a nice newline */
+      (*printf_callback)(printf_stream, "\n");
+    }
+
+    (*event_callback)(event_stream, "/insns", (void*) p);
+    return (void*) p;
+  }
+}
+
+/* take the address of the function, for luck, and also test the typedef: */
+const decode_instructions_ftype decode_instructions_address = &decode_instructions;
+
+static const char* format_insn_close(const char* close,
+                                     disassemble_info* dinfo,
+                                     char* buf, size_t bufsize) {
+  if (!dinfo->insn_info_valid)
+    return close;
+  enum dis_insn_type itype = dinfo->insn_type;
+  int dsize = dinfo->data_size, delays = dinfo->branch_delay_insns;
+  if ((itype == dis_nonbranch && (dsize | delays) == 0)
+      || (strlen(close) + 3*20 > bufsize))
+    return close;
+
+  const char* type = "unknown";
+  switch (itype) {
+  case dis_nonbranch:   type = NULL;         break;
+  case dis_branch:      type = "branch";     break;
+  case dis_condbranch:  type = "condbranch"; break;
+  case dis_jsr:         type = "jsr";        break;
+  case dis_condjsr:     type = "condjsr";    break;
+  case dis_dref:        type = "dref";       break;
+  case dis_dref2:       type = "dref2";      break;
+  }
+
+  strcpy(buf, close);
+  char* p = buf;
+  if (type)    sprintf(p += strlen(p), " type='%s'", type);
+  if (dsize)   sprintf(p += strlen(p), " dsize='%d'", dsize);
+  if (delays)  sprintf(p += strlen(p), " delay='%d'", delays);
+  return buf;
+}
+
+/* handler functions */
+
+static int
+hsdis_read_memory_func(bfd_vma memaddr,
+                       bfd_byte* myaddr,
+                       unsigned int length,
+                       struct disassemble_info* dinfo) {
+  uintptr_t memaddr_p = (uintptr_t) memaddr;
+  DECL_APP_DATA(dinfo);
+  if (memaddr_p + length > app_data->end) {
+    /* read is out of bounds */
+    return EIO;
+  } else {
+    memcpy(myaddr, (bfd_byte*) memaddr_p, length);
+    return 0;
+  }
+}
+
+static void
+hsdis_print_address_func(bfd_vma vma, struct disassemble_info* dinfo) {
+  /* the actual value to print: */
+  void* addr_value = (void*) (uintptr_t) vma;
+  DECL_APP_DATA(dinfo);
+  DECL_EVENT_CALLBACK(app_data);
+
+  /* issue the event: */
+  void* result =
+    (*event_callback)(event_stream, "addr/", addr_value);
+  if (result == NULL) {
+    /* event declined */
+    generic_print_address(vma, dinfo);
+  }
+}
+
+
+/* configuration */
+
+static void set_optional_callbacks(struct hsdis_app_data* app_data);
+static void parse_caller_options(struct hsdis_app_data* app_data,
+                                 const char* caller_options);
+static const char* native_arch_name();
+static enum bfd_endian native_endian();
+static const bfd_arch_info_type* find_arch_info(const char* arch_nane);
+static bfd* get_native_bfd(const bfd_arch_info_type* arch_info,
+                           /* to avoid malloc: */
+                           bfd* empty_bfd, bfd_target* empty_xvec);
+static void init_disassemble_info_from_bfd(struct disassemble_info* dinfo,
+                                           void *stream,
+                                           fprintf_ftype fprintf_func,
+                                           bfd* bfd,
+                                           char* disassembler_options);
+static void parse_fake_insn(disassembler_ftype dfn,
+                            struct disassemble_info* dinfo);
+
+static void setup_app_data(struct hsdis_app_data* app_data,
+                           const char* caller_options) {
+  /* Make reasonable defaults for null callbacks.
+     A non-null stream for a null callback is assumed to be a FILE* for output.
+     Events are rendered as XML.
+  */
+  set_optional_callbacks(app_data);
+
+  /* Look into caller_options for anything interesting. */
+  if (caller_options != NULL)
+    parse_caller_options(app_data, caller_options);
+
+  /* Discover which architecture we are going to disassemble. */
+  app_data->arch_name = &app_data->mach_option[0];
+  if (app_data->arch_name[0] == '\0')
+    app_data->arch_name = native_arch_name();
+  app_data->arch_info = find_arch_info(app_data->arch_name);
+
+  /* Make a fake bfd to hold the arch. and byteorder info. */
+  struct {
+    bfd_target empty_xvec;
+    bfd        empty_bfd;
+  } buf;
+  bfd* native_bfd = get_native_bfd(app_data->arch_info,
+                                   /* to avoid malloc: */
+                                   &buf.empty_bfd, &buf.empty_xvec);
+  init_disassemble_info_from_bfd(&app_data->dinfo,
+                                 app_data->printf_stream,
+                                 app_data->printf_callback,
+                                 native_bfd,
+                                 app_data->insn_options);
+
+  /* Finish linking together the various callback blocks. */
+  app_data->dinfo.application_data = (void*) app_data;
+  app_data->dfn = disassembler(native_bfd);
+  app_data->dinfo.print_address_func = hsdis_print_address_func;
+  app_data->dinfo.read_memory_func = hsdis_read_memory_func;
+
+  if (app_data->dfn == NULL) {
+    const char* bad = app_data->arch_name;
+    static bool complained;
+    if (bad == &app_data->mach_option[0])
+      print_help(app_data, "bad mach=%s", bad);
+    else if (!complained)
+      print_help(app_data, "bad native mach=%s; please port hsdis to this platform", bad);
+    complained = true;
+    /* must bail out */
+    app_data->losing = true;
+    return;
+  }
+
+  parse_fake_insn(app_data->dfn, &app_data->dinfo);
+}
+
+
+/* ignore all events, return a null */
+static void* null_event_callback(void* ignore_stream, const char* ignore_event, void* arg) {
+  return NULL;
+}
+
+/* print all events as XML markup */
+static void* xml_event_callback(void* stream, const char* event, void* arg) {
+  FILE* fp = (FILE*) stream;
+#define NS_PFX "dis:"
+  if (event[0] != '/') {
+    /* issue the tag, with or without a formatted argument */
+    fprintf(fp, "<"NS_PFX);
+    fprintf(fp, event, arg);
+    fprintf(fp, ">");
+  } else {
+    ++event;                    /* skip slash */
+    const char* argp = strchr(event, ' ');
+    if (argp == NULL) {
+      /* no arguments; just issue the closing tag */
+      fprintf(fp, "</"NS_PFX"%s>", event);
+    } else {
+      /* split out the closing attributes as <dis:foo_done attr='val'/> */
+      int event_prefix = (argp - event);
+      fprintf(fp, "<"NS_PFX"%.*s_done", event_prefix, event);
+      fprintf(fp, argp, arg);
+      fprintf(fp, "/></"NS_PFX"%.*s>", event_prefix, event);
+    }
+  }
+  return NULL;
+}
+
+static void set_optional_callbacks(struct hsdis_app_data* app_data) {
+  if (app_data->printf_callback == NULL) {
+    int (*fprintf_callback)(FILE*, const char*, ...) = &fprintf;
+    FILE* fprintf_stream = stdout;
+    app_data->printf_callback = (printf_callback_t) fprintf_callback;
+    if (app_data->printf_stream == NULL)
+      app_data->printf_stream   = (void*)           fprintf_stream;
+  }
+  if (app_data->event_callback == NULL) {
+    if (app_data->event_stream == NULL)
+      app_data->event_callback = &null_event_callback;
+    else
+      app_data->event_callback = &xml_event_callback;
+  }
+
+}
+
+static void parse_caller_options(struct hsdis_app_data* app_data, const char* caller_options) {
+  char* iop_base = app_data->insn_options;
+  char* iop_limit = iop_base + sizeof(app_data->insn_options) - 1;
+  char* iop = iop_base;
+  const char* p;
+  for (p = caller_options; p != NULL; ) {
+    const char* q = strchr(p, ',');
+    size_t plen = (q == NULL) ? strlen(p) : ((q++) - p);
+    if (plen == 4 && strncmp(p, "help", plen) == 0) {
+      print_help(app_data, NULL, NULL);
+    } else if (plen >= 5 && strncmp(p, "mach=", 5) == 0) {
+      char*  mach_option = app_data->mach_option;
+      size_t mach_size   = sizeof(app_data->mach_option);
+      mach_size -= 1;           /*leave room for the null*/
+      if (plen > mach_size)  plen = mach_size;
+      strncpy(mach_option, p, plen);
+      mach_option[plen] = '\0';
+    } else if (plen > 6 && strncmp(p, "hsdis-", 6)) {
+      // do not pass these to the next level
+    } else {
+      /* just copy it; {i386,sparc}-dis.c might like to see it  */
+      if (iop > iop_base && iop < iop_limit)  (*iop++) = ',';
+      if (iop + plen > iop_limit)
+        plen = iop_limit - iop;
+      strncpy(iop, p, plen);
+      iop += plen;
+    }
+    p = q;
+  }
+}
+
+static void print_help(struct hsdis_app_data* app_data,
+                       const char* msg, const char* arg) {
+  DECL_PRINTF_CALLBACK(app_data);
+  if (msg != NULL) {
+    (*printf_callback)(printf_stream, "hsdis: ");
+    (*printf_callback)(printf_stream, msg, arg);
+    (*printf_callback)(printf_stream, "\n");
+  }
+  (*printf_callback)(printf_stream, "hsdis output options:\n");
+  if (printf_callback == (printf_callback_t) &fprintf)
+    disassembler_usage((FILE*) printf_stream);
+  else
+    disassembler_usage(stderr); /* better than nothing */
+  (*printf_callback)(printf_stream, "  mach=<arch>   select disassembly mode\n");
+#if defined(LIBARCH_i386) || defined(LIBARCH_amd64)
+  (*printf_callback)(printf_stream, "  mach=i386     select 32-bit mode\n");
+  (*printf_callback)(printf_stream, "  mach=x86-64   select 64-bit mode\n");
+  (*printf_callback)(printf_stream, "  suffix        always print instruction suffix\n");
+#endif
+  (*printf_callback)(printf_stream, "  help          print this message\n");
+}
+
+
+/* low-level bfd and arch stuff that binutils doesn't do for us */
+
+static const bfd_arch_info_type* find_arch_info(const char* arch_name) {
+  const bfd_arch_info_type* arch_info = bfd_scan_arch(arch_name);
+  if (arch_info == NULL) {
+    extern const bfd_arch_info_type bfd_default_arch_struct;
+    arch_info = &bfd_default_arch_struct;
+  }
+  return arch_info;
+}
+
+static const char* native_arch_name() {
+  const char* res = HOTSPOT_LIB_ARCH;
+#ifdef LIBARCH_amd64
+    res = "i386:x86-64";
+#endif
+#ifdef LIBARCH_sparc
+    res = "sparc:v8plusb";
+#endif
+#ifdef LIBARCH_sparc
+    res = "sparc:v8plusb";
+#endif
+#ifdef LIBARCH_sparcv9
+    res = "sparc:v9b";
+#endif
+  if (res == NULL)
+    res = "HOTSPOT_LIB_ARCH is not set in Makefile!";
+  return res;
+}
+
+static enum bfd_endian native_endian() {
+  int32_t endian_test = 'x';
+  if (*(const char*) &endian_test == 'x')
+    return BFD_ENDIAN_LITTLE;
+  else
+    return BFD_ENDIAN_BIG;
+}
+
+static bfd* get_native_bfd(const bfd_arch_info_type* arch_info,
+                           bfd* empty_bfd, bfd_target* empty_xvec) {
+  memset(empty_bfd,  0, sizeof(*empty_bfd));
+  memset(empty_xvec, 0, sizeof(*empty_xvec));
+  empty_xvec->flavour = bfd_target_unknown_flavour;
+  empty_xvec->byteorder = native_endian();
+  empty_bfd->xvec = empty_xvec;
+  empty_bfd->arch_info = arch_info;
+  return empty_bfd;
+}
+
+static int read_zero_data_only(bfd_vma ignore_p,
+                               bfd_byte* myaddr, unsigned int length,
+                               struct disassemble_info *ignore_info) {
+  memset(myaddr, 0, length);
+  return 0;
+}
+static int print_to_dev_null(void* ignore_stream, const char* ignore_format, ...) {
+  return 0;
+}
+
+/* Prime the pump by running the selected disassembler on a null input.
+   This forces the machine-specific disassembler to divulge invariant
+   information like bytes_per_line.
+ */
+static void parse_fake_insn(disassembler_ftype dfn,
+                            struct disassemble_info* dinfo) {
+  typedef int (*read_memory_ftype)
+    (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length,
+     struct disassemble_info *info);
+  read_memory_ftype read_memory_func = dinfo->read_memory_func;
+  fprintf_ftype     fprintf_func     = dinfo->fprintf_func;
+
+  dinfo->read_memory_func = &read_zero_data_only;
+  dinfo->fprintf_func     = &print_to_dev_null;
+  (*dfn)(0, dinfo);
+
+  // put it back:
+  dinfo->read_memory_func = read_memory_func;
+  dinfo->fprintf_func     = fprintf_func;
+}
+
+static void init_disassemble_info_from_bfd(struct disassemble_info* dinfo,
+                                           void *stream,
+                                           fprintf_ftype fprintf_func,
+                                           bfd* abfd,
+                                           char* disassembler_options) {
+  init_disassemble_info(dinfo, stream, fprintf_func);
+
+  dinfo->flavour = bfd_get_flavour(abfd);
+  dinfo->arch = bfd_get_arch(abfd);
+  dinfo->mach = bfd_get_mach(abfd);
+  dinfo->disassembler_options = disassembler_options;
+  dinfo->octets_per_byte = bfd_octets_per_byte (abfd);
+  dinfo->skip_zeroes = sizeof(void*) * 2;
+  dinfo->skip_zeroes_at_end = sizeof(void*)-1;
+  dinfo->disassembler_needs_relocs = FALSE;
+
+  if (bfd_big_endian(abfd))
+    dinfo->display_endian = dinfo->endian = BFD_ENDIAN_BIG;
+  else if (bfd_little_endian(abfd))
+    dinfo->display_endian = dinfo->endian = BFD_ENDIAN_LITTLE;
+  else
+    dinfo->endian = native_endian();
+
+  disassemble_init_for_target(dinfo);
+}

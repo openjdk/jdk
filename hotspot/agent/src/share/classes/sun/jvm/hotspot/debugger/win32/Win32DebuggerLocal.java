@@ -306,10 +306,20 @@ public class Win32DebuggerLocal extends DebuggerBase implements Win32Debugger {
     return (Win32Address) newAddress(readAddressValue(address));
   }
 
+  public Win32Address readCompOopAddress(long address)
+    throws UnmappedAddressException, UnalignedAddressException {
+    return (Win32Address) newAddress(readCompOopAddressValue(address));
+  }
+
   /** From the Win32Debugger interface */
   public Win32OopHandle readOopHandle(long address)
     throws UnmappedAddressException, UnalignedAddressException, NotInHeapException {
     long value = readAddressValue(address);
+    return (value == 0 ? null : new Win32OopHandle(this, value));
+  }
+  public Win32OopHandle readCompOopHandle(long address)
+    throws UnmappedAddressException, UnalignedAddressException, NotInHeapException {
+    long value = readCompOopAddressValue(address);
     return (value == 0 ? null : new Win32OopHandle(this, value));
   }
 

@@ -19,7 +19,7 @@
 // Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
 // CA 95054 USA or visit www.sun.com if you need additional information or
 // have any questions.
-//  
+//
 //
 
 // NOTE: DO NOT CHANGE THIS COPYRIGHT TO NEW STYLE - IT WILL BREAK makeDeps!
@@ -279,6 +279,7 @@ psParallelCompact.hpp			mutableSpace.hpp
 psParallelCompact.hpp                   objectStartArray.hpp
 psParallelCompact.hpp			oop.hpp
 psParallelCompact.hpp			parMarkBitMap.hpp
+psParallelCompact.hpp			psCompactionManager.hpp
 psParallelCompact.hpp			sharedHeap.hpp
 
 psOldGen.cpp                            psAdaptiveSizePolicy.hpp

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug     6207984 6272521 6192552 6269713 6197726 6260652 5073546 4137464
  *          4155650 4216399 4294891 6282555 6318622 6355327 6383475 6420753
- *          6431845 4802633 6570566 6570575 6570631 6570924
+ *          6431845 4802633 6570566 6570575 6570631 6570924 6691185 6691215
  * @summary Run many tests on many Collection and Map implementations
  * @author  Martin Buchholz
  */
@@ -155,7 +155,7 @@ public class MOAT {
         check(c.containsAll(new ArrayList<Integer>()));
     }
 
-    private static void testEmptyCollection(Collection<?> c) {
+    private static <T> void testEmptyCollection(Collection<T> c) {
         check(c.isEmpty());
         equal(c.size(), 0);
         equal(c.toString(),"[]");
@@ -165,6 +165,23 @@ public class MOAT {
         Object[] a = new Object[1]; a[0] = Boolean.TRUE;
         equal(c.toArray(a), a);
         equal(a[0], null);
+        testEmptyIterator(c.iterator());
+    }
+
+    static <T> void testEmptyIterator(final Iterator<T> it) {
+        if (rnd.nextBoolean())
+            check(! it.hasNext());
+
+        THROWS(NoSuchElementException.class,
+               new Fun(){void f(){ it.next(); }});
+
+        try { it.remove(); }
+        catch (IllegalStateException _) { pass(); }
+        catch (UnsupportedOperationException _) { pass(); }
+        catch (Throwable t) { unexpected(t); }
+
+        if (rnd.nextBoolean())
+            check(! it.hasNext());
     }
 
     private static void testEmptyList(List<?> c) {
@@ -173,10 +190,12 @@ public class MOAT {
         equal2(c, Collections.<Integer>emptyList());
     }
 
-    private static void testEmptySet(Set<?> c) {
+    private static <T> void testEmptySet(Set<T> c) {
         testEmptyCollection(c);
         equal(c.hashCode(), 0);
         equal2(c, Collections.<Integer>emptySet());
+        if (c instanceof NavigableSet<?>)
+            testEmptyIterator(((NavigableSet<T>)c).descendingIterator());
     }
 
     private static void testImmutableCollection(final Collection<Integer> c) {
@@ -221,13 +240,20 @@ public class MOAT {
         testEmptyCollection(c);
     }
 
-    private static void testEmptyMap(final Map<?,?> m) {
+    private static <K,V> void testEmptyMap(final Map<K,V> m) {
         check(m.isEmpty());
         equal(m.size(), 0);
         equal(m.toString(),"{}");
         testEmptySet(m.keySet());
         testEmptySet(m.entrySet());
         testEmptyCollection(m.values());
+
+        try { check(! m.containsValue(null)); }
+        catch (NullPointerException _) { /* OK */ }
+        try { check(! m.containsKey(null)); }
+        catch (NullPointerException _) { /* OK */ }
+        check(! m.containsValue(1));
+        check(! m.containsKey(1));
     }
 
     private static void testImmutableMap(final Map<Integer,Integer> m) {
@@ -433,8 +459,18 @@ public class MOAT {
         if (! supportsAdd(c)) return;
         //System.out.println("add() supported");
 
-        if (c instanceof NavigableSet)
-            testNavigableSet((NavigableSet<Integer>)c);
+        if (c instanceof NavigableSet) {
+            System.out.println("NavigableSet tests...");
+
+            NavigableSet<Integer> ns = (NavigableSet<Integer>)c;
+            testNavigableSet(ns);
+            testNavigableSet(ns.headSet(6, false));
+            testNavigableSet(ns.headSet(5, true));
+            testNavigableSet(ns.tailSet(0, false));
+            testNavigableSet(ns.tailSet(1, true));
+            testNavigableSet(ns.subSet(0, false, 5, true));
+            testNavigableSet(ns.subSet(1, true, 6, false));
+        }
 
         if (c instanceof Queue)
             testQueue((Queue<Integer>)c);
@@ -514,8 +550,19 @@ public class MOAT {
         if (m instanceof ConcurrentMap)
             testConcurrentMap((ConcurrentMap<Integer,Integer>) m);
 
-        if (m instanceof NavigableMap)
-            testNavigableMap((NavigableMap<Integer,Integer>) m);
+        if (m instanceof NavigableMap) {
+            System.out.println("NavigableMap tests...");
+
+            NavigableMap<Integer,Integer> nm =
+                (NavigableMap<Integer,Integer>) m;
+            testNavigableMap(nm);
+            testNavigableMap(nm.headMap(6, false));
+            testNavigableMap(nm.headMap(5, true));
+            testNavigableMap(nm.tailMap(0, false));
+            testNavigableMap(nm.tailMap(1, true));
+            testNavigableMap(nm.subMap(1, true, 6, false));
+            testNavigableMap(nm.subMap(0, false, 5, true));
+        }
 
         checkFunctionalInvariants(m);
 
@@ -697,8 +744,6 @@ public class MOAT {
 
     private static void testNavigableMap(NavigableMap<Integer,Integer> m)
     {
-        System.out.println("NavigableMap tests...");
-
         clear(m);
         checkNavigableMapKeys(m, 1, null, null, null, null);
 
@@ -717,9 +762,11 @@ public class MOAT {
         checkNavigableMapKeys(m, 5,    3,    5,    5, null);
         checkNavigableMapKeys(m, 6,    5,    5, null, null);
 
-        {
-            final Iterator<Integer> it
-                = m.descendingKeySet().iterator();
+        for (final Iterator<Integer> it :
+                 (Iterator<Integer>[])
+                 new Iterator<?>[] {
+                     m.descendingKeySet().iterator(),
+                     m.navigableKeySet().descendingIterator()}) {
             equalNext(it, 5);
             equalNext(it, 3);
             equalNext(it, 1);
@@ -742,8 +789,6 @@ public class MOAT {
 
 
     private static void testNavigableSet(NavigableSet<Integer> s) {
-        System.out.println("NavigableSet tests...");
-
         clear(s);
         checkNavigableSetKeys(s, 1, null, null, null, null);
 
@@ -762,8 +807,11 @@ public class MOAT {
         checkNavigableSetKeys(s, 5,    3,    5,    5, null);
         checkNavigableSetKeys(s, 6,    5,    5, null, null);
 
-        {
-            final Iterator<Integer> it = s.descendingIterator();
+        for (final Iterator<Integer> it :
+                 (Iterator<Integer>[])
+                 new Iterator<?>[] {
+                     s.descendingIterator(),
+                     s.descendingSet().iterator()}) {
             equalNext(it, 5);
             equalNext(it, 3);
             equalNext(it, 1);

@@ -159,7 +159,7 @@ address CppInterpreterGenerator::generate_tosca_to_stack_converter(BasicType typ
       break;
     case T_LONG   :
 #ifndef _LP64
-#if !defined(_LP64) && defined(COMPILER2)
+#if defined(COMPILER2)
   // All return values are where we want them, except for Longs.  C2 returns
   // longs in G1 in the 32-bit build whereas the interpreter wants them in O0/O1.
   // Since the interpreter will return longs in G1 and O0/O1 in the 32bit
@@ -173,10 +173,9 @@ address CppInterpreterGenerator::generate_tosca_to_stack_converter(BasicType typ
       // native result is in O0, O1
       __ st(O1, L1_scratch, 0);                      // Low order
       __ st(O0, L1_scratch, -wordSize);              // High order
-#endif /* !_LP64 && COMPILER2 */
+#endif /* COMPILER2 */
 #else
-      __ stx(O0, L1_scratch, 0);
-__ breakpoint_trap();
+      __ stx(O0, L1_scratch, -wordSize);
 #endif
       __ sub(L1_scratch, 2*wordSize, L1_scratch);
       break;
@@ -237,7 +236,6 @@ address CppInterpreterGenerator::generate_stack_to_stack_converter(BasicType typ
     case T_VOID:  break;
       break;
     case T_FLOAT  :
-      __ breakpoint_trap(Assembler::zero);
     case T_BOOLEAN:
     case T_CHAR   :
     case T_BYTE   :
@@ -255,11 +253,7 @@ address CppInterpreterGenerator::generate_stack_to_stack_converter(BasicType typ
       // except we allocated one extra word for this intepretState so we won't overwrite it
       // when we return a two word result.
 #ifdef _LP64
-__ breakpoint_trap();
-      // Hmm now that longs are in one entry should "_ptr" really be "x"?
       __ ld_ptr(O0, 0, O2);
-      __ ld_ptr(O0, wordSize, O3);
-      __ st_ptr(O3, O1, 0);
       __ st_ptr(O2, O1, -wordSize);
 #else
       __ ld(O0, 0, O2);
@@ -319,10 +313,7 @@ address CppInterpreterGenerator::generate_stack_to_native_abi_converter(BasicTyp
       // except we allocated one extra word for this intepretState so we won't overwrite it
       // when we return a two word result.
 #ifdef _LP64
-__ breakpoint_trap();
-      // Hmm now that longs are in one entry should "_ptr" really be "x"?
       __ ld_ptr(O0, 0, O0->after_save());
-      __ ld_ptr(O0, wordSize, O1->after_save());
 #else
       __ ld(O0, wordSize, O1->after_save());
       __ ld(O0, 0, O0->after_save());
@@ -1373,7 +1364,7 @@ void CppInterpreterGenerator::generate_more_monitors() {
   __ delayed()->ld_ptr(L1_scratch, entry_size, L3_scratch);
 
   // now zero the slot so we can find it.
-  __ st(G0, L4_scratch, BasicObjectLock::obj_offset_in_bytes());
+  __ st_ptr(G0, L4_scratch, BasicObjectLock::obj_offset_in_bytes());
 
 }
 
@@ -1713,7 +1704,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   __ lduh(L4_scratch, in_bytes(methodOopDesc::size_of_parameters_offset()), L2_scratch); // get parameter size
   __ sll(L2_scratch, LogBytesPerWord, L2_scratch     );                           // parameter size in bytes
   __ add(L1_scratch, L2_scratch, L1_scratch);                                      // stack destination for result
-  __ ld_ptr(L4_scratch, in_bytes(methodOopDesc::result_index_offset()), L3_scratch); // called method result type index
+  __ ld(L4_scratch, in_bytes(methodOopDesc::result_index_offset()), L3_scratch); // called method result type index
 
   // tosca is really just native abi
   __ set((intptr_t)CppInterpreter::_tosca_to_stack, L4_scratch);
@@ -1757,7 +1748,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   __ ld_ptr(STATE(_prev_link), L1_scratch);
   __ ld_ptr(STATE(_method), L2_scratch);                               // get method just executed
-  __ ld_ptr(L2_scratch, in_bytes(methodOopDesc::result_index_offset()), L2_scratch);
+  __ ld(L2_scratch, in_bytes(methodOopDesc::result_index_offset()), L2_scratch);
   __ tst(L1_scratch);
   __ brx(Assembler::zero, false, Assembler::pt, return_to_initial_caller);
   __ delayed()->sll(L2_scratch, LogBytesPerWord, L2_scratch);
@@ -1923,10 +1914,10 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   // compute the unused java stack size
   __ sub(Gargs, L1_scratch, L2_scratch);                       // compute unused space
 
-  // Round down the unused space to that stack is always aligned
-  // by making the unused space a multiple of the size of a long.
+  // Round down the unused space to that stack is always 16-byte aligned
+  // by making the unused space a multiple of the size of two longs.
 
-  __ and3(L2_scratch, -BytesPerLong, L2_scratch);
+  __ and3(L2_scratch, -2*BytesPerLong, L2_scratch);
 
   // Now trim the stack
   __ add(SP, L2_scratch, SP);
@@ -2176,6 +2167,9 @@ int AbstractInterpreter::layout_activation(methodOop method,
     // MUCHO HACK
 
     intptr_t* frame_bottom = interpreter_frame->sp() - (full_frame_words - frame_words);
+    // 'interpreter_frame->sp()' is unbiased while 'frame_bottom' must be a biased value in 64bit mode.
+    assert(((intptr_t)frame_bottom & 0xf) == 0, "SP biased in layout_activation");
+    frame_bottom = (intptr_t*)((intptr_t)frame_bottom - STACK_BIAS);
 
     /* Now fillin the interpreterState object */
 

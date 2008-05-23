@@ -48,6 +48,7 @@ ciInstanceKlass::ciInstanceKlass(KlassHandle h_k) :
   // Next line must follow and use the result of the previous line:
   _is_linked = _is_initialized || ik->is_linked();
   _nonstatic_field_size = ik->nonstatic_field_size();
+  _has_nonstatic_fields = ik->has_nonstatic_fields();
   _nonstatic_fields = NULL; // initialized lazily by compute_nonstatic_fields:
 
   _nof_implementors = ik->nof_implementors();
@@ -93,6 +94,7 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
   _is_initialized = false;
   _is_linked = false;
   _nonstatic_field_size = -1;
+  _has_nonstatic_fields = false;
   _nonstatic_fields = NULL;
   _nof_implementors = -1;
   _loader = loader;
@@ -201,7 +203,7 @@ ciInstanceKlass* ciInstanceKlass::get_canonical_holder(int offset) {
   assert(offset >= 0 && offset < layout_helper(), "offset must be tame");
   #endif
 
-  if (offset < (instanceOopDesc::header_size() * wordSize)) {
+  if (offset < instanceOopDesc::base_offset_in_bytes()) {
     // All header offsets belong properly to java/lang/Object.
     return CURRENT_ENV->Object_klass();
   }
@@ -210,7 +212,8 @@ ciInstanceKlass* ciInstanceKlass::get_canonical_holder(int offset) {
   for (;;) {
     assert(self->is_loaded(), "must be loaded to have size");
     ciInstanceKlass* super = self->super();
-    if (super == NULL || !super->contains_field_offset(offset)) {
+    if (super == NULL || super->nof_nonstatic_fields() == 0 ||
+        !super->contains_field_offset(offset)) {
       return self;
     } else {
       self = super;  // return super->get_canonical_holder(offset)
@@ -381,31 +384,28 @@ int ciInstanceKlass::compute_nonstatic_fields() {
   if (_nonstatic_fields != NULL)
     return _nonstatic_fields->length();
 
-  // Size in bytes of my fields, including inherited fields.
-  // About equal to size_helper() - sizeof(oopDesc).
-  int fsize = nonstatic_field_size() * wordSize;
-  if (fsize == 0) {     // easy shortcut
+  if (!has_nonstatic_fields()) {
     Arena* arena = CURRENT_ENV->arena();
     _nonstatic_fields = new (arena) GrowableArray<ciField*>(arena, 0, 0, NULL);
     return 0;
   }
   assert(!is_java_lang_Object(), "bootstrap OK");
 
+  // Size in bytes of my fields, including inherited fields.
+  int fsize = nonstatic_field_size() * wordSize;
+
   ciInstanceKlass* super = this->super();
-  int      super_fsize = 0;
-  int      super_flen  = 0;
   GrowableArray<ciField*>* super_fields = NULL;
-  if (super != NULL) {
-    super_fsize  = super->nonstatic_field_size() * wordSize;
-    super_flen   = super->nof_nonstatic_fields();
+  if (super != NULL && super->has_nonstatic_fields()) {
+    int super_fsize  = super->nonstatic_field_size() * wordSize;
+    int super_flen   = super->nof_nonstatic_fields();
     super_fields = super->_nonstatic_fields;
     assert(super_flen == 0 || super_fields != NULL, "first get nof_fields");
-  }
-
-  // See if I am no larger than my super; if so, I can use his fields.
-  if (fsize == super_fsize) {
-    _nonstatic_fields = super_fields;
-    return super_fields->length();
+    // See if I am no larger than my super; if so, I can use his fields.
+    if (fsize == super_fsize) {
+      _nonstatic_fields = super_fields;
+      return super_fields->length();
+    }
   }
 
   GrowableArray<ciField*>* fields = NULL;
@@ -425,11 +425,11 @@ int ciInstanceKlass::compute_nonstatic_fields() {
   // (In principle, they could mix with superclass fields.)
   fields->sort(sort_field_by_offset);
 #ifdef ASSERT
-  int last_offset = sizeof(oopDesc);
+  int last_offset = instanceOopDesc::base_offset_in_bytes();
   for (int i = 0; i < fields->length(); i++) {
     ciField* field = fields->at(i);
     int offset = field->offset_in_bytes();
-    int size   = (field->_type == NULL) ? oopSize : field->size_in_bytes();
+    int size   = (field->_type == NULL) ? heapOopSize : field->size_in_bytes();
     assert(last_offset <= offset, "no field overlap");
     if (last_offset > (int)sizeof(oopDesc))
       assert((offset - last_offset) < BytesPerLong, "no big holes");

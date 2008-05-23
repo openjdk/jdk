@@ -73,8 +73,7 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp,
 
   VALIDATE_MARK_SWEEP_ONLY(
     if (ValidateMarkSweep) {
-      guarantee(_root_refs_stack->length() == 0,
-                "should be empty by now");
+      guarantee(_root_refs_stack->length() == 0, "should be empty by now");
     }
   )
 
@@ -165,9 +164,9 @@ void GenMarkSweep::allocate_stacks() {
 
 #ifdef VALIDATE_MARK_SWEEP
   if (ValidateMarkSweep) {
-    _root_refs_stack    = new (ResourceObj::C_HEAP) GrowableArray<oop*>(100, true);
-    _other_refs_stack   = new (ResourceObj::C_HEAP) GrowableArray<oop*>(100, true);
-    _adjusted_pointers  = new (ResourceObj::C_HEAP) GrowableArray<oop*>(100, true);
+    _root_refs_stack    = new (ResourceObj::C_HEAP) GrowableArray<void*>(100, true);
+    _other_refs_stack   = new (ResourceObj::C_HEAP) GrowableArray<void*>(100, true);
+    _adjusted_pointers  = new (ResourceObj::C_HEAP) GrowableArray<void*>(100, true);
     _live_oops          = new (ResourceObj::C_HEAP) GrowableArray<oop>(100, true);
     _live_oops_moved_to = new (ResourceObj::C_HEAP) GrowableArray<oop>(100, true);
     _live_oops_size     = new (ResourceObj::C_HEAP) GrowableArray<size_t>(100, true);

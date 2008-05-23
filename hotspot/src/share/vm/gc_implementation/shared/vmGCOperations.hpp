@@ -43,6 +43,7 @@
 //     is specified; and also the attach "inspectheap" operation
 //
 //  VM_GenCollectForAllocation
+//  VM_GenCollectForPermanentAllocation
 //  VM_ParallelGCFailedAllocation
 //  VM_ParallelGCFailedPermanentAllocation
 //   - this operation is invoked when allocation is failed;
@@ -165,4 +166,24 @@ class VM_GenCollectFull: public VM_GC_Operation {
   ~VM_GenCollectFull() {}
   virtual VMOp_Type type() const { return VMOp_GenCollectFull; }
   virtual void doit();
+};
+
+class VM_GenCollectForPermanentAllocation: public VM_GC_Operation {
+ private:
+  HeapWord*   _res;
+  size_t      _size;                       // size of object to be allocated
+ public:
+  VM_GenCollectForPermanentAllocation(size_t size,
+                                      unsigned int gc_count_before,
+                                      unsigned int full_gc_count_before,
+                                      GCCause::Cause gc_cause)
+    : VM_GC_Operation(gc_count_before, full_gc_count_before, true),
+      _size(size) {
+    _res = NULL;
+    _gc_cause = gc_cause;
+  }
+  ~VM_GenCollectForPermanentAllocation()  {}
+  virtual VMOp_Type type() const { return VMOp_GenCollectForPermanentAllocation; }
+  virtual void doit();
+  HeapWord* result() const       { return _res; }
 };

@@ -203,6 +203,10 @@ static void declareConstStorage(FILE *fp, FormDict &globals, OperandForm *oper) 
       if (i > 0) fprintf(fp,", ");
       fprintf(fp,"  const TypePtr *_c%d;\n", i);
     }
+    else if (!strcmp(type, "ConN")) {
+      if (i > 0) fprintf(fp,", ");
+      fprintf(fp,"  const TypeNarrowOop *_c%d;\n", i);
+    }
     else if (!strcmp(type, "ConL")) {
       if (i > 0) fprintf(fp,", ");
       fprintf(fp,"  jlong          _c%d;\n", i);
@@ -232,6 +236,10 @@ static void declareConstStorage(FILE *fp, FormDict &globals, OperandForm *oper) 
         i++;
       }
       else if (!strcmp(comp->base_type(globals), "ConP")) {
+        fprintf(fp,"  const TypePtr *_c%d;\n", i);
+        i++;
+      }
+      else if (!strcmp(comp->base_type(globals), "ConN")) {
         fprintf(fp,"  const TypePtr *_c%d;\n", i);
         i++;
       }
@@ -280,6 +288,7 @@ static void defineConstructor(FILE *fp, const char *name, uint num_consts,
       fprintf(fp,is_ideal_bool ? "BoolTest::mask c%d" : "int32 c%d", i);
       break;
     }
+    case Form::idealN : { fprintf(fp,"const TypeNarrowOop *c%d", i); break; }
     case Form::idealP : { fprintf(fp,"const TypePtr *c%d", i); break; }
     case Form::idealL : { fprintf(fp,"jlong c%d", i);   break;        }
     case Form::idealF : { fprintf(fp,"jfloat c%d", i);  break;        }
@@ -298,6 +307,11 @@ static void defineConstructor(FILE *fp, const char *name, uint num_consts,
         i++;
       }
       else if (!strcmp(comp->base_type(globals), "ConP")) {
+        if (i > 0) fprintf(fp,", ");
+        fprintf(fp,"const TypePtr *c%d", i);
+        i++;
+      }
+      else if (!strcmp(comp->base_type(globals), "ConN")) {
         if (i > 0) fprintf(fp,", ");
         fprintf(fp,"const TypePtr *c%d", i);
         i++;
@@ -360,6 +374,10 @@ static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i) {
     fprintf(fp,"    _c%d->dump_on(st);\n", i);
     ++i;
   }
+  else if (!strcmp(ideal_type, "ConN")) {
+    fprintf(fp,"    _c%d->dump();\n", i);
+    ++i;
+  }
   else if (!strcmp(ideal_type, "ConL")) {
     fprintf(fp,"    st->print(\"#\" INT64_FORMAT, _c%d);\n", i);
     ++i;
@@ -417,8 +435,13 @@ void gen_oper_format(FILE *fp, FormDict &globals, OperandForm &oper, bool for_c_
           // Replacement variable
           const char *rep_var = oper._format->_rep_vars.iter();
           // Check that it is a local name, and an operand
-          OperandForm *op      = oper._localNames[rep_var]->is_operand();
-          assert( op, "replacement variable was not found in local names");
+          const Form* form = oper._localNames[rep_var];
+          if (form == NULL) {
+            globalAD->syntax_err(oper._linenum,
+                                 "\'%s\' not found in format for %s\n", rep_var, oper._ident);
+            assert(form, "replacement variable was not found in local names");
+          }
+          OperandForm *op      = form->is_operand();
           // Get index if register or constant
           if ( op->_matrule && op->_matrule->is_base_register(globals) ) {
             idx  = oper.register_position( globals, rep_var);
@@ -483,9 +506,14 @@ void gen_oper_format(FILE *fp, FormDict &globals, OperandForm &oper, bool for_c_
         } else {
           // Replacement variable
           const char *rep_var = oper._format->_rep_vars.iter();
-          // Check that it is a local name, and an operand
-          OperandForm *op      = oper._localNames[rep_var]->is_operand();
-          assert( op, "replacement variable was not found in local names");
+         // Check that it is a local name, and an operand
+          const Form* form = oper._localNames[rep_var];
+          if (form == NULL) {
+            globalAD->syntax_err(oper._linenum,
+                                 "\'%s\' not found in format for %s\n", rep_var, oper._ident);
+            assert(form, "replacement variable was not found in local names");
+          }
+          OperandForm *op      = form->is_operand();
           // Get index if register or constant
           if ( op->_matrule && op->_matrule->is_base_register(globals) ) {
             idx  = oper.register_position( globals, rep_var);
@@ -1163,7 +1191,7 @@ void ArchDesc::declareClasses(FILE *fp) {
       if( type != NULL ) {
         Form::DataType data_type = oper->is_base_constant(_globalNames);
         // Check if we are an ideal pointer type
-        if( data_type == Form::idealP ) {
+        if( data_type == Form::idealP || data_type == Form::idealN ) {
           // Return the ideal type we already have: <TypePtr *>
           fprintf(fp," return _c0;");
         } else {
@@ -1289,6 +1317,16 @@ void ArchDesc::declareClasses(FILE *fp) {
           // Generate query to determine if this pointer is an oop
           fprintf(fp,"  virtual bool           constant_is_oop() const {");
           fprintf(fp,   " return _c0->isa_oop_ptr();");
+          fprintf(fp, " }\n");
+        }
+        else if (!strcmp(oper->ideal_type(_globalNames), "ConN")) {
+          // Access the locally stored constant
+          fprintf(fp,"  virtual intptr_t       constant() const {");
+          fprintf(fp,   " return _c0->make_oopptr()->get_con();");
+          fprintf(fp, " }\n");
+          // Generate query to determine if this pointer is an oop
+          fprintf(fp,"  virtual bool           constant_is_oop() const {");
+          fprintf(fp,   " return _c0->make_oopptr()->isa_oop_ptr();");
           fprintf(fp, " }\n");
         }
         else if (!strcmp(oper->ideal_type(_globalNames), "ConL")) {
@@ -1748,6 +1786,7 @@ void ArchDesc::declareClasses(FILE *fp) {
         fprintf(fp,"    return  TypeInt::make(opnd_array(1)->constant());\n");
         break;
       case Form::idealP:
+      case Form::idealN:
         fprintf(fp,"    return  opnd_array(1)->type();\n",result);
         break;
       case Form::idealD:

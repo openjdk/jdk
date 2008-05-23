@@ -383,6 +383,10 @@ public:
 // Phase for iteratively performing local, pessimistic GVN-style optimizations.
 // and ideal transformations on the graph.
 class PhaseIterGVN : public PhaseGVN {
+ private:
+  bool _delay_transform;  // When true simply register the node when calling transform
+                          // instead of actually optimizing it
+
   // Idealize old Node 'n' with respect to its inputs and its value
   virtual Node *transform_old( Node *a_node );
 protected:
@@ -444,6 +448,10 @@ public:
     add_users_to_worklist(old);
     hash_delete(old);
     subsume_node(old, nn);
+  }
+
+  void set_delay_transform(bool delay) {
+    _delay_transform = delay;
   }
 
 #ifndef PRODUCT

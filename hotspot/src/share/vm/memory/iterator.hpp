@@ -35,6 +35,8 @@ class OopClosure : public StackObj {
   OopClosure() : _ref_processor(NULL) { }
   virtual void do_oop(oop* o) = 0;
   virtual void do_oop_v(oop* o) { do_oop(o); }
+  virtual void do_oop(narrowOop* o) = 0;
+  virtual void do_oop_v(narrowOop* o) { do_oop(o); }
 
   // In support of post-processing of weak links of KlassKlass objects;
   // see KlassKlass::oop_oop_iterate().

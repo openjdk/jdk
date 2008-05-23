@@ -25,6 +25,9 @@
 # include "incls/_precompiled.incl"
 # include "incls/_space.cpp.incl"
 
+void SpaceMemRegionOopsIterClosure::do_oop(oop* p)       { SpaceMemRegionOopsIterClosure::do_oop_work(p); }
+void SpaceMemRegionOopsIterClosure::do_oop(narrowOop* p) { SpaceMemRegionOopsIterClosure::do_oop_work(p); }
+
 HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
                                                 HeapWord* top_obj) {
   if (top_obj != NULL) {
@@ -148,10 +151,6 @@ DirtyCardToOopClosure* Space::new_dcto_cl(OopClosure* cl,
                                           CardTableModRefBS::PrecisionStyle precision,
                                           HeapWord* boundary) {
   return new DirtyCardToOopClosure(this, cl, precision, boundary);
-}
-
-void FilteringClosure::do_oop(oop* p) {
-  do_oop_nv(p);
 }
 
 HeapWord* ContiguousSpaceDCTOC::get_actual_top(HeapWord* top,
@@ -337,7 +336,7 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
     assert(q->forwardee() == NULL, "should be forwarded to NULL");
   }
 
-  debug_only(MarkSweep::register_live_oop(q, size));
+  VALIDATE_MARK_SWEEP_ONLY(MarkSweep::register_live_oop(q, size));
   compact_top += size;
 
   // we need to update the offset table so that the beginnings of objects can be
@@ -406,13 +405,13 @@ void Space::adjust_pointers() {
     if (oop(q)->is_gc_marked()) {
       // q is alive
 
-      debug_only(MarkSweep::track_interior_pointers(oop(q)));
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::track_interior_pointers(oop(q)));
       // point all the oops to the new location
       size_t size = oop(q)->adjust_pointers();
-      debug_only(MarkSweep::check_interior_pointers());
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::check_interior_pointers());
 
       debug_only(prev_q = q);
-      debug_only(MarkSweep::validate_live_oop(oop(q), size));
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::validate_live_oop(oop(q), size));
 
       q += size;
     } else {
@@ -884,10 +883,13 @@ OffsetTableContigSpace::OffsetTableContigSpace(BlockOffsetSharedArray* sharedOff
 
 class VerifyOldOopClosure : public OopClosure {
  public:
-  oop the_obj;
-  bool allow_dirty;
+  oop  _the_obj;
+  bool _allow_dirty;
   void do_oop(oop* p) {
-    the_obj->verify_old_oop(p, allow_dirty);
+    _the_obj->verify_old_oop(p, _allow_dirty);
+  }
+  void do_oop(narrowOop* p) {
+    _the_obj->verify_old_oop(p, _allow_dirty);
   }
 };
 
@@ -898,7 +900,7 @@ void OffsetTableContigSpace::verify(bool allow_dirty) const {
   HeapWord* p = bottom();
   HeapWord* prev_p = NULL;
   VerifyOldOopClosure blk;      // Does this do anything?
-  blk.allow_dirty = allow_dirty;
+  blk._allow_dirty = allow_dirty;
   int objs = 0;
   int blocks = 0;
 
@@ -919,7 +921,7 @@ void OffsetTableContigSpace::verify(bool allow_dirty) const {
 
     if (objs == OBJ_SAMPLE_INTERVAL) {
       oop(p)->verify();
-      blk.the_obj = oop(p);
+      blk._the_obj = oop(p);
       oop(p)->oop_iterate(&blk);
       objs = 0;
     } else {

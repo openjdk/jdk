@@ -26,20 +26,67 @@
 // Evaluating "String arg[10]" will create an objArrayOop.
 
 class objArrayOopDesc : public arrayOopDesc {
- public:
-  // Accessing
-  oop obj_at(int index) const           { return *obj_at_addr(index);           }
-  void obj_at_put(int index, oop value) { oop_store(obj_at_addr(index), value); }
-  oop* base() const                     { return (oop*) arrayOopDesc::base(T_OBJECT); }
+  friend class objArrayKlass;
+  friend class Runtime1;
+  friend class psPromotionManager;
 
-  // Sizing
-  static int header_size()              { return arrayOopDesc::header_size(T_OBJECT); }
-  static int object_size(int length)    { return align_object_size(header_size() + length); }
-  int object_size()                     { return object_size(length()); }
-
-  // Returns the address of the index'th element
-  oop* obj_at_addr(int index) const {
+  template <class T> T* obj_at_addr(int index) const {
     assert(is_within_bounds(index), "index out of bounds");
-    return &base()[index];
+    return &((T*)base())[index];
   }
+
+ public:
+  // base is the address following the header.
+  HeapWord* base() const      { return (HeapWord*) arrayOopDesc::base(T_OBJECT); }
+
+  // Accessing
+  oop obj_at(int index) const {
+    // With UseCompressedOops decode the narrow oop in the objArray to an
+    // uncompressed oop.  Otherwise this is simply a "*" operator.
+    if (UseCompressedOops) {
+      return load_decode_heap_oop(obj_at_addr<narrowOop>(index));
+    } else {
+      return load_decode_heap_oop(obj_at_addr<oop>(index));
+    }
+  }
+
+  void obj_at_put(int index, oop value) {
+    if (UseCompressedOops) {
+      oop_store(obj_at_addr<narrowOop>(index), value);
+    } else {
+      oop_store(obj_at_addr<oop>(index), value);
+    }
+  }
+  // Sizing
+  static int header_size()    { return arrayOopDesc::header_size(T_OBJECT); }
+  int object_size()           { return object_size(length()); }
+  int array_size()            { return array_size(length()); }
+
+  static int object_size(int length) {
+    // This returns the object size in HeapWords.
+    return align_object_size(header_size() + array_size(length));
+  }
+
+  // Give size of objArrayOop in HeapWords minus the header
+  static int array_size(int length) {
+    // Without UseCompressedOops, this is simply:
+    // oop->length() * HeapWordsPerOop;
+    // With narrowOops, HeapWordsPerOop is 1/2 or equal 0 as an integer.
+    // The oop elements are aligned up to wordSize
+    const int HeapWordsPerOop = heapOopSize/HeapWordSize;
+    if (HeapWordsPerOop > 0) {
+      return length * HeapWordsPerOop;
+    } else {
+      const int OopsPerHeapWord = HeapWordSize/heapOopSize;
+      int word_len = align_size_up(length, OopsPerHeapWord)/OopsPerHeapWord;
+      return word_len;
+    }
+  }
+
+  // special iterators for index ranges, returns size of object
+#define ObjArrayOop_OOP_ITERATE_DECL(OopClosureType, nv_suffix)     \
+  int oop_iterate_range(OopClosureType* blk, int start, int end);
+
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayOop_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_3(ObjArrayOop_OOP_ITERATE_DECL)
 };

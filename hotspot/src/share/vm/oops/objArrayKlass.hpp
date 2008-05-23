@@ -63,6 +63,11 @@ class objArrayKlass : public arrayKlass {
   // Compute class loader
   oop class_loader() const { return Klass::cast(bottom_klass())->class_loader(); }
 
+ private:
+  // Either oop or narrowOop depending on UseCompressedOops.
+  // must be called from within objArrayKlass.cpp
+  template <class T> void do_copy(arrayOop s, T* src, arrayOop d,
+                                  T* dst, int length, TRAPS);
  protected:
   // Returns the objArrayKlass for n'th dimension.
   virtual klassOop array_klass_impl(bool or_null, int n, TRAPS);
@@ -101,7 +106,9 @@ class objArrayKlass : public arrayKlass {
 #define ObjArrayKlass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)   \
   int oop_oop_iterate##nv_suffix(oop obj, OopClosureType* blk);         \
   int oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* blk,      \
-                                     MemRegion mr);
+                                     MemRegion mr);                     \
+  int oop_oop_iterate_range##nv_suffix(oop obj, OopClosureType* blk,    \
+                                     int start, int end);
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayKlass_OOP_OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_3(ObjArrayKlass_OOP_OOP_ITERATE_DECL)
@@ -124,5 +131,6 @@ class objArrayKlass : public arrayKlass {
   const char* internal_name() const;
   void oop_verify_on(oop obj, outputStream* st);
   void oop_verify_old_oop(oop obj, oop* p, bool allow_dirty);
+  void oop_verify_old_oop(oop obj, narrowOop* p, bool allow_dirty);
 
 };
