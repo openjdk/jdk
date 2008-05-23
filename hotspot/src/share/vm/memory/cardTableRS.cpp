@@ -191,7 +191,7 @@ public:
 // prev-younger-gen               ==> cur_youngergen_and_prev_nonclean_card
 // cur-younger-gen                ==> cur_younger_gen
 // cur_youngergen_and_prev_nonclean_card ==> no change.
-void CardTableRS::write_ref_field_gc_par(oop* field, oop new_val) {
+void CardTableRS::write_ref_field_gc_par(void* field, oop new_val) {
   jbyte* entry = ct_bs()->byte_for(field);
   do {
     jbyte entry_val = *entry;
@@ -290,28 +290,36 @@ void CardTableRS::invalidate_or_clear(Generation* gen, bool younger,
 
 
 class VerifyCleanCardClosure: public OopClosure {
-  HeapWord* boundary;
-  HeapWord* begin; HeapWord* end;
-public:
-  void do_oop(oop* p) {
+private:
+  HeapWord* _boundary;
+  HeapWord* _begin;
+  HeapWord* _end;
+protected:
+  template <class T> void do_oop_work(T* p) {
     HeapWord* jp = (HeapWord*)p;
-    if (jp >= begin && jp < end) {
-      guarantee(*p == NULL || (HeapWord*)p < boundary
-                || (HeapWord*)(*p) >= boundary,
+    if (jp >= _begin && jp < _end) {
+      oop obj = oopDesc::load_decode_heap_oop(p);
+      guarantee(obj == NULL ||
+                (HeapWord*)p < _boundary ||
+                (HeapWord*)obj >= _boundary,
                 "pointer on clean card crosses boundary");
     }
   }
-  VerifyCleanCardClosure(HeapWord* b, HeapWord* _begin, HeapWord* _end) :
-    boundary(b), begin(_begin), end(_end) {}
+public:
+  VerifyCleanCardClosure(HeapWord* b, HeapWord* begin, HeapWord* end) :
+    _boundary(b), _begin(begin), _end(end) {}
+  virtual void do_oop(oop* p)       { VerifyCleanCardClosure::do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) { VerifyCleanCardClosure::do_oop_work(p); }
 };
 
 class VerifyCTSpaceClosure: public SpaceClosure {
+private:
   CardTableRS* _ct;
   HeapWord* _boundary;
 public:
   VerifyCTSpaceClosure(CardTableRS* ct, HeapWord* boundary) :
     _ct(ct), _boundary(boundary) {}
-  void do_space(Space* s) { _ct->verify_space(s, _boundary); }
+  virtual void do_space(Space* s) { _ct->verify_space(s, _boundary); }
 };
 
 class VerifyCTGenClosure: public GenCollectedHeap::GenClosure {

@@ -345,7 +345,7 @@ Node* IdealKit::load(Node* ctl,
   if (require_atomic_access && bt == T_LONG) {
     ld = LoadLNode::make_atomic(C, ctl, mem, adr, adr_type, t);
   } else {
-    ld = LoadNode::make(C, ctl, mem, adr, adr_type, t, bt);
+    ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt);
   }
   return transform(ld);
 }
@@ -361,7 +361,7 @@ Node* IdealKit::store(Node* ctl, Node* adr, Node *val, BasicType bt,
   if (require_atomic_access && bt == T_LONG) {
     st = StoreLNode::make_atomic(C, ctl, mem, adr, adr_type, val);
   } else {
-    st = StoreNode::make(C, ctl, mem, adr, adr_type, val, bt);
+    st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt);
   }
   st = transform(st);
   set_memory(st, adr_idx);

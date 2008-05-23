@@ -859,7 +859,7 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache, R
 
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is
-// a subtype of super_klass.  Blows registers Rsub_klass, tmp1, tmp2.
+// a subtype of super_klass.  Blows registers Rsuper_klass, Rsub_klass, tmp1, tmp2.
 void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
                                                   Register Rsuper_klass,
                                                   Register Rtmp1,
@@ -891,6 +891,9 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
   // Now do a linear scan of the secondary super-klass chain.
   delayed()->ld_ptr( Rsub_klass, sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes(), Rtmp2 );
 
+  // compress superclass
+  if (UseCompressedOops) encode_heap_oop(Rsuper_klass);
+
   // Rtmp2 holds the objArrayOop of secondary supers.
   ld( Rtmp2, arrayOopDesc::length_offset_in_bytes(), Rtmp1 );// Load the array length
   // Check for empty secondary super list
@@ -900,20 +903,28 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
   bind( loop );
   br( Assembler::equal, false, Assembler::pn, not_subtype );
   delayed()->nop();
-  // load next super to check
-  ld_ptr( Rtmp2, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Rtmp3 );
 
-  // Bump array pointer forward one oop
-  add( Rtmp2, wordSize, Rtmp2 );
+  // load next super to check
+  if (UseCompressedOops) {
+    ld( Rtmp2, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Rtmp3);
+    // Bump array pointer forward one oop
+    add( Rtmp2, 4, Rtmp2 );
+  } else {
+    ld_ptr( Rtmp2, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Rtmp3);
+    // Bump array pointer forward one oop
+    add( Rtmp2, wordSize, Rtmp2);
+  }
   // Look for Rsuper_klass on Rsub_klass's secondary super-class-overflow list
   cmp( Rtmp3, Rsuper_klass );
   // A miss means we are NOT a subtype and need to keep looping
   brx( Assembler::notEqual, false, Assembler::pt, loop );
   delayed()->deccc( Rtmp1 );    // dec trip counter in delay slot
   // Falling out the bottom means we found a hit; we ARE a subtype
+  if (UseCompressedOops) decode_heap_oop(Rsuper_klass);
   br( Assembler::always, false, Assembler::pt, ok_is_subtype );
   // Update the cache
-  delayed()->st_ptr( Rsuper_klass, Rsub_klass, sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes() );
+  delayed()->st_ptr( Rsuper_klass, Rsub_klass,
+                     sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes() );
 
   bind(not_subtype);
   profile_typecheck_failed(Rtmp1);

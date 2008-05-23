@@ -1118,8 +1118,8 @@ void klassItable::setup_itable_offset_table(instanceKlassHandle klass) {
   itableOffsetEntry* ioe = (itableOffsetEntry*)klass->start_of_itable();
   itableMethodEntry* ime = (itableMethodEntry*)(ioe + nof_interfaces);
   intptr_t* end               = klass->end_of_itable();
-  assert((oop*)(ime + nof_methods) <= klass->start_of_static_fields(), "wrong offset calculation (1)");
-  assert((oop*)(end) == (oop*)(ime + nof_methods),                     "wrong offset calculation (2)");
+  assert((oop*)(ime + nof_methods) <= (oop*)klass->start_of_static_fields(), "wrong offset calculation (1)");
+  assert((oop*)(end) == (oop*)(ime + nof_methods),                      "wrong offset calculation (2)");
 
   // Visit all interfaces and initialize itable offset table
   SetupItableClosure sic((address)klass->as_klassOop(), ioe, ime);

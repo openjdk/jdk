@@ -43,6 +43,19 @@ public class BasicField implements Field {
   /** Used for static fields only */
   private Address staticFieldAddress;
 
+  // Copy constructor to create NarrowOopField from OopField.
+  public BasicField(Field fld) {
+    BasicField field = (BasicField)fld;
+
+    this.db = field.db;
+    this.containingType = field.containingType;
+    this.name = field.name;
+    this.type = field.type;
+    this.size = field.size;
+    this.isStatic = field.isStatic;
+    this.offset = field.offset;
+    this.staticFieldAddress = field.staticFieldAddress;
+  }
   /** offsetInBytes is ignored if the field is static;
       staticFieldAddress is used only if the field is static. */
   public BasicField(BasicTypeDataBase db, Type containingType, String name, Type type,
@@ -161,6 +174,13 @@ public class BasicField implements Field {
     }
     return addr.getOopHandleAt(offset);
   }
+  public OopHandle getNarrowOopHandle(Address addr)
+    throws UnmappedAddressException, UnalignedAddressException, WrongTypeException, NotInHeapException {
+    if (isStatic) {
+      throw new WrongTypeException();
+    }
+    return addr.getCompOopHandleAt(offset);
+  }
 
   //--------------------------------------------------------------------------------
   // Dereferencing operations for static fields
@@ -233,5 +253,12 @@ public class BasicField implements Field {
       throw new WrongTypeException();
     }
     return staticFieldAddress.getOopHandleAt(0);
+  }
+  public OopHandle getNarrowOopHandle()
+    throws UnmappedAddressException, UnalignedAddressException, WrongTypeException, NotInHeapException {
+    if (!isStatic) {
+      throw new WrongTypeException();
+    }
+    return staticFieldAddress.getCompOopHandleAt(0);
   }
 }

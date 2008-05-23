@@ -57,6 +57,13 @@ public class OopPrinter implements OopVisitor {
     Oop.printOopValueOn(field.getValue(getObj()), tty);
     tty.println();
   }
+
+  public void doOop(NarrowOopField field, boolean isVMField) {
+    printField(field);
+    Oop.printOopValueOn(field.getValue(getObj()), tty);
+    tty.println();
+  }
+
   public void doChar(CharField field, boolean isVMField) {
     printField(field);
     char c = field.getValue(getObj());

@@ -59,6 +59,10 @@ class SharedRuntime: AllStatic {
 
 #endif // !PRODUCT
  public:
+
+  // max bytes for each dtrace string parameter
+  enum { max_dtrace_string_size = 256 };
+
   // The following arithmetic routines are used on platforms that do
   // not have machine instructions to implement their functionality.
   // Do not remove these.
@@ -258,9 +262,6 @@ class SharedRuntime: AllStatic {
 
  public:
 
-
-  static void create_native_wrapper (JavaThread* thread, methodOop method);
-
   // Read the array of BasicTypes from a Java signature, and compute where
   // compiled Java code would like to put the results.  Values in reg_lo and
   // reg_hi refer to 4-byte quantities.  Values less than SharedInfo::stack0 are
@@ -353,6 +354,19 @@ class SharedRuntime: AllStatic {
                                           BasicType *sig_bt,
                                           VMRegPair *regs,
                                           BasicType ret_type );
+
+#ifdef HAVE_DTRACE_H
+  // Generate a dtrace wrapper for a given method.  The method takes arguments
+  // in the Java compiled code convention, marshals them to the native
+  // convention (handlizes oops, etc), transitions to native, makes the call,
+  // returns to java state (possibly blocking), unhandlizes any result and
+  // returns.
+  static nmethod *generate_dtrace_nmethod(MacroAssembler* masm,
+                                          methodHandle method);
+
+  // dtrace support to convert a Java string to utf8
+  static void get_utf(oopDesc* src, address dst);
+#endif // def HAVE_DTRACE_H
 
   // A compiled caller has just called the interpreter, but compiled code
   // exists.  Patch the caller so he no longer calls into the interpreter.
@@ -492,42 +506,55 @@ class AdapterHandlerEntry : public CHeapObj {
   address _c2i_unverified_entry;
 
  public:
+
+  // The name we give all buffer blobs
+  static const char* name;
+
   AdapterHandlerEntry(address i2c_entry, address c2i_entry, address c2i_unverified_entry):
     _i2c_entry(i2c_entry),
     _c2i_entry(c2i_entry),
     _c2i_unverified_entry(c2i_unverified_entry) {
   }
-  // The name we give all buffer blobs
-  static const char* name;
 
   address get_i2c_entry()            { return _i2c_entry; }
   address get_c2i_entry()            { return _c2i_entry; }
   address get_c2i_unverified_entry() { return _c2i_unverified_entry; }
+
   void relocate(address new_base);
 #ifndef PRODUCT
   void print();
 #endif /* PRODUCT */
 };
 
-
 class AdapterHandlerLibrary: public AllStatic {
  private:
+  static u_char                   _buffer[];  // the temporary code buffer
+  static GrowableArray<uint64_t>* _fingerprints; // the fingerprint collection
+  static GrowableArray<AdapterHandlerEntry*> * _handlers; // the corresponding handlers
   enum {
     AbstractMethodHandler = 1 // special handler for abstract methods
   };
-  static GrowableArray<uint64_t>* _fingerprints; // the fingerprint collection
-  static GrowableArray<AdapterHandlerEntry*> * _handlers; // the corresponding handlers
-  static u_char                   _buffer[];  // the temporary code buffer
   static void initialize();
-  static AdapterHandlerEntry* get_entry( int index ) { return _handlers->at(index); }
   static int get_create_adapter_index(methodHandle method);
-  static address get_i2c_entry( int index ) { return get_entry(index)->get_i2c_entry(); }
-  static address get_c2i_entry( int index ) { return get_entry(index)->get_c2i_entry(); }
-  static address get_c2i_unverified_entry( int index ) { return get_entry(index)->get_c2i_unverified_entry(); }
+  static address get_i2c_entry( int index ) {
+    return get_entry(index)->get_i2c_entry();
+  }
+  static address get_c2i_entry( int index ) {
+    return get_entry(index)->get_c2i_entry();
+  }
+  static address get_c2i_unverified_entry( int index ) {
+    return get_entry(index)->get_c2i_unverified_entry();
+  }
 
  public:
+  static AdapterHandlerEntry* get_entry( int index ) { return _handlers->at(index); }
   static nmethod* create_native_wrapper(methodHandle method);
-  static AdapterHandlerEntry* get_adapter(methodHandle method)  { return get_entry(get_create_adapter_index(method)); }
+  static AdapterHandlerEntry* get_adapter(methodHandle method)  {
+    return get_entry(get_create_adapter_index(method));
+  }
+#ifdef HAVE_DTRACE_H
+  static nmethod* create_dtrace_nmethod (methodHandle method);
+#endif // HAVE_DTRACE_H
 
 #ifndef PRODUCT
   static void print_handler(CodeBlob* b);

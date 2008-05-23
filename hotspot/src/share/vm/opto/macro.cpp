@@ -584,7 +584,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
 
       const Type *field_type;
       // The next code is taken from Parse::do_get_xxx().
-      if (basic_elem_type == T_OBJECT) {
+      if (basic_elem_type == T_OBJECT || basic_elem_type == T_ARRAY) {
         if (!elem_type->is_loaded()) {
           field_type = TypeInstPtr::BOTTOM;
         } else if (field != NULL && field->is_constant()) {
@@ -596,6 +596,10 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
           assert(field_type != NULL, "field singleton type must be consistent");
         } else {
           field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
+        }
+        if (UseCompressedOops) {
+          field_type = field_type->is_oopptr()->make_narrowoop();
+          basic_elem_type = T_NARROWOOP;
         }
       } else {
         field_type = Type::get_const_basic_type(basic_elem_type);
@@ -658,6 +662,13 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
         }
 #endif
         return false;
+      }
+      if (UseCompressedOops && field_type->isa_narrowoop()) {
+        // Enable "DecodeN(EncodeP(Allocate)) --> Allocate" transformation
+        // to be able scalar replace the allocation.
+        _igvn.set_delay_transform(false);
+        field_val = DecodeNNode::decode(&_igvn, field_val);
+        _igvn.set_delay_transform(true);
       }
       sfpt->add_req(field_val);
     }
@@ -819,7 +830,7 @@ void PhaseMacroExpand::set_eden_pointers(Node* &eden_top_adr, Node* &eden_end_ad
 Node* PhaseMacroExpand::make_load(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
   Node* adr = basic_plus_adr(base, offset);
   const TypePtr* adr_type = TypeRawPtr::BOTTOM;
-  Node* value = LoadNode::make(C, ctl, mem, adr, adr_type, value_type, bt);
+  Node* value = LoadNode::make(_igvn, ctl, mem, adr, adr_type, value_type, bt);
   transform_later(value);
   return value;
 }
@@ -827,7 +838,7 @@ Node* PhaseMacroExpand::make_load(Node* ctl, Node* mem, Node* base, int offset, 
 
 Node* PhaseMacroExpand::make_store(Node* ctl, Node* mem, Node* base, int offset, Node* value, BasicType bt) {
   Node* adr = basic_plus_adr(base, offset);
-  mem = StoreNode::make(C, ctl, mem, adr, NULL, value, bt);
+  mem = StoreNode::make(_igvn, ctl, mem, adr, NULL, value, bt);
   transform_later(mem);
   return mem;
 }
@@ -1270,6 +1281,13 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
     mark_node = makecon(TypeRawPtr::make((address)markOopDesc::prototype()));
   }
   rawmem = make_store(control, rawmem, object, oopDesc::mark_offset_in_bytes(), mark_node, T_ADDRESS);
+
+  if (UseCompressedOops) {
+    Node *zeronode = makecon(TypeInt::ZERO);
+    // store uncompressed 0 into klass ptr to zero out gap.  The gap is
+    // used for primitive fields and has to be zeroed.
+    rawmem = make_store(control, rawmem, object, oopDesc::klass_gap_offset_in_bytes(), zeronode, T_INT);
+  }
   rawmem = make_store(control, rawmem, object, oopDesc::klass_offset_in_bytes(), klass_node, T_OBJECT);
   int header_size = alloc->minimum_header_size();  // conservatively small
 
@@ -1277,7 +1295,7 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
   if (length != NULL) {         // Arrays need length field
     rawmem = make_store(control, rawmem, object, arrayOopDesc::length_offset_in_bytes(), length, T_INT);
     // conservatively small header size:
-    header_size = sizeof(arrayOopDesc);
+    header_size = arrayOopDesc::base_offset_in_bytes(T_BYTE);
     ciKlass* k = _igvn.type(klass_node)->is_klassptr()->klass();
     if (k->is_array_klass())    // we know the exact header size in most cases:
       header_size = Klass::layout_helper_header_size(k->layout_helper());
@@ -1306,7 +1324,6 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
       rawmem = init->complete_stores(control, rawmem, object,
                                      header_size, size_in_bytes, &_igvn);
     }
-
     // We have no more use for this link, since the AllocateNode goes away:
     init->set_req(InitializeNode::RawAddress, top());
     // (If we keep the link, it just confuses the register allocator,
@@ -1705,6 +1722,8 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     assert(C->macro_count() < macro_count, "must have deleted a node from macro list");
     if (C->failing())  return true;
   }
+
+  _igvn.set_delay_transform(false);
   _igvn.optimize();
   return false;
 }

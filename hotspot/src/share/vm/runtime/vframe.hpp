@@ -416,6 +416,48 @@ inline bool vframeStreamCommon::fill_from_frame() {
       int decode_offset;
       if (pc_desc == NULL) {
         // Should not happen, but let fill_from_compiled_frame handle it.
+
+        // If we are trying to walk the stack of a thread that is not
+        // at a safepoint (like AsyncGetCallTrace would do) then this is an
+        // acceptable result. [ This is assuming that safe_for_sender
+        // is so bullet proof that we can trust the frames it produced. ]
+        //
+        // So if we see that the thread is not safepoint safe
+        // then simply produce the method and a bci of zero
+        // and skip the possibility of decoding any inlining that
+        // may be present. That is far better than simply stopping (or
+        // asserting. If however the thread is safepoint safe this
+        // is the sign of a compiler bug  and we'll let
+        // fill_from_compiled_frame handle it.
+
+
+        JavaThreadState state = _thread->thread_state();
+
+        // in_Java should be good enough to test safepoint safety
+        // if state were say in_Java_trans then we'd expect that
+        // the pc would have already been slightly adjusted to
+        // one that would produce a pcDesc since the trans state
+        // would be one that might in fact anticipate a safepoint
+
+        if (state == _thread_in_Java ) {
+          // This will get a method a zero bci and no inlining.
+          // Might be nice to have a unique bci to signify this
+          // particular case but for now zero will do.
+
+          fill_from_compiled_native_frame();
+
+          // There is something to be said for setting the mode to
+          // at_end_mode to prevent trying to walk further up the
+          // stack. There is evidence that if we walk any further
+          // that we could produce a bad stack chain. However until
+          // we see evidence that allowing this causes us to find
+          // frames bad enough to cause segv's or assertion failures
+          // we don't do it as while we may get a bad call chain the
+          // probability is much higher (several magnitudes) that we
+          // get good data.
+
+          return true;
+        }
         decode_offset = DebugInformationRecorder::serialized_null;
       } else {
         decode_offset = pc_desc->scope_decode_offset();

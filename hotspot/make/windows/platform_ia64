@@ -1,0 +1,12 @@
+// Platform file for Itanium Windows platform $Revision: 1.0 $
+
+os_family = win32
+
+arch = ia64
+
+os_arch = win32_ia64
+
+compiler = visCPP
+
+gnu_dis_arch = ia64
+

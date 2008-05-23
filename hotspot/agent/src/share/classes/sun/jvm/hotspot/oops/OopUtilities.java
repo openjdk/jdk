@@ -281,8 +281,11 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
        } catch (RuntimeException re) {
           // ignore, currently java_lang_Class::hc_klass_offset is zero
        }
-
-       hcKlassField = new OopField(new NamedFieldIdentifier("hc_klass"), hcKlassOffset, true);
+       if (VM.getVM().isCompressedOopsEnabled()) {
+         hcKlassField = new NarrowOopField(new NamedFieldIdentifier("hc_klass"), hcKlassOffset, true);
+       } else {
+         hcKlassField = new OopField(new NamedFieldIdentifier("hc_klass"), hcKlassOffset, true);
+       }
     }
   }
 

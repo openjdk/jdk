@@ -44,50 +44,10 @@ HeapWord* CMSPermGen::mem_allocate(size_t size) {
   bool lock_owned = lock->owned_by_self();
   if (lock_owned) {
     MutexUnlocker mul(lock);
-    return mem_allocate_work(size);
+    return mem_allocate_in_gen(size, _gen);
   } else {
-    return mem_allocate_work(size);
+    return mem_allocate_in_gen(size, _gen);
   }
-}
-
-HeapWord* CMSPermGen::mem_allocate_work(size_t size) {
-  assert(!_gen->freelistLock()->owned_by_self(), "Potetntial deadlock");
-
-  MutexLocker ml(Heap_lock);
-  HeapWord* obj = NULL;
-
-  obj = _gen->allocate(size, false);
-  // Since we want to minimize pause times, we will prefer
-  // expanding the perm gen rather than doing a stop-world
-  // collection to satisfy the allocation request.
-  if (obj == NULL) {
-    // Try to expand the perm gen and allocate space.
-    obj = _gen->expand_and_allocate(size, false, false);
-    if (obj == NULL) {
-      // Let's see if a normal stop-world full collection will
-      // free up enough space.
-      SharedHeap::heap()->collect_locked(GCCause::_permanent_generation_full);
-      obj = _gen->allocate(size, false);
-      if (obj == NULL) {
-        // The collection above may have shrunk the space, so try
-        // to expand again and allocate space.
-        obj = _gen->expand_and_allocate(size, false, false);
-      }
-      if (obj == NULL) {
-        // We have not been able to allocate space despite a
-        // full stop-world collection. We now make a last-ditch collection
-        // attempt (in which soft refs are all aggressively freed)
-        // that will try to reclaim as much space as possible.
-        SharedHeap::heap()->collect_locked(GCCause::_last_ditch_collection);
-        obj = _gen->allocate(size, false);
-        if (obj == NULL) {
-          // Expand generation in case it was shrunk following the collection.
-          obj = _gen->expand_and_allocate(size, false, false);
-        }
-      }
-    }
-  }
-  return obj;
 }
 
 void CMSPermGen::compute_new_size() {

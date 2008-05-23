@@ -4168,6 +4168,36 @@ JVM_ENTRY(jboolean, JVM_CX8Field(JNIEnv *env, jobject obj, jfieldID fid, jlong o
   return res == oldVal;
 JVM_END
 
+// DTrace ///////////////////////////////////////////////////////////////////
+
+JVM_ENTRY(jint, JVM_DTraceGetVersion(JNIEnv* env))
+  JVMWrapper("JVM_DTraceGetVersion");
+  return (jint)JVM_TRACING_DTRACE_VERSION;
+JVM_END
+
+JVM_ENTRY(jlong,JVM_DTraceActivate(
+    JNIEnv* env, jint version, jstring module_name, jint providers_count,
+    JVM_DTraceProvider* providers))
+  JVMWrapper("JVM_DTraceActivate");
+  return DTraceJSDT::activate(
+    version, module_name, providers_count, providers, CHECK_0);
+JVM_END
+
+JVM_ENTRY(jboolean,JVM_DTraceIsProbeEnabled(JNIEnv* env, jmethodID method))
+  JVMWrapper("JVM_DTraceIsProbeEnabled");
+  return DTraceJSDT::is_probe_enabled(method);
+JVM_END
+
+JVM_ENTRY(void,JVM_DTraceDispose(JNIEnv* env, jlong handle))
+  JVMWrapper("JVM_DTraceDispose");
+  DTraceJSDT::dispose(handle);
+JVM_END
+
+JVM_ENTRY(jboolean,JVM_DTraceIsSupported(JNIEnv* env))
+  JVMWrapper("JVM_DTraceIsSupported");
+  return DTraceJSDT::is_supported();
+JVM_END
+
 // Returns an array of all live Thread objects (VM internal JavaThreads,
 // jvmti agent threads, and JNI attaching threads  are skipped)
 // See CR 6404306 regarding JNI attaching threads
@@ -4496,3 +4526,4 @@ JVM_ENTRY(void, JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t i
 #endif // KERNEL
 }
 JVM_END
+

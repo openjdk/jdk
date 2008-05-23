@@ -720,9 +720,13 @@ public final class SunPKCS11 extends AuthProvider {
     }
 
     private boolean hasValidToken() {
+        /* Commented out to work with Solaris softtoken impl which
+           returns 0-value flags, e.g. both REMOVABLE_DEVICE and
+           TOKEN_PRESENT are false, when it can't access the token.
         if (removable == false) {
             return true;
         }
+        */
         Token token = this.token;
         return (token != null) && token.isValid();
     }
@@ -752,7 +756,7 @@ public final class SunPKCS11 extends AuthProvider {
         if (slotInfo == null) {
             slotInfo = p11.C_GetSlotInfo(slotID);
         }
-        if ((slotInfo.flags & CKF_TOKEN_PRESENT) == 0) {
+        if (removable && (slotInfo.flags & CKF_TOKEN_PRESENT) == 0) {
             createPoller();
             return;
         }
