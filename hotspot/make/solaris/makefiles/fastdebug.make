@@ -25,7 +25,7 @@
 # Sets make macros for making debug version of VM
 
 # Compiler specific DEBUG_CFLAGS are passed in from gcc.make, sparcWorks.make
-# They may also specify FASTDEBUG_CFLAGS, but it defaults to DEBUG_FLAGS.
+# They may also specify FASTDEBUG_CFLAGS, but it defaults to DEBUG_CFLAGS.
 
 FASTDEBUG_CFLAGS$(FASTDEBUG_CFLAGS) = $(DEBUG_CFLAGS)
 
@@ -35,15 +35,26 @@ OPT_CFLAGS/BYFILE = $(OPT_CFLAGS/$@)$(OPT_CFLAGS/DEFAULT$(OPT_CFLAGS/$@))
 
 ifeq ("${Platform_compiler}", "sparcWorks")
 OPT_CFLAGS/SLOWER = -xO2
-ifeq ($(shell expr $(COMPILER_REV) \>= 5.5), 1)
-# CC 5.5 has bug 4908364 with -xO4 
+
+# Problem with SS12 compiler, dtrace doesn't like the .o files  (bug 6693876)
+ifeq ($(COMPILER_REV), 5.9)
+  # Not clear this workaround could be skipped in some cases.
+  OPT_CFLAGS/vmGCOperations.o = $(OPT_CFLAGS/SLOWER)
+  OPT_CFLAGS/java.o = $(OPT_CFLAGS/SLOWER)
+  OPT_CFLAGS/jni.o = $(OPT_CFLAGS/SLOWER)
+endif
+
+ifeq ($(COMPILER_REV), 5.5)
+# CC 5.5 has bug 4908364 with -xO4  (Fixed in 5.6)
 OPT_CFLAGS/library_call.o = $(OPT_CFLAGS/SLOWER)
-else # COMPILER_REV >= 5.5
+endif # COMPILER_REV == 5.5
+
+ifeq ($(shell expr $(COMPILER_REV) \<= 5.4), 1)
 # Compilation of *_<arch>.cpp can take an hour or more at O3.  Use O2
 # See comments at top of sparc.make.
 OPT_CFLAGS/ad_$(Platform_arch).o = $(OPT_CFLAGS/SLOWER)
 OPT_CFLAGS/dfa_$(Platform_arch).o = $(OPT_CFLAGS/SLOWER)
-endif # COMPILER_REV >= 5.5
+endif # COMPILER_REV <= 5.4
 
 ifeq (${COMPILER_REV}, 5.0)
 # Avoid a compiler bug caused by using -xO<level> -g<level>
