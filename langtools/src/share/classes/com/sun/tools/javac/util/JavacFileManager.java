@@ -1606,7 +1606,7 @@ public class JavacFileManager implements StandardJavaFileManager {
         /** @deprecated see bug 6410637 */
         @Deprecated
         public String getPath() {
-            return entry.getName() + "(" + entry + ")";
+            return zipName + "(" + entry.getName() + ")";
         }
 
         public long getLastModified() {
