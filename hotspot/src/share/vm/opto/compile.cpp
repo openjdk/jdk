@@ -456,7 +456,15 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   }
   TraceTime t1("Total compilation time", &_t_totalCompilation, TimeCompiler, TimeCompiler2);
   TraceTime t2(NULL, &_t_methodCompilation, TimeCompiler, false);
-  set_print_assembly(PrintOptoAssembly || _method->should_print_assembly());
+  bool print_opto_assembly = PrintOptoAssembly || _method->has_option("PrintOptoAssembly");
+  if (!print_opto_assembly) {
+    bool print_assembly = (PrintAssembly || _method->should_print_assembly());
+    if (print_assembly && !Disassembler::can_decode()) {
+      tty->print_cr("PrintAssembly request changed to PrintOptoAssembly");
+      print_opto_assembly = true;
+    }
+  }
+  set_print_assembly(print_opto_assembly);
 #endif
 
   if (ProfileTraps) {
@@ -1023,6 +1031,10 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,ta->klass(),false,offset, ta->instance_id());
     }
     // Arrays of known objects become arrays of unknown objects.
+    if (ta->elem()->isa_narrowoop() && ta->elem() != TypeNarrowOop::BOTTOM) {
+      const TypeAry *tary = TypeAry::make(TypeNarrowOop::BOTTOM, ta->size());
+      tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,NULL,false,offset, ta->instance_id());
+    }
     if (ta->elem()->isa_oopptr() && ta->elem() != TypeInstPtr::BOTTOM) {
       const TypeAry *tary = TypeAry::make(TypeInstPtr::BOTTOM, ta->size());
       tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,NULL,false,offset, ta->instance_id());
@@ -1061,7 +1073,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     }
     // Canonicalize the holder of this field
     ciInstanceKlass *k = to->klass()->as_instance_klass();
-    if (offset >= 0 && offset < oopDesc::header_size() * wordSize) {
+    if (offset >= 0 && offset < instanceOopDesc::base_offset_in_bytes()) {
       // First handle header references such as a LoadKlassNode, even if the
       // object's klass is unloaded at compile time (4965979).
       tj = to = TypeInstPtr::make(TypePtr::BotPTR, env()->Object_klass(), false, NULL, offset, to->instance_id());
@@ -1302,7 +1314,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
 
     // Check for final instance fields.
     const TypeInstPtr* tinst = flat->isa_instptr();
-    if (tinst && tinst->offset() >= oopDesc::header_size() * wordSize) {
+    if (tinst && tinst->offset() >= instanceOopDesc::base_offset_in_bytes()) {
       ciInstanceKlass *k = tinst->klass()->as_instance_klass();
       ciField* field = k->get_field_by_offset(tinst->offset(), false);
       // Set field() and is_rewritable() attributes.
@@ -1723,6 +1735,8 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
           starts_bundle = '+';
       }
 
+      if (WizardMode) n->dump();
+
       if( !n->is_Region() &&    // Dont print in the Assembly
           !n->is_Phi() &&       // a few noisely useless nodes
           !n->is_Proj() &&
@@ -1747,6 +1761,8 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
       // then back up and print it
       if (valid_bundle_info(n) && node_bundling(n)->use_unconditional_delay()) {
         assert(delay != NULL, "no unconditional delay instruction");
+        if (WizardMode) delay->dump();
+
         if (node_bundling(delay)->starts_bundle())
           starts_bundle = '+';
         if (pcs && n->_idx < pc_limit)
@@ -1811,7 +1827,7 @@ struct Final_Reshape_Counts : public StackObj {
 static bool oop_offset_is_sane(const TypeInstPtr* tp) {
   ciInstanceKlass *k = tp->klass()->as_instance_klass();
   // Make sure the offset goes inside the instance layout.
-  return (uint)tp->offset() < (uint)(oopDesc::header_size() + k->nonstatic_field_size())*wordSize;
+  return k->contains_field_offset(tp->offset());
   // Note that OffsetBot and OffsetTop are very negative.
 }
 
@@ -1938,7 +1954,9 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_CompareAndSwapI:
   case Op_CompareAndSwapL:
   case Op_CompareAndSwapP:
+  case Op_CompareAndSwapN:
   case Op_StoreP:
+  case Op_StoreN:
   case Op_LoadB:
   case Op_LoadC:
   case Op_LoadI:
@@ -1948,6 +1966,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_LoadPLocked:
   case Op_LoadLLocked:
   case Op_LoadP:
+  case Op_LoadN:
   case Op_LoadRange:
   case Op_LoadS: {
   handle_mem:
@@ -1962,10 +1981,6 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
 #endif
     break;
   }
-  case Op_If:
-  case Op_CountedLoopEnd:
-    fpu._tests.push(n);         // Collect CFG split points
-    break;
 
   case Op_AddP: {               // Assert sane base pointers
     const Node *addp = n->in(AddPNode::Address);
@@ -2064,10 +2079,12 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   default:
     assert( !n->is_Call(), "" );
     assert( !n->is_Mem(), "" );
-    if( n->is_If() || n->is_PCTable() )
-      fpu._tests.push(n);       // Collect CFG split points
     break;
   }
+
+  // Collect CFG split points
+  if (n->is_MultiBranch())
+    fpu._tests.push(n);
 }
 
 //------------------------------final_graph_reshaping_walk---------------------
@@ -2146,19 +2163,18 @@ bool Compile::final_graph_reshaping() {
 
   // Check for unreachable (from below) code (i.e., infinite loops).
   for( uint i = 0; i < fpu._tests.size(); i++ ) {
-    Node *n = fpu._tests[i];
-    assert( n->is_PCTable() || n->is_If(), "either PCTables or IfNodes" );
-    // Get number of CFG targets; 2 for IfNodes or _size for PCTables.
+    MultiBranchNode *n = fpu._tests[i]->as_MultiBranch();
+    // Get number of CFG targets.
     // Note that PCTables include exception targets after calls.
-    uint expected_kids = n->is_PCTable() ? n->as_PCTable()->_size : 2;
-    if (n->outcnt() != expected_kids) {
+    uint required_outcnt = n->required_outcnt();
+    if (n->outcnt() != required_outcnt) {
       // Check for a few special cases.  Rethrow Nodes never take the
       // 'fall-thru' path, so expected kids is 1 less.
       if (n->is_PCTable() && n->in(0) && n->in(0)->in(0)) {
         if (n->in(0)->in(0)->is_Call()) {
           CallNode *call = n->in(0)->in(0)->as_Call();
           if (call->entry_point() == OptoRuntime::rethrow_stub()) {
-            expected_kids--;      // Rethrow always has 1 less kid
+            required_outcnt--;      // Rethrow always has 1 less kid
           } else if (call->req() > TypeFunc::Parms &&
                      call->is_CallDynamicJava()) {
             // Check for null receiver. In such case, the optimizer has
@@ -2168,7 +2184,7 @@ bool Compile::final_graph_reshaping() {
             Node *arg0 = call->in(TypeFunc::Parms);
             if (arg0->is_Type() &&
                 arg0->as_Type()->type()->higher_equal(TypePtr::NULL_PTR)) {
-              expected_kids--;
+              required_outcnt--;
             }
           } else if (call->entry_point() == OptoRuntime::new_array_Java() &&
                      call->req() > TypeFunc::Parms+1 &&
@@ -2179,13 +2195,13 @@ bool Compile::final_graph_reshaping() {
             Node *arg1 = call->in(TypeFunc::Parms+1);
             if (arg1->is_Type() &&
                 arg1->as_Type()->type()->join(TypeInt::POS)->empty()) {
-              expected_kids--;
+              required_outcnt--;
             }
           }
         }
       }
-      // Recheck with a better notion of 'expected_kids'
-      if (n->outcnt() != expected_kids) {
+      // Recheck with a better notion of 'required_outcnt'
+      if (n->outcnt() != required_outcnt) {
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
       }

@@ -52,20 +52,23 @@ class GenRemSet;
 class CardTableRS;
 class DirtyCardToOopClosure;
 
-
 // An oop closure that is circumscribed by a filtering memory region.
-class SpaceMemRegionOopsIterClosure: public virtual OopClosure {
-  OopClosure* cl;
-  MemRegion mr;
-public:
-  void do_oop(oop* p) {
-    if (mr.contains(p)) {
-      cl->do_oop(p);
+class SpaceMemRegionOopsIterClosure: public OopClosure {
+ private:
+  OopClosure* _cl;
+  MemRegion   _mr;
+ protected:
+  template <class T> void do_oop_work(T* p) {
+    if (_mr.contains(p)) {
+      _cl->do_oop(p);
     }
   }
-  SpaceMemRegionOopsIterClosure(OopClosure* _cl, MemRegion _mr): cl(_cl), mr(_mr) {}
+ public:
+  SpaceMemRegionOopsIterClosure(OopClosure* cl, MemRegion mr):
+    _cl(cl), _mr(mr) {}
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
 };
-
 
 // A Space describes a heap area. Class Space is an abstract
 // base class.
@@ -279,7 +282,7 @@ protected:
   CardTableModRefBS::PrecisionStyle _precision;
   HeapWord* _boundary;          // If non-NULL, process only non-NULL oops
                                 // pointing below boundary.
-  HeapWord* _min_done;          // ObjHeadPreciseArray precision requires
+  HeapWord* _min_done;                // ObjHeadPreciseArray precision requires
                                 // a downwards traversal; this is the
                                 // lowest location already done (or,
                                 // alternatively, the lowest address that
@@ -508,7 +511,7 @@ protected:
       /* prefetch beyond q */                                                \
       Prefetch::write(q, interval);                                          \
       /* size_t size = oop(q)->size();  changing this for cms for perm gen */\
-      size_t size = block_size(q);                                           \
+      size_t size = block_size(q);                                             \
       compact_top = cp->space->forward(oop(q), size, cp, compact_top);       \
       q += size;                                                             \
       end_of_live = q;                                                       \
@@ -572,147 +575,149 @@ protected:
   cp->space->set_compaction_top(compact_top);                                \
 }
 
-#define SCAN_AND_ADJUST_POINTERS(adjust_obj_size) {                             \
-  /* adjust all the interior pointers to point at the new locations of objects  \
-   * Used by MarkSweep::mark_sweep_phase3() */                                  \
+#define SCAN_AND_ADJUST_POINTERS(adjust_obj_size) {                                \
+  /* adjust all the interior pointers to point at the new locations of objects        \
+   * Used by MarkSweep::mark_sweep_phase3() */                                        \
                                                                                 \
-  HeapWord* q = bottom();                                                       \
-  HeapWord* t = _end_of_live;  /* Established by "prepare_for_compaction". */   \
+  HeapWord* q = bottom();                                                        \
+  HeapWord* t = _end_of_live;  /* Established by "prepare_for_compaction". */        \
                                                                                 \
-  assert(_first_dead <= _end_of_live, "Stands to reason, no?");                 \
+  assert(_first_dead <= _end_of_live, "Stands to reason, no?");                        \
                                                                                 \
-  if (q < t && _first_dead > q &&                                               \
+  if (q < t && _first_dead > q &&                                                \
       !oop(q)->is_gc_marked()) {                                                \
     /* we have a chunk of the space which hasn't moved and we've                \
      * reinitialized the mark word during the previous pass, so we can't        \
-     * use is_gc_marked for the traversal. */                                   \
+     * use is_gc_marked for the traversal. */                                        \
     HeapWord* end = _first_dead;                                                \
                                                                                 \
-    while (q < end) {                                                           \
-      /* I originally tried to conjoin "block_start(q) == q" to the             \
-       * assertion below, but that doesn't work, because you can't              \
-       * accurately traverse previous objects to get to the current one         \
-       * after their pointers (including pointers into permGen) have been       \
-       * updated, until the actual compaction is done.  dld, 4/00 */            \
-      assert(block_is_obj(q),                                                   \
-             "should be at block boundaries, and should be looking at objs");   \
+    while (q < end) {                                                                \
+      /* I originally tried to conjoin "block_start(q) == q" to the                \
+       * assertion below, but that doesn't work, because you can't                \
+       * accurately traverse previous objects to get to the current one                \
+       * after their pointers (including pointers into permGen) have been        \
+       * updated, until the actual compaction is done.  dld, 4/00 */                \
+      assert(block_is_obj(q),                                                        \
+             "should be at block boundaries, and should be looking at objs");        \
                                                                                 \
-      debug_only(MarkSweep::track_interior_pointers(oop(q)));                   \
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::track_interior_pointers(oop(q)));     \
                                                                                 \
-      /* point all the oops to the new location */                              \
-      size_t size = oop(q)->adjust_pointers();                                  \
-      size = adjust_obj_size(size);                                             \
+      /* point all the oops to the new location */                                \
+      size_t size = oop(q)->adjust_pointers();                                        \
+      size = adjust_obj_size(size);                                                \
                                                                                 \
-      debug_only(MarkSweep::check_interior_pointers());                         \
-                                                                                \
-      debug_only(MarkSweep::validate_live_oop(oop(q), size));                   \
-                                                                                \
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::check_interior_pointers());           \
+                                                                                      \
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::validate_live_oop(oop(q), size));     \
+                                                                                      \
       q += size;                                                                \
-    }                                                                           \
+    }                                                                                \
                                                                                 \
-    if (_first_dead == t) {                                                     \
-      q = t;                                                                    \
-    } else {                                                                    \
-      /* $$$ This is funky.  Using this to read the previously written          \
-       * LiveRange.  See also use below. */                                     \
+    if (_first_dead == t) {                                                        \
+      q = t;                                                                        \
+    } else {                                                                        \
+      /* $$$ This is funky.  Using this to read the previously written                \
+       * LiveRange.  See also use below. */                                        \
       q = (HeapWord*)oop(_first_dead)->mark()->decode_pointer();                \
-    }                                                                           \
-  }                                                                             \
+    }                                                                                \
+  }                                                                                \
                                                                                 \
   const intx interval = PrefetchScanIntervalInBytes;                            \
                                                                                 \
-  debug_only(HeapWord* prev_q = NULL);                                          \
-  while (q < t) {                                                               \
-    /* prefetch beyond q */                                                     \
+  debug_only(HeapWord* prev_q = NULL);                                                \
+  while (q < t) {                                                                \
+    /* prefetch beyond q */                                                        \
     Prefetch::write(q, interval);                                               \
-    if (oop(q)->is_gc_marked()) {                                               \
-      /* q is alive */                                                          \
-      debug_only(MarkSweep::track_interior_pointers(oop(q)));                   \
-      /* point all the oops to the new location */                              \
-      size_t size = oop(q)->adjust_pointers();                                  \
-      size = adjust_obj_size(size);                                             \
-      debug_only(MarkSweep::check_interior_pointers());                         \
-      debug_only(MarkSweep::validate_live_oop(oop(q), size));                   \
-      debug_only(prev_q = q);                                                   \
+    if (oop(q)->is_gc_marked()) {                                                \
+      /* q is alive */                                                                \
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::track_interior_pointers(oop(q)));     \
+      /* point all the oops to the new location */                                \
+      size_t size = oop(q)->adjust_pointers();                                        \
+      size = adjust_obj_size(size);                                                \
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::check_interior_pointers());                \
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::validate_live_oop(oop(q), size));     \
+      debug_only(prev_q = q);                                                        \
       q += size;                                                                \
-    } else {                                                                    \
-      /* q is not a live object, so its mark should point at the next           \
-       * live object */                                                         \
-      debug_only(prev_q = q);                                                   \
-      q = (HeapWord*) oop(q)->mark()->decode_pointer();                         \
-      assert(q > prev_q, "we should be moving forward through memory");         \
-    }                                                                           \
-  }                                                                             \
+    } else {                                                                        \
+      /* q is not a live object, so its mark should point at the next                \
+       * live object */                                                                \
+      debug_only(prev_q = q);                                                        \
+      q = (HeapWord*) oop(q)->mark()->decode_pointer();                                \
+      assert(q > prev_q, "we should be moving forward through memory");                \
+    }                                                                                \
+  }                                                                                \
                                                                                 \
-  assert(q == t, "just checking");                                              \
+  assert(q == t, "just checking");                                                \
 }
 
-#define SCAN_AND_COMPACT(obj_size) {                                            \
+#define SCAN_AND_COMPACT(obj_size) {                                                \
   /* Copy all live objects to their new location                                \
-   * Used by MarkSweep::mark_sweep_phase4() */                                  \
+   * Used by MarkSweep::mark_sweep_phase4() */                                        \
                                                                                 \
-  HeapWord*       q = bottom();                                                 \
-  HeapWord* const t = _end_of_live;                                             \
-  debug_only(HeapWord* prev_q = NULL);                                          \
+  HeapWord*       q = bottom();                                                        \
+  HeapWord* const t = _end_of_live;                                                \
+  debug_only(HeapWord* prev_q = NULL);                                                \
                                                                                 \
-  if (q < t && _first_dead > q &&                                               \
+  if (q < t && _first_dead > q &&                                                \
       !oop(q)->is_gc_marked()) {                                                \
-    debug_only(                                                                 \
-    /* we have a chunk of the space which hasn't moved and we've reinitialized the              \
-     * mark word during the previous pass, so we can't use is_gc_marked for the \
-     * traversal. */                                                            \
-    HeapWord* const end = _first_dead;                                          \
-                                                                                \
-    while (q < end) {                                                           \
+    debug_only(                                                                        \
+    /* we have a chunk of the space which hasn't moved and we've reinitialized  \
+     * the mark word during the previous pass, so we can't use is_gc_marked for \
+     * the traversal. */                                                        \
+    HeapWord* const end = _first_dead;                                                \
+                                                                                      \
+    while (q < end) {                                                                \
       size_t size = obj_size(q);                                                \
-      assert(!oop(q)->is_gc_marked(), "should be unmarked (special dense prefix handling)"); \
-      debug_only(MarkSweep::live_oop_moved_to(q, size, q));                     \
-      debug_only(prev_q = q);                                                   \
+      assert(!oop(q)->is_gc_marked(),                                           \
+             "should be unmarked (special dense prefix handling)");             \
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::live_oop_moved_to(q, size, q));        \
+      debug_only(prev_q = q);                                                        \
       q += size;                                                                \
-    }                                                                           \
-    )  /* debug_only */                                                         \
+    }                                                                                \
+    )  /* debug_only */                                                                \
+                                                                                      \
+    if (_first_dead == t) {                                                        \
+      q = t;                                                                        \
+    } else {                                                                        \
+      /* $$$ Funky */                                                                 \
+      q = (HeapWord*) oop(_first_dead)->mark()->decode_pointer();                \
+    }                                                                                \
+  }                                                                                \
                                                                                 \
-    if (_first_dead == t) {                                                     \
-      q = t;                                                                    \
-    } else {                                                                    \
-      /* $$$ Funky */                                                           \
-      q = (HeapWord*) oop(_first_dead)->mark()->decode_pointer();               \
-    }                                                                           \
-  }                                                                             \
-                                                                                \
-  const intx scan_interval = PrefetchScanIntervalInBytes;                       \
-  const intx copy_interval = PrefetchCopyIntervalInBytes;                       \
-  while (q < t) {                                                               \
-    if (!oop(q)->is_gc_marked()) {                                              \
-      /* mark is pointer to next marked oop */                                  \
-      debug_only(prev_q = q);                                                   \
-      q = (HeapWord*) oop(q)->mark()->decode_pointer();                         \
-      assert(q > prev_q, "we should be moving forward through memory");         \
-    } else {                                                                    \
-      /* prefetch beyond q */                                                   \
+  const intx scan_interval = PrefetchScanIntervalInBytes;                        \
+  const intx copy_interval = PrefetchCopyIntervalInBytes;                        \
+  while (q < t) {                                                                \
+    if (!oop(q)->is_gc_marked()) {                                                \
+      /* mark is pointer to next marked oop */                                        \
+      debug_only(prev_q = q);                                                        \
+      q = (HeapWord*) oop(q)->mark()->decode_pointer();                                \
+      assert(q > prev_q, "we should be moving forward through memory");                \
+    } else {                                                                        \
+      /* prefetch beyond q */                                                        \
       Prefetch::read(q, scan_interval);                                         \
                                                                                 \
       /* size and destination */                                                \
       size_t size = obj_size(q);                                                \
       HeapWord* compaction_top = (HeapWord*)oop(q)->forwardee();                \
                                                                                 \
-      /* prefetch beyond compaction_top */                                      \
+      /* prefetch beyond compaction_top */                                        \
       Prefetch::write(compaction_top, copy_interval);                           \
                                                                                 \
-      /* copy object and reinit its mark */                                     \
-      debug_only(MarkSweep::live_oop_moved_to(q, size, compaction_top));        \
-      assert(q != compaction_top, "everything in this pass should be moving");  \
-      Copy::aligned_conjoint_words(q, compaction_top, size);                    \
-      oop(compaction_top)->init_mark();                                         \
-      assert(oop(compaction_top)->klass() != NULL, "should have a class");      \
+      /* copy object and reinit its mark */                                        \
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::live_oop_moved_to(q, size,            \
+                                                            compaction_top));   \
+      assert(q != compaction_top, "everything in this pass should be moving");        \
+      Copy::aligned_conjoint_words(q, compaction_top, size);                        \
+      oop(compaction_top)->init_mark();                                                \
+      assert(oop(compaction_top)->klass() != NULL, "should have a class");        \
                                                                                 \
-      debug_only(prev_q = q);                                                   \
+      debug_only(prev_q = q);                                                        \
       q += size;                                                                \
-    }                                                                           \
-  }                                                                             \
+    }                                                                                \
+  }                                                                                \
                                                                                 \
   /* Reset space after compaction is complete */                                \
-  reset_after_compaction();                                                     \
+  reset_after_compaction();                                                        \
   /* We do this clear, below, since it has overloaded meanings for some */      \
   /* space subtypes.  For example, OffsetTableContigSpace's that were   */      \
   /* compacted into will have had their offset table thresholds updated */      \

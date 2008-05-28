@@ -323,7 +323,7 @@ c1_Runtime1.cpp                         collectedHeap.hpp
 c1_Runtime1.cpp                         compilationPolicy.hpp
 c1_Runtime1.cpp                         compiledIC.hpp
 c1_Runtime1.cpp                         copy.hpp
-c1_Runtime1.cpp                         disassembler_<arch>.hpp
+c1_Runtime1.cpp                         disassembler.hpp
 c1_Runtime1.cpp                         events.hpp
 c1_Runtime1.cpp                         interfaceSupport.hpp
 c1_Runtime1.cpp                         interpreter.hpp

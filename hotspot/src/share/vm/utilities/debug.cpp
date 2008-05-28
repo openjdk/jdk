@@ -669,6 +669,7 @@ public:
       tty->print_cr("0x%08x", o);
     }
   }
+  void do_oop(narrowOop* o) { ShouldNotReachHere(); }
 };
 
 

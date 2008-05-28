@@ -85,6 +85,9 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
       jlongSize    = remoteDebugger.getJLongSize();
       jshortSize   = remoteDebugger.getJShortSize();
       javaPrimitiveTypesConfigured = true;
+      heapBase     = remoteDebugger.getHeapBase();
+      heapOopSize  = remoteDebugger.getHeapOopSize();
+      logMinObjAlignmentInBytes  = remoteDebugger.getLogMinObjAlignmentInBytes();
     }
     catch (RemoteException e) {
       throw new DebuggerException(e);
@@ -298,9 +301,21 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
     return (value == 0 ? null : new RemoteAddress(this, value));
   }
 
+  RemoteAddress readCompOopAddress(long address)
+    throws UnmappedAddressException, UnalignedAddressException {
+    long value = readCompOopAddressValue(address);
+    return (value == 0 ? null : new RemoteAddress(this, value));
+  }
+
   RemoteOopHandle readOopHandle(long address)
     throws UnmappedAddressException, UnalignedAddressException, NotInHeapException {
     long value = readAddressValue(address);
+    return (value == 0 ? null : new RemoteOopHandle(this, value));
+  }
+
+  RemoteOopHandle readCompOopHandle(long address)
+    throws UnmappedAddressException, UnalignedAddressException, NotInHeapException {
+    long value = readCompOopAddressValue(address);
     return (value == 0 ? null : new RemoteOopHandle(this, value));
   }
 

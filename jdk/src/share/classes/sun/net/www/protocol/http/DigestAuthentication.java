@@ -36,6 +36,7 @@ import java.util.Random;
 import sun.net.www.HeaderParser;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import static sun.net.www.protocol.http.HttpURLConnection.HTTP_CONNECT;
 
 
 /**
@@ -210,10 +211,38 @@ class DigestAuthentication extends AuthenticationInfo {
 
     /**
      * Reclaculates the request-digest and returns it.
+     *
+     * <P> Used in the common case where the requestURI is simply the
+     * abs_path.
+     *
+     * @param  url
+     *         the URL
+     *
+     * @param  method
+     *         the HTTP method
+     *
      * @return the value of the HTTP header this authentication wants set
      */
     String getHeaderValue(URL url, String method) {
-        return getHeaderValueImpl (url.getFile(), method);
+        return getHeaderValueImpl(url.getFile(), method);
+    }
+
+    /**
+     * Reclaculates the request-digest and returns it.
+     *
+     * <P> Used when the requestURI is not the abs_path. The exact
+     * requestURI can be passed as a String.
+     *
+     * @param  requestURI
+     *         the Request-URI from the HTTP request line
+     *
+     * @param  method
+     *         the HTTP method
+     *
+     * @return the value of the HTTP header this authentication wants set
+     */
+    String getHeaderValue(String requestURI, String method) {
+        return getHeaderValueImpl(requestURI, method);
     }
 
     /**
@@ -249,7 +278,16 @@ class DigestAuthentication extends AuthenticationInfo {
         params.setOpaque (p.findValue("opaque"));
         params.setQop (p.findValue("qop"));
 
-        String uri = conn.getURL().getFile();
+        String uri;
+        String method;
+        if (type == PROXY_AUTHENTICATION &&
+                conn.tunnelState() == HttpURLConnection.TunnelState.SETUP) {
+            uri = HttpURLConnection.connectRequestURI(conn.getURL());
+            method = HTTP_CONNECT;
+        } else {
+            uri = conn.getURL().getFile();
+            method = conn.getMethod();
+        }
 
         if (params.nonce == null || authMethod == null || pw == null || realm == null) {
             return false;
@@ -275,7 +313,7 @@ class DigestAuthentication extends AuthenticationInfo {
             params.setNewCnonce();
         }
 
-        String value = getHeaderValueImpl (uri, conn.getMethod());
+        String value = getHeaderValueImpl (uri, method);
         if (value != null) {
             conn.setAuthenticationProperty(getHeaderName(), value);
             return true;

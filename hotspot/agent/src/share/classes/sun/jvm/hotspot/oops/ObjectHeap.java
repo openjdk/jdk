@@ -41,6 +41,12 @@ import sun.jvm.hotspot.utilities.*;
 
 public class ObjectHeap {
 
+  private static final boolean DEBUG;
+
+  static {
+    DEBUG = System.getProperty("sun.jvm.hotspot.oops.ObjectHeap.DEBUG") != null;
+  }
+
   private OopHandle              symbolKlassHandle;
   private OopHandle              methodKlassHandle;
   private OopHandle              constMethodKlassHandle;
@@ -152,7 +158,7 @@ public class ObjectHeap {
 
   public ObjectHeap(TypeDataBase db) throws WrongTypeException {
     // Get commonly used sizes of basic types
-    oopSize     = db.getOopSize();
+    oopSize     = VM.getVM().getOopSize();
     byteSize    = db.getJByteType().getSize();
     charSize    = db.getJCharType().getSize();
     booleanSize = db.getJBooleanType().getSize();
@@ -440,12 +446,16 @@ public class ObjectHeap {
       try {
         // Traverses the space from bottom to top
         OopHandle handle = bottom.addOffsetToAsOopHandle(0);
+
         while (handle.lessThan(top)) {
         Oop obj = null;
 
           try {
             obj = newOop(handle);
           } catch (UnknownOopException exp) {
+            if (DEBUG) {
+              throw new RuntimeException(" UnknownOopException  " + exp);
+            }
           }
           if (obj == null) {
              //Find the object size using Printezis bits and skip over

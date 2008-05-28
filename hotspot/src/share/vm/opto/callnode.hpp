@@ -725,7 +725,8 @@ public:
 
   // Conservatively small estimate of offset of first non-header byte.
   int minimum_header_size() {
-    return is_AllocateArray() ? sizeof(arrayOopDesc) : sizeof(oopDesc);
+    return is_AllocateArray() ? arrayOopDesc::base_offset_in_bytes(T_BYTE) :
+                                instanceOopDesc::base_offset_in_bytes();
   }
 
   // Return the corresponding initialization barrier (or null if none).

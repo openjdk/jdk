@@ -1,0 +1,15 @@
+// Platform file for win32 NT platform
+
+os_family = windows
+
+arch = x86
+
+arch_model = x86_64
+
+os_arch = windows_x86
+
+os_arch_model = windows_x86_64
+
+lib_arch = amd64
+
+compiler = visCPP

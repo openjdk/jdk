@@ -2228,18 +2228,40 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint) {
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
-void os::free_memory(char *addr, size_t bytes)         { }
+
+void os::free_memory(char *addr, size_t bytes) {
+  uncommit_memory(addr, bytes);
+}
+
 void os::numa_make_global(char *addr, size_t bytes)    { }
-void os::numa_make_local(char *addr, size_t bytes)     { }
-bool os::numa_topology_changed()                       { return false; }
-size_t os::numa_get_groups_num()                       { return 1; }
-int os::numa_get_group_id()                            { return 0; }
-size_t os::numa_get_leaf_groups(int *ids, size_t size) {
-  if (size > 0) {
-    ids[0] = 0;
-    return 1;
+
+void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint) {
+  Linux::numa_tonode_memory(addr, bytes, lgrp_hint);
+}
+
+bool os::numa_topology_changed()   { return false; }
+
+size_t os::numa_get_groups_num() {
+  int max_node = Linux::numa_max_node();
+  return max_node > 0 ? max_node + 1 : 1;
+}
+
+int os::numa_get_group_id() {
+  int cpu_id = Linux::sched_getcpu();
+  if (cpu_id != -1) {
+    int lgrp_id = Linux::get_node_by_cpu(cpu_id);
+    if (lgrp_id != -1) {
+      return lgrp_id;
+    }
   }
   return 0;
+}
+
+size_t os::numa_get_leaf_groups(int *ids, size_t size) {
+  for (size_t i = 0; i < size; i++) {
+    ids[i] = i;
+  }
+  return size;
 }
 
 bool os::get_page_info(char *start, page_info* info) {
@@ -2249,6 +2271,74 @@ bool os::get_page_info(char *start, page_info* info) {
 char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found) {
   return end;
 }
+
+extern "C" void numa_warn(int number, char *where, ...) { }
+extern "C" void numa_error(char *where) { }
+
+void os::Linux::libnuma_init() {
+  // sched_getcpu() should be in libc.
+  set_sched_getcpu(CAST_TO_FN_PTR(sched_getcpu_func_t,
+                                  dlsym(RTLD_DEFAULT, "sched_getcpu")));
+
+  if (sched_getcpu() != -1) { // Does it work?
+    void *handle = dlopen("libnuma.so", RTLD_LAZY);
+    if (handle != NULL) {
+      set_numa_node_to_cpus(CAST_TO_FN_PTR(numa_node_to_cpus_func_t,
+                                           dlsym(handle, "numa_node_to_cpus")));
+      set_numa_max_node(CAST_TO_FN_PTR(numa_max_node_func_t,
+                                       dlsym(handle, "numa_max_node")));
+      set_numa_available(CAST_TO_FN_PTR(numa_available_func_t,
+                                        dlsym(handle, "numa_available")));
+      set_numa_tonode_memory(CAST_TO_FN_PTR(numa_tonode_memory_func_t,
+                                            dlsym(handle, "numa_tonode_memory")));
+      if (numa_available() != -1) {
+        // Create a cpu -> node mapping
+        _cpu_to_node = new (ResourceObj::C_HEAP) GrowableArray<int>(0, true);
+        rebuild_cpu_to_node_map();
+      }
+    }
+  }
+}
+
+// rebuild_cpu_to_node_map() constructs a table mapping cpud id to node id.
+// The table is later used in get_node_by_cpu().
+void os::Linux::rebuild_cpu_to_node_map() {
+  int cpu_num = os::active_processor_count();
+  cpu_to_node()->clear();
+  cpu_to_node()->at_grow(cpu_num - 1);
+  int node_num = numa_get_groups_num();
+  int cpu_map_size = (cpu_num + BitsPerLong - 1) / BitsPerLong;
+  unsigned long *cpu_map = NEW_C_HEAP_ARRAY(unsigned long, cpu_map_size);
+  for (int i = 0; i < node_num; i++) {
+    if (numa_node_to_cpus(i, cpu_map, cpu_map_size * sizeof(unsigned long)) != -1) {
+      for (int j = 0; j < cpu_map_size; j++) {
+        if (cpu_map[j] != 0) {
+          for (int k = 0; k < BitsPerLong; k++) {
+            if (cpu_map[j] & (1UL << k)) {
+              cpu_to_node()->at_put(j * BitsPerLong + k, i);
+            }
+          }
+        }
+      }
+    }
+  }
+  FREE_C_HEAP_ARRAY(unsigned long, cpu_map);
+}
+
+int os::Linux::get_node_by_cpu(int cpu_id) {
+  if (cpu_to_node() != NULL && cpu_id >= 0 && cpu_id < cpu_to_node()->length()) {
+    return cpu_to_node()->at(cpu_id);
+  }
+  return -1;
+}
+
+GrowableArray<int>* os::Linux::_cpu_to_node;
+os::Linux::sched_getcpu_func_t os::Linux::_sched_getcpu;
+os::Linux::numa_node_to_cpus_func_t os::Linux::_numa_node_to_cpus;
+os::Linux::numa_max_node_func_t os::Linux::_numa_max_node;
+os::Linux::numa_available_func_t os::Linux::_numa_available;
+os::Linux::numa_tonode_memory_func_t os::Linux::_numa_tonode_memory;
+
 
 bool os::uncommit_memory(char* addr, size_t size) {
   return ::mmap(addr, size,
@@ -3550,6 +3640,10 @@ jint os::init_2(void)
      tty->print_cr("[HotSpot is running with %s, %s(%s)]\n",
           Linux::glibc_version(), Linux::libpthread_version(),
           Linux::is_floating_stack() ? "floating stack" : "fixed stack");
+  }
+
+  if (UseNUMA) {
+    Linux::libnuma_init();
   }
 
   if (MaxFDLimit) {

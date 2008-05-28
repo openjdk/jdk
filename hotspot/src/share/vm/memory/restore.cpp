@@ -50,6 +50,8 @@ public:
     *p = obj;
   }
 
+  void do_oop(narrowOop* p) { ShouldNotReachHere(); }
+
   void do_ptr(void** p) {
     assert(*p == NULL, "initializing previous initialized pointer.");
     void* obj = nextOop();

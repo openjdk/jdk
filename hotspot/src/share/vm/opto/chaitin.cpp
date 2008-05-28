@@ -682,6 +682,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           break;
         case Op_RegF:
         case Op_RegI:
+        case Op_RegN:
         case Op_RegFlags:
         case 0:                 // not an ideal register
           lrg.set_num_regs(1);

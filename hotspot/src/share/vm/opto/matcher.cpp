@@ -30,7 +30,7 @@ OptoReg::Name OptoReg::c_frame_pointer;
 
 
 const int Matcher::base2reg[Type::lastype] = {
-  Node::NotAMachineReg,0,0, Op_RegI, Op_RegL, 0,
+  Node::NotAMachineReg,0,0, Op_RegI, Op_RegL, 0, Op_RegN,
   Node::NotAMachineReg, Node::NotAMachineReg, /* tuple, array */
   Op_RegP, Op_RegP, Op_RegP, Op_RegP, Op_RegP, Op_RegP, /* the pointers */
   0, 0/*abio*/,
@@ -70,12 +70,14 @@ Matcher::Matcher( Node_List &proj_list ) :
   C->set_matcher(this);
 
   idealreg2spillmask[Op_RegI] = NULL;
+  idealreg2spillmask[Op_RegN] = NULL;
   idealreg2spillmask[Op_RegL] = NULL;
   idealreg2spillmask[Op_RegF] = NULL;
   idealreg2spillmask[Op_RegD] = NULL;
   idealreg2spillmask[Op_RegP] = NULL;
 
   idealreg2debugmask[Op_RegI] = NULL;
+  idealreg2debugmask[Op_RegN] = NULL;
   idealreg2debugmask[Op_RegL] = NULL;
   idealreg2debugmask[Op_RegF] = NULL;
   idealreg2debugmask[Op_RegD] = NULL;
@@ -366,17 +368,19 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
 void Matcher::init_first_stack_mask() {
 
   // Allocate storage for spill masks as masks for the appropriate load type.
-  RegMask *rms = (RegMask*)C->comp_arena()->Amalloc_D(sizeof(RegMask)*10);
-  idealreg2spillmask[Op_RegI] = &rms[0];
-  idealreg2spillmask[Op_RegL] = &rms[1];
-  idealreg2spillmask[Op_RegF] = &rms[2];
-  idealreg2spillmask[Op_RegD] = &rms[3];
-  idealreg2spillmask[Op_RegP] = &rms[4];
-  idealreg2debugmask[Op_RegI] = &rms[5];
-  idealreg2debugmask[Op_RegL] = &rms[6];
-  idealreg2debugmask[Op_RegF] = &rms[7];
-  idealreg2debugmask[Op_RegD] = &rms[8];
-  idealreg2debugmask[Op_RegP] = &rms[9];
+  RegMask *rms = (RegMask*)C->comp_arena()->Amalloc_D(sizeof(RegMask)*12);
+  idealreg2spillmask[Op_RegN] = &rms[0];
+  idealreg2spillmask[Op_RegI] = &rms[1];
+  idealreg2spillmask[Op_RegL] = &rms[2];
+  idealreg2spillmask[Op_RegF] = &rms[3];
+  idealreg2spillmask[Op_RegD] = &rms[4];
+  idealreg2spillmask[Op_RegP] = &rms[5];
+  idealreg2debugmask[Op_RegN] = &rms[6];
+  idealreg2debugmask[Op_RegI] = &rms[7];
+  idealreg2debugmask[Op_RegL] = &rms[8];
+  idealreg2debugmask[Op_RegF] = &rms[9];
+  idealreg2debugmask[Op_RegD] = &rms[10];
+  idealreg2debugmask[Op_RegP] = &rms[11];
 
   OptoReg::Name i;
 
@@ -399,6 +403,10 @@ void Matcher::init_first_stack_mask() {
   C->FIRST_STACK_mask().set_AllStack();
 
   // Make spill masks.  Registers for their class, plus FIRST_STACK_mask.
+#ifdef _LP64
+  *idealreg2spillmask[Op_RegN] = *idealreg2regmask[Op_RegN];
+   idealreg2spillmask[Op_RegN]->OR(C->FIRST_STACK_mask());
+#endif
   *idealreg2spillmask[Op_RegI] = *idealreg2regmask[Op_RegI];
    idealreg2spillmask[Op_RegI]->OR(C->FIRST_STACK_mask());
   *idealreg2spillmask[Op_RegL] = *idealreg2regmask[Op_RegL];
@@ -413,6 +421,7 @@ void Matcher::init_first_stack_mask() {
   // Make up debug masks.  Any spill slot plus callee-save registers.
   // Caller-save registers are assumed to be trashable by the various
   // inline-cache fixup routines.
+  *idealreg2debugmask[Op_RegN]= *idealreg2spillmask[Op_RegN];
   *idealreg2debugmask[Op_RegI]= *idealreg2spillmask[Op_RegI];
   *idealreg2debugmask[Op_RegL]= *idealreg2spillmask[Op_RegL];
   *idealreg2debugmask[Op_RegF]= *idealreg2spillmask[Op_RegF];
@@ -428,6 +437,7 @@ void Matcher::init_first_stack_mask() {
     if( _register_save_policy[i] == 'C' ||
         _register_save_policy[i] == 'A' ||
         (_register_save_policy[i] == 'E' && exclude_soe) ) {
+      idealreg2debugmask[Op_RegN]->Remove(i);
       idealreg2debugmask[Op_RegI]->Remove(i); // Exclude save-on-call
       idealreg2debugmask[Op_RegL]->Remove(i); // registers from debug
       idealreg2debugmask[Op_RegF]->Remove(i); // masks
@@ -661,6 +671,9 @@ void Matcher::init_spill_mask( Node *ret ) {
   set_shared(fp);
 
   // Compute generic short-offset Loads
+#ifdef _LP64
+  MachNode *spillCP = match_tree(new (C, 3) LoadNNode(NULL,mem,fp,atp,TypeInstPtr::BOTTOM));
+#endif
   MachNode *spillI  = match_tree(new (C, 3) LoadINode(NULL,mem,fp,atp));
   MachNode *spillL  = match_tree(new (C, 3) LoadLNode(NULL,mem,fp,atp));
   MachNode *spillF  = match_tree(new (C, 3) LoadFNode(NULL,mem,fp,atp));
@@ -670,6 +683,9 @@ void Matcher::init_spill_mask( Node *ret ) {
          spillD != NULL && spillP != NULL, "");
 
   // Get the ADLC notion of the right regmask, for each basic type.
+#ifdef _LP64
+  idealreg2regmask[Op_RegN] = &spillCP->out_RegMask();
+#endif
   idealreg2regmask[Op_RegI] = &spillI->out_RegMask();
   idealreg2regmask[Op_RegL] = &spillL->out_RegMask();
   idealreg2regmask[Op_RegF] = &spillF->out_RegMask();
@@ -1227,6 +1243,13 @@ static bool match_into_reg( const Node *n, Node *m, Node *control, int i, bool s
       if( j == max_scan )       // No post-domination before scan end?
         return true;            // Then break the match tree up
     }
+
+    if (m->Opcode() == Op_DecodeN && m->outcnt() == 2) {
+      // These are commonly used in address expressions and can
+      // efficiently fold into them in some cases but because they are
+      // consumed by AddP they commonly have two users.
+      if (m->raw_out(0) == m->raw_out(1) && m->raw_out(0)->Opcode() == Op_AddP) return false;
+    }
   }
 
   // Not forceably cloning.  If shared, put it into a register.
@@ -1714,6 +1737,7 @@ void Matcher::find_shared( Node *n ) {
       case Op_StoreI:
       case Op_StoreL:
       case Op_StoreP:
+      case Op_StoreN:
       case Op_Store16B:
       case Op_Store8B:
       case Op_Store4B:
@@ -1739,6 +1763,7 @@ void Matcher::find_shared( Node *n ) {
       case Op_LoadL:
       case Op_LoadS:
       case Op_LoadP:
+      case Op_LoadN:
       case Op_LoadRange:
       case Op_LoadD_unaligned:
       case Op_LoadL_unaligned:
@@ -1853,7 +1878,8 @@ void Matcher::find_shared( Node *n ) {
       case Op_StoreLConditional:
       case Op_CompareAndSwapI:
       case Op_CompareAndSwapL:
-      case Op_CompareAndSwapP: {   // Convert trinary to binary-tree
+      case Op_CompareAndSwapP:
+      case Op_CompareAndSwapN: {   // Convert trinary to binary-tree
         Node *newval = n->in(MemNode::ValueIn );
         Node *oldval  = n->in(LoadStoreNode::ExpectedIn);
         Node *pair = new (C, 3) BinaryNode( oldval, newval );
@@ -1905,22 +1931,25 @@ void Matcher::collect_null_checks( Node *proj ) {
     // During matching If's have Bool & Cmp side-by-side
     BoolNode *b = iff->in(1)->as_Bool();
     Node *cmp = iff->in(2);
-    if( cmp->Opcode() == Op_CmpP ) {
-      if( cmp->in(2)->bottom_type() == TypePtr::NULL_PTR ) {
+    int opc = cmp->Opcode();
+    if (opc != Op_CmpP && opc != Op_CmpN) return;
 
-        if( proj->Opcode() == Op_IfTrue ) {
-          extern int all_null_checks_found;
-          all_null_checks_found++;
-          if( b->_test._test == BoolTest::ne ) {
-            _null_check_tests.push(proj);
-            _null_check_tests.push(cmp->in(1));
-          }
-        } else {
-          assert( proj->Opcode() == Op_IfFalse, "" );
-          if( b->_test._test == BoolTest::eq ) {
-            _null_check_tests.push(proj);
-            _null_check_tests.push(cmp->in(1));
-          }
+    const Type* ct = cmp->in(2)->bottom_type();
+    if (ct == TypePtr::NULL_PTR ||
+        (opc == Op_CmpN && ct == TypeNarrowOop::NULL_PTR)) {
+
+      if( proj->Opcode() == Op_IfTrue ) {
+        extern int all_null_checks_found;
+        all_null_checks_found++;
+        if( b->_test._test == BoolTest::ne ) {
+          _null_check_tests.push(proj);
+          _null_check_tests.push(cmp->in(1));
+        }
+      } else {
+        assert( proj->Opcode() == Op_IfFalse, "" );
+        if( b->_test._test == BoolTest::eq ) {
+          _null_check_tests.push(proj);
+          _null_check_tests.push(cmp->in(1));
         }
       }
     }
@@ -2038,6 +2067,7 @@ bool Matcher::post_store_load_barrier(const Node *vmb) {
         xop == Op_FastLock ||
         xop == Op_CompareAndSwapL ||
         xop == Op_CompareAndSwapP ||
+        xop == Op_CompareAndSwapN ||
         xop == Op_CompareAndSwapI)
       return true;
 

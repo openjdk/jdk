@@ -29,7 +29,8 @@
 RUNTIME_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PD_DEVELOPER_FLAG, \
               MATERIALIZE_PRODUCT_FLAG, MATERIALIZE_PD_PRODUCT_FLAG, \
               MATERIALIZE_DIAGNOSTIC_FLAG, MATERIALIZE_NOTPRODUCT_FLAG, \
-              MATERIALIZE_MANAGEABLE_FLAG, MATERIALIZE_PRODUCT_RW_FLAG)
+              MATERIALIZE_MANAGEABLE_FLAG, MATERIALIZE_PRODUCT_RW_FLAG, \
+              MATERIALIZE_LP64_PRODUCT_FLAG)
 
 RUNTIME_OS_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PD_DEVELOPER_FLAG, \
                  MATERIALIZE_PRODUCT_FLAG, MATERIALIZE_PD_PRODUCT_FLAG, \
@@ -68,18 +69,20 @@ void Flag::print_on(outputStream* st) {
   if (is_uintx()) st->print("%-16lu", get_uintx());
   if (is_ccstr()) {
     const char* cp = get_ccstr();
-    const char* eol;
-    while ((eol = strchr(cp, '\n')) != NULL) {
-      char format_buffer[FORMAT_BUFFER_LEN];
-      size_t llen = pointer_delta(eol, cp, sizeof(char));
-      jio_snprintf(format_buffer, FORMAT_BUFFER_LEN,
-                   "%%." SIZE_FORMAT "s", llen);
-      st->print(format_buffer, cp);
-      st->cr();
-      cp = eol+1;
-      st->print("%5s %-35s += ", "", name);
+    if (cp != NULL) {
+      const char* eol;
+      while ((eol = strchr(cp, '\n')) != NULL) {
+        char format_buffer[FORMAT_BUFFER_LEN];
+        size_t llen = pointer_delta(eol, cp, sizeof(char));
+        jio_snprintf(format_buffer, FORMAT_BUFFER_LEN,
+                     "%%." SIZE_FORMAT "s", llen);
+        st->print(format_buffer, cp);
+        st->cr();
+        cp = eol+1;
+        st->print("%5s %-35s += ", "", name);
+      }
+      st->print("%-16s", cp);
     }
-    st->print("%-16s", cp);
   }
   st->print(" %s", kind);
   st->cr();
@@ -94,18 +97,21 @@ void Flag::print_as_flag(outputStream* st) {
     st->print("-XX:%s=" UINTX_FORMAT, name, get_uintx());
   } else if (is_ccstr()) {
     st->print("-XX:%s=", name);
-    // Need to turn embedded '\n's back into separate arguments
-    // Not so efficient to print one character at a time,
-    // but the choice is to do the transformation to a buffer
-    // and print that.  And this need not be efficient.
-    for (const char* cp = get_ccstr(); *cp != '\0'; cp += 1) {
-      switch (*cp) {
-      default:
-        st->print("%c", *cp);
-        break;
-      case '\n':
-        st->print(" -XX:%s=", name);
-        break;
+    const char* cp = get_ccstr();
+    if (cp != NULL) {
+      // Need to turn embedded '\n's back into separate arguments
+      // Not so efficient to print one character at a time,
+      // but the choice is to do the transformation to a buffer
+      // and print that.  And this need not be efficient.
+      for (; *cp != '\0'; cp += 1) {
+        switch (*cp) {
+          default:
+            st->print("%c", *cp);
+            break;
+          case '\n':
+            st->print(" -XX:%s=", name);
+            break;
+        }
       }
     }
   } else {
@@ -131,6 +137,12 @@ void Flag::print_as_flag(outputStream* st) {
   #define RUNTIME_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, "{pd}", DEFAULT },
   #define RUNTIME_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{notproduct}", DEFAULT },
 #endif
+
+#ifdef _LP64
+  #define RUNTIME_LP64_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{lp64_product}", DEFAULT },
+#else
+  #define RUNTIME_LP64_PRODUCT_FLAG_STRUCT(type, name, value, doc) /* flag is constant */
+#endif // _LP64
 
 #define C1_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{C1 product}", DEFAULT },
 #define C1_PD_PRODUCT_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, "{C1 pd product}", DEFAULT },
@@ -160,7 +172,7 @@ void Flag::print_as_flag(outputStream* st) {
 
 
 static Flag flagTable[] = {
- RUNTIME_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, RUNTIME_PD_DEVELOP_FLAG_STRUCT, RUNTIME_PRODUCT_FLAG_STRUCT, RUNTIME_PD_PRODUCT_FLAG_STRUCT, RUNTIME_DIAGNOSTIC_FLAG_STRUCT, RUNTIME_NOTPRODUCT_FLAG_STRUCT, RUNTIME_MANAGEABLE_FLAG_STRUCT, RUNTIME_PRODUCT_RW_FLAG_STRUCT)
+ RUNTIME_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, RUNTIME_PD_DEVELOP_FLAG_STRUCT, RUNTIME_PRODUCT_FLAG_STRUCT, RUNTIME_PD_PRODUCT_FLAG_STRUCT, RUNTIME_DIAGNOSTIC_FLAG_STRUCT, RUNTIME_NOTPRODUCT_FLAG_STRUCT, RUNTIME_MANAGEABLE_FLAG_STRUCT, RUNTIME_PRODUCT_RW_FLAG_STRUCT, RUNTIME_LP64_PRODUCT_FLAG_STRUCT)
  RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, RUNTIME_PD_DEVELOP_FLAG_STRUCT, RUNTIME_PRODUCT_FLAG_STRUCT, RUNTIME_PD_PRODUCT_FLAG_STRUCT, RUNTIME_DIAGNOSTIC_FLAG_STRUCT, RUNTIME_NOTPRODUCT_FLAG_STRUCT)
 #ifdef COMPILER1
  C1_FLAGS(C1_DEVELOP_FLAG_STRUCT, C1_PD_DEVELOP_FLAG_STRUCT, C1_PRODUCT_FLAG_STRUCT, C1_PD_PRODUCT_FLAG_STRUCT, C1_NOTPRODUCT_FLAG_STRUCT)

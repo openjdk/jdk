@@ -41,17 +41,18 @@ void CompactingPermGenGen::serialize_oops(SerializeOopClosure* soc) {
   int tag = 0;
   soc->do_tag(--tag);
 
+  assert(!UseCompressedOops, "UseCompressedOops doesn't work with shared archive");
   // Verify the sizes of various oops in the system.
   soc->do_tag(sizeof(oopDesc));
   soc->do_tag(sizeof(instanceOopDesc));
   soc->do_tag(sizeof(methodOopDesc));
   soc->do_tag(sizeof(constMethodOopDesc));
   soc->do_tag(sizeof(methodDataOopDesc));
-  soc->do_tag(sizeof(arrayOopDesc));
+  soc->do_tag(arrayOopDesc::base_offset_in_bytes(T_BYTE));
   soc->do_tag(sizeof(constantPoolOopDesc));
   soc->do_tag(sizeof(constantPoolCacheOopDesc));
-  soc->do_tag(sizeof(objArrayOopDesc));
-  soc->do_tag(sizeof(typeArrayOopDesc));
+  soc->do_tag(objArrayOopDesc::base_offset_in_bytes(T_BYTE));
+  soc->do_tag(typeArrayOopDesc::base_offset_in_bytes(T_BYTE));
   soc->do_tag(sizeof(symbolOopDesc));
   soc->do_tag(sizeof(klassOopDesc));
   soc->do_tag(sizeof(markOopDesc));

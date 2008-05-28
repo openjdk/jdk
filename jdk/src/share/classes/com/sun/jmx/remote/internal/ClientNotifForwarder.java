@@ -435,7 +435,6 @@ public abstract class ClientNotifForwarder {
 
                     clientSequenceNumber = nr.getNextSequenceNumber();
 
-                    final int size = infoList.size();
                     listeners = new HashMap<Integer, ClientListenerInfo>();
 
                     for (int i = 0 ; i < len ; i++) {
@@ -791,9 +790,6 @@ public abstract class ClientNotifForwarder {
     private Integer mbeanRemovedNotifID = null;
 
     private Thread currentFetchThread;
-
-    // admin stuff
-    private boolean inited = false;
 
     // state
     /**
