@@ -36,6 +36,7 @@ import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
+import sun.jvm.hotspot.runtime.*;
 
 /** <P> This class encapsulates the global state of the VM; the
     universe, object heap, interpreter, etc. It is a Singleton and
@@ -93,6 +94,10 @@ public class VM {
   private boolean      isLP64;
   private int          bytesPerLong;
   private int          minObjAlignmentInBytes;
+  private int          logMinObjAlignmentInBytes;
+  private int          heapWordSize;
+  private int          heapOopSize;
+  private int          oopSize;
   /** This is only present in a non-core build */
   private CodeCache    codeCache;
   /** This is only present in a C1 build */
@@ -117,6 +122,7 @@ public class VM {
   private static Type uintxType;
   private static CIntegerType boolType;
   private Boolean sharingEnabled;
+  private Boolean compressedOopsEnabled;
 
   // command line flags supplied to VM - see struct Flag in globals.hpp
   public static final class Flag {
@@ -308,6 +314,11 @@ public class VM {
     }
     bytesPerLong = db.lookupIntConstant("BytesPerLong").intValue();
     minObjAlignmentInBytes = db.lookupIntConstant("MinObjAlignmentInBytes").intValue();
+    // minObjAlignment = db.lookupIntConstant("MinObjAlignment").intValue();
+    logMinObjAlignmentInBytes = db.lookupIntConstant("LogMinObjAlignmentInBytes").intValue();
+    heapWordSize = db.lookupIntConstant("HeapWordSize").intValue();
+    oopSize  = db.lookupIntConstant("oopSize").intValue();
+    heapOopSize  = db.lookupIntConstant("heapOopSize").intValue();
 
     intxType = db.lookupType("intx");
     uintxType = db.lookupType("uintx");
@@ -331,6 +342,8 @@ public class VM {
       throw new RuntimeException("Attempt to initialize VM twice");
     }
     soleInstance = new VM(db, debugger, debugger.getMachineDescription().isBigEndian());
+    debugger.putHeapConst(Universe.getHeapBase(), soleInstance.getHeapOopSize(),
+                          soleInstance.logMinObjAlignmentInBytes);
     for (Iterator iter = vmInitializedObservers.iterator(); iter.hasNext(); ) {
       ((Observer) iter.next()).update(null, null);
     }
@@ -440,11 +453,15 @@ public class VM {
   }
 
   public long getOopSize() {
-    return db.getOopSize();
+    return oopSize;
   }
 
   public long getLogAddressSize() {
     return logAddressSize;
+  }
+
+  public long getIntSize() {
+    return db.getJIntType().getSize();
   }
 
   /** NOTE: this offset is in BYTES in this system! */
@@ -467,10 +484,24 @@ public class VM {
   }
 
   /** Get minimum object alignment in bytes. */
-  public int getMinObjAlignmentInBytes() {
+  public int getMinObjAlignment() {
     return minObjAlignmentInBytes;
   }
 
+  public int getMinObjAlignmentInBytes() {
+    return minObjAlignmentInBytes;
+  }
+  public int getLogMinObjAlignmentInBytes() {
+    return logMinObjAlignmentInBytes;
+  }
+
+  public int getHeapWordSize() {
+    return heapWordSize;
+  }
+
+  public int getHeapOopSize() {
+    return heapOopSize;
+  }
   /** Utility routine for getting data structure alignment correct */
   public long alignUp(long size, long alignment) {
     return (size + alignment - 1) & ~(alignment - 1);
@@ -701,6 +732,14 @@ public class VM {
     return sharingEnabled.booleanValue();
   }
 
+  public boolean isCompressedOopsEnabled() {
+    if (compressedOopsEnabled == null) {
+        Flag flag = getCommandLineFlag("UseCompressedOops");
+        compressedOopsEnabled = (flag == null) ? Boolean.FALSE:
+             (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
+    }
+    return compressedOopsEnabled.booleanValue();
+  }
 
   // returns null, if not available.
   public Flag[] getCommandLineFlags() {

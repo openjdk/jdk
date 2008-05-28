@@ -29,10 +29,6 @@ public class MachineDescriptionIntelX86 extends MachineDescriptionTwosComplement
     return 4;
   }
 
-  public long getOopSize() {
-    return 4;
-  }
-
   public boolean isBigEndian() {
     return false;
   }

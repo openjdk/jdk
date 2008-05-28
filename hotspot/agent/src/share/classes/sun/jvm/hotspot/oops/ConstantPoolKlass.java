@@ -32,7 +32,7 @@ import sun.jvm.hotspot.types.*;
 
 // A ConstantPoolKlass is the klass of a ConstantPool
 
-public class ConstantPoolKlass extends ArrayKlass {
+public class ConstantPoolKlass extends Klass {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -43,13 +43,19 @@ public class ConstantPoolKlass extends ArrayKlass {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type  = db.lookupType("constantPoolKlass");
+    headerSize = type.getSize() + Oop.getHeaderSize();
   }
 
   ConstantPoolKlass(OopHandle handle, ObjectHeap heap) {
     super(handle, heap);
   }
 
+  public long getObjectSize() { return alignObjectSize(headerSize); }
+
   public void printValueOn(PrintStream tty) {
     tty.print("ConstantPoolKlass");
   }
-};
+
+  private static long headerSize;
+}
+

@@ -252,7 +252,7 @@ public class OpenMBeanConstructorInfoSupport
             int value = 0;
             value += this.getName().hashCode();
             value += Arrays.asList(this.getSignature()).hashCode();
-            myHashCode = new Integer(value);
+            myHashCode = Integer.valueOf(value);
         }
 
         // return always the same hash code for this instance (immutable)

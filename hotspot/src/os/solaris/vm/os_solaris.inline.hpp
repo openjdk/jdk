@@ -204,3 +204,6 @@ do { \
   RESTARTABLE(_cmd, _result); \
   return _result; \
 } while(false)
+
+inline bool os::numa_has_static_binding()   { return false; }
+inline bool os::numa_has_group_homing()     { return true;  }

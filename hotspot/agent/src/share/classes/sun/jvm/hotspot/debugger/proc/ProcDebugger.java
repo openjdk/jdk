@@ -46,7 +46,9 @@ public interface ProcDebugger extends JVMDebugger {
   public long         readCInteger(long address, long numBytes, boolean isUnsigned)
     throws DebuggerException;
   public ProcAddress   readAddress(long address) throws DebuggerException;
+  public ProcAddress   readCompOopAddress(long address) throws DebuggerException;
   public ProcOopHandle readOopHandle(long address) throws DebuggerException;
+  public ProcOopHandle readCompOopHandle(long address) throws DebuggerException;
   public long[]       getThreadIntegerRegisterSet(int tid) throws DebuggerException;
   public long         getAddressValue(Address addr) throws DebuggerException;
   public Address      newAddress(long value) throws DebuggerException;

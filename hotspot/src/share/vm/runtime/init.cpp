@@ -27,7 +27,6 @@
 
 // Initialization done by VM thread in vm_init_globals()
 void check_ThreadShadow();
-void check_basic_types();
 void eventlog_init();
 void mutex_init();
 void chunkpool_init();
@@ -73,7 +72,7 @@ void ostream_exit();
 
 void vm_init_globals() {
   check_ThreadShadow();
-  check_basic_types();
+  basic_types_init();
   eventlog_init();
   mutex_init();
   chunkpool_init();

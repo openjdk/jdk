@@ -295,13 +295,7 @@ class Generation: public CHeapObj {
   //
   // The "obj_size" argument is just obj->size(), passed along so the caller can
   // avoid repeating the virtual call to retrieve it.
-  //
-  // The "ref" argument, if non-NULL, is the address of some reference to "obj"
-  // (that is "*ref == obj"); some generations may use this information to, for
-  // example, influence placement decisions.
-  //
-  // The default implementation ignores "ref" and calls allocate().
-  virtual oop promote(oop obj, size_t obj_size, oop* ref);
+  virtual oop promote(oop obj, size_t obj_size);
 
   // Thread "thread_num" (0 <= i < ParalleGCThreads) wants to promote
   // object "obj", whose original mark word was "m", and whose size is

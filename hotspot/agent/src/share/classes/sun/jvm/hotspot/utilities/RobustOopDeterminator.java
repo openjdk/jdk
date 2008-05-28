@@ -51,7 +51,11 @@ public class RobustOopDeterminator {
   private static void initialize(TypeDataBase db) {
     Type type = db.lookupType("oopDesc");
 
-    klassField = type.getOopField("_klass");
+    if (VM.getVM().isCompressedOopsEnabled()) {
+      klassField = type.getNarrowOopField("_metadata._compressed_klass");
+    } else {
+      klassField = type.getOopField("_metadata._klass");
+    }
   }
 
   public static boolean oopLooksValid(OopHandle oop) {

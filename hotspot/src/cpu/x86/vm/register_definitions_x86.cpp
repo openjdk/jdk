@@ -106,6 +106,7 @@ REGISTER_DEFINITION(XMMRegister, j_farg7);
 REGISTER_DEFINITION(Register, rscratch1);
 REGISTER_DEFINITION(Register, rscratch2);
 
+REGISTER_DEFINITION(Register, r12_heapbase);
 REGISTER_DEFINITION(Register, r15_thread);
 #endif // AMD64
 

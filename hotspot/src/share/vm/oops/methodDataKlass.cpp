@@ -95,6 +95,7 @@ void methodDataKlass::oop_follow_contents(ParCompactionManager* cm,
 }
 #endif // SERIALGC
 
+
 int methodDataKlass::oop_oop_iterate(oop obj, OopClosure* blk) {
   assert (obj->is_methodData(), "object must be method data");
   methodDataOop m = methodDataOop(obj);
@@ -112,7 +113,6 @@ int methodDataKlass::oop_oop_iterate(oop obj, OopClosure* blk) {
   }
   return size;
 }
-
 
 int methodDataKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr) {
   assert (obj->is_methodData(), "object must be method data");
@@ -158,14 +158,14 @@ void methodDataKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
   assert (obj->is_methodData(), "object must be method data");
   methodDataOop m = methodDataOop(obj);
   // This should never point into the young gen.
-  assert(!PSScavenge::should_scavenge(oop(*m->adr_method())), "Sanity");
+  assert(!PSScavenge::should_scavenge(m->adr_method()), "Sanity");
 }
 
 void methodDataKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert (obj->is_methodData(), "object must be method data");
   methodDataOop m = methodDataOop(obj);
   // This should never point into the young gen.
-  assert(!PSScavenge::should_scavenge(oop(*m->adr_method())), "Sanity");
+  assert(!PSScavenge::should_scavenge(m->adr_method()), "Sanity");
 }
 
 int methodDataKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {

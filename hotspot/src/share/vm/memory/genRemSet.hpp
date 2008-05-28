@@ -68,13 +68,13 @@ public:
 
   // This method is used to notify the remembered set that "new_val" has
   // been written into "field" by the garbage collector.
-  void write_ref_field_gc(oop* field, oop new_val);
+  void write_ref_field_gc(void* field, oop new_val);
 protected:
-  virtual void write_ref_field_gc_work(oop* field, oop new_val) = 0;
+  virtual void write_ref_field_gc_work(void* field, oop new_val) = 0;
 public:
 
   // A version of the above suitable for use by parallel collectors.
-  virtual void write_ref_field_gc_par(oop* field, oop new_val) = 0;
+  virtual void write_ref_field_gc_par(void* field, oop new_val) = 0;
 
   // Resize one of the regions covered by the remembered set.
   virtual void resize_covered_region(MemRegion new_region) = 0;

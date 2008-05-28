@@ -96,7 +96,7 @@ public:
 
   intptr_t value() const         {return (intptr_t) this; }
 
-  void print_on(outputStream* st) const PRODUCT_RETURN;
+  void print_on(outputStream* st) const;
   void print() const { print_on(tty); }
 
   // bias a stack slot.
@@ -156,22 +156,22 @@ public:
     _first = ptr;
   }
   // Return true if single register, even if the pair is really just adjacent stack slots
-  bool is_single_reg() {
+  bool is_single_reg() const {
     return (_first->is_valid()) && (_first->value() + 1 == _second->value());
   }
 
   // Return true if single stack based "register" where the slot alignment matches input alignment
-  bool is_adjacent_on_stack(int alignment) {
+  bool is_adjacent_on_stack(int alignment) const {
     return (_first->is_stack() && (_first->value() + 1 == _second->value()) && ((_first->value() & (alignment-1)) == 0));
   }
 
   // Return true if single stack based "register" where the slot alignment matches input alignment
-  bool is_adjacent_aligned_on_stack(int alignment) {
+  bool is_adjacent_aligned_on_stack(int alignment) const {
     return (_first->is_stack() && (_first->value() + 1 == _second->value()) && ((_first->value() & (alignment-1)) == 0));
   }
 
   // Return true if single register but adjacent stack slots do not count
-  bool is_single_phys_reg() {
+  bool is_single_phys_reg() const {
     return (_first->is_reg() && (_first->value() + 1 == _second->value()));
   }
 

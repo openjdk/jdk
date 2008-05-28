@@ -65,6 +65,9 @@ public interface RemoteDebugger extends Remote {
   public long      getJIntSize() throws RemoteException;
   public long      getJLongSize() throws RemoteException;
   public long      getJShortSize() throws RemoteException;
+  public long      getHeapBase() throws RemoteException;
+  public long      getHeapOopSize() throws RemoteException;
+  public long      getLogMinObjAlignmentInBytes() throws RemoteException;
   public boolean   areThreadsEqual(long addrOrId1, boolean isAddress1,
                                    long addrOrId2, boolean isAddress2) throws RemoteException;
   public int       getThreadHashCode(long addrOrId, boolean isAddress) throws RemoteException;

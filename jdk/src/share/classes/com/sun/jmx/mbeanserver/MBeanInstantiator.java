@@ -205,7 +205,7 @@ public class MBeanInstantiator {
      */
     public Object instantiate(Class theClass)
         throws ReflectionException, MBeanException {
-        Object moi = null;
+        Object moi;
 
 
         // ------------------------------
@@ -265,7 +265,7 @@ public class MBeanInstantiator {
         // ------------------------------
         // ------------------------------
         final Class[] tab;
-        Object moi= null;
+        Object moi;
         try {
             // Build the signature of the method
             //
@@ -283,8 +283,7 @@ public class MBeanInstantiator {
         }
 
         // Query the metadata service to get the right constructor
-        Constructor cons = null;
-        cons = findConstructor(theClass, tab);
+        Constructor cons = findConstructor(theClass, tab);
 
         if (cons == null) {
             throw new ReflectionException(new
@@ -408,7 +407,7 @@ public class MBeanInstantiator {
             throw new  RuntimeOperationsException(new
              IllegalArgumentException(), "Null className passed in parameter");
         }
-        Class theClass = null;
+        Class theClass;
         if (loaderName == null) {
             // Load the class using the agent class loader
             theClass = findClass(className, loader);
@@ -621,7 +620,7 @@ public class MBeanInstantiator {
     static Class loadClass(String className, ClassLoader loader)
         throws ReflectionException {
 
-        Class theClass = null;
+        Class theClass;
         if (className == null) {
             throw new RuntimeOperationsException(new
                 IllegalArgumentException("The class name cannot be null"),

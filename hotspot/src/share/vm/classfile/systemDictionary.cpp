@@ -37,71 +37,9 @@ int         SystemDictionary::_number_of_modifications = 0;
 
 oop         SystemDictionary::_system_loader_lock_obj     =  NULL;
 
-klassOop    SystemDictionary::_object_klass               =  NULL;
-klassOop    SystemDictionary::_string_klass               =  NULL;
-klassOop    SystemDictionary::_class_klass                =  NULL;
-klassOop    SystemDictionary::_cloneable_klass            =  NULL;
-klassOop    SystemDictionary::_classloader_klass          =  NULL;
-klassOop    SystemDictionary::_serializable_klass         =  NULL;
-klassOop    SystemDictionary::_system_klass               =  NULL;
+klassOop    SystemDictionary::_well_known_klasses[SystemDictionary::WKID_LIMIT]
+                                                          =  { NULL /*, NULL...*/ };
 
-klassOop    SystemDictionary::_throwable_klass            =  NULL;
-klassOop    SystemDictionary::_error_klass                =  NULL;
-klassOop    SystemDictionary::_threaddeath_klass          =  NULL;
-klassOop    SystemDictionary::_exception_klass            =  NULL;
-klassOop    SystemDictionary::_runtime_exception_klass    =  NULL;
-klassOop    SystemDictionary::_classNotFoundException_klass = NULL;
-klassOop    SystemDictionary::_noClassDefFoundError_klass = NULL;
-klassOop    SystemDictionary::_linkageError_klass         = NULL;
-klassOop    SystemDictionary::_classCastException_klass   =  NULL;
-klassOop    SystemDictionary::_arrayStoreException_klass  =  NULL;
-klassOop    SystemDictionary::_virtualMachineError_klass  =  NULL;
-klassOop    SystemDictionary::_outOfMemoryError_klass     =  NULL;
-klassOop    SystemDictionary::_StackOverflowError_klass   =  NULL;
-klassOop    SystemDictionary::_illegalMonitorStateException_klass   =  NULL;
-klassOop    SystemDictionary::_protectionDomain_klass     =  NULL;
-klassOop    SystemDictionary::_AccessControlContext_klass = NULL;
-
-klassOop    SystemDictionary::_reference_klass            =  NULL;
-klassOop    SystemDictionary::_soft_reference_klass       =  NULL;
-klassOop    SystemDictionary::_weak_reference_klass       =  NULL;
-klassOop    SystemDictionary::_final_reference_klass      =  NULL;
-klassOop    SystemDictionary::_phantom_reference_klass    =  NULL;
-klassOop    SystemDictionary::_finalizer_klass            =  NULL;
-
-klassOop    SystemDictionary::_thread_klass               =  NULL;
-klassOop    SystemDictionary::_threadGroup_klass          =  NULL;
-klassOop    SystemDictionary::_properties_klass           =  NULL;
-klassOop    SystemDictionary::_reflect_accessible_object_klass =  NULL;
-klassOop    SystemDictionary::_reflect_field_klass        =  NULL;
-klassOop    SystemDictionary::_reflect_method_klass       =  NULL;
-klassOop    SystemDictionary::_reflect_constructor_klass  =  NULL;
-klassOop    SystemDictionary::_reflect_magic_klass        =  NULL;
-klassOop    SystemDictionary::_reflect_method_accessor_klass = NULL;
-klassOop    SystemDictionary::_reflect_constructor_accessor_klass = NULL;
-klassOop    SystemDictionary::_reflect_delegating_classloader_klass = NULL;
-klassOop    SystemDictionary::_reflect_constant_pool_klass =  NULL;
-klassOop    SystemDictionary::_reflect_unsafe_static_field_accessor_impl_klass = NULL;
-
-klassOop    SystemDictionary::_vector_klass               =  NULL;
-klassOop    SystemDictionary::_hashtable_klass            =  NULL;
-klassOop    SystemDictionary::_stringBuffer_klass         =  NULL;
-
-klassOop    SystemDictionary::_stackTraceElement_klass    =  NULL;
-
-klassOop    SystemDictionary::_java_nio_Buffer_klass      =  NULL;
-
-klassOop    SystemDictionary::_sun_misc_AtomicLongCSImpl_klass = NULL;
-klassOop    SystemDictionary::_sun_jkernel_DownloadManager_klass  = NULL;
-
-klassOop    SystemDictionary::_boolean_klass              =  NULL;
-klassOop    SystemDictionary::_char_klass                 =  NULL;
-klassOop    SystemDictionary::_float_klass                =  NULL;
-klassOop    SystemDictionary::_double_klass               =  NULL;
-klassOop    SystemDictionary::_byte_klass                 =  NULL;
-klassOop    SystemDictionary::_short_klass                =  NULL;
-klassOop    SystemDictionary::_int_klass                  =  NULL;
-klassOop    SystemDictionary::_long_klass                 =  NULL;
 klassOop    SystemDictionary::_box_klasses[T_VOID+1]      =  { NULL /*, NULL...*/ };
 
 oop         SystemDictionary::_java_system_loader         =  NULL;
@@ -121,10 +59,10 @@ oop SystemDictionary::java_system_loader() {
 }
 
 void SystemDictionary::compute_java_system_loader(TRAPS) {
-  KlassHandle system_klass(THREAD, _classloader_klass);
+  KlassHandle system_klass(THREAD, WK_KLASS(classloader_klass));
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result,
-                         KlassHandle(THREAD, _classloader_klass),
+                         KlassHandle(THREAD, WK_KLASS(classloader_klass)),
                          vmSymbolHandles::getSystemClassLoader_name(),
                          vmSymbolHandles::void_classloader_signature(),
                          CHECK);
@@ -291,6 +229,15 @@ klassOop SystemDictionary::resolve_super_or_fail(symbolHandle child_name,
                                                  Handle protection_domain,
                                                  bool is_superclass,
                                                  TRAPS) {
+
+  // Try to get one of the well-known klasses.
+  // They are trusted, and do not participate in circularities.
+  if (LinkWellKnownClasses) {
+    klassOop k = find_well_known_klass(class_name());
+    if (k != NULL) {
+      return k;
+    }
+  }
 
   // Double-check, if child class is already loaded, just return super-class,interface
   // Don't add a placedholder if already loaded, i.e. already in system dictionary
@@ -919,6 +866,15 @@ klassOop SystemDictionary::find_instance_or_array_klass(symbolHandle class_name,
                                                         TRAPS) {
   klassOop k = NULL;
   assert(class_name() != NULL, "class name must be non NULL");
+
+  // Try to get one of the well-known klasses.
+  if (LinkWellKnownClasses) {
+    k = find_well_known_klass(class_name());
+    if (k != NULL) {
+      return k;
+    }
+  }
+
   if (FieldType::is_array(class_name())) {
     // The name refers to an array.  Parse the name.
     jint dimension;
@@ -940,6 +896,38 @@ klassOop SystemDictionary::find_instance_or_array_klass(symbolHandle class_name,
     k = find(class_name, class_loader, protection_domain, THREAD);
   }
   return k;
+}
+
+// Quick range check for names of well-known classes:
+static symbolOop wk_klass_name_limits[2] = {NULL, NULL};
+
+#ifndef PRODUCT
+static int find_wkk_calls, find_wkk_probes, find_wkk_wins;
+// counts for "hello world": 3983, 1616, 1075
+//  => 60% hit after limit guard, 25% total win rate
+#endif
+
+klassOop SystemDictionary::find_well_known_klass(symbolOop class_name) {
+  // A bounds-check on class_name will quickly get a negative result.
+  NOT_PRODUCT(find_wkk_calls++);
+  if (class_name >= wk_klass_name_limits[0] &&
+      class_name <= wk_klass_name_limits[1]) {
+    NOT_PRODUCT(find_wkk_probes++);
+    vmSymbols::SID sid = vmSymbols::find_sid(class_name);
+    if (sid != vmSymbols::NO_SID) {
+      klassOop k = NULL;
+      switch (sid) {
+        #define WK_KLASS_CASE(name, symbol, ignore_option) \
+        case vmSymbols::VM_SYMBOL_ENUM_NAME(symbol): \
+          k = WK_KLASS(name); break;
+        WK_KLASSES_DO(WK_KLASS_CASE)
+        #undef WK_KLASS_CASE
+      }
+      NOT_PRODUCT(if (k != NULL)  find_wkk_wins++);
+      return k;
+    }
+  }
+  return NULL;
 }
 
 // Note: this method is much like resolve_from_stream, but
@@ -1684,71 +1672,13 @@ void SystemDictionary::oops_do(OopClosure* f) {
 
 
 void SystemDictionary::preloaded_oops_do(OopClosure* f) {
-  f->do_oop((oop*) &_string_klass);
-  f->do_oop((oop*) &_object_klass);
-  f->do_oop((oop*) &_class_klass);
-  f->do_oop((oop*) &_cloneable_klass);
-  f->do_oop((oop*) &_classloader_klass);
-  f->do_oop((oop*) &_serializable_klass);
-  f->do_oop((oop*) &_system_klass);
+  f->do_oop((oop*) &wk_klass_name_limits[0]);
+  f->do_oop((oop*) &wk_klass_name_limits[1]);
 
-  f->do_oop((oop*) &_throwable_klass);
-  f->do_oop((oop*) &_error_klass);
-  f->do_oop((oop*) &_threaddeath_klass);
-  f->do_oop((oop*) &_exception_klass);
-  f->do_oop((oop*) &_runtime_exception_klass);
-  f->do_oop((oop*) &_classNotFoundException_klass);
-  f->do_oop((oop*) &_noClassDefFoundError_klass);
-  f->do_oop((oop*) &_linkageError_klass);
-  f->do_oop((oop*) &_classCastException_klass);
-  f->do_oop((oop*) &_arrayStoreException_klass);
-  f->do_oop((oop*) &_virtualMachineError_klass);
-  f->do_oop((oop*) &_outOfMemoryError_klass);
-  f->do_oop((oop*) &_StackOverflowError_klass);
-  f->do_oop((oop*) &_illegalMonitorStateException_klass);
-  f->do_oop((oop*) &_protectionDomain_klass);
-  f->do_oop((oop*) &_AccessControlContext_klass);
+  for (int k = (int)FIRST_WKID; k < (int)WKID_LIMIT; k++) {
+    f->do_oop((oop*) &_well_known_klasses[k]);
+  }
 
-  f->do_oop((oop*) &_reference_klass);
-  f->do_oop((oop*) &_soft_reference_klass);
-  f->do_oop((oop*) &_weak_reference_klass);
-  f->do_oop((oop*) &_final_reference_klass);
-  f->do_oop((oop*) &_phantom_reference_klass);
-  f->do_oop((oop*) &_finalizer_klass);
-
-  f->do_oop((oop*) &_thread_klass);
-  f->do_oop((oop*) &_threadGroup_klass);
-  f->do_oop((oop*) &_properties_klass);
-  f->do_oop((oop*) &_reflect_accessible_object_klass);
-  f->do_oop((oop*) &_reflect_field_klass);
-  f->do_oop((oop*) &_reflect_method_klass);
-  f->do_oop((oop*) &_reflect_constructor_klass);
-  f->do_oop((oop*) &_reflect_magic_klass);
-  f->do_oop((oop*) &_reflect_method_accessor_klass);
-  f->do_oop((oop*) &_reflect_constructor_accessor_klass);
-  f->do_oop((oop*) &_reflect_delegating_classloader_klass);
-  f->do_oop((oop*) &_reflect_constant_pool_klass);
-  f->do_oop((oop*) &_reflect_unsafe_static_field_accessor_impl_klass);
-
-  f->do_oop((oop*) &_stringBuffer_klass);
-  f->do_oop((oop*) &_vector_klass);
-  f->do_oop((oop*) &_hashtable_klass);
-
-  f->do_oop((oop*) &_stackTraceElement_klass);
-
-  f->do_oop((oop*) &_java_nio_Buffer_klass);
-
-  f->do_oop((oop*) &_sun_misc_AtomicLongCSImpl_klass);
-  f->do_oop((oop*) &_sun_jkernel_DownloadManager_klass);
-
-  f->do_oop((oop*) &_boolean_klass);
-  f->do_oop((oop*) &_char_klass);
-  f->do_oop((oop*) &_float_klass);
-  f->do_oop((oop*) &_double_klass);
-  f->do_oop((oop*) &_byte_klass);
-  f->do_oop((oop*) &_short_klass);
-  f->do_oop((oop*) &_int_klass);
-  f->do_oop((oop*) &_long_klass);
   {
     for (int i = 0; i < T_VOID+1; i++) {
       if (_box_klasses[i] != NULL) {
@@ -1841,14 +1771,72 @@ void SystemDictionary::initialize(TRAPS) {
   initialize_preloaded_classes(CHECK);
 }
 
+// Compact table of directions on the initialization of klasses:
+static const short wk_init_info[] = {
+  #define WK_KLASS_INIT_INFO(name, symbol, option) \
+    ( ((int)vmSymbols::VM_SYMBOL_ENUM_NAME(symbol) \
+          << SystemDictionary::CEIL_LG_OPTION_LIMIT) \
+      | (int)SystemDictionary::option ),
+  WK_KLASSES_DO(WK_KLASS_INIT_INFO)
+  #undef WK_KLASS_INIT_INFO
+  0
+};
+
+bool SystemDictionary::initialize_wk_klass(WKID id, int init_opt, TRAPS) {
+  assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
+  int  info = wk_init_info[id - FIRST_WKID];
+  int  sid  = (info >> CEIL_LG_OPTION_LIMIT);
+  symbolHandle symbol = vmSymbolHandles::symbol_handle_at((vmSymbols::SID)sid);
+  klassOop*    klassp = &_well_known_klasses[id];
+  bool must_load = (init_opt < SystemDictionary::Opt);
+  bool try_load  = true;
+  if (init_opt == SystemDictionary::Opt_Kernel) {
+#ifndef KERNEL
+    try_load = false;
+#endif //KERNEL
+  }
+  if ((*klassp) == NULL && try_load) {
+    if (must_load) {
+      (*klassp) = resolve_or_fail(symbol, true, CHECK_0); // load required class
+    } else {
+      (*klassp) = resolve_or_null(symbol,       CHECK_0); // load optional klass
+    }
+  }
+  return ((*klassp) != NULL);
+}
+
+void SystemDictionary::initialize_wk_klasses_until(WKID limit_id, WKID &start_id, TRAPS) {
+  assert((int)start_id <= (int)limit_id, "IDs are out of order!");
+  for (int id = (int)start_id; id < (int)limit_id; id++) {
+    assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
+    int info = wk_init_info[id - FIRST_WKID];
+    int sid  = (info >> CEIL_LG_OPTION_LIMIT);
+    int opt  = (info & right_n_bits(CEIL_LG_OPTION_LIMIT));
+
+    initialize_wk_klass((WKID)id, opt, CHECK);
+
+    // Update limits, so find_well_known_klass can be very fast:
+    symbolOop s = vmSymbols::symbol_at((vmSymbols::SID)sid);
+    if (wk_klass_name_limits[1] == NULL) {
+      wk_klass_name_limits[0] = wk_klass_name_limits[1] = s;
+    } else if (wk_klass_name_limits[1] < s) {
+      wk_klass_name_limits[1] = s;
+    } else if (wk_klass_name_limits[0] > s) {
+      wk_klass_name_limits[0] = s;
+    }
+  }
+}
+
 
 void SystemDictionary::initialize_preloaded_classes(TRAPS) {
-  assert(_object_klass == NULL, "preloaded classes should only be initialized once");
+  assert(WK_KLASS(object_klass) == NULL, "preloaded classes should only be initialized once");
   // Preload commonly used klasses
-  _object_klass            = resolve_or_fail(vmSymbolHandles::java_lang_Object(),                true, CHECK);
-  _string_klass            = resolve_or_fail(vmSymbolHandles::java_lang_String(),                true, CHECK);
-  _class_klass             = resolve_or_fail(vmSymbolHandles::java_lang_Class(),                 true, CHECK);
-  debug_only(instanceKlass::verify_class_klass_nonstatic_oop_maps(_class_klass));
+  WKID scan = FIRST_WKID;
+  // first do Object, String, Class
+  initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(class_klass), scan, CHECK);
+
+  debug_only(instanceKlass::verify_class_klass_nonstatic_oop_maps(WK_KLASS(class_klass)));
+
   // Fixup mirrors for classes loaded before java.lang.Class.
   // These calls iterate over the objects currently in the perm gen
   // so calling them at this point is matters (not before when there
@@ -1857,100 +1845,37 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   Universe::initialize_basic_type_mirrors(CHECK);
   Universe::fixup_mirrors(CHECK);
 
-  _cloneable_klass         = resolve_or_fail(vmSymbolHandles::java_lang_Cloneable(),             true, CHECK);
-  _classloader_klass       = resolve_or_fail(vmSymbolHandles::java_lang_ClassLoader(),           true, CHECK);
-  _serializable_klass      = resolve_or_fail(vmSymbolHandles::java_io_Serializable(),            true, CHECK);
-  _system_klass            = resolve_or_fail(vmSymbolHandles::java_lang_System(),                true, CHECK);
-
-  _throwable_klass         = resolve_or_fail(vmSymbolHandles::java_lang_Throwable(),             true, CHECK);
-  _error_klass             = resolve_or_fail(vmSymbolHandles::java_lang_Error(),                 true, CHECK);
-  _threaddeath_klass       = resolve_or_fail(vmSymbolHandles::java_lang_ThreadDeath(),           true, CHECK);
-  _exception_klass         = resolve_or_fail(vmSymbolHandles::java_lang_Exception(),             true, CHECK);
-  _runtime_exception_klass = resolve_or_fail(vmSymbolHandles::java_lang_RuntimeException(),      true, CHECK);
-  _protectionDomain_klass  = resolve_or_fail(vmSymbolHandles::java_security_ProtectionDomain(),  true, CHECK);
-  _AccessControlContext_klass = resolve_or_fail(vmSymbolHandles::java_security_AccessControlContext(),  true, CHECK);
-  _classNotFoundException_klass = resolve_or_fail(vmSymbolHandles::java_lang_ClassNotFoundException(),  true, CHECK);
-  _noClassDefFoundError_klass   = resolve_or_fail(vmSymbolHandles::java_lang_NoClassDefFoundError(),  true, CHECK);
-  _linkageError_klass   = resolve_or_fail(vmSymbolHandles::java_lang_LinkageError(),  true, CHECK);
-  _classCastException_klass = resolve_or_fail(vmSymbolHandles::java_lang_ClassCastException(),   true, CHECK);
-  _arrayStoreException_klass = resolve_or_fail(vmSymbolHandles::java_lang_ArrayStoreException(),   true, CHECK);
-  _virtualMachineError_klass = resolve_or_fail(vmSymbolHandles::java_lang_VirtualMachineError(),   true, CHECK);
-  _outOfMemoryError_klass  = resolve_or_fail(vmSymbolHandles::java_lang_OutOfMemoryError(),      true, CHECK);
-  _StackOverflowError_klass = resolve_or_fail(vmSymbolHandles::java_lang_StackOverflowError(),   true, CHECK);
-  _illegalMonitorStateException_klass = resolve_or_fail(vmSymbolHandles::java_lang_IllegalMonitorStateException(),   true, CHECK);
+  // do a bunch more:
+  initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(reference_klass), scan, CHECK);
 
   // Preload ref klasses and set reference types
-  _reference_klass         = resolve_or_fail(vmSymbolHandles::java_lang_ref_Reference(),         true, CHECK);
-  instanceKlass::cast(_reference_klass)->set_reference_type(REF_OTHER);
-  instanceRefKlass::update_nonstatic_oop_maps(_reference_klass);
+  instanceKlass::cast(WK_KLASS(reference_klass))->set_reference_type(REF_OTHER);
+  instanceRefKlass::update_nonstatic_oop_maps(WK_KLASS(reference_klass));
 
-  _soft_reference_klass    = resolve_or_fail(vmSymbolHandles::java_lang_ref_SoftReference(),     true, CHECK);
-  instanceKlass::cast(_soft_reference_klass)->set_reference_type(REF_SOFT);
-  _weak_reference_klass    = resolve_or_fail(vmSymbolHandles::java_lang_ref_WeakReference(),     true, CHECK);
-  instanceKlass::cast(_weak_reference_klass)->set_reference_type(REF_WEAK);
-  _final_reference_klass   = resolve_or_fail(vmSymbolHandles::java_lang_ref_FinalReference(),    true, CHECK);
-  instanceKlass::cast(_final_reference_klass)->set_reference_type(REF_FINAL);
-  _phantom_reference_klass = resolve_or_fail(vmSymbolHandles::java_lang_ref_PhantomReference(),  true, CHECK);
-  instanceKlass::cast(_phantom_reference_klass)->set_reference_type(REF_PHANTOM);
-  _finalizer_klass         = resolve_or_fail(vmSymbolHandles::java_lang_ref_Finalizer(),         true, CHECK);
+  initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(phantom_reference_klass), scan, CHECK);
+  instanceKlass::cast(WK_KLASS(soft_reference_klass))->set_reference_type(REF_SOFT);
+  instanceKlass::cast(WK_KLASS(weak_reference_klass))->set_reference_type(REF_WEAK);
+  instanceKlass::cast(WK_KLASS(final_reference_klass))->set_reference_type(REF_FINAL);
+  instanceKlass::cast(WK_KLASS(phantom_reference_klass))->set_reference_type(REF_PHANTOM);
 
-  _thread_klass           = resolve_or_fail(vmSymbolHandles::java_lang_Thread(),                true, CHECK);
-  _threadGroup_klass      = resolve_or_fail(vmSymbolHandles::java_lang_ThreadGroup(),           true, CHECK);
-  _properties_klass       = resolve_or_fail(vmSymbolHandles::java_util_Properties(),            true, CHECK);
-  _reflect_accessible_object_klass = resolve_or_fail(vmSymbolHandles::java_lang_reflect_AccessibleObject(),  true, CHECK);
-  _reflect_field_klass    = resolve_or_fail(vmSymbolHandles::java_lang_reflect_Field(),         true, CHECK);
-  _reflect_method_klass   = resolve_or_fail(vmSymbolHandles::java_lang_reflect_Method(),        true, CHECK);
-  _reflect_constructor_klass = resolve_or_fail(vmSymbolHandles::java_lang_reflect_Constructor(),   true, CHECK);
-  // Universe::is_gte_jdk14x_version() is not set up by this point.
-  // It's okay if these turn out to be NULL in non-1.4 JDKs.
-  _reflect_magic_klass    = resolve_or_null(vmSymbolHandles::sun_reflect_MagicAccessorImpl(),         CHECK);
-  _reflect_method_accessor_klass = resolve_or_null(vmSymbolHandles::sun_reflect_MethodAccessorImpl(),     CHECK);
-  _reflect_constructor_accessor_klass = resolve_or_null(vmSymbolHandles::sun_reflect_ConstructorAccessorImpl(),     CHECK);
-  _reflect_delegating_classloader_klass = resolve_or_null(vmSymbolHandles::sun_reflect_DelegatingClassLoader(),     CHECK);
-  _reflect_constant_pool_klass = resolve_or_null(vmSymbolHandles::sun_reflect_ConstantPool(),         CHECK);
-  _reflect_unsafe_static_field_accessor_impl_klass = resolve_or_null(vmSymbolHandles::sun_reflect_UnsafeStaticFieldAccessorImpl(), CHECK);
+  initialize_wk_klasses_until(WKID_LIMIT, scan, CHECK);
 
-  _vector_klass           = resolve_or_fail(vmSymbolHandles::java_util_Vector(),                true, CHECK);
-  _hashtable_klass        = resolve_or_fail(vmSymbolHandles::java_util_Hashtable(),             true, CHECK);
-  _stringBuffer_klass     = resolve_or_fail(vmSymbolHandles::java_lang_StringBuffer(),          true, CHECK);
+  _box_klasses[T_BOOLEAN] = WK_KLASS(boolean_klass);
+  _box_klasses[T_CHAR]    = WK_KLASS(char_klass);
+  _box_klasses[T_FLOAT]   = WK_KLASS(float_klass);
+  _box_klasses[T_DOUBLE]  = WK_KLASS(double_klass);
+  _box_klasses[T_BYTE]    = WK_KLASS(byte_klass);
+  _box_klasses[T_SHORT]   = WK_KLASS(short_klass);
+  _box_klasses[T_INT]     = WK_KLASS(int_klass);
+  _box_klasses[T_LONG]    = WK_KLASS(long_klass);
+  //_box_klasses[T_OBJECT]  = WK_KLASS(object_klass);
+  //_box_klasses[T_ARRAY]   = WK_KLASS(object_klass);
 
-  // It's NULL in non-1.4 JDKs.
-  _stackTraceElement_klass = resolve_or_null(vmSymbolHandles::java_lang_StackTraceElement(),          CHECK);
-
-  // Universe::is_gte_jdk14x_version() is not set up by this point.
-  // It's okay if this turns out to be NULL in non-1.4 JDKs.
-  _java_nio_Buffer_klass   = resolve_or_null(vmSymbolHandles::java_nio_Buffer(),                 CHECK);
-
-  // If this class isn't present, it won't be referenced.
-  _sun_misc_AtomicLongCSImpl_klass = resolve_or_null(vmSymbolHandles::sun_misc_AtomicLongCSImpl(),     CHECK);
 #ifdef KERNEL
-  _sun_jkernel_DownloadManager_klass = resolve_or_null(vmSymbolHandles::sun_jkernel_DownloadManager(),     CHECK);
-  if (_sun_jkernel_DownloadManager_klass == NULL) {
+  if (sun_jkernel_DownloadManager_klass() == NULL) {
     warning("Cannot find sun/jkernel/DownloadManager");
   }
 #endif // KERNEL
-
-  // Preload boxing klasses
-  _boolean_klass           = resolve_or_fail(vmSymbolHandles::java_lang_Boolean(),               true, CHECK);
-  _char_klass              = resolve_or_fail(vmSymbolHandles::java_lang_Character(),             true, CHECK);
-  _float_klass             = resolve_or_fail(vmSymbolHandles::java_lang_Float(),                 true, CHECK);
-  _double_klass            = resolve_or_fail(vmSymbolHandles::java_lang_Double(),                true, CHECK);
-  _byte_klass              = resolve_or_fail(vmSymbolHandles::java_lang_Byte(),                  true, CHECK);
-  _short_klass             = resolve_or_fail(vmSymbolHandles::java_lang_Short(),                 true, CHECK);
-  _int_klass               = resolve_or_fail(vmSymbolHandles::java_lang_Integer(),               true, CHECK);
-  _long_klass              = resolve_or_fail(vmSymbolHandles::java_lang_Long(),                  true, CHECK);
-
-  _box_klasses[T_BOOLEAN] = _boolean_klass;
-  _box_klasses[T_CHAR]    = _char_klass;
-  _box_klasses[T_FLOAT]   = _float_klass;
-  _box_klasses[T_DOUBLE]  = _double_klass;
-  _box_klasses[T_BYTE]    = _byte_klass;
-  _box_klasses[T_SHORT]   = _short_klass;
-  _box_klasses[T_INT]     = _int_klass;
-  _box_klasses[T_LONG]    = _long_klass;
-  //_box_klasses[T_OBJECT]  = _object_klass;
-  //_box_klasses[T_ARRAY]   = _object_klass;
-
   { // Compute whether we should use loadClass or loadClassInternal when loading classes.
     methodOop method = instanceKlass::cast(classloader_klass())->find_method(vmSymbols::loadClassInternal_name(), vmSymbols::string_class_signature());
     _has_loadClassInternal = (method != NULL);

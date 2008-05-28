@@ -60,7 +60,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
   // get receiver klass
   address npe_addr = __ pc();
-  __ ld_ptr(O0, oopDesc::klass_offset_in_bytes(), G3_scratch);
+  __ load_klass(O0, G3_scratch);
 
   // set methodOop (in case of interpreted method), and destination address
   int entry_offset = instanceKlass::vtable_start_offset() + vtable_index*vtableEntry::size();
@@ -131,7 +131,7 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
 
   // get receiver klass (also an implicit null-check)
   address npe_addr = __ pc();
-  __ ld_ptr(O0, oopDesc::klass_offset_in_bytes(), G3_klassOop);
+  __ load_klass(O0, G3_klassOop);
   __ verify_oop(G3_klassOop);
 
   // Push a new window to get some temp registers.  This chops the head of all
@@ -237,11 +237,16 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
   else {
     const int slop = 2*BytesPerInstWord; // sethi;add  (needed for long offsets)
     if (is_vtable_stub) {
-      const int basic = 5*BytesPerInstWord; // ld;ld;ld,jmp,nop
+      // ld;ld;ld,jmp,nop
+      const int basic = 5*BytesPerInstWord +
+                        // shift;add for load_klass
+                        (UseCompressedOops ? 2*BytesPerInstWord : 0);
       return basic + slop;
     } else {
       // save, ld, ld, sll, and, add, add, ld, cmp, br, add, ld, add, ld, ld, jmp, restore, sethi, jmpl, restore
-      const int basic = (20 LP64_ONLY(+ 6)) * BytesPerInstWord;
+      const int basic = (20 LP64_ONLY(+ 6)) * BytesPerInstWord +
+                        // shift;add for load_klass
+                        (UseCompressedOops ? 2*BytesPerInstWord : 0);
       return (basic + slop);
     }
   }

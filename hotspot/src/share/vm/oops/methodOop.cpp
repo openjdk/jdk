@@ -430,11 +430,11 @@ bool methodOopDesc::can_be_statically_bound() const {
 bool methodOopDesc::is_accessor() const {
   if (code_size() != 5) return false;
   if (size_of_parameters() != 1) return false;
-  if (Bytecodes::java_code_at(code_base()+0) != Bytecodes::_aload_0 ) return false;
-  if (Bytecodes::java_code_at(code_base()+1) != Bytecodes::_getfield) return false;
-  Bytecodes::Code ret_bc = Bytecodes::java_code_at(code_base()+4);
-  if (Bytecodes::java_code_at(code_base()+4) != Bytecodes::_areturn &&
-      Bytecodes::java_code_at(code_base()+4) != Bytecodes::_ireturn ) return false;
+  methodOop m = (methodOop)this;  // pass to code_at() to avoid method_from_bcp
+  if (Bytecodes::java_code_at(code_base()+0, m) != Bytecodes::_aload_0 ) return false;
+  if (Bytecodes::java_code_at(code_base()+1, m) != Bytecodes::_getfield) return false;
+  if (Bytecodes::java_code_at(code_base()+4, m) != Bytecodes::_areturn &&
+      Bytecodes::java_code_at(code_base()+4, m) != Bytecodes::_ireturn ) return false;
   return true;
 }
 
@@ -672,9 +672,6 @@ void methodOopDesc::link_method(methodHandle h_method, TRAPS) {
 }
 
 address methodOopDesc::make_adapters(methodHandle mh, TRAPS) {
-  // If running -Xint we need no adapters.
-  if (Arguments::mode() == Arguments::_int) return NULL;
-
   // Adapters for compiled code are made eagerly here.  They are fairly
   // small (generally < 100 bytes) and quick to make (and cached and shared)
   // so making them eagerly shouldn't be too expensive.
@@ -888,10 +885,11 @@ bool methodOopDesc::load_signature_classes(methodHandle m, TRAPS) {
       symbolHandle name (THREAD, sym);
       klassOop klass = SystemDictionary::resolve_or_null(name, class_loader,
                                              protection_domain, THREAD);
-      // We are loading classes eagerly. If a ClassNotFoundException was generated,
-      // be sure to ignore it.
+      // We are loading classes eagerly. If a ClassNotFoundException or
+      // a LinkageError was generated, be sure to ignore it.
       if (HAS_PENDING_EXCEPTION) {
-        if (PENDING_EXCEPTION->is_a(SystemDictionary::classNotFoundException_klass())) {
+        if (PENDING_EXCEPTION->is_a(SystemDictionary::classNotFoundException_klass()) ||
+            PENDING_EXCEPTION->is_a(SystemDictionary::linkageError_klass())) {
           CLEAR_PENDING_EXCEPTION;
         } else {
           return false;
@@ -954,7 +952,7 @@ extern "C" {
 // This is only done during class loading, so it is OK to assume method_idnum matches the methods() array
 static void reorder_based_on_method_index(objArrayOop methods,
                                           objArrayOop annotations,
-                                          oop* temp_array) {
+                                          GrowableArray<oop>* temp_array) {
   if (annotations == NULL) {
     return;
   }
@@ -962,12 +960,15 @@ static void reorder_based_on_method_index(objArrayOop methods,
   int length = methods->length();
   int i;
   // Copy to temp array
-  memcpy(temp_array, annotations->obj_at_addr(0), length * sizeof(oop));
+  temp_array->clear();
+  for (i = 0; i < length; i++) {
+    temp_array->append(annotations->obj_at(i));
+  }
 
   // Copy back using old method indices
   for (i = 0; i < length; i++) {
     methodOop m = (methodOop) methods->obj_at(i);
-    annotations->obj_at_put(i, temp_array[m->method_idnum()]);
+    annotations->obj_at_put(i, temp_array->at(m->method_idnum()));
   }
 }
 
@@ -996,7 +997,7 @@ void methodOopDesc::sort_methods(objArrayOop methods,
 
     // Use a simple bubble sort for small number of methods since
     // qsort requires a functional pointer call for each comparison.
-    if (length < 8) {
+    if (UseCompressedOops || length < 8) {
       bool sorted = true;
       for (int i=length-1; i>0; i--) {
         for (int j=0; j<i; j++) {
@@ -1009,11 +1010,14 @@ void methodOopDesc::sort_methods(objArrayOop methods,
           }
         }
         if (sorted) break;
-        sorted = true;
+          sorted = true;
       }
     } else {
+      // XXX This doesn't work for UseCompressedOops because the compare fn
+      // will have to decode the methodOop anyway making it not much faster
+      // than above.
       compareFn compare = (compareFn) (idempotent ? method_compare_idempotent : method_compare);
-      qsort(methods->obj_at_addr(0), length, oopSize, compare);
+      qsort(methods->base(), length, heapOopSize, compare);
     }
 
     // Sort annotations if necessary
@@ -1021,8 +1025,9 @@ void methodOopDesc::sort_methods(objArrayOop methods,
     assert(methods_parameter_annotations == NULL || methods_parameter_annotations->length() == methods->length(), "");
     assert(methods_default_annotations == NULL   || methods_default_annotations->length() == methods->length(), "");
     if (do_annotations) {
+      ResourceMark rm;
       // Allocate temporary storage
-      oop* temp_array = NEW_RESOURCE_ARRAY(oop, length);
+      GrowableArray<oop>* temp_array = new GrowableArray<oop>(length);
       reorder_based_on_method_index(methods, methods_annotations, temp_array);
       reorder_based_on_method_index(methods, methods_parameter_annotations, temp_array);
       reorder_based_on_method_index(methods, methods_default_annotations, temp_array);

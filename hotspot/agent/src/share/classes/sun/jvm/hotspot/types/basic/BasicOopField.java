@@ -32,6 +32,12 @@ import sun.jvm.hotspot.types.*;
     returning OopHandles. */
 
 public class BasicOopField extends BasicField implements OopField {
+
+
+  public BasicOopField(OopField oopf) {
+    super(oopf);
+  }
+
   public BasicOopField(BasicTypeDataBase db, Type containingType, String name, Type type,
                        boolean isStatic, long offset, Address staticFieldAddress) {
     super(db, containingType, name, type, isStatic, offset, staticFieldAddress);

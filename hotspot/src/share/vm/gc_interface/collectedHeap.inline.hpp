@@ -61,7 +61,10 @@ void CollectedHeap::post_allocation_install_obj_klass(KlassHandle klass,
   obj->set_klass(klass());
   assert(!Universe::is_fully_initialized() || obj->blueprint() != NULL,
          "missing blueprint");
+}
 
+// Support for jvmti and dtrace
+inline void post_allocation_notify(KlassHandle klass, oop obj) {
   // support for JVMTI VMObjectAlloc event (no-op if not enabled)
   JvmtiExport::vm_object_alloc_event_collector(obj);
 
@@ -79,18 +82,22 @@ void CollectedHeap::post_allocation_setup_obj(KlassHandle klass,
   post_allocation_setup_common(klass, obj, size);
   assert(Universe::is_bootstrapping() ||
          !((oop)obj)->blueprint()->oop_is_array(), "must not be an array");
+  // notify jvmti and dtrace
+  post_allocation_notify(klass, (oop)obj);
 }
 
 void CollectedHeap::post_allocation_setup_array(KlassHandle klass,
                                                 HeapWord* obj,
                                                 size_t size,
                                                 int length) {
-  // Set array length before posting jvmti object alloc event
-  // in post_allocation_setup_common()
   assert(length >= 0, "length should be non-negative");
-  ((arrayOop)obj)->set_length(length);
   post_allocation_setup_common(klass, obj, size);
+  // Must set length after installing klass as set_klass zeros the length
+  // field in UseCompressedOops
+  ((arrayOop)obj)->set_length(length);
   assert(((oop)obj)->blueprint()->oop_is_array(), "must be an array");
+  // notify jvmti and dtrace (must be after length is set for dtrace)
+  post_allocation_notify(klass, (oop)obj);
 }
 
 HeapWord* CollectedHeap::common_mem_allocate_noinit(size_t size, bool is_noref, TRAPS) {

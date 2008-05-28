@@ -46,55 +46,59 @@ class ReferenceProcessor;
 #define VALIDATE_MARK_SWEEP_ONLY(code)
 #endif
 
-
 // declared at end
 class PreservedMark;
 
 class MarkSweep : AllStatic {
   //
-  // In line closure decls
+  // Inline closure decls
   //
-
-  class FollowRootClosure: public OopsInGenClosure{
+  class FollowRootClosure: public OopsInGenClosure {
    public:
-    void do_oop(oop* p) { follow_root(p); }
+    virtual void do_oop(oop* p);
+    virtual void do_oop(narrowOop* p);
     virtual const bool do_nmethods() const { return true; }
   };
 
   class MarkAndPushClosure: public OopClosure {
    public:
-    void do_oop(oop* p) { mark_and_push(p); }
+    virtual void do_oop(oop* p);
+    virtual void do_oop(narrowOop* p);
     virtual const bool do_nmethods() const { return true; }
   };
 
   class FollowStackClosure: public VoidClosure {
    public:
-    void do_void() { follow_stack(); }
+    virtual void do_void();
   };
 
   class AdjustPointerClosure: public OopsInGenClosure {
+   private:
     bool _is_root;
    public:
     AdjustPointerClosure(bool is_root) : _is_root(is_root) {}
-    void do_oop(oop* p) { _adjust_pointer(p, _is_root); }
+    virtual void do_oop(oop* p);
+    virtual void do_oop(narrowOop* p);
   };
 
   // Used for java/lang/ref handling
   class IsAliveClosure: public BoolObjectClosure {
    public:
-    void do_object(oop p) { assert(false, "don't call"); }
-    bool do_object_b(oop p) { return p->is_gc_marked(); }
+    virtual void do_object(oop p);
+    virtual bool do_object_b(oop p);
   };
 
   class KeepAliveClosure: public OopClosure {
+   protected:
+    template <class T> void do_oop_work(T* p);
    public:
-    void do_oop(oop* p);
+    virtual void do_oop(oop* p);
+    virtual void do_oop(narrowOop* p);
   };
 
   //
   // Friend decls
   //
-
   friend class AdjustPointerClosure;
   friend class KeepAliveClosure;
   friend class VM_MarkSweep;
@@ -120,14 +124,14 @@ class MarkSweep : AllStatic {
   static ReferenceProcessor*             _ref_processor;
 
 #ifdef VALIDATE_MARK_SWEEP
-  static GrowableArray<oop*>*            _root_refs_stack;
+  static GrowableArray<void*>*           _root_refs_stack;
   static GrowableArray<oop> *            _live_oops;
   static GrowableArray<oop> *            _live_oops_moved_to;
   static GrowableArray<size_t>*          _live_oops_size;
   static size_t                          _live_oops_index;
   static size_t                          _live_oops_index_at_perm;
-  static GrowableArray<oop*>*            _other_refs_stack;
-  static GrowableArray<oop*>*            _adjusted_pointers;
+  static GrowableArray<void*>*           _other_refs_stack;
+  static GrowableArray<void*>*           _adjusted_pointers;
   static bool                            _pointer_tracking;
   static bool                            _root_tracking;
 
@@ -146,9 +150,8 @@ class MarkSweep : AllStatic {
   static GrowableArray<size_t>*          _last_gc_live_oops_size;
 #endif
 
-
   // Non public closures
-  static IsAliveClosure is_alive;
+  static IsAliveClosure   is_alive;
   static KeepAliveClosure keep_alive;
 
   // Class unloading. Update subklass/sibling/implementor links at end of marking phase.
@@ -159,9 +162,9 @@ class MarkSweep : AllStatic {
 
  public:
   // Public closures
-  static FollowRootClosure follow_root_closure;
-  static MarkAndPushClosure mark_and_push_closure;
-  static FollowStackClosure follow_stack_closure;
+  static FollowRootClosure    follow_root_closure;
+  static MarkAndPushClosure   mark_and_push_closure;
+  static FollowStackClosure   follow_stack_closure;
   static AdjustPointerClosure adjust_root_pointer_closure;
   static AdjustPointerClosure adjust_pointer_closure;
 
@@ -170,39 +173,29 @@ class MarkSweep : AllStatic {
 
   // Call backs for marking
   static void mark_object(oop obj);
-  static void follow_root(oop* p);        // Mark pointer and follow contents. Empty marking
+  // Mark pointer and follow contents.  Empty marking stack afterwards.
+  template <class T> static inline void follow_root(T* p);
+  // Mark pointer and follow contents.
+  template <class T> static inline void mark_and_follow(T* p);
+  // Check mark and maybe push on marking stack
+  template <class T> static inline void mark_and_push(T* p);
 
-                                          // stack afterwards.
+  static void follow_stack();   // Empty marking stack.
 
-  static void mark_and_follow(oop* p);    // Mark pointer and follow contents.
-  static void _mark_and_push(oop* p);     // Mark pointer and push obj on
-                                          // marking stack.
+  static void preserve_mark(oop p, markOop mark);
+                                // Save the mark word so it can be restored later
+  static void adjust_marks();   // Adjust the pointers in the preserved marks table
+  static void restore_marks();  // Restore the marks that we saved in preserve_mark
 
+  template <class T> static inline void adjust_pointer(T* p, bool isroot);
 
-  static void mark_and_push(oop* p) {     // Check mark and maybe push on
-                                          // marking stack
-    // assert(Universe::is_reserved_heap((oop)p), "we should only be traversing objects here");
-    oop m = *p;
-    if (m != NULL && !m->mark()->is_marked()) {
-      _mark_and_push(p);
-    }
-  }
-
-  static void follow_stack();             // Empty marking stack.
-
-
-  static void preserve_mark(oop p, markOop mark);       // Save the mark word so it can be restored later
-  static void adjust_marks();             // Adjust the pointers in the preserved marks table
-  static void restore_marks();            // Restore the marks that we saved in preserve_mark
-
-  static void _adjust_pointer(oop* p, bool isroot);
-
-  static void adjust_root_pointer(oop* p) { _adjust_pointer(p, true); }
-  static void adjust_pointer(oop* p)      { _adjust_pointer(p, false); }
+  static void adjust_root_pointer(oop* p)  { adjust_pointer(p, true); }
+  static void adjust_pointer(oop* p)       { adjust_pointer(p, false); }
+  static void adjust_pointer(narrowOop* p) { adjust_pointer(p, false); }
 
 #ifdef VALIDATE_MARK_SWEEP
-  static void track_adjusted_pointer(oop* p, oop newobj, bool isroot);
-  static void check_adjust_pointer(oop* p);     // Adjust this pointer
+  static void track_adjusted_pointer(void* p, bool isroot);
+  static void check_adjust_pointer(void* p);
   static void track_interior_pointers(oop obj);
   static void check_interior_pointers();
 
@@ -222,7 +215,6 @@ class MarkSweep : AllStatic {
   // Call backs for class unloading
   static void revisit_weak_klass_link(Klass* k);  // Update subklass/sibling/implementor links at end of marking.
 };
-
 
 class PreservedMark VALUE_OBJ_CLASS_SPEC {
 private:

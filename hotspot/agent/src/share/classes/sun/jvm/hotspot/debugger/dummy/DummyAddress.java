@@ -76,6 +76,10 @@ class DummyAddress implements Address {
     return new DummyAddress(debugger, badLong);
   }
 
+  public Address getCompOopAddressAt(long offset) throws UnalignedAddressException, UnmappedAddressException {
+    return new DummyAddress(debugger, badLong);
+  }
+
   //
   // Java-related routines
   //
@@ -113,6 +117,10 @@ class DummyAddress implements Address {
   }
 
   public OopHandle getOopHandleAt(long offset)
+    throws UnalignedAddressException, UnmappedAddressException, NotInHeapException {
+    return new DummyOopHandle(debugger, badLong);
+  }
+  public OopHandle getCompOopHandleAt(long offset)
     throws UnalignedAddressException, UnmappedAddressException, NotInHeapException {
     return new DummyOopHandle(debugger, badLong);
   }
