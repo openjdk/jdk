@@ -24,7 +24,7 @@ public class T6589361 {
             Iterable<JavaFileObject> files = fm.list(StandardLocation.PLATFORM_CLASS_PATH, "java.lang", set, false);
             for (JavaFileObject file : files) {
 
-                if (file.toString().startsWith("java" + File.separator + "lang" + File.separator + "Object.class")) {
+                if (file.toString().contains("java" + File.separator + "lang" + File.separator + "Object.class")) {
                     String str = fm.inferBinaryName(StandardLocation.CLASS_PATH, file);
                     if (!str.equals("java.lang.Object")) {
                         throw new AssertionError("Error in JavacFileManager.inferBinaryName method!");

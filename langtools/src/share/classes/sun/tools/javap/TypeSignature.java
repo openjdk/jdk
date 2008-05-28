@@ -79,7 +79,7 @@ public class TypeSignature {
      * Returns java type signature of a parameter.
      */
     public String getParametersHelper(String parameterdes){
-        Vector parameters = new Vector();
+        Vector<String> parameters = new Vector<String>();
         int startindex = -1;
         int endindex = -1;
         String param = "";
@@ -187,7 +187,7 @@ public class TypeSignature {
         int i;
 
         for(i = 0; i < parameters.size(); i++){
-            parametersignature += (String)parameters.elementAt(i);
+            parametersignature += parameters.elementAt(i);
             if(i != parameters.size()-1){
                 parametersignature += ", ";
             }

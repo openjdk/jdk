@@ -58,7 +58,7 @@ public class ClassData implements RuntimeConstants {
     private String superclassname;
     private int source_cpx=0;
     private byte tags[];
-    private Hashtable indexHashAscii = new Hashtable();
+    private Hashtable<Object,Integer> indexHashAscii = new Hashtable<Object,Integer>();
     private String pkgPrefix="";
     private int pkgPrefixLen=0;
 
@@ -167,19 +167,19 @@ public class ClassData implements RuntimeConstants {
             switch(tags[i] = tag) {
             case CONSTANT_UTF8:
                 String str=in.readUTF();
-                indexHashAscii.put(cpool[i] = str, new Integer(i));
+                indexHashAscii.put(cpool[i] = str, i);
                 break;
             case CONSTANT_INTEGER:
-                cpool[i] = new Integer(in.readInt());
+                cpool[i] = Integer.valueOf(in.readInt());
                 break;
             case CONSTANT_FLOAT:
-                cpool[i] = new Float(in.readFloat());
+                cpool[i] = Float.valueOf(in.readFloat());
                 break;
             case CONSTANT_LONG:
-                cpool[i++] = new Long(in.readLong());
+                cpool[i++] = Long.valueOf(in.readLong());
                 break;
             case CONSTANT_DOUBLE:
-                cpool[i++] = new Double(in.readDouble());
+                cpool[i++] = Double.valueOf(in.readDouble());
                 break;
             case CONSTANT_CLASS:
             case CONSTANT_STRING:
@@ -365,7 +365,7 @@ public class ClassData implements RuntimeConstants {
      * Returns the access of this class or interface.
      */
     public String[] getAccess(){
-        Vector v = new Vector();
+        Vector<String> v = new Vector<String>();
         if ((access & ACC_PUBLIC)   !=0) v.addElement("public");
         if ((access & ACC_FINAL)    !=0) v.addElement("final");
         if ((access & ACC_ABSTRACT) !=0) v.addElement("abstract");
