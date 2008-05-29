@@ -725,6 +725,18 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
+//------------------------------AryEq---------------------------------------
+class AryEqNode: public Node {
+public:
+  AryEqNode(Node *control, Node* s1, Node* s2): Node(control, s1, s2) {};
+  virtual int Opcode() const;
+  virtual bool depends_only_on_test() const { return false; }
+  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual const TypePtr* adr_type() const { return TypeAryPtr::CHARS; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+};
+
 //------------------------------MemBar-----------------------------------------
 // There are different flavors of Memory Barriers to match the Java Memory
 // Model.  Monitor-enter and volatile-load act as Aquires: no following ref

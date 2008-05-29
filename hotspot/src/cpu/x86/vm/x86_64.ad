@@ -3808,6 +3808,78 @@ encode %{
     masm.bind(DONE_LABEL);
   %}
 
+  enc_class enc_Array_Equals(rdi_RegP ary1, rsi_RegP ary2, rax_RegI tmp1, rbx_RegI tmp2, rcx_RegI result) %{
+    Label TRUE_LABEL, FALSE_LABEL, DONE_LABEL, COMPARE_LOOP_HDR, COMPARE_LOOP;
+    MacroAssembler masm(&cbuf);
+
+    Register ary1Reg   = as_Register($ary1$$reg);
+    Register ary2Reg   = as_Register($ary2$$reg);
+    Register tmp1Reg   = as_Register($tmp1$$reg);
+    Register tmp2Reg   = as_Register($tmp2$$reg);
+    Register resultReg = as_Register($result$$reg);
+
+    int length_offset  = arrayOopDesc::length_offset_in_bytes();
+    int base_offset    = arrayOopDesc::base_offset_in_bytes(T_CHAR);
+
+    // Check the input args
+    masm.cmpq(ary1Reg, ary2Reg);                        
+    masm.jcc(Assembler::equal, TRUE_LABEL);
+    masm.testq(ary1Reg, ary1Reg);                       
+    masm.jcc(Assembler::zero, FALSE_LABEL);
+    masm.testq(ary2Reg, ary2Reg);                       
+    masm.jcc(Assembler::zero, FALSE_LABEL);
+
+    // Check the lengths
+    masm.movl(tmp2Reg, Address(ary1Reg, length_offset));
+    masm.movl(resultReg, Address(ary2Reg, length_offset));
+    masm.cmpl(tmp2Reg, resultReg);
+    masm.jcc(Assembler::notEqual, FALSE_LABEL);
+    masm.testl(resultReg, resultReg);
+    masm.jcc(Assembler::zero, TRUE_LABEL);
+
+    // Get the number of 4 byte vectors to compare
+    masm.shrl(resultReg, 1);
+
+    // Check for odd-length arrays
+    masm.andl(tmp2Reg, 1);
+    masm.testl(tmp2Reg, tmp2Reg);
+    masm.jcc(Assembler::zero, COMPARE_LOOP_HDR);
+
+    // Compare 2-byte "tail" at end of arrays
+    masm.load_unsigned_word(tmp1Reg, Address(ary1Reg, resultReg, Address::times_4, base_offset));
+    masm.load_unsigned_word(tmp2Reg, Address(ary2Reg, resultReg, Address::times_4, base_offset));
+    masm.cmpl(tmp1Reg, tmp2Reg);
+    masm.jcc(Assembler::notEqual, FALSE_LABEL);
+    masm.testl(resultReg, resultReg);
+    masm.jcc(Assembler::zero, TRUE_LABEL);
+
+    // Setup compare loop
+    masm.bind(COMPARE_LOOP_HDR);
+    // Shift tmp1Reg and tmp2Reg to the last 4-byte boundary of the arrays
+    masm.leaq(tmp1Reg, Address(ary1Reg, resultReg, Address::times_4, base_offset));
+    masm.leaq(tmp2Reg, Address(ary2Reg, resultReg, Address::times_4, base_offset));
+    masm.negq(resultReg);
+
+    // 4-byte-wide compare loop
+    masm.bind(COMPARE_LOOP);
+    masm.movl(ary1Reg, Address(tmp1Reg, resultReg, Address::times_4, 0));
+    masm.movl(ary2Reg, Address(tmp2Reg, resultReg, Address::times_4, 0));
+    masm.cmpl(ary1Reg, ary2Reg);
+    masm.jcc(Assembler::notEqual, FALSE_LABEL);
+    masm.incrementq(resultReg);
+    masm.jcc(Assembler::notZero, COMPARE_LOOP);
+
+    masm.bind(TRUE_LABEL);
+    masm.movl(resultReg, 1);   // return true
+    masm.jmp(DONE_LABEL);
+
+    masm.bind(FALSE_LABEL);
+    masm.xorl(resultReg, resultReg); // return false
+
+    // That's it
+    masm.bind(DONE_LABEL);
+  %}
+
   enc_class enc_rethrow()
   %{
     cbuf.set_inst_mark();
@@ -10873,6 +10945,18 @@ instruct string_compare(rdi_RegP str1, rsi_RegP str2, rax_RegI tmp1,
 
   format %{ "String Compare $str1, $str2 -> $result    // XXX KILL RAX, RBX" %}
   ins_encode( enc_String_Compare() );
+  ins_pipe( pipe_slow );
+%}
+
+// fast array equals
+instruct array_equals(rdi_RegP ary1, rsi_RegP ary2, rax_RegI tmp1, 
+                      rbx_RegI tmp2, rcx_RegI result, rFlagsReg cr) %{
+  match(Set result (AryEq ary1 ary2));
+  effect(USE_KILL ary1, USE_KILL ary2, KILL tmp1, KILL tmp2, KILL cr);
+  //ins_cost(300);
+
+  format %{ "Array Equals $ary1,$ary2 -> $result    // KILL RAX, RBX" %}
+  ins_encode( enc_Array_Equals(ary1, ary2, tmp1, tmp2, result) );
   ins_pipe( pipe_slow );
 %}
 

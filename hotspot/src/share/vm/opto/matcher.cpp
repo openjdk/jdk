@@ -744,6 +744,7 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
   if (nidx == Compile::AliasIdxBot && midx == Compile::AliasIdxTop) {
     switch (n->Opcode()) {
     case Op_StrComp:
+    case Op_AryEq:
     case Op_MemBarVolatile:
     case Op_MemBarCPUOrder: // %%% these ideals should have narrower adr_type?
       nidx = Compile::AliasIdxTop;
@@ -1717,6 +1718,7 @@ void Matcher::find_shared( Node *n ) {
         mstack.push(n->in(0), Pre_Visit);     // Visit Control input
         continue;                             // while (mstack.is_nonempty())
       case Op_StrComp:
+      case Op_AryEq:
         set_shared(n); // Force result into register (it will be anyways)
         break;
       case Op_ConP: {  // Convert pointers above the centerline to NUL
