@@ -5202,15 +5202,15 @@ operand indIndexScaleOffset(any_RegP reg, immL32 off, rRegL lreg, immI2 scale)
   %}
 %}
 
-// Indirect Memory Times Scale Plus Index Register Plus Offset Operand
-operand indIndexScaleOffsetComp(rRegN src, immL32 off, r12RegL base) %{
+// Indirect Narrow Oop Plus Offset Operand
+operand indNarrowOopOffset(rRegN src, immL32 off) %{
   constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (DecodeN src base) off);
+  match(AddP (DecodeN src) off);
 
   op_cost(10);
-  format %{"[$base + $src << 3 + $off] (compressed)" %}
+  format %{"[R12 + $src << 3 + $off] (compressed oop addressing)" %}
   interface(MEMORY_INTER) %{
-    base($base);
+    base(0xc); // R12
     index($src);
     scale(0x3);
     disp($off);
@@ -5365,7 +5365,7 @@ operand cmpOpU()
 
 opclass memory(indirect, indOffset8, indOffset32, indIndexOffset, indIndex,
                indIndexScale, indIndexScaleOffset, indPosIndexScaleOffset,
-               indIndexScaleOffsetComp);
+               indNarrowOopOffset);
 
 //----------PIPELINE-----------------------------------------------------------
 // Rules which define the behavior of the target architectures pipeline.

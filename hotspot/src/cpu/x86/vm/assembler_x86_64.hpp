@@ -1028,7 +1028,7 @@ class MacroAssembler : public Assembler {
   // is needed if the offset is within a certain range (0 <= offset <=
   // page_size).
   void null_check(Register reg, int offset = -1);
-  static bool needs_explicit_null_check(int offset);
+  static bool needs_explicit_null_check(intptr_t offset);
 
   // Required platform-specific helpers for Label::patch_instructions.
   // They _shadow_ the declarations in AbstractAssembler, which are undefined.

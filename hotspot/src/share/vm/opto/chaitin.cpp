@@ -1385,7 +1385,7 @@ void PhaseChaitin::fixup_spills() {
             cisc->ins_req(1,src);         // Requires a memory edge
           }
           b->_nodes.map(j,cisc);          // Insert into basic block
-          n->replace_by(cisc); // Correct graph
+          n->subsume_by(cisc); // Correct graph
           //
           ++_used_cisc_instructions;
 #ifndef PRODUCT

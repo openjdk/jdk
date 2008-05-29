@@ -458,7 +458,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
         }
       } else if (use->is_SafePoint()) {
         SafePointNode* sfpt = use->as_SafePoint();
-        if (sfpt->has_non_debug_use(res)) {
+        if (sfpt->is_Call() && sfpt->as_Call()->has_non_debug_use(res)) {
           // Object is passed as argument.
           DEBUG_ONLY(disq_node = use;)
           NOT_PRODUCT(fail_eliminate = "Object is passed as argument";)

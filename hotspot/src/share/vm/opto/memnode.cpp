@@ -1625,14 +1625,10 @@ Node *LoadKlassNode::make( PhaseGVN& gvn, Node *mem, Node *adr, const TypePtr* a
     const TypeNarrowOop* narrowtype = tk->is_oopptr()->make_narrowoop();
     Node* load_klass = gvn.transform(new (C, 3) LoadNKlassNode(ctl, mem, adr, at, narrowtype));
     return DecodeNNode::decode(&gvn, load_klass);
-  } else
-#endif
-  {
-    assert(!adr_type->is_ptr_to_narrowoop(), "should have got back a narrow oop");
-    return new (C, 3) LoadKlassNode(ctl, mem, adr, at, tk);
   }
-  ShouldNotReachHere();
-  return (LoadKlassNode*)NULL;
+#endif
+  assert(!adr_type->is_ptr_to_narrowoop(), "should have got back a narrow oop");
+  return new (C, 3) LoadKlassNode(ctl, mem, adr, at, tk);
 }
 
 //------------------------------Value------------------------------------------

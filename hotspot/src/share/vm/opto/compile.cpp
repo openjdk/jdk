@@ -1842,6 +1842,7 @@ static bool oop_offset_is_sane(const TypeInstPtr* tp) {
 // Implement items 1-5 from final_graph_reshaping below.
 static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
 
+  if ( n->outcnt() == 0 ) return; // dead node
   uint nop = n->Opcode();
 
   // Check for 2-input instruction with "last use" on right input.
@@ -1908,7 +1909,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
     break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
   case Op_Opaque2:              // Remove Opaque Nodes before matching
-    n->replace_by(n->in(1));
+    n->subsume_by(n->in(1));
     break;
   case Op_CallStaticJava:
   case Op_CallJava:
@@ -2001,24 +2002,34 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
 
 #ifdef _LP64
   case Op_CmpP:
-    if( n->in(1)->Opcode() == Op_DecodeN ) {
+    // Do this transformation here to preserve CmpPNode::sub() and
+    // other TypePtr related Ideal optimizations (for example, ptr nullness).
+    if( n->in(1)->is_DecodeN() ) {
       Compile* C = Compile::current();
       Node* in2 = NULL;
-      if( n->in(2)->Opcode() == Op_DecodeN ) {
+      if( n->in(2)->is_DecodeN() ) {
         in2 = n->in(2)->in(1);
       } else if ( n->in(2)->Opcode() == Op_ConP ) {
         const Type* t = n->in(2)->bottom_type();
         if (t == TypePtr::NULL_PTR) {
           Node *in1 = n->in(1);
-          uint i = 0;
-          for (; i < in1->outcnt(); i++) {
-            if (in1->raw_out(i)->is_AddP())
-              break;
-          }
-          if (i >= in1->outcnt()) {
-            // Don't replace CmpP(o ,null) if 'o' is used in AddP
-            // to generate implicit NULL check.
+          if (Matcher::clone_shift_expressions) {
+            // x86, ARM and friends can handle 2 adds in addressing mode.
+            // Decode a narrow oop and do implicit NULL check in address
+            // [R12 + narrow_oop_reg<<3 + offset]
             in2 = ConNode::make(C, TypeNarrowOop::NULL_PTR);
+          } else {
+            // Don't replace CmpP(o ,null) if 'o' is used in AddP
+            // to generate implicit NULL check on Sparc where
+            // narrow oops can't be used in address.
+            uint i = 0;
+            for (; i < in1->outcnt(); i++) {
+              if (in1->raw_out(i)->is_AddP())
+                break;
+            }
+            if (i >= in1->outcnt()) {
+              in2 = ConNode::make(C, TypeNarrowOop::NULL_PTR);
+            }
           }
         } else if (t->isa_oopptr()) {
           in2 = ConNode::make(C, t->is_oopptr()->make_narrowoop());
@@ -2026,7 +2037,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
       }
       if( in2 != NULL ) {
         Node* cmpN = new (C, 3) CmpNNode(n->in(1)->in(1), in2);
-        n->replace_by( cmpN );
+        n->subsume_by( cmpN );
       }
     }
 #endif
@@ -2040,13 +2051,13 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
         Compile* C = Compile::current();
         if (Matcher::has_match_rule(Op_DivModI)) {
           DivModINode* divmod = DivModINode::make(C, n);
-          d->replace_by(divmod->div_proj());
-          n->replace_by(divmod->mod_proj());
+          d->subsume_by(divmod->div_proj());
+          n->subsume_by(divmod->mod_proj());
         } else {
           // replace a%b with a-((a/b)*b)
           Node* mult = new (C, 3) MulINode(d, d->in(2));
           Node* sub  = new (C, 3) SubINode(d->in(1), mult);
-          n->replace_by( sub );
+          n->subsume_by( sub );
         }
       }
     }
@@ -2061,13 +2072,13 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
         Compile* C = Compile::current();
         if (Matcher::has_match_rule(Op_DivModL)) {
           DivModLNode* divmod = DivModLNode::make(C, n);
-          d->replace_by(divmod->div_proj());
-          n->replace_by(divmod->mod_proj());
+          d->subsume_by(divmod->div_proj());
+          n->subsume_by(divmod->mod_proj());
         } else {
           // replace a%b with a-((a/b)*b)
           Node* mult = new (C, 3) MulLNode(d, d->in(2));
           Node* sub  = new (C, 3) SubLNode(d->in(1), mult);
-          n->replace_by( sub );
+          n->subsume_by( sub );
         }
       }
     }
@@ -2113,7 +2124,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
       // Replace many operand PackNodes with a binary tree for matching
       PackNode* p = (PackNode*) n;
       Node* btp = p->binaryTreePack(Compile::current(), 1, n->req());
-      n->replace_by(btp);
+      n->subsume_by(btp);
     }
     break;
   default:

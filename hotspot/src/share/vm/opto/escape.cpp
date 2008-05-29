@@ -428,7 +428,7 @@ static Node* get_addp_base(Node *addp) {
   if (base->is_top()) { // The AddP case #3 and #6.
     base = addp->in(AddPNode::Address)->uncast();
     assert(base->Opcode() == Op_ConP || base->Opcode() == Op_ThreadLocal ||
-           base->Opcode() == Op_CastX2P || base->Opcode() == Op_DecodeN ||
+           base->Opcode() == Op_CastX2P || base->is_DecodeN() ||
            (base->is_Mem() && base->bottom_type() == TypeRawPtr::NOTNULL) ||
            (base->is_Proj() && base->in(0)->is_Allocate()), "sanity");
   }
@@ -943,8 +943,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       tinst = igvn->type(base)->isa_oopptr();
     } else if (n->is_Phi() ||
                n->is_CheckCastPP() ||
-               n->Opcode() == Op_EncodeP ||
-               n->Opcode() == Op_DecodeN ||
+               n->is_EncodeP() ||
+               n->is_DecodeN() ||
                (n->is_ConstraintCast() && n->Opcode() == Op_CastPP)) {
       if (visited.test_set(n->_idx)) {
         assert(n->is_Phi(), "loops only through Phi's");
@@ -1016,8 +1016,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         alloc_worklist.append_if_missing(use);
       } else if (use->is_Phi() ||
                  use->is_CheckCastPP() ||
-                 use->Opcode() == Op_EncodeP ||
-                 use->Opcode() == Op_DecodeN ||
+                 use->is_EncodeP() ||
+                 use->is_DecodeN() ||
                  (use->is_ConstraintCast() && use->Opcode() == Op_CastPP)) {
         alloc_worklist.append_if_missing(use);
       }
