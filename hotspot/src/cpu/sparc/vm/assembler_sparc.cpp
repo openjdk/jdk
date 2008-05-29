@@ -3421,13 +3421,15 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   set((intptr_t)markOopDesc::prototype()->copy_set_hash(0x2), t2);
   st_ptr(t2, top, oopDesc::mark_offset_in_bytes()); // set up the mark word
   // set klass to intArrayKlass
-  set((intptr_t)Universe::intArrayKlassObj_addr(), t2);
-  ld_ptr(t2, 0, t2);
-  store_klass(t2, top);
   sub(t1, typeArrayOopDesc::header_size(T_INT), t1);
   add(t1, ThreadLocalAllocBuffer::alignment_reserve(), t1);
   sll_ptr(t1, log2_intptr(HeapWordSize/sizeof(jint)), t1);
   st(t1, top, arrayOopDesc::length_offset_in_bytes());
+  set((intptr_t)Universe::intArrayKlassObj_addr(), t2);
+  ld_ptr(t2, 0, t2);
+  // store klass last.  concurrent gcs assumes klass length is valid if
+  // klass field is not null.
+  store_klass(t2, top);
   verify_oop(top);
 
   // refill the tlab with an eden allocation
@@ -3568,10 +3570,16 @@ void MacroAssembler::store_klass(Register klass, Register dst_oop) {
   if (UseCompressedOops) {
     assert(dst_oop != klass, "not enough registers");
     encode_heap_oop_not_null(klass);
-    sllx(klass, BitsPerInt, klass);
-    stx(klass, dst_oop, oopDesc::klass_offset_in_bytes());
+    st(klass, dst_oop, oopDesc::klass_offset_in_bytes());
   } else {
     st_ptr(klass, dst_oop, oopDesc::klass_offset_in_bytes());
+  }
+}
+
+void MacroAssembler::store_klass_gap(Register s, Register d) {
+  if (UseCompressedOops) {
+    assert(s != d, "not enough registers");
+    st(s, d, oopDesc::klass_gap_offset_in_bytes());
   }
 }
 
