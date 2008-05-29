@@ -271,6 +271,7 @@ class EncodePNode : public TypeNode {
  public:
   EncodePNode(Node* value, const Type* type):
     TypeNode(type, 2) {
+    init_class_id(Class_EncodeP);
     init_req(0, NULL);
     init_req(1, value);
   }
@@ -291,6 +292,7 @@ class DecodeNNode : public TypeNode {
  public:
   DecodeNNode(Node* value, const Type* type):
     TypeNode(type, 2) {
+    init_class_id(Class_DecodeN);
     init_req(0, NULL);
     init_req(1, value);
   }

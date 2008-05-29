@@ -35,7 +35,6 @@ uint ConNode::hash() const {
 
 //------------------------------make-------------------------------------------
 ConNode *ConNode::make( Compile* C, const Type *t ) {
-  if (t->isa_narrowoop()) return new (C, 1) ConNNode( t->is_narrowoop() );
   switch( t->basic_type() ) {
   case T_INT:       return new (C, 1) ConINode( t->is_int() );
   case T_LONG:      return new (C, 1) ConLNode( t->is_long() );
@@ -45,6 +44,7 @@ ConNode *ConNode::make( Compile* C, const Type *t ) {
   case T_OBJECT:    return new (C, 1) ConPNode( t->is_oopptr() );
   case T_ARRAY:     return new (C, 1) ConPNode( t->is_aryptr() );
   case T_ADDRESS:   return new (C, 1) ConPNode( t->is_ptr() );
+  case T_NARROWOOP: return new (C, 1) ConNNode( t->is_narrowoop() );
     // Expected cases:  TypePtr::NULL_PTR, any is_rawptr()
     // Also seen: AnyPtr(TopPTR *+top); from command line:
     //   r -XX:+PrintOpto -XX:CIStart=285 -XX:+CompileTheWorld -XX:CompileTheWorldStartAt=660
@@ -557,7 +557,7 @@ Node* DecodeNNode::Identity(PhaseTransform* phase) {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return in(1);
 
-  if (in(1)->Opcode() == Op_EncodeP) {
+  if (in(1)->is_EncodeP()) {
     // (DecodeN (EncodeP p)) -> p
     return in(1)->in(1);
   }
@@ -572,7 +572,7 @@ const Type *DecodeNNode::Value( PhaseTransform *phase ) const {
 }
 
 Node* DecodeNNode::decode(PhaseTransform* phase, Node* value) {
-  if (value->Opcode() == Op_EncodeP) {
+  if (value->is_EncodeP()) {
     // (DecodeN (EncodeP p)) -> p
     return value->in(1);
   }
@@ -591,7 +591,7 @@ Node* EncodePNode::Identity(PhaseTransform* phase) {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return in(1);
 
-  if (in(1)->Opcode() == Op_DecodeN) {
+  if (in(1)->is_DecodeN()) {
     // (EncodeP (DecodeN p)) -> p
     return in(1)->in(1);
   }
@@ -606,7 +606,7 @@ const Type *EncodePNode::Value( PhaseTransform *phase ) const {
 }
 
 Node* EncodePNode::encode(PhaseTransform* phase, Node* value) {
-  if (value->Opcode() == Op_DecodeN) {
+  if (value->is_DecodeN()) {
     // (EncodeP (DecodeN p)) -> p
     return value->in(1);
   }

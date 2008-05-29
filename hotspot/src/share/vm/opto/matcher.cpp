@@ -52,7 +52,7 @@ Matcher::Matcher( Node_List &proj_list ) :
 #ifdef ASSERT
   _old2new_map(C->comp_arena()),
 #endif
-  _shared_constants(C->comp_arena()),
+  _shared_nodes(C->comp_arena()),
   _reduceOp(reduceOp), _leftOp(leftOp), _rightOp(rightOp),
   _swallowed(swallowed),
   _begin_inst_chain_rule(_BEGIN_INST_CHAIN_RULE),
@@ -1191,7 +1191,7 @@ MachNode *Matcher::match_tree( const Node *n ) {
   uint cnt = n->req();
   uint start = 1;
   if( mem != (Node*)1 ) start = MemNode::Memory+1;
-  if( n->Opcode() == Op_AddP ) {
+  if( n->is_AddP() ) {
     assert( mem == (Node*)1, "" );
     start = AddPNode::Base+1;
   }
@@ -1219,7 +1219,7 @@ static bool match_into_reg( const Node *n, Node *m, Node *control, int i, bool s
   if( t->singleton() ) {
     // Never force constants into registers.  Allow them to match as
     // constants or registers.  Copies of the same value will share
-    // the same register.  See find_shared_constant.
+    // the same register.  See find_shared_node.
     return false;
   } else {                      // Not a constant
     // Stop recursion if they have different Controls.
@@ -1243,12 +1243,10 @@ static bool match_into_reg( const Node *n, Node *m, Node *control, int i, bool s
       if( j == max_scan )       // No post-domination before scan end?
         return true;            // Then break the match tree up
     }
-
-    if (m->Opcode() == Op_DecodeN && m->outcnt() == 2) {
+    if (m->is_DecodeN() && Matcher::clone_shift_expressions) {
       // These are commonly used in address expressions and can
-      // efficiently fold into them in some cases but because they are
-      // consumed by AddP they commonly have two users.
-      if (m->raw_out(0) == m->raw_out(1) && m->raw_out(0)->Opcode() == Op_AddP) return false;
+      // efficiently fold into them on X64 in some cases.
+      return false;
     }
   }
 
@@ -1368,13 +1366,16 @@ Node *Matcher::Label_Root( const Node *n, State *svec, Node *control, const Node
 // which reduces the number of copies of a constant in the final
 // program.  The register allocator is free to split uses later to
 // split live ranges.
-MachNode* Matcher::find_shared_constant(Node* leaf, uint rule) {
-  if (!leaf->is_Con()) return NULL;
+MachNode* Matcher::find_shared_node(Node* leaf, uint rule) {
+  if (!leaf->is_Con() && !leaf->is_DecodeN()) return NULL;
 
   // See if this Con has already been reduced using this rule.
-  if (_shared_constants.Size() <= leaf->_idx) return NULL;
-  MachNode* last = (MachNode*)_shared_constants.at(leaf->_idx);
+  if (_shared_nodes.Size() <= leaf->_idx) return NULL;
+  MachNode* last = (MachNode*)_shared_nodes.at(leaf->_idx);
   if (last != NULL && rule == last->rule()) {
+    // Don't expect control change for DecodeN
+    if (leaf->is_DecodeN())
+      return last;
     // Get the new space root.
     Node* xroot = new_node(C->root());
     if (xroot == NULL) {
@@ -1420,9 +1421,9 @@ MachNode* Matcher::find_shared_constant(Node* leaf, uint rule) {
 MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
   assert( rule >= NUM_OPERANDS, "called with operand rule" );
 
-  MachNode* shared_con = find_shared_constant(s->_leaf, rule);
-  if (shared_con != NULL) {
-    return shared_con;
+  MachNode* shared_node = find_shared_node(s->_leaf, rule);
+  if (shared_node != NULL) {
+    return shared_node;
   }
 
   // Build the object to represent this state & prepare for recursive calls
@@ -1447,7 +1448,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
     mach->ins_req(MemNode::Memory,mem);
 
   // If the _leaf is an AddP, insert the base edge
-  if( leaf->Opcode() == Op_AddP )
+  if( leaf->is_AddP() )
     mach->ins_req(AddPNode::Base,leaf->in(AddPNode::Base));
 
   uint num_proj = _proj_list.size();
@@ -1475,9 +1476,9 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
     guarantee(_proj_list.size() == num_proj, "no allocation during spill generation");
   }
 
-  if (leaf->is_Con()) {
+  if (leaf->is_Con() || leaf->is_DecodeN()) {
     // Record the con for sharing
-    _shared_constants.map(leaf->_idx, ex);
+    _shared_nodes.map(leaf->_idx, ex);
   }
 
   return ex;
@@ -1826,7 +1827,7 @@ void Matcher::find_shared( Node *n ) {
             Node *adr = m->in(AddPNode::Address);
 
             // Intel, ARM and friends can handle 2 adds in addressing mode
-            if( clone_shift_expressions && adr->Opcode() == Op_AddP &&
+            if( clone_shift_expressions && adr->is_AddP() &&
                 // AtomicAdd is not an addressing expression.
                 // Cheap to find it by looking for screwy base.
                 !adr->in(AddPNode::Base)->is_top() ) {
