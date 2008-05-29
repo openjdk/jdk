@@ -1979,6 +1979,7 @@ class MacroAssembler: public Assembler {
   // klass oop manipulations if compressed
   void load_klass(Register src_oop, Register klass);
   void store_klass(Register klass, Register dst_oop);
+  void store_klass_gap(Register s, Register dst_oop);
 
    // oop manipulations
   void load_heap_oop(const Address& s, Register d, int offset = 0);

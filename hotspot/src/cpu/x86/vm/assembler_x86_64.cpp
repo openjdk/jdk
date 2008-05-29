@@ -4935,6 +4935,8 @@ void MacroAssembler::tlab_refill(Label& retry,
   movq(Address(top, arrayOopDesc::length_offset_in_bytes()), t1);
   // set klass to intArrayKlass
   movptr(t1, ExternalAddress((address) Universe::intArrayKlassObj_addr()));
+  // store klass last.  concurrent gcs assumes klass length is valid if
+  // klass field is not null.
   store_klass(top, t1);
 
   // refill the tlab with an eden allocation
@@ -5159,9 +5161,17 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 void MacroAssembler::store_klass(Register dst, Register src) {
   if (UseCompressedOops) {
     encode_heap_oop_not_null(src);
-    // Store to the wide klass field to zero the gap.
+    movl(Address(dst, oopDesc::klass_offset_in_bytes()), src);
+  } else {
+    movq(Address(dst, oopDesc::klass_offset_in_bytes()), src);
   }
-  movq(Address(dst, oopDesc::klass_offset_in_bytes()), src);
+}
+
+void MacroAssembler::store_klass_gap(Register dst, Register src) {
+  if (UseCompressedOops) {
+    // Store to klass gap in destination
+    movl(Address(dst, oopDesc::klass_gap_offset_in_bytes()), src);
+  }
 }
 
 void MacroAssembler::load_heap_oop(Register dst, Address src) {
