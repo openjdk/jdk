@@ -156,7 +156,7 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
                        phase->C->must_alias(adr_check, alias_idx );
     // Sometimes dead array references collapse to a[-1], a[-2], or a[-3]
     if( !consistent && adr_check != NULL && !adr_check->empty() &&
-           tp->isa_aryptr() &&    tp->offset() == Type::OffsetBot &&
+               tp->isa_aryptr() &&        tp->offset() == Type::OffsetBot &&
         adr_check->isa_aryptr() && adr_check->offset() != Type::OffsetBot &&
         ( adr_check->offset() == arrayOopDesc::length_offset_in_bytes() ||
           adr_check->offset() == oopDesc::klass_offset_in_bytes() ||
@@ -2391,6 +2391,13 @@ uint StrCompNode::match_edge(uint idx) const {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node *StrCompNode::Ideal(PhaseGVN *phase, bool can_reshape){
+  return remove_dead_region(phase, can_reshape) ? this : NULL;
+}
+
+//------------------------------Ideal------------------------------------------
+// Return a node which is more "ideal" than the current node.  Strip out
+// control copies
+Node *AryEqNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 

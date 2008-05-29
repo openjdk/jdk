@@ -163,6 +163,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_newArray();
   bool inline_native_getLength();
   bool inline_array_copyOf(bool is_copyOfRange);
+  bool inline_array_equals();
   bool inline_native_clone(bool is_virtual);
   bool inline_native_Reflection_getCallerClass();
   bool inline_native_AtomicLong_get();
@@ -259,6 +260,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     switch (id) {
     case vmIntrinsics::_indexOf:
     case vmIntrinsics::_compareTo:
+    case vmIntrinsics::_equalsC:
       break;  // InlineNatives does not control String.compareTo
     default:
       return NULL;
@@ -271,6 +273,9 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     break;
   case vmIntrinsics::_indexOf:
     if (!SpecialStringIndexOf)  return NULL;
+    break;
+  case vmIntrinsics::_equalsC:
+    if (!SpecialArraysEquals)  return NULL;
     break;
   case vmIntrinsics::_arraycopy:
     if (!InlineArrayCopy)  return NULL;
@@ -586,6 +591,8 @@ bool LibraryCallKit::try_to_inline() {
     return inline_array_copyOf(false);
   case vmIntrinsics::_copyOfRange:
     return inline_array_copyOf(true);
+  case vmIntrinsics::_equalsC:
+    return inline_array_equals();
   case vmIntrinsics::_clone:
     return inline_native_clone(intrinsic()->is_virtual());
 
@@ -810,6 +817,22 @@ bool LibraryCallKit::inline_string_compareTo() {
                         receiver,
                         argument));
   push(compare);
+  return true;
+}
+
+//------------------------------inline_array_equals----------------------------
+bool LibraryCallKit::inline_array_equals() {
+
+  _sp += 2;
+  Node *argument2 = pop();
+  Node *argument1 = pop();
+
+  Node* equals =
+    _gvn.transform(new (C, 3) AryEqNode(control(),
+                                        argument1,
+                                        argument2)
+                   );
+  push(equals);
   return true;
 }
 
