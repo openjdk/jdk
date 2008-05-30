@@ -23,7 +23,7 @@
 #
 
 Obj_Files += solaris_sparc.o
-ASFLAGS += $(ARCHFLAG)
+ASFLAGS += $(AS_ARCHFLAG)
 
 ifeq ("${Platform_compiler}", "sparcWorks")
 ifeq ($(shell expr $(COMPILER_REV) \< 5.5), 1)

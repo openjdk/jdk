@@ -5471,7 +5471,6 @@ instruct loadN(iRegN dst, memory mem) %{
 // Load Klass Pointer
 instruct loadKlass(iRegP dst, memory mem) %{
   match(Set dst (LoadKlass mem));
-  predicate(!n->in(MemNode::Address)->bottom_type()->is_narrow());
   ins_cost(MEMORY_REF_COST);
   size(4);
 
@@ -5486,11 +5485,11 @@ instruct loadKlass(iRegP dst, memory mem) %{
   ins_pipe(iload_mem);
 %}
 
-// Load Klass Pointer
-instruct loadKlassComp(iRegP dst, memory mem) %{
-  match(Set dst (LoadKlass mem));
-  predicate(n->in(MemNode::Address)->bottom_type()->is_narrow());
+// Load narrow Klass Pointer
+instruct loadNKlass(iRegN dst, memory mem) %{
+  match(Set dst (LoadNKlass mem));
   ins_cost(MEMORY_REF_COST);
+  size(4);
 
   format %{ "LDUW   $mem,$dst\t! compressed klass ptr" %}
 
@@ -5503,9 +5502,6 @@ instruct loadKlassComp(iRegP dst, memory mem) %{
      } else {
        __ lduw(base, $mem$$disp, dst);
      }
-     // klass oop never null but this is generated for nonheader klass loads
-     // too which can be null.
-     __ decode_heap_oop(dst);
   %}
   ins_pipe(iload_mem);
 %}
@@ -5609,22 +5605,24 @@ instruct loadConP_poll(iRegP dst, immP_poll src) %{
   ins_pipe(loadConP_poll);
 %}
 
+instruct loadConN0(iRegN dst, immN0 src) %{
+  match(Set dst src);
+
+  size(4);
+  format %{ "CLR    $dst\t! compressed NULL ptr" %}
+  ins_encode( SetNull( dst ) );
+  ins_pipe(ialu_imm);
+%}
+
 instruct loadConN(iRegN dst, immN src) %{
   match(Set dst src);
-  ins_cost(DEFAULT_COST * 2);
-  format %{ "SET    $src,$dst\t!ptr" %}
+  ins_cost(DEFAULT_COST * 3/2);
+  format %{ "SET    $src,$dst\t! compressed ptr" %}
   ins_encode %{
-    address con = (address)$src$$constant;
     Register dst = $dst$$Register;
-    if (con == NULL) {
-      __ mov(G0, dst);
-    } else {
-      __ set_oop((jobject)$src$$constant, dst);
-      __ encode_heap_oop(dst);
-    }
+    __ set_narrow_oop((jobject)$src$$constant, dst);
   %}
-  ins_pipe(loadConP);
-
+  ins_pipe(ialu_hi_lo_reg);
 %}
 
 instruct loadConL(iRegL dst, immL src, o7RegL tmp) %{
@@ -6258,6 +6256,34 @@ instruct cmovIF_imm(cmpOpF cmp, flagsRegF fcc, iRegI dst, immI11 src) %{
   ins_pipe(ialu_imm);
 %}
 
+// Conditional move for RegN. Only cmov(reg,reg).
+instruct cmovNP_reg(cmpOpP cmp, flagsRegP pcc, iRegN dst, iRegN src) %{
+  match(Set dst (CMoveN (Binary cmp pcc) (Binary dst src)));
+  ins_cost(150);
+  format %{ "MOV$cmp $pcc,$src,$dst" %}
+  ins_encode( enc_cmov_reg(cmp,dst,src, (Assembler::ptr_cc)) );
+  ins_pipe(ialu_reg);
+%}
+
+// This instruction also works with CmpN so we don't need cmovNN_reg.
+instruct cmovNI_reg(cmpOp cmp, flagsReg icc, iRegN dst, iRegN src) %{
+  match(Set dst (CMoveN (Binary cmp icc) (Binary dst src)));
+  ins_cost(150);
+  size(4);
+  format %{ "MOV$cmp  $icc,$src,$dst" %}
+  ins_encode( enc_cmov_reg(cmp,dst,src, (Assembler::icc)) );
+  ins_pipe(ialu_reg);
+%}
+
+instruct cmovNF_reg(cmpOpF cmp, flagsRegF fcc, iRegN dst, iRegN src) %{
+  match(Set dst (CMoveN (Binary cmp fcc) (Binary dst src)));
+  ins_cost(150);
+  size(4);
+  format %{ "MOV$cmp $fcc,$src,$dst" %}
+  ins_encode( enc_cmov_reg_f(cmp,dst,src, fcc) );
+  ins_pipe(ialu_reg);
+%}
+
 // Conditional move
 instruct cmovPP_reg(cmpOpP cmp, flagsRegP pcc, iRegP dst, iRegP src) %{
   match(Set dst (CMoveP (Binary cmp pcc) (Binary dst src)));
@@ -6275,6 +6301,7 @@ instruct cmovPP_imm(cmpOpP cmp, flagsRegP pcc, iRegP dst, immP0 src) %{
   ins_pipe(ialu_imm);
 %}
 
+// This instruction also works with CmpN so we don't need cmovPN_reg.
 instruct cmovPI_reg(cmpOp cmp, flagsReg icc, iRegP dst, iRegP src) %{
   match(Set dst (CMoveP (Binary cmp icc) (Binary dst src)));
   ins_cost(150);
@@ -8265,6 +8292,27 @@ instruct compP_iRegP_imm13(flagsRegP pcc, iRegP op1, immP13 op2 ) %{
   ins_pipe(ialu_cconly_reg_imm);
 %}
 
+// Compare Narrow oops
+instruct compN_iRegN(flagsReg icc, iRegN op1, iRegN op2 ) %{
+  match(Set icc (CmpN op1 op2));
+
+  size(4);
+  format %{ "CMP    $op1,$op2\t! compressed ptr" %}
+  opcode(Assembler::subcc_op3, Assembler::arith_op);
+  ins_encode( form3_rs1_rs2_rd( op1, op2, R_G0 ) );
+  ins_pipe(ialu_cconly_reg_reg);
+%}
+
+instruct compN_iRegN_immN0(flagsReg icc, iRegN op1, immN0 op2 ) %{
+  match(Set icc (CmpN op1 op2));
+
+  size(4);
+  format %{ "CMP    $op1,$op2\t! compressed ptr" %}
+  opcode(Assembler::subcc_op3, Assembler::arith_op);
+  ins_encode( form3_rs1_simm13_rd( op1, op2, R_G0 ) );
+  ins_pipe(ialu_cconly_reg_imm);
+%}
+
 //----------Max and Min--------------------------------------------------------
 // Min Instructions
 // Conditional move for min
@@ -8595,6 +8643,14 @@ instruct cmovIL_imm(cmpOp cmp, flagsRegL xcc, iRegI dst, immI11 src) %{
   ins_pipe(ialu_imm);
 %}
 
+instruct cmovNL_reg(cmpOp cmp, flagsRegL xcc, iRegN dst, iRegN src) %{
+  match(Set dst (CMoveN (Binary cmp xcc) (Binary dst src)));
+  ins_cost(150);
+  format %{ "MOV$cmp  $xcc,$src,$dst" %}
+  ins_encode( enc_cmov_reg(cmp,dst,src, (Assembler::xcc)) );
+  ins_pipe(ialu_reg);
+%}
+
 instruct cmovPL_reg(cmpOp cmp, flagsRegL xcc, iRegP dst, iRegP src) %{
   match(Set dst (CMoveP (Binary cmp xcc) (Binary dst src)));
   ins_cost(150);
@@ -8825,16 +8881,6 @@ instruct partialSubtypeCheck_vs_zero( flagsRegP pcc, o1RegP sub, o2RegP super, i
   ins_pipe(partial_subtype_check_pipe);
 %}
 
-
-instruct compP_iRegN_immN0(flagsRegP pcc, iRegN op1, immN0 op2 ) %{
-  match(Set pcc (CmpN op1 op2));
-
-  size(4);
-  format %{ "CMP    $op1,$op2\t! ptr" %}
-  opcode(Assembler::subcc_op3, Assembler::arith_op);
-  ins_encode( form3_rs1_simm13_rd( op1, op2, R_G0 ) );
-  ins_pipe(ialu_cconly_reg_imm);
-%}
 
 // ============================================================================
 // inlined locking and unlocking

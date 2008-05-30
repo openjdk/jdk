@@ -1312,6 +1312,9 @@ void Arguments::set_aggressive_opts_flags() {
   if (AggressiveOpts && FLAG_IS_DEFAULT(DoEscapeAnalysis)) {
     FLAG_SET_DEFAULT(DoEscapeAnalysis, true);
   }
+  if (AggressiveOpts && FLAG_IS_DEFAULT(SpecialArraysEquals)) {
+    FLAG_SET_DEFAULT(SpecialArraysEquals, true);
+  }
 #endif
 
   if (AggressiveOpts) {

@@ -246,16 +246,16 @@ SA_PROPERTIES = $(OUTPUT_DIR)/sa.properties
 all: filelist
 	@mkdir -p $(OUTPUT_DIR)
 	@echo "$(SA_BUILD_VERSION_PROP)" > $(SA_PROPERTIES)
-	@javac -source 1.4 -classpath $(CLASSPATH) -deprecation -sourcepath $(SRC_DIR) -g -d $(OUTPUT_DIR) @filelist
-	@rmic -classpath $(OUTPUT_DIR) -d $(OUTPUT_DIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
+	@${JDK_HOME}/bin/javac -source 1.4 -classpath $(CLASSPATH) -deprecation -sourcepath $(SRC_DIR) -g -d $(OUTPUT_DIR) @filelist
+	@${JDK_HOME}/bin/rmic -classpath $(OUTPUT_DIR) -d $(OUTPUT_DIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
 	rm -f $(OUTPUT_DIR)/sun/jvm/hotspot/utilities/soql/sa.js
 	cp $(SRC_DIR)/sun/jvm/hotspot/utilities/soql/sa.js $(OUTPUT_DIR)/sun/jvm/hotspot/utilities/soql
 
 allprof: filelist
 	@mkdir -p $(OUTPUT_DIR)
 	@echo "$(SA_BUILD_VERSION_PROP)" > $(SA_PROPERTIES)
-	@javac -source 1.4 -J-Xprof -classpath $(CLASSPATH) -deprecation -sourcepath $(SRC_DIR) -g -d $(OUTPUT_DIR) @filelist
-	@rmic -classpath $(OUTPUT_DIR) -d $(OUTPUT_DIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
+	@${JDK_HOME}/bin/javac -source 1.4 -J-Xprof -classpath $(CLASSPATH) -deprecation -sourcepath $(SRC_DIR) -g -d $(OUTPUT_DIR) @filelist
+	@${JDK_HOME}/bin/rmic -classpath $(OUTPUT_DIR) -d $(OUTPUT_DIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
 	rm -f $(OUTPUT_DIR)/sun/jvm/hotspot/utilities/soql/sa.js
 	cp $(SRC_DIR)/sun/jvm/hotspot/utilities/soql/sa.js $(OUTPUT_DIR)/sun/jvm/hotspot/utilities/soql
 
