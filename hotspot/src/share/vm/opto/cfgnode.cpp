@@ -707,8 +707,14 @@ PhiNode* PhiNode::slice_memory(const TypePtr* adr_type) const {
 //------------------------split_out_instance-----------------------------------
 // Split out an instance type from a bottom phi.
 PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) const {
-  assert(type() == Type::MEMORY && (adr_type() == TypePtr::BOTTOM ||
-         adr_type() == TypeRawPtr::BOTTOM) , "bottom or raw memory required");
+  const TypeOopPtr *t_oop = at->isa_oopptr();
+  assert(t_oop != NULL && t_oop->is_instance(), "expecting instance oopptr");
+  const TypePtr *t = adr_type();
+  assert(type() == Type::MEMORY &&
+         (t == TypePtr::BOTTOM || t == TypeRawPtr::BOTTOM ||
+          t->isa_oopptr() && !t->is_oopptr()->is_instance() &&
+          t->is_oopptr()->cast_to_instance(t_oop->instance_id()) == t_oop),
+         "bottom or raw memory required");
 
   // Check if an appropriate node already exists.
   Node *region = in(0);
@@ -1342,7 +1348,7 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
     Node *n = phi->in(i);
     if( !n ) return NULL;
     if( phase->type(n) == Type::TOP ) return NULL;
-    if( n->Opcode() == Op_ConP )
+    if( n->Opcode() == Op_ConP || n->Opcode() == Op_ConN )
       break;
   }
   if( i >= phi->req() )         // Only split for constants

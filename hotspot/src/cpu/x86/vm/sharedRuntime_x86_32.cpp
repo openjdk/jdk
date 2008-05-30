@@ -1920,7 +1920,6 @@ nmethod *SharedRuntime::generate_dtrace_nmethod(
   int total_strings = 0;
   int first_arg_to_pass = 0;
   int total_c_args = 0;
-  int box_offset = java_lang_boxing_object::value_offset_in_bytes();
 
   if( !method->is_static() ) {  // Pass in receiver first
     in_sig_bt[i++] = T_OBJECT;
@@ -2131,7 +2130,10 @@ nmethod *SharedRuntime::generate_dtrace_nmethod(
           assert(dst.first()->is_stack() &&
                  (!dst.second()->is_valid() || dst.second()->is_stack()),
                  "value(s) must go into stack slots");
-          if ( out_sig_bt[c_arg] == T_LONG ) {
+
+          BasicType bt = out_sig_bt[c_arg];
+          int box_offset = java_lang_boxing_object::value_offset_in_bytes(bt);
+          if ( bt == T_LONG ) {
             __ movl(rbx, Address(in_reg,
                                  box_offset + VMRegImpl::stack_slot_size));
             __ movl(Address(rsp, reg2offset_out(dst.second())), rbx);
