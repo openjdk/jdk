@@ -490,7 +490,12 @@ class Assembler : public AbstractAssembler  {
     imm64_operand  = 0,          // embedded 64-bit immediate operand
     disp32_operand = 1,          // embedded 32-bit displacement
     call32_operand = 2,          // embedded 32-bit self-relative displacement
+#ifndef AMD64
     _WhichOperand_limit = 3
+#else
+     narrow_oop_operand = 3,     // embedded 32-bit immediate narrow oop
+    _WhichOperand_limit = 4
+#endif
   };
 
   public:
@@ -1023,7 +1028,7 @@ class MacroAssembler : public Assembler {
   // is needed if the offset is within a certain range (0 <= offset <=
   // page_size).
   void null_check(Register reg, int offset = -1);
-  static bool needs_explicit_null_check(int offset);
+  static bool needs_explicit_null_check(intptr_t offset);
 
   // Required platform-specific helpers for Label::patch_instructions.
   // They _shadow_ the declarations in AbstractAssembler, which are undefined.
@@ -1104,6 +1109,7 @@ class MacroAssembler : public Assembler {
   // oop manipulations
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
+  void store_klass_gap(Register dst, Register src);
 
   void load_heap_oop(Register dst, Address src);
   void store_heap_oop(Address dst, Register src);
@@ -1113,6 +1119,8 @@ class MacroAssembler : public Assembler {
   void decode_heap_oop_not_null(Register r);
   void encode_heap_oop_not_null(Register dst, Register src);
   void decode_heap_oop_not_null(Register dst, Register src);
+
+  void set_narrow_oop(Register dst, jobject obj);
 
   // Stack frame creation/removal
   void enter();
