@@ -2664,8 +2664,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
                                   fac.static_byte_count ), wordSize );
     static_field_size           = (next_static_type_offset -
                                   next_static_oop_offset) / wordSize;
-    first_nonstatic_field_offset = (instanceOopDesc::header_size() +
-                                    nonstatic_field_size) * wordSize;
+    first_nonstatic_field_offset = instanceOopDesc::base_offset_in_bytes() +
+                                   nonstatic_field_size * heapOopSize;
     next_nonstatic_field_offset = first_nonstatic_field_offset;
 
     // Add fake fields for java.lang.Class instances (also see below)
@@ -2734,9 +2734,9 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
       next_nonstatic_byte_offset  = next_nonstatic_short_offset +
                                     (nonstatic_short_count * BytesPerShort);
       next_nonstatic_type_offset  = align_size_up((next_nonstatic_byte_offset +
-                                    nonstatic_byte_count ), wordSize );
+                                    nonstatic_byte_count ), heapOopSize );
       orig_nonstatic_field_size   = nonstatic_field_size +
-        ((next_nonstatic_type_offset - first_nonstatic_field_offset)/wordSize);
+      ((next_nonstatic_type_offset - first_nonstatic_field_offset)/heapOopSize);
     }
 #endif
     bool compact_fields   = CompactFields;
@@ -2791,18 +2791,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     int nonstatic_short_space_offset;
     int nonstatic_byte_space_offset;
 
-    bool compact_into_header = (UseCompressedOops &&
-                                allocation_style == 1 && compact_fields &&
-                                !super_has_nonstatic_fields);
-
-    if( compact_into_header || nonstatic_double_count > 0 ) {
-      int offset;
-      // Pack something in with the header if no super klass has done so.
-      if (compact_into_header) {
-        offset = oopDesc::klass_gap_offset_in_bytes();
-      } else {
-        offset = next_nonstatic_double_offset;
-      }
+    if( nonstatic_double_count > 0 ) {
+      int offset = next_nonstatic_double_offset;
       next_nonstatic_double_offset = align_size_up(offset, BytesPerLong);
       if( compact_fields && offset != next_nonstatic_double_offset ) {
         // Allocate available fields into the gap before double field.
@@ -2830,8 +2820,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
         }
         // Allocate oop field in the gap if there are no other fields for that.
         nonstatic_oop_space_offset = offset;
-        if(!compact_into_header && length >= heapOopSize &&
-            nonstatic_oop_count > 0 &&
+        if( length >= heapOopSize && nonstatic_oop_count > 0 &&
             allocation_style != 0 ) { // when oop fields not first
           nonstatic_oop_count      -= 1;
           nonstatic_oop_space_count = 1; // Only one will fit
@@ -2854,14 +2843,13 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     } else { // allocation_style == 1
       next_nonstatic_oop_offset = next_nonstatic_byte_offset + nonstatic_byte_count;
       if( nonstatic_oop_count > 0 ) {
-        notaligned_offset = next_nonstatic_oop_offset;
         next_nonstatic_oop_offset = align_size_up(next_nonstatic_oop_offset, heapOopSize);
       }
       notaligned_offset = next_nonstatic_oop_offset + (nonstatic_oop_count * heapOopSize);
     }
-    next_nonstatic_type_offset = align_size_up(notaligned_offset, wordSize );
+    next_nonstatic_type_offset = align_size_up(notaligned_offset, heapOopSize );
     nonstatic_field_size = nonstatic_field_size + ((next_nonstatic_type_offset
-                                      - first_nonstatic_field_offset)/wordSize);
+                                   - first_nonstatic_field_offset)/heapOopSize);
 
     // Iterate over fields again and compute correct offsets.
     // The field allocation type was temporarily stored in the offset slot.
@@ -2962,9 +2950,10 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     // Size of instances
     int instance_size;
 
+    next_nonstatic_type_offset = align_size_up(notaligned_offset, wordSize );
     instance_size = align_object_size(next_nonstatic_type_offset / wordSize);
 
-    assert(instance_size == align_object_size(instanceOopDesc::header_size() + nonstatic_field_size), "consistent layout helper value");
+    assert(instance_size == align_object_size(align_size_up((instanceOopDesc::base_offset_in_bytes() + nonstatic_field_size*heapOopSize), wordSize) / wordSize), "consistent layout helper value");
 
     // Size of non-static oop map blocks (in words) allocated at end of klass
     int nonstatic_oop_map_size = compute_oop_map_size(super_klass, nonstatic_oop_map_count, first_nonstatic_oop_offset);
@@ -3122,13 +3111,15 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
 #ifndef PRODUCT
     if( PrintCompactFieldsSavings ) {
       if( nonstatic_field_size < orig_nonstatic_field_size ) {
-        tty->print("[Saved %d of %3d words in %s]\n",
-                 orig_nonstatic_field_size - nonstatic_field_size,
-                 orig_nonstatic_field_size, this_klass->external_name());
+        tty->print("[Saved %d of %d bytes in %s]\n",
+                 (orig_nonstatic_field_size - nonstatic_field_size)*heapOopSize,
+                 orig_nonstatic_field_size*heapOopSize,
+                 this_klass->external_name());
       } else if( nonstatic_field_size > orig_nonstatic_field_size ) {
-        tty->print("[Wasted %d over %3d words in %s]\n",
-                 nonstatic_field_size - orig_nonstatic_field_size,
-                 orig_nonstatic_field_size, this_klass->external_name());
+        tty->print("[Wasted %d over %d bytes in %s]\n",
+                 (nonstatic_field_size - orig_nonstatic_field_size)*heapOopSize,
+                 orig_nonstatic_field_size*heapOopSize,
+                 this_klass->external_name());
       }
     }
 #endif

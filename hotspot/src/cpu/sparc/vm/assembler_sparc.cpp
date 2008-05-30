@@ -1523,6 +1523,21 @@ Address MacroAssembler::constant_oop_address(jobject obj, Register d) {
   return Address(d, address(obj), oop_Relocation::spec(oop_index));
 }
 
+void  MacroAssembler::set_narrow_oop(jobject obj, Register d) {
+  assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int oop_index = oop_recorder()->find_index(obj);
+  RelocationHolder rspec = oop_Relocation::spec(oop_index);
+
+  assert_not_delayed();
+  // Relocation with special format (see relocInfo_sparc.hpp).
+  relocate(rspec, 1);
+  // Assembler::sethi(0x3fffff, d);
+  emit_long( op(branch_op) | rd(d) | op2(sethi_op2) | hi22(0x3fffff) );
+  // Don't add relocation for 'add'. Do patching during 'sethi' processing.
+  add(d, 0x3ff, d);
+
+}
+
 
 void MacroAssembler::align(int modulus) {
   while (offset() % modulus != 0) nop();
@@ -3406,13 +3421,15 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   set((intptr_t)markOopDesc::prototype()->copy_set_hash(0x2), t2);
   st_ptr(t2, top, oopDesc::mark_offset_in_bytes()); // set up the mark word
   // set klass to intArrayKlass
-  set((intptr_t)Universe::intArrayKlassObj_addr(), t2);
-  ld_ptr(t2, 0, t2);
-  store_klass(t2, top);
   sub(t1, typeArrayOopDesc::header_size(T_INT), t1);
   add(t1, ThreadLocalAllocBuffer::alignment_reserve(), t1);
   sll_ptr(t1, log2_intptr(HeapWordSize/sizeof(jint)), t1);
   st(t1, top, arrayOopDesc::length_offset_in_bytes());
+  set((intptr_t)Universe::intArrayKlassObj_addr(), t2);
+  ld_ptr(t2, 0, t2);
+  // store klass last.  concurrent gcs assumes klass length is valid if
+  // klass field is not null.
+  store_klass(t2, top);
   verify_oop(top);
 
   // refill the tlab with an eden allocation
@@ -3537,28 +3554,32 @@ void MacroAssembler::bang_stack_size(Register Rsize, Register Rtsp,
   }
 }
 
-void MacroAssembler::load_klass(Register s, Register d) {
+void MacroAssembler::load_klass(Register src_oop, Register klass) {
   // The number of bytes in this code is used by
   // MachCallDynamicJavaNode::ret_addr_offset()
   // if this changes, change that.
   if (UseCompressedOops) {
-    lduw(s, oopDesc::klass_offset_in_bytes(), d);
-    decode_heap_oop_not_null(d);
+    lduw(src_oop, oopDesc::klass_offset_in_bytes(), klass);
+    decode_heap_oop_not_null(klass);
   } else {
-    ld_ptr(s, oopDesc::klass_offset_in_bytes(), d);
+    ld_ptr(src_oop, oopDesc::klass_offset_in_bytes(), klass);
   }
 }
 
-// ??? figure out src vs. dst!
-void MacroAssembler::store_klass(Register d, Register s1) {
+void MacroAssembler::store_klass(Register klass, Register dst_oop) {
   if (UseCompressedOops) {
-    assert(s1 != d, "not enough registers");
-    encode_heap_oop_not_null(d);
-    // Zero out entire klass field first.
-    st_ptr(G0, s1, oopDesc::klass_offset_in_bytes());
-    st(d, s1, oopDesc::klass_offset_in_bytes());
+    assert(dst_oop != klass, "not enough registers");
+    encode_heap_oop_not_null(klass);
+    st(klass, dst_oop, oopDesc::klass_offset_in_bytes());
   } else {
-    st_ptr(d, s1, oopDesc::klass_offset_in_bytes());
+    st_ptr(klass, dst_oop, oopDesc::klass_offset_in_bytes());
+  }
+}
+
+void MacroAssembler::store_klass_gap(Register s, Register d) {
+  if (UseCompressedOops) {
+    assert(s != d, "not enough registers");
+    st(s, d, oopDesc::klass_gap_offset_in_bytes());
   }
 }
 

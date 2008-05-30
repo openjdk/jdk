@@ -96,9 +96,9 @@ public class DefNewGeneration extends Generation {
   public void printOn(PrintStream tty) {
     tty.print("  eden");
     eden().printOn(tty);
-    tty.print("  from");
+    tty.print("\n  from");
     from().printOn(tty);
-    tty.print("  to  ");
+    tty.print("\n  to  ");
     to().printOn(tty);
   }
 }
