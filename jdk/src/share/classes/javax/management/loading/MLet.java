@@ -591,8 +591,8 @@ public class MLet extends java.net.URLClassLoader
              // Instantiate the class specified in the
              // CODE or OBJECT section of the MLet tag
              //
-             Object o = null;
-             ObjectInstance objInst = null;
+             Object o;
+             ObjectInstance objInst;
 
              if (code != null && serName != null) {
                  final String msg =
@@ -1131,11 +1131,17 @@ public class MLet extends java.net.URLClassLoader
              return null;
          } finally {
              // Cleanup ...
-             if (tmpFile!=null) try {
-                 tmpFile.delete();
-             } catch (Exception x) {
-                 MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
-                         "getTmpDir", "Failed to delete temporary file", x);
+             if (tmpFile!=null) {
+                 try {
+                     boolean deleted = tmpFile.delete();
+                     if (!deleted) {
+                         MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
+                                 "getTmpDir", "Failed to delete temp file");
+                     }
+                 } catch (Exception x) {
+                     MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
+                             "getTmpDir", "Failed to delete temporary file", x);
+                 }
              }
         }
      }
@@ -1178,25 +1184,8 @@ public class MLet extends java.net.URLClassLoader
     * Removes any white space from a string. This is used to
     * convert strings such as "Windows NT" to "WindowsNT".
     */
-     private String removeSpace(String s) {
-         s = s.trim();
-         int j = s.indexOf(' ');
-         if (j == -1) {
-             return s;
-         }
-         String temp = "";
-         int k = 0;
-         while (j != -1) {
-             s = s.substring(k);
-             j = s.indexOf(' ');
-             if (j != -1) {
-                 temp = temp + s.substring(0, j);
-             } else {
-                 temp = temp + s.substring(0);
-             }
-             k = j + 1;
-         }
-         return temp;
+     private static String removeSpace(String s) {
+         return s.trim().replace(" ", "");
      }
 
      /**
