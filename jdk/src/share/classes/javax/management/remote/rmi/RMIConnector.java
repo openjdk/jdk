@@ -1376,12 +1376,12 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
         protected Integer addListenerForMBeanRemovedNotif()
                 throws IOException, InstanceNotFoundException {
-            MarshalledObject<NotificationFilter> sFilter = null;
             NotificationFilterSupport clientFilter =
                 new NotificationFilterSupport();
             clientFilter.enableType(
                 MBeanServerNotification.UNREGISTRATION_NOTIFICATION);
-            sFilter = new MarshalledObject<NotificationFilter>(clientFilter);
+            MarshalledObject<NotificationFilter> sFilter =
+                new MarshalledObject<NotificationFilter>(clientFilter);
 
             Integer[] listenerIDs;
             final ObjectName[] names =
@@ -1434,7 +1434,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                                               connectionId,
                                               clientNotifCounter++,
                                               message,
-                                              new Long(number));
+                                              Long.valueOf(number));
             sendNotification(n);
         }
     }
@@ -1593,7 +1593,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
         protected void doStart() throws IOException {
             // Get RMIServer stub from directory or URL encoding if needed.
-            RMIServer stub = null;
+            RMIServer stub;
             try {
                 stub = (rmiServer!=null)?rmiServer:
                     findRMIServer(jmxServiceURL, env);
@@ -2532,7 +2532,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
      * A static WeakReference to an {@link org.omg.CORBA.ORB ORB} to
      * connect unconnected stubs.
      **/
-    private static WeakReference<ORB> orb = null;
+    private static volatile WeakReference<ORB> orb = null;
 
     // TRACES & DEBUG
     //---------------
