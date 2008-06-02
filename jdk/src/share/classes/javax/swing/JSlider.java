@@ -25,14 +25,12 @@
 
 package javax.swing;
 
-import javax.swing.border.*;
 import javax.swing.event.*;
 import javax.swing.plaf.*;
 import javax.accessibility.*;
 
 import java.io.Serializable;
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
 
 import java.awt.Color;
@@ -409,8 +407,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      * @since 1.4
      */
     public ChangeListener[] getChangeListeners() {
-        return (ChangeListener[])listenerList.getListeners(
-                ChangeListener.class);
+        return listenerList.getListeners(ChangeListener.class);
     }
 
 
@@ -826,17 +823,16 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      * @see JComponent#updateUI
      */
     protected void updateLabelUIs() {
-        if ( getLabelTable() == null ) {
+        Dictionary labelTable = getLabelTable();
+
+        if (labelTable == null) {
             return;
         }
-        Enumeration labels = getLabelTable().keys();
+        Enumeration labels = labelTable.keys();
         while ( labels.hasMoreElements() ) {
-            Object value = getLabelTable().get( labels.nextElement() );
-            if ( value instanceof JComponent ) {
-                JComponent component = (JComponent)value;
-                component.updateUI();
-                component.setSize( component.getPreferredSize()  );
-            }
+            JComponent component = (JComponent) labelTable.get(labels.nextElement());
+            component.updateUI();
+            component.setSize(component.getPreferredSize());
         }
     }
 
@@ -845,11 +841,8 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
         if (labelTable != null) {
             Enumeration labels = labelTable.elements();
             while (labels.hasMoreElements()) {
-                Object value = labels.nextElement();
-                if (value instanceof JComponent) {
-                    JComponent component = (JComponent)value;
-                    component.setSize(component.getPreferredSize());
-                }
+                JComponent component = (JComponent) labels.nextElement();
+                component.setSize(component.getPreferredSize());
             }
         }
     }
@@ -960,14 +953,14 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
                 if ( e.getPropertyName().equals( "minimum" ) ||
                      e.getPropertyName().equals( "maximum" ) ) {
 
-                    Enumeration keys = getLabelTable().keys();
-                    Object key = null;
+                    Dictionary labelTable = getLabelTable();
+                    Enumeration keys = labelTable.keys();
                     Hashtable hashtable = new Hashtable();
 
                     // Save the labels that were added by the developer
                     while ( keys.hasMoreElements() ) {
-                        key = keys.nextElement();
-                        Object value = getLabelTable().get( key );
+                        Object key = keys.nextElement();
+                        Object value = labelTable.get(key);
                         if ( !(value instanceof LabelUIResource) ) {
                             hashtable.put( key, value );
                         }
@@ -979,7 +972,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
                     // Add the saved labels
                     keys = hashtable.keys();
                     while ( keys.hasMoreElements() ) {
-                        key = keys.nextElement();
+                        Object key = keys.nextElement();
                         put( key, hashtable.get( key ) );
                     }
 
@@ -996,8 +989,10 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
 
         SmartHashtable table = new SmartHashtable( increment, start );
 
-        if ( getLabelTable() != null && (getLabelTable() instanceof PropertyChangeListener) ) {
-            removePropertyChangeListener( (PropertyChangeListener)getLabelTable() );
+        Dictionary labelTable = getLabelTable();
+
+        if (labelTable != null && (labelTable instanceof PropertyChangeListener)) {
+            removePropertyChangeListener((PropertyChangeListener) labelTable);
         }
 
         addPropertyChangeListener( table );
