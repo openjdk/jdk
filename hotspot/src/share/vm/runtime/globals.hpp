@@ -460,7 +460,7 @@ class CommandLineFlags {
   develop(bool, SpecialStringIndexOf, true,                                 \
           "special version of string indexOf")                              \
                                                                             \
-  product(bool, SpecialArraysEquals, true,                                  \
+  product(bool, SpecialArraysEquals, false,                                 \
           "special version of Arrays.equals(char[],char[])")                \
                                                                             \
   develop(bool, TraceCallFixup, false,                                      \
