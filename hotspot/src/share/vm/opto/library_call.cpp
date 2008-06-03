@@ -823,6 +823,8 @@ bool LibraryCallKit::inline_string_compareTo() {
 //------------------------------inline_array_equals----------------------------
 bool LibraryCallKit::inline_array_equals() {
 
+  if (!Matcher::has_match_rule(Op_AryEq)) return false;
+
   _sp += 2;
   Node *argument2 = pop();
   Node *argument1 = pop();
