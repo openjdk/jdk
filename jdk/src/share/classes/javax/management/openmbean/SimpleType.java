@@ -257,7 +257,7 @@ public final class SimpleType<T> extends OpenType<T> {
         // Calculate the hash code value if it has not yet been done (ie 1st call to hashCode())
         //
         if (myHashCode == null) {
-            myHashCode = new Integer(this.getClassName().hashCode());
+            myHashCode = Integer.valueOf(this.getClassName().hashCode());
         }
 
         // return always the same hash code for this instance (immutable)
