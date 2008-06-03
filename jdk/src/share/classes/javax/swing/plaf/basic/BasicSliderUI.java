@@ -25,16 +25,8 @@
 
 package javax.swing.plaf.basic;
 
-import java.awt.Component;
 import java.awt.event.*;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Dimension;
-import java.awt.Rectangle;
-import java.awt.Insets;
-import java.awt.Color;
-import java.awt.IllegalComponentStateException;
-import java.awt.Polygon;
+import java.awt.*;
 import java.beans.*;
 import java.util.Dictionary;
 import java.util.Enumeration;
@@ -1100,6 +1092,16 @@ public class BasicSliderUI extends SliderUI{
                 if (value >= minValue && value <= maxValue) {
                     JComponent label = (JComponent) dictionary.get(key);
                     label.setEnabled(enabled);
+
+                    if (label instanceof JLabel) {
+                        Icon icon = label.isEnabled() ? ((JLabel) label).getIcon() : ((JLabel) label).getDisabledIcon();
+
+                        if (icon instanceof ImageIcon) {
+                            // Register Slider as an image observer. It allows to catch notifications about
+                            // image changes (e.g. gif animation)
+                            Toolkit.getDefaultToolkit().checkImage(((ImageIcon) icon).getImage(), -1, -1, slider);
+                        }
+                    }
 
                     if ( slider.getOrientation() == JSlider.HORIZONTAL ) {
                         g.translate( 0, labelBounds.y );

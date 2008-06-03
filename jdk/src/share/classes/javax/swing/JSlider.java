@@ -33,8 +33,7 @@ import java.io.Serializable;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
 
-import java.awt.Color;
-import java.awt.Font;
+import java.awt.*;
 import java.util.*;
 import java.beans.*;
 
@@ -761,6 +760,33 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
         updateLabelSizes();
     }
 
+    /**
+     * {@inheritDoc}
+     * @since 1.7
+     */
+    public boolean imageUpdate(Image img, int infoflags, int x, int y, int w, int h) {
+        if (!isShowing()) {
+            return false;
+        }
+
+        // Check that there is a label with such image
+        Enumeration elements = labelTable.elements();
+
+        while (elements.hasMoreElements()) {
+            Component component = (Component) elements.nextElement();
+
+            if (component instanceof JLabel) {
+                JLabel label = (JLabel) component;
+
+                if (SwingUtilities.doesIconReferenceImage(label.getIcon(), img) ||
+                        SwingUtilities.doesIconReferenceImage(label.getDisabledIcon(), img)) {
+                    return super.imageUpdate(img, infoflags, x, y, w, h);
+                }
+            }
+        }
+
+        return false;
+    }
 
     /**
      * Returns the dictionary of what labels to draw at which values.
