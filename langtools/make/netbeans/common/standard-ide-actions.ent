@@ -157,5 +157,5 @@
 </action>
 
 <action name="javadoc">
-    <target>javadoc-nb</target>
+    <target>-javadoc-nb</target>
 </action>
