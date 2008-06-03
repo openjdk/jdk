@@ -454,6 +454,8 @@ public class Attr extends JCTree.Visitor {
     void attribTypeVariables(List<JCTypeParameter> typarams, Env<AttrContext> env) {
         for (JCTypeParameter tvar : typarams) {
             TypeVar a = (TypeVar)tvar.type;
+            a.tsym.flags_field |= UNATTRIBUTED;
+            a.bound = Type.noType;
             if (!tvar.bounds.isEmpty()) {
                 List<Type> bounds = List.of(attribType(tvar.bounds.head, env));
                 for (JCExpression bound : tvar.bounds.tail)
@@ -464,13 +466,14 @@ public class Attr extends JCTree.Visitor {
                 // java.lang.Object.
                 types.setBounds(a, List.of(syms.objectType));
             }
+            a.tsym.flags_field &= ~UNATTRIBUTED;
         }
-    }
-
-    void attribBounds(List<JCTypeParameter> typarams, Env<AttrContext> env) {
         for (JCTypeParameter tvar : typarams)
             chk.checkNonCyclic(tvar.pos(), (TypeVar)tvar.type);
         attribStats(typarams, env);
+    }
+
+    void attribBounds(List<JCTypeParameter> typarams) {
         for (JCTypeParameter typaram : typarams) {
             Type bound = typaram.type.getUpperBound();
             if (bound != null && bound.tsym instanceof ClassSymbol) {
@@ -581,7 +584,7 @@ public class Attr extends JCTree.Visitor {
         try {
             chk.checkDeprecatedAnnotation(tree.pos(), m);
 
-            attribBounds(tree.typarams, env);
+            attribBounds(tree.typarams);
 
             // If we override any other methods, check that we do so properly.
             // JLS ???
@@ -2689,7 +2692,7 @@ public class Attr extends JCTree.Visitor {
         chk.validateAnnotations(tree.mods.annotations, c);
 
         // Validate type parameters, supertype and interfaces.
-        attribBounds(tree.typarams, env);
+        attribBounds(tree.typarams);
         chk.validateTypeParams(tree.typarams);
         chk.validate(tree.extending);
         chk.validate(tree.implementing);
