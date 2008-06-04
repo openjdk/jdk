@@ -142,9 +142,6 @@ public class TrayIcon {
      */
     public TrayIcon(Image image) {
         this();
-        if (image == null) {
-            throw new IllegalArgumentException("creating TrayIcon with null Image");
-        }
         setImage(image);
     }
 
@@ -433,7 +430,7 @@ public class TrayIcon {
      * @see      java.awt.event.MouseListener
      */
     public synchronized MouseListener[] getMouseListeners() {
-        return (MouseListener[])(getListeners(MouseListener.class));
+        return AWTEventMulticaster.getListeners(mouseListener, MouseListener.class);
     }
 
     /**
@@ -494,7 +491,7 @@ public class TrayIcon {
      * @see      java.awt.event.MouseMotionListener
      */
     public synchronized MouseMotionListener[] getMouseMotionListeners() {
-        return (MouseMotionListener[]) (getListeners(MouseMotionListener.class));
+        return AWTEventMulticaster.getListeners(mouseMotionListener, MouseMotionListener.class);
     }
 
     /**
@@ -581,7 +578,7 @@ public class TrayIcon {
      * @see      java.awt.event.ActionListener
      */
     public synchronized ActionListener[] getActionListeners() {
-        return (ActionListener[])(getListeners(ActionListener.class));
+        return AWTEventMulticaster.getListeners(actionListener, ActionListener.class);
     }
 
     /**
@@ -635,7 +632,7 @@ public class TrayIcon {
 
         TrayIconPeer peer = this.peer;
         if (peer != null) {
-            peer.displayMessage(caption, text, messageType.toString());
+            peer.displayMessage(caption, text, messageType.name());
         }
     }
 
@@ -656,18 +653,6 @@ public class TrayIcon {
 
     // ****************************************************************
     // ****************************************************************
-
-    <T extends EventListener> T[] getListeners(Class<T> listenerType) {
-        EventListener l = null;
-        if (listenerType == MouseListener.class) {
-            l = mouseListener;
-        } else if (listenerType == MouseMotionListener.class) {
-            l = mouseMotionListener;
-        } else if (listenerType == ActionListener.class) {
-            l = actionListener;
-        }
-        return AWTEventMulticaster.getListeners(l, listenerType);
-    }
 
     void addNotify()
       throws AWTException
