@@ -125,6 +125,8 @@ public class SystemTray {
 
     transient private SystemTrayPeer peer;
 
+    private static final TrayIcon[] EMPTY_TRAY_ARRAY = new TrayIcon[0];
+
     /**
      * Private <code>SystemTray</code> constructor.
      *
@@ -203,13 +205,12 @@ public class SystemTray {
     public static boolean isSupported() {
         initializeSystemTrayIfNeeded();
 
-        if (Toolkit.getDefaultToolkit() instanceof SunToolkit) {
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
 
-            return ((SunToolkit)Toolkit.getDefaultToolkit()).isTraySupported();
-
-        } else if (Toolkit.getDefaultToolkit() instanceof HeadlessToolkit) {
-
-            return ((HeadlessToolkit)Toolkit.getDefaultToolkit()).isTraySupported();
+        if (toolkit instanceof SunToolkit) {
+            return ((SunToolkit)toolkit).isTraySupported();
+        } else if (toolkit instanceof HeadlessToolkit) {
+            return ((HeadlessToolkit)toolkit).isTraySupported();
         }
         return false;
     }
@@ -323,7 +324,7 @@ public class SystemTray {
         if (icons != null) {
             return (TrayIcon[])icons.toArray(new TrayIcon[icons.size()]);
         }
-        return new TrayIcon[0];
+        return EMPTY_TRAY_ARRAY;
     }
 
     /**
