@@ -635,11 +635,21 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     private PropertyChangeSupport changeSupport;
 
-    // Note: this field is considered final, though readObject() prohibits
-    // initializing final fields.
-    private transient Object changeSupportLock = new Object();
-    private Object getChangeSupportLock() {
-        return changeSupportLock;
+    /*
+     * In some cases using "this" as an object to synchronize by
+     * can lead to a deadlock if client code also uses synchronization
+     * by a component object. For every such situation revealed we should
+     * consider possibility of replacing "this" with the package private
+     * objectLock object introduced below. So far there're 2 issues known:
+     * - CR 6708322 (the getName/setName methods);
+     * - CR 6608764 (the PropertyChangeListener machinery).
+     *
+     * Note: this field is considered final, though readObject() prohibits
+     * initializing final fields.
+     */
+    private transient Object objectLock = new Object();
+    Object getObjectLock() {
+        return objectLock;
     }
 
     boolean isPacked = false;
@@ -812,7 +822,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     public String getName() {
         if (name == null && !nameExplicitlySet) {
-            synchronized(this) {
+            synchronized(getObjectLock()) {
                 if (name == null && !nameExplicitlySet)
                     name = constructComponentName();
             }
@@ -829,7 +839,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     public void setName(String name) {
         String oldName;
-        synchronized(this) {
+        synchronized(getObjectLock()) {
             oldName = this.name;
             this.name = name;
             nameExplicitlySet = true;
@@ -7838,7 +7848,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     public void addPropertyChangeListener(
                                                        PropertyChangeListener listener) {
-        synchronized (getChangeSupportLock()) {
+        synchronized (getObjectLock()) {
             if (listener == null) {
                 return;
             }
@@ -7864,7 +7874,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     public void removePropertyChangeListener(
                                                           PropertyChangeListener listener) {
-        synchronized (getChangeSupportLock()) {
+        synchronized (getObjectLock()) {
             if (listener == null || changeSupport == null) {
                 return;
             }
@@ -7887,7 +7897,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since    1.4
      */
     public PropertyChangeListener[] getPropertyChangeListeners() {
-        synchronized (getChangeSupportLock()) {
+        synchronized (getObjectLock()) {
             if (changeSupport == null) {
                 return new PropertyChangeListener[0];
             }
@@ -7929,7 +7939,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     public void addPropertyChangeListener(
                                                        String propertyName,
                                                        PropertyChangeListener listener) {
-        synchronized (getChangeSupportLock()) {
+        synchronized (getObjectLock()) {
             if (listener == null) {
                 return;
             }
@@ -7959,7 +7969,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     public void removePropertyChangeListener(
                                                           String propertyName,
                                                           PropertyChangeListener listener) {
-        synchronized (getChangeSupportLock()) {
+        synchronized (getObjectLock()) {
             if (listener == null || changeSupport == null) {
                 return;
             }
@@ -7983,7 +7993,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     public PropertyChangeListener[] getPropertyChangeListeners(
                                                                             String propertyName) {
-        synchronized (getChangeSupportLock()) {
+        synchronized (getObjectLock()) {
             if (changeSupport == null) {
                 return new PropertyChangeListener[0];
             }
@@ -8004,7 +8014,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     protected void firePropertyChange(String propertyName,
                                       Object oldValue, Object newValue) {
         PropertyChangeSupport changeSupport;
-        synchronized (getChangeSupportLock()) {
+        synchronized (getObjectLock()) {
             changeSupport = this.changeSupport;
         }
         if (changeSupport == null ||
@@ -8306,7 +8316,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {
-        changeSupportLock = new Object();
+        objectLock = new Object();
 
         s.defaultReadObject();
 
