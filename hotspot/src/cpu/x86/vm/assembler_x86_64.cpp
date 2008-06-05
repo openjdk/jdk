@@ -5265,6 +5265,7 @@ void  MacroAssembler::decode_heap_oop_not_null(Register r) {
   assert (UseCompressedOops, "should only be used for compressed headers");
   // Cannot assert, unverified entry point counts instructions (see .ad file)
   // vtableStubs also counts instructions in pd_code_size_limit.
+  // Also do not verify_oop as this is called by verify_oop.
   assert(Address::times_8 == LogMinObjAlignmentInBytes, "decode alg wrong");
   leaq(r, Address(r12_heapbase, r, Address::times_8, 0));
 }
@@ -5273,6 +5274,7 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
   assert (UseCompressedOops, "should only be used for compressed headers");
   // Cannot assert, unverified entry point counts instructions (see .ad file)
   // vtableStubs also counts instructions in pd_code_size_limit.
+  // Also do not verify_oop as this is called by verify_oop.
   assert(Address::times_8 == LogMinObjAlignmentInBytes, "decode alg wrong");
   leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
 }
