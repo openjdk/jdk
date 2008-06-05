@@ -1992,11 +1992,49 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   }
 
   case Op_AddP: {               // Assert sane base pointers
-    const Node *addp = n->in(AddPNode::Address);
+    Node *addp = n->in(AddPNode::Address);
     assert( !addp->is_AddP() ||
             addp->in(AddPNode::Base)->is_top() || // Top OK for allocation
             addp->in(AddPNode::Base) == n->in(AddPNode::Base),
             "Base pointers must match" );
+#ifdef _LP64
+    if (UseCompressedOops &&
+        addp->Opcode() == Op_ConP &&
+        addp == n->in(AddPNode::Base) &&
+        n->in(AddPNode::Offset)->is_Con()) {
+      // Use addressing with narrow klass to load with offset on x86.
+      // On sparc loading 32-bits constant and decoding it have less
+      // instructions (4) then load 64-bits constant (7).
+      // Do this transformation here since IGVN will convert ConN back to ConP.
+      const Type* t = addp->bottom_type();
+      if (t->isa_oopptr()) {
+        Node* nn = NULL;
+
+        // Look for existing ConN node of the same exact type.
+        Compile* C = Compile::current();
+        Node* r  = C->root();
+        uint cnt = r->outcnt();
+        for (uint i = 0; i < cnt; i++) {
+          Node* m = r->raw_out(i);
+          if (m!= NULL && m->Opcode() == Op_ConN &&
+              m->bottom_type()->is_narrowoop()->make_oopptr() == t) {
+            nn = m;
+            break;
+          }
+        }
+        if (nn != NULL) {
+          // Decode a narrow oop to match address
+          // [R12 + narrow_oop_reg<<3 + offset]
+          nn = new (C,  2) DecodeNNode(nn, t);
+          n->set_req(AddPNode::Base, nn);
+          n->set_req(AddPNode::Address, nn);
+          if (addp->outcnt() == 0) {
+            addp->disconnect_inputs(NULL);
+          }
+        }
+      }
+    }
+#endif
     break;
   }
 

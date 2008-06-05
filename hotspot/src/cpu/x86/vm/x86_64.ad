@@ -6149,7 +6149,7 @@ instruct loadNKlass(rRegN dst, memory mem)
   match(Set dst (LoadNKlass mem));
 
   ins_cost(125); // XXX
-  format %{ "movl    $dst, $mem\t# compressed klass ptr\n\t" %}
+  format %{ "movl    $dst, $mem\t# compressed klass ptr" %}
   ins_encode %{
     Address addr = build_address($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
     Register dst = as_Register($dst$$reg);
@@ -7089,7 +7089,8 @@ instruct encodeHeapOop_not_null(rRegN dst, rRegP src, rFlagsReg cr) %{
 %}
 
 instruct decodeHeapOop(rRegP dst, rRegN src, rFlagsReg cr) %{
-  predicate(n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull);
+  predicate(n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
+            n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant);
   match(Set dst (DecodeN src));
   effect(KILL cr);
   format %{ "decode_heap_oop $dst,$src" %}
@@ -7105,7 +7106,8 @@ instruct decodeHeapOop(rRegP dst, rRegN src, rFlagsReg cr) %{
 %}
 
 instruct decodeHeapOop_not_null(rRegP dst, rRegN src) %{
-  predicate(n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull);
+  predicate(n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
+            n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant);
   match(Set dst (DecodeN src));
   format %{ "decode_heap_oop_not_null $dst,$src" %}
   ins_encode %{
