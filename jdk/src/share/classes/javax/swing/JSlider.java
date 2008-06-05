@@ -638,9 +638,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
     /**
      * Sets the model's {@code valueIsAdjusting} property.  Slider look and
      * feel implementations should set this property to {@code true} when
-     * a knob drag begins, and to {@code false} when the drag ends.  The
-     * slider model will not generate {@code ChangeEvent}s while
-     * {@code valueIsAdjusting} is {@code true}.
+     * a knob drag begins, and to {@code false} when the drag ends.
      *
      * @param b the new value for the {@code valueIsAdjusting} property
      * @see   #getValueIsAdjusting
