@@ -26,6 +26,8 @@
 package com.sun.jmx.mbeanserver;
 
 import static com.sun.jmx.mbeanserver.Util.*;
+import java.lang.annotation.ElementType;
+import javax.management.openmbean.MXBeanMappingClass;
 
 import static javax.management.openmbean.SimpleType.*;
 
@@ -66,6 +68,8 @@ import javax.management.openmbean.CompositeDataInvocationHandler;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.CompositeDataView;
 import javax.management.openmbean.CompositeType;
+import javax.management.openmbean.MXBeanMapping;
+import javax.management.openmbean.MXBeanMappingFactory;
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.OpenType;
 import javax.management.openmbean.SimpleType;
@@ -74,137 +78,118 @@ import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
 /**
-   <p>A converter between Java types and the limited set of classes
-   defined by Open MBeans.</p>
-
-   <p>A Java type is an instance of java.lang.reflect.Type.  For our
-   purposes, it is either a Class, such as String.class or int.class;
-   or a ParameterizedType, such as List<String> or Map<Integer,
-   String[]>.  On J2SE 1.4 and earlier, it can only be a Class.</p>
-
-   <p>Each Type is associated with an OpenConverter.  The
-   OpenConverter defines an OpenType corresponding to the Type, plus a
-   Java class corresponding to the OpenType.  For example:</p>
-
-   <pre>
-   Type                     Open class     OpenType
-   ----                     ----------     --------
-   Integer                  Integer        SimpleType.INTEGER
-   int                      int            SimpleType.INTEGER
-   Integer[]                Integer[]      ArrayType(1, SimpleType.INTEGER)
-   int[]                    Integer[]      ArrayType(SimpleType.INTEGER, true)
-   String[][]               String[][]     ArrayType(2, SimpleType.STRING)
-   List<String>             String[]       ArrayType(1, SimpleType.STRING)
-   ThreadState (an Enum)    String         SimpleType.STRING
-   Map<Integer, String[]>   TabularData    TabularType(
-                                             CompositeType(
-                                               {"key", SimpleType.INTEGER},
-                                               {"value",
-                                                 ArrayType(1,
-                                                  SimpleType.STRING)}),
-                                             indexNames={"key"})
-   </pre>
-
-   <p>Apart from simple types, arrays, and collections, Java types are
-   converted through introspection into CompositeType.  The Java type
-   must have at least one getter (method such as "int getSize()" or
-   "boolean isBig()"), and we must be able to deduce how to
-   reconstruct an instance of the Java class from the values of the
-   getters using one of various heuristics.</p>
-
-   @since 1.6
+ *   <p>A converter between Java types and the limited set of classes
+ *   defined by Open MBeans.</p>
+ *
+ *   <p>A Java type is an instance of java.lang.reflect.Type.  For our
+ *   purposes, it is either a Class, such as String.class or int.class;
+ *   or a ParameterizedType, such as List<String> or Map<Integer,
+ *   String[]>.  On J2SE 1.4 and earlier, it can only be a Class.</p>
+ *
+ *   <p>Each Type is associated with an DefaultMXBeanMappingFactory.  The
+ *   DefaultMXBeanMappingFactory defines an OpenType corresponding to the Type, plus a
+ *   Java class corresponding to the OpenType.  For example:</p>
+ *
+ *   <pre>
+ *   Type                     Open class     OpenType
+ *   ----                     ----------     --------
+ *   Integer                Integer        SimpleType.INTEGER
+ *   int                            int            SimpleType.INTEGER
+ *   Integer[]              Integer[]      ArrayType(1, SimpleType.INTEGER)
+ *   int[]                  Integer[]      ArrayType(SimpleType.INTEGER, true)
+ *   String[][]             String[][]     ArrayType(2, SimpleType.STRING)
+ *   List<String>                   String[]       ArrayType(1, SimpleType.STRING)
+ *   ThreadState (an Enum)    String         SimpleType.STRING
+ *   Map<Integer, String[]>   TabularData          TabularType(
+ *                                           CompositeType(
+ *                                             {"key", SimpleType.INTEGER},
+ *                                             {"value",
+ *                                               ArrayType(1,
+ *                                                SimpleType.STRING)}),
+ *                                           indexNames={"key"})
+ *   </pre>
+ *
+ *   <p>Apart from simple types, arrays, and collections, Java types are
+ *   converted through introspection into CompositeType.  The Java type
+ *   must have at least one getter (method such as "int getSize()" or
+ *   "boolean isBig()"), and we must be able to deduce how to
+ *   reconstruct an instance of the Java class from the values of the
+ *   getters using one of various heuristics.</p>
+ *
+ * @since 1.6
  */
-public abstract class OpenConverter {
-    private OpenConverter(Type targetType, OpenType openType,
-                          Class openClass) {
-        this.targetType = targetType;
-        this.openType = openType;
-        this.openClass = openClass;
+public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
+    static abstract class NonNullMXBeanMapping extends MXBeanMapping {
+        NonNullMXBeanMapping(Type javaType, OpenType openType) {
+            super(javaType, openType);
+        }
+
+        @Override
+        public final Object fromOpenValue(Object openValue)
+        throws InvalidObjectException {
+            if (openValue == null)
+                return null;
+            else
+                return fromNonNullOpenValue(openValue);
+        }
+
+        @Override
+        public final Object toOpenValue(Object javaValue) throws OpenDataException {
+            if (javaValue == null)
+                return null;
+            else
+                return toNonNullOpenValue(javaValue);
+        }
+
+        abstract Object fromNonNullOpenValue(Object openValue)
+        throws InvalidObjectException;
+
+        abstract Object toNonNullOpenValue(Object javaValue)
+        throws OpenDataException;
+
+        /**
+         * <p>True if and only if this MXBeanMapping's toOpenValue and
+         * fromOpenValue methods are the identity function.</p>
+         */
+        boolean isIdentity() {
+            return false;
+        }
     }
 
-    /** <p>Convert an instance of openClass into an instance of targetType. */
-    public final Object fromOpenValue(MXBeanLookup lookup, Object value)
-            throws InvalidObjectException {
-        if (value == null)
-            return null;
-        else
-            return fromNonNullOpenValue(lookup, value);
+    static boolean isIdentity(MXBeanMapping mapping) {
+        return (mapping instanceof NonNullMXBeanMapping &&
+                ((NonNullMXBeanMapping) mapping).isIdentity());
     }
 
-    abstract Object fromNonNullOpenValue(MXBeanLookup lookup, Object value)
-            throws InvalidObjectException;
+    private static final class Mappings
+        extends WeakHashMap<Type, WeakReference<MXBeanMapping>> {}
 
-    /** <p>Throw an appropriate InvalidObjectException if we will not be able
-        to convert back from the open data to the original Java object.</p> */
-    void checkReconstructible() throws InvalidObjectException {
-        // subclasses override if action necessary
-    }
+    private static final Map<MXBeanMappingFactory, Mappings> factoryMappings =
+            new WeakHashMap<MXBeanMappingFactory, Mappings>();
 
-    /** <p>Convert an instance of targetType into an instance of openClass. */
-    final Object toOpenValue(MXBeanLookup lookup, Object value)
-            throws OpenDataException {
-        if (value == null)
-            return null;
-        else
-            return toNonNullOpenValue(lookup, value);
-    }
+    private static final Map<Type, MXBeanMapping> permanentMappings = newMap();
 
-    abstract Object toNonNullOpenValue(MXBeanLookup lookup, Object value)
-            throws OpenDataException;
-
-    /** <p>True if and only if this OpenConverter's toOpenValue and fromOpenValue
-        methods are the identity function.</p> */
-    boolean isIdentity() {
-        return false;
-    }
-
-    /** <p>True if and only if isIdentity() and even an array of the underlying type
-       is transformed as the identity.  This is true for Integer and
-       ObjectName, for instance, but not for int.</p> */
-    final Type getTargetType() {
-        return targetType;
-    }
-
-    final OpenType getOpenType() {
-        return openType;
-    }
-
-    /* The Java class corresponding to getOpenType().  This is the class
-       named by getOpenType().getClassName(), except that it may be a
-       primitive type or an array of primitive type.  */
-    final Class getOpenClass() {
-        return openClass;
-    }
-
-    private final Type targetType;
-    private final OpenType openType;
-    private final Class openClass;
-
-    private static final class ConverterMap
-        extends WeakHashMap<Type, WeakReference<OpenConverter>> {}
-
-    private static final ConverterMap converterMap = new ConverterMap();
-
-    /** Following List simply serves to keep a reference to predefined
-        OpenConverters so they don't get garbage collected. */
-    private static final List<OpenConverter> permanentConverters = newList();
-
-    private static synchronized OpenConverter getConverter(Type type) {
-        WeakReference<OpenConverter> wr = converterMap.get(type);
+    private static synchronized MXBeanMapping getMapping(
+            Type type, MXBeanMappingFactory factory) {
+        Mappings mappings = factoryMappings.get(factory);
+        if (mappings == null) {
+            mappings = new Mappings();
+            factoryMappings.put(factory, mappings);
+        }
+        WeakReference<MXBeanMapping> wr = mappings.get(type);
         return (wr == null) ? null : wr.get();
     }
 
-    private static synchronized void putConverter(Type type,
-                                                  OpenConverter conv) {
-        WeakReference<OpenConverter> wr =
-            new WeakReference<OpenConverter>(conv);
-        converterMap.put(type, wr);
-    }
-
-    private static synchronized void putPermanentConverter(Type type,
-                                                           OpenConverter conv) {
-        putConverter(type, conv);
-        permanentConverters.add(conv);
+    private static synchronized void putMapping(
+            Type type, MXBeanMapping mapping, MXBeanMappingFactory factory) {
+        Mappings mappings = factoryMappings.get(factory);
+        if (mappings == null) {
+            mappings = new Mappings();
+            factoryMappings.put(factory, mappings);
+        }
+        WeakReference<MXBeanMapping> wr =
+            new WeakReference<MXBeanMapping>(mapping);
+        mappings.put(type, wr);
     }
 
     static {
@@ -226,28 +211,26 @@ public abstract class OpenConverter {
                 // the classes that these predefined types declare must exist!
                 throw new Error(e);
             }
-            final OpenConverter conv = new IdentityConverter(c, t, c);
-            putPermanentConverter(c, conv);
+            final MXBeanMapping mapping = new IdentityMapping(c, t);
+            permanentMappings.put(c, mapping);
 
             if (c.getName().startsWith("java.lang.")) {
                 try {
                     final Field typeField = c.getField("TYPE");
-                    final Class primitiveType = (Class) typeField.get(null);
-                    final OpenConverter primitiveConv =
-                        new IdentityConverter(primitiveType, t, primitiveType);
-                    putPermanentConverter(primitiveType,
-                                          primitiveConv);
+                    final Class<?> primitiveType = (Class<?>) typeField.get(null);
+                    final MXBeanMapping primitiveMapping =
+                        new IdentityMapping(primitiveType, t);
+                    permanentMappings.put(primitiveType, primitiveMapping);
                     if (primitiveType != void.class) {
                         final Class<?> primitiveArrayType =
                             Array.newInstance(primitiveType, 0).getClass();
                         final OpenType primitiveArrayOpenType =
                             ArrayType.getPrimitiveArrayType(primitiveArrayType);
-                        final OpenConverter primitiveArrayConv =
-                            new IdentityConverter(primitiveArrayType,
-                                                  primitiveArrayOpenType,
-                                                  primitiveArrayType);
-                        putPermanentConverter(primitiveArrayType,
-                                              primitiveArrayConv);
+                        final MXBeanMapping primitiveArrayMapping =
+                            new IdentityMapping(primitiveArrayType,
+                                                primitiveArrayOpenType);
+                        permanentMappings.put(primitiveArrayType,
+                                              primitiveArrayMapping);
                     }
                 } catch (NoSuchFieldException e) {
                     // OK: must not be a primitive wrapper
@@ -260,64 +243,119 @@ public abstract class OpenConverter {
     }
 
     /** Get the converter for the given Java type, creating it if necessary. */
-    public static synchronized OpenConverter toConverter(Type objType)
+    @Override
+    public synchronized MXBeanMapping mappingForType(Type objType,
+                                                     MXBeanMappingFactory factory)
             throws OpenDataException {
-
         if (inProgress.containsKey(objType))
             throw new OpenDataException("Recursive data structure");
 
-        OpenConverter conv;
+        MXBeanMapping mapping;
 
-        conv = getConverter(objType);
-        if (conv != null)
-            return conv;
+        mapping = getMapping(objType, null);
+        if (mapping != null)
+            return mapping;
 
         inProgress.put(objType, objType);
         try {
-            conv = makeConverter(objType);
+            mapping = makeMapping(objType, factory);
         } finally {
             inProgress.remove(objType);
         }
 
-        putConverter(objType, conv);
-        return conv;
+        putMapping(objType, mapping, factory);
+        return mapping;
     }
 
-    private static OpenConverter makeConverter(Type objType)
-            throws OpenDataException {
+    private MXBeanMapping makeMapping(Type objType, MXBeanMappingFactory factory)
+    throws OpenDataException {
 
         /* It's not yet worth formalizing these tests by having for example
            an array of factory classes, each of which says whether it
            recognizes the Type (Chain of Responsibility pattern).  */
+        MXBeanMapping mapping = permanentMappings.get(objType);
+        if (mapping != null)
+            return mapping;
+        Class<?> erasure = erasure(objType);
+        MXBeanMappingClass mappingClass =
+                erasure.getAnnotation(MXBeanMappingClass.class);
+        if (mappingClass != null)
+            return makeAnnotationMapping(mappingClass, objType, factory);
         if (objType instanceof GenericArrayType) {
             Type componentType =
                 ((GenericArrayType) objType).getGenericComponentType();
-            return makeArrayOrCollectionConverter(objType, componentType);
+            return makeArrayOrCollectionMapping(objType, componentType, factory);
         } else if (objType instanceof Class) {
             Class<?> objClass = (Class<?>) objType;
             if (objClass.isEnum()) {
                 // Huge hack to avoid compiler warnings here.  The ElementType
                 // parameter is ignored but allows us to obtain a type variable
                 // T that matches <T extends Enum<T>>.
-                return makeEnumConverter(objClass, ElementType.class);
+                return makeEnumMapping((Class) objClass, ElementType.class);
             } else if (objClass.isArray()) {
                 Type componentType = objClass.getComponentType();
-                return makeArrayOrCollectionConverter(objClass, componentType);
+                return makeArrayOrCollectionMapping(objClass, componentType,
+                        factory);
             } else if (JMX.isMXBeanInterface(objClass)) {
-                return makeMXBeanConverter(objClass);
+                return makeMXBeanRefMapping(objClass);
             } else {
-                return makeCompositeConverter(objClass);
+                return makeCompositeMapping(objClass, factory);
             }
         } else if (objType instanceof ParameterizedType) {
-            return makeParameterizedConverter((ParameterizedType) objType);
+            return makeParameterizedTypeMapping((ParameterizedType) objType,
+                                                factory);
         } else
             throw new OpenDataException("Cannot map type: " + objType);
     }
 
-    private static <T extends Enum<T>> OpenConverter
-            makeEnumConverter(Class<?> enumClass, Class<T> fake) {
-        Class<T> enumClassT = Util.cast(enumClass);
-        return new EnumConverter<T>(enumClassT);
+    private static MXBeanMapping
+            makeAnnotationMapping(MXBeanMappingClass mappingClass,
+                                  Type objType,
+                                  MXBeanMappingFactory factory)
+    throws OpenDataException {
+        Class<? extends MXBeanMapping> c = mappingClass.value();
+        Constructor<? extends MXBeanMapping> cons;
+        try {
+            cons = c.getConstructor(Type.class);
+        } catch (NoSuchMethodException e) {
+            final String msg =
+                    "Annotation @" + MXBeanMappingClass.class.getName() +
+                    " must name a class with a public constructor that has a " +
+                    "single " + Type.class.getName() + " argument";
+            OpenDataException ode = new OpenDataException(msg);
+            ode.initCause(e);
+            throw ode;
+        }
+        try {
+            return cons.newInstance(objType);
+        } catch (Exception e) {
+            final String msg =
+                    "Could not construct a " + c.getName() + " for @" +
+                    MXBeanMappingClass.class.getName();
+            OpenDataException ode = new OpenDataException(msg);
+            ode.initCause(e);
+            throw ode;
+        }
+    }
+
+    private static Class<?> erasure(Type t) {
+        if (t instanceof Class<?>)
+            return (Class<?>) t;
+        if (t instanceof ParameterizedType)
+            return erasure(((ParameterizedType) t).getRawType());
+        /* Other cases: GenericArrayType, TypeVariable, WildcardType.
+         * Returning the erasure of GenericArrayType is not necessary because
+         * anyway we will be recursing on the element type, and we'll erase
+         * then.  Returning the erasure of the other two would mean returning
+         * the type bound (e.g. Foo in <T extends Foo> or <? extends Foo>)
+         * and since we don't treat this as Foo elsewhere we shouldn't here.
+         */
+        return Object.class;
+    }
+
+    private static <T extends Enum<T>> MXBeanMapping
+            makeEnumMapping(Class enumClass, Class<T> fake) {
+        return new EnumMapping<T>(Util.<Class<T>>cast(enumClass));
     }
 
     /* Make the converter for an array type, or a collection such as
@@ -325,14 +363,15 @@ public abstract class OpenConverter {
      * primitive arrays (e.g. int[]) here because they use the identity
      * converter and are registered as such in the static initializer.
      */
-    private static OpenConverter
-        makeArrayOrCollectionConverter(Type collectionType, Type elementType)
+    private MXBeanMapping
+        makeArrayOrCollectionMapping(Type collectionType, Type elementType,
+                                     MXBeanMappingFactory factory)
             throws OpenDataException {
 
-        final OpenConverter elementConverter = toConverter(elementType);
-        final OpenType<?> elementOpenType = elementConverter.getOpenType();
+        final MXBeanMapping elementMapping = factory.mappingForType(elementType, factory);
+        final OpenType<?> elementOpenType = elementMapping.getOpenType();
         final ArrayType<?> openType = ArrayType.getArrayType(elementOpenType);
-        final Class<?> elementOpenClass = elementConverter.getOpenClass();
+        final Class<?> elementOpenClass = elementMapping.getOpenClass();
 
         final Class<?> openArrayClass;
         final String openArrayClassName;
@@ -347,19 +386,18 @@ public abstract class OpenConverter {
         }
 
         if (collectionType instanceof ParameterizedType) {
-            return new CollectionConverter(collectionType,
-                                           openType, openArrayClass,
-                                           elementConverter);
+            return new CollectionMapping(collectionType,
+                                         openType, openArrayClass,
+                                         elementMapping);
         } else {
-            if (elementConverter.isIdentity()) {
-                return new IdentityConverter(collectionType,
-                                             openType,
-                                             openArrayClass);
+            if (isIdentity(elementMapping)) {
+                return new IdentityMapping(collectionType,
+                                           openType);
             } else {
-                return new ArrayConverter(collectionType,
+                return new ArrayMapping(collectionType,
                                           openType,
                                           openArrayClass,
-                                          elementConverter);
+                                          elementMapping);
             }
         }
     }
@@ -367,16 +405,17 @@ public abstract class OpenConverter {
     private static final String[] keyArray = {"key"};
     private static final String[] keyValueArray = {"key", "value"};
 
-    private static OpenConverter
-        makeTabularConverter(Type objType, boolean sortedMap,
-                             Type keyType, Type valueType)
+    private MXBeanMapping
+        makeTabularMapping(Type objType, boolean sortedMap,
+                           Type keyType, Type valueType,
+                           MXBeanMappingFactory factory)
             throws OpenDataException {
 
         final String objTypeName = objType.toString();
-        final OpenConverter keyConverter = toConverter(keyType);
-        final OpenConverter valueConverter = toConverter(valueType);
-        final OpenType keyOpenType = keyConverter.getOpenType();
-        final OpenType valueOpenType = valueConverter.getOpenType();
+        final MXBeanMapping keyMapping = factory.mappingForType(keyType, factory);
+        final MXBeanMapping valueMapping = factory.mappingForType(valueType, factory);
+        final OpenType keyOpenType = keyMapping.getOpenType();
+        final OpenType valueOpenType = valueMapping.getOpenType();
         final CompositeType rowType =
             new CompositeType(objTypeName,
                               objTypeName,
@@ -385,8 +424,8 @@ public abstract class OpenConverter {
                               new OpenType[] {keyOpenType, valueOpenType});
         final TabularType tabularType =
             new TabularType(objTypeName, objTypeName, rowType, keyArray);
-        return new TabularConverter(objType, sortedMap, tabularType,
-                                    keyConverter, valueConverter);
+        return new TabularMapping(objType, sortedMap, tabularType,
+                                    keyMapping, valueMapping);
     }
 
     /* We know how to translate List<E>, Set<E>, SortedSet<E>,
@@ -394,8 +433,10 @@ public abstract class OpenConverter {
        subtypes of those because we wouldn't know how to deserialize
        them.  We don't accept Queue<E> because it is unlikely people
        would use that as a parameter or return type in an MBean.  */
-    private static OpenConverter
-        makeParameterizedConverter(ParameterizedType objType) throws OpenDataException {
+    private MXBeanMapping
+            makeParameterizedTypeMapping(ParameterizedType objType,
+                                         MXBeanMappingFactory factory)
+            throws OpenDataException {
 
         final Type rawType = objType.getRawType();
 
@@ -406,7 +447,7 @@ public abstract class OpenConverter {
                 assert(actuals.length == 1);
                 if (c == SortedSet.class)
                     mustBeComparable(c, actuals[0]);
-                return makeArrayOrCollectionConverter(objType, actuals[0]);
+                return makeArrayOrCollectionMapping(objType, actuals[0], factory);
             } else {
                 boolean sortedMap = (c == SortedMap.class);
                 if (c == Map.class || sortedMap) {
@@ -414,20 +455,21 @@ public abstract class OpenConverter {
                     assert(actuals.length == 2);
                     if (sortedMap)
                         mustBeComparable(c, actuals[0]);
-                    return makeTabularConverter(objType, sortedMap,
-                            actuals[0], actuals[1]);
+                    return makeTabularMapping(objType, sortedMap,
+                            actuals[0], actuals[1], factory);
                 }
             }
         }
         throw new OpenDataException("Cannot convert type: " + objType);
     }
 
-    private static OpenConverter makeMXBeanConverter(Type t)
+    private static MXBeanMapping makeMXBeanRefMapping(Type t)
             throws OpenDataException {
-        return new MXBeanConverter(t);
+        return new MXBeanRefMapping(t);
     }
 
-    private static OpenConverter makeCompositeConverter(Class c)
+    private MXBeanMapping makeCompositeMapping(Class c,
+                                               MXBeanMappingFactory factory)
             throws OpenDataException {
 
         // For historical reasons GcInfo implements CompositeData but we
@@ -479,7 +521,7 @@ public abstract class OpenConverter {
             final Method getter = entry.getValue();
             getters[i] = getter;
             final Type retType = getter.getGenericReturnType();
-            openTypes[i] = toConverter(retType).getOpenType();
+            openTypes[i] = factory.mappingForType(retType, factory).getOpenType();
             i++;
         }
 
@@ -490,52 +532,55 @@ public abstract class OpenConverter {
                               itemNames, // field descriptions
                               openTypes);
 
-        return new CompositeConverter(c,
-                                      compositeType,
-                                      itemNames,
-                                      getters);
+        return new CompositeMapping(c,
+                                    compositeType,
+                                    itemNames,
+                                    getters,
+                                    factory);
     }
 
     /* Converter for classes where the open data is identical to the
        original data.  This is true for any of the SimpleType types,
        and for an any-dimension array of those.  It is also true for
-       primitive types as of JMX 1.3, since an int[] needs to
+       primitive types as of JMX 1.3, since an int[]
        can be directly represented by an ArrayType, and an int needs no mapping
        because reflection takes care of it.  */
-    private static final class IdentityConverter extends OpenConverter {
-        IdentityConverter(Type targetType, OpenType openType,
-                          Class openClass) {
-            super(targetType, openType, openClass);
+    private static final class IdentityMapping extends NonNullMXBeanMapping {
+        IdentityMapping(Type targetType, OpenType openType) {
+            super(targetType, openType);
         }
 
         boolean isIdentity() {
             return true;
         }
 
-        final Object toNonNullOpenValue(MXBeanLookup lookup, Object value) {
-            return value;
+        @Override
+        Object fromNonNullOpenValue(Object openValue)
+        throws InvalidObjectException {
+            return openValue;
         }
 
-        public final Object fromNonNullOpenValue(MXBeanLookup lookup, Object value) {
-            return value;
+        @Override
+        Object toNonNullOpenValue(Object javaValue) throws OpenDataException {
+            return javaValue;
         }
     }
 
-    private static final class EnumConverter<T extends Enum<T>>
-            extends OpenConverter {
+    private static final class EnumMapping<T extends Enum<T>>
+            extends NonNullMXBeanMapping {
 
-        EnumConverter(Class<T> enumClass) {
-            super(enumClass, SimpleType.STRING, String.class);
+        EnumMapping(Class<T> enumClass) {
+            super(enumClass, SimpleType.STRING);
             this.enumClass = enumClass;
         }
 
-        final Object toNonNullOpenValue(MXBeanLookup lookup, Object value) {
+        @Override
+        final Object toNonNullOpenValue(Object value) {
             return ((Enum) value).name();
         }
 
-        // return type could be T, but after erasure that would be
-        // java.lang.Enum, which doesn't exist on J2SE 1.4
-        public final Object fromNonNullOpenValue(MXBeanLookup lookup, Object value)
+        @Override
+        final T fromNonNullOpenValue(Object value)
                 throws InvalidObjectException {
             try {
                 return Enum.valueOf(enumClass, (String) value);
@@ -548,69 +593,69 @@ public abstract class OpenConverter {
         private final Class<T> enumClass;
     }
 
-    private static final class ArrayConverter extends OpenConverter {
-        ArrayConverter(Type targetType,
-                       ArrayType openArrayType, Class openArrayClass,
-                       OpenConverter elementConverter) {
-            super(targetType, openArrayType, openArrayClass);
-            this.elementConverter = elementConverter;
+    private static final class ArrayMapping extends NonNullMXBeanMapping {
+        ArrayMapping(Type targetType,
+                     ArrayType openArrayType, Class openArrayClass,
+                     MXBeanMapping elementMapping) {
+            super(targetType, openArrayType);
+            this.elementMapping = elementMapping;
         }
 
-        final Object toNonNullOpenValue(MXBeanLookup lookup, Object value)
+        @Override
+        final Object toNonNullOpenValue(Object value)
                 throws OpenDataException {
             Object[] valueArray = (Object[]) value;
             final int len = valueArray.length;
             final Object[] openArray = (Object[])
                 Array.newInstance(getOpenClass().getComponentType(), len);
-            for (int i = 0; i < len; i++) {
-                openArray[i] =
-                    elementConverter.toOpenValue(lookup, valueArray[i]);
-            }
+            for (int i = 0; i < len; i++)
+                openArray[i] = elementMapping.toOpenValue(valueArray[i]);
             return openArray;
         }
 
-        public final Object fromNonNullOpenValue(MXBeanLookup lookup, Object openValue)
+        @Override
+        final Object fromNonNullOpenValue(Object openValue)
                 throws InvalidObjectException {
             final Object[] openArray = (Object[]) openValue;
-            final Type targetType = getTargetType();
+            final Type javaType = getJavaType();
             final Object[] valueArray;
             final Type componentType;
-            if (targetType instanceof GenericArrayType) {
+            if (javaType instanceof GenericArrayType) {
                 componentType =
-                    ((GenericArrayType) targetType).getGenericComponentType();
-            } else if (targetType instanceof Class &&
-                       ((Class<?>) targetType).isArray()) {
-                componentType = ((Class<?>) targetType).getComponentType();
+                    ((GenericArrayType) javaType).getGenericComponentType();
+            } else if (javaType instanceof Class &&
+                       ((Class<?>) javaType).isArray()) {
+                componentType = ((Class<?>) javaType).getComponentType();
             } else {
                 throw new IllegalArgumentException("Not an array: " +
-                                                   targetType);
+                                                   javaType);
             }
             valueArray = (Object[]) Array.newInstance((Class<?>) componentType,
                                                       openArray.length);
-            for (int i = 0; i < openArray.length; i++) {
-                valueArray[i] =
-                    elementConverter.fromOpenValue(lookup, openArray[i]);
-            }
+            for (int i = 0; i < openArray.length; i++)
+                valueArray[i] = elementMapping.fromOpenValue(openArray[i]);
             return valueArray;
         }
 
-        void checkReconstructible() throws InvalidObjectException {
-            elementConverter.checkReconstructible();
+        public void checkReconstructible() throws InvalidObjectException {
+            elementMapping.checkReconstructible();
         }
 
-        /** OpenConverter for the elements of this array.  If this is an
-            array of arrays, the converter converts the second-level arrays,
-            not the deepest elements.  */
-        private final OpenConverter elementConverter;
+        /**
+         * DefaultMXBeanMappingFactory for the elements of this array.  If this is an
+         *          array of arrays, the converter converts the second-level arrays,
+         *          not the deepest elements.
+         */
+        private final MXBeanMapping elementMapping;
     }
 
-    private static final class CollectionConverter extends OpenConverter {
-        CollectionConverter(Type targetType,
-                            ArrayType openArrayType,
-                            Class openArrayClass,
-                            OpenConverter elementConverter) {
-            super(targetType, openArrayType, openArrayClass);
-            this.elementConverter = elementConverter;
+    private static final class CollectionMapping extends NonNullMXBeanMapping {
+        CollectionMapping(Type targetType,
+                          ArrayType openArrayType,
+                          Class openArrayClass,
+                          MXBeanMapping elementMapping) {
+            super(targetType, openArrayType);
+            this.elementMapping = elementMapping;
 
             /* Determine the concrete class to be used when converting
                back to this Java type.  We convert all Lists to ArrayList
@@ -630,7 +675,8 @@ public abstract class OpenConverter {
             }
         }
 
-        final Object toNonNullOpenValue(MXBeanLookup lookup, Object value)
+        @Override
+        final Object toNonNullOpenValue(Object value)
                 throws OpenDataException {
             final Collection valueCollection = (Collection) value;
             if (valueCollection instanceof SortedSet) {
@@ -648,21 +694,22 @@ public abstract class OpenConverter {
                                   valueCollection.size());
             int i = 0;
             for (Object o : valueCollection)
-                openArray[i++] = elementConverter.toOpenValue(lookup, o);
+                openArray[i++] = elementMapping.toOpenValue(o);
             return openArray;
         }
 
-        public final Object fromNonNullOpenValue(MXBeanLookup lookup, Object openValue)
+        @Override
+        final Object fromNonNullOpenValue(Object openValue)
                 throws InvalidObjectException {
             final Object[] openArray = (Object[]) openValue;
             final Collection<Object> valueCollection;
             try {
-                valueCollection = Util.cast(collectionClass.newInstance());
+                valueCollection = cast(collectionClass.newInstance());
             } catch (Exception e) {
                 throw invalidObjectException("Cannot create collection", e);
             }
             for (Object o : openArray) {
-                Object value = elementConverter.fromOpenValue(lookup, o);
+                Object value = elementMapping.fromOpenValue(o);
                 if (!valueCollection.add(value)) {
                     final String msg =
                         "Could not add " + o + " to " +
@@ -674,34 +721,36 @@ public abstract class OpenConverter {
             return valueCollection;
         }
 
-        void checkReconstructible() throws InvalidObjectException {
-            elementConverter.checkReconstructible();
+        public void checkReconstructible() throws InvalidObjectException {
+            elementMapping.checkReconstructible();
         }
 
         private final Class<? extends Collection> collectionClass;
-        private final OpenConverter elementConverter;
+        private final MXBeanMapping elementMapping;
     }
 
-    private static final class MXBeanConverter extends OpenConverter {
-        MXBeanConverter(Type intf) {
-            super(intf, SimpleType.OBJECTNAME, ObjectName.class);
+    private static final class MXBeanRefMapping extends NonNullMXBeanMapping {
+        MXBeanRefMapping(Type intf) {
+            super(intf, SimpleType.OBJECTNAME);
         }
 
-        final Object toNonNullOpenValue(MXBeanLookup lookup, Object value)
+        @Override
+        final Object toNonNullOpenValue(Object javaValue)
                 throws OpenDataException {
-            lookupNotNull(lookup, OpenDataException.class);
-            ObjectName name = lookup.mxbeanToObjectName(value);
+            MXBeanLookup lookup = lookupNotNull(OpenDataException.class);
+            ObjectName name = lookup.mxbeanToObjectName(javaValue);
             if (name == null)
-                throw new OpenDataException("No name for object: " + value);
+                throw new OpenDataException("No name for object: " + javaValue);
             return name;
         }
 
-        public final Object fromNonNullOpenValue(MXBeanLookup lookup, Object value)
+        @Override
+        final Object fromNonNullOpenValue(Object openValue)
                 throws InvalidObjectException {
-            lookupNotNull(lookup, InvalidObjectException.class);
-            ObjectName name = (ObjectName) value;
+            MXBeanLookup lookup = lookupNotNull(InvalidObjectException.class);
+            ObjectName name = (ObjectName) openValue;
             Object mxbean =
-                lookup.objectNameToMXBean(name, (Class<?>) getTargetType());
+                lookup.objectNameToMXBean(name, (Class<?>) getJavaType());
             if (mxbean == null) {
                 final String msg =
                     "No MXBean for name: " + name;
@@ -710,9 +759,10 @@ public abstract class OpenConverter {
             return mxbean;
         }
 
-        private <T extends Exception> void
-            lookupNotNull(MXBeanLookup lookup, Class<T> excClass)
+        private <T extends Exception> MXBeanLookup
+            lookupNotNull(Class<T> excClass)
                 throws T {
+            MXBeanLookup lookup = MXBeanLookup.getLookup();
             if (lookup == null) {
                 final String msg =
                     "Cannot convert MXBean interface in this context";
@@ -725,24 +775,25 @@ public abstract class OpenConverter {
                 }
                 throw exc;
             }
+            return lookup;
         }
     }
 
-    private static final class TabularConverter extends OpenConverter {
-        TabularConverter(Type targetType,
-                         boolean sortedMap,
-                         TabularType tabularType,
-                         OpenConverter keyConverter,
-                         OpenConverter valueConverter) {
-            super(targetType, tabularType, TabularData.class);
+    private static final class TabularMapping extends NonNullMXBeanMapping {
+        TabularMapping(Type targetType,
+                       boolean sortedMap,
+                       TabularType tabularType,
+                       MXBeanMapping keyConverter,
+                       MXBeanMapping valueConverter) {
+            super(targetType, tabularType);
             this.sortedMap = sortedMap;
-            this.keyConverter = keyConverter;
-            this.valueConverter = valueConverter;
+            this.keyMapping = keyConverter;
+            this.valueMapping = valueConverter;
         }
 
-        final Object toNonNullOpenValue(MXBeanLookup lookup, Object value)
-                throws OpenDataException {
-            final Map<Object, Object> valueMap = Util.cast(value);
+        @Override
+        final Object toNonNullOpenValue(Object value) throws OpenDataException {
+            final Map<Object, Object> valueMap = cast(value);
             if (valueMap instanceof SortedMap) {
                 Comparator comparator = ((SortedMap) valueMap).comparator();
                 if (comparator != null) {
@@ -756,10 +807,8 @@ public abstract class OpenConverter {
             final TabularData table = new TabularDataSupport(tabularType);
             final CompositeType rowType = tabularType.getRowType();
             for (Map.Entry entry : valueMap.entrySet()) {
-                final Object openKey =
-                    keyConverter.toOpenValue(lookup, entry.getKey());
-                final Object openValue =
-                    valueConverter.toOpenValue(lookup, entry.getValue());
+                final Object openKey = keyMapping.toOpenValue(entry.getKey());
+                final Object openValue = valueMapping.toOpenValue(entry.getValue());
                 final CompositeData row;
                 row =
                     new CompositeDataSupport(rowType, keyValueArray,
@@ -770,17 +819,18 @@ public abstract class OpenConverter {
             return table;
         }
 
-        public final Object fromNonNullOpenValue(MXBeanLookup lookup, Object openValue)
+        @Override
+        final Object fromNonNullOpenValue(Object openValue)
                 throws InvalidObjectException {
             final TabularData table = (TabularData) openValue;
-            final Collection<CompositeData> rows = Util.cast(table.values());
+            final Collection<CompositeData> rows = cast(table.values());
             final Map<Object, Object> valueMap =
                 sortedMap ? newSortedMap() : newMap();
             for (CompositeData row : rows) {
                 final Object key =
-                    keyConverter.fromOpenValue(lookup, row.get("key"));
+                    keyMapping.fromOpenValue(row.get("key"));
                 final Object value =
-                    valueConverter.fromOpenValue(lookup, row.get("value"));
+                    valueMapping.fromOpenValue(row.get("value"));
                 if (valueMap.put(key, value) != null) {
                     final String msg =
                         "Duplicate entry in TabularData: key=" + key;
@@ -790,35 +840,38 @@ public abstract class OpenConverter {
             return valueMap;
         }
 
-        void checkReconstructible() throws InvalidObjectException {
-            keyConverter.checkReconstructible();
-            valueConverter.checkReconstructible();
+        @Override
+        public void checkReconstructible() throws InvalidObjectException {
+            keyMapping.checkReconstructible();
+            valueMapping.checkReconstructible();
         }
 
         private final boolean sortedMap;
-        private final OpenConverter keyConverter;
-        private final OpenConverter valueConverter;
+        private final MXBeanMapping keyMapping;
+        private final MXBeanMapping valueMapping;
     }
 
-    private static final class CompositeConverter extends OpenConverter {
-        CompositeConverter(Class targetClass,
-                           CompositeType compositeType,
-                           String[] itemNames,
-                           Method[] getters) throws OpenDataException {
-            super(targetClass, compositeType, CompositeData.class);
+    private final class CompositeMapping extends NonNullMXBeanMapping {
+        CompositeMapping(Class targetClass,
+                         CompositeType compositeType,
+                         String[] itemNames,
+                         Method[] getters,
+                         MXBeanMappingFactory factory) throws OpenDataException {
+            super(targetClass, compositeType);
 
             assert(itemNames.length == getters.length);
 
             this.itemNames = itemNames;
             this.getters = getters;
-            this.getterConverters = new OpenConverter[getters.length];
+            this.getterMappings = new MXBeanMapping[getters.length];
             for (int i = 0; i < getters.length; i++) {
                 Type retType = getters[i].getGenericReturnType();
-                getterConverters[i] = OpenConverter.toConverter(retType);
+                getterMappings[i] = factory.mappingForType(retType, factory);
             }
         }
 
-        final Object toNonNullOpenValue(MXBeanLookup lookup, Object value)
+        @Override
+        final Object toNonNullOpenValue(Object value)
                 throws OpenDataException {
             CompositeType ct = (CompositeType) getOpenType();
             if (value instanceof CompositeDataView)
@@ -830,7 +883,7 @@ public abstract class OpenConverter {
             for (int i = 0; i < getters.length; i++) {
                 try {
                     Object got = getters[i].invoke(value, (Object[]) null);
-                    values[i] = getterConverters[i].toOpenValue(lookup, got);
+                    values[i] = getterMappings[i].toOpenValue(got);
                 } catch (Exception e) {
                     throw openDataException("Error calling getter for " +
                                             itemNames[i] + ": " + e, e);
@@ -848,7 +901,7 @@ public abstract class OpenConverter {
             if (compositeBuilder != null)
                 return;
 
-            Class targetClass = (Class<?>) getTargetType();
+            Class targetClass = (Class<?>) getJavaType();
             /* In this 2D array, each subarray is a set of builders where
                there is no point in consulting the ones after the first if
                the first refuses.  */
@@ -861,7 +914,7 @@ public abstract class OpenConverter {
                 },
                 {
                     new CompositeBuilderCheckGetters(targetClass, itemNames,
-                                                     getterConverters),
+                                                     getterMappings),
                     new CompositeBuilderViaSetters(targetClass, itemNames),
                     new CompositeBuilderViaProxy(targetClass, itemNames),
                 },
@@ -898,22 +951,23 @@ public abstract class OpenConverter {
             compositeBuilder = foundBuilder;
         }
 
-        void checkReconstructible() throws InvalidObjectException {
+        @Override
+        public void checkReconstructible() throws InvalidObjectException {
             makeCompositeBuilder();
         }
 
-        public final Object fromNonNullOpenValue(MXBeanLookup lookup, Object value)
+        @Override
+        final Object fromNonNullOpenValue(Object value)
                 throws InvalidObjectException {
             makeCompositeBuilder();
-            return compositeBuilder.fromCompositeData(lookup,
-                                                      (CompositeData) value,
+            return compositeBuilder.fromCompositeData((CompositeData) value,
                                                       itemNames,
-                                                      getterConverters);
+                                                      getterMappings);
         }
 
         private final String[] itemNames;
         private final Method[] getters;
-        private final OpenConverter[] getterConverters;
+        private final MXBeanMapping[] getterMappings;
         private CompositeBuilder compositeBuilder;
     }
 
@@ -940,9 +994,9 @@ public abstract class OpenConverter {
         abstract String applicable(Method[] getters)
                 throws InvalidObjectException;
 
-        abstract Object fromCompositeData(MXBeanLookup lookup, CompositeData cd,
+        abstract Object fromCompositeData(CompositeData cd,
                                           String[] itemNames,
-                                          OpenConverter[] converters)
+                                          MXBeanMapping[] converters)
                 throws InvalidObjectException;
 
         private final Class<?> targetClass;
@@ -991,9 +1045,9 @@ public abstract class OpenConverter {
             }
         }
 
-        final Object fromCompositeData(MXBeanLookup lookup, CompositeData cd,
-                                 String[] itemNames,
-                                 OpenConverter[] converters)
+        final Object fromCompositeData(CompositeData cd,
+                                       String[] itemNames,
+                                       MXBeanMapping[] converters)
                 throws InvalidObjectException {
             try {
                 return fromMethod.invoke(null, cd);
@@ -1018,7 +1072,7 @@ public abstract class OpenConverter {
         an empty string and the other builders will be tried.  */
     private static class CompositeBuilderCheckGetters extends CompositeBuilder {
         CompositeBuilderCheckGetters(Class targetClass, String[] itemNames,
-                                     OpenConverter[] getterConverters) {
+                                     MXBeanMapping[] getterConverters) {
             super(targetClass, itemNames);
             this.getterConverters = getterConverters;
         }
@@ -1035,25 +1089,25 @@ public abstract class OpenConverter {
             return "";
         }
 
-        final Object fromCompositeData(MXBeanLookup lookup, CompositeData cd,
+        final Object fromCompositeData(CompositeData cd,
                                        String[] itemNames,
-                                       OpenConverter[] converters) {
+                                       MXBeanMapping[] converters) {
             throw new Error();
         }
 
-        private final OpenConverter[] getterConverters;
+        private final MXBeanMapping[] getterConverters;
     }
 
     /** Builder for when the target class has a setter for every getter. */
     private static class CompositeBuilderViaSetters extends CompositeBuilder {
 
-        CompositeBuilderViaSetters(Class targetClass, String[] itemNames) {
+        CompositeBuilderViaSetters(Class<?> targetClass, String[] itemNames) {
             super(targetClass, itemNames);
         }
 
         String applicable(Method[] getters) {
             try {
-                Constructor<?> c = getTargetClass().getConstructor((Class[]) null);
+                Constructor<?> c = getTargetClass().getConstructor();
             } catch (Exception e) {
                 return "does not have a public no-arg constructor";
             }
@@ -1079,9 +1133,9 @@ public abstract class OpenConverter {
             return null;
         }
 
-        Object fromCompositeData(MXBeanLookup lookup, CompositeData cd,
+        Object fromCompositeData(CompositeData cd,
                                  String[] itemNames,
-                                 OpenConverter[] converters)
+                                 MXBeanMapping[] converters)
                 throws InvalidObjectException {
             Object o;
             try {
@@ -1090,7 +1144,7 @@ public abstract class OpenConverter {
                     if (cd.containsKey(itemNames[i])) {
                         Object openItem = cd.get(itemNames[i]);
                         Object javaItem =
-                            converters[i].fromOpenValue(lookup, openItem);
+                            converters[i].fromOpenValue(openItem);
                         setters[i].invoke(o, javaItem);
                     }
                 }
@@ -1118,10 +1172,10 @@ public abstract class OpenConverter {
             final Class<ConstructorProperties> propertyNamesClass = ConstructorProperties.class;
 
             Class targetClass = getTargetClass();
-            Constructor<?>[] constrs = targetClass.getConstructors();
+            Constructor[] constrs = targetClass.getConstructors();
 
             // Applicable if and only if there are any annotated constructors
-            List<Constructor<?>> annotatedConstrList = newList();
+            List<Constructor> annotatedConstrList = newList();
             for (Constructor<?> constr : constrs) {
                 if (Modifier.isPublic(constr.getModifiers())
                         && constr.getAnnotation(propertyNamesClass) != null)
@@ -1152,7 +1206,7 @@ public abstract class OpenConverter {
             // Also remember the set of properties in that constructor
             // so we can test unambiguity.
             Set<BitSet> getterIndexSets = newSet();
-            for (Constructor<?> constr : annotatedConstrList) {
+            for (Constructor constr : annotatedConstrList) {
                 String[] propertyNames =
                     constr.getAnnotation(propertyNamesClass).value();
 
@@ -1251,9 +1305,9 @@ public abstract class OpenConverter {
             return null; // success!
         }
 
-        Object fromCompositeData(MXBeanLookup lookup, CompositeData cd,
-                                 String[] itemNames,
-                                 OpenConverter[] converters)
+        final Object fromCompositeData(CompositeData cd,
+                                       String[] itemNames,
+                                       MXBeanMapping[] mappings)
                 throws InvalidObjectException {
             // The CompositeData might come from an earlier version where
             // not all the items were present.  We look for a constructor
@@ -1287,7 +1341,7 @@ public abstract class OpenConverter {
                 if (!max.presentParams.get(i))
                     continue;
                 Object openItem = cd.get(itemNames[i]);
-                Object javaItem = converters[i].fromOpenValue(lookup, openItem);
+                Object javaItem = mappings[i].fromOpenValue(openItem);
                 int index = max.paramIndexes[i];
                 if (index >= 0)
                     params[index] = javaItem;
@@ -1309,10 +1363,10 @@ public abstract class OpenConverter {
         }
 
         private static class Constr {
-            final Constructor<?> constructor;
+            final Constructor constructor;
             final int[] paramIndexes;
             final BitSet presentParams;
-            Constr(Constructor<?> constructor, int[] paramIndexes,
+            Constr(Constructor constructor, int[] paramIndexes,
                    BitSet presentParams) {
                 this.constructor = constructor;
                 this.paramIndexes = paramIndexes;
@@ -1365,9 +1419,9 @@ public abstract class OpenConverter {
             return null; // success!
         }
 
-        final Object fromCompositeData(MXBeanLookup lookup, CompositeData cd,
-                                 String[] itemNames,
-                                 OpenConverter[] converters) {
+        final Object fromCompositeData(CompositeData cd,
+                                       String[] itemNames,
+                                       MXBeanMapping[] converters) {
             final Class targetClass = getTargetClass();
             return
                 Proxy.newProxyInstance(targetClass.getClassLoader(),

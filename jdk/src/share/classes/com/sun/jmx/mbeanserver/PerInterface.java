@@ -231,7 +231,7 @@ final class PerInterface<M> {
     /**
      * Visitor that sets up the method maps (operations, getters, setters).
      */
-    private class InitMaps implements MBeanAnalyzer.MBeanVisitor<M> {
+    private class InitMaps implements MBeanAnalyzer.MBeanVisitor<M, RuntimeException> {
         public void visitAttribute(String attributeName,
                                    M getter,
                                    M setter) {

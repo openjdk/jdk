@@ -26,7 +26,7 @@
 package javax.management.openmbean;
 
 import com.sun.jmx.mbeanserver.MXBeanLookup;
-import com.sun.jmx.mbeanserver.OpenConverter;
+import com.sun.jmx.mbeanserver.DefaultMXBeanMappingFactory;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -115,7 +115,12 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
        is null.
     */
     public CompositeDataInvocationHandler(CompositeData compositeData) {
-        this(compositeData, null);
+        this(compositeData, MXBeanMappingFactory.DEFAULT);
+    }
+
+    public CompositeDataInvocationHandler(CompositeData compositeData,
+                                          MXBeanMappingFactory mappingFactory) {
+        this(compositeData, mappingFactory, null);
     }
 
     /**
@@ -134,11 +139,13 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
        is null.
     */
     CompositeDataInvocationHandler(CompositeData compositeData,
+                                   MXBeanMappingFactory mappingFactory,
                                    MXBeanLookup lookup) {
         if (compositeData == null)
             throw new IllegalArgumentException("compositeData");
         this.compositeData = compositeData;
         this.lookup = lookup;
+        this.mappingFactory = mappingFactory;
     }
 
     /**
@@ -176,7 +183,7 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
             }
         }
 
-        String propertyName = OpenConverter.propertyName(method);
+        String propertyName = DefaultMXBeanMappingFactory.propertyName(method);
         if (propertyName == null) {
             throw new IllegalArgumentException("Method is not getter: " +
                                                method.getName());
@@ -185,7 +192,7 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
         if (compositeData.containsKey(propertyName))
             openValue = compositeData.get(propertyName);
         else {
-            String decap = OpenConverter.decapitalize(propertyName);
+            String decap = DefaultMXBeanMappingFactory.decapitalize(propertyName);
             if (compositeData.containsKey(decap))
                 openValue = compositeData.get(decap);
             else {
@@ -196,9 +203,10 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
                 throw new IllegalArgumentException(msg);
             }
         }
-        OpenConverter converter =
-            OpenConverter.toConverter(method.getGenericReturnType());
-        return converter.fromOpenValue(lookup, openValue);
+        MXBeanMapping mapping =
+            mappingFactory.mappingForType(method.getGenericReturnType(),
+                                   MXBeanMappingFactory.DEFAULT);
+        return mapping.fromOpenValue(openValue);
     }
 
     /* This method is called when equals(Object) is
@@ -242,4 +250,5 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
 
     private final CompositeData compositeData;
     private final MXBeanLookup lookup;
+    private final MXBeanMappingFactory mappingFactory;
 }
