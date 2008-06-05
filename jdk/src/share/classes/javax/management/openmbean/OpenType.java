@@ -219,7 +219,7 @@ public abstract class OpenType<T> implements Serializable {
         });
     }
 
-    private static String validClassName(String className) throws OpenDataException {
+    static String validClassName(String className) throws OpenDataException {
         className   = valid("className", className);
 
         // Check if className describes an array class, and determines its elements' class name.

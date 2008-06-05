@@ -33,6 +33,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.WeakHashMap;
+import javax.management.openmbean.MXBeanMappingFactory;
+
+import static javax.management.JMX.MBeanOptions;
 
 /**
  * <p>{@link InvocationHandler} that forwards methods in an MBean's
@@ -111,7 +114,7 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
     public MBeanServerInvocationHandler(MBeanServerConnection connection,
                                         ObjectName objectName) {
 
-        this(connection, objectName, false);
+        this(connection, objectName, null);
     }
 
     /**
@@ -138,6 +141,14 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
     public MBeanServerInvocationHandler(MBeanServerConnection connection,
                                         ObjectName objectName,
                                         boolean isMXBean) {
+        this(connection, objectName, isMXBean ? MBeanOptions.MXBEAN : null);
+    }
+
+    public MBeanServerInvocationHandler(MBeanServerConnection connection,
+                                        ObjectName objectName,
+                                        MBeanOptions options) {
+        if (options == null)
+            options = new MBeanOptions();
         if (connection == null) {
             throw new IllegalArgumentException("Null connection");
         }
@@ -146,7 +157,7 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
         }
         this.connection = connection;
         this.objectName = objectName;
-        this.isMXBean = isMXBean;
+        this.options = options.canonical();
     }
 
     /**
@@ -182,7 +193,16 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
      * @since 1.6
      */
     public boolean isMXBean() {
-        return isMXBean;
+        return options.isMXBean();
+    }
+
+    /**
+     * <p>Return the {@link MBeanOptions} used for this proxy.</p>
+     *
+     * @return the MBeanOptions.
+     */
+    public MBeanOptions getMBeanOptions() {
+        return options.uncanonical();
     }
 
     /**
@@ -260,7 +280,7 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
             return doLocally(proxy, method, args);
 
         try {
-            if (isMXBean) {
+            if (isMXBean()) {
                 MXBeanProxy p = findMXBeanProxy(methodClass);
                 return p.invoke(connection, objectName, method, args);
             } else {
@@ -326,21 +346,34 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
          */
     }
 
-    private static MXBeanProxy findMXBeanProxy(Class<?> mxbeanInterface) {
+    private MXBeanProxy findMXBeanProxy(Class<?> mxbeanInterface) {
+        MXBeanMappingFactory mappingFactory = options.getMXBeanMappingFactory();
         synchronized (mxbeanProxies) {
-            WeakReference<MXBeanProxy> proxyRef =
-                    mxbeanProxies.get(mxbeanInterface);
-            MXBeanProxy p = (proxyRef == null) ? null : proxyRef.get();
-            if (p == null) {
-                p = new MXBeanProxy(mxbeanInterface);
-                mxbeanProxies.put(mxbeanInterface,
-                                  new WeakReference<MXBeanProxy>(p));
+            ClassToProxy classToProxy = mxbeanProxies.get(mappingFactory);
+            if (classToProxy == null) {
+                classToProxy = new ClassToProxy();
+                mxbeanProxies.put(mappingFactory, classToProxy);
             }
+            WeakReference<MXBeanProxy> wr = classToProxy.get(mxbeanInterface);
+            MXBeanProxy p;
+            if (wr != null) {
+                p = wr.get();
+                if (p != null)
+                    return p;
+            }
+            p = new MXBeanProxy(mxbeanInterface, mappingFactory);
+            classToProxy.put(mxbeanInterface, new WeakReference<MXBeanProxy>(p));
             return p;
         }
     }
-    private static final WeakHashMap<Class<?>, WeakReference<MXBeanProxy>>
-            mxbeanProxies = new WeakHashMap<Class<?>, WeakReference<MXBeanProxy>>();
+    private static final WeakHashMap<MXBeanMappingFactory, ClassToProxy>
+            mxbeanProxies = newWeakHashMap();
+    private static class ClassToProxy
+            extends WeakHashMap<Class<?>, WeakReference<MXBeanProxy>> {}
+
+    private static <K, V> WeakHashMap<K, V> newWeakHashMap() {
+        return new WeakHashMap<K, V>();
+    }
 
     private Object invokeBroadcasterMethod(Object proxy, Method method,
                                            Object[] args) throws Exception {
@@ -453,7 +486,7 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
                 objectName.equals(handler.objectName) &&
                 proxy.getClass().equals(args[0].getClass());
         } else if (methodName.equals("toString")) {
-            return (isMXBean ? "MX" : "M") + "BeanProxy(" +
+            return (isMXBean() ? "MX" : "M") + "BeanProxy(" +
                 connection + "[" + objectName + "])";
         } else if (methodName.equals("hashCode")) {
             return objectName.hashCode()+connection.hashCode();
@@ -484,5 +517,5 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
 
     private final MBeanServerConnection connection;
     private final ObjectName objectName;
-    private final boolean isMXBean;
+    private final MBeanOptions options;
 }

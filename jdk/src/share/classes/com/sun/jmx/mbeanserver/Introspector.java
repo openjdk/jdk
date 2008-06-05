@@ -42,7 +42,6 @@ import javax.management.ImmutableDescriptor;
 import javax.management.MBeanInfo;
 import javax.management.NotCompliantMBeanException;
 
-import com.sun.jmx.mbeanserver.Util;
 import com.sun.jmx.remote.util.EnvHelp;
 import java.beans.BeanInfo;
 import java.beans.PropertyDescriptor;
@@ -50,6 +49,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import javax.management.AttributeNotFoundException;
 import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.MXBeanMappingFactory;
 
 /**
  * This class contains the methods for performing all the tests needed to verify
@@ -165,30 +165,34 @@ public class Introspector {
         throw new NotCompliantMBeanException(msg);
     }
 
-    public static DynamicMBean makeDynamicMBean(Object mbean)
-        throws NotCompliantMBeanException {
+    public static <T> DynamicMBean makeDynamicMBean(T mbean)
+    throws NotCompliantMBeanException {
+        if (mbean == null)
+            throw new NotCompliantMBeanException("Null MBean object");
         if (mbean instanceof DynamicMBean)
             return (DynamicMBean) mbean;
         final Class mbeanClass = mbean.getClass();
-        Class<?> c = null;
+        Class<? super T> c = null;
         try {
-            c = getStandardMBeanInterface(mbeanClass);
+            c = Util.cast(getStandardMBeanInterface(mbeanClass));
         } catch (NotCompliantMBeanException e) {
             // Ignore exception - we need to check whether
             // mbean is an MXBean first.
         }
         if (c != null)
-            return new StandardMBeanSupport(mbean, Util.<Class<Object>>cast(c));
+            return new StandardMBeanSupport(mbean, c);
 
         try {
-            c = getMXBeanInterface(mbeanClass);
+            c = Util.cast(getMXBeanInterface(mbeanClass));
         } catch (NotCompliantMBeanException e) {
             // Ignore exception - we cannot decide whether mbean was supposed
             // to be an MBean or an MXBean. We will call checkCompliance()
             // to generate the appropriate exception.
         }
-        if (c != null)
-            return new MXBeanSupport(mbean, Util.<Class<Object>>cast(c));
+        if (c != null) {
+            MXBeanMappingFactory factory = MXBeanMappingFactory.forInterface(c);
+            return new MXBeanSupport(mbean, c, factory);
+        }
         checkCompliance(mbeanClass);
         throw new NotCompliantMBeanException("Not compliant"); // not reached
     }
@@ -217,9 +221,10 @@ public class Introspector {
         return testCompliance(baseClass, null);
     }
 
-    public static void testComplianceMXBeanInterface(Class interfaceClass)
+    public static void testComplianceMXBeanInterface(Class interfaceClass,
+                                                     MXBeanMappingFactory factory)
             throws NotCompliantMBeanException {
-        MXBeanIntrospector.getInstance().getAnalyzer(interfaceClass);
+        MXBeanIntrospector.getInstance(factory).getAnalyzer(interfaceClass);
     }
 
     /**
@@ -323,6 +328,15 @@ public class Introspector {
         } catch (Exception e) {
             throw throwException(baseClass,e);
         }
+    }
+
+    public static <T> Class<? super T> getStandardOrMXBeanInterface(
+            Class<T> baseClass, boolean mxbean)
+    throws NotCompliantMBeanException {
+        if (mxbean)
+            return getMXBeanInterface(baseClass);
+        else
+            return getStandardMBeanInterface(baseClass);
     }
 
     /*

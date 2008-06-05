@@ -40,6 +40,7 @@ import java.util.WeakHashMap;
 
 import javax.management.Descriptor;
 import javax.management.ImmutableDescriptor;
+import javax.management.IntrospectionException;
 import javax.management.InvalidAttributeValueException;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanConstructorInfo;
@@ -53,8 +54,9 @@ import javax.management.ReflectionException;
 
 /**
  * An introspector for MBeans of a certain type.  There is one instance
- * of this class for Standard MBeans and one for MXBeans, characterized
- * by the two concrete subclasses of this abstract class.
+ * of this class for Standard MBeans, and one for every MXBeanMappingFactory;
+ * these two cases correspond to the two concrete subclasses of this abstract
+ * class.
  *
  * @param <M> the representation of methods for this kind of MBean:
  * Method for Standard MBeans, ConvertingMethod for MXBeans.
@@ -119,7 +121,7 @@ abstract class MBeanIntrospector<M> {
      * MXBean interface is not valid if one of its parameters cannot be
      * mapped to an Open Type.
      */
-    abstract void checkMethod(M m) throws IllegalArgumentException;
+    abstract void checkMethod(M m);
 
     /**
      * Invoke the method with the given target and arguments.
@@ -149,7 +151,8 @@ abstract class MBeanIntrospector<M> {
      * may be null.
      */
     abstract MBeanAttributeInfo getMBeanAttributeInfo(String attributeName,
-            M getter, M setter);
+            M getter, M setter) throws IntrospectionException;
+
     /**
      * Construct an MBeanOperationInfo for the given operation based on
      * the M it was derived from.
@@ -169,6 +172,16 @@ abstract class MBeanIntrospector<M> {
      * is resourceClass will always have.
      */
     abstract Descriptor getMBeanDescriptor(Class<?> resourceClass);
+
+    /**
+     * Get any additional Descriptor entries for this introspector instance.
+     * If there is a non-default MXBeanMappingFactory, it will appear in
+     * this Descriptor.
+     * @return Additional Descriptor entries, or an empty Descriptor if none.
+     */
+    Descriptor getSpecificMBeanDescriptor() {
+        return ImmutableDescriptor.EMPTY_DESCRIPTOR;
+    }
 
     void checkCompliance(Class<?> mbeanType) throws NotCompliantMBeanException {
         if (!mbeanType.isInterface()) {
@@ -216,7 +229,7 @@ abstract class MBeanIntrospector<M> {
      * the MBeanInfo's Descriptor.
      */
     private MBeanInfo makeInterfaceMBeanInfo(Class<?> mbeanInterface,
-            MBeanAnalyzer<M> analyzer) {
+            MBeanAnalyzer<M> analyzer) throws IntrospectionException {
         final MBeanInfoMaker maker = new MBeanInfoMaker();
         analyzer.visit(maker);
         final String description =
@@ -317,11 +330,12 @@ abstract class MBeanIntrospector<M> {
     }
 
     /** A visitor that constructs the per-interface MBeanInfo. */
-    private class MBeanInfoMaker implements MBeanAnalyzer.MBeanVisitor<M> {
+    private class MBeanInfoMaker
+            implements MBeanAnalyzer.MBeanVisitor<M, IntrospectionException> {
 
         public void visitAttribute(String attributeName,
                 M getter,
-                M setter) {
+                M setter) throws IntrospectionException {
             MBeanAttributeInfo mbai =
                     getMBeanAttributeInfo(attributeName, getter, setter);
 
@@ -346,13 +360,14 @@ abstract class MBeanIntrospector<M> {
                     ops.toArray(new MBeanOperationInfo[0]);
             final String interfaceClassName =
                     "interfaceClassName=" + mbeanInterface.getName();
-            final Descriptor interfDescriptor =
+            final Descriptor classNameDescriptor =
                     new ImmutableDescriptor(interfaceClassName);
             final Descriptor mbeanDescriptor = getBasicMBeanDescriptor();
             final Descriptor annotatedDescriptor =
                     Introspector.descriptorForElement(mbeanInterface);
             final Descriptor descriptor =
-                    DescriptorCache.getInstance().union(interfDescriptor,
+                DescriptorCache.getInstance().union(
+                    classNameDescriptor,
                     mbeanDescriptor,
                     annotatedDescriptor);
 
@@ -388,20 +403,24 @@ abstract class MBeanIntrospector<M> {
      * Return the MBeanInfo for the given resource, based on the given
      * per-interface data.
      */
-    final MBeanInfo getMBeanInfo(Object resource, PerInterface<M> perInterface) {
+    final MBeanInfo getMBeanInfo(Object resource, PerInterface<M> perInterface)
+    throws NotCompliantMBeanException {
         MBeanInfo mbi =
                 getClassMBeanInfo(resource.getClass(), perInterface);
         MBeanNotificationInfo[] notifs = findNotifications(resource);
-        if (notifs == null || notifs.length == 0)
+        Descriptor d = getSpecificMBeanDescriptor();
+        boolean anyNotifs = (notifs != null && notifs.length > 0);
+        if (!anyNotifs && ImmutableDescriptor.EMPTY_DESCRIPTOR.equals(d))
             return mbi;
         else {
+            d = ImmutableDescriptor.union(d, mbi.getDescriptor());
             return new MBeanInfo(mbi.getClassName(),
                     mbi.getDescription(),
                     mbi.getAttributes(),
                     mbi.getConstructors(),
                     mbi.getOperations(),
                     notifs,
-                    mbi.getDescriptor());
+                    d);
         }
     }
 
@@ -446,7 +465,7 @@ abstract class MBeanIntrospector<M> {
             return null;
         MBeanNotificationInfo[] mbn =
                 ((NotificationBroadcaster) moi).getNotificationInfo();
-        if (mbn == null)
+        if (mbn == null || mbn.length == 0)
             return null;
         MBeanNotificationInfo[] result =
                 new MBeanNotificationInfo[mbn.length];
