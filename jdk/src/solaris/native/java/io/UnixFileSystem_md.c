@@ -58,70 +58,6 @@ Java_java_io_UnixFileSystem_initIDs(JNIEnv *env, jclass cls)
                                   "path", "Ljava/lang/String;");
 }
 
-
-/* -- Large-file support -- */
-
-/* LINUX_FIXME: ifdef __solaris__ here is wrong.  We need to move the
- * definition of stat64 into a solaris_largefile.h and create a
- * linux_largefile.h with a good stat64 structure to compile on
- * glibc2.0 based systems.
- */
-#if defined(__solaris__) && !defined(_LFS_LARGEFILE) || !_LFS_LARGEFILE
-
-/* The stat64 structure must be provided for systems without large-file support
-   (e.g., Solaris 2.5.1).  These definitions are copied from the Solaris 2.6
-   <sys/stat.h> and <sys/types.h> files.
- */
-
-typedef longlong_t      off64_t;        /* offsets within files */
-typedef u_longlong_t    ino64_t;        /* expanded inode type  */
-typedef longlong_t      blkcnt64_t;     /* count of file blocks */
-
-struct  stat64 {
-        dev_t   st_dev;
-        long    st_pad1[3];
-        ino64_t st_ino;
-        mode_t  st_mode;
-        nlink_t st_nlink;
-        uid_t   st_uid;
-        gid_t   st_gid;
-        dev_t   st_rdev;
-        long    st_pad2[2];
-        off64_t st_size;
-        timestruc_t st_atim;
-        timestruc_t st_mtim;
-        timestruc_t st_ctim;
-        long    st_blksize;
-        blkcnt64_t st_blocks;
-        char    st_fstype[_ST_FSTYPSZ];
-        long    st_pad4[8];
-};
-
-#endif  /* !_LFS_LARGEFILE */
-
-typedef int (*STAT64)(const char *, struct stat64 *);
-
-#if defined(__linux__) && defined(_LARGEFILE64_SOURCE)
-static STAT64 stat64_ptr = &stat64;
-#else
-static STAT64 stat64_ptr = NULL;
-#endif
-
-#ifndef __linux__
-#ifdef __GNUC__
-static void init64IO(void) __attribute__((constructor));
-#else
-#pragma init(init64IO)
-#endif
-#endif
-
-static void init64IO(void) {
-    void *handle = dlopen(0, RTLD_LAZY);
-    stat64_ptr = (STAT64) dlsym(handle, "_stat64");
-    dlclose(handle);
-}
-
-
 /* -- Path operations -- */
 
 extern int canonicalize(char *path, const char *out, int len);
@@ -151,18 +87,10 @@ Java_java_io_UnixFileSystem_canonicalize0(JNIEnv *env, jobject this,
 static jboolean
 statMode(const char *path, int *mode)
 {
-    if (stat64_ptr) {
-        struct stat64 sb;
-        if (((*stat64_ptr)(path, &sb)) == 0) {
-            *mode = sb.st_mode;
-            return JNI_TRUE;
-        }
-    } else {
-        struct stat sb;
-        if (stat(path, &sb) == 0) {
-            *mode = sb.st_mode;
-            return JNI_TRUE;
-        }
+    struct stat64 sb;
+    if (stat64(path, &sb) == 0) {
+        *mode = sb.st_mode;
+        return JNI_TRUE;
     }
     return JNI_FALSE;
 }
@@ -266,16 +194,9 @@ Java_java_io_UnixFileSystem_getLastModifiedTime(JNIEnv *env, jobject this,
     jlong rv = 0;
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
-        if (stat64_ptr) {
-            struct stat64 sb;
-            if (((*stat64_ptr)(path, &sb)) == 0) {
-                rv = 1000 * (jlong)sb.st_mtime;
-            }
-        } else {
-            struct stat sb;
-            if (stat(path, &sb) == 0) {
-                rv = 1000 * (jlong)sb.st_mtime;
-            }
+        struct stat64 sb;
+        if (stat64(path, &sb) == 0) {
+            rv = 1000 * (jlong)sb.st_mtime;
         }
     } END_PLATFORM_STRING(env, path);
     return rv;
@@ -289,16 +210,9 @@ Java_java_io_UnixFileSystem_getLength(JNIEnv *env, jobject this,
     jlong rv = 0;
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
-        if (stat64_ptr) {
-            struct stat64 sb;
-            if (((*stat64_ptr)(path, &sb)) == 0) {
-                rv = sb.st_size;
-            }
-        } else {
-            struct stat sb;
-            if (stat(path, &sb) == 0) {
-                rv = sb.st_size;
-            }
+        struct stat64 sb;
+        if (stat64(path, &sb) == 0) {
+            rv = sb.st_size;
         }
     } END_PLATFORM_STRING(env, path);
     return rv;
@@ -447,15 +361,6 @@ Java_java_io_UnixFileSystem_rename0(JNIEnv *env, jobject this,
     return rv;
 }
 
-
-/* Bug in solaris /usr/include/sys/time.h? */
-#ifdef __solaris__
-extern int utimes(const char *, const struct timeval *);
-#elif defined(__linux___)
-extern int utimes(const char *, struct timeval *);
-#endif
-
-
 JNIEXPORT jboolean JNICALL
 Java_java_io_UnixFileSystem_setLastModifiedTime(JNIEnv *env, jobject this,
                                                 jobject file, jlong time)
@@ -463,47 +368,22 @@ Java_java_io_UnixFileSystem_setLastModifiedTime(JNIEnv *env, jobject this,
     jboolean rv = JNI_FALSE;
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
-        struct timeval tv[2];
-#ifdef __solaris__
-        timestruc_t ts;
+        struct stat64 sb;
 
-        if (stat64_ptr) {
-            struct stat64 sb;
-            if (((*stat64_ptr)(path, &sb)) == 0)
-                ts = sb.st_atim;
-            else
-                goto error;
-        } else {
-            struct stat sb;
-            if (stat(path, &sb) == 0)
-                ts = sb.st_atim;
-            else
-                goto error;
+        if (stat64(path, &sb) == 0) {
+            struct timeval tv[2];
+
+            /* Preserve access time */
+            tv[0].tv_sec = sb.st_atime;
+            tv[0].tv_usec = 0;
+
+            /* Change last-modified time */
+            tv[1].tv_sec = time / 1000;
+            tv[1].tv_usec = (time % 1000) * 1000;
+
+            if (utimes(path, tv) == 0)
+                rv = JNI_TRUE;
         }
-#endif
-
-        /* Preserve access time */
-#ifdef __linux__
-        struct stat sb;
-
-        if (stat(path, &sb) == 0) {
-
-        tv[0].tv_sec = sb.st_atime;
-        tv[0].tv_usec = 0;
-        }
-#else
-        tv[0].tv_sec = ts.tv_sec;
-        tv[0].tv_usec = ts.tv_nsec / 1000;
-#endif
-
-        /* Change last-modified time */
-        tv[1].tv_sec = time / 1000;
-        tv[1].tv_usec = (time % 1000) * 1000;
-
-        if (utimes(path, tv) >= 0)
-            rv = JNI_TRUE;
-
-    error: ;
     } END_PLATFORM_STRING(env, path);
 
     return rv;
