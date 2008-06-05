@@ -6677,10 +6677,9 @@ instruct compareAndSwapP_bool(iRegP mem_ptr, iRegP oldval, iRegP newval, iRegI r
   ins_pipe( long_memory_op );
 %}
 
-instruct compareAndSwapN_bool_comp(iRegP mem_ptr, iRegN oldval, iRegN newval, iRegI res, o7RegI tmp, flagsReg ccr ) %{
+instruct compareAndSwapN_bool(iRegP mem_ptr, iRegN oldval, iRegN newval, iRegI res, o7RegI tmp1, flagsReg ccr ) %{
   match(Set res (CompareAndSwapN mem_ptr (Binary oldval newval)));
-  effect( USE mem_ptr, KILL ccr, KILL tmp);
-
+  effect( USE mem_ptr, KILL ccr, KILL tmp1);
   format %{
             "MOV    $newval,O7\n\t"
             "CASA   [$mem_ptr],$oldval,O7\t! If $oldval==[$mem_ptr] Then store O7 into [$mem_ptr], set O7=[$mem_ptr] in any case\n\t"
@@ -6688,18 +6687,8 @@ instruct compareAndSwapN_bool_comp(iRegP mem_ptr, iRegN oldval, iRegN newval, iR
             "MOV    1,$res\n\t"
             "MOVne  icc,R_G0,$res"
   %}
-  ins_encode %{
-    Register Rmem = reg_to_register_object($mem_ptr$$reg);
-    Register Rold = reg_to_register_object($oldval$$reg);
-    Register Rnew = reg_to_register_object($newval$$reg);
-    Register Rres = reg_to_register_object($res$$reg);
-
-    __ cas(Rmem, Rold, Rnew);
-    __ cmp( Rold, Rnew );
-    __ mov(1, Rres);
-    __ movcc( Assembler::notEqual, false, Assembler::icc, G0, Rres );
-  %}
-
+  ins_encode( enc_casi(mem_ptr, oldval, newval),
+              enc_iflags_ne_to_boolean(res) );
   ins_pipe( long_memory_op );
 %}
 
