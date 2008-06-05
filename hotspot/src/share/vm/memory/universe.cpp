@@ -734,6 +734,15 @@ jint Universe::initialize_heap() {
     fatal("UseParallelGC not supported in java kernel vm.");
 #endif // SERIALGC
 
+  } else if (UseG1GC) {
+#ifndef SERIALGC
+    G1CollectorPolicy* g1p = new G1CollectorPolicy_BestRegionsFirst();
+    G1CollectedHeap* g1h = new G1CollectedHeap(g1p);
+    Universe::_collectedHeap = g1h;
+#else  // SERIALGC
+    fatal("UseG1GC not supported in java kernel vm.");
+#endif // SERIALGC
+
   } else {
     GenCollectorPolicy *gc_policy;
 
@@ -933,7 +942,10 @@ bool universe_post_init() {
 
   // This needs to be done before the first scavenge/gc, since
   // it's an input to soft ref clearing policy.
-  Universe::update_heap_info_at_gc();
+  {
+    MutexLocker x(Heap_lock);
+    Universe::update_heap_info_at_gc();
+  }
 
   // ("weak") refs processing infrastructure initialization
   Universe::heap()->post_initialize();
@@ -1189,10 +1201,11 @@ uintptr_t Universe::verify_klass_mask() {
     // ???: What if a CollectedHeap doesn't have a permanent generation?
     ShouldNotReachHere();
     break;
-  case CollectedHeap::GenCollectedHeap: {
-    GenCollectedHeap* gch = (GenCollectedHeap*) Universe::heap();
-    permanent_reserved = gch->perm_gen()->reserved();
-    break;
+  case CollectedHeap::GenCollectedHeap:
+  case CollectedHeap::G1CollectedHeap: {
+    SharedHeap* sh = (SharedHeap*) Universe::heap();
+    permanent_reserved = sh->perm_gen()->reserved();
+   break;
   }
 #ifndef SERIALGC
   case CollectedHeap::ParallelScavengeHeap: {

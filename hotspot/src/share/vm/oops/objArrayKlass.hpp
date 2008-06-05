@@ -111,7 +111,7 @@ class objArrayKlass : public arrayKlass {
                                      int start, int end);
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayKlass_OOP_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_3(ObjArrayKlass_OOP_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayKlass_OOP_OOP_ITERATE_DECL)
 
   // JVM support
   jint compute_modifier_flags(TRAPS) const;

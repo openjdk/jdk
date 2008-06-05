@@ -294,10 +294,14 @@ class Arguments : AllStatic {
   // CMS/ParNew garbage collectors
   static void set_parnew_gc_flags();
   static void set_cms_and_parnew_gc_flags();
-  // UseParallelGC
+  // UseParallel[Old]GC
   static void set_parallel_gc_flags();
+  // Garbage-First (UseG1GC)
+  static void set_g1_gc_flags();
   // GC ergonomics
   static void set_ergonomics_flags();
+  // Setup heap size for a server platform
+  static void set_server_heap_size();
   // Based on automatic selection criteria, should the
   // low pause collector be used.
   static bool should_auto_select_low_pause_collector();

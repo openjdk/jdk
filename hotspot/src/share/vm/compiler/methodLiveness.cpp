@@ -76,8 +76,9 @@ class BitCounter: public BitMapClosure {
   BitCounter() : _count(0) {}
 
   // Callback when bit in map is set
-  virtual void do_bit(size_t offset) {
+  virtual bool do_bit(size_t offset) {
     _count++;
+    return true;
   }
 
   int count() {
@@ -467,7 +468,7 @@ MethodLivenessResult MethodLiveness::get_liveness_at(int entry_bci) {
     bci = 0;
   }
 
-  MethodLivenessResult answer(NULL,0);
+  MethodLivenessResult answer((uintptr_t*)NULL,0);
 
   if (_block_count > 0) {
     if (TimeLivenessAnalysis) _time_total.start();

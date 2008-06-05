@@ -33,4 +33,4 @@ int objArrayOopDesc::oop_iterate_range(OopClosureType* blk, int start, int end) 
 }
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayOop_OOP_ITERATE_DEFN)
-ALL_OOP_OOP_ITERATE_CLOSURES_3(ObjArrayOop_OOP_ITERATE_DEFN)
+ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayOop_OOP_ITERATE_DEFN)

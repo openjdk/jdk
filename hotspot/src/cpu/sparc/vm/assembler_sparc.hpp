@@ -1439,7 +1439,11 @@ public:
   // pp 214
 
   void save(    Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(save_op3) | rs1(s1) | rs2(s2) ); }
-  void save(    Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(save_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void save(    Register s1, int simm13a, Register d ) {
+    // make sure frame is at least large enough for the register save area
+    assert(-simm13a >= 16 * wordSize, "frame too small");
+    emit_long( op(arith_op) | rd(d) | op3(save_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) );
+  }
 
   void restore( Register s1 = G0,  Register s2 = G0, Register d = G0 ) { emit_long( op(arith_op) | rd(d) | op3(restore_op3) | rs1(s1) | rs2(s2) ); }
   void restore( Register s1,       int simm13a,      Register d      ) { emit_long( op(arith_op) | rd(d) | op3(restore_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
@@ -1594,6 +1598,11 @@ public:
   inline void wrasi(  Register d) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(3, 29, 25)); }
   inline void wrfprs( Register d) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(6, 29, 25)); }
 
+  // For a given register condition, return the appropriate condition code
+  // Condition (the one you would use to get the same effect after "tst" on
+  // the target register.)
+  Assembler::Condition reg_cond_to_cc_cond(RCondition in);
+
 
   // Creation
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
@@ -1630,6 +1639,8 @@ class RegistersForDebugging : public StackObj {
 
   // restore global registers in case C code disturbed them
   static void restore_registers(MacroAssembler* a, Register r);
+
+
 };
 
 
@@ -1721,6 +1732,12 @@ class MacroAssembler: public Assembler {
   // Does a test & branch on 32-bit systems and a register-branch on 64-bit.
   void br_null   ( Register s1, bool a, Predict p, Label& L );
   void br_notnull( Register s1, bool a, Predict p, Label& L );
+
+  // These versions will do the most efficient thing on v8 and v9.  Perhaps
+  // this is what the routine above was meant to do, but it didn't (and
+  // didn't cover both target address kinds.)
+  void br_on_reg_cond( RCondition c, bool a, Predict p, Register s1, address d, relocInfo::relocType rt = relocInfo::none );
+  void br_on_reg_cond( RCondition c, bool a, Predict p, Register s1, Label& L);
 
   inline void bp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void bp( Condition c, bool a, CC cc, Predict p, Label& L );
@@ -2055,9 +2072,23 @@ class MacroAssembler: public Assembler {
 #endif // ASSERT
 
  public:
-  // Stores
-  void store_check(Register tmp, Register obj);                // store check for obj - register is destroyed afterwards
-  void store_check(Register tmp, Register obj, Register offset); // store check for obj - register is destroyed afterwards
+
+  // Write to card table for - register is destroyed afterwards.
+  void card_table_write(jbyte* byte_map_base, Register tmp, Register obj);
+
+  void card_write_barrier_post(Register store_addr, Register new_val, Register tmp);
+
+#ifndef SERIALGC
+  // Array store and offset
+  void g1_write_barrier_pre(Register obj, Register index, int offset, Register tmp, bool preserve_o_regs);
+
+  void g1_write_barrier_post(Register store_addr, Register new_val, Register tmp);
+
+  // May do filtering, depending on the boolean arguments.
+  void g1_card_table_write(jbyte* byte_map_base,
+                           Register tmp, Register obj, Register new_val,
+                           bool region_filter, bool null_filter);
+#endif // SERIALGC
 
   // pushes double TOS element of FPU stack on CPU stack; pops from FPU stack
   void push_fTOS();

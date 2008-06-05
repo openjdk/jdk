@@ -3767,6 +3767,10 @@ bool MatchRule::is_chain_rule(FormDict &globals) const {
 int MatchRule::is_ideal_copy() const {
   if( _rChild ) {
     const char  *opType = _rChild->_opType;
+#if 1
+    if( strcmp(opType,"CastIP")==0 )
+      return 1;
+#else
     if( strcmp(opType,"CastII")==0 )
       return 1;
     // Do not treat *CastPP this way, because it
@@ -3786,6 +3790,7 @@ int MatchRule::is_ideal_copy() const {
     //  return 1;
     //if( strcmp(opType,"CastP2X")==0 )
     //  return 1;
+#endif
   }
   if( is_chain_rule(_AD.globalNames()) &&
       _lChild && strncmp(_lChild->_opType,"stackSlot",9)==0 )

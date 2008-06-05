@@ -21,6 +21,10 @@
 // have any questions.
 //  
 
+assembler_<arch_model>.cpp              g1SATBCardTableModRefBS.hpp
+assembler_<arch_model>.cpp              g1CollectedHeap.inline.hpp
+assembler_<arch_model>.cpp              heapRegion.hpp
+
 collectorPolicy.cpp                     cmsAdaptiveSizePolicy.hpp
 collectorPolicy.cpp                     cmsGCAdaptivePolicyCounters.hpp
 
@@ -37,6 +41,9 @@ heapDumper.cpp                          parallelScavengeHeap.hpp
 
 heapInspection.cpp                      parallelScavengeHeap.hpp
 
+instanceKlass.cpp                       heapRegionSeq.inline.hpp
+instanceKlass.cpp                       g1CollectedHeap.inline.hpp
+instanceKlass.cpp                       g1OopClosures.inline.hpp
 instanceKlass.cpp                       oop.pcgc.inline.hpp
 instanceKlass.cpp                       psPromotionManager.inline.hpp
 instanceKlass.cpp                       psScavenge.inline.hpp
@@ -48,6 +55,9 @@ instanceKlassKlass.cpp                  psPromotionManager.inline.hpp
 instanceKlassKlass.cpp                  psScavenge.inline.hpp
 instanceKlassKlass.cpp                  parOopClosures.inline.hpp
 
+instanceRefKlass.cpp                    heapRegionSeq.inline.hpp
+instanceRefKlass.cpp                    g1CollectedHeap.inline.hpp
+instanceRefKlass.cpp                    g1OopClosures.inline.hpp
 instanceRefKlass.cpp                    oop.pcgc.inline.hpp
 instanceRefKlass.cpp                    psPromotionManager.inline.hpp
 instanceRefKlass.cpp                    psScavenge.inline.hpp
@@ -70,6 +80,7 @@ memoryPool.hpp                          compactibleFreeListSpace.hpp
 
 memoryService.cpp                       cmsPermGen.hpp
 memoryService.cpp                       concurrentMarkSweepGeneration.hpp
+memoryService.cpp                       g1CollectedHeap.inline.hpp
 memoryService.cpp                       parNewGeneration.hpp
 memoryService.cpp                       parallelScavengeHeap.hpp
 memoryService.cpp                       psMemoryPool.hpp
@@ -80,6 +91,9 @@ memoryService.cpp                       psYoungGen.hpp
 methodDataKlass.cpp                     oop.pcgc.inline.hpp
 methodDataKlass.cpp                     psScavenge.inline.hpp
 
+objArrayKlass.cpp                       heapRegionSeq.inline.hpp
+objArrayKlass.cpp                       g1CollectedHeap.inline.hpp
+objArrayKlass.cpp                       g1OopClosures.inline.hpp
 objArrayKlass.cpp                       oop.pcgc.inline.hpp
 objArrayKlass.cpp                       psPromotionManager.inline.hpp
 objArrayKlass.cpp                       psScavenge.inline.hpp
@@ -121,6 +135,9 @@ safepoint.cpp                           concurrentMarkSweepThread.hpp
 
 thread.cpp                              concurrentMarkSweepThread.hpp
 thread.cpp                              pcTasks.hpp
+
+thread.hpp                              dirtyCardQueue.hpp
+thread.hpp                              satbQueue.hpp
 
 universe.cpp                            parallelScavengeHeap.hpp
 universe.cpp                            cmsCollectorPolicy.hpp

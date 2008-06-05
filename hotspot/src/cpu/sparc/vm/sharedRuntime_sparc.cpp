@@ -699,17 +699,16 @@ Register AdapterGenerator::next_arg_slot(const int st_off){
 // Stores long into offset pointed to by base
 void AdapterGenerator::store_c2i_long(Register r, Register base,
                                       const int st_off, bool is_stack) {
-#ifdef COMPILER2
 #ifdef _LP64
   // In V9, longs are given 2 64-bit slots in the interpreter, but the
   // data is passed in only 1 slot.
   __ stx(r, base, next_arg_slot(st_off));
 #else
+#ifdef COMPILER2
   // Misaligned store of 64-bit data
   __ stw(r, base, arg_slot(st_off));    // lo bits
   __ srlx(r, 32, r);
   __ stw(r, base, next_arg_slot(st_off));  // hi bits
-#endif // _LP64
 #else
   if (is_stack) {
     // Misaligned store of 64-bit data
@@ -721,6 +720,7 @@ void AdapterGenerator::store_c2i_long(Register r, Register base,
     __ stw(r             , base, next_arg_slot(st_off)); // hi bits
   }
 #endif // COMPILER2
+#endif // _LP64
   tag_c2i_arg(frame::TagCategory2, base, st_off, r);
 }
 

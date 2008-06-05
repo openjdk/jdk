@@ -110,6 +110,7 @@ CPP_INCLUDE_DIRS=\
   /I "$(WorkSpace)\src\share\vm\gc_implementation\shared"\
   /I "$(WorkSpace)\src\share\vm\gc_implementation\parNew"\
   /I "$(WorkSpace)\src\share\vm\gc_implementation\concurrentMarkSweep"\
+  /I "$(WorkSpace)\src\share\vm\gc_implementation\g1"\
   /I "$(WorkSpace)\src\share\vm\gc_interface"\
   /I "$(WorkSpace)\src\share\vm\asm"         \
   /I "$(WorkSpace)\src\share\vm\memory"      \
@@ -139,6 +140,7 @@ VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/parallelScavenge
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/shared
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/parNew
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/concurrentMarkSweep
+VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/g1
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_interface
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/asm
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/memory
@@ -213,6 +215,9 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
         $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
 
 {$(WorkSpace)\src\share\vm\gc_implementation\concurrentMarkSweep}.cpp.obj::
+        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+
+{$(WorkSpace)\src\share\vm\gc_implementation\g1}.cpp.obj::
         $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
 
 {$(WorkSpace)\src\share\vm\gc_interface}.cpp.obj::

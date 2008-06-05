@@ -216,9 +216,11 @@ class Address VALUE_OBJ_CLASS_SPEC {
 #endif // ASSERT
 
   // accessors
-  bool uses(Register reg) const {
-    return _base == reg || _index == reg;
-  }
+  bool        uses(Register reg) const { return _base == reg || _index == reg; }
+  Register    base()             const { return _base;  }
+  Register    index()            const { return _index; }
+  ScaleFactor scale()            const { return _scale; }
+  int         disp()             const { return _disp;  }
 
   // Convert the raw encoding form into the form expected by the constructor for
   // Address.  An index of 4 (rsp) corresponds to having no index, so convert
@@ -990,7 +992,8 @@ class Assembler : public AbstractAssembler  {
 // on arguments should also go in here.
 
 class MacroAssembler: public Assembler {
- friend class LIR_Assembler;
+  friend class LIR_Assembler;
+  friend class Runtime1;      // as_Address()
  protected:
 
   Address as_Address(AddressLiteral adr);
@@ -1150,6 +1153,10 @@ class MacroAssembler: public Assembler {
   // Stores
   void store_check(Register obj);                // store check for obj - register is destroyed afterwards
   void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
+
+  void g1_write_barrier_pre(Register obj, Register thread, Register tmp, Register tmp2, bool tosca_live );
+  void g1_write_barrier_post(Register store_addr, Register new_val, Register thread, Register tmp, Register tmp2);
+
 
   // split store_check(Register obj) to enhance instruction interleaving
   void store_check_part_1(Register obj);

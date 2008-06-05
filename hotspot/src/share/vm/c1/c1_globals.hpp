@@ -213,9 +213,6 @@
   develop(bool, UseFastLocking, true,                                       \
           "Use fast inlined locking code")                                  \
                                                                             \
-  product(bool, FastTLABRefill, true,                                       \
-          "Use fast TLAB refill code")                                      \
-                                                                            \
   develop(bool, UseSlowPath, false,                                         \
           "For debugging: test slow cases by always using them")            \
                                                                             \

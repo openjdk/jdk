@@ -214,20 +214,26 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size) {
   MemRegion fromMR((HeapWord*)from_start, (HeapWord*)to_start);
   MemRegion toMR  ((HeapWord*)to_start, (HeapWord*)to_end);
 
-  eden()->initialize(edenMR, (minimum_eden_size == 0));
-  // If minumum_eden_size != 0, we will not have cleared any
-  // portion of eden above its top. This can cause newly
-  // expanded space not to be mangled if using ZapUnusedHeapArea.
-  // We explicitly do such mangling here.
-  if (ZapUnusedHeapArea && (minimum_eden_size != 0)) {
-    eden()->mangle_unused_area();
+  eden()->set_bounds(edenMR);
+  if (minimum_eden_size == 0) {
+    // The "minimum_eden_size" is really the amount of eden occupied by
+    // allocated objects -- if this is zero, then we can clear the space.
+    eden()->clear();
+  } else {
+    // Otherwise, we will not have cleared eden. This can cause newly
+    // expanded space not to be mangled if using ZapUnusedHeapArea.
+    // We explicitly do such mangling here.
+    if (ZapUnusedHeapArea) {
+      eden()->mangle_unused_area();
+    }
   }
-  from()->initialize(fromMR, true);
-    to()->initialize(toMR  , true);
-  eden()->set_next_compaction_space(from());
+  from()->set_bounds(fromMR); from()->clear();
+    to()->set_bounds(toMR);     to()->clear();
+  // Make sure we compact eden, then from.
   // The to-space is normally empty before a compaction so need
   // not be considered.  The exception is during promotion
   // failure handling when to-space can contain live objects.
+  eden()->set_next_compaction_space(from());
   from()->set_next_compaction_space(NULL);
 }
 

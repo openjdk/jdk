@@ -2751,13 +2751,14 @@ class VerifyMarkedClosure: public BitMapClosure {
  public:
   VerifyMarkedClosure(CMSBitMap* bm): _marks(bm), _failed(false) {}
 
-  void do_bit(size_t offset) {
+  bool do_bit(size_t offset) {
     HeapWord* addr = _marks->offsetToHeapWord(offset);
     if (!_marks->isMarked(addr)) {
       oop(addr)->print();
       gclog_or_tty->print_cr(" ("INTPTR_FORMAT" should have been marked)", addr);
       _failed = true;
     }
+    return true;
   }
 
   bool failed() { return _failed; }
@@ -4645,8 +4646,11 @@ size_t CMSCollector::preclean_card_table(ConcurrentMarkSweepGeneration* gen,
       startTimer();
       sample_eden();
       // Get and clear dirty region from card table
-      dirtyRegion = _ct->ct_bs()->dirty_card_range_after_preclean(
-                                    MemRegion(nextAddr, endAddr));
+      dirtyRegion = _ct->ct_bs()->dirty_card_range_after_reset(
+                                    MemRegion(nextAddr, endAddr),
+                                    true,
+                                    CardTableModRefBS::precleaned_card_val());
+
       assert(dirtyRegion.start() >= nextAddr,
              "returned region inconsistent?");
     }
@@ -5414,8 +5418,8 @@ void CMSCollector::do_remark_non_parallel() {
                               &mrias_cl);
   {
     TraceTime t("grey object rescan", PrintGCDetails, false, gclog_or_tty);
-    // Iterate over the dirty cards, marking them precleaned, and
-    // setting the corresponding bits in the mod union table.
+    // Iterate over the dirty cards, setting the corresponding bits in the
+    // mod union table.
     {
       ModUnionClosure modUnionClosure(&_modUnionTable);
       _ct->ct_bs()->dirty_card_iterate(
@@ -6187,7 +6191,7 @@ HeapWord* CMSCollector::next_card_start_after_block(HeapWord* addr) const {
 // bit vector itself. That is done by a separate call CMSBitMap::allocate()
 // further below.
 CMSBitMap::CMSBitMap(int shifter, int mutex_rank, const char* mutex_name):
-  _bm(NULL,0),
+  _bm(),
   _shifter(shifter),
   _lock(mutex_rank >= 0 ? new Mutex(mutex_rank, mutex_name, true) : NULL)
 {
@@ -6212,7 +6216,7 @@ bool CMSBitMap::allocate(MemRegion mr) {
   }
   assert(_virtual_space.committed_size() == brs.size(),
          "didn't reserve backing store for all of CMS bit map?");
-  _bm.set_map((uintptr_t*)_virtual_space.low());
+  _bm.set_map((BitMap::bm_word_t*)_virtual_space.low());
   assert(_virtual_space.committed_size() << (_shifter + LogBitsPerByte) >=
          _bmWordSize, "inconsistency in bit map sizing");
   _bm.set_size(_bmWordSize >> _shifter);
@@ -6853,10 +6857,10 @@ void MarkFromRootsClosure::reset(HeapWord* addr) {
 
 // Should revisit to see if this should be restructured for
 // greater efficiency.
-void MarkFromRootsClosure::do_bit(size_t offset) {
+bool MarkFromRootsClosure::do_bit(size_t offset) {
   if (_skipBits > 0) {
     _skipBits--;
-    return;
+    return true;
   }
   // convert offset into a HeapWord*
   HeapWord* addr = _bitMap->startWord() + offset;
@@ -6896,10 +6900,11 @@ void MarkFromRootsClosure::do_bit(size_t offset) {
           } // ...else the setting of klass will dirty the card anyway.
         }
       DEBUG_ONLY(})
-      return;
+      return true;
     }
   }
   scanOopsInOop(addr);
+  return true;
 }
 
 // We take a break if we've been at this for a while,
@@ -7033,10 +7038,10 @@ Par_MarkFromRootsClosure::Par_MarkFromRootsClosure(CMSConcMarkingTask* task,
 
 // Should revisit to see if this should be restructured for
 // greater efficiency.
-void Par_MarkFromRootsClosure::do_bit(size_t offset) {
+bool Par_MarkFromRootsClosure::do_bit(size_t offset) {
   if (_skip_bits > 0) {
     _skip_bits--;
-    return;
+    return true;
   }
   // convert offset into a HeapWord*
   HeapWord* addr = _bit_map->startWord() + offset;
@@ -7051,10 +7056,11 @@ void Par_MarkFromRootsClosure::do_bit(size_t offset) {
     if (p->klass() == NULL || !p->is_parsable()) {
       // in the case of Clean-on-Enter optimization, redirty card
       // and avoid clearing card by increasing  the threshold.
-      return;
+      return true;
     }
   }
   scan_oops_in_oop(addr);
+  return true;
 }
 
 void Par_MarkFromRootsClosure::scan_oops_in_oop(HeapWord* ptr) {
@@ -7177,7 +7183,7 @@ void MarkFromRootsVerifyClosure::reset(HeapWord* addr) {
 
 // Should revisit to see if this should be restructured for
 // greater efficiency.
-void MarkFromRootsVerifyClosure::do_bit(size_t offset) {
+bool MarkFromRootsVerifyClosure::do_bit(size_t offset) {
   // convert offset into a HeapWord*
   HeapWord* addr = _verification_bm->startWord() + offset;
   assert(_verification_bm->endWord() && addr < _verification_bm->endWord(),
@@ -7205,6 +7211,7 @@ void MarkFromRootsVerifyClosure::do_bit(size_t offset) {
     new_oop->oop_iterate(&_pam_verify_closure);
   }
   assert(_mark_stack->isEmpty(), "tautology, emphasizing post-condition");
+  return true;
 }
 
 PushAndMarkVerifyClosure::PushAndMarkVerifyClosure(
@@ -7448,8 +7455,12 @@ PushAndMarkClosure::PushAndMarkClosure(CMSCollector* collector,
 // Grey object rescan during pre-cleaning and second checkpoint phases --
 // the non-parallel version (the parallel version appears further below.)
 void PushAndMarkClosure::do_oop(oop obj) {
-  // If _concurrent_precleaning, ignore mark word verification
-  assert(obj->is_oop_or_null(_concurrent_precleaning),
+  // Ignore mark word verification. If during concurrent precleaning,
+  // the object monitor may be locked. If during the checkpoint
+  // phases, the object may already have been reached by a  different
+  // path and may be at the end of the global overflow list (so
+  // the mark word may be NULL).
+  assert(obj->is_oop_or_null(true /* ignore mark word */),
          "expected an oop or NULL");
   HeapWord* addr = (HeapWord*)obj;
   // Check if oop points into the CMS generation

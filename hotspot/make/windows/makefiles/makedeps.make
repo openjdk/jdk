@@ -64,6 +64,7 @@ MakeDepsIncludesPRIVATE=\
         -relativeInclude src\share\vm\gc_implementation\shared \
         -relativeInclude src\share\vm\gc_implementation\parNew \
         -relativeInclude src\share\vm\gc_implementation\concurrentMarkSweep \
+        -relativeInclude src\share\vm\gc_implementation\g1 \
         -relativeInclude src\share\vm\gc_interface \
         -relativeInclude src\share\vm\asm \
         -relativeInclude src\share\vm\memory \
@@ -115,6 +116,7 @@ MakeDepsIDEOptions=\
         -additionalFile includeDB_gc_parallel \
         -additionalFile includeDB_gc_parallelScavenge \
         -additionalFile includeDB_gc_concurrentMarkSweep \
+        -additionalFile includeDB_gc_g1 \
         -additionalFile includeDB_gc_parNew \
         -additionalFile includeDB_gc_shared \
         -additionalFile includeDB_gc_serial \

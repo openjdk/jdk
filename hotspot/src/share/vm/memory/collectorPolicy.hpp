@@ -39,10 +39,12 @@
 // Forward declarations.
 class GenCollectorPolicy;
 class TwoGenerationCollectorPolicy;
+class AdaptiveSizePolicy;
 #ifndef SERIALGC
 class ConcurrentMarkSweepPolicy;
+class G1CollectorPolicy;
 #endif // SERIALGC
-class AdaptiveSizePolicy;
+
 class GCPolicyCounters;
 class PermanentGenerationSpec;
 class MarkSweepPolicy;
@@ -55,7 +57,7 @@ class CollectorPolicy : public CHeapObj {
   // Requires that the concrete subclass sets the alignment constraints
   // before calling.
   virtual void initialize_flags();
-  virtual void initialize_size_info() = 0;
+  virtual void initialize_size_info();
   // Initialize "_permanent_generation" to a spec for the given kind of
   // Perm Gen.
   void initialize_perm_generation(PermGen::Name pgnm);
@@ -91,17 +93,18 @@ class CollectorPolicy : public CHeapObj {
   enum Name {
     CollectorPolicyKind,
     TwoGenerationCollectorPolicyKind,
-    TrainPolicyKind,
     ConcurrentMarkSweepPolicyKind,
-    ASConcurrentMarkSweepPolicyKind
+    ASConcurrentMarkSweepPolicyKind,
+    G1CollectorPolicyKind
   };
 
   // Identification methods.
-  virtual GenCollectorPolicy*           as_generation_policy()          { return NULL; }
+  virtual GenCollectorPolicy*           as_generation_policy()            { return NULL; }
   virtual TwoGenerationCollectorPolicy* as_two_generation_policy()        { return NULL; }
   virtual MarkSweepPolicy*              as_mark_sweep_policy()            { return NULL; }
 #ifndef SERIALGC
   virtual ConcurrentMarkSweepPolicy*    as_concurrent_mark_sweep_policy() { return NULL; }
+  virtual G1CollectorPolicy*            as_g1_policy()                    { return NULL; }
 #endif // SERIALGC
   // Note that these are not virtual.
   bool is_generation_policy()            { return as_generation_policy() != NULL; }
@@ -109,9 +112,12 @@ class CollectorPolicy : public CHeapObj {
   bool is_mark_sweep_policy()            { return as_mark_sweep_policy() != NULL; }
 #ifndef SERIALGC
   bool is_concurrent_mark_sweep_policy() { return as_concurrent_mark_sweep_policy() != NULL; }
+  bool is_g1_policy()                    { return as_g1_policy() != NULL; }
 #else  // SERIALGC
   bool is_concurrent_mark_sweep_policy() { return false; }
+  bool is_g1_policy()                    { return false; }
 #endif // SERIALGC
+
 
   virtual PermanentGenerationSpec *permanent_generation() {
     assert(_permanent_generation != NULL, "Sanity check");

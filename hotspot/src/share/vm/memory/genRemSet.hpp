@@ -42,6 +42,7 @@ public:
   };
 
   GenRemSet(BarrierSet * bs) : _bs(bs) {}
+  GenRemSet() : _bs(NULL) {}
 
   virtual Name rs_kind() = 0;
 
@@ -52,6 +53,9 @@ public:
 
   // Return the barrier set associated with "this."
   BarrierSet* bs() { return _bs; }
+
+  // Set the barrier set.
+  void set_bs(BarrierSet* bs) { _bs = bs; }
 
   // Do any (sequential) processing necessary to prepare for (possibly
   // "parallel", if that arg is true) calls to younger_refs_iterate.
@@ -116,7 +120,10 @@ public:
 
   // Informs the RS that refs in the given "mr" may have changed
   // arbitrarily, and therefore may contain old-to-young pointers.
-  virtual void invalidate(MemRegion mr) = 0;
+  // If "whole heap" is true, then this invalidation is part of an
+  // invalidation of the whole heap, which an implementation might
+  // handle differently than that of a sub-part of the heap.
+  virtual void invalidate(MemRegion mr, bool whole_heap = false) = 0;
 
   // Informs the RS that refs in this generation
   // may have changed arbitrarily, and therefore may contain

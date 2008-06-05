@@ -113,6 +113,69 @@ static Assembler::Condition j_not(TemplateTable::Condition cc) {
 
 
 // Miscelaneous helper routines
+// Store an oop (or NULL) at the address described by obj.
+// If val == noreg this means store a NULL
+
+static void do_oop_store(InterpreterMacroAssembler* _masm,
+                         Address obj,
+                         Register val,
+                         BarrierSet::Name barrier,
+                         bool precise) {
+  assert(val == noreg || val == rax, "parameter is just for looks");
+  switch (barrier) {
+#ifndef SERIALGC
+    case BarrierSet::G1SATBCT:
+    case BarrierSet::G1SATBCTLogging:
+      {
+        // flatten object address if needed
+        if (obj.index() == noreg && obj.disp() == 0) {
+          if (obj.base() != rdx) {
+            __ movq(rdx, obj.base());
+          }
+        } else {
+          __ leaq(rdx, obj);
+        }
+        __ g1_write_barrier_pre(rdx, r8, rbx, val != noreg);
+        if (val == noreg) {
+          __ store_heap_oop(Address(rdx, 0), NULL_WORD);
+        } else {
+          __ store_heap_oop(Address(rdx, 0), val);
+          __ g1_write_barrier_post(rdx, val, r8, rbx);
+        }
+
+      }
+      break;
+#endif // SERIALGC
+    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableExtension:
+      {
+        if (val == noreg) {
+          __ store_heap_oop(obj, NULL_WORD);
+        } else {
+          __ store_heap_oop(obj, val);
+          // flatten object address if needed
+          if (!precise || (obj.index() == noreg && obj.disp() == 0)) {
+            __ store_check(obj.base());
+          } else {
+            __ leaq(rdx, obj);
+            __ store_check(rdx);
+          }
+        }
+      }
+      break;
+    case BarrierSet::ModRef:
+    case BarrierSet::Other:
+      if (val == noreg) {
+        __ store_heap_oop(obj, NULL_WORD);
+      } else {
+        __ store_heap_oop(obj, val);
+      }
+      break;
+    default      :
+      ShouldNotReachHere();
+
+  }
+}
 
 Address TemplateTable::at_bcp(int offset) {
   assert(_desc->uses_bcp(), "inconsistent uses_bcp information");
@@ -558,8 +621,8 @@ void TemplateTable::aaload() {
   // rdx: array
   index_check(rdx, rax); // kills rbx
   __ load_heap_oop(rax, Address(rdx, rax,
-                       UseCompressedOops ? Address::times_4 : Address::times_8,
-                       arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+                                UseCompressedOops ? Address::times_4 : Address::times_8,
+                                arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
 }
 
 void TemplateTable::baload() {
@@ -864,6 +927,11 @@ void TemplateTable::aastore() {
   __ movq(rax, at_tos());    // value
   __ movl(rcx, at_tos_p1()); // index
   __ movq(rdx, at_tos_p2()); // array
+
+  Address element_address(rdx, rcx,
+                          UseCompressedOops? Address::times_4 : Address::times_8,
+                          arrayOopDesc::base_offset_in_bytes(T_OBJECT));
+
   index_check(rdx, rcx);     // kills rbx
   // do array store check - check for NULL value first
   __ testq(rax, rax);
@@ -877,9 +945,7 @@ void TemplateTable::aastore() {
                        sizeof(oopDesc) +
                        objArrayKlass::element_klass_offset_in_bytes()));
   // Compress array + index*oopSize + 12 into a single register.  Frees rcx.
-  __ leaq(rdx, Address(rdx, rcx,
-                       UseCompressedOops ? Address::times_4 : Address::times_8,
-                       arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+  __ leaq(rdx, element_address);
 
   // Generate subtype check.  Blows rcx, rdi
   // Superklass in rax.  Subklass in rbx.
@@ -891,18 +957,20 @@ void TemplateTable::aastore() {
 
   // Come here on success
   __ bind(ok_is_subtype);
-  __ movq(rax, at_tos()); // Value
-  __ store_heap_oop(Address(rdx, 0), rax);
-  __ store_check(rdx);
+
+  // Get the value we will store
+  __ movq(rax, at_tos());
+
+  // Now store using the appropriate barrier
+  do_oop_store(_masm, Address(rdx, 0), rax, _bs->kind(), true);
   __ jmp(done);
 
   // Have a NULL in rax, rdx=array, ecx=index.  Store NULL at ary[idx]
   __ bind(is_null);
   __ profile_null_seen(rbx);
-  __ store_heap_oop(Address(rdx, rcx,
-                            UseCompressedOops ? Address::times_4 : Address::times_8,
-                            arrayOopDesc::base_offset_in_bytes(T_OBJECT)),
-                    rax);
+
+  // Store a NULL
+  do_oop_store(_masm, element_address, noreg, _bs->kind(), true);
 
   // Pop stack arguments
   __ bind(done);
@@ -2394,8 +2462,10 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
   // atos
   __ pop(atos);
   if (!is_static) pop_and_check_object(obj);
-  __ store_heap_oop(field, rax);
-  __ store_check(obj, field); // Need to mark card
+
+  // Store into the field
+  do_oop_store(_masm, field, rax, _bs->kind(), false);
+
   if (!is_static) {
     patch_bytecode(Bytecodes::_fast_aputfield, bc, rbx);
   }
@@ -2582,8 +2652,7 @@ void TemplateTable::fast_storefield(TosState state) {
   // access field
   switch (bytecode()) {
   case Bytecodes::_fast_aputfield:
-    __ store_heap_oop(field, rax);
-    __ store_check(rcx, field);
+    do_oop_store(_masm, field, rax, _bs->kind(), false);
     break;
   case Bytecodes::_fast_lputfield:
     __ movq(field, rax);
@@ -2789,7 +2858,7 @@ void TemplateTable::prepare_invoke(Register method,
     __ andl(recv, 0xFF);
     if (TaggedStackInterpreter) __ shll(recv, 1);  // index*2
     __ movq(recv, Address(rsp, recv, Address::times_8,
-                                 -Interpreter::expr_offset_in_bytes(1)));
+                          -Interpreter::expr_offset_in_bytes(1)));
     __ verify_oop(recv);
   }
 
@@ -3042,8 +3111,6 @@ void TemplateTable::_new() {
   Label initialize_header;
   Label initialize_object; // including clearing the fields
   Label allocate_shared;
-  ExternalAddress top((address)Universe::heap()->top_addr());
-  ExternalAddress end((address)Universe::heap()->end_addr());
 
   __ get_cpool_and_tags(rsi, rax);
   // get instanceKlass
@@ -3103,6 +3170,9 @@ void TemplateTable::_new() {
   // rdx: instance size in bytes
   if (allow_shared_alloc) {
     __ bind(allocate_shared);
+
+    ExternalAddress top((address)Universe::heap()->top_addr());
+    ExternalAddress end((address)Universe::heap()->end_addr());
 
     const Register RtopAddr = rscratch1;
     const Register RendAddr = rscratch2;

@@ -1106,7 +1106,10 @@ class CommandLineFlags {
   /* gc */                                                                  \
                                                                             \
   product(bool, UseSerialGC, false,                                         \
-          "Tells whether the VM should use serial garbage collector")       \
+          "Use the serial garbage collector")                               \
+                                                                            \
+  product(bool, UseG1GC, false,                                             \
+          "Use the Garbage-First garbage collector")                        \
                                                                             \
   product(bool, UseParallelGC, false,                                       \
           "Use the Parallel Scavenge garbage collector")                    \
@@ -1168,6 +1171,9 @@ class CommandLineFlags {
                                                                             \
   develop(bool, TraceChunkTasksQueuing, false,                              \
           "Trace the queuing of the chunk tasks")                           \
+                                                                            \
+  product(uintx, ParallelMarkingThreads, 0,                                 \
+          "Number of marking threads concurrent gc will use")               \
                                                                             \
   product(uintx, YoungPLABSize, 4096,                                       \
           "Size of young gen promotion labs (in HeapWords)")                \
@@ -1264,6 +1270,12 @@ class CommandLineFlags {
   product(intx, CMSYoungGenPerWorker, 16*M,                                 \
           "The amount of young gen chosen by default per GC worker "        \
           "thread available ")                                              \
+                                                                            \
+  product(bool, GCOverheadReporting, false,                                 \
+         "Enables the GC overhead reporting facility")                      \
+                                                                            \
+  product(intx, GCOverheadReportingPeriodMS, 100,                           \
+          "Reporting period for conc GC overhead reporting, in ms ")        \
                                                                             \
   product(bool, CMSIncrementalMode, false,                                  \
           "Whether CMS GC should operate in \"incremental\" mode")          \
@@ -1592,6 +1604,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, ZeroTLAB, false,                                            \
           "Zero out the newly created TLAB")                                \
+                                                                            \
+  product(bool, FastTLABRefill, true,                                       \
+          "Use fast TLAB refill code")                                      \
                                                                             \
   product(bool, PrintTLAB, false,                                           \
           "Print various TLAB related information")                         \
@@ -2789,6 +2804,12 @@ class CommandLineFlags {
   product(uintx, GCDrainStackTargetSize, 64,                                \
           "how many entries we'll try to leave on the stack during "        \
           "parallel GC")                                                    \
+                                                                            \
+  product(intx, DCQBarrierQueueBufferSize, 256,                             \
+          "Number of elements in a dirty card queue buffer")                \
+                                                                            \
+  product(intx, DCQBarrierProcessCompletedThreshold, 5,                     \
+          "Number of completed dirty card buffers to trigger processing.")  \
                                                                             \
   /* stack parameters */                                                    \
   product_pd(intx, StackYellowPages,                                        \

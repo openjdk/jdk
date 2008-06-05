@@ -666,7 +666,7 @@ public:
   oop target;
   void do_oop(oop* o) {
     if (o != NULL && *o == target) {
-      tty->print_cr("0x%08x", o);
+      tty->print_cr(INTPTR_FORMAT, o);
     }
   }
   void do_oop(narrowOop* o) { ShouldNotReachHere(); }
@@ -685,13 +685,13 @@ public:
 
 
 static void findref(intptr_t x) {
-  GenCollectedHeap *gch = GenCollectedHeap::heap();
+  CollectedHeap *ch = Universe::heap();
   LookForRefInGenClosure lookFor;
   lookFor.target = (oop) x;
   LookForRefInObjectClosure look_in_object((oop) x);
 
   tty->print_cr("Searching heap:");
-  gch->object_iterate(&look_in_object);
+  ch->object_iterate(&look_in_object);
 
   tty->print_cr("Searching strong roots:");
   Universe::oops_do(&lookFor, false);
