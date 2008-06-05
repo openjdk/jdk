@@ -121,14 +121,14 @@ public class QueryExpStringTest {
         eq, "(12345678) = (2.5)",
         between, "(12345678) between (2.5) and (2.5)",
         match, "attr like 'simpleString'",
-        initial, "attr like 'simpleString%'",
-        initialStar, "attr like '\\*%'",
-        initialPercent, "attr like '\\%%'",
-        any, "attr like '%simpleString%'",
-        anyStar, "attr like '%\\*%'",
-        anyPercent, "attr like '%\\%%'",
-        ffinal, "attr like '%simpleString'",
-        finalMagic, "attr like '%\\?\\*\\[\\\\'",
+        initial, "attr like 'simpleString*'",
+        initialStar, "attr like '\\**'",
+        initialPercent, "attr like '%*'",
+        any, "attr like '*simpleString*'",
+        anyStar, "attr like '*\\**'",
+        anyPercent, "attr like '*%*'",
+        ffinal, "attr like '*simpleString'",
+        finalMagic, "attr like '*\\?\\*\\[\\\\'",
         in, "12345678 in (12345678, 2.5)",
         and, "((12345678) > (2.5)) and ((12345678) < (2.5))",
         or, "((12345678) > (2.5)) or ((12345678) < (2.5))",
@@ -207,7 +207,6 @@ public class QueryExpStringTest {
                                     exp + " like " + pat);
             }
             StringValueExp spat = (StringValueExp) pat;
-            spat = Query.value(translateMatch(spat.getValue()));
             return Query.match((AttributeValueExp) exp, spat);
         }
 
@@ -224,28 +223,6 @@ public class QueryExpStringTest {
         }
 
         throw new Exception("Expected in or like after expression");
-    }
-
-    private static String translateMatch(String s) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < s.length(); i++) {  // logic not correct for wide chars
-            char c = s.charAt(i);
-            switch (c) {
-                case '\\':
-                    sb.append(c).append(s.charAt(++i)); break;
-                case '%':
-                    sb.append('*'); break;
-                case '_':
-                    sb.append('?'); break;
-                case '*':
-                    sb.append("\\*"); break;
-                case '?':
-                    sb.append("\\?"); break;
-                default:
-                    sb.append(c); break;
-            }
-        }
-        return sb.toString();
     }
 
     private static QueryExp parseQueryAfterParen(String[] ss)

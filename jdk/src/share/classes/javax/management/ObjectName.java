@@ -1781,7 +1781,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
     }
 
     String toQueryString() {
-        return "LIKE " + Query.value(toString());
+        return "like " + Query.value(toString());
     }
 
     /**
