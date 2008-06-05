@@ -5007,8 +5007,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg, Register obj_reg, Re
   jcc(Assembler::notEqual, cas_label);
   // The bias pattern is present in the object's header. Need to check
   // whether the bias owner and the epoch are both still current.
-  load_klass(tmp_reg, obj_reg);
-  movq(tmp_reg, Address(tmp_reg, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+  load_prototype_header(tmp_reg, obj_reg);
   orq(tmp_reg, r15_thread);
   xorq(tmp_reg, swap_reg);
   andq(tmp_reg, ~((int) markOopDesc::age_mask_in_place));
@@ -5082,8 +5081,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg, Register obj_reg, Re
   //
   // FIXME: due to a lack of registers we currently blow away the age
   // bits in this situation. Should attempt to preserve them.
-  load_klass(tmp_reg, obj_reg);
-  movq(tmp_reg, Address(tmp_reg, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+  load_prototype_header(tmp_reg, obj_reg);
   orq(tmp_reg, r15_thread);
   if (os::is_MP()) {
     lock();
@@ -5113,8 +5111,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg, Register obj_reg, Re
   //
   // FIXME: due to a lack of registers we currently blow away the age
   // bits in this situation. Should attempt to preserve them.
-  load_klass(tmp_reg, obj_reg);
-  movq(tmp_reg, Address(tmp_reg, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+  load_prototype_header(tmp_reg, obj_reg);
   if (os::is_MP()) {
     lock();
   }
@@ -5155,6 +5152,16 @@ void MacroAssembler::load_klass(Register dst, Register src) {
     decode_heap_oop_not_null(dst);
   } else {
     movq(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+  }
+}
+
+void MacroAssembler::load_prototype_header(Register dst, Register src) {
+  if (UseCompressedOops) {
+    movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+    movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+  } else {
+    movq(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+    movq(dst, Address(dst, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
   }
 }
 
