@@ -121,7 +121,7 @@ HeapWord* CollectedHeap::common_mem_allocate_noinit(size_t size, bool is_noref, 
       return result;
     }
   }
-  bool gc_overhead_limit_was_exceeded;
+  bool gc_overhead_limit_was_exceeded = false;
   result = Universe::heap()->mem_allocate(size,
                                           is_noref,
                                           false,

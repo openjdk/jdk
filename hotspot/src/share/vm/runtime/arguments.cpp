@@ -922,18 +922,17 @@ static void no_shared_spaces() {
 // UseParNewGC and not explicitly set ParallelGCThreads we
 // set it, unless this is a single cpu machine.
 void Arguments::set_parnew_gc_flags() {
-  assert(!UseSerialGC && !UseParallelGC, "control point invariant");
+  assert(!UseSerialGC && !UseParallelGC && !UseG1GC,
+         "control point invariant");
+  assert(UseParNewGC, "Error");
 
   // Turn off AdaptiveSizePolicy by default for parnew until it is
   // complete.
-  if (UseParNewGC &&
-      FLAG_IS_DEFAULT(UseAdaptiveSizePolicy)) {
+  if (FLAG_IS_DEFAULT(UseAdaptiveSizePolicy)) {
     FLAG_SET_DEFAULT(UseAdaptiveSizePolicy, false);
   }
 
-  if (FLAG_IS_DEFAULT(UseParNewGC) && ParallelGCThreads > 1) {
-    FLAG_SET_DEFAULT(UseParNewGC, true);
-  } else if (UseParNewGC && ParallelGCThreads == 0) {
+  if (ParallelGCThreads == 0) {
     FLAG_SET_DEFAULT(ParallelGCThreads,
                      Abstract_VM_Version::parallel_worker_threads());
     if (FLAG_IS_DEFAULT(ParallelGCThreads) && ParallelGCThreads == 1) {
@@ -969,15 +968,12 @@ void Arguments::set_parnew_gc_flags() {
 // further optimization and tuning efforts, and would almost
 // certainly gain from analysis of platform and environment.
 void Arguments::set_cms_and_parnew_gc_flags() {
-  if (UseSerialGC || UseParallelGC) {
-    return;
-  }
-
+  assert(!UseSerialGC && !UseParallelGC, "Error");
   assert(UseConcMarkSweepGC, "CMS is expected to be on here");
 
   // If we are using CMS, we prefer to UseParNewGC,
   // unless explicitly forbidden.
-  if (!UseParNewGC && FLAG_IS_DEFAULT(UseParNewGC)) {
+  if (FLAG_IS_DEFAULT(UseParNewGC)) {
     FLAG_SET_ERGO(bool, UseParNewGC, true);
   }
 
@@ -1157,6 +1153,7 @@ void Arguments::set_ergonomics_flags() {
     // machine class and automatic selection policy.
     if (!UseSerialGC &&
         !UseConcMarkSweepGC &&
+        !UseG1GC &&
         !UseParNewGC &&
         !DumpSharedSpaces &&
         FLAG_IS_DEFAULT(UseParallelGC)) {
@@ -1174,7 +1171,7 @@ void Arguments::set_ergonomics_flags() {
   // field offset to determine free list chunk markers.
   // Check that UseCompressedOops can be set with the max heap size allocated
   // by ergonomics.
-  if (!UseConcMarkSweepGC && MaxHeapSize <= max_heap_for_compressed_oops()) {
+  if (!UseG1GC && !UseConcMarkSweepGC && MaxHeapSize <= max_heap_for_compressed_oops()) {
     if (FLAG_IS_DEFAULT(UseCompressedOops)) {
       FLAG_SET_ERGO(bool, UseCompressedOops, true);
     }
@@ -1183,6 +1180,8 @@ void Arguments::set_ergonomics_flags() {
       // If specified, give a warning
       if (UseConcMarkSweepGC){
         warning("Compressed Oops does not work with CMS");
+      } else if (UseG1GC) {
+        warning("Compressed Oops does not work with UseG1GC");
       } else {
         warning(
           "Max heap size too large for Compressed Oops");
@@ -1196,6 +1195,7 @@ void Arguments::set_ergonomics_flags() {
 }
 
 void Arguments::set_parallel_gc_flags() {
+  assert(UseParallelGC || UseParallelOldGC, "Error");
   // If parallel old was requested, automatically enable parallel scavenge.
   if (UseParallelOldGC && !UseParallelGC && FLAG_IS_DEFAULT(UseParallelGC)) {
     FLAG_SET_DEFAULT(UseParallelGC, true);
@@ -1207,51 +1207,8 @@ void Arguments::set_parallel_gc_flags() {
     FLAG_SET_ERGO(uintx, ParallelGCThreads,
                   Abstract_VM_Version::parallel_worker_threads());
 
-    if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-      const uint64_t reasonable_fraction =
-        os::physical_memory() / DefaultMaxRAMFraction;
-      const uint64_t maximum_size = (uint64_t)
-                 (FLAG_IS_DEFAULT(DefaultMaxRAM) && UseCompressedOops ?
-                     MIN2(max_heap_for_compressed_oops(), DefaultMaxRAM) :
-                     DefaultMaxRAM);
-      size_t reasonable_max =
-        (size_t) os::allocatable_physical_memory(reasonable_fraction);
-      if (reasonable_max > maximum_size) {
-        reasonable_max = maximum_size;
-      }
-      if (PrintGCDetails && Verbose) {
-        // Cannot use gclog_or_tty yet.
-        tty->print_cr("  Max heap size for server class platform "
-                      SIZE_FORMAT, reasonable_max);
-      }
-      // If the initial_heap_size has not been set with -Xms,
-      // then set it as fraction of size of physical memory
-      // respecting the maximum and minimum sizes of the heap.
-      if (initial_heap_size() == 0) {
-        const uint64_t reasonable_initial_fraction =
-          os::physical_memory() / DefaultInitialRAMFraction;
-        const size_t reasonable_initial =
-          (size_t) os::allocatable_physical_memory(reasonable_initial_fraction);
-        const size_t minimum_size = NewSize + OldSize;
-        set_initial_heap_size(MAX2(MIN2(reasonable_initial, reasonable_max),
-                                  minimum_size));
-        // Currently the minimum size and the initial heap sizes are the same.
-        set_min_heap_size(initial_heap_size());
-        if (PrintGCDetails && Verbose) {
-          // Cannot use gclog_or_tty yet.
-          tty->print_cr("  Initial heap size for server class platform "
-                        SIZE_FORMAT, initial_heap_size());
-        }
-      } else {
-        // An minimum size was specified on the command line.  Be sure
-        // that the maximum size is consistent.
-        if (initial_heap_size() > reasonable_max) {
-          reasonable_max = initial_heap_size();
-        }
-      }
-      FLAG_SET_ERGO(uintx, MaxHeapSize, (uintx) reasonable_max);
-    }
-
+    // PS is a server collector, setup the heap sizes accordingly.
+    set_server_heap_size();
     // If InitialSurvivorRatio or MinSurvivorRatio were not specified, but the
     // SurvivorRatio has been set, reset their default values to SurvivorRatio +
     // 2.  By doing this we make SurvivorRatio also work for Parallel Scavenger.
@@ -1276,6 +1233,70 @@ void Arguments::set_parallel_gc_flags() {
         FLAG_SET_DEFAULT(PermMarkSweepDeadRatio, 5);
       }
     }
+  }
+}
+
+void Arguments::set_g1_gc_flags() {
+  assert(UseG1GC, "Error");
+  // G1 is a server collector, setup the heap sizes accordingly.
+  set_server_heap_size();
+#ifdef COMPILER1
+  FastTLABRefill = false;
+#endif
+  FLAG_SET_DEFAULT(ParallelGCThreads,
+                     Abstract_VM_Version::parallel_worker_threads());
+  if (ParallelGCThreads == 0) {
+    FLAG_SET_DEFAULT(ParallelGCThreads,
+                     Abstract_VM_Version::parallel_worker_threads
+());
+  }
+  no_shared_spaces();
+}
+
+void Arguments::set_server_heap_size() {
+  if (FLAG_IS_DEFAULT(MaxHeapSize)) {
+    const uint64_t reasonable_fraction =
+      os::physical_memory() / DefaultMaxRAMFraction;
+    const uint64_t maximum_size = (uint64_t)
+                 (FLAG_IS_DEFAULT(DefaultMaxRAM) && UseCompressedOops ?
+                     MIN2(max_heap_for_compressed_oops(), DefaultMaxRAM) :
+                     DefaultMaxRAM);
+    size_t reasonable_max =
+      (size_t) os::allocatable_physical_memory(reasonable_fraction);
+    if (reasonable_max > maximum_size) {
+      reasonable_max = maximum_size;
+    }
+    if (PrintGCDetails && Verbose) {
+      // Cannot use gclog_or_tty yet.
+      tty->print_cr("  Max heap size for server class platform "
+                    SIZE_FORMAT, reasonable_max);
+    }
+    // If the initial_heap_size has not been set with -Xms,
+    // then set it as fraction of size of physical memory
+    // respecting the maximum and minimum sizes of the heap.
+    if (initial_heap_size() == 0) {
+      const uint64_t reasonable_initial_fraction =
+        os::physical_memory() / DefaultInitialRAMFraction;
+      const size_t reasonable_initial =
+        (size_t) os::allocatable_physical_memory(reasonable_initial_fraction);
+      const size_t minimum_size = NewSize + OldSize;
+      set_initial_heap_size(MAX2(MIN2(reasonable_initial, reasonable_max),
+                                minimum_size));
+      // Currently the minimum size and the initial heap sizes are the same.
+      set_min_heap_size(initial_heap_size());
+      if (PrintGCDetails && Verbose) {
+        // Cannot use gclog_or_tty yet.
+        tty->print_cr("  Initial heap size for server class platform "
+                      SIZE_FORMAT, initial_heap_size());
+      }
+    } else {
+      // A minimum size was specified on the command line.  Be sure
+      // that the maximum size is consistent.
+      if (initial_heap_size() > reasonable_max) {
+        reasonable_max = initial_heap_size();
+      }
+    }
+    FLAG_SET_ERGO(uintx, MaxHeapSize, (uintx) reasonable_max);
   }
 }
 
@@ -1362,12 +1383,13 @@ static void set_serial_gc_flags() {
   FLAG_SET_DEFAULT(UseConcMarkSweepGC, false);
   FLAG_SET_DEFAULT(UseParallelGC, false);
   FLAG_SET_DEFAULT(UseParallelOldGC, false);
+  FLAG_SET_DEFAULT(UseG1GC, false);
 }
 
 static bool verify_serial_gc_flags() {
   return (UseSerialGC &&
-        !(UseParNewGC || UseConcMarkSweepGC || UseParallelGC ||
-          UseParallelOldGC));
+        !(UseParNewGC || UseConcMarkSweepGC || UseG1GC ||
+          UseParallelGC || UseParallelOldGC));
 }
 
 // Check consistency of GC selection
@@ -1470,8 +1492,8 @@ bool Arguments::check_vm_args_consistency() {
   status = status && verify_percentage(GCHeapFreeLimit, "GCHeapFreeLimit");
 
   // Check user specified sharing option conflict with Parallel GC
-  bool cannot_share = (UseConcMarkSweepGC || UseParallelGC ||
-                       UseParallelOldGC || UseParNewGC ||
+  bool cannot_share = (UseConcMarkSweepGC || UseG1GC || UseParNewGC ||
+                       UseParallelGC || UseParallelOldGC ||
                        SOLARIS_ONLY(UseISM) NOT_SOLARIS(UseLargePages));
 
   if (cannot_share) {
@@ -1511,11 +1533,6 @@ bool Arguments::check_vm_args_consistency() {
                   "The CMS collector (-XX:+UseConcMarkSweepGC) must be "
                   "selected in order\nto use CMSIncrementalMode.\n");
       status = false;
-    } else if (!UseTLAB) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "error:  CMSIncrementalMode requires thread-local "
-                  "allocation buffers\n(-XX:+UseTLAB).\n");
-      status = false;
     } else {
       status = status && verify_percentage(CMSIncrementalDutyCycle,
                                   "CMSIncrementalDutyCycle");
@@ -1533,13 +1550,6 @@ bool Arguments::check_vm_args_consistency() {
         FLAG_SET_DEFAULT(CMSInitiatingOccupancyFraction, 1);
       }
     }
-  }
-
-  if (UseNUMA && !UseTLAB) {
-    jio_fprintf(defaultStream::error_stream(),
-                "error:  NUMA allocator (-XX:+UseNUMA) requires thread-local "
-                "allocation\nbuffers (-XX:+UseTLAB).\n");
-    status = false;
   }
 
   // CMS space iteration, which FLSVerifyAllHeapreferences entails,
@@ -2330,9 +2340,14 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     SOLARIS_ONLY(FLAG_SET_DEFAULT(UseMPSS, false));
     SOLARIS_ONLY(FLAG_SET_DEFAULT(UseISM, false));
   }
+
 #else
   if (!FLAG_IS_DEFAULT(OptoLoopAlignment) && FLAG_IS_DEFAULT(MaxLoopPad)) {
     FLAG_SET_DEFAULT(MaxLoopPad, OptoLoopAlignment-1);
+  }
+  // Temporary disable bulk zeroing reduction with G1. See CR 6627983.
+  if (UseG1GC) {
+    FLAG_SET_DEFAULT(ReduceBulkZeroing, false);
   }
 #endif
 
@@ -2485,10 +2500,27 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     }
   }
 
+
   // Parse JavaVMInitArgs structure passed in, as well as JAVA_TOOL_OPTIONS and _JAVA_OPTIONS
   jint result = parse_vm_init_args(args);
   if (result != JNI_OK) {
     return result;
+  }
+
+  // These are hacks until G1 is fully supported and tested
+  // but lets you force -XX:+UseG1GC in PRT and get it where it (mostly) works
+  if (UseG1GC) {
+    if (UseConcMarkSweepGC || UseParNewGC || UseParallelGC || UseParallelOldGC || UseSerialGC) {
+#ifndef PRODUCT
+      tty->print_cr("-XX:+UseG1GC is incompatible with other collectors, using UseG1GC");
+#endif // PRODUCT
+      UseConcMarkSweepGC = false;
+      UseParNewGC        = false;
+      UseParallelGC      = false;
+      UseParallelOldGC   = false;
+      UseSerialGC        = false;
+    }
+    no_shared_spaces();
   }
 
 #ifndef PRODUCT
@@ -2535,6 +2567,12 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   } else if (UseParNewGC) {
     // Set some flags for ParNew
     set_parnew_gc_flags();
+  }
+  // Temporary; make the "if" an "else-if" before
+  // we integrate G1. XXX
+  if (UseG1GC) {
+    // Set some flags for garbage-first, if needed.
+    set_g1_gc_flags();
   }
 
 #ifdef SERIALGC

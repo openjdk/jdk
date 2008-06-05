@@ -302,7 +302,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(CardTableModRefBS,           _guard_region,                                 MemRegion)                             \
   nonstatic_field(CardTableModRefBS,           byte_map_base,                                 jbyte*)                                \
                                                                                                                                      \
-  nonstatic_field(CardTableRS,                 _ct_bs,                                        CardTableModRefBS)                     \
+  nonstatic_field(CardTableRS,                 _ct_bs,                                        CardTableModRefBSForCTRS*)             \
                                                                                                                                      \
   nonstatic_field(CollectedHeap,               _reserved,                                     MemRegion)                             \
   nonstatic_field(SharedHeap,                  _perm_gen,                                     PermGen*)                              \
@@ -993,6 +993,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_toplevel_type(BarrierSet)                                       \
            declare_type(ModRefBarrierSet,             BarrierSet)         \
            declare_type(CardTableModRefBS,            ModRefBarrierSet)   \
+           declare_type(CardTableModRefBSForCTRS,     CardTableModRefBS)  \
   declare_toplevel_type(GenRemSet)                                        \
            declare_type(CardTableRS,                  GenRemSet)          \
   declare_toplevel_type(BlockOffsetSharedArray)                           \
@@ -1020,6 +1021,10 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_toplevel_type(BlockOffsetSharedArray*)                          \
   declare_toplevel_type(GenRemSet*)                                       \
   declare_toplevel_type(CardTableRS*)                                     \
+  declare_toplevel_type(CardTableModRefBS*)                               \
+  declare_toplevel_type(CardTableModRefBS**)                              \
+  declare_toplevel_type(CardTableModRefBSForCTRS*)                        \
+  declare_toplevel_type(CardTableModRefBSForCTRS**)                       \
   declare_toplevel_type(CollectedHeap*)                                   \
   declare_toplevel_type(ContiguousSpace*)                                 \
   declare_toplevel_type(DefNewGeneration*)                                \

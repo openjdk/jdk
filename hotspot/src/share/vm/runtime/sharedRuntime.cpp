@@ -111,6 +111,25 @@ void SharedRuntime::print_ic_miss_histogram() {
 }
 #endif // PRODUCT
 
+#ifndef SERIALGC
+
+// G1 write-barrier pre: executed before a pointer store.
+JRT_LEAF(void, SharedRuntime::g1_wb_pre(oopDesc* orig, JavaThread *thread))
+  if (orig == NULL) {
+    assert(false, "should be optimized out");
+    return;
+  }
+  // store the original value that was in the field reference
+  thread->satb_mark_queue().enqueue(orig);
+JRT_END
+
+// G1 write-barrier post: executed after a pointer store.
+JRT_LEAF(void, SharedRuntime::g1_wb_post(void* card_addr, JavaThread* thread))
+  thread->dirty_card_queue().enqueue(card_addr);
+JRT_END
+
+#endif // !SERIALGC
+
 
 JRT_LEAF(jlong, SharedRuntime::lmul(jlong y, jlong x))
   return x * y;

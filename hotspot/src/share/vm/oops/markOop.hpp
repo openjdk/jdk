@@ -216,11 +216,7 @@ class markOopDesc: public oopDesc {
   static markOop INFLATING() { return (markOop) 0; }    // inflate-in-progress
 
   // Should this header be preserved during GC?
-  bool must_be_preserved(oop obj_containing_mark) const {
-    if (!UseBiasedLocking)
-      return (!is_unlocked() || !has_no_hash());
-    return must_be_preserved_with_bias(obj_containing_mark);
-  }
+  inline bool must_be_preserved(oop obj_containing_mark) const;
   inline bool must_be_preserved_with_bias(oop obj_containing_mark) const;
 
   // Should this header (including its age bits) be preserved in the
@@ -240,22 +236,14 @@ class markOopDesc: public oopDesc {
   // observation is that promotion failures are quite rare and
   // reducing the number of mark words preserved during them isn't a
   // high priority.
-  bool must_be_preserved_for_promotion_failure(oop obj_containing_mark) const {
-    if (!UseBiasedLocking)
-      return (this != prototype());
-    return must_be_preserved_with_bias_for_promotion_failure(obj_containing_mark);
-  }
+  inline bool must_be_preserved_for_promotion_failure(oop obj_containing_mark) const;
   inline bool must_be_preserved_with_bias_for_promotion_failure(oop obj_containing_mark) const;
 
   // Should this header be preserved during a scavenge where CMS is
   // the old generation?
   // (This is basically the same body as must_be_preserved_for_promotion_failure(),
   // but takes the klassOop as argument instead)
-  bool must_be_preserved_for_cms_scavenge(klassOop klass_of_obj_containing_mark) const {
-    if (!UseBiasedLocking)
-      return (this != prototype());
-    return must_be_preserved_with_bias_for_cms_scavenge(klass_of_obj_containing_mark);
-  }
+  inline bool must_be_preserved_for_cms_scavenge(klassOop klass_of_obj_containing_mark) const;
   inline bool must_be_preserved_with_bias_for_cms_scavenge(klassOop klass_of_obj_containing_mark) const;
 
   // WARNING: The following routines are used EXCLUSIVELY by

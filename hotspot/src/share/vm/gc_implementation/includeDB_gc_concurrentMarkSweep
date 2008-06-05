@@ -123,17 +123,6 @@ compactibleFreeListSpace.hpp            space.hpp
 
 compactingPermGenGen.cpp                concurrentMarkSweepGeneration.inline.hpp
 
-concurrentGCThread.cpp                  concurrentGCThread.hpp
-concurrentGCThread.cpp                  init.hpp
-concurrentGCThread.cpp                  instanceRefKlass.hpp
-concurrentGCThread.cpp                  interfaceSupport.hpp
-concurrentGCThread.cpp                  java.hpp
-concurrentGCThread.cpp                  javaCalls.hpp
-concurrentGCThread.cpp                  oop.inline.hpp
-concurrentGCThread.cpp                  systemDictionary.hpp
-
-concurrentGCThread.hpp                  thread.hpp
-
 concurrentMarkSweepGeneration.cpp       cardTableRS.hpp
 concurrentMarkSweepGeneration.cpp       cmsAdaptiveSizePolicy.hpp
 concurrentMarkSweepGeneration.cpp       cmsCollectorPolicy.hpp
@@ -165,7 +154,7 @@ concurrentMarkSweepGeneration.cpp       systemDictionary.hpp
 concurrentMarkSweepGeneration.cpp       vmCMSOperations.hpp
 concurrentMarkSweepGeneration.cpp       vmThread.hpp
 
-concurrentMarkSweepGeneration.hpp       bitMap.hpp
+concurrentMarkSweepGeneration.hpp       bitMap.inline.hpp
 concurrentMarkSweepGeneration.hpp       freeBlockDictionary.hpp
 concurrentMarkSweepGeneration.hpp       gSpaceCounters.hpp
 concurrentMarkSweepGeneration.hpp       gcStats.hpp

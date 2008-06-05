@@ -783,6 +783,18 @@ class JavaThread: public Thread {
   }   _jmp_ring[ jump_ring_buffer_size ];
 #endif /* PRODUCT */
 
+#ifndef SERIALGC
+  // Support for G1 barriers
+
+  ObjPtrQueue _satb_mark_queue;          // Thread-local log for SATB barrier.
+  // Set of all such queues.
+  static SATBMarkQueueSet _satb_mark_queue_set;
+
+  DirtyCardQueue _dirty_card_queue;      // Thread-local log for dirty cards.
+  // Set of all such queues.
+  static DirtyCardQueueSet _dirty_card_queue_set;
+#endif // !SERIALGC
+
   friend class VMThread;
   friend class ThreadWaitTransition;
   friend class VM_Exit;
@@ -1168,6 +1180,11 @@ class JavaThread: public Thread {
 
   static ByteSize do_not_unlock_if_synchronized_offset() { return byte_offset_of(JavaThread, _do_not_unlock_if_synchronized); }
 
+#ifndef SERIALGC
+  static ByteSize satb_mark_queue_offset()       { return byte_offset_of(JavaThread, _satb_mark_queue); }
+  static ByteSize dirty_card_queue_offset()      { return byte_offset_of(JavaThread, _dirty_card_queue); }
+#endif // !SERIALGC
+
   // Returns the jni environment for this thread
   JNIEnv* jni_environment()                      { return &_jni_environment; }
 
@@ -1414,6 +1431,20 @@ public:
     _stack_size_at_create = value;
   }
 
+#ifndef SERIALGC
+  // SATB marking queue support
+  ObjPtrQueue& satb_mark_queue() { return _satb_mark_queue; }
+  static SATBMarkQueueSet& satb_mark_queue_set() {
+    return _satb_mark_queue_set;
+  }
+
+  // Dirty card queue support
+  DirtyCardQueue& dirty_card_queue() { return _dirty_card_queue; }
+  static DirtyCardQueueSet& dirty_card_queue_set() {
+    return _dirty_card_queue_set;
+  }
+#endif // !SERIALGC
+
   // Machine dependent stuff
   #include "incls/_thread_pd.hpp.incl"
 
@@ -1445,6 +1476,14 @@ public:
   // clearing/querying jni attach status
   bool is_attaching() const { return _is_attaching; }
   void set_attached() { _is_attaching = false; OrderAccess::fence(); }
+private:
+  // This field is used to determine if a thread has claimed
+  // a par_id: it is -1 if the thread has not claimed a par_id;
+  // otherwise its value is the par_id that has been claimed.
+  int _claimed_par_id;
+public:
+  int get_claimed_par_id() { return _claimed_par_id; }
+  void set_claimed_par_id(int id) { _claimed_par_id = id;}
 };
 
 // Inline implementation of JavaThread::current

@@ -59,6 +59,12 @@ class CMSInnerParMarkAndPushClosure;
 // This is split into several because of a Visual C++ 6.0 compiler bug
 // where very long macros cause the compiler to crash
 
+// Some other heap might define further specialized closures.
+#ifndef FURTHER_SPECIALIZED_OOP_OOP_ITERATE_CLOSURES
+#define FURTHER_SPECIALIZED_OOP_OOP_ITERATE_CLOSURES(f) \
+        /* None */
+#endif
+
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_S(f)       \
   f(ScanClosure,_nv)                                    \
   f(FastScanClosure,_nv)                                \
@@ -77,7 +83,7 @@ class CMSInnerParMarkAndPushClosure;
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_P(f)
 
 #ifndef SERIALGC
-#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_3(f)       \
+#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)       \
   f(MarkRefsIntoAndScanClosure,_nv)                     \
   f(Par_MarkRefsIntoAndScanClosure,_nv)                 \
   f(PushAndMarkClosure,_nv)                             \
@@ -85,10 +91,12 @@ class CMSInnerParMarkAndPushClosure;
   f(PushOrMarkClosure,_nv)                              \
   f(Par_PushOrMarkClosure,_nv)                          \
   f(CMSKeepAliveClosure,_nv)                            \
-  f(CMSInnerParMarkAndPushClosure,_nv)
+  f(CMSInnerParMarkAndPushClosure,_nv)                  \
+  FURTHER_SPECIALIZED_OOP_OOP_ITERATE_CLOSURES(f)
 #else  // SERIALGC
-#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_3(f)
+#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)
 #endif // SERIALGC
+
 
 // We separate these out, because sometime the general one has
 // a different definition from the specialized ones, and sometimes it
@@ -98,8 +106,8 @@ class CMSInnerParMarkAndPushClosure;
   f(OopClosure,_v)                                      \
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_1(f)
 
-#define ALL_OOP_OOP_ITERATE_CLOSURES_3(f)               \
-  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_3(f)
+#define ALL_OOP_OOP_ITERATE_CLOSURES_2(f)               \
+  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)
 
 #ifndef SERIALGC
 // This macro applies an argument macro to all OopClosures for which we
@@ -125,6 +133,13 @@ class CMSInnerParMarkAndPushClosure;
 // The "root_class" is the most general class to define; this may be
 // "OopClosure" in some applications and "OopsInGenClosure" in others.
 
+
+// Some other heap might define further specialized closures.
+#ifndef FURTHER_SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES
+#define FURTHER_SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(f) \
+        /* None */
+#endif
+
 #define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_S(f) \
   f(ScanClosure,_nv)                                     \
   f(FastScanClosure,_nv)
@@ -132,7 +147,8 @@ class CMSInnerParMarkAndPushClosure;
 #ifndef SERIALGC
 #define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_P(f) \
   f(ParScanWithBarrierClosure,_nv)                       \
-  f(ParScanWithoutBarrierClosure,_nv)
+  f(ParScanWithoutBarrierClosure,_nv)                    \
+  FURTHER_SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(f)
 #else  // SERIALGC
 #define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_P(f)
 #endif // SERIALGC
@@ -179,13 +195,15 @@ public:
 
 #if ENABLE_SPECIALIZATION_STATS
 private:
-  static int _numCallsAll;
+  static bool _init;
+  static bool _wrapped;
+  static jint _numCallsAll;
 
-  static int _numCallsTotal[NUM_Kinds];
-  static int _numCalls_nv[NUM_Kinds];
+  static jint _numCallsTotal[NUM_Kinds];
+  static jint _numCalls_nv[NUM_Kinds];
 
-  static int _numDoOopCallsTotal[NUM_Kinds];
-  static int _numDoOopCalls_nv[NUM_Kinds];
+  static jint _numDoOopCallsTotal[NUM_Kinds];
+  static jint _numDoOopCalls_nv[NUM_Kinds];
 public:
 #endif
   static void clear()  PRODUCT_RETURN;
@@ -203,22 +221,22 @@ public:
 #if ENABLE_SPECIALIZATION_STATS
 
 inline void SpecializationStats::record_call() {
-  _numCallsAll++;;
+  Atomic::inc(&_numCallsAll);
 }
 inline void SpecializationStats::record_iterate_call_v(Kind k) {
-  _numCallsTotal[k]++;
+  Atomic::inc(&_numCallsTotal[k]);
 }
 inline void SpecializationStats::record_iterate_call_nv(Kind k) {
-  _numCallsTotal[k]++;
-  _numCalls_nv[k]++;
+  Atomic::inc(&_numCallsTotal[k]);
+  Atomic::inc(&_numCalls_nv[k]);
 }
 
 inline void SpecializationStats::record_do_oop_call_v(Kind k) {
-  _numDoOopCallsTotal[k]++;
+  Atomic::inc(&_numDoOopCallsTotal[k]);
 }
 inline void SpecializationStats::record_do_oop_call_nv(Kind k) {
-  _numDoOopCallsTotal[k]++;
-  _numDoOopCalls_nv[k]++;
+  Atomic::inc(&_numDoOopCallsTotal[k]);
+  Atomic::inc(&_numDoOopCalls_nv[k]);
 }
 
 #else   // !ENABLE_SPECIALIZATION_STATS

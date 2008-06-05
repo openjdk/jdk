@@ -44,7 +44,7 @@ class CardTableRS: public GenRemSet {
     return CardTableModRefBS::card_is_dirty_wrt_gen_iter(cv);
   }
 
-  CardTableModRefBSForCTRS _ct_bs;
+  CardTableModRefBSForCTRS* _ct_bs;
 
   virtual void younger_refs_in_space_iterate(Space* sp, OopsInGenClosure* cl);
 
@@ -73,6 +73,8 @@ class CardTableRS: public GenRemSet {
 
   jbyte _cur_youngergen_card_val;
 
+  int _regions_to_iterate;
+
   jbyte cur_youngergen_card_val() {
     return _cur_youngergen_card_val;
   }
@@ -96,7 +98,7 @@ public:
 
   CardTableRS* as_CardTableRS() { return this; }
 
-  CardTableModRefBS* ct_bs() { return &_ct_bs; }
+  CardTableModRefBS* ct_bs() { return _ct_bs; }
 
   // Override.
   void prepare_for_younger_refs_iterate(bool parallel);
@@ -107,7 +109,7 @@ public:
   void younger_refs_iterate(Generation* g, OopsInGenClosure* blk);
 
   void inline_write_ref_field_gc(void* field, oop new_val) {
-    jbyte* byte = _ct_bs.byte_for(field);
+    jbyte* byte = _ct_bs->byte_for(field);
     *byte = youngergen_card;
   }
   void write_ref_field_gc_work(void* field, oop new_val) {
@@ -122,25 +124,27 @@ public:
   void resize_covered_region(MemRegion new_region);
 
   bool is_aligned(HeapWord* addr) {
-    return _ct_bs.is_card_aligned(addr);
+    return _ct_bs->is_card_aligned(addr);
   }
 
   void verify();
   void verify_aligned_region_empty(MemRegion mr);
 
-  void clear(MemRegion mr) { _ct_bs.clear(mr); }
+  void clear(MemRegion mr) { _ct_bs->clear(mr); }
   void clear_into_younger(Generation* gen, bool clear_perm);
 
-  void invalidate(MemRegion mr) { _ct_bs.invalidate(mr); }
+  void invalidate(MemRegion mr, bool whole_heap = false) {
+    _ct_bs->invalidate(mr, whole_heap);
+  }
   void invalidate_or_clear(Generation* gen, bool younger, bool perm);
 
   static uintx ct_max_alignment_constraint() {
     return CardTableModRefBS::ct_max_alignment_constraint();
   }
 
-  jbyte* byte_for(void* p)     { return _ct_bs.byte_for(p); }
-  jbyte* byte_after(void* p)   { return _ct_bs.byte_after(p); }
-  HeapWord* addr_for(jbyte* p) { return _ct_bs.addr_for(p); }
+  jbyte* byte_for(void* p)     { return _ct_bs->byte_for(p); }
+  jbyte* byte_after(void* p)   { return _ct_bs->byte_after(p); }
+  HeapWord* addr_for(jbyte* p) { return _ct_bs->addr_for(p); }
 
   bool is_prev_nonclean_card_val(jbyte v) {
     return

@@ -91,7 +91,8 @@ ReferenceProcessor::create_ref_processor(MemRegion          span,
                                          bool               mt_discovery,
                                          BoolObjectClosure* is_alive_non_header,
                                          int                parallel_gc_threads,
-                                         bool               mt_processing) {
+                                         bool               mt_processing,
+                                         bool               dl_needs_barrier) {
   int mt_degree = 1;
   if (parallel_gc_threads > 1) {
     mt_degree = parallel_gc_threads;
@@ -99,7 +100,8 @@ ReferenceProcessor::create_ref_processor(MemRegion          span,
   ReferenceProcessor* rp =
     new ReferenceProcessor(span, atomic_discovery,
                            mt_discovery, mt_degree,
-                           mt_processing && (parallel_gc_threads > 0));
+                           mt_processing && (parallel_gc_threads > 0),
+                           dl_needs_barrier);
   if (rp == NULL) {
     vm_exit_during_initialization("Could not allocate ReferenceProcessor object");
   }
@@ -111,10 +113,13 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
                                        bool      atomic_discovery,
                                        bool      mt_discovery,
                                        int       mt_degree,
-                                       bool      mt_processing) :
+                                       bool      mt_processing,
+                                       bool      discovered_list_needs_barrier)  :
   _discovering_refs(false),
   _enqueuing_is_done(false),
   _is_alive_non_header(NULL),
+  _discovered_list_needs_barrier(discovered_list_needs_barrier),
+  _bs(NULL),
   _processing_is_mt(mt_processing),
   _next_id(0)
 {
@@ -134,6 +139,10 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
   for (int i = 0; i < _num_q * subclasses_of_ref; i++) {
         _discoveredSoftRefs[i].set_head(sentinel_ref());
     _discoveredSoftRefs[i].set_length(0);
+  }
+  // If we do barreirs, cache a copy of the barrier set.
+  if (discovered_list_needs_barrier) {
+    _bs = Universe::heap()->barrier_set();
   }
 }
 
@@ -727,10 +736,15 @@ ReferenceProcessor::abandon_partial_discovered_list(DiscoveredList& refs_list) {
   refs_list.set_length(0);
 }
 
-void
-ReferenceProcessor::abandon_partial_discovered_list_arr(DiscoveredList refs_lists[]) {
-  for (int i = 0; i < _num_q; i++) {
-    abandon_partial_discovered_list(refs_lists[i]);
+void ReferenceProcessor::abandon_partial_discovery() {
+  // loop over the lists
+  for (int i = 0; i < _num_q * subclasses_of_ref; i++) {
+    if (TraceReferenceGC && PrintGCDetails && ((i % _num_q) == 0)) {
+      gclog_or_tty->print_cr(
+        "\nAbandoning %s discovered list",
+        list_name(i));
+    }
+    abandon_partial_discovered_list(_discoveredSoftRefs[i]);
   }
 }
 
@@ -994,7 +1008,16 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
   assert(_discovery_is_mt, "!_discovery_is_mt should have been handled by caller");
   // First we must make sure this object is only enqueued once. CAS in a non null
   // discovered_addr.
-  oop retest = oopDesc::atomic_compare_exchange_oop(refs_list.head(), discovered_addr,
+  oop current_head = refs_list.head();
+
+  // Note: In the case of G1, this pre-barrier is strictly
+  // not necessary because the only case we are interested in
+  // here is when *discovered_addr is NULL, so this will expand to
+  // nothing. As a result, I am just manually eliding this out for G1.
+  if (_discovered_list_needs_barrier && !UseG1GC) {
+    _bs->write_ref_field_pre((void*)discovered_addr, current_head); guarantee(false, "Needs to be fixed: YSR");
+  }
+  oop retest = oopDesc::atomic_compare_exchange_oop(current_head, discovered_addr,
                                                     NULL);
   if (retest == NULL) {
     // This thread just won the right to enqueue the object.
@@ -1002,6 +1025,10 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
     // is necessary.
     refs_list.set_head(obj);
     refs_list.set_length(refs_list.length() + 1);
+    if (_discovered_list_needs_barrier) {
+      _bs->write_ref_field((void*)discovered_addr, current_head); guarantee(false, "Needs to be fixed: YSR");
+    }
+
   } else {
     // If retest was non NULL, another thread beat us to it:
     // The reference has already been discovered...
@@ -1073,8 +1100,8 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     }
   }
 
-  HeapWord* discovered_addr = java_lang_ref_Reference::discovered_addr(obj);
-  oop  discovered = java_lang_ref_Reference::discovered(obj);
+  HeapWord* const discovered_addr = java_lang_ref_Reference::discovered_addr(obj);
+  const oop  discovered = java_lang_ref_Reference::discovered(obj);
   assert(discovered->is_oop_or_null(), "bad discovered field");
   if (discovered != NULL) {
     // The reference has already been discovered...
@@ -1094,7 +1121,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
       // discovered twice except by concurrent collectors that potentially
       // trace the same Reference object twice.
       assert(UseConcMarkSweepGC,
-             "Only possible with a concurrent collector");
+             "Only possible with an incremental-update concurrent collector");
       return true;
     }
   }
@@ -1122,12 +1149,24 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     return false;   // nothing special needs to be done
   }
 
-  // We do a raw store here, the field will be visited later when
-  // processing the discovered references.
   if (_discovery_is_mt) {
     add_to_discovered_list_mt(*list, obj, discovered_addr);
   } else {
-    oop_store_raw(discovered_addr, list->head());
+    // If "_discovered_list_needs_barrier", we do write barriers when
+    // updating the discovered reference list.  Otherwise, we do a raw store
+    // here: the field will be visited later when processing the discovered
+    // references.
+    oop current_head = list->head();
+    // As in the case further above, since we are over-writing a NULL
+    // pre-value, we can safely elide the pre-barrier here for the case of G1.
+    assert(discovered == NULL, "control point invariant");
+    if (_discovered_list_needs_barrier && !UseG1GC) { // safe to elide for G1
+      _bs->write_ref_field_pre((oop*)discovered_addr, current_head);
+    }
+    oop_store_raw(discovered_addr, current_head);
+    if (_discovered_list_needs_barrier) {
+      _bs->write_ref_field((oop*)discovered_addr, current_head);
+    }
     list->set_head(obj);
     list->set_length(list->length() + 1);
   }

@@ -299,6 +299,17 @@ void CardTableModRefBS::write_ref_field_work(void* field, oop newVal) {
 }
 
 
+bool CardTableModRefBS::claim_card(size_t card_index) {
+  jbyte val = _byte_map[card_index];
+  if (val != claimed_card_val()) {
+    jbyte res = Atomic::cmpxchg((jbyte) claimed_card_val(), &_byte_map[card_index], val);
+    if (res == val)
+      return true;
+    else return false;
+  }
+  return false;
+}
+
 void CardTableModRefBS::non_clean_card_iterate(Space* sp,
                                                MemRegion mr,
                                                DirtyCardToOopClosure* dcto_cl,
@@ -398,7 +409,7 @@ void CardTableModRefBS::dirty_MemRegion(MemRegion mr) {
   }
 }
 
-void CardTableModRefBS::invalidate(MemRegion mr) {
+void CardTableModRefBS::invalidate(MemRegion mr, bool whole_heap) {
   for (int i = 0; i < _cur_covered_regions; i++) {
     MemRegion mri = mr.intersection(_covered[i]);
     if (!mri.is_empty()) dirty_MemRegion(mri);
@@ -426,11 +437,15 @@ void CardTableModRefBS::clear(MemRegion mr) {
   }
 }
 
+void CardTableModRefBS::dirty(MemRegion mr) {
+  jbyte* first = byte_for(mr.start());
+  jbyte* last  = byte_after(mr.last());
+  memset(first, dirty_card, last-first);
+}
+
 // NOTES:
 // (1) Unlike mod_oop_in_space_iterate() above, dirty_card_iterate()
 //     iterates over dirty cards ranges in increasing address order.
-// (2) Unlike, e.g., dirty_card_range_after_preclean() below,
-//     this method does not make the dirty cards prelceaned.
 void CardTableModRefBS::dirty_card_iterate(MemRegion mr,
                                            MemRegionClosure* cl) {
   for (int i = 0; i < _cur_covered_regions; i++) {
@@ -456,7 +471,9 @@ void CardTableModRefBS::dirty_card_iterate(MemRegion mr,
   }
 }
 
-MemRegion CardTableModRefBS::dirty_card_range_after_preclean(MemRegion mr) {
+MemRegion CardTableModRefBS::dirty_card_range_after_reset(MemRegion mr,
+                                                          bool reset,
+                                                          int reset_val) {
   for (int i = 0; i < _cur_covered_regions; i++) {
     MemRegion mri = mr.intersection(_covered[i]);
     if (!mri.is_empty()) {
@@ -473,8 +490,10 @@ MemRegion CardTableModRefBS::dirty_card_range_after_preclean(MemRegion mr) {
                dirty_cards++, next_entry++);
           MemRegion cur_cards(addr_for(cur_entry),
                               dirty_cards*card_size_in_words);
-          for (size_t i = 0; i < dirty_cards; i++) {
-             cur_entry[i] = precleaned_card;
+          if (reset) {
+            for (size_t i = 0; i < dirty_cards; i++) {
+              cur_entry[i] = reset_val;
+            }
           }
           return cur_cards;
         }

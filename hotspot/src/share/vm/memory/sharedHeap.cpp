@@ -57,15 +57,24 @@ SharedHeap::SharedHeap(CollectorPolicy* policy_) :
   }
   _sh = this;  // ch is static, should be set only once.
   if ((UseParNewGC ||
-      (UseConcMarkSweepGC && CMSParallelRemarkEnabled)) &&
+      (UseConcMarkSweepGC && CMSParallelRemarkEnabled) ||
+       UseG1GC) &&
       ParallelGCThreads > 0) {
-    _workers = new WorkGang("Parallel GC Threads", ParallelGCThreads, true);
+    _workers = new WorkGang("Parallel GC Threads", ParallelGCThreads,
+                            /* are_GC_task_threads */true,
+                            /* are_ConcurrentGC_threads */false);
     if (_workers == NULL) {
       vm_exit_during_initialization("Failed necessary allocation.");
     }
   }
 }
 
+bool SharedHeap::heap_lock_held_for_gc() {
+  Thread* t = Thread::current();
+  return    Heap_lock->owned_by_self()
+         || (   (t->is_GC_task_thread() ||  t->is_VM_thread())
+             && _thread_holds_heap_lock_for_gc);
+}
 
 void SharedHeap::set_par_threads(int t) {
   _n_par_threads = t;
@@ -280,10 +289,11 @@ void SharedHeap::fill_region_with_object(MemRegion mr) {
 }
 
 // Some utilities.
-void SharedHeap::print_size_transition(size_t bytes_before,
+void SharedHeap::print_size_transition(outputStream* out,
+                                       size_t bytes_before,
                                        size_t bytes_after,
                                        size_t capacity) {
-  tty->print(" %d%s->%d%s(%d%s)",
+  out->print(" %d%s->%d%s(%d%s)",
              byte_size_in_proper_unit(bytes_before),
              proper_unit_for_byte_size(bytes_before),
              byte_size_in_proper_unit(bytes_after),

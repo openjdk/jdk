@@ -287,6 +287,10 @@ attachListener.hpp                      allocation.hpp
 attachListener.hpp                      debug.hpp
 attachListener.hpp                      ostream.hpp
 
+barrierSet.cpp				barrierSet.hpp
+barrierSet.cpp			        collectedHeap.hpp
+barrierSet.cpp				universe.hpp
+
 barrierSet.hpp                          memRegion.hpp
 barrierSet.hpp                          oopsHierarchy.hpp
 
@@ -294,7 +298,7 @@ barrierSet.inline.hpp                   barrierSet.hpp
 barrierSet.inline.hpp                   cardTableModRefBS.hpp
 
 bcEscapeAnalyzer.cpp                    bcEscapeAnalyzer.hpp
-bcEscapeAnalyzer.cpp                    bitMap.hpp
+bcEscapeAnalyzer.cpp                    bitMap.inline.hpp
 bcEscapeAnalyzer.cpp                    bytecode.hpp
 bcEscapeAnalyzer.cpp                    ciConstant.hpp
 bcEscapeAnalyzer.cpp                    ciField.hpp
@@ -319,13 +323,12 @@ biasedLocking.cpp                       vm_operations.hpp
 biasedLocking.hpp                       growableArray.hpp
 biasedLocking.hpp                       handles.hpp
 
-bitMap.cpp                              bitMap.hpp
+bitMap.cpp                              allocation.inline.hpp
 bitMap.cpp                              bitMap.inline.hpp
 bitMap.cpp                              copy.hpp
 bitMap.cpp                              os_<os_family>.inline.hpp
 
 bitMap.hpp                              allocation.hpp
-bitMap.hpp                              ostream.hpp
 bitMap.hpp                              top.hpp
 
 bitMap.inline.hpp                       atomic.hpp
@@ -644,6 +647,7 @@ ciKlassKlass.hpp                        ciSymbol.hpp
 ciMethod.cpp                            abstractCompiler.hpp
 ciMethod.cpp                            allocation.inline.hpp
 ciMethod.cpp                            bcEscapeAnalyzer.hpp
+ciMethod.cpp                            bitMap.inline.hpp
 ciMethod.cpp                            ciCallProfile.hpp
 ciMethod.cpp                            ciExceptionHandler.hpp
 ciMethod.cpp                            ciInstanceKlass.hpp
@@ -1757,7 +1761,7 @@ genRemSet.cpp                           genRemSet.hpp
 
 genRemSet.hpp                           oop.hpp
 
-generateOopMap.cpp                      bitMap.hpp
+generateOopMap.cpp                      bitMap.inline.hpp
 generateOopMap.cpp                      bytecodeStream.hpp
 generateOopMap.cpp                      generateOopMap.hpp
 generateOopMap.cpp                      handles.inline.hpp
@@ -1804,6 +1808,8 @@ generation.hpp                          watermark.hpp
 generation.inline.hpp                   genCollectedHeap.hpp
 generation.inline.hpp                   generation.hpp
 generation.inline.hpp                   space.hpp
+
+genOopClosures.hpp                      oop.hpp
 
 generationSpec.cpp                      compactPermGen.hpp
 generationSpec.cpp                      defNewGeneration.hpp
@@ -2215,6 +2221,11 @@ invocationCounter.cpp                   invocationCounter.hpp
 invocationCounter.hpp                   allocation.hpp
 invocationCounter.hpp                   exceptions.hpp
 invocationCounter.hpp                   handles.hpp
+
+intHisto.cpp				intHisto.hpp
+
+intHisto.hpp				allocation.hpp
+intHisto.hpp                            growableArray.hpp
 
 iterator.cpp                            iterator.hpp
 iterator.cpp                            oop.inline.hpp
@@ -2815,6 +2826,7 @@ methodKlass.hpp                         klassOop.hpp
 methodKlass.hpp                         methodOop.hpp
 
 methodLiveness.cpp                      allocation.inline.hpp
+methodLiveness.cpp                      bitMap.inline.hpp
 methodLiveness.cpp                      bytecode.hpp
 methodLiveness.cpp                      bytecodes.hpp
 methodLiveness.cpp                      ciMethod.hpp
@@ -2960,6 +2972,11 @@ nmethod.cpp                             xmlstream.hpp
 
 nmethod.hpp                             codeBlob.hpp
 nmethod.hpp                             pcDesc.hpp
+
+numberSeq.cpp				debug.hpp
+numberSeq.cpp				numberSeq.hpp
+numberSeq.cpp				globalDefinitions.hpp
+numberSeq.cpp				allocation.inline.hpp
 
 objArrayKlass.cpp                       collectedHeap.inline.hpp
 objArrayKlass.cpp                       copy.hpp
@@ -3403,8 +3420,6 @@ referencePolicy.cpp                     javaClasses.hpp
 referencePolicy.cpp                     referencePolicy.hpp
 referencePolicy.cpp                     universe.hpp
 
-referencePolicy.hpp                     oop.hpp
-
 referenceProcessor.cpp                  collectedHeap.hpp
 referenceProcessor.cpp                  collectedHeap.inline.hpp
 referenceProcessor.cpp                  java.hpp
@@ -3746,6 +3761,8 @@ space.inline.hpp                        universe.hpp
 specialized_oop_closures.cpp            ostream.hpp
 specialized_oop_closures.cpp            specialized_oop_closures.hpp
 
+specialized_oop_closures.hpp            atomic.hpp
+
 stackMapFrame.cpp                       globalDefinitions.hpp
 stackMapFrame.cpp                       handles.inline.hpp
 stackMapFrame.cpp                       oop.inline.hpp
@@ -3988,7 +4005,6 @@ taskqueue.cpp                           thread_<os_family>.inline.hpp
 
 taskqueue.hpp                           allocation.hpp
 taskqueue.hpp                           allocation.inline.hpp
-taskqueue.hpp                           debug.hpp
 taskqueue.hpp                           mutex.hpp
 taskqueue.hpp                           orderAccess_<os_arch>.inline.hpp
 
@@ -4026,6 +4042,7 @@ templateInterpreter_<arch>.hpp          generate_platform_dependent_include
 
 templateInterpreterGenerator_<arch>.hpp generate_platform_dependent_include
 
+templateTable.cpp                       collectedHeap.hpp
 templateTable.cpp                       templateTable.hpp
 templateTable.cpp                       timer.hpp
 
@@ -4530,6 +4547,7 @@ vm_operations.cpp                       compileBroker.hpp
 vm_operations.cpp                       compilerOracle.hpp
 vm_operations.cpp                       deoptimization.hpp
 vm_operations.cpp                       interfaceSupport.hpp
+vm_operations.cpp                       isGCActiveMark.hpp
 vm_operations.cpp                       resourceArea.hpp
 vm_operations.cpp                       threadService.hpp
 vm_operations.cpp                       thread_<os_family>.inline.hpp

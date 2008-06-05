@@ -107,6 +107,78 @@ static Assembler::Condition j_not(TemplateTable::Condition cc) {
 //----------------------------------------------------------------------------------------------------
 // Miscelaneous helper routines
 
+// Store an oop (or NULL) at the address described by obj.
+// If val == noreg this means store a NULL
+
+static void do_oop_store(InterpreterMacroAssembler* _masm,
+                         Address obj,
+                         Register val,
+                         BarrierSet::Name barrier,
+                         bool precise) {
+  assert(val == noreg || val == rax, "parameter is just for looks");
+  switch (barrier) {
+#ifndef SERIALGC
+    case BarrierSet::G1SATBCT:
+    case BarrierSet::G1SATBCTLogging:
+      {
+        // flatten object address if needed
+        // We do it regardless of precise because we need the registers
+        if (obj.index() == noreg && obj.disp() == 0) {
+          if (obj.base() != rdx) {
+            __ movl(rdx, obj.base());
+          }
+        } else {
+          __ leal(rdx, obj);
+        }
+        __ get_thread(rcx);
+        __ save_bcp();
+        __ g1_write_barrier_pre(rdx, rcx, rsi, rbx, val != noreg);
+
+        // Do the actual store
+        // noreg means NULL
+        if (val == noreg) {
+          __ movl(Address(rdx, 0), NULL_WORD);
+          // No post barrier for NULL
+        } else {
+          __ movl(Address(rdx, 0), val);
+          __ g1_write_barrier_post(rdx, rax, rcx, rbx, rsi);
+        }
+        __ restore_bcp();
+
+      }
+      break;
+#endif // SERIALGC
+    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableExtension:
+      {
+        if (val == noreg) {
+          __ movl(obj, NULL_WORD);
+        } else {
+          __ movl(obj, val);
+          // flatten object address if needed
+          if (!precise || (obj.index() == noreg && obj.disp() == 0)) {
+            __ store_check(obj.base());
+          } else {
+            __ leal(rdx, obj);
+            __ store_check(rdx);
+          }
+        }
+      }
+      break;
+    case BarrierSet::ModRef:
+    case BarrierSet::Other:
+      if (val == noreg) {
+        __ movl(obj, NULL_WORD);
+      } else {
+        __ movl(obj, val);
+      }
+      break;
+    default      :
+      ShouldNotReachHere();
+
+  }
+}
+
 Address TemplateTable::at_bcp(int offset) {
   assert(_desc->uses_bcp(), "inconsistent uses_bcp information");
   return Address(rsi, offset);
@@ -872,6 +944,8 @@ void TemplateTable::aastore() {
   __ movl(rax, at_tos());     // Value
   __ movl(rcx, at_tos_p1());  // Index
   __ movl(rdx, at_tos_p2());  // Array
+
+  Address element_address(rdx, rcx, Address::times_4, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
   index_check_without_pop(rdx, rcx);      // kills rbx,
   // do array store check - check for NULL value first
   __ testl(rax, rax);
@@ -883,7 +957,7 @@ void TemplateTable::aastore() {
   __ movl(rax, Address(rdx, oopDesc::klass_offset_in_bytes()));
   __ movl(rax, Address(rax, sizeof(oopDesc) + objArrayKlass::element_klass_offset_in_bytes()));
   // Compress array+index*4+12 into a single register.  Frees ECX.
-  __ leal(rdx, Address(rdx, rcx, Address::times_4, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+  __ leal(rdx, element_address);
 
   // Generate subtype check.  Blows ECX.  Resets EDI to locals.
   // Superklass in EAX.  Subklass in EBX.
@@ -895,15 +969,20 @@ void TemplateTable::aastore() {
 
   // Come here on success
   __ bind(ok_is_subtype);
-  __ movl(rax, at_rsp());     // Value
-  __ movl(Address(rdx, 0), rax);
-  __ store_check(rdx);
-  __ jmpb(done);
+
+  // Get the value to store
+  __ movl(rax, at_rsp());
+  // and store it with appropriate barrier
+  do_oop_store(_masm, Address(rdx, 0), rax, _bs->kind(), true);
+
+  __ jmp(done);
 
   // Have a NULL in EAX, EDX=array, ECX=index.  Store NULL at ary[idx]
   __ bind(is_null);
   __ profile_null_seen(rbx);
-  __ movl(Address(rdx, rcx, Address::times_4, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), rax);
+
+  // Store NULL, (noreg means NULL to do_oop_store)
+  do_oop_store(_masm, element_address, noreg, _bs->kind(), true);
 
   // Pop stack arguments
   __ bind(done);
@@ -1506,7 +1585,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     // compute return address as bci in rax,
     __ leal(rax, at_bcp((is_wide ? 5 : 3) - in_bytes(constMethodOopDesc::codes_offset())));
     __ subl(rax, Address(rcx, methodOopDesc::const_offset()));
-    // Adjust the bcp in ESI by the displacement in EDX
+    // Adjust the bcp in rsi by the displacement in EDX
     __ addl(rsi, rdx);
     // Push return address
     __ push_i(rax);
@@ -1517,7 +1596,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // Normal (non-jsr) branch handling
 
-  // Adjust the bcp in ESI by the displacement in EDX
+  // Adjust the bcp in rsi by the displacement in EDX
   __ addl(rsi, rdx);
 
   assert(UseLoopCounter || !UseOnStackReplacement, "on-stack-replacement requires loop counters");
@@ -2426,11 +2505,12 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
   __ pop(atos);
   if (!is_static) pop_and_check_object(obj);
 
-  __ movl(lo, rax );
-  __ store_check(obj, lo);  // Need to mark card
+  do_oop_store(_masm, lo, rax, _bs->kind(), false);
+
   if (!is_static) {
     patch_bytecode(Bytecodes::_fast_aputfield, rcx, rbx);
   }
+
   __ jmp(Done);
 
   __ bind(notObj);
@@ -2638,14 +2718,18 @@ void TemplateTable::fast_storefield(TosState state) {
     case Bytecodes::_fast_lputfield: __ movl(hi, rdx); __ movl(lo, rax);        break;
     case Bytecodes::_fast_fputfield: __ fstp_s(lo); break;
     case Bytecodes::_fast_dputfield: __ fstp_d(lo); break;
-    case Bytecodes::_fast_aputfield: __ movl(lo, rax); __ store_check(rcx, lo); break;
+    case Bytecodes::_fast_aputfield: {
+      do_oop_store(_masm, lo, rax, _bs->kind(), false);
+      break;
+    }
     default:
       ShouldNotReachHere();
   }
 
   Label done;
   volatile_barrier( );
-  __ jmpb(done);
+  // Barriers are so large that short branch doesn't reach!
+  __ jmp(done);
 
   // Same code as above, but don't need rdx to test for volatile.
   __ bind(notVolatile);
@@ -2664,7 +2748,10 @@ void TemplateTable::fast_storefield(TosState state) {
     case Bytecodes::_fast_lputfield: __ movl(hi, rdx); __ movl(lo, rax);        break;
     case Bytecodes::_fast_fputfield: __ fstp_s(lo); break;
     case Bytecodes::_fast_dputfield: __ fstp_d(lo); break;
-    case Bytecodes::_fast_aputfield: __ movl(lo, rax); __ store_check(rcx, lo); break;
+    case Bytecodes::_fast_aputfield: {
+      do_oop_store(_masm, lo, rax, _bs->kind(), false);
+      break;
+    }
     default:
       ShouldNotReachHere();
   }
@@ -3019,8 +3106,6 @@ void TemplateTable::_new() {
   Label initialize_object;  // including clearing the fields
   Label allocate_shared;
 
-  ExternalAddress heap_top((address)Universe::heap()->top_addr());
-
   __ get_cpool_and_tags(rcx, rax);
   // get instanceKlass
   __ movl(rcx, Address(rcx, rdx, Address::times_4, sizeof(constantPoolOopDesc)));
@@ -3076,6 +3161,8 @@ void TemplateTable::_new() {
   // rdx: instance size in bytes
   if (allow_shared_alloc) {
     __ bind(allocate_shared);
+
+    ExternalAddress heap_top((address)Universe::heap()->top_addr());
 
     Label retry;
     __ bind(retry);

@@ -365,6 +365,10 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     __ store_check(value.result(), array.result(), tmp1, tmp2, tmp3, store_check_info);
   }
 
+  if (obj_store) {
+    // Needs GC write barriers.
+    pre_barrier(LIR_OprFact::address(array_addr), false, NULL);
+  }
   __ move(value.result(), array_addr, null_check_info);
   if (obj_store) {
     // Is this precise?
@@ -663,6 +667,10 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
 
   __ add(obj.result(), offset.result(), addr);
 
+  if (type == objectType) {  // Write-barrier needed for Object fields.
+    pre_barrier(obj.result(), false, NULL);
+  }
+
   if (type == objectType)
     __ cas_obj(addr, cmp.result(), val.result(), t1, t2);
   else if (type == intType)
@@ -677,7 +685,11 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   LIR_Opr result = rlock_result(x);
   __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0), result);
   if (type == objectType) {  // Write-barrier needed for Object fields.
+#ifdef PRECISE_CARDMARK
+    post_barrier(addr, val.result());
+#else
     post_barrier(obj.result(), val.result());
+#endif // PRECISE_CARDMARK
   }
 }
 
@@ -1153,6 +1165,10 @@ void LIRGenerator::put_Object_unsafe(LIR_Opr src, LIR_Opr offset, LIR_Opr data,
         addr = new LIR_Address(base_op, index_op, type);
       }
 
+      if (is_obj) {
+        pre_barrier(LIR_OprFact::address(addr), false, NULL);
+        // _bs->c1_write_barrier_pre(this, LIR_OprFact::address(addr));
+      }
       __ move(data, addr);
       if (is_obj) {
         // This address is precise

@@ -380,10 +380,11 @@ inline int oopDesc::size_given_klass(Klass* klass)  {
       s = (int)((size_t)round_to(size_in_bytes, MinObjAlignmentInBytes) /
         HeapWordSize);
 
-      // UseParNewGC can change the length field of an "old copy" of an object
-      // array in the young gen so it indicates the stealable portion of
-      // an already copied array. This will cause the first disjunct below
-      // to fail if the sizes are computed across such a concurrent change.
+      // UseParNewGC, UseParallelGC and UseG1GC can change the length field
+      // of an "old copy" of an object array in the young gen so it indicates
+      // the grey portion of an already copied array. This will cause the first
+      // disjunct below to fail if the two comparands are computed across such
+      // a concurrent change.
       // UseParNewGC also runs with promotion labs (which look like int
       // filler arrays) which are subject to changing their declared size
       // when finally retiring a PLAB; this also can cause the first disjunct
@@ -393,13 +394,11 @@ inline int oopDesc::size_given_klass(Klass* klass)  {
       //     is_objArray() && is_forwarded()   // covers first scenario above
       //  || is_typeArray()                    // covers second scenario above
       // If and when UseParallelGC uses the same obj array oop stealing/chunking
-      // technique, or when G1 is integrated (and currently uses this array chunking
-      // technique) we will need to suitably modify the assertion.
+      // technique, we will need to suitably modify the assertion.
       assert((s == klass->oop_size(this)) ||
-             (((UseParNewGC || UseParallelGC) &&
-              Universe::heap()->is_gc_active()) &&
-              (is_typeArray() ||
-               (is_objArray() && is_forwarded()))),
+             (Universe::heap()->is_gc_active() &&
+              ((is_typeArray() && UseParNewGC) ||
+               (is_objArray()  && is_forwarded() && (UseParNewGC || UseParallelGC || UseG1GC)))),
              "wrong array object size");
     } else {
       // Must be zero, so bite the bullet and take the virtual call.
@@ -426,16 +425,22 @@ inline void update_barrier_set(void* p, oop v) {
   oopDesc::bs()->write_ref_field(p, v);
 }
 
+inline void update_barrier_set_pre(void* p, oop v) {
+  oopDesc::bs()->write_ref_field_pre(p, v);
+}
+
 template <class T> inline void oop_store(T* p, oop v) {
   if (always_do_update_barrier) {
     oop_store((volatile T*)p, v);
   } else {
+    update_barrier_set_pre(p, v);
     oopDesc::encode_store_heap_oop(p, v);
     update_barrier_set(p, v);
   }
 }
 
 template <class T> inline void oop_store(volatile T* p, oop v) {
+  update_barrier_set_pre((void*)p, v);
   // Used by release_obj_field_put, so use release_store_ptr.
   oopDesc::release_encode_store_heap_oop(p, v);
   update_barrier_set((void*)p, v);
@@ -683,8 +688,19 @@ inline int oopDesc::oop_iterate(OopClosureType* blk, MemRegion mr) {       \
 }
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_ITERATE_DEFN)
-ALL_OOP_OOP_ITERATE_CLOSURES_3(OOP_ITERATE_DEFN)
+ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_DEFN)
 
+#ifndef SERIALGC
+#define OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)              \
+                                                                           \
+inline int oopDesc::oop_iterate_backwards(OopClosureType* blk) {           \
+  SpecializationStats::record_call();                                      \
+  return blueprint()->oop_oop_iterate_backwards##nv_suffix(this, blk);     \
+}
+
+ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_ITERATE_BACKWARDS_DEFN)
+ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_BACKWARDS_DEFN)
+#endif // !SERIALGC
 
 inline bool oopDesc::is_shared() const {
   return CompactingPermGenGen::is_shared(this);

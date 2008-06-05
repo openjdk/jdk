@@ -31,8 +31,8 @@ class GangWorker;
 class WorkData;
 
 YieldingFlexibleWorkGang::YieldingFlexibleWorkGang(
-  const char* name, int workers, bool are_GC_threads) :
-  AbstractWorkGang(name, are_GC_threads) {
+  const char* name, int workers, bool are_GC_task_threads) :
+  AbstractWorkGang(name, are_GC_task_threads, false) {
   // Save arguments.
   _total_workers = workers;
   assert(_total_workers > 0, "Must have more than 1 worker");

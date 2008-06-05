@@ -3372,12 +3372,141 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1, Register 
   call_VM_leaf(entry_point, 3);
 }
 
-
 // Calls to C land
 //
 // When entering C land, the rbp, & rsp of the last Java frame have to be recorded
 // in the (thread-local) JavaThread object. When leaving C land, the last Java fp
 // has to be reset to 0. This is required to allow proper stack traversal.
+
+//////////////////////////////////////////////////////////////////////////////////
+#ifndef SERIALGC
+
+void MacroAssembler::g1_write_barrier_pre(Register obj,
+                                          Register thread,
+                                          Register tmp,
+                                          Register tmp2,
+                                          bool tosca_live) {
+  Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
+                                       PtrQueue::byte_offset_of_active()));
+
+  Address index(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
+                                       PtrQueue::byte_offset_of_index()));
+  Address buffer(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
+                                       PtrQueue::byte_offset_of_buf()));
+
+
+  Label done;
+  Label runtime;
+
+  // if (!marking_in_progress) goto done;
+  if (in_bytes(PtrQueue::byte_width_of_active()) == 4) {
+    cmpl(in_progress, 0);
+  } else {
+    assert(in_bytes(PtrQueue::byte_width_of_active()) == 1, "Assumption");
+    cmpb(in_progress, 0);
+  }
+  jcc(Assembler::equal, done);
+
+  // if (x.f == NULL) goto done;
+  cmpl(Address(obj, 0), NULL_WORD);
+  jcc(Assembler::equal, done);
+
+  // Can we store original value in the thread's buffer?
+
+  movl(tmp2, Address(obj, 0));
+  cmpl(index, 0);
+  jcc(Assembler::equal, runtime);
+  subl(index, wordSize);
+  movl(tmp, buffer);
+  addl(tmp, index);
+  movl(Address(tmp, 0), tmp2);
+  jmp(done);
+  bind(runtime);
+  // save the live input values
+  if(tosca_live) pushl(rax);
+  pushl(obj);
+  pushl(thread);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), tmp2, thread);
+  popl(thread);
+  popl(obj);
+  if(tosca_live) popl(rax);
+  bind(done);
+
+}
+
+void MacroAssembler::g1_write_barrier_post(Register store_addr,
+                                           Register new_val,
+                                           Register thread,
+                                           Register tmp,
+                                           Register tmp2) {
+
+  Address queue_index(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
+                                       PtrQueue::byte_offset_of_index()));
+  Address buffer(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
+                                       PtrQueue::byte_offset_of_buf()));
+  BarrierSet* bs = Universe::heap()->barrier_set();
+  CardTableModRefBS* ct = (CardTableModRefBS*)bs;
+  Label done;
+  Label runtime;
+
+  // Does store cross heap regions?
+
+  movl(tmp, store_addr); // ebx = edx
+  xorl(tmp, new_val);    // ebx ^= eax
+  shrl(tmp, HeapRegion::LogOfHRGrainBytes); // ebx <<= 9
+  jcc(Assembler::equal, done);
+
+  // crosses regions, storing NULL?
+
+  cmpl(new_val, NULL_WORD);
+  jcc(Assembler::equal, done);
+
+  // storing region crossing non-NULL, is card already dirty?
+
+  const Register card_index = tmp;
+
+  movl(card_index, store_addr);       // ebx = edx
+  shrl(card_index, CardTableModRefBS::card_shift); // ebx >>= 9
+  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+
+  ExternalAddress cardtable((address)ct->byte_map_base);
+  Address index(noreg, card_index, Address::times_1);
+  const Register card_addr = tmp;
+  leal(card_addr, as_Address(ArrayAddress(cardtable, index)));
+  cmpb(Address(card_addr, 0), 0);
+  jcc(Assembler::equal, done);
+
+  // storing a region crossing, non-NULL oop, card is clean.
+  // dirty card and log.
+
+  movb(Address(card_addr, 0), 0);
+
+  cmpl(queue_index, 0);
+  jcc(Assembler::equal, runtime);
+  subl(queue_index, wordSize);
+  movl(tmp2, buffer);
+  addl(tmp2, queue_index);
+  movl(Address(tmp2, 0), card_index);
+  jmp(done);
+
+  bind(runtime);
+  // save the live input values
+  pushl(store_addr);
+  pushl(new_val);
+  pushl(thread);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), card_addr, thread);
+  popl(thread);
+  popl(new_val);
+  popl(store_addr);
+
+  bind(done);
+
+
+}
+
+#endif // SERIALGC
+//////////////////////////////////////////////////////////////////////////////////
+
 
 void MacroAssembler::store_check(Register obj) {
   // Does a store check for the oop in register obj. The content of
@@ -4548,29 +4677,33 @@ void MacroAssembler::eden_allocate(Register obj, Register var_size_in_bytes, int
                                    Register t1, Label& slow_case) {
   assert(obj == rax, "obj must be in rax, for cmpxchg");
   assert_different_registers(obj, var_size_in_bytes, t1);
-  Register end = t1;
-  Label retry;
-  bind(retry);
-  ExternalAddress heap_top((address) Universe::heap()->top_addr());
-  movptr(obj, heap_top);
-  if (var_size_in_bytes == noreg) {
-    leal(end, Address(obj, con_size_in_bytes));
+  if (CMSIncrementalMode || !Universe::heap()->supports_inline_contig_alloc()) {
+    jmp(slow_case);
   } else {
-    leal(end, Address(obj, var_size_in_bytes, Address::times_1));
+    Register end = t1;
+    Label retry;
+    bind(retry);
+    ExternalAddress heap_top((address) Universe::heap()->top_addr());
+    movptr(obj, heap_top);
+    if (var_size_in_bytes == noreg) {
+      leal(end, Address(obj, con_size_in_bytes));
+    } else {
+      leal(end, Address(obj, var_size_in_bytes, Address::times_1));
+    }
+    // if end < obj then we wrapped around => object too long => slow case
+    cmpl(end, obj);
+    jcc(Assembler::below, slow_case);
+    cmpptr(end, ExternalAddress((address) Universe::heap()->end_addr()));
+    jcc(Assembler::above, slow_case);
+    // Compare obj with the top addr, and if still equal, store the new top addr in
+    // end at the address of the top addr pointer. Sets ZF if was equal, and clears
+    // it otherwise. Use lock prefix for atomicity on MPs.
+    if (os::is_MP()) {
+      lock();
+    }
+    cmpxchgptr(end, heap_top);
+    jcc(Assembler::notEqual, retry);
   }
-  // if end < obj then we wrapped around => object too long => slow case
-  cmpl(end, obj);
-  jcc(Assembler::below, slow_case);
-  cmpptr(end, ExternalAddress((address) Universe::heap()->end_addr()));
-  jcc(Assembler::above, slow_case);
-  // Compare obj with the top addr, and if still equal, store the new top addr in
-  // end at the address of the top addr pointer. Sets ZF if was equal, and clears
-  // it otherwise. Use lock prefix for atomicity on MPs.
-  if (os::is_MP()) {
-    lock();
-  }
-  cmpxchgptr(end, heap_top);
-  jcc(Assembler::notEqual, retry);
 }
 
 
