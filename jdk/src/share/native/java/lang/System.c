@@ -84,7 +84,7 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
 #define VENDOR_URL_BUG "http://java.sun.com/cgi-bin/bugreport.cgi"
 #endif
 
-#define JAVA_MAX_SUPPORTED_VERSION 50
+#define JAVA_MAX_SUPPORTED_VERSION 51
 #define JAVA_MAX_SUPPORTED_MINOR_VERSION 0
 
 JNIEXPORT jobject JNICALL
