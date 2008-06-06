@@ -1176,7 +1176,9 @@ void Arguments::set_ergonomics_flags() {
   // by ergonomics.
   if (!UseConcMarkSweepGC && MaxHeapSize <= max_heap_for_compressed_oops()) {
     if (FLAG_IS_DEFAULT(UseCompressedOops)) {
-      FLAG_SET_ERGO(bool, UseCompressedOops, true);
+      // Leave compressed oops off by default. Uncomment
+      // the following line to return it to default status.
+      // FLAG_SET_ERGO(bool, UseCompressedOops, true);
     }
   } else {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {

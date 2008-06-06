@@ -1111,6 +1111,8 @@ class MacroAssembler : public Assembler {
   void store_klass(Register dst, Register src);
   void store_klass_gap(Register dst, Register src);
 
+  void load_prototype_header(Register dst, Register src);
+
   void load_heap_oop(Register dst, Address src);
   void store_heap_oop(Address dst, Register src);
   void encode_heap_oop(Register r);
