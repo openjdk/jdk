@@ -2720,7 +2720,8 @@ nmethod *SharedRuntime::generate_dtrace_nmethod(
 #endif /* ASSERT */
 
   VMRegPair zero;
-  zero.set2(G0->as_VMReg());
+  const Register g0 = G0; // without this we get a compiler warning (why??)
+  zero.set2(g0->as_VMReg());
 
   int c_arg, j_arg;
 
