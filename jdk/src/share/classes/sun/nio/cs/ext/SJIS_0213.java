@@ -274,14 +274,14 @@ public class SJIS_0213 extends Charset {
                         leftoverBase = c;
                     } else {
                         db = encodeChar(c);
-                        if (db > MAX_SINGLEBYTE) {      // DoubleByte
+                        if (db <= MAX_SINGLEBYTE) {      // SingleByte
+                            if (dl <= dp)
+                                return CoderResult.OVERFLOW;
+                            da[dp++] = (byte)db;
+                        } else if (db != UNMAPPABLE) {   // DoubleByte
                             if (dl - dp < 2)
                                 return CoderResult.OVERFLOW;
                             da[dp++] = (byte)(db >> 8);
-                            da[dp++] = (byte)db;
-                        } else if (db != UNMAPPABLE) {  // SingleByte
-                            if (dl <= dp)
-                                return CoderResult.OVERFLOW;
                             da[dp++] = (byte)db;
                         } else if (Character.isHighSurrogate(c)) {
                             if ((sp + 1) == sl)
@@ -297,6 +297,8 @@ public class SJIS_0213 extends Charset {
                             da[dp++] = (byte)(db >> 8);
                             da[dp++] = (byte)db;
                             sp++;
+                        } else if (Character.isLowSurrogate(c)) {
+                            return CoderResult.malformedForLength(1);
                         } else {
                             return CoderResult.unmappableForLength(1);
                         }
@@ -337,15 +339,15 @@ public class SJIS_0213 extends Charset {
                         leftoverBase = c;
                     } else {
                         db = encodeChar(c);
-                        if (db > MAX_SINGLEBYTE) {        // DoubleByte
+                        if (db <= MAX_SINGLEBYTE) {    // Single-byte
+                            if (dst.remaining() < 1)
+                                return CoderResult.OVERFLOW;
+                            dst.put((byte)db);
+                        } else if (db != UNMAPPABLE) {   // DoubleByte
                             if (dst.remaining() < 2)
                                 return CoderResult.OVERFLOW;
                             dst.put((byte)(db >> 8));
                             dst.put((byte)(db));
-                        } else if (db != UNMAPPABLE) {    // Single-byte
-                            if (dst.remaining() < 1)
-                                return CoderResult.OVERFLOW;
-                            dst.put((byte)db);
                         } else if (Character.isHighSurrogate(c)) {
                             if (!src.hasRemaining())     // Surrogates
                                 return CoderResult.UNDERFLOW;
@@ -360,6 +362,8 @@ public class SJIS_0213 extends Charset {
                             dst.put((byte)(db >> 8));
                             dst.put((byte)(db));
                             mark++;
+                        } else if (Character.isLowSurrogate(c)) {
+                            return CoderResult.malformedForLength(1);
                         } else {
                             return CoderResult.unmappableForLength(1);
                         }

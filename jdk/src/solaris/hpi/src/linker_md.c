@@ -51,15 +51,6 @@
 sys_mon_t _dl_lock;
 
 /*
- * glibc-2.0 libdl is not MT safe.  If you are building with any glibc,
- * chances are you might want to run the generated bits against glibc-2.0
- * libdl.so, so always use locking for any version of glibc.
- */
-#ifdef __GLIBC__
-    #define NEED_DL_LOCK
-#endif
-
-/*
  * Solaris green threads needs to lock around libdl.so.
  */
 #if defined(__solaris__) && !defined(NATIVE)

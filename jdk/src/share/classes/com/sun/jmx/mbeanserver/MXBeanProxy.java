@@ -27,14 +27,15 @@ package com.sun.jmx.mbeanserver;
 
 import static com.sun.jmx.mbeanserver.Util.*;
 
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.Map;
 
 import javax.management.Attribute;
 import javax.management.MBeanServerConnection;
+import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
+import javax.management.openmbean.MXBeanMappingFactory;
 
 /**
    <p>Helper class for an {@link InvocationHandler} that forwards methods from an
@@ -46,8 +47,7 @@ import javax.management.ObjectName;
    @since 1.6
 */
 public class MXBeanProxy {
-    public MXBeanProxy(Class<?> mxbeanInterface)
-            throws IllegalArgumentException {
+    public MXBeanProxy(Class<?> mxbeanInterface, MXBeanMappingFactory factory) {
 
         if (mxbeanInterface == null)
             throw new IllegalArgumentException("Null parameter");
@@ -55,14 +55,15 @@ public class MXBeanProxy {
         final MBeanAnalyzer<ConvertingMethod> analyzer;
         try {
             analyzer =
-                MXBeanIntrospector.getInstance().getAnalyzer(mxbeanInterface);
+                MXBeanIntrospector.getInstance(factory).getAnalyzer(mxbeanInterface);
         } catch (NotCompliantMBeanException e) {
             throw new IllegalArgumentException(e);
         }
         analyzer.visit(new Visitor());
     }
 
-    private class Visitor implements MBeanAnalyzer.MBeanVisitor<ConvertingMethod> {
+    private class Visitor
+            implements MBeanAnalyzer.MBeanVisitor<ConvertingMethod, RuntimeException> {
         public void visitAttribute(String attributeName,
                                    ConvertingMethod getter,
                                    ConvertingMethod setter) {
@@ -160,10 +161,29 @@ public class MXBeanProxy {
 
         Handler handler = handlerMap.get(method);
         ConvertingMethod cm = handler.getConvertingMethod();
-        MXBeanLookup lookup = MXBeanLookup.lookupFor(mbsc);
-        Object[] openArgs = cm.toOpenParameters(lookup, args);
-        Object result = handler.invoke(mbsc, name, openArgs);
-        return cm.fromOpenReturnValue(lookup, result);
+        String prefix = extractPrefix(name);
+        MXBeanLookup lookup = MXBeanLookup.lookupFor(mbsc, prefix);
+        MXBeanLookup oldLookup = MXBeanLookup.getLookup();
+        try {
+            MXBeanLookup.setLookup(lookup);
+            Object[] openArgs = cm.toOpenParameters(lookup, args);
+            Object result = handler.invoke(mbsc, name, openArgs);
+            return cm.fromOpenReturnValue(lookup, result);
+        } finally {
+            MXBeanLookup.setLookup(oldLookup);
+        }
+    }
+
+    private static String extractPrefix(ObjectName name)
+            throws MalformedObjectNameException {
+        String domain = name.getDomain();
+        int slashslash = domain.lastIndexOf("//");
+        if (slashslash > 0 && domain.charAt(slashslash - 1) == '/')
+            slashslash--;
+        if (slashslash >= 0)
+            return domain.substring(0, slashslash + 2);
+        else
+            return null;
     }
 
     private final Map<Method, Handler> handlerMap = newMap();
