@@ -37,7 +37,7 @@ import java.security.*;
 
 public class CharsetMapping {
     public final static char UNMAPPABLE_DECODING = '\uFFFD';
-    public final static int  UNMAPPABLE_ENCODING = -1;
+    public final static int  UNMAPPABLE_ENCODING = 0xFFFD;
 
     char[] b2cSB;                //singlebyte b->c
     char[] b2cDB1;               //dobulebyte b->c /db1
@@ -109,9 +109,11 @@ public class CharsetMapping {
     }
 
     public int encodeSurrogate(char hi, char lo) {
-        char c = (char)Character.toCodePoint(hi, lo);
+        int cp = Character.toCodePoint(hi, lo);
+        if (cp < 0x20000 || cp >= 0x30000)
+            return UNMAPPABLE_ENCODING;
         int end = c2bSupp.length / 2;
-        int i = Arrays.binarySearch(c2bSupp, 0, end, c);
+        int i = Arrays.binarySearch(c2bSupp, 0, end, (char)cp);
         if (i >= 0)
             return c2bSupp[end + i];
         return UNMAPPABLE_ENCODING;
