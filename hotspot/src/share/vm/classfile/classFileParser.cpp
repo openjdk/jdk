@@ -44,6 +44,7 @@
 
 // Used for backward compatibility reasons:
 // - to check for javac bug fixes that happened after 1.5
+// - also used as the max version when running in jdk6
 #define JAVA_6_VERSION                    50
 
 
@@ -3507,9 +3508,11 @@ bool ClassFileParser::has_illegal_visibility(jint flags) {
 }
 
 bool ClassFileParser::is_supported_version(u2 major, u2 minor) {
+  u2 max_version = JDK_Version::is_gte_jdk17x_version() ?
+    JAVA_MAX_SUPPORTED_VERSION : JAVA_6_VERSION;
   return (major >= JAVA_MIN_SUPPORTED_VERSION) &&
-         (major <= JAVA_MAX_SUPPORTED_VERSION) &&
-         ((major != JAVA_MAX_SUPPORTED_VERSION) ||
+         (major <= max_version) &&
+         ((major != max_version) ||
           (minor <= JAVA_MAX_SUPPORTED_MINOR_VERSION));
 }
 

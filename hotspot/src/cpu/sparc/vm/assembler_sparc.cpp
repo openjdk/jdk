@@ -3643,6 +3643,7 @@ void MacroAssembler::store_heap_oop(Register d, const Address& a, int offset) {
 
 void MacroAssembler::encode_heap_oop(Register src, Register dst) {
   assert (UseCompressedOops, "must be compressed");
+  verify_oop(src);
   Label done;
   if (src == dst) {
     // optimize for frequent case src == dst
@@ -3664,12 +3665,14 @@ void MacroAssembler::encode_heap_oop(Register src, Register dst) {
 
 void MacroAssembler::encode_heap_oop_not_null(Register r) {
   assert (UseCompressedOops, "must be compressed");
+  verify_oop(r);
   sub(r, G6_heapbase, r);
   srlx(r, LogMinObjAlignmentInBytes, r);
 }
 
 void MacroAssembler::encode_heap_oop_not_null(Register src, Register dst) {
   assert (UseCompressedOops, "must be compressed");
+  verify_oop(src);
   sub(src, G6_heapbase, dst);
   srlx(dst, LogMinObjAlignmentInBytes, dst);
 }
@@ -3682,11 +3685,13 @@ void  MacroAssembler::decode_heap_oop(Register src, Register dst) {
   bpr(rc_nz, true, Assembler::pt, dst, done);
   delayed() -> add(dst, G6_heapbase, dst); // annuled if not taken
   bind(done);
+  verify_oop(dst);
 }
 
 void  MacroAssembler::decode_heap_oop_not_null(Register r) {
   // Do not add assert code to this unless you change vtableStubs_sparc.cpp
   // pd_code_size_limit.
+  // Also do not verify_oop as this is called by verify_oop.
   assert (UseCompressedOops, "must be compressed");
   sllx(r, LogMinObjAlignmentInBytes, r);
   add(r, G6_heapbase, r);
@@ -3695,6 +3700,7 @@ void  MacroAssembler::decode_heap_oop_not_null(Register r) {
 void  MacroAssembler::decode_heap_oop_not_null(Register src, Register dst) {
   // Do not add assert code to this unless you change vtableStubs_sparc.cpp
   // pd_code_size_limit.
+  // Also do not verify_oop as this is called by verify_oop.
   assert (UseCompressedOops, "must be compressed");
   sllx(src, LogMinObjAlignmentInBytes, dst);
   add(dst, G6_heapbase, dst);
