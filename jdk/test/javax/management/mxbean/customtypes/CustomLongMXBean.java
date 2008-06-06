@@ -1,12 +1,10 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,16 +21,11 @@
  * have any questions.
  */
 
-package javax.management;
+// CustomLongMXBean.java - see CustomTypeTest
 
-/* QueryExp classes can extend this to get non-default treatment for
- * Query.toString(q).  We're reluctant to change the public toString()
- * methods of the classes because people might be parsing them, even
- * though that's rather fragile.  But Query.toString(q) has no such
- * constraint so it can use the new toQueryString() method defined here.
- */
-class ToQueryString {
-    String toQueryString() {
-        return toString();
-    }
-}
+package customtypes;
+
+import javax.management.openmbean.MXBeanMappingFactoryClass;
+
+@MXBeanMappingFactoryClass(IntegerIsLongFactory.class)
+public interface CustomLongMXBean extends CustomMXBean {}

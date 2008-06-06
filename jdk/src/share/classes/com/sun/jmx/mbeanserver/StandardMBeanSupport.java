@@ -25,14 +25,13 @@
 
 package com.sun.jmx.mbeanserver;
 
-import static com.sun.jmx.mbeanserver.Util.*;
-
 import java.lang.reflect.Method;
 
 import javax.management.MBeanInfo;
 import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
+import javax.management.openmbean.MXBeanMappingFactory;
 
 /**
  * Base class for Standard MBeans.
@@ -61,11 +60,11 @@ public class StandardMBeanSupport extends MBeanSupport<Method> {
     */
     public <T> StandardMBeanSupport(T resource, Class<T> mbeanInterface)
             throws NotCompliantMBeanException {
-        super(resource, mbeanInterface);
+        super(resource, mbeanInterface, (MXBeanMappingFactory) null);
     }
 
     @Override
-    MBeanIntrospector<Method> getMBeanIntrospector() {
+    MBeanIntrospector<Method> getMBeanIntrospector(MXBeanMappingFactory ignored) {
         return StandardMBeanIntrospector.getInstance();
     }
 

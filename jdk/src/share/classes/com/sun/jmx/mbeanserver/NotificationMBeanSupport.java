@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.management.NotCompliantMBeanException;
 import javax.management.Notification;
+import javax.management.openmbean.MXBeanMappingFactory;
 
 /**
  * <p>A variant of {@code StandardMBeanSupport} where the only
@@ -48,7 +49,7 @@ public class NotificationMBeanSupport extends StandardMBeanSupport {
     }
 
     @Override
-    MBeanIntrospector<Method> getMBeanIntrospector() {
+    MBeanIntrospector<Method> getMBeanIntrospector(MXBeanMappingFactory ignored) {
         return introspector;
     }
 

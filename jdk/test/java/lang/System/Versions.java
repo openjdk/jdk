@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4989690 6259855
+ * @bug 4989690 6259855 6706299
  * @summary Check that version-related system property invariants hold.
  * @author Martin Buchholz
  */

@@ -31,13 +31,15 @@ IMPORT_RT_PACKAGES +=               \
       javax/tools
 
 IMPORT_TOOLS_PACKAGES +=            \
+      com/sun/javadoc               \
       com/sun/mirror                \
       com/sun/source                \
       com/sun/tools/apt             \
-      com/sun/tools/javac           \
-      com/sun/tools/javah           \
-      com/sun/tools/javadoc         \
+      com/sun/tools/classfile       \
       com/sun/tools/doclets         \
-      com/sun/javadoc               \
+      com/sun/tools/javac           \
+      com/sun/tools/javadoc         \
+      com/sun/tools/javah           \
+      com/sun/tools/javap           \
       sun/tools/javap
 
