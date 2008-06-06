@@ -301,14 +301,15 @@
                               jarmainclass="sun.tools.javap.Main"/>
     </target>
     
-    <target name="build-classes-javap" depends="build-bootstrap-javac">
+    <target name="build-classes-javap" depends="build-classes-javac">
         <build-classes name="javap" includes="${javap.includes}"/>
     </target>
     
-    <target name="build-javap" depends="build-bootstrap-javac">
+    <target name="build-javap" depends="build-javac">
         <build-tool name="javap"
                     includes="${javap.includes}"
-                    jarmainclass="sun.tools.javap.Main"/>
+                    jarmainclass="sun.tools.javap.Main"
+                    jarclasspath="javac.jar"/>
     </target>
     
     <!-- (no javadoc for javap) -->
@@ -480,7 +481,7 @@
                           destdir="@{gensrc.dir}"
                           includes="@{includes}"/>
                 <copy todir="@{gensrc.dir}">
-                    <fileset dir="${src.classes.dir}" includes="${javac.includes}"/>
+                    <fileset dir="${src.classes.dir}" includes="@{includes}"/>
                     <globmapper from="*.properties-template" to="*.properties"/>
                     <filterset begintoken="$(" endtoken=")">
                         <filter token="JDK_VERSION" value="${jdk.version}"/>

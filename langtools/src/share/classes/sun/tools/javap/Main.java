@@ -49,6 +49,12 @@ public class Main {
     }
 
     public static void main(String argv[]) {
+        // unless first arg is -Xold, use new javap
+        if (!(argv.length >= 1 && argv[0].equals("-Xold"))) {
+            com.sun.tools.javap.Main.main(argv);
+            return;
+        }
+
         entry(argv);
         if (errorOccurred) {
             System.exit(1);
@@ -178,6 +184,8 @@ public class Main {
                     }
                 } else if (arg.equals("-all")) {
                     env.showallAttr = true;
+                } else if (arg.equals("-Xold")) {
+                    // ignore: this is old javap
                 } else {
                     error("invalid flag: " + arg);
                     usage();
