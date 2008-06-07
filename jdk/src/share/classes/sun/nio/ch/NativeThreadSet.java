@@ -43,7 +43,7 @@ class NativeThreadSet {
     //
     int add() {
         long th = NativeThread.current();
-        if (th <= 0)
+        if (th == -1)
             return -1;
         synchronized (this) {
             int start = 0;
