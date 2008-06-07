@@ -34,14 +34,14 @@ package sun.nio.ch;
 // upon which Java threads are built, and defines a simple signal mechanism
 // that can be used to release a native thread from a blocking I/O operation.
 // On systems that do not require this type of signalling, the current() method
-// always returns zero and the signal(long) method has no effect.
+// always returns -1 and the signal(long) method has no effect.
 
 
 class NativeThread {
 
     // Returns an opaque token representing the native thread underlying the
     // invoking Java thread.  On systems that do not require signalling, this
-    // method always returns zero.
+    // method always returns -1.
     //
     static native long current();
 
