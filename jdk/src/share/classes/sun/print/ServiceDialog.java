@@ -2149,48 +2149,55 @@ public class ServiceDialog extends JDialog implements ActionListener {
                         }
                     }
                 }
-            }
-            rbPortrait.setEnabled(pSupported);
-            rbLandscape.setEnabled(lSupported);
-            rbRevPortrait.setEnabled(rpSupported);
-            rbRevLandscape.setEnabled(rlSupported);
 
-            OrientationRequested or = (OrientationRequested)asCurrent.get(orCategory);
-            if (or == null ||
-                !psCurrent.isAttributeValueSupported(or, docFlavor, asCurrent)) {
+                rbPortrait.setEnabled(pSupported);
+                rbLandscape.setEnabled(lSupported);
+                rbRevPortrait.setEnabled(rpSupported);
+                rbRevLandscape.setEnabled(rlSupported);
 
-                or = (OrientationRequested)psCurrent.getDefaultAttributeValue(orCategory);
-                // need to validate if default is not supported
-                if (!psCurrent.isAttributeValueSupported(or, docFlavor, asCurrent)) {
-                    or = null;
-                    Object values =
-                        psCurrent.getSupportedAttributeValues(orCategory,
-                                                              docFlavor,
-                                                              asCurrent);
-                    if (values instanceof OrientationRequested[]) {
-                        OrientationRequested[] orValues =
+                OrientationRequested or = (OrientationRequested)asCurrent.get(orCategory);
+                if (or == null ||
+                    !psCurrent.isAttributeValueSupported(or, docFlavor, asCurrent)) {
+
+                    or = (OrientationRequested)psCurrent.getDefaultAttributeValue(orCategory);
+                    // need to validate if default is not supported
+                    if (!psCurrent.isAttributeValueSupported(or, docFlavor, asCurrent)) {
+                        or = null;
+                        values =
+                            psCurrent.getSupportedAttributeValues(orCategory,
+                                                                  docFlavor,
+                                                                  asCurrent);
+                        if (values instanceof OrientationRequested[]) {
+                            OrientationRequested[] orValues =
                                                 (OrientationRequested[])values;
-                        if (orValues.length > 1) {
-                            // get the first in the list
-                            or = orValues[0];
+                            if (orValues.length > 1) {
+                                // get the first in the list
+                                or = orValues[0];
+                            }
                         }
                     }
+
+                    if (or == null) {
+                        or = OrientationRequested.PORTRAIT;
+                    }
+                    asCurrent.add(or);
                 }
 
-                if (or == null) {
-                    or = OrientationRequested.PORTRAIT;
+                if (or == OrientationRequested.PORTRAIT) {
+                    rbPortrait.setSelected(true);
+                } else if (or == OrientationRequested.LANDSCAPE) {
+                    rbLandscape.setSelected(true);
+                } else if (or == OrientationRequested.REVERSE_PORTRAIT) {
+                    rbRevPortrait.setSelected(true);
+                } else { // if (or == OrientationRequested.REVERSE_LANDSCAPE)
+                    rbRevLandscape.setSelected(true);
                 }
-                asCurrent.add(or);
-            }
+                } else {
+                rbPortrait.setEnabled(pSupported);
+                rbLandscape.setEnabled(lSupported);
+                rbRevPortrait.setEnabled(rpSupported);
+                rbRevLandscape.setEnabled(rlSupported);
 
-            if (or == OrientationRequested.PORTRAIT) {
-                rbPortrait.setSelected(true);
-            } else if (or == OrientationRequested.LANDSCAPE) {
-                rbLandscape.setSelected(true);
-            } else if (or == OrientationRequested.REVERSE_PORTRAIT) {
-                rbRevPortrait.setSelected(true);
-            } else { // if (or == OrientationRequested.REVERSE_LANDSCAPE)
-                rbRevLandscape.setSelected(true);
             }
         }
     }

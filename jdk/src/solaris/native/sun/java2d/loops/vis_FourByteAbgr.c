@@ -1936,6 +1936,7 @@ void ADD_SUFF(FourByteAbgrDrawGlyphListAA)(SurfaceDataRasInfo * pRasInfo,
         for (j = 0; j < height; j++) {
             mlib_u8  *src = (void*)pixels;
             mlib_s32 *dst, *dst_end;
+            mlib_u8 *dst_start;
 
             if ((mlib_s32)dstBase & 3) {
                 COPY_NA(dstBase, pbuff, width*sizeof(mlib_s32));
@@ -1943,7 +1944,13 @@ void ADD_SUFF(FourByteAbgrDrawGlyphListAA)(SurfaceDataRasInfo * pRasInfo,
             } else {
                 dst = (void*)dstBase;
             }
+            dst_start = (void*)dst;
             dst_end = dst + width;
+
+            /* Need to reset the GSR from the values set by the
+             * convert call near the end of this loop.
+             */
+            vis_write_gsr(7 << 0);
 
             if ((mlib_s32)dst & 7) {
                 pix = *src++;
@@ -1984,8 +1991,13 @@ void ADD_SUFF(FourByteAbgrDrawGlyphListAA)(SurfaceDataRasInfo * pRasInfo,
                 dst++;
             }
 
+            ADD_SUFF(IntArgbPreToIntArgbConvert)(dst_start, dst_start,
+                                                 width, 1,
+                                                 pRasInfo, pRasInfo,
+                                                 pPrim, pCompInfo);
+
             if ((mlib_s32)dstBase & 3) {
-                COPY_NA(pbuff, dstBase, width*sizeof(mlib_s32));
+                COPY_NA(dst_start, dstBase, width*sizeof(mlib_s32));
             }
 
             PTR_ADD(dstBase, scan);

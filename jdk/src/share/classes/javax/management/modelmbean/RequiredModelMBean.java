@@ -1696,8 +1696,8 @@ public class RequiredModelMBean
             } catch (Exception e) {
                 // eat exceptions because interface doesn't have an
                 // exception on it
-                if (MODELMBEAN_LOGGER.isLoggable(Level.WARNING)) {
-                    MODELMBEAN_LOGGER.logp(Level.WARNING,
+                if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
+                    MODELMBEAN_LOGGER.logp(Level.FINER,
                             RequiredModelMBean.class.getName(),
                         "getAttributes(String[])",
                             "Failed to get \"" + attrNames[i] + "\": ", e);
@@ -1857,8 +1857,8 @@ public class RequiredModelMBean
                                             attrValue.getClass().getName() +
                                                            " received.");
                     } catch (ClassNotFoundException x) {
-                        if (MODELMBEAN_LOGGER.isLoggable(Level.WARNING)) {
-                            MODELMBEAN_LOGGER.logp(Level.WARNING,
+                        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
+                            MODELMBEAN_LOGGER.logp(Level.FINER,
                                     RequiredModelMBean.class.getName(),
                                 "setAttribute(Attribute)","Class " +
                                     attrType + " for attribute "
@@ -2224,8 +2224,8 @@ public class RequiredModelMBean
                             ntfyObj.getMessage() + " Severity = " +
                             (String)ntfyDesc.getFieldValue("severity"));
                     } catch (Exception e) {
-                        if (MODELMBEAN_LOGGER.isLoggable(Level.WARNING)) {
-                            MODELMBEAN_LOGGER.logp(Level.WARNING,
+                        if (MODELMBEAN_LOGGER.isLoggable(Level.FINE)) {
+                            MODELMBEAN_LOGGER.logp(Level.FINE,
                                     RequiredModelMBean.class.getName(),
                                     "sendNotification(Notification)",
                                     "Failed to log " +
@@ -2618,8 +2618,8 @@ public class RequiredModelMBean
                            " Old value = " + oldv +
                            " New value = " + newv);
                     } catch (Exception e) {
-                        if (MODELMBEAN_LOGGER.isLoggable(Level.WARNING)) {
-                            MODELMBEAN_LOGGER.logp(Level.WARNING,
+                        if (MODELMBEAN_LOGGER.isLoggable(Level.FINE)) {
+                            MODELMBEAN_LOGGER.logp(Level.FINE,
                                     RequiredModelMBean.class.getName(),mth,
                                 "Failed to log " + ntfyObj.getType() +
                                     " notification: ", e);
@@ -2644,8 +2644,8 @@ public class RequiredModelMBean
                            " Old value = " + oldv +
                            " New value = " + newv);
                     } catch (Exception e) {
-                        if (MODELMBEAN_LOGGER.isLoggable(Level.WARNING)) {
-                            MODELMBEAN_LOGGER.logp(Level.WARNING,
+                        if (MODELMBEAN_LOGGER.isLoggable(Level.FINE)) {
+                            MODELMBEAN_LOGGER.logp(Level.FINE,
                                     RequiredModelMBean.class.getName(),mth,
                                 "Failed to log " + ntfyObj.getType() +
                                     " notification: ", e);
