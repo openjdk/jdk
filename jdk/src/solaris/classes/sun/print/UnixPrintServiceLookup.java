@@ -196,11 +196,20 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
 
     // refreshes "printServices"
     public synchronized void refreshServices() {
-        String[] printers; /* excludes the default printer */
+        /* excludes the default printer */
+        String[] printers = null; // array of printer names
+        String[] printerURIs = null; //array of printer URIs
 
         getDefaultPrintService();
         if (CUPSPrinter.isCupsRunning()) {
-            printers = CUPSPrinter.getAllPrinters();
+            printerURIs = CUPSPrinter.getAllPrinters();
+            if ((printerURIs != null) && (printerURIs.length > 0)) {
+                printers = new String[printerURIs.length];
+                for (int i=0; i<printerURIs.length; i++) {
+                    int lastIndex = printerURIs[i].lastIndexOf("/");
+                    printers[i] = printerURIs[i].substring(lastIndex+1);
+                }
+            }
         } else {
             if (isSysV()) {
                 printers = getAllPrinterNamesSysV();
@@ -236,12 +245,9 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
 
                     if (CUPSPrinter.isCupsRunning()) {
                         try {
-                            URL serviceURL =
-                                new URL("http://"+
-                                        CUPSPrinter.getServer()+":"+
-                                        CUPSPrinter.getPort()+"/"+printers[p]);
-                            printerList.add(new IPPPrintService( printers[p],
-                                                                 serviceURL));
+                            printerList.add(new IPPPrintService(printers[p],
+                                                                printerURIs[p],
+                                                                true));
                         } catch (Exception e) {
                             IPPPrintService.debug_println(debugPrefix+
                                                           " getAllPrinters Exception "+
@@ -265,12 +271,10 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
                     if (j == printServices.length) {      // not found?
                         if (CUPSPrinter.isCupsRunning()) {
                             try {
-                                URL serviceURL =
-                                    new URL("http://"+
-                                        CUPSPrinter.getServer()+":"+
-                                        CUPSPrinter.getPort()+"/"+printers[p]);
-                                printerList.add(new IPPPrintService( printers[p],
-                                                                 serviceURL));
+                                printerList.add(new IPPPrintService(
+                                                               printers[p],
+                                                               printerURIs[p],
+                                                               true));
                             } catch (Exception e) {
                                 IPPPrintService.debug_println(debugPrefix+
                                                               " getAllPrinters Exception "+

@@ -34,6 +34,8 @@
 typedef jushort Ushort4444ArgbPixelType;
 typedef jushort Ushort4444ArgbDataType;
 
+#define Ushort4444ArgbIsOpaque 0
+
 #define Ushort4444ArgbPixelStride               2
 
 #define DeclareUshort4444ArgbLoadVars(PREFIX)
