@@ -30,6 +30,7 @@ import javax.management.*;
 import javax.swing.Icon;
 import sun.tools.jconsole.JConsole;
 import sun.tools.jconsole.MBeansTab;
+import sun.tools.jconsole.ProxyClient.SnapshotMBeanServerConnection;
 
 public class XMBean {
 
@@ -58,6 +59,10 @@ public class XMBean {
 
     MBeanServerConnection getMBeanServerConnection() {
         return mbeansTab.getMBeanServerConnection();
+    }
+
+    SnapshotMBeanServerConnection getSnapshotMBeanServerConnection() {
+        return mbeansTab.getSnapshotMBeanServerConnection();
     }
 
     public Boolean isBroadcaster() {
@@ -103,14 +108,14 @@ public class XMBean {
     public Object getAttribute(String attributeName)
             throws AttributeNotFoundException, InstanceNotFoundException,
             MBeanException, ReflectionException, IOException {
-        return getMBeanServerConnection().getAttribute(
+        return getSnapshotMBeanServerConnection().getAttribute(
                 getObjectName(), attributeName);
     }
 
     public AttributeList getAttributes(String attributeNames[])
             throws AttributeNotFoundException, InstanceNotFoundException,
             MBeanException, ReflectionException, IOException {
-        return getMBeanServerConnection().getAttributes(
+        return getSnapshotMBeanServerConnection().getAttributes(
                 getObjectName(), attributeNames);
     }
 

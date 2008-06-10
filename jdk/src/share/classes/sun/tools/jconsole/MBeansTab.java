@@ -37,6 +37,7 @@ import javax.management.*;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.tree.*;
+import sun.tools.jconsole.ProxyClient.SnapshotMBeanServerConnection;
 import sun.tools.jconsole.inspector.*;
 
 import com.sun.tools.jconsole.JConsoleContext;
@@ -152,6 +153,10 @@ public class MBeansTab extends Tab implements
 
     public MBeanServerConnection getMBeanServerConnection() {
         return vmPanel.getProxyClient().getMBeanServerConnection();
+    }
+
+    public SnapshotMBeanServerConnection getSnapshotMBeanServerConnection() {
+        return vmPanel.getProxyClient().getSnapshotMBeanServerConnection();
     }
 
     @Override
