@@ -93,7 +93,6 @@ else # PLATFORM
 # Other extra flags needed for compiling.
 #
 CPPFLAGS += -I$(OPENWIN_HOME)/include \
-	    -I$(MOTIF_DIR)/include \
 	    -I$(SHARE_SRC)/native/$(PKGDIR)/debug \
             -I$(SHARE_SRC)/native/$(PKGDIR)/image \
 	    -I$(SHARE_SRC)/native/$(PKGDIR)/image/cvutils \
