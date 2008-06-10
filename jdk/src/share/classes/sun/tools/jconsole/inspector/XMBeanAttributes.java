@@ -349,7 +349,14 @@ public class XMBeanAttributes extends XTable {
 
         try {
             list = mbean.getAttributes(attributesInfo);
-        }catch(Exception e) {
+        } catch (Exception e) {
+            if (JConsole.isDebug()) {
+                System.err.println("Error calling getAttributes() on MBean \"" +
+                                   mbean.getObjectName() + "\". JConsole will " +
+                                   "try to get them individually calling " +
+                                   "getAttribute() instead. Exception:");
+                e.printStackTrace(System.err);
+            }
             list = new AttributeList();
             //Can't load all attributes, do it one after each other.
             for(int i = 0; i < attributesInfo.length; i++) {
@@ -357,7 +364,7 @@ public class XMBeanAttributes extends XTable {
                 try {
                     name = attributesInfo[i].getName();
                     Object value =
-                        mbean.getAttribute(name);
+                        mbean.getMBeanServerConnection().getAttribute(mbean.getObjectName(), name);
                     list.add(new Attribute(name, value));
                 }catch(Exception ex) {
                     if(attributesInfo[i].isReadable()) {
@@ -397,8 +404,8 @@ public class XMBeanAttributes extends XTable {
                             // went wrong.
                             try {
                                 Object v =
-                                    mbean.getAttribute(attributeInfo.
-                                                       getName());
+                                    mbean.getMBeanServerConnection().getAttribute(
+                                    mbean.getObjectName(), attributeInfo.getName());
                                 //What happens if now it is ok?
                                 // Be pragmatic, add it to readable...
                                 attributes.put(attributeInfo.getName(),
@@ -528,10 +535,8 @@ public class XMBeanAttributes extends XTable {
     }
 
      public void refreshAttributes() {
-         MBeanServerConnection mbsc = mbeansTab.getMBeanServerConnection();
-         if (mbsc instanceof SnapshotMBeanServerConnection) {
-             ((SnapshotMBeanServerConnection) mbsc).flush();
-         }
+         SnapshotMBeanServerConnection mbsc = mbeansTab.getSnapshotMBeanServerConnection();
+         mbsc.flush();
          stopCellEditing();
          loadAttributes(mbean, mbeanInfo);
      }
