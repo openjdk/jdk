@@ -133,19 +133,7 @@ ifeq    ($(findstring j,$(MFLAGS)),j)
 COMPILE_DONE    = && { echo Done with $<; }
 endif
 
-# A list of directories under which all source code are built without -KPIC/-Kpic
-# flag. Performance measurements show that compiling GC related code will
-# dramatically reduce the gc pause time. See bug 6454213 for more details.
-
-include $(GAMMADIR)/make/scm.make
-
-NONPIC_DIRS  = memory oops gc_implementation gc_interface 
-NONPIC_DIRS  := $(foreach dir,$(NONPIC_DIRS), $(GAMMADIR)/src/share/vm/$(dir))
-# Look for source code under NONPIC_DIRS
-NONPIC_FILES := $(foreach dir,$(NONPIC_DIRS),\
-                 $(shell find $(dir) \( $(SCM_DIRS) \) -prune -o \
-		  -name '*.cpp' -print))
-NONPIC_OBJ_FILES := $(notdir $(subst .cpp,.o,$(NONPIC_FILES)))
+include $(GAMMADIR)/make/defs.make
 
 # Sun compiler for 64 bit Solaris does not support building non-PIC object files.
 ifdef LP64

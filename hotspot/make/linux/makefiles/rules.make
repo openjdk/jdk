@@ -133,10 +133,22 @@ ifeq    ($(findstring j,$(MFLAGS)),j)
 COMPILE_DONE    = && { echo Done with $<; }
 endif
 
+include $(GAMMADIR)/make/defs.make
+
+# The non-PIC object files are only generated for 32 bit platforms.
+ifdef LP64
 %.o: %.cpp
 	@echo Compiling $<
 	$(QUIETLY) $(REMOVE_TARGET)
 	$(QUIETLY) $(COMPILE.CC) -o $@ $< $(COMPILE_DONE)
+else
+%.o: %.cpp
+	@echo Compiling $<
+	$(QUIETLY) $(REMOVE_TARGET)
+	$(QUIETLY) $(if $(findstring $@, $(NONPIC_OBJ_FILES)), \
+	   $(subst $(VM_PICFLAG), ,$(COMPILE.CC)) -o $@ $< $(COMPILE_DONE), \
+	   $(COMPILE.CC) -o $@ $< $(COMPILE_DONE))
+endif
 
 %.o: %.s
 	@echo Assembling $<
