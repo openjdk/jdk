@@ -4104,7 +4104,7 @@ class RuntimePerm extends Perm {
                 "getClassLoader",
                 "setContextClassLoader",
                 "enableContextClassLoaderOverride",
-                "setSecurityManage",
+                "setSecurityManager",
                 "createSecurityManager",
                 "getenv.<" +
                     PolicyTool.rb.getString("environment variable name") + ">",
