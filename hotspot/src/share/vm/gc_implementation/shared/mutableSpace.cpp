@@ -118,7 +118,7 @@ void MutableSpace::print_on(outputStream* st) const {
                  bottom(), top(), end());
 }
 
-void MutableSpace::verify(bool allow_dirty) const {
+void MutableSpace::verify(bool allow_dirty) {
   HeapWord* p = bottom();
   HeapWord* t = top();
   HeapWord* prev_p = NULL;
