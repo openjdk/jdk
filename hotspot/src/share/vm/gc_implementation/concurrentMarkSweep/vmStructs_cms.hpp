@@ -23,6 +23,7 @@
  */
 
 #define VM_STRUCTS_CMS(nonstatic_field, \
+                   volatile_nonstatic_field, \
                    static_field) \
   nonstatic_field(CompactibleFreeListSpace,    _collector,                                    CMSCollector*)                         \
   nonstatic_field(CompactibleFreeListSpace,    _bt,                                           BlockOffsetArrayNonContigSpace)        \
@@ -36,9 +37,9 @@
   nonstatic_field(CMSCollector,                _markBitMap,                                   CMSBitMap)                             \
   nonstatic_field(ConcurrentMarkSweepGeneration, _cmsSpace,                                   CompactibleFreeListSpace*)             \
      static_field(ConcurrentMarkSweepThread,   _collector,                                    CMSCollector*)                         \
+  volatile_nonstatic_field(FreeChunk,          _size,                                         size_t)                                \
   nonstatic_field(FreeChunk,                   _next,                                         FreeChunk*)                            \
   nonstatic_field(FreeChunk,                   _prev,                                         FreeChunk*)                            \
-  nonstatic_field(FreeChunk,                   _size,                                         size_t)                                \
   nonstatic_field(LinearAllocBlock,            _word_size,                                    size_t)                                \
   nonstatic_field(FreeList,                    _size,                                         size_t)                                \
   nonstatic_field(FreeList,                    _count,                                        ssize_t)                               \
