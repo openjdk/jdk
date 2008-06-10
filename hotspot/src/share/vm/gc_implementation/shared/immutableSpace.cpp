@@ -66,7 +66,7 @@ void ImmutableSpace::print() const {
 
 #endif
 
-void ImmutableSpace::verify(bool allow_dirty) const {
+void ImmutableSpace::verify(bool allow_dirty) {
   HeapWord* p = bottom();
   HeapWord* t = end();
   HeapWord* prev_p = NULL;
