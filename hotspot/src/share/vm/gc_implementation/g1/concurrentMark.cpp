@@ -3751,8 +3751,10 @@ void CMTask::do_marking_step(double time_target_ms) {
 
   if (!has_aborted()) {
     // We cannot check whether the global stack is empty, since other
-    // tasks might be pushing objects to it concurrently.
-    tmp_guarantee_CM( _cm->out_of_regions() && _cm->region_stack_empty(),
+    // tasks might be pushing objects to it concurrently. We also cannot
+    // check if the region stack is empty because if a thread is aborting
+    // it can push a partially done region back.
+    tmp_guarantee_CM( _cm->out_of_regions(),
                       "at this point we should be out of regions" );
 
     if (_cm->verbose_low())
@@ -3774,9 +3776,10 @@ void CMTask::do_marking_step(double time_target_ms) {
     // we could. Let's try to do some stealing...
 
     // We cannot check whether the global stack is empty, since other
-    // tasks might be pushing objects to it concurrently.
+    // tasks might be pushing objects to it concurrently. We also cannot
+    // check if the region stack is empty because if a thread is aborting
+    // it can push a partially done region back.
     guarantee( _cm->out_of_regions() &&
-               _cm->region_stack_empty() &&
                _task_queue->size() == 0, "only way to reach here" );
 
     if (_cm->verbose_low())
@@ -3811,9 +3814,10 @@ void CMTask::do_marking_step(double time_target_ms) {
   // termination protocol.
   if (!has_aborted()) {
     // We cannot check whether the global stack is empty, since other
-    // tasks might be concurrently pushing objects on it.
+    // tasks might be concurrently pushing objects on it. We also cannot
+    // check if the region stack is empty because if a thread is aborting
+    // it can push a partially done region back.
     guarantee( _cm->out_of_regions() &&
-               _cm->region_stack_empty() &&
                _task_queue->size() == 0, "only way to reach here" );
 
     if (_cm->verbose_low())
