@@ -36,6 +36,8 @@
 typedef jubyte  ByteGrayPixelType;
 typedef jubyte  ByteGrayDataType;
 
+#define ByteGrayIsOpaque 1
+
 #define ByteGrayPixelStride     1
 #define ByteGrayBitsPerPixel    8
 
