@@ -44,7 +44,7 @@ import javax.print.attribute.Attribute;
  * print request's, print job's, or print service's attribute set.
  * <P>
  * The Internet Assigned Numbers Authority maintains the
- * <A HREF="http://www.isi.edu/in-notes/iana/assignments/url-schemes">official
+ * <A HREF="http://www.iana.org/assignments/uri-schemes.html">official
  * list of URI schemes</A>.
  * <p>
  * Class ReferenceUriSchemesSupported defines enumeration values for widely

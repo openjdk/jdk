@@ -428,6 +428,11 @@ void ADD_SUFF(IntArgbDrawGlyphListAA)(GLYPH_LIST_PARAMS)
             dst = (void*)dstBase;
             dst_end = dst + width;
 
+            /* Clearing the Graphics Status Register is necessary otherwise
+             * left over scale settings affect the pack instructions.
+             */
+            vis_write_gsr(0 << 3);
+
             if ((mlib_s32)dst & 7) {
                 pix = *src++;
                 dd = vis_fpadd16(MUL8_VIS(srcG_f, pix), d_half);
@@ -467,6 +472,9 @@ void ADD_SUFF(IntArgbDrawGlyphListAA)(GLYPH_LIST_PARAMS)
                 dst++;
             }
 
+            ADD_SUFF(IntArgbPreToIntArgbConvert)(dstBase, dstBase, width, 1,
+                                                 pRasInfo, pRasInfo,
+                                                 pPrim, pCompInfo);
             PTR_ADD(dstBase, scan);
             pixels += rowBytes;
         }
