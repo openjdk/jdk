@@ -2556,7 +2556,6 @@ nmethod *SharedRuntime::generate_dtrace_nmethod(
   int total_strings = 0;
   int first_arg_to_pass = 0;
   int total_c_args = 0;
-  int box_offset = java_lang_boxing_object::value_offset_in_bytes();
 
   // Skip the receiver as dtrace doesn't want to see it
   if( !method->is_static() ) {
@@ -2721,7 +2720,8 @@ nmethod *SharedRuntime::generate_dtrace_nmethod(
 #endif /* ASSERT */
 
   VMRegPair zero;
-  zero.set2(G0->as_VMReg());
+  const Register g0 = G0; // without this we get a compiler warning (why??)
+  zero.set2(g0->as_VMReg());
 
   int c_arg, j_arg;
 
@@ -2778,7 +2778,9 @@ nmethod *SharedRuntime::generate_dtrace_nmethod(
             __ br_null(in_reg, true, Assembler::pn, skipUnbox);
             __ delayed()->mov(G0, tmp);
 
-            switch (out_sig_bt[c_arg]) {
+            BasicType bt = out_sig_bt[c_arg];
+            int box_offset = java_lang_boxing_object::value_offset_in_bytes(bt);
+            switch (bt) {
                 case T_BYTE:
                   __ ldub(in_reg, box_offset, tmp); break;
                 case T_SHORT:
