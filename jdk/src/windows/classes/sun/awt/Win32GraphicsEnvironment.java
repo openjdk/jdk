@@ -338,7 +338,9 @@ public class Win32GraphicsEnvironment
 
     // Implements SunGraphicsEnvironment.createFontConfiguration.
     protected FontConfiguration createFontConfiguration() {
-        return new WFontConfiguration(this);
+       FontConfiguration fc = new WFontConfiguration(this);
+       fc.init();
+       return fc;
     }
 
     public FontConfiguration createFontConfiguration(boolean preferLocaleFonts,
