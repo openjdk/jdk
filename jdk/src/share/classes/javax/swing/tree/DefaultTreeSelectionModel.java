@@ -157,8 +157,8 @@ public class DefaultTreeSelectionModel extends Object implements Cloneable, Seri
             selectionMode = TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION;
         if(oldMode != selectionMode && changeSupport != null)
             changeSupport.firePropertyChange(SELECTION_MODE_PROPERTY,
-                                             new Integer(oldMode),
-                                             new Integer(selectionMode));
+                                             Integer.valueOf(oldMode),
+                                             Integer.valueOf(selectionMode));
     }
 
     /**

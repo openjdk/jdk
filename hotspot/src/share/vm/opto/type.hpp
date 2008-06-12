@@ -191,9 +191,8 @@ public:
   virtual const Type *filter( const Type *kills ) const;
 
   // Returns true if this pointer points at memory which contains a
-  // compressed oop references.  In 32-bit builds it's non-virtual
-  // since we don't support compressed oops at all in the mode.
-  LP64_ONLY(virtual) bool is_narrow() const { return false; }
+  // compressed oop references.
+  bool is_ptr_to_narrowoop() const;
 
   // Convenience access
   float getf() const;
@@ -213,8 +212,8 @@ public:
   const TypePtr    *isa_ptr() const;             // Returns NULL if not ptr type
   const TypeRawPtr *isa_rawptr() const;          // NOT Java oop
   const TypeRawPtr *is_rawptr() const;           // Asserts is rawptr
-  const TypeNarrowOop  *is_narrowoop() const;        // Java-style GC'd pointer
-  const TypeNarrowOop  *isa_narrowoop() const;       // Returns NULL if not oop ptr type
+  const TypeNarrowOop  *is_narrowoop() const;    // Java-style GC'd pointer
+  const TypeNarrowOop  *isa_narrowoop() const;   // Returns NULL if not oop ptr type
   const TypeOopPtr   *isa_oopptr() const;        // Returns NULL if not oop ptr type
   const TypeOopPtr   *is_oopptr() const;         // Java-style GC'd pointer
   const TypeKlassPtr *isa_klassptr() const;      // Returns NULL if not KlassPtr
@@ -643,7 +642,7 @@ public:
 // Some kind of oop (Java pointer), either klass or instance or array.
 class TypeOopPtr : public TypePtr {
 protected:
-  TypeOopPtr( TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id ) : TypePtr(t, ptr, offset), _const_oop(o), _klass(k), _klass_is_exact(xk), _instance_id(instance_id) { }
+  TypeOopPtr( TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id );
 public:
   virtual bool eq( const Type *t ) const;
   virtual int  hash() const;             // Type specific hashing
@@ -660,8 +659,9 @@ protected:
   ciKlass*      _klass;       // Klass object
   // Does the type exclude subclasses of the klass?  (Inexact == polymorphic.)
   bool          _klass_is_exact;
+  bool          _is_ptr_to_narrowoop;
 
-  int          _instance_id;   // if not UNKNOWN_INSTANCE, indicates that this is a particular instance
+  int           _instance_id;  // if not UNKNOWN_INSTANCE, indicates that this is a particular instance
                                // of this type which is distinct.  This is the  the node index of the
                                // node creating this instance
 
@@ -696,6 +696,11 @@ public:
   ciObject* const_oop()    const { return _const_oop; }
   virtual ciKlass* klass() const { return _klass;     }
   bool klass_is_exact()    const { return _klass_is_exact; }
+
+  // Returns true if this pointer points at memory which contains a
+  // compressed oop references.
+  bool is_ptr_to_narrowoop_nv() const { return _is_ptr_to_narrowoop; }
+
   bool is_instance()       const { return _instance_id != UNKNOWN_INSTANCE; }
   uint instance_id()       const { return _instance_id; }
   bool is_instance_field() const { return _instance_id != UNKNOWN_INSTANCE && _offset >= 0; }
@@ -715,12 +720,6 @@ public:
 
   // returns the equivalent compressed version of this pointer type
   virtual const TypeNarrowOop* make_narrowoop() const;
-
-#ifdef _LP64
-  virtual bool is_narrow() const {
-    return (UseCompressedOops && _offset != 0);
-  }
-#endif
 
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
@@ -843,15 +842,10 @@ public:
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
 
-#ifdef _LP64
-  virtual bool is_narrow() const {
-    return (UseCompressedOops && klass() != NULL && _offset != 0);
-  }
-#endif
-
   // Convenience common pre-built types.
   static const TypeAryPtr *RANGE;
   static const TypeAryPtr *OOPS;
+  static const TypeAryPtr *NARROWOOPS;
   static const TypeAryPtr *BYTES;
   static const TypeAryPtr *SHORTS;
   static const TypeAryPtr *CHARS;
@@ -901,18 +895,6 @@ public:
   virtual const Type    *xmeet( const Type *t ) const;
   virtual const Type    *xdual() const;      // Compute dual right now.
 
-#ifdef _LP64
-  // Perm objects don't use compressed references, except for static fields
-  // which are currently compressed
-  virtual bool is_narrow() const {
-    if (UseCompressedOops && _offset != 0 && _klass->is_instance_klass()) {
-      ciInstanceKlass* ik = _klass->as_instance_klass();
-      return ik != NULL && ik->get_field_by_offset(_offset, true) != NULL;
-    }
-    return false;
-  }
-#endif
-
   // Convenience common pre-built types.
   static const TypeKlassPtr* OBJECT; // Not-null object klass or below
   static const TypeKlassPtr* OBJECT_OR_NULL; // Maybe-null version of same
@@ -921,7 +903,7 @@ public:
 #endif
 };
 
-//------------------------------TypeNarrowOop----------------------------------------
+//------------------------------TypeNarrowOop----------------------------------
 // A compressed reference to some kind of Oop.  This type wraps around
 // a preexisting TypeOopPtr and forwards most of it's operations to
 // the underlying type.  It's only real purpose is to track the
@@ -1013,6 +995,14 @@ public:
 };
 
 //------------------------------accessors--------------------------------------
+inline bool Type::is_ptr_to_narrowoop() const {
+#ifdef _LP64
+  return (isa_oopptr() != NULL && is_oopptr()->is_ptr_to_narrowoop_nv());
+#else
+  return false;
+#endif
+}
+
 inline float Type::getf() const {
   assert( _base == FloatCon, "Not a FloatCon" );
   return ((TypeF*)this)->_f;

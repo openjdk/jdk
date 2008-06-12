@@ -223,8 +223,7 @@ import javax.management.QueryExp;
  * @since 1.5
  */
 @SuppressWarnings("serial") // don't complain serialVersionUID not constant
-public class ObjectName extends ToQueryString
-        implements Comparable<ObjectName>, QueryExp {
+public class ObjectName implements Comparable<ObjectName>, QueryExp {
 
     /**
      * A structure recording property structure and
@@ -450,7 +449,7 @@ public class ObjectName extends ToQueryString
         // parses domain part
     domain_parsing:
         while (index < len) {
-            switch (c = name_chars[index]) {
+            switch (name_chars[index]) {
                 case ':' :
                     _domain_length = index++;
                     break domain_parsing;
@@ -620,7 +619,7 @@ public class ObjectName extends ToQueryString
                     case '\n' :
                         final String ichar = ((c1=='\n')?"\\n":""+c1);
                         throw new MalformedObjectNameException(
-                                                 "Invalid character '" + c1 +
+                                                 "Invalid character '" + ichar +
                                                  "' in value part of property");
                     default :
                         in_index++;
@@ -1781,7 +1780,6 @@ public class ObjectName extends ToQueryString
         return getSerializedNameString();
     }
 
-    @Override
     String toQueryString() {
         return "LIKE " + Query.value(toString());
     }

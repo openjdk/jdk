@@ -417,11 +417,18 @@ static Node* get_addp_base(Node *addp) {
   //       | |
   //       AddP  ( base == address )
   //
+  // case #8. narrow Klass's field reference.
+  //      LoadNKlass
+  //       |
+  //      DecodeN
+  //       | |
+  //       AddP  ( base == address )
+  //
   Node *base = addp->in(AddPNode::Base)->uncast();
   if (base->is_top()) { // The AddP case #3 and #6.
     base = addp->in(AddPNode::Address)->uncast();
     assert(base->Opcode() == Op_ConP || base->Opcode() == Op_ThreadLocal ||
-           base->Opcode() == Op_CastX2P ||
+           base->Opcode() == Op_CastX2P || base->is_DecodeN() ||
            (base->is_Mem() && base->bottom_type() == TypeRawPtr::NOTNULL) ||
            (base->is_Proj() && base->in(0)->is_Allocate()), "sanity");
   }
@@ -888,6 +895,23 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       record_for_optimizer(n);
       if (alloc->is_Allocate() && ptn->_scalar_replaceable &&
           (t->isa_instptr() || t->isa_aryptr())) {
+
+        // First, put on the worklist all Field edges from Connection Graph
+        // which is more accurate then putting immediate users from Ideal Graph.
+        for (uint e = 0; e < ptn->edge_count(); e++) {
+          Node *use = _nodes->adr_at(ptn->edge_target(e))->_node;
+          assert(ptn->edge_type(e) == PointsToNode::FieldEdge && use->is_AddP(),
+                 "only AddP nodes are Field edges in CG");
+          if (use->outcnt() > 0) { // Don't process dead nodes
+            Node* addp2 = find_second_addp(use, use->in(AddPNode::Base));
+            if (addp2 != NULL) {
+              assert(alloc->is_AllocateArray(),"array allocation was expected");
+              alloc_worklist.append_if_missing(addp2);
+            }
+            alloc_worklist.append_if_missing(use);
+          }
+        }
+
         // An allocation may have an Initialize which has raw stores. Scan
         // the users of the raw allocation result and push AddP users
         // on alloc_worklist.
@@ -919,6 +943,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       tinst = igvn->type(base)->isa_oopptr();
     } else if (n->is_Phi() ||
                n->is_CheckCastPP() ||
+               n->is_EncodeP() ||
+               n->is_DecodeN() ||
                (n->is_ConstraintCast() && n->Opcode() == Op_CastPP)) {
       if (visited.test_set(n->_idx)) {
         assert(n->is_Phi(), "loops only through Phi's");
@@ -935,13 +961,25 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         tinst = igvn->type(val)->isa_oopptr();
         assert(tinst != NULL && tinst->is_instance() &&
                tinst->instance_id() == elem , "instance type expected.");
-        const TypeOopPtr *tn_t = igvn->type(tn)->isa_oopptr();
+
+        const TypeOopPtr *tn_t = NULL;
+        const Type *tn_type = igvn->type(tn);
+        if (tn_type->isa_narrowoop()) {
+          tn_t = tn_type->is_narrowoop()->make_oopptr()->isa_oopptr();
+        } else {
+          tn_t = tn_type->isa_oopptr();
+        }
 
         if (tn_t != NULL &&
  tinst->cast_to_instance(TypeOopPtr::UNKNOWN_INSTANCE)->higher_equal(tn_t)) {
+          if (tn_type->isa_narrowoop()) {
+            tn_type = tinst->make_narrowoop();
+          } else {
+            tn_type = tinst;
+          }
           igvn->hash_delete(tn);
-          igvn->set_type(tn, tinst);
-          tn->set_type(tinst);
+          igvn->set_type(tn, tn_type);
+          tn->set_type(tn_type);
           igvn->hash_insert(tn);
           record_for_optimizer(n);
         }
@@ -978,6 +1016,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         alloc_worklist.append_if_missing(use);
       } else if (use->is_Phi() ||
                  use->is_CheckCastPP() ||
+                 use->is_EncodeP() ||
+                 use->is_DecodeN() ||
                  (use->is_ConstraintCast() && use->Opcode() == Op_CastPP)) {
         alloc_worklist.append_if_missing(use);
       }
@@ -1199,7 +1239,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
 
 void ConnectionGraph::compute_escape() {
 
-  // 1. Populate Connection Graph with Ideal nodes.
+  // 1. Populate Connection Graph (CG) with Ideal nodes.
 
   Unique_Node_List worklist_init;
   worklist_init.map(_compile->unique(), NULL);  // preallocate space
@@ -1281,11 +1321,13 @@ void ConnectionGraph::compute_escape() {
       remove_deferred(ni, &deferred_edges, &visited);
       if (n->is_AddP()) {
         // If this AddP computes an address which may point to more that one
-        // object, nothing the address points to can be scalar replaceable.
+        // object or more then one field (array's element), nothing the address
+        // points to can be scalar replaceable.
         Node *base = get_addp_base(n);
         ptset.Clear();
         PointsTo(ptset, base, igvn);
-        if (ptset.Size() > 1) {
+        if (ptset.Size() > 1 ||
+            (ptset.Size() != 0 && ptn->offset() == Type::OffsetBot)) {
           for( VectorSetI j(&ptset); j.test(); ++j ) {
             uint pt = j.elem;
             ptnode_adr(pt)->_scalar_replaceable = false;
@@ -1538,6 +1580,7 @@ void ConnectionGraph::process_call_result(ProjNode *resproj, PhaseTransform *pha
       if (k->Opcode() == Op_LoadKlass) {
         kt = k->as_Load()->type()->isa_klassptr();
       } else {
+        // Also works for DecodeN(LoadNKlass).
         kt = k->as_Type()->type()->isa_klassptr();
       }
       assert(kt != NULL, "TypeKlassPtr  required.");
@@ -1776,6 +1819,7 @@ void ConnectionGraph::record_for_escape_analysis(Node *n, PhaseTransform *phase)
       break;
     }
     case Op_LoadKlass:
+    case Op_LoadNKlass:
     {
       add_node(n, PointsToNode::JavaObject, PointsToNode::GlobalEscape, true);
       break;
@@ -1979,12 +2023,18 @@ void ConnectionGraph::build_connection_graph(Node *n, PhaseTransform *phase) {
       assert(false, "Op_ConP");
       break;
     }
+    case Op_ConN:
+    {
+      assert(false, "Op_ConN");
+      break;
+    }
     case Op_CreateEx:
     {
       assert(false, "Op_CreateEx");
       break;
     }
     case Op_LoadKlass:
+    case Op_LoadNKlass:
     {
       assert(false, "Op_LoadKlass");
       break;

@@ -1842,7 +1842,7 @@ class Parser implements DTDConstants {
             String elemStr = getString(0);
 
             if (elemStr.equals("image")) {
-                elemStr = new String("img");
+                elemStr = "img";
             }
 
             /* determine if this element is part of the dtd. */

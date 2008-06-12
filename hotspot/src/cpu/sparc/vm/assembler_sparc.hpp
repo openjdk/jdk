@@ -1994,8 +1994,9 @@ class MacroAssembler: public Assembler {
   inline void movbool( bool boolconst, Register d) { mov( (int) boolconst, d); }
 
   // klass oop manipulations if compressed
-  void load_klass(Register  src_oop, Register dst);
-  void store_klass(Register dst_oop, Register s1);
+  void load_klass(Register src_oop, Register klass);
+  void store_klass(Register klass, Register dst_oop);
+  void store_klass_gap(Register s, Register dst_oop);
 
    // oop manipulations
   void load_heap_oop(const Address& s, Register d, int offset = 0);
@@ -2133,6 +2134,8 @@ class MacroAssembler: public Assembler {
   inline void set_oop         ( jobject obj, Register d ); // uses allocate_oop_address
   inline void set_oop_constant( jobject obj, Register d ); // uses constant_oop_address
   inline void set_oop         ( Address obj_addr );        // same as load_address
+
+  void set_narrow_oop( jobject obj, Register d );
 
   // nop padding
   void align(int modulus);

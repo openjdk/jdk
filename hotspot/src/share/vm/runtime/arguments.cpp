@@ -1171,21 +1171,18 @@ void Arguments::set_ergonomics_flags() {
   // field offset to determine free list chunk markers.
   // Check that UseCompressedOops can be set with the max heap size allocated
   // by ergonomics.
-  if (!UseG1GC && !UseConcMarkSweepGC && MaxHeapSize <= max_heap_for_compressed_oops()) {
-    if (FLAG_IS_DEFAULT(UseCompressedOops)) {
-      FLAG_SET_ERGO(bool, UseCompressedOops, true);
+  if (MaxHeapSize <= max_heap_for_compressed_oops()) {
+    if (FLAG_IS_DEFAULT(UseCompressedOops) && !UseG1GC) {
+      // Leave compressed oops off by default. Uncomment
+      // the following line to return it to default status.
+      // FLAG_SET_ERGO(bool, UseCompressedOops, true);
+    } else if (UseCompressedOops && UseG1GC) {
+      warning(" UseCompressedOops does not currently work with UseG1GC; switching off UseCompressedOops. ");
+      FLAG_SET_DEFAULT(UseCompressedOops, false);
     }
   } else {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
-      // If specified, give a warning
-      if (UseConcMarkSweepGC){
-        warning("Compressed Oops does not work with CMS");
-      } else if (UseG1GC) {
-        warning("Compressed Oops does not work with UseG1GC");
-      } else {
-        warning(
-          "Max heap size too large for Compressed Oops");
-      }
+      warning("Max heap size too large for Compressed Oops");
       FLAG_SET_DEFAULT(UseCompressedOops, false);
     }
   }
@@ -1332,6 +1329,9 @@ void Arguments::set_aggressive_opts_flags() {
   }
   if (AggressiveOpts && FLAG_IS_DEFAULT(DoEscapeAnalysis)) {
     FLAG_SET_DEFAULT(DoEscapeAnalysis, true);
+  }
+  if (AggressiveOpts && FLAG_IS_DEFAULT(SpecialArraysEquals)) {
+    FLAG_SET_DEFAULT(SpecialArraysEquals, true);
   }
 #endif
 

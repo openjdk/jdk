@@ -41,8 +41,9 @@ public class GetDiagnosticOptions {
         "com.sun.management:type=HotSpotDiagnostic";
 
     public static void main(String[] args) throws Exception {
-        HotSpotDiagnosticMXBean mbean =
-            sun.management.ManagementFactory.getDiagnosticMXBean();
+        List<HotSpotDiagnosticMXBean> list =
+            ManagementFactory.getPlatformMXBeans(HotSpotDiagnosticMXBean.class);
+        HotSpotDiagnosticMXBean mbean = list.get(0);
         checkDiagnosticOptions(mbean);
 
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();

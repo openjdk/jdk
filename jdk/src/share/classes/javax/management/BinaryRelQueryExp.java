@@ -187,11 +187,11 @@ class BinaryRelQueryExp extends QueryEval implements QueryExp {
     /**
      * Returns the string representing the object.
      */
+    @Override
     public String toString()  {
         return "(" + exp1 + ") " + relOpString() + " (" + exp2 + ")";
     }
 
-    @Override
     String toQueryString() {
         return exp1 + " " + relOpString() + " " + exp2;
     }

@@ -190,7 +190,8 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
   // depends on this property.
   debug_only(
     FreeChunk* junk = NULL;
-    assert(junk->prev_addr() == (void*)(oop(junk)->klass_addr()),
+    assert(UseCompressedOops ||
+           junk->prev_addr() == (void*)(oop(junk)->klass_addr()),
            "Offset of FreeChunk::_prev within FreeChunk must match"
            "  that of OopDesc::_klass within OopDesc");
   )
@@ -1039,7 +1040,7 @@ void CMSCollector::direct_allocated(HeapWord* start, size_t size) {
                                       // mark end of object
   }
   // check that oop looks uninitialized
-  assert(oop(start)->klass() == NULL, "_klass should be NULL");
+  assert(oop(start)->klass_or_null() == NULL, "_klass should be NULL");
 }
 
 void CMSCollector::promoted(bool par, HeapWord* start,
@@ -1309,17 +1310,25 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
      }
   }
   oop obj = oop(obj_ptr);
-  assert(obj->klass() == NULL, "Object should be uninitialized here.");
+  assert(obj->klass_or_null() == NULL, "Object should be uninitialized here.");
   // Otherwise, copy the object.  Here we must be careful to insert the
   // klass pointer last, since this marks the block as an allocated object.
+  // Except with compressed oops it's the mark word.
   HeapWord* old_ptr = (HeapWord*)old;
   if (word_sz > (size_t)oopDesc::header_size()) {
     Copy::aligned_disjoint_words(old_ptr + oopDesc::header_size(),
                                  obj_ptr + oopDesc::header_size(),
                                  word_sz - oopDesc::header_size());
   }
+
+  if (UseCompressedOops) {
+    // Copy gap missed by (aligned) header size calculation above
+    obj->set_klass_gap(old->klass_gap());
+  }
+
   // Restore the mark word copied above.
   obj->set_mark(m);
+
   // Now we can track the promoted object, if necessary.  We take care
   // To delay the transition from uninitialized to full object
   // (i.e., insertion of klass pointer) until after, so that it
@@ -1327,7 +1336,8 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
   if (promoInfo->tracking()) {
     promoInfo->track((PromotedObject*)obj, old->klass());
   }
-  // Finally, install the klass pointer.
+
+  // Finally, install the klass pointer (this should be volatile).
   obj->set_klass(old->klass());
 
   assert(old->is_oop(), "Will dereference klass ptr below");
@@ -6169,7 +6179,7 @@ size_t CMSCollector::block_size_if_printezis_bits(HeapWord* addr) const {
 HeapWord* CMSCollector::next_card_start_after_block(HeapWord* addr) const {
   size_t sz = 0;
   oop p = (oop)addr;
-  if (p->klass() != NULL && p->is_parsable()) {
+  if (p->klass_or_null() != NULL && p->is_parsable()) {
     sz = CompactibleFreeListSpace::adjustObjectSize(p->size());
   } else {
     sz = block_size_using_printezis_bits(addr);
@@ -6606,7 +6616,7 @@ size_t ScanMarkedObjectsAgainCarefullyClosure::do_object_careful_m(
   }
   if (_bitMap->isMarked(addr)) {
     // it's marked; is it potentially uninitialized?
-    if (p->klass() != NULL) {
+    if (p->klass_or_null() != NULL) {
       if (CMSPermGenPrecleaningEnabled && !p->is_parsable()) {
         // Signal precleaning to redirty the card since
         // the klass pointer is already installed.
@@ -6619,11 +6629,8 @@ size_t ScanMarkedObjectsAgainCarefullyClosure::do_object_careful_m(
         if (p->is_objArray()) {
           // objArrays are precisely marked; restrict scanning
           // to dirty cards only.
-          size = p->oop_iterate(_scanningClosure, mr);
-          assert(size == CompactibleFreeListSpace::adjustObjectSize(size),
-                 "adjustObjectSize should be the identity for array sizes, "
-                 "which are necessarily larger than minimum object size of "
-                 "two heap words");
+          size = CompactibleFreeListSpace::adjustObjectSize(
+                   p->oop_iterate(_scanningClosure, mr));
         } else {
           // A non-array may have been imprecisely marked; we need
           // to scan object in its entirety.
@@ -6657,7 +6664,7 @@ size_t ScanMarkedObjectsAgainCarefullyClosure::do_object_careful_m(
     }
   } else {
     // Either a not yet marked object or an uninitialized object
-    if (p->klass() == NULL || !p->is_parsable()) {
+    if (p->klass_or_null() == NULL || !p->is_parsable()) {
       // An uninitialized object, skip to the next card, since
       // we may not be able to read its P-bits yet.
       assert(size == 0, "Initial value");
@@ -6714,7 +6721,7 @@ size_t SurvivorSpacePrecleanClosure::do_object_careful(oop p) {
   HeapWord* addr = (HeapWord*)p;
   DEBUG_ONLY(_collector->verify_work_stacks_empty();)
   assert(!_span.contains(addr), "we are scanning the survivor spaces");
-  assert(p->klass() != NULL, "object should be initializd");
+  assert(p->klass_or_null() != NULL, "object should be initializd");
   assert(p->is_parsable(), "must be parsable.");
   // an initialized object; ignore mark word in verification below
   // since we are running concurrent with mutators
@@ -6872,7 +6879,7 @@ bool MarkFromRootsClosure::do_bit(size_t offset) {
     assert(_skipBits == 0, "tautology");
     _skipBits = 2;  // skip next two marked bits ("Printezis-marks")
     oop p = oop(addr);
-    if (p->klass() == NULL || !p->is_parsable()) {
+    if (p->klass_or_null() == NULL || !p->is_parsable()) {
       DEBUG_ONLY(if (!_verifying) {)
         // We re-dirty the cards on which this object lies and increase
         // the _threshold so that we'll come back to scan this object
@@ -6894,7 +6901,7 @@ bool MarkFromRootsClosure::do_bit(size_t offset) {
           if (_threshold < end_card_addr) {
             _threshold = end_card_addr;
           }
-          if (p->klass() != NULL) {
+          if (p->klass_or_null() != NULL) {
             // Redirty the range of cards...
             _mut->mark_range(redirty_range);
           } // ...else the setting of klass will dirty the card anyway.
@@ -7053,7 +7060,7 @@ bool Par_MarkFromRootsClosure::do_bit(size_t offset) {
     assert(_skip_bits == 0, "tautology");
     _skip_bits = 2;  // skip next two marked bits ("Printezis-marks")
     oop p = oop(addr);
-    if (p->klass() == NULL || !p->is_parsable()) {
+    if (p->klass_or_null() == NULL || !p->is_parsable()) {
       // in the case of Clean-on-Enter optimization, redirty card
       // and avoid clearing card by increasing  the threshold.
       return true;
@@ -8034,7 +8041,7 @@ size_t SweepClosure::doLiveChunk(FreeChunk* fc) {
            "alignment problem");
 
     #ifdef DEBUG
-      if (oop(addr)->klass() != NULL &&
+      if (oop(addr)->klass_or_null() != NULL &&
           (   !_collector->should_unload_classes()
            || oop(addr)->is_parsable())) {
         // Ignore mark word because we are running concurrent with mutators
@@ -8047,7 +8054,7 @@ size_t SweepClosure::doLiveChunk(FreeChunk* fc) {
 
   } else {
     // This should be an initialized object that's alive.
-    assert(oop(addr)->klass() != NULL &&
+    assert(oop(addr)->klass_or_null() != NULL &&
            (!_collector->should_unload_classes()
             || oop(addr)->is_parsable()),
            "Should be an initialized object");

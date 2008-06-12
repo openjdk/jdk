@@ -195,6 +195,7 @@ freeBlockDictionary.cpp                 thread_<os_family>.inline.hpp
 
 freeBlockDictionary.hpp                 allocation.hpp
 freeBlockDictionary.hpp                 debug.hpp
+freeBlockDictionary.hpp                 freeChunk.hpp
 freeBlockDictionary.hpp                 globalDefinitions.hpp
 freeBlockDictionary.hpp                 memRegion.hpp
 freeBlockDictionary.hpp                 mutex.hpp
@@ -202,6 +203,14 @@ freeBlockDictionary.hpp                 ostream.hpp
 
 freeChunk.cpp                           copy.hpp
 freeChunk.cpp                           freeBlockDictionary.hpp
+
+freeChunk.hpp                           allocation.hpp
+freeChunk.hpp                           debug.hpp
+freeChunk.hpp                           globalDefinitions.hpp
+freeChunk.hpp                           markOop.hpp
+freeChunk.hpp                           memRegion.hpp
+freeChunk.hpp                           mutex.hpp
+freeChunk.hpp                           ostream.hpp
 
 freeList.cpp                            freeBlockDictionary.hpp
 freeList.cpp                            freeList.hpp

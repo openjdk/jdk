@@ -84,7 +84,7 @@ AwtTrayIcon::AwtTrayIcon() {
     if (sm_instCount++ == 0 && AwtTrayIcon::sm_msgWindow == NULL) {
         sm_msgWindow = AwtTrayIcon::CreateMessageWindow();
     }
-    m_mouseDragState = 0;
+    m_mouseButtonClickAllowed = 0;
 }
 
 AwtTrayIcon::~AwtTrayIcon() {
@@ -349,7 +349,7 @@ MsgRouting AwtTrayIcon::WmMouseDown(UINT flags, int x, int y, int button)
     }
     lastTime = now;
     // it's needed only if WM_LBUTTONUP doesn't come for some reason
-    m_mouseDragState &= ~AwtComponent::GetButtonMK(button);
+    m_mouseButtonClickAllowed |= AwtComponent::GetButtonMK(button);
 
     MSG msg;
     AwtComponent::InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
@@ -371,12 +371,12 @@ MsgRouting AwtTrayIcon::WmMouseUp(UINT flags, int x, int y, int button)
                    (AwtComponent::GetButton(button) == java_awt_event_MouseEvent_BUTTON3 ?
                     TRUE : FALSE), AwtComponent::GetButton(button), &msg);
 
-    if (!(m_mouseDragState & AwtComponent::GetButtonMK(button))) { // No up-button in the drag-state
+    if ((m_mouseButtonClickAllowed & AwtComponent::GetButtonMK(button)) != 1) { // No up-button in the drag-state
         SendMouseEvent(java_awt_event_MouseEvent_MOUSE_CLICKED,
                        TimeHelper::windowsToUTC(::GetTickCount()), x, y, AwtComponent::GetJavaModifiers(),
                        clickCount, JNI_FALSE, AwtComponent::GetButton(button));
     }
-    m_mouseDragState &= ~AwtComponent::GetButtonMK(button); // Exclude the up-button from the drag-state
+    m_mouseButtonClickAllowed &= ~AwtComponent::GetButtonMK(button); // Exclude the up-button from the drag-state
 
     return mrConsume;
 }
@@ -398,7 +398,7 @@ MsgRouting AwtTrayIcon::WmMouseMove(UINT flags, int x, int y)
         lastY = y;
         AwtComponent::InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
         if ((flags & AwtComponent::ALL_MK_BUTTONS) != 0) {
-            m_mouseDragState = flags;
+            m_mouseButtonClickAllowed = 0;
         } else {
             SendMouseEvent(java_awt_event_MouseEvent_MOUSE_MOVED, TimeHelper::windowsToUTC(::GetTickCount()), x, y,
                            AwtComponent::GetJavaModifiers(), 0, JNI_FALSE,

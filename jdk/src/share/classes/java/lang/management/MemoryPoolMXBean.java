@@ -46,6 +46,9 @@ package java.lang.management;
  *    <tt>java.lang:type=MemoryPool</tt>}<tt>,name=</tt><i>pool's name</i>
  * </blockquote>
  *
+ * It can be obtained by calling the
+ * {@link PlatformManagedObject#getObjectName} method.
+ *
  * <h4>Memory Type</h4>
  * <p>The Java virtual machine has a heap for object allocation and also
  * maintains non-heap memory for the method area and the Java virtual
@@ -349,6 +352,7 @@ package java.lang.management;
  * described above for the <a href="#UsageThreshold">usage threshold</a>
  * in a similar fashion.
  *
+ * @see ManagementFactory#getPlatformMXBeans(Class)
  * @see <a href="../../../javax/management/package-summary.html">
  *      JMX Specification.</a>
  * @see <a href="package-summary.html#examples">
@@ -357,7 +361,7 @@ package java.lang.management;
  * @author  Mandy Chung
  * @since   1.5
  */
-public interface MemoryPoolMXBean {
+public interface MemoryPoolMXBean extends PlatformManagedObject {
     /**
      * Returns the name representing this memory pool.
      *

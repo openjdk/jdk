@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.awt.geom;
 
 import java.awt.Shape;
 import java.awt.Rectangle;
+import java.beans.Transient;
 
 /**
  * <code>RectangularShape</code> is the base class for a number of
@@ -171,6 +172,7 @@ public abstract class RectangularShape implements Shape, Cloneable {
      * @see #setFrame(Rectangle2D)
      * @since 1.2
      */
+    @Transient
     public Rectangle2D getFrame() {
         return new Rectangle2D.Double(getX(), getY(), getWidth(), getHeight());
     }

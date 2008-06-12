@@ -233,7 +233,6 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
                MBeanRegistrationException, MBeanException,
                NotCompliantMBeanException, InstanceNotFoundException {
 
-        ObjectName logicalName = name;
         Class theClass;
 
         if (className == null) {
@@ -519,8 +518,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
                                                 QueryExp query) {
         // Query the MBeans on the repository
         //
-        Set<NamedObject> list = null;
-        list = repository.query(name, query);
+        Set<NamedObject> list = repository.query(name, query);
 
         if (queryByRepo) {
             // The repository performs the filtering
@@ -576,8 +574,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
     private Set<ObjectName> queryNamesImpl(ObjectName name, QueryExp query) {
         // Query the MBeans on the repository
         //
-        Set<NamedObject> list = null;
-        list = repository.query(name, query);
+        Set<NamedObject> list = repository.query(name, query);
 
         if (queryByRepo) {
             // The repository performs the filtering
@@ -1042,7 +1039,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         if (registerFailed && moi instanceof DynamicMBean2)
             ((DynamicMBean2) moi).registerFailed();
         try {
-            moi.postRegister(new Boolean(registrationDone));
+            moi.postRegister(registrationDone);
         } catch (RuntimeException e) {
             throw new RuntimeMBeanException(e,
                       "RuntimeException thrown in postRegister method");
@@ -1094,8 +1091,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
                 IllegalArgumentException("Object name cannot be null"),
                                "Exception occurred trying to get an MBean");
         }
-        DynamicMBean obj = null;
-        obj = repository.retrieve(name);
+        DynamicMBean obj = repository.retrieve(name);
         if (obj == null) {
             if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
                 MBEANSERVER_LOGGER.logp(Level.FINER,
@@ -1568,7 +1564,6 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             query.setMBeanServer(server);
             try {
                 for (NamedObject no : list) {
-                    final DynamicMBean obj = no.getObject();
                     boolean res;
                     try {
                         res = query.apply(no.getName());

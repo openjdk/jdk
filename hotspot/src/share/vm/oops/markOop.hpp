@@ -29,8 +29,10 @@
 //
 // Bit-format of an object header (most significant first):
 //
-//
-//  unused:0/25 hash:25/31 age:4 biased_lock:1 lock:2 = 32/64 bits
+//  32 bits: unused:0  hash:25 age:4 biased_lock:1 lock:2
+//  64 bits: unused:24 hash:31 cms:2 age:4 biased_lock:1 lock:2
+//           unused:20 size:35 cms:2 age:4 biased_lock:1 lock:2 (if cms
+//                                                               free chunk)
 //
 //  - hash contains the identity hash value: largest value is
 //    31 bits, see os::random().  Also, 64-bit vm's require
@@ -91,6 +93,7 @@ class markOopDesc: public oopDesc {
          biased_lock_bits         = 1,
          max_hash_bits            = BitsPerWord - age_bits - lock_bits - biased_lock_bits,
          hash_bits                = max_hash_bits > 31 ? 31 : max_hash_bits,
+         cms_bits                 = LP64_ONLY(1) NOT_LP64(0),
          epoch_bits               = 2
   };
 
@@ -106,7 +109,8 @@ class markOopDesc: public oopDesc {
   enum { lock_shift               = 0,
          biased_lock_shift        = lock_bits,
          age_shift                = lock_bits + biased_lock_bits,
-         hash_shift               = lock_bits + biased_lock_bits + age_bits,
+         cms_shift                = age_shift + age_bits,
+         hash_shift               = cms_shift + cms_bits,
          epoch_shift              = hash_shift
   };
 
@@ -118,7 +122,9 @@ class markOopDesc: public oopDesc {
          age_mask                 = right_n_bits(age_bits),
          age_mask_in_place        = age_mask << age_shift,
          epoch_mask               = right_n_bits(epoch_bits),
-         epoch_mask_in_place      = epoch_mask << epoch_shift
+         epoch_mask_in_place      = epoch_mask << epoch_shift,
+         cms_mask                 = right_n_bits(cms_bits),
+         cms_mask_in_place        = cms_mask << cms_shift
 #ifndef _WIN64
          ,hash_mask               = right_n_bits(hash_bits),
          hash_mask_in_place       = (address_word)hash_mask << hash_shift
@@ -348,4 +354,40 @@ class markOopDesc: public oopDesc {
 
   // see the definition in markOop.cpp for the gory details
   bool should_not_be_cached() const;
+
+  // These markOops indicate cms free chunk blocks and not objects.
+  // In 64 bit, the markOop is set to distinguish them from oops.
+  // These are defined in 32 bit mode for vmStructs.
+  const static uintptr_t cms_free_chunk_pattern  = 0x1;
+
+  // Constants for the size field.
+  enum { size_shift                = cms_shift + cms_bits,
+         size_bits                 = 35    // need for compressed oops 32G
+       };
+  // These values are too big for Win64
+  const static uintptr_t size_mask = LP64_ONLY(right_n_bits(size_bits))
+                                     NOT_LP64(0);
+  const static uintptr_t size_mask_in_place =
+                                     (address_word)size_mask << size_shift;
+
+#ifdef _LP64
+  static markOop cms_free_prototype() {
+    return markOop(((intptr_t)prototype() & ~cms_mask_in_place) |
+                   ((cms_free_chunk_pattern & cms_mask) << cms_shift));
+  }
+  uintptr_t cms_encoding() const {
+    return mask_bits(value() >> cms_shift, cms_mask);
+  }
+  bool is_cms_free_chunk() const {
+    return is_neutral() &&
+           (cms_encoding() & cms_free_chunk_pattern) == cms_free_chunk_pattern;
+  }
+
+  size_t get_size() const       { return (size_t)(value() >> size_shift); }
+  static markOop set_size_and_free(size_t size) {
+    assert((size & ~size_mask) == 0, "shouldn't overflow size field");
+    return markOop(((intptr_t)cms_free_prototype() & ~size_mask_in_place) |
+                   (((intptr_t)size & size_mask) << size_shift));
+  }
+#endif // _LP64
 };

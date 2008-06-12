@@ -740,16 +740,16 @@ public class CounterMonitor extends Monitor implements CounterMonitorMBean {
                 //
                 switch (o.getType()) {
                     case INTEGER:
-                        o.setThreshold(new Integer((int)threshold_value));
+                        o.setThreshold(Integer.valueOf((int)threshold_value));
                         break;
                     case BYTE:
-                        o.setThreshold(new Byte((byte)threshold_value));
+                        o.setThreshold(Byte.valueOf((byte)threshold_value));
                         break;
                     case SHORT:
-                        o.setThreshold(new Short((short)threshold_value));
+                        o.setThreshold(Short.valueOf((short)threshold_value));
                         break;
                     case LONG:
-                        o.setThreshold(new Long(threshold_value));
+                        o.setThreshold(Long.valueOf(threshold_value));
                         break;
                     default:
                         // Should never occur...
@@ -810,10 +810,10 @@ public class CounterMonitor extends Monitor implements CounterMonitorMBean {
             derived += modulus.longValue();
 
         switch (o.getType()) {
-        case INTEGER: o.setDerivedGauge(new Integer((int) derived)); break;
-        case BYTE: o.setDerivedGauge(new Byte((byte) derived)); break;
-        case SHORT: o.setDerivedGauge(new Short((short) derived)); break;
-        case LONG: o.setDerivedGauge(new Long(derived)); break;
+        case INTEGER: o.setDerivedGauge(Integer.valueOf((int) derived)); break;
+        case BYTE: o.setDerivedGauge(Byte.valueOf((byte) derived)); break;
+        case SHORT: o.setDerivedGauge(Short.valueOf((short) derived)); break;
+        case LONG: o.setDerivedGauge(Long.valueOf(derived)); break;
         default:
             // Should never occur...
             MONITOR_LOGGER.logp(Level.FINEST, CounterMonitor.class.getName(),

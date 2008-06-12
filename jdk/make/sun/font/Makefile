@@ -63,6 +63,7 @@ FILES_export = \
     java/awt/Font.java \
     java/text/Bidi.java \
     sun/font/FileFont.java \
+    sun/font/FileFontStrike.java \
     sun/font/FontManager.java \
     sun/font/GlyphList.java \
     sun/font/NativeFont.java \

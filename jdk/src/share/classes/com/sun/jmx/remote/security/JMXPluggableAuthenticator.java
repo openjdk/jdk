@@ -295,7 +295,7 @@ private final class JMXCallbackHandler implements CallbackHandler {
 private static class FileLoginConfig extends Configuration {
 
     // The JAAS configuration for file-based authentication
-    private static AppConfigurationEntry[] entries;
+    private AppConfigurationEntry[] entries;
 
     // The classname of the login module for file-based authentication
     private static final String FILE_LOGIN_MODULE =

@@ -683,7 +683,8 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
 
   case REP8(0xB8): // movl/q r, #32/#64(oop?)
     if (which == end_pc_operand)  return ip + (is_64bit ? 8 : 4);
-    assert((which == call32_operand || which == imm64_operand) && is_64bit, "");
+    assert((which == call32_operand || which == imm64_operand) && is_64bit ||
+           which == narrow_oop_operand && !is_64bit, "");
     return ip;
 
   case 0x69: // imul r, a, #32
@@ -909,7 +910,8 @@ void Assembler::check_relocation(RelocationHolder const& rspec, int format) {
   } else if (r->is_call() || format == call32_operand) {
     opnd = locate_operand(inst, call32_operand);
   } else if (r->is_data()) {
-    assert(format == imm64_operand || format == disp32_operand, "format ok");
+    assert(format == imm64_operand || format == disp32_operand ||
+           format == narrow_oop_operand, "format ok");
     opnd = locate_operand(inst, (WhichOperand) format);
   } else {
     assert(format == 0, "cannot specify a format");
@@ -5060,6 +5062,8 @@ void MacroAssembler::tlab_refill(Label& retry,
   movq(Address(top, arrayOopDesc::length_offset_in_bytes()), t1);
   // set klass to intArrayKlass
   movptr(t1, ExternalAddress((address) Universe::intArrayKlassObj_addr()));
+  // store klass last.  concurrent gcs assumes klass length is valid if
+  // klass field is not null.
   store_klass(top, t1);
 
   // refill the tlab with an eden allocation
@@ -5130,8 +5134,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg, Register obj_reg, Re
   jcc(Assembler::notEqual, cas_label);
   // The bias pattern is present in the object's header. Need to check
   // whether the bias owner and the epoch are both still current.
-  load_klass(tmp_reg, obj_reg);
-  movq(tmp_reg, Address(tmp_reg, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+  load_prototype_header(tmp_reg, obj_reg);
   orq(tmp_reg, r15_thread);
   xorq(tmp_reg, swap_reg);
   andq(tmp_reg, ~((int) markOopDesc::age_mask_in_place));
@@ -5205,8 +5208,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg, Register obj_reg, Re
   //
   // FIXME: due to a lack of registers we currently blow away the age
   // bits in this situation. Should attempt to preserve them.
-  load_klass(tmp_reg, obj_reg);
-  movq(tmp_reg, Address(tmp_reg, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+  load_prototype_header(tmp_reg, obj_reg);
   orq(tmp_reg, r15_thread);
   if (os::is_MP()) {
     lock();
@@ -5236,8 +5238,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg, Register obj_reg, Re
   //
   // FIXME: due to a lack of registers we currently blow away the age
   // bits in this situation. Should attempt to preserve them.
-  load_klass(tmp_reg, obj_reg);
-  movq(tmp_reg, Address(tmp_reg, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+  load_prototype_header(tmp_reg, obj_reg);
   if (os::is_MP()) {
     lock();
   }
@@ -5281,14 +5282,29 @@ void MacroAssembler::load_klass(Register dst, Register src) {
   }
 }
 
+void MacroAssembler::load_prototype_header(Register dst, Register src) {
+  if (UseCompressedOops) {
+    movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+    movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+  } else {
+    movq(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+    movq(dst, Address(dst, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+  }
+}
+
 void MacroAssembler::store_klass(Register dst, Register src) {
   if (UseCompressedOops) {
     encode_heap_oop_not_null(src);
-    // zero the entire klass field first as the gap needs to be zeroed too.
-    movptr(Address(dst, oopDesc::klass_offset_in_bytes()), NULL_WORD);
     movl(Address(dst, oopDesc::klass_offset_in_bytes()), src);
   } else {
     movq(Address(dst, oopDesc::klass_offset_in_bytes()), src);
+  }
+}
+
+void MacroAssembler::store_klass_gap(Register dst, Register src) {
+  if (UseCompressedOops) {
+    // Store to klass gap in destination
+    movl(Address(dst, oopDesc::klass_gap_offset_in_bytes()), src);
   }
 }
 
@@ -5315,13 +5331,15 @@ void MacroAssembler::store_heap_oop(Address dst, Register src) {
 void MacroAssembler::encode_heap_oop(Register r) {
   assert (UseCompressedOops, "should be compressed");
 #ifdef ASSERT
-  Label ok;
-  pushq(rscratch1); // cmpptr trashes rscratch1
-  cmpptr(r12_heapbase, ExternalAddress((address)Universe::heap_base_addr()));
-  jcc(Assembler::equal, ok);
-  stop("MacroAssembler::encode_heap_oop: heap base corrupted?");
-  bind(ok);
-  popq(rscratch1);
+  if (CheckCompressedOops) {
+    Label ok;
+    pushq(rscratch1); // cmpptr trashes rscratch1
+    cmpptr(r12_heapbase, ExternalAddress((address)Universe::heap_base_addr()));
+    jcc(Assembler::equal, ok);
+    stop("MacroAssembler::encode_heap_oop: heap base corrupted?");
+    bind(ok);
+    popq(rscratch1);
+  }
 #endif
   verify_oop(r, "broken oop in encode_heap_oop");
   testq(r, r);
@@ -5333,11 +5351,13 @@ void MacroAssembler::encode_heap_oop(Register r) {
 void MacroAssembler::encode_heap_oop_not_null(Register r) {
   assert (UseCompressedOops, "should be compressed");
 #ifdef ASSERT
-  Label ok;
-  testq(r, r);
-  jcc(Assembler::notEqual, ok);
-  stop("null oop passed to encode_heap_oop_not_null");
-  bind(ok);
+  if (CheckCompressedOops) {
+    Label ok;
+    testq(r, r);
+    jcc(Assembler::notEqual, ok);
+    stop("null oop passed to encode_heap_oop_not_null");
+    bind(ok);
+  }
 #endif
   verify_oop(r, "broken oop in encode_heap_oop_not_null");
   subq(r, r12_heapbase);
@@ -5347,11 +5367,13 @@ void MacroAssembler::encode_heap_oop_not_null(Register r) {
 void MacroAssembler::encode_heap_oop_not_null(Register dst, Register src) {
   assert (UseCompressedOops, "should be compressed");
 #ifdef ASSERT
-  Label ok;
-  testq(src, src);
-  jcc(Assembler::notEqual, ok);
-  stop("null oop passed to encode_heap_oop_not_null2");
-  bind(ok);
+  if (CheckCompressedOops) {
+    Label ok;
+    testq(src, src);
+    jcc(Assembler::notEqual, ok);
+    stop("null oop passed to encode_heap_oop_not_null2");
+    bind(ok);
+  }
 #endif
   verify_oop(src, "broken oop in encode_heap_oop_not_null2");
   if (dst != src) {
@@ -5364,14 +5386,16 @@ void MacroAssembler::encode_heap_oop_not_null(Register dst, Register src) {
 void  MacroAssembler::decode_heap_oop(Register r) {
   assert (UseCompressedOops, "should be compressed");
 #ifdef ASSERT
-  Label ok;
-  pushq(rscratch1);
-  cmpptr(r12_heapbase,
-         ExternalAddress((address)Universe::heap_base_addr()));
-  jcc(Assembler::equal, ok);
-  stop("MacroAssembler::decode_heap_oop: heap base corrupted?");
-  bind(ok);
-  popq(rscratch1);
+  if (CheckCompressedOops) {
+    Label ok;
+    pushq(rscratch1);
+    cmpptr(r12_heapbase,
+           ExternalAddress((address)Universe::heap_base_addr()));
+    jcc(Assembler::equal, ok);
+    stop("MacroAssembler::decode_heap_oop: heap base corrupted?");
+    bind(ok);
+    popq(rscratch1);
+  }
 #endif
 
   Label done;
@@ -5392,6 +5416,7 @@ void  MacroAssembler::decode_heap_oop_not_null(Register r) {
   assert (UseCompressedOops, "should only be used for compressed headers");
   // Cannot assert, unverified entry point counts instructions (see .ad file)
   // vtableStubs also counts instructions in pd_code_size_limit.
+  // Also do not verify_oop as this is called by verify_oop.
   assert(Address::times_8 == LogMinObjAlignmentInBytes, "decode alg wrong");
   leaq(r, Address(r12_heapbase, r, Address::times_8, 0));
 }
@@ -5400,9 +5425,23 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
   assert (UseCompressedOops, "should only be used for compressed headers");
   // Cannot assert, unverified entry point counts instructions (see .ad file)
   // vtableStubs also counts instructions in pd_code_size_limit.
+  // Also do not verify_oop as this is called by verify_oop.
   assert(Address::times_8 == LogMinObjAlignmentInBytes, "decode alg wrong");
   leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
 }
+
+void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
+  assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int oop_index = oop_recorder()->find_index(obj);
+  RelocationHolder rspec = oop_Relocation::spec(oop_index);
+
+  // movl dst,obj
+  InstructionMark im(this);
+  int encode = prefix_and_encode(dst->encoding());
+  emit_byte(0xB8 | encode);
+  emit_data(oop_index, rspec, narrow_oop_operand);
+}
+
 
 Assembler::Condition MacroAssembler::negate_condition(Assembler::Condition cond) {
   switch (cond) {

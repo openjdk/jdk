@@ -328,7 +328,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
         setHSB(hue, saturation, brightness);
         if (update) {
             settingColor = true;
-            hueSpinner.setValue(new Integer((int)(hue * 360)));
+            hueSpinner.setValue(Integer.valueOf((int)(hue * 360)));
             settingColor = false;
         }
     }
@@ -376,8 +376,8 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
         setHSB(hue, s, b);
         if (update) {
             settingColor = true;
-            saturationSpinner.setValue(new Integer((int)(s * 255)));
-            valueSpinner.setValue(new Integer((int)(b * 255)));
+            saturationSpinner.setValue(Integer.valueOf((int)(s * 255)));
+            valueSpinner.setValue(Integer.valueOf((int)(b * 255)));
             settingColor = false;
         }
     }
@@ -391,9 +391,9 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
         setColor(color, false, true, true);
 
         settingColor = true;
-        hueSpinner.setValue(new Integer((int)(hue * 360)));
-        saturationSpinner.setValue(new Integer((int)(saturation * 255)));
-        valueSpinner.setValue(new Integer((int)(brightness * 255)));
+        hueSpinner.setValue(Integer.valueOf((int)(hue * 360)));
+        saturationSpinner.setValue(Integer.valueOf((int)(saturation * 255)));
+        valueSpinner.setValue(Integer.valueOf((int)(brightness * 255)));
         settingColor = false;
     }
 
@@ -409,9 +409,9 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
         setColor(color, false, false, true);
 
         settingColor = true;
-        redSpinner.setValue(new Integer(color.getRed()));
-        greenSpinner.setValue(new Integer(color.getGreen()));
-        blueSpinner.setValue(new Integer(color.getBlue()));
+        redSpinner.setValue(Integer.valueOf(color.getRed()));
+        greenSpinner.setValue(Integer.valueOf(color.getGreen()));
+        blueSpinner.setValue(Integer.valueOf(color.getBlue()));
         settingColor = false;
     }
 
@@ -454,13 +454,13 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
         colorNameTF.setText("#" + hexString.substring(1));
 
         if (updateSpinners) {
-            redSpinner.setValue(new Integer(color.getRed()));
-            greenSpinner.setValue(new Integer(color.getGreen()));
-            blueSpinner.setValue(new Integer(color.getBlue()));
+            redSpinner.setValue(Integer.valueOf(color.getRed()));
+            greenSpinner.setValue(Integer.valueOf(color.getGreen()));
+            blueSpinner.setValue(Integer.valueOf(color.getBlue()));
 
-            hueSpinner.setValue(new Integer((int)(hue * 360)));
-            saturationSpinner.setValue(new Integer((int)(saturation * 255)));
-            valueSpinner.setValue(new Integer((int)(brightness * 255)));
+            hueSpinner.setValue(Integer.valueOf((int)(hue * 360)));
+            saturationSpinner.setValue(Integer.valueOf((int)(saturation * 255)));
+            valueSpinner.setValue(Integer.valueOf((int)(brightness * 255)));
         }
         settingColor = false;
     }

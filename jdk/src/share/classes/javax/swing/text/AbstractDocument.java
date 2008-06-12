@@ -351,7 +351,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      *   loaded asynchronously
      */
     public void setAsynchronousLoadPriority(int p) {
-        Integer loadPriority = (p >= 0) ? new Integer(p) : null;
+        Integer loadPriority = (p >= 0) ? Integer.valueOf(p) : null;
         putProperty(AbstractDocument.AsyncLoadPriority, loadPriority);
     }
 
@@ -2675,7 +2675,7 @@ public abstract class AbstractDocument implements Document, Serializable {
          */
         BidiElement(Element parent, int start, int end, int level) {
             super(parent, new SimpleAttributeSet(), start, end);
-            addAttribute(StyleConstants.BidiLevel, new Integer(level));
+            addAttribute(StyleConstants.BidiLevel, Integer.valueOf(level));
             //System.out.println("BidiElement: start = " + start
             //                   + " end = " + end + " level = " + level );
         }

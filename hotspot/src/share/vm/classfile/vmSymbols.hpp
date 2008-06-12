@@ -564,6 +564,10 @@
    do_name(     copyOfRange_name,                                "copyOfRange")                                         \
    do_signature(copyOfRange_signature,        "([Ljava/lang/Object;IILjava/lang/Class;)[Ljava/lang/Object;")            \
                                                                                                                         \
+  do_intrinsic(_equalsC,                  java_util_Arrays,       equals_name,    equalsC_signature,             F_S)   \
+   do_name(     equals_name,                                     "equals")                                              \
+   do_signature(equalsC_signature,                               "([C[C)Z")                                             \
+                                                                                                                        \
   do_intrinsic(_invoke,                   java_lang_reflect_Method, invoke_name, object_array_object_object_signature, F_R) \
   /*   (symbols invoke_name and invoke_signature defined above) */                                                      \
                                                                                                                         \

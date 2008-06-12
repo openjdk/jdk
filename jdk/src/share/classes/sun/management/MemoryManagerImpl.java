@@ -25,8 +25,11 @@
 
 package sun.management;
 
+import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryManagerMXBean;
 import java.lang.management.MemoryPoolMXBean;
+
+import javax.management.ObjectName;
 
 /**
  * Implementation class for a memory manager.
@@ -72,5 +75,9 @@ class MemoryManagerImpl implements MemoryManagerMXBean {
         return pools;
     }
     private native MemoryPoolMXBean[] getMemoryPools0();
+
+    public ObjectName getObjectName() {
+        return Util.newObjectName(ManagementFactory.MEMORY_MANAGER_MXBEAN_DOMAIN_TYPE, getName());
+    }
 
 }

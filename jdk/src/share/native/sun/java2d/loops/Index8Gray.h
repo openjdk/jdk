@@ -37,6 +37,8 @@
 typedef jubyte  Index8GrayPixelType;
 typedef jubyte  Index8GrayDataType;
 
+#define Index8GrayIsOpaque 1
+
 #define Index8GrayPixelStride           1
 #define Index8GrayBitsPerPixel          8
 

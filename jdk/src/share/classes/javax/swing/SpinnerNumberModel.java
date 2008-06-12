@@ -144,7 +144,7 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
      *     <code>minimum &lt;= value &lt;= maximum</code>
      */
     public SpinnerNumberModel(int value, int minimum, int maximum, int stepSize) {
-        this(new Integer(value), new Integer(minimum), new Integer(maximum), new Integer(stepSize));
+        this(Integer.valueOf(value), Integer.valueOf(minimum), Integer.valueOf(maximum), Integer.valueOf(stepSize));
     }
 
 
@@ -171,7 +171,7 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
      * <code>stepSize</code> equal to one, and an initial value of zero.
      */
     public SpinnerNumberModel() {
-        this(new Integer(0), null, null, new Integer(1));
+        this(Integer.valueOf(0), null, null, Integer.valueOf(1));
     }
 
 
@@ -333,16 +333,16 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
             long v = value.longValue() + (stepSize.longValue() * (long)dir);
 
             if (value instanceof Long) {
-                newValue = new Long(v);
+                newValue = Long.valueOf(v);
             }
             else if (value instanceof Integer) {
-                newValue = new Integer((int)v);
+                newValue = Integer.valueOf((int)v);
             }
             else if (value instanceof Short) {
-                newValue = new Short((short)v);
+                newValue = Short.valueOf((short)v);
             }
             else {
-                newValue = new Byte((byte)v);
+                newValue = Byte.valueOf((byte)v);
             }
         }
 
