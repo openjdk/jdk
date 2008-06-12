@@ -66,7 +66,7 @@ import sun.security.util.SecurityConstants;
  * </pre></blockquote>
  * <p>
  * The syntax of <code>URL</code> is defined by  <a
- * href="http://www.ietf.org/rfc/rfc2396.txt""><i>RFC&nbsp;2396: Uniform
+ * href="http://www.ietf.org/rfc/rfc2396.txt"><i>RFC&nbsp;2396: Uniform
  * Resource Identifiers (URI): Generic Syntax</i></a>, amended by <a
  * href="http://www.ietf.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format for
  * Literal IPv6 Addresses in URLs</i></a>. The Literal IPv6 address format
