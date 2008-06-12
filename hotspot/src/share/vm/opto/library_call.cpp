@@ -163,6 +163,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_newArray();
   bool inline_native_getLength();
   bool inline_array_copyOf(bool is_copyOfRange);
+  bool inline_array_equals();
   bool inline_native_clone(bool is_virtual);
   bool inline_native_Reflection_getCallerClass();
   bool inline_native_AtomicLong_get();
@@ -259,6 +260,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     switch (id) {
     case vmIntrinsics::_indexOf:
     case vmIntrinsics::_compareTo:
+    case vmIntrinsics::_equalsC:
       break;  // InlineNatives does not control String.compareTo
     default:
       return NULL;
@@ -271,6 +273,9 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     break;
   case vmIntrinsics::_indexOf:
     if (!SpecialStringIndexOf)  return NULL;
+    break;
+  case vmIntrinsics::_equalsC:
+    if (!SpecialArraysEquals)  return NULL;
     break;
   case vmIntrinsics::_arraycopy:
     if (!InlineArrayCopy)  return NULL;
@@ -586,6 +591,8 @@ bool LibraryCallKit::try_to_inline() {
     return inline_array_copyOf(false);
   case vmIntrinsics::_copyOfRange:
     return inline_array_copyOf(true);
+  case vmIntrinsics::_equalsC:
+    return inline_array_equals();
   case vmIntrinsics::_clone:
     return inline_native_clone(intrinsic()->is_virtual());
 
@@ -813,6 +820,24 @@ bool LibraryCallKit::inline_string_compareTo() {
   return true;
 }
 
+//------------------------------inline_array_equals----------------------------
+bool LibraryCallKit::inline_array_equals() {
+
+  if (!Matcher::has_match_rule(Op_AryEq)) return false;
+
+  _sp += 2;
+  Node *argument2 = pop();
+  Node *argument1 = pop();
+
+  Node* equals =
+    _gvn.transform(new (C, 3) AryEqNode(control(),
+                                        argument1,
+                                        argument2)
+                   );
+  push(equals);
+  return true;
+}
+
 // Java version of String.indexOf(constant string)
 // class StringDecl {
 //   StringDecl(char[] ca) {
@@ -896,7 +921,7 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   Node* sourcea       = basic_plus_adr(string_object, string_object, value_offset);
   Node* source        = make_load(no_ctrl, sourcea, source_type, T_OBJECT, string_type->add_offset(value_offset));
 
-  Node* target = _gvn.transform(ConPNode::make(C, target_array));
+  Node* target = _gvn.transform( makecon(TypeOopPtr::make_from_constant(target_array)) );
   jint target_length = target_array->length();
   const TypeAry* target_array_type = TypeAry::make(TypeInt::CHAR, TypeInt::make(0, target_length, Type::WidenMin));
   const TypeAryPtr* target_type = TypeAryPtr::make(TypePtr::BotPTR, target_array_type, target_array->klass(), true, Type::OffsetBot);
@@ -2168,7 +2193,7 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
     // (They don't if CAS fails, but it isn't worth checking.)
     pre_barrier(control(), base, adr, alias_idx, newval, value_type, T_OBJECT);
 #ifdef _LP64
-    if (adr->bottom_type()->is_narrow()) {
+    if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       cas = _gvn.transform(new (C, 5) CompareAndSwapNNode(control(), mem, adr,
                                                            EncodePNode::encode(&_gvn, newval),
                                                            EncodePNode::encode(&_gvn, oldval)));
@@ -2454,7 +2479,7 @@ Node* LibraryCallKit::load_klass_from_mirror_common(Node* mirror,
   if (region == NULL)  never_see_null = true;
   Node* p = basic_plus_adr(mirror, offset);
   const TypeKlassPtr*  kls_type = TypeKlassPtr::OBJECT_OR_NULL;
-  Node* kls = _gvn.transform(new (C, 3) LoadKlassNode(0, immutable_memory(), p, TypeRawPtr::BOTTOM, kls_type));
+  Node* kls = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), p, TypeRawPtr::BOTTOM, kls_type) );
   _sp += nargs; // any deopt will start just before call to enclosing method
   Node* null_ctl = top();
   kls = null_check_oop(kls, &null_ctl, never_see_null);
@@ -2634,7 +2659,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
       phi->add_req(makecon(TypeInstPtr::make(env()->Object_klass()->java_mirror())));
     // If we fall through, it's a plain class.  Get its _super.
     p = basic_plus_adr(kls, Klass::super_offset_in_bytes() + sizeof(oopDesc));
-    kls = _gvn.transform(new (C, 3) LoadKlassNode(0, immutable_memory(), p, TypeRawPtr::BOTTOM, TypeKlassPtr::OBJECT_OR_NULL));
+    kls = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), p, TypeRawPtr::BOTTOM, TypeKlassPtr::OBJECT_OR_NULL) );
     null_ctl = top();
     kls = null_check_oop(kls, &null_ctl);
     if (null_ctl != top()) {
@@ -2720,7 +2745,7 @@ bool LibraryCallKit::inline_native_subtype_check() {
     args[which_arg] = _gvn.transform(arg);
 
     Node* p = basic_plus_adr(arg, class_klass_offset);
-    Node* kls = new (C, 3) LoadKlassNode(0, immutable_memory(), p, adr_type, kls_type);
+    Node* kls = LoadKlassNode::make(_gvn, immutable_memory(), p, adr_type, kls_type);
     klasses[which_arg] = _gvn.transform(kls);
   }
 
@@ -2838,6 +2863,8 @@ bool LibraryCallKit::inline_native_newArray() {
   _sp += nargs;  // set original stack for use by uncommon_trap
   mirror = do_null_check(mirror, T_OBJECT);
   _sp -= nargs;
+  // If mirror or obj is dead, only null-path is taken.
+  if (stopped())  return true;
 
   enum { _normal_path = 1, _slow_path = 2, PATH_LIMIT };
   RegionNode* result_reg = new(C, PATH_LIMIT) RegionNode(PATH_LIMIT);
@@ -3827,24 +3854,22 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
   if (!stopped()) {
     // Copy the fastest available way.
     // (No need for PreserveJVMState, since we're using it all up now.)
+    // TODO: generate fields/elements copies for small objects instead.
     Node* src  = obj;
     Node* dest = raw_obj;
-    Node* end  = dest;
     Node* size = _gvn.transform(alloc_siz);
 
     // Exclude the header.
     int base_off = instanceOopDesc::base_offset_in_bytes();
     if (UseCompressedOops) {
-      // copy the header gap though.
-      Node* sptr = basic_plus_adr(src,  base_off);
-      Node* dptr = basic_plus_adr(dest, base_off);
-      Node* sval = make_load(control(), sptr, TypeInt::INT, T_INT, raw_adr_type);
-      store_to_memory(control(), dptr, sval, T_INT, raw_adr_type);
-      base_off += sizeof(int);
+      assert(base_off % BytesPerLong != 0, "base with compressed oops");
+      // With compressed oops base_offset_in_bytes is 12 which creates
+      // the gap since countx is rounded by 8 bytes below.
+      // Copy klass and the gap.
+      base_off = instanceOopDesc::klass_offset_in_bytes();
     }
     src  = basic_plus_adr(src,  base_off);
     dest = basic_plus_adr(dest, base_off);
-    end  = basic_plus_adr(end,  size);
 
     // Compute the length also, if needed:
     Node* countx = size;
@@ -4388,7 +4413,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
       // (At this point we can assume disjoint_bases, since types differ.)
       int ek_offset = objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc);
       Node* p1 = basic_plus_adr(dest_klass, ek_offset);
-      Node* n1 = new (C, 3) LoadKlassNode(0, immutable_memory(), p1, TypeRawPtr::BOTTOM);
+      Node* n1 = LoadKlassNode::make(_gvn, immutable_memory(), p1, TypeRawPtr::BOTTOM);
       Node* dest_elem_klass = _gvn.transform(n1);
       Node* cv = generate_checkcast_arraycopy(adr_type,
                                               dest_elem_klass,
