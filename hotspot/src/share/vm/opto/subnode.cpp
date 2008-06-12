@@ -45,10 +45,13 @@ Node *SubNode::Identity( PhaseTransform *phase ) {
     return in(2)->in(2);
   }
 
-  // Convert "(X+Y) - Y" into X
+  // Convert "(X+Y) - Y" into X and "(X+Y) - X" into Y
   if( in(1)->Opcode() == Op_AddI ) {
     if( phase->eqv(in(1)->in(2),in(2)) )
       return in(1)->in(1);
+    if (phase->eqv(in(1)->in(1),in(2)))
+      return in(1)->in(2);
+
     // Also catch: "(X + Opaque2(Y)) - Y".  In this case, 'Y' is a loop-varying
     // trip counter and X is likely to be loop-invariant (that's how O2 Nodes
     // are originally used, although the optimizer sometimes jiggers things).
