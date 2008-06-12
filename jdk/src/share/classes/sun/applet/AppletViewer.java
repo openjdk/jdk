@@ -587,9 +587,9 @@ public class AppletViewer extends Frame implements AppletContext,
         Dimension d = panel.size();
         Insets in = panel.insets();
         panel.atts.put("width",
-                       new Integer(d.width - (in.left + in.right)).toString());
+                       Integer.toString(d.width - (in.left + in.right)));
         panel.atts.put("height",
-                       new Integer(d.height - (in.top + in.bottom)).toString());
+                       Integer.toString(d.height - (in.top + in.bottom)));
     }
 
     /**

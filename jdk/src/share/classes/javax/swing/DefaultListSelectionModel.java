@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package javax.swing;
 import java.util.EventListener;
 import java.util.BitSet;
 import java.io.Serializable;
+import java.beans.Transient;
 
 import javax.swing.event.*;
 
@@ -714,11 +715,13 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
     }
 
     /** {@inheritDoc} */
+    @Transient
     public int getAnchorSelectionIndex() {
         return anchorIndex;
     }
 
     /** {@inheritDoc} */
+    @Transient
     public int getLeadSelectionIndex() {
         return leadIndex;
     }

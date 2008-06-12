@@ -893,6 +893,31 @@ public class TrueTypeFont extends FileFont {
         return null;
     }
 
+    /* Used to determine if this size has embedded bitmaps, which
+     * for CJK fonts should be used in preference to LCD glyphs.
+     */
+    boolean useEmbeddedBitmapsForSize(int ptSize) {
+        if (!supportsCJK) {
+            return false;
+        }
+        if (getDirectoryEntry(EBLCTag) == null) {
+            return false;
+        }
+        ByteBuffer eblcTable = getTableBuffer(EBLCTag);
+        int numSizes = eblcTable.getInt(4);
+        /* The bitmapSizeTable's start at offset of 8.
+         * Each bitmapSizeTable entry is 48 bytes.
+         * The offset of ppemY in the entry is 45.
+         */
+        for (int i=0;i<numSizes;i++) {
+            int ppemY = eblcTable.get(8+(i*48)+45) &0xff;
+            if (ppemY == ptSize) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public String getFullName() {
         return fullName;
     }

@@ -215,7 +215,7 @@ class TablePrintable implements Printable {
         }
 
         // to pass the page number when formatting the header and footer text
-        Object[] pageNumber = new Object[]{new Integer(pageIndex + 1)};
+        Object[] pageNumber = new Object[]{Integer.valueOf(pageIndex + 1)};
 
         // fetch the formatted header text, if any
         String headerText = null;

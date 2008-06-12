@@ -32,6 +32,7 @@ public class AttributeClass {
     private int nameLen;
     private Object myValue;
 
+    public static final int TAG_UNSUPPORTED_VALUE = 0x10;
     public static final int TAG_INT = 0x21;
     public static final int TAG_BOOL = 0x22;
     public static final int TAG_ENUM = 0x23;

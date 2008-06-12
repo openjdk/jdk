@@ -1,13 +1,13 @@
 #!/bin/sh
 # @test Arrrghs.sh
-# @bug 5030233 6214916 6356475 6571029
+# @bug 5030233 6214916 6356475 6571029 6684582
 # @build Arrrghs
 # @run shell Arrrghs.sh
 # @summary Argument parsing validation.
 # @author Joseph E. Kowalski
 
 #
-# Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,44 @@ TestHelp() {
 }
 
 #
+# Test to ensure that a missing main class is indicated in the error message
+#
+TestMissingMainClass() {
+	# First create a small jar file with no main
+        printf "public class Foo {}\n" > Foo.java
+	$TESTJAVA/bin/javac Foo.java
+	if [ $? -ne 0 ]; then
+		printf "Error: compilation of Foo.java failed\n" 
+ 		exit 1
+	fi
+	printf "Main-Class: Bar\n" > manifest
+	$TESTJAVA/bin/jar -cvfm some.jar manifest Foo.class
+	if [ ! -f some.jar ]; then
+		printf "Error: did not find some.jar\n" 
+ 		exit 1
+	fi
+
+	# test a non-existence main-class using -jar 
+	mess="`$TESTJAVA/bin/java -jar some.jar 2>&1 1>/dev/null`"
+	echo $mess | grep 'Bar' 2>&1 > /dev/null
+	if [ $? -ne 0 ]; then
+		printf "Error: did not find main class missing message\n"
+		exit 1
+	fi
+
+	# test a non-existent main-class using classpath
+	mess="`$TESTJAVA/bin/java -cp some.jar Bar 2>&1 1>/dev/null`"
+	echo $mess | grep 'Bar' 2>&1 > /dev/null
+	if [ $? -ne 0 ]; then
+		printf "Error: did not find main class missing message\n"
+		exit 1
+	fi
+
+	# cleanup
+	rm -f some.jar Foo.* manifest
+}
+
+#
 # Main processing:
 #
 
@@ -117,6 +155,7 @@ TestCP javac -cp
 TestCP javac -classpath
 TestXUsage
 TestHelp
+TestMissingMainClass
 
 #
 # Tests for 6214916

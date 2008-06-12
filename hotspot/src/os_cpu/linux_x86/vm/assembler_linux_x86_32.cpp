@@ -40,7 +40,7 @@ void MacroAssembler::get_thread(Register thread) {
   movptr(thread, tls);
 }
 
-bool MacroAssembler::needs_explicit_null_check(int offset) {
+bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
   // Linux kernel guarantees that the first page is always unmapped. Don't
   // assume anything more than that.
   bool offset_in_first_page =   0 <= offset  &&  offset < os::vm_page_size();

@@ -1610,8 +1610,12 @@ void NAME_SOLID_DRAWGLYPHLIST(DST)(SurfaceDataRasInfo *pRasInfo, \
                        MUL8(SRC_PREFIX ## A, mixValSrc); \
                 MultMultAddAndStore4ByteArgbComps(dst, mixValDst, dst, \
                                                   mixValSrc, SRC_PREFIX); \
-                Store ## DST ## From4ByteArgb(DST_PTR, pix, PIXEL_INDEX, \
-                                              dstA, dstR, dstG, dstB); \
+                if (!(DST ## IsOpaque) && \
+                    !(DST ## IsPremultiplied) && dstA && dstA < 255) { \
+                    DivideAndStore4ByteArgbComps(dst, dst, dstA); \
+                } \
+                Store ## DST ## From4ByteArgbComps(DST_PTR, pix, \
+                                                   PIXEL_INDEX, dst); \
             } else { \
                 Store ## DST ## PixelData(DST_PTR, PIXEL_INDEX, \
                                           FG_PIXEL, PREFIX); \
@@ -1793,8 +1797,12 @@ void NAME_SOLID_DRAWGLYPHLISTAA(DST)(SurfaceDataRasInfo *pRasInfo, \
                 dstR = gammaLut[dstR]; \
                 dstG = gammaLut[dstG]; \
                 dstB = gammaLut[dstB]; \
-                Store ## DST ## From4ByteArgb(DST_PTR, pix, PIXEL_INDEX, \
-                                              dstA, dstR, dstG, dstB); \
+                if (!(DST ## IsOpaque) && \
+                    !(DST ## IsPremultiplied) && dstA && dstA < 255) { \
+                    DivideAndStore4ByteArgbComps(dst, dst, dstA); \
+                } \
+                Store ## DST ## From4ByteArgbComps(DST_PTR, pix, \
+                                                   PIXEL_INDEX, dst); \
             } else { \
                 Store ## DST ## PixelData(DST_PTR, PIXEL_INDEX, \
                                           FG_PIXEL, PREFIX); \
