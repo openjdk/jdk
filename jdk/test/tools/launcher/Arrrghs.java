@@ -1,17 +1,5 @@
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +21,19 @@ import java.util.StringTokenizer;
  * have any questions.
  */
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 
-public class Arrrghs{
+public class Arrrghs {
 
     /**
      * A group of tests to ensure that arguments are passed correctly to
@@ -113,12 +112,10 @@ public class Arrrghs{
         return retval;
     }
 
-
-
     private static boolean doExec0(ProcessBuilder pb, String expectedArguments) {
         boolean retval = false;
         try {
-            pb.redirectErrorStream(_debug);
+            pb.redirectErrorStream(true);
             Process p = pb.start();
             retval = detectCookie(p.getInputStream(), expectedArguments);
             p.waitFor();
@@ -166,7 +163,6 @@ public class Arrrghs{
                 doUsage("The java executable must exist");
             }
         }
-
 
         if (_debug) System.out.println("Starting Arrrghs tests");
         // Basic test

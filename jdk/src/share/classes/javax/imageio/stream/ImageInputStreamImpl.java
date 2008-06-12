@@ -778,8 +778,8 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      */
     public void mark() {
         try {
-            markByteStack.push(new Long(getStreamPosition()));
-            markBitStack.push(new Integer(getBitOffset()));
+            markByteStack.push(Long.valueOf(getStreamPosition()));
+            markBitStack.push(Integer.valueOf(getBitOffset()));
         } catch (IOException e) {
         }
     }

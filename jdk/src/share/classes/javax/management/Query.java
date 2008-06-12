@@ -979,8 +979,18 @@ package javax.management;
          if (query == null)
              return null;
 
-         if (query instanceof ToQueryString)
-             return ((ToQueryString) query).toQueryString();
+         // This is ugly. At one stage we had a non-public class called
+         // ToQueryString with the toQueryString() method, and every class
+         // mentioned here inherited from that class. But that interfered
+         // with serialization of custom subclasses of e.g. QueryEval. Even
+         // though we could make it work by adding a public constructor to this
+         // non-public class, that seemed fragile because according to the
+         // serialization spec it shouldn't work. If only non-public interfaces
+         // could have non-public methods.
+         if (query instanceof ObjectName)
+             return ((ObjectName) query).toQueryString();
+         if (query instanceof QueryEval)
+             return ((QueryEval) query).toQueryString();
 
          return query.toString();
      }

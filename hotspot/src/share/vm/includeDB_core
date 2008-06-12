@@ -3507,6 +3507,7 @@ relocInfo.hpp                           top.hpp
 relocInfo_<arch>.cpp                    assembler.inline.hpp
 relocInfo_<arch>.cpp                    assembler_<arch_model>.inline.hpp
 relocInfo_<arch>.cpp                    nativeInst_<arch>.hpp
+relocInfo_<arch>.cpp                    oop.inline.hpp
 relocInfo_<arch>.cpp                    relocInfo.hpp
 relocInfo_<arch>.cpp                    safepoint.hpp
 

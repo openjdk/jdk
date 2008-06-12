@@ -653,6 +653,7 @@ class java_lang_boxing_object: AllStatic {
    hc_value_offset = 0
   };
   static int value_offset;
+  static int long_value_offset;
 
   static oop initialize_and_allocate(BasicType type, TRAPS);
  public:
@@ -665,7 +666,10 @@ class java_lang_boxing_object: AllStatic {
   static bool is_instance(oop box)                 { return basic_type(box) != T_ILLEGAL; }
   static bool is_instance(oop box, BasicType type) { return basic_type(box) == type; }
 
-  static int value_offset_in_bytes() { return value_offset; }
+  static int value_offset_in_bytes(BasicType type) {
+    return ( type == T_LONG || type == T_DOUBLE ) ? long_value_offset :
+                                                    value_offset;
+  }
 
   // Debugging
   friend class JavaClasses;
@@ -747,7 +751,7 @@ class java_lang_ref_SoftReference: public java_lang_ref_Reference {
  public:
   enum {
    // The timestamp is a long field and may need to be adjusted for alignment.
-   hc_timestamp_offset    = align_object_offset_(hc_discovered_offset + 1)
+   hc_timestamp_offset  = hc_discovered_offset + 1
   };
   enum {
    hc_static_clock_offset = 0

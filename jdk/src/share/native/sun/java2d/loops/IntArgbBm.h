@@ -38,6 +38,8 @@
 typedef jint    IntArgbBmPixelType;
 typedef jint    IntArgbBmDataType;
 
+#define IntArgbBmIsOpaque 0
+
 #define IntArgbBmPixelStride    4
 
 #define DeclareIntArgbBmLoadVars(PREFIX)

@@ -1970,7 +1970,7 @@ class AccessibleHTML implements Accessible {
 
                     for (int i = 0; i < nRows; i++) {
                         if (isAccessibleRowSelected(i)) {
-                            vec.addElement(new Integer(i));
+                            vec.addElement(Integer.valueOf(i));
                         }
                     }
                     int retval[] = new int[vec.size()];
@@ -1995,7 +1995,7 @@ class AccessibleHTML implements Accessible {
 
                     for (int i = 0; i < nColumns; i++) {
                         if (isAccessibleColumnSelected(i)) {
-                            vec.addElement(new Integer(i));
+                            vec.addElement(Integer.valueOf(i));
                         }
                     }
                     int retval[] = new int[vec.size()];
@@ -2139,7 +2139,7 @@ class AccessibleHTML implements Accessible {
                 private int columnCount = 0;
 
                 public void addHeader(TableCellElementInfo cellInfo, int rowNumber) {
-                    Integer rowInteger = new Integer(rowNumber);
+                    Integer rowInteger = Integer.valueOf(rowNumber);
                     ArrayList list = (ArrayList)headers.get(rowInteger);
                     if (list == null) {
                         list = new ArrayList();
@@ -2201,7 +2201,7 @@ class AccessibleHTML implements Accessible {
                 }
 
                 private TableCellElementInfo getElementInfoAt(int r, int c) {
-                    ArrayList list = (ArrayList)headers.get(new Integer(r));
+                    ArrayList list = (ArrayList)headers.get(Integer.valueOf(r));
                     if (list != null) {
                         return (TableCellElementInfo)list.get(c);
                     } else {

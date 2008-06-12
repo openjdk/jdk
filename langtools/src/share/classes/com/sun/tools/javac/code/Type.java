@@ -640,6 +640,10 @@ public class Type implements PrimitiveType {
             return typarams_field;
         }
 
+        public boolean hasErasedSupertypes() {
+            return isRaw();
+        }
+
         public Type getEnclosingType() {
             return outer_field;
         }
@@ -708,6 +712,17 @@ public class Type implements PrimitiveType {
 
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitDeclared(this, p);
+        }
+    }
+
+    public static class ErasedClassType extends ClassType {
+        public ErasedClassType(Type outer, TypeSymbol tsym) {
+            super(outer, List.<Type>nil(), tsym);
+        }
+
+        @Override
+        public boolean hasErasedSupertypes() {
+            return true;
         }
     }
 

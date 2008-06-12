@@ -54,7 +54,7 @@ Java_sun_awt_DefaultMouseInfoPeer_fillPointWithCoords(JNIEnv *env, jclass cls,
      int i;
      int32_t xr, yr, xw, yw;
      uint32_t keys;
-     BOOL pointerFound;
+     Bool pointerFound;
 
      AWT_LOCK();
      if (pointClass == NULL) {
@@ -102,7 +102,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_DefaultMouseInfoPeer_isWindowUnderMouse
     int32_t xr = 0, yr = 0, xw = 0, yw = 0;
     uint32_t keys = 0;
     uint32_t nchildren = 0;
-    BOOL pointerFound = 0;
+    Bool pointerFound = 0;
     struct FrameData *wdata = NULL;
     jobject winPeer = NULL;
 

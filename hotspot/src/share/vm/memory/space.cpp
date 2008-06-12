@@ -844,6 +844,7 @@ void ContiguousSpace::allocate_temporary_filler(int factor) {
            "size for smallest fake object doesn't match");
     instanceOop obj = (instanceOop) allocate(size);
     obj->set_mark(markOopDesc::prototype());
+    obj->set_klass_gap(0);
     obj->set_klass(SystemDictionary::object_klass());
   }
 }

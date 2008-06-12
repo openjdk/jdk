@@ -223,7 +223,7 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
   assert(Rsub_klass != rcx, "rcx holds 2ndary super array length");
   assert(Rsub_klass != rdi, "rdi holds 2ndary super array scan ptr");
 
-  Label not_subtype, loop;
+  Label not_subtype, not_subtype_pop, loop;
 
   // Profile the not-null value's klass.
   profile_typecheck(rcx, Rsub_klass, rdi); // blows rcx, rdi
@@ -262,12 +262,13 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
   // and we store values in objArrays always encoded, thus we need to encode value
   // before repne
   if (UseCompressedOops) {
+    pushq(rax);
     encode_heap_oop(rax);
     repne_scanl();
     // Not equal?
-    jcc(Assembler::notEqual, not_subtype);
-    // decode heap oop here for movq
-    decode_heap_oop(rax);
+    jcc(Assembler::notEqual, not_subtype_pop);
+    // restore heap oop here for movq
+    popq(rax);
   } else {
     repne_scanq();
     jcc(Assembler::notEqual, not_subtype);
@@ -277,9 +278,10 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
                Klass::secondary_super_cache_offset_in_bytes()), rax);
   jmp(ok_is_subtype);
 
+  bind(not_subtype_pop);
+  // restore heap oop here for miss
+  if (UseCompressedOops) popq(rax);
   bind(not_subtype);
-  // decode heap oop here for miss
-  if (UseCompressedOops) decode_heap_oop(rax);
   profile_typecheck_failed(rcx); // blows rcx
 }
 

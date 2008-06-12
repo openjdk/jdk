@@ -25,13 +25,13 @@
 
 package sun.management;
 
+import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
 import java.lang.management.MemoryNotificationInfo;
 import java.lang.management.MemoryManagerMXBean;
 import java.lang.management.MemoryPoolMXBean;
 import javax.management.ObjectName;
-import javax.management.MalformedObjectNameException;
 import javax.management.MBeanNotificationInfo;
 import javax.management.Notification;
 import javax.management.NotificationEmitter;
@@ -88,7 +88,7 @@ class MemoryImpl extends NotificationEmitterSupport
     }
 
     public void setVerbose(boolean value) {
-        ManagementFactory.checkControlAccess();
+        Util.checkControlAccess();
 
         setVerboseGC(value);
     }
@@ -150,19 +150,6 @@ class MemoryImpl extends NotificationEmitterSupport
         return ++seqNumber;
     }
 
-    private static ObjectName objname = null;
-    private static synchronized ObjectName getObjectName() {
-        if (objname != null) return objname;
-
-        try {
-            objname = new ObjectName(java.lang.management.ManagementFactory.MEMORY_MXBEAN_NAME);
-        } catch (MalformedObjectNameException e) {
-            // should never reach here
-            throw Util.newInternalError(e);
-        }
-        return objname;
-    }
-
     static void createNotification(String notifType,
                                    String poolName,
                                    MemoryUsage usage,
@@ -175,7 +162,7 @@ class MemoryImpl extends NotificationEmitterSupport
         long timestamp = System.currentTimeMillis();
         String msg = getNotifMsg(notifType);
         Notification notif = new Notification(notifType,
-                                              getObjectName(),
+                                              mbean.getObjectName(),
                                               getNextSeqNumber(),
                                               timestamp,
                                               msg);
@@ -187,6 +174,10 @@ class MemoryImpl extends NotificationEmitterSupport
             MemoryNotifInfoCompositeData.toCompositeData(info);
         notif.setUserData(cd);
         mbean.sendNotification(notif);
+    }
+
+    public ObjectName getObjectName() {
+        return Util.newObjectName(ManagementFactory.MEMORY_MXBEAN_NAME);
     }
 
 }

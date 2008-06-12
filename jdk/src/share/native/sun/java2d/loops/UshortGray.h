@@ -36,6 +36,8 @@
 typedef jushort UshortGrayPixelType;
 typedef jushort UshortGrayDataType;
 
+#define UshortGrayIsOpaque 1
+
 #define UshortGrayPixelStride           2
 #define UshortGrayBitsPerPixel         16
 

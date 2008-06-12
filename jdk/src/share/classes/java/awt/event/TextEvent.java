@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,15 @@ import java.awt.AWTEvent;
  * this <code>TextEvent</code> when the event occurs. The listener is
  * spared the details of processing individual mouse movements and key strokes
  * Instead, it can process a "meaningful" (semantic) event like "text changed".
+ * <p>
+ * An unspecified behavior will be caused if the {@code id} parameter
+ * of any particular {@code TextEvent} instance is not
+ * in the range from {@code TEXT_FIRST} to {@code TEXT_LAST}.
  *
  * @author Georges Saab
  *
  * @see java.awt.TextComponent
  * @see TextListener
- * @see <a href="http://java.sun.com/docs/books/tutorial/post1.0/ui/textlistener.html">Tutorial: Writing a Text Listener</a>
  *
  * @since 1.1
  */
@@ -72,15 +75,18 @@ public class TextEvent extends AWTEvent {
 
     /**
      * Constructs a <code>TextEvent</code> object.
-     * <p>Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior. This method throws an
+     * <p> This method throws an
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
      *
-     * @param source the (<code>TextComponent</code>) object that
+     * @param source The (<code>TextComponent</code>) object that
      *               originated the event
-     * @param id     an integer that identifies the event type
+     * @param id     An integer that identifies the event type.
+     *                     For information on allowable values, see
+     *                     the class description for {@link TextEvent}
      * @throws IllegalArgumentException if <code>source</code> is null
+     * @see #getSource()
+     * @see #getID()
      */
     public TextEvent(Object source, int id) {
         super(source, id);

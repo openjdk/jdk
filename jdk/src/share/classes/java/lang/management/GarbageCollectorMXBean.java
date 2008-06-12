@@ -48,9 +48,13 @@ package java.lang.management;
  *    <tt>java.lang:type=GarbageCollector</tt>}<tt>,name=</tt><i>collector's name</i>
  * </blockquote>
  *
+ * It can be obtained by calling the
+ * {@link PlatformManagedObject#getObjectName} method.
+ *
  * A platform usually includes additional platform-dependent information
  * specific to a garbage collection algorithm for monitoring.
  *
+ * @see ManagementFactory#getPlatformMXBeans(Class)
  * @see MemoryMXBean
  *
  * @see <a href="../../../javax/management/package-summary.html">

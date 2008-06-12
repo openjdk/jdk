@@ -36,7 +36,15 @@ inline markOop oopDesc::cas_set_mark(markOop new_mark, markOop old_mark) {
 inline klassOop oopDesc::klass() const {
   if (UseCompressedOops) {
     return (klassOop)decode_heap_oop_not_null(_metadata._compressed_klass);
-      // can be NULL in CMS, but isn't supported on CMS yet.
+  } else {
+    return _metadata._klass;
+  }
+}
+
+inline klassOop oopDesc::klass_or_null() const volatile {
+  // can be NULL in CMS
+  if (UseCompressedOops) {
+    return (klassOop)decode_heap_oop(_metadata._compressed_klass);
   } else {
     return _metadata._klass;
   }
@@ -64,12 +72,19 @@ inline void oopDesc::set_klass(klassOop k) {
   assert(Universe::is_bootstrapping() || k != NULL, "must be a real klassOop");
   assert(Universe::is_bootstrapping() || k->is_klass(), "not a klassOop");
   if (UseCompressedOops) {
-    // zero the gap when the klass is set, by zeroing the pointer sized
-    // part of the union.
-    _metadata._klass = NULL;
     oop_store_without_check(compressed_klass_addr(), (oop)k);
   } else {
     oop_store_without_check(klass_addr(), (oop) k);
+  }
+}
+
+inline int oopDesc::klass_gap() const {
+  return *(int*)(((intptr_t)this) + klass_gap_offset_in_bytes());
+}
+
+inline void oopDesc::set_klass_gap(int v) {
+  if (UseCompressedOops) {
+    *(int*)(((intptr_t)this) + klass_gap_offset_in_bytes()) = v;
   }
 }
 
@@ -510,7 +525,7 @@ inline bool oopDesc::is_oop(bool ignore_mark_word) const {
   // try to find metaclass cycle safely without seg faulting on bad input
   // we should reach klassKlassObj by following klass link at most 3 times
   for (int i = 0; i < 3; i++) {
-    obj = obj->klass();
+    obj = obj->klass_or_null();
     // klass should be aligned and in permspace
     if (!check_obj_alignment(obj)) return false;
     if (!Universe::heap()->is_in_permanent(obj)) return false;

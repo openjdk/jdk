@@ -205,11 +205,31 @@ public class CookieManager extends CookieHandler
         if (cookieJar == null)
             return Collections.unmodifiableMap(cookieMap);
 
+        boolean secureLink = "https".equalsIgnoreCase(uri.getScheme());
         List<HttpCookie> cookies = new java.util.ArrayList<HttpCookie>();
+        String path = uri.getPath();
+        if (path == null || path.isEmpty()) {
+            path = "/";
+        }
         for (HttpCookie cookie : cookieJar.get(uri)) {
             // apply path-matches rule (RFC 2965 sec. 3.3.4)
-            if (pathMatches(uri.getPath(), cookie.getPath())) {
-                cookies.add(cookie);
+            // and check for the possible "secure" tag (i.e. don't send
+            // 'secure' cookies over unsecure links)
+            if (pathMatches(path, cookie.getPath()) &&
+                    (secureLink || !cookie.getSecure())) {
+                // Let's check the authorize port list if it exists
+                String ports = cookie.getPortlist();
+                if (ports != null && !ports.isEmpty()) {
+                    int port = uri.getPort();
+                    if (port == -1) {
+                        port = "https".equals(uri.getScheme()) ? 443 : 80;
+                    }
+                    if (isInPortList(ports, port)) {
+                        cookies.add(cookie);
+                    }
+                } else {
+                    cookies.add(cookie);
+                }
             }
         }
 
@@ -251,8 +271,46 @@ public class CookieManager extends CookieHandler
                 try {
                     List<HttpCookie> cookies = HttpCookie.parse(headerValue);
                     for (HttpCookie cookie : cookies) {
-                        if (shouldAcceptInternal(uri, cookie)) {
-                            cookieJar.add(uri, cookie);
+                        if (cookie.getPath() == null) {
+                            // If no path is specified, then by default
+                            // the path is the directory of the page/doc
+                            String path = uri.getPath();
+                            if (!path.endsWith("/")) {
+                                int i = path.lastIndexOf("/");
+                                if (i > 0) {
+                                    path = path.substring(0, i + 1);
+                                } else {
+                                    path = "/";
+                                }
+                            }
+                            cookie.setPath(path);
+                        }
+                        String ports = cookie.getPortlist();
+                        if (ports != null) {
+                            int port = uri.getPort();
+                            if (port == -1) {
+                                port = "https".equals(uri.getScheme()) ? 443 : 80;
+                            }
+                            if (ports.isEmpty()) {
+                                // Empty port list means this should be restricted
+                                // to the incoming URI port
+                                cookie.setPortlist("" + port );
+                                if (shouldAcceptInternal(uri, cookie)) {
+                                    cookieJar.add(uri, cookie);
+                                }
+                            } else {
+                                // Only store cookies with a port list
+                                // IF the URI port is in that list, as per
+                                // RFC 2965 section 3.3.2
+                                if (isInPortList(ports, port) &&
+                                        shouldAcceptInternal(uri, cookie)) {
+                                    cookieJar.add(uri, cookie);
+                                }
+                            }
+                        } else {
+                            if (shouldAcceptInternal(uri, cookie)) {
+                                cookieJar.add(uri, cookie);
+                            }
                         }
                     }
                 } catch (IllegalArgumentException e) {
@@ -275,6 +333,32 @@ public class CookieManager extends CookieHandler
         }
     }
 
+
+    static private boolean isInPortList(String lst, int port) {
+        int i = lst.indexOf(",");
+        int val = -1;
+        while (i > 0) {
+            try {
+                val = Integer.parseInt(lst.substring(0, i));
+                if (val == port) {
+                    return true;
+                }
+            } catch (NumberFormatException numberFormatException) {
+            }
+            lst = lst.substring(i+1);
+            i = lst.indexOf(",");
+        }
+        if (!lst.isEmpty()) {
+            try {
+                val = Integer.parseInt(lst);
+                if (val == port) {
+                    return true;
+                }
+            } catch (NumberFormatException numberFormatException) {
+            }
+        }
+        return false;
+    }
 
     /*
      * path-matches algorithm, as defined by RFC 2965

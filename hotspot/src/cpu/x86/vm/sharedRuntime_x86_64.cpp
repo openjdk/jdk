@@ -1950,7 +1950,6 @@ nmethod *SharedRuntime::generate_dtrace_nmethod(MacroAssembler *masm,
   int total_strings = 0;
   int first_arg_to_pass = 0;
   int total_c_args = 0;
-  int box_offset = java_lang_boxing_object::value_offset_in_bytes();
 
   // Skip the receiver as dtrace doesn't want to see it
   if( !method->is_static() ) {
@@ -2197,8 +2196,10 @@ nmethod *SharedRuntime::generate_dtrace_nmethod(MacroAssembler *masm,
               __ testq(in_reg, in_reg);
               __ jcc(Assembler::zero, skipUnbox);
 
+              BasicType bt = out_sig_bt[c_arg];
+              int box_offset = java_lang_boxing_object::value_offset_in_bytes(bt);
               Address src1(in_reg, box_offset);
-              if ( out_sig_bt[c_arg] == T_LONG ) {
+              if ( bt == T_LONG ) {
                 __ movq(in_reg,  src1);
                 __ movq(stack_dst, in_reg);
                 assert(out_sig_bt[c_arg+1] == T_VOID, "must be");
@@ -2460,8 +2461,10 @@ nmethod *SharedRuntime::generate_dtrace_nmethod(MacroAssembler *masm,
           Label skip;
           __ testq(r, r);
           __ jcc(Assembler::equal, skip);
+          BasicType bt = out_sig_bt[c_arg];
+          int box_offset = java_lang_boxing_object::value_offset_in_bytes(bt);
           Address src1(r, box_offset);
-          if ( out_sig_bt[c_arg] == T_LONG ) {
+          if ( bt == T_LONG ) {
             __ movq(r, src1);
           } else {
             __ movl(r, src1);

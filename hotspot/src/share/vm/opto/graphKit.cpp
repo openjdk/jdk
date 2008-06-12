@@ -532,7 +532,7 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
         C->log()->elem("hot_throw preallocated='1' reason='%s'",
                        Deoptimization::trap_reason_name(reason));
       const TypeInstPtr* ex_con  = TypeInstPtr::make(ex_obj);
-      Node*              ex_node = _gvn.transform(new (C, 1) ConPNode(ex_con));
+      Node*              ex_node = _gvn.transform( ConNode::make(C, ex_con) );
 
       // Clear the detail message of the preallocated exception object.
       // Weblogic sometimes mutates the detail message of exceptions
@@ -1043,7 +1043,7 @@ Node* GraphKit::load_object_klass(Node* obj) {
   Node* akls = AllocateNode::Ideal_klass(obj, &_gvn);
   if (akls != NULL)  return akls;
   Node* k_adr = basic_plus_adr(obj, oopDesc::klass_offset_in_bytes());
-  return _gvn.transform( new (C, 3) LoadKlassNode(0, immutable_memory(), k_adr, TypeInstPtr::KLASS) );
+  return _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), k_adr, TypeInstPtr::KLASS) );
 }
 
 //-------------------------load_array_length-----------------------------------
@@ -2224,7 +2224,7 @@ Node* GraphKit::gen_subtype_check(Node* subklass, Node* superklass) {
   // cache which is mutable so can't use immutable memory.  Other
   // types load from the super-class display table which is immutable.
   Node *kmem = might_be_cache ? memory(p2) : immutable_memory();
-  Node *nkls = _gvn.transform( new (C, 3) LoadKlassNode( NULL, kmem, p2, _gvn.type(p2)->is_ptr(), TypeKlassPtr::OBJECT_OR_NULL ) );
+  Node *nkls = _gvn.transform( LoadKlassNode::make( _gvn, kmem, p2, _gvn.type(p2)->is_ptr(), TypeKlassPtr::OBJECT_OR_NULL ) );
 
   // Compile speed common case: ARE a subtype and we canNOT fail
   if( superklass == nkls )
@@ -2815,7 +2815,6 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
     // initialization, and source them from the new InitializeNode.
     // This will allow us to observe initializations when they occur,
     // and link them properly (as a group) to the InitializeNode.
-    Node* klass_node = alloc->in(AllocateNode::KlassNode);
     assert(init->in(InitializeNode::Memory) == malloc, "");
     MergeMemNode* minit_in = MergeMemNode::make(C, malloc);
     init->set_req(InitializeNode::Memory, minit_in);
