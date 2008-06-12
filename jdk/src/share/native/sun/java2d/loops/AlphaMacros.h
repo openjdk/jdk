@@ -416,7 +416,8 @@ void NAME_SRCOVER_MASKBLIT(SRC, DST) \
                             MultiplyAndStore ## STRATEGY ## Comps(res, \
                                                                   srcF, res);\
                         } \
-                        if (!(DST ## IsPremultiplied) && resA && \
+                        if (!(DST ## IsOpaque) && \
+                            !(DST ## IsPremultiplied) && resA && \
                             resA < MaxValFor ## STRATEGY) \
                         { \
                             DivideAndStore ## STRATEGY ## Comps(res, \
@@ -475,7 +476,8 @@ void NAME_SRCOVER_MASKBLIT(SRC, DST) \
                         MultiplyAndStore ## STRATEGY ## Comps(res, \
                                                               srcF, res); \
                     } \
-                    if (!(DST ## IsPremultiplied) && resA && \
+                    if (!(DST ## IsOpaque) && \
+                        !(DST ## IsPremultiplied) && resA && \
                         resA < MaxValFor ## STRATEGY) \
                     { \
                         DivideAndStore ## STRATEGY ## Comps(res, res, resA); \
@@ -797,7 +799,8 @@ void NAME_SRCOVER_MASKFILL(TYPE) \
                             Store ## STRATEGY ## CompsUsingOp(res, +=, tmp); \
                         } \
                     } \
-                    if (!(TYPE ## IsPremultiplied) && resA && \
+                    if (!(TYPE ## IsOpaque) && \
+                        !(TYPE ## IsPremultiplied) && resA && \
                         resA < MaxValFor ## STRATEGY) \
                     { \
                         DivideAndStore ## STRATEGY ## Comps(res, res, resA); \
@@ -831,7 +834,8 @@ void NAME_SRCOVER_MASKFILL(TYPE) \
                 Postload ## STRATEGY ## From ## TYPE(pRas, DstPix, res); \
                 MultiplyAddAndStore ## STRATEGY ## Comps(res, \
                                                          dstF, res, src); \
-                if (!(TYPE ## IsPremultiplied) && resA && \
+                if (!(TYPE ## IsOpaque) && \
+                    !(TYPE ## IsPremultiplied) && resA && \
                     resA < MaxValFor ## STRATEGY) \
                 { \
                     DivideAndStore ## STRATEGY ## Comps(res, res, resA); \

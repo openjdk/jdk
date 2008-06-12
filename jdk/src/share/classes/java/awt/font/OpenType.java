@@ -31,9 +31,9 @@ package java.awt.font;
  * <i>sfnt</i> tables from the font.  A particular
  * <code>Font</code> object can implement this interface.
  * <p>
- * For more information on TrueType fonts, see the
- * Apple TrueType Reference Manual
- * ( <a href="http://fonts.apple.com/TTRefMan/index.html">http://fonts.apple.com/TTRefMan/index.html</a> ).
+ * For more information on TrueType and OpenType fonts, see the
+ * OpenType specification.
+ * ( <a href=http://www.microsoft.com/typography/otspec/">http://www.microsoft.com/typography/otspec/l</a> ).
  */
 public interface OpenType {
 
