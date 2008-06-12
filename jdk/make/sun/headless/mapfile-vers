@@ -60,6 +60,7 @@ SUNWprivate_1.1 {
 		X11SurfaceData_GetOps;
 		Java_java_awt_Font_initIDs;
                 Java_sun_font_FontManager_getFontConfig;
+                Java_sun_font_FontManager_getFontConfigVersion;
                 Java_sun_font_FontManager_getFontConfigAASettings;
 		Java_sun_font_FontManager_getFontPath;
 		Java_sun_font_FontManager_setNativeFontPath;
