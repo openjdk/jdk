@@ -291,6 +291,9 @@ class CommandLineFlags {
             "Use 32-bit object references in 64-bit VM. "                   \
             "lp64_product means flag is always constant in 32 bit VM")      \
                                                                             \
+  lp64_product(bool, CheckCompressedOops, trueInDebug,                      \
+            "generate checks in encoding/decoding code")                    \
+                                                                            \
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
    * been re-added (see 6401008) */                                         \
@@ -456,6 +459,9 @@ class CommandLineFlags {
                                                                             \
   develop(bool, SpecialStringIndexOf, true,                                 \
           "special version of string indexOf")                              \
+                                                                            \
+  product(bool, SpecialArraysEquals, false,                                 \
+          "special version of Arrays.equals(char[],char[])")                \
                                                                             \
   develop(bool, TraceCallFixup, false,                                      \
           "traces all call fixups")                                         \

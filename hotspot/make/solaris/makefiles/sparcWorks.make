@@ -28,6 +28,8 @@
 CC	= cc
 CPP	= CC
 
+# Note that this 'as' is an older version of the Sun Studio 'fbe', and will
+#   use the older style options. The 'fbe' options will match 'cc' and 'CC'.
 AS	= /usr/ccs/bin/as
 
 NM	= /usr/ccs/bin/nm
@@ -43,25 +45,33 @@ $(shell $(CPP) -V 2>&1 | sed -e 's/^.*\([1-9]\.[0-9][0-9]*\).*/\1/')
 C_COMPILER_REV := \
 $(shell $(CC) -V 2>&1 | grep -i "cc:" |  sed -e 's/^.*\([1-9]\.[0-9][0-9]*\).*/\1/')
 
-VALIDATED_COMPILER_REV   := 5.8
-VALIDATED_C_COMPILER_REV := 5.8
+# Pick which compiler is validated
+ifeq ($(JDK_MINOR_VERSION),6)
+  # Validated compiler for JDK6 is SS11 (5.8)
+  VALIDATED_COMPILER_REV   := 5.8
+  VALIDATED_C_COMPILER_REV := 5.8
+else
+  # FIXUP: Change to SS12 (5.9) once it has been validated.
+  # Validated compiler for JDK7 is SS12 (5.9)
+  #VALIDATED_COMPILER_REV   := 5.9
+  #VALIDATED_C_COMPILER_REV := 5.9
+  VALIDATED_COMPILER_REV   := 5.8
+  VALIDATED_C_COMPILER_REV := 5.8
+endif
 
+# Warning messages about not using the above validated version
 ENFORCE_COMPILER_REV${ENFORCE_COMPILER_REV} := ${VALIDATED_COMPILER_REV}
 ifneq (${COMPILER_REV},${ENFORCE_COMPILER_REV})
-dummy_target_to_enforce_compiler_rev:
-	@echo "Wrong ${CPP} version:  ${COMPILER_REV}. " \
-	"Use version ${ENFORCE_COMPILER_REV}, or set" \
-	"ENFORCE_COMPILER_REV=${COMPILER_REV}."
-	@exit 1
+dummy_target_to_enforce_compiler_rev:=\
+$(info WARNING: You are using CC version ${COMPILER_REV} \
+and should be using version ${ENFORCE_COMPILER_REV})
 endif
 
 ENFORCE_C_COMPILER_REV${ENFORCE_C_COMPILER_REV} := ${VALIDATED_C_COMPILER_REV}
 ifneq (${C_COMPILER_REV},${ENFORCE_C_COMPILER_REV})
-dummy_target_to_enforce_c_compiler_rev:
-	@echo "Wrong ${CC} version:  ${C_COMPILER_REV}. " \
-	"Use version ${ENFORCE_C_COMPILER_REV}, or set" \
-	"ENFORCE_C_COMPILER_REV=${C_COMPILER_REV}."
-	@exit 1
+dummy_target_to_enforce_c_compiler_rev:=\
+$(info WARNING: You are using cc version ${C_COMPILER_REV} \
+and should be using version ${ENFORCE_C_COMPILER_REV})
 endif
 
 # Fail the build if __fabsf is used.  __fabsf exists only in Solaris 8 2/04
@@ -90,20 +100,44 @@ SOLARIS_7_OR_LATER := \
 $(shell uname -r | awk -F. '{ if ($$2 >= 7) print "-DSOLARIS_7_OR_LATER"; }')
 CFLAGS += ${SOLARIS_7_OR_LATER}
 
-ARCHFLAG         = $(ARCHFLAG/$(BUILDARCH))
-# set ARCHFLAG/BUILDARCH which will ultimately be ARCHFLAG
+# New architecture options started in SS12 (5.9), we need both styles to build.
+#   The older arch options for SS11 (5.8) or older and also for /usr/ccs/bin/as.
+#   Note: SS12 default for 32bit sparc is now the same as v8plus, so the
+#         settings below have changed all SS12 32bit sparc builds to be v8plus.
+#         The older SS11 (5.8) settings have remained as they always have been.
 ifeq ($(TYPE),COMPILER2)
-ARCHFLAG/sparc   = -xarch=v8plus
+  ARCHFLAG_OLD/sparc   = -xarch=v8plus
 else
-ifeq ($(TYPE),TIERED)
-ARCHFLAG/sparc   = -xarch=v8plus
+  ifeq ($(TYPE),TIERED)
+    ARCHFLAG_OLD/sparc = -xarch=v8plus
+  else
+    ARCHFLAG_OLD/sparc = -xarch=v8
+  endif
+endif
+ARCHFLAG_NEW/sparc   = -m32 -xarch=sparc
+ARCHFLAG_OLD/sparcv9 = -xarch=v9
+ARCHFLAG_NEW/sparcv9 = -m64 -xarch=sparc
+ARCHFLAG_OLD/i486    =
+ARCHFLAG_NEW/i486    = -m32
+ARCHFLAG_OLD/amd64   = -xarch=amd64
+ARCHFLAG_NEW/amd64   = -m64
+
+# Select the ARCHFLAGs and other SS12 (5.9) options
+ifeq ($(shell expr $(COMPILER_REV) \>= 5.9), 1)
+  ARCHFLAG/sparc   = $(ARCHFLAG_NEW/sparc)
+  ARCHFLAG/sparcv9 = $(ARCHFLAG_NEW/sparcv9)
+  ARCHFLAG/i486    = $(ARCHFLAG_NEW/i486)
+  ARCHFLAG/amd64   = $(ARCHFLAG_NEW/amd64)
 else
-ARCHFLAG/sparc   = -xarch=v8
+  ARCHFLAG/sparc   = $(ARCHFLAG_OLD/sparc)
+  ARCHFLAG/sparcv9 = $(ARCHFLAG_OLD/sparcv9)
+  ARCHFLAG/i486    = $(ARCHFLAG_OLD/i486)
+  ARCHFLAG/amd64   = $(ARCHFLAG_OLD/amd64)
 endif
-endif
-ARCHFLAG/sparcv9 = -xarch=v9
-ARCHFLAG/i486  =
-ARCHFLAG/amd64  = -xarch=amd64
+
+# ARCHFLAGS for the current build arch
+ARCHFLAG    = $(ARCHFLAG/$(BUILDARCH))
+AS_ARCHFLAG = $(ARCHFLAG_OLD/$(BUILDARCH))
 
 # Optional sub-directory in /usr/lib where BUILDARCH libraries are kept.
 ISA_DIR=$(ISA_DIR/$(BUILDARCH))
@@ -166,13 +200,13 @@ endif # 32bit x86
 
 ifeq ("${Platform_arch_model}", "x86_64")
 
-ASFLAGS += -xarch=amd64
-CFLAGS  += -xarch=amd64
+ASFLAGS += $(AS_ARCHFLAG)
+CFLAGS  += $(ARCHFLAG/amd64)
 # this one seemed useless
-LFLAGS_VM  += -xarch=amd64
+LFLAGS_VM  += $(ARCHFLAG/amd64)
 # this one worked
-LFLAGS  += -xarch=amd64
-AOUT_FLAGS += -xarch=amd64
+LFLAGS  += $(ARCHFLAG/amd64)
+AOUT_FLAGS += $(ARCHFLAG/amd64)
 
 # -xO3 is faster than -xO4 on specjbb with SS10 compiler
 OPT_CFLAGS=-xO4 $(EXTRA_OPT_CFLAGS)
@@ -224,7 +258,7 @@ LFLAGS += -library=%none
 
 LFLAGS += -mt
 
-endif	# COMPILER_REV >= VALIDATED_COMPILER_REV
+endif	# COMPILER_REV >= 5.5
 
 ######################################
 # End 5.5 Forte compiler options     #
@@ -293,7 +327,7 @@ PICFLAG/BYFILE  = $(PICFLAG/$@)$(PICFLAG/DEFAULT$(PICFLAG/$@))
 LFLAGS += -library=Crun
 LIBS   += -library=Crun -lCrun
 
-endif	# COMPILER_REV >= VALIDATED_COMPILER_REV
+endif	# COMPILER_REV == 5.2
 
 ##################################
 # End 5.2 Forte compiler options #
@@ -320,6 +354,7 @@ ifeq	(${COMPILER_REV}, 5.0)
 
 # Had to hoist this higher apparently because of other changes. Must
 # come before -xarch specification.
+#  NOTE: native says optimize for the machine doing the compile, bad news.
 CFLAGS += -xtarget=native
 
 CFLAGS     += $(ARCHFLAG)
@@ -359,7 +394,7 @@ CFLAGS += $(GAMMADIR)/src/os_cpu/solaris_x86/vm/solaris_x86_32.il
 endif  # 32bit x86
 
 # The following options run into misaligned ldd problem (raj)
-#OPT_CFLAGS = -fast -O4 -xarch=v8 -xchip=ultra
+#OPT_CFLAGS = -fast -O4 $(ARCHFLAG/sparc) -xchip=ultra
 
 # no more exceptions
 CFLAGS/NOEX=-noex
@@ -426,6 +461,15 @@ endif
 DEBUG_CFLAGS = -g
 FASTDEBUG_CFLAGS = -g0
 # The -g0 setting allows the C++ frontend to inline, which is a big win.
+
+# Special global options for SS12
+ifeq ($(COMPILER_REV),5.9)
+  # There appears to be multiple issues with the new Dwarf2 debug format, so
+  #   we tell the compiler to use the older 'stabs' debug format all the time.
+  #   Note that this needs to be used in optimized compiles too to be 100%.
+  #   This is a workaround for SS12 (5.9) bug 6694600
+  CFLAGS += -xdebugformat=stabs
+endif
 
 # Enable the following CFLAGS additions if you need to compare the
 # built ELF objects.

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package javax.swing;
 import java.awt.*;
 import java.awt.image.*;
 import java.beans.ConstructorProperties;
+import java.beans.Transient;
 import java.net.URL;
 
 import java.io.Serializable;
@@ -336,6 +337,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * Returns this icon's <code>Image</code>.
      * @return the <code>Image</code> object for this <code>ImageIcon</code>
      */
+    @Transient
     public Image getImage() {
         return image;
     }
@@ -436,6 +438,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      *
      * @return the image observer, which may be null
      */
+    @Transient
     public ImageObserver getImageObserver() {
         return imageObserver;
     }

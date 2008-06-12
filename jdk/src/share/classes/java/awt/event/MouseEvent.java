@@ -159,6 +159,11 @@ import java.awt.IllegalComponentStateException;
  * The reported coordinates for mouse drag events are clipped to fit within the
  * bounds of the virtual device associated with the <code>Component</code>.
  * </ul>
+ * <p>
+ * An unspecified behavior will be caused if the {@code id} parameter
+ * of any particular {@code MouseEvent} instance is not
+ * in the range from {@code MOUSE_FIRST} to {@code MOUSE_LAST}-1
+ * ({@code MOUSE_WHEEL} is not acceptable).
  *
  * @author Carl Quinn
  *
@@ -418,8 +423,7 @@ public class MouseEvent extends InputEvent {
      * specified source component,
      * type, modifiers, coordinates, and click count.
      * <p>
-     * Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior.  Creating an invalid event (such
+     * Creating an invalid event (such
      * as by using more than one of the old _MASKs, or modifier/button
      * values which don't match) results in unspecified behavior.
      * An invocation of the form
@@ -435,28 +439,44 @@ public class MouseEvent extends InputEvent {
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
      *
-     * @param source       the <code>Component</code> that originated the event
-     * @param id           the integer that identifies the event
-     * @param when         a long int that gives the time the event occurred
-     * @param modifiers    the modifier keys down during event (e.g. shift, ctrl,
+     * @param source       The <code>Component</code> that originated the event
+     * @param id              An integer indicating the type of event.
+     *                     For information on allowable values, see
+     *                     the class description for {@link MouseEvent}
+     * @param when         A long integer that gives the time the event occurred.
+     *                     Passing negative or zero value
+     *                     is not recommended
+     * @param modifiers    The modifier keys down during event (e.g. shift, ctrl,
      *                     alt, meta)
-     *                     Either extended _DOWN_MASK or old _MASK modifiers
-     *                     should be used, but both models should not be mixed
-     *                     in one event. Use of the extended modifiers is
-     *                     preferred.
-     * @param x            the horizontal x coordinate for the mouse location
-     * @param y            the vertical y coordinate for the mouse location
-     * @param clickCount   the number of mouse clicks associated with event
-     * @param popupTrigger a boolean, true if this event is a trigger for a
-     *                     popup menu
-     * @param button       which of the mouse buttons has changed state.
-     *                      <code>NOBUTTON</code>,
-     *                      <code>BUTTON1</code>,
-     *                      <code>BUTTON2</code> or
-     *                      <code>BUTTON3</code>.
+     *                     Passing negative parameter
+     *                     is not recommended.
+     *                     Zero value means that no modifiers were passed.
+     *                     Use either an extended _DOWN_MASK or old _MASK modifiers,
+     *                     however do not mix models in the one event.
+     *                     The extended modifiers are preferred for using
+     * @param x            The horizontal x coordinate for the mouse location.
+     *                       It is allowed to pass negative values
+     * @param y            The vertical y coordinate for the mouse location.
+     *                       It is allowed to pass negative values
+     * @param clickCount   The number of mouse clicks associated with event.
+     *                       Passing negative value
+     *                       is not recommended
+     * @param popupTrigger A boolean that equals {@code true} if this event
+     *                     is a trigger for a popup menu
+     * @param button       An integer that indicates, which of the mouse buttons has
+     *                     changed its state
      * @throws IllegalArgumentException if an invalid <code>button</code>
      *            value is passed in
      * @throws IllegalArgumentException if <code>source</code> is null
+     * @see #getSource()
+     * @see #getID()
+     * @see #getWhen()
+     * @see #getModifiers()
+     * @see #getX()
+     * @see #getY()
+     * @see #getClickCount()
+     * @see #isPopupTrigger()
+     * @see #getButton()
      * @since 1.4
      */
     public MouseEvent(Component source, int id, long when, int modifiers,
@@ -479,8 +499,6 @@ public class MouseEvent extends InputEvent {
      * Constructs a <code>MouseEvent</code> object with the
      * specified source component,
      * type, modifiers, coordinates, and click count.
-     * <p>Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior.
      * An invocation of the form
      * <tt>MouseEvent(source, id, when, modifiers, x, y, clickCount, popupTrigger)</tt>
      * behaves in exactly the same way as the invocation
@@ -493,21 +511,39 @@ public class MouseEvent extends InputEvent {
      * This method throws an <code>IllegalArgumentException</code>
      * if <code>source</code> is <code>null</code>.
      *
-     * @param source       the <code>Component</code> that originated the event
-     * @param id           the integer that identifies the event
-     * @param when         a long int that gives the time the event occurred
-     * @param modifiers    the modifier keys down during event (e.g. shift, ctrl,
+     * @param source       The <code>Component</code> that originated the event
+     * @param id              An integer indicating the type of event.
+     *                     For information on allowable values, see
+     *                     the class description for {@link MouseEvent}
+     * @param when         A long integer that gives the time the event occurred.
+     *                     Passing negative or zero value
+     *                     is not recommended
+     * @param modifiers    The modifier keys down during event (e.g. shift, ctrl,
      *                     alt, meta)
-     *                     Either extended _DOWN_MASK or old _MASK modifiers
-     *                     should be used, but both models should not be mixed
-     *                     in one event. Use of the extended modifiers is
-     *                     preferred.
-     * @param x            the horizontal x coordinate for the mouse location
-     * @param y            the vertical y coordinate for the mouse location
-     * @param clickCount   the number of mouse clicks associated with event
-     * @param popupTrigger a boolean, true if this event is a trigger for a
-     *                     popup menu
+     *                     Passing negative parameter
+     *                     is not recommended.
+     *                     Zero value means that no modifiers were passed.
+     *                     Use either an extended _DOWN_MASK or old _MASK modifiers,
+     *                     however do not mix models in the one event.
+     *                     The extended modifiers are preferred for using
+     * @param x            The horizontal x coordinate for the mouse location.
+     *                       It is allowed to pass negative values
+     * @param y            The vertical y coordinate for the mouse location.
+     *                       It is allowed to pass negative values
+     * @param clickCount   The number of mouse clicks associated with event.
+     *                       Passing negative value
+     *                       is not recommended
+     * @param popupTrigger A boolean that equals {@code true} if this event
+     *                     is a trigger for a popup menu
      * @throws IllegalArgumentException if <code>source</code> is null
+     * @see #getSource()
+     * @see #getID()
+     * @see #getWhen()
+     * @see #getModifiers()
+     * @see #getX()
+     * @see #getY()
+     * @see #getClickCount()
+     * @see #isPopupTrigger()
      */
      public MouseEvent(Component source, int id, long when, int modifiers,
                       int x, int y, int clickCount, boolean popupTrigger) {
@@ -520,8 +556,7 @@ public class MouseEvent extends InputEvent {
      * specified source component,
      * type, modifiers, coordinates, absolute coordinates, and click count.
      * <p>
-     * Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior.  Creating an invalid event (such
+     * Creating an invalid event (such
      * as by using more than one of the old _MASKs, or modifier/button
      * values which don't match) results in unspecified behavior.
      * Even if inconsistent values for relative and absolute coordinates are
@@ -531,30 +566,50 @@ public class MouseEvent extends InputEvent {
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
      *
-     * @param source       the <code>Component</code> that originated the event
-     * @param id           the integer that identifies the event
-     * @param when         a long int that gives the time the event occurred
-     * @param modifiers    the modifier keys down during event (e.g. shift, ctrl,
+     * @param source       The <code>Component</code> that originated the event
+     * @param id              An integer indicating the type of event.
+     *                     For information on allowable values, see
+     *                     the class description for {@link MouseEvent}
+     * @param when         A long integer that gives the time the event occurred.
+     *                     Passing negative or zero value
+     *                     is not recommended
+     * @param modifiers    The modifier keys down during event (e.g. shift, ctrl,
      *                     alt, meta)
-     *                     Either extended _DOWN_MASK or old _MASK modifiers
-     *                     should be used, but both models should not be mixed
-     *                     in one event. Use of the extended modifiers is
-     *                     preferred.
-     * @param x            the horizontal x coordinate for the mouse location
-     * @param y            the vertical y coordinate for the mouse location
-     * @param xAbs         the absolute horizontal x coordinate for the mouse location
-     * @param yAbs         the absolute vertical y coordinate for the mouse location
-     * @param clickCount   the number of mouse clicks associated with event
-     * @param popupTrigger a boolean, true if this event is a trigger for a
-     *                     popup menu
-     * @param button       which of the mouse buttons has changed state.
-     *                      <code>NOBUTTON</code>,
-     *                      <code>BUTTON1</code>,
-     *                      <code>BUTTON2</code> or
-     *                      <code>BUTTON3</code>.
+     *                     Passing negative parameter
+     *                     is not recommended.
+     *                     Zero value means that no modifiers were passed.
+     *                     Use either an extended _DOWN_MASK or old _MASK modifiers,
+     *                     however do not mix models in the one event.
+     *                     The extended modifiers are preferred for using
+     * @param x            The horizontal x coordinate for the mouse location.
+     *                       It is allowed to pass negative values
+     * @param y            The vertical y coordinate for the mouse location.
+     *                       It is allowed to pass negative values
+     * @param xAbs           The absolute horizontal x coordinate for the mouse location
+     *                       It is allowed to pass negative values
+     * @param yAbs           The absolute vertical y coordinate for the mouse location
+     *                       It is allowed to pass negative values
+     * @param clickCount   The number of mouse clicks associated with event.
+     *                       Passing negative value
+     *                       is not recommended
+     * @param popupTrigger A boolean that equals {@code true} if this event
+     *                     is a trigger for a popup menu
+     * @param button       An integer that indicates, which of the mouse buttons has
+     *                     changed its state
      * @throws IllegalArgumentException if an invalid <code>button</code>
      *            value is passed in
      * @throws IllegalArgumentException if <code>source</code> is null
+     * @see #getSource()
+     * @see #getID()
+     * @see #getWhen()
+     * @see #getModifiers()
+     * @see #getX()
+     * @see #getY()
+     * @see #getXOnScreen()
+     * @see #getYOnScreen()
+     * @see #getClickCount()
+     * @see #isPopupTrigger()
+     * @see #getButton()
      * @since 1.6
      */
     public MouseEvent(Component source, int id, long when, int modifiers,
@@ -675,21 +730,26 @@ public class MouseEvent extends InputEvent {
     }
 
     /**
-     * Returns a <code>String</code> describing the modifier keys and
+     * Returns a <code>String</code> instance describing the modifier keys and
      * mouse buttons that were down during the event, such as "Shift",
      * or "Ctrl+Shift". These strings can be localized by changing
      * the <code>awt.properties</code> file.
      * <p>
-     * Note that <code>InputEvent.ALT_MASK</code> and
-     * <code>InputEvent.BUTTON2_MASK</code> have the same value,
-     * so the string "Alt" is returned for both modifiers.  Likewise,
-     * <code>InputEvent.META_MASK</code> and
-     * <code>InputEvent.BUTTON3_MASK</code> have the same value,
-     * so the string "Meta" is returned for both modifiers.
+     * Note that the <code>InputEvent.ALT_MASK</code> and
+     * <code>InputEvent.BUTTON2_MASK</code> have equal values,
+     * so the "Alt" string is returned for both modifiers.  Likewise,
+     * the <code>InputEvent.META_MASK</code> and
+     * <code>InputEvent.BUTTON3_MASK</code> have equal values,
+     * so the "Meta" string is returned for both modifiers.
+     * <p>
+     * Note that passing negative parameter is incorrect,
+     * and will cause the returning an unspecified string.
+     * Zero parameter means that no modifiers were passed and will
+     * cause the returning an empty string.
      *
-     * @param modifiers a modifier mask describing the modifier keys and
+     * @param modifiers A modifier mask describing the modifier keys and
      *                  mouse buttons that were down during the event
-     * @return string   a text description of the combination of modifier
+     * @return string   string text description of the combination of modifier
      *                  keys and mouse buttons that were down during the event
      * @see InputEvent#getModifiersExText(int)
      * @since 1.4

@@ -72,7 +72,8 @@ public:
   // This one should probably be a phase-specific function:
   static bool all_controls_dominate(Node* dom, Node* sub);
 
-  // Is this Node a MemNode or some descendent?  Default is YES.
+  // Find any cast-away of null-ness and keep its control.
+  static  Node *Ideal_common_DU_postCCP( PhaseCCP *ccp, Node* n, Node* adr );
   virtual Node *Ideal_DU_postCCP( PhaseCCP *ccp );
 
   virtual const class TypePtr *adr_type() const;  // returns bottom_type of address
@@ -150,12 +151,19 @@ public:
   // zero out the control input.
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
+  // Split instance field load through Phi.
+  Node* split_through_phi(PhaseGVN *phase);
+
   // Recover original value from boxed values
   Node *eliminate_autobox(PhaseGVN *phase);
 
   // Compute a new Type for this node.  Basically we just do the pre-check,
   // then call the virtual add() to set the type.
   virtual const Type *Value( PhaseTransform *phase ) const;
+
+  // Common methods for LoadKlass and LoadNKlass nodes.
+  const Type *klass_value_common( PhaseTransform *phase ) const;
+  Node *klass_identity_common( PhaseTransform *phase );
 
   virtual uint ideal_reg() const;
   virtual const Type *bottom_type() const;
@@ -358,13 +366,34 @@ public:
 // Load a Klass from an object
 class LoadKlassNode : public LoadPNode {
 public:
-  LoadKlassNode( Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeKlassPtr *tk = TypeKlassPtr::OBJECT )
+  LoadKlassNode( Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeKlassPtr *tk )
     : LoadPNode(c,mem,adr,at,tk) {}
   virtual int Opcode() const;
   virtual const Type *Value( PhaseTransform *phase ) const;
   virtual Node *Identity( PhaseTransform *phase );
   virtual bool depends_only_on_test() const { return true; }
+
+  // Polymorphic factory method:
+  static Node* make( PhaseGVN& gvn, Node *mem, Node *adr, const TypePtr* at,
+                     const TypeKlassPtr *tk = TypeKlassPtr::OBJECT );
 };
+
+//------------------------------LoadNKlassNode---------------------------------
+// Load a narrow Klass from an object.
+class LoadNKlassNode : public LoadNNode {
+public:
+  LoadNKlassNode( Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeNarrowOop *tk )
+    : LoadNNode(c,mem,adr,at,tk) {}
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegN; }
+  virtual int store_Opcode() const { return Op_StoreN; }
+  virtual BasicType memory_type() const { return T_NARROWOOP; }
+
+  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual Node *Identity( PhaseTransform *phase );
+  virtual bool depends_only_on_test() const { return true; }
+};
+
 
 //------------------------------LoadSNode--------------------------------------
 // Load a short (16bits signed) from memory
@@ -692,6 +721,18 @@ public:
   // a StrCompNode (conservatively) aliases with everything:
   virtual const TypePtr* adr_type() const { return TypePtr::BOTTOM; }
   virtual uint match_edge(uint idx) const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+};
+
+//------------------------------AryEq---------------------------------------
+class AryEqNode: public Node {
+public:
+  AryEqNode(Node *control, Node* s1, Node* s2): Node(control, s1, s2) {};
+  virtual int Opcode() const;
+  virtual bool depends_only_on_test() const { return false; }
+  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual const TypePtr* adr_type() const { return TypeAryPtr::CHARS; }
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };

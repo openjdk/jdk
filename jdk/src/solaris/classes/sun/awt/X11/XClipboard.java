@@ -185,7 +185,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
 
     private static class SelectionNotifyHandler implements XEventDispatcher {
         public void dispatchEvent(XEvent ev) {
-            if (ev.get_type() == XlibWrapper.SelectionNotify) {
+            if (ev.get_type() == XConstants.SelectionNotify) {
                 final XSelectionEvent xse = ev.get_xselection();
                 XClipboard clipboard = null;
                 synchronized (XClipboard.classLock) {
@@ -223,7 +223,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
                                               XDataTransferer.TARGETS_ATOM.getAtom(),
                                               getTargetsPropertyAtom().getAtom(),
                                               XWindow.getXAWTRootWindow().getWindow(),
-                                              XlibWrapper.CurrentTime);
+                                              XConstants.CurrentTime);
                 isSelectionNotifyProcessed = false;
             }
         } finally {
@@ -260,7 +260,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
 
         long[] formats = null;
 
-        if (propertyAtom == XlibWrapper.None) {
+        if (propertyAtom == XConstants.None) {
             // We treat None property atom as "empty selection".
             formats = new long[0];
         } else {
@@ -268,7 +268,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
                 new WindowPropertyGetter(XWindow.getXAWTRootWindow().getWindow(),
                                          XAtom.get(propertyAtom), 0,
                                          XSelection.MAX_LENGTH, true,
-                                         XlibWrapper.AnyPropertyType);
+                                         XConstants.AnyPropertyType);
             try {
                 targetsGetter.execute();
                 formats = XSelection.getFormats(targetsGetter);

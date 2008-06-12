@@ -285,7 +285,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
                 //System.out.println("SEND0= " + id);
                 queue = new Queue();
             }
-            Integer eventId = new Integer(id);
+            Integer eventId = Integer.valueOf(id);
             queue.enqueue(eventId);
             notifyAll();
         }

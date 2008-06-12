@@ -1,0 +1,24 @@
+<html>
+<!--
+  @test
+  @bug 4411534 4517274
+  @summary ensures that user's requestFocus() during applet initialization
+           is not ignored
+  @author  prs area=appletviewer
+  @library ../../regtesthelpers
+  @build   Util
+  @run applet AppletInitialFocusTest1.html
+  -->
+<head>
+<title> AppletInitialFocusTest1 </title>
+</head>
+<body>
+
+<h1>AppletInitialFocusTest1<br>Bug ID: 4517274</h1>
+
+<p> See the dialog box (usually in upper left corner) for instructions</p>
+
+<APPLET CODE="AppletInitialFocusTest1.class" WIDTH=200 HEIGHT=200></APPLET>
+</body>
+</html>
+

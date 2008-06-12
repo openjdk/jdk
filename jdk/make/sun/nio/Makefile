@@ -1,5 +1,5 @@
 #
-# Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -73,11 +73,21 @@ build: $(CHARSETS_JAR)
 SERVICE_DESCRIPTION = java.nio.charset.spi.CharsetProvider
 SERVICE_DESCRIPTION_PATH = META-INF/services/$(SERVICE_DESCRIPTION)
 
+GENCSDATASRC = $(BUILDDIR)/tools/CharsetMapping
+FILES_MAP = $(GENCSDATASRC)/sjis0213.map
+FILES_DAT = $(CLASSDESTDIR)/sun/nio/cs/ext/sjis0213.dat
+CHARSETMAPPING_JARFILE = $(BUILDTOOLJARDIR)/charsetmapping.jar
+
+$(FILES_DAT): $(FILES_MAP)
+	@$(prep-target)
+	$(BOOT_JAVA_CMD) -jar $(CHARSETMAPPING_JARFILE) \
+		$(FILES_MAP) $(FILES_DAT)
+
 $(CLASSDESTDIR)/$(SERVICE_DESCRIPTION_PATH): \
   $(SHARE_SRC)/classes/sun/nio/cs/ext/$(SERVICE_DESCRIPTION_PATH)
 	$(install-file)
 
-$(CHARSETS_JAR): $(FILES_class) $(CLASSDESTDIR)/$(SERVICE_DESCRIPTION_PATH)
+$(CHARSETS_JAR): $(FILES_class) $(CLASSDESTDIR)/$(SERVICE_DESCRIPTION_PATH) $(FILES_DAT)
 	$(BOOT_JAR_CMD) cf $(CHARSETS_JAR) \
 	      -C $(CLASSDESTDIR) sun \
 	      -C $(CLASSDESTDIR) $(SERVICE_DESCRIPTION_PATH)  \

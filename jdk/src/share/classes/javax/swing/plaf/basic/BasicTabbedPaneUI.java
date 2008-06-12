@@ -539,7 +539,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
         mnemonicInputMap.put(KeyStroke.getKeyStroke(mnemonic, Event.ALT_MASK),
                              "setSelectedIndex");
-        mnemonicToIndexMap.put(new Integer(mnemonic), new Integer(index));
+        mnemonicToIndexMap.put(Integer.valueOf(mnemonic), Integer.valueOf(index));
     }
 
     /**
@@ -2231,7 +2231,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                         mnemonic  -= ('a' - 'A');
                     }
                     Integer index = (Integer)ui.mnemonicToIndexMap.
-                                 get(new Integer(mnemonic));
+                                 get(Integer.valueOf(mnemonic));
                     if (index != null && pane.isEnabledAt(index.intValue())) {
                         pane.setSelectedIndex(index.intValue());
                     }

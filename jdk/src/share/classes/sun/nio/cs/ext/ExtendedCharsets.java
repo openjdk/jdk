@@ -23,9 +23,6 @@
  * have any questions.
  */
 
-/*
- */
-
 package sun.nio.cs.ext;
 
 import java.lang.ref.SoftReference;
@@ -181,6 +178,25 @@ public class ExtendedCharsets
                     "x0212",
                     "iso-ir-159",
                     "csISO159JISX02121990"
+                });
+
+        charset("x-SJIS_0213", "SJIS_0213",
+                new String[] {
+                    "sjis-0213",
+                    "sjis_0213",
+                    "sjis:2004",
+                    "sjis_0213:2004",
+                    "shift_jis_0213:2004",
+                    "shift_jis:2004"
+                });
+
+        charset("x-MS932_0213", "MS932_0213",
+                new String[] {
+                    "MS932-0213",
+                    "MS932_0213",
+                    "MS932:2004",
+                    "windows-932-0213",
+                    "windows-932:2004"
                 });
 
         charset("EUC-JP", "EUC_JP",
