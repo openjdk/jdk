@@ -38,6 +38,8 @@
 typedef jint    IntBgrPixelType;
 typedef jint    IntBgrDataType;
 
+#define IntBgrIsOpaque 1
+
 #define IntBgrPixelStride       4
 
 #define DeclareIntBgrLoadVars(PREFIX)
