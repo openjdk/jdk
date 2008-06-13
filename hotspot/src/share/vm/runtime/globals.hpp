@@ -2246,6 +2246,9 @@ class CommandLineFlags {
   product(bool, AggressiveOpts, false,                                      \
           "Enable aggressive optimizations - see arguments.cpp")            \
                                                                             \
+  product(bool, UseStringCache, false,                                      \
+          "Enable String cache capabilities on String.java")                \
+                                                                            \
   /* statistics */                                                          \
   develop(bool, UseVTune, false,                                            \
           "enable support for Intel's VTune profiler")                      \
