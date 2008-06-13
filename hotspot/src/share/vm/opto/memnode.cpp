@@ -253,10 +253,16 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
   if (dom == NULL || dom->is_top() || sub == NULL || sub->is_top())
     return false; // Conservative answer for dead code
 
-  // Check 'dom'.
+  // Check 'dom'. Skip Proj and CatchProj nodes.
   dom = dom->find_exact_control(dom);
   if (dom == NULL || dom->is_top())
     return false; // Conservative answer for dead code
+
+  if (dom == sub) {
+    // For the case when, for example, 'sub' is Initialize and the original
+    // 'dom' is Proj node of the 'sub'.
+    return false;
+  }
 
   if (dom->is_Con() || dom->is_Start() || dom->is_Root() || dom == sub)
     return true;
@@ -271,6 +277,7 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
          sub->is_Region(), "expecting only these nodes");
 
   // Get control edge of 'sub'.
+  Node* orig_sub = sub;
   sub = sub->find_exact_control(sub->in(0));
   if (sub == NULL || sub->is_top())
     return false; // Conservative answer for dead code
@@ -296,14 +303,16 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
 
     for (uint next = 0; next < dom_list.size(); next++) {
       Node* n = dom_list.at(next);
+      if (n == orig_sub)
+        return false; // One of dom's inputs dominated by sub.
       if (!n->is_CFG() && n->pinned()) {
         // Check only own control edge for pinned non-control nodes.
         n = n->find_exact_control(n->in(0));
         if (n == NULL || n->is_top())
           return false; // Conservative answer for dead code
         assert(n->is_CFG(), "expecting control");
-      }
-      if (n->is_Con() || n->is_Start() || n->is_Root()) {
+        dom_list.push(n);
+      } else if (n->is_Con() || n->is_Start() || n->is_Root()) {
         only_dominating_controls = true;
       } else if (n->is_CFG()) {
         if (n->dominates(sub, nlist))
