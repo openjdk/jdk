@@ -940,6 +940,7 @@ const Type *TypeD::xmeet( const Type *t ) const {
   case InstPtr:
   case KlassPtr:
   case AryPtr:
+  case NarrowOop:
   case Int:
   case Long:
   case FloatTop:
@@ -1086,6 +1087,7 @@ const Type *TypeInt::xmeet( const Type *t ) const {
   case InstPtr:
   case KlassPtr:
   case AryPtr:
+  case NarrowOop:
   case Long:
   case FloatTop:
   case FloatCon:
@@ -1093,7 +1095,6 @@ const Type *TypeInt::xmeet( const Type *t ) const {
   case DoubleTop:
   case DoubleCon:
   case DoubleBot:
-  case NarrowOop:
   case Bottom:                  // Ye Olde Default
     return Type::BOTTOM;
   default:                      // All else is a mistake
@@ -1328,6 +1329,7 @@ const Type *TypeLong::xmeet( const Type *t ) const {
   case InstPtr:
   case KlassPtr:
   case AryPtr:
+  case NarrowOop:
   case Int:
   case FloatTop:
   case FloatCon:
