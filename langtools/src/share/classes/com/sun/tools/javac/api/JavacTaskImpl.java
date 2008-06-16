@@ -36,12 +36,12 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.*;
 
-import com.sun.source.tree.Tree;
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.*;
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.*;
 import com.sun.tools.javac.model.*;
 import com.sun.tools.javac.parser.Parser;

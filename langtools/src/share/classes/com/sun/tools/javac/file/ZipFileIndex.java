@@ -23,14 +23,26 @@
  * have any questions.
  */
 
-package com.sun.tools.javac.zip;
+package com.sun.tools.javac.file;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.zip.*;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
+import java.util.zip.ZipException;
 
 /** This class implements building of index of a zip archive and access to it's context.
  *  It also uses prebuild index if available. It supports invocations where it will

@@ -30,8 +30,8 @@
  */
 
 import com.sun.tools.javac.api.JavacTaskImpl;
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.JavaCompiler;
-import com.sun.tools.javac.util.JavacFileManager;
 import java.io.File;
 import java.io.IOException;
 import javax.lang.model.element.TypeElement;
