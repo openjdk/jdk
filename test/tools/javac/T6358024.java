@@ -35,6 +35,7 @@ import javax.lang.model.element.*;
 import javax.tools.*;
 import com.sun.source.util.*;
 import com.sun.tools.javac.api.*;
+import com.sun.tools.javac.file.*;
 import com.sun.tools.javac.main.*;
 import com.sun.tools.javac.util.*;
 

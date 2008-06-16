@@ -29,7 +29,7 @@
  * @author  Peter von der Ah\u00e9
  */
 
-import com.sun.tools.javac.util.JavacFileManager;
+import com.sun.tools.javac.file.JavacFileManager;
 
 public class TestName {
     public static void main(String... args) {

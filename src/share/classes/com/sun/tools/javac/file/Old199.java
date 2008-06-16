@@ -23,15 +23,9 @@
  * have any questions.
  */
 
-package com.sun.tools.javac.util;
+package com.sun.tools.javac.file;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import javax.tools.*;
-
-import static javax.tools.StandardLocation.SOURCE_PATH;
+import javax.tools.FileObject;
 
 /**
  * Provides an easy migration to JSR 199 v3.3.  The class is

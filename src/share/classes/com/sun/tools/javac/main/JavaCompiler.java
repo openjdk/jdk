@@ -40,6 +40,7 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.DiagnosticListener;
 
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 
