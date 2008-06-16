@@ -52,7 +52,7 @@ import sun.security.util.SecurityConstants;
  * protocol is allowed to use a cached response.
  *
  * For more information on HTTP caching, see <a
- * href="http://www.ietf.org/rfc/rfc2616.txt""><i>RFC&nbsp;2616: Hypertext
+ * href="http://www.ietf.org/rfc/rfc2616.txt"><i>RFC&nbsp;2616: Hypertext
  * Transfer Protocol -- HTTP/1.1</i></a>
  *
  * @author Yingxian Wang
