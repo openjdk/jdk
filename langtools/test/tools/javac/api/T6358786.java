@@ -30,7 +30,7 @@
  */
 
 import com.sun.tools.javac.api.JavacTaskImpl;
-import com.sun.tools.javac.util.JavacFileManager;
+import com.sun.tools.javac.file.JavacFileManager;
 import java.util.Arrays;
 
 import javax.lang.model.util.Elements;
