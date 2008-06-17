@@ -88,13 +88,20 @@ AGCT_EXPORT=/export:AsyncGetCallTrace
 !endif
 !endif
 
-LINK_FLAGS=$(LINK_FLAGS) $(STACK_SIZE) /subsystem:windows /dll /base:0x8000000  \
-  /export:JNI_GetDefaultJavaVMInitArgs /export:JNI_CreateJavaVM    \
-  /export:JNI_GetCreatedJavaVMs /export:jio_snprintf               \
-  /export:jio_printf /export:jio_fprintf                           \
-  /export:jio_vfprintf /export:jio_vsnprintf $(AGCT_EXPORT)        \
-  /export:JVM_GetVersionInfo \
-  /export:JVM_GetThreadStateNames /export:JVM_GetThreadStateValues \
+LINK_FLAGS=$(LINK_FLAGS) $(STACK_SIZE) /subsystem:windows /dll /base:0x8000000 \
+  /export:JNI_GetDefaultJavaVMInitArgs       \
+  /export:JNI_CreateJavaVM                   \
+  /export:JVM_FindClassFromBootLoader        \
+  /export:JNI_GetCreatedJavaVMs              \
+  /export:jio_snprintf                       \
+  /export:jio_printf                         \
+  /export:jio_fprintf                        \
+  /export:jio_vfprintf                       \
+  /export:jio_vsnprintf                      \
+  $(AGCT_EXPORT)                             \
+  /export:JVM_GetVersionInfo                 \
+  /export:JVM_GetThreadStateNames            \
+  /export:JVM_GetThreadStateValues           \
   /export:JVM_InitAgentProperties
 
 CPP_INCLUDE_DIRS=\
