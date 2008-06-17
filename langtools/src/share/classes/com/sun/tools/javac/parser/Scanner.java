@@ -25,16 +25,12 @@
 
 package com.sun.tools.javac.parser;
 
-import java.io.*;
 import java.nio.*;
-import java.nio.ByteBuffer;
-import java.nio.charset.*;
-import java.nio.channels.*;
-import java.util.regex.*;
-
-import com.sun.tools.javac.util.*;
 
 import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.util.*;
+
 
 import static com.sun.tools.javac.parser.Token.*;
 import static com.sun.tools.javac.util.LayoutCharacters.*;

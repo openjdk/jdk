@@ -30,7 +30,7 @@
 import java.io.*;
 import java.util.*;
 import javax.tools.*;
-import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.file.*;
 
 public class T6705935 {
     public static void main(String... args) throws Exception {
