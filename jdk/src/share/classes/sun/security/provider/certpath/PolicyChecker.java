@@ -68,7 +68,7 @@ class PolicyChecker extends PKIXCertPathChecker {
     private int inhibitAnyPolicy;
     private int certIndex;
 
-    private static Set<String> supportedExts;
+    private Set<String> supportedExts;
 
     private static final Debug debug = Debug.getInstance("certpath");
     static final String ANY_POLICY = "2.5.29.32.0";
