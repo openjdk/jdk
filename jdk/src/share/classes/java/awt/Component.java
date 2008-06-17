@@ -7488,9 +7488,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         Container rootAncestor = getTraversalRoot();
         Component comp = this;
         while (rootAncestor != null &&
-               !(rootAncestor.isShowing() &&
-                 rootAncestor.isFocusable() &&
-                 rootAncestor.isEnabled()))
+               !(rootAncestor.isShowing() && rootAncestor.canBeFocusOwner()))
         {
             comp = rootAncestor;
             rootAncestor = comp.getFocusCycleRootAncestor();
@@ -7539,9 +7537,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         Container rootAncestor = getTraversalRoot();
         Component comp = this;
         while (rootAncestor != null &&
-               !(rootAncestor.isShowing() &&
-                 rootAncestor.isFocusable() &&
-                 rootAncestor.isEnabled()))
+               !(rootAncestor.isShowing() && rootAncestor.canBeFocusOwner()))
         {
             comp = rootAncestor;
             rootAncestor = comp.getFocusCycleRootAncestor();
@@ -8518,6 +8514,14 @@ public abstract class Component implements ImageObserver, MenuContainer,
         setComponentOrientation(orientation);
     }
 
+    final boolean canBeFocusOwner() {
+        // It is enabled, visible, focusable.
+        if (isEnabled() && isDisplayable() && isVisible() && isFocusable()) {
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Checks that this component meets the prerequesites to be focus owner:
      * - it is enabled, visible, focusable
@@ -8527,9 +8531,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * this component as focus owner
      * @since 1.5
      */
-    final boolean canBeFocusOwner() {
+    final boolean canBeFocusOwnerRecursively() {
         // - it is enabled, visible, focusable
-        if (!(isEnabled() && isDisplayable() && isVisible() && isFocusable())) {
+        if (!canBeFocusOwner()) {
             return false;
         }
 
