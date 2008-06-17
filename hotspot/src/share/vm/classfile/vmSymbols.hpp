@@ -283,6 +283,7 @@
   template(cache_field_name,                          "cache")                                    \
   template(value_name,                                "value")                                    \
   template(frontCacheEnabled_name,                    "frontCacheEnabled")                        \
+  template(stringCacheEnabled_name,                   "stringCacheEnabled")                       \
                                                                                                   \
   /* non-intrinsic name/signature pairs: */                                                       \
   template(register_method_name,                      "register")                                 \
