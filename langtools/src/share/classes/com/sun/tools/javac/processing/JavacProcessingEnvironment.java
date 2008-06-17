@@ -25,22 +25,17 @@
 
 package com.sun.tools.javac.processing;
 
-import com.sun.source.util.TaskEvent;
-import com.sun.source.util.TaskListener;
-import com.sun.tools.javac.api.JavacTaskImpl;
-import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.comp.*;
-import com.sun.tools.javac.jvm.*;
-import com.sun.tools.javac.tree.*;
-import com.sun.tools.javac.parser.*;
-import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.model.JavacElements;
-import com.sun.tools.javac.model.JavacTypes;
-import com.sun.tools.javac.tree.JCTree.*;
-import com.sun.tools.javac.main.JavaCompiler;
+
+import java.lang.reflect.*;
+import java.util.*;
+import java.util.regex.*;
+
+import java.net.URL;
+import java.io.Closeable;
+import java.io.File;
+import java.io.PrintWriter;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.io.StringWriter;
 
 import javax.annotation.processing.*;
@@ -50,24 +45,34 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.util.*;
-
 import javax.tools.JavaFileManager;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.DiagnosticListener;
+
+import com.sun.source.util.TaskEvent;
+import com.sun.source.util.TaskListener;
+import com.sun.tools.javac.api.JavacTaskImpl;
+import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.file.Paths;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.main.JavaCompiler;
+import com.sun.tools.javac.model.JavacElements;
+import com.sun.tools.javac.model.JavacTypes;
+import com.sun.tools.javac.parser.*;
+import com.sun.tools.javac.tree.*;
+import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.util.Abort;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Options;
+
 import static javax.tools.StandardLocation.*;
-
-import java.lang.reflect.*;
-import java.util.*;
-import java.util.regex.*;
-
-import java.net.URLClassLoader;
-import java.net.URL;
-import java.io.Closeable;
-import java.io.File;
-import java.io.PrintWriter;
-import java.io.IOException;
-import java.net.MalformedURLException;
 
 /**
  * Objects of this class hold and manage the state needed to support

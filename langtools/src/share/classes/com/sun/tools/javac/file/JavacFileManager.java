@@ -23,11 +23,9 @@
  * have any questions.
  */
 
-package com.sun.tools.javac.util;
+package com.sun.tools.javac.file;
 
-import com.sun.tools.javac.main.JavacOption;
-import com.sun.tools.javac.main.OptionName;
-import com.sun.tools.javac.main.RecognizedOptions;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -63,6 +61,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -70,14 +69,18 @@ import javax.lang.model.SourceVersion;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
-
-import com.sun.tools.javac.code.Source;
-import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
-import java.util.concurrent.ConcurrentHashMap;
 import javax.tools.StandardJavaFileManager;
 
-import com.sun.tools.javac.zip.*;
-import java.io.ByteArrayInputStream;
+import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.main.JavacOption;
+import com.sun.tools.javac.main.OptionName;
+import com.sun.tools.javac.main.RecognizedOptions;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
+import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Options;
 
 import static com.sun.tools.javac.main.OptionName.*;
 import static javax.tools.StandardLocation.*;
@@ -1225,7 +1228,7 @@ public class JavacFileManager implements StandardJavaFileManager {
     }
 
     @SuppressWarnings("deprecation") // bug 6410637
-    protected static String getJavacFileName(FileObject file) {
+    public static String getJavacFileName(FileObject file) {
         if (file instanceof BaseFileObject)
             return ((BaseFileObject)file).getPath();
         URI uri = file.toUri();
@@ -1237,7 +1240,7 @@ public class JavacFileManager implements StandardJavaFileManager {
     }
 
     @SuppressWarnings("deprecation") // bug 6410637
-    protected static String getJavacBaseFileName(FileObject file) {
+    public static String getJavacBaseFileName(FileObject file) {
         if (file instanceof BaseFileObject)
             return ((BaseFileObject)file).getName();
         URI uri = file.toUri();

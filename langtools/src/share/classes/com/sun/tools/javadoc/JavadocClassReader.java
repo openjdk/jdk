@@ -26,10 +26,10 @@
 package com.sun.tools.javadoc;
 
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.file.Old199;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JavacFileManager;
-import com.sun.tools.javac.util.Old199;
 
 import java.io.File;
 import java.util.EnumSet;

@@ -23,7 +23,8 @@
  * have any questions.
  */
 
-package com.sun.tools.javac.util;
+package com.sun.tools.javac.file;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -39,15 +40,19 @@ import java.util.LinkedHashSet;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.zip.ZipFile;
-import com.sun.tools.javac.code.Lint;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.tools.JavaFileManager.Location;
 
-import static com.sun.tools.javac.main.OptionName.*;
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Options;
+
 import static javax.tools.StandardLocation.*;
+import static com.sun.tools.javac.main.OptionName.*;
 
 /** This class converts command line arguments, environment variables
  *  and system properties (in File.pathSeparator-separated String form)
