@@ -38,12 +38,21 @@ OPT_CFLAGS/ciEnv.o = $(OPT_CFLAGS) -xinline=no%__1cFciEnvbFpost_compiled_method_
 endif
 
 # (OPT_CFLAGS/SLOWER is also available, to alter compilation of buggy files)
-
-# Workaround SS11 bug 6345274 (all platforms)
 ifeq ("${Platform_compiler}", "sparcWorks")
-ifeq ($(shell expr $(COMPILER_REV) \>= 5.8), 1)
+
+# Problem with SS12 compiler, dtrace doesn't like the .o files  (bug 6693876)
+ifeq ($(COMPILER_REV),5.9)
+  # Not clear this workaround could be skipped in some cases.
+  OPT_CFLAGS/vmGCOperations.o = $(OPT_CFLAGS/SLOWER) -g
+  OPT_CFLAGS/java.o = $(OPT_CFLAGS/SLOWER) -g
+  OPT_CFLAGS/jni.o = $(OPT_CFLAGS/SLOWER) -g
+endif
+
+# Workaround SS11 bug 6345274 (all platforms) (Fixed in SS11 patch and SS12)
+ifeq ($(COMPILER_REV),5.8)
 OPT_CFLAGS/ciTypeFlow.o = $(OPT_CFLAGS/O2)
-endif # COMPILER_REV >= 5.8
+endif # COMPILER_REV == 5.8
+
 endif # Platform_compiler == sparcWorks
 
 # If you set HOTSPARC_GENERIC=yes, you disable all OPT_CFLAGS settings

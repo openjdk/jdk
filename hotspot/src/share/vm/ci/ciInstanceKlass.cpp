@@ -392,12 +392,12 @@ int ciInstanceKlass::compute_nonstatic_fields() {
   assert(!is_java_lang_Object(), "bootstrap OK");
 
   // Size in bytes of my fields, including inherited fields.
-  int fsize = nonstatic_field_size() * wordSize;
+  int fsize = nonstatic_field_size() * heapOopSize;
 
   ciInstanceKlass* super = this->super();
   GrowableArray<ciField*>* super_fields = NULL;
   if (super != NULL && super->has_nonstatic_fields()) {
-    int super_fsize  = super->nonstatic_field_size() * wordSize;
+    int super_fsize  = super->nonstatic_field_size() * heapOopSize;
     int super_flen   = super->nof_nonstatic_fields();
     super_fields = super->_nonstatic_fields;
     assert(super_flen == 0 || super_fields != NULL, "first get nof_fields");
@@ -438,7 +438,7 @@ int ciInstanceKlass::compute_nonstatic_fields() {
     // This is a minor inefficiency classFileParser.cpp.
     last_offset = offset + size;
   }
-  assert(last_offset <= (int)sizeof(oopDesc) + fsize, "no overflow");
+  assert(last_offset <= (int)instanceOopDesc::base_offset_in_bytes() + fsize, "no overflow");
 #endif
 
   _nonstatic_fields = fields;

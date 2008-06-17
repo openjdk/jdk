@@ -77,10 +77,15 @@ class oopDesc {
   void init_mark();
 
   klassOop klass() const;
+  klassOop klass_or_null() const volatile;
   oop* klass_addr();
   narrowOop* compressed_klass_addr();
 
   void set_klass(klassOop k);
+
+  // For klass field compression
+  int klass_gap() const;
+  void set_klass_gap(int z);
   // For when the klass pointer is being used as a linked list "next" field.
   void set_klass_to_list_ptr(oop k);
 
