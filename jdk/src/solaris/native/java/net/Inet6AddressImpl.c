@@ -142,7 +142,6 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                                                 jstring host) {
     const char *hostname;
     jobjectArray ret = 0;
-    jobject name;
     int retLen = 0;
     jclass byteArrayCls;
     jboolean preferIPv6Address;
@@ -310,11 +309,6 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                 inet6Index = inetCount;
             }
 
-            name = (*env)->NewStringUTF(env, hostname);
-            if (IS_NULL(name)) {
-              ret = NULL;
-              goto cleanupAndReturn;
-            }
             while (iterator != NULL) {
               if (iterator->ai_family == AF_INET) {
                 jobject iaObj = (*env)->NewObject(env, ni_ia4cls, ni_ia4ctrID);
@@ -324,7 +318,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                 }
                 (*env)->SetIntField(env, iaObj, ni_iaaddressID,
                                     ntohl(((struct sockaddr_in*)iterator->ai_addr)->sin_addr.s_addr));
-                (*env)->SetObjectField(env, iaObj, ni_iahostID, name);
+                (*env)->SetObjectField(env, iaObj, ni_iahostID, host);
                 (*env)->SetObjectArrayElement(env, ret, inetIndex, iaObj);
                 inetIndex++;
               } else if (iterator->ai_family == AF_INET6) {
@@ -355,7 +349,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                   (*env)->SetBooleanField(env, iaObj, ia6_scopeidsetID, JNI_TRUE);
                 }
                 (*env)->SetObjectField(env, iaObj, ni_ia6ipaddressID, ipaddress);
-                (*env)->SetObjectField(env, iaObj, ni_iahostID, name);
+                (*env)->SetObjectField(env, iaObj, ni_iahostID, host);
                 (*env)->SetObjectArrayElement(env, ret, inet6Index, iaObj);
                 inet6Index++;
               }
