@@ -860,11 +860,11 @@ public class Container extends Component {
 
             // If component is focus owner or parent container of focus owner check that after reparenting
             // focus owner moved out if new container prohibit this kind of focus owner.
-            if (comp.isFocusOwner() && !comp.canBeFocusOwner()) {
+            if (comp.isFocusOwner() && !comp.canBeFocusOwnerRecursively()) {
                 comp.transferFocus();
             } else if (comp instanceof Container) {
                 Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-                if (focusOwner != null && isParentOf(focusOwner) && !focusOwner.canBeFocusOwner()) {
+                if (focusOwner != null && isParentOf(focusOwner) && !focusOwner.canBeFocusOwnerRecursively()) {
                     focusOwner.transferFocus();
                 }
             }
