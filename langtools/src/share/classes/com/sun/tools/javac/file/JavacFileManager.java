@@ -665,7 +665,8 @@ public class JavacFileManager implements StandardJavaFileManager {
             } catch (FileNotFoundException ex) {
                 archive = new MissingArchive(zipFileName);
             } catch (IOException ex) {
-                log.error("error.reading.file", zipFileName, ex.getLocalizedMessage());
+                if (zipFileName.exists())
+                    log.error("error.reading.file", zipFileName, ex.getLocalizedMessage());
                 archive = new MissingArchive(zipFileName);
             }
 
