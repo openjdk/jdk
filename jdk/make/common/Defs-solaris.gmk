@@ -197,7 +197,6 @@ endif
 
 # Lint Flags:
 #	-Xa			ANSI C plus K&R, favor ANSI rules
-#       -Xarch=XXX		Same as 'cc -xarch=XXX'
 #	-fd			report on old style func defs
 #	-errchk=structarg	report on 64bit struct args by value
 #	-errchk=longptr64	report on 64bit to 32bit issues (ignores casts)
@@ -206,6 +205,7 @@ endif
 #	-x			suppress unused externs
 #	-u			suppress extern func/vars used/defined
 #	-errfmt=simple		use one line errors with position info
+#       $(LINT_XARCH_OPTION)    See Compiler-sun.gwk
 
 LINTFLAGS_COMMON  = -Xa
 LINTFLAGS_COMMON += -fd 
@@ -224,42 +224,12 @@ LINTFLAGS_DBG   =
 #    Tell the compilers to never generate globalized names, all the time.
 CFLAGS_COMMON += -W0,-noglobal
 
-# Arch specific settings (determines type of .o files and instruction set)
-ifeq ($(ARCH_FAMILY), sparc)
-  ifdef VIS_NEEDED
-    XARCH_VALUE/32=v8plusa
-    XARCH_VALUE/64=v9a
-  else 
-    # Someday this should change to improve optimization on UltraSPARC
-    #    and abandon the old v8-only machines like the SPARCstation 10.
-    #    Indications with Mustang is that alacrity runs do not show a
-    #    big improvement using v8plus over v8, but other benchmarks might.
-    XARCH_VALUE/32=v8
-    XARCH_VALUE/64=v9
-  endif
-endif
-ifeq ($(ARCH_FAMILY), i586)
-  XARCH_VALUE/64=amd64
-  XARCH_VALUE/32=
-endif
-
-# Arch value based on current data model being built
-XARCH_VALUE=$(XARCH_VALUE/$(ARCH_DATA_MODEL))
-ifneq ($(XARCH_VALUE), )
-  # The actual compiler -xarch options to use
-  XARCH_OPTION/32 = -xarch=$(XARCH_VALUE/32)
-  XARCH_OPTION/64 = -xarch=$(XARCH_VALUE/64)
-  XARCH_OPTION    = $(XARCH_OPTION/$(ARCH_DATA_MODEL))
-endif
-
-# If we have a specific -xarch value to use, add it
-ifdef XARCH_OPTION
-  CFLAGS_COMMON    += $(XARCH_OPTION)
-  CXXFLAGS_COMMON  += $(XARCH_OPTION)
-  ASFLAGS_COMMON   += $(XARCH_OPTION)
-  EXTRA_LIBS       += $(XARCH_OPTION)
-  LINTFLAGS_COMMON += -Xarch=$(XARCH_VALUE)
-endif
+# If we have a specific arch value to use, add it
+CFLAGS_COMMON    += $(XARCH_OPTION)
+CXXFLAGS_COMMON  += $(XARCH_OPTION)
+ASFLAGS_COMMON   += $(AS_XARCH_OPTION)
+EXTRA_LIBS       += $(XARCH_OPTION)
+LINTFLAGS_COMMON += $(LINT_XARCH_OPTION)
 
 #
 # uncomment the following to build with PERTURBALOT set
