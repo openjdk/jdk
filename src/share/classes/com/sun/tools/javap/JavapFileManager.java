@@ -25,16 +25,13 @@
 
 package com.sun.tools.javap;
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
-import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JCDiagnostic;
 
 /**
  *  javap's implementation of JavaFileManager.
@@ -52,29 +49,8 @@ class JavapFileManager extends JavacFileManager {
     static JavapFileManager create(final DiagnosticListener<? super JavaFileObject> dl, PrintWriter log, Options options) {
         Context javac_context = new Context();
 
-        if (dl != null) {
-            // Workaround bug 6625520: javac handles missing entries on classpath badly
-            // Ignore spurious errors for missing files
-            DiagnosticListener<JavaFileObject> wrapper = new DiagnosticListener<JavaFileObject>() {
-                public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-                    if (diagnostic instanceof JCDiagnostic) {
-                        JCDiagnostic jcd = (JCDiagnostic) diagnostic;
-                        if (jcd.getCode().equals("compiler.err.error.reading.file")) {
-                            Object[] args = jcd.getArgs();
-                            if (args.length > 0 && args[0] != null && args[0].toString().length() > 0) {
-                                File f = new File(args[0].toString());
-                                if (!f.exists())
-                                    return;
-                            }
-                        }
-
-                    }
-                    dl.report(diagnostic);
-                }
-            };
-            javac_context.put(DiagnosticListener.class, wrapper);
-        }
-
+        if (dl != null)
+            javac_context.put(DiagnosticListener.class, dl);
         javac_context.put(com.sun.tools.javac.util.Log.outKey, log);
 
         return new JavapFileManager(javac_context, null);
