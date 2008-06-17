@@ -23,7 +23,7 @@
  * have any questions.
  */
 
-package com.sun.tools.javac.util;
+package com.sun.tools.javac.file;
 
 import java.io.IOException;
 import java.io.InputStreamReader;

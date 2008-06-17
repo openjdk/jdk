@@ -29,19 +29,14 @@ import java.io.*;
 
 import java.util.Collection;
 
-import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.*;
-import com.sun.tools.javac.jvm.ClassReader;
-import com.sun.tools.javac.jvm.ClassWriter;
+import com.sun.tools.javac.file.Paths;
 import com.sun.tools.javac.parser.DocCommentScanner;
-import com.sun.tools.javac.util.Paths;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
 
-import com.sun.javadoc.LanguageVersion;
-import static com.sun.javadoc.LanguageVersion.*;
 
 /**
  *  This class could be the main entry point for Javadoc when Javadoc is used as a
@@ -147,7 +142,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
                 } else if (isValidPackageName(name)) {
                     names = names.append(name);
                 } else if (name.endsWith(".java")) {
-                    docenv.error(null, "main.file_not_found", name);;
+                    docenv.error(null, "main.file_not_found", name);
                 } else {
                     docenv.error(null, "main.illegal_package_name", name);
                 }

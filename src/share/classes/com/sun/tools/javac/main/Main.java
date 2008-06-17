@@ -25,13 +25,13 @@
 
 package com.sun.tools.javac.main;
 
-import com.sun.tools.javac.util.Options;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.MissingResourceException;
 
 import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.JavacOption.Option;
 import com.sun.tools.javac.main.RecognizedOptions.OptionHelper;

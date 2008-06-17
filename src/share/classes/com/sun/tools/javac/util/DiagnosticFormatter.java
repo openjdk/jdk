@@ -27,6 +27,7 @@ package com.sun.tools.javac.util;
 
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticSource;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 

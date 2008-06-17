@@ -44,7 +44,7 @@ import java.net.URL;
 import java.io.File;
 import java.net.MalformedURLException;
 
-import com.sun.tools.javac.util.Paths;
+import com.sun.tools.javac.file.Paths;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;

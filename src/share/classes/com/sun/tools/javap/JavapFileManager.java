@@ -32,9 +32,9 @@ import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
-import com.sun.tools.javac.util.JavacFileManager;
 
 /**
  *  javap's implementation of JavaFileManager.
