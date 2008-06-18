@@ -475,6 +475,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask {
                 t.printStackTrace(pw);
                 pw.close();
                 diagnosticListener.report(createDiagnostic("err.crash", t.toString(), sw.toString()));
+                ok = false;
             }
         }
 

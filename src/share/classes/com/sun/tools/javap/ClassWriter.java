@@ -291,7 +291,7 @@ public class ClassWriter extends BasicWriter {
                     for (int i = 0; i < exceptions.number_of_exceptions; i++) {
                         if (i > 0)
                             print(", ");
-                        print(attrWriter.getJavaException(exceptions, i));
+                        print(getJavaException(exceptions, i));
                     }
                 }
             } else {
@@ -437,6 +437,14 @@ public class ClassWriter extends BasicWriter {
         } catch (ConstantPoolException e) {
             return report(e);
         } catch (DescriptorException e) {
+            return report(e);
+        }
+    }
+
+    String getJavaException(Exceptions_attribute attr, int index) {
+        try {
+            return getJavaName(attr.getException(index, constant_pool));
+        } catch (ConstantPoolException e) {
             return report(e);
         }
     }
