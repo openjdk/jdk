@@ -2141,7 +2141,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                     Toolkit.getEventQueue().postEvent(e);
                 }
             } else {
-                if (this instanceof Container && ((Container)this).ncomponents > 0) {
+                if (this instanceof Container && ((Container)this).countComponents() > 0) {
                     boolean enabledOnToolkit =
                         Toolkit.enabledOnToolkit(AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK);
                     if (resized) {
