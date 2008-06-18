@@ -25,26 +25,17 @@
 
 package javax.swing.plaf.synth;
 
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Adjustable;
 import java.awt.event.*;
 import java.awt.Graphics;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Rectangle;
 import java.awt.Point;
 import java.awt.Insets;
-import java.awt.Color;
-import java.awt.IllegalComponentStateException;
-import java.awt.Polygon;
 import java.beans.*;
 import java.util.Dictionary;
 import java.util.Enumeration;
-import javax.swing.border.AbstractBorder;
 import javax.swing.*;
-import javax.swing.event.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicSliderUI;
 import sun.swing.plaf.synth.SynthUI;
@@ -203,8 +194,7 @@ class SynthSliderUI extends BasicSliderUI implements PropertyChangeListener,
                 centerY += valueHeight + 2;
                 centerY += trackHeight + trackInsets.top + trackInsets.bottom;
                 centerY += tickHeight + 2;
-                Component label = (Component)slider.getLabelTable().
-                                   elements().nextElement();
+                JComponent label = (JComponent) slider.getLabelTable().elements().nextElement();
                 Dimension pref = label.getPreferredSize();
                 return centerY + label.getBaseline(pref.width, pref.height);
             }
@@ -226,8 +216,7 @@ class SynthSliderUI extends BasicSliderUI implements PropertyChangeListener,
                     int trackHeight = contentHeight - valueHeight;
                     int yPosition = yPositionForValue(value.intValue(), trackY,
                                                       trackHeight);
-                    Component label = (Component)slider.getLabelTable().
-                            get(value);
+                    JComponent label = (JComponent) slider.getLabelTable().get(value);
                     Dimension pref = label.getPreferredSize();
                     return yPosition - pref.height / 2 +
                             label.getBaseline(pref.width, pref.height);
@@ -434,16 +423,14 @@ class SynthSliderUI extends BasicSliderUI implements PropertyChangeListener,
     /**
      * Calculates the pad for the label at the specified index.
      *
-     * @param index index of the label to calculate pad for.
+     * @param i index of the label to calculate pad for.
      * @return padding required to keep label visible.
      */
     private int getPadForLabel(int i) {
-        Dictionary dictionary = slider.getLabelTable();
         int pad = 0;
 
-        Object o = dictionary.get(i);
-        if (o != null) {
-            Component c = (Component)o;
+        JComponent c = (JComponent) slider.getLabelTable().get(i);
+        if (c != null) {
             int centerX = xPositionForValue(i);
             int cHalfWidth = c.getPreferredSize().width / 2;
             if (centerX - cHalfWidth < insetCache.left) {
@@ -500,8 +487,6 @@ class SynthSliderUI extends BasicSliderUI implements PropertyChangeListener,
         }
     }
 
-    private static Rectangle unionRect = new Rectangle();
-
     public void setThumbLocation(int x, int y) {
         super.setThumbLocation(x, y);
         // Value rect is tied to the thumb location.  We need to repaint when
@@ -544,7 +529,7 @@ class SynthSliderUI extends BasicSliderUI implements PropertyChangeListener,
                 trackBorder;
         int trackLength = trackBottom - trackTop;
         double valueRange = (double)max - (double)min;
-        double pixelsPerValue = (double)trackLength / (double)valueRange;
+        double pixelsPerValue = (double)trackLength / valueRange;
         int yPosition;
 
         if (!drawInverted()) {
@@ -802,8 +787,7 @@ class SynthSliderUI extends BasicSliderUI implements PropertyChangeListener,
         }
 
         public void mouseDragged(MouseEvent e) {
-            SynthScrollBarUI ui;
-            int thumbMiddle = 0;
+            int thumbMiddle;
 
             if (!slider.isEnabled()) {
                 return;

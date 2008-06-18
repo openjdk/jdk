@@ -196,7 +196,7 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
     }
 
     protected void sort(Vector<? extends File> v){
-        ShellFolder.sortFiles(v);
+        ShellFolder.sort(v);
     }
 
     // Obsolete - not used
