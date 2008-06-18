@@ -153,7 +153,7 @@ public class ConstantPool {
                 break;
 
             case CONSTANT_String:
-                pool[i] = new CONSTANT_String_info(cr);
+                pool[i] = new CONSTANT_String_info(this, cr);
                 break;
 
             case CONSTANT_Utf8:
@@ -509,7 +509,8 @@ public class ConstantPool {
     }
 
     public static class CONSTANT_String_info extends CPInfo {
-        CONSTANT_String_info(ClassReader cr) throws IOException {
+        CONSTANT_String_info(ConstantPool cp, ClassReader cr) throws IOException {
+            super(cp);
             string_index = cr.readUnsignedShort();
         }
 

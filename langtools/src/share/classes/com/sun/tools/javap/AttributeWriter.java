@@ -259,7 +259,7 @@ public class AttributeWriter extends BasicWriter
         return null;
     }
 
-    String getJavaException(Exceptions_attribute attr, int index) {
+    private String getJavaException(Exceptions_attribute attr, int index) {
         try {
             return getJavaName(attr.getException(index, constant_pool));
         } catch (ConstantPoolException e) {
