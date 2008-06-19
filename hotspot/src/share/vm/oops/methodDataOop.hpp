@@ -158,7 +158,6 @@ public:
     assert(ProfileTraps, "used only under +ProfileTraps");
     uint old_flags = (_header._struct._flags & flag_mask);
     _header._struct._flags = (new_state << trap_shift) | old_flags;
-    assert(trap_state() == new_state, "sanity");
   }
 
   u1 flags() {
