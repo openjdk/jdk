@@ -25,6 +25,7 @@ import java.io.*;
 import java.util.*;
 import javax.tools.*;
 import com.sun.tools.javac.file.*;
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.*;
 
 /*
