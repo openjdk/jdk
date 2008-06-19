@@ -1695,7 +1695,12 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_constant(markOopDesc::no_hash)                                  \
   declare_constant(markOopDesc::no_hash_in_place)                         \
   declare_constant(markOopDesc::no_lock_in_place)                         \
-  declare_constant(markOopDesc::max_age)
+  declare_constant(markOopDesc::max_age)                                  \
+                                                                          \
+  /* Constants in markOop used by CMS. */                                 \
+  declare_constant(markOopDesc::cms_shift)                                \
+  declare_constant(markOopDesc::cms_mask)                                 \
+  declare_constant(markOopDesc::size_shift)                               \
 
   /* NOTE that we do not use the last_entry() macro here; it is used   */
   /* in vmStructs_<os>_<cpu>.hpp's VM_LONG_CONSTANTS_OS_CPU macro (and */
@@ -1959,6 +1964,7 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
                         GENERATE_STATIC_VM_STRUCT_ENTRY)
 
   VM_STRUCTS_CMS(GENERATE_NONSTATIC_VM_STRUCT_ENTRY, \
+                 GENERATE_NONSTATIC_VM_STRUCT_ENTRY, \
                  GENERATE_STATIC_VM_STRUCT_ENTRY)
 #endif // SERIALGC
 
@@ -2100,6 +2106,7 @@ VMStructs::init() {
              CHECK_STATIC_VM_STRUCT_ENTRY);
 
   VM_STRUCTS_CMS(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
+             CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
              CHECK_STATIC_VM_STRUCT_ENTRY);
 #endif // SERIALGC
 
@@ -2204,6 +2211,7 @@ VMStructs::init() {
   debug_only(VM_STRUCTS_PARALLELGC(ENSURE_FIELD_TYPE_PRESENT, \
                                    ENSURE_FIELD_TYPE_PRESENT));
   debug_only(VM_STRUCTS_CMS(ENSURE_FIELD_TYPE_PRESENT, \
+                            ENSURE_FIELD_TYPE_PRESENT, \
                             ENSURE_FIELD_TYPE_PRESENT));
 #endif // SERIALGC
   debug_only(VM_STRUCTS_CPU(ENSURE_FIELD_TYPE_PRESENT, \

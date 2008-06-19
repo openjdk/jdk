@@ -1174,7 +1174,7 @@ void Arguments::set_ergonomics_flags() {
   // field offset to determine free list chunk markers.
   // Check that UseCompressedOops can be set with the max heap size allocated
   // by ergonomics.
-  if (!UseConcMarkSweepGC && MaxHeapSize <= max_heap_for_compressed_oops()) {
+  if (MaxHeapSize <= max_heap_for_compressed_oops()) {
     if (FLAG_IS_DEFAULT(UseCompressedOops)) {
       // Leave compressed oops off by default. Uncomment
       // the following line to return it to default status.

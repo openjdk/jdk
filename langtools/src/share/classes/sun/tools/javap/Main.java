@@ -35,9 +35,9 @@ import java.io.*;
  *
  * @author  Sucheta Dambalkar (Adopted code from old javap)
  */
-public class Main{
+public class Main {
 
-    private Vector classList = new Vector();
+    private Vector<String> classList = new Vector<String>();
     private PrintWriter out;
     JavapEnvironment env = new JavapEnvironment();
     private static boolean errorOccurred = false;
@@ -201,7 +201,7 @@ public class Main{
      */
     private void displayResults() {
         for (int i = 0; i < classList.size() ; i++ ) {
-            String Name = (String)classList.elementAt(i);
+            String Name = classList.elementAt(i);
             InputStream classin = env.getFileInputStream(Name);
 
             try {

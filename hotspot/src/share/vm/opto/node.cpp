@@ -1039,6 +1039,9 @@ Node* Node::find_exact_control(Node* ctrl) {
 //--------------------------dominates------------------------------------------
 // Helper function for MemNode::all_controls_dominate().
 // Check if 'this' control node dominates or equal to 'sub' control node.
+// We already know that if any path back to Root or Start reaches 'this',
+// then all paths so, so this is a simple search for one example,
+// not an exhaustive search for a counterexample.
 bool Node::dominates(Node* sub, Node_List &nlist) {
   assert(this->is_CFG(), "expecting control");
   assert(sub != NULL && sub->is_CFG(), "expecting control");
@@ -1047,110 +1050,115 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
   int iterations_without_region_limit = DominatorSearchLimit;
 
   Node* orig_sub = sub;
+  Node* dom      = this;
+  bool  met_dom  = false;
   nlist.clear();
-  bool this_dominates = false;
-  bool result = false; // Conservative answer
 
-  while (sub != NULL) {        // walk 'sub' up the chain to 'this'
-    if (sub == this) {
+  // Walk 'sub' backward up the chain to 'dom', watching for regions.
+  // After seeing 'dom', continue up to Root or Start.
+  // If we hit a region (backward split point), it may be a loop head.
+  // Keep going through one of the region's inputs.  If we reach the
+  // same region again, go through a different input.  Eventually we
+  // will either exit through the loop head, or give up.
+  // (If we get confused, break out and return a conservative 'false'.)
+  while (sub != NULL) {
+    if (sub->is_top())  break; // Conservative answer for dead code.
+    if (sub == dom) {
       if (nlist.size() == 0) {
         // No Region nodes except loops were visited before and the EntryControl
         // path was taken for loops: it did not walk in a cycle.
-        result = true;
-        break;
-      } else if (this_dominates) {
-        result = false;          // already met before: walk in a cycle
-        break;
+        return true;
+      } else if (met_dom) {
+        break;          // already met before: walk in a cycle
       } else {
         // Region nodes were visited. Continue walk up to Start or Root
         // to make sure that it did not walk in a cycle.
-        this_dominates = true; // first time meet
+        met_dom = true; // first time meet
         iterations_without_region_limit = DominatorSearchLimit; // Reset
      }
     }
     if (sub->is_Start() || sub->is_Root()) {
-      result = this_dominates;
-      break;
+      // Success if we met 'dom' along a path to Start or Root.
+      // We assume there are no alternative paths that avoid 'dom'.
+      // (This assumption is up to the caller to ensure!)
+      return met_dom;
     }
-    Node* up = sub->find_exact_control(sub->in(0));
-    if (up == NULL || up->is_top()) {
-      result = false; // Conservative answer for dead code
-      break;
-    }
-    if (sub == up && (sub->is_Loop() || sub->is_Region() && sub->req() != 3)) {
-      // Take first valid path on the way up to 'this'.
+    Node* up = sub->in(0);
+    // Normalize simple pass-through regions and projections:
+    up = sub->find_exact_control(up);
+    // If sub == up, we found a self-loop.  Try to push past it.
+    if (sub == up && sub->is_Loop()) {
+      // Take loop entry path on the way up to 'dom'.
       up = sub->in(1); // in(LoopNode::EntryControl);
+    } else if (sub == up && sub->is_Region() && sub->req() != 3) {
+      // Always take in(1) path on the way up to 'dom' for clone regions
+      // (with only one input) or regions which merge > 2 paths
+      // (usually used to merge fast/slow paths).
+      up = sub->in(1);
     } else if (sub == up && sub->is_Region()) {
-      assert(sub->req() == 3, "sanity");
+      // Try both paths for Regions with 2 input paths (it may be a loop head).
+      // It could give conservative 'false' answer without information
+      // which region's input is the entry path.
       iterations_without_region_limit = DominatorSearchLimit; // Reset
 
-      // Try both paths for such Regions.
-      // It is not accurate without regions dominating information.
-      // With such information the other path should be checked for
-      // the most dominating Region which was visited before.
       bool region_was_visited_before = false;
-      uint i = 1;
-      uint size = nlist.size();
-      if (size == 0) {
-        // No such Region nodes were visited before.
-        // Take first valid path on the way up to 'this'.
-      } else {
-        // Was this Region node visited before?
-        intptr_t ni;
-        int j = size - 1;
-        for (; j >= 0; j--) {
-          ni = (intptr_t)nlist.at(j);
-          if ((Node*)(ni & ~1) == sub) {
-            if ((ni & 1) != 0) {
-              break; // Visited 2 paths. Give up.
-            } else {
-              // The Region node was visited before only once.
-              nlist.remove(j);
-              region_was_visited_before = true;
-              for (; i < sub->req(); i++) {
-                Node* in = sub->in(i);
-                if (in != NULL && !in->is_top() && in != sub) {
-                  break;
-                }
-              }
-              i++; // Take other path.
-              break;
-            }
+      // Was this Region node visited before?
+      // If so, we have reached it because we accidentally took a
+      // loop-back edge from 'sub' back into the body of the loop,
+      // and worked our way up again to the loop header 'sub'.
+      // So, take the first unexplored path on the way up to 'dom'.
+      for (int j = nlist.size() - 1; j >= 0; j--) {
+        intptr_t ni = (intptr_t)nlist.at(j);
+        Node* visited = (Node*)(ni & ~1);
+        bool  visited_twice_already = ((ni & 1) != 0);
+        if (visited == sub) {
+          if (visited_twice_already) {
+            // Visited 2 paths, but still stuck in loop body.  Give up.
+            return false;
           }
-        }
-        if (j >= 0 && (ni & 1) != 0) {
-          result = false; // Visited 2 paths. Give up.
+          // The Region node was visited before only once.
+          // (We will repush with the low bit set, below.)
+          nlist.remove(j);
+          // We will find a new edge and re-insert.
+          region_was_visited_before = true;
           break;
         }
-        // The Region node was not visited before.
       }
-      for (; i < sub->req(); i++) {
+
+      // Find an incoming edge which has not been seen yet; walk through it.
+      assert(up == sub, "");
+      uint skip = region_was_visited_before ? 1 : 0;
+      for (uint i = 1; i < sub->req(); i++) {
         Node* in = sub->in(i);
         if (in != NULL && !in->is_top() && in != sub) {
-          break;
+          if (skip == 0) {
+            up = in;
+            break;
+          }
+          --skip;               // skip this nontrivial input
         }
       }
-      if (i < sub->req()) {
-        up = sub->in(i);
-        if (region_was_visited_before && sub != up) {
-          // Set 0 bit to indicate that both paths were taken.
-          nlist.push((Node*)((intptr_t)sub + 1));
-        } else {
-          nlist.push(sub);
-        }
-      }
+
+      // Set 0 bit to indicate that both paths were taken.
+      nlist.push((Node*)((intptr_t)sub + (region_was_visited_before ? 1 : 0)));
     }
-    if (sub == up) {
-      result = false;    // some kind of tight cycle
-      break;
+
+    if (up == sub) {
+      break;    // some kind of tight cycle
+    }
+    if (up == orig_sub && met_dom) {
+      // returned back after visiting 'dom'
+      break;    // some kind of cycle
     }
     if (--iterations_without_region_limit < 0) {
-      result = false;    // dead cycle
-      break;
+      break;    // dead cycle
     }
     sub = up;
   }
-  return result;
+
+  // Did not meet Root or Start node in pred. chain.
+  // Conservative answer for dead code.
+  return false;
 }
 
 //------------------------------remove_dead_region-----------------------------
