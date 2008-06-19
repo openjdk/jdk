@@ -28,14 +28,6 @@
 #
 INIT += $(LIB_LOCATION) 
 
-ifndef HEADLESS
-ifeq ($(PLATFORM), linux)
-ifeq ($(STATIC_MOTIF),false)
-INIT += $(LIB_LOCATION)/libXm.so
-endif
-endif
-endif
-
 #
 # Files
 #
@@ -52,13 +44,9 @@ include $(BUILDDIR)/sun/awt/FILES_export_unix.gmk
 ifdef HEADLESS
   FILES_c = $(FILES_NO_MOTIF_c)
 else
-  FILES_c = $(FILES_MOTIF_c) $(FILES_NO_MOTIF_c)
-
-  ifeq ($(MOTIF_VERSION), 2)
-    FILES_c += awt_motif21.c
-    FILES_c += awt_Choice21.c
-  endif
-
+#  FILES_c = $(FILES_MOTIF_c) $(FILES_NO_MOTIF_c)
+#  XXX if in FILES_MOTIF_c there are unrelated to motif stuff, create a separate list!
+  FILES_c = $(FILES_NO_MOTIF_c)
 endif
 
 ifeq ($(PLATFORM), solaris)
@@ -93,15 +81,6 @@ include $(BUILDDIR)/common/Library.gmk
 $(LIB_LOCATION):
 	$(MKDIR) -p $@
 
-ifeq ($(PLATFORM), linux)
-ifeq ($(STATIC_MOTIF),false)
-$(LIB_LOCATION)/libXm.so:
-	$(CP) $(MOTIF_LIB)/libXm.so $(LIB_LOCATION)/libXm.so
-# Automounter problem makes the link fail on Redhat 6.1.
-#	$(LN) -s $(MOTIF_LIB)/libXm.so $(LIB_LOCATION)/libXm.so
-endif
-endif
-
 clean:: 
 
 #
@@ -135,33 +114,49 @@ CFLAGS += -DHEADLESS=$(HEADLESS)
 CPPFLAGS += -DHEADLESS=$(HEADLESS)
 OTHER_LDLIBS =
 else
-CFLAGS += -DMOTIF_VERSION=$(MOTIF_VERSION)
+#CFLAGS += -DMOTIF_VERSION=$(MOTIF_VERSION)
 
-ifeq ($(STATIC_MOTIF),true)
-    LIBXM = $(MOTIF_LIB)/libXm.a -lXp -lXmu
-    ifeq ($(PLATFORM), linux)
-	ifeq ($(ARCH_DATA_MODEL), 64)
-            LIBXT = -lXt
-        else
-        # Allows for builds on Debian GNU Linux, X11 is in a different place 
-	    LIBXT = $(firstword $(wildcard /usr/X11R6/lib/libXt.a) \
-                            $(wildcard /usr/lib/libXt.a))
-	    LIBSM = $(firstword $(wildcard /usr/X11R6/lib/libSM.a) \
-                            $(wildcard /usr/lib/libSM.a))
-	    LIBICE = $(firstword $(wildcard /usr/X11R6/lib/libICE.a) \
-                             $(wildcard /usr/lib/libICE.a))
-	endif
-    endif
-else
-    LIBXM = -L$(MOTIF_LIB) -lXm -lXp
-    ifeq ($(PLATFORM), linux)
-	LIBXT = -lXt
-	LIBSM = 
-	LIBICE = 
-    endif
-endif
+#ifeq ($(STATIC_MOTIF),true)
+#    LIBXM = $(MOTIF_LIB)/libXm.a -lXp -lXmu
+#    ifeq ($(PLATFORM), linux)
+#	ifeq ($(ARCH_DATA_MODEL), 64)
+#            LIBXT = -lXt
+#        else
+#        # Allows for builds on Debian GNU Linux, X11 is in a different place 
+#	    LIBXT = $(firstword $(wildcard /usr/X11R6/lib/libXt.a) \
+#                            $(wildcard /usr/lib/libXt.a))
+#	    LIBSM = $(firstword $(wildcard /usr/X11R6/lib/libSM.a) \
+#                            $(wildcard /usr/lib/libSM.a))
+#	    LIBICE = $(firstword $(wildcard /usr/X11R6/lib/libICE.a) \
+#                             $(wildcard /usr/lib/libICE.a))
+#	endif
+#    endif
+#else
+#    LIBXM = -L$(MOTIF_LIB) -lXm -lXp
+#    ifeq ($(PLATFORM), linux)
+#	LIBXT = -lXt
+#	LIBSM = 
+#	LIBICE = 
+#    endif
+#endif
 
 LIBXTST = -lXtst
+ifeq ($(PLATFORM), linux)
+   ifeq ($(ARCH_DATA_MODEL), 64)
+   # XXX what about the rest of them?
+        LIBXT = -lXt
+    else
+    # Allows for builds on Debian GNU Linux, X11 is in a different place 
+       LIBXT = $(firstword $(wildcard /usr/X11R6/lib/libXt.a) \
+                        $(wildcard /usr/lib/libXt.a))
+       LIBSM = $(firstword $(wildcard /usr/X11R6/lib/libSM.a) \
+                        $(wildcard /usr/lib/libSM.a))
+       LIBICE = $(firstword $(wildcard /usr/X11R6/lib/libICE.a) \
+                         $(wildcard /usr/lib/libICE.a))
+       LIBXTST = $(firstword $(wildcard /usr/X11R6/lib/libXtst.a) \
+                         $(wildcard /usr/lib/libXtst.a))
+   endif
+endif
 
 # Use -lXmu for EditRes support
 LIBXMU_DBG	= -lXmu
@@ -169,14 +164,14 @@ LIBXMU_OPT	=
 LIBXMU		= $(LIBXMU_$(VARIANT))
 
 ifeq ($(PLATFORM), solaris)
-OTHER_LDLIBS = $(LIBXM) -lXt -lXext $(LIBXTST) $(LIBXMU) -lX11 -lXi
+OTHER_LDLIBS = -lXt -lXext $(LIBXTST) $(LIBXMU) -lX11 -lXi
 endif
 
 ifeq ($(PLATFORM), linux)
 OTHER_CFLAGS += -DMLIB_NO_LIBSUNMATH
-OTHER_CFLAGS += -DMOTIF_VERSION=2
+# XXX what is this define below? Isn't it motif-related?
 OTHER_CFLAGS += -DXMSTRINGDEFINES=1
-OTHER_LDLIBS = $(LIBXM) $(LIBXMU) $(LIBXTST) -lXext $(LIBXT) $(LIBSM) $(LIBICE) -lX11 -lXi
+OTHER_LDLIBS =  $(LIBXMU) $(LIBXTST) -lXext $(LIBXT) $(LIBSM) $(LIBICE) -lX11 -lXi
 endif
 
 endif
@@ -199,9 +194,8 @@ endif
 CPPFLAGS += -I$(CUPS_HEADERS_PATH)
 
 ifndef HEADLESS
-CPPFLAGS += -I$(MOTIF_DIR)/include \
-            -I$(OPENWIN_HOME)/include 
-LDFLAGS  += -L$(MOTIF_LIB) -L$(OPENWIN_LIB)
+CPPFLAGS += -I$(OPENWIN_HOME)/include 
+LDFLAGS  += -L$(OPENWIN_LIB)
 
 endif # !HEADLESS
 

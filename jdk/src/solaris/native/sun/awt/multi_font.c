@@ -52,8 +52,8 @@
 extern XFontStruct *loadFont(Display *, char *, int32_t);
 
 extern struct FontIDs fontIDs;
-extern struct MComponentPeerIDs mComponentPeerIDs;
-extern struct MMenuItemPeerIDs mMenuItemPeerIDs;
+//extern struct MComponentPeerIDs mComponentPeerIDs;
+//extern struct MMenuItemPeerIDs mMenuItemPeerIDs;
 extern struct PlatformFontIDs platformFontIDs;
 extern struct MFontPeerIDs mFontPeerIDs;
 
@@ -151,8 +151,8 @@ awtJNI_DeleteGlobalMenuRef(JNIEnv * env, jobject this)
     struct gRefStruct *temp;
 
     gRef = (jobject)
-      JNU_GetLongFieldAsPtr(env, this, mMenuItemPeerIDs.jniGlobalRef);
-    JNU_SetLongFieldFromPtr(env, this, mMenuItemPeerIDs.jniGlobalRef, NULL);
+    //JNU_GetLongFieldAsPtr(env, this, mMenuItemPeerIDs.jniGlobalRef);
+    //JNU_SetLongFieldFromPtr(env, this, mMenuItemPeerIDs.jniGlobalRef, NULL);
 
     /*
      * Verra handy for tracking down race conditions. If you
