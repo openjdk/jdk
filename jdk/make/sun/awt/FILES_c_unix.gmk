@@ -142,59 +142,59 @@ FILES_2D_c = \
 # These files rely on motif to be built, and should not be included
 # in a headless build.
 
-FILES_MOTIF_c = \
-	awt_AWTEvent.c \
-	awt_Button.c \
-	awt_Canvas.c \
-	awt_Checkbox.c \
-	awt_Component.c \
-	awt_Cursor.c \
-	awt_DataTransferer.c \
-	awt_DrawingSurface.c \
-	awt_Event.c \
-	awt_FileDialog.c \
-	awt_GlobalCursorManager.c \
-	awt_GraphicsEnv.c \
-	awt_InputMethod.c \
-	awt_Insets.c \
-	awt_KeyboardFocusManager.c \
-	awt_Label.c \
-	awt_List.c \
-	awt_Menu.c \
-	awt_MenuBar.c \
-	awt_MenuComponent.c \
-	awt_MenuItem.c \
-	awt_motif.c \
-	awt_Plugin.c \
-	awt_PopupMenu.c \
-	awt_Robot.c \
-	awt_Scrollbar.c \
-	awt_ScrollPane.c \
-	awt_Selection.c \
-	awt_UNIXToolkit.c \
-	awt_TextArea.c \
-	awt_TextField.c \
-	awt_TopLevel.c \
-	awt_mgrsel.c \
-	awt_util.c \
-	awt_wm.c \
-	awt_XmDnD.c \
-	awt_dnd.c \
-	awt_dnd_ds.c \
-	awt_dnd_dt.c \
-	canvas.c \
-	cursor.c \
-	multi_font.c \
-	robot_common.c \
-        list.c \
-        multiVis.c \
-	XDrawingArea.c \
-	MouseInfo.c \
-	awt_xembed.c \
-	awt_xembed_server.c \
-        gtk2_interface.c \
-        swing_GTKEngine.c \
-        swing_GTKStyle.c
+#FILES_MOTIF_c = \
+#keep	awt_AWTEvent.c \
+#	awt_Button.c \
+#	awt_Canvas.c \
+#	awt_Checkbox.c \
+#keep .h	awt_Component.c \
+#keep .h	awt_Cursor.c \
+#	awt_DataTransferer.c \
+#	awt_DrawingSurface.c \
+#	awt_Event.c \
+#	awt_FileDialog.c \
+#	awt_GlobalCursorManager.c \
+#	awt_GraphicsEnv.c \
+#	awt_InputMethod.c \
+#keep	awt_Insets.c \
+#	awt_KeyboardFocusManager.c \
+#	awt_Label.c \
+#	awt_List.c \
+#	awt_Menu.c \
+#	awt_MenuBar.c \
+#	awt_MenuComponent.c \
+#	awt_MenuItem.c \
+#	awt_motif.c \
+#	awt_Plugin.c \
+#	awt_PopupMenu.c \
+#	awt_Robot.c \
+#	awt_Scrollbar.c \
+#	awt_ScrollPane.c \
+#	awt_Selection.c \
+#	awt_UNIXToolkit.c \
+#	awt_TextArea.c \
+#	awt_TextField.c \
+#	awt_TopLevel.c \
+#	awt_mgrsel.c \
+#	awt_util.c \
+#	awt_wm.c \
+#	awt_XmDnD.c \
+#	awt_dnd.c \
+#	awt_dnd_ds.c \
+#	awt_dnd_dt.c \
+#	canvas.c \
+#	cursor.c \
+#	multi_font.c \
+#	robot_common.c \
+#        list.c \
+#        multiVis.c \
+#	XDrawingArea.c \
+#	MouseInfo.c \
+#	awt_xembed.c \
+#	awt_xembed_server.c \
+#        gtk2_interface.c \
+#        swing_GTKEngine.c \
+#        swing_GTKStyle.c
 
 
 # These files are required to be built, with or without motif.  Some of
