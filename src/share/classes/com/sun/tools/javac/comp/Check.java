@@ -1367,12 +1367,46 @@ public class Check {
                         types.isSameType(rt1, rt2) ||
                         rt1.tag >= CLASS && rt2.tag >= CLASS &&
                         (types.covariantReturnType(rt1, rt2, Warner.noWarnings) ||
-                         types.covariantReturnType(rt2, rt1, Warner.noWarnings));
+                         types.covariantReturnType(rt2, rt1, Warner.noWarnings)) ||
+                         checkCommonOverriderIn(s1,s2,site);
                     if (!compat) return s2;
                 }
             }
         }
         return null;
+    }
+    //WHERE
+    boolean checkCommonOverriderIn(Symbol s1, Symbol s2, Type site) {
+        Map<TypeSymbol,Type> supertypes = new HashMap<TypeSymbol,Type>();
+        Type st1 = types.memberType(site, s1);
+        Type st2 = types.memberType(site, s2);
+        closure(site, supertypes);
+        for (Type t : supertypes.values()) {
+            for (Scope.Entry e = t.tsym.members().lookup(s1.name); e.scope != null; e = e.next()) {
+                Symbol s3 = e.sym;
+                if (s3 == s1 || s3 == s2 || s3.kind != MTH || (s3.flags() & (BRIDGE|SYNTHETIC)) != 0) continue;
+                Type st3 = types.memberType(site,s3);
+                if (types.overrideEquivalent(st3, st1) && types.overrideEquivalent(st3, st2)) {
+                    if (s3.owner == site.tsym) {
+                        return true;
+                    }
+                    List<Type> tvars1 = st1.getTypeArguments();
+                    List<Type> tvars2 = st2.getTypeArguments();
+                    List<Type> tvars3 = st3.getTypeArguments();
+                    Type rt1 = st1.getReturnType();
+                    Type rt2 = st2.getReturnType();
+                    Type rt13 = types.subst(st3.getReturnType(), tvars3, tvars1);
+                    Type rt23 = types.subst(st3.getReturnType(), tvars3, tvars2);
+                    boolean compat =
+                        rt13.tag >= CLASS && rt23.tag >= CLASS &&
+                        (types.covariantReturnType(rt13, rt1, Warner.noWarnings) &&
+                         types.covariantReturnType(rt23, rt2, Warner.noWarnings));
+                    if (compat)
+                        return true;
+                }
+            }
+        }
+        return false;
     }
 
     /** Check that a given method conforms with any method it overrides.
