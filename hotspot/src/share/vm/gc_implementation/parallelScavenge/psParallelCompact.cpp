@@ -1004,6 +1004,9 @@ void PSParallelCompact::pre_compact(PreGCValues* pre_gc_values)
 
   DEBUG_ONLY(mark_bitmap()->verify_clear();)
   DEBUG_ONLY(summary_data().verify_clear();)
+
+  // Have worker threads release resources the next time they run a task.
+  gc_task_manager()->release_all_resources();
 }
 
 void PSParallelCompact::post_compact()
@@ -1949,12 +1952,6 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   TimeStamp compaction_start;
   TimeStamp collection_exit;
 
-  // "serial_CM" is needed until the parallel implementation
-  // of the move and update is done.
-  ParCompactionManager* serial_CM = new ParCompactionManager();
-  // Don't initialize more than once.
-  // serial_CM->initialize(&summary_data(), mark_bitmap());
-
   ParallelScavengeHeap* heap = gc_heap();
   GCCause::Cause gc_cause = heap->gc_cause();
   PSYoungGen* young_gen = heap->young_gen();
@@ -1968,6 +1965,10 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   // miscellaneous bookkeeping.
   PreGCValues pre_gc_values;
   pre_compact(&pre_gc_values);
+
+  // Get the compaction manager reserved for the VM thread.
+  ParCompactionManager* const vmthread_cm =
+    ParCompactionManager::manager_array(gc_task_manager()->workers());
 
   // Place after pre_compact() where the number of invocations is incremented.
   AdaptiveSizePolicyOutput(size_policy, heap->total_collections());
@@ -2008,7 +2009,7 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     bool marked_for_unloading = false;
 
     marking_start.update();
-    marking_phase(serial_CM, maximum_heap_compaction);
+    marking_phase(vmthread_cm, maximum_heap_compaction);
 
 #ifndef PRODUCT
     if (TraceParallelOldGCMarkingPhase) {
@@ -2039,7 +2040,7 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 #endif
 
     bool max_on_system_gc = UseMaximumCompactionOnSystemGC && is_system_gc;
-    summary_phase(serial_CM, maximum_heap_compaction || max_on_system_gc);
+    summary_phase(vmthread_cm, maximum_heap_compaction || max_on_system_gc);
 
 #ifdef ASSERT
     if (VerifyParallelOldWithMarkSweep &&
@@ -2067,13 +2068,13 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
       // code can use the the forwarding pointers to
       // check the new pointer calculation.  The restore_marks()
       // has to be done before the real compact.
-      serial_CM->set_action(ParCompactionManager::VerifyUpdate);
-      compact_perm(serial_CM);
-      compact_serial(serial_CM);
-      serial_CM->set_action(ParCompactionManager::ResetObjects);
-      compact_perm(serial_CM);
-      compact_serial(serial_CM);
-      serial_CM->set_action(ParCompactionManager::UpdateAndCopy);
+      vmthread_cm->set_action(ParCompactionManager::VerifyUpdate);
+      compact_perm(vmthread_cm);
+      compact_serial(vmthread_cm);
+      vmthread_cm->set_action(ParCompactionManager::ResetObjects);
+      compact_perm(vmthread_cm);
+      compact_serial(vmthread_cm);
+      vmthread_cm->set_action(ParCompactionManager::UpdateAndCopy);
 
       // For debugging only
       PSMarkSweep::restore_marks();
@@ -2084,15 +2085,13 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     compaction_start.update();
     // Does the perm gen always have to be done serially because
     // klasses are used in the update of an object?
-    compact_perm(serial_CM);
+    compact_perm(vmthread_cm);
 
     if (UseParallelOldGCCompacting) {
       compact();
     } else {
-      compact_serial(serial_CM);
+      compact_serial(vmthread_cm);
     }
-
-    delete serial_CM;
 
     // Reset the mark bitmap, summary data, and do other bookkeeping.  Must be
     // done before resizing.
