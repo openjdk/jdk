@@ -1674,7 +1674,14 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         success = eliminate_locking_node(n->as_AbstractLock());
         break;
       default:
-        assert(false, "unknown node type in macro list");
+        if (n->Opcode() == Op_Opaque1 || n->Opcode() == Op_Opaque2) {
+          _igvn.add_users_to_worklist(n);
+          _igvn.hash_delete(n);
+          _igvn.subsume_node(n, n->in(1));
+          success = true;
+        } else {
+          assert(false, "unknown node type in macro list");
+        }
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
