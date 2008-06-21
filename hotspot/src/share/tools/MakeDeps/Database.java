@@ -36,6 +36,7 @@ public class Database {
   private FileList outerFiles;
   private FileList indivIncludes;
   private FileList grandInclude; // the results for the grand include file
+  private HashMap<String,String> platformDepFiles;
   private long threshold;
   private int nOuterFiles;
   private int nPrecompiledFiles;
@@ -57,6 +58,7 @@ public class Database {
     outerFiles      = new FileList("outerFiles", plat);
     indivIncludes   = new FileList("IndivIncludes", plat);
     grandInclude    = new FileList(plat.getGIFileTemplate().nameOfList(), plat);
+    platformDepFiles = new HashMap<String,String>();
 
     threshold = t;
     nOuterFiles = 0;
@@ -208,6 +210,10 @@ public class Database {
 
               FileList p = allFiles.listForFile(includer);
               p.setPlatformDependentInclude(pdName.dirPreStemSuff());
+
+              // Record the implicit include of this file so that the
+              // dependencies for precompiled headers can mention it.
+              platformDepFiles.put(newIncluder, includer);
 
               // Add an implicit dependency on platform
               // specific file for the generic file
@@ -408,6 +414,12 @@ public class Database {
       for (Iterator iter = grandInclude.iterator(); iter.hasNext(); ) {
         FileList list = (FileList) iter.next();
         gd.println(list.getName() + " \\");
+        String platformDep = platformDepFiles.get(list.getName());
+        if (platformDep != null) {
+            // make sure changes to the platform dependent file will
+            // cause regeneration of the pch file.
+            gd.println(platformDep + " \\");
+        }
       }
       gd.println();
       gd.println();
