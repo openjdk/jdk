@@ -549,10 +549,18 @@ class Opaque1Node : public Node {
   virtual uint hash() const ;                  // { return NO_HASH; }
   virtual uint cmp( const Node &n ) const;
 public:
-  Opaque1Node( Node *n ) : Node(0,n) {}
+  Opaque1Node( Compile* C, Node *n ) : Node(0,n) {
+    // Put it on the Macro nodes list to removed during macro nodes expansion.
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
   // Special version for the pre-loop to hold the original loop limit
   // which is consumed by range check elimination.
-  Opaque1Node( Node *n, Node* orig_limit ) : Node(0,n,orig_limit) {}
+  Opaque1Node( Compile* C, Node *n, Node* orig_limit ) : Node(0,n,orig_limit) {
+    // Put it on the Macro nodes list to removed during macro nodes expansion.
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
   Node* original_loop_limit() { return req()==3 ? in(2) : NULL; }
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::INT; }
@@ -572,7 +580,11 @@ class Opaque2Node : public Node {
   virtual uint hash() const ;                  // { return NO_HASH; }
   virtual uint cmp( const Node &n ) const;
 public:
-  Opaque2Node( Node *n ) : Node(0,n) {}
+  Opaque2Node( Compile* C, Node *n ) : Node(0,n) {
+    // Put it on the Macro nodes list to removed during macro nodes expansion.
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::INT; }
 };

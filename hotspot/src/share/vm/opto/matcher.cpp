@@ -82,6 +82,7 @@ Matcher::Matcher( Node_List &proj_list ) :
   idealreg2debugmask[Op_RegF] = NULL;
   idealreg2debugmask[Op_RegD] = NULL;
   idealreg2debugmask[Op_RegP] = NULL;
+  debug_only(_mem_node = NULL;)   // Ideal memory node consumed by mach node
 }
 
 //------------------------------warp_incoming_stk_arg------------------------
@@ -1153,7 +1154,10 @@ MachNode *Matcher::match_tree( const Node *n ) {
 
   // StoreNodes require their Memory input to match any LoadNodes
   Node *mem = n->is_Store() ? n->in(MemNode::Memory) : (Node*)1 ;
-
+#ifdef ASSERT
+  Node* save_mem_node = _mem_node;
+  _mem_node = n->is_Store() ? (Node*)n : NULL;
+#endif
   // State object for root node of match tree
   // Allocate it on _states_arena - stack allocation can cause stack overflow.
   State *s = new (&_states_arena) State;
@@ -1205,6 +1209,7 @@ MachNode *Matcher::match_tree( const Node *n ) {
     }
   }
 
+  debug_only( _mem_node = save_mem_node; )
   return m;
 }
 
@@ -1445,8 +1450,30 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
   }
 
   // If a Memory was used, insert a Memory edge
-  if( mem != (Node*)1 )
+  if( mem != (Node*)1 ) {
     mach->ins_req(MemNode::Memory,mem);
+#ifdef ASSERT
+    // Verify adr type after matching memory operation
+    const MachOper* oper = mach->memory_operand();
+    if (oper != NULL && oper != (MachOper*)-1 &&
+        mach->adr_type() != TypeRawPtr::BOTTOM) { // non-direct addressing mode
+      // It has a unique memory operand.  Find corresponding ideal mem node.
+      Node* m = NULL;
+      if (leaf->is_Mem()) {
+        m = leaf;
+      } else {
+        m = _mem_node;
+        assert(m != NULL && m->is_Mem(), "expecting memory node");
+      }
+      if (m->adr_type() != mach->adr_type()) {
+        m->dump();
+        tty->print_cr("mach:");
+        mach->dump(1);
+      }
+      assert(m->adr_type() == mach->adr_type(), "matcher should not change adr type");
+    }
+#endif
+  }
 
   // If the _leaf is an AddP, insert the base edge
   if( leaf->is_AddP() )
@@ -1510,7 +1537,9 @@ void Matcher::ReduceInst_Chain_Rule( State *s, int rule, Node *&mem, MachNode *m
     assert( newrule >= _LAST_MACH_OPER, "Do NOT chain from internal operand");
     mach->_opnds[1] = s->MachOperGenerator( _reduceOp[catch_op], C );
     Node *mem1 = (Node*)1;
+    debug_only(Node *save_mem_node = _mem_node;)
     mach->add_req( ReduceInst(s, newrule, mem1) );
+    debug_only(_mem_node = save_mem_node;)
   }
   return;
 }
@@ -1520,6 +1549,7 @@ uint Matcher::ReduceInst_Interior( State *s, int rule, Node *&mem, MachNode *mac
   if( s->_leaf->is_Load() ) {
     Node *mem2 = s->_leaf->in(MemNode::Memory);
     assert( mem == (Node*)1 || mem == mem2, "multiple Memories being matched at once?" );
+    debug_only( if( mem == (Node*)1 ) _mem_node = s->_leaf;)
     mem = mem2;
   }
   if( s->_leaf->in(0) != NULL && s->_leaf->req() > 1) {
@@ -1563,7 +1593,9 @@ uint Matcher::ReduceInst_Interior( State *s, int rule, Node *&mem, MachNode *mac
         //             --> ReduceInst( newrule )
         mach->_opnds[num_opnds++] = s->MachOperGenerator( _reduceOp[catch_op], C );
         Node *mem1 = (Node*)1;
+        debug_only(Node *save_mem_node = _mem_node;)
         mach->add_req( ReduceInst( newstate, newrule, mem1 ) );
+        debug_only(_mem_node = save_mem_node;)
       }
     }
     assert( mach->_opnds[num_opnds-1], "" );
@@ -1594,6 +1626,7 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
   if( s->_leaf->is_Load() ) {
     assert( mem == (Node*)1, "multiple Memories being matched at once?" );
     mem = s->_leaf->in(MemNode::Memory);
+    debug_only(_mem_node = s->_leaf;)
   }
   if( s->_leaf->in(0) && s->_leaf->req() > 1) {
     if( !mach->in(0) )
@@ -1618,7 +1651,9 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
       // Reduce the instruction, and add a direct pointer from this
       // machine instruction to the newly reduced one.
       Node *mem1 = (Node*)1;
+      debug_only(Node *save_mem_node = _mem_node;)
       mach->add_req( ReduceInst( kid, newrule, mem1 ) );
+      debug_only(_mem_node = save_mem_node;)
     }
   }
 }

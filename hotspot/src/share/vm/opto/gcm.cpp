@@ -307,7 +307,6 @@ static Block* raise_LCA_above_marks(Block* LCA, node_idx_t mark,
 
     // Test and set the visited bit.
     if (mid->raise_LCA_visited() == mark)  continue;  // already visited
-    mid->set_raise_LCA_visited(mark);
 
     // Don't process the current LCA, otherwise the search may terminate early
     if (mid != LCA && mid->raise_LCA_mark() == mark) {
@@ -317,6 +316,8 @@ static Block* raise_LCA_above_marks(Block* LCA, node_idx_t mark,
       assert(early->dominates(LCA), "early is high enough");
       // Resume searching at that point, skipping intermediate levels.
       worklist.push(LCA);
+      if (LCA == mid)
+        continue; // Don't mark as visited to avoid early termination.
     } else {
       // Keep searching through this block's predecessors.
       for (uint j = 1, jmax = mid->num_preds(); j < jmax; j++) {
@@ -324,6 +325,7 @@ static Block* raise_LCA_above_marks(Block* LCA, node_idx_t mark,
         worklist.push(mid_parent);
       }
     }
+    mid->set_raise_LCA_visited(mark);
   }
   return LCA;
 }

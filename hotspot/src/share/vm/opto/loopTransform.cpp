@@ -690,7 +690,7 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   // (the main-loop trip-counter exit value) because we will be changing
   // the exit value (via unrolling) so we cannot constant-fold away the zero
   // trip guard until all unrolling is done.
-  Node *zer_opaq = new (C, 2) Opaque1Node(incr);
+  Node *zer_opaq = new (C, 2) Opaque1Node(C, incr);
   Node *zer_cmp  = new (C, 3) CmpINode( zer_opaq, limit );
   Node *zer_bol  = new (C, 2) BoolNode( zer_cmp, b_test );
   register_new_node( zer_opaq, new_main_exit );
@@ -760,7 +760,7 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   // pre-loop, the main-loop may not execute at all.  Later in life this
   // zero-trip guard will become the minimum-trip guard when we unroll
   // the main-loop.
-  Node *min_opaq = new (C, 2) Opaque1Node(limit);
+  Node *min_opaq = new (C, 2) Opaque1Node(C, limit);
   Node *min_cmp  = new (C, 3) CmpINode( pre_incr, min_opaq );
   Node *min_bol  = new (C, 2) BoolNode( min_cmp, b_test );
   register_new_node( min_opaq, new_pre_exit );
@@ -810,7 +810,7 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
 
   // Save the original loop limit in this Opaque1 node for
   // use by range check elimination.
-  Node *pre_opaq  = new (C, 3) Opaque1Node(pre_limit, limit);
+  Node *pre_opaq  = new (C, 3) Opaque1Node(C, pre_limit, limit);
 
   register_new_node( pre_limit, pre_head->in(0) );
   register_new_node( pre_opaq , pre_head->in(0) );
