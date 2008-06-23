@@ -373,6 +373,9 @@ private:
   CompactibleSpace* _next_compaction_space;
 
 public:
+  CompactibleSpace() :
+   _compaction_top(NULL), _next_compaction_space(NULL) {}
+
   virtual void initialize(MemRegion mr, bool clear_space);
   virtual void clear();
 
@@ -766,6 +769,10 @@ class ContiguousSpace: public CompactibleSpace {
   inline HeapWord* par_allocate_impl(size_t word_size, HeapWord* end_value);
 
  public:
+  ContiguousSpace() :
+    _top(NULL),
+    _concurrent_iteration_safe_limit(NULL) {}
+
   virtual void initialize(MemRegion mr, bool clear_space);
 
   // Accessors
@@ -970,7 +977,8 @@ class EdenSpace : public ContiguousSpace {
   HeapWord* _soft_end;
 
  public:
-  EdenSpace(DefNewGeneration* gen) : _gen(gen) { _soft_end = NULL; }
+  EdenSpace(DefNewGeneration* gen) :
+   _gen(gen), _soft_end(NULL) {}
 
   // Get/set just the 'soft' limit.
   HeapWord* soft_end()               { return _soft_end; }

@@ -276,6 +276,7 @@ void ContiguousSpace::initialize(MemRegion mr, bool clear_space) {
   set_top(bottom());
   set_saved_mark();
   if (clear_space) clear();
+  set_concurrent_iteration_safe_limit(top());
 }
 
 void ContiguousSpace::clear() {

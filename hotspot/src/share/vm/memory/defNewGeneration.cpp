@@ -227,8 +227,8 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size) {
       eden()->mangle_unused_area();
     }
   }
-  from()->set_bounds(fromMR); from()->clear();
-    to()->set_bounds(toMR);     to()->clear();
+  from()->initialize(fromMR, true /* clear */);
+    to()->initialize(  toMR, true /* clear */);
   // Make sure we compact eden, then from.
   // The to-space is normally empty before a compaction so need
   // not be considered.  The exception is during promotion
