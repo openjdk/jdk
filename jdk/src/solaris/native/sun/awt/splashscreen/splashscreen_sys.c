@@ -40,6 +40,7 @@
 #include <langinfo.h>
 #include <locale.h>
 #include <fcntl.h>
+#include <poll.h>
 
 static Bool shapeSupported;
 static int shapeEventBase, shapeErrorBase;
@@ -534,40 +535,34 @@ void
 SplashEventLoop(Splash * splash) {
 
     /*      Different from win32 implementation - this loop
-       uses select timeouts instead of a timer */
+       uses poll timeouts instead of a timer */
     /* we should have splash _locked_ on entry!!! */
 
     int xconn = XConnectionNumber(splash->display);
 
     while (1) {
+        struct pollfd pfd[2];
+        int timeout = -1;
         int ctl = splash->controlpipe[0];
-        fd_set fds[2];
-        int n = 0;
-        struct timeval tv, *ptv;
         int rc;
-        int time;
         int pipes_empty;
 
-        FD_ZERO(fds);
-        FD_SET(xconn, fds);
-        if (xconn+1 > n)
-            n = xconn+1;
-        FD_SET(ctl, fds);
-        if (ctl+1 > n)
-            n = ctl+1;
+        pfd[0].fd = xconn;
+        pfd[0].events = POLLIN | POLLPRI;
+
+        pfd[1].fd = ctl;
+        pfd[1].events = POLLIN | POLLPRI;
+
         errno = 0;
         if (splash->isVisible>0 && SplashIsStillLooping(splash)) {
-            time = splash->time + splash->frames[splash->currentFrame].delay
+            timeout = splash->time + splash->frames[splash->currentFrame].delay
                 - SplashTime();
-            if (time < 0)
-                time = 0;
-            msec2timeval(time, &tv);
-            ptv = &tv;
-        } else {
-            ptv = NULL;
+            if (timeout < 0) {
+                timeout = 0;
+            }
         }
         SplashUnlock(splash);
-        rc = select(n, fds, NULL, NULL, ptv);
+        rc = poll(pfd, 2, timeout);
         SplashLock(splash);
         if (splash->isVisible>0 && SplashTime() >= splash->time +
                 splash->frames[splash->currentFrame].delay) {
