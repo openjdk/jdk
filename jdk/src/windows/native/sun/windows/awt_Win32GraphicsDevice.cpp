@@ -1107,6 +1107,10 @@ Java_sun_awt_Win32GraphicsDevice_exitFullScreenExclusive(
             }
         }
     } else {
+        jobject target = env->GetObjectField(windowPeer, AwtObject::targetID);
+        jboolean alwaysOnTop = JNU_GetFieldByName(env, NULL, target, "alwaysOnTop", "Z").z;
+        env->DeleteLocalRef(target);
+
         if (!::SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0,
                             SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOSIZE))
         {
@@ -1114,6 +1118,9 @@ Java_sun_awt_Win32GraphicsDevice_exitFullScreenExclusive(
                         "Error %d unsetting topmost attribute to fs window",
                         ::GetLastError());
         }
+
+        // We should restore alwaysOnTop state as it's anyway dropped here
+        Java_sun_awt_windows_WWindowPeer_setAlwaysOnTopNative(env, windowPeer, alwaysOnTop);
     }
 
     CATCH_BAD_ALLOC;
