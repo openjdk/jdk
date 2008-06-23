@@ -502,9 +502,9 @@ void vm_shutdown()
   os::shutdown();
 }
 
-void vm_abort() {
+void vm_abort(bool dump_core) {
   vm_perform_shutdown_actions();
-  os::abort(PRODUCT_ONLY(false));
+  os::abort(dump_core);
   ShouldNotReachHere();
 }
 
@@ -538,18 +538,24 @@ void vm_exit_during_initialization(Handle exception) {
   java_lang_Throwable::print_stack_trace(exception(), tty);
   tty->cr();
   vm_notify_during_shutdown(NULL, NULL);
-  vm_abort();
+
+  // Failure during initialization, we don't want to dump core
+  vm_abort(false);
 }
 
 void vm_exit_during_initialization(symbolHandle ex, const char* message) {
   ResourceMark rm;
   vm_notify_during_shutdown(ex->as_C_string(), message);
-  vm_abort();
+
+  // Failure during initialization, we don't want to dump core
+  vm_abort(false);
 }
 
 void vm_exit_during_initialization(const char* error, const char* message) {
   vm_notify_during_shutdown(error, message);
-  vm_abort();
+
+  // Failure during initialization, we don't want to dump core
+  vm_abort(false);
 }
 
 void vm_shutdown_during_initialization(const char* error, const char* message) {
