@@ -1,0 +1,106 @@
+/*
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ *
+ */
+package com.sun.hotspot.igv.filter;
+
+import com.sun.hotspot.igv.graph.Connection;
+import com.sun.hotspot.igv.graph.Diagram;
+import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.graph.OutputSlot;
+import com.sun.hotspot.igv.graph.Selector;
+import com.sun.hotspot.igv.data.Properties;
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ *
+ * @author Thomas Wuerthinger
+ */
+public class ConnectionFilter extends AbstractFilter {
+
+    private List<ConnectionStyleRule> connectionStyleRules;
+    private String name;
+
+    public ConnectionFilter(String name) {
+        this.name = name;
+        connectionStyleRules = new ArrayList<ConnectionStyleRule>();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void apply(Diagram diagram) {
+
+        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<Figure>(diagram.getFigures());
+        for (ConnectionStyleRule rule : connectionStyleRules) {
+            List<Figure> figures = null;
+            if (rule.getSelector() != null) {
+                figures = rule.getSelector().selected(diagram);
+            } else {
+                figures = diagram.getFigures();
+            }
+
+            for (Figure f : figures) {
+                for (OutputSlot os : f.getOutputSlots()) {
+                    for (Connection c : os.getConnections()) {
+                        if (figures.contains(c.getInputSlot().getFigure())) {
+                            c.setStyle(rule.getLineStyle());
+                            c.setColor(rule.getLineColor());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void addRule(ConnectionStyleRule r) {
+        connectionStyleRules.add(r);
+    }
+
+    public static class ConnectionStyleRule {
+
+        private Color lineColor;
+        private Connection.ConnectionStyle lineStyle;
+        private Selector selector;
+
+        public ConnectionStyleRule(Selector selector, Color lineColor, Connection.ConnectionStyle lineStyle) {
+            this.selector = selector;
+            this.lineColor = lineColor;
+            this.lineStyle = lineStyle;
+        }
+
+        public Selector getSelector() {
+            return selector;
+        }
+
+        public Color getLineColor() {
+            return lineColor;
+        }
+
+        public Connection.ConnectionStyle getLineStyle() {
+            return lineStyle;
+        }
+    }
+}
