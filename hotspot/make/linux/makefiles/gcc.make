@@ -50,14 +50,7 @@ PICFLAG = -fPIC
 
 VM_PICFLAG/LIBJVM = $(PICFLAG)
 VM_PICFLAG/AOUT   =
-
-ifneq ($(BUILDARCH), i486)
 VM_PICFLAG        = $(VM_PICFLAG/$(LINK_INTO))
-else
-# PIC has significant overhead on x86, build nonpic VM for now.
-# Link JVM at a "good" base location to avoid unnecessary .text patching.
-JVM_BASE_ADDR     = 0x06000000
-endif
 
 CFLAGS += $(VM_PICFLAG)
 CFLAGS += -fno-rtti
