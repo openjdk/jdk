@@ -301,7 +301,11 @@ public class Types {
                 : isSubtypeUnchecked(elemtype(t), elemtype(s), warn);
         } else if (isSubtype(t, s)) {
             return true;
-        } else if (!s.isRaw()) {
+        }
+        else if (t.tag == TYPEVAR) {
+            return isSubtypeUnchecked(t.getUpperBound(), s, warn);
+        }
+        else if (!s.isRaw()) {
             Type t2 = asSuper(t, s.tsym);
             if (t2 != null && t2.isRaw()) {
                 if (isReifiable(s))
