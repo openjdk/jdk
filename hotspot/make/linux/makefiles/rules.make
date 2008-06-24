@@ -133,7 +133,10 @@ ifeq    ($(findstring j,$(MFLAGS)),j)
 COMPILE_DONE    = && { echo Done with $<; }
 endif
 
-include $(GAMMADIR)/make/defs.make
+# Include $(NONPIC_OBJ_FILES) definition
+ifndef LP64
+include $(GAMMADIR)/make/pic.make
+endif
 
 # The non-PIC object files are only generated for 32 bit platforms.
 ifdef LP64
