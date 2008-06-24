@@ -2017,7 +2017,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
         for (uint i = 0; i < cnt; i++) {
           Node* m = r->raw_out(i);
           if (m!= NULL && m->Opcode() == Op_ConN &&
-              m->bottom_type()->is_narrowoop()->make_oopptr() == t) {
+              m->bottom_type()->make_ptr() == t) {
             nn = m;
             break;
           }
@@ -2070,7 +2070,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
             }
           }
         } else if (t->isa_oopptr()) {
-          in2 = ConNode::make(C, t->is_oopptr()->make_narrowoop());
+          in2 = ConNode::make(C, t->make_narrowoop());
         }
       }
       if( in2 != NULL ) {

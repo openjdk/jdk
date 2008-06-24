@@ -225,6 +225,12 @@ public:
   virtual bool      is_finite() const;           // Has a finite value
   virtual bool      is_nan()    const;           // Is not a number (NaN)
 
+  // Returns this ptr type or the equivalent ptr type for this compressed pointer.
+  const TypePtr* make_ptr() const;
+  // Returns this compressed pointer or the equivalent compressed version
+  // of this pointer type.
+  const TypeNarrowOop* make_narrowoop() const;
+
   // Special test for register pressure heuristic
   bool is_floatingpoint() const;        // True if Float or Double base type
 
@@ -718,9 +724,6 @@ public:
 
   virtual const TypePtr *add_offset( int offset ) const;
 
-  // returns the equivalent compressed version of this pointer type
-  virtual const TypeNarrowOop* make_narrowoop() const;
-
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
 
@@ -911,7 +914,7 @@ public:
 // between the normal and the compressed form.
 class TypeNarrowOop : public Type {
 protected:
-  const TypePtr* _ooptype;
+  const TypePtr* _ooptype; // Could be TypePtr::NULL_PTR
 
   TypeNarrowOop( const TypePtr* ooptype): Type(NarrowOop),
     _ooptype(ooptype) {
@@ -940,8 +943,8 @@ public:
     return make(TypeOopPtr::make_from_constant(con));
   }
 
-  // returns the equivalent oopptr type for this compressed pointer
-  virtual const TypePtr *make_oopptr() const {
+  // returns the equivalent ptr type for this compressed pointer
+  const TypePtr *make_oopptr() const {
     return _ooptype;
   }
 
@@ -1126,6 +1129,16 @@ inline const TypeKlassPtr *Type::isa_klassptr() const {
 inline const TypeKlassPtr *Type::is_klassptr() const {
   assert( _base == KlassPtr, "Not a klass pointer" );
   return (TypeKlassPtr*)this;
+}
+
+inline const TypePtr* Type::make_ptr() const {
+  return (_base == NarrowOop) ? is_narrowoop()->make_oopptr() :
+                                (isa_ptr() ? is_ptr() : NULL);
+}
+
+inline const TypeNarrowOop* Type::make_narrowoop() const {
+  return (_base == NarrowOop) ? is_narrowoop() :
+                                (isa_ptr() ? TypeNarrowOop::make(is_ptr()) : NULL);
 }
 
 inline bool Type::is_floatingpoint() const {

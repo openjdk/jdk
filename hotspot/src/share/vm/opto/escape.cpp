@@ -962,13 +962,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         assert(tinst != NULL && tinst->is_instance() &&
                tinst->instance_id() == elem , "instance type expected.");
 
-        const TypeOopPtr *tn_t = NULL;
         const Type *tn_type = igvn->type(tn);
-        if (tn_type->isa_narrowoop()) {
-          tn_t = tn_type->is_narrowoop()->make_oopptr()->isa_oopptr();
-        } else {
-          tn_t = tn_type->isa_oopptr();
-        }
+        const TypeOopPtr *tn_t = tn_type->make_ptr()->isa_oopptr();
 
         if (tn_t != NULL &&
  tinst->cast_to_instance(TypeOopPtr::UNKNOWN_INSTANCE)->higher_equal(tn_t)) {
@@ -1921,9 +1916,7 @@ void ConnectionGraph::record_for_escape_analysis(Node *n, PhaseTransform *phase)
     case Op_StoreN:
     {
       const Type *adr_type = phase->type(n->in(MemNode::Address));
-      if (adr_type->isa_narrowoop()) {
-        adr_type = adr_type->is_narrowoop()->make_oopptr();
-      }
+      adr_type = adr_type->make_ptr();
       if (adr_type->isa_oopptr()) {
         add_node(n, PointsToNode::UnknownType, PointsToNode::UnknownEscape, false);
       } else {
@@ -1948,9 +1941,7 @@ void ConnectionGraph::record_for_escape_analysis(Node *n, PhaseTransform *phase)
     case Op_CompareAndSwapN:
     {
       const Type *adr_type = phase->type(n->in(MemNode::Address));
-      if (adr_type->isa_narrowoop()) {
-        adr_type = adr_type->is_narrowoop()->make_oopptr();
-      }
+      adr_type = adr_type->make_ptr();
       if (adr_type->isa_oopptr()) {
         add_node(n, PointsToNode::UnknownType, PointsToNode::UnknownEscape, false);
       } else {
@@ -2131,10 +2122,7 @@ void ConnectionGraph::build_connection_graph(Node *n, PhaseTransform *phase) {
     case Op_CompareAndSwapN:
     {
       Node *adr = n->in(MemNode::Address);
-      const Type *adr_type = phase->type(adr);
-      if (adr_type->isa_narrowoop()) {
-        adr_type = adr_type->is_narrowoop()->make_oopptr();
-      }
+      const Type *adr_type = phase->type(adr)->make_ptr();
 #ifdef ASSERT
       if (!adr_type->isa_oopptr())
         assert(phase->type(adr) == TypeRawPtr::NOTNULL, "Op_StoreP");

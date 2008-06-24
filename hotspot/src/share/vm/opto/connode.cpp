@@ -570,23 +570,7 @@ const Type *DecodeNNode::Value( PhaseTransform *phase ) const {
   if (t == TypeNarrowOop::NULL_PTR) return TypePtr::NULL_PTR;
 
   assert(t->isa_narrowoop(), "only  narrowoop here");
-  return t->is_narrowoop()->make_oopptr();
-}
-
-Node* DecodeNNode::decode(PhaseTransform* phase, Node* value) {
-  if (value->is_EncodeP()) {
-    // (DecodeN (EncodeP p)) -> p
-    return value->in(1);
-  }
-  const Type* newtype = value->bottom_type();
-  if (newtype == TypeNarrowOop::NULL_PTR) {
-    return phase->transform(new (phase->C, 1) ConPNode(TypePtr::NULL_PTR));
-  } else if (newtype->isa_narrowoop()) {
-    return phase->transform(new (phase->C, 2) DecodeNNode(value, newtype->is_narrowoop()->make_oopptr()));
-  } else {
-    ShouldNotReachHere();
-    return NULL; // to make C++ compiler happy.
-  }
+  return t->make_ptr();
 }
 
 Node* EncodePNode::Identity(PhaseTransform* phase) {
@@ -606,24 +590,9 @@ const Type *EncodePNode::Value( PhaseTransform *phase ) const {
   if (t == TypePtr::NULL_PTR) return TypeNarrowOop::NULL_PTR;
 
   assert(t->isa_oopptr(), "only oopptr here");
-  return t->is_oopptr()->make_narrowoop();
+  return t->make_narrowoop();
 }
 
-Node* EncodePNode::encode(PhaseTransform* phase, Node* value) {
-  if (value->is_DecodeN()) {
-    // (EncodeP (DecodeN p)) -> p
-    return value->in(1);
-  }
-  const Type* newtype = value->bottom_type();
-  if (newtype == TypePtr::NULL_PTR) {
-    return phase->transform(new (phase->C, 1) ConNNode(TypeNarrowOop::NULL_PTR));
-  } else if (newtype->isa_oopptr()) {
-    return phase->transform(new (phase->C, 2) EncodePNode(value, newtype->is_oopptr()->make_narrowoop()));
-  } else {
-    ShouldNotReachHere();
-    return NULL; // to make C++ compiler happy.
-  }
-}
 
 Node *EncodePNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
   return MemNode::Ideal_common_DU_postCCP(ccp, this, in(1));
