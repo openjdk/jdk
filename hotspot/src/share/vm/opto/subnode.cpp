@@ -743,8 +743,8 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
 // Simplify an CmpN (compare 2 pointers) node, based on local information.
 // If both inputs are constants, compare them.
 const Type *CmpNNode::sub( const Type *t1, const Type *t2 ) const {
-  const TypePtr *r0 = t1->is_narrowoop()->make_oopptr(); // Handy access
-  const TypePtr *r1 = t2->is_narrowoop()->make_oopptr();
+  const TypePtr *r0 = t1->make_ptr(); // Handy access
+  const TypePtr *r1 = t2->make_ptr();
 
   // Undefined inputs makes for an undefined result
   if( TypePtr::above_centerline(r0->_ptr) ||

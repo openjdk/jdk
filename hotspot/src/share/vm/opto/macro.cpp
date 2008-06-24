@@ -598,7 +598,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
           field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
         }
         if (UseCompressedOops) {
-          field_type = field_type->is_oopptr()->make_narrowoop();
+          field_type = field_type->make_narrowoop();
           basic_elem_type = T_NARROWOOP;
         }
       } else {
@@ -666,9 +666,11 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
       if (UseCompressedOops && field_type->isa_narrowoop()) {
         // Enable "DecodeN(EncodeP(Allocate)) --> Allocate" transformation
         // to be able scalar replace the allocation.
-        _igvn.set_delay_transform(false);
-        field_val = DecodeNNode::decode(&_igvn, field_val);
-        _igvn.set_delay_transform(true);
+        if (field_val->is_EncodeP()) {
+          field_val = field_val->in(1);
+        } else {
+          field_val = transform_later(new (C, 2) DecodeNNode(field_val, field_val->bottom_type()->make_ptr()));
+        }
       }
       sfpt->add_req(field_val);
     }

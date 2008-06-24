@@ -1766,8 +1766,8 @@ void Matcher::find_shared( Node *n ) {
       }
       case Op_ConN: {  // Convert narrow pointers above the centerline to NUL
         TypeNode *tn = n->as_Type(); // Constants derive from type nodes
-        const TypePtr* tp = tn->type()->is_narrowoop()->make_oopptr();
-        if (tp->_ptr == TypePtr::AnyNull) {
+        const TypePtr* tp = tn->type()->make_ptr();
+        if (tp && tp->_ptr == TypePtr::AnyNull) {
           tn->set_type(TypeNarrowOop::NULL_PTR);
         }
         break;

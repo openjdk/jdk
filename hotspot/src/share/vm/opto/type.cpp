@@ -168,7 +168,20 @@ const Type* Type::get_typeflow_type(ciType* type) {
 const Type *Type::make( enum TYPES t ) {
   return (new Type(t))->hashcons();
 }
+/*
+//------------------------------make_ptr---------------------------------------
+// Returns this ptr type or the equivalent ptr type for this compressed pointer.
+const TypePtr* Type::make_ptr() const {
+  return (_base == NarrowOop) ? is_narrowoop()->make_oopptr() : is_ptr();
+}
 
+//------------------------------make_narrowoop---------------------------------
+// Returns this compressed pointer or the equivalent compressed version
+// of this pointer type.
+const TypeNarrowOop* Type::make_narrowoop() const {
+  return (_base == NarrowOop) ? is_narrowoop() : TypeNarrowOop::make(is_ptr());
+}
+*/
 //------------------------------cmp--------------------------------------------
 int Type::cmp( const Type *const t1, const Type *const t2 ) {
   if( t1->_base != t2->_base )
@@ -491,14 +504,8 @@ bool Type::is_nan()    const {
 // commutative and the lattice is symmetric.
 const Type *Type::meet( const Type *t ) const {
   if (isa_narrowoop() && t->isa_narrowoop()) {
-    const Type* result = is_narrowoop()->make_oopptr()->meet(t->is_narrowoop()->make_oopptr());
-    if (result->isa_oopptr()) {
-      return result->isa_oopptr()->make_narrowoop();
-    } else if (result == TypePtr::NULL_PTR) {
-      return TypeNarrowOop::NULL_PTR;
-    } else {
-      return result;
-    }
+    const Type* result = make_ptr()->meet(t->make_ptr());
+    return result->make_narrowoop();
   }
 
   const Type *mt = xmeet(t);
@@ -1764,7 +1771,7 @@ inline const TypeInt* normalize_array_size(const TypeInt* size) {
 //------------------------------make-------------------------------------------
 const TypeAry *TypeAry::make( const Type *elem, const TypeInt *size) {
   if (UseCompressedOops && elem->isa_oopptr()) {
-    elem = elem->is_oopptr()->make_narrowoop();
+    elem = elem->make_narrowoop();
   }
   size = normalize_array_size(size);
   return (TypeAry*)(new TypeAry(elem,size))->hashcons();
@@ -1849,9 +1856,8 @@ bool TypeAry::ary_must_be_exact() const {
   if (_elem == BOTTOM)      return false;  // general array not exact
   if (_elem == TOP   )      return false;  // inverted general array not exact
   const TypeOopPtr*  toop = NULL;
-  if (UseCompressedOops) {
-    const TypeNarrowOop* noop = _elem->isa_narrowoop();
-    if (noop) toop = noop->make_oopptr()->isa_oopptr();
+  if (UseCompressedOops && _elem->isa_narrowoop()) {
+    toop = _elem->make_ptr()->isa_oopptr();
   } else {
     toop = _elem->isa_oopptr();
   }
@@ -1861,16 +1867,18 @@ bool TypeAry::ary_must_be_exact() const {
   if (!tklass->is_loaded()) return false;  // unloaded class
   const TypeInstPtr* tinst;
   if (_elem->isa_narrowoop())
-    tinst = _elem->is_narrowoop()->make_oopptr()->isa_instptr();
+    tinst = _elem->make_ptr()->isa_instptr();
   else
     tinst = _elem->isa_instptr();
-  if (tinst)                return tklass->as_instance_klass()->is_final();
+  if (tinst)
+    return tklass->as_instance_klass()->is_final();
   const TypeAryPtr*  tap;
   if (_elem->isa_narrowoop())
-    tap = _elem->is_narrowoop()->make_oopptr()->isa_aryptr();
+    tap = _elem->make_ptr()->isa_aryptr();
   else
     tap = _elem->isa_aryptr();
-  if (tap)                  return tap->ary()->ary_must_be_exact();
+  if (tap)
+    return tap->ary()->ary_must_be_exact();
   return false;
 }
 
@@ -2577,10 +2585,6 @@ int TypeOopPtr::xadd_offset( int offset ) const {
 //------------------------------add_offset-------------------------------------
 const TypePtr *TypeOopPtr::add_offset( int offset ) const {
   return make( _ptr, xadd_offset(offset) );
-}
-
-const TypeNarrowOop* TypeOopPtr::make_narrowoop() const {
-  return TypeNarrowOop::make(this);
 }
 
 int TypeOopPtr::meet_instance(int iid) const {
@@ -3494,7 +3498,7 @@ const Type *TypeNarrowOop::xmeet( const Type *t ) const {
     return this;
 
   case NarrowOop: {
-    const Type* result = _ooptype->xmeet(t->is_narrowoop()->make_oopptr());
+    const Type* result = _ooptype->xmeet(t->make_ptr());
     if (result->isa_ptr()) {
       return TypeNarrowOop::make(result->is_ptr());
     }
@@ -3604,7 +3608,7 @@ ciKlass* TypeAryPtr::klass() const {
   const TypeAryPtr *tary;
   const Type* el = elem();
   if (el->isa_narrowoop()) {
-    el = el->is_narrowoop()->make_oopptr();
+    el = el->make_ptr();
   }
 
   // Get element klass

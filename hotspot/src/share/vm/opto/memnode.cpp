@@ -769,15 +769,8 @@ Node *LoadNode::make( PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const Type
   case T_OBJECT:
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
-      const TypeNarrowOop* narrowtype;
-      if (rt->isa_narrowoop()) {
-        narrowtype = rt->is_narrowoop();
-      } else {
-        narrowtype = rt->is_oopptr()->make_narrowoop();
-      }
-      Node* load  = gvn.transform(new (C, 3) LoadNNode(ctl, mem, adr, adr_type, narrowtype));
-
-      return DecodeNNode::decode(&gvn, load);
+      Node* load  = gvn.transform(new (C, 3) LoadNNode(ctl, mem, adr, adr_type, rt->make_narrowoop()));
+      return new (C, 2) DecodeNNode(load, load->bottom_type()->make_ptr());
     } else
 #endif
     {
@@ -1631,9 +1624,8 @@ Node *LoadKlassNode::make( PhaseGVN& gvn, Node *mem, Node *adr, const TypePtr* a
   assert(adr_type != NULL, "expecting TypeOopPtr");
 #ifdef _LP64
   if (adr_type->is_ptr_to_narrowoop()) {
-    const TypeNarrowOop* narrowtype = tk->is_oopptr()->make_narrowoop();
-    Node* load_klass = gvn.transform(new (C, 3) LoadNKlassNode(ctl, mem, adr, at, narrowtype));
-    return DecodeNNode::decode(&gvn, load_klass);
+    Node* load_klass = gvn.transform(new (C, 3) LoadNKlassNode(ctl, mem, adr, at, tk->make_narrowoop()));
+    return new (C, 2) DecodeNNode(load_klass, load_klass->bottom_type()->make_ptr());
   }
 #endif
   assert(!adr_type->is_ptr_to_narrowoop(), "should have got back a narrow oop");
@@ -1843,15 +1835,10 @@ Node* LoadNode::klass_identity_common(PhaseTransform *phase ) {
 //------------------------------Value------------------------------------------
 const Type *LoadNKlassNode::Value( PhaseTransform *phase ) const {
   const Type *t = klass_value_common(phase);
+  if (t == Type::TOP)
+    return t;
 
-  if (t == TypePtr::NULL_PTR) {
-    return TypeNarrowOop::NULL_PTR;
-  }
-  if (t != Type::TOP && !t->isa_narrowoop()) {
-    assert(t->is_oopptr(), "sanity");
-    t = t->is_oopptr()->make_narrowoop();
-  }
-  return t;
+  return t->make_narrowoop();
 }
 
 //------------------------------Identity---------------------------------------
@@ -1864,7 +1851,7 @@ Node* LoadNKlassNode::Identity( PhaseTransform *phase ) {
   if( t == Type::TOP ) return x;
   if( t->isa_narrowoop()) return x;
 
-  return EncodePNode::encode(phase, x);
+  return phase->transform(new (phase->C, 2) EncodePNode(x, t->make_narrowoop()));
 }
 
 //------------------------------Value-----------------------------------------
@@ -1930,14 +1917,13 @@ StoreNode* StoreNode::make( PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, cons
     if (adr->bottom_type()->is_ptr_to_narrowoop() ||
         (UseCompressedOops && val->bottom_type()->isa_klassptr() &&
          adr->bottom_type()->isa_rawptr())) {
-      const TypePtr* type = val->bottom_type()->is_ptr();
-      Node* cp = EncodePNode::encode(&gvn, val);
-      return new (C, 4) StoreNNode(ctl, mem, adr, adr_type, cp);
+      val = gvn.transform(new (C, 2) EncodePNode(val, val->bottom_type()->make_narrowoop()));
+      return new (C, 4) StoreNNode(ctl, mem, adr, adr_type, val);
     } else
 #endif
-      {
-        return new (C, 4) StorePNode(ctl, mem, adr, adr_type, val);
-      }
+    {
+      return new (C, 4) StorePNode(ctl, mem, adr, adr_type, val);
+    }
   }
   ShouldNotReachHere();
   return (StoreNode*)NULL;
