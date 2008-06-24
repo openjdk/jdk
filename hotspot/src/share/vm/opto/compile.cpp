@@ -313,9 +313,6 @@ CompileWrapper::CompileWrapper(Compile* compile) : _compile(compile) {
   _compile->begin_method();
 }
 CompileWrapper::~CompileWrapper() {
-  if (_compile->failing()) {
-    _compile->print_method("Failed");
-  }
   _compile->end_method();
   if (_compile->scratch_buffer_blob() != NULL)
     BufferBlob::free(_compile->scratch_buffer_blob());
@@ -603,6 +600,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   Optimize();
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
+
+  print_method("Before Matching");
 
 #ifndef PRODUCT
   if (PrintIdeal) {
@@ -1481,7 +1480,7 @@ void Compile::Optimize() {
 
   NOT_PRODUCT( verify_graph_edges(); )
 
-  print_method("Start");
+  print_method("After Parsing");
 
  {
   // Iterative Global Value Numbering, including ideal transforms
@@ -1688,7 +1687,7 @@ void Compile::Code_Gen() {
     Output();
   }
 
-  print_method("End");
+  print_method("Final Code");
 
   // He's dead, Jim.
   _cfg     = (PhaseCFG*)0xdeadbeef;
@@ -2465,6 +2464,9 @@ void Compile::record_failure(const char* reason) {
   if (_failure_reason == NULL) {
     // Record the first failure reason.
     _failure_reason = reason;
+  }
+  if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
+    C->print_method(_failure_reason);
   }
   _root = NULL;  // flush the graph, too
 }

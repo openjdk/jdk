@@ -2220,7 +2220,7 @@ void Parse::do_one_bytecode() {
     sprintf(buffer, "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();
     printer->set_traverse_outs(true);
-    printer->print_method(C, buffer, 3);
+    printer->print_method(C, buffer, 4);
     printer->set_traverse_outs(old);
   }
 #endif
