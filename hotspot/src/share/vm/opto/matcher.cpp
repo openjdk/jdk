@@ -51,6 +51,7 @@ Matcher::Matcher( Node_List &proj_list ) :
   PhaseTransform( Phase::Ins_Select ),
 #ifdef ASSERT
   _old2new_map(C->comp_arena()),
+  _new2old_map(C->comp_arena()),
 #endif
   _shared_nodes(C->comp_arena()),
   _reduceOp(reduceOp), _leftOp(leftOp), _rightOp(rightOp),
@@ -835,10 +836,16 @@ Node *Matcher::xform( Node *n, int max_stack ) {
             if( n->is_Proj() && n->in(0)->is_Multi()) {       // Projections?
               // Convert to machine-dependent projection
               m = n->in(0)->as_Multi()->match( n->as_Proj(), this );
+#ifdef ASSERT
+              _new2old_map.map(m->_idx, n);
+#endif
               if (m->in(0) != NULL) // m might be top
                 collect_null_checks(m);
             } else {                // Else just a regular 'ol guy
               m = n->clone();       // So just clone into new-space
+#ifdef ASSERT
+              _new2old_map.map(m->_idx, n);
+#endif
               // Def-Use edges will be added incrementally as Uses
               // of this node are matched.
               assert(m->outcnt() == 0, "no Uses of this clone yet");
@@ -887,6 +894,9 @@ Node *Matcher::xform( Node *n, int max_stack ) {
             // || op == Op_BoxLock  // %%%% enable this and remove (+++) in chaitin.cpp
             ) {
           m = m->clone();
+#ifdef ASSERT
+          _new2old_map.map(m->_idx, n);
+#endif
           mstack.push(m, Post_Visit, n, i); // Don't neet to visit
           mstack.push(m->in(0), Visit, m, 0);
         } else {
@@ -1190,6 +1200,7 @@ MachNode *Matcher::match_tree( const Node *n ) {
   MachNode *m = ReduceInst( s, s->_rule[mincost], mem );
 #ifdef ASSERT
   _old2new_map.map(n->_idx, m);
+  _new2old_map.map(m->_idx, (Node*)n);
 #endif
 
   // Add any Matcher-ignored edges
@@ -1491,6 +1502,9 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
     for( uint i=0; i<mach->req(); i++ ) {
       mach->set_req(i,NULL);
     }
+#ifdef ASSERT
+    _new2old_map.map(ex->_idx, s->_leaf);
+#endif
   }
 
   // PhaseChaitin::fixup_spills will sometimes generate spill code
