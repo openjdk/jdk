@@ -100,9 +100,12 @@ public class Check {
 
         boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
         boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
+        boolean enforceMandatoryWarnings = source.enforceMandatoryWarnings();
 
-        deprecationHandler = new MandatoryWarningHandler(log,verboseDeprecated, "deprecated");
-        uncheckedHandler = new MandatoryWarningHandler(log, verboseUnchecked, "unchecked");
+        deprecationHandler = new MandatoryWarningHandler(log, verboseDeprecated,
+                enforceMandatoryWarnings, "deprecated");
+        uncheckedHandler = new MandatoryWarningHandler(log, verboseUnchecked,
+                enforceMandatoryWarnings, "unchecked");
     }
 
     /** Switch: generics enabled?
