@@ -25,6 +25,7 @@
 
 package sun.awt.shell;
 
+import javax.swing.*;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.io.*;
@@ -37,6 +38,10 @@ import java.util.*;
  */
 
 public abstract class ShellFolder extends File {
+    private static final String COLUMN_NAME = "FileChooser.fileNameHeaderText";
+    private static final String COLUMN_SIZE = "FileChooser.fileSizeHeaderText";
+    private static final String COLUMN_DATE = "FileChooser.fileDateHeaderText";
+
     protected ShellFolder parent;
 
     /**
@@ -268,8 +273,45 @@ public abstract class ShellFolder extends File {
 
     // Override File methods
 
-    public static void sortFiles(List files) {
-        shellFolderManager.sortFiles(files);
+    public static void sort(List<? extends File> files) {
+        if (files == null || files.size() <= 1) {
+            return;
+        }
+
+        // Check that we can use the ShellFolder.sortChildren() method:
+        //   1. All files have the same non-null parent
+        //   2. All files is ShellFolders
+        File commonParent = null;
+
+        for (File file : files) {
+            File parent = file.getParentFile();
+
+            if (parent == null || !(file instanceof ShellFolder)) {
+                commonParent = null;
+
+                break;
+            }
+
+            if (commonParent == null) {
+                commonParent = parent;
+            } else {
+                if (commonParent != parent && !commonParent.equals(parent)) {
+                    commonParent = null;
+
+                    break;
+                }
+            }
+        }
+
+        if (commonParent instanceof ShellFolder) {
+            ((ShellFolder) commonParent).sortChildren(files);
+        } else {
+            Collections.sort(files, FILE_COMPARATOR);
+        }
+    }
+
+    public void sortChildren(List<? extends File> files) {
+        Collections.sort(files, FILE_COMPARATOR);
     }
 
     public boolean isAbsolute() {
@@ -356,18 +398,131 @@ public abstract class ShellFolder extends File {
     }
 
     public static ShellFolderColumnInfo[] getFolderColumns(File dir) {
-        return shellFolderManager.getFolderColumns(dir);
-    }
+        ShellFolderColumnInfo[] columns = null;
 
-    public static Object getFolderColumnValue(File file, int column) {
-        return shellFolderManager.getFolderColumnValue(file, column);
+        if (dir instanceof ShellFolder) {
+            columns = ((ShellFolder) dir).getFolderColumns();
+        }
+
+        if (columns == null) {
+            columns = new ShellFolderColumnInfo[]{
+                    new ShellFolderColumnInfo(COLUMN_NAME, 150,
+                            SwingConstants.LEADING, true, null,
+                            FILE_COMPARATOR),
+                    new ShellFolderColumnInfo(COLUMN_SIZE, 75,
+                            SwingConstants.RIGHT, true, null,
+                            DEFAULT_COMPARATOR, true),
+                    new ShellFolderColumnInfo(COLUMN_DATE, 130,
+                            SwingConstants.LEADING, true, null,
+                            DEFAULT_COMPARATOR, true)
+            };
+        }
+
+        return columns;
     }
 
     public ShellFolderColumnInfo[] getFolderColumns() {
         return null;
     }
 
+    public static Object getFolderColumnValue(File file, int column) {
+        if (file instanceof ShellFolder) {
+            Object value = ((ShellFolder)file).getFolderColumnValue(column);
+            if (value != null) {
+                return value;
+            }
+        }
+
+        if (file == null || !file.exists()) {
+            return null;
+        }
+
+        switch (column) {
+            case 0:
+                // By default, file name will be rendered using getSystemDisplayName()
+                return file;
+
+            case 1: // size
+                return file.isDirectory() ? null : Long.valueOf(file.length());
+
+            case 2: // date
+                if (isFileSystemRoot(file)) {
+                    return null;
+                }
+                long time = file.lastModified();
+                return (time == 0L) ? null : new Date(time);
+
+            default:
+                return null;
+        }
+    }
+
     public Object getFolderColumnValue(int column) {
         return null;
     }
+
+    /**
+     * Provides a default comparator for the default column set
+     */
+    private static final Comparator DEFAULT_COMPARATOR = new Comparator() {
+        public int compare(Object o1, Object o2) {
+            int gt;
+
+            if (o1 == null && o2 == null) {
+                gt = 0;
+            } else if (o1 != null && o2 == null) {
+                gt = 1;
+            } else if (o1 == null && o2 != null) {
+                gt = -1;
+            } else if (o1 instanceof Comparable) {
+                gt = ((Comparable) o1).compareTo(o2);
+            } else {
+                gt = 0;
+            }
+
+            return gt;
+        }
+    };
+
+    private static final Comparator<File> FILE_COMPARATOR = new Comparator<File>() {
+        public int compare(File f1, File f2) {
+            ShellFolder sf1 = null;
+            ShellFolder sf2 = null;
+
+            if (f1 instanceof ShellFolder) {
+                sf1 = (ShellFolder) f1;
+                if (sf1.isFileSystem()) {
+                    sf1 = null;
+                }
+            }
+            if (f2 instanceof ShellFolder) {
+                sf2 = (ShellFolder) f2;
+                if (sf2.isFileSystem()) {
+                    sf2 = null;
+                }
+            }
+
+            if (sf1 != null && sf2 != null) {
+                return sf1.compareTo(sf2);
+            } else if (sf1 != null) {
+                // Non-file shellfolders sort before files
+                return -1;
+            } else if (sf2 != null) {
+                return 1;
+            } else {
+                String name1 = f1.getName();
+                String name2 = f2.getName();
+
+                // First ignore case when comparing
+                int diff = name1.compareToIgnoreCase(name2);
+                if (diff != 0) {
+                    return diff;
+                } else {
+                    // May differ in case (e.g. "mail" vs. "Mail")
+                    // We need this test for consistent sorting
+                    return name1.compareTo(name2);
+                }
+            }
+        }
+    };
 }
