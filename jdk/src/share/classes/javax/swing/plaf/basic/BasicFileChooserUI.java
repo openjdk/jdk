@@ -384,6 +384,10 @@ public class BasicFileChooserUI extends FileChooserUI {
         return null;
     }
 
+    public JButton getDefaultButton(JFileChooser fc) {
+        return getApproveButton(fc);
+    }
+
     public String getApproveButtonToolTipText(JFileChooser fc) {
         String tooltipText = fc.getApproveButtonToolTipText();
         if(tooltipText != null) {
