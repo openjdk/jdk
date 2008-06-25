@@ -1222,9 +1222,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "FileChooser.enterFileNameLabelMnemonic", new Integer (KeyEvent.VK_N), // 'n'
             "FileChooser.ancestorInputMap",
                new UIDefaults.LazyInputMap(new Object[] {
-                     "ESCAPE", "cancelSelection",
-                     "ENTER", "approveSelection",
-                "ctrl ENTER", "approveSelection"
+                     "ESCAPE", "cancelSelection"
                  }),
 
 

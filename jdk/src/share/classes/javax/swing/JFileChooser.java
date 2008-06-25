@@ -770,7 +770,8 @@ public class JFileChooser extends JComponent implements Accessible {
      * @since 1.4
      */
     protected JDialog createDialog(Component parent) throws HeadlessException {
-        String title = getUI().getDialogTitle(this);
+        FileChooserUI ui = getUI();
+        String title = ui.getDialogTitle(this);
         putClientProperty(AccessibleContext.ACCESSIBLE_DESCRIPTION_PROPERTY,
                           title);
 
@@ -794,6 +795,7 @@ public class JFileChooser extends JComponent implements Accessible {
                 dialog.getRootPane().setWindowDecorationStyle(JRootPane.FILE_CHOOSER_DIALOG);
             }
         }
+        dialog.getRootPane().setDefaultButton(ui.getDefaultButton(this));
         dialog.pack();
         dialog.setLocationRelativeTo(parent);
 

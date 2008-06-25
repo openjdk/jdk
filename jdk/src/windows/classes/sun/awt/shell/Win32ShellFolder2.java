@@ -306,7 +306,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * <code>java.io.File</code> instead. If not, then the object depends
      * on native PIDL state and should not be serialized.
      *
-     * @returns a <code>java.io.File</code> replacement object. If the folder
+     * @return a <code>java.io.File</code> replacement object. If the folder
      * is a not a normal directory, then returns the first non-removable
      * drive (normally "C:\").
      */
@@ -605,10 +605,10 @@ final class Win32ShellFolder2 extends ShellFolder {
         // parent so we have an IShellFolder to query.
         long pIShellFolder = getIShellFolder();
         // Now we can enumerate the objects in this folder.
-        ArrayList list = new ArrayList();
+        ArrayList<Win32ShellFolder2> list = new ArrayList<Win32ShellFolder2>();
         long pEnumObjects = getEnumObjects(pIShellFolder, includeHiddenFiles);
         if (pEnumObjects != 0) {
-            long childPIDL = 0;
+            long childPIDL;
             int testedAttrs = ATTRIB_FILESYSTEM | ATTRIB_FILESYSANCESTOR;
             do {
                 if (Thread.currentThread().isInterrupted()) {
@@ -635,7 +635,7 @@ final class Win32ShellFolder2 extends ShellFolder {
             } while (childPIDL != 0);
             releaseEnumObjects(pEnumObjects);
         }
-        return (ShellFolder[])list.toArray(new ShellFolder[list.size()]);
+        return list.toArray(new ShellFolder[list.size()]);
     }
 
 
@@ -648,7 +648,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         long pIShellFolder = getIShellFolder();
         long pEnumObjects =  getEnumObjects(pIShellFolder, true);
         Win32ShellFolder2 child = null;
-        long childPIDL = 0;
+        long childPIDL;
 
         while ((childPIDL = getNextChild(pEnumObjects)) != 0) {
             if (getAttributes0(pIShellFolder, childPIDL, ATTRIB_FILESYSTEM) != 0) {
@@ -983,7 +983,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                             ? SwingConstants.CENTER
                                 : SwingConstants.LEADING);
 
-                    column.setComparator(new ColumnComparator(i));
+                    column.setComparator(new ColumnComparator(getIShellFolder(), i));
 
                     notNullColumns.add(column);
                 }
@@ -1002,22 +1002,29 @@ final class Win32ShellFolder2 extends ShellFolder {
 
     private native Object doGetColumnValue(long parentIShellFolder2, long childPIDL, int columnIdx);
 
-    private native int compareIDsByColumn(long pParentIShellFolder, long pidl1, long pidl2, int columnIdx);
+    private static native int compareIDsByColumn(long pParentIShellFolder, long pidl1, long pidl2, int columnIdx);
 
 
-    private class ColumnComparator implements Comparator {
+    public void sortChildren(List<? extends File> files) {
+        Collections.sort(files, new ColumnComparator(getIShellFolder(), 0));
+    }
+
+    private static class ColumnComparator implements Comparator<File> {
+        private final long parentIShellFolder;
+
         private final int columnIdx;
 
-        public ColumnComparator(int columnIdx) {
+        public ColumnComparator(long parentIShellFolder, int columnIdx) {
+            this.parentIShellFolder = parentIShellFolder;
             this.columnIdx = columnIdx;
         }
 
         // compares 2 objects within this folder by the specified column
-        public int compare(Object o, Object o1) {
+        public int compare(File o, File o1) {
             if (o instanceof Win32ShellFolder2
                     && o1 instanceof Win32ShellFolder2) {
                 // delegates comparison to native method
-                return compareIDsByColumn(getIShellFolder(),
+                return compareIDsByColumn(parentIShellFolder,
                         ((Win32ShellFolder2) o).getRelativePIDL(),
                         ((Win32ShellFolder2) o1).getRelativePIDL(),
                         columnIdx);
