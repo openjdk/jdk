@@ -636,7 +636,7 @@ public class EventHandler implements InvocationHandler {
      * time a mouse button is pressed, one would write:
      *<blockquote>
      *<pre>
-     *EventHandler.create(MouseListener.class, "mousePressed", target, "origin", "point");
+     *EventHandler.create(MouseListener.class, target, "origin", "point", "mousePressed");
      *</pre>
      *</blockquote>
      *

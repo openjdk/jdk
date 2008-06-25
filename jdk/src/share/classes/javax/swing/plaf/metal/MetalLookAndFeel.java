@@ -853,9 +853,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
                      "ESCAPE", "cancelSelection",
                      "F2", "editFileName",
                      "F5", "refresh",
-                     "BACK_SPACE", "Go Up",
-                     "ENTER", "approveSelection",
-                "ctrl ENTER", "approveSelection"
+                     "BACK_SPACE", "Go Up"
                  }),
 
 
