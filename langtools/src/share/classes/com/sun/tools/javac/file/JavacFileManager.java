@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,16 @@
 
 package com.sun.tools.javac.file;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.lang.ref.SoftReference;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
@@ -56,13 +51,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import javax.lang.model.SourceVersion;
@@ -95,15 +88,6 @@ public class JavacFileManager implements StandardJavaFileManager {
     private static final String symbolFilePrefix = "META-INF/sym/rt.jar/";
 
     boolean useZipFileIndex;
-
-    private static int symbolFilePrefixLength = 0;
-    static {
-        try {
-            symbolFilePrefixLength = symbolFilePrefix.getBytes("UTF-8").length;
-        } catch (java.io.UnsupportedEncodingException uee) {
-            // Can't happen...UTF-8 is always supported.
-        }
-    }
 
     private static boolean CHECK_ZIP_TIMESTAMP = false;
     private static Map<File, Boolean> isDirectory = new ConcurrentHashMap<File, Boolean>();
@@ -202,7 +186,7 @@ public class JavacFileManager implements StandardJavaFileManager {
     }
 
     public JavaFileObject getRegularFile(File file) {
-        return new RegularFileObject(file);
+        return new RegularFileObject(this, file);
     }
 
     public JavaFileObject getFileForOutput(String classname,
@@ -405,7 +389,7 @@ public class JavacFileManager implements StandardJavaFileManager {
                 } else {
                     if (isValidFile(fname, fileKinds)) {
                         JavaFileObject fe =
-                        new RegularFileObject(fname, new File(d, fname));
+                            new RegularFileObject(this, fname, new File(d, fname));
                         l.append(fe);
                     }
                 }
@@ -469,106 +453,13 @@ public class JavacFileManager implements StandardJavaFileManager {
         Set<String> getSubdirectories();
     }
 
-    public class ZipArchive implements Archive {
-        protected final Map<String,List<String>> map;
-        protected final ZipFile zdir;
-        public ZipArchive(ZipFile zdir) throws IOException {
-            this.zdir = zdir;
-            this.map = new HashMap<String,List<String>>();
-            for (Enumeration<? extends ZipEntry> e = zdir.entries(); e.hasMoreElements(); ) {
-                ZipEntry entry;
-                try {
-                    entry = e.nextElement();
-                } catch (InternalError ex) {
-                    IOException io = new IOException();
-                    io.initCause(ex); // convenience constructors added in Mustang :-(
-                    throw io;
-                }
-                addZipEntry(entry);
-            }
-        }
-
-        void addZipEntry(ZipEntry entry) {
-            String name = entry.getName();
-            int i = name.lastIndexOf('/');
-            String dirname = name.substring(0, i+1);
-            String basename = name.substring(i+1);
-            if (basename.length() == 0)
-                return;
-            List<String> list = map.get(dirname);
-            if (list == null)
-                list = List.nil();
-            list = list.prepend(basename);
-            map.put(dirname, list);
-        }
-
-        public boolean contains(String name) {
-            int i = name.lastIndexOf('/');
-            String dirname = name.substring(0, i+1);
-            String basename = name.substring(i+1);
-            if (basename.length() == 0)
-                return false;
-            List<String> list = map.get(dirname);
-            return (list != null && list.contains(basename));
-        }
-
-        public List<String> getFiles(String subdirectory) {
-            return map.get(subdirectory);
-        }
-
-        public JavaFileObject getFileObject(String subdirectory, String file) {
-            ZipEntry ze = zdir.getEntry(subdirectory + file);
-            return new ZipFileObject(file, zdir, ze);
-        }
-
-        public Set<String> getSubdirectories() {
-            return map.keySet();
-        }
-
-        public void close() throws IOException {
-            zdir.close();
-        }
-    }
-
-    public class SymbolArchive extends ZipArchive {
-        final File origFile;
-        public SymbolArchive(File orig, ZipFile zdir) throws IOException {
-            super(zdir);
-            this.origFile = orig;
-        }
-
-        @Override
-        void addZipEntry(ZipEntry entry) {
-            // called from super constructor, may not refer to origFile.
-            String name = entry.getName();
-            if (!name.startsWith(symbolFilePrefix))
-                return;
-            name = name.substring(symbolFilePrefix.length());
-            int i = name.lastIndexOf('/');
-            String dirname = name.substring(0, i+1);
-            String basename = name.substring(i+1);
-            if (basename.length() == 0)
-                return;
-            List<String> list = map.get(dirname);
-            if (list == null)
-                list = List.nil();
-            list = list.prepend(basename);
-            map.put(dirname, list);
-        }
-
-        @Override
-        public JavaFileObject getFileObject(String subdirectory, String file) {
-            return super.getFileObject(symbolFilePrefix + subdirectory, file);
-        }
-    }
-
     public class MissingArchive implements Archive {
         final File zipFileName;
         public MissingArchive(File name) {
             zipFileName = name;
         }
         public boolean contains(String name) {
-              return false;
+            return false;
         }
 
         public void close() {
@@ -647,25 +538,30 @@ public class JavacFileManager implements StandardJavaFileManager {
 
                 if (origZipFileName == zipFileName) {
                     if (!useZipFileIndex) {
-                        archive = new ZipArchive(zdir);
+                        archive = new ZipArchive(this, zdir);
                     } else {
-                        archive = new ZipFileIndexArchive(this, ZipFileIndex.getZipFileIndex(zipFileName, 0,
+                        archive = new ZipFileIndexArchive(this, ZipFileIndex.getZipFileIndex(zipFileName, null,
                                 usePreindexedCache, preindexCacheLocation, options.get("writezipindexfiles") != null));
                     }
                 }
                 else {
                     if (!useZipFileIndex) {
-                        archive = new SymbolArchive(origZipFileName, zdir);
+                        archive = new SymbolArchive(this, origZipFileName, zdir, symbolFilePrefix);
                     }
                     else {
-                        archive = new ZipFileIndexArchive(this, ZipFileIndex.getZipFileIndex(zipFileName, symbolFilePrefixLength,
-                                usePreindexedCache, preindexCacheLocation, options.get("writezipindexfiles") != null));
+                        archive = new ZipFileIndexArchive(this,
+                                ZipFileIndex.getZipFileIndex(zipFileName,
+                                symbolFilePrefix,
+                                usePreindexedCache,
+                                preindexCacheLocation,
+                                options.get("writezipindexfiles") != null));
                     }
                 }
             } catch (FileNotFoundException ex) {
                 archive = new MissingArchive(zipFileName);
             } catch (IOException ex) {
-                log.error("error.reading.file", zipFileName, ex.getLocalizedMessage());
+                if (zipFileName.exists())
+                    log.error("error.reading.file", zipFileName, ex.getLocalizedMessage());
                 archive = new MissingArchive(zipFileName);
             }
 
@@ -694,7 +590,17 @@ public class JavacFileManager implements StandardJavaFileManager {
         }
     }
 
-    private Map<JavaFileObject, SoftReference<CharBuffer>> contentCache = new HashMap<JavaFileObject, SoftReference<CharBuffer>>();
+    CharBuffer getCachedContent(JavaFileObject file) {
+        SoftReference<CharBuffer> r = contentCache.get(file);
+        return (r == null ? null : r.get());
+    }
+
+    void cache(JavaFileObject file, CharBuffer cb) {
+        contentCache.put(file, new SoftReference<CharBuffer>(cb));
+    }
+
+    private final Map<JavaFileObject, SoftReference<CharBuffer>> contentCache
+            = new HashMap<JavaFileObject, SoftReference<CharBuffer>>();
 
     private String defaultEncodingName;
     private String getDefaultEncodingName() {
@@ -724,7 +630,7 @@ public class JavacFileManager implements StandardJavaFileManager {
     /**
      * Make a byte buffer from an input stream.
      */
-    private ByteBuffer makeByteBuffer(InputStream in)
+    ByteBuffer makeByteBuffer(InputStream in)
         throws IOException {
         int limit = in.available();
         if (mmappedIO && in instanceof FileInputStream) {
@@ -750,6 +656,10 @@ public class JavacFileManager implements StandardJavaFileManager {
         return (ByteBuffer)result.flip();
     }
 
+    void recycleByteBuffer(ByteBuffer bb) {
+        byteBufferCache.put(bb);
+    }
+
     /**
      * A single-element cache of direct byte buffers.
      */
@@ -768,9 +678,10 @@ public class JavacFileManager implements StandardJavaFileManager {
             cached = x;
         }
     }
+
     private final ByteBufferCache byteBufferCache;
 
-    private CharsetDecoder getDecoder(String encodingName, boolean ignoreEncodingErrors) {
+    CharsetDecoder getDecoder(String encodingName, boolean ignoreEncodingErrors) {
         Charset charset = (this.charset == null)
             ? Charset.forName(encodingName)
             : this.charset;
@@ -790,7 +701,7 @@ public class JavacFileManager implements StandardJavaFileManager {
     /**
      * Decode a ByteBuffer into a CharBuffer.
      */
-    private CharBuffer decode(ByteBuffer inbuf, boolean ignoreEncodingErrors) {
+    CharBuffer decode(ByteBuffer inbuf, boolean ignoreEncodingErrors) {
         String encodingName = getEncodingName();
         CharsetDecoder decoder;
         try {
@@ -900,48 +811,14 @@ public class JavacFileManager implements StandardJavaFileManager {
         // Need to match the path semantics of list(location, ...)
         Iterable<? extends File> path = getLocation(location);
         if (path == null) {
-            //System.err.println("Path for " + location + " is null");
             return null;
         }
-        //System.err.println("Path for " + location + " is " + path);
 
-        if (file instanceof RegularFileObject) {
-            RegularFileObject r = (RegularFileObject) file;
-            String rPath = r.getPath();
-            //System.err.println("RegularFileObject " + file + " " +r.getPath());
-            for (File dir: path) {
-                //System.err.println("dir: " + dir);
-                String dPath = dir.getPath();
-                if (!dPath.endsWith(File.separator))
-                    dPath += File.separator;
-                if (rPath.regionMatches(true, 0, dPath, 0, dPath.length())
-                    && new File(rPath.substring(0, dPath.length())).equals(new File(dPath))) {
-                    String relativeName = rPath.substring(dPath.length());
-                    return removeExtension(relativeName).replace(File.separatorChar, '.');
-                }
-            }
-        } else if (file instanceof ZipFileObject) {
-            ZipFileObject z = (ZipFileObject) file;
-            String entryName = z.getZipEntryName();
-            if (entryName.startsWith(symbolFilePrefix))
-                entryName = entryName.substring(symbolFilePrefix.length());
-            return removeExtension(entryName).replace('/', '.');
-        } else if (file instanceof ZipFileIndexFileObject) {
-            ZipFileIndexFileObject z = (ZipFileIndexFileObject) file;
-            String entryName = z.getZipEntryName();
-            if (entryName.startsWith(symbolFilePrefix))
-                entryName = entryName.substring(symbolFilePrefix.length());
-            return removeExtension(entryName).replace(File.separatorChar, '.');
+        if (file instanceof BaseFileObject) {
+            return ((BaseFileObject) file).inferBinaryName(path);
         } else
             throw new IllegalArgumentException(file.getClass().getName());
-        // System.err.println("inferBinaryName failed for " + file);
-        return null;
     }
-    // where
-        private static String removeExtension(String fileName) {
-            int lastDot = fileName.lastIndexOf(".");
-            return (lastDot == -1 ? fileName : fileName.substring(0, lastDot));
-        }
 
     public boolean isSameFile(FileObject a, FileObject b) {
         nullCheck(a);
@@ -1028,7 +905,7 @@ public class JavacFileManager implements StandardJavaFileManager {
             if (dir.isDirectory()) {
                 File f = new File(dir, name.replace('/', File.separatorChar));
                 if (f.exists())
-                    return new RegularFileObject(f);
+                    return new RegularFileObject(this, f);
             } else {
                 Archive a = openArchive(dir);
                 if (a.contains(name)) {
@@ -1090,7 +967,7 @@ public class JavacFileManager implements StandardJavaFileManager {
                 if (sibling != null && sibling instanceof RegularFileObject) {
                     siblingDir = ((RegularFileObject)sibling).f.getParentFile();
                 }
-                return new RegularFileObject(new File(siblingDir, baseName(fileName)));
+                return new RegularFileObject(this, new File(siblingDir, baseName(fileName)));
             }
         } else if (location == SOURCE_OUTPUT) {
             dir = (getSourceOutDir() != null ? getSourceOutDir() : getClassOutDir());
@@ -1104,7 +981,7 @@ public class JavacFileManager implements StandardJavaFileManager {
         }
 
         File file = (dir == null ? new File(fileName) : new File(dir, fileName));
-        return new RegularFileObject(file);
+        return new RegularFileObject(this, file);
 
     }
 
@@ -1117,7 +994,7 @@ public class JavacFileManager implements StandardJavaFileManager {
         else
             result = new ArrayList<RegularFileObject>();
         for (File f: files)
-            result.add(new RegularFileObject(nullCheck(f)));
+            result.add(new RegularFileObject(this, nullCheck(f)));
         return result;
     }
 
@@ -1266,453 +1143,5 @@ public class JavacFileManager implements StandardJavaFileManager {
         for (T t : it)
             t.getClass(); // null check
         return it;
-    }
-
-    /**
-     * A subclass of JavaFileObject representing regular files.
-     */
-    private class RegularFileObject extends BaseFileObject {
-        /** Have the parent directories been created?
-         */
-        private boolean hasParents=false;
-
-        /** The file's name.
-         */
-        private String name;
-
-        /** The underlying file.
-         */
-        final File f;
-
-        public RegularFileObject(File f) {
-            this(f.getName(), f);
-        }
-
-        public RegularFileObject(String name, File f) {
-            if (f.isDirectory())
-                throw new IllegalArgumentException("directories not supported");
-            this.name = name;
-            this.f = f;
-        }
-
-        public InputStream openInputStream() throws IOException {
-            return new FileInputStream(f);
-        }
-
-        protected CharsetDecoder getDecoder(boolean ignoreEncodingErrors) {
-            return JavacFileManager.this.getDecoder(getEncodingName(), ignoreEncodingErrors);
-        }
-
-        public OutputStream openOutputStream() throws IOException {
-            ensureParentDirectoriesExist();
-            return new FileOutputStream(f);
-        }
-
-        public Writer openWriter() throws IOException {
-            ensureParentDirectoriesExist();
-            return new OutputStreamWriter(new FileOutputStream(f), getEncodingName());
-        }
-
-        private void ensureParentDirectoriesExist() throws IOException {
-            if (!hasParents) {
-                File parent = f.getParentFile();
-                if (parent != null && !parent.exists()) {
-                    if (!parent.mkdirs()) {
-                        // if the mkdirs failed, it may be because another process concurrently
-                        // created the directory, so check if the directory got created
-                        // anyway before throwing an exception
-                        if (!parent.exists() || !parent.isDirectory())
-                            throw new IOException("could not create parent directories");
-                    }
-                }
-                hasParents = true;
-            }
-        }
-
-        /** @deprecated see bug 6410637 */
-        @Deprecated
-        public String getName() {
-            return name;
-        }
-
-        public boolean isNameCompatible(String cn, JavaFileObject.Kind kind) {
-            cn.getClass(); // null check
-            if (kind == Kind.OTHER && getKind() != kind)
-                return false;
-            String n = cn + kind.extension;
-            if (name.equals(n))
-                return true;
-            if (name.equalsIgnoreCase(n)) {
-                try {
-                    // allow for Windows
-                    return (f.getCanonicalFile().getName().equals(n));
-                } catch (IOException e) {
-                }
-            }
-            return false;
-        }
-
-        /** @deprecated see bug 6410637 */
-        @Deprecated
-        public String getPath() {
-            return f.getPath();
-        }
-
-        public long getLastModified() {
-            return f.lastModified();
-        }
-
-        public boolean delete() {
-            return f.delete();
-        }
-
-        public CharBuffer getCharContent(boolean ignoreEncodingErrors) throws IOException {
-            SoftReference<CharBuffer> r = contentCache.get(this);
-            CharBuffer cb = (r == null ? null : r.get());
-            if (cb == null) {
-                InputStream in = new FileInputStream(f);
-                try {
-                    ByteBuffer bb = makeByteBuffer(in);
-                    JavaFileObject prev = log.useSource(this);
-                    try {
-                        cb = decode(bb, ignoreEncodingErrors);
-                    } finally {
-                        log.useSource(prev);
-                    }
-                    byteBufferCache.put(bb); // save for next time
-                    if (!ignoreEncodingErrors)
-                        contentCache.put(this, new SoftReference<CharBuffer>(cb));
-                } finally {
-                    in.close();
-                }
-            }
-            return cb;
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (!(other instanceof RegularFileObject))
-                return false;
-            RegularFileObject o = (RegularFileObject) other;
-            try {
-                return f.equals(o.f)
-                    || f.getCanonicalFile().equals(o.f.getCanonicalFile());
-            } catch (IOException e) {
-                return false;
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            return f.hashCode();
-        }
-
-        public URI toUri() {
-            try {
-                // Do no use File.toURI to avoid file system access
-                String path = f.getAbsolutePath().replace(File.separatorChar, '/');
-                return new URI("file://" + path).normalize();
-            } catch (URISyntaxException ex) {
-                return f.toURI();
-            }
-        }
-
-    }
-
-    /**
-     * A subclass of JavaFileObject representing zip entries.
-     */
-    public class ZipFileObject extends BaseFileObject {
-
-        /** The entry's name.
-         */
-        private String name;
-
-        /** The zipfile containing the entry.
-         */
-        ZipFile zdir;
-
-        /** The underlying zip entry object.
-         */
-        ZipEntry entry;
-
-        public ZipFileObject(String name, ZipFile zdir, ZipEntry entry) {
-            this.name = name;
-            this.zdir = zdir;
-            this.entry = entry;
-        }
-
-        public InputStream openInputStream() throws IOException {
-            return zdir.getInputStream(entry);
-        }
-
-        public OutputStream openOutputStream() throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        protected CharsetDecoder getDecoder(boolean ignoreEncodingErrors) {
-            return JavacFileManager.this.getDecoder(getEncodingName(), ignoreEncodingErrors);
-        }
-
-        public Writer openWriter() throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        /** @deprecated see bug 6410637 */
-        @Deprecated
-        public String getName() {
-            return name;
-        }
-
-        public boolean isNameCompatible(String cn, JavaFileObject.Kind k) {
-            cn.getClass(); // null check
-            if (k == Kind.OTHER && getKind() != k)
-                return false;
-            return name.equals(cn + k.extension);
-        }
-
-        /** @deprecated see bug 6410637 */
-        @Deprecated
-        public String getPath() {
-            return zdir.getName() + "(" + entry + ")";
-        }
-
-        public long getLastModified() {
-            return entry.getTime();
-        }
-
-        public boolean delete() {
-            throw new UnsupportedOperationException();
-        }
-
-        public CharBuffer getCharContent(boolean ignoreEncodingErrors) throws IOException {
-            SoftReference<CharBuffer> r = contentCache.get(this);
-            CharBuffer cb = (r == null ? null : r.get());
-            if (cb == null) {
-                InputStream in = zdir.getInputStream(entry);
-                try {
-                    ByteBuffer bb = makeByteBuffer(in);
-                    JavaFileObject prev = log.useSource(this);
-                    try {
-                        cb = decode(bb, ignoreEncodingErrors);
-                    } finally {
-                        log.useSource(prev);
-                    }
-                    byteBufferCache.put(bb); // save for next time
-                    if (!ignoreEncodingErrors)
-                        contentCache.put(this, new SoftReference<CharBuffer>(cb));
-                } finally {
-                    in.close();
-                }
-            }
-            return cb;
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (!(other instanceof ZipFileObject))
-                return false;
-            ZipFileObject o = (ZipFileObject) other;
-            return zdir.equals(o.zdir) || name.equals(o.name);
-        }
-
-        @Override
-        public int hashCode() {
-            return zdir.hashCode() + name.hashCode();
-        }
-
-        public String getZipName() {
-            return zdir.getName();
-        }
-
-        public String getZipEntryName() {
-            return entry.getName();
-        }
-
-        public URI toUri() {
-            String zipName = new File(getZipName()).toURI().normalize().getPath();
-            String entryName = getZipEntryName();
-            return URI.create("jar:" + zipName + "!" + entryName);
-        }
-
-    }
-
-    /**
-     * A subclass of JavaFileObject representing zip entries using the com.sun.tools.javac.zip.ZipFileIndex implementation.
-     */
-    public class ZipFileIndexFileObject extends BaseFileObject {
-
-            /** The entry's name.
-         */
-        private String name;
-
-        /** The zipfile containing the entry.
-         */
-        ZipFileIndex zfIndex;
-
-        /** The underlying zip entry object.
-         */
-        ZipFileIndexEntry entry;
-
-        /** The InputStream for this zip entry (file.)
-         */
-        InputStream inputStream = null;
-
-        /** The name of the zip file where this entry resides.
-         */
-        String zipName;
-
-        JavacFileManager defFileManager = null;
-
-        public ZipFileIndexFileObject(JavacFileManager fileManager, ZipFileIndex zfIndex, ZipFileIndexEntry entry, String zipFileName) {
-            super();
-            this.name = entry.getFileName();
-            this.zfIndex = zfIndex;
-            this.entry = entry;
-            this.zipName = zipFileName;
-            defFileManager = fileManager;
-        }
-
-        public InputStream openInputStream() throws IOException {
-
-            if (inputStream == null) {
-                inputStream = new ByteArrayInputStream(read());
-            }
-            return inputStream;
-        }
-
-        protected CharsetDecoder getDecoder(boolean ignoreEncodingErrors) {
-            return JavacFileManager.this.getDecoder(getEncodingName(), ignoreEncodingErrors);
-        }
-
-        public OutputStream openOutputStream() throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        public Writer openWriter() throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        /** @deprecated see bug 6410637 */
-        @Deprecated
-        public String getName() {
-            return name;
-        }
-
-        public boolean isNameCompatible(String cn, JavaFileObject.Kind k) {
-            cn.getClass(); // null check
-            if (k == Kind.OTHER && getKind() != k)
-                return false;
-            return name.equals(cn + k.extension);
-        }
-
-        /** @deprecated see bug 6410637 */
-        @Deprecated
-        public String getPath() {
-            return zipName + "(" + entry.getName() + ")";
-        }
-
-        public long getLastModified() {
-            return entry.getLastModified();
-        }
-
-        public boolean delete() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (!(other instanceof ZipFileIndexFileObject))
-                return false;
-            ZipFileIndexFileObject o = (ZipFileIndexFileObject) other;
-            return entry.equals(o.entry);
-        }
-
-        @Override
-        public int hashCode() {
-            return zipName.hashCode() + (name.hashCode() << 10);
-        }
-
-        public String getZipName() {
-            return zipName;
-        }
-
-        public String getZipEntryName() {
-            return entry.getName();
-        }
-
-        public URI toUri() {
-            String zipName = new File(getZipName()).toURI().normalize().getPath();
-            String entryName = getZipEntryName();
-            if (File.separatorChar != '/') {
-                entryName = entryName.replace(File.separatorChar, '/');
-            }
-            return URI.create("jar:" + zipName + "!" + entryName);
-        }
-
-        private byte[] read() throws IOException {
-            if (entry == null) {
-                entry = zfIndex.getZipIndexEntry(name);
-                if (entry == null)
-                  throw new FileNotFoundException();
-            }
-            return zfIndex.read(entry);
-        }
-
-        public CharBuffer getCharContent(boolean ignoreEncodingErrors) throws IOException {
-            SoftReference<CharBuffer> r = defFileManager.contentCache.get(this);
-            CharBuffer cb = (r == null ? null : r.get());
-            if (cb == null) {
-                InputStream in = new ByteArrayInputStream(zfIndex.read(entry));
-                try {
-                    ByteBuffer bb = makeByteBuffer(in);
-                    JavaFileObject prev = log.useSource(this);
-                    try {
-                        cb = decode(bb, ignoreEncodingErrors);
-                    } finally {
-                        log.useSource(prev);
-                    }
-                    byteBufferCache.put(bb); // save for next time
-                    if (!ignoreEncodingErrors)
-                        defFileManager.contentCache.put(this, new SoftReference<CharBuffer>(cb));
-                } finally {
-                    in.close();
-                }
-            }
-            return cb;
-        }
-    }
-
-    public class ZipFileIndexArchive implements Archive {
-        private final ZipFileIndex zfIndex;
-        private JavacFileManager fileManager;
-
-        public ZipFileIndexArchive(JavacFileManager fileManager, ZipFileIndex zdir) throws IOException {
-            this.fileManager = fileManager;
-            this.zfIndex = zdir;
-        }
-
-        public boolean contains(String name) {
-            return zfIndex.contains(name);
-        }
-
-        public com.sun.tools.javac.util.List<String> getFiles(String subdirectory) {
-              return zfIndex.getFiles(((subdirectory.endsWith("/") || subdirectory.endsWith("\\"))? subdirectory.substring(0, subdirectory.length() - 1) : subdirectory));
-        }
-
-        public JavaFileObject getFileObject(String subdirectory, String file) {
-            String fullZipFileName = subdirectory + file;
-            ZipFileIndexEntry entry = zfIndex.getZipIndexEntry(fullZipFileName);
-            JavaFileObject ret = new ZipFileIndexFileObject(fileManager, zfIndex, entry, zfIndex.getZipFile().getPath());
-            return ret;
-        }
-
-        public Set<String> getSubdirectories() {
-            return zfIndex.getAllDirectories();
-        }
-
-        public void close() throws IOException {
-            zfIndex.close();
-        }
     }
 }
