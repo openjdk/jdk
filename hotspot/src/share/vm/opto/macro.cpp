@@ -919,10 +919,6 @@ void PhaseMacroExpand::expand_allocate_common(
     mem = mem->as_MergeMem()->memory_at(Compile::AliasIdxRaw);
   }
 
-  Node* eden_top_adr;
-  Node* eden_end_adr;
-  set_eden_pointers(eden_top_adr, eden_end_adr);
-
   assert(ctrl != NULL, "must have control");
   // We need a Region and corresponding Phi's to merge the slow-path and fast-path results.
   // they will not be used if "always_slow" is set
