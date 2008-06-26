@@ -483,7 +483,7 @@ static Node* find_second_addp(Node* addp, Node* n) {
 //
 void ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
   const TypeOopPtr *base_t = igvn->type(base)->isa_oopptr();
-  assert(base_t != NULL && base_t->is_instance(), "expecting instance oopptr");
+  assert(base_t != NULL && base_t->is_known_instance(), "expecting instance oopptr");
   const TypeOopPtr *t = igvn->type(addp)->isa_oopptr();
   if (t == NULL) {
     // We are computing a raw address for a store captured by an Initialize
@@ -494,8 +494,8 @@ void ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
     assert(offs != Type::OffsetBot, "offset must be a constant");
     t = base_t->add_offset(offs)->is_oopptr();
   }
-  uint inst_id =  base_t->instance_id();
-  assert(!t->is_instance() || t->instance_id() == inst_id,
+  int inst_id =  base_t->instance_id();
+  assert(!t->is_known_instance() || t->instance_id() == inst_id,
                              "old type must be non-instance or match new type");
   const TypeOopPtr *tinst = base_t->add_offset(t->offset())->is_oopptr();
   // Do NOT remove the next call: ensure an new alias index is allocated
@@ -509,7 +509,7 @@ void ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
   Node *adr = addp->in(AddPNode::Address);
   const TypeOopPtr  *atype = igvn->type(adr)->isa_oopptr();
   if (atype != NULL && atype->instance_id() != inst_id) {
-    assert(!atype->is_instance(), "no conflicting instances");
+    assert(!atype->is_known_instance(), "no conflicting instances");
     const TypeOopPtr *new_atype = base_t->add_offset(atype->offset())->isa_oopptr();
     Node *acast = new (_compile, 2) CastPPNode(adr, new_atype);
     acast->set_req(0, adr->in(0));
@@ -663,7 +663,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
     return orig_mem;
   Compile* C = phase->C;
   const TypeOopPtr *tinst = C->get_adr_type(alias_idx)->isa_oopptr();
-  bool is_instance = (tinst != NULL) && tinst->is_instance();
+  bool is_instance = (tinst != NULL) && tinst->is_known_instance();
   Node *prev = NULL;
   Node *result = orig_mem;
   while (prev != result) {
@@ -693,7 +693,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
         AllocateNode* alloc = proj_in->as_Initialize()->allocation();
         // Stop if this is the initialization for the object instance which
         // which contains this memory slice, otherwise skip over it.
-        if (alloc == NULL || alloc->_idx != tinst->instance_id()) {
+        if (alloc == NULL || alloc->_idx != (uint)tinst->instance_id()) {
           result = proj_in->in(TypeFunc::Memory);
         }
       } else if (proj_in->is_MemBar()) {
@@ -887,7 +887,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       const TypeOopPtr *t = igvn->type(n)->isa_oopptr();
       if (t == NULL)
         continue;  // not a TypeInstPtr
-      tinst = t->cast_to_instance(ni);
+      tinst = t->cast_to_instance_id(ni);
       igvn->hash_delete(n);
       igvn->set_type(n,  tinst);
       n->raise_bottom_type(tinst);
@@ -959,14 +959,19 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         Node *val = get_map(elem);   // CheckCastPP node
         TypeNode *tn = n->as_Type();
         tinst = igvn->type(val)->isa_oopptr();
-        assert(tinst != NULL && tinst->is_instance() &&
-               tinst->instance_id() == elem , "instance type expected.");
+        assert(tinst != NULL && tinst->is_known_instance() &&
+               (uint)tinst->instance_id() == elem , "instance type expected.");
 
         const Type *tn_type = igvn->type(tn);
-        const TypeOopPtr *tn_t = tn_type->make_ptr()->isa_oopptr();
+        const TypeOopPtr *tn_t;
+        if (tn_type->isa_narrowoop()) {
+          tn_t = tn_type->make_ptr()->isa_oopptr();
+        } else {
+          tn_t = tn_type->isa_oopptr();
+        }
 
         if (tn_t != NULL &&
- tinst->cast_to_instance(TypeOopPtr::UNKNOWN_INSTANCE)->higher_equal(tn_t)) {
+            tinst->cast_to_instance_id(TypeOopPtr::InstanceBot)->higher_equal(tn_t)) {
           if (tn_type->isa_narrowoop()) {
             tn_type = tinst->make_narrowoop();
           } else {

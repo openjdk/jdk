@@ -320,9 +320,9 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
 
 // Search the last value stored into the object's field.
 Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, Node *alloc) {
-  assert(adr_t->is_instance_field(), "instance required");
-  uint instance_id = adr_t->instance_id();
-  assert(instance_id == alloc->_idx, "wrong allocation");
+  assert(adr_t->is_known_instance_field(), "instance required");
+  int instance_id = adr_t->instance_id();
+  assert((uint)instance_id == alloc->_idx, "wrong allocation");
 
   int alias_idx = C->get_alias_index(adr_t);
   int offset = adr_t->offset();
@@ -354,7 +354,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type 
       const TypeOopPtr* atype = mem->as_Store()->adr_type()->isa_oopptr();
       assert(atype != NULL, "address type must be oopptr");
       assert(C->get_alias_index(atype) == alias_idx &&
-             atype->is_instance_field() && atype->offset() == offset &&
+             atype->is_known_instance_field() && atype->offset() == offset &&
              atype->instance_id() == instance_id, "store is correct memory slice");
       done = true;
     } else if (mem->is_Phi()) {
