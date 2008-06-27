@@ -1084,6 +1084,7 @@ idealGraphPrinter.hpp                   dict.hpp
 idealGraphPrinter.hpp                   vectset.hpp
 idealGraphPrinter.hpp                   growableArray.hpp
 idealGraphPrinter.hpp                   ostream.hpp
+idealGraphPrinter.hpp                   xmlstream.hpp
 
 idealGraphPrinter.cpp                   idealGraphPrinter.hpp
 idealGraphPrinter.cpp                   chaitin.hpp
