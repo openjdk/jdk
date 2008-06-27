@@ -274,10 +274,10 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
        // hc_klass is a HotSpot magic field and hence we can't
        // find it from InstanceKlass for java.lang.Class.
        TypeDataBase db = VM.getVM().getTypeDataBase();
-       int hcKlassOffset = (int) Oop.getHeaderSize();
+       int hcKlassOffset = (int) Instance.getHeaderSize();
        try {
           hcKlassOffset += (db.lookupIntConstant("java_lang_Class::hc_klass_offset").intValue() *
-                           db.getAddressSize());
+                           VM.getVM().getHeapOopSize());
        } catch (RuntimeException re) {
           // ignore, currently java_lang_Class::hc_klass_offset is zero
        }

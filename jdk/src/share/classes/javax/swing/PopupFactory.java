@@ -548,47 +548,46 @@ public class PopupFactory {
         }
 
         /**
-         * Returns true if the Popup can fit on the screen.
+         * Returns true if popup can fit the screen and the owner's top parent.
+         * It determines can popup be lightweight or mediumweight.
          */
         boolean fitsOnScreen() {
+            boolean result = false;
             Component component = getComponent();
-
             if (owner != null && component != null) {
-                Container parent;
-                int width = component.getWidth();
-                int height = component.getHeight();
-                for(parent = owner.getParent(); parent != null ;
-                    parent = parent.getParent()) {
-                    if (parent instanceof JFrame ||
-                        parent instanceof JDialog ||
-                        parent instanceof JWindow) {
+                Container parent = (Container) SwingUtilities.getRoot(owner);
+                int popupWidth = component.getWidth();
+                int popupHeight = component.getHeight();
+                Rectangle parentBounds = parent.getBounds();
+                if (parent instanceof JFrame ||
+                    parent instanceof JDialog ||
+                    parent instanceof JWindow) {
 
-                        Rectangle r = parent.getBounds();
-                        Insets i = parent.getInsets();
-                        r.x += i.left;
-                        r.y += i.top;
-                        r.width -= (i.left + i.right);
-                        r.height -= (i.top + i.bottom);
+                    Insets i = parent.getInsets();
+                    parentBounds.x += i.left;
+                    parentBounds.y += i.top;
+                    parentBounds.width -= i.left + i.right;
+                    parentBounds.height -= i.top + i.bottom;
 
-                        GraphicsConfiguration gc = parent.getGraphicsConfiguration();
+                    if (JPopupMenu.canPopupOverlapTaskBar()) {
+                        GraphicsConfiguration gc =
+                                parent.getGraphicsConfiguration();
                         Rectangle popupArea = getContainerPopupArea(gc);
-                        return r.intersection(popupArea).contains(x, y, width, height);
-
-                    } else if (parent instanceof JApplet) {
-                        Rectangle r = parent.getBounds();
-                        Point p  = parent.getLocationOnScreen();
-
-                        r.x = p.x;
-                        r.y = p.y;
-                        return r.contains(x, y, width, height);
-                    } else if (parent instanceof Window ||
-                               parent instanceof Applet) {
-                        // No suitable swing component found
-                        break;
+                        result = parentBounds.intersection(popupArea)
+                                .contains(x, y, popupWidth, popupHeight);
+                    } else {
+                        result = parentBounds
+                                .contains(x, y, popupWidth, popupHeight);
                     }
+                } else if (parent instanceof JApplet) {
+                    Point p = parent.getLocationOnScreen();
+                    parentBounds.x = p.x;
+                    parentBounds.y = p.y;
+                    result = parentBounds
+                            .contains(x, y, popupWidth, popupHeight);
                 }
             }
-            return false;
+            return result;
         }
 
         Rectangle getContainerPopupArea(GraphicsConfiguration gc) {

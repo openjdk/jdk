@@ -59,5 +59,5 @@ class ImmutableSpace: public CHeapObj {
   // Debugging
   virtual void print() const            PRODUCT_RETURN;
   virtual void print_short() const      PRODUCT_RETURN;
-  virtual void verify(bool allow_dirty) const;
+  virtual void verify(bool allow_dirty);
 };

@@ -1872,7 +1872,7 @@ oop java_lang_boxing_object::create(BasicType type, jvalue* value, TRAPS) {
       box->float_field_put(value_offset, value->f);
       break;
     case T_DOUBLE:
-      box->double_field_put(value_offset, value->d);
+      box->double_field_put(long_value_offset, value->d);
       break;
     case T_BYTE:
       box->byte_field_put(value_offset, value->b);
@@ -1884,7 +1884,7 @@ oop java_lang_boxing_object::create(BasicType type, jvalue* value, TRAPS) {
       box->int_field_put(value_offset, value->i);
       break;
     case T_LONG:
-      box->long_field_put(value_offset, value->j);
+      box->long_field_put(long_value_offset, value->j);
       break;
     default:
       return NULL;
@@ -1915,7 +1915,7 @@ BasicType java_lang_boxing_object::get_value(oop box, jvalue* value) {
     value->f = box->float_field(value_offset);
     break;
   case T_DOUBLE:
-    value->d = box->double_field(value_offset);
+    value->d = box->double_field(long_value_offset);
     break;
   case T_BYTE:
     value->b = box->byte_field(value_offset);
@@ -1927,7 +1927,7 @@ BasicType java_lang_boxing_object::get_value(oop box, jvalue* value) {
     value->i = box->int_field(value_offset);
     break;
   case T_LONG:
-    value->j = box->long_field(value_offset);
+    value->j = box->long_field(long_value_offset);
     break;
   default:
     return T_ILLEGAL;
@@ -1949,7 +1949,7 @@ BasicType java_lang_boxing_object::set_value(oop box, jvalue* value) {
     box->float_field_put(value_offset, value->f);
     break;
   case T_DOUBLE:
-    box->double_field_put(value_offset, value->d);
+    box->double_field_put(long_value_offset, value->d);
     break;
   case T_BYTE:
     box->byte_field_put(value_offset, value->b);
@@ -1961,7 +1961,7 @@ BasicType java_lang_boxing_object::set_value(oop box, jvalue* value) {
     box->int_field_put(value_offset, value->i);
     break;
   case T_LONG:
-    box->long_field_put(value_offset, value->j);
+    box->long_field_put(long_value_offset, value->j);
     break;
   default:
     return T_ILLEGAL;
@@ -2163,6 +2163,7 @@ int java_lang_reflect_Field::modifiers_offset;
 int java_lang_reflect_Field::signature_offset;
 int java_lang_reflect_Field::annotations_offset;
 int java_lang_boxing_object::value_offset;
+int java_lang_boxing_object::long_value_offset;
 int java_lang_ref_Reference::referent_offset;
 int java_lang_ref_Reference::queue_offset;
 int java_lang_ref_Reference::next_offset;
@@ -2282,10 +2283,7 @@ oop java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(
 // are not available to determine the offset_of_static_fields.
 void JavaClasses::compute_hard_coded_offsets() {
   const int x = heapOopSize;
-  // Objects don't get allocated in the gap in the header with compressed oops
-  // for these special classes because hard coded offsets can't be conditional
-  // so base_offset_in_bytes() is wrong here, allocate after the header.
-  const int header = sizeof(instanceOopDesc);
+  const int header = instanceOopDesc::base_offset_in_bytes();
 
   // Do the String Class
   java_lang_String::value_offset  = java_lang_String::hc_value_offset  * x + header;
@@ -2308,7 +2306,8 @@ void JavaClasses::compute_hard_coded_offsets() {
   java_lang_Throwable::stackTrace_offset = java_lang_Throwable::hc_stackTrace_offset * x + header;
 
   // java_lang_boxing_object
-  java_lang_boxing_object::value_offset = java_lang_boxing_object::hc_value_offset * x + header;
+  java_lang_boxing_object::value_offset = java_lang_boxing_object::hc_value_offset + header;
+  java_lang_boxing_object::long_value_offset = align_size_up((java_lang_boxing_object::hc_value_offset + header), BytesPerLong);
 
   // java_lang_ref_Reference:
   java_lang_ref_Reference::referent_offset = java_lang_ref_Reference::hc_referent_offset * x + header;
@@ -2322,7 +2321,7 @@ void JavaClasses::compute_hard_coded_offsets() {
   java_lang_ref_Reference::number_of_fake_oop_fields = 1;
 
   // java_lang_ref_SoftReference Class
-  java_lang_ref_SoftReference::timestamp_offset = java_lang_ref_SoftReference::hc_timestamp_offset * x + header;
+  java_lang_ref_SoftReference::timestamp_offset = align_size_up((java_lang_ref_SoftReference::hc_timestamp_offset * x + header), BytesPerLong);
   // Don't multiply static fields because they are always in wordSize units
   java_lang_ref_SoftReference::static_clock_offset = java_lang_ref_SoftReference::hc_static_clock_offset * x;
 
@@ -2469,6 +2468,9 @@ void JavaClasses::check_offsets() {
 #define CHECK_OFFSET(klass_name, cpp_klass_name, field_name, field_sig) \
   valid &= check_offset(klass_name, cpp_klass_name :: field_name ## _offset, #field_name, field_sig)
 
+#define CHECK_LONG_OFFSET(klass_name, cpp_klass_name, field_name, field_sig) \
+  valid &= check_offset(klass_name, cpp_klass_name :: long_ ## field_name ## _offset, #field_name, field_sig)
+
 #define CHECK_STATIC_OFFSET(klass_name, cpp_klass_name, field_name, field_sig) \
   valid &= check_static_offset(klass_name, cpp_klass_name :: static_ ## field_name ## _offset, #field_name, field_sig)
 
@@ -2501,11 +2503,11 @@ void JavaClasses::check_offsets() {
   CHECK_OFFSET("java/lang/Boolean",   java_lang_boxing_object, value, "Z");
   CHECK_OFFSET("java/lang/Character", java_lang_boxing_object, value, "C");
   CHECK_OFFSET("java/lang/Float",     java_lang_boxing_object, value, "F");
-  CHECK_OFFSET("java/lang/Double",    java_lang_boxing_object, value, "D");
+  CHECK_LONG_OFFSET("java/lang/Double", java_lang_boxing_object, value, "D");
   CHECK_OFFSET("java/lang/Byte",      java_lang_boxing_object, value, "B");
   CHECK_OFFSET("java/lang/Short",     java_lang_boxing_object, value, "S");
   CHECK_OFFSET("java/lang/Integer",   java_lang_boxing_object, value, "I");
-  CHECK_OFFSET("java/lang/Long",      java_lang_boxing_object, value, "J");
+  CHECK_LONG_OFFSET("java/lang/Long", java_lang_boxing_object, value, "J");
 
   // java.lang.ClassLoader
 

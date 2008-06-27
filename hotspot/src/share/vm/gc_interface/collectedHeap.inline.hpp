@@ -90,11 +90,12 @@ void CollectedHeap::post_allocation_setup_array(KlassHandle klass,
                                                 HeapWord* obj,
                                                 size_t size,
                                                 int length) {
+  // Set array length before setting the _klass field
+  // in post_allocation_setup_common() because the klass field
+  // indicates that the object is parsable by concurrent GC.
   assert(length >= 0, "length should be non-negative");
-  post_allocation_setup_common(klass, obj, size);
-  // Must set length after installing klass as set_klass zeros the length
-  // field in UseCompressedOops
   ((arrayOop)obj)->set_length(length);
+  post_allocation_setup_common(klass, obj, size);
   assert(((oop)obj)->blueprint()->oop_is_array(), "must be an array");
   // notify jvmti and dtrace (must be after length is set for dtrace)
   post_allocation_notify(klass, (oop)obj);
@@ -224,6 +225,7 @@ void CollectedHeap::init_obj(HeapWord* obj, size_t size) {
   assert(obj != NULL, "cannot initialize NULL object");
   const size_t hs = oopDesc::header_size();
   assert(size >= hs, "unexpected object size");
+  ((oop)obj)->set_klass_gap(0);
   Copy::fill_to_aligned_words(obj + hs, size - hs);
 }
 
