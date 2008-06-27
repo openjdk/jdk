@@ -878,7 +878,7 @@ int ciMethod::instructions_size() {
         (TieredCompilation && code->compiler() != NULL && code->compiler()->is_c1())) {
       return 0;
     }
-    return code->code_size();
+    return code->code_end() - code->verified_entry_point();
   )
 }
 
