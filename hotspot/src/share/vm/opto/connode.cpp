@@ -565,10 +565,12 @@ Node* DecodeNNode::Identity(PhaseTransform* phase) {
 }
 
 const Type *DecodeNNode::Value( PhaseTransform *phase ) const {
-  if (phase->type( in(1) ) == TypeNarrowOop::NULL_PTR) {
-    return TypePtr::NULL_PTR;
-  }
-  return bottom_type();
+  const Type *t = phase->type( in(1) );
+  if (t == Type::TOP) return Type::TOP;
+  if (t == TypeNarrowOop::NULL_PTR) return TypePtr::NULL_PTR;
+
+  assert(t->isa_narrowoop(), "only  narrowoop here");
+  return t->is_narrowoop()->make_oopptr();
 }
 
 Node* DecodeNNode::decode(PhaseTransform* phase, Node* value) {
@@ -599,10 +601,12 @@ Node* EncodePNode::Identity(PhaseTransform* phase) {
 }
 
 const Type *EncodePNode::Value( PhaseTransform *phase ) const {
-  if (phase->type( in(1) ) == TypePtr::NULL_PTR) {
-    return TypeNarrowOop::NULL_PTR;
-  }
-  return bottom_type();
+  const Type *t = phase->type( in(1) );
+  if (t == Type::TOP) return Type::TOP;
+  if (t == TypePtr::NULL_PTR) return TypeNarrowOop::NULL_PTR;
+
+  assert(t->isa_oopptr(), "only oopptr here");
+  return t->is_oopptr()->make_narrowoop();
 }
 
 Node* EncodePNode::encode(PhaseTransform* phase, Node* value) {

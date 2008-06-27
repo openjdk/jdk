@@ -189,7 +189,7 @@ public class CompactibleFreeListSpace extends CompactibleSpace {
             cur = cur.addOffsetTo(adjustObjectSizeInBytes(size));
          }
 
-         if (FreeChunk.secondWordIndicatesFreeChunk(dbg.getAddressValue(klassOop))) {
+         if (FreeChunk.indicatesFreeChunk(cur)) {
             if (! cur.equals(regionStart)) {
                res.add(new MemRegion(regionStart, cur));
             }
