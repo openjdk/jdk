@@ -228,7 +228,7 @@ public class Resolve {
                 // another symbol which is a member of `site'
                 // (because, if it is overridden, `sym' is not strictly
                 // speaking a member of `site'.)
-                (sym.kind != MTH || sym.isConstructor() ||
+                (sym.kind != MTH || sym.isConstructor() || sym.isStatic() ||
                  ((MethodSymbol)sym).implementation(site.tsym, types, true) == sym);
         default: // this case includes erroneous combinations as well
             return isAccessible(env, site);

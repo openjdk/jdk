@@ -1236,7 +1236,6 @@ ifeq ($(PLATFORM), windows)
 	$(RM) $(TEMPDIR)/rebase.input
 endif
 	$(RM) -r $(JDK_IMAGE_DIR)
-	$(RM) -r $(JDK_DEBUG_IMAGE_DIR)
 	$(RM) -r $(JRE_IMAGE_DIR)
 
 images images-clobber::

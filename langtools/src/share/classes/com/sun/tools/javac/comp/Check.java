@@ -1486,6 +1486,8 @@ public class Check {
 
     private void checkNonCyclic1(DiagnosticPosition pos, Type t, Set<TypeVar> seen) {
         final TypeVar tv;
+        if  (t.tag == TYPEVAR && (t.tsym.flags() & UNATTRIBUTED) != 0)
+            return;
         if (seen.contains(t)) {
             tv = (TypeVar)t;
             tv.bound = new ErrorType();

@@ -45,7 +45,7 @@ public class FieldData implements RuntimeConstants  {
     int value_cpx=0;
     boolean isSynthetic=false;
     boolean isDeprecated=false;
-    Vector attrs;
+    Vector<AttrData> attrs;
 
     public FieldData(ClassData cls){
         this.cls=cls;
@@ -60,7 +60,7 @@ public class FieldData implements RuntimeConstants  {
         descriptor_index = in.readUnsignedShort();
         // Read the attributes
         int attributes_count = in.readUnsignedShort();
-        attrs=new Vector(attributes_count);
+        attrs=new Vector<AttrData>(attributes_count);
         for (int i = 0; i < attributes_count; i++) {
             int attr_name_index=in.readUnsignedShort();
             if (cls.getTag(attr_name_index)!=CONSTANT_UTF8) continue;
@@ -99,7 +99,7 @@ public class FieldData implements RuntimeConstants  {
      * Returns access of a field.
      */
     public String[] getAccess(){
-        Vector v = new Vector();
+        Vector<String> v = new Vector<String>();
         if ((access & ACC_PUBLIC)   !=0) v.addElement("public");
         if ((access & ACC_PRIVATE)   !=0) v.addElement("private");
         if ((access & ACC_PROTECTED)   !=0) v.addElement("protected");

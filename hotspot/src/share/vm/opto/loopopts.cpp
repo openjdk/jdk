@@ -2685,7 +2685,7 @@ void PhaseIdealLoop::reorg_offsets( IdealLoopTree *loop ) {
       if( !cle->stride_is_con() ) continue;
       // Hit!  Refactor use to use the post-incremented tripcounter.
       // Compute a post-increment tripcounter.
-      Node *opaq = new (C, 2) Opaque2Node( cle->incr() );
+      Node *opaq = new (C, 2) Opaque2Node( C, cle->incr() );
       register_new_node( opaq, u_ctrl );
       Node *neg_stride = _igvn.intcon(-cle->stride_con());
       set_ctrl(neg_stride, C->root());
