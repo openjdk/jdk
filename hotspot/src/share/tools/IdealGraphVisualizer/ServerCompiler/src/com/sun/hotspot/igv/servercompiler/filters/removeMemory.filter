@@ -1,0 +1,7 @@
+
+//var f = new RemoveFilter("Remove Memory");
+//f.addRule(new RemoveFilter.RemoveRule(new MatcherSelector(new Properties.StringPropertyMatcher("dump_spec", "Memory")), false));
+//f.addRule(new RemoveFilter.RemoveRule(new AndSelector(new MatcherSelector(new Properties.StringPropertyMatcher("name", "Proj")), new MatcherSelector(new Properties.StringPropertyMatcher("type", "memory"))), false));
+//f.apply(graph);
+
+remove("dump_spec", "Memory");

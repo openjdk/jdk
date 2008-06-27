@@ -313,9 +313,6 @@ CompileWrapper::CompileWrapper(Compile* compile) : _compile(compile) {
   _compile->begin_method();
 }
 CompileWrapper::~CompileWrapper() {
-  if (_compile->failing()) {
-    _compile->print_method("Failed");
-  }
   _compile->end_method();
   if (_compile->scratch_buffer_blob() != NULL)
     BufferBlob::free(_compile->scratch_buffer_blob());
@@ -603,6 +600,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   Optimize();
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
+
+  print_method("Before Matching");
 
 #ifndef PRODUCT
   if (PrintIdeal) {
@@ -1070,7 +1069,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       // No constant oop pointers (such as Strings); they alias with
       // unknown strings.
       tj = to = TypeInstPtr::make(TypePtr::BotPTR,to->klass(),false,0,offset);
-    } else if( to->is_instance_field() ) {
+    } else if( to->is_known_instance_field() ) {
       tj = to; // Keep NotNull and klass_is_exact for instance type
     } else if( ptr == TypePtr::NotNull || to->klass_is_exact() ) {
       // During the 2nd round of IterGVN, NotNull castings are removed.
@@ -1191,8 +1190,8 @@ void Compile::AliasType::Init(int i, const TypePtr* at) {
   _field = NULL;
   _is_rewritable = true; // default
   const TypeOopPtr *atoop = (at != NULL) ? at->isa_oopptr() : NULL;
-  if (atoop != NULL && atoop->is_instance()) {
-    const TypeOopPtr *gt = atoop->cast_to_instance(TypeOopPtr::UNKNOWN_INSTANCE);
+  if (atoop != NULL && atoop->is_known_instance()) {
+    const TypeOopPtr *gt = atoop->cast_to_instance_id(TypeOopPtr::InstanceBot);
     _general_index = Compile::current()->get_alias_index(gt);
   } else {
     _general_index = 0;
@@ -1481,7 +1480,7 @@ void Compile::Optimize() {
 
   NOT_PRODUCT( verify_graph_edges(); )
 
-  print_method("Start");
+  print_method("After Parsing");
 
  {
   // Iterative Global Value Numbering, including ideal transforms
@@ -1688,7 +1687,7 @@ void Compile::Code_Gen() {
     Output();
   }
 
-  print_method("End");
+  print_method("Final Code");
 
   // He's dead, Jim.
   _cfg     = (PhaseCFG*)0xdeadbeef;
@@ -2017,7 +2016,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
         for (uint i = 0; i < cnt; i++) {
           Node* m = r->raw_out(i);
           if (m!= NULL && m->Opcode() == Op_ConN &&
-              m->bottom_type()->is_narrowoop()->make_oopptr() == t) {
+              m->bottom_type()->make_ptr() == t) {
             nn = m;
             break;
           }
@@ -2070,7 +2069,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
             }
           }
         } else if (t->isa_oopptr()) {
-          in2 = ConNode::make(C, t->is_oopptr()->make_narrowoop());
+          in2 = ConNode::make(C, t->make_narrowoop());
         }
       }
       if( in2 != NULL ) {
@@ -2465,6 +2464,9 @@ void Compile::record_failure(const char* reason) {
   if (_failure_reason == NULL) {
     // Record the first failure reason.
     _failure_reason = reason;
+  }
+  if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
+    C->print_method(_failure_reason);
   }
   _root = NULL;  // flush the graph, too
 }

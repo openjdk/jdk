@@ -41,7 +41,7 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
   const Type* type = n->bottom_type();
   const TypeOopPtr *t_oop = _igvn.type(n)->isa_oopptr();
   Node *phi;
-  if( t_oop != NULL && t_oop->is_instance_field() ) {
+  if( t_oop != NULL && t_oop->is_known_instance_field() ) {
     int iid    = t_oop->instance_id();
     int index  = C->get_alias_index(t_oop);
     int offset = t_oop->offset();

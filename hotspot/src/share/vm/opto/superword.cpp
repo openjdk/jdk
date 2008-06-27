@@ -1424,9 +1424,9 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust_in_bytes) {
 //---------------------------container_type---------------------------
 // Smallest type containing range of values
 const Type* SuperWord::container_type(const Type* t) {
-  if (t->isa_narrowoop()) t = t->is_narrowoop()->make_oopptr();
-  if (t->isa_aryptr()) {
-    t = t->is_aryptr()->elem();
+  const Type* tp = t->make_ptr();
+  if (tp && tp->isa_aryptr()) {
+    t = tp->is_aryptr()->elem();
   }
   if (t->basic_type() == T_INT) {
     if (t->higher_equal(TypeInt::BOOL))  return TypeInt::BOOL;

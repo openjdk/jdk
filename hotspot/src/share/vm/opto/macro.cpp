@@ -320,9 +320,9 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
 
 // Search the last value stored into the object's field.
 Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, Node *alloc) {
-  assert(adr_t->is_instance_field(), "instance required");
-  uint instance_id = adr_t->instance_id();
-  assert(instance_id == alloc->_idx, "wrong allocation");
+  assert(adr_t->is_known_instance_field(), "instance required");
+  int instance_id = adr_t->instance_id();
+  assert((uint)instance_id == alloc->_idx, "wrong allocation");
 
   int alias_idx = C->get_alias_index(adr_t);
   int offset = adr_t->offset();
@@ -354,7 +354,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type 
       const TypeOopPtr* atype = mem->as_Store()->adr_type()->isa_oopptr();
       assert(atype != NULL, "address type must be oopptr");
       assert(C->get_alias_index(atype) == alias_idx &&
-             atype->is_instance_field() && atype->offset() == offset &&
+             atype->is_known_instance_field() && atype->offset() == offset &&
              atype->instance_id() == instance_id, "store is correct memory slice");
       done = true;
     } else if (mem->is_Phi()) {
@@ -598,7 +598,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
           field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
         }
         if (UseCompressedOops) {
-          field_type = field_type->is_oopptr()->make_narrowoop();
+          field_type = field_type->make_narrowoop();
           basic_elem_type = T_NARROWOOP;
         }
       } else {
@@ -666,9 +666,11 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
       if (UseCompressedOops && field_type->isa_narrowoop()) {
         // Enable "DecodeN(EncodeP(Allocate)) --> Allocate" transformation
         // to be able scalar replace the allocation.
-        _igvn.set_delay_transform(false);
-        field_val = DecodeNNode::decode(&_igvn, field_val);
-        _igvn.set_delay_transform(true);
+        if (field_val->is_EncodeP()) {
+          field_val = field_val->in(1);
+        } else {
+          field_val = transform_later(new (C, 2) DecodeNNode(field_val, field_val->bottom_type()->make_ptr()));
+        }
       }
       sfpt->add_req(field_val);
     }

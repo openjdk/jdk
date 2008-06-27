@@ -280,7 +280,6 @@ class EncodePNode : public TypeNode {
   virtual const Type *Value( PhaseTransform *phase ) const;
   virtual uint  ideal_reg() const { return Op_RegN; }
 
-  static Node* encode(PhaseTransform* phase, Node* value);
   virtual Node *Ideal_DU_postCCP( PhaseCCP *ccp );
 };
 
@@ -300,8 +299,6 @@ class DecodeNNode : public TypeNode {
   virtual Node *Identity( PhaseTransform *phase );
   virtual const Type *Value( PhaseTransform *phase ) const;
   virtual uint  ideal_reg() const { return Op_RegP; }
-
-  static Node* decode(PhaseTransform* phase, Node* value);
 };
 
 //------------------------------Conv2BNode-------------------------------------
