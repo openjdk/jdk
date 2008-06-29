@@ -50,7 +50,7 @@ class KeyChecker extends PKIXCertPathChecker {
     private CertSelector targetConstraints;
     private int remainingCerts;
 
-    private static Set<String> supportedExts;
+    private Set<String> supportedExts;
 
     /**
      * Default Constructor
