@@ -26,7 +26,7 @@
 // Defines all globals flags used by the garbage-first compiler.
 //
 
-#define G1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct, manageable, product_rw) \
+#define G1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw) \
                                                                             \
   product(intx, ParallelGCG1AllocBufferSize, 4*K,                           \
           "Size of parallel G1 allocation buffers in to-space.")            \
@@ -284,4 +284,4 @@
   product(intx, G1MaxSurvivorRegions, 0,                                    \
           "The maximum number of survivor regions")
 
-G1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)
+G1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)

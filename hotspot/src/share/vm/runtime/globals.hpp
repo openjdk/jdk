@@ -255,7 +255,19 @@ class CommandLineFlags {
 // diagnostic information about VM problems.  To use a VM diagnostic
 // option, you must first specify +UnlockDiagnosticVMOptions.
 // (This master switch also affects the behavior of -Xprintflags.)
-
+//
+// experimental flags are in support of features that are not
+//    part of the officially supported product, but are available
+//    for experimenting with. They could, for example, be performance
+//    features that may not have undergone full or rigorous QA, but which may
+//    help performance in some cases and released for experimentation
+//    by the community of users and developers. This flag also allows one to
+//    be able to build a fully supported product that nonetheless also
+//    ships with some unsupported, lightly tested, experimental features.
+//    Like the UnlockDiagnosticVMOptions flag above, there is a corresponding
+//    UnlockExperimentalVMOptions flag, which allows the control and
+//    modification of the experimental flags.
+//
 // manageable flags are writeable external product flags.
 //    They are dynamically writeable through the JDK management interface
 //    (com.sun.management.HotSpotDiagnosticMXBean API) and also through JConsole.
@@ -285,7 +297,7 @@ class CommandLineFlags {
 // Note that when there is a need to support develop flags to be writeable,
 // it can be done in the same way as product_rw.
 
-#define RUNTIME_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct, manageable, product_rw, lp64_product) \
+#define RUNTIME_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw, lp64_product) \
                                                                             \
   lp64_product(bool, UseCompressedOops, false,                              \
             "Use 32-bit object references in 64-bit VM. "                   \
@@ -304,7 +316,10 @@ class CommandLineFlags {
           "Prints flags that appeared on the command line")                 \
                                                                             \
   diagnostic(bool, UnlockDiagnosticVMOptions, trueInDebug,                  \
-          "Enable processing of flags relating to field diagnostics")       \
+          "Enable normal processing of flags relating to field diagnostics")\
+                                                                            \
+  experimental(bool, UnlockExperimentalVMOptions, false,                    \
+          "Enable normal processing of flags relating to experimental features")\
                                                                             \
   product(bool, JavaMonitorsInStackTrace, true,                             \
           "Print info. about Java monitor locks when the stacks are dumped")\
@@ -1114,7 +1129,7 @@ class CommandLineFlags {
   product(bool, UseSerialGC, false,                                         \
           "Use the serial garbage collector")                               \
                                                                             \
-  product(bool, UseG1GC, false,                                             \
+  experimental(bool, UseG1GC, false,                                        \
           "Use the Garbage-First garbage collector")                        \
                                                                             \
   product(bool, UseParallelGC, false,                                       \
@@ -3241,6 +3256,7 @@ class CommandLineFlags {
 #define DECLARE_PRODUCT_FLAG(type, name, value, doc)    extern "C" type name;
 #define DECLARE_PD_PRODUCT_FLAG(type, name, doc)        extern "C" type name;
 #define DECLARE_DIAGNOSTIC_FLAG(type, name, value, doc) extern "C" type name;
+#define DECLARE_EXPERIMENTAL_FLAG(type, name, value, doc) extern "C" type name;
 #define DECLARE_MANAGEABLE_FLAG(type, name, value, doc) extern "C" type name;
 #define DECLARE_PRODUCT_RW_FLAG(type, name, value, doc) extern "C" type name;
 #ifdef PRODUCT
@@ -3263,6 +3279,7 @@ class CommandLineFlags {
 #define MATERIALIZE_PRODUCT_FLAG(type, name, value, doc)   type name = value;
 #define MATERIALIZE_PD_PRODUCT_FLAG(type, name, doc)       type name = pd_##name;
 #define MATERIALIZE_DIAGNOSTIC_FLAG(type, name, value, doc) type name = value;
+#define MATERIALIZE_EXPERIMENTAL_FLAG(type, name, value, doc) type name = value;
 #define MATERIALIZE_MANAGEABLE_FLAG(type, name, value, doc) type name = value;
 #define MATERIALIZE_PRODUCT_RW_FLAG(type, name, value, doc) type name = value;
 #ifdef PRODUCT
@@ -3280,6 +3297,6 @@ class CommandLineFlags {
 #define MATERIALIZE_LP64_PRODUCT_FLAG(type, name, value, doc) /* flag is constant */
 #endif // _LP64
 
-RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG, DECLARE_LP64_PRODUCT_FLAG)
+RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG, DECLARE_LP64_PRODUCT_FLAG)
 
 RUNTIME_OS_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG)
