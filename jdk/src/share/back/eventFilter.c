@@ -492,14 +492,17 @@ eventFilterRestricted_passesFilter(JNIEnv *env,
                   char *sourceName = 0;
                   jvmtiError error = JVMTI_FUNC_PTR(gdata->jvmti,GetSourceFileName)
                                             (gdata->jvmti, clazz, &sourceName);
-                  if (error == JVMTI_ERROR_NONE) {
-                      if (sourceName == 0 || !patternStringMatch(sourceName, desiredNamePattern)) {
-                        /* We have no match */
-                        jvmtiDeallocate(sourceName);
-                        return JNI_FALSE;
-                      }
+                  if (error == JVMTI_ERROR_NONE &&
+                      sourceName != 0 &&
+                      patternStringMatch(sourceName, desiredNamePattern)) {
+                          // got a hit - report the event
+                          jvmtiDeallocate(sourceName);
+                          break;
                   }
+                  // We have no match, we have no source file name,
+                  // or we got a JVM TI error. Don't report the event.
                   jvmtiDeallocate(sourceName);
+                  return JNI_FALSE;
               }
               break;
           }
