@@ -84,6 +84,7 @@ class Matcher : public PhaseTransform {
   Node_Array _shared_nodes;
 
   debug_only(Node_Array _old2new_map;)   // Map roots of ideal-trees to machine-roots
+  debug_only(Node_Array _new2old_map;)   // Maps machine nodes back to ideal
 
   // Accessors for the inherited field PhaseTransform::_nodes:
   void   grow_new_node_array(uint idx_limit) {
@@ -104,6 +105,8 @@ class Matcher : public PhaseTransform {
 #ifdef ASSERT
   // Make sure only new nodes are reachable from this node
   void verify_new_nodes_only(Node* root);
+
+  Node* _mem_node;   // Ideal memory node consumed by mach node
 #endif
 
 public:
@@ -388,5 +391,9 @@ public:
 
 #ifdef ASSERT
   void dump_old2new_map();      // machine-independent to machine-dependent
+
+  Node* find_old_node(Node* new_node) {
+    return _new2old_map[new_node->_idx];
+  }
 #endif
 };

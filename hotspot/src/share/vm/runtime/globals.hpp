@@ -961,6 +961,9 @@ class CommandLineFlags {
   diagnostic(bool, UseIncDec, true,                                         \
           "Use INC, DEC instructions on x86")                               \
                                                                             \
+  product(bool, UseNewLongLShift, false,                                    \
+          "Use optimized bitwise shift left")                               \
+                                                                            \
   product(bool, UseStoreImmI16, true,                                       \
           "Use store immediate 16-bits value instruction on x86")           \
                                                                             \

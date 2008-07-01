@@ -2194,14 +2194,15 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
     pre_barrier(control(), base, adr, alias_idx, newval, value_type, T_OBJECT);
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
+      Node *newval_enc = _gvn.transform(new (C, 2) EncodePNode(newval, newval->bottom_type()->make_narrowoop()));
+      Node *oldval_enc = _gvn.transform(new (C, 2) EncodePNode(oldval, oldval->bottom_type()->make_narrowoop()));
       cas = _gvn.transform(new (C, 5) CompareAndSwapNNode(control(), mem, adr,
-                                                           EncodePNode::encode(&_gvn, newval),
-                                                           EncodePNode::encode(&_gvn, oldval)));
+                                                          newval_enc, oldval_enc));
     } else
 #endif
-      {
-        cas = _gvn.transform(new (C, 5) CompareAndSwapPNode(control(), mem, adr, newval, oldval));
-      }
+    {
+      cas = _gvn.transform(new (C, 5) CompareAndSwapPNode(control(), mem, adr, newval, oldval));
+    }
     post_barrier(control(), cas, base, adr, alias_idx, newval, T_OBJECT, true);
     break;
   default:
