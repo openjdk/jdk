@@ -2750,68 +2750,59 @@ private:
   G1CollectedHeap* _g1;
   ConcurrentMark* _cm;
   HeapRegion* _hr;
-  HeapWord* _last_self_forwarded_end;
   size_t _prev_marked_bytes;
   size_t _next_marked_bytes;
 public:
   RemoveSelfPointerClosure(G1CollectedHeap* g1, HeapRegion* hr) :
     _g1(g1), _cm(_g1->concurrent_mark()), _hr(hr),
-    _last_self_forwarded_end(_hr->bottom()),
     _prev_marked_bytes(0), _next_marked_bytes(0)
   {}
 
   size_t prev_marked_bytes() { return _prev_marked_bytes; }
   size_t next_marked_bytes() { return _next_marked_bytes; }
 
-  void fill_remainder() {
-    HeapWord* limit = _hr->top();
-    MemRegion mr(_last_self_forwarded_end, limit);
-    if (!mr.is_empty()) {
+  // The original idea here was to coalesce evacuated and dead objects.
+  // However that caused complications with the block offset table (BOT).
+  // In particular if there were two TLABs, one of them partially refined.
+  // |----- TLAB_1--------|----TLAB_2-~~~(partially refined part)~~~|
+  // The BOT entries of the unrefined part of TLAB_2 point to the start
+  // of TLAB_2. If the last object of the TLAB_1 and the first object
+  // of TLAB_2 are coalesced, then the cards of the unrefined part
+  // would point into middle of the filler object.
+  //
+  // The current approach is to not coalesce and leave the BOT contents intact.
+  void do_object(oop obj) {
+    if (obj->is_forwarded() && obj->forwardee() == obj) {
+      // The object failed to move.
+      assert(!_g1->is_obj_dead(obj), "We should not be preserving dead objs.");
+      _cm->markPrev(obj);
+      assert(_cm->isPrevMarked(obj), "Should be marked!");
+      _prev_marked_bytes += (obj->size() * HeapWordSize);
+      if (_g1->mark_in_progress() && !_g1->is_obj_ill(obj)) {
+        _cm->markAndGrayObjectIfNecessary(obj);
+      }
+      obj->set_mark(markOopDesc::prototype());
+      // While we were processing RSet buffers during the
+      // collection, we actually didn't scan any cards on the
+      // collection set, since we didn't want to update remebered
+      // sets with entries that point into the collection set, given
+      // that live objects fromthe collection set are about to move
+      // and such entries will be stale very soon. This change also
+      // dealt with a reliability issue which involved scanning a
+      // card in the collection set and coming across an array that
+      // was being chunked and looking malformed. The problem is
+      // that, if evacuation fails, we might have remembered set
+      // entries missing given that we skipped cards on the
+      // collection set. So, we'll recreate such entries now.
+      RecreateRSetEntriesClosure cl(_g1, _hr);
+      obj->oop_iterate(&cl);
+      assert(_cm->isPrevMarked(obj), "Should be marked!");
+    } else {
+      // The object has been either evacuated or is dead. Fill it with a
+      // dummy object.
+      MemRegion mr((HeapWord*)obj, obj->size());
       SharedHeap::fill_region_with_object(mr);
       _cm->clearRangeBothMaps(mr);
-      _hr->declare_filled_region_to_BOT(mr);
-    }
-  }
-
-  void do_object(oop obj) {
-    if (obj->is_forwarded()) {
-      if (obj->forwardee() == obj) {
-        assert(!_g1->is_obj_dead(obj), "We should not be preserving dead objs.");
-        _cm->markPrev(obj);
-        assert(_cm->isPrevMarked(obj), "Should be marked!");
-        _prev_marked_bytes += (obj->size() * HeapWordSize);
-        if (_g1->mark_in_progress() && !_g1->is_obj_ill(obj)) {
-          _cm->markAndGrayObjectIfNecessary(obj);
-        }
-        HeapWord* obj_start = (HeapWord*)obj;
-        if (obj_start > _last_self_forwarded_end) {
-          MemRegion mr(_last_self_forwarded_end, obj_start);
-          SharedHeap::fill_region_with_object(mr);
-          assert(_cm->isPrevMarked(obj), "Should be marked!");
-          _cm->clearRangeBothMaps(mr);
-          assert(_cm->isPrevMarked(obj), "Should be marked!");
-          _hr->declare_filled_region_to_BOT(mr);
-        }
-        _last_self_forwarded_end = obj_start + obj->size();
-        obj->set_mark(markOopDesc::prototype());
-
-        // While we were processing RSet buffers during the
-        // collection, we actually didn't scan any cards on the
-        // collection set, since we didn't want to update remebered
-        // sets with entries that point into the collection set, given
-        // that live objects fromthe collection set are about to move
-        // and such entries will be stale very soon. This change also
-        // dealt with a reliability issue which involved scanning a
-        // card in the collection set and coming across an array that
-        // was being chunked and looking malformed. The problem is
-        // that, if evacuation fails, we might have remembered set
-        // entries missing given that we skipped cards on the
-        // collection set. So, we'll recreate such entries now.
-        RecreateRSetEntriesClosure cl(_g1, _hr);
-        obj->oop_iterate(&cl);
-
-        assert(_cm->isPrevMarked(obj), "Should be marked!");
-      }
     }
   }
 };
@@ -2826,7 +2817,6 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
       RemoveSelfPointerClosure rspc(_g1h, cur);
       assert(cur->in_collection_set(), "bad CS");
       cur->object_iterate(&rspc);
-      rspc.fill_remainder();
 
       // A number of manipulations to make the TAMS be the current top,
       // and the marked bytes be the ones observed in the iteration.
