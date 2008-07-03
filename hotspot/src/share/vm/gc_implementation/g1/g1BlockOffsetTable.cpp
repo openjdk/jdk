@@ -412,7 +412,11 @@ G1BlockOffsetArray::forward_to_block_containing_addr_slow(HeapWord* q,
   // offset table was actually a lab allocation, and was divided into
   // several objects subsequently.  Fix this situation as we answer the
   // query, by updating entries as we cross them.
-  size_t next_index = _array->index_for(n) + 1;
+
+  // If the fist object's end q is at the card boundary. Start refining
+  // with the corresponding card (the value of the entry will be basically
+  // set to 0). If the object crosses the boundary -- start from the next card.
+  size_t next_index = _array->index_for(n) + !_array->is_card_boundary(n);
   HeapWord* next_boundary = _array->address_for_index(next_index);
   if (csp() != NULL) {
     if (addr >= csp()->top()) return csp()->top();
