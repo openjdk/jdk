@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6285901
+ * @bug 6285901 6501089
  * @summary Check no data is written to wrong socket channel during async closing.
  * @author Xueming Shen
  */
@@ -33,13 +33,13 @@ import java.nio.channels.*;
 import java.net.*;
 
 public class AsyncCloseChannel {
-    static boolean failed = false;
-    static boolean keepGoing = true;
+    static volatile boolean failed = false;
+    static volatile boolean keepGoing = true;
+    static int maxAcceptCount = 100;
+    static volatile int acceptCount = 0;
     static String host = "127.0.0.1";
-    static int sensorPort = 3010;
-    static int targetPort = 3020;
-    static int maxAcceptCount = 1000;
-    static int acceptCount = 0;
+    static int sensorPort;
+    static int targetPort;
 
     public static void main(String args[]) throws Exception {
         if (System.getProperty("os.name").startsWith("Windows")) {
@@ -48,11 +48,15 @@ public class AsyncCloseChannel {
         }
         Thread ss = new SensorServer(); ss.start();
         Thread ts = new TargetServer(); ts.start();
+
+        sensorPort = ((ServerThread)ss).server.getLocalPort();
+        targetPort = ((ServerThread)ts).server.getLocalPort();
+
         Thread sc = new SensorClient(); sc.start();
         Thread tc = new TargetClient(); tc.start();
 
         while(acceptCount < maxAcceptCount && !failed) {
-            Thread.yield();
+            Thread.sleep(10);
         }
         keepGoing = false;
         try {
@@ -66,11 +70,8 @@ public class AsyncCloseChannel {
                                        + acceptCount + "> times of accept!");
     }
 
-
-    static class SensorServer extends ThreadEx {
+    static class SensorServer extends ServerThread {
         public void runEx() throws Exception {
-            ServerSocket server;
-            server = new ServerSocket(sensorPort);
             while(keepGoing) {
                 try {
                     final Socket s = server.accept();
@@ -80,7 +81,7 @@ public class AsyncCloseChannel {
                                 int c = s.getInputStream().read();
                                 if(c != -1) {
                                     // No data is ever written to the peer's socket!
-                                    System.out.println("Oops: read a character: "
+                                    System.err.println("Oops: read a character: "
                                                        + (char) c);
                                     failed = true;
                                 }
@@ -92,17 +93,14 @@ public class AsyncCloseChannel {
                         }
                     }.start();
                 } catch (IOException ex) {
-                    //ex.printStackTrace();
+                    System.err.println("Exception on sensor server " + ex.getMessage());
                 }
             }
         }
     }
 
-    static class TargetServer extends ThreadEx {
+    static class TargetServer extends ServerThread {
         public void runEx() throws Exception {
-
-            ServerSocket server;
-            server = new ServerSocket(targetPort);
             while (keepGoing) {
                 try {
                     final Socket s = server.accept();
@@ -127,7 +125,7 @@ public class AsyncCloseChannel {
                         }
                     }.start();
                 } catch (IOException ex) {
-                    //ex.printStackTrace();
+                    System.err.println("Exception on target server " + ex.getMessage());
                 }
             }
         }
@@ -142,19 +140,19 @@ public class AsyncCloseChannel {
                 try {
                     s = new Socket();
                     synchronized(this) {
-                        while(!wake) {
+                        while(!wake && keepGoing) {
                             try {
                                 wait();
                             } catch (InterruptedException ex) { }
                         }
+                        wake = false;
                     }
-                    wake = false;
                     s.connect(new InetSocketAddress(host, sensorPort));
                     try {
                         Thread.sleep(10);
                     } catch (InterruptedException ex) { }
                 } catch (IOException ex) {
-                    System.out.println("Exception on sensor client " + ex.getMessage());
+                    System.err.println("Exception on sensor client " + ex.getMessage());
                 } finally {
                     if(s != null) {
                         try {
@@ -200,26 +198,49 @@ public class AsyncCloseChannel {
                                 }
                             } catch (IOException ex) {
                                 if(!(ex instanceof ClosedChannelException))
-                                    System.out.println("Exception in target client child "
+                                    System.err.println("Exception in target client child "
                                                        + ex.toString());
                             }
                         }
                     };
                     t.start();
-                    while(!ready)
-                        Thread.yield();
+                    while(!ready && keepGoing) {
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException ex) {}
+                    }
                     s.close();
                     SensorClient.wakeMe();
                     t.join();
                 } catch (IOException ex) {
-                     System.out.println("Exception in target client parent "
+                     System.err.println("Exception in target client parent "
                                         + ex.getMessage());
                 } catch (InterruptedException ex) {}
             }
         }
     }
 
-    static abstract class ThreadEx extends Thread {
+    static abstract class ServerThread extends Thread {
+        ServerSocket server;
+        public ServerThread() {
+            super();
+            try {
+                server = new ServerSocket(0);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        public void interrupt() {
+            super.interrupt();
+            if (server != null) {
+                try {
+                    server.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
         public void run() {
             try {
                 runEx();
@@ -230,7 +251,6 @@ public class AsyncCloseChannel {
 
         abstract void runEx() throws Exception;
     }
-
 
     public static void closeIt(Socket s) {
         try {

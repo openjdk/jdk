@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,6 @@ JNIEXPORT jobjectArray JNICALL
 Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                                                 jstring host) {
     const char *hostname;
-    jobject name;
     jobjectArray ret = 0;
     struct hostent res, *hp = 0;
     char buf[HENT_BUF_SIZE];
@@ -210,12 +209,6 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
             addrp++;
         }
 
-        name = (*env)->NewStringUTF(env, hostname);
-
-        if (IS_NULL(name)) {
-          goto cleanupAndReturn;
-        }
-
         ret = (*env)->NewObjectArray(env, i, ni_iacls, NULL);
         if (IS_NULL(ret)) {
             /* we may have memory to free at the end of this */
@@ -231,7 +224,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
           }
           (*env)->SetIntField(env, iaObj, ni_iaaddressID,
                               ntohl((*addrp)->s_addr));
-          (*env)->SetObjectField(env, iaObj, ni_iahostID, name);
+          (*env)->SetObjectField(env, iaObj, ni_iahostID, host);
           (*env)->SetObjectArrayElement(env, ret, i, iaObj);
           addrp++;
           i++;

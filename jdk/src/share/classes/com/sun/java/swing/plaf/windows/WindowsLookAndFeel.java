@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -825,9 +825,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
                      "ESCAPE", "cancelSelection",
                      "F2", "editFileName",
                      "F5", "refresh",
-                     "BACK_SPACE", "Go Up",
-                     "ENTER", "approveSelection",
-                "ctrl ENTER", "approveSelection"
+                     "BACK_SPACE", "Go Up"
                  }),
 
             "FileView.directoryIcon", SwingUtilities2.makeIcon(getClass(),
