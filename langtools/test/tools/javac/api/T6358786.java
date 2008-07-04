@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  */
 
 import com.sun.tools.javac.api.JavacTaskImpl;
-import com.sun.tools.javac.util.JavacFileManager;
+import com.sun.tools.javac.file.JavacFileManager;
 import java.util.Arrays;
 
 import javax.lang.model.util.Elements;

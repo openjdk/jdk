@@ -23,7 +23,7 @@
  * have any questions.
  */
 
-package com.sun.tools.javac.zip;
+package com.sun.tools.javac.file;
 
 import java.io.File;
 

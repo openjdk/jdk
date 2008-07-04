@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
 package com.sun.tools.javadoc;
 
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.file.Old199;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JavacFileManager;
-import com.sun.tools.javac.util.Old199;
 
 import java.io.File;
 import java.util.EnumSet;

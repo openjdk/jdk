@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,14 @@ import java.util.Map;
 import java.util.Set;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
+
 import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
+
 import static com.sun.tools.javac.util.LayoutCharacters.*;
 
 /** A class for error logs. Reports errors and warnings, and

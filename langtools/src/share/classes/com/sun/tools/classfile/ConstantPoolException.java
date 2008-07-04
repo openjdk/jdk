@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,38 +23,19 @@
  * have any questions.
  */
 
-package com.sun.tools.javac.util;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import javax.tools.*;
+package com.sun.tools.classfile;
 
-import static javax.tools.StandardLocation.SOURCE_PATH;
-
-/**
- * Provides an easy migration to JSR 199 v3.3.  The class is
- * deprecated as we should remove it as soon as possible.
- *
- * <p><b>This is NOT part of any API supported by Sun Microsystems.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
- *
- * @author Peter von der Ah\u00e9
+/*
+ *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
+ *  you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
-@Deprecated
-public class Old199 {
-
-    private Old199() {}
-
-    public static String getPath(FileObject jfo) {
-        return JavacFileManager.getJavacFileName(jfo);
+public class ConstantPoolException extends Exception {
+    ConstantPoolException(int index) {
+        this.index = index;
     }
 
-    public static String getName(FileObject jfo) {
-        return JavacFileManager.getJavacBaseFileName(jfo);
-    }
-
+    public final int index;
 }
