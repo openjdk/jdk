@@ -505,9 +505,7 @@ public class Container extends Component {
             comp.parent = null;
             component.remove(index);
 
-            if (valid) {
-                invalidate();
-            }
+            invalidateIfValid();
         } else {
             // We should remove component and then
             // add it by the newIndex without newIndex decrement if even we shift components to the left
@@ -800,9 +798,7 @@ public class Container extends Component {
             }
         }
 
-        if (valid) {
-            invalidate();
-        }
+        invalidateIfValid();
         if (peer != null) {
             if (comp.peer == null) { // Remove notify was called or it didn't have peer - create new one
                 comp.addNotify();
@@ -1064,9 +1060,7 @@ public class Container extends Component {
                 comp.numListening(AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK));
             adjustDescendants(comp.countHierarchyMembers());
 
-            if (valid) {
-                invalidate();
-            }
+            invalidateIfValid();
             if (peer != null) {
                 comp.addNotify();
             }
@@ -1155,9 +1149,7 @@ public class Container extends Component {
             comp.parent = null;
             component.remove(index);
 
-            if (valid) {
-                invalidate();
-            }
+            invalidateIfValid();
             if (containerListener != null ||
                 (eventMask & AWTEvent.CONTAINER_EVENT_MASK) != 0 ||
                 Toolkit.enabledOnToolkit(AWTEvent.CONTAINER_EVENT_MASK)) {
@@ -1249,9 +1241,7 @@ public class Container extends Component {
             if (peer != null && layoutMgr == null && isVisible()) {
                 updateCursorImmediately();
             }
-            if (valid) {
-                invalidate();
-            }
+            invalidateIfValid();
         }
     }
 
@@ -1411,9 +1401,7 @@ public class Container extends Component {
      */
     public void setLayout(LayoutManager mgr) {
         layoutMgr = mgr;
-        if (valid) {
-            invalidate();
-        }
+        invalidateIfValid();
     }
 
     /**
@@ -1485,10 +1473,10 @@ public class Container extends Component {
      */
     public void validate() {
         /* Avoid grabbing lock unless really necessary. */
-        if (!valid) {
+        if (!isValid()) {
             boolean updateCur = false;
             synchronized (getTreeLock()) {
-                if (!valid && peer != null) {
+                if (!isValid() && peer != null) {
                     ContainerPeer p = null;
                     if (peer instanceof ContainerPeer) {
                         p = (ContainerPeer) peer;
@@ -1497,7 +1485,6 @@ public class Container extends Component {
                         p.beginValidate();
                     }
                     validateTree();
-                    valid = true;
                     if (p != null) {
                         p.endValidate();
                         updateCur = isVisible();
@@ -1520,7 +1507,7 @@ public class Container extends Component {
      * @see #validate
      */
     protected void validateTree() {
-        if (!valid) {
+        if (!isValid()) {
             if (peer instanceof ContainerPeer) {
                 ((ContainerPeer)peer).beginLayout();
             }
@@ -1529,7 +1516,7 @@ public class Container extends Component {
                 Component comp = component.get(i);
                 if (   (comp instanceof Container)
                        && !(comp instanceof Window)
-                       && !comp.valid) {
+                       && !comp.isValid()) {
                     ((Container)comp).validateTree();
                 } else {
                     comp.validate();
@@ -1539,7 +1526,7 @@ public class Container extends Component {
                 ((ContainerPeer)peer).endLayout();
             }
         }
-        valid = true;
+        super.validate();
     }
 
     /**
@@ -1554,14 +1541,10 @@ public class Container extends Component {
                     ((Container)comp).invalidateTree();
                 }
                 else {
-                    if (comp.valid) {
-                        comp.invalidate();
-                    }
+                    comp.invalidateIfValid();
                 }
             }
-            if (valid) {
-                invalidate();
-            }
+            invalidateIfValid();
         }
     }
 
@@ -4080,6 +4063,21 @@ public class Container extends Component {
                 recursiveApplyCurrentShape();
             }
             super.mixOnZOrderChanging(oldZorder, newZorder);
+        }
+    }
+
+    @Override
+    void mixOnValidating() {
+        synchronized (getTreeLock()) {
+            if (mixingLog.isLoggable(Level.FINE)) {
+                mixingLog.fine("this = " + this);
+            }
+
+            if (hasHeavyweightDescendants()) {
+                recursiveApplyCurrentShape();
+            }
+
+            super.mixOnValidating();
         }
     }
 
