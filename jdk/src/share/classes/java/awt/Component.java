@@ -346,7 +346,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #validate
      * @see #invalidate
      */
-    volatile boolean valid = false;
+    private volatile boolean valid = false;
 
     /**
      * The <code>DropTarget</code> associated with this component.
@@ -1714,9 +1714,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
         // This could change the preferred size of the Component.
         // Fix for 6213660. Should compare old and new fonts and do not
         // call invalidate() if they are equal.
-        if (valid && f != oldFont && (oldFont == null ||
+        if (f != oldFont && (oldFont == null ||
                                       !oldFont.equals(f))) {
-            invalidate();
+            invalidateIfValid();
         }
     }
 
@@ -1773,9 +1773,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         firePropertyChange("locale", oldValue, l);
 
         // This could change the preferred size of the Component.
-        if (valid) {
-            invalidate();
-        }
+        invalidateIfValid();
     }
 
     /**
@@ -2084,8 +2082,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
                     if (resized) {
                         invalidate();
                     }
-                    if (parent != null && parent.valid) {
-                        parent.invalidate();
+                    if (parent != null) {
+                        parent.invalidateIfValid();
                     }
                 }
                 if (needNotify) {
@@ -2654,7 +2652,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
     public void validate() {
         synchronized (getTreeLock()) {
             ComponentPeer peer = this.peer;
-            if (!valid && peer != null) {
+            boolean wasValid = isValid();
+            if (!wasValid && peer != null) {
                 Font newfont = getFont();
                 Font oldfont = peerFont;
                 if (newfont != oldfont && (oldfont == null
@@ -2665,6 +2664,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 peer.layout();
             }
             valid = true;
+            if (!wasValid) {
+                mixOnValidating();
+            }
         }
     }
 
@@ -2693,9 +2695,17 @@ public abstract class Component implements ImageObserver, MenuContainer,
             if (!isMaximumSizeSet()) {
                 maxSize = null;
             }
-            if (parent != null && parent.valid) {
-                parent.invalidate();
+            if (parent != null) {
+                parent.invalidateIfValid();
             }
+        }
+    }
+
+    /** Invalidates the component unless it is already invalid.
+     */
+    final void invalidateIfValid() {
+        if (isValid()) {
+            invalidate();
         }
     }
 
@@ -7716,7 +7726,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     protected String paramString() {
         String thisName = getName();
         String str = (thisName != null? thisName : "") + "," + x + "," + y + "," + width + "x" + height;
-        if (!valid) {
+        if (!isValid()) {
             str += ",invalid";
         }
         if (!visible) {
@@ -8476,9 +8486,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         firePropertyChange("componentOrientation", oldValue, o);
 
         // This could change the preferred size of the Component.
-        if (valid) {
-            invalidate();
-        }
+        invalidateIfValid();
     }
 
     /**
@@ -9328,7 +9336,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     private boolean areBoundsValid() {
         Container cont = getContainer();
-        return cont == null || cont.isValid() || cont.getLayout() == null;
+        return cont == null || cont.isValid()
+            || cont.getLayout() == null;
     }
 
     /**
@@ -9597,6 +9606,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
         } else {
             mixOnHiding(isLightweight());
         }
+    }
+
+    void mixOnValidating() {
+        // This method gets overriden in the Container. Obviously, a plain
+        // non-container components don't need to handle validation.
     }
 
     // ****************** END OF MIXING CODE ********************************
