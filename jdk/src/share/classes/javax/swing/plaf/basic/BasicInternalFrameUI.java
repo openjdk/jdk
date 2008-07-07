@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ public class BasicInternalFrameUI extends InternalFrameUI
     protected MouseInputAdapter          borderListener;
     protected PropertyChangeListener     propertyChangeListener;
     protected LayoutManager              internalFrameLayout;
-    protected ComponentListener          componentListener;
     protected MouseInputListener         glassPaneDispatcher;
     private InternalFrameListener        internalFrameListener;
 
@@ -67,9 +66,9 @@ public class BasicInternalFrameUI extends InternalFrameUI
     protected BasicInternalFrameTitlePane titlePane; // access needs this
 
     private static DesktopManager sharedDesktopManager;
-    private boolean componentListenerAdded = false;
 
     private Rectangle parentBounds;
+    private DesktopIconMover desktopIconMover;
 
     private boolean dragging = false;
     private boolean resizing = false;
@@ -210,14 +209,17 @@ public class BasicInternalFrameUI extends InternalFrameUI
             frame.getGlassPane().addMouseListener(glassPaneDispatcher);
             frame.getGlassPane().addMouseMotionListener(glassPaneDispatcher);
         }
-        componentListener =  createComponentListener();
         if (frame.getParent() != null) {
           parentBounds = frame.getParent().getBounds();
         }
-        if ((frame.getParent() != null) && !componentListenerAdded) {
-          frame.getParent().addComponentListener(componentListener);
-          componentListenerAdded = true;
+        getDesktopIconMover().installListeners();
+    }
+
+    private DesktopIconMover getDesktopIconMover() {
+        if (desktopIconMover == null) {
+            desktopIconMover = new DesktopIconMover(frame);
         }
+        return desktopIconMover;
     }
 
     // Provide a FocusListener to listen for a WINDOW_LOST_FOCUS event,
@@ -288,11 +290,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
      * @since 1.3
      */
     protected void uninstallListeners() {
-      if ((frame.getParent() != null) && componentListenerAdded) {
-        frame.getParent().removeComponentListener(componentListener);
-        componentListenerAdded = false;
-      }
-      componentListener = null;
+      getDesktopIconMover().uninstallListeners();
       if (glassPaneDispatcher != null) {
           frame.getGlassPane().removeMouseListener(glassPaneDispatcher);
           frame.getGlassPane().removeMouseMotionListener(glassPaneDispatcher);
@@ -1230,15 +1228,6 @@ public class BasicInternalFrameUI extends InternalFrameUI
                 }
             }
 
-            // Relocate the icon base on the new parent bounds.
-            if (icon != null) {
-                Rectangle iconBounds = icon.getBounds();
-                int y = iconBounds.y +
-                    (parentNewBounds.height - parentBounds.height);
-                icon.setBounds(iconBounds.x, y,
-                    iconBounds.width, iconBounds.height);
-            }
-
             // Update the new parent bounds for next resize.
             if (!parentBounds.equals(parentNewBounds)) {
                 parentBounds = parentNewBounds;
@@ -1413,10 +1402,6 @@ public class BasicInternalFrameUI extends InternalFrameUI
                     // Cancel a resize in progress if the internal frame
                     // gets a setClosed(true) or dispose().
                     cancelResize();
-                    if ((frame.getParent() != null) && componentListenerAdded) {
-                        frame.getParent().removeComponentListener(
-                                componentListener);
-                    }
                     closeFrame(f);
                 }
             } else if (JInternalFrame.IS_MAXIMUM_PROPERTY == prop) {
@@ -1448,16 +1433,6 @@ public class BasicInternalFrameUI extends InternalFrameUI
                     parentBounds = f.getParent().getBounds();
                 } else {
                     parentBounds = null;
-                }
-                if ((frame.getParent() != null) && !componentListenerAdded) {
-                    f.getParent().addComponentListener(componentListener);
-                    componentListenerAdded = true;
-                } else if ((newValue == null) && componentListenerAdded) {
-                    if (f.getParent() != null) {
-                        f.getParent().removeComponentListener(
-                                componentListener);
-                    }
-                    componentListenerAdded = false;
                 }
             } else if (JInternalFrame.TITLE_PROPERTY == prop ||
                     prop == "closable" || prop == "iconable" ||
