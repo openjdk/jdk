@@ -25,6 +25,8 @@
 
 #include "awt_Component.h"
 
+#include <commctrl.h>
+
 #ifndef _COMCTL32UTIL_H
 #define _COMCTL32UTIL_H
 
@@ -80,6 +82,11 @@ class ComCtl32Util
         PFNSETWINDOWSUBCLASS m_lpfnSetWindowSubclass;
         PFNREMOVEWINDOWSUBCLASS m_lpfnRemoveWindowSubclass;
         PFNDEFSUBCLASSPROC m_lpfnDefSubclassProc;
+
+        typedef BOOL (WINAPI * InitCommonControlsExType)(const LPINITCOMMONCONTROLSEX lpInitCtrls);
+        InitCommonControlsExType fn_InitCommonControlsEx;
+
+        void InitCommonControls();
 
         BOOL m_bNewSubclassing;
 
