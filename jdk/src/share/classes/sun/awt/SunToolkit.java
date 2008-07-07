@@ -2039,12 +2039,3 @@ class PostEventQueue {
         SunToolkit.wakeupEventQueue(eventQueue, event.getSource() == AWTAutoShutdown.getInstance());
     }
 } // class PostEventQueue
-
-class EventQueueItem {
-    AWTEvent event;
-    EventQueueItem next;
-
-    EventQueueItem(AWTEvent evt) {
-        event = evt;
-    }
-} // class EventQueueItem

@@ -5737,7 +5737,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
     }
 
-    transient EventQueueItem[] eventCache;
+    transient sun.awt.EventQueueItem[] eventCache;
 
     /**
      * @see #isCoalescingEnabled
