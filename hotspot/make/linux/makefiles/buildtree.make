@@ -335,7 +335,7 @@ test_gamma:  $(BUILDTREE_MAKE)
 	$(BUILDTREE_COMMENT); \
 	echo '. ./env.sh'; \
 	echo "if [ -z \$$JAVA_HOME ]; then { $(NO_JAVA_HOME_MSG); exit 0; }; fi"; \
-	echo "if ! \$${JAVA_HOME}/bin/java $(JAVA_FLAG) -fullversion 2>1 > /dev/null"; \
+	echo "if ! \$${JAVA_HOME}/bin/java $(JAVA_FLAG) -fullversion 2>&1 > /dev/null"; \
 	echo "then"; \
 	echo "  $(WRONG_DATA_MODE_MSG); exit 0;"; \
 	echo "fi"; \
