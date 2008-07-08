@@ -82,15 +82,16 @@ ifeq ($(PLATFORM), linux)
 endif
 
 ifeq ($(PLATFORM), windows)
-  WINVER=$(JDK_TOPDIR)/make/tools/winver/bin/winver.exe
   FREE_SPACE := $(shell $(DF) -kP $(OUTPUTDIR) | $(TAIL) -1 | $(NAWK) '{print $$4;}')
   TEMP_FREE_SPACE := $(shell $(DF) -kP $(TEMP_DISK) | $(TAIL) -1 | $(NAWK) '{print $$4;}')
-  WINDOWS_VERSION := $(shell \
-      if [ -x $(WINVER) ]; then \
-	$(WINVER) ; \
-      else \
-	$(ECHO) "Unknown Windows Version"; \
-      fi)
+  # Localized systeminfo has localized labels, but not localized values.
+  _WINDOWS_VERSION := \
+    $(shell systeminfo 2> $(DEV_NULL) | grep 'Microsoft' | grep 'Windows' | \
+	 cut -d':' -f2)
+  ifeq ($(_WINDOWS_VERSION),)
+    _WINDOWS_VERSION := Windows 2000 or Unknown (no systeminfo utility)
+  endif
+  WINDOWS_VERSION := $(strip $(_WINDOWS_VERSION))
   DXSDK_VER := $(shell $(EGREP) DIRECTDRAW_VERSION $(DXSDK_INCLUDE_PATH)/ddraw.h 2>&1 | \
     $(EGREP) "\#define" | $(NAWK) '{print $$3}')
 endif
@@ -264,9 +265,9 @@ ifndef OPENJDK
 	    "" >> $(WARNING_FILE) ; \
 	fi
   ifeq ($(PLATFORM), windows)
-	@if [ "$(WINDOWS_VERSION)" != "$(REQUIRED_WINDOWS_VERSION)" ]; then \
-	    $(ECHO) "WARNING: $(YOU_ARE_USING) an unsupported version of $(REQUIRED_WINDOWS_NAME). \n" \
-	      "        The supported version is $(REQUIRED_WINDOWS_NAME) $(REQUIRED_WINDOWS_VERSION). \n" \
+	@if [ "$(findstring $(REQUIRED_WINDOWS_VERSION),$(WINDOWS_VERSION))" = "" ]; then \
+	    $(ECHO) "WARNING: $(YOU_ARE_USING) an unknown version of Windows. \n" \
+	      "        The required version is $(REQUIRED_WINDOWS_VERSION). \n" \
 	      "        $(YOU_ARE_USING) $(WINDOWS_VERSION) \n" \
 	      "" >> $(WARNING_FILE) ; \
 	fi
