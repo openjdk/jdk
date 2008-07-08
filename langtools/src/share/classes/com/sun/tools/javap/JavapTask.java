@@ -306,14 +306,32 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask {
         };
     }
 
+    /** Result codes.
+     */
+    static final int
+        EXIT_OK = 0,        // Compilation completed with no errors.
+        EXIT_ERROR = 1,     // Completed but reported errors.
+        EXIT_CMDERR = 2,    // Bad command-line arguments
+        EXIT_SYSERR = 3,    // System error or resource exhaustion.
+        EXIT_ABNORMAL = 4;  // Compiler terminated abnormally
+
     int run(String[] args) {
         try {
             handleOptions(args);
+
+            // the following gives consistent behavior with javac
+            if (classes == null || classes.size() == 0) {
+                if (options.help || options.version || options.fullVersion)
+                    return EXIT_OK;
+                else
+                    return EXIT_CMDERR;
+            }
+
             boolean ok = run();
-            return ok ? 0 : 1;
+            return ok ? EXIT_OK : EXIT_ERROR;
         } catch (BadArgs e) {
             diagnosticListener.report(createDiagnostic(e.key, e.args));
-            return 1;
+            return EXIT_CMDERR;
         } catch (InternalError e) {
             Object[] e_args;
             if (e.getCause() == null)
@@ -324,7 +342,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask {
                 System.arraycopy(e.args, 0, e_args, 1, e.args.length);
             }
             diagnosticListener.report(createDiagnostic("err.internal.error", e_args));
-            return 1;
+            return EXIT_ABNORMAL;
         } finally {
             log.flush();
         }
@@ -349,8 +367,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask {
             fileManager = getDefaultFileManager(diagnosticListener, log);
 
         Iterator<String> iter = args.iterator();
-        if (!iter.hasNext())
-            options.help = true;
+        boolean noArgs = !iter.hasNext();
 
         while (iter.hasNext()) {
             String arg = iter.next();
@@ -370,9 +387,15 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask {
             ((JavapFileManager) fileManager).setIgnoreSymbolFile(true);
 
         if ((classes == null || classes.size() == 0) &&
-                !(options.help || options.version || options.fullVersion)) {
+                !(noArgs || options.help || options.version || options.fullVersion)) {
             throw new BadArgs("err.no.classes.specified");
         }
+
+        if (noArgs || options.help)
+            showHelp();
+
+        if (options.version || options.fullVersion)
+            showVersion(options.fullVersion);
     }
 
     private void handleOption(String name, Iterator<String> rest) throws BadArgs {
@@ -405,14 +428,8 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask {
     }
 
     public boolean run() {
-        if (options.help)
-            showHelp();
-
-        if (options.version || options.fullVersion)
-            showVersion(options.fullVersion);
-
         if (classes == null || classes.size() == 0)
-            return true;
+            return false;
 
         context.put(PrintWriter.class, log);
         ClassWriter classWriter = ClassWriter.instance(context);

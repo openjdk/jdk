@@ -21,44 +21,47 @@
  * have any questions.
  */
 
+import java.io.*;
+import java.util.*;
+
 /*
  * @test
- * @bug 4876942 6715251
- * @summary javap invoked without args does not print help screen
+ * @bug 6715251
+ * @summary javap should be consistent with javac and return 2 if given no arguments
  */
 
-import java.io.*;
-import java.util.zip.*;
-
-public class T4876942 {
-    public static void main(String[] args) throws Exception {
-        new T4876942().run();
+public class T6715251 {
+    public static void main(String... args) throws Exception {
+        new T6715251().run();
     }
 
-    public void run() throws IOException {
-        String output = javap();
-        verify(output, "-public", "-protected", "-private"); // check that some of the options are listed
+    void run() throws Exception {
+        String testClasses = System.getProperty("test.classes", ".");
+
+        test(2);
+        test(0, "-help");
+        test(0, "-version");
+        test(0, "-fullversion");
+        test(0, "-classpath", testClasses, "T6715251");
 
         if (errors > 0)
-            throw new Error(errors + " found.");
+            throw new Exception(errors + " errors received");
     }
 
-    String javap(String... args) {
+    void test(int expect, String ... args) {
+        int rc = javap(args);
+        if (rc != expect)
+            error("bad result: expected: " + expect + ", found " + rc + "\n"
+                  + log);
+
+    }
+
+    int javap(String... args) {
         StringWriter sw = new StringWriter();
-        PrintWriter out = new PrintWriter(sw);
-        //sun.tools.javap.Main.entry(args);
-        int rc = com.sun.tools.javap.Main.run(args, out);
-        if (rc != (args.length == 0 ? 2 : 0))
-            throw new Error("javap failed. rc=" + rc);
-        out.close();
-        return sw.toString();
-    }
-
-    void verify(String output, String... expects) {
-        for (String expect: expects) {
-            if (output.indexOf(expect)< 0)
-                error(expect + " not found");
-        }
+        PrintWriter pw = new PrintWriter(sw);
+        int rc = com.sun.tools.javap.Main.run(args, pw);
+        log = sw.toString();
+        return rc;
     }
 
     void error(String msg) {
@@ -66,5 +69,6 @@ public class T4876942 {
         errors++;
     }
 
+    String log;
     int errors;
 }
