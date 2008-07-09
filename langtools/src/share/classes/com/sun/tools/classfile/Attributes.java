@@ -78,6 +78,19 @@ public class Attributes implements Iterable<Attribute> {
         return map.get(name);
     }
 
+    public int getIndex(ConstantPool constant_pool, String name) {
+        for (int i = 0; i < attrs.length; i++) {
+            Attribute attr = attrs[i];
+            try {
+                if (attr != null && attr.getName(constant_pool).equals(name))
+                    return i;
+            } catch (ConstantPoolException e) {
+                // ignore invalid entries
+            }
+        }
+        return -1;
+    }
+
     public int size() {
         return attrs.length;
     }
