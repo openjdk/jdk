@@ -35,6 +35,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.WeakHashMap;
+import javax.management.Description;
 import javax.management.Descriptor;
 import javax.management.ImmutableDescriptor;
 import javax.management.IntrospectionException;
@@ -43,6 +44,7 @@ import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanException;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
+import javax.management.ManagedOperation;
 import javax.management.NotCompliantMBeanException;
 import javax.management.openmbean.MXBeanMappingFactory;
 import javax.management.openmbean.OpenMBeanAttributeInfoSupport;
@@ -180,7 +182,10 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
         final boolean isWritable = (setter != null);
         final boolean isIs = isReadable && getName(getter).startsWith("is");
 
-        final String description = attributeName;
+        final String description = getAttributeDescription(
+                attributeName, attributeName,
+                getter == null ? null : getter.getMethod(),
+                setter == null ? null : setter.getMethod());
 
         final OpenType<?> openType;
         final Type originalType;
@@ -229,13 +234,17 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
     MBeanOperationInfo getMBeanOperationInfo(String operationName,
             ConvertingMethod operation) {
         final Method method = operation.getMethod();
-        final String description = operationName;
+        String description = operationName;
         /* Ideally this would be an empty string, but
-           OMBOperationInfo constructor forbids that.  Also, we
-           could consult an annotation to get a useful
-           description.  */
+           OMBOperationInfo constructor forbids that.  */
+        Description d = method.getAnnotation(Description.class);
+        if (d != null)
+            description = d.value();
 
-        final int impact = MBeanOperationInfo.UNKNOWN;
+        int impact = MBeanOperationInfo.UNKNOWN;
+        ManagedOperation annot = method.getAnnotation(ManagedOperation.class);
+        if (annot != null)
+            impact = annot.impact().getCode();
 
         final OpenType<?> returnType = operation.getOpenReturnType();
         final Type originalReturnType = operation.getGenericReturnType();
@@ -247,8 +256,15 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
         boolean openParameterTypes = true;
         Annotation[][] annots = method.getParameterAnnotations();
         for (int i = 0; i < paramTypes.length; i++) {
-            final String paramName = "p" + i;
-            final String paramDescription = paramName;
+            String paramName = Introspector.nameForParameter(annots[i]);
+            if (paramName == null)
+                paramName = "p" + i;
+
+            String paramDescription =
+                    Introspector.descriptionForParameter(annots[i]);
+            if (paramDescription == null)
+                paramDescription = paramName;
+
             final OpenType<?> openType = paramTypes[i];
             final Type originalType = originalParamTypes[i];
             Descriptor descriptor =
