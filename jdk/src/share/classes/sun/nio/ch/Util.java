@@ -142,11 +142,10 @@ class Util {
             || ((sel = selWrapper.get()) == null)
             || (sel.provider() != sc.provider())) {
             sel = sc.provider().openSelector();
-            localSelector.set(new SoftReference<SelectorWrapper>(
-                                  new SelectorWrapper(sel)));
-        } else {
-            localSelectorWrapper.set(selWrapper);
+            selWrapper = new SelectorWrapper(sel);
+            localSelector.set(new SoftReference<SelectorWrapper>(selWrapper));
         }
+        localSelectorWrapper.set(selWrapper);
         return sel;
     }
 
