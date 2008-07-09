@@ -58,7 +58,8 @@ import com.sun.jmx.remote.util.ClassLogger;
  *
  * @since 1.5
  */
-public class NotificationBroadcasterSupport implements NotificationEmitter {
+public class NotificationBroadcasterSupport
+        implements NotificationEmitter, SendNotification {
     /**
      * Constructs a NotificationBroadcasterSupport where each listener is invoked by the
      * thread sending the notification. This constructor is equivalent to
