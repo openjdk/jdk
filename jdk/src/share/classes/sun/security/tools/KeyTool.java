@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,35 +26,23 @@
 package sun.security.tools;
 
 import java.io.*;
-import java.math.BigInteger;
-import java.security.GeneralSecurityException;
-import java.security.InvalidParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.Key;
 import java.security.PublicKey;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.Signature;
-import java.security.SignatureException;
 import java.security.UnrecoverableEntryException;
 import java.security.UnrecoverableKeyException;
 import java.security.Principal;
 import java.security.Provider;
 import java.security.Identity;
-import java.security.Signer;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
-import java.security.interfaces.DSAParams;
-import java.security.interfaces.DSAPrivateKey;
-import java.security.interfaces.DSAPublicKey;
-import java.security.interfaces.RSAPrivateCrtKey;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.text.Collator;
 import java.text.MessageFormat;
 import java.util.*;
@@ -62,7 +50,6 @@ import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLClassLoader;
 
-import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 import sun.security.util.ObjectIdentifier;
 import sun.security.pkcs.PKCS10;
@@ -72,11 +59,16 @@ import sun.security.provider.SystemIdentity;
 import sun.security.provider.X509Factory;
 import sun.security.util.DerOutputStream;
 import sun.security.util.Password;
-import sun.security.util.Resources;
 import sun.security.util.PathList;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import sun.security.x509.*;
 
 import static java.security.KeyStore.*;
@@ -132,6 +124,7 @@ public final class KeyTool {
     private String ksfname = null;
     private File ksfile = null;
     private InputStream ksStream = null; // keystore stream
+    private String sslserver = null;
     private KeyStore keyStore = null;
     private boolean token = false;
     private boolean nullStream = false;
@@ -347,6 +340,9 @@ public final class KeyTool {
             } else if (collator.compare(flags, "-file") == 0) {
                 if (++i == args.length) errorNeedArgument(flags);
                 filename = args[i];
+            } else if (collator.compare(flags, "-sslserver") == 0) {
+                if (++i == args.length) errorNeedArgument(flags);
+                sslserver = args[i];
             } else if (collator.compare(flags, "-srckeystore") == 0) {
                 if (++i == args.length) errorNeedArgument(flags);
                 srcksfname = args[i];
@@ -924,17 +920,7 @@ public final class KeyTool {
                 doPrintEntries(out);
             }
         } else if (command == PRINTCERT) {
-            InputStream inStream = System.in;
-            if (filename != null) {
-                inStream = new FileInputStream(filename);
-            }
-            try {
-                doPrintCert(inStream, out);
-            } finally {
-                if (inStream != System.in) {
-                    inStream.close();
-                }
-            }
+            doPrintCert(out);
         } else if (command == SELFCERT) {
             doSelfCert(alias, dname, sigAlgName);
             kssave = true;
@@ -1744,7 +1730,7 @@ public final class KeyTool {
      * Reads a certificate (or certificate chain) and prints its contents in
      * a human readbable format.
      */
-    private void doPrintCert(InputStream in, PrintStream out)
+    private void printCertFromStream(InputStream in, PrintStream out)
         throws Exception
     {
         Collection<? extends Certificate> c = null;
@@ -1770,13 +1756,98 @@ public final class KeyTool {
                 Object[] source = {new Integer(i + 1)};
                 out.println(form.format(source));
             }
-            printX509Cert(x509Cert, out);
+            if (rfc) dumpCert(x509Cert, out);
+            else printX509Cert(x509Cert, out);
             if (i < (certs.length-1)) {
                 out.println();
             }
         }
     }
 
+    private void doPrintCert(final PrintStream out) throws Exception {
+        if (sslserver != null) {
+            SSLContext sc = SSLContext.getInstance("SSL");
+            final boolean[] certPrinted = new boolean[1];
+            sc.init(null, new TrustManager[] {
+                new X509TrustManager() {
+
+                    public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                        return null;
+                    }
+
+                    public void checkClientTrusted(
+                        java.security.cert.X509Certificate[] certs, String authType) {
+                    }
+
+                    public void checkServerTrusted(
+                            java.security.cert.X509Certificate[] certs, String authType) {
+                        for (int i=0; i<certs.length; i++) {
+                            X509Certificate cert = certs[i];
+                            try {
+                                if (rfc) {
+                                    dumpCert(cert, out);
+                                } else {
+                                    out.println("Certificate #" + i);
+                                    out.println("====================================");
+                                    printX509Cert(cert, out);
+                                    out.println();
+                                }
+                            } catch (Exception e) {
+                                if (debug) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+
+                        // Set to true where there's something to print
+                        if (certs.length > 0) {
+                            certPrinted[0] = true;
+                        }
+                    }
+                }
+            }, null);
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+            HttpsURLConnection.setDefaultHostnameVerifier(
+                    new HostnameVerifier() {
+                        public boolean verify(String hostname, SSLSession session) {
+                            return true;
+                        }
+                    });
+            // HTTPS instead of raw SSL, so that -Dhttps.proxyHost and
+            // -Dhttps.proxyPort can be used. Since we only go through
+            // the handshake process, an HTTPS server is not needed.
+            // This program should be able to deal with any SSL-based
+            // network service.
+            Exception ex = null;
+            try {
+                new URL("https://" + sslserver).openConnection().connect();
+            } catch (Exception e) {
+                ex = e;
+            }
+            // If the certs are not printed out, we consider it an error even
+            // if the URL connection is successful.
+            if (!certPrinted[0]) {
+                Exception e = new Exception(
+                        rb.getString("No certificate from the SSL server"));
+                if (ex != null) {
+                    e.initCause(ex);
+                }
+                throw e;
+            }
+        } else {
+            InputStream inStream = System.in;
+            if (filename != null) {
+                inStream = new FileInputStream(filename);
+            }
+            try {
+                printCertFromStream(inStream, out);
+            } finally {
+                if (inStream != System.in) {
+                    inStream.close();
+                }
+            }
+        }
+    }
     /**
      * Creates a self-signed certificate, and stores it as a single-element
      * certificate chain.
@@ -3127,7 +3198,7 @@ public final class KeyTool {
         System.err.println();
 
         System.err.println(rb.getString
-                ("-printcert   [-v] [-file <cert_file>]"));
+                ("-printcert   [-v] [-rfc] [-file <cert_file> | -sslserver <host[:port]>]"));
         System.err.println();
 
         System.err.println(rb.getString
