@@ -170,8 +170,19 @@ bool ASPSYoungGen::resize_generation(size_t eden_size, size_t survivor_size) {
   if (desired_size > orig_size) {
     // Grow the generation
     size_t change = desired_size - orig_size;
+    HeapWord* prev_low = (HeapWord*) virtual_space()->low();
     if (!virtual_space()->expand_by(change)) {
       return false;
+    }
+    if (ZapUnusedHeapArea) {
+      // Mangle newly committed space immediately because it
+      // can be done here more simply that after the new
+      // spaces have been computed.
+      HeapWord* new_low = (HeapWord*) virtual_space()->low();
+      assert(new_low < prev_low, "Did not grow");
+
+      MemRegion mangle_region(new_low, prev_low);
+      SpaceMangler::mangle_region(mangle_region);
     }
     size_changed = true;
   } else if (desired_size < orig_size) {
@@ -215,8 +226,10 @@ bool ASPSYoungGen::resize_generation(size_t eden_size, size_t survivor_size) {
 //  current implementation does not allow holes between the spaces
 //  _young_generation_boundary has to be reset because it changes.
 //  so additional verification
+
 void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
                                  size_t requested_survivor_size) {
+  assert(UseAdaptiveSizePolicy, "sanity check");
   assert(requested_eden_size > 0 && requested_survivor_size > 0,
          "just checking");
 
@@ -276,22 +289,42 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
 
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
   const size_t alignment = heap->intra_heap_alignment();
+  const bool maintain_minimum =
+    (requested_eden_size + 2 * requested_survivor_size) <= min_gen_size();
 
+  bool eden_from_to_order = from_start < to_start;
   // Check whether from space is below to space
-  if (from_start < to_start) {
+  if (eden_from_to_order) {
     // Eden, from, to
+
     if (PrintAdaptiveSizePolicy && Verbose) {
       gclog_or_tty->print_cr("  Eden, from, to:");
     }
 
     // Set eden
-    // Compute how big eden can be, then adjust end.
-    // See comment in PSYoungGen::resize_spaces() on
-    // calculating eden_end.
-    const size_t eden_size = MIN2(requested_eden_size,
-                                  pointer_delta(from_start,
-                                                eden_start,
-                                                sizeof(char)));
+    // "requested_eden_size" is a goal for the size of eden
+    // and may not be attainable.  "eden_size" below is
+    // calculated based on the location of from-space and
+    // the goal for the size of eden.  from-space is
+    // fixed in place because it contains live data.
+    // The calculation is done this way to avoid 32bit
+    // overflow (i.e., eden_start + requested_eden_size
+    // may too large for representation in 32bits).
+    size_t eden_size;
+    if (maintain_minimum) {
+      // Only make eden larger than the requested size if
+      // the minimum size of the generation has to be maintained.
+      // This could be done in general but policy at a higher
+      // level is determining a requested size for eden and that
+      // should be honored unless there is a fundamental reason.
+      eden_size = pointer_delta(from_start,
+                                eden_start,
+                                sizeof(char));
+    } else {
+      eden_size = MIN2(requested_eden_size,
+                       pointer_delta(from_start, eden_start, sizeof(char)));
+    }
+
     eden_end = eden_start + eden_size;
     assert(eden_end >= eden_start, "addition overflowed")
 
@@ -371,12 +404,14 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
     to_start = MAX2(to_start, eden_start + alignment);
 
     // Compute how big eden can be, then adjust end.
-    // See comment in PSYoungGen::resize_spaces() on
-    // calculating eden_end.
-    const size_t eden_size = MIN2(requested_eden_size,
-                                  pointer_delta(to_start,
-                                                eden_start,
-                                                sizeof(char)));
+    // See  comments above on calculating eden_end.
+    size_t eden_size;
+    if (maintain_minimum) {
+      eden_size = pointer_delta(to_start, eden_start, sizeof(char));
+    } else {
+      eden_size = MIN2(requested_eden_size,
+                       pointer_delta(to_start, eden_start, sizeof(char)));
+    }
     eden_end = eden_start + eden_size;
     assert(eden_end >= eden_start, "addition overflowed")
 
@@ -423,9 +458,47 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
   size_t old_from = from_space()->capacity_in_bytes();
   size_t old_to   = to_space()->capacity_in_bytes();
 
-  eden_space()->initialize(edenMR, true);
-    to_space()->initialize(toMR  , true);
-  from_space()->initialize(fromMR, false);     // Note, not cleared!
+  if (ZapUnusedHeapArea) {
+    // NUMA is a special case because a numa space is not mangled
+    // in order to not prematurely bind its address to memory to
+    // the wrong memory (i.e., don't want the GC thread to first
+    // touch the memory).  The survivor spaces are not numa
+    // spaces and are mangled.
+    if (UseNUMA) {
+      if (eden_from_to_order) {
+        mangle_survivors(from_space(), fromMR, to_space(), toMR);
+      } else {
+        mangle_survivors(to_space(), toMR, from_space(), fromMR);
+      }
+    }
+
+    // If not mangling the spaces, do some checking to verify that
+    // the spaces are already mangled.
+    // The spaces should be correctly mangled at this point so
+    // do some checking here. Note that they are not being mangled
+    // in the calls to initialize().
+    // Must check mangling before the spaces are reshaped.  Otherwise,
+    // the bottom or end of one space may have moved into an area
+    // covered by another space and a failure of the check may
+    // not correctly indicate which space is not properly mangled.
+
+    HeapWord* limit = (HeapWord*) virtual_space()->high();
+    eden_space()->check_mangled_unused_area(limit);
+    from_space()->check_mangled_unused_area(limit);
+      to_space()->check_mangled_unused_area(limit);
+  }
+  // When an existing space is being initialized, it is not
+  // mangled because the space has been previously mangled.
+  eden_space()->initialize(edenMR,
+                           SpaceDecorator::Clear,
+                           SpaceDecorator::DontMangle);
+    to_space()->initialize(toMR,
+                           SpaceDecorator::Clear,
+                           SpaceDecorator::DontMangle);
+  from_space()->initialize(fromMR,
+                           SpaceDecorator::DontClear,
+                           SpaceDecorator::DontMangle);
+
   PSScavenge::set_young_generation_boundary(eden_space()->bottom());
 
   assert(from_space()->top() == old_from_top, "from top changed!");
@@ -446,7 +519,6 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
   }
   space_invariants();
 }
-
 void ASPSYoungGen::reset_after_change() {
   assert_locked_or_safepoint(Heap_lock);
 
@@ -458,7 +530,9 @@ void ASPSYoungGen::reset_after_change() {
   HeapWord* eden_bottom = eden_space()->bottom();
   if (new_eden_bottom != eden_bottom) {
     MemRegion eden_mr(new_eden_bottom, eden_space()->end());
-    eden_space()->initialize(eden_mr, true);
+    eden_space()->initialize(eden_mr,
+                             SpaceDecorator::Clear,
+                             SpaceDecorator::Mangle);
     PSScavenge::set_young_generation_boundary(eden_space()->bottom());
   }
   MemRegion cmr((HeapWord*)virtual_space()->low(),

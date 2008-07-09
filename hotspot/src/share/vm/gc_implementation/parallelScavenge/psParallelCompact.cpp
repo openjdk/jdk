@@ -1058,6 +1058,10 @@ void PSParallelCompact::post_compact()
 
   ref_processor()->enqueue_discovered_references(NULL);
 
+  if (ZapUnusedHeapArea) {
+    heap->gen_mangle_unused_area();
+  }
+
   // Update time of last GC
   reset_millis_since_last_gc();
 }
@@ -1959,6 +1963,11 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   PSPermGen* perm_gen = heap->perm_gen();
   PSAdaptiveSizePolicy* size_policy = heap->size_policy();
 
+  if (ZapUnusedHeapArea) {
+    // Save information needed to minimize mangling
+    heap->record_gen_tops_before_GC();
+  }
+
   _print_phases = PrintGCDetails && PrintParallelOldGCPhaseTimes;
 
   // Make sure data structures are sane, make the heap parsable, and do other
@@ -2127,17 +2136,19 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
         size_t max_eden_size = young_gen->max_size() -
           young_gen->from_space()->capacity_in_bytes() -
           young_gen->to_space()->capacity_in_bytes();
-        size_policy->compute_generation_free_space(young_gen->used_in_bytes(),
-                                 young_gen->eden_space()->used_in_bytes(),
-                                 old_gen->used_in_bytes(),
-                                 perm_gen->used_in_bytes(),
-                                 young_gen->eden_space()->capacity_in_bytes(),
-                                 old_gen->max_gen_size(),
-                                 max_eden_size,
-                                 true /* full gc*/,
-                                 gc_cause);
+        size_policy->compute_generation_free_space(
+                              young_gen->used_in_bytes(),
+                              young_gen->eden_space()->used_in_bytes(),
+                              old_gen->used_in_bytes(),
+                              perm_gen->used_in_bytes(),
+                              young_gen->eden_space()->capacity_in_bytes(),
+                              old_gen->max_gen_size(),
+                              max_eden_size,
+                              true /* full gc*/,
+                              gc_cause);
 
-        heap->resize_old_gen(size_policy->calculated_old_free_size_in_bytes());
+        heap->resize_old_gen(
+          size_policy->calculated_old_free_size_in_bytes());
 
         // Don't resize the young generation at an major collection.  A
         // desired young generation size may have been calculated but
@@ -2208,6 +2219,11 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
       VerifyAfterGC) {
     old_gen->verify_object_start_array();
     perm_gen->verify_object_start_array();
+  }
+
+  if (ZapUnusedHeapArea) {
+    old_gen->object_space()->check_mangled_unused_area_complete();
+    perm_gen->object_space()->check_mangled_unused_area_complete();
   }
 
   NOT_PRODUCT(ref_processor()->verify_no_references_recorded());
