@@ -42,19 +42,31 @@ MutableNUMASpace::~MutableNUMASpace() {
   delete lgrp_spaces();
 }
 
+#ifndef PRODUCT
 void MutableNUMASpace::mangle_unused_area() {
-  for (int i = 0; i < lgrp_spaces()->length(); i++) {
-    LGRPSpace *ls = lgrp_spaces()->at(i);
-    MutableSpace *s = ls->space();
-    if (!os::numa_has_static_binding()) {
-      HeapWord *top = MAX2((HeapWord*)round_down((intptr_t)s->top(), page_size()), s->bottom());
-      if (top < s->end()) {
-        ls->add_invalid_region(MemRegion(top, s->end()));
-      }
-    }
-    s->mangle_unused_area();
-  }
+  // This method should do nothing.
+  // It can be called on a numa space during a full compaction.
 }
+void MutableNUMASpace::mangle_unused_area_complete() {
+  // This method should do nothing.
+  // It can be called on a numa space during a full compaction.
+}
+void MutableNUMASpace::mangle_region(MemRegion mr) {
+  // This method should do nothing because numa spaces are not mangled.
+}
+void MutableNUMASpace::set_top_for_allocations(HeapWord* v) {
+  assert(false, "Do not mangle MutableNUMASpace's");
+}
+void MutableNUMASpace::set_top_for_allocations() {
+  // This method should do nothing.
+}
+void MutableNUMASpace::check_mangled_unused_area(HeapWord* limit) {
+  // This method should do nothing.
+}
+void MutableNUMASpace::check_mangled_unused_area_complete() {
+  // This method should do nothing.
+}
+#endif  // NOT_PRODUCT
 
 // There may be unallocated holes in the middle chunks
 // that should be filled with dead objects to ensure parseability.
@@ -243,7 +255,10 @@ void MutableNUMASpace::update() {
       s->set_end(s->bottom());
       s->set_top(s->bottom());
     }
-    initialize(region(), true);
+    // A NUMA space is never mangled
+    initialize(region(),
+               SpaceDecorator::Clear,
+               SpaceDecorator::DontMangle);
   } else {
     bool should_initialize = false;
     if (!os::numa_has_static_binding()) {
@@ -257,7 +272,10 @@ void MutableNUMASpace::update() {
 
     if (should_initialize ||
         (UseAdaptiveNUMAChunkSizing && adaptation_cycles() < samples_count())) {
-      initialize(region(), true);
+      // A NUMA space is never mangled
+      initialize(region(),
+                 SpaceDecorator::Clear,
+                 SpaceDecorator::DontMangle);
     }
   }
 
@@ -448,14 +466,17 @@ void MutableNUMASpace::merge_regions(MemRegion new_region, MemRegion* intersecti
         }
 }
 
-void MutableNUMASpace::initialize(MemRegion mr, bool clear_space) {
+void MutableNUMASpace::initialize(MemRegion mr,
+                                  bool clear_space,
+                                  bool mangle_space) {
   assert(clear_space, "Reallocation will destory data!");
   assert(lgrp_spaces()->length() > 0, "There should be at least one space");
 
   MemRegion old_region = region(), new_region;
   set_bottom(mr.start());
   set_end(mr.end());
-  MutableSpace::set_top(bottom());
+  // Must always clear the space
+  clear(SpaceDecorator::DontMangle);
 
   // Compute chunk sizes
   size_t prev_page_size = page_size();
@@ -586,10 +607,8 @@ void MutableNUMASpace::initialize(MemRegion mr, bool clear_space) {
       bias_region(top_region, ls->lgrp_id());
     }
 
-    // If we clear the region, we would mangle it in debug. That would cause page
-    // allocation in a different place. Hence setting the top directly.
-    s->initialize(new_region, false);
-    s->set_top(s->bottom());
+    // Clear space (set top = bottom) but never mangle.
+    s->initialize(new_region, SpaceDecorator::Clear, SpaceDecorator::DontMangle);
 
     set_adaptation_cycles(samples_count());
   }
@@ -641,10 +660,12 @@ void MutableNUMASpace::set_top(HeapWord* value) {
   MutableSpace::set_top(value);
 }
 
-void MutableNUMASpace::clear() {
+void MutableNUMASpace::clear(bool mangle_space) {
   MutableSpace::set_top(bottom());
   for (int i = 0; i < lgrp_spaces()->length(); i++) {
-    lgrp_spaces()->at(i)->space()->clear();
+    // Never mangle NUMA spaces because the mangling will
+    // bind the memory to a possibly unwanted lgroup.
+    lgrp_spaces()->at(i)->space()->clear(SpaceDecorator::DontMangle);
   }
 }
 

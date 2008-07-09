@@ -727,7 +727,7 @@ void ParNewGeneration::collect(bool   full,
   SpecializationStats::clear();
 
   age_table()->clear();
-  to()->clear();
+  to()->clear(SpaceDecorator::Mangle);
 
   gch->save_marks();
   assert(workers != NULL, "Need parallel worker threads.");
@@ -793,8 +793,18 @@ void ParNewGeneration::collect(bool   full,
   }
   if (!promotion_failed()) {
     // Swap the survivor spaces.
-    eden()->clear();
-    from()->clear();
+    eden()->clear(SpaceDecorator::Mangle);
+    from()->clear(SpaceDecorator::Mangle);
+    if (ZapUnusedHeapArea) {
+      // This is now done here because of the piece-meal mangling which
+      // can check for valid mangling at intermediate points in the
+      // collection(s).  When a minor collection fails to collect
+      // sufficient space resizing of the young generation can occur
+      // an redistribute the spaces in the young generation.  Mangle
+      // here so that unzapped regions don't get distributed to
+      // other spaces.
+      to()->mangle_unused_area();
+    }
     swap_spaces();
 
     assert(to()->is_empty(), "to space should be empty now");

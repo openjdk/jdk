@@ -232,30 +232,44 @@ ContiguousSpace::new_dcto_cl(OopClosure* cl,
   return new ContiguousSpaceDCTOC(this, cl, precision, boundary);
 }
 
-void Space::initialize(MemRegion mr, bool clear_space) {
+void Space::initialize(MemRegion mr,
+                       bool clear_space,
+                       bool mangle_space) {
   HeapWord* bottom = mr.start();
   HeapWord* end    = mr.end();
   assert(Universe::on_page_boundary(bottom) && Universe::on_page_boundary(end),
          "invalid space boundaries");
   set_bottom(bottom);
   set_end(end);
-  if (clear_space) clear();
+  if (clear_space) clear(mangle_space);
 }
 
-void Space::clear() {
-  if (ZapUnusedHeapArea) mangle_unused_area();
+void Space::clear(bool mangle_space) {
+  if (ZapUnusedHeapArea && mangle_space) {
+    mangle_unused_area();
+  }
 }
 
-void ContiguousSpace::initialize(MemRegion mr, bool clear_space)
+ContiguousSpace::ContiguousSpace(): CompactibleSpace(), _top(NULL) {
+  _mangler = new GenSpaceMangler(this);
+}
+
+ContiguousSpace::~ContiguousSpace() {
+  delete _mangler;
+}
+
+void ContiguousSpace::initialize(MemRegion mr,
+                                 bool clear_space,
+                                 bool mangle_space)
 {
-  CompactibleSpace::initialize(mr, clear_space);
+  CompactibleSpace::initialize(mr, clear_space, mangle_space);
   _concurrent_iteration_safe_limit = top();
 }
 
-void ContiguousSpace::clear() {
+void ContiguousSpace::clear(bool mangle_space) {
   set_top(bottom());
   set_saved_mark();
-  Space::clear();
+  Space::clear(mangle_space);
 }
 
 bool Space::is_in(const void* p) const {
@@ -271,8 +285,8 @@ bool ContiguousSpace::is_free_block(const HeapWord* p) const {
   return p >= _top;
 }
 
-void OffsetTableContigSpace::clear() {
-  ContiguousSpace::clear();
+void OffsetTableContigSpace::clear(bool mangle_space) {
+  ContiguousSpace::clear(mangle_space);
   _offsets.initialize_threshold();
 }
 
@@ -288,17 +302,46 @@ void OffsetTableContigSpace::set_end(HeapWord* new_end) {
   Space::set_end(new_end);
 }
 
+#ifndef PRODUCT
+
+void ContiguousSpace::set_top_for_allocations(HeapWord* v) {
+  mangler()->set_top_for_allocations(v);
+}
+void ContiguousSpace::set_top_for_allocations() {
+  mangler()->set_top_for_allocations(top());
+}
+void ContiguousSpace::check_mangled_unused_area(HeapWord* limit) {
+  mangler()->check_mangled_unused_area(limit);
+}
+
+void ContiguousSpace::check_mangled_unused_area_complete() {
+  mangler()->check_mangled_unused_area_complete();
+}
+
+// Mangled only the unused space that has not previously
+// been mangled and that has not been allocated since being
+// mangled.
 void ContiguousSpace::mangle_unused_area() {
-  // to-space is used for storing marks during mark-sweep
-  mangle_region(MemRegion(top(), end()));
+  mangler()->mangle_unused_area();
 }
-
+void ContiguousSpace::mangle_unused_area_complete() {
+  mangler()->mangle_unused_area_complete();
+}
 void ContiguousSpace::mangle_region(MemRegion mr) {
-  debug_only(Copy::fill_to_words(mr.start(), mr.word_size(), badHeapWord));
+  // Although this method uses SpaceMangler::mangle_region() which
+  // is not specific to a space, the when the ContiguousSpace version
+  // is called, it is always with regard to a space and this
+  // bounds checking is appropriate.
+  MemRegion space_mr(bottom(), end());
+  assert(space_mr.contains(mr), "Mangling outside space");
+  SpaceMangler::mangle_region(mr);
 }
+#endif  // NOT_PRODUCT
 
-void CompactibleSpace::initialize(MemRegion mr, bool clear_space) {
-  Space::initialize(mr, clear_space);
+void CompactibleSpace::initialize(MemRegion mr,
+                                  bool clear_space,
+                                  bool mangle_space) {
+  Space::initialize(mr, clear_space, mangle_space);
   _compaction_top = bottom();
   _next_compaction_space = NULL;
 }
@@ -820,8 +863,8 @@ void ContiguousSpace::allocate_temporary_filler(int factor) {
   }
 }
 
-void EdenSpace::clear() {
-  ContiguousSpace::clear();
+void EdenSpace::clear(bool mangle_space) {
+  ContiguousSpace::clear(mangle_space);
   set_soft_end(end());
 }
 
@@ -878,7 +921,7 @@ OffsetTableContigSpace::OffsetTableContigSpace(BlockOffsetSharedArray* sharedOff
   _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock", true)
 {
   _offsets.set_contig_space(this);
-  initialize(mr, true);
+  initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
 }
 
 

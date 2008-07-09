@@ -53,14 +53,15 @@ asPSOldGen.cpp                          java.hpp
 asPSOldGen.cpp                          oop.inline.hpp
 asPSOldGen.cpp                          parallelScavengeHeap.hpp
 asPSOldGen.cpp                          psMarkSweepDecorator.hpp
-asPSOldGen.cpp				asPSOldGen.hpp
+asPSOldGen.cpp                          asPSOldGen.hpp
 
 asPSYoungGen.hpp                        generationCounters.hpp
 asPSYoungGen.hpp                        mutableSpace.hpp
 asPSYoungGen.hpp                        objectStartArray.hpp
 asPSYoungGen.hpp                        spaceCounters.hpp
 asPSYoungGen.hpp                        psVirtualspace.hpp
-asPSYoungGen.hpp			psYoungGen.hpp
+asPSYoungGen.hpp                        psYoungGen.hpp
+asPSYoungGen.hpp                        spaceDecorator.hpp
 
 asPSYoungGen.cpp                        gcUtil.hpp
 asPSYoungGen.cpp                        java.hpp
@@ -68,8 +69,9 @@ asPSYoungGen.cpp                        oop.inline.hpp
 asPSYoungGen.cpp                        parallelScavengeHeap.hpp
 asPSYoungGen.cpp                        psMarkSweepDecorator.hpp
 asPSYoungGen.cpp                        psScavenge.hpp
-asPSYoungGen.cpp			asPSYoungGen.hpp
-asPSYoungGen.cpp			psYoungGen.hpp
+asPSYoungGen.cpp                        asPSYoungGen.hpp
+asPSYoungGen.cpp                        psYoungGen.hpp
+asPSYoungGen.cpp                        spaceDecorator.hpp
 
 cardTableExtension.cpp                  cardTableExtension.hpp
 cardTableExtension.cpp                  gcTaskManager.hpp
@@ -225,6 +227,7 @@ psMarkSweep.cpp                         psYoungGen.hpp
 psMarkSweep.cpp                         referencePolicy.hpp
 psMarkSweep.cpp                         referenceProcessor.hpp
 psMarkSweep.cpp                         safepoint.hpp
+psMarkSweep.cpp                         spaceDecorator.hpp
 psMarkSweep.cpp                         symbolTable.hpp
 psMarkSweep.cpp                         systemDictionary.hpp
 psMarkSweep.cpp                         vmThread.hpp
@@ -239,6 +242,7 @@ psMarkSweepDecorator.cpp                oop.inline.hpp
 psMarkSweepDecorator.cpp                parallelScavengeHeap.hpp
 psMarkSweepDecorator.cpp                psMarkSweep.hpp
 psMarkSweepDecorator.cpp                psMarkSweepDecorator.hpp
+psMarkSweepDecorator.cpp                spaceDecorator.hpp
 psMarkSweepDecorator.cpp                systemDictionary.hpp
 
 psMarkSweepDecorator.hpp                mutableSpace.hpp
@@ -290,6 +294,7 @@ psOldGen.cpp                            oop.inline.hpp
 psOldGen.cpp                            parallelScavengeHeap.hpp
 psOldGen.cpp                            psMarkSweepDecorator.hpp
 psOldGen.cpp                            psOldGen.hpp
+psOldGen.cpp                            spaceDecorator.hpp
 
 psOldGen.hpp                            psGenerationCounters.hpp
 psOldGen.hpp                            mutableSpace.hpp
@@ -351,6 +356,7 @@ psScavenge.cpp                          psTasks.hpp
 psScavenge.cpp                          referencePolicy.hpp
 psScavenge.cpp                          referenceProcessor.hpp
 psScavenge.cpp                          resourceArea.hpp
+psScavenge.cpp                          spaceDecorator.hpp
 psScavenge.cpp                          threadCritical.hpp
 psScavenge.cpp                          vmThread.hpp
 psScavenge.cpp                          vm_operations.hpp
@@ -409,8 +415,8 @@ psVirtualspace.hpp			virtualspace.hpp
 
 psVirtualspace.cpp			os.hpp
 psVirtualspace.cpp                      os_<os_family>.inline.hpp
-psVirtualspace.cpp			psVirtualspace.hpp
-psVirtualspace.cpp			virtualspace.hpp
+psVirtualspace.cpp                      psVirtualspace.hpp
+psVirtualspace.cpp                      virtualspace.hpp
 
 psYoungGen.cpp                          gcUtil.hpp
 psYoungGen.cpp                          java.hpp
@@ -419,7 +425,8 @@ psYoungGen.cpp                          parallelScavengeHeap.hpp
 psYoungGen.cpp                          psMarkSweepDecorator.hpp
 psYoungGen.cpp                          psScavenge.hpp
 psYoungGen.cpp                          psYoungGen.hpp
-psYoungGen.cpp				mutableNUMASpace.hpp
+psYoungGen.cpp                          mutableNUMASpace.hpp
+psYoungGen.cpp                          spaceDecorator.hpp
 
 psYoungGen.hpp                          psGenerationCounters.hpp
 psYoungGen.hpp                          mutableSpace.hpp

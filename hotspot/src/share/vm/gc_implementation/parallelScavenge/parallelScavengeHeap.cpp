@@ -938,3 +938,23 @@ void ParallelScavengeHeap::resize_old_gen(size_t desired_free_space) {
   // Delegate the resize to the generation.
   _old_gen->resize(desired_free_space);
 }
+
+#ifndef PRODUCT
+void ParallelScavengeHeap::record_gen_tops_before_GC() {
+  if (ZapUnusedHeapArea) {
+    young_gen()->record_spaces_top();
+    old_gen()->record_spaces_top();
+    perm_gen()->record_spaces_top();
+  }
+}
+
+void ParallelScavengeHeap::gen_mangle_unused_area() {
+  if (ZapUnusedHeapArea) {
+    young_gen()->eden_space()->mangle_unused_area();
+    young_gen()->to_space()->mangle_unused_area();
+    young_gen()->from_space()->mangle_unused_area();
+    old_gen()->object_space()->mangle_unused_area();
+    perm_gen()->object_space()->mangle_unused_area();
+  }
+}
+#endif

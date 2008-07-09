@@ -54,7 +54,7 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   _collector(NULL)
 {
   _bt.set_space(this);
-  initialize(mr, true);
+  initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
   // We have all of "mr", all of which we place in the dictionary
   // as one big chunk. We'll need to decide here which of several
   // possible alternative dictionary implementations to use. For
