@@ -140,24 +140,31 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask {
 
         new Option(false, "-public") {
             void process(JavapTask task, String opt, String arg) {
+                task.options.accessOptions.add(opt);
                 task.options.showAccess = AccessFlags.ACC_PUBLIC;
             }
         },
 
         new Option(false, "-protected") {
             void process(JavapTask task, String opt, String arg) {
+                task.options.accessOptions.add(opt);
                 task.options.showAccess = AccessFlags.ACC_PROTECTED;
             }
         },
 
         new Option(false, "-package") {
             void process(JavapTask task, String opt, String arg) {
+                task.options.accessOptions.add(opt);
                 task.options.showAccess = 0;
             }
         },
 
         new Option(false, "-p", "-private") {
             void process(JavapTask task, String opt, String arg) {
+                if (!task.options.accessOptions.contains("-p") &&
+                        !task.options.accessOptions.contains("-private")) {
+                    task.options.accessOptions.add(opt);
+                }
                 task.options.showAccess = AccessFlags.ACC_PRIVATE;
             }
         },
@@ -384,6 +391,16 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask {
                     classes.add(iter.next());
             } else
                 throw new BadArgs("err.unknown.option", arg).showUsage(true);
+        }
+
+        if (!options.compat && options.accessOptions.size() > 1) {
+            StringBuilder sb = new StringBuilder();
+            for (String opt: options.accessOptions) {
+                if (sb.length() > 0)
+                    sb.append(" ");
+                sb.append(opt);
+            }
+            throw new BadArgs("err.incompatible.options", sb);
         }
 
         if (options.ignoreSymbolFile && fileManager instanceof JavapFileManager)
