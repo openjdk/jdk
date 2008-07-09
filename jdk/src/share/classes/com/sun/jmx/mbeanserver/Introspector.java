@@ -25,23 +25,39 @@
 
 package com.sun.jmx.mbeanserver;
 
+import com.sun.jmx.remote.util.EnvHelp;
+import java.beans.BeanInfo;
+import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import javax.management.AttributeNotFoundException;
+import javax.management.Description;
 
 import javax.management.Descriptor;
+import javax.management.DescriptorFields;
 import javax.management.DescriptorKey;
 import javax.management.DynamicMBean;
 import javax.management.ImmutableDescriptor;
+import javax.management.MBean;
 import javax.management.MBeanInfo;
+import javax.management.MXBean;
 import javax.management.NotCompliantMBeanException;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.MXBeanMappingFactory;
 
+import static com.sun.jmx.defaults.JmxProperties.MBEANSERVER_LOGGER;
+import com.sun.jmx.mbeanserver.Util;
 import com.sun.jmx.remote.util.EnvHelp;
 import java.beans.BeanInfo;
 import java.beans.PropertyDescriptor;
@@ -133,8 +149,12 @@ public class Introspector {
         }
     }
 
-    public static void checkCompliance(Class mbeanClass)
-        throws NotCompliantMBeanException {
+    public static void checkCompliance(Class<?> mbeanClass)
+    throws NotCompliantMBeanException {
+
+        // Check that @Resource is used correctly (if it used).
+        MBeanInjector.validate(mbeanClass);
+
         // Is DynamicMBean?
         //
         if (DynamicMBean.class.isAssignableFrom(mbeanClass))
@@ -157,21 +177,39 @@ public class Introspector {
         } catch (NotCompliantMBeanException e) {
             mxbeanException = e;
         }
+        // Is @MBean or @MXBean class?
+        // In fact we find @MBean or @MXBean as a hacky variant of
+        // getStandardMBeanInterface or getMXBeanInterface.  If we get here
+        // then nothing worked.
         final String msg =
             "MBean class " + mbeanClass.getName() + " does not implement " +
-            "DynamicMBean, neither follows the Standard MBean conventions (" +
-            mbeanException.toString() + ") nor the MXBean conventions (" +
-            mxbeanException.toString() + ")";
+            "DynamicMBean; does not follow the Standard MBean conventions (" +
+            mbeanException.toString() + "); does not follow the MXBean conventions (" +
+            mxbeanException.toString() + "); and does not have or inherit the @" +
+            MBean.class.getSimpleName() + " or @" + MXBean.class.getSimpleName() +
+            " annotation";
         throw new NotCompliantMBeanException(msg);
     }
 
+    /**
+     * <p>Make a DynamicMBean out of the existing MBean object.  The object
+     * may already be a DynamicMBean, or it may be a Standard MBean or
+     * MXBean, possibly defined using {@code @MBean} or {@code @MXBean}.</p>
+     * @param mbean the object to convert to a DynamicMBean.
+     * @param <T> a type parameter defined for implementation convenience
+     * (which would have to be removed if this method were part of the public
+     * API).
+     * @return the converted DynamicMBean.
+     * @throws NotCompliantMBeanException if {@code mbean} is not a compliant
+     * MBean object, including the case where it is null.
+     */
     public static <T> DynamicMBean makeDynamicMBean(T mbean)
     throws NotCompliantMBeanException {
         if (mbean == null)
             throw new NotCompliantMBeanException("Null MBean object");
         if (mbean instanceof DynamicMBean)
             return (DynamicMBean) mbean;
-        final Class mbeanClass = mbean.getClass();
+        final Class<?> mbeanClass = mbean.getClass();
         Class<? super T> c = null;
         try {
             c = Util.cast(getStandardMBeanInterface(mbeanClass));
@@ -270,7 +308,7 @@ public class Introspector {
      *         Return <code>null</code> if the MBean is a DynamicMBean,
      *         or if no MBean interface is found.
      */
-    public static Class getMBeanInterface(Class baseClass) {
+    public static Class<?> getMBeanInterface(Class<?> baseClass) {
         // Check if the given class implements the MBean interface
         // or the Dynamic MBean interface
         if (isDynamic(baseClass)) return null;
@@ -291,10 +329,12 @@ public class Introspector {
      * @throws NotCompliantMBeanException The specified class is
      * not a JMX compliant Standard MBean.
      */
-    public static Class getStandardMBeanInterface(Class baseClass)
-        throws NotCompliantMBeanException {
-        Class current = baseClass;
-        Class mbeanInterface = null;
+    public static <T> Class<? super T> getStandardMBeanInterface(Class<T> baseClass)
+    throws NotCompliantMBeanException {
+        if (baseClass.isAnnotationPresent(MBean.class))
+            return baseClass;
+        Class<? super T> current = baseClass;
+        Class<? super T> mbeanInterface = null;
         while (current != null) {
             mbeanInterface =
                 findMBeanInterface(current, current.getName());
@@ -321,8 +361,10 @@ public class Introspector {
      * @throws NotCompliantMBeanException The specified class is
      * not a JMX compliant MXBean.
      */
-    public static Class getMXBeanInterface(Class baseClass)
+    public static <T> Class<? super T> getMXBeanInterface(Class<T> baseClass)
         throws NotCompliantMBeanException {
+        if (hasMXBeanAnnotation(baseClass))
+            return baseClass;
         try {
             return MXBeanSupport.findMXBeanInterface(baseClass);
         } catch (Exception e) {
@@ -345,22 +387,69 @@ public class Introspector {
      * ------------------------------------------
      */
 
+    static boolean hasMXBeanAnnotation(Class<?> c) {
+        MXBean m = c.getAnnotation(MXBean.class);
+        return (m != null && m.value());
+    }
 
     /**
      * Try to find the MBean interface corresponding to the class aName
      * - i.e. <i>aName</i>MBean, from within aClass and its superclasses.
      **/
-    private static Class findMBeanInterface(Class aClass, String aName) {
-        Class current = aClass;
+    private static <T> Class<? super T> findMBeanInterface(
+            Class<T> aClass, String aName) {
+        Class<? super T> current = aClass;
         while (current != null) {
-            final Class[] interfaces = current.getInterfaces();
+            final Class<?>[] interfaces = current.getInterfaces();
             final int len = interfaces.length;
             for (int i=0;i<len;i++)  {
-                final Class inter =
-                    implementsMBean(interfaces[i], aName);
+                Class<? super T> inter = Util.cast(interfaces[i]);
+                inter = implementsMBean(inter, aName);
                 if (inter != null) return inter;
             }
             current = current.getSuperclass();
+        }
+        return null;
+    }
+
+    public static String descriptionForElement(AnnotatedElement elmt) {
+        if (elmt == null)
+            return null;
+        Description d = elmt.getAnnotation(Description.class);
+        if (d == null)
+            return null;
+        return d.value();
+    }
+
+    public static String descriptionForParameter(
+            Annotation[] parameterAnnotations) {
+        for (Annotation a : parameterAnnotations) {
+            if (a instanceof Description)
+                return ((Description) a).value();
+        }
+        return null;
+    }
+
+    public static String nameForParameter(
+            Annotation[] parameterAnnotations) {
+        for (Annotation a : parameterAnnotations) {
+            Class<? extends Annotation> ac = a.annotationType();
+            // You'd really have to go out of your way to have more than
+            // one @Name annotation, so we don't check for that.
+            if (ac.getSimpleName().equals("Name")) {
+                try {
+                    Method value = ac.getMethod("value");
+                    if (value.getReturnType() == String.class &&
+                            value.getParameterTypes().length == 0) {
+                        return (String) value.invoke(a);
+                    }
+                } catch (Exception e) {
+                    MBEANSERVER_LOGGER.log(
+                            Level.WARNING,
+                            "Unexpected exception getting @" + ac.getName(),
+                            e);
+                }
+            }
         }
         return null;
     }
@@ -372,47 +461,80 @@ public class Introspector {
         return descriptorForAnnotations(annots);
     }
 
+    public static Descriptor descriptorForAnnotation(Annotation annot) {
+        return descriptorForAnnotations(new Annotation[] {annot});
+    }
+
     public static Descriptor descriptorForAnnotations(Annotation[] annots) {
         if (annots.length == 0)
             return ImmutableDescriptor.EMPTY_DESCRIPTOR;
         Map<String, Object> descriptorMap = new HashMap<String, Object>();
         for (Annotation a : annots) {
-            Class<? extends Annotation> c = a.annotationType();
-            Method[] elements = c.getMethods();
-            for (Method element : elements) {
-                DescriptorKey key = element.getAnnotation(DescriptorKey.class);
-                if (key != null) {
-                    String name = key.value();
-                    Object value;
-                    try {
-                        value = element.invoke(a);
-                    } catch (RuntimeException e) {
-                        // we don't expect this - except for possibly
-                        // security exceptions?
-                        // RuntimeExceptions shouldn't be "UndeclaredThrowable".
-                        // anyway...
-                        //
-                        throw e;
-                    } catch (Exception e) {
-                        // we don't expect this
-                        throw new UndeclaredThrowableException(e);
-                    }
-                    value = annotationToField(value);
-                    Object oldValue = descriptorMap.put(name, value);
-                    if (oldValue != null && !equals(oldValue, value)) {
-                        final String msg =
-                            "Inconsistent values for descriptor field " + name +
-                            " from annotations: " + value + " :: " + oldValue;
-                        throw new IllegalArgumentException(msg);
-                    }
-                }
-            }
+            if (a instanceof DescriptorFields)
+                addDescriptorFieldsToMap(descriptorMap, (DescriptorFields) a);
+            addAnnotationFieldsToMap(descriptorMap, a);
         }
 
         if (descriptorMap.isEmpty())
             return ImmutableDescriptor.EMPTY_DESCRIPTOR;
         else
             return new ImmutableDescriptor(descriptorMap);
+    }
+
+    private static void addDescriptorFieldsToMap(
+            Map<String, Object> descriptorMap, DescriptorFields df) {
+        for (String field : df.value()) {
+            int eq = field.indexOf('=');
+            if (eq < 0) {
+                throw new IllegalArgumentException(
+                        "@DescriptorFields string must contain '=': " +
+                        field);
+            }
+            String name = field.substring(0, eq);
+            String value = field.substring(eq + 1);
+            addToMap(descriptorMap, name, value);
+        }
+    }
+
+    private static void addAnnotationFieldsToMap(
+            Map<String, Object> descriptorMap, Annotation a) {
+        Class<? extends Annotation> c = a.annotationType();
+        Method[] elements = c.getMethods();
+        for (Method element : elements) {
+            DescriptorKey key = element.getAnnotation(DescriptorKey.class);
+            if (key != null) {
+                String name = key.value();
+                Object value;
+                try {
+                    value = element.invoke(a);
+                } catch (RuntimeException e) {
+                    // we don't expect this - except for possibly
+                    // security exceptions?
+                    // RuntimeExceptions shouldn't be "UndeclaredThrowable".
+                    // anyway...
+                    throw e;
+                } catch (Exception e) {
+                    // we don't expect this
+                    throw new UndeclaredThrowableException(e);
+                }
+                if (!key.omitIfDefault() ||
+                        !equals(value, element.getDefaultValue())) {
+                    value = annotationToField(value);
+                    addToMap(descriptorMap, name, value);
+                }
+            }
+        }
+    }
+
+    private static void addToMap(
+            Map<String, Object> descriptorMap, String name, Object value) {
+        Object oldValue = descriptorMap.put(name, value);
+        if (oldValue != null && !equals(oldValue, value)) {
+            final String msg =
+                "Inconsistent values for descriptor field " + name +
+                " from annotations: " + value + " :: " + oldValue;
+            throw new IllegalArgumentException(msg);
+        }
     }
 
     /**
@@ -473,8 +595,13 @@ public class Introspector {
         // The only other possibility is that the value is another
         // annotation, or that the language has evolved since this code
         // was written.  We don't allow for either of those currently.
+        // If it is indeed another annotation, then x will be a proxy
+        // with an unhelpful name like $Proxy2.  So we extract the
+        // proxy's interface to use that in the exception message.
+        if (Proxy.isProxyClass(c))
+            c = c.getInterfaces()[0];  // array "can't be empty"
         throw new IllegalArgumentException("Illegal type for annotation " +
-                "element: " + x.getClass().getName());
+                "element using @DescriptorKey: " + c.getName());
     }
 
     // This must be consistent with the check for duplicate field values in
@@ -490,15 +617,15 @@ public class Introspector {
      * @param c The interface to be tested
      * @param clName The name of the class implementing this interface
      */
-    private static Class implementsMBean(Class c, String clName) {
+    private static <T> Class<? super T> implementsMBean(Class<T> c, String clName) {
         String clMBeanName = clName + "MBean";
         if (c.getName().equals(clMBeanName)) {
             return c;
         }
-        Class[] interfaces = c.getInterfaces();
+        Class<?>[] interfaces = c.getInterfaces();
         for (int i = 0;i < interfaces.length; i++) {
             if (interfaces[i].getName().equals(clMBeanName))
-                return interfaces[i];
+                return Util.cast(interfaces[i]);
         }
 
         return null;
