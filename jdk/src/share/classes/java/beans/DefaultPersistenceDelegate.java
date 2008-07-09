@@ -298,7 +298,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
                 oldL = (EventListener[])MethodUtil.invoke(m, oldInstance, new Object[]{});
                 newL = (EventListener[])MethodUtil.invoke(m, newInstance, new Object[]{});
             }
-            catch (Throwable e2) {
+            catch (Exception e2) {
                 try {
                     Method m = type.getMethod("getListeners", new Class[]{Class.class});
                     oldL = (EventListener[])MethodUtil.invoke(m, oldInstance, new Object[]{listenerType});
