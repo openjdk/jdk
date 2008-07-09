@@ -650,7 +650,7 @@ class java_util_Map_PersistenceDelegate extends DefaultPersistenceDelegate {
         // Remove the new elements.
         // Do this first otherwise we undo the adding work.
         if (newMap != null) {
-            for ( Object newKey : newMap.keySet() ) {
+            for (Object newKey : newMap.keySet().toArray()) {
                // PENDING: This "key" is not in the right environment.
                 if (!oldMap.containsKey(newKey)) {
                     invokeStatement(oldInstance, "remove", new Object[]{newKey}, out);
