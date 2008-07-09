@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.WeakHashMap;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
@@ -69,6 +70,10 @@ public class Util {
 
     static <K, V> Map<K, V> newInsertionOrderMap() {
         return new LinkedHashMap<K, V>();
+    }
+
+    static <K, V> WeakHashMap<K, V> newWeakHashMap() {
+        return new WeakHashMap<K, V>();
     }
 
     static <E> Set<E> newSet() {
