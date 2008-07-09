@@ -298,7 +298,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask {
         return new DiagnosticListener<JavaFileObject> () {
             public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
                 if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                    pw.print(getMessage("err.prefix"));
+                        pw.print(getMessage("err.prefix"));
                     pw.print(" ");
                 }
                 pw.println(diagnostic.getMessage(null));
@@ -331,6 +331,9 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask {
             return ok ? EXIT_OK : EXIT_ERROR;
         } catch (BadArgs e) {
             diagnosticListener.report(createDiagnostic(e.key, e.args));
+            if (e.showUsage) {
+                log.println(getMessage("main.usage.summary", progname));
+            }
             return EXIT_CMDERR;
         } catch (InternalError e) {
             Object[] e_args;
