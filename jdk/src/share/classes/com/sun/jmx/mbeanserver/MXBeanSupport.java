@@ -161,7 +161,7 @@ public class MXBeanSupport extends MBeanSupport<ConvertingMethod> {
 
         synchronized (lock) {
             this.mxbeanLookup = MXBeanLookup.Plain.lookupFor(server);
-            this.mxbeanLookup.addReference(name, getResource());
+            this.mxbeanLookup.addReference(name, getWrappedObject());
             this.objectName = name;
         }
     }
@@ -170,7 +170,7 @@ public class MXBeanSupport extends MBeanSupport<ConvertingMethod> {
     public void unregister() {
         synchronized (lock) {
             if (mxbeanLookup != null) {
-                if (mxbeanLookup.removeReference(objectName, getResource()))
+                if (mxbeanLookup.removeReference(objectName, getWrappedObject()))
                     objectName = null;
             }
             // XXX: need to revisit the whole register/unregister logic in
