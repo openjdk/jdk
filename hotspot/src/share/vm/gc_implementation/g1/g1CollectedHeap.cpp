@@ -2279,7 +2279,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
   assert(Thread::current() == VMThread::vm_thread(), "should be in vm thread");
   guarantee(!is_gc_active(), "collection is not reentrant");
   assert(regions_accounted_for(), "Region leakage!");
-  ++_gc_time_stamp;
+
+  increment_gc_time_stamp();
 
   if (g1_policy()->in_young_gc_mode()) {
     assert(check_young_list_well_formed(),

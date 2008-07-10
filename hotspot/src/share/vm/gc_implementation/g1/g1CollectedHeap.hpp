@@ -247,7 +247,7 @@ private:
   NumberSeq _pop_obj_rc_at_copy;
   void print_popularity_summary_info() const;
 
-  unsigned _gc_time_stamp;
+  volatile unsigned _gc_time_stamp;
 
   size_t* _surviving_young_words;
 
@@ -653,6 +653,12 @@ public:
 
   void reset_gc_time_stamp() {
     _gc_time_stamp = 0;
+    OrderAccess::fence();
+  }
+
+  void increment_gc_time_stamp() {
+    ++_gc_time_stamp;
+    OrderAccess::fence();
   }
 
   void iterate_dirty_card_closure(bool concurrent, int worker_i);
