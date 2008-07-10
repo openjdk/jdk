@@ -5,7 +5,9 @@
  * the type to which a component member belongs be accessible in qualified
  * names.
  *
- * @run shell QualifiedAccess_2.sh
+ * @compile pack1/P1.java
+ * @compile pack1/P2.java
+ * @compile/fail/ref=QualifiedAccess_2.out -XDrawDiagnostics -XDstdout QualifiedAccess_2.java
  */
 
 import pack1.P1;
