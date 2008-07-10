@@ -793,8 +793,8 @@ void G1OffsetTableContigSpace::set_saved_mark() {
     // will pick up the right saved_mark_word() as the high water mark
     // of the region. Either way, the behaviour will be correct.
     ContiguousSpace::set_saved_mark();
-    OrderAccess::release_store_ptr((volatile intptr_t*) &_gc_time_stamp,
-                                   (intptr_t) curr_gc_time_stamp);
+    _gc_time_stamp = curr_gc_time_stamp;
+    OrderAccess::fence();
   }
 }
 
