@@ -1639,7 +1639,7 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
     const size_t live = pointer_delta(_space_info[id].new_top(),
                                       space->bottom());
     const size_t available = pointer_delta(target_space_end, *new_top_addr);
-    if (live <= available) {
+    if (live > 0 && live <= available) {
       // All the live data will fit.
       if (TraceParallelOldGCSummaryPhase) {
         tty->print_cr("summarizing %d into old_space @ " PTR_FORMAT,
@@ -1649,16 +1649,18 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
                               space->bottom(), space->top(),
                               new_top_addr);
 
-      // Reset the new_top value for the space.
-      _space_info[id].set_new_top(space->bottom());
-
       // Clear the source_chunk field for each chunk in the space.
+      HeapWord* const new_top = _space_info[id].new_top();
+      HeapWord* const clear_end = _summary_data.chunk_align_up(new_top);
       ChunkData* beg_chunk = _summary_data.addr_to_chunk_ptr(space->bottom());
-      ChunkData* end_chunk = _summary_data.addr_to_chunk_ptr(space->top() - 1);
-      while (beg_chunk <= end_chunk) {
+      ChunkData* end_chunk = _summary_data.addr_to_chunk_ptr(clear_end);
+      while (beg_chunk < end_chunk) {
         beg_chunk->set_source_chunk(0);
         ++beg_chunk;
       }
+
+      // Reset the new_top value for the space.
+      _space_info[id].set_new_top(space->bottom());
     }
   }
 
