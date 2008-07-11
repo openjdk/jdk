@@ -7060,7 +7060,7 @@ instruct castP2X(rRegL dst, rRegP src)
 
 // Convert oop pointer into compressed form
 instruct encodeHeapOop(rRegN dst, rRegP src, rFlagsReg cr) %{
-  predicate(n->bottom_type()->is_narrowoop()->make_oopptr()->ptr() != TypePtr::NotNull);
+  predicate(n->bottom_type()->make_ptr()->ptr() != TypePtr::NotNull);
   match(Set dst (EncodeP src));
   effect(KILL cr);
   format %{ "encode_heap_oop $dst,$src" %}
@@ -7076,7 +7076,7 @@ instruct encodeHeapOop(rRegN dst, rRegP src, rFlagsReg cr) %{
 %}
 
 instruct encodeHeapOop_not_null(rRegN dst, rRegP src, rFlagsReg cr) %{
-  predicate(n->bottom_type()->is_narrowoop()->make_oopptr()->ptr() == TypePtr::NotNull);
+  predicate(n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull);
   match(Set dst (EncodeP src));
   effect(KILL cr);
   format %{ "encode_heap_oop_not_null $dst,$src" %}
