@@ -200,8 +200,8 @@ void PSParallelCompact::print_chunk_ranges()
   for (unsigned int id = 0; id < last_space_id; ++id) {
     const MutableSpace* space = _space_info[id].space();
     tty->print_cr("%u %s "
-                  SIZE_FORMAT_W("10") " " SIZE_FORMAT_W("10") " "
-                  SIZE_FORMAT_W("10") " " SIZE_FORMAT_W("10") " ",
+                  SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) " "
+                  SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) " ",
                   id, space_names[id],
                   summary_data().addr_to_chunk_idx(space->bottom()),
                   summary_data().addr_to_chunk_idx(space->top()),
@@ -213,8 +213,8 @@ void PSParallelCompact::print_chunk_ranges()
 void
 print_generic_summary_chunk(size_t i, const ParallelCompactData::ChunkData* c)
 {
-#define CHUNK_IDX_FORMAT        SIZE_FORMAT_W("7")
-#define CHUNK_DATA_FORMAT       SIZE_FORMAT_W("5")
+#define CHUNK_IDX_FORMAT        SIZE_FORMAT_W(7)
+#define CHUNK_DATA_FORMAT       SIZE_FORMAT_W(5)
 
   ParallelCompactData& sd = PSParallelCompact::summary_data();
   size_t dci = c->destination() ? sd.addr_to_chunk_idx(c->destination()) : 0;
@@ -269,9 +269,9 @@ print_initial_summary_chunk(size_t i,
                             const ParallelCompactData::ChunkData* c,
                             bool newline = true)
 {
-  tty->print(SIZE_FORMAT_W("5") " " PTR_FORMAT " "
-             SIZE_FORMAT_W("5") " " SIZE_FORMAT_W("5") " "
-             SIZE_FORMAT_W("5") " " SIZE_FORMAT_W("5") " %d",
+  tty->print(SIZE_FORMAT_W(5) " " PTR_FORMAT " "
+             SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " "
+             SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " %d",
              i, c->destination(),
              c->partial_obj_size(), c->live_obj_size(),
              c->data_size(), c->source_chunk(), c->destination_count());
@@ -326,7 +326,7 @@ print_initial_summary_data(ParallelCompactData& summary_data,
     }
 
     print_initial_summary_chunk(i, c, false);
-    tty->print_cr(" %12.10f " SIZE_FORMAT_W("10") " " SIZE_FORMAT_W("10"),
+    tty->print_cr(" %12.10f " SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10),
                   reclaimed_ratio, dead_to_right, live_to_right);
 
     live_to_right -= c->data_size();
@@ -338,8 +338,8 @@ print_initial_summary_data(ParallelCompactData& summary_data,
     print_initial_summary_chunk(i, summary_data.chunk(i));
   }
 
-  tty->print_cr("max:  " SIZE_FORMAT_W("4") " d2r=" SIZE_FORMAT_W("10") " "
-                "l2r=" SIZE_FORMAT_W("10") " max_ratio=%14.12f",
+  tty->print_cr("max:  " SIZE_FORMAT_W(4) " d2r=" SIZE_FORMAT_W(10) " "
+                "l2r=" SIZE_FORMAT_W(10) " max_ratio=%14.12f",
                 max_reclaimed_ratio_chunk, max_dead_to_right,
                 max_live_to_right, max_reclaimed_ratio);
 }
@@ -1121,8 +1121,8 @@ PSParallelCompact::compute_dense_prefix_via_density(const SpaceId id,
     HeapWord* chunk_destination = cp->destination();
     const size_t cur_deadwood = pointer_delta(dense_prefix, chunk_destination);
     if (TraceParallelOldGCDensePrefix && Verbose) {
-      tty->print_cr("c#=" SIZE_FORMAT_W("04") " dst=" PTR_FORMAT " "
-                    "dp=" SIZE_FORMAT_W("08") " " "cdw=" SIZE_FORMAT_W("08"),
+      tty->print_cr("c#=" SIZE_FORMAT_W(4) " dst=" PTR_FORMAT " "
+                    "dp=" SIZE_FORMAT_W(8) " " "cdw=" SIZE_FORMAT_W(8),
                     sd.chunk(cp), chunk_destination,
                     dense_prefix, cur_deadwood);
     }
@@ -1147,7 +1147,7 @@ PSParallelCompact::compute_dense_prefix_via_density(const SpaceId id,
           return dense_prefix;
         }
         if (TraceParallelOldGCDensePrefix && Verbose) {
-          tty->print_cr("backing up from c=" SIZE_FORMAT_W("4") " d2r=%10.8f "
+          tty->print_cr("backing up from c=" SIZE_FORMAT_W(4) " d2r=%10.8f "
                         "pc_d2r=%10.8f", sd.chunk(cp), density_to_right,
                         prev_chunk_density_to_right);
         }
@@ -1184,7 +1184,7 @@ void PSParallelCompact::print_dense_prefix_stats(const char* const algorithm,
   const size_t live_to_right = new_top - cp->destination();
   const size_t dead_to_right = space->top() - addr - live_to_right;
 
-  tty->print_cr("%s=" PTR_FORMAT " dpc=" SIZE_FORMAT_W("05") " "
+  tty->print_cr("%s=" PTR_FORMAT " dpc=" SIZE_FORMAT_W(5) " "
                 "spl=" SIZE_FORMAT " "
                 "d2l=" SIZE_FORMAT " d2l%%=%6.4f "
                 "d2r=" SIZE_FORMAT " l2r=" SIZE_FORMAT
@@ -2513,7 +2513,7 @@ void PSParallelCompact::enqueue_chunk_draining_tasks(GCTaskQueue* q,
         if (TraceParallelOldGCCompactionPhase && Verbose) {
           const size_t count_mod_8 = fillable_chunks & 7;
           if (count_mod_8 == 0) gclog_or_tty->print("fillable: ");
-          gclog_or_tty->print(" " SIZE_FORMAT_W("7"), cur);
+          gclog_or_tty->print(" " SIZE_FORMAT_W(7), cur);
           if (count_mod_8 == 7) gclog_or_tty->cr();
         }
 
