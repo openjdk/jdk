@@ -132,7 +132,7 @@ JVM_END
 */
 
 struct siglabel {
-  char *name;
+  const char *name;
   int   number;
 };
 

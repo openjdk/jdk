@@ -328,18 +328,19 @@ JAVA_FLAG/64 = -d64
 WRONG_DATA_MODE_MSG = \
 	echo "JAVA_HOME must point to $(DATA_MODE)bit JDK."
 
-test_gamma:  $(BUILDTREE_MAKE)
+test_gamma:  $(BUILDTREE_MAKE) $(GAMMADIR)/make/test/Queens.java
 	@echo Creating $@ ...
 	$(QUIETLY) ( \
 	echo '#!/bin/sh'; \
 	$(BUILDTREE_COMMENT); \
 	echo '. ./env.sh'; \
 	echo "if [ -z \$$JAVA_HOME ]; then { $(NO_JAVA_HOME_MSG); exit 0; }; fi"; \
-	echo "if ! \$${JAVA_HOME}/bin/java $(JAVA_FLAG) -fullversion 2>1 > /dev/null"; \
+	echo "if ! \$${JAVA_HOME}/bin/java $(JAVA_FLAG) -fullversion 2>&1 > /dev/null"; \
 	echo "then"; \
 	echo "  $(WRONG_DATA_MODE_MSG); exit 0;"; \
 	echo "fi"; \
-	echo 'CLASSPATH="$(GAMMADIR)/make/$(OS_FAMILY):$$CLASSPATH"'; \
+	echo "rm -f Queens.class"; \
+	echo "\$${JAVA_HOME}/bin/javac -d . $(GAMMADIR)/make/test/Queens.java"; \
 	echo '[ -f gamma_g ] && { gamma=gamma_g; }'; \
 	echo './$${gamma:-gamma} $(TESTFLAGS) Queens < /dev/null'; \
 	) > $@

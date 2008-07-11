@@ -67,12 +67,9 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type* *result2) {
   const Type*       elemtype = arytype->elem();
 
   if (UseUniqueSubclasses && result2 != NULL) {
-    const Type* el = elemtype;
-    if (elemtype->isa_narrowoop()) {
-      el = elemtype->is_narrowoop()->make_oopptr();
-    }
-    const TypeInstPtr* toop = el->isa_instptr();
-    if (toop) {
+    const Type* el = elemtype->make_ptr();
+    if (el && el->isa_instptr()) {
+      const TypeInstPtr* toop = el->is_instptr();
       if (toop->klass()->as_instance_klass()->unique_concrete_subklass()) {
         // If we load from "AbstractClass[]" we must see "ConcreteSubClass".
         const Type* subklass = Type::get_const_type(toop->klass());
@@ -2223,7 +2220,7 @@ void Parse::do_one_bytecode() {
     sprintf(buffer, "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();
     printer->set_traverse_outs(true);
-    printer->print_method(C, buffer, 3);
+    printer->print_method(C, buffer, 4);
     printer->set_traverse_outs(old);
   }
 #endif

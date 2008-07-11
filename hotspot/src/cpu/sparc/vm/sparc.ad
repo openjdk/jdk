@@ -5955,7 +5955,7 @@ instruct storeA8B(memory mem, regD src) %{
 
 // Convert oop pointer into compressed form
 instruct encodeHeapOop(iRegN dst, iRegP src) %{
-  predicate(n->bottom_type()->is_narrowoop()->make_oopptr()->ptr() != TypePtr::NotNull);
+  predicate(n->bottom_type()->make_ptr()->ptr() != TypePtr::NotNull);
   match(Set dst (EncodeP src));
   format %{ "encode_heap_oop $src, $dst" %}
   ins_encode %{
@@ -5965,7 +5965,7 @@ instruct encodeHeapOop(iRegN dst, iRegP src) %{
 %}
 
 instruct encodeHeapOop_not_null(iRegN dst, iRegP src) %{
-  predicate(n->bottom_type()->is_narrowoop()->make_oopptr()->ptr() == TypePtr::NotNull);
+  predicate(n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull);
   match(Set dst (EncodeP src));
   format %{ "encode_heap_oop_not_null $src, $dst" %}
   ins_encode %{
