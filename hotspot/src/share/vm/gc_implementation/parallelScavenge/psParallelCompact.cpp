@@ -1524,48 +1524,53 @@ void
 PSParallelCompact::summarize_space(SpaceId id, bool maximum_compaction)
 {
   assert(id < last_space_id, "id out of range");
+  assert(_space_info[id].dense_prefix() == _space_info[id].space()->bottom(),
+         "should have been set in summarize_spaces_quick()");
 
   const MutableSpace* space = _space_info[id].space();
-  HeapWord** new_top_addr = _space_info[id].new_top_addr();
-
-  HeapWord* dense_prefix_end = compute_dense_prefix(id, maximum_compaction);
-  _space_info[id].set_dense_prefix(dense_prefix_end);
+  if (_space_info[id].new_top() != space->bottom()) {
+    HeapWord* dense_prefix_end = compute_dense_prefix(id, maximum_compaction);
+    _space_info[id].set_dense_prefix(dense_prefix_end);
 
 #ifndef PRODUCT
-  if (TraceParallelOldGCDensePrefix) {
-    print_dense_prefix_stats("ratio", id, maximum_compaction, dense_prefix_end);
-    HeapWord* addr = compute_dense_prefix_via_density(id, maximum_compaction);
-    print_dense_prefix_stats("density", id, maximum_compaction, addr);
-  }
+    if (TraceParallelOldGCDensePrefix) {
+      print_dense_prefix_stats("ratio", id, maximum_compaction,
+                               dense_prefix_end);
+      HeapWord* addr = compute_dense_prefix_via_density(id, maximum_compaction);
+      print_dense_prefix_stats("density", id, maximum_compaction, addr);
+    }
 #endif  // #ifndef PRODUCT
 
-  // If dead space crosses the dense prefix boundary, it is (at least partially)
-  // filled with a dummy object, marked live and added to the summary data.
-  // This simplifies the copy/update phase and must be done before the final
-  // locations of objects are determined, to prevent leaving a fragment of dead
-  // space that is too small to fill with an object.
-  if (!maximum_compaction && dense_prefix_end != space->bottom()) {
-    fill_dense_prefix_end(id);
-  }
+    // If dead space crosses the dense prefix boundary, it is (at least
+    // partially) filled with a dummy object, marked live and added to the
+    // summary data.  This simplifies the copy/update phase and must be done
+    // before the final locations of objects are determined, to prevent leaving
+    // a fragment of dead space that is too small to fill with an object.
+    if (!maximum_compaction && dense_prefix_end != space->bottom()) {
+      fill_dense_prefix_end(id);
+    }
 
-  // Compute the destination of each Chunk, and thus each object.
-  _summary_data.summarize_dense_prefix(space->bottom(), dense_prefix_end);
-  _summary_data.summarize(dense_prefix_end, space->end(),
-                          dense_prefix_end, space->top(),
-                          new_top_addr);
+    // Compute the destination of each Chunk, and thus each object.
+    _summary_data.summarize_dense_prefix(space->bottom(), dense_prefix_end);
+    _summary_data.summarize(dense_prefix_end, space->end(),
+                            dense_prefix_end, space->top(),
+                            _space_info[id].new_top_addr());
+  }
 
   if (TraceParallelOldGCSummaryPhase) {
     const size_t chunk_size = ParallelCompactData::ChunkSize;
+    HeapWord* const dense_prefix_end = _space_info[id].dense_prefix();
     const size_t dp_chunk = _summary_data.addr_to_chunk_idx(dense_prefix_end);
     const size_t dp_words = pointer_delta(dense_prefix_end, space->bottom());
-    const HeapWord* nt_aligned_up = _summary_data.chunk_align_up(*new_top_addr);
+    HeapWord* const new_top = _space_info[id].new_top();
+    const HeapWord* nt_aligned_up = _summary_data.chunk_align_up(new_top);
     const size_t cr_words = pointer_delta(nt_aligned_up, dense_prefix_end);
     tty->print_cr("id=%d cap=" SIZE_FORMAT " dp=" PTR_FORMAT " "
                   "dp_chunk=" SIZE_FORMAT " " "dp_count=" SIZE_FORMAT " "
                   "cr_count=" SIZE_FORMAT " " "nt=" PTR_FORMAT,
                   id, space->capacity_in_words(), dense_prefix_end,
                   dp_chunk, dp_words / chunk_size,
-                  cr_words / chunk_size, *new_top_addr);
+                  cr_words / chunk_size, new_top);
   }
 }
 
