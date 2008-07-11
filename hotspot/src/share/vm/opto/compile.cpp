@@ -583,18 +583,22 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   NOT_PRODUCT( verify_graph_edges(); )
 
   // Perform escape analysis
-  if (_do_escape_analysis)
-    _congraph = new ConnectionGraph(this);
-  if (_congraph != NULL) {
-    NOT_PRODUCT( TracePhase t2("escapeAnalysis", &_t_escapeAnalysis, TimeCompiler); )
-    _congraph->compute_escape();
-    if (failing())  return;
+  if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {
+    TracePhase t2("escapeAnalysis", &_t_escapeAnalysis, true);
+
+    _congraph = new(comp_arena()) ConnectionGraph(this);
+    bool has_non_escaping_obj = _congraph->compute_escape();
 
 #ifndef PRODUCT
     if (PrintEscapeAnalysis) {
       _congraph->dump();
     }
 #endif
+    if (!has_non_escaping_obj) {
+      _congraph = NULL;
+    }
+
+    if (failing())  return;
   }
   // Now optimize
   Optimize();
