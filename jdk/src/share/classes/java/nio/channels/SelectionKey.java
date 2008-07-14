@@ -191,7 +191,7 @@ public abstract class SelectionKey {
      * @throws  IllegalArgumentException
      *          If a bit in the set does not correspond to an operation that
      *          is supported by this key's channel, that is, if
-     *          <tt>set & ~(channel().validOps()) != 0</tt>
+     *          <tt>(ops & ~channel().validOps()) != 0</tt>
      *
      * @throws  CancelledKeyException
      *          If this key has been cancelled
