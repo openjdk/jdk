@@ -4570,7 +4570,7 @@ void os::Solaris::synchronization_init() {
 }
 
 void os::Solaris::liblgrp_init() {
-  void *handle = dlopen("liblgrp.so", RTLD_LAZY);
+  void *handle = dlopen("liblgrp.so.1", RTLD_LAZY);
   if (handle != NULL) {
     os::Solaris::set_lgrp_home(CAST_TO_FN_PTR(lgrp_home_func_t, dlsym(handle, "lgrp_home")));
     os::Solaris::set_lgrp_init(CAST_TO_FN_PTR(lgrp_init_func_t, dlsym(handle, "lgrp_init")));
