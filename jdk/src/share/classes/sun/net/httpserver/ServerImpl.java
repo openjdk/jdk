@@ -120,14 +120,8 @@ class ServerImpl implements TimeSource {
         if (executor == null) {
             executor = new DefaultExecutor();
         }
+        Thread t = new Thread (dispatcher);
         started = true;
-        final Dispatcher d = dispatcher;
-        Thread t = AccessController.doPrivileged(new PrivilegedAction<Thread>() {
-            public Thread run() {
-                Thread t = new Thread (d);
-                return t;
-            }
-        });
         t.start();
     }
 
