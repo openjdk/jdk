@@ -51,7 +51,6 @@ SUBDIRS =                   \
   jdwpgen                   \
   makeclasslist             \
   strip_properties          \
-  winver                    \
   CharsetMapping
 
 all build clean clobber::

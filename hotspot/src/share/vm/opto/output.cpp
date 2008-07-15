@@ -447,6 +447,7 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
             // We've got a winner.  Replace this branch.
             MachNode *replacement = mach->short_branch_version(this);
             b->_nodes.map(j, replacement);
+            mach->subsume_by(replacement);
 
             // Update the jmp_end size to save time in our
             // next pass.
