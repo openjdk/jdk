@@ -27,7 +27,9 @@ package com.sun.tools.javadoc;
 
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.file.ZipArchive.ZipFileObject;
 import com.sun.tools.javac.file.Old199;
+import com.sun.tools.javac.file.ZipFileIndexArchive;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.util.Context;
 
@@ -82,16 +84,16 @@ class JavadocClassReader extends ClassReader {
     protected void extraFileActions(PackageSymbol pack, JavaFileObject fo) {
         CharSequence fileName = Old199.getName(fo);
         if (docenv != null && fileName.equals("package.html")) {
-            if (fo instanceof JavacFileManager.ZipFileObject) {
-                JavacFileManager.ZipFileObject zfo = (JavacFileManager.ZipFileObject) fo;
+            if (fo instanceof ZipFileObject) {
+                ZipFileObject zfo = (ZipFileObject) fo;
                 String zipName = zfo.getZipName();
                 String entryName = zfo.getZipEntryName();
                 int lastSep = entryName.lastIndexOf("/");
                 String classPathName = entryName.substring(0, lastSep + 1);
                 docenv.getPackageDoc(pack).setDocPath(zipName, classPathName);
             }
-            else if (fo instanceof JavacFileManager.ZipFileIndexFileObject) {
-                JavacFileManager.ZipFileIndexFileObject zfo = (JavacFileManager.ZipFileIndexFileObject) fo;
+            else if (fo instanceof ZipFileIndexArchive.ZipFileIndexFileObject) {
+                ZipFileIndexArchive.ZipFileIndexFileObject zfo = (ZipFileIndexArchive.ZipFileIndexFileObject) fo;
                 String zipName = zfo.getZipName();
                 String entryName = zfo.getZipEntryName();
                 if (File.separatorChar != '/') {
