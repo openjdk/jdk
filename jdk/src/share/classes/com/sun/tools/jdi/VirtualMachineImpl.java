@@ -146,8 +146,9 @@ class VirtualMachineImpl extends MirrorImpl
     public boolean threadResumable(ThreadAction action) {
         /*
          * If any thread is resumed, the VM is considered not suspended.
+         * Just one thread is being resumed so pass it to thaw.
          */
-        state.thaw();
+        state.thaw(action.thread());
         return true;
     }
 
