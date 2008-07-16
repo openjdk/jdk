@@ -142,18 +142,20 @@ abstract class SelectorImpl
         // Precondition: Synchronized on this, keys, and selectedKeys
         Set cks = cancelledKeys();
         synchronized (cks) {
-            Iterator i = cks.iterator();
-            while (i.hasNext()) {
-                SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
-                try {
-                    implDereg(ski);
-                } catch (SocketException se) {
-                    IOException ioe = new IOException(
-                        "Error deregistering key");
-                    ioe.initCause(se);
-                    throw ioe;
-                } finally {
-                    i.remove();
+            if (!cks.isEmpty()) {
+                Iterator i = cks.iterator();
+                while (i.hasNext()) {
+                    SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
+                    try {
+                        implDereg(ski);
+                    } catch (SocketException se) {
+                        IOException ioe = new IOException(
+                            "Error deregistering key");
+                        ioe.initCause(se);
+                        throw ioe;
+                    } finally {
+                        i.remove();
+                    }
                 }
             }
         }
