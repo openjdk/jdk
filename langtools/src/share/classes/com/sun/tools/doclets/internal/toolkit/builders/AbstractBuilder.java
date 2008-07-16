@@ -61,7 +61,7 @@ public abstract class AbstractBuilder {
      * efficiency purposes.  We don't want to copy the
      * doc files multiple times for a single package.
      */
-    protected static Set containingPackagesSeen;
+    protected static Set<String> containingPackagesSeen;
 
     /**
      * True if we want to print debug output.
