@@ -875,6 +875,8 @@ bool Parse::seems_never_taken(float prob) {
   return prob < PROB_MIN;
 }
 
+//-------------------------------repush_if_args--------------------------------
+// Push arguments of an "if" bytecode back onto the stack by adjusting _sp.
 inline void Parse::repush_if_args() {
 #ifndef PRODUCT
   if (PrintOpto && WizardMode) {
@@ -906,7 +908,6 @@ void Parse::do_ifnull(BoolTest::mask btest) {
     if (PrintOpto && Verbose)
       tty->print_cr("Never-taken backedge stops compilation at bci %d",bci());
 #endif
-    repush_if_args(); // to gather stats on loop
     // We need to mark this branch as taken so that if we recompile we will
     // see that it is possible. In the tiered system the interpreter doesn't
     // do profiling and by the time we get to the lower tier from the interpreter
