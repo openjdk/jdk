@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1145,6 +1145,10 @@ public class Krb5LoginModule implements LoginModule {
                 sharedState.put(NAME, username);
                 sharedState.put(PWD, password);
             }
+        } else {
+            // remove temp results for the next try
+            encKeys = null;
+            principal = null;
         }
         username = null;
         password = null;
