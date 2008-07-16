@@ -135,7 +135,9 @@ Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGV
     const TypePtr *t = mphi->adr_type();
     if (t == TypePtr::BOTTOM || t == TypeRawPtr::BOTTOM ||
         t->isa_oopptr() && !t->is_oopptr()->is_known_instance() &&
-        t->is_oopptr()->cast_to_instance_id(t_oop->instance_id()) == t_oop) {
+        t->is_oopptr()->cast_to_exactness(true)
+         ->is_oopptr()->cast_to_ptr_type(t_oop->ptr())
+         ->is_oopptr()->cast_to_instance_id(t_oop->instance_id()) == t_oop) {
       // clone the Phi with our address type
       result = mphi->split_out_instance(t_adr, igvn);
     } else {
