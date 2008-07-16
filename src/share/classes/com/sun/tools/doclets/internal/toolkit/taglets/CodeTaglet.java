@@ -26,6 +26,7 @@ package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import java.util.Map;
 import com.sun.javadoc.Tag;
+import com.sun.tools.doclets.Taglet;
 
 /**
  * An inline Taglet used to denote literal code fragments.
@@ -47,7 +48,7 @@ public class CodeTaglet extends LiteralTaglet {
 
         private static final String NAME = "code";
 
-        public static void register(Map map) {
+        public static void register(Map<String, Taglet> map) {
                 map.remove(NAME);
                 map.put(NAME, new CodeTaglet());
         }

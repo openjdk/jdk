@@ -38,7 +38,7 @@ import java.util.*;
 public class PackageUseWriter extends SubWriterHolderWriter {
 
     final PackageDoc pkgdoc;
-    final SortedMap usingPackageToUsedClasses = new TreeMap();
+    final SortedMap<String,Set<ClassDoc>> usingPackageToUsedClasses = new TreeMap<String,Set<ClassDoc>>();
 
     /**
      * Constructor.
@@ -61,15 +61,15 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         ClassDoc[] content = pkgdoc.allClasses();
         for (int i = 0; i < content.length; ++i) {
             ClassDoc usedClass = content[i];
-            Set usingClasses = (Set)mapper.classToClass.get(usedClass.qualifiedName());
+            Set<ClassDoc> usingClasses = mapper.classToClass.get(usedClass.qualifiedName());
             if (usingClasses != null) {
                 for (Iterator it = usingClasses.iterator(); it.hasNext(); ) {
                     ClassDoc usingClass = (ClassDoc)it.next();
                     PackageDoc usingPackage = usingClass.containingPackage();
-                    Set usedClasses = (Set)usingPackageToUsedClasses
+                    Set<ClassDoc> usedClasses = usingPackageToUsedClasses
                         .get(usingPackage.name());
                     if (usedClasses == null) {
-                        usedClasses = new TreeSet();
+                        usedClasses = new TreeSet<ClassDoc>();
                         usingPackageToUsedClasses.put(Util.getPackageName(usingPackage),
                                                       usedClasses);
                     }

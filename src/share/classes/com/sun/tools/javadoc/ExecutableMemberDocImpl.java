@@ -231,7 +231,7 @@ public abstract class ExecutableMemberDocImpl
         StringBuffer result = new StringBuffer();
         result.append("(");
         for (List<Type> types = sym.type.getParameterTypes(); types.nonEmpty(); ) {
-            Type t = (Type)types.head;
+            Type t = types.head;
             result.append(TypeMaker.getTypeString(env, t, full));
             types = types.tail;
             if (types.nonEmpty()) {

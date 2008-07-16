@@ -62,7 +62,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     /**
      * The list of members being documented.
      */
-    protected List members;
+    protected List<ProgramElementDoc> members;
 
     /**
      * The index of the current member that is being documented at this point
@@ -97,7 +97,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
         builder.writer = writer;
         builder.visibleMemberMap = new VisibleMemberMap(classDoc,
             VisibleMemberMap.ANNOTATION_TYPE_MEMBER_REQUIRED, configuration.nodeprecated);
-        builder.members = new ArrayList(
+        builder.members = new ArrayList<ProgramElementDoc>(
             builder.visibleMemberMap.getMembersFor(classDoc));
         if (configuration.getMemberComparator() != null) {
             Collections.sort(builder.members,
