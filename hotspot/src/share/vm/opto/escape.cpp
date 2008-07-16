@@ -717,12 +717,17 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       }
     }
   }
-  if (is_instance && result->is_Phi()) {
+  if (result->is_Phi()) {
     PhiNode *mphi = result->as_Phi();
     assert(mphi->bottom_type() == Type::MEMORY, "memory phi required");
     const TypePtr *t = mphi->adr_type();
     if (C->get_alias_index(t) != alias_idx) {
+      // Create a new Phi with the specified alias index type.
       result = split_memory_phi(mphi, alias_idx, orig_phis, phase);
+    } else if (!is_instance) {
+      // Push all non-instance Phis on the orig_phis worklist to update inputs
+      // during Phase 4 if needed.
+      orig_phis.append_if_missing(mphi);
     }
   }
   // the result is either MemNode, PhiNode, InitializeNode.
@@ -859,10 +864,14 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
           !n->is_CheckCastPP()) // not unique CheckCastPP.
         continue;
       // The inline code for Object.clone() casts the allocation result to
-      // java.lang.Object and then to the the actual type of the allocated
+      // java.lang.Object and then to the actual type of the allocated
       // object. Detect this case and use the second cast.
+      // Also detect j.l.reflect.Array.newInstance(jobject, jint) case when
+      // the allocation result is cast to java.lang.Object and then
+      // to the actual Array type.
       if (alloc->is_Allocate() && n->as_Type()->type() == TypeInstPtr::NOTNULL
-          && igvn->type(alloc->in(AllocateNode::KlassNode)) != TypeKlassPtr::OBJECT) {
+          && (alloc->is_AllocateArray() ||
+              igvn->type(alloc->in(AllocateNode::KlassNode)) != TypeKlassPtr::OBJECT)) {
         Node *cast2 = NULL;
         for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
           Node *use = n->fast_out(i);
@@ -878,7 +887,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         }
       }
       set_escape_state(n->_idx, es);
-      // in order for an object to be stackallocatable, it must be:
+      // in order for an object to be scalar-replaceable, it must be:
       //   - a direct allocation (not a call returning an object)
       //   - non-escaping
       //   - eligible to be a unique type
@@ -888,7 +897,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       const TypeOopPtr *t = igvn->type(n)->isa_oopptr();
       if (t == NULL)
         continue;  // not a TypeInstPtr
-      tinst = t->cast_to_instance_id(ni);
+      tinst = t->cast_to_exactness(true)->is_oopptr()->cast_to_instance_id(ni);
       igvn->hash_delete(n);
       igvn->set_type(n,  tinst);
       n->raise_bottom_type(tinst);
@@ -1204,8 +1213,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
   // to recursively process Phi's encounted on the input memory
   // chains as is done in split_memory_phi() since they  will
   // also be processed here.
-  while (orig_phis.length() != 0) {
-    PhiNode *phi = orig_phis.pop();
+  for (int j = 0; j < orig_phis.length(); j++) {
+    PhiNode *phi = orig_phis.at(j);
     int alias_idx = _compile->get_alias_index(phi->adr_type());
     igvn->hash_delete(phi);
     for (uint i = 1; i < phi->req(); i++) {
