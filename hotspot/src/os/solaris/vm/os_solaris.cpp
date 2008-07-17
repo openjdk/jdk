@@ -2658,6 +2658,12 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
      top += r;
      cur++;
    }
+   if (bottom == 0) {
+     // Handle a situation, when the OS reports no memory available.
+     // Assume UMA architecture.
+     ids[0] = 0;
+     return 1;
+   }
    return bottom;
 }
 

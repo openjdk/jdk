@@ -141,7 +141,20 @@ size_t MutableNUMASpace::free_in_words() const {
 size_t MutableNUMASpace::tlab_capacity(Thread *thr) const {
   guarantee(thr != NULL, "No thread");
   int lgrp_id = thr->lgrp_id();
-  assert(lgrp_id != -1, "No lgrp_id set");
+  if (lgrp_id == -1) {
+    // This case can occur after the topology of the system has
+    // changed. Thread can change their location, the new home
+    // group will be determined during the first allocation
+    // attempt. For now we can safely assume that all spaces
+    // have equal size because the whole space will be reinitialized.
+    if (lgrp_spaces()->length() > 0) {
+      return capacity_in_bytes() / lgrp_spaces()->length();
+    } else {
+      assert(false, "There should be at least one locality group");
+      return 0;
+    }
+  }
+  // That's the normal case, where we know the locality group of the thread.
   int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
   if (i == -1) {
     return 0;
@@ -150,9 +163,17 @@ size_t MutableNUMASpace::tlab_capacity(Thread *thr) const {
 }
 
 size_t MutableNUMASpace::unsafe_max_tlab_alloc(Thread *thr) const {
+  // Please see the comments for tlab_capacity().
   guarantee(thr != NULL, "No thread");
   int lgrp_id = thr->lgrp_id();
-  assert(lgrp_id != -1, "No lgrp_id set");
+  if (lgrp_id == -1) {
+    if (lgrp_spaces()->length() > 0) {
+      return free_in_bytes() / lgrp_spaces()->length();
+    } else {
+      assert(false, "There should be at least one locality group");
+      return 0;
+    }
+  }
   int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
   if (i == -1) {
     return 0;
@@ -250,10 +271,15 @@ void MutableNUMASpace::free_region(MemRegion mr) {
 void MutableNUMASpace::update() {
   if (update_layout(false)) {
     // If the topology has changed, make all chunks zero-sized.
+    // And clear the alloc-rate statistics.
+    // In future we may want to handle this more gracefully in order
+    // to avoid the reallocation of the pages as much as possible.
     for (int i = 0; i < lgrp_spaces()->length(); i++) {
-      MutableSpace *s = lgrp_spaces()->at(i)->space();
+      LGRPSpace *ls = lgrp_spaces()->at(i);
+      MutableSpace *s = ls->space();
       s->set_end(s->bottom());
       s->set_top(s->bottom());
+      ls->clear_alloc_rate();
     }
     // A NUMA space is never mangled
     initialize(region(),
