@@ -112,6 +112,7 @@ class MutableNUMASpace : public MutableSpace {
     int lgrp_id() const                             { return _lgrp_id;             }
     MutableSpace* space() const                     { return _space;               }
     AdaptiveWeightedAverage* alloc_rate() const     { return _alloc_rate;          }
+    void clear_alloc_rate()                         { _alloc_rate->clear();        }
     SpaceStats* space_stats()                       { return &_space_stats;        }
     void clear_space_stats()                        { _space_stats = SpaceStats(); }
 
