@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 
 #include "java_awt_image_AffineTransformOp.h"
 #include "sun_java2d_opengl_OGLSurfaceData.h"
+#include "sun_java2d_pipe_hw_AccelSurface.h"
 
 #include "J2D_GL/gl.h"
 #include "SurfaceData.h"
@@ -215,12 +216,12 @@ struct _OGLSDOps {
  * These are shorthand names for the surface type constants defined in
  * OGLSurfaceData.java.
  */
-#define OGLSD_UNDEFINED       sun_java2d_opengl_OGLSurfaceData_UNDEFINED
-#define OGLSD_WINDOW          sun_java2d_opengl_OGLSurfaceData_WINDOW
-#define OGLSD_PBUFFER         sun_java2d_opengl_OGLSurfaceData_PBUFFER
-#define OGLSD_TEXTURE         sun_java2d_opengl_OGLSurfaceData_TEXTURE
-#define OGLSD_FLIP_BACKBUFFER sun_java2d_opengl_OGLSurfaceData_FLIP_BACKBUFFER
-#define OGLSD_FBOBJECT        sun_java2d_opengl_OGLSurfaceData_FBOBJECT
+#define OGLSD_UNDEFINED       sun_java2d_pipe_hw_AccelSurface_UNDEFINED
+#define OGLSD_WINDOW          sun_java2d_pipe_hw_AccelSurface_WINDOW
+#define OGLSD_PBUFFER         sun_java2d_pipe_hw_AccelSurface_RT_PLAIN
+#define OGLSD_TEXTURE         sun_java2d_pipe_hw_AccelSurface_TEXTURE
+#define OGLSD_FLIP_BACKBUFFER sun_java2d_pipe_hw_AccelSurface_FLIP_BACKBUFFER
+#define OGLSD_FBOBJECT        sun_java2d_pipe_hw_AccelSurface_RT_TEXTURE
 
 /**
  * These are shorthand names for the filtering method constants used by

@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,11 +44,21 @@ extern GetRasInfoFunc               OGLSD_GetRasInfo;
 extern UnlockFunc                   OGLSD_Unlock;
 extern DisposeFunc                  OGLSD_Dispose;
 
+extern OGLPixelFormat PixelFormats[];
+extern void AwtWindow_UpdateWindow(JNIEnv *env, jobject peer,
+                                   jint w, jint h, HBITMAP hBitmap);
+extern HBITMAP BitmapUtil_CreateBitmapFromARGBPre(int width, int height,
+                                                  int srcStride,
+                                                  int* imageData);
+extern void AwtComponent_GetInsets(JNIEnv *env, jobject peer, RECT *insets);
+
+extern void
+    OGLSD_SetNativeDimensions(JNIEnv *env, OGLSDOps *oglsdo, jint w, jint h);
+
 JNIEXPORT void JNICALL
 Java_sun_java2d_opengl_WGLSurfaceData_initOps(JNIEnv *env, jobject wglsd,
                                               jlong pConfigInfo,
-                                              jlong pPeerData,
-                                              jint xoff, jint yoff)
+                                              jobject peer, jlong hwnd)
 {
     OGLSDOps *oglsdo = (OGLSDOps *)SurfaceData_InitOps(env, wglsd,
                                                        sizeof(OGLSDOps));
@@ -71,10 +81,17 @@ Java_sun_java2d_opengl_WGLSurfaceData_initOps(JNIEnv *env, jobject wglsd,
     oglsdo->drawableType = OGLSD_UNDEFINED;
     oglsdo->activeBuffer = GL_FRONT;
     oglsdo->needsInit = JNI_TRUE;
-    oglsdo->xOffset = xoff;
-    oglsdo->yOffset = yoff;
+    if (peer != NULL) {
+        RECT insets;
+        AwtComponent_GetInsets(env, peer, &insets);
+        oglsdo->xOffset = -insets.left;
+        oglsdo->yOffset = -insets.bottom;
+    } else {
+        oglsdo->xOffset = 0;
+        oglsdo->yOffset = 0;
+    }
 
-    wglsdo->peerData = pPeerData;
+    wglsdo->window = (HWND)jlong_to_ptr(hwnd);
     wglsdo->configInfo = (WGLGraphicsConfigInfo *)jlong_to_ptr(pConfigInfo);
     if (wglsdo->configInfo == NULL) {
         free(wglsdo);
@@ -96,14 +113,14 @@ OGLSD_DestroyOGLSurface(JNIEnv *env, OGLSDOps *oglsdo)
     J2dTraceLn(J2D_TRACE_INFO, "OGLSD_DestroyOGLSurface");
 
     if (oglsdo->drawableType == OGLSD_PBUFFER) {
-        if (wglsdo->drawable.pbuffer != 0) {
+        if (wglsdo->pbuffer != 0) {
             if (wglsdo->pbufferDC != 0) {
-                j2d_wglReleasePbufferDCARB(wglsdo->drawable.pbuffer,
+                j2d_wglReleasePbufferDCARB(wglsdo->pbuffer,
                                            wglsdo->pbufferDC);
                 wglsdo->pbufferDC = 0;
             }
-            j2d_wglDestroyPbufferARB(wglsdo->drawable.pbuffer);
-            wglsdo->drawable.pbuffer = 0;
+            j2d_wglDestroyPbufferARB(wglsdo->pbuffer);
+            wglsdo->pbuffer = 0;
         }
     }
 }
@@ -256,7 +273,7 @@ OGLSD_MakeOGLContextCurrent(JNIEnv *env, OGLSDOps *srcOps, OGLSDOps *dstOps)
     if (dstOps->drawableType == OGLSD_PBUFFER) {
         dstHDC = dstWGLOps->pbufferDC;
     } else {
-        dstHDC = GetDC(dstWGLOps->drawable.window);
+        dstHDC = GetDC(dstWGLOps->window);
     }
 
     // get the hdc for the source surface
@@ -284,7 +301,7 @@ OGLSD_MakeOGLContextCurrent(JNIEnv *env, OGLSDOps *srcOps, OGLSDOps *dstOps)
         J2dRlsTraceLn(J2D_TRACE_ERROR,
                       "OGLSD_MakeOGLContextCurrent: could not make current");
         if (dstOps->drawableType != OGLSD_PBUFFER) {
-            ReleaseDC(dstWGLOps->drawable.window, dstHDC);
+            ReleaseDC(dstWGLOps->window, dstHDC);
         }
         return NULL;
     }
@@ -297,7 +314,7 @@ OGLSD_MakeOGLContextCurrent(JNIEnv *env, OGLSDOps *srcOps, OGLSDOps *dstOps)
     }
 
     if (dstOps->drawableType != OGLSD_PBUFFER) {
-        ReleaseDC(dstWGLOps->drawable.window, dstHDC);
+        ReleaseDC(dstWGLOps->window, dstHDC);
     }
 
     return oglc;
@@ -340,7 +357,7 @@ OGLSD_InitOGLWindow(JNIEnv *env, OGLSDOps *oglsdo)
         return JNI_FALSE;
     }
 
-    window = AwtComponent_GetHWnd(env, wglsdo->peerData);
+    window = wglsdo->window;
     if (!IsWindow(window)) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
                       "OGLSD_InitOGLWindow: disposed component");
@@ -369,7 +386,6 @@ OGLSD_InitOGLWindow(JNIEnv *env, OGLSDOps *oglsdo)
     oglsdo->isOpaque = JNI_TRUE;
     oglsdo->width = wbounds.right - wbounds.left;
     oglsdo->height = wbounds.bottom - wbounds.top;
-    wglsdo->drawable.window = window;
     wglsdo->pbufferDC = 0;
 
     J2dTraceLn2(J2D_TRACE_VERBOSE, "  created window: w=%d h=%d",
@@ -505,8 +521,10 @@ Java_sun_java2d_opengl_WGLSurfaceData_initPbuffer
     oglsdo->isOpaque = isOpaque;
     oglsdo->width = width;
     oglsdo->height = height;
-    wglsdo->drawable.pbuffer = pbuffer;
+    wglsdo->pbuffer = pbuffer;
     wglsdo->pbufferDC = pbufferDC;
+
+    OGLSD_SetNativeDimensions(env, oglsdo, width, height);
 
     return JNI_TRUE;
 }
@@ -542,4 +560,84 @@ OGLSD_SwapBuffers(JNIEnv *env, jlong pPeerData)
         J2dRlsTraceLn(J2D_TRACE_ERROR,
                       "OGLSD_SwapBuffers: error while releasing dc");
     }
+}
+
+/*
+ * Class:     sun_java2d_opengl_WGLSurfaceData
+ * Method:    updateWindowAccelImpl
+ * Signature: (JJII)Z
+ */
+JNIEXPORT jboolean JNICALL
+    Java_sun_java2d_opengl_WGLSurfaceData_updateWindowAccelImpl
+  (JNIEnv *env, jclass clazz, jlong pData, jobject peer, jint w, jint h)
+{
+    OGLSDOps *oglsdo = (OGLSDOps *)jlong_to_ptr(pData);
+    OGLPixelFormat pf = PixelFormats[0/*PF_INT_ARGB_PRE*/];
+    HBITMAP hBitmap = NULL;
+    void *pDst;
+    jint srcx, srcy, dstx, dsty, width, height;
+    jint pixelStride = 4;
+    jint scanStride = pixelStride * w;
+
+    J2dTraceLn(J2D_TRACE_INFO, "WGLSurfaceData_updateWindowAccelImpl");
+
+    if (w <= 0 || h <= 0) {
+        return JNI_TRUE;
+    }
+    if (oglsdo == NULL) {
+        return JNI_FALSE;
+    }
+    RESET_PREVIOUS_OP();
+
+    width = w;
+    height = h;
+    srcx = srcy = dstx = dsty = 0;
+
+    pDst = malloc(height * scanStride);
+    if (pDst == NULL) {
+        return JNI_FALSE;
+    }
+    ZeroMemory(pDst, height * scanStride);
+
+    // the code below is mostly copied from OGLBlitLoops_SurfaceToSwBlit
+
+    j2d_glPixelStorei(GL_PACK_SKIP_PIXELS, dstx);
+    j2d_glPixelStorei(GL_PACK_ROW_LENGTH, scanStride / pixelStride);
+    j2d_glPixelStorei(GL_PACK_ALIGNMENT, pf.alignment);
+
+    // this accounts for lower-left origin of the source region
+    srcx = oglsdo->xOffset + srcx;
+    srcy = oglsdo->yOffset + oglsdo->height - (srcy + 1);
+    // we must read one scanline at a time because there is no way
+    // to read starting at the top-left corner of the source region
+    while (height > 0) {
+        j2d_glPixelStorei(GL_PACK_SKIP_ROWS, dsty);
+        j2d_glReadPixels(srcx, srcy, width, 1,
+                         pf.format, pf.type, pDst);
+        srcy--;
+        dsty++;
+        height--;
+    }
+
+    j2d_glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
+    j2d_glPixelStorei(GL_PACK_SKIP_ROWS, 0);
+    j2d_glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+    j2d_glPixelStorei(GL_PACK_ALIGNMENT, 4);
+
+    // the pixels read from the surface are already premultiplied
+    // REMIND: commented until translucent window support is integrated
+//    hBitmap = BitmapUtil_CreateBitmapFromARGBPre(w, h, scanStride,
+//                                                 (int*)pDst);
+    free(pDst);
+
+    if (hBitmap == NULL) {
+        return JNI_FALSE;
+    }
+
+    // REMIND: commented until translucent window support is integrated
+    // AwtWindow_UpdateWindow(env, peer, w, h, hBitmap);
+
+    // hBitmap is released in UpdateWindow
+
+    return JNI_TRUE;
 }

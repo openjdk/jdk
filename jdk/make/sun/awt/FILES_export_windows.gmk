@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -125,14 +125,9 @@ FILES_export2 = \
 	sun/awt/image/BufImgSurfaceData.java \
 	sun/awt/image/DataBufferNative.java \
         sun/awt/shell/Win32ShellFolder2.java \
-	sun/java2d/windows/DDBlitLoops.java \
-	sun/java2d/windows/DDRenderer.java \
-	sun/java2d/windows/DDScaleLoops.java \
 	sun/java2d/windows/GDIBlitLoops.java \
 	sun/java2d/windows/GDIRenderer.java \
-	sun/java2d/windows/Win32OffScreenSurfaceData.java \
-	sun/java2d/windows/Win32SurfaceData.java \
-	sun/java2d/windows/WinBackBufferSurfaceData.java \
+	sun/java2d/windows/GDIWindowSurfaceData.java \
         sun/java2d/windows/WindowsFlags.java \
 	sun/java2d/loops/Blit.java \
 	sun/java2d/loops/BlitBg.java \
@@ -219,6 +214,9 @@ FILES_export3 = \
 	sun/awt/windows/WBufferStrategy.java \
 	sun/awt/windows/WTrayIconPeer.java \
 	sun/awt/image/ImagingLib.java \
+        sun/java2d/pipe/hw/AccelSurface.java \
+        sun/java2d/pipe/hw/AccelDeviceEventNotifier.java \
+        sun/java2d/pipe/hw/ContextCapabilities.java \
         sun/java2d/pipe/BufferedContext.java \
         sun/java2d/pipe/BufferedMaskBlit.java \
         sun/java2d/pipe/BufferedOpCodes.java \
@@ -229,13 +227,6 @@ FILES_export3 = \
 	sun/java2d/pipe/ShapeSpanIterator.java \
 	sun/java2d/pipe/SpanClipRenderer.java \
 	sun/java2d/pipe/RegionIterator.java \
- 	sun/java2d/d3d/D3DBlitLoops.java \
- 	sun/java2d/d3d/D3DMaskFill.java \
- 	sun/java2d/d3d/D3DRenderer.java \
- 	sun/java2d/d3d/D3DContext.java \
- 	sun/java2d/d3d/D3DSurfaceData.java \
- 	sun/java2d/d3d/D3DBackBufferSurfaceData.java \
- 	sun/java2d/d3d/D3DTextRenderer.java \
 	sun/java2d/opengl/OGLBlitLoops.java \
 	sun/java2d/opengl/OGLContext.java \
 	sun/java2d/opengl/OGLMaskFill.java \
@@ -245,4 +236,13 @@ FILES_export3 = \
 	sun/java2d/opengl/OGLSurfaceData.java \
 	sun/java2d/opengl/OGLTextRenderer.java \
 	sun/java2d/opengl/WGLGraphicsConfig.java \
-	sun/java2d/opengl/WGLSurfaceData.java
+	sun/java2d/opengl/WGLSurfaceData.java \
+	sun/java2d/d3d/D3DBlitLoops.java \
+	sun/java2d/d3d/D3DGraphicsDevice.java \
+	sun/java2d/d3d/D3DSurfaceData.java \
+	sun/java2d/d3d/D3DMaskFill.java \
+	sun/java2d/d3d/D3DPaints.java \
+	sun/java2d/d3d/D3DRenderQueue.java \
+	sun/java2d/d3d/D3DRenderer.java \
+	sun/java2d/d3d/D3DTextRenderer.java \
+	sun/java2d/d3d/D3DContext.java

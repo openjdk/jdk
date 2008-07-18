@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.font.TextAttribute;
 import java.awt.image.BufferedImage;
+import java.awt.peer.ComponentPeer;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -1313,4 +1314,18 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
     /*
      * ----END DISPLAY CHANGE SUPPORT----
      */
+
+    /**
+     * Returns true if FlipBufferStrategy with COPIED buffer contents
+     * is preferred for this peer's GraphicsConfiguration over
+     * BlitBufferStrategy, false otherwise.
+     *
+     * The reason FlipBS could be preferred is that in some configurations
+     * an accelerated copy to the screen is supported (like Direct3D 9)
+     *
+     * @return true if flip strategy should be used, false otherwise
+     */
+    public boolean isFlipStrategyPreferred(ComponentPeer peer) {
+        return false;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,11 @@ package sun.java2d.opengl;
 
 import java.awt.AWTException;
 import java.awt.BufferCapabilities;
+import java.awt.BufferCapabilities.FlipContents;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.ImageCapabilities;
 import java.awt.Transparency;
@@ -45,7 +48,19 @@ import sun.awt.X11GraphicsDevice;
 import sun.awt.X11GraphicsEnvironment;
 import sun.awt.image.OffScreenImage;
 import sun.awt.image.SunVolatileImage;
+import sun.awt.image.SurfaceManager;
+import sun.java2d.SunGraphics2D;
+import sun.java2d.Surface;
 import sun.java2d.SurfaceData;
+import sun.java2d.pipe.hw.AccelSurface;
+import sun.java2d.pipe.hw.AccelTypedVolatileImage;
+import sun.java2d.pipe.hw.ContextCapabilities;
+import static sun.java2d.opengl.OGLSurfaceData.*;
+import static sun.java2d.opengl.OGLContext.*;
+import static sun.java2d.opengl.OGLContext.OGLContextCaps.*;
+import sun.java2d.opengl.GLXSurfaceData.GLXVSyncOffScreenSurfaceData;
+import sun.java2d.pipe.hw.AccelDeviceEventListener;
+import sun.java2d.pipe.hw.AccelDeviceEventNotifier;
 
 public class GLXGraphicsConfig
     extends X11GraphicsConfig
@@ -54,7 +69,7 @@ public class GLXGraphicsConfig
     private static ImageCapabilities imageCaps = new GLXImageCaps();
     private BufferCapabilities bufferCaps;
     private long pConfigInfo;
-    private int oglCaps;
+    private ContextCapabilities oglCaps;
     private OGLContext context;
 
     private static native long getGLXConfigInfo(int screennum, int visualnum);
@@ -62,20 +77,22 @@ public class GLXGraphicsConfig
     private native void initConfig(long aData, long ctxinfo);
 
     private GLXGraphicsConfig(X11GraphicsDevice device, int visualnum,
-                              long configInfo, int oglCaps)
+                              long configInfo, ContextCapabilities oglCaps)
     {
         super(device, visualnum, 0, 0,
-              (oglCaps & OGLContext.CAPS_DOUBLEBUFFERED) != 0);
+              (oglCaps.getCaps() & CAPS_DOUBLEBUFFERED) != 0);
         pConfigInfo = configInfo;
         initConfig(getAData(), configInfo);
         this.oglCaps = oglCaps;
-        context = new OGLContext(OGLRenderQueue.getInstance());
+        context = new OGLContext(OGLRenderQueue.getInstance(), this);
     }
 
+    @Override
     public Object getProxyKey() {
         return this;
     }
 
+    @Override
     public SurfaceData createManagedSurface(int w, int h, int transparency) {
         return GLXSurfaceData.createData(this, w, h,
                                          getColorModel(transparency),
@@ -91,6 +108,7 @@ public class GLXGraphicsConfig
         }
 
         long cfginfo = 0;
+        final String ids[] = new String[1];
         OGLRenderQueue rq = OGLRenderQueue.getInstance();
         rq.lock();
         try {
@@ -102,6 +120,12 @@ public class GLXGraphicsConfig
                 new GLXGetConfigInfo(device.getScreen(), visualnum);
             rq.flushAndInvokeNow(action);
             cfginfo = action.getConfigInfo();
+            OGLContext.setScratchSurface(cfginfo);
+            rq.flushAndInvokeNow(new Runnable() {
+                public void run() {
+                    ids[0] = OGLContext.getOGLIdString();
+                }
+            });
         } finally {
             rq.unlock();
         }
@@ -110,8 +134,9 @@ public class GLXGraphicsConfig
         }
 
         int oglCaps = getOGLCapabilities(cfginfo);
+        ContextCapabilities caps = new OGLContextCaps(oglCaps, ids[0]);
 
-        return new GLXGraphicsConfig(device, visualnum, cfginfo, oglCaps);
+        return new GLXGraphicsConfig(device, visualnum, cfginfo, caps);
     }
 
     /**
@@ -138,14 +163,22 @@ public class GLXGraphicsConfig
      * Returns true if the provided capability bit is present for this config.
      * See OGLContext.java for a list of supported capabilities.
      */
+    @Override
     public final boolean isCapPresent(int cap) {
-        return ((oglCaps & cap) != 0);
+        return ((oglCaps.getCaps() & cap) != 0);
     }
 
+    @Override
     public final long getNativeConfigInfo() {
         return pConfigInfo;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @see sun.java2d.pipe.hw.BufferedContextProvider#getContext
+     */
+    @Override
     public final OGLContext getContext() {
         return context;
     }
@@ -275,16 +308,36 @@ public class GLXGraphicsConfig
     @Override
     public void flip(X11ComponentPeer peer,
                      Component target, VolatileImage xBackBuffer,
+                     int x1, int y1, int x2, int y2,
                      BufferCapabilities.FlipContents flipAction)
     {
         if (flipAction == BufferCapabilities.FlipContents.COPIED) {
-            Graphics g = peer.getGraphics();
-            try {
-                g.drawImage(xBackBuffer, 0, 0, null);
-            } finally {
-                g.dispose();
+            SurfaceManager vsm = SurfaceManager.getManager(xBackBuffer);
+            SurfaceData sd = vsm.getPrimarySurfaceData();
+
+            if (sd instanceof GLXVSyncOffScreenSurfaceData) {
+                GLXVSyncOffScreenSurfaceData vsd =
+                    (GLXVSyncOffScreenSurfaceData)sd;
+                SurfaceData bbsd = vsd.getFlipSurface();
+                Graphics2D bbg =
+                    new SunGraphics2D(bbsd, Color.black, Color.white, null);
+                try {
+                    bbg.drawImage(xBackBuffer, 0, 0, null);
+                } finally {
+                    bbg.dispose();
+                }
+            } else {
+                Graphics g = peer.getGraphics();
+                try {
+                    g.drawImage(xBackBuffer,
+                                x1, y1, x2, y2,
+                                x1, y1, x2, y2,
+                                null);
+                } finally {
+                    g.dispose();
+                }
+                return;
             }
-            return;
         } else if (flipAction == BufferCapabilities.FlipContents.PRIOR) {
             // not supported by GLX...
             return;
@@ -332,5 +385,65 @@ public class GLXGraphicsConfig
     @Override
     public ImageCapabilities getImageCapabilities() {
         return imageCaps;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see sun.java2d.pipe.hw.AccelGraphicsConfig#createCompatibleVolatileImage
+     */
+    @Override
+    public VolatileImage
+        createCompatibleVolatileImage(int width, int height,
+                                      int transparency, int type)
+    {
+        if (type == FLIP_BACKBUFFER || type == WINDOW || type == UNDEFINED ||
+            transparency == Transparency.BITMASK)
+        {
+            return null;
+        }
+
+        if (type == FBOBJECT) {
+            if (!isCapPresent(CAPS_EXT_FBOBJECT)) {
+                return null;
+            }
+        } else if (type == PBUFFER) {
+            boolean isOpaque = transparency == Transparency.OPAQUE;
+            if (!isOpaque && !isCapPresent(CAPS_STORED_ALPHA)) {
+                return null;
+            }
+        }
+
+        SunVolatileImage vi = new AccelTypedVolatileImage(this, width, height,
+                                                          transparency, type);
+        Surface sd = vi.getDestSurface();
+        if (!(sd instanceof AccelSurface) ||
+            ((AccelSurface)sd).getType() != type)
+        {
+            vi.flush();
+            vi = null;
+        }
+
+        return vi;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see sun.java2d.pipe.hw.AccelGraphicsConfig#getContextCapabilities
+     */
+    @Override
+    public ContextCapabilities getContextCapabilities() {
+        return oglCaps;
+    }
+
+    @Override
+    public void addDeviceEventListener(AccelDeviceEventListener l) {
+        AccelDeviceEventNotifier.addListener(l, screen.getScreen());
+    }
+
+    @Override
+    public void removeDeviceEventListener(AccelDeviceEventListener l) {
+        AccelDeviceEventNotifier.removeListener(l);
     }
 }

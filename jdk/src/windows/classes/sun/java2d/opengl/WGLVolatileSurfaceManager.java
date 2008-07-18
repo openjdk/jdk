@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,20 @@
 
 package sun.java2d.opengl;
 
+import java.awt.BufferCapabilities;
+import static java.awt.BufferCapabilities.FlipContents.*;
 import java.awt.Component;
 import java.awt.GraphicsConfiguration;
-import java.awt.ImageCapabilities;
-import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.image.ColorModel;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.VolatileSurfaceManager;
 import sun.awt.windows.WComponentPeer;
 import sun.java2d.SurfaceData;
+import static sun.java2d.opengl.OGLContext.OGLContextCaps.*;
+import static sun.java2d.pipe.hw.AccelSurface.*;
+import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
+import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.*;
 
 public class WGLVolatileSurfaceManager
     extends VolatileSurfaceManager
@@ -57,8 +61,8 @@ public class WGLVolatileSurfaceManager
         accelerationEnabled =
             (transparency == Transparency.OPAQUE) ||
             ((transparency == Transparency.TRANSLUCENT) &&
-             (gc.isCapPresent(OGLContext.CAPS_EXT_FBOBJECT) ||
-              gc.isCapPresent(OGLContext.CAPS_STORED_ALPHA)));
+             (gc.isCapPresent(CAPS_EXT_FBOBJECT) ||
+              gc.isCapPresent(CAPS_STORED_ALPHA)));
     }
 
     protected boolean isAccelerationEnabled() {
@@ -76,24 +80,47 @@ public class WGLVolatileSurfaceManager
             (comp != null) ? (WComponentPeer)comp.getPeer() : null;
 
         try {
+            boolean createVSynced = false;
             boolean forceback = false;
             if (context instanceof Boolean) {
                 forceback = ((Boolean)context).booleanValue();
+                if (forceback) {
+                    BufferCapabilities caps = peer.getBackBufferCaps();
+                    if (caps instanceof ExtendedBufferCapabilities) {
+                        ExtendedBufferCapabilities ebc =
+                            (ExtendedBufferCapabilities)caps;
+                        if (ebc.getVSync() == VSYNC_ON &&
+                            ebc.getFlipContents() == COPIED)
+                        {
+                            createVSynced = true;
+                            forceback = false;
+                        }
+                    }
+                }
             }
 
             if (forceback) {
                 // peer must be non-null in this case
-                sData = WGLSurfaceData.createData(peer, vImg);
+                sData = WGLSurfaceData.createData(peer, vImg, FLIP_BACKBUFFER);
             } else {
                 WGLGraphicsConfig gc =
                     (WGLGraphicsConfig)vImg.getGraphicsConfig();
                 ColorModel cm = gc.getColorModel(vImg.getTransparency());
-                int type = gc.isCapPresent(OGLContext.CAPS_EXT_FBOBJECT) ?
-                    OGLSurfaceData.FBOBJECT : OGLSurfaceData.PBUFFER;
-                sData = WGLSurfaceData.createData(gc,
-                                                  vImg.getWidth(),
-                                                  vImg.getHeight(),
-                                                  cm, vImg, type);
+                int type = vImg.getForcedAccelSurfaceType();
+                // if acceleration type is forced (type != UNDEFINED) then
+                // use the forced type, otherwise choose one based on caps
+                if (type == OGLSurfaceData.UNDEFINED) {
+                    type = gc.isCapPresent(CAPS_EXT_FBOBJECT) ?
+                        OGLSurfaceData.FBOBJECT : OGLSurfaceData.PBUFFER;
+                }
+                if (createVSynced) {
+                    sData = WGLSurfaceData.createData(peer, vImg, type);
+                } else {
+                    sData = WGLSurfaceData.createData(gc,
+                                                      vImg.getWidth(),
+                                                      vImg.getHeight(),
+                                                      cm, vImg, type);
+                }
             }
         } catch (NullPointerException ex) {
             sData = null;
@@ -104,7 +131,15 @@ public class WGLVolatileSurfaceManager
         return sData;
     }
 
+    @Override
     protected boolean isConfigValid(GraphicsConfiguration gc) {
         return ((gc == null) || (gc == vImg.getGraphicsConfig()));
+    }
+
+    @Override
+    public void initContents() {
+        if (vImg.getForcedAccelSurfaceType() != OGLSurfaceData.TEXTURE) {
+            super.initContents();
+        }
     }
 }

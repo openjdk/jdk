@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,13 +73,20 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
      * double-buffered on-screen Window.
      */
     public static GLXOffScreenSurfaceData createData(X11ComponentPeer peer,
-                                                     Image image)
+                                                     Image image,
+                                                     int type)
     {
         GLXGraphicsConfig gc = getGC(peer);
         Rectangle r = peer.getBounds();
-        return new GLXOffScreenSurfaceData(peer, gc, r.width, r.height,
-                                           image, peer.getColorModel(),
-                                           FLIP_BACKBUFFER);
+        if (type == FLIP_BACKBUFFER) {
+            return new GLXOffScreenSurfaceData(peer, gc, r.width, r.height,
+                                               image, peer.getColorModel(),
+                                               FLIP_BACKBUFFER);
+        } else {
+            return new GLXVSyncOffScreenSurfaceData(peer, gc, r.width, r.height,
+                                                    image, peer.getColorModel(),
+                                                    type);
+        }
     }
 
     /**
@@ -132,6 +139,42 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
         public Object getDestination() {
             return peer.getTarget();
         }
+    }
+
+    /**
+     * A surface which implements a v-synced flip back-buffer with COPIED
+     * FlipContents.
+     *
+     * This surface serves as a back-buffer to the outside world, while
+     * it is actually an offscreen surface. When the BufferStrategy this surface
+     * belongs to is showed, it is first copied to the real private
+     * FLIP_BACKBUFFER, which is then flipped.
+     */
+    public static class GLXVSyncOffScreenSurfaceData extends
+        GLXOffScreenSurfaceData
+    {
+        private GLXOffScreenSurfaceData flipSurface;
+
+        public GLXVSyncOffScreenSurfaceData(X11ComponentPeer peer,
+                                            GLXGraphicsConfig gc,
+                                            int width, int height,
+                                            Image image, ColorModel cm,
+                                            int type)
+        {
+            super(peer, gc, width, height, image, cm, type);
+            flipSurface = GLXSurfaceData.createData(peer, image, FLIP_BACKBUFFER);
+        }
+
+        public SurfaceData getFlipSurface() {
+            return flipSurface;
+        }
+
+        @Override
+        public void flush() {
+            flipSurface.flush();
+            super.flush();
+        }
+
     }
 
     public static class GLXOffScreenSurfaceData extends GLXSurfaceData {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,15 +79,16 @@ public class X11PMBlitBgLoops extends BlitBg {
         super(srcType, CompositeType.SrcNoEa, dstType);
     }
 
+    @Override
     public void BlitBg(SurfaceData src, SurfaceData dst,
-                       Composite comp, Region clip, Color bgColor,
+                       Composite comp, Region clip, int bgColor,
                        int sx, int sy,
                        int dx, int dy,
                        int w, int h)
     {
         SunToolkit.awtLock();
         try {
-            int pixel = dst.pixelFor(bgColor.getRGB());
+            int pixel = dst.pixelFor(bgColor);
             X11SurfaceData x11sd = (X11SurfaceData)dst;
             // use false for needExposures since we clip to the pixmap
             long xgc = x11sd.getBlitGC(clip, false);

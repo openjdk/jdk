@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,7 @@ public class BlitBg extends GraphicsPrimitive
      */
     public native void BlitBg(SurfaceData src, SurfaceData dst,
                               Composite comp, Region clip,
-                              Color bgColor,
+                              int bgColor,
                               int srcx, int srcy,
                               int dstx, int dsty,
                               int width, int height);
@@ -142,19 +142,19 @@ public class BlitBg extends GraphicsPrimitive
             compositeType = comptype;
         }
 
+        @Override
         public void BlitBg(SurfaceData srcData,
                            SurfaceData dstData,
                            Composite comp,
                            Region clip,
-                           Color bgColor,
+                           int bgArgb,
                            int srcx, int srcy,
                            int dstx, int dsty,
                            int width, int height)
         {
             ColorModel dstModel = dstData.getColorModel();
-            if (!dstModel.hasAlpha() &&
-                bgColor.getTransparency() != Transparency.OPAQUE)
-            {
+            boolean bgHasAlpha = (bgArgb >>> 24) != 0xff;
+            if (!dstModel.hasAlpha() && bgHasAlpha) {
                 dstModel = ColorModel.getRGBdefault();
             }
             WritableRaster wr =
@@ -163,6 +163,7 @@ public class BlitBg extends GraphicsPrimitive
             BufferedImage bimg =
                 new BufferedImage(dstModel, wr, isPremult, null);
             SurfaceData tmpData = BufImgSurfaceData.createData(bimg);
+            Color bgColor = new Color(bgArgb, bgHasAlpha);
             SunGraphics2D sg2d = new SunGraphics2D(tmpData, bgColor, bgColor,
                                                    defaultFont);
             FillRect fillop = FillRect.locate(SurfaceType.AnyColor,
@@ -201,9 +202,10 @@ public class BlitBg extends GraphicsPrimitive
             return this;
         }
 
+        @Override
         public void BlitBg(SurfaceData src, SurfaceData dst,
                            Composite comp, Region clip,
-                           Color bgColor,
+                           int bgColor,
                            int srcx, int srcy, int dstx, int dsty,
                            int width, int height)
         {

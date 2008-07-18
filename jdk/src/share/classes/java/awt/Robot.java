@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,18 @@
 
 package java.awt;
 
-import java.awt.peer.*;
-import java.awt.image.*;
-import java.awt.event.*;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
+import java.awt.image.DirectColorModel;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
+import java.awt.peer.RobotPeer;
 import java.lang.reflect.InvocationTargetException;
 import sun.awt.ComponentFactory;
 import sun.awt.SunToolkit;
+import sun.awt.image.SunWritableRaster;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -335,6 +341,10 @@ public class Robot {
                                                /* blue mask */   0x000000FF);
         }
 
+        // need to sync the toolkit prior to grabbing the pixels since in some
+        // cases rendering to the screen may be delayed
+        Toolkit.getDefaultToolkit().sync();
+
         int pixels[];
         int[] bandmasks = new int[3];
 
@@ -346,6 +356,7 @@ public class Robot {
         bandmasks[2] = screenCapCM.getBlueMask();
 
         raster = Raster.createPackedRaster(buffer, translatedRect.width, translatedRect.height, translatedRect.width, bandmasks, null);
+        SunWritableRaster.makeTrackable(buffer);
 
         image = new BufferedImage(screenCapCM, raster, false, null);
 

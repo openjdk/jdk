@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,14 @@ public class BufferedOpCodes {
     public static final int DRAW_POLY            = 12;
     public static final int DRAW_PIXEL           = 13;
     public static final int DRAW_SCANLINES       = 14;
+    public static final int DRAW_PARALLELOGRAM   = 15;
+    public static final int DRAW_AAPARALLELOGRAM = 16;
 
     // fill ops
     public static final int FILL_RECT            = 20;
     public static final int FILL_SPANS           = 21;
+    public static final int FILL_PARALLELOGRAM   = 22;
+    public static final int FILL_AAPARALLELOGRAM = 23;
 
     // copy-related ops
     public static final int COPY_AREA            = 30;
@@ -67,6 +71,9 @@ public class BufferedOpCodes {
     public static final int DISPOSE_CONFIG       = 74;
     public static final int INVALIDATE_CONTEXT   = 75;
     public static final int SYNC                 = 76;
+    public static final int RESTORE_DEVICES      = 77;
+    public static final int SAVE_STATE           = 78;
+    public static final int RESTORE_STATE        = 79;
 
     // multibuffering ops
     public static final int SWAP_BUFFERS         = 80;

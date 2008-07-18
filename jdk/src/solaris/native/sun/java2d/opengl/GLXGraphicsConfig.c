@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -471,7 +471,7 @@ Java_sun_java2d_opengl_GLXGraphicsConfig_getGLXConfigInfo(JNIEnv *env,
     GLXContext context;
     GLXPbuffer scratch;
     GLXGraphicsConfigInfo *glxinfo;
-    jint caps = sun_java2d_opengl_OGLContext_CAPS_EMPTY;
+    jint caps = CAPS_EMPTY;
     int db, alpha;
     const unsigned char *versionstr;
 
@@ -581,11 +581,11 @@ Java_sun_java2d_opengl_GLXGraphicsConfig_getGLXConfigInfo(JNIEnv *env,
     // get config-specific capabilities
     j2d_glXGetFBConfigAttrib(awt_display, fbconfig, GLX_DOUBLEBUFFER, &db);
     if (db) {
-        caps |= sun_java2d_opengl_OGLContext_CAPS_DOUBLEBUFFERED;
+        caps |= CAPS_DOUBLEBUFFERED;
     }
     j2d_glXGetFBConfigAttrib(awt_display, fbconfig, GLX_ALPHA_SIZE, &alpha);
     if (alpha > 0) {
-        caps |= sun_java2d_opengl_OGLContext_CAPS_STORED_ALPHA;
+        caps |= CAPS_STORED_ALPHA;
     }
 
     // initialize the OGLContext, which wraps the GLXFBConfig and GLXContext
@@ -662,11 +662,11 @@ Java_sun_java2d_opengl_GLXGraphicsConfig_getOGLCapabilities(JNIEnv *env,
     J2dTraceLn(J2D_TRACE_INFO, "GLXGraphicsConfig_getOGLCapabilities");
 
     if (glxinfo == NULL || glxinfo->context == NULL) {
-        return sun_java2d_opengl_OGLContext_CAPS_EMPTY;
+        return CAPS_EMPTY;
     }
 
     return glxinfo->context->caps;
 #else
-    return sun_java2d_opengl_OGLContext_CAPS_EMPTY;
+    return CAPS_EMPTY;
 #endif /* !HEADLESS */
 }

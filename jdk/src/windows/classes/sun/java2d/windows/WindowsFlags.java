@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,71 +39,24 @@ public class WindowsFlags {
      * has forced it on with d3d=true.  These associated variables have
      * the same base (eg, d3d) but end in "Set" (eg, d3dEnabled and
      * d3dSet).
-     *      ddEnabled: usage: "-Dsun.java2d.noddraw[=true]"
-     *               turns off all usage of ddraw, including surface -> surface
-     *               Blts (including onscreen->onscreen copyarea), offscreen
-     *               surface creation, and surface locking via DDraw.
-     *      ddOffscreenEnabled: usage: "-Dsun.java2d.ddoffscreen=false"
-     *               disables the use of ddraw surfaces for offscreen
-     *               images.  Effectively disables use of ddraw for most
-     *               operations except onscreen scrolling and some locking.
-     *      ddVramForced: usage: "-Dsun.java2d.ddforcevram=true"
-     *               Disables punts of offscreen ddraw surfaces to ddraw
-     *               system memory.  We use a punting mechanism when we detect
-     *               a high proportion of expensive read operations on a ddraw
-     *               surface; this flag disables that mechanism and forces the
-     *               surfaces to remain in VRAM regardless.
-     *      ddLockEnabled:  usage: "-Dsun.java2d.ddlock=[true|false]"
-     *               forces on|off usage of DirectDraw for locking the
-     *               screen.  This feature is usually enabled by default
-     *               for pre-Win2k OS's and disabled by default for
-     *               Win2k and future OS's (as of jdk1.4.1).
+     *      ddEnabled: usage: "-Dsun.java2d.noddraw[=false|true]"
+     *               turns on/off all usage of Direct3D
+     *      ddOffscreenEnabled: equivalent of sun.java2d.noddraw
      *      gdiBlitEnabled: usage: "-Dsun.java2d.gdiblit=false"
      *               turns off Blit loops that use GDI for copying to
      *               the screen from certain image types.  Copies will,
      *               instead, happen via ddraw locking or temporary GDI DIB
      *               creation/copying (depending on OS and other flags)
-     *      ddBlitEnabled: usage: "-Dsun.java2d.ddblit=false"
-     *               turns off Blit loops that use DDraw for copying to
-     *               the screen from other ddraw surfaces.  Copies will use
-     *               fallback mechanisms of GDI blits or ddraw locks, as
-     *               appropriate.  This flag is primarily for debugging
-     *               purposes, to force our copies through a different code
-     *               path.
-     *      ddScaleEnabled: usage: "-Dsun.java2d.ddscale=true"
-     *               Turns on hardware-accelerated iamge scaling via ddraw.
-     *               This is off by default because we cannot guarantee the
-     *               quality of the scaling; hardware may choose to do
-     *               filtered or unfiltered scales, resulting in inconsistent
-     *               scaling between ddraw-accelerated and java2D-rendered
-     *               operations.  This flag and capability should go away
-     *               someday as we eventually should use Direct3D for any
-     *               scaling operation (where we can control the filtering
-     *               used).
      *      d3dEnabled: usage: "-Dsun.java2d.d3d=[true|false]"
      *               Forces our use of Direct3D on or off.  Direct3D is on
      *               by default, but may be disabled in some situations, such
-     *               as when running on Itanium, or on a card with bad d3d line
-     *               quality, or on a video card that we have had bad experience
-     *               with (e.g., Trident).  This flag can force us to use d3d
+     *               as on a card with bad d3d line quality, or on a video card
+     *               that we have had bad experience with (e.g., Trident).
+     *               This flag can force us to use d3d
      *               anyway in these situations.  Or, this flag can force us to
      *               not use d3d in a situation where we would use it otherwise.
      *      translAccelEnabled: usage: "-Dsun.java2d.translaccel=true"
-     *               Turns on hardware acceleration for some translucent
-     *               image copying via Direct3D.  Images that are created with
-     *               GraphicsConfiguration.createCompatibleImage(w, h, trans)
-     *               may be acceleratable by use a Direct3D texture and
-     *               performing copying operations to other DirectX-based
-     *               image destinations via a textured quad.  This capability
-     *               is disabled by default pending further testing and fixing
-     *               some minor bugs (such as the ability to render Direct3D
-     *               to the screen which completely ignores the desktop
-     *               clip list).  When this capability is turned on by default,
-     *               this flag should go away.  Note: currently, enabling this
-     *               flag also enables the ddVramForced flag.  This is because
-     *               d3d translucency acceleration can only happen to offscreen
-     *               surfaces which have not been punted through the means that
-     *               ddVramForced disables.
+     *               equivalent to sun.java2d.d3d=true
      *      offscreenSharingEnabled: usage: "-Dsun.java2d.offscreenSharing=true"
      *               Turns on the ability to share a hardware-accelerated
      *               offscreen surface through the JAWT interface.  See
@@ -114,15 +67,6 @@ public class WindowsFlags {
      *               without being very sure that we will be willing to support
      *               that API in the future regardless of other native
      *               rendering pipeline changes.
-     *      d3dTexBpp: usage: "-Dsun.java2d.d3dtexbpp=[16|32]
-     *               When translucent image acceleration is enabled (see
-     *               translAccelEnabled above), this flag specifies the bit
-     *               depth of the software (BufferedImage) and hardware
-     *               (textures) that we should use.  The default is to use
-     *               32 bit images and textures, but specifying a value of 16
-     *               for this flag will force us to use a color model of 4444
-     *               and 16-bit textures.  This can be useful for applications
-     *               with heavy requirements on constrained VRAM resources.
      *      accelReset: usage: "-Dsun.java2d.accelReset"
      *               This flag tells us to reset any persistent information
      *               the display device acceleration characteristics so that
@@ -169,28 +113,19 @@ public class WindowsFlags {
      *
      */
 
-    private static boolean ddEnabled;
-    private static boolean ddSet;
-    private static boolean ddOffscreenEnabled;
-    private static boolean ddVramForced;
-    private static boolean ddLockEnabled;
-    private static boolean ddLockSet;
     private static boolean gdiBlitEnabled;
-    private static boolean ddBlitEnabled;
-    private static boolean ddScaleEnabled;
     private static boolean d3dEnabled;
     private static boolean d3dVerbose;
     private static boolean d3dSet;
+    private static boolean d3dOnScreenEnabled;
     private static boolean oglEnabled;
     private static boolean oglVerbose;
-    private static boolean translAccelEnabled;
     private static boolean offscreenSharingEnabled;
     private static boolean accelReset;
     private static boolean checkRegistry;
     private static boolean disableRegistry;
     private static boolean magPresent;
     private static boolean setHighDPIAware;
-    private static int d3dTexBpp;
     private static String javaVersion;
     // TODO: other flags, including nopixfmt
 
@@ -271,20 +206,18 @@ public class WindowsFlags {
             public Object run() {
                 magPresent = getBooleanProp(
                     "javax.accessibility.screen_magnifier_present", false);
-                ddEnabled = !getBooleanProp("sun.java2d.noddraw", magPresent);
-                ddSet = getPropertySet("sun.java2d.noddraw");
-                ddOffscreenEnabled = getBooleanProp("sun.java2d.ddoffscreen",
-                    !magPresent);
-                ddVramForced = getBooleanProp("sun.java2d.ddforcevram", false);
-                ddLockEnabled = getBooleanProp("sun.java2d.ddlock", false);
-                ddBlitEnabled = getBooleanProp("sun.java2d.ddblit", !magPresent);
-                ddScaleEnabled = getBooleanProp("sun.java2d.ddscale", false);
-                d3dEnabled = getBooleanProp("sun.java2d.d3d", !magPresent);
+                boolean ddEnabled =
+                    !getBooleanProp("sun.java2d.noddraw", magPresent);
+                boolean ddOffscreenEnabled =
+                    getBooleanProp("sun.java2d.ddoffscreen", ddEnabled);
+                d3dEnabled = getBooleanProp("sun.java2d.d3d",
+                    ddEnabled && ddOffscreenEnabled);
+                d3dOnScreenEnabled =
+                    getBooleanProp("sun.java2d.d3d.onscreen", d3dEnabled);
                 oglEnabled = getBooleanProp("sun.java2d.opengl", false);
                 if (oglEnabled) {
                     oglVerbose = isBooleanPropTrueVerbose("sun.java2d.opengl");
                     if (WGLGraphicsConfig.isWGLAvailable()) {
-                        ddEnabled = false;
                         d3dEnabled = false;
                     } else {
                         if (oglVerbose) {
@@ -299,18 +232,6 @@ public class WindowsFlags {
                 d3dSet = getPropertySet("sun.java2d.d3d");
                 if (d3dSet) {
                     d3dVerbose = isBooleanPropTrueVerbose("sun.java2d.d3d");
-                }
-                translAccelEnabled =
-                    getBooleanProp("sun.java2d.translaccel", false);
-                if (translAccelEnabled) {
-                    // translucency only accelerated to un-punted buffers
-                    ddVramForced = true;
-                    // since they've requested translucency acceleration,
-                    // we assume they'll be happy with d3d quality
-                    if (!d3dSet && !magPresent) {
-                        d3dEnabled = true;
-                        d3dSet = true;
-                    }
                 }
                 offscreenSharingEnabled =
                     getBooleanProp("sun.java2d.offscreenSharing", false);
@@ -330,9 +251,6 @@ public class WindowsFlags {
                         javaVersion = javaVersion.substring(0, dashIndex);
                     }
                 }
-                d3dTexBpp = getIntProp("sun.java2d.d3dtexbpp", 32);
-                ddLockSet = getPropertySet("sun.java2d.ddlock");
-
                 String dpiOverride = System.getProperty("sun.java2d.dpiaware");
                 if (dpiOverride != null) {
                     setHighDPIAware = dpiOverride.equalsIgnoreCase("true");
@@ -350,16 +268,6 @@ public class WindowsFlags {
                         "The use of this capability will change in future " +
                         "releases and applications that depend on it " +
                         "may not work correctly");
-                }
-                if (translAccelEnabled) {
-                    System.out.println(
-                        "Acceleration for translucent images is enabled.");
-                }
-                if (!ddBlitEnabled) {
-                    System.out.println("DirectDraw Blits disabled");
-                }
-                if (ddScaleEnabled) {
-                    System.out.println("DirectDraw Scaling enabled");
                 }
                 */
                 return null;
@@ -388,34 +296,6 @@ public class WindowsFlags {
         */
     }
 
-    public static boolean isDDEnabled() {
-        return ddEnabled;
-    }
-
-    public static boolean isDDOffscreenEnabled() {
-        return ddOffscreenEnabled;
-    }
-
-    public static boolean isDDVramForced() {
-        return ddVramForced;
-    }
-
-    public static boolean isDDLockEnabled() {
-        return ddLockEnabled;
-    }
-
-    public static boolean isDDLockSet() {
-        return ddLockSet;
-    }
-
-    public static boolean isDDBlitEnabled() {
-        return ddBlitEnabled;
-    }
-
-    public static boolean isDDScaleEnabled() {
-        return ddScaleEnabled;
-    }
-
     public static boolean isD3DEnabled() {
         return d3dEnabled;
     }
@@ -424,12 +304,12 @@ public class WindowsFlags {
         return d3dSet;
     }
 
-    public static boolean isD3DVerbose() {
-        return d3dVerbose;
+    public static boolean isD3DOnScreenEnabled() {
+        return d3dOnScreenEnabled;
     }
 
-    public static int getD3DTexBpp() {
-        return d3dTexBpp;
+    public static boolean isD3DVerbose() {
+        return d3dVerbose;
     }
 
     public static boolean isGdiBlitEnabled() {

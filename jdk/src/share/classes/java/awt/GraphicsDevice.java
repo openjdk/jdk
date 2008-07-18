@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,6 +236,10 @@ public abstract class GraphicsDevice {
      */
     public void setFullScreenWindow(Window w) {
         if (fullScreenWindow != null && windowedModeBounds != null) {
+            // if the window went into fs mode before it was realized it may
+            // have (0,0) dimensions
+            if (windowedModeBounds.width  == 0) windowedModeBounds.width  = 1;
+            if (windowedModeBounds.height == 0) windowedModeBounds.height = 1;
             fullScreenWindow.setBounds(windowedModeBounds);
         }
         // Set the full screen window

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,13 @@
 package sun.java2d.pipe;
 
 import java.awt.AlphaComposite;
+import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Paint;
 import java.awt.geom.AffineTransform;
+import sun.java2d.pipe.hw.AccelSurface;
 import sun.java2d.InvalidPipeException;
 import sun.java2d.SunGraphics2D;
-import sun.java2d.SurfaceData;
 import sun.java2d.loops.XORComposite;
 import static sun.java2d.pipe.BufferedOpCodes.*;
 import static sun.java2d.pipe.BufferedRenderPipe.BYTES_PER_SPAN;
@@ -43,8 +44,10 @@ import static sun.java2d.pipe.BufferedRenderPipe.BYTES_PER_SPAN;
  * single thread.  Note that the RenderQueue lock must be acquired before
  * calling the validate() method (or any other method in this class).  See
  * the RenderQueue class comments for a sample usage scenario.
+ *
+ * @see RenderQueue
  */
-public class BufferedContext {
+public abstract class BufferedContext {
 
     /*
      * The following flags help the internals of validate() determine
@@ -82,17 +85,64 @@ public class BufferedContext {
      */
     protected static BufferedContext currentContext;
 
-    private SurfaceData     validatedSrcData;
-    private SurfaceData     validatedDstData;
+    private AccelSurface    validatedSrcData;
+    private AccelSurface    validatedDstData;
     private Region          validatedClip;
     private Composite       validatedComp;
     private Paint           validatedPaint;
+    private boolean         isValidatedPaintAColor;
+    private int             validatedRGB;
     private int             validatedFlags;
     private boolean         xformInUse;
+    private int             transX;
+    private int             transY;
 
     protected BufferedContext(RenderQueue rq) {
         this.rq = rq;
         this.buf = rq.getBuffer();
+    }
+
+    /**
+     * Fetches the BufferedContextContext associated with the dst. surface
+     * and validates the context using the given parameters.  Most rendering
+     * operations will call this method first in order to set the necessary
+     * state before issuing rendering commands.
+     *
+     * Note: must be called while the RenderQueue lock is held.
+     *
+     * @throws InvalidPipeException if either src or dest surface is not valid
+     * or lost
+     * @see RenderQueue#lock
+     * @see RenderQueue#unlock
+     */
+    public static void validateContext(AccelSurface srcData,
+                                       AccelSurface dstData,
+                                       Region clip, Composite comp,
+                                       AffineTransform xform,
+                                       Paint paint, SunGraphics2D sg2d,
+                                       int flags)
+    {
+        // assert rq.lock.isHeldByCurrentThread();
+        BufferedContext d3dc = dstData.getContext();
+        d3dc.validate(srcData, dstData,
+                      clip, comp, xform, paint, sg2d, flags);
+    }
+
+    /**
+     * Fetches the BufferedContextassociated with the surface
+     * and disables all context state settings.
+     *
+     * Note: must be called while the RenderQueue lock is held.
+     *
+     * @throws InvalidPipeException if the surface is not valid
+     * or lost
+     * @see RenderQueue#lock
+     * @see RenderQueue#unlock
+     */
+    public static void validateContext(AccelSurface surface) {
+        // assert rt.lock.isHeldByCurrentThread();
+        validateContext(surface, surface,
+                        null, null, null, null, null, NO_CONTEXT_FLAGS);
     }
 
     /**
@@ -106,19 +156,47 @@ public class BufferedContext {
      * Note that the SunGraphics2D parameter is only used for the purposes
      * of validating a (non-null) Paint parameter.  In all other cases it
      * is safe to pass a null SunGraphics2D and it will be ignored.
+     *
+     * Note: must be called while the RenderQueue lock is held.
+     *
+     * @throws InvalidPipeException if either src or dest surface is not valid
+     * or lost
      */
-    public void validate(SurfaceData srcData, SurfaceData dstData,
+    public void validate(AccelSurface srcData, AccelSurface dstData,
                          Region clip, Composite comp,
                          AffineTransform xform,
                          Paint paint, SunGraphics2D sg2d, int flags)
     {
         // assert rq.lock.isHeldByCurrentThread();
 
-        boolean updateClip = (clip != validatedClip);
-        boolean updatePaint = (paint != validatedPaint);
+        boolean updateClip = false;
+        boolean updatePaint = false;
 
-        if (!dstData.isValid()) {
-            throw new InvalidPipeException("bounds changed");
+        if (!dstData.isValid() ||
+            dstData.isSurfaceLost() || srcData.isSurfaceLost())
+        {
+            invalidateContext();
+            throw new InvalidPipeException("bounds changed or surface lost");
+        }
+
+        if (paint instanceof Color) {
+            // REMIND: not 30-bit friendly
+            int newRGB = ((Color)paint).getRGB();
+            if (isValidatedPaintAColor) {
+                if (newRGB != validatedRGB) {
+                    validatedRGB = newRGB;
+                    updatePaint = true;
+                }
+            } else {
+                validatedRGB = newRGB;
+                updatePaint = true;
+                isValidatedPaintAColor = true;
+            }
+        } else if (validatedPaint != paint) {
+            updatePaint = true;
+            // this should be set when we are switching from paint to color
+            // in which case this condition will be true
+            isValidatedPaintAColor = false;
         }
 
         if ((currentContext != this) ||
@@ -147,9 +225,18 @@ public class BufferedContext {
         }
 
         // validate clip
-        if (updateClip) {
+        if ((clip != validatedClip) || updateClip) {
             if (clip != null) {
-                setClip(clip);
+                if (updateClip ||
+                    validatedClip == null ||
+                    !(validatedClip.isRectangular() && clip.isRectangular()) ||
+                    ((clip.getLoX() != validatedClip.getLoX() ||
+                      clip.getLoY() != validatedClip.getLoY() ||
+                      clip.getHiX() != validatedClip.getHiX() ||
+                      clip.getHiY() != validatedClip.getHiY())))
+                {
+                    setClip(clip);
+                }
             } else {
                 resetClip();
             }
@@ -173,14 +260,29 @@ public class BufferedContext {
         }
 
         // validate transform
+        boolean txChanged = false;
         if (xform == null) {
             if (xformInUse) {
                 resetTransform();
                 xformInUse = false;
+                txChanged = true;
+            } else if (sg2d != null) {
+                if (transX != sg2d.transX || transY != sg2d.transY) {
+                    txChanged = true;
+                }
+            }
+            if (sg2d != null) {
+                transX = sg2d.transX;
+                transY = sg2d.transY;
             }
         } else {
             setTransform(xform);
             xformInUse = true;
+            txChanged = true;
+        }
+        // non-Color paints may require paint revalidation
+        if (!isValidatedPaintAColor && txChanged) {
+            updatePaint = true;
         }
 
         // validate paint
@@ -194,6 +296,7 @@ public class BufferedContext {
         }
 
         // mark dstData dirty
+        // REMIND: is this really needed now? we do it in SunGraphics2D..
         dstData.markDirty();
     }
 
@@ -201,13 +304,20 @@ public class BufferedContext {
      * Invalidates the surfaces associated with this context.  This is
      * useful when the context is no longer needed, and we want to break
      * the chain caused by these surface references.
+     *
+     * Note: must be called while the RenderQueue lock is held.
+     *
+     * @see RenderQueue#lock
+     * @see RenderQueue#unlock
      */
     public void invalidateSurfaces() {
         validatedSrcData = null;
         validatedDstData = null;
     }
 
-    private void setSurfaces(SurfaceData srcData, SurfaceData dstData) {
+    private void setSurfaces(AccelSurface srcData,
+                             AccelSurface dstData)
+    {
         // assert rq.lock.isHeldByCurrentThread();
         rq.ensureCapacityAndAlignment(20, 4);
         buf.putInt(SET_SURFACES);
@@ -304,4 +414,54 @@ public class BufferedContext {
         buf.putDouble(xform.getTranslateX());
         buf.putDouble(xform.getTranslateY());
     }
+
+    /**
+     * Resets this context's surfaces and all attributes.
+     *
+     * Note: must be called while the RenderQueue lock is held.
+     *
+     * @see RenderQueue#lock
+     * @see RenderQueue#unlock
+     */
+    public void invalidateContext() {
+        resetTransform();
+        resetComposite();
+        resetClip();
+        invalidateSurfaces();
+        validatedComp = null;
+        validatedClip = null;
+        validatedPaint = null;
+        xformInUse = false;
+    }
+
+    /**
+     * Returns a singleton {@code RenderQueue} object used by the rendering
+     * pipeline.
+     *
+     * @return a render queue
+     * @see RenderQueue
+     */
+    public abstract RenderQueue getRenderQueue();
+
+    /**
+     * Saves the the state of this context.
+     * It may reset the current context.
+     *
+     * Note: must be called while the RenderQueue lock is held.
+     *
+     * @see RenderQueue#lock
+     * @see RenderQueue#unlock
+     */
+    public abstract void saveState();
+
+    /**
+     * Restores the native state of this context.
+     * It may reset the current context.
+     *
+     * Note: must be called while the RenderQueue lock is held.
+     *
+     * @see RenderQueue#lock
+     * @see RenderQueue#unlock
+     */
+    public abstract void restoreState();
 }

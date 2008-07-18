@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,31 @@ void OGLRenderer_DrawPoly(OGLContext *oglc,
                           jint *xPoints, jint *yPoints);
 void OGLRenderer_DrawScanlines(OGLContext *oglc,
                                jint count, jint *scanlines);
+void OGLRenderer_DrawParallelogram(OGLContext *oglc,
+                                   jfloat fx11, jfloat fy11,
+                                   jfloat dx21, jfloat dy21,
+                                   jfloat dx12, jfloat dy12,
+                                   jfloat lw21, jfloat lw12);
+void OGLRenderer_DrawAAParallelogram(OGLContext *oglc, OGLSDOps *dstOps,
+                                     jfloat fx11, jfloat fy11,
+                                     jfloat dx21, jfloat dy21,
+                                     jfloat dx12, jfloat dy12,
+                                     jfloat lw21, jfloat lw12);
+
 void OGLRenderer_FillRect(OGLContext *oglc,
                           jint x, jint y, jint w, jint h);
 void OGLRenderer_FillSpans(OGLContext *oglc,
                            jint count, jint *spans);
+void OGLRenderer_FillParallelogram(OGLContext *oglc,
+                                   jfloat fx11, jfloat fy11,
+                                   jfloat dx21, jfloat dy21,
+                                   jfloat dx12, jfloat dy12);
+void OGLRenderer_FillAAParallelogram(OGLContext *oglc, OGLSDOps *dstOps,
+                                     jfloat fx11, jfloat fy11,
+                                     jfloat dx21, jfloat dy21,
+                                     jfloat dx12, jfloat dy12);
+
+void OGLRenderer_EnableAAParallelogramProgram();
+void OGLRenderer_DisableAAParallelogramProgram();
 
 #endif /* OGLRenderer_h_Included */

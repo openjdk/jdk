@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ import sun.awt.image.SurfaceManager;
  * retrieved the tracker.
  */
 public abstract class SurfaceData
-    implements Transparency, DisposerTarget, StateTrackable
+    implements Transparency, DisposerTarget, StateTrackable, Surface
 {
     private long pData;
     private boolean valid;
