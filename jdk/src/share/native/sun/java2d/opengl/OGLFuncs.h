@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,12 @@ typedef void (GLAPIENTRY *glPixelStoreiType)(GLenum pname, GLint param);
 typedef void (GLAPIENTRY *glPixelTransferfType)(GLenum pname, GLfloat param);
 typedef void (GLAPIENTRY *glPixelZoomType)(GLfloat xfactor, GLfloat yfactor);
 typedef void (GLAPIENTRY *glPolygonOffsetType)(GLfloat factor, GLfloat units);
+typedef void (GLAPIENTRY *glPopAttribType)(void);
+typedef void (GLAPIENTRY *glPopClientAttribType)(void);
 typedef void (GLAPIENTRY *glPopMatrixType)(void);
 typedef void (GLAPIENTRY *glPrioritizeTexturesType)(GLsizei n, const GLuint *textures, const GLclampf *priorities);
+typedef void (GLAPIENTRY *glPushAttribType)(GLbitfield);
+typedef void (GLAPIENTRY *glPushClientAttribType)(GLbitfield);
 typedef void (GLAPIENTRY *glPushMatrixType)(void);
 typedef void (GLAPIENTRY *glRasterPos2iType)(GLint x, GLint y);
 typedef void (GLAPIENTRY *glReadBufferType)(GLenum mode);
@@ -155,8 +159,10 @@ typedef void (GLAPIENTRY *glUniform2fARBType)(GLint, GLfloat, GLfloat);
 typedef void (GLAPIENTRY *glUniform3fARBType)(GLint, GLfloat, GLfloat, GLfloat);
 typedef void (GLAPIENTRY *glUniform3fvARBType)(GLint, GLsizei, const GLfloat *);
 typedef void (GLAPIENTRY *glUniform4fARBType)(GLint, GLfloat, GLfloat, GLfloat, GLfloat);
+typedef void (GLAPIENTRY *glUniform4fvARBType)(GLint, GLsizei, const GLfloat *);
 typedef GLint (GLAPIENTRY *glGetUniformLocationARBType)(GLhandleARB, const GLcharARB *);
 typedef void (GLAPIENTRY *glGetInfoLogARBType)(GLhandleARB, GLsizei, GLsizei *, GLcharARB *);
+typedef void (GLAPIENTRY *glGetProgramivARBType)(GLenum, GLenum, GLint *);
 typedef void (GLAPIENTRY *glGetObjectParameterivARBType)(GLhandleARB, GLenum, GLint *);
 typedef GLhandleARB (GLAPIENTRY *glCreateProgramObjectARBType)(void);
 typedef void (GLAPIENTRY *glAttachObjectARBType)(GLhandleARB, GLhandleARB);
@@ -243,8 +249,12 @@ typedef void (GLAPIENTRY *glDeleteObjectARBType)(GLhandleARB);
     OGL_##action##_FUNC(glPixelTransferf); \
     OGL_##action##_FUNC(glPixelZoom); \
     OGL_##action##_FUNC(glPolygonOffset); \
+    OGL_##action##_FUNC(glPopAttrib); \
+    OGL_##action##_FUNC(glPopClientAttrib); \
     OGL_##action##_FUNC(glPopMatrix); \
     OGL_##action##_FUNC(glPrioritizeTextures); \
+    OGL_##action##_FUNC(glPushAttrib); \
+    OGL_##action##_FUNC(glPushClientAttrib); \
     OGL_##action##_FUNC(glPushMatrix); \
     OGL_##action##_FUNC(glRasterPos2i); \
     OGL_##action##_FUNC(glReadBuffer); \
@@ -298,7 +308,9 @@ typedef void (GLAPIENTRY *glDeleteObjectARBType)(GLhandleARB);
     OGL_##action##_EXT_FUNC(glUniform3fARB); \
     OGL_##action##_EXT_FUNC(glUniform3fvARB); \
     OGL_##action##_EXT_FUNC(glUniform4fARB); \
+    OGL_##action##_EXT_FUNC(glUniform4fvARB); \
     OGL_##action##_EXT_FUNC(glGetUniformLocationARB); \
+    OGL_##action##_EXT_FUNC(glGetProgramivARB); \
     OGL_##action##_EXT_FUNC(glGetInfoLogARB); \
     OGL_##action##_EXT_FUNC(glGetObjectParameterivARB); \
     OGL_##action##_EXT_FUNC(glDeleteObjectARB);

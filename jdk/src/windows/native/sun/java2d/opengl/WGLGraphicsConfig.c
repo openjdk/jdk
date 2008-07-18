@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -501,7 +501,7 @@ Java_sun_java2d_opengl_WGLGraphicsConfig_getWGLConfigInfo(JNIEnv *env,
     WGLGraphicsConfigInfo *wglinfo;
     const unsigned char *versionstr;
     const char *extstr;
-    jint caps = sun_java2d_opengl_OGLContext_CAPS_EMPTY;
+    jint caps = CAPS_EMPTY;
     int attrKeys[] = { WGL_DOUBLE_BUFFER_ARB, WGL_ALPHA_BITS_ARB };
     int attrVals[2];
 
@@ -626,10 +626,10 @@ Java_sun_java2d_opengl_WGLGraphicsConfig_getWGLConfigInfo(JNIEnv *env,
     // get config-specific capabilities
     j2d_wglGetPixelFormatAttribivARB(hdc, pixfmt, 0, 2, attrKeys, attrVals);
     if (attrVals[0]) {
-        caps |= sun_java2d_opengl_OGLContext_CAPS_DOUBLEBUFFERED;
+        caps |= CAPS_DOUBLEBUFFERED;
     }
     if (attrVals[1] > 0) {
-        caps |= sun_java2d_opengl_OGLContext_CAPS_STORED_ALPHA;
+        caps |= CAPS_STORED_ALPHA;
     }
 
     // create the scratch pbuffer
@@ -712,7 +712,7 @@ Java_sun_java2d_opengl_WGLGraphicsConfig_getOGLCapabilities(JNIEnv *env,
     J2dTraceLn(J2D_TRACE_INFO, "WGLGraphicsConfig_getOGLCapabilities");
 
     if (wglinfo == NULL || wglinfo->context == NULL) {
-        return sun_java2d_opengl_OGLContext_CAPS_EMPTY;
+        return CAPS_EMPTY;
     }
 
     return wglinfo->context->caps;

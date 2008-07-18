@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 
 #include "sun_java2d_pipe_BufferedContext.h"
 #include "sun_java2d_opengl_OGLContext.h"
+#include "sun_java2d_opengl_OGLContext_OGLContextCaps.h"
 
 #include "j2d_md.h"
 #include "J2D_GL/gl.h"
@@ -96,13 +97,50 @@ typedef struct {
     sun_java2d_pipe_BufferedContext_USE_MASK
 
 /**
+ * See OGLContext.java for more on these flags.
+ */
+#define CAPS_EMPTY           \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_EMPTY
+#define CAPS_RT_PLAIN_ALPHA  \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_RT_PLAIN_ALPHA
+#define CAPS_RT_TEXTURE_ALPHA       \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_RT_TEXTURE_ALPHA
+#define CAPS_RT_TEXTURE_OPAQUE      \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_RT_TEXTURE_OPAQUE
+#define CAPS_MULTITEXTURE    \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_MULTITEXTURE
+#define CAPS_TEXNONPOW2      \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_TEXNONPOW2
+#define CAPS_TEXNONSQUARE    \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_TEXNONSQUARE
+#define CAPS_PS20            \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_PS20
+#define CAPS_PS30            \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_PS30
+#define LAST_SHARED_CAP      \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_LAST_SHARED_CAP
+#define CAPS_EXT_FBOBJECT    \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_EXT_FBOBJECT
+#define CAPS_STORED_ALPHA    \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_STORED_ALPHA
+#define CAPS_DOUBLEBUFFERED  \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_DOUBLEBUFFERED
+#define CAPS_EXT_LCD_SHADER  \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_EXT_LCD_SHADER
+#define CAPS_EXT_BIOP_SHADER \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_EXT_BIOP_SHADER
+#define CAPS_EXT_GRAD_SHADER \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_EXT_GRAD_SHADER
+#define CAPS_EXT_TEXRECT     \
+    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_EXT_TEXRECT
+
+/**
  * Evaluates to true if the given capability bitmask is present for the
  * given OGLContext.  Note that only the constant name needs to be passed as
  * a parameter, as this macro will automatically prepend the full package
  * and class name to the constant name.
  */
-#define OGLC_IS_CAP_PRESENT(oglc, cap) \
-    (((oglc)->caps & (sun_java2d_opengl_OGLContext_##cap)) != 0)
+#define OGLC_IS_CAP_PRESENT(oglc, cap) (((oglc)->caps & (cap)) != 0)
 
 /**
  * At startup we will embed one of the following values in the caps field

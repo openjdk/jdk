@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,45 +23,71 @@
  * have any questions.
  */
 
-#ifndef D3DSurfaceData_h_Included
-#define D3DSurfaceData_h_Included
+#ifndef _D3DSURFACEDATA_H_
+#define _D3DSURFACEDATA_H_
 
 #include "java_awt_image_AffineTransformOp.h"
 #include "sun_java2d_d3d_D3DSurfaceData.h"
-#include "Win32SurfaceData.h"
-
-// Shortcut macros
-
-#define D3D_PLAIN_SURFACE      sun_java2d_d3d_D3DSurfaceData_D3D_PLAIN_SURFACE
-#define D3D_TEXTURE_SURFACE    sun_java2d_d3d_D3DSurfaceData_D3D_TEXTURE_SURFACE
-#define D3D_BACKBUFFER_SURFACE sun_java2d_d3d_D3DSurfaceData_D3D_BACKBUFFER_SURFACE
-#define D3D_RTT_SURFACE        sun_java2d_d3d_D3DSurfaceData_D3D_RTT_SURFACE
-
-#define D3D_RENDER_TARGET      sun_java2d_d3d_D3DSurfaceData_D3D_RENDER_TARGET
-#define D3D_ATTACHED_SURFACE   sun_java2d_d3d_D3DSurfaceData_D3D_ATTACHED_SURFACE
-
-#define PF_INVALID          sun_java2d_d3d_D3DSurfaceData_PF_INVALID
-#define PF_INT_ARGB         sun_java2d_d3d_D3DSurfaceData_PF_INT_ARGB
-#define PF_INT_RGB          sun_java2d_d3d_D3DSurfaceData_PF_INT_RGB
-#define PF_INT_RGBX         sun_java2d_d3d_D3DSurfaceData_PF_INT_RGBX
-#define PF_INT_BGR          sun_java2d_d3d_D3DSurfaceData_PF_INT_BGR
-#define PF_USHORT_565_RGB   sun_java2d_d3d_D3DSurfaceData_PF_USHORT_565_RGB
-#define PF_USHORT_555_RGB   sun_java2d_d3d_D3DSurfaceData_PF_USHORT_555_RGB
-#define PF_USHORT_555_RGBX  sun_java2d_d3d_D3DSurfaceData_PF_USHORT_555_RGBX
-#define PF_INT_ARGB_PRE     sun_java2d_d3d_D3DSurfaceData_PF_INT_ARGB_PRE
-#define PF_USHORT_4444_ARGB sun_java2d_d3d_D3DSurfaceData_PF_USHORT_4444_ARGB
+#include "sun_java2d_pipe_hw_AccelSurface.h"
+#include "SurfaceData.h"
+#include <d3d9.h>
 
 typedef struct _D3DSDOps D3DSDOps;
 
+class D3DResource;
+
 struct _D3DSDOps {
-    Win32SDOps dxOps;
-    jint d3dType; // surface type (plain/texture/bb/rtt) - see D3DSurfaceData.java
+    SurfaceDataOps sdOps;
+
+    // the ordinal of the d3d adapter this surface belongs to
+    // (may be different from GDI display number)
+    jint adapter;
+    jint width, height;
+
+    // backbuffer-related data
+    jint xoff, yoff;
+    D3DSWAPEFFECT swapEffect;
+
+    D3DResource  *pResource;
 };
 
+#define UNDEFINED       sun_java2d_pipe_hw_AccelSurface_UNDEFINED
+#define RT_PLAIN        sun_java2d_pipe_hw_AccelSurface_RT_PLAIN
+#define TEXTURE         sun_java2d_pipe_hw_AccelSurface_TEXTURE
+#define RT_TEXTURE      sun_java2d_pipe_hw_AccelSurface_RT_TEXTURE
+#define FLIP_BACKBUFFER sun_java2d_pipe_hw_AccelSurface_FLIP_BACKBUFFER
+#define D3D_DEVICE_RESOURCE \
+                        sun_java2d_d3d_D3DSurfaceData_D3D_DEVICE_RESOURCE
+
+#define ST_INT_ARGB        sun_java2d_d3d_D3DSurfaceData_ST_INT_ARGB
+#define ST_INT_ARGB_PRE    sun_java2d_d3d_D3DSurfaceData_ST_INT_ARGB_PRE
+#define ST_INT_ARGB_BM     sun_java2d_d3d_D3DSurfaceData_ST_INT_ARGB_BM
+#define ST_INT_RGB         sun_java2d_d3d_D3DSurfaceData_ST_INT_RGB
+#define ST_INT_BGR         sun_java2d_d3d_D3DSurfaceData_ST_INT_BGR
+#define ST_USHORT_565_RGB  sun_java2d_d3d_D3DSurfaceData_ST_USHORT_565_RGB
+#define ST_USHORT_555_RGB  sun_java2d_d3d_D3DSurfaceData_ST_USHORT_555_RGB
+#define ST_BYTE_INDEXED    sun_java2d_d3d_D3DSurfaceData_ST_BYTE_INDEXED
+#define ST_BYTE_INDEXED_BM sun_java2d_d3d_D3DSurfaceData_ST_BYTE_INDEXED_BM
+
+/**
+ * These are defined to be the same as ExtendedBufferCapabilities.VSyncType
+ * enum.
+ */
+#define VSYNC_DEFAULT 0
+#define VSYNC_ON      1
+#define VSYNC_OFF     2
+
+/**
+ * These are shorthand names for the filtering method constants used by
+ * image transform methods.
+ */
+#define D3DSD_XFORM_DEFAULT 0
 #define D3DSD_XFORM_NEAREST_NEIGHBOR \
     java_awt_image_AffineTransformOp_TYPE_NEAREST_NEIGHBOR
 #define D3DSD_XFORM_BILINEAR \
     java_awt_image_AffineTransformOp_TYPE_BILINEAR
 
+void D3DSD_Flush(void *pData);
+void D3DSD_MarkLost(void *pData);
 
-#endif /* D3DSurfaceData_h_Included */
+#endif /* _D3DSURFACEDATA_H_ */

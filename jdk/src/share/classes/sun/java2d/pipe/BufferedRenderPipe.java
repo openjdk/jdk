@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.java2d.pipe;
 
+import java.awt.BasicStroke;
 import java.awt.Polygon;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
@@ -33,6 +34,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.IllegalPathStateException;
 import java.awt.geom.PathIterator;
+import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.loops.ProcessPath;
@@ -51,8 +53,10 @@ import static sun.java2d.pipe.BufferedOpCodes.*;
  * simply delegate to draw(Shape) and fill(Shape), respectively.
  */
 public abstract class BufferedRenderPipe
-    implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe
+    implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, ParallelogramPipe
 {
+    ParallelogramPipe aapgrampipe = new AAParallelogramPipe();
+
     static final int BYTES_PER_POLY_POINT = 8;
     static final int BYTES_PER_SCANLINE = 12;
     static final int BYTES_PER_SPAN = 16;
@@ -67,12 +71,17 @@ public abstract class BufferedRenderPipe
         this.drawHandler = new BufferedDrawHandler();
     }
 
+    public ParallelogramPipe getAAParallelogramPipe() {
+        return aapgrampipe;
+    }
+
     /**
      * Validates the state in the provided SunGraphics2D object and sets up
      * any special resources for this operation (e.g. enabling gradient
      * shading).
      */
     protected abstract void validateContext(SunGraphics2D sg2d);
+    protected abstract void validateContextAA(SunGraphics2D sg2d);
 
     public void drawLine(SunGraphics2D sg2d,
                          int x1, int y1, int x2, int y2)
@@ -395,6 +404,98 @@ public abstract class BufferedRenderPipe
             buf.position(newpos);
         } finally {
             rq.unlock();
+        }
+    }
+
+    public void fillParallelogram(SunGraphics2D sg2d,
+                                  double x, double y,
+                                  double dx1, double dy1,
+                                  double dx2, double dy2)
+    {
+        rq.lock();
+        try {
+            validateContext(sg2d);
+            rq.ensureCapacity(28);
+            buf.putInt(FILL_PARALLELOGRAM);
+            buf.putFloat((float) x);
+            buf.putFloat((float) y);
+            buf.putFloat((float) dx1);
+            buf.putFloat((float) dy1);
+            buf.putFloat((float) dx2);
+            buf.putFloat((float) dy2);
+        } finally {
+            rq.unlock();
+        }
+    }
+
+    public void drawParallelogram(SunGraphics2D sg2d,
+                                  double x, double y,
+                                  double dx1, double dy1,
+                                  double dx2, double dy2,
+                                  double lw1, double lw2)
+    {
+        rq.lock();
+        try {
+            validateContext(sg2d);
+            rq.ensureCapacity(36);
+            buf.putInt(DRAW_PARALLELOGRAM);
+            buf.putFloat((float) x);
+            buf.putFloat((float) y);
+            buf.putFloat((float) dx1);
+            buf.putFloat((float) dy1);
+            buf.putFloat((float) dx2);
+            buf.putFloat((float) dy2);
+            buf.putFloat((float) lw1);
+            buf.putFloat((float) lw2);
+        } finally {
+            rq.unlock();
+        }
+    }
+
+    private class AAParallelogramPipe implements ParallelogramPipe {
+        public void fillParallelogram(SunGraphics2D sg2d,
+                                      double x, double y,
+                                      double dx1, double dy1,
+                                      double dx2, double dy2)
+        {
+            rq.lock();
+            try {
+                validateContextAA(sg2d);
+                rq.ensureCapacity(28);
+                buf.putInt(FILL_AAPARALLELOGRAM);
+                buf.putFloat((float) x);
+                buf.putFloat((float) y);
+                buf.putFloat((float) dx1);
+                buf.putFloat((float) dy1);
+                buf.putFloat((float) dx2);
+                buf.putFloat((float) dy2);
+            } finally {
+                rq.unlock();
+            }
+        }
+
+        public void drawParallelogram(SunGraphics2D sg2d,
+                                      double x, double y,
+                                      double dx1, double dy1,
+                                      double dx2, double dy2,
+                                      double lw1, double lw2)
+        {
+            rq.lock();
+            try {
+                validateContextAA(sg2d);
+                rq.ensureCapacity(36);
+                buf.putInt(DRAW_AAPARALLELOGRAM);
+                buf.putFloat((float) x);
+                buf.putFloat((float) y);
+                buf.putFloat((float) dx1);
+                buf.putFloat((float) dy1);
+                buf.putFloat((float) dx2);
+                buf.putFloat((float) dy2);
+                buf.putFloat((float) lw1);
+                buf.putFloat((float) lw2);
+            } finally {
+                rq.unlock();
+            }
         }
     }
 

@@ -1,6 +1,6 @@
 
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,19 +27,17 @@
 #ifndef WINDOWSFLAGS_H
 #define WINDOWSFLAGS_H
 
-extern BOOL      ddVramForced;       // disable punting of ddraw buffers
 extern BOOL      accelReset;         // reset registry 2d acceleration settings
-extern BOOL      useDD;              // ddraw enabled flag
 extern BOOL      useD3D;             // d3d enabled flag
 extern BOOL      forceD3DUsage;      // force d3d on or off
 extern jboolean  g_offscreenSharing; // JAWT accelerated surface sharing
-extern BOOL      useDDLock;          // Disabled for win2k/XP
 extern BOOL      checkRegistry;      // Diag tool: outputs 2d registry settings
 extern BOOL      disableRegistry;    // Diag tool: disables registry interaction
 extern BOOL      setHighDPIAware;    // whether to set High DPI Aware flag on Vista
 
 void SetD3DEnabledFlag(JNIEnv *env, BOOL d3dEnabled, BOOL d3dSet);
 
-void SetDDEnabledFlag(JNIEnv *env, BOOL ddEnabled);
+BOOL IsD3DEnabled();
+BOOL IsD3DForced();
 
 #endif WINDOWSFLAGS_H

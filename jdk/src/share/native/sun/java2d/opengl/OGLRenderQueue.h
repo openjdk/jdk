@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,13 @@
  * such as OGLTR_DrawGrayscaleGlyphViaCache().
  */
 #define OGL_STATE_GLYPH_OP -4
+
+/*
+ * Parameter passed to the CHECK_PREVIOUS_OP() macro to indicate that the
+ * following operation represents an operation that renders a
+ * parallelogram via a fragment program (see OGLRenderer).
+ */
+#define OGL_STATE_PGRAM_OP -5
 
 /*
  * Initializes the "previous operation" state to its default value.

@@ -1,5 +1,5 @@
 #
-# Copyright 1995-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1995-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,6 @@ include FILES_export_windows.gmk
 #
 AUTO_JAVA_PRUNE += RemoteOffScreenImage.java
 
-OTHER_CXXFLAGS += -DD3D_OVERLOADS
 OTHER_CFLAGS += $(GX_OPTION) -DMLIB_NO_LIBSUNMATH -DUNICODE -D_UNICODE
 OTHER_CXXFLAGS += $(GX_OPTION) -DUNICODE -D_UNICODE
 
@@ -448,7 +447,7 @@ OTHER_INCLUDES += -I$(CLASSHDRDIR)/../../java/jvm \
 	-I$(SHARE_SRC)/native/sun/dc/path \
 	-I$(SHARE_SRC)/native/sun/dc/doe \
 	-I$(SHARE_SRC)/native/sun/awt/debug \
-	-I$(PLATFORM_SRC)/native/sun/awt \
+	-I$(PLATFORM_SRC)/native/sun/awt
 #	-I$(WINAWT_COMMON_native)
 
 # this is only required for compiling )/native/sun/awt/medialib/*.c files

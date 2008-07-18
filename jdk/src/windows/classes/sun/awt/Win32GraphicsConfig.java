@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,9 +55,7 @@ import sun.java2d.InvalidPipeException;
 import sun.java2d.loops.RenderLoops;
 import sun.java2d.loops.SurfaceType;
 import sun.java2d.loops.CompositeType;
-import sun.java2d.windows.Win32SurfaceData;
-import sun.java2d.windows.WinBackBuffer;
-import sun.java2d.windows.WindowsFlags;
+import sun.java2d.windows.GDIWindowSurfaceData;
 
 /**
  * This is an implementation of a GraphicsConfiguration object for a
@@ -72,8 +70,6 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
     protected Win32GraphicsDevice screen;
     protected int visual;  //PixelFormatID
     protected RenderLoops solidloops;
-    private static BufferCapabilities bufferCaps;
-    private static ImageCapabilities imageCaps;
 
     private static native void initIDs();
 
@@ -170,29 +166,9 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
         case Transparency.BITMASK:
             return new DirectColorModel(25, 0xff0000, 0xff00, 0xff, 0x1000000);
         case Transparency.TRANSLUCENT:
-            return getTranslucentColorModel();
+            return ColorModel.getRGBdefault();
         default:
             return null;
-        }
-    }
-
-    private static final int DCM_4444_RED_MASK = 0x0f00;
-    private static final int DCM_4444_GRN_MASK = 0x00f0;
-    private static final int DCM_4444_BLU_MASK = 0x000f;
-    private static final int DCM_4444_ALP_MASK = 0xf000;
-    static ColorModel translucentCM = null;
-    public static ColorModel getTranslucentColorModel() {
-        if (WindowsFlags.getD3DTexBpp() == 16) {
-            if (translucentCM == null) {
-                translucentCM = new DirectColorModel(16,
-                                                     DCM_4444_RED_MASK,
-                                                     DCM_4444_GRN_MASK,
-                                                     DCM_4444_BLU_MASK,
-                                                     DCM_4444_ALP_MASK);
-            }
-            return translucentCM;
-        } else {
-            return ColorModel.getRGBdefault();
         }
     }
 
@@ -246,44 +222,6 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
         return getBounds(screen.getScreen());
     }
 
-    private static class DDrawBufferCapabilities extends BufferCapabilities {
-        public DDrawBufferCapabilities(ImageCapabilities imageCaps) {
-            super(imageCaps, imageCaps, FlipContents.PRIOR);
-        }
-        public boolean isFullScreenRequired() { return true; }
-        public boolean isMultiBufferAvailable() { return true; }
-    }
-
-    private static class DDrawImageCapabilities extends ImageCapabilities {
-        public DDrawImageCapabilities() {
-            super(true);
-        }
-        public boolean isTrueVolatile() { return true; }
-    }
-
-    public BufferCapabilities getBufferCapabilities() {
-        if (bufferCaps == null) {
-            if (WindowsFlags.isDDEnabled()) {
-                bufferCaps = new DDrawBufferCapabilities(
-                    getImageCapabilities());
-            } else {
-                bufferCaps = super.getBufferCapabilities();
-            }
-        }
-        return bufferCaps;
-    }
-
-    public ImageCapabilities getImageCapabilities() {
-        if (imageCaps == null) {
-            if (WindowsFlags.isDDEnabled()) {
-                imageCaps = new DDrawImageCapabilities();
-            } else {
-                imageCaps = super.getImageCapabilities();
-            }
-        }
-        return imageCaps;
-    }
-
     public synchronized void displayChanged() {
         solidloops = null;
     }
@@ -305,11 +243,11 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
     public SurfaceData createSurfaceData(WComponentPeer peer,
                                          int numBackBuffers)
     {
-        return Win32SurfaceData.createData(peer, numBackBuffers);
+        return GDIWindowSurfaceData.createData(peer);
     }
 
     /**
-     * Creates a new hidden-acceleration image of the given width and height
+     * Creates a new managed image of the given width and height
      * that is associated with the target Component.
      */
     public Image createAcceleratedImage(Component target,
@@ -327,15 +265,6 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
      * WComponentPeer.java...
      */
 
-    private boolean isFullScreenExclusive(Component target) {
-        Win32GraphicsDevice gd = (Win32GraphicsDevice)getDevice();
-        while (target != null && !(target instanceof Window)) {
-            target = target.getParent();
-        }
-        return (target == gd.getFullScreenWindow() &&
-                gd.isDDEnabledOnDevice());
-    }
-
     /**
      * Checks that the requested configuration is natively supported; if not,
      * an AWTException is thrown.
@@ -345,51 +274,61 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
                                          BufferCapabilities caps)
         throws AWTException
     {
-        if (!isFullScreenExclusive(target)) {
-            throw new AWTException(
-                "The operation requested is only supported on a full-screen" +
-                " exclusive window");
-        }
+        // the default pipeline doesn't support flip buffer strategy
+        throw new AWTException(
+            "The operation requested is not supported");
     }
 
     /**
-     * Creates a backbuffer for the given peer and returns the image wrapper.
+     * This method is called from WComponentPeer when a surface data is replaced
+     * REMIND: while the default pipeline doesn't support flipping, it may
+     * happen that the accelerated device may have this graphics config
+     * (like if the device restoration failed when one device exits fs mode
+     * while others remain).
      */
     public VolatileImage createBackBuffer(WComponentPeer peer) {
-        // Create the back buffer object
-        return new WinBackBuffer((Component)peer.getTarget(),
-                                 (Win32SurfaceData)peer.getSurfaceData());
+        Component target = (Component)peer.getTarget();
+        return new SunVolatileImage(target,
+                                    target.getWidth(), target.getHeight(),
+                                    Boolean.TRUE);
     }
 
     /**
      * Performs the native flip operation for the given target Component.
+     *
+     * REMIND: we should really not get here because that would mean that
+     * a FLIP BufferStrategy has been created, and one could only be created
+     * if accelerated pipeline is present but in some rare (and transitional)
+     * cases it may happen that the accelerated graphics device may have a
+     * default graphics configuraiton, so this is just a precaution.
      */
     public void flip(WComponentPeer peer,
                      Component target, VolatileImage backBuffer,
+                     int x1, int y1, int x2, int y2,
                      BufferCapabilities.FlipContents flipAction)
     {
-        int width = target.getWidth();
-        int height = target.getHeight();
-        if (flipAction == BufferCapabilities.FlipContents.COPIED) {
-            Graphics g = target.getGraphics();
-            g.drawImage(backBuffer, 0, 0, width, height, null);
-            g.dispose();
-            return;
-        }
-        Win32SurfaceData sd = (Win32SurfaceData)peer.getSurfaceData();
-        try {
-            sd.flip(((WinBackBuffer)backBuffer).getHWSurfaceData());
-        } catch (sun.java2d.InvalidPipeException e) {
-            // copy software surface to the screen via gdi blit
-            Graphics g = target.getGraphics();
-            g.drawImage(backBuffer, 0, 0, width, height, null);
-            g.dispose();
-        }
-        if (flipAction == BufferCapabilities.FlipContents.BACKGROUND) {
+        if (flipAction == BufferCapabilities.FlipContents.COPIED ||
+            flipAction == BufferCapabilities.FlipContents.UNDEFINED) {
+            Graphics g = peer.getGraphics();
+            try {
+                g.drawImage(backBuffer,
+                            x1, y1, x2, y2,
+                            x1, y1, x2, y2,
+                            null);
+            } finally {
+                g.dispose();
+            }
+        } else if (flipAction == BufferCapabilities.FlipContents.BACKGROUND) {
             Graphics g = backBuffer.getGraphics();
-            g.setColor(target.getBackground());
-            g.fillRect(0, 0, width, height);
-            g.dispose();
+            try {
+                g.setColor(target.getBackground());
+                g.fillRect(0, 0,
+                           backBuffer.getWidth(),
+                           backBuffer.getHeight());
+            } finally {
+                g.dispose();
+            }
         }
+        // the rest of the flip actions are not supported
     }
 }

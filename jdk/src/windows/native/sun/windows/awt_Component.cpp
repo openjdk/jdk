@@ -45,7 +45,6 @@
 #include "awt_Unicode.h"
 #include "awt_Window.h"
 #include "awt_Win32GraphicsDevice.h"
-#include "ddrawUtils.h"
 #include "Hashtable.h"
 #include "ComCtl32Util.h"
 
@@ -164,6 +163,11 @@ struct SetRectangularShapeStruct {
     jobject component;
     jint x1, x2, y1, y2;
     jobject region;
+};
+// Struct for _GetInsets function
+struct GetInsetsStruct {
+    jobject window;
+    RECT *insets;
 };
 /************************************************************************/
 
@@ -414,7 +418,10 @@ BOOL AwtComponent::IsFocusable() {
     jobject peer = GetPeer(env);
     jobject target = env->GetObjectField(peer, AwtObject::targetID);
     BOOL res = env->GetBooleanField(target, focusableID);
-    res &= GetContainer()->IsFocusableWindow();
+    AwtWindow *pCont = GetContainer();
+    if (pCont) {
+        res &= pCont->IsFocusableWindow();
+    }
     env->DeleteLocalRef(target);
     return res;
 }
@@ -1936,25 +1943,6 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
                                                   *((SIZE *)lParam));
           mr = mrConsume;
           break;
-      case WM_AWT_DD_CREATE_SURFACE:
-      {
-          return (LRESULT)WmDDCreateSurface((Win32SDOps*)wParam);
-      }
-      case WM_AWT_DD_ENTER_FULLSCREEN:
-      {
-          mr = WmDDEnterFullScreen((HMONITOR)wParam);
-          break;
-      }
-      case WM_AWT_DD_EXIT_FULLSCREEN:
-      {
-          mr = WmDDExitFullScreen((HMONITOR)wParam);
-          break;
-      }
-      case WM_AWT_DD_SET_DISPLAY_MODE:
-      {
-          mr = WmDDSetDisplayMode((HMONITOR)wParam, (DDrawDisplayMode*)lParam);
-          break;
-      }
       case WM_UNDOCUMENTED_CLICKMENUBAR:
       {
           if (::IsWindow(AwtWindow::GetModalBlocker(GetHWnd()))) {
@@ -2223,7 +2211,8 @@ AwtComponent::AwtSetFocus()
         }
     }
 
-    AwtFrame *owner = GetContainer()->GetOwningFrameOrDialog();
+    AwtWindow *pCont = GetContainer();
+    AwtFrame *owner = pCont ? pCont->GetOwningFrameOrDialog() : NULL;
 
     if (owner == NULL) {
         ::SetFocus(hwnd);
@@ -4788,31 +4777,6 @@ jintArray AwtComponent::CreatePrintedPixels(SIZE &loc, SIZE &size) {
     return pixelArray;
 }
 
-BOOL AwtComponent::WmDDCreateSurface(Win32SDOps* wsdo) {
-    return DDCreateSurface(wsdo);
-}
-
-// This method is fully implemented in AwtWindow
-MsgRouting AwtComponent::WmDDEnterFullScreen(HMONITOR monitor) {
-    DASSERT(FALSE);
-    return mrDoDefault;
-}
-
-// This method is fully implemented in AwtWindow
-MsgRouting AwtComponent::WmDDExitFullScreen(HMONITOR monitor) {
-    DASSERT(FALSE);
-    return mrDoDefault;
-}
-
-MsgRouting AwtComponent::WmDDSetDisplayMode(HMONITOR monitor,
-    DDrawDisplayMode* pDisplayMode) {
-
-    DDSetDisplayMode(monitor, *pDisplayMode);
-
-    delete pDisplayMode;
-    return mrDoDefault;
-}
-
 void *
 AwtComponent::GetNativeFocusOwner() {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -5359,7 +5323,8 @@ void AwtComponent::SynthesizeMouseMessage(JNIEnv *env, jobject mouseEvent)
     MSG* msg = CreateMessage(message, wParam, MAKELPARAM(x, y), x, y);
     // If the window is not focusable but if this is a focusing
     // message we should skip it then and perform our own actions.
-    if (((AwtWindow*)GetContainer())->IsFocusableWindow() || !ActMouseMessage(msg)) {
+    AwtWindow *pCont = GetContainer();
+    if ((pCont && pCont->IsFocusableWindow()) || !ActMouseMessage(msg)) {
         PostHandleEventMessage(msg, TRUE);
     } else {
         delete msg;
@@ -5882,7 +5847,10 @@ void AwtComponent::_NativeHandleEvent(void *param)
                 AwtComponent* p = (AwtComponent*)pData;
                 // If the window is not focusable but if this is a focusing
                 // message we should skip it then and perform our own actions.
-                if (((AwtWindow*)p->GetContainer())->IsFocusableWindow() || !p->ActMouseMessage(&msg)) {
+                AwtWindow *pCont = (AwtWindow*)(p->GetContainer());
+                if ((pCont && pCont->IsFocusableWindow()) ||
+                    !p->ActMouseMessage(&msg))
+                {
                     // Create copy for local msg
                     MSG* pCopiedMsg = new MSG;
                     memmove(pCopiedMsg, &msg, sizeof(MSG));
@@ -6419,6 +6387,46 @@ AwtComponent_GetHWnd(JNIEnv *env, jlong pData)
         return (HWND)0;
     }
     return p->GetHWnd();
+}
+
+static void _GetInsets(void* param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    GetInsetsStruct *gis = (GetInsetsStruct *)param;
+    jobject self = gis->window;
+
+    gis->insets->left = gis->insets->top =
+        gis->insets->right = gis->insets->bottom = 0;
+
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    AwtComponent *component = (AwtComponent *)pData;
+
+    component->GetInsets(gis->insets);
+
+  ret:
+    env->DeleteGlobalRef(self);
+    delete gis;
+}
+
+/**
+ * This method is called from the WGL pipeline when it needs to retrieve
+ * the insets associated with a ComponentPeer's C++ level object.
+ */
+void AwtComponent_GetInsets(JNIEnv *env, jobject peer, RECT *insets)
+{
+    TRY;
+
+    GetInsetsStruct *gis = new GetInsetsStruct;
+    gis->window = env->NewGlobalRef(peer);
+    gis->insets = insets;
+
+    AwtToolkit::GetInstance().InvokeFunction(_GetInsets, gis);
+    // global refs and mds are deleted in _UpdateWindow
+
+    CATCH_BAD_ALLOC;
+
 }
 
 JNIEXPORT void JNICALL

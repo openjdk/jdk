@@ -1,5 +1,5 @@
 #
-# Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1997-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -371,7 +371,7 @@ ifeq ($(PLATFORM), windows)
   # ISHIELD_TEMP_MIN is the difference of an empty C:\TEMP vs. one after a
   #     bundles build on windows.
   ISHIELD_TEMP_MIN=250000
-  REQUIRED_DXSDK_VER = 0x0700
+  REQUIRED_DXSDK_VER = 0x0900
   OS_VENDOR = Microsoft
   # How much RAM does this machine have:
   ifeq ($(USING_CYGWIN),true)

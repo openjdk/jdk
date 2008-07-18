@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "awt_Brush.h"
 #include "awt_Pen.h"
 #include "awt_Win32GraphicsDevice.h"
-#include "Win32SurfaceData.h"
+#include "GDIWindowSurfaceData.h"
 
 #include "java_awt_Component.h"
 #include "sun_awt_windows_WComponentPeer.h"
@@ -61,8 +61,6 @@ const UINT MAX_ACP_STR_LEN = 7; // ANSI CP identifiers are no longer than this
 class AwtPopupMenu;
 
 class AwtDropTarget;
-
-class DDrawDisplayMode;
 
 struct WmComponentSetFocusData;
 
@@ -203,7 +201,8 @@ public:
      */
     AwtComponent* GetParent();
 
-    /* Get the component's immediate container. */
+    /* Get the component's immediate container. Note: may return NULL while
+       the component is being reparented in full-screen mode by Direct3D */
     class AwtWindow* GetContainer();
 
     /* Is a component a container? Used by above method */
@@ -599,11 +598,6 @@ public:
     void UpdateColorModel();
 
     jintArray CreatePrintedPixels(SIZE &loc, SIZE &size);
-
-    virtual BOOL WmDDCreateSurface(Win32SDOps* wsdo);
-    virtual MsgRouting WmDDEnterFullScreen(HMONITOR monitor);
-    virtual MsgRouting WmDDExitFullScreen(HMONITOR monitor);
-    virtual MsgRouting WmDDSetDisplayMode(HMONITOR monitor, DDrawDisplayMode* pDisplayMode);
 
     static void * GetNativeFocusOwner();
     static void * GetNativeFocusedWindow();

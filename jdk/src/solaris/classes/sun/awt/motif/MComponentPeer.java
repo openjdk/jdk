@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1138,11 +1138,14 @@ abstract class MComponentPeer implements ComponentPeer, DropTargetPeer, X11Compo
                                                            backBuffer);
     }
 
-    public void flip(BufferCapabilities.FlipContents flipAction) {
+    public void flip(int x1, int y1, int x2, int y2,
+                     BufferCapabilities.FlipContents flipAction)
+    {
         if (backBuffer == 0) {
             throw new IllegalStateException("Buffers have not been created");
         }
-        graphicsConfig.flip(this, target, xBackBuffer, flipAction);
+        graphicsConfig.flip(this, target, xBackBuffer,
+                            x1, y1, x2, y2, flipAction);
     }
 
     public Image getBackBuffer() {
