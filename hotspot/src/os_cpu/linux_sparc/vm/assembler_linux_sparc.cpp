@@ -27,12 +27,6 @@
 
 #include <asm-sparc/traps.h>
 
-bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
-  // Since the linux kernel resides at the low end of
-  // user address space, no null pointer check is needed.
-  return offset < 0 || offset >= 0x100000;
-}
-
 void MacroAssembler::read_ccr_trap(Register ccr_save) {
   // No implementation
   breakpoint_trap();
