@@ -108,8 +108,8 @@ jint ParallelScavengeHeap::initialize() {
   // size than is needed or wanted for the perm gen.  Use the "compound
   // alignment" ReservedSpace ctor to avoid having to use the same page size for
   // all gens.
-  ReservedSpace heap_rs(pg_max_size, pg_align, og_max_size + yg_max_size,
-                        og_align);
+  ReservedHeapSpace heap_rs(pg_max_size, pg_align, og_max_size + yg_max_size,
+                            og_align);
   os::trace_page_sizes("ps perm", pg_min_size, pg_max_size, pg_page_sz,
                        heap_rs.base(), pg_max_size);
   os::trace_page_sizes("ps main", og_min_size + yg_min_size,

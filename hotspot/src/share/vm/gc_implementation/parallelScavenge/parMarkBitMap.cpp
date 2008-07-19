@@ -61,6 +61,8 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   if (_virtual_space != NULL) {
     delete _virtual_space;
     _virtual_space = NULL;
+    // Release memory reserved in the space.
+    rs.release();
   }
   return false;
 }
