@@ -26,8 +26,6 @@
 package com.sun.tools.javac.util;
 
 import java.io.*;
-import java.nio.CharBuffer;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -38,9 +36,6 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
-import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
-
-import static com.sun.tools.javac.util.LayoutCharacters.*;
 
 /** A class for error logs. Reports errors and warnings, and
  *  keeps track of error numbers and positions.
@@ -50,7 +45,7 @@ import static com.sun.tools.javac.util.LayoutCharacters.*;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class Log {
+public class Log extends AbstractLog {
     /** The context key for the log. */
     public static final Context.Key<Log> logKey
         = new Context.Key<Log>();
@@ -98,27 +93,21 @@ public class Log {
      * interface to javac (JSR 199).
      */
     protected DiagnosticListener<? super JavaFileObject> diagListener;
+
     /**
      * Formatter for diagnostics
      */
     private DiagnosticFormatter diagFormatter;
 
-    /**
-     * Factory for diagnostics
-     */
-    private JCDiagnostic.Factory diags;
-
-
     /** Construct a log with given I/O redirections.
      */
     @Deprecated
     protected Log(Context context, PrintWriter errWriter, PrintWriter warnWriter, PrintWriter noticeWriter) {
+        super(JCDiagnostic.Factory.instance(context));
         context.put(logKey, this);
         this.errWriter = errWriter;
         this.warnWriter = warnWriter;
         this.noticeWriter = noticeWriter;
-
-        this.diags = JCDiagnostic.Factory.instance(context);
 
         Options options = Options.instance(context);
         this.dumpOnError = options.get("-doe") != null;
@@ -174,10 +163,6 @@ public class Log {
         return instance;
     }
 
-    /** The file that's currently translated.
-     */
-    protected JCDiagnostic.DiagnosticSource source;
-
     /** The number of errors encountered so far.
      */
     public int nerrors = 0;
@@ -192,77 +177,13 @@ public class Log {
      */
     private Set<Pair<JavaFileObject, Integer>> recorded = new HashSet<Pair<JavaFileObject,Integer>>();
 
-    private Map<JavaFileObject, Map<JCTree, Integer>> endPosTables;
-
-    /** The buffer containing the file that's currently translated.
-     */
-    private char[] buf = null;
-
-    /** The length of useful data in buf
-     */
-    private int bufLen = 0;
-
-    /** The position in the buffer at which last error was reported
-     */
-    private int bp;
-
-    /** number of the current source line; first line is 1
-     */
-    private int line;
-
-    /**  buffer index of the first character of the current source line
-     */
-    private int lineStart;
-
     public boolean hasDiagnosticListener() {
         return diagListener != null;
     }
 
     public void setEndPosTable(JavaFileObject name, Map<JCTree, Integer> table) {
-        if (endPosTables == null)
-            endPosTables = new HashMap<JavaFileObject, Map<JCTree, Integer>>();
-        endPosTables.put(name, table);
-    }
-
-    /** Re-assign source, returning previous setting.
-     */
-    public JavaFileObject useSource(final JavaFileObject name) {
-        JavaFileObject prev = currentSource();
-        if (name != prev) {
-            source = new JCDiagnostic.DiagnosticSource() {
-                    public JavaFileObject getFile() {
-                        return name;
-                    }
-                    public CharSequence getName() {
-                        return JavacFileManager.getJavacBaseFileName(getFile());
-                    }
-                    public int getLineNumber(int pos) {
-                        return Log.this.getLineNumber(pos);
-                    }
-                    public int getColumnNumber(int pos) {
-                        return Log.this.getColumnNumber(pos);
-                    }
-                    public Map<JCTree, Integer> getEndPosTable() {
-                        return (endPosTables == null ? null : endPosTables.get(name));
-                    }
-                };
-            buf = null;
-        }
-        return prev;
-    }
-
-    /** Re-assign source buffer for existing source name.
-     */
-    protected void setBuf(char[] newBuf) {
-        buf = newBuf;
-        bufLen = buf.length;
-        bp = 0;
-        lineStart = 0;
-        line = 1;
-    }
-
-    protected char[] getBuf() {
-        return buf;
+        name.getClass(); // null check
+        getSource(name).setEndPosTable(table);
     }
 
     /** Return current source name.
@@ -320,72 +241,17 @@ public class Log {
      *  @param pos   Buffer index of the error position, must be on current line
      */
     private void printErrLine(int pos, PrintWriter writer) {
-        if (!findLine(pos))
+        String line = (source == null ? null : source.getLine(pos));
+        if (line == null)
             return;
+        int col = source.getColumnNumber(pos);
 
-        int lineEnd = lineStart;
-        while (lineEnd < bufLen && buf[lineEnd] != CR && buf[lineEnd] != LF)
-            lineEnd++;
-        if (lineEnd - lineStart == 0)
-            return;
-        printLines(writer, new String(buf, lineStart, lineEnd - lineStart));
-        for (bp = lineStart; bp < pos; bp++) {
-            writer.print((buf[bp] == '\t') ? "\t" : " ");
+        printLines(writer, line);
+        for (int i = 0; i < col - 1; i++) {
+            writer.print((line.charAt(i) == '\t') ? "\t" : " ");
         }
         writer.println("^");
         writer.flush();
-    }
-
-    protected void initBuf(JavaFileObject fileObject) throws IOException {
-        CharSequence cs = fileObject.getCharContent(true);
-        if (cs instanceof CharBuffer) {
-            CharBuffer cb = (CharBuffer) cs;
-            buf = JavacFileManager.toArray(cb);
-            bufLen = cb.limit();
-        } else {
-            buf = cs.toString().toCharArray();
-            bufLen = buf.length;
-        }
-    }
-
-    /** Find the line in the buffer that contains the current position
-     * @param pos      Character offset into the buffer
-     */
-    private boolean findLine(int pos) {
-        if (pos == Position.NOPOS || currentSource() == null)
-            return false;
-        try {
-            if (buf == null) {
-                initBuf(currentSource());
-                lineStart = 0;
-                line = 1;
-            } else if (lineStart > pos) { // messages don't come in order
-                lineStart = 0;
-                line = 1;
-            }
-            bp = lineStart;
-            while (bp < bufLen && bp < pos) {
-                switch (buf[bp++]) {
-                case CR:
-                    if (bp < bufLen && buf[bp] == LF) bp++;
-                    line++;
-                    lineStart = bp;
-                    break;
-                case LF:
-                    line++;
-                    lineStart = bp;
-                    break;
-                }
-            }
-            return bp <= bufLen;
-        } catch (IOException e) {
-            //e.printStackTrace();
-            // FIXME: include e.getLocalizedMessage() in error message
-            printLines(errWriter, getLocalizedString("source.unavailable"));
-            errWriter.flush();
-            buf = new char[0];
-        }
-        return false;
     }
 
     /** Print the text of a message, translating newlines appropriately
@@ -400,72 +266,9 @@ public class Log {
         if (msg.length() != 0) writer.println(msg);
     }
 
-    /** Report an error, unless another error was already reported at same
-     *  source position.
-     *  @param key    The key for the localized error message.
-     *  @param args   Fields of the error message.
-     */
-    public void error(String key, Object ... args) {
-        report(diags.error(source, null, key, args));
-    }
-
-    /** Report an error, unless another error was already reported at same
-     *  source position.
-     *  @param pos    The source position at which to report the error.
-     *  @param key    The key for the localized error message.
-     *  @param args   Fields of the error message.
-     */
-    public void error(DiagnosticPosition pos, String key, Object ... args) {
-        report(diags.error(source, pos, key, args));
-    }
-
-    /** Report an error, unless another error was already reported at same
-     *  source position.
-     *  @param pos    The source position at which to report the error.
-     *  @param key    The key for the localized error message.
-     *  @param args   Fields of the error message.
-     */
-    public void error(int pos, String key, Object ... args) {
-        report(diags.error(source, wrap(pos), key, args));
-    }
-
-    /** Report a warning, unless suppressed by the  -nowarn option or the
-     *  maximum number of warnings has been reached.
-     *  @param pos    The source position at which to report the warning.
-     *  @param key    The key for the localized warning message.
-     *  @param args   Fields of the warning message.
-     */
-    public void warning(String key, Object ... args) {
-        report(diags.warning(source, null, key, args));
-    }
-
-    /** Report a warning, unless suppressed by the  -nowarn option or the
-     *  maximum number of warnings has been reached.
-     *  @param pos    The source position at which to report the warning.
-     *  @param key    The key for the localized warning message.
-     *  @param args   Fields of the warning message.
-     */
-    public void warning(DiagnosticPosition pos, String key, Object ... args) {
-        report(diags.warning(source, pos, key, args));
-    }
-
-    /** Report a warning, unless suppressed by the  -nowarn option or the
-     *  maximum number of warnings has been reached.
-     *  @param pos    The source position at which to report the warning.
-     *  @param key    The key for the localized warning message.
-     *  @param args   Fields of the warning message.
-     */
-    public void warning(int pos, String key, Object ... args) {
-        report(diags.warning(source, wrap(pos), key, args));
-    }
-
-    /** Report a warning.
-     *  @param pos    The source position at which to report the warning.
-     *  @param key    The key for the localized warning message.
-     *  @param args   Fields of the warning message.
-     */
-    public void mandatoryWarning(DiagnosticPosition pos, String key, Object ... args) {
-        report(diags.mandatoryWarning(source, pos, key, args));
+    protected void directError(String key, Object... args) {
+        printLines(errWriter, getLocalizedString(key, args));
+        errWriter.flush();
     }
 
     /** Report a warning that cannot be suppressed.
@@ -476,74 +279,6 @@ public class Log {
     public void strictWarning(DiagnosticPosition pos, String key, Object ... args) {
         writeDiagnostic(diags.warning(source, pos, key, args));
         nwarnings++;
-    }
-
-    /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
-     *  @param key    The key for the localized notification message.
-     *  @param args   Fields of the notification message.
-     */
-    public void note(String key, Object ... args) {
-        report(diags.note(source, null, key, args));
-    }
-
-    /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
-     *  @param key    The key for the localized notification message.
-     *  @param args   Fields of the notification message.
-     */
-    public void note(DiagnosticPosition pos, String key, Object ... args) {
-        report(diags.note(source, pos, key, args));
-    }
-
-    /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
-     *  @param key    The key for the localized notification message.
-     *  @param args   Fields of the notification message.
-     */
-    public void note(int pos, String key, Object ... args) {
-        report(diags.note(source, wrap(pos), key, args));
-    }
-
-    /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
-     *  @param file   The file to which the note applies.
-     *  @param key    The key for the localized notification message.
-     *  @param args   Fields of the notification message.
-     */
-    public void note(JavaFileObject file, String key, Object ... args) {
-        report(diags.note(wrap(file), null, key, args));
-    }
-
-    /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
-     *  @param key    The key for the localized notification message.
-     *  @param args   Fields of the notification message.
-     */
-    public void mandatoryNote(final JavaFileObject file, String key, Object ... args) {
-        report(diags.mandatoryNote(wrap(file), key, args));
-    }
-
-    private JCDiagnostic.DiagnosticSource wrap(final JavaFileObject file) {
-        if (file == null) {
-            return null;
-        }
-        return new JCDiagnostic.DiagnosticSource() {
-            public JavaFileObject getFile() {
-                return file;
-            }
-            public CharSequence getName() {
-                return JavacFileManager.getJavacBaseFileName(getFile());
-            }
-            public int getLineNumber(int pos) {
-                return Log.this.getLineNumber(pos);
-            }
-            public int getColumnNumber(int pos) {
-                return Log.this.getColumnNumber(pos);
-            }
-            public Map<JCTree, Integer> getEndPosTable() {
-                return (endPosTables == null ? null : endPosTables.get(file));
-            }
-        };
-    }
-
-    private DiagnosticPosition wrap(int pos) {
-        return (pos == Position.NOPOS ? null : new SimpleDiagnosticPosition(pos));
     }
 
     /**
@@ -657,12 +392,13 @@ public class Log {
  * and quick prototyping
  ***************************************************************************/
 
-/** print an error or warning message:
- */
+    /** print an error or warning message:
+     */
     private void printRawError(int pos, String msg) {
-        if (!findLine(pos)) {
+        if (source == null || pos == Position.NOPOS) {
             printLines(errWriter, "error: " + msg);
         } else {
+            int line = source.getLineNumber(pos);
             JavaFileObject file = currentSource();
             if (file != null)
                 printLines(errWriter,
@@ -673,8 +409,8 @@ public class Log {
         errWriter.flush();
     }
 
-/** report an error:
- */
+    /** report an error:
+     */
     public void rawError(int pos, String msg) {
         if (nerrors < MaxErrors && shouldReport(currentSource(), pos)) {
             printRawError(pos, msg);
@@ -684,8 +420,8 @@ public class Log {
         errWriter.flush();
     }
 
-/** report a warning:
- */
+    /** report a warning:
+     */
     public void rawWarning(int pos, String msg) {
         if (nwarnings < MaxWarnings && emitWarnings) {
             printRawError(pos, "warning: " + msg);
@@ -693,36 +429,6 @@ public class Log {
         prompt();
         nwarnings++;
         errWriter.flush();
-    }
-
-    /** Return the one-based line number associated with a given pos
-     * for the current source file.  Zero is returned if no line exists
-     * for the given position.
-     */
-    protected int getLineNumber(int pos) {
-        if (findLine(pos))
-            return line;
-        return 0;
-    }
-
-    /** Return the one-based column number associated with a given pos
-     * for the current source file.  Zero is returned if no column exists
-     * for the given position.
-     */
-    protected int getColumnNumber(int pos) {
-        if (findLine(pos)) {
-            int column = 0;
-            for (bp = lineStart; bp < pos; bp++) {
-                if (bp >= bufLen)
-                    return 0;
-                if (buf[bp] == '\t')
-                    column = (column / TabInc * TabInc) + TabInc;
-                else
-                    column++;
-            }
-            return column + 1; // positions are one-based
-        }
-        return 0;
     }
 
     public static String format(String fmt, Object... args) {

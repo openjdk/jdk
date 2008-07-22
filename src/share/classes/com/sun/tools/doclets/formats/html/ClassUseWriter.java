@@ -39,28 +39,28 @@ public class ClassUseWriter extends SubWriterHolderWriter {
 
     final ClassDoc classdoc;
     Set pkgToPackageAnnotations = null;
-    final Map pkgToClassTypeParameter;
-    final Map pkgToClassAnnotations;
-    final Map pkgToMethodTypeParameter;
-    final Map pkgToMethodArgTypeParameter;
-    final Map pkgToMethodReturnTypeParameter;
-    final Map pkgToMethodAnnotations;
-    final Map pkgToMethodParameterAnnotations;
-    final Map pkgToFieldTypeParameter;
-    final Map pkgToFieldAnnotations;
-    final Map pkgToSubclass;
-    final Map pkgToSubinterface;
-    final Map pkgToImplementingClass;
-    final Map pkgToField;
-    final Map pkgToMethodReturn;
-    final Map pkgToMethodArgs;
-    final Map pkgToMethodThrows;
-    final Map pkgToConstructorAnnotations;
-    final Map pkgToConstructorParameterAnnotations;
-    final Map pkgToConstructorArgs;
-    final Map pkgToConstructorArgTypeParameter;
-    final Map pkgToConstructorThrows;
-    final SortedSet pkgSet;
+    final Map<String,List<ProgramElementDoc>> pkgToClassTypeParameter;
+    final Map<String,List<ProgramElementDoc>> pkgToClassAnnotations;
+    final Map<String,List<ProgramElementDoc>> pkgToMethodTypeParameter;
+    final Map<String,List<ProgramElementDoc>> pkgToMethodArgTypeParameter;
+    final Map<String,List<ProgramElementDoc>> pkgToMethodReturnTypeParameter;
+    final Map<String,List<ProgramElementDoc>> pkgToMethodAnnotations;
+    final Map<String,List<ProgramElementDoc>> pkgToMethodParameterAnnotations;
+    final Map<String,List<ProgramElementDoc>> pkgToFieldTypeParameter;
+    final Map<String,List<ProgramElementDoc>> pkgToFieldAnnotations;
+    final Map<String,List<ProgramElementDoc>> pkgToSubclass;
+    final Map<String,List<ProgramElementDoc>> pkgToSubinterface;
+    final Map<String,List<ProgramElementDoc>> pkgToImplementingClass;
+    final Map<String,List<ProgramElementDoc>> pkgToField;
+    final Map<String,List<ProgramElementDoc>> pkgToMethodReturn;
+    final Map<String,List<ProgramElementDoc>> pkgToMethodArgs;
+    final Map<String,List<ProgramElementDoc>> pkgToMethodThrows;
+    final Map<String,List<ProgramElementDoc>> pkgToConstructorAnnotations;
+    final Map<String,List<ProgramElementDoc>> pkgToConstructorParameterAnnotations;
+    final Map<String,List<ProgramElementDoc>> pkgToConstructorArgs;
+    final Map<String,List<ProgramElementDoc>> pkgToConstructorArgTypeParameter;
+    final Map<String,List<ProgramElementDoc>> pkgToConstructorThrows;
+    final SortedSet<PackageDoc> pkgSet;
     final MethodWriterImpl methodSubWriter;
     final ConstructorWriterImpl constrSubWriter;
     final FieldWriterImpl fieldSubWriter;
@@ -81,9 +81,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         super(configuration, path, filename, relpath);
         this.classdoc = classdoc;
         if (mapper.classToPackageAnnotations.containsKey(classdoc.qualifiedName()))
-                pkgToPackageAnnotations = new HashSet((List) mapper.classToPackageAnnotations.get(classdoc.qualifiedName()));
+                pkgToPackageAnnotations = new HashSet<PackageDoc>(mapper.classToPackageAnnotations.get(classdoc.qualifiedName()));
         configuration.currentcd = classdoc;
-        this.pkgSet = new TreeSet();
+        this.pkgSet = new TreeSet<PackageDoc>();
         this.pkgToClassTypeParameter = pkgDivide(mapper.classToClassTypeParam);
         this.pkgToClassAnnotations = pkgDivide(mapper.classToClassAnnotations);
         this.pkgToMethodTypeParameter = pkgDivide(mapper.classToExecMemberDocTypeParam);
@@ -135,19 +135,19 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         }
     }
 
-    private Map pkgDivide(Map classMap) {
-        Map map = new HashMap();
-        List list= (List)classMap.get(classdoc.qualifiedName());
+    private Map<String,List<ProgramElementDoc>> pkgDivide(Map<String,? extends List<? extends ProgramElementDoc>> classMap) {
+        Map<String,List<ProgramElementDoc>> map = new HashMap<String,List<ProgramElementDoc>>();
+        List<? extends ProgramElementDoc> list= classMap.get(classdoc.qualifiedName());
         if (list != null) {
             Collections.sort(list);
-            Iterator it = list.iterator();
+            Iterator<? extends ProgramElementDoc> it = list.iterator();
             while (it.hasNext()) {
-                ProgramElementDoc doc = (ProgramElementDoc)it.next();
+                ProgramElementDoc doc = it.next();
                 PackageDoc pkg = doc.containingPackage();
                 pkgSet.add(pkg);
-                List inPkg = (List)map.get(pkg.name());
+                List<ProgramElementDoc> inPkg = map.get(pkg.name());
                 if (inPkg == null) {
-                    inPkg = new ArrayList();
+                    inPkg = new ArrayList<ProgramElementDoc>();
                     map.put(pkg.name(), inPkg);
                 }
                 inPkg.add(doc);

@@ -55,10 +55,10 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         super(writer, classDoc);
         VisibleMemberMap visibleMemberMap = new VisibleMemberMap(classDoc,
             VisibleMemberMap.CONSTRUCTORS, configuration().nodeprecated);
-        List constructors = new ArrayList(visibleMemberMap.getMembersFor(classDoc));
+        List<ProgramElementDoc> constructors = new ArrayList<ProgramElementDoc>(visibleMemberMap.getMembersFor(classDoc));
         for (int i = 0; i < constructors.size(); i++) {
-            if (((ProgramElementDoc)(constructors.get(i))).isProtected() ||
-                ((ProgramElementDoc)(constructors.get(i))).isPrivate()) {
+            if ((constructors.get(i)).isProtected() ||
+                (constructors.get(i)).isPrivate()) {
                 setFoundNonPubConstructor(true);
             }
         }

@@ -84,7 +84,7 @@ public abstract class LinkFactory {
                         owner instanceof ClassDoc) {
                     linkInfo.classDoc = (ClassDoc) owner;
                     linkInfo.label = type.typeName();
-                    linkOutput.append(getClassLink((LinkInfo) linkInfo));
+                    linkOutput.append(getClassLink(linkInfo));
                 } else {
                     //No need to link method type parameters.
                     linkInfo.displayLength += type.typeName().length();
@@ -113,7 +113,7 @@ public abstract class LinkFactory {
                     return linkOutput;
                 } else {
                     linkInfo.classDoc = type.asClassDoc();
-                    linkOutput = getClassLink((LinkInfo) linkInfo);
+                    linkOutput = getClassLink(linkInfo);
                     if (linkInfo.includeTypeAsSepLink) {
                         linkOutput.append(getTypeParameterLinks(linkInfo, false));
                     }
@@ -136,7 +136,7 @@ public abstract class LinkFactory {
             return linkOutput;
         } else if (linkInfo.classDoc != null) {
             //Just a class link
-            LinkOutput linkOutput = getClassLink((LinkInfo) linkInfo);
+            LinkOutput linkOutput = getClassLink(linkInfo);
             if (linkInfo.includeTypeAsSepLink) {
                 linkOutput.append(getTypeParameterLinks(linkInfo, false));
             }
