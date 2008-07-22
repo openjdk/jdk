@@ -84,7 +84,7 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
         builder.annotationTypeDoc = annotationTypeDoc;
         builder.writer = writer;
         if(containingPackagesSeen == null) {
-            containingPackagesSeen = new HashSet();
+            containingPackagesSeen = new HashSet<String>();
         }
         return builder;
     }
