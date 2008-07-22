@@ -253,7 +253,7 @@ public class ConfigurationImpl extends Configuration {
             }
         }
         if (root.specifiedClasses().length > 0) {
-            Map map = new HashMap();
+            Map<String,PackageDoc> map = new HashMap<String,PackageDoc>();
             PackageDoc pd;
             ClassDoc[] classes = root.classes();
             for (int i = 0; i < classes.length; i++) {
@@ -481,7 +481,7 @@ public class ConfigurationImpl extends Configuration {
     /**
      * {@inheritDoc}
      */
-    public Comparator getMemberComparator() {
+    public Comparator<ProgramElementDoc> getMemberComparator() {
         return null;
     }
 }

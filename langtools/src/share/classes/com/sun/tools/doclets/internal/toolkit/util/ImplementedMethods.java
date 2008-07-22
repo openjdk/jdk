@@ -41,8 +41,8 @@ import java.util.*;
  */
 public class ImplementedMethods {
 
-    private Map interfaces = new HashMap();
-    private List methlist = new ArrayList();
+    private Map<MethodDoc,Type> interfaces = new HashMap<MethodDoc,Type>();
+    private List<MethodDoc> methlist = new ArrayList<MethodDoc>();
     private Configuration configuration;
     private final ClassDoc classdoc;
     private final MethodDoc method;
@@ -67,7 +67,7 @@ public class ImplementedMethods {
      */
     public MethodDoc[] build(boolean sort) {
         buildImplementedMethodList(sort);
-        return (MethodDoc[])methlist.toArray(new MethodDoc[methlist.size()]);
+        return methlist.toArray(new MethodDoc[methlist.size()]);
     }
 
     public MethodDoc[] build() {
@@ -75,7 +75,7 @@ public class ImplementedMethods {
     }
 
     public Type getMethodHolder(MethodDoc methodDoc) {
-        return (Type) interfaces.get(methodDoc);
+        return interfaces.get(methodDoc);
     }
 
     /**
@@ -111,7 +111,7 @@ public class ImplementedMethods {
         ClassDoc overriddenClass = method.overriddenClass();
         if (overriddenClass != null) {
             for (int i = 0; i < methlist.size(); i++) {
-                ClassDoc cd = ((MethodDoc)methlist.get(i)).containingClass();
+                ClassDoc cd = methlist.get(i).containingClass();
                 if (cd == overriddenClass || overriddenClass.subclassOf(cd)) {
                     methlist.remove(i);  // remove overridden method
                     return;
@@ -131,7 +131,7 @@ public class ImplementedMethods {
     private boolean overridingMethodFound(MethodDoc method) {
         ClassDoc containingClass = method.containingClass();
         for (int i = 0; i < methlist.size(); i++) {
-            MethodDoc listmethod = (MethodDoc)methlist.get(i);
+            MethodDoc listmethod = methlist.get(i);
             if (containingClass == listmethod.containingClass()) {
                 // it's the same method.
                 return true;

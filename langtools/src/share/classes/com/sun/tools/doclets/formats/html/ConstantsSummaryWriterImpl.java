@@ -107,7 +107,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
-    public void writeLinkToPackageContent(PackageDoc pkg, String parsedPackageName, Set printedPackageHeaders) {
+    public void writeLinkToPackageContent(PackageDoc pkg, String parsedPackageName, Set<String> printedPackageHeaders) {
         String packageName = pkg.name();
         //add link to summary
         li();

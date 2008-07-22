@@ -100,7 +100,7 @@ public class ClassBuilder extends AbstractBuilder {
             Util.setEnumDocumentation(configuration, classDoc);
         }
         if(containingPackagesSeen == null) {
-            containingPackagesSeen = new HashSet();
+            containingPackagesSeen = new HashSet<String>();
         }
         return builder;
     }

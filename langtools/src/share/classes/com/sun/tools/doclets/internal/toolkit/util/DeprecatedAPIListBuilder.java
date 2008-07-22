@@ -52,7 +52,7 @@ public class DeprecatedAPIListBuilder {
     /**
      * List of deprecated type Lists.
      */
-    private List deprecatedLists;
+    private List<List<Doc>> deprecatedLists;
 
 
     /**
@@ -61,9 +61,9 @@ public class DeprecatedAPIListBuilder {
      * @param root Root of the tree.
      */
     public DeprecatedAPIListBuilder(RootDoc root) {
-        deprecatedLists = new ArrayList();
+        deprecatedLists = new ArrayList<List<Doc>>();
         for (int i = 0; i < NUM_TYPES; i++) {
-            deprecatedLists.add(i, new ArrayList());
+            deprecatedLists.add(i, new ArrayList<Doc>());
         }
         buildDeprecatedAPIInfo(root);
     }
@@ -114,7 +114,7 @@ public class DeprecatedAPIListBuilder {
      * @param list List of all the particular deprecated members, e.g. methods.
      * @param members members to be added in the list.
      */
-    private void composeDeprecatedList(List list, MemberDoc[] members) {
+    private void composeDeprecatedList(List<Doc> list, MemberDoc[] members) {
         for (int i = 0; i < members.length; i++) {
             if (Util.isDeprecated(members[i])) {
                 list.add(members[i]);
@@ -137,8 +137,8 @@ public class DeprecatedAPIListBuilder {
      *
      * @param the constant representing the type of list being returned.
      */
-    public List getList(int type) {
-        return (List) deprecatedLists.get(type);
+    public List<Doc> getList(int type) {
+        return deprecatedLists.get(type);
     }
 
     /**
@@ -147,6 +147,6 @@ public class DeprecatedAPIListBuilder {
      * @param type the type of list being checked.
      */
     public boolean hasDocumentation(int type) {
-        return ((List) deprecatedLists.get(type)).size() > 0;
+        return (deprecatedLists.get(type)).size() > 0;
     }
 }
