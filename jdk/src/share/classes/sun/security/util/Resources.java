@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,8 +386,10 @@ public class Resources extends java.util.ListResourceBundle {
         {"\t     [-alias <alias>]", "\t     [-alias <alias>]"},
         /** rest is same as -certreq starting from -keystore **/
 
-        {"-printcert   [-v] [-file <cert_file>]",
-                "-printcert   [-v] [-file <cert_file>]"},
+        {"-printcert   [-v] [-rfc] [-file <cert_file> | -sslserver <host[:port]>]",
+                "-printcert   [-v] [-rfc] [-file <cert_file> | -sslserver <host[:port]>]"},
+        {"No certificate from the SSL server",
+                "No certificate from the SSL server"},
 
         //{"-selfcert    [-v] [-protected]",
         //      "-selfcert    [-v] [-protected]"},
