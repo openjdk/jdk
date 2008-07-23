@@ -26,6 +26,7 @@
 #ifndef NETWORK_INTERFACE_H
 #define NETWORK_INTERFACE_H
 
+#include <iphlpapi.h>
 #include "net_util.h"
 
 /*
@@ -85,6 +86,12 @@ extern jmethodID ni_ibctrID;        /* InterfaceAddress() */
 extern jfieldID ni_ibaddressID;     /* InterfaceAddress.address */
 extern jfieldID ni_ibbroadcastID;   /* InterfaceAddress.broadcast */
 extern jfieldID ni_ibmaskID;        /* InterfaceAddress.maskLength */
+
+/* We have included iphlpapi.h which includes iptypes.h which has the definition
+ * for MAX_ADAPTER_DESCRIPTION_LENGTH (along with the other definitions in this
+ * ifndef block). Therefore if MAX_ADAPTER_DESCRIPTION_LENGTH is defined we can
+ * be sure that the other definitions are also defined */
+#ifndef MAX_ADAPTER_DESCRIPTION_LENGTH
 
 /*
  * Following includes come from iptypes.h
@@ -372,6 +379,7 @@ typedef struct {
     UINT EnableProxy;
     UINT EnableDns;
 } FIXED_INFO, *PFIXED_INFO;
+#endif /*!MAX_ADAPTER_DESCRIPTION_LENGTH*/
 
 #ifndef IP_INTERFACE_NAME_INFO_DEFINED
 #define IP_INTERFACE_NAME_INFO_DEFINED
