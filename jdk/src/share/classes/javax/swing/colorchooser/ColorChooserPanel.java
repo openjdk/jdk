@@ -59,10 +59,12 @@ final class ColorChooserPanel extends AbstractColorChooserPanel implements Prope
     @Override
     public void updateChooser() {
         Color color = getColorFromModel();
-        this.panel.setColor(color);
-        this.text.setValue(Integer.valueOf(color.getRGB()));
-        this.slider.repaint();
-        this.diagram.repaint();
+        if (color != null) {
+            this.panel.setColor(color);
+            this.text.setValue(Integer.valueOf(color.getRGB()));
+            this.slider.repaint();
+            this.diagram.repaint();
+        }
     }
 
     @Override
@@ -157,10 +159,13 @@ final class ColorChooserPanel extends AbstractColorChooserPanel implements Prope
     }
 
     public void propertyChange(PropertyChangeEvent event) {
-        Object object = event.getNewValue();
-        if (object instanceof Integer) {
-            int value = MASK & getColorFromModel().getRGB() | (Integer) object;
-            getColorSelectionModel().setSelectedColor(new Color(value, true));
+        ColorSelectionModel model = getColorSelectionModel();
+        if (model != null) {
+            Object object = event.getNewValue();
+            if (object instanceof Integer) {
+                int value = MASK & model.getSelectedColor().getRGB() | (Integer) object;
+                model.setSelectedColor(new Color(value, true));
+            }
         }
         this.text.selectAll();
     }

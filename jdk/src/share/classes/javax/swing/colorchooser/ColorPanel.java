@@ -138,7 +138,7 @@ final class ColorPanel extends JPanel implements ActionListener {
         Object parent = getParent();
         if (parent instanceof ColorChooserPanel) {
             ColorChooserPanel chooser = (ColorChooserPanel) parent;
-            chooser.getColorSelectionModel().setSelectedColor(this.color);
+            chooser.setSelectedColor(this.color);
             chooser.repaint();
         }
     }
