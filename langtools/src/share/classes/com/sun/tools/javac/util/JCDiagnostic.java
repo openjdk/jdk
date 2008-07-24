@@ -25,12 +25,15 @@
 
 package com.sun.tools.javac.util;
 
+import java.util.ResourceBundle;
+import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.api.Formattable;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.tree.JCTree;
 
@@ -431,6 +434,12 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
                 strings[i] = null;
             else if (arg instanceof JCDiagnostic)
                 strings[i] = ((JCDiagnostic) arg).getMessage(null);
+            else if (arg instanceof Collection<?>)
+                strings[i] = DiagnosticFormatter.convert((Collection<?>)arg).toString();
+            else if (arg instanceof Formattable) {
+                ResourceBundle rb = ResourceBundle.getBundle(messageBundleName);
+                strings[i] = ((Formattable)arg).toString(rb);
+            }
             else
                 strings[i] = arg.toString();
         }
