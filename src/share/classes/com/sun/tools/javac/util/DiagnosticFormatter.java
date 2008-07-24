@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.util;
 
+import java.util.Collection;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.file.JavacFileManager;
@@ -145,11 +146,25 @@ public class DiagnosticFormatter {
             }
             else if (arg instanceof JavaFileObject)
                 sb.append(JavacFileManager.getJavacBaseFileName((JavaFileObject) arg));
+            else if (arg instanceof Collection<?>)
+                sb.append(convert((Collection<?>)arg));
             else
                 sb.append(arg);
             sep = ", ";
         }
         return sb.toString();
+    }
+
+    static <T> List<T> convert(Collection<T> c) {
+        if (c instanceof List<?>)
+            return (List<T>)c;
+        else {
+            List<T> l = List.<T>nil();
+            for (T t : c) {
+                l = l.prepend(t);
+            }
+            return l.reverse();
+        }
     }
 
     private String format_std(JCDiagnostic d) {

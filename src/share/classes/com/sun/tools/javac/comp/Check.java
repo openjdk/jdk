@@ -576,8 +576,8 @@ public class Check {
         if ((flags & set1) != 0 && (flags & set2) != 0) {
             log.error(pos,
                       "illegal.combination.of.modifiers",
-                      TreeInfo.flagNames(TreeInfo.firstFlag(flags & set1)),
-                      TreeInfo.flagNames(TreeInfo.firstFlag(flags & set2)));
+                      asFlagSet(TreeInfo.firstFlag(flags & set1)),
+                      asFlagSet(TreeInfo.firstFlag(flags & set2)));
             return false;
         } else
             return true;
@@ -670,7 +670,7 @@ public class Check {
             }
             else {
                 log.error(pos,
-                          "mod.not.allowed.here", TreeInfo.flagNames(illegal));
+                          "mod.not.allowed.here", asFlagSet(illegal));
             }
         }
         else if ((sym.kind == TYP ||
@@ -1023,14 +1023,6 @@ public class Check {
         }
     }
 
-    /** A string describing the access permission given by a flag set.
-     *  This always returns a space-separated list of Java Keywords.
-     */
-    private static String protectionString(long flags) {
-        long flags1 = flags & AccessFlags;
-        return (flags1 == 0) ? "package" : TreeInfo.flagNames(flags1);
-    }
-
     /** A customized "cannot override" error message.
      *  @param m      The overriding method.
      *  @param other  The overridden method.
@@ -1124,7 +1116,7 @@ public class Check {
                  (other.flags() & STATIC) != 0) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.meth",
                       cannotOverride(m, other),
-                      TreeInfo.flagNames(other.flags() & (FINAL | STATIC)));
+                      asFlagSet(other.flags() & (FINAL | STATIC)));
             return;
         }
 
@@ -1138,9 +1130,10 @@ public class Check {
                  protection(m.flags()) > protection(other.flags())) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.weaker.access",
                       cannotOverride(m, other),
-                      protectionString(other.flags()));
+                      other.flags() == 0 ?
+                          Flag.PACKAGE :
+                          asFlagSet(other.flags() & AccessFlags));
             return;
-
         }
 
         Type mt = types.memberType(origin.type, m);
@@ -2035,7 +2028,7 @@ public class Check {
             log.error(pos,
                       "operator.cant.be.applied",
                       treeinfo.operatorName(tag),
-                      left + "," + right);
+                      List.of(left, right));
         }
         return operator.opcode;
     }

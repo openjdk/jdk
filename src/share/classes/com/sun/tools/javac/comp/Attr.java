@@ -172,8 +172,8 @@ public class Attr extends JCTree.Visitor {
                 owntype = chk.checkType(tree.pos(), owntype, pt);
             } else {
                 log.error(tree.pos(), "unexpected.type",
-                          Resolve.kindNames(pkind),
-                          Resolve.kindName(ownkind));
+                          kindNames(pkind),
+                          kindName(ownkind));
                 owntype = syms.errType;
             }
         }
