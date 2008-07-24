@@ -82,7 +82,7 @@ public abstract class AbstractSelector
         this.provider = provider;
     }
 
-    private final Set cancelledKeys = new HashSet();
+    private final Set<SelectionKey> cancelledKeys = new HashSet<SelectionKey>();
 
     void cancel(SelectionKey k) {                       // package-private
         synchronized (cancelledKeys) {

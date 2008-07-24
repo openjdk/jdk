@@ -67,7 +67,7 @@ class PipeImpl
     }
 
     private class Initializer
-        implements PrivilegedExceptionAction
+        implements PrivilegedExceptionAction<Void>
     {
 
         private final SelectorProvider sp;
@@ -76,7 +76,7 @@ class PipeImpl
             this.sp = sp;
         }
 
-        public Object run() throws IOException {
+        public Void run() throws IOException {
             ServerSocketChannel ssc = null;
             SocketChannel sc1 = null;
             SocketChannel sc2 = null;
