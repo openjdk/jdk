@@ -422,7 +422,34 @@ public class Check {
      *  @param bs            The bound.
      */
     private void checkExtends(DiagnosticPosition pos, Type a, TypeVar bs) {
-        if (!(a instanceof CapturedType)) {
+        if (a.tag == TYPEVAR && ((TypeVar)a).isCaptured()) {
+            CapturedType ct = (CapturedType)a;
+            boolean ok;
+            if (ct.bound.isErroneous()) {//capture doesn't exist
+                ok = false;
+            }
+            else {
+                switch (ct.wildcard.kind) {
+                    case EXTENDS:
+                        ok = types.isCastable(bs.getUpperBound(),
+                                types.upperBound(a),
+                                Warner.noWarnings);
+                        break;
+                    case SUPER:
+                        ok = !types.notSoftSubtype(types.lowerBound(a),
+                                bs.getUpperBound());
+                        break;
+                    case UNBOUND:
+                        ok = true;
+                        break;
+                    default:
+                        throw new AssertionError("Invalid bound kind");
+                }
+            }
+            if (!ok)
+                log.error(pos, "not.within.bounds", a);
+        }
+        else {
             a = types.upperBound(a);
             for (List<Type> l = types.getBounds(bs); l.nonEmpty(); l = l.tail) {
                 if (!types.isSubtype(a, l.head)) {
@@ -430,25 +457,6 @@ public class Check {
                     return;
                 }
             }
-        }
-        else {
-            CapturedType ct = (CapturedType)a;
-            boolean ok = false;
-            switch (ct.wildcard.kind) {
-                case EXTENDS:
-                    ok = types.isCastable(bs.getUpperBound(),
-                            types.upperBound(a),
-                            Warner.noWarnings);
-                    break;
-                case SUPER:
-                    ok = !types.notSoftSubtype(types.lowerBound(a),
-                            bs.getUpperBound());
-                    break;
-                case UNBOUND:
-                    ok = true;
-            }
-            if (!ok)
-                log.error(pos, "not.within.bounds", a);
         }
     }
 
