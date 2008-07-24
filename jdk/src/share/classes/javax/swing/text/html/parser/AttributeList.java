@@ -129,7 +129,7 @@ class AttributeList implements DTDConstants, Serializable {
     /**
      * Create a hashtable of attribute types.
      */
-    static Hashtable attributeTypes = new Hashtable();
+    static Hashtable<Object, Object> attributeTypes = new Hashtable<Object, Object>();
 
     static void defineAttributeType(String nm, int val) {
         Integer num = Integer.valueOf(val);
