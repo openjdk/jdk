@@ -422,9 +422,7 @@ public class Check {
      *  @param bs            The bound.
      */
     private void checkExtends(DiagnosticPosition pos, Type a, TypeVar bs) {
-        if (a.isUnbound()) {
-            return;
-        } else if (a.tag != WILDCARD) {
+        if (!(a instanceof CapturedType)) {
             a = types.upperBound(a);
             for (List<Type> l = types.getBounds(bs); l.nonEmpty(); l = l.tail) {
                 if (!types.isSubtype(a, l.head)) {
@@ -432,11 +430,24 @@ public class Check {
                     return;
                 }
             }
-        } else if (a.isExtendsBound()) {
-            if (!types.isCastable(bs.getUpperBound(), types.upperBound(a), Warner.noWarnings))
-                log.error(pos, "not.within.bounds", a);
-        } else if (a.isSuperBound()) {
-            if (types.notSoftSubtype(types.lowerBound(a), bs.getUpperBound()))
+        }
+        else {
+            CapturedType ct = (CapturedType)a;
+            boolean ok = false;
+            switch (ct.wildcard.kind) {
+                case EXTENDS:
+                    ok = types.isCastable(bs.getUpperBound(),
+                            types.upperBound(a),
+                            Warner.noWarnings);
+                    break;
+                case SUPER:
+                    ok = !types.notSoftSubtype(types.lowerBound(a),
+                            bs.getUpperBound());
+                    break;
+                case UNBOUND:
+                    ok = true;
+            }
+            if (!ok)
                 log.error(pos, "not.within.bounds", a);
         }
     }
@@ -776,7 +787,7 @@ public class Check {
         public void visitTypeApply(JCTypeApply tree) {
             if (tree.type.tag == CLASS) {
                 List<Type> formals = tree.type.tsym.type.getTypeArguments();
-                List<Type> actuals = tree.type.getTypeArguments();
+                List<Type> actuals = types.capture(tree.type).getTypeArguments();
                 List<JCExpression> args = tree.arguments;
                 List<Type> forms = formals;
                 ListBuffer<TypeVar> tvars_buf = new ListBuffer<TypeVar>();
@@ -792,7 +803,7 @@ public class Check {
                     // bounds substed with actuals.
                     tvars_buf.append(types.substBound(((TypeVar)forms.head),
                                                       formals,
-                                                      Type.removeBounds(actuals)));
+                                                      actuals));
 
                     args = args.tail;
                     forms = forms.tail;
@@ -811,10 +822,11 @@ public class Check {
                 tvars = tvars_buf.toList();
                 while (args.nonEmpty() && tvars.nonEmpty()) {
                     checkExtends(args.head.pos(),
-                                 args.head.type,
+                                 actuals.head,
                                  tvars.head);
                     args = args.tail;
                     tvars = tvars.tail;
+                    actuals = actuals.tail;
                 }
 
                 // Check that this type is either fully parameterized, or
