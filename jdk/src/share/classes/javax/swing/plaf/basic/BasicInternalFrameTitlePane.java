@@ -86,6 +86,7 @@ public class BasicInternalFrameTitlePane extends JComponent
     protected Action moveAction;
     protected Action sizeAction;
 
+    // These constants are not used in JDK code
     protected static final String CLOSE_CMD =
         UIManager.getString("InternalFrameTitlePane.closeButtonText");
     protected static final String ICONIFY_CMD =
@@ -600,7 +601,8 @@ public class BasicInternalFrameTitlePane extends JComponent
      */
     public class CloseAction extends AbstractAction {
         public CloseAction() {
-            super(CLOSE_CMD);
+            super(UIManager.getString(
+                    "InternalFrameTitlePane.closeButtonText"));
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -616,7 +618,8 @@ public class BasicInternalFrameTitlePane extends JComponent
      */
     public class MaximizeAction extends AbstractAction {
         public MaximizeAction() {
-            super(MAXIMIZE_CMD);
+            super(UIManager.getString(
+                    "InternalFrameTitlePane.maximizeButtonText"));
         }
 
         public void actionPerformed(ActionEvent evt) {
@@ -644,7 +647,8 @@ public class BasicInternalFrameTitlePane extends JComponent
      */
     public class IconifyAction extends AbstractAction {
         public IconifyAction() {
-            super(ICONIFY_CMD);
+            super(UIManager.getString(
+                    "InternalFrameTitlePane.minimizeButtonText"));
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -664,7 +668,8 @@ public class BasicInternalFrameTitlePane extends JComponent
      */
     public class RestoreAction extends AbstractAction {
         public RestoreAction() {
-            super(RESTORE_CMD);
+            super(UIManager.getString(
+                    "InternalFrameTitlePane.restoreButtonText"));
         }
 
         public void actionPerformed(ActionEvent evt) {
@@ -690,7 +695,8 @@ public class BasicInternalFrameTitlePane extends JComponent
      */
     public class MoveAction extends AbstractAction {
         public MoveAction() {
-            super(MOVE_CMD);
+            super(UIManager.getString(
+                    "InternalFrameTitlePane.moveButtonText"));
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -723,7 +729,8 @@ public class BasicInternalFrameTitlePane extends JComponent
      */
     public class SizeAction extends AbstractAction {
         public SizeAction() {
-            super(SIZE_CMD);
+            super(UIManager.getString(
+                    "InternalFrameTitlePane.sizeButtonText"));
         }
 
         public void actionPerformed(ActionEvent e) {
