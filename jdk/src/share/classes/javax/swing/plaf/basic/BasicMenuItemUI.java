@@ -1041,15 +1041,15 @@ public class BasicMenuItemUI extends MenuItemUI
             Icon icon;
             ButtonModel model = li.mi.getModel();
             if (!model.isEnabled()) {
-                icon = (Icon) li.mi.getDisabledIcon();
+                icon = li.mi.getDisabledIcon();
             } else if (model.isPressed() && model.isArmed()) {
-                icon = (Icon) li.mi.getPressedIcon();
+                icon = li.mi.getPressedIcon();
                 if (icon == null) {
                     // Use default icon
-                    icon = (Icon) li.mi.getIcon();
+                    icon = li.mi.getIcon();
                 }
             } else {
-                icon = (Icon) li.mi.getIcon();
+                icon = li.mi.getIcon();
             }
 
             if (icon != null) {
@@ -1601,7 +1601,7 @@ public class BasicMenuItemUI extends MenuItemUI
         for(i=0,j=path.length; i<j ;i++){
             for (int k=0; k<=i; k++)
                 System.out.print("  ");
-            MenuElement me = (MenuElement) path[i];
+            MenuElement me = path[i];
             if(me instanceof JMenuItem)
                 System.out.println(((JMenuItem)me).getText() + ", ");
             else if (me == null)

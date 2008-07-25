@@ -53,7 +53,7 @@ public abstract class SynthStyle {
     /**
      * Contains the default values for certain properties.
      */
-    private static Map DEFAULT_VALUES;
+    private static Map<Object, Object> DEFAULT_VALUES;
 
     /**
      * Shared SynthGraphics.
@@ -715,7 +715,7 @@ public abstract class SynthStyle {
     private static Object getDefaultValue(Object key) {
         synchronized(SynthStyle.class) {
             if (DEFAULT_VALUES == null) {
-                DEFAULT_VALUES = new HashMap();
+                DEFAULT_VALUES = new HashMap<Object, Object>();
                 populateDefaultValues();
             }
             Object value = DEFAULT_VALUES.get(key);
