@@ -124,7 +124,7 @@ public class LocalMonitoredVm extends AbstractMonitoredVm {
             }
 
             int oldInterval = interval;
-            super.setInterval(interval);
+            super.setInterval(newInterval);
 
             if (task != null) {
                 task.cancel();
