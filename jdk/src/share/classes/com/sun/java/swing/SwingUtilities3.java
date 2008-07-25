@@ -133,42 +133,46 @@ public class SwingUtilities3 {
         }
 
         @Override
-        public void afterDispatch(AWTEvent event, Object handle) {
+        public void afterDispatch(AWTEvent event, Object handle) throws InterruptedException {
             afterDispatchEventArgument[0] = event;
             afterDispatchHandleArgument[0] = handle;
             try {
                 afterDispatchCallable.call();
+            } catch (InterruptedException e) {
+                throw e;
+            } catch (RuntimeException e) {
+                throw e;
             } catch (Exception e) {
-                if (e instanceof RuntimeException) {
-                    throw (RuntimeException) e;
-                }
+                throw new RuntimeException(e);
             }
         }
 
         @Override
-        public Object beforeDispatch(AWTEvent event) {
+        public Object beforeDispatch(AWTEvent event) throws InterruptedException {
             beforeDispatchEventArgument[0] = event;
             try {
                 return beforeDispatchCallable.call();
+            } catch (InterruptedException e) {
+                throw e;
+            } catch (RuntimeException e) {
+                throw e;
             } catch (Exception e) {
-                if (e instanceof RuntimeException) {
-                    throw (RuntimeException) e;
-                }
+                throw new RuntimeException(e);
             }
-            return null;
         }
 
         @Override
-        public AWTEvent getNextEvent(EventQueue eventQueue) {
+        public AWTEvent getNextEvent(EventQueue eventQueue) throws InterruptedException {
             getNextEventEventQueueArgument[0] = eventQueue;
             try {
                 return getNextEventCallable.call();
+            } catch (InterruptedException e) {
+                throw e;
+            } catch (RuntimeException e) {
+                throw e;
             } catch (Exception e) {
-                if (e instanceof RuntimeException) {
-                    throw (RuntimeException) e;
-                }
+                throw new RuntimeException(e);
             }
-            return null;
         }
     }
 }

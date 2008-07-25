@@ -58,7 +58,7 @@ public class EventQueueDelegate {
          * @param event  to be dispatched by {@code dispatch} method
          * @return handle to be passed to {@code afterDispatch} method
          */
-        public Object beforeDispatch(AWTEvent event);
+        public Object beforeDispatch(AWTEvent event) throws InterruptedException;
 
         /**
          * Notifies delegate after EventQueue.dispatch method.
@@ -66,6 +66,6 @@ public class EventQueueDelegate {
          * @param event {@code event} dispatched by the {@code dispatch} method
          * @param handle object which came from {@code beforeDispatch} method
          */
-        public void afterDispatch(AWTEvent event, Object handle);
+        public void afterDispatch(AWTEvent event, Object handle) throws InterruptedException;
     }
 }
