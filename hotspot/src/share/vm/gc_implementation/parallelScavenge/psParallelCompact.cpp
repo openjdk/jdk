@@ -422,6 +422,8 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
       return vspace;
     }
     delete vspace;
+    // Release memory reserved in the space.
+    rs.release();
   }
 
   return 0;
