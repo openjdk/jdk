@@ -106,7 +106,7 @@ class SynthMenuItemUI extends BasicMenuItemUI implements
            Icon checkIcon, Icon arrowIcon, int defaultTextIconGap,
            String acceleratorDelimiter) {
         JMenuItem b = (JMenuItem) c;
-        Icon icon = (Icon) b.getIcon();
+        Icon icon = b.getIcon();
         String text = b.getText();
         KeyStroke accelerator =  b.getAccelerator();
         String acceleratorText = "";
@@ -306,15 +306,15 @@ class SynthMenuItemUI extends BasicMenuItemUI implements
         if(b.getIcon() != null) {
             Icon icon;
             if(!model.isEnabled()) {
-                icon = (Icon) b.getDisabledIcon();
+                icon = b.getDisabledIcon();
             } else if(model.isPressed() && model.isArmed()) {
-                icon = (Icon) b.getPressedIcon();
+                icon = b.getPressedIcon();
                 if(icon == null) {
                     // Use default icon
-                    icon = (Icon) b.getIcon();
+                    icon = b.getIcon();
                 }
             } else {
-                icon = (Icon) b.getIcon();
+                icon = b.getIcon();
             }
 
             if (icon!=null) {

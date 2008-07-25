@@ -269,18 +269,18 @@ public class BasicInternalFrameTitlePane extends JComponent
     }
 
     protected void addSystemMenuItems(JMenu systemMenu) {
-        JMenuItem mi = (JMenuItem)systemMenu.add(restoreAction);
+        JMenuItem mi = systemMenu.add(restoreAction);
         mi.setMnemonic('R');
-        mi = (JMenuItem)systemMenu.add(moveAction);
+        mi = systemMenu.add(moveAction);
         mi.setMnemonic('M');
-        mi = (JMenuItem)systemMenu.add(sizeAction);
+        mi = systemMenu.add(sizeAction);
         mi.setMnemonic('S');
-        mi = (JMenuItem)systemMenu.add(iconifyAction);
+        mi = systemMenu.add(iconifyAction);
         mi.setMnemonic('n');
-        mi = (JMenuItem)systemMenu.add(maximizeAction);
+        mi = systemMenu.add(maximizeAction);
         mi.setMnemonic('x');
         systemMenu.add(new JSeparator());
-        mi = (JMenuItem)systemMenu.add(closeAction);
+        mi = systemMenu.add(closeAction);
         mi.setMnemonic('C');
     }
 
@@ -414,7 +414,7 @@ public class BasicInternalFrameTitlePane extends JComponent
         // PropertyChangeListener
         //
         public void propertyChange(PropertyChangeEvent evt) {
-            String prop = (String)evt.getPropertyName();
+            String prop = evt.getPropertyName();
 
             if (prop == JInternalFrame.IS_SELECTED_PROPERTY) {
                 repaint();
@@ -429,19 +429,19 @@ public class BasicInternalFrameTitlePane extends JComponent
             }
 
             if ("closable" == prop) {
-                if ((Boolean)evt.getNewValue() == Boolean.TRUE) {
+                if (evt.getNewValue() == Boolean.TRUE) {
                     add(closeButton);
                 } else {
                     remove(closeButton);
                 }
             } else if ("maximizable" == prop) {
-                if ((Boolean)evt.getNewValue() == Boolean.TRUE) {
+                if (evt.getNewValue() == Boolean.TRUE) {
                     add(maxButton);
                 } else {
                     remove(maxButton);
                 }
             } else if ("iconable" == prop) {
-                if ((Boolean)evt.getNewValue() == Boolean.TRUE) {
+                if (evt.getNewValue() == Boolean.TRUE) {
                     add(iconButton);
                 } else {
                     remove(iconButton);
@@ -781,7 +781,7 @@ public class BasicInternalFrameTitlePane extends JComponent
             }
         }
         public boolean isFocusTraversable() { return false; }
-        public void requestFocus() {};
+        public void requestFocus() {}
         public AccessibleContext getAccessibleContext() {
             AccessibleContext ac = super.getAccessibleContext();
             if (uiKey != null) {
@@ -790,6 +790,6 @@ public class BasicInternalFrameTitlePane extends JComponent
             }
             return ac;
         }
-    };  // end NoFocusButton
+    }  // end NoFocusButton
 
 }   // End Title Pane Class

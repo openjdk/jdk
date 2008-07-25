@@ -416,7 +416,7 @@ public class SynthGraphicsUtils {
      * the SynthIcon with a given SynthContext.
      */
     private static class SynthIconWrapper implements Icon {
-        private static final java.util.List CACHE = new java.util.ArrayList(1);
+        private static final java.util.List<SynthIconWrapper> CACHE = new java.util.ArrayList<SynthIconWrapper>(1);
 
         private SynthIcon synthIcon;
         private SynthContext context;
@@ -425,8 +425,7 @@ public class SynthGraphicsUtils {
             synchronized(CACHE) {
                 int size = CACHE.size();
                 if (size > 0) {
-                    SynthIconWrapper wrapper = (SynthIconWrapper)CACHE.remove(
-                                               size - 1);
+                    SynthIconWrapper wrapper = CACHE.remove(size - 1);
                     wrapper.reset(icon, context);
                     return wrapper;
                 }
