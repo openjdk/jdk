@@ -116,16 +116,25 @@ class VMState {
     }
 
     /**
-     * Tell listeners to invalidate suspend-sensitive caches.
+     * All threads are resuming
      */
-    synchronized void thaw() {
+    void thaw() {
+        thaw(null);
+    }
+
+    /**
+     * Tell listeners to invalidate suspend-sensitive caches.
+     * If resumingThread != null, then only that thread is being
+     * resumed.
+     */
+    synchronized void thaw(ThreadReference resumingThread) {
         if (cache != null) {
             if ((vm.traceFlags & vm.TRACE_OBJREFS) != 0) {
                 vm.printTrace("Clearing VM suspended cache");
             }
             disableCache();
         }
-        processVMAction(new VMAction(vm, VMAction.VM_NOT_SUSPENDED));
+        processVMAction(new VMAction(vm, resumingThread, VMAction.VM_NOT_SUSPENDED));
     }
 
     private synchronized void processVMAction(VMAction action) {
