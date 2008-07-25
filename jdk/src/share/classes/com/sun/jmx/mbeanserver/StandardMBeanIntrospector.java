@@ -35,6 +35,7 @@ import javax.management.IntrospectionException;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanException;
 import javax.management.MBeanOperationInfo;
+import javax.management.ManagedOperation;
 import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationBroadcaster;
 import javax.management.NotificationBroadcasterSupport;
@@ -118,22 +119,32 @@ class StandardMBeanIntrospector extends MBeanIntrospector<Method> {
 
     @Override
     MBeanAttributeInfo getMBeanAttributeInfo(String attributeName,
-            Method getter, Method setter) {
+            Method getter, Method setter) throws IntrospectionException {
 
-        final String description = "Attribute exposed for management";
-        try {
-            return new MBeanAttributeInfo(attributeName, description,
-                                          getter, setter);
-        } catch (IntrospectionException e) {
-            throw new RuntimeException(e); // should not happen
-        }
+        String description = getAttributeDescription(
+                attributeName, "Attribute exposed for management",
+                getter, setter);
+        return new MBeanAttributeInfo(attributeName, description,
+                                      getter, setter);
     }
 
     @Override
     MBeanOperationInfo getMBeanOperationInfo(String operationName,
             Method operation) {
-        final String description = "Operation exposed for management";
-        return new MBeanOperationInfo(description, operation);
+        final String defaultDescription = "Operation exposed for management";
+        String description = Introspector.descriptionForElement(operation);
+        if (description == null)
+            description = defaultDescription;
+
+        int impact = MBeanOperationInfo.UNKNOWN;
+        ManagedOperation annot = operation.getAnnotation(ManagedOperation.class);
+        if (annot != null)
+            impact = annot.impact().getCode();
+
+        MBeanOperationInfo mboi = new MBeanOperationInfo(description, operation);
+        return new MBeanOperationInfo(
+                mboi.getName(), mboi.getDescription(), mboi.getSignature(),
+                mboi.getReturnType(), impact, mboi.getDescriptor());
     }
 
     @Override
