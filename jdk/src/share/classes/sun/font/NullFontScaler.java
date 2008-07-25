@@ -76,7 +76,7 @@ class NullFontScaler extends FontScaler {
     }
 
     int getNumGlyphs() throws FontScalerException {
-        return 0;
+        return 1;
     }
 
     int getMissingGlyphCode() throws FontScalerException {

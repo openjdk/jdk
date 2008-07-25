@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,450 +24,367 @@
  */
 
 #include "sun_java2d_d3d_D3DRenderer.h"
-#include "sun_java2d_windows_DDRenderer.h"
-#include "Win32SurfaceData.h"
 
-#include <ddraw.h>
+#include "D3DContext.h"
+#include "D3DRenderer.h"
+#include "D3DRenderQueue.h"
 
-#include "D3DUtils.h"
-#include "ddrawUtils.h"
-
-#include "j2d_md.h"
-#include "jlong.h"
-
-/*
- * Class:     sun_java2d_d3d_D3DRenderer
- * Method:    doDrawLineD3D
- * Signature: (Lsun/java2d/SurfaceData;IIIII)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_sun_java2d_d3d_D3DRenderer_doDrawLineD3D
-    (JNIEnv *env, jobject d3dr,
-     jlong pData, jlong pCtx,
-     jint x1, jint y1, jint x2, jint y2)
+HRESULT D3DPIPELINE_API
+D3DRenderer_DrawLine(D3DContext *d3dc,
+                     jint x1, jint y1, jint x2, jint y2)
 {
-    Win32SDOps *wsdo = (Win32SDOps *)jlong_to_ptr(pData);
-    D3DContext *d3dc = (D3DContext *)jlong_to_ptr(pCtx);
-    static J2D_XY_C_VERTEX lineVerts[] = {
-#ifdef USE_SINGLE_VERTEX_FORMAT
-        { 0.0f, 0.0f, 0.0f, 0x0, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 0.0f, 0x0, 0.0f, 0.0f },
-#else
-        // x, y, z, color
-        { 0, 0, 0, 0x0 },
-        { 0, 0, 0, 0x0 },
-#endif // USE_SINGLE_VERTEX_FORMAT
-    };
-
-    J2dTraceLn(J2D_TRACE_INFO, "D3DRenderer_doDrawLineD3D");
-    J2dTraceLn4(J2D_TRACE_VERBOSE,
-                "  x1=%-4d y1=%-4d x2=%-4d y2=%-4d",
+    J2dTraceLn4(J2D_TRACE_INFO,
+                "D3DRenderer_doDrawLineD3D x1=%-4d y1=%-4d x2=%-4d y2=%-4d",
                 x1, y1, x2, y2);
-    HRESULT res = DDERR_GENERIC;
-    if (d3dc != NULL) {
-        DDrawSurface *ddTargetSurface = d3dc->GetTargetSurface();
-        if (ddTargetSurface == NULL) {
-            return FALSE;
-        }
-        ddTargetSurface->GetExclusiveAccess();
-        d3dc->GetExclusiveAccess();
-
-        IDirect3DDevice7 *d3dDevice = d3dc->Get3DDevice();
-        if (d3dDevice == NULL) {
-            d3dc->ReleaseExclusiveAccess();
-            ddTargetSurface->ReleaseExclusiveAccess();
-            return FALSE;
-        }
-
-        // +0.5f is needed to compensate for the -0.5f we
-        // force when setting the transform
-        lineVerts[0].x = (float)x1 + 0.5f;
-        lineVerts[0].y = (float)y1 + 0.5f;
-        lineVerts[0].color = d3dc->colorPixel;
-        lineVerts[1].x = (float)x2 + 0.5f;
-        lineVerts[1].y = (float)y2 + 0.5f;
-        lineVerts[1].color = d3dc->colorPixel;
-
-        D3DU_PRIM_LOOP_BEGIN(res, wsdo);
-        if (SUCCEEDED(res = d3dc->BeginScene(STATE_RENDEROP))) {
-            res = d3dDevice->DrawPrimitive(D3DPT_LINESTRIP, D3DFVF_J2D_XY_C,
-                                           lineVerts, 2, 0);
-            // REMIND: need to be using the results of device testing
-            res = d3dDevice->DrawPrimitive(D3DPT_POINTLIST, D3DFVF_J2D_XY_C,
-                                           &(lineVerts[1]), 1, 0);
-            d3dc->EndScene(res);
-        }
-        D3DU_PRIM_LOOP_END(env, res, wsdo, "DrawPrimitive(D3DPT_LINESTRIP)");
-
-        d3dc->ReleaseExclusiveAccess();
-        ddTargetSurface->ReleaseExclusiveAccess();
-    }
-    return SUCCEEDED(res);
+    d3dc->BeginScene(STATE_RENDEROP);
+    return d3dc->pVCacher->DrawLine(x1, y1, x2, y2);
 }
 
-JNIEXPORT jboolean JNICALL
-Java_sun_java2d_d3d_D3DRenderer_doDrawRectD3D
-    (JNIEnv *env, jobject d3dr,
-     jlong pData, jlong pCtx,
-     jint x, jint y, jint w, jint h)
+HRESULT D3DPIPELINE_API
+D3DRenderer_DrawRect(D3DContext *d3dc,
+                     jint x, jint y, jint w, jint h)
 {
-    Win32SDOps *wsdo = (Win32SDOps *)jlong_to_ptr(pData);
-    D3DContext *d3dc = (D3DContext *)jlong_to_ptr(pCtx);
-    float x1, y1, x2, y2;
-    static J2D_XY_C_VERTEX lineVerts[] = {
-#ifdef USE_SINGLE_VERTEX_FORMAT
-        { 0.0f, 0.0f, 0.0f, 0x0, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 0.0f, 0x0, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 0.0f, 0x0, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 0.0f, 0x0, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 0.0f, 0x0, 0.0f, 0.0f },
-#else
-        // x, y, z, color
-        { 0, 0, 0, 0x0 },
-        { 0, 0, 0, 0x0 },
-        { 0, 0, 0, 0x0 },
-        { 0, 0, 0, 0x0 },
-        { 0, 0, 0, 0x0 },
-#endif // USE_SINGLE_VERTEX_FORMAT
-    };
-
-    J2dTraceLn(J2D_TRACE_INFO, "D3DRenderer_doDrawRectD3D");
-    J2dTraceLn4(J2D_TRACE_VERBOSE,
-                "  x=%-4d y=%-4d w=%-4d h=%-4d",
+    J2dTraceLn4(J2D_TRACE_INFO,
+                "D3DRenderer_DrawRect x=%-4d y=%-4d w=%-4d h=%-4d",
                 x, y, w, h);
 
-    HRESULT res = DDERR_GENERIC;
-    if (d3dc != NULL) {
-        DDrawSurface *ddTargetSurface = d3dc->GetTargetSurface();
-        if (ddTargetSurface == NULL) {
-            return FALSE;
-        }
-        ddTargetSurface->GetExclusiveAccess();
-        d3dc->GetExclusiveAccess();
-
-        IDirect3DDevice7 *d3dDevice = d3dc->Get3DDevice();
-        if (d3dDevice == NULL) {
-            d3dc->ReleaseExclusiveAccess();
-            ddTargetSurface->ReleaseExclusiveAccess();
-            return FALSE;
-        }
-
-        // +0.5f is needed to compensate for the -0.5f we
-        // force when setting the transform
-        x1 = (float)x + 0.5f;
-        y1 = (float)y + 0.5f;
-        x2 = x1 + (float)w;
-        y2 = y1 + (float)h;
-        D3DU_INIT_VERTEX_PENT_XY(lineVerts, x1, y1, x2, y2);
-        D3DU_INIT_VERTEX_PENT_COLOR(lineVerts, d3dc->colorPixel);
-
-        D3DU_PRIM_LOOP_BEGIN(res, wsdo);
-        if (SUCCEEDED(res = d3dc->BeginScene(STATE_RENDEROP))) {
-            res = d3dDevice->DrawPrimitive(D3DPT_LINESTRIP, D3DFVF_J2D_XY_C,
-                                           lineVerts, 5, 0);
-            d3dc->EndScene(res);
-        }
-        D3DU_PRIM_LOOP_END(env, res, wsdo, "DrawPrimitive(D3DPT_LINESTRIP)");
-
-        d3dc->ReleaseExclusiveAccess();
-        ddTargetSurface->ReleaseExclusiveAccess();
-    }
-    return SUCCEEDED(res);
+    d3dc->BeginScene(STATE_RENDEROP);
+    return d3dc->pVCacher->DrawRect(x, y, x + w, y + h);
 }
 
-/*
- * Class:     sun_java2d_d3d_D3DRenderer
- * Method:    doFillRectD3D
- * Signature: (JIIII)Z
- */
-JNIEXPORT jboolean JNICALL Java_sun_java2d_d3d_D3DRenderer_doFillRectD3D
-  (JNIEnv *env, jobject d3dr,
-   jlong pData, jlong pCtx,
-   jint x, jint y, jint w, jint h)
+HRESULT D3DPIPELINE_API
+D3DRenderer_FillRect(D3DContext *d3dc,
+                     jint x, jint y, jint w, jint h)
 {
-    Win32SDOps *wsdo = (Win32SDOps *)jlong_to_ptr(pData);
-    D3DContext *d3dc = (D3DContext *)jlong_to_ptr(pCtx);
-    HRESULT res = DDERR_GENERIC;
-    float x1, y1, x2, y2;
-    static J2D_XY_C_VERTEX quadVerts[] = {
-#ifdef USE_SINGLE_VERTEX_FORMAT
-        { 0.0f, 0.0f, 0.0f, 0x0, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 0.0f, 0x0, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 0.0f, 0x0, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 0.0f, 0x0, 0.0f, 0.0f }
-#else
-        // x, y, z, color
-        { 0, 0, 0, 0x0 },
-        { 0, 0, 0, 0x0 },
-        { 0, 0, 0, 0x0 },
-        { 0, 0, 0, 0x0 },
-#endif // USE_SINGLE_VERTEX_FORMAT
-    };
+    J2dTraceLn4(J2D_TRACE_INFO,
+               "D3DRenderer_FillRect x=%-4d y=%-4d w=%-4d h=%-4d",
+                x, y, w, h);
 
-    J2dTraceLn(J2D_TRACE_INFO, "doFillRectD3D");
-    J2dTraceLn4(J2D_TRACE_VERBOSE, "  x=%-4d y=%-4d w=%-4d h=%-4d", x, y, w, h);
-
-    if (d3dc != NULL) {
-        DDrawSurface *ddTargetSurface = d3dc->GetTargetSurface();
-        if (ddTargetSurface == NULL) {
-            return FALSE;
-        }
-        ddTargetSurface->GetExclusiveAccess();
-        d3dc->GetExclusiveAccess();
-
-        IDirect3DDevice7 *d3dDevice = d3dc->Get3DDevice();
-        if (d3dDevice == NULL) {
-            d3dc->ReleaseExclusiveAccess();
-            ddTargetSurface->ReleaseExclusiveAccess();
-            return FALSE;
-        }
-
-        x1 = (float)x;
-        y1 = (float)y;
-        x2 = x1 + (float)w;
-        y2 = y1 + (float)h;
-        D3DU_INIT_VERTEX_QUAD_COLOR(quadVerts, d3dc->colorPixel);
-        D3DU_INIT_VERTEX_QUAD_XY(quadVerts, x1, y1, x2, y2);
-
-        D3DU_PRIM_LOOP_BEGIN(res, wsdo);
-        if (SUCCEEDED(res = d3dc->BeginScene(STATE_RENDEROP))) {
-            res = d3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, D3DFVF_J2D_XY_C,
-                                           quadVerts, 4, 0);
-            d3dc->EndScene(res);
-        }
-        D3DU_PRIM_LOOP_END(env, res, wsdo, "DrawPrimitive(D3DPT_TRIANGLEFAN)");
-
-        d3dc->ReleaseExclusiveAccess();
-        ddTargetSurface->ReleaseExclusiveAccess();
-    }
-    return SUCCEEDED(res);
+    d3dc->BeginScene(STATE_RENDEROP);
+    return d3dc->pVCacher->FillRect(x, y, x + w, y + h);
 }
 
-/*
- * Class:     sun_java2d_d3d_D3DRenderer
- * Method:    doDrawPoly
- * Signature: (JII[I[IIZ)V
- */
-JNIEXPORT void JNICALL Java_sun_java2d_d3d_D3DRenderer_doDrawPoly
-  (JNIEnv *env, jobject d3dr,
-   jlong pData, jlong pCtx,
-   jint transx, jint transy,
-   jintArray xcoordsArray, jintArray ycoordsArray, jint npoints,
-   jboolean needToClose)
+HRESULT D3DPIPELINE_API
+D3DRenderer_DrawPoly(D3DContext *d3dc,
+                     jint nPoints, jboolean isClosed,
+                     jint transX, jint transY,
+                     jint *xPoints, jint *yPoints)
 {
-    Win32SDOps *wsdo = (Win32SDOps *)jlong_to_ptr(pData);
-    D3DContext *d3dc = (D3DContext *)jlong_to_ptr(pCtx);
-    jint *xcoords, *ycoords;
-    jint i;
+    J2dTraceLn(J2D_TRACE_INFO, "D3DRenderer_DrawPoly");
 
-    J2dTraceLn(J2D_TRACE_INFO, "D3DRenderer_doDrawPoly");
-    J2dTraceLn4(J2D_TRACE_VERBOSE,
-                "  transx=%-4d transy=%-4d "\
-                "npoints=%-4d needToClose=%-4d",
-                transx, transy, npoints, needToClose);
+    if (d3dc == NULL || xPoints == NULL || yPoints == NULL) {
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+            "D3DRenderer_DrawPoly: d3dc, xPoints or yPoints is NULL");
+        return E_FAIL;
+    }
+
+    d3dc->BeginScene(STATE_RENDEROP);
+    return d3dc->pVCacher->DrawPoly(nPoints, isClosed, transX, transY,
+                                    xPoints, yPoints);
+}
+
+HRESULT D3DPIPELINE_API
+D3DRenderer_DrawScanlines(D3DContext *d3dc,
+                          jint scanlineCount, jint *scanlines)
+{
+    J2dTraceLn(J2D_TRACE_INFO, "D3DRenderer_DrawScanlines");
 
     if (d3dc == NULL) {
-        J2dTraceLn(J2D_TRACE_WARNING,
-                   "D3DRenderer_doDrawPoly: null device context");
-        return;
+       return E_FAIL;
+    }
+    if (scanlines == NULL || scanlineCount <= 0) {
+        return D3D_OK;
     }
 
-    if (JNU_IsNull(env, xcoordsArray) || JNU_IsNull(env, ycoordsArray)) {
-        JNU_ThrowNullPointerException(env, "coordinate array");
-        return;
-    }
-    if (env->GetArrayLength(ycoordsArray) < npoints ||
-        env->GetArrayLength(xcoordsArray) < npoints)
-    {
-        JNU_ThrowArrayIndexOutOfBoundsException(env, "coordinate array");
-        return;
-    }
-
-    xcoords = (jint *)
-        env->GetPrimitiveArrayCritical(xcoordsArray, NULL);
-    if (xcoords == NULL) {
-        return;
-    }
-
-    ycoords = (jint *)
-        env->GetPrimitiveArrayCritical(ycoordsArray, NULL);
-    if (ycoords == NULL) {
-        env->ReleasePrimitiveArrayCritical(xcoordsArray, xcoords, JNI_ABORT);
-        return;
-    }
-
-    DDrawSurface *ddTargetSurface = d3dc->GetTargetSurface();
-    if (ddTargetSurface == NULL) {
-        env->ReleasePrimitiveArrayCritical(ycoordsArray, ycoords, JNI_ABORT);
-        env->ReleasePrimitiveArrayCritical(xcoordsArray, xcoords, JNI_ABORT);
-        return;
-    }
-
-    ddTargetSurface->GetExclusiveAccess();
-    d3dc->GetExclusiveAccess();
-    IDirect3DDevice7 *d3dDevice = d3dc->Get3DDevice();
-    if (d3dDevice == NULL) {
-        d3dc->ReleaseExclusiveAccess();
-        ddTargetSurface->ReleaseExclusiveAccess();
-        env->ReleasePrimitiveArrayCritical(ycoordsArray, ycoords, JNI_ABORT);
-        env->ReleasePrimitiveArrayCritical(xcoordsArray, xcoords, JNI_ABORT);
-        return;
-    }
-
-    int totalPoints = npoints;
-    if (needToClose) {
-        if (xcoords[npoints - 1] != xcoords[0] ||
-            ycoords[npoints - 1] != ycoords[0])
-        {
-            totalPoints++;
-        } else {
-            needToClose = FALSE;
-        }
-    }
-    J2D_XY_C_VERTEX *lpVerts =
-        (J2D_XY_C_VERTEX *)safe_Malloc(totalPoints*sizeof(J2D_XY_C_VERTEX));
-    if (!lpVerts) {
-        d3dc->ReleaseExclusiveAccess();
-        ddTargetSurface->ReleaseExclusiveAccess();
-        env->ReleasePrimitiveArrayCritical(ycoordsArray, ycoords, JNI_ABORT);
-        env->ReleasePrimitiveArrayCritical(xcoordsArray, xcoords, JNI_ABORT);
-        return;
-    }
-
-    ZeroMemory(lpVerts, totalPoints*sizeof(J2D_XY_C_VERTEX));
-    for (i = 0; i < npoints; i++) {
-        // +0.5f is needed to compensate for the -0.5f we
-        // force when setting the transform
-        lpVerts[i].x = (float)(xcoords[i] + transx) + 0.5f;
-        lpVerts[i].y = (float)(ycoords[i] + transy) + 0.5f;
-        lpVerts[i].color =  d3dc->colorPixel;
-    }
-    if (needToClose) {
-        lpVerts[npoints].x = (float)(xcoords[0] + transx) + 0.5f;
-        lpVerts[npoints].y = (float)(ycoords[0] + transy) + 0.5f;
-        lpVerts[npoints].color = d3dc->colorPixel;
-    }
-    env->ReleasePrimitiveArrayCritical(ycoordsArray, ycoords, JNI_ABORT);
-    env->ReleasePrimitiveArrayCritical(xcoordsArray, xcoords, JNI_ABORT);
-
-    HRESULT res;
-    D3DU_PRIM_LOOP_BEGIN(res, wsdo);
-    if (SUCCEEDED(res = d3dc->BeginScene(STATE_RENDEROP))) {
-        res = d3dDevice->DrawPrimitive(D3DPT_LINESTRIP, D3DFVF_J2D_XY_C,
-                                       lpVerts, totalPoints, 0);
-        // REMIND: temp hack, need to be using the results of device testing
-        if (!needToClose) {
-            res = d3dDevice->DrawPrimitive(D3DPT_POINTLIST, D3DFVF_J2D_XY_C,
-                                           &(lpVerts[totalPoints-1]), 1, 0);
-        }
-        d3dc->EndScene(res);
-    }
-    D3DU_PRIM_LOOP_END(env, res, wsdo, "DrawPrimitive(D3DPT_LINESTRIP)");
-
-    free(lpVerts);
-
-    d3dc->ReleaseExclusiveAccess();
-    ddTargetSurface->ReleaseExclusiveAccess();
+    d3dc->BeginScene(STATE_RENDEROP);
+    return d3dc->pVCacher->DrawScanlines(scanlineCount, scanlines);
 }
+
+HRESULT D3DPIPELINE_API
+D3DRenderer_FillSpans(D3DContext *d3dc, jint spanCount, jint *spans)
+{
+    J2dTraceLn(J2D_TRACE_INFO, "D3DRenderer_FillSpans");
+    if (d3dc == NULL) {
+        return E_FAIL;
+    }
+
+    d3dc->BeginScene(STATE_RENDEROP);
+    return d3dc->pVCacher->FillSpans(spanCount, spans);
+}
+
+HRESULT D3DPIPELINE_API
+D3DRenderer_FillParallelogram(D3DContext *d3dc,
+                              jfloat fx11, jfloat fy11,
+                              jfloat dx21, jfloat dy21,
+                              jfloat dx12, jfloat dy12)
+{
+    J2dTraceLn6(J2D_TRACE_INFO,
+                "D3DRenderer_FillParallelogram "
+                "x=%6.2f y=%6.2f "
+                "dx1=%6.2f dy1=%6.2f "
+                "dx2=%6.2f dy2=%6.2f ",
+                fx11, fy11,
+                dx21, dy21,
+                dx12, dy12);
+
+    d3dc->BeginScene(STATE_RENDEROP);
+    return d3dc->pVCacher->FillParallelogram(fx11, fy11,
+                                             dx21, dy21,
+                                             dx12, dy12);
+}
+
+HRESULT D3DPIPELINE_API
+D3DRenderer_DrawParallelogram(D3DContext *d3dc,
+                              jfloat fx11, jfloat fy11,
+                              jfloat dx21, jfloat dy21,
+                              jfloat dx12, jfloat dy12,
+                              jfloat lwr21, jfloat lwr12)
+{
+    HRESULT res;
+
+    J2dTraceLn8(J2D_TRACE_INFO,
+                "D3DRenderer_DrawParallelogram "
+                "x=%6.2f y=%6.2f "
+                "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
+                "dx2=%6.2f dy2=%6.2f lwr2=%6.2f ",
+                fx11, fy11,
+                dx21, dy21, lwr21,
+                dx12, dy12, lwr12);
+
+    // dx,dy for line width in the "21" and "12" directions.
+    jfloat ldx21 = dx21 * lwr21;
+    jfloat ldy21 = dy21 * lwr21;
+    jfloat ldx12 = dx12 * lwr12;
+    jfloat ldy12 = dy12 * lwr12;
+
+    // calculate origin of the outer parallelogram
+    jfloat ox11 = fx11 - (ldx21 + ldx12) / 2.0f;
+    jfloat oy11 = fy11 - (ldy21 + ldy12) / 2.0f;
+
+    res = d3dc->BeginScene(STATE_RENDEROP);
+    RETURN_STATUS_IF_FAILED(res);
+
+    // Only need to generate 4 quads if the interior still
+    // has a hole in it (i.e. if the line width ratio was
+    // less than 1.0)
+    if (lwr21 < 1.0f && lwr12 < 1.0f) {
+        // Note: "TOP", "BOTTOM", "LEFT" and "RIGHT" here are
+        // relative to whether the dxNN variables are positive
+        // and negative.  The math works fine regardless of
+        // their signs, but for conceptual simplicity the
+        // comments will refer to the sides as if the dxNN
+        // were all positive.  "TOP" and "BOTTOM" segments
+        // are defined by the dxy21 deltas.  "LEFT" and "RIGHT"
+        // segments are defined by the dxy12 deltas.
+
+        // Each segment includes its starting corner and comes
+        // to just short of the following corner.  Thus, each
+        // corner is included just once and the only lengths
+        // needed are the original parallelogram delta lengths
+        // and the "line width deltas".  The sides will cover
+        // the following relative territories:
+        //
+        //     T T T T T R
+        //      L         R
+        //       L         R
+        //        L         R
+        //         L         R
+        //          L B B B B B
+
+        // TOP segment, to left side of RIGHT edge
+        // "width" of original pgram, "height" of hor. line size
+        fx11 = ox11;
+        fy11 = oy11;
+        res = d3dc->pVCacher->FillParallelogram(fx11, fy11,
+                                                dx21, dy21,
+                                                ldx12, ldy12);
+
+        // RIGHT segment, to top of BOTTOM edge
+        // "width" of vert. line size , "height" of original pgram
+        fx11 = ox11 + dx21;
+        fy11 = oy11 + dy21;
+        res = d3dc->pVCacher->FillParallelogram(fx11, fy11,
+                                                ldx21, ldy21,
+                                                dx12, dy12);
+
+        // BOTTOM segment, from right side of LEFT edge
+        // "width" of original pgram, "height" of hor. line size
+        fx11 = ox11 + dx12 + ldx21;
+        fy11 = oy11 + dy12 + ldy21;
+        res = d3dc->pVCacher->FillParallelogram(fx11, fy11,
+                                                dx21, dy21,
+                                                ldx12, ldy12);
+
+        // LEFT segment, from bottom of TOP edge
+        // "width" of vert. line size , "height" of inner pgram
+        fx11 = ox11 + ldx12;
+        fy11 = oy11 + ldy12;
+        res = d3dc->pVCacher->FillParallelogram(fx11, fy11,
+                                                ldx21, ldy21,
+                                                dx12, dy12);
+    } else {
+        // The line width ratios were large enough to consume
+        // the entire hole in the middle of the parallelogram
+        // so we can just issue one large quad for the outer
+        // parallelogram.
+        dx21 += ldx21;
+        dy21 += ldy21;
+        dx12 += ldx12;
+        dy12 += ldy12;
+
+        res = d3dc->pVCacher->FillParallelogram(ox11, oy11,
+                                                dx21, dy21,
+                                                dx12, dy12);
+    }
+
+    return res;
+}
+
+HRESULT D3DPIPELINE_API
+D3DRenderer_FillAAParallelogram(D3DContext *d3dc,
+                                jfloat fx11, jfloat fy11,
+                                jfloat dx21, jfloat dy21,
+                                jfloat dx12, jfloat dy12)
+{
+    IDirect3DDevice9 *pd3dDevice;
+    HRESULT res;
+
+    J2dTraceLn6(J2D_TRACE_INFO,
+                "D3DRenderer_FillAAParallelogram "
+                "x=%6.2f y=%6.2f "
+                "dx1=%6.2f dy1=%6.2f "
+                "dx2=%6.2f dy2=%6.2f ",
+                fx11, fy11,
+                dx21, dy21,
+                dx12, dy12);
+
+    res = d3dc->BeginScene(STATE_AAPGRAMOP);
+    RETURN_STATUS_IF_FAILED(res);
+
+    pd3dDevice = d3dc->Get3DDevice();
+    if (pd3dDevice == NULL) {
+        return E_FAIL;
+    }
+
+    res = d3dc->pVCacher->FillParallelogramAA(fx11, fy11,
+                                              dx21, dy21,
+                                              dx12, dy12);
+    return res;
+}
+
+HRESULT D3DPIPELINE_API
+D3DRenderer_DrawAAParallelogram(D3DContext *d3dc,
+                                jfloat fx11, jfloat fy11,
+                                jfloat dx21, jfloat dy21,
+                                jfloat dx12, jfloat dy12,
+                                jfloat lwr21, jfloat lwr12)
+{
+    IDirect3DDevice9 *pd3dDevice;
+    // dx,dy for line width in the "21" and "12" directions.
+    jfloat ldx21, ldy21, ldx12, ldy12;
+    // parameters for "outer" parallelogram
+    jfloat ofx11, ofy11, odx21, ody21, odx12, ody12;
+    // parameters for "inner" parallelogram
+    jfloat ifx11, ify11, idx21, idy21, idx12, idy12;
+    HRESULT res;
+
+    J2dTraceLn8(J2D_TRACE_INFO,
+                "D3DRenderer_DrawAAParallelogram "
+                "x=%6.2f y=%6.2f "
+                "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
+                "dx2=%6.2f dy2=%6.2f lwr2=%6.2f ",
+                fx11, fy11,
+                dx21, dy21, lwr21,
+                dx12, dy12, lwr12);
+
+    res = d3dc->BeginScene(STATE_AAPGRAMOP);
+    RETURN_STATUS_IF_FAILED(res);
+
+    pd3dDevice = d3dc->Get3DDevice();
+    if (pd3dDevice == NULL) {
+        return E_FAIL;
+    }
+
+    // calculate true dx,dy for line widths from the "line width ratios"
+    ldx21 = dx21 * lwr21;
+    ldy21 = dy21 * lwr21;
+    ldx12 = dx12 * lwr12;
+    ldy12 = dy12 * lwr12;
+
+    // calculate coordinates of the outer parallelogram
+    ofx11 = fx11 - (ldx21 + ldx12) / 2.0f;
+    ofy11 = fy11 - (ldy21 + ldy12) / 2.0f;
+    odx21 = dx21 + ldx21;
+    ody21 = dy21 + ldy21;
+    odx12 = dx12 + ldx12;
+    ody12 = dy12 + ldy12;
+
+    // Only process the inner parallelogram if the line width ratio
+    // did not consume the entire interior of the parallelogram
+    // (i.e. if the width ratio was less than 1.0)
+    if (lwr21 < 1.0f && lwr12 < 1.0f) {
+        // calculate coordinates of the inner parallelogram
+        ifx11 = fx11 + (ldx21 + ldx12) / 2.0f;
+        ify11 = fy11 + (ldy21 + ldy12) / 2.0f;
+        idx21 = dx21 - ldx21;
+        idy21 = dy21 - ldy21;
+        idx12 = dx12 - ldx12;
+        idy12 = dy12 - ldy12;
+
+        res = d3dc->pVCacher->DrawParallelogramAA(ofx11, ofy11,
+                                                  odx21, ody21,
+                                                  odx12, ody12,
+                                                  ifx11, ify11,
+                                                  idx21, idy21,
+                                                  idx12, idy12);
+    } else {
+        // Just invoke a regular fill on the outer parallelogram
+        res = d3dc->pVCacher->FillParallelogramAA(ofx11, ofy11,
+                                                  odx21, ody21,
+                                                  odx12, ody12);
+    }
+
+    return res;
+}
+
+#ifndef D3D_PPL_DLL
+
+extern "C"
+{
 
 JNIEXPORT void JNICALL
-Java_sun_java2d_d3d_D3DRenderer_devFillSpans
+Java_sun_java2d_d3d_D3DRenderer_drawPoly
     (JNIEnv *env, jobject d3dr,
-     jlong pData, jlong pCtx,
-     jobject si, jlong pIterator, jint transx, jint transy)
+     jintArray xpointsArray, jintArray ypointsArray,
+     jint nPoints, jboolean isClosed,
+     jint transX, jint transY)
 {
-    Win32SDOps *wsdo = (Win32SDOps *)jlong_to_ptr(pData);
-    D3DContext *d3dc = (D3DContext *)jlong_to_ptr(pCtx);
-    SpanIteratorFuncs *pFuncs = (SpanIteratorFuncs *)jlong_to_ptr(pIterator);
-    void *srData;
-    float x1, y1, x2, y2;
-    jint spanbox[4];
-    J2dTraceLn(J2D_TRACE_INFO, "D3DRenderer_devFillSpans");
-    J2dTraceLn2(J2D_TRACE_VERBOSE,
-                "  transx=%-4d transy=%-4d", transx, transy);
+    jint *xPoints, *yPoints;
 
-    if (JNU_IsNull(env, si)) {
-        JNU_ThrowNullPointerException(env, "span iterator");
-        return;
-    }
-    if (pFuncs == NULL) {
-        JNU_ThrowNullPointerException(env, "native iterator not supplied");
-        return;
-    }
+    J2dTraceLn(J2D_TRACE_INFO, "D3DRenderer_drawPoly");
 
-    if (d3dc == NULL) {
-        J2dTraceLn(J2D_TRACE_WARNING,
-                   "D3DRenderer_devFillSpans: context is null");
-        return;
-    }
+    xPoints = (jint *)env->GetPrimitiveArrayCritical(xpointsArray, NULL);
+    if (xPoints != NULL) {
+        yPoints = (jint *)env->GetPrimitiveArrayCritical(ypointsArray, NULL);
+        if (yPoints != NULL) {
+            D3DContext *d3dc = D3DRQ_GetCurrentContext();
 
-    DDrawSurface *ddTargetSurface = d3dc->GetTargetSurface();
-    if (ddTargetSurface == NULL) {
-        return;
-    }
+            D3DRenderer_DrawPoly(d3dc,
+                                 nPoints, isClosed,
+                                 transX, transY,
+                                 xPoints, yPoints);
 
-    ddTargetSurface->GetExclusiveAccess();
-    d3dc->GetExclusiveAccess();
-
-    IDirect3DDevice7 *d3dDevice = d3dc->Get3DDevice();
-    if (d3dDevice == NULL) {
-        d3dc->ReleaseExclusiveAccess();
-        ddTargetSurface->ReleaseExclusiveAccess();
-        return;
-    }
-
-    HRESULT res = D3D_OK;
-
-    // buffer for the span vertexes (6 vertexes per span)
-    static J2DXYC_HEXA spanVx[MAX_CACHED_SPAN_VX_NUM];
-    J2DXYC_HEXA *pHexa = (J2DXYC_HEXA*)spanVx;
-    jint numOfCachedSpans = 0;
-
-    if (SUCCEEDED(res = d3dc->BeginScene(STATE_RENDEROP))) {
-        srData = (*pFuncs->open)(env, si);
-
-        // REMIND: this is wrong, if something has failed, we need to
-        // do a EndScene/BeginScene()
-        D3DU_PRIM_LOOP_BEGIN(res, wsdo);
-        while ((*pFuncs->nextSpan)(srData, spanbox)) {
-            x1 = (float)(spanbox[0] + transx);
-            y1 = (float)(spanbox[1] + transy);
-            x2 = (float)(spanbox[2] + transx);
-            y2 = (float)(spanbox[3] + transy);
-
-            D3DU_INIT_VERTEX_COLOR_6(*pHexa, d3dc->colorPixel);
-            D3DU_INIT_VERTEX_XY_6(*pHexa, x1, y1, x2, y2);
-            numOfCachedSpans++;
-            pHexa = (J2DXYC_HEXA*)PtrAddBytes(pHexa, sizeof(J2DXYC_HEXA));
-            if (numOfCachedSpans >= MAX_CACHED_SPAN_VX_NUM) {
-                if (FAILED(res = ddTargetSurface->IsLost())) {
-                    numOfCachedSpans = 0;
-                    break;
-                }
-
-                res = d3dDevice->DrawPrimitive(D3DPT_TRIANGLELIST,
-                                               D3DFVF_J2D_XY_C,
-                                               (void*)spanVx,
-                                               6*numOfCachedSpans, 0);
-                numOfCachedSpans = 0;
-                pHexa = (J2DXYC_HEXA*)spanVx;
-                if (FAILED(res)) {
-                    break;
-                }
+            if (d3dc != NULL) {
+                HRESULT res = d3dc->EndScene();
+                D3DRQ_MarkLostIfNeeded(res,
+                    D3DRQ_GetCurrentDestination());
             }
+            env->ReleasePrimitiveArrayCritical(ypointsArray, yPoints, JNI_ABORT);
         }
-        if (numOfCachedSpans > 0) {
-            res = d3dDevice->DrawPrimitive(D3DPT_TRIANGLELIST, D3DFVF_J2D_XY_C,
-                                           (void*)spanVx,
-                                           6*numOfCachedSpans, 0);
-        }
-        D3DU_PRIM_LOOP_END(env, res, wsdo, "DrawPrimitive(D3DPT_TRIANGLEFAN)");
-
-        (*pFuncs->close)(env, srData);
-
-        d3dc->EndScene(res);
+        env->ReleasePrimitiveArrayCritical(xpointsArray, xPoints, JNI_ABORT);
     }
-
-    d3dc->ReleaseExclusiveAccess();
-    ddTargetSurface->ReleaseExclusiveAccess();
 }
+
+}
+
+#endif // D3D_PPL_DLL
