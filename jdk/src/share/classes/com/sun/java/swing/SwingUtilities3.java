@@ -25,7 +25,12 @@
 
 package com.sun.java.swing;
 
+import sun.awt.EventQueueDelegate;
 import sun.awt.AppContext;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.awt.AWTEvent;
+import java.awt.EventQueue;
 import java.awt.Component;
 import javax.swing.JComponent;
 import javax.swing.RepaintManager;
@@ -87,5 +92,83 @@ public class SwingUtilities3 {
             }
         }
         return delegate;
+    }
+
+    /*
+     * We use maps to avoid reflection. Hopefully it should perform better
+     * this way.
+     */
+    public static void setEventQueueDelegate(
+            Map<String, Map<String, Object>> map) {
+        EventQueueDelegate.setDelegate(new EventQueueDelegateFromMap(map));
+    }
+
+    private static class EventQueueDelegateFromMap
+    implements EventQueueDelegate.Delegate {
+        private final AWTEvent[] afterDispatchEventArgument;
+        private final Object[] afterDispatchHandleArgument;
+        private final Callable<Void> afterDispatchCallable;
+
+        private final AWTEvent[] beforeDispatchEventArgument;
+        private final Callable<Object> beforeDispatchCallable;
+
+        private final EventQueue[] getNextEventEventQueueArgument;
+        private final Callable<AWTEvent> getNextEventCallable;
+
+        @SuppressWarnings("unchecked")
+        public EventQueueDelegateFromMap(Map<String, Map<String, Object>> objectMap) {
+            Map<String, Object> methodMap = objectMap.get("afterDispatch");
+            afterDispatchEventArgument = (AWTEvent[]) methodMap.get("event");
+            afterDispatchHandleArgument = (Object[]) methodMap.get("handle");
+            afterDispatchCallable = (Callable<Void>) methodMap.get("method");
+
+            methodMap = objectMap.get("beforeDispatch");
+            beforeDispatchEventArgument = (AWTEvent[]) methodMap.get("event");
+            beforeDispatchCallable = (Callable<Object>) methodMap.get("method");
+
+            methodMap = objectMap.get("getNextEvent");
+            getNextEventEventQueueArgument =
+                (EventQueue[]) methodMap.get("eventQueue");
+            getNextEventCallable = (Callable<AWTEvent>) methodMap.get("method");
+        }
+
+        @Override
+        public void afterDispatch(AWTEvent event, Object handle) {
+            afterDispatchEventArgument[0] = event;
+            afterDispatchHandleArgument[0] = handle;
+            try {
+                afterDispatchCallable.call();
+            } catch (Exception e) {
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
+                }
+            }
+        }
+
+        @Override
+        public Object beforeDispatch(AWTEvent event) {
+            beforeDispatchEventArgument[0] = event;
+            try {
+                return beforeDispatchCallable.call();
+            } catch (Exception e) {
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public AWTEvent getNextEvent(EventQueue eventQueue) {
+            getNextEventEventQueueArgument[0] = eventQueue;
+            try {
+                return getNextEventCallable.call();
+            } catch (Exception e) {
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
+                }
+            }
+            return null;
+        }
     }
 }
