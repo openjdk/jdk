@@ -244,13 +244,17 @@ final class IDATOutputStream extends ImageOutputStreamImpl {
     }
 
     public void finish() throws IOException {
-        if (!def.finished()) {
-            def.finish();
-            while (!def.finished()) {
-                deflate();
+        try {
+            if (!def.finished()) {
+                def.finish();
+                while (!def.finished()) {
+                    deflate();
+                }
             }
+            finishChunk();
+        } finally {
+            def.end();
         }
-        finishChunk();
     }
 
     protected void finalize() throws Throwable {
@@ -928,23 +932,24 @@ public class PNGImageWriter extends ImageWriter {
     // Use sourceXOffset, etc.
     private void write_IDAT(RenderedImage image) throws IOException {
         IDATOutputStream ios = new IDATOutputStream(stream, 32768);
-
-        if (metadata.IHDR_interlaceMethod == 1) {
-            for (int i = 0; i < 7; i++) {
-                encodePass(ios, image,
-                           PNGImageReader.adam7XOffset[i],
-                           PNGImageReader.adam7YOffset[i],
-                           PNGImageReader.adam7XSubsampling[i],
-                           PNGImageReader.adam7YSubsampling[i]);
-                if (abortRequested()) {
-                    break;
+        try {
+            if (metadata.IHDR_interlaceMethod == 1) {
+                for (int i = 0; i < 7; i++) {
+                    encodePass(ios, image,
+                               PNGImageReader.adam7XOffset[i],
+                               PNGImageReader.adam7YOffset[i],
+                               PNGImageReader.adam7XSubsampling[i],
+                               PNGImageReader.adam7YSubsampling[i]);
+                    if (abortRequested()) {
+                        break;
+                    }
                 }
+            } else {
+                encodePass(ios, image, 0, 0, 1, 1);
             }
-        } else {
-            encodePass(ios, image, 0, 0, 1, 1);
+        } finally {
+            ios.finish();
         }
-
-        ios.finish();
     }
 
     private void writeIEND() throws IOException {
