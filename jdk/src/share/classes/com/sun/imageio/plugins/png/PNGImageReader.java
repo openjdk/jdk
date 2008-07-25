@@ -616,10 +616,15 @@ public class PNGImageReader extends ImageReader {
     private static String inflate(byte[] b) throws IOException {
         InputStream bais = new ByteArrayInputStream(b);
         InputStream iis = new InflaterInputStream(bais);
+
         StringBuilder sb = new StringBuilder(80);
         int c;
-        while ((c = iis.read()) != -1) {
-            sb.append((char)c);
+        try {
+            while ((c = iis.read()) != -1) {
+                sb.append((char)c);
+            }
+        } finally {
+            iis.close();
         }
         return sb.toString();
     }
@@ -1244,13 +1249,26 @@ public class PNGImageReader extends ImageReader {
             destinationBands = param.getDestinationBands();
             destinationOffset = param.getDestinationOffset();
         }
-
+        Inflater inf = null;
         try {
             stream.seek(imageStartPosition);
 
             Enumeration e = new PNGImageDataEnumeration(stream);
             InputStream is = new SequenceInputStream(e);
-            is = new InflaterInputStream(is, new Inflater());
+
+           /* InflaterInputStream uses an Inflater instance which consumes
+            * native (non-GC visible) resources. This is normally implicitly
+            * freed when the stream is closed. However since the
+            * InflaterInputStream wraps a client-supplied input stream,
+            * we cannot close it.
+            * But the app may depend on GC finalization to close the stream.
+            * Therefore to ensure timely freeing of native resources we
+            * explicitly create the Inflater instance and free its resources
+            * when we are done with the InflaterInputStream by calling
+            * inf.end();
+            */
+            inf = new Inflater();
+            is = new InflaterInputStream(is, inf);
             is = new BufferedInputStream(is);
             this.pixelStream = new DataInputStream(is);
 
@@ -1283,6 +1301,10 @@ public class PNGImageReader extends ImageReader {
             }
         } catch (IOException e) {
             throw new IIOException("Error reading PNG image data", e);
+        } finally {
+            if (inf != null) {
+                inf.end();
+            }
         }
     }
 
