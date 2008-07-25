@@ -52,11 +52,12 @@
 #include "CmdIDList.h"
 #include "awt_new.h"
 #include "awt_Unicode.h"
-#include "ddrawUtils.h"
 #include "debug_trace.h"
 #include "debug_mem.h"
 
 #include "ComCtl32Util.h"
+
+#include "D3DPipelineManager.h"
 
 #include <awt_DnDDT.h>
 #include <awt_DnDDS.h>
@@ -78,10 +79,11 @@ extern BOOL windowMoveLockHeld;
 extern jclass jawtVImgClass;
 extern jclass jawtVSMgrClass;
 extern jclass jawtComponentClass;
-extern jclass jawtW32ossdClass;
 extern jfieldID jawtPDataID;
 extern jfieldID jawtSDataID;
 extern jfieldID jawtSMgrID;
+
+extern void DWMResetCompositionEnabled();
 
 /************************************************************************
  * Utilities
@@ -268,20 +270,6 @@ extern "C" BOOL APIENTRY DllMain(HANDLE hInstance, DWORD ul_reason_for_call,
         DTrace_DisableMutex();
         DMem_DisableMutex();
 #endif DEBUG
-        // Release any resources that have not yet been released
-        // Note that releasing DirectX objects is necessary for some
-        // failure situations on win9x (such as the primary remaining
-        // locked on application exit) but cannot be done during
-        // PROCESS_DETACH on XP.  On NT and win2k calling this ends up
-        // in a catch() clause in the calling function, but on XP
-        // the process simply hangs during the release of the ddraw
-        // device object.  Thus we check for NT here and do not bother
-        // with the release on any NT flavored OS.  Note that XP is
-        // based on NT, so the IS_NT check is valid for NT4, win2k,
-        // XP, and presumably XP follow-ons.
-        if (!IS_NT) {
-            DDRelease();
-        }
         break;
     }
     return TRUE;
@@ -464,6 +452,11 @@ BOOL AwtToolkit::Dispose() {
 
     awt_dnd_uninitialize();
     awt_clipboard_uninitialize((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2));
+
+    // dispose Direct3D-related resources. This should be done
+    // before AwtObjectList::Cleanup() as the d3d will attempt to
+    // shutdown when the last of its windows is disposed of
+    D3DPipelineManager::DeleteInstance();
 
     AwtObjectList::Cleanup();
     AwtFont::Cleanup();
@@ -697,20 +690,6 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           AwtObjectList::Cleanup();
           return 0;
       }
-      case WM_AWT_D3D_CREATE_DEVICE: {
-          DDraw *ddObject = (DDraw*)wParam;
-          if (ddObject != NULL) {
-              ddObject->InitD3DContext();
-          }
-          return 0;
-      }
-      case WM_AWT_D3D_RELEASE_DEVICE: {
-          DDraw *ddObject = (DDraw*)wParam;
-          if (ddObject != NULL) {
-              ddObject->ReleaseD3DContext();
-          }
-          return 0;
-      }
       case WM_SYSCOLORCHANGE: {
 
           jclass systemColorClass = env->FindClass("java/awt/SystemColor");
@@ -745,6 +724,17 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           }
           return 0;
       }
+#ifndef WM_DWMCOMPOSITIONCHANGED
+#define WM_DWMCOMPOSITIONCHANGED        0x031E
+#define WM_DWMNCRENDERINGCHANGED        0x031F
+#define WM_DWMCOLORIZATIONCOLORCHANGED  0x0320
+#define WM_DWMWINDOWMAXIMIZEDCHANGED    0x0321
+#endif // WM_DWMCOMPOSITIONCHANGED
+      case WM_DWMCOMPOSITIONCHANGED: {
+          DWMResetCompositionEnabled();
+          return 0;
+      }
+
       case WM_TIMER: {
           // 6479820. Should check if a window is in manual resizing process: skip
           // sending any MouseExit/Enter events while inside resize-loop.
@@ -900,17 +890,6 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
 
           // Reinitialize screens
           initScreens(env);
-
-          // Invalidate current DDraw object; the object must be recreated
-          // when we first try to create a new DDraw surface.  Note that we
-          // don't recreate the ddraw object directly here because of
-          // multi-threading issues; we'll just leave that to the first
-          // time an object tries to create a DDraw surface under the new
-          // display depth (which will happen after the displayChange event
-          // propagation at the end of this case).
-          if (DDCanReplaceSurfaces(NULL)) {
-              DDInvalidateDDInstance(NULL);
-          }
 
           // Notify Java side - call WToolkit.displayChanged()
           jclass clazz = env->FindClass("sun/awt/windows/WToolkit");
@@ -1545,9 +1524,6 @@ Java_sun_awt_windows_WToolkit_initIDs(JNIEnv *env, jclass cls)
     DASSERT(vSMgrClassLocal != 0);
     jclass componentClassLocal = env->FindClass("java/awt/Component");
     DASSERT(componentClassLocal != 0);
-    jclass w32ossdClassLocal =
-        env->FindClass("sun/java2d/windows/Win32OffScreenSurfaceData");
-    DASSERT(w32ossdClassLocal != 0);
     jawtSMgrID = env->GetFieldID(vImgClassLocal, "volSurfaceManager",
                                  "Lsun/awt/image/VolatileSurfaceManager;");
     DASSERT(jawtSMgrID != 0);
@@ -1560,7 +1536,6 @@ Java_sun_awt_windows_WToolkit_initIDs(JNIEnv *env, jclass cls)
     // Save these classes in global references for later use
     jawtVImgClass = (jclass)env->NewGlobalRef(vImgClassLocal);
     jawtComponentClass = (jclass)env->NewGlobalRef(componentClassLocal);
-    jawtW32ossdClass = (jclass)env->NewGlobalRef(w32ossdClassLocal);
 
     CATCH_BAD_ALLOC;
 }
@@ -1867,7 +1842,6 @@ Java_sun_awt_windows_WToolkit_nativeSync(JNIEnv *env, jobject self)
 
     // Synchronize both GDI and DDraw
     VERIFY(::GdiFlush());
-    DDSync();
 
     CATCH_BAD_ALLOC;
 }

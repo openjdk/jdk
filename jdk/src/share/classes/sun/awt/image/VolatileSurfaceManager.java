@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import sun.awt.image.SunVolatileImage;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceData;
 import sun.java2d.loops.CompositeType;
+import static sun.java2d.pipe.hw.AccelSurface.*;
 
 /**
  * This SurfaceManager variant manages an accelerated volatile surface, if it
@@ -117,7 +118,11 @@ public abstract class VolatileSurfaceManager
                 sdCurrent = sdAccel;
             }
         }
-        if (sdCurrent == null) {
+        // only initialize the backup surface for images with unforced
+        // acceleration type
+        if (sdCurrent == null &&
+            vImg.getForcedAccelSurfaceType() == UNDEFINED)
+        {
             sdCurrent = getBackupSurface();
         }
     }
@@ -270,9 +275,13 @@ public abstract class VolatileSurfaceManager
      * the background).
      */
     public void initContents() {
-        Graphics g = vImg.createGraphics();
-        g.clearRect(0, 0, vImg.getWidth(), vImg.getHeight());
-        g.dispose();
+        // images with forced acceleration type may have a null sdCurrent
+        // because we do not create a backup surface for them
+        if (sdCurrent != null) {
+            Graphics g = vImg.createGraphics();
+            g.clearRect(0, 0, vImg.getWidth(), vImg.getHeight());
+            g.dispose();
+        }
     }
 
     /**

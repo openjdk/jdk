@@ -26,14 +26,13 @@
 package sun.java2d;
 
 import java.awt.GraphicsConfiguration;
-import java.awt.image.BufferedImage;
+import sun.awt.image.BufImgVolatileSurfaceManager;
 import sun.awt.image.SunVolatileImage;
-import sun.awt.image.SurfaceManager;
 import sun.awt.image.VolatileSurfaceManager;
+import sun.java2d.d3d.D3DGraphicsConfig;
+import sun.java2d.d3d.D3DVolatileSurfaceManager;
 import sun.java2d.opengl.WGLGraphicsConfig;
 import sun.java2d.opengl.WGLVolatileSurfaceManager;
-import sun.java2d.windows.WindowsFlags;
-import sun.java2d.windows.WinVolatileSurfaceManager;
 
 /**
  * The SurfaceManagerFactory that creates VolatileSurfaceManager
@@ -54,10 +53,12 @@ public class WindowsSurfaceManagerFactory extends SurfaceManagerFactory {
                                                         Object context)
     {
         GraphicsConfiguration gc = vImg.getGraphicsConfig();
-        if (gc instanceof WGLGraphicsConfig) {
+        if (gc instanceof D3DGraphicsConfig) {
+            return new D3DVolatileSurfaceManager(vImg, context);
+        } else if (gc instanceof WGLGraphicsConfig) {
             return new WGLVolatileSurfaceManager(vImg, context);
         } else {
-            return new WinVolatileSurfaceManager(vImg, context);
+            return new BufImgVolatileSurfaceManager(vImg, context);
         }
     }
 
