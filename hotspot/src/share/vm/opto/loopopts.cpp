@@ -1891,18 +1891,19 @@ void PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, N
     _igvn.hash_delete(use);
     use->set_req(j, n_clone);
     _igvn._worklist.push(use);
+    Node* use_c;
     if (!use->is_Phi()) {
-      Node* use_c = has_ctrl(use) ? get_ctrl(use) : use->in(0);
-      set_ctrl(n_clone, use_c);
-      assert(!loop->is_member(get_loop(use_c)), "should be outside loop");
-      get_loop(use_c)->_body.push(n_clone);
+      use_c = has_ctrl(use) ? get_ctrl(use) : use->in(0);
     } else {
       // Use in a phi is considered a use in the associated predecessor block
-      Node *prevbb = use->in(0)->in(j);
-      set_ctrl(n_clone, prevbb);
-      assert(!loop->is_member(get_loop(prevbb)), "should be outside loop");
-      get_loop(prevbb)->_body.push(n_clone);
+      use_c = use->in(0)->in(j);
     }
+    if (use_c->is_CountedLoop()) {
+      use_c = use_c->in(LoopNode::EntryControl);
+    }
+    set_ctrl(n_clone, use_c);
+    assert(!loop->is_member(get_loop(use_c)), "should be outside loop");
+    get_loop(use_c)->_body.push(n_clone);
     _igvn.register_new_node_with_optimizer(n_clone);
 #if !defined(PRODUCT)
     if (TracePartialPeeling) {
