@@ -171,7 +171,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"Entry type: <type>", "Entry type: {0}"},
         {"Certificate chain length: ", "Certificate chain length: "},
         {"Certificate[(i + 1)]:", "Certificate[{0,number,integer}]:"},
-        {"Certificate fingerprint (MD5): ", "Certificate fingerprint (MD5): "},
+        {"Certificate fingerprint (SHA1): ", "Certificate fingerprint (SHA1): "},
         {"Entry type: trustedCertEntry\n", "Entry type: trustedCertEntry\n"},
         {"trustedCertEntry,", "trustedCertEntry,"},
         {"Keystore type: ", "Keystore type: "},
