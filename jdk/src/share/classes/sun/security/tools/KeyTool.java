@@ -1454,8 +1454,8 @@ public final class KeyTool {
                 } else {
                     // Print the digest of the user cert only
                     out.println
-                        (rb.getString("Certificate fingerprint (MD5): ") +
-                        getCertFingerPrint("MD5", chain[0]));
+                        (rb.getString("Certificate fingerprint (SHA1): ") +
+                        getCertFingerPrint("SHA1", chain[0]));
                 }
             }
         } else if (keyStore.entryInstanceOf(alias,
@@ -1472,8 +1472,8 @@ public final class KeyTool {
                 out.println(cert.toString());
             } else {
                 out.println(rb.getString("trustedCertEntry,"));
-                out.println(rb.getString("Certificate fingerprint (MD5): ")
-                            + getCertFingerPrint("MD5", cert));
+                out.println(rb.getString("Certificate fingerprint (SHA1): ")
+                            + getCertFingerPrint("SHA1", cert));
             }
         } else {
             out.println(rb.getString("Unknown Entry Type"));
