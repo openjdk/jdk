@@ -166,8 +166,8 @@ include $(BUILDDIR)/common/Library.gmk
 # Generate source files
 #
 
-SPP = spp.sh
-SPP_CMD = $(SH) $(SPP)
+SPP_JARFILE = $(BUILDTOOLJARDIR)/spp.jar
+SPP_CMD = $(BOOT_JAVA_CMD) -jar $(SPP_JARFILE)
 
 FILES_genout = $(FILES_gen:%.java=$(GENSRCDIR)/%.java)
 
@@ -183,7 +183,7 @@ CS_GEN=$(NIO_GEN)/charset
 SCH_GEN=$(SNIO_GEN)/ch
 SCS_GEN=$(SNIO_GEN)/cs
 
-sources: $(SPP) $(FILES_genout)
+sources: $(SPP_JARFILE) $(FILES_genout)
 
 #
 # Generated buffer classes

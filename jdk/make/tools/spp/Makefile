@@ -1,5 +1,5 @@
 #
-# Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,41 +24,22 @@
 #
 
 #
-# Create all the build tools
+# Makefile for build spp tool
 #
 
-BUILDDIR = ..
+BUILDDIR = ../..
+PACKAGE = build.tools.spp
+PRODUCT = tools
+PROGRAM = spp
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS =                   \
-  addjsum                   \
-  auto_multi                \
-  buildmetaindex            \
-  commentchecker            \
-  compile_font_config       \
-  compile_properties        \
-  dir_diff                  \
-  dtdbuilder                \
-  fontchecker               \
-  freetypecheck             \
-  generate_break_iterator   \
-  GenerateCharacter         \
-  generatecurrencydata      \
-  hasher_classes            \
-  jarreorder                \
-  jarsplit                  \
-  javazic                   \
-  jdwpgen                   \
-  makeclasslist             \
-  strip_properties          \
-  spp                       \
-  CharsetMapping
 
-all build clean clobber::
-	$(SUBDIRS-loop)
+BUILDTOOL_SOURCE_ROOT = $(BUILDDIR)/tools/src
+BUILDTOOL_MAIN        = $(PKGDIR)/Spp.java
 
-clean clobber::
-	$(RM) -r $(BUILDTOOLCLASSDIR)
-	$(RM) -r $(BUILDTOOLJARDIR)
-	$(RM) -r $(BUILDTOOLBINDIR)
+#
+# Build tool jar rules.
+#
+include $(BUILDDIR)/common/BuildToolJar.gmk
+
 
