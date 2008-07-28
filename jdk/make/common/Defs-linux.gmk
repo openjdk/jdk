@@ -149,10 +149,9 @@ endif # ARCH
 PIC_CODE_LARGE = -fPIC
 PIC_CODE_SMALL = -fpic
 GLOBAL_KPIC = $(PIC_CODE_LARGE)
+CFLAGS_COMMON   += $(GLOBAL_KPIC) $(GCC_WARNINGS)
 ifeq ($(ARCH), amd64)
-   CFLAGS_COMMON   += $(GLOBAL_KPIC) $(GCC_WARNINGS) -pipe
-else
-   CFLAGS_COMMON   += $(GLOBAL_KPIC) $(GCC_WARNINGS)
+ CFLAGS_COMMON += -pipe
 endif
 
 # Linux 64bit machines use Dwarf2, which can be HUGE, have fastdebug use -g1
