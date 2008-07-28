@@ -985,7 +985,7 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
         read_rv = select(fd+1, &rd, &wr, &ex, &t);
 
         newTime = JVM_CurrentTimeMillis(env, 0);
-        timeout -= (newTime - prevTime);
+        timeout -= (jint)(newTime - prevTime);
         if (timeout <= 0) {
           return read_rv > 0 ? 0 : -1;
         }

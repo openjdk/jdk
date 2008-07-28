@@ -87,6 +87,8 @@ extern jfieldID ni_ibaddressID;     /* InterfaceAddress.address */
 extern jfieldID ni_ibbroadcastID;   /* InterfaceAddress.broadcast */
 extern jfieldID ni_ibmaskID;        /* InterfaceAddress.maskLength */
 
+int enumInterfaces_win(JNIEnv *env, netif **netifPP);
+
 /* We have included iphlpapi.h which includes iptypes.h which has the definition
  * for MAX_ADAPTER_DESCRIPTION_LENGTH (along with the other definitions in this
  * ifndef block). Therefore if MAX_ADAPTER_DESCRIPTION_LENGTH is defined we can
@@ -379,6 +381,9 @@ typedef struct {
     UINT EnableProxy;
     UINT EnableDns;
 } FIXED_INFO, *PFIXED_INFO;
+
+#pragma warning(pop)
+
 #endif /*!MAX_ADAPTER_DESCRIPTION_LENGTH*/
 
 #ifndef IP_INTERFACE_NAME_INFO_DEFINED
@@ -397,7 +402,6 @@ typedef struct ip_interface_name_info {
 
 #endif
 
-#pragma warning(pop)
 
 /* from ipifcons.h */
 

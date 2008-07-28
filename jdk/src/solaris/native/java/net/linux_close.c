@@ -281,7 +281,7 @@ int NET_ReadV(int s, const struct iovec * vector, int count) {
 
 int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
        struct sockaddr *from, int *fromlen) {
-    BLOCKING_IO_RETURN_INT( s, recvfrom(s, buf, len, flags, from, fromlen) );
+    BLOCKING_IO_RETURN_INT( s, recvfrom(s, buf, len, flags, from, (socklen_t)fromlen) );
 }
 
 int NET_Send(int s, void *msg, int len, unsigned int flags) {
@@ -298,7 +298,7 @@ int NET_SendTo(int s, const void *msg, int len,  unsigned  int
 }
 
 int NET_Accept(int s, struct sockaddr *addr, int *addrlen) {
-    BLOCKING_IO_RETURN_INT( s, accept(s, addr, addrlen) );
+    BLOCKING_IO_RETURN_INT( s, accept(s, addr, (socklen_t)addrlen) );
 }
 
 int NET_Connect(int s, struct sockaddr *addr, int addrlen) {
@@ -323,7 +323,7 @@ int NET_Select(int s, fd_set *readfds, fd_set *writefds,
  * signal other than our wakeup signal.
  */
 int NET_Timeout(int s, long timeout) {
-    long prevtime,newtime;
+    long prevtime = 0, newtime;
     struct timeval t;
     fdEntry_t *fdEntry = getFdEntry(s);
 
