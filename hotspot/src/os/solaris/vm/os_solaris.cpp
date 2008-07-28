@@ -1783,6 +1783,24 @@ const char* os::dll_file_extension() { return ".so"; }
 
 const char* os::get_temp_directory() { return "/tmp/"; }
 
+void os::dll_build_name(
+    char* buffer, size_t buflen, const char* pname, const char* fname) {
+  // copied from libhpi
+  const size_t pnamelen = pname ? strlen(pname) : 0;
+
+  /* Quietly truncate on buffer overflow.  Should be an error. */
+  if (pnamelen + strlen(fname) + 10 > (size_t) buflen) {
+      *buffer = '\0';
+      return;
+  }
+
+  if (pnamelen == 0) {
+      sprintf(buffer, "lib%s.so", fname);
+  } else {
+      sprintf(buffer, "%s/lib%s.so", pname, fname);
+  }
+}
+
 const char* os::get_current_directory(char *buf, int buflen) {
   return getcwd(buf, buflen);
 }
@@ -2034,6 +2052,9 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
   return NULL;
 }
 
+void* os::dll_lookup(void* handle, const char* name) {
+  return dlsym(handle, name);
+}
 
 
 bool _print_ascii_file(const char* filename, outputStream* st) {

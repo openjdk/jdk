@@ -357,9 +357,11 @@ class Arguments : AllStatic {
     short* methodsNum, short* methodsMax, char*** methods, bool** allClasses
   );
 
-  // Returns true if the string s is in the list of
-  // flags made obsolete in 1.5.0.
-  static bool made_obsolete_in_1_5_0(const char* s);
+  // Returns true if the string s is in the list of flags that have recently
+  // been made obsolete.  If we detect one of these flags on the command
+  // line, instead of failing we print a warning message and ignore the
+  // flag.  This gives the user a release or so to stop using the flag.
+  static bool is_newly_obsolete(const char* s, JDK_Version* buffer);
 
   static short  CompileOnlyClassesNum;
   static short  CompileOnlyClassesMax;

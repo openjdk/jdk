@@ -153,37 +153,56 @@ void Arguments::init_system_properties() {
   os::init_system_properties_values();
 }
 
-// String containing commands that will be ignored and cause a
-// warning to be issued.  These commands should be accepted
-// for 1.6 but not 1.7.  The string should be cleared at the
-// beginning of 1.7.
-static const char*  obsolete_jvm_flags_1_5_0[] = {
-                                           "UseTrainGC",
-                                           "UseSpecialLargeObjectHandling",
-                                           "UseOversizedCarHandling",
-                                           "TraceCarAllocation",
-                                           "PrintTrainGCProcessingStats",
-                                           "LogOfCarSpaceSize",
-                                           "OversizedCarThreshold",
-                                           "MinTickInterval",
-                                           "DefaultTickInterval",
-                                           "MaxTickInterval",
-                                           "DelayTickAdjustment",
-                                           "ProcessingToTenuringRatio",
-                                           "MinTrainLength",
-                                           0};
+/**
+ * Provide a slightly more user-friendly way of eliminating -XX flags.
+ * When a flag is eliminated, it can be added to this list in order to
+ * continue accepting this flag on the command-line, while issuing a warning
+ * and ignoring the value.  Once the JDK version reaches the 'accept_until'
+ * limit, we flatly refuse to admit the existence of the flag.  This allows
+ * a flag to die correctly over JDK releases using HSX.
+ */
+typedef struct {
+  const char* name;
+  JDK_Version obsoleted_in; // when the flag went away
+  JDK_Version accept_until; // which version to start denying the existence
+} ObsoleteFlag;
 
-bool Arguments::made_obsolete_in_1_5_0(const char *s) {
+static ObsoleteFlag obsolete_jvm_flags[] = {
+  { "UseTrainGC",                    JDK_Version::jdk(5), JDK_Version::jdk(7) },
+  { "UseSpecialLargeObjectHandling", JDK_Version::jdk(5), JDK_Version::jdk(7) },
+  { "UseOversizedCarHandling",       JDK_Version::jdk(5), JDK_Version::jdk(7) },
+  { "TraceCarAllocation",            JDK_Version::jdk(5), JDK_Version::jdk(7) },
+  { "PrintTrainGCProcessingStats",   JDK_Version::jdk(5), JDK_Version::jdk(7) },
+  { "LogOfCarSpaceSize",             JDK_Version::jdk(5), JDK_Version::jdk(7) },
+  { "OversizedCarThreshold",         JDK_Version::jdk(5), JDK_Version::jdk(7) },
+  { "MinTickInterval",               JDK_Version::jdk(5), JDK_Version::jdk(7) },
+  { "DefaultTickInterval",           JDK_Version::jdk(5), JDK_Version::jdk(7) },
+  { "MaxTickInterval",               JDK_Version::jdk(5), JDK_Version::jdk(7) },
+  { "DelayTickAdjustment",           JDK_Version::jdk(5), JDK_Version::jdk(7) },
+  { "ProcessingToTenuringRatio",     JDK_Version::jdk(5), JDK_Version::jdk(7) },
+  { "MinTrainLength",                JDK_Version::jdk(5), JDK_Version::jdk(7) },
+  { "AppendRatio",         JDK_Version::jdk_update(6,10), JDK_Version::jdk(7) },
+  { NULL, JDK_Version(0), JDK_Version(0) }
+};
+
+// Returns true if the flag is obsolete and fits into the range specified
+// for being ignored.  In the case that the flag is ignored, the 'version'
+// value is filled in with the version number when the flag became
+// obsolete so that that value can be displayed to the user.
+bool Arguments::is_newly_obsolete(const char *s, JDK_Version* version) {
   int i = 0;
-  while (obsolete_jvm_flags_1_5_0[i] != NULL) {
+  assert(version != NULL, "Must provide a version buffer");
+  while (obsolete_jvm_flags[i].name != NULL) {
+    const ObsoleteFlag& flag_status = obsolete_jvm_flags[i];
     // <flag>=xxx form
     // [-|+]<flag> form
-    if ((strncmp(obsolete_jvm_flags_1_5_0[i], s,
-               strlen(obsolete_jvm_flags_1_5_0[i])) == 0) ||
+    if ((strncmp(flag_status.name, s, strlen(flag_status.name)) == 0) ||
         ((s[0] == '+' || s[0] == '-') &&
-        (strncmp(obsolete_jvm_flags_1_5_0[i], &s[1],
-               strlen(obsolete_jvm_flags_1_5_0[i])) == 0))) {
-      return true;
+        (strncmp(flag_status.name, &s[1], strlen(flag_status.name)) == 0))) {
+      if (JDK_Version::current().compare(flag_status.accept_until) == -1) {
+          *version = flag_status.obsoleted_in;
+          return true;
+      }
     }
     i++;
   }
@@ -705,14 +724,20 @@ void Arguments::print_jvm_args_on(outputStream* st) {
   }
 }
 
-bool Arguments::process_argument(const char* arg, jboolean ignore_unrecognized, FlagValueOrigin origin) {
+bool Arguments::process_argument(const char* arg,
+    jboolean ignore_unrecognized, FlagValueOrigin origin) {
+
+  JDK_Version since = JDK_Version();
 
   if (parse_argument(arg, origin)) {
     // do nothing
-  } else if (made_obsolete_in_1_5_0(arg)) {
+  } else if (is_newly_obsolete(arg, &since)) {
+    enum { bufsize = 256 };
+    char buffer[bufsize];
+    since.to_string(buffer, bufsize);
     jio_fprintf(defaultStream::error_stream(),
-      "Warning: The flag %s has been EOL'd as of 1.5.0 and will"
-      " be ignored\n", arg);
+      "Warning: The flag %s has been EOL'd as of %s and will"
+      " be ignored\n", arg, buffer);
   } else {
     if (!ignore_unrecognized) {
       jio_fprintf(defaultStream::error_stream(),
