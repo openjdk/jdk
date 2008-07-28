@@ -25,15 +25,13 @@
 
 package com.sun.tools.javac.util;
 
-import java.util.ResourceBundle;
-import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
-import com.sun.tools.javac.api.Formattable;
+import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.tree.JCTree;
 
@@ -256,7 +254,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     private final int line;
     private final int column;
     private final String key;
-    private final Object[] args;
+    protected Object[] args;
     private boolean mandatory;
 
     /**
@@ -400,52 +398,25 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
      * @return the prefix string associated with a particular type of diagnostic
      */
     public String getPrefix(DiagnosticType dt) {
-        switch (dt) {
-        case FRAGMENT: return "";
-        case NOTE:     return getLocalizedString("compiler.note.note");
-        case WARNING:  return getLocalizedString("compiler.warn.warning");
-        case ERROR:    return getLocalizedString("compiler.err.error");
-        default:
-            throw new AssertionError("Unknown diagnostic type: " + dt);
-        }
+        return getFormatter().formatKind(this, Locale.getDefault());
     }
+
+     private DiagnosticFormatter<JCDiagnostic> getFormatter() {
+        if (defaultFormatter == null) {
+            defaultFormatter = new BasicDiagnosticFormatter(messages);
+        }
+        return defaultFormatter;
+    }
+
 
     /**
      * Return the standard presentation of this diagnostic.
      */
     public String toString() {
-        if (defaultFormatter == null) {
-            defaultFormatter =
-                new DiagnosticFormatter();
-        }
-        return defaultFormatter.format(this);
+        return getFormatter().format(this,Locale.getDefault());
     }
 
-    private static DiagnosticFormatter defaultFormatter;
-
-    private static final String messageBundleName =
-        "com.sun.tools.javac.resources.compiler";
-
-    private String getLocalizedString(String key, Object... args) {
-        String[] strings = new String[args.length];
-        for (int i = 0; i < strings.length; i++) {
-            Object arg = args[i];
-            if (arg == null)
-                strings[i] = null;
-            else if (arg instanceof JCDiagnostic)
-                strings[i] = ((JCDiagnostic) arg).getMessage(null);
-            else if (arg instanceof Collection<?>)
-                strings[i] = DiagnosticFormatter.convert((Collection<?>)arg).toString();
-            else if (arg instanceof Formattable) {
-                ResourceBundle rb = ResourceBundle.getBundle(messageBundleName);
-                strings[i] = ((Formattable)arg).toString(rb);
-            }
-            else
-                strings[i] = arg.toString();
-        }
-
-        return messages.getLocalizedString(key, (Object[]) strings);
-    }
+    private static DiagnosticFormatter<JCDiagnostic> defaultFormatter;
 
     // Methods for javax.tools.Diagnostic
 
@@ -469,7 +440,6 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
 
     public String getMessage(Locale locale) {
         // RFE 6406133: JCDiagnostic.getMessage ignores locale argument
-        return getLocalizedString(key, args);
+        return getFormatter().formatMessage(this, locale);
     }
-
 }
