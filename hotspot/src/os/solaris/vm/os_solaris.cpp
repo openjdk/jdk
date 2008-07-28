@@ -2658,6 +2658,12 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
      top += r;
      cur++;
    }
+   if (bottom == 0) {
+     // Handle a situation, when the OS reports no memory available.
+     // Assume UMA architecture.
+     ids[0] = 0;
+     return 1;
+   }
    return bottom;
 }
 
@@ -4581,7 +4587,7 @@ void os::Solaris::synchronization_init() {
 }
 
 void os::Solaris::liblgrp_init() {
-  void *handle = dlopen("liblgrp.so", RTLD_LAZY);
+  void *handle = dlopen("liblgrp.so.1", RTLD_LAZY);
   if (handle != NULL) {
     os::Solaris::set_lgrp_home(CAST_TO_FN_PTR(lgrp_home_func_t, dlsym(handle, "lgrp_home")));
     os::Solaris::set_lgrp_init(CAST_TO_FN_PTR(lgrp_init_func_t, dlsym(handle, "lgrp_init")));

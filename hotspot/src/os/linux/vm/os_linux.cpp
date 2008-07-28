@@ -2278,7 +2278,7 @@ void os::Linux::libnuma_init() {
                                   dlsym(RTLD_DEFAULT, "sched_getcpu")));
 
   if (sched_getcpu() != -1) { // Does it work?
-    void *handle = dlopen("libnuma.so", RTLD_LAZY);
+    void *handle = dlopen("libnuma.so.1", RTLD_LAZY);
     if (handle != NULL) {
       set_numa_node_to_cpus(CAST_TO_FN_PTR(numa_node_to_cpus_func_t,
                                            dlsym(handle, "numa_node_to_cpus")));

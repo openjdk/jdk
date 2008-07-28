@@ -32,6 +32,12 @@ Generation::Generation(ReservedSpace rs, size_t initial_size, int level) :
     vm_exit_during_initialization("Could not reserve enough space for "
                     "object heap");
   }
+  // Mangle all of the the initial generation.
+  if (ZapUnusedHeapArea) {
+    MemRegion mangle_region((HeapWord*)_virtual_space.low(),
+      (HeapWord*)_virtual_space.high());
+    SpaceMangler::mangle_region(mangle_region);
+  }
   _reserved = MemRegion((HeapWord*)_virtual_space.low_boundary(),
           (HeapWord*)_virtual_space.high_boundary());
 }
@@ -505,8 +511,11 @@ bool OneContigSpaceCardGeneration::grow_by(size_t bytes) {
     _bts->resize(new_word_size);
 
     // Fix for bug #4668531
-    MemRegion mangle_region(_the_space->end(), (HeapWord*)_virtual_space.high());
-    _the_space->mangle_region(mangle_region);
+    if (ZapUnusedHeapArea) {
+      MemRegion mangle_region(_the_space->end(),
+      (HeapWord*)_virtual_space.high());
+      SpaceMangler::mangle_region(mangle_region);
+    }
 
     // Expand space -- also expands space's BOT
     // (which uses (part of) shared array above)
@@ -622,6 +631,14 @@ void OneContigSpaceCardGeneration::gc_epilogue(bool full) {
 
   // update the generation and space performance counters
   update_counters();
+  if (ZapUnusedHeapArea) {
+    the_space()->check_mangled_unused_area_complete();
+  }
+}
+
+void OneContigSpaceCardGeneration::record_spaces_top() {
+  assert(ZapUnusedHeapArea, "Not mangling unused space");
+  the_space()->set_top_for_allocations();
 }
 
 void OneContigSpaceCardGeneration::verify(bool allow_dirty) {
