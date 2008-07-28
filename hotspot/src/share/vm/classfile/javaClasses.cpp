@@ -649,8 +649,8 @@ jlong java_lang_Thread::thread_id(oop java_thread) {
 }
 
 oop java_lang_Thread::park_blocker(oop java_thread) {
-  assert(JDK_Version::supports_thread_park_blocker() && _park_blocker_offset != 0,
-         "Must support parkBlocker field");
+  assert(JDK_Version::current().supports_thread_park_blocker() &&
+         _park_blocker_offset != 0, "Must support parkBlocker field");
 
   if (_park_blocker_offset > 0) {
     return java_thread->obj_field(_park_blocker_offset);

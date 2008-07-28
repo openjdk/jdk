@@ -985,6 +985,28 @@ const char * os::get_temp_directory()
     }
 }
 
+void os::dll_build_name(char *holder, size_t holderlen,
+                        const char* pname, const char* fname)
+{
+    // copied from libhpi
+    const size_t pnamelen = pname ? strlen(pname) : 0;
+    const char c = (pnamelen > 0) ? pname[pnamelen-1] : 0;
+
+    /* Quietly truncates on buffer overflow. Should be an error. */
+    if (pnamelen + strlen(fname) + 10 > holderlen) {
+        *holder = '\0';
+        return;
+    }
+
+    if (pnamelen == 0) {
+        sprintf(holder, "%s.dll", fname);
+    } else if (c == ':' || c == '\\') {
+        sprintf(holder, "%s%s.dll", pname, fname);
+    } else {
+        sprintf(holder, "%s\\%s.dll", pname, fname);
+    }
+}
+
 // Needs to be in os specific directory because windows requires another
 // header file <direct.h>
 const char* os::get_current_directory(char *buf, int buflen) {
@@ -1246,6 +1268,10 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   if (offset)  *offset  = -1;
   if (buf) buf[0] = '\0';
   return false;
+}
+
+void* os::dll_lookup(void* handle, const char* name) {
+  return GetProcAddress((HMODULE)handle, name);
 }
 
 // save the start and end address of jvm.dll into param[0] and param[1]
