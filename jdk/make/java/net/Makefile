@@ -94,8 +94,6 @@ include $(BUILDDIR)/common/Library.gmk
 
 ifeq ($(PLATFORM), windows)
   OTHER_LDLIBS = ws2_32.lib $(JVMLIB)
-  # Will not compile at warning level 3 if warnings are fatal
-  COMPILER_WARNINGS_FATAL=false
 else
   OTHER_LDLIBS = $(LIBSOCKET) -lnsl -ldl $(JVMLIB)
 endif

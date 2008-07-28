@@ -283,7 +283,7 @@ CPPFLAGS_COMMON = -DWIN32 -DIAL -D_LITTLE_ENDIAN
 ifeq ($(ARCH), amd64)
   CPPFLAGS_COMMON += -D_AMD64_ -Damd64
 else
-  CPPFLAGS_COMMON += -DWIN32 -D_X86_ -Dx86 
+  CPPFLAGS_COMMON += -D_X86_ -Dx86 
 endif
 CPPFLAGS_COMMON += -DWIN32_LEAN_AND_MEAN
 
@@ -293,16 +293,23 @@ CPPFLAGS_COMMON += -DWIN32_LEAN_AND_MEAN
 CFLAGS_COMMON += -Fd$(OBJDIR)/$(basename $(@F)).pdb -Fm$(OBJDIR)/$(basename $(@F)).map
 
 #
+# Use -wdNNNN to disable warning NNNN.
+#   C4800 is a warning about bool performance casts (can't make go away)
+#
+COMPILER_WARNINGS_TO_IGNORE = 4800
+CFLAGS_COMMON += $(COMPILER_WARNINGS_TO_IGNORE:%=-wd%)
+
+#
 # Add warnings and extra on 64bit issues
 #
 ifeq ($(ARCH_DATA_MODEL), 64)
   CFLAGS_COMMON += -Wp64 
 endif
-CFLAGS_COMMON += -W$(COMPILER_WARNING_LEVEL)
 
 #
 # Treat compiler warnings as errors, if requested
 #
+CFLAGS_COMMON += -W$(COMPILER_WARNING_LEVEL)
 ifeq ($(COMPILER_WARNINGS_FATAL),true)
   CFLAGS_COMMON += -WX
 endif
@@ -352,17 +359,9 @@ else
   #    BUILD_WIN_SA=1
   # on the make command.
   ifdef BUILD_WIN_SA
-    ifeq ($(ARCH), amd64)
-      INCLUDE_SA = true
-    else
-      INCLUDE_SA = true
-    endif
+    INCLUDE_SA = true
   else
-    ifeq ($(ARCH), amd64)
-      INCLUDE_SA = false
-    else
-      INCLUDE_SA = false
-    endif
+    INCLUDE_SA = false
   endif
 endif
 
