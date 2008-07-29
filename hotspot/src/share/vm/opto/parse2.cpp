@@ -925,9 +925,6 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
     return;
   }
 
-  // If this is a backwards branch in the bytecodes, add Safepoint
-  maybe_add_safepoint(target_bci);
-
   explicit_null_checks_inserted++;
 
   // Generate real control flow
@@ -1008,9 +1005,6 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     }
     return;
   }
-
-  // If this is a backwards branch in the bytecodes, add Safepoint
-  maybe_add_safepoint(target_bci);
 
   // Sanity check the probability value
   assert(0.0f < prob && prob < 1.0f,"Bad probability in Parser");
@@ -2100,6 +2094,8 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_ifnull:    btest = BoolTest::eq; goto handle_if_null;
   case Bytecodes::_ifnonnull: btest = BoolTest::ne; goto handle_if_null;
   handle_if_null:
+    // If this is a backwards branch in the bytecodes, add Safepoint
+    maybe_add_safepoint(iter().get_dest());
     a = null();
     b = pop();
     c = _gvn.transform( new (C, 3) CmpPNode(b, a) );
@@ -2109,6 +2105,8 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_if_acmpeq: btest = BoolTest::eq; goto handle_if_acmp;
   case Bytecodes::_if_acmpne: btest = BoolTest::ne; goto handle_if_acmp;
   handle_if_acmp:
+    // If this is a backwards branch in the bytecodes, add Safepoint
+    maybe_add_safepoint(iter().get_dest());
     a = pop();
     b = pop();
     c = _gvn.transform( new (C, 3) CmpPNode(b, a) );
@@ -2122,6 +2120,8 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_ifgt: btest = BoolTest::gt; goto handle_ifxx;
   case Bytecodes::_ifge: btest = BoolTest::ge; goto handle_ifxx;
   handle_ifxx:
+    // If this is a backwards branch in the bytecodes, add Safepoint
+    maybe_add_safepoint(iter().get_dest());
     a = _gvn.intcon(0);
     b = pop();
     c = _gvn.transform( new (C, 3) CmpINode(b, a) );
@@ -2135,6 +2135,8 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_if_icmpgt: btest = BoolTest::gt; goto handle_if_icmp;
   case Bytecodes::_if_icmpge: btest = BoolTest::ge; goto handle_if_icmp;
   handle_if_icmp:
+    // If this is a backwards branch in the bytecodes, add Safepoint
+    maybe_add_safepoint(iter().get_dest());
     a = pop();
     b = pop();
     c = _gvn.transform( new (C, 3) CmpINode( b, a ) );
