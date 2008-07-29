@@ -388,6 +388,9 @@
   product(intx, EliminateAllocationArraySizeLimit, 64,                      \
           "Array size (number of elements) limit for scalar replacement")   \
                                                                             \
+  product(intx, ValueSearchLimit, 1000,                                     \
+          "Recursion limit in PhaseMacroExpand::value_from_mem_phi")        \
+                                                                            \
   product(intx, MaxLabelRootDepth, 1100,                                    \
           "Maximum times call Label_Root to prevent stack overflow")        \
                                                                             \

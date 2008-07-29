@@ -578,7 +578,8 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
     Node *cmov = conditional_move( n );
     if( cmov ) return cmov;
   }
-  if( n->is_CFG() || n_op == Op_StorePConditional || n_op == Op_StoreLConditional || n_op == Op_CompareAndSwapI || n_op == Op_CompareAndSwapL ||n_op == Op_CompareAndSwapP)  return n;
+  if( n->is_CFG() || n->is_LoadStore() )
+    return n;
   if( n_op == Op_Opaque1 ||     // Opaque nodes cannot be mod'd
       n_op == Op_Opaque2 ) {
     if( !C->major_progress() )   // If chance of no more loop opts...
