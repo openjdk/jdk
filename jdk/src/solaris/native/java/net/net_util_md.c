@@ -1085,7 +1085,16 @@ NET_GetSockOpt(int fd, int level, int opt, void *result,
     }
 #endif
 
-    rv = getsockopt(fd, level, opt, result, (socklen_t)len);
+#ifdef __solaris__
+    rv = getsockopt(fd, level, opt, result, len);
+#else
+    {
+        socklen_t socklen = *len;
+        rv = getsockopt(fd, level, opt, result, &socklen);
+        *len = socklen;
+    }
+#endif
+
     if (rv < 0) {
         return rv;
     }
