@@ -197,7 +197,7 @@ public:
   void remove_edge(uint targIdx, EdgeType et);
 
 #ifndef PRODUCT
-  void dump() const;
+  void dump(bool print_state=true) const;
 #endif
 
 };
@@ -221,6 +221,8 @@ private:
                                        // that pointer values loaded from
                                        // a field which has not been set
                                        // are assumed to point to.
+  uint                      _oop_null; // ConP(#NULL)
+  uint                     _noop_null; // ConN(#NULL)
 
   Compile *                  _compile; // Compile object for current compilation
 

@@ -194,9 +194,10 @@ void PhaseMacroExpand::eliminate_card_mark(Node *p2x) {
 }
 
 // Search for a memory operation for the specified memory slice.
-static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_mem, Node *alloc) {
+static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_mem, Node *alloc, PhaseGVN *phase) {
   Node *orig_mem = mem;
   Node *alloc_mem = alloc->in(TypeFunc::Memory);
+  const TypeOopPtr *tinst = phase->C->get_adr_type(alias_idx)->isa_oopptr();
   while (true) {
     if (mem == alloc_mem || mem == start_mem ) {
       return mem;  // hit one of our sentinals
@@ -208,7 +209,13 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
       // already know that the object is safe to eliminate.
       if (in->is_Initialize() && in->as_Initialize()->allocation() == alloc) {
         return in;
-      } else if (in->is_Call() || in->is_MemBar()) {
+      } else if (in->is_Call()) {
+        CallNode *call = in->as_Call();
+        if (!call->may_modify(tinst, phase)) {
+          mem = call->in(TypeFunc::Memory);
+        }
+        mem = in->in(TypeFunc::Memory);
+      } else if (in->is_MemBar()) {
         mem = in->in(TypeFunc::Memory);
       } else {
         assert(false, "unexpected projection");
@@ -265,7 +272,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
   }
 
   if (level <= 0) {
-    return NULL;
+    return NULL; // Give up: phi tree too deep
   }
   Node *start_mem = C->start()->proj_out(TypeFunc::Memory);
   Node *alloc_mem = alloc->in(TypeFunc::Memory);
@@ -283,7 +290,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
     if (in == NULL || in->is_top()) {
       values.at_put(j, in);
     } else  {
-      Node *val = scan_mem_chain(in, alias_idx, offset, start_mem, alloc);
+      Node *val = scan_mem_chain(in, alias_idx, offset, start_mem, alloc, &_igvn);
       if (val == start_mem || val == alloc_mem) {
         // hit a sentinel, return appropriate 0 value
         values.at_put(j, _igvn.zerocon(ft));
@@ -308,7 +315,8 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         }
         values.at_put(j, val);
       } else {
-        return NULL;  // unknown node  on this path
+        assert(false, "unknown node on this path");
+        return NULL;  // unknown node on this path
       }
     }
   }
@@ -344,7 +352,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type 
     if (visited.test_set(mem->_idx)) {
       return NULL;  // found a loop, give up
     }
-    mem = scan_mem_chain(mem, alias_idx, offset, start_mem, alloc);
+    mem = scan_mem_chain(mem, alias_idx, offset, start_mem, alloc, &_igvn);
     if (mem == start_mem || mem == alloc_mem) {
       done = true;  // hit a sentinel, return appropriate 0 value
     } else if (mem->is_Initialize()) {
@@ -368,7 +376,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type 
       Node *unique_input = NULL;
       Node *top = C->top();
       for (uint i = 1; i < mem->req(); i++) {
-        Node *n = scan_mem_chain(mem->in(i), alias_idx, offset, start_mem, alloc);
+        Node *n = scan_mem_chain(mem->in(i), alias_idx, offset, start_mem, alloc, &_igvn);
         if (n == NULL || n == top || n == mem) {
           continue;
         } else if (unique_input == NULL) {
@@ -396,7 +404,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type 
     } else if (mem->is_Phi()) {
       // attempt to produce a Phi reflecting the values on the input paths of the Phi
       Node_Stack value_phis(a, 8);
-      Node * phi = value_from_mem_phi(mem, ft, ftype, adr_t, alloc, &value_phis, 8);
+      Node * phi = value_from_mem_phi(mem, ft, ftype, adr_t, alloc, &value_phis, ValueSearchLimit);
       if (phi != NULL) {
         return phi;
       } else {
@@ -463,7 +471,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
           Node* n = use->fast_out(k);
           if (!n->is_Store() && n->Opcode() != Op_CastP2X) {
             DEBUG_ONLY(disq_node = n;)
-            if (n->is_Load()) {
+            if (n->is_Load() || n->is_LoadStore()) {
               NOT_PRODUCT(fail_eliminate = "Field load";)
             } else {
               NOT_PRODUCT(fail_eliminate = "Not store field referrence";)

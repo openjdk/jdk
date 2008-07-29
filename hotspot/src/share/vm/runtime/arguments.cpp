@@ -2472,6 +2472,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     if (match_option(option, "-XX:+PrintVMOptions", &tail)) {
       PrintVMOptions = true;
     }
+    if (match_option(option, "-XX:-PrintVMOptions", &tail)) {
+      PrintVMOptions = false;
+    }
   }
 
   // Parse default .hotspotrc settings file
