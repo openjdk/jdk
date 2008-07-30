@@ -648,6 +648,12 @@ G1CollectedHeap::attempt_allocation_slow(size_t word_size,
            "Prevent a regression of this bug.");
 
   } else {
+    // We may have concurrent cleanup working at the time. Wait for it
+    // to complete. In the future we would probably want to make the
+    // concurrent cleanup truly concurrent by decoupling it from the
+    // allocation.
+    if (!SafepointSynchronize::is_at_safepoint())
+      wait_for_cleanup_complete();
     // If we do a collection pause, this will be reset to a non-NULL
     // value.  If we don't, nulling here ensures that we allocate a new
     // region below.
