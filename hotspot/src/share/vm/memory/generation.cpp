@@ -379,6 +379,41 @@ CardGeneration::CardGeneration(ReservedSpace rs, size_t initial_byte_size,
   }
 }
 
+bool CardGeneration::expand(size_t bytes, size_t expand_bytes) {
+  assert_locked_or_safepoint(Heap_lock);
+  if (bytes == 0) {
+    return true;  // That's what grow_by(0) would return
+  }
+  size_t aligned_bytes  = ReservedSpace::page_align_size_up(bytes);
+  if (aligned_bytes == 0){
+    // The alignment caused the number of bytes to wrap.  An expand_by(0) will
+    // return true with the implication that an expansion was done when it
+    // was not.  A call to expand implies a best effort to expand by "bytes"
+    // but not a guarantee.  Align down to give a best effort.  This is likely
+    // the most that the generation can expand since it has some capacity to
+    // start with.
+    aligned_bytes = ReservedSpace::page_align_size_down(bytes);
+  }
+  size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
+  bool success = false;
+  if (aligned_expand_bytes > aligned_bytes) {
+    success = grow_by(aligned_expand_bytes);
+  }
+  if (!success) {
+    success = grow_by(aligned_bytes);
+  }
+  if (!success) {
+    success = grow_to_reserved();
+  }
+  if (PrintGC && Verbose) {
+    if (success && GC_locker::is_active()) {
+      gclog_or_tty->print_cr("Garbage collection disabled, expanded heap instead");
+    }
+  }
+
+  return success;
+}
+
 
 // No young generation references, clear this generation's cards.
 void CardGeneration::clear_remembered_set() {
@@ -441,25 +476,9 @@ OneContigSpaceCardGeneration::expand_and_allocate(size_t word_size,
   }
 }
 
-void OneContigSpaceCardGeneration::expand(size_t bytes, size_t expand_bytes) {
+bool OneContigSpaceCardGeneration::expand(size_t bytes, size_t expand_bytes) {
   GCMutexLocker x(ExpandHeap_lock);
-  size_t aligned_bytes  = ReservedSpace::page_align_size_up(bytes);
-  size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
-  bool success = false;
-  if (aligned_expand_bytes > aligned_bytes) {
-    success = grow_by(aligned_expand_bytes);
-  }
-  if (!success) {
-    success = grow_by(aligned_bytes);
-  }
-  if (!success) {
-    grow_to_reserved();
-  }
-  if (GC_locker::is_active()) {
-    if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("Garbage collection disabled, expanded heap instead");
-    }
-  }
+  return CardGeneration::expand(bytes, expand_bytes);
 }
 
 
