@@ -42,7 +42,6 @@
 
   <property name="app.name" value="sa"/>
   <property name="dist.jar" value="${app.name}.jar"/>
-  <property name="libs"     value="../src/share/lib"/>
   <property name="classes"  value="../build/classes"/>
 
 <!-- The "prepare" target is used to construct the deployment home
@@ -83,11 +82,6 @@
      home directory structure will be created if needed the first time.
 -->
 
-  <path id="javac.classpath">
-    <pathelement path="${libs}/maf-1_0.jar" />
-    <pathelement path="${libs}/jlfgr-1_0.jar" />
-  </path>
-
   <target name="compile" depends="prepare" description="Compiles the sources">
     <javac srcdir="../src/share/classes" 
            destdir="${classes}"
@@ -109,6 +103,18 @@
     <mkdir dir="${classes}/sun/jvm/hotspot/ui/resources" />
     <copy todir="${classes}/sun/jvm/hotspot/ui/resources">
       <fileset dir="../src/share/classes/sun/jvm/hotspot/ui/resources" includes="*.png" />
+    </copy>
+    <copy todir="${classes}/toolbarButtonGraphics/development/">
+      <fileset dir="../src/share/classes/images/toolbarButtonGraphics/development/" includes="*.gif" />
+    </copy>
+    <copy todir="${classes}/toolbarButtonGraphics/general/">
+      <fileset dir="../src/share/classes/images/toolbarButtonGraphics/general/" includes="*.gif" />
+    </copy>
+    <copy todir="${classes}/toolbarButtonGraphics/navigation/">
+      <fileset dir="../src/share/classes/images/toolbarButtonGraphics/navigation/" includes="*.gif" />
+    </copy>
+    <copy todir="${classes}/toolbarButtonGraphics/text/">
+      <fileset dir="../src/share/classes/images/toolbarButtonGraphics/text/" includes="*.gif" />
     </copy>
 
     <jar jarfile="${classes}/${dist.jar}"
