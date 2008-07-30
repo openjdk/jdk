@@ -606,11 +606,21 @@ class CardGeneration: public Generation {
 
  public:
 
+  // Attempt to expand the generation by "bytes".  Expand by at a
+  // minimum "expand_bytes".  Return true if some amount (not
+  // necessarily the full "bytes") was done.
+  virtual bool expand(size_t bytes, size_t expand_bytes);
+
   virtual void clear_remembered_set();
 
   virtual void invalidate_remembered_set();
 
   virtual void prepare_for_verify();
+
+  // Grow generation with specified size (returns false if unable to grow)
+  virtual bool grow_by(size_t bytes) = 0;
+  // Grow generation to reserved size.
+  virtual bool grow_to_reserved() = 0;
 };
 
 // OneContigSpaceCardGeneration models a heap of old objects contained in a single
@@ -631,14 +641,14 @@ class OneContigSpaceCardGeneration: public CardGeneration {
                                       // and after last GC.
 
   // Grow generation with specified size (returns false if unable to grow)
-  bool grow_by(size_t bytes);
+  virtual bool grow_by(size_t bytes);
   // Grow generation to reserved size.
-  bool grow_to_reserved();
+  virtual bool grow_to_reserved();
   // Shrink generation with specified size (returns false if unable to shrink)
   void shrink_by(size_t bytes);
 
   // Allocation failure
-  void expand(size_t bytes, size_t expand_bytes);
+  virtual bool expand(size_t bytes, size_t expand_bytes);
   void shrink(size_t bytes);
 
   // Accessing spaces
