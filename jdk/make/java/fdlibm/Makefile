@@ -33,6 +33,7 @@
 BUILDDIR     = ../..
 LIBRARY      = fdlibm
 PRODUCT      = java
+
 include $(BUILDDIR)/common/Defs.gmk
 
 #
@@ -40,14 +41,23 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 FDLIBM_SRC = $(SHARE_SRC)/native/java/lang/fdlibm
 
-# windows compiler flags
+# Windows: compiler flags
 ifeq ($(PLATFORM),windows)
   # Turn all optimizations off
-  _OPT = $(CC_NO_OPT)
+  OPTIMIZATION_LEVEL = NONE
   OTHER_CFLAGS =
   CPPFLAGS_DBG += -DLOGGING
   # Files built here do not compile with warning level 3 if warnings are fatal
   COMPILER_WARNINGS_FATAL=false
+endif
+
+#
+# Linux: Disable optimization to get correctly reproducible
+# floating-point results.
+#
+ifeq ($(PLATFORM),linux)
+  # Turn all optimizations off
+  OPTIMIZATION_LEVEL = NONE
 endif
 
 #
@@ -69,15 +79,6 @@ include FILES_c.gmk
 # Rules for the .a file.
 #
 include $(BUILDDIR)/common/Library.gmk
-
-#
-# Disable optimization to get correctly reproducible 
-# floating-point results.
-#
-ifeq ($(PLATFORM),linux)
-  # Turn all optimizations off
-  _OPT = $(CC_NO_OPT)
-endif
 
 #
 # Find fdlibm source files.

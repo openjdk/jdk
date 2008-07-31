@@ -483,11 +483,6 @@ PKGDIR		= $(subst .,/,$(PACKAGE))
 include $(JDK_MAKE_SHARED_DIR)/Defs-java.gmk
 
 #
-# Set opt level to ALT_OPT if set otherwise _OPT
-#
-POPT = $(_OPT$(ALT_OPT))$(ALT_OPT)
-
-#
 # Convenient macros
 #
 
