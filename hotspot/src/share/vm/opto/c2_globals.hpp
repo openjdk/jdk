@@ -373,7 +373,7 @@
   product(intx, AutoBoxCacheMax, 128,                                       \
           "Sets max value cached by the java.lang.Integer autobox cache")   \
                                                                             \
-  product(bool, DoEscapeAnalysis, false,                                    \
+  product(bool, DoEscapeAnalysis, true,                                     \
           "Perform escape analysis")                                        \
                                                                             \
   notproduct(bool, PrintEscapeAnalysis, false,                              \
@@ -387,6 +387,9 @@
                                                                             \
   product(intx, EliminateAllocationArraySizeLimit, 64,                      \
           "Array size (number of elements) limit for scalar replacement")   \
+                                                                            \
+  product(intx, ValueSearchLimit, 1000,                                     \
+          "Recursion limit in PhaseMacroExpand::value_from_mem_phi")        \
                                                                             \
   product(intx, MaxLabelRootDepth, 1100,                                    \
           "Maximum times call Label_Root to prevent stack overflow")        \
