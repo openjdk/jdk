@@ -19,34 +19,42 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
- *
  */
 
-/*
+/**
  * @test
- * @bug 6646019
- * @summary array subscript expressions become top() with -d64
- * @run main/othervm -Xcomp -XX:CompileOnly=Test.test Test
-*/
+ * @bug 6700047
+ * @summary C2 failed in idom_no_update
+ * @run main Test6700047
+ */
 
-
-public class Test  {
-  final static int i = 2076285318;
-  long l = 2;
-  short s;
-
-  public static void main(String[] args) {
-    Test t = new Test();
-    try { t.test(); }
-    catch (Throwable e) {
-      if (t.l != 5) {
-        System.out.println("Fails: " + t.l + " != 5");
-      }
+public class Test6700047 {
+    public static void main(String[] args) {
+        for (int i = 0; i < 100000; i++) {
+            intToLeftPaddedAsciiBytes();
+        }
     }
-  }
 
-  private void test() {
-    l = 5;
-    l = (new short[(byte)-2])[(byte)(l = i)];
-  }
+    public static int intToLeftPaddedAsciiBytes() {
+        int offset = 40;
+        int q;
+        int r;
+        int         i   = 100;
+        int result = 1;
+        while (offset > 0) {
+            q = (i * 52429);
+            r = i;
+            offset--;
+            i = q;
+            if (i == 0) {
+                break;
+            }
+        }
+        if (offset > 0) {
+            for(int j = 0; j < offset; j++) {
+                result++;
+            }
+        }
+        return result;
+    }
 }
