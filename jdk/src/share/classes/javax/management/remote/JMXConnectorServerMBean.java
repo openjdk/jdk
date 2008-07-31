@@ -105,23 +105,34 @@ public interface JMXConnectorServerMBean {
     public boolean isActive();
 
     /**
-     * <p>Adds an object that intercepts requests for the MBean server
+     * <p>Inserts an object that intercepts requests for the MBean server
      * that arrive through this connector server.  This object will be
      * supplied as the <code>MBeanServer</code> for any new connection
      * created by this connector server.  Existing connections are
      * unaffected.</p>
      *
-     * <p>If this connector server is already associated with an
+     * <p>This method can be called more than once with different
+     * {@link MBeanServerForwarder} objects.  The result is a chain
+     * of forwarders.  The last forwarder added is the first in the chain.
+     * In more detail:</p>
+     *
+     * <ul>
+     * <li><p>If this connector server is already associated with an
      * <code>MBeanServer</code> object, then that object is given to
      * {@link MBeanServerForwarder#setMBeanServer
      * mbsf.setMBeanServer}.  If doing so produces an exception, this
      * method throws the same exception without any other effect.</p>
      *
-     * <p>If this connector is not already associated with an
+     * <li><p>If this connector is not already associated with an
      * <code>MBeanServer</code> object, or if the
      * <code>mbsf.setMBeanServer</code> call just mentioned succeeds,
      * then <code>mbsf</code> becomes this connector server's
      * <code>MBeanServer</code>.</p>
+     * </ul>
+     *
+     * <p>A connector server may support two chains of forwarders,
+     * a system chain and a user chain.  See {@link
+     * JMXConnectorServer#setSystemMBeanServerForwarder} for details.</p>
      *
      * @param mbsf the new <code>MBeanServerForwarder</code>.
      *
@@ -129,6 +140,8 @@ public interface JMXConnectorServerMBean {
      * MBeanServerForwarder#setMBeanServer mbsf.setMBeanServer} fails
      * with <code>IllegalArgumentException</code>.  This includes the
      * case where <code>mbsf</code> is null.
+     *
+     * @see JMXConnectorServer#setSystemMBeanServerForwarder
      */
     public void setMBeanServerForwarder(MBeanServerForwarder mbsf);
 

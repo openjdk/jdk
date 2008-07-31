@@ -420,7 +420,13 @@ public interface MBeanServer extends MBeanServerConnection {
     // doc comment inherited from MBeanServerConnection
     public String[] getDomains();
 
-    // doc comment inherited from MBeanServerConnection
+    // doc comment inherited from MBeanServerConnection, plus:
+    /**
+     * {@inheritDoc}
+     * If the source of the notification
+     * is a reference to an MBean object, the MBean server will replace it
+     * by that MBean's ObjectName.  Otherwise the source is unchanged.
+     */
     public void addNotificationListener(ObjectName name,
                                         NotificationListener listener,
                                         NotificationFilter filter,

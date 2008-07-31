@@ -33,7 +33,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 // remaining imports are for Javadoc
-import java.beans.ConstructorProperties;
 import java.io.InvalidObjectException;
 import java.lang.management.MemoryUsage;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -865,7 +864,8 @@ public interface ModuleMXBean {
         <em>J</em>.</p></li>
 
       <li><p>Otherwise, if <em>J</em> has at least one public
-        constructor with a {@link ConstructorProperties} annotation, then one
+        constructor with a {@link java.beans.ConstructorProperties
+        ConstructorProperties} annotation, then one
         of those constructors (not necessarily always the same one)
         will be called to reconstruct an instance of <em>J</em>.
         Every such annotation must list as many strings as the
