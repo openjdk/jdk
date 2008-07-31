@@ -38,10 +38,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.WeakHashMap;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+import javax.management.loading.ClassLoaderRepository;
 
 public class Util {
     static <K, V> Map<K, V> newMap() {
@@ -142,4 +145,97 @@ public class Util {
         return hash;
     }
 
+    /**
+     * Filters a set of ObjectName according to a given pattern.
+     *
+     * @param pattern the pattern that the returned names must match.
+     * @param all     the set of names to filter.
+     * @return a set of ObjectName from which non matching names
+     *         have been removed.
+     */
+    public static Set<ObjectName> filterMatchingNames(ObjectName pattern,
+                                        Set<ObjectName> all) {
+        // If no pattern, just return all names
+        if (pattern == null
+                || all.isEmpty()
+                || ObjectName.WILDCARD.equals(pattern))
+            return all;
+
+        // If there's a pattern, do the matching.
+        final Set<ObjectName> res = equivalentEmptySet(all);
+        for (ObjectName n : all) if (pattern.apply(n)) res.add(n);
+        return res;
+    }
+
+    /**
+     * An abstract ClassLoaderRepository that contains a single class loader.
+     **/
+    private final static class SingleClassLoaderRepository
+            implements ClassLoaderRepository {
+        private final ClassLoader singleLoader;
+
+        SingleClassLoaderRepository(ClassLoader loader) {
+            this.singleLoader = loader;
+        }
+
+        ClassLoader getSingleClassLoader() {
+           return singleLoader;
+        }
+
+        private Class<?> loadClass(String className, ClassLoader loader)
+                throws ClassNotFoundException {
+            return Class.forName(className, false, loader);
+        }
+
+        public Class<?> loadClass(String className)
+                throws ClassNotFoundException {
+            return loadClass(className, getSingleClassLoader());
+        }
+
+        public Class<?> loadClassWithout(ClassLoader exclude,
+                String className) throws ClassNotFoundException {
+            final ClassLoader loader = getSingleClassLoader();
+            if (exclude != null && exclude.equals(loader))
+                throw new ClassNotFoundException(className);
+            return loadClass(className, loader);
+        }
+
+        public Class<?> loadClassBefore(ClassLoader stop, String className)
+                throws ClassNotFoundException {
+            return loadClassWithout(stop, className);
+        }
+    }
+
+    /**
+     * Returns a ClassLoaderRepository that contains a single class loader.
+     * @param loader the class loader contained in the returned repository.
+     * @return a ClassLoaderRepository that contains the single loader.
+     */
+    public static ClassLoaderRepository getSingleClassLoaderRepository(
+            final ClassLoader loader) {
+        return new SingleClassLoaderRepository(loader);
+    }
+
+    public static <T> Set<T> cloneSet(Set<T> set) {
+        if (set instanceof SortedSet) {
+            @SuppressWarnings("unchecked")
+            SortedSet<T> sset = (SortedSet<T>) set;
+            set = new TreeSet<T>(sset.comparator());
+            set.addAll(sset);
+        } else
+            set = new HashSet<T>(set);
+        return set;
+    }
+
+    public static <T> Set<T> equivalentEmptySet(Set<T> set) {
+        if (set instanceof SortedSet) {
+            @SuppressWarnings("unchecked")
+            SortedSet<T> sset = (SortedSet<T>) set;
+            set = new TreeSet<T>(sset.comparator());
+        } else if (set != null) {
+            set = new HashSet<T>(set.size());
+        } else
+            set = new HashSet<T>();
+        return set;
+    }
 }
