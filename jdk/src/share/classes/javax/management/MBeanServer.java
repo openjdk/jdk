@@ -328,11 +328,30 @@ public interface MBeanServer extends MBeanServerConnection {
      * <CODE>preRegister</CODE> (<CODE>MBeanRegistration</CODE>
      * interface) method of the MBean has thrown an exception. The
      * MBean will not be registered.
+     * @exception RuntimeMBeanException If the <CODE>postRegister</CODE>
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws a
+     * <CODE>RuntimeException</CODE>, the <CODE>registerMBean<CODE> method will
+     * throw a <CODE>RuntimeMBeanException</CODE>, although the MBean
+     * registration succeeded. In such a case, the MBean will be actually
+     * registered even though the <CODE>registerMBean<CODE> method
+     * threw an exception.  Note that <CODE>RuntimeMBeanException</CODE> can
+     * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
+     * will not be registered.
+     * @exception RuntimeErrorException If the <CODE>postRegister</CODE>
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws an
+     * <CODE>Error</CODE>, the <CODE>registerMBean<CODE> method will
+     * throw a <CODE>RuntimeErrorException</CODE>, although the MBean
+     * registration succeeded. In such a case, the MBean will be actually
+     * registered even though the <CODE>registerMBean<CODE> method
+     * threw an exception.  Note that <CODE>RuntimeErrorException</CODE> can
+     * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
+     * will not be registered.
      * @exception NotCompliantMBeanException This object is not a JMX
      * compliant MBean
      * @exception RuntimeOperationsException Wraps a
      * <CODE>java.lang.IllegalArgumentException</CODE>: The object
      * passed in parameter is null or no object name is specified.
+     * @see javax.management.MBeanRegistration
      */
     public ObjectInstance registerMBean(Object object, ObjectName name)
             throws InstanceAlreadyExistsException, MBeanRegistrationException,
