@@ -804,6 +804,7 @@ const Type *TypeF::xmeet( const Type *t ) const {
   case InstPtr:
   case KlassPtr:
   case AryPtr:
+  case NarrowOop:
   case Int:
   case Long:
   case DoubleTop:
@@ -2263,6 +2264,7 @@ const Type *TypeOopPtr::xmeet( const Type *t ) const {
   case DoubleTop:
   case DoubleCon:
   case DoubleBot:
+  case NarrowOop:
   case Bottom:                  // Ye Olde Default
     return Type::BOTTOM;
   case Top:
@@ -3465,7 +3467,7 @@ bool TypeNarrowOop::empty(void) const {
   return _ooptype->empty();
 }
 
-//------------------------------meet-------------------------------------------
+//------------------------------xmeet------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeNarrowOop::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -3483,6 +3485,13 @@ const Type *TypeNarrowOop::xmeet( const Type *t ) const {
   case DoubleTop:
   case DoubleCon:
   case DoubleBot:
+  case AnyPtr:
+  case RawPtr:
+  case OopPtr:
+  case InstPtr:
+  case KlassPtr:
+  case AryPtr:
+
   case Bottom:                  // Ye Olde Default
     return Type::BOTTOM;
   case Top:
@@ -3499,16 +3508,9 @@ const Type *TypeNarrowOop::xmeet( const Type *t ) const {
   default:                      // All else is a mistake
     typerr(t);
 
-  case RawPtr:
-  case AnyPtr:
-  case OopPtr:
-  case InstPtr:
-  case KlassPtr:
-  case AryPtr:
-    typerr(t);
-    return Type::BOTTOM;
-
   } // End of switch
+
+  return this;
 }
 
 const Type *TypeNarrowOop::xdual() const {    // Compute dual right now.
@@ -3702,6 +3704,7 @@ const Type    *TypeKlassPtr::xmeet( const Type *t ) const {
   case DoubleTop:
   case DoubleCon:
   case DoubleBot:
+  case NarrowOop:
   case Bottom:                  // Ye Olde Default
     return Type::BOTTOM;
   case Top:
