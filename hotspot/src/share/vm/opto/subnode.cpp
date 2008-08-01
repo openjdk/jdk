@@ -681,7 +681,11 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
 
   // Now check for LoadKlass on left.
   Node* ldk1 = in(1);
-  if (ldk1->Opcode() != Op_LoadKlass)
+  if (ldk1->is_DecodeN()) {
+    ldk1 = ldk1->in(1);
+    if (ldk1->Opcode() != Op_LoadNKlass )
+      return NULL;
+  } else if (ldk1->Opcode() != Op_LoadKlass )
     return NULL;
   // Take apart the address of the LoadKlass:
   Node* adr1 = ldk1->in(MemNode::Address);
@@ -702,7 +706,11 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
 
   // Check for a LoadKlass from primary supertype array.
   // Any nested loadklass from loadklass+con must be from the p.s. array.
-  if (ldk2->Opcode() != Op_LoadKlass)
+  if (ldk2->is_DecodeN()) {
+    // Keep ldk2 as DecodeN since it could be used in CmpP below.
+    if (ldk2->in(1)->Opcode() != Op_LoadNKlass )
+      return NULL;
+  } else if (ldk2->Opcode() != Op_LoadKlass)
     return NULL;
 
   // Verify that we understand the situation
