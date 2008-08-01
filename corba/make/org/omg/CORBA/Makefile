@@ -48,7 +48,7 @@ endif
 
 FILES_java = \
         $(ORG_OMG_SENDINGCONTEXT_java) \
-        $(ORG_OMG_CORBA_2_3_java) \
+        $(org_omg_CORBA_2_3_java) \
         $(ORG_OMG_CORBA_java)
 
 #
