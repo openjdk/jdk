@@ -25,6 +25,7 @@
 
 package java.util;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A facility for threads to schedule tasks for future execution in a
@@ -116,12 +117,11 @@ public class Timer {
     };
 
     /**
-     * This ID is used to generate thread names.  (It could be replaced
-     * by an AtomicInteger as soon as they become available.)
+     * This ID is used to generate thread names.
      */
-    private static int nextSerialNumber = 0;
-    private static synchronized int serialNumber() {
-        return nextSerialNumber++;
+    private static AtomicInteger nextSerialNumber = new AtomicInteger(0);
+    private static int serialNumber() {
+        return nextSerialNumber.getAndIncrement();
     }
 
     /**
