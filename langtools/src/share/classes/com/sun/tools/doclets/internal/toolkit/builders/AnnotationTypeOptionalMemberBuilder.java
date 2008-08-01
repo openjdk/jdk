@@ -73,7 +73,7 @@ public class AnnotationTypeOptionalMemberBuilder extends
         builder.writer = writer;
         builder.visibleMemberMap = new VisibleMemberMap(classDoc,
             VisibleMemberMap.ANNOTATION_TYPE_MEMBER_OPTIONAL, configuration.nodeprecated);
-        builder.members = new ArrayList(
+        builder.members = new ArrayList<ProgramElementDoc>(
             builder.visibleMemberMap.getMembersFor(classDoc));
         if (configuration.getMemberComparator() != null) {
             Collections.sort(builder.members,

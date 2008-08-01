@@ -175,18 +175,6 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     }
 
     /**
-     * A simple abstraction of a source file, as needed for use in a diagnostic message.
-     */
-    // Note: This class may be superceded by a more general abstraction
-    public interface DiagnosticSource {
-        JavaFileObject getFile();
-        CharSequence getName();
-        int getLineNumber(int pos);
-        int getColumnNumber(int pos);
-        Map<JCTree, Integer> getEndPosTable();
-    };
-
-    /**
      * A DiagnosticType defines the type of the diagnostic.
      **/
     public enum DiagnosticType {

@@ -73,9 +73,9 @@ public class Util {
      * @return List       List of eligible members for whom
      *                    documentation is getting generated.
      */
-    public static List excludeDeprecatedMembersAsList(
+    public static List<ProgramElementDoc> excludeDeprecatedMembersAsList(
         ProgramElementDoc[] members) {
-        List list = new ArrayList();
+        List<ProgramElementDoc> list = new ArrayList<ProgramElementDoc>();
         for (int i = 0; i < members.length; i++) {
             if (members[i].tags("deprecated").length == 0) {
                 list.add(members[i]);
@@ -372,10 +372,10 @@ public class Util {
      * We want the list of types in alphabetical order.  However, types are not
      * comparable.  We need a comparator for now.
      */
-    private static class TypeComparator implements Comparator {
-        public int compare(Object type1, Object type2) {
-            return ((Type) type1).qualifiedTypeName().toLowerCase().compareTo(
-                ((Type) type2).qualifiedTypeName().toLowerCase());
+    private static class TypeComparator implements Comparator<Type> {
+        public int compare(Type type1, Type type2) {
+            return type1.qualifiedTypeName().toLowerCase().compareTo(
+                type2.qualifiedTypeName().toLowerCase());
         }
     }
 
@@ -391,9 +391,9 @@ public class Util {
      * @param  sort if true, return list of interfaces sorted alphabetically.
      * @return List of all the required interfaces.
      */
-    public static List getAllInterfaces(Type type,
+    public static List<Type> getAllInterfaces(Type type,
             Configuration configuration, boolean sort) {
-        Map results = sort ? new TreeMap() : new LinkedHashMap();
+        Map<ClassDoc,Type> results = sort ? new TreeMap<ClassDoc,Type>() : new LinkedHashMap<ClassDoc,Type>();
         Type[] interfaceTypes = null;
         Type superType = null;
         if (type instanceof ParameterizedType) {
@@ -423,7 +423,7 @@ public class Util {
             }
         }
         if (superType == null)
-            return new ArrayList(results.values());
+            return new ArrayList<Type>(results.values());
         //Try walking the tree.
         addAllInterfaceTypes(results,
             superType,
@@ -431,7 +431,7 @@ public class Util {
                 ((ClassDoc) superType).interfaceTypes() :
                 ((ParameterizedType) superType).interfaceTypes(),
             false, configuration);
-        List resultsList = new ArrayList(results.values());
+        List<Type> resultsList = new ArrayList<Type>(results.values());
         if (sort) {
                 Collections.sort(resultsList, new TypeComparator());
         }
@@ -442,7 +442,7 @@ public class Util {
         return getAllInterfaces(type, configuration, true);
     }
 
-    private static void findAllInterfaceTypes(Map results, ClassDoc c, boolean raw,
+    private static void findAllInterfaceTypes(Map<ClassDoc,Type> results, ClassDoc c, boolean raw,
             Configuration configuration) {
         Type superType = c.superclassType();
         if (superType == null)
@@ -454,7 +454,7 @@ public class Util {
                 raw, configuration);
     }
 
-    private static void findAllInterfaceTypes(Map results, ParameterizedType p,
+    private static void findAllInterfaceTypes(Map<ClassDoc,Type> results, ParameterizedType p,
             Configuration configuration) {
         Type superType = p.superclassType();
         if (superType == null)
@@ -466,7 +466,7 @@ public class Util {
                 false, configuration);
     }
 
-    private static void addAllInterfaceTypes(Map results, Type type,
+    private static void addAllInterfaceTypes(Map<ClassDoc,Type> results, Type type,
             Type[] interfaceTypes, boolean raw,
             Configuration configuration) {
         for (int i = 0; i < interfaceTypes.length; i++) {
@@ -495,8 +495,8 @@ public class Util {
     }
 
 
-    public static List asList(ProgramElementDoc[] members) {
-        List list = new ArrayList();
+    public static List<ProgramElementDoc> asList(ProgramElementDoc[] members) {
+        List<ProgramElementDoc> list = new ArrayList<ProgramElementDoc>();
         for (int i = 0; i < members.length; i++) {
             list.add(members[i]);
         }
@@ -639,7 +639,7 @@ public class Util {
      * @return an array of tokens.
      */
     public static String[] tokenize(String s, char separator, int maxTokens) {
-        List tokens = new ArrayList();
+        List<String> tokens = new ArrayList<String>();
         StringBuilder  token = new StringBuilder ();
         boolean prevIsEscapeChar = false;
         for (int i = 0; i < s.length(); i += Character.charCount(i)) {
@@ -663,7 +663,7 @@ public class Util {
         if (token.length() > 0) {
             tokens.add(token.toString());
         }
-        return (String[]) tokens.toArray(new String[] {});
+        return tokens.toArray(new String[] {});
     }
 
     /**
