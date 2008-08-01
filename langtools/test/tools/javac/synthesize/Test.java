@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,12 @@
  * have any questions.
  */
 
-/**
- * @test
- * @bug 5045412 6627366
- * @compile -Xlint:serial -XDfailcomplete=java.io.Serializable Foo.java
- */
-
-/**
- * @test
- * @bug 5045412 6627366
- * @compile -Xlint:serial -XDfailcomplete=java.io.Serializable Foo.java Bar.java
- */
-
-class Foo { }
+// This code (indirectly) requires the presence of
+// Cloneable and Serializable (supertypes for Java arrays)
+// Double and Float (for boxing/unboxing)
+public class Test
+{
+    Object f(boolean b, int[] array) {
+        return b ? array : 2;
+    }
+}
