@@ -5514,3 +5514,7 @@ CurrencyNames/ar_SD/SDG=\u062c.\u0633.\u200f
 # bug 6531593
 FormatData/is_IS/NumberPatterns/1=#,##0. \u00A4;-#,##0. \u00A4
 
+# bug 6509039
+FormatData/sv/AmPmMarkers/0=fm
+FormatData/sv/AmPmMarkers/1=em
+
