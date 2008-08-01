@@ -3,7 +3,7 @@
  * @bug 4087314 4087314 4785453
  * @summary Test access checking within 'extends' and 'implements' clause.
  * @author William Maddox (maddox)
- * @run shell ExtendsAccess.sh
+ * @compile/fail/ref=ExtendsAccess.out -XDrawDiagnostics -XDstdout ExtendsAccess.java
  */
 
 /*

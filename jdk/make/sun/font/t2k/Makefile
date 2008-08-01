@@ -64,9 +64,6 @@ FILES_export = \
 
 ifeq ($(PLATFORM), windows)
 
-  # Files built here do not compile with warning level 3 if warnings are fatal
-  COMPILER_WARNINGS_FATAL=false
-
   # t2k imports several shared methods from fontmanager.dll
   LDLIBS += user32.lib $(OBJDIR)/../../../sun.font/fontmanager/$(OBJDIRNAME)/fontmanager.lib
 
