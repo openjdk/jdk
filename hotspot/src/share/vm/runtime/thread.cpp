@@ -2578,7 +2578,8 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
 oop JavaThread::current_park_blocker() {
   // Support for JSR-166 locks
   oop thread_oop = threadObj();
-  if (thread_oop != NULL && JDK_Version::supports_thread_park_blocker()) {
+  if (thread_oop != NULL &&
+      JDK_Version::current().supports_thread_park_blocker()) {
     return java_lang_Thread::park_blocker(thread_oop);
   }
   return NULL;
@@ -2761,6 +2762,8 @@ void Threads::threads_do(ThreadClosure* tc) {
 
 jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
+  extern void JDK_Version_init();
+
   // Check version
   if (!is_supported_jni_version(args->version)) return JNI_EVERSION;
 
@@ -2775,6 +2778,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Initialize system properties.
   Arguments::init_system_properties();
+
+  // So that JDK version can be used as a discrimintor when parsing arguments
+  JDK_Version_init();
 
   // Parse arguments
   jint parse_result = Arguments::parse(args);

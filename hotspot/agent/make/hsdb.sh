@@ -29,4 +29,4 @@ if [ "x$SA_JAVA" = "x" ]; then
    SA_JAVA=java
 fi
 
-$SA_JAVA -showversion -cp $STARTDIR/../build/classes:$STARTDIR/../src/share/lib/maf-1_0.jar:$STARTDIR/../src/share/lib/jlfgr-1_0.jar:$STARTDIR/../src/share/lib/js.jar:$STARTDIR/sa.jar:$STARTDIR/lib/maf-1_0.jar:$STARTDIR/lib/jlfgr-1_0.jar:$STARTDIR/lib/js.jar sun.jvm.hotspot.HSDB $*
+$SA_JAVA -showversion -cp $STARTDIR/../build/classes:$STARTDIR/../src/share/lib/js.jar:$STARTDIR/sa.jar:$STARTDIR/lib/js.jar sun.jvm.hotspot.HSDB $*
