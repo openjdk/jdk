@@ -215,10 +215,22 @@ HeapWord* PSOldGen::expand_and_cas_allocate(size_t word_size) {
 }
 
 void PSOldGen::expand(size_t bytes) {
+  if (bytes == 0) {
+    return;
+  }
   MutexLocker x(ExpandHeap_lock);
   const size_t alignment = virtual_space()->alignment();
   size_t aligned_bytes  = align_size_up(bytes, alignment);
   size_t aligned_expand_bytes = align_size_up(MinHeapDeltaBytes, alignment);
+  if (aligned_bytes == 0){
+    // The alignment caused the number of bytes to wrap.  An expand_by(0) will
+    // return true with the implication that and expansion was done when it
+    // was not.  A call to expand implies a best effort to expand by "bytes"
+    // but not a guarantee.  Align down to give a best effort.  This is likely
+    // the most that the generation can expand since it has some capacity to
+    // start with.
+    aligned_bytes = align_size_down(bytes, alignment);
+  }
 
   bool success = false;
   if (aligned_expand_bytes > aligned_bytes) {
@@ -231,8 +243,8 @@ void PSOldGen::expand(size_t bytes) {
     success = expand_to_reserved();
   }
 
-  if (GC_locker::is_active()) {
-    if (PrintGC && Verbose) {
+  if (PrintGC && Verbose) {
+    if (success && GC_locker::is_active()) {
       gclog_or_tty->print_cr("Garbage collection disabled, expanded heap instead");
     }
   }
@@ -241,6 +253,9 @@ void PSOldGen::expand(size_t bytes) {
 bool PSOldGen::expand_by(size_t bytes) {
   assert_lock_strong(ExpandHeap_lock);
   assert_locked_or_safepoint(Heap_lock);
+  if (bytes == 0) {
+    return true;  // That's what virtual_space()->expand_by(0) would return
+  }
   bool result = virtual_space()->expand_by(bytes);
   if (result) {
     if (ZapUnusedHeapArea) {
