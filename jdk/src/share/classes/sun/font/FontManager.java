@@ -3344,7 +3344,7 @@ public final class FontManager {
             int fontFormat = FONTFORMAT_NONE;
             int fontRank = Font2D.UNKNOWN_RANK;
 
-            if (ext.equals(".ttf") || isTTC) {
+            if (ext.equals(".ttf") || ext.equals(".otf") || isTTC) {
                 fontFormat = FONTFORMAT_TRUETYPE;
                 fontRank = Font2D.TTF_RANK;
             } else if (ext.equals(".pfa") || ext.equals(".pfb")) {

@@ -812,7 +812,9 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
                 return(name.startsWith(".ttf", offset) ||
                        name.startsWith(".TTF", offset) ||
                        name.startsWith(".ttc", offset) ||
-                       name.startsWith(".TTC", offset));
+                       name.startsWith(".TTC", offset) ||
+                       name.startsWith(".otf", offset) ||
+                       name.startsWith(".OTF", offset));
             }
         }
     }
@@ -835,31 +837,11 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
         }
     }
 
-     public static class TTorT1Filter implements FilenameFilter {
-        public boolean accept(File dir, String name) {
-
-            /* all conveniently have the same suffix length */
-            int offset = name.length()-4;
-            if (offset <= 0) { /* must be at least A.ttf or A.pfa */
-                return false;
-            } else {
-                boolean isTT =
-                    name.startsWith(".ttf", offset) ||
-                    name.startsWith(".TTF", offset) ||
-                    name.startsWith(".ttc", offset) ||
-                    name.startsWith(".TTC", offset);
-                if (isTT) {
-                    return true;
-                } else if (noType1Font) {
-                    return false;
-                } else {
-                    return(name.startsWith(".pfa", offset) ||
-                           name.startsWith(".pfb", offset) ||
-                           name.startsWith(".PFA", offset) ||
-                           name.startsWith(".PFB", offset));
-                }
-            }
-        }
+    public static class TTorT1Filter implements FilenameFilter {
+         public boolean accept(File dir, String name) {
+             return SunGraphicsEnvironment.ttFilter.accept(dir, name) ||
+                 SunGraphicsEnvironment.t1Filter.accept(dir, name);
+         }
     }
 
     /* No need to keep consing up new instances - reuse a singleton.
