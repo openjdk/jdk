@@ -501,12 +501,14 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
      *   - the pixel shaders are available, and
      *   - blending is disabled, and
      *   - the source color is opaque
+     *   - and the destination is opaque
      */
     public boolean canRenderLCDText(SunGraphics2D sg2d) {
         return
             graphicsDevice.isCapPresent(CAPS_LCD_SHADER) &&
             sg2d.compositeState <= SunGraphics2D.COMP_ISCOPY &&
-            sg2d.paintState <= SunGraphics2D.PAINT_OPAQUECOLOR;
+            sg2d.paintState <= SunGraphics2D.PAINT_OPAQUECOLOR   &&
+            sg2d.surfaceData.getTransparency() == Transparency.OPAQUE;
     }
 
     public void validatePipe(SunGraphics2D sg2d) {
