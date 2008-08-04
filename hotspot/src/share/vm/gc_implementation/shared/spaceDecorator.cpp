@@ -39,7 +39,8 @@ bool SpaceMangler::is_mangled(HeapWord* q) {
 
 void SpaceMangler::set_top_for_allocations(HeapWord* v)  {
   if (v < end()) {
-    assert(is_mangled(v), "The high water mark is not mangled");
+    assert(!CheckZapUnusedHeapArea || is_mangled(v),
+      "The high water mark is not mangled");
   }
   _top_for_allocations = v;
 }
