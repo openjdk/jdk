@@ -229,6 +229,12 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask {
             void process(JavapTask task, String opt, String arg) {
                 task.options.ignoreSymbolFile = true;
             }
+        },
+
+        new Option(false, "-constants") {
+            void process(JavapTask task, String opt, String arg) {
+                task.options.showConstants = true;
+            }
         }
 
     };

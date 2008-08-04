@@ -35,6 +35,7 @@ import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.ConstantPool;
 import com.sun.tools.classfile.ConstantPoolException;
+import com.sun.tools.classfile.ConstantValue_attribute;
 import com.sun.tools.classfile.Descriptor;
 import com.sun.tools.classfile.DescriptorException;
 import com.sun.tools.classfile.Exceptions_attribute;
@@ -185,6 +186,14 @@ public class ClassWriter extends BasicWriter {
         }
         print(" ");
         print(getFieldName(f));
+        if (options.showConstants && !options.compat) { // BUG 4111861 print static final field contents
+            Attribute a = f.attributes.get(Attribute.ConstantValue);
+            if (a instanceof ConstantValue_attribute) {
+                print(" = ");
+                ConstantValue_attribute cv = (ConstantValue_attribute) a;
+                print(getConstantValue(f.descriptor, cv.constantvalue_index));
+            }
+        }
         print(";");
         println();
 
@@ -478,6 +487,81 @@ public class ClassWriter extends BasicWriter {
             return attr.getSourceFile(constant_pool);
         } catch (ConstantPoolException e) {
             return report(e);
+        }
+    }
+
+    /**
+     * Get the value of an entry in the constant pool as a Java constant.
+     * Characters and booleans are represented by CONSTANT_Intgere entries.
+     * Character and string values are processed to escape characters outside
+     * the basic printable ASCII set.
+     * @param d the descriptor, giving the expected type of the constant
+     * @param index the index of the value in the constant pool
+     * @return a printable string containing the value of the constant.
+     */
+    String getConstantValue(Descriptor d, int index) {
+        try {
+            ConstantPool.CPInfo cpInfo = constant_pool.get(index);
+
+            switch (cpInfo.getTag()) {
+                case ConstantPool.CONSTANT_Integer: {
+                    ConstantPool.CONSTANT_Integer_info info =
+                            (ConstantPool.CONSTANT_Integer_info) cpInfo;
+                    String t = d.getValue(constant_pool);
+                    if (t.equals("C")) { // character
+                        return getConstantCharValue((char) info.value);
+                    } else if (t.equals("Z")) { // boolean
+                        return String.valueOf(info.value == 1);
+                    } else { // other: assume integer
+                        return String.valueOf(info.value);
+                    }
+                }
+
+                case ConstantPool.CONSTANT_String: {
+                    ConstantPool.CONSTANT_String_info info =
+                            (ConstantPool.CONSTANT_String_info) cpInfo;
+                    return getConstantStringValue(info.getString());
+                }
+
+                default:
+                    return constantWriter.stringValue(cpInfo);
+            }
+        } catch (ConstantPoolException e) {
+            return "#" + index;
+        }
+    }
+
+    private String getConstantCharValue(char c) {
+        StringBuilder sb = new StringBuilder();
+        sb.append('\'');
+        sb.append(esc(c, '\''));
+        sb.append('\'');
+        return sb.toString();
+    }
+
+    private String getConstantStringValue(String s) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\"");
+        for (int i = 0; i < s.length(); i++) {
+            sb.append(esc(s.charAt(i), '"'));
+        }
+        sb.append("\"");
+        return sb.toString();
+    }
+
+    private String esc(char c, char quote) {
+        if (32 <= c && c <= 126 && c != quote)
+            return String.valueOf(c);
+        else switch (c) {
+            case '\b': return "\\b";
+            case '\n': return "\\n";
+            case '\t': return "\\t";
+            case '\f': return "\\f";
+            case '\r': return "\\r";
+            case '\\': return "\\\\";
+            case '\'': return "\\'";
+            case '\"': return "\\\"";
+            default:   return String.format("\\u%04x", (int) c);
         }
     }
 
