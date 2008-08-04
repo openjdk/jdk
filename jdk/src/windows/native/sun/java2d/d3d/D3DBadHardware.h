@@ -85,6 +85,15 @@ static const ADAPTER_INFO badHardware[] = {
     { 0x1002, 0x71C5, D_VERSION(6,14,10,6706), OS_WINXP },
     { 0x1002, 0x71C5, D_VERSION(7,14,10,0567), OS_VISTA },
 
+    // Nvidia FX 5200
+    // Reason: workaround for 6717988
+    { 0x10DE, 0x0322, D_VERSION(6,14,11,6921), OS_WINXP },
+
+    // Nvidia FX Go5600, Go5700
+    // Reason: workaround for 6714579
+    { 0x10DE, 0x031A, D_VERSION(6,14,11,6921), OS_WINXP },
+    { 0x10DE, 0x0347, D_VERSION(6,14,11,6921), OS_WINXP },
+
     // Nvidia Quadro NVS 110M
     // Reason: workaround for 6629891
     { 0x10DE, 0x01D7, D_VERSION(6,14,11,5665), OS_WINXP },
