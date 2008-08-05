@@ -63,6 +63,7 @@ public class Check {
     private final Target target;
     private final Source source;
     private final Types types;
+    private final JCDiagnostic.Factory diags;
     private final boolean skipAnnotations;
     private final TreeInfo treeinfo;
 
@@ -86,6 +87,7 @@ public class Check {
         syms = Symtab.instance(context);
         infer = Infer.instance(context);
         this.types = Types.instance(context);
+        diags = JCDiagnostic.Factory.instance(context);
         Options options = Options.instance(context);
         target = Target.instance(context);
         source = Source.instance(context);
@@ -343,7 +345,7 @@ public class Check {
         if (types.isAssignable(found, req, convertWarner(pos, found, req)))
             return found;
         if (found.tag <= DOUBLE && req.tag <= DOUBLE)
-            return typeError(pos, JCDiagnostic.fragment("possible.loss.of.precision"), found, req);
+            return typeError(pos, diags.fragment("possible.loss.of.precision"), found, req);
         if (found.isSuperBound()) {
             log.error(pos, "assignment.from.super-bound", found);
             return syms.errType;
@@ -352,7 +354,7 @@ public class Check {
             log.error(pos, "assignment.to.extends-bound", req);
             return syms.errType;
         }
-        return typeError(pos, JCDiagnostic.fragment("incompatible.types"), found, req);
+        return typeError(pos, diags.fragment("incompatible.types"), found, req);
     }
 
     /** Instantiate polymorphic type to some prototype, unless
@@ -380,7 +382,7 @@ public class Check {
                 } else {
                     JCDiagnostic d = ex.getDiagnostic();
                     return typeError(pos,
-                                     JCDiagnostic.fragment("incompatible.types" + (d!=null ? ".1" : ""), d),
+                                     diags.fragment("incompatible.types" + (d!=null ? ".1" : ""), d),
                                      t, pt);
                 }
             }
@@ -401,7 +403,7 @@ public class Check {
             return req;
         } else {
             return typeError(pos,
-                             JCDiagnostic.fragment("inconvertible.types"),
+                             diags.fragment("inconvertible.types"),
                              found, req);
         }
     }
@@ -480,9 +482,9 @@ public class Check {
     Type checkClassType(DiagnosticPosition pos, Type t) {
         if (t.tag != CLASS && t.tag != ERROR)
             return typeTagError(pos,
-                                JCDiagnostic.fragment("type.req.class"),
+                                diags.fragment("type.req.class"),
                                 (t.tag == TYPEVAR)
-                                ? JCDiagnostic.fragment("type.parameter", t)
+                                ? diags.fragment("type.parameter", t)
                                 : t);
         else
             return t;
@@ -515,7 +517,7 @@ public class Check {
     Type checkReifiableReferenceType(DiagnosticPosition pos, Type t) {
         if (t.tag != CLASS && t.tag != ARRAY && t.tag != ERROR) {
             return typeTagError(pos,
-                                JCDiagnostic.fragment("type.req.class.array"),
+                                diags.fragment("type.req.class.array"),
                                 t);
         } else if (!types.isReifiable(t)) {
             log.error(pos, "illegal.generic.type.for.instof");
@@ -540,7 +542,7 @@ public class Check {
             return t;
         default:
             return typeTagError(pos,
-                                JCDiagnostic.fragment("type.req.ref"),
+                                diags.fragment("type.req.ref"),
                                 t);
         }
     }
@@ -560,7 +562,7 @@ public class Check {
             return t;
         default:
             return typeTagError(pos,
-                                JCDiagnostic.fragment("type.req.ref"),
+                                diags.fragment("type.req.ref"),
                                 t);
         }
     }
@@ -1028,7 +1030,7 @@ public class Check {
      *  @param other  The overridden method.
      *  @return       An internationalized string.
      */
-    static Object cannotOverride(MethodSymbol m, MethodSymbol other) {
+    Object cannotOverride(MethodSymbol m, MethodSymbol other) {
         String key;
         if ((other.owner.flags() & INTERFACE) == 0)
             key = "cant.override";
@@ -1036,7 +1038,7 @@ public class Check {
             key = "cant.implement";
         else
             key = "clashes.with";
-        return JCDiagnostic.fragment(key, m, m.location(), other, other.location());
+        return diags.fragment(key, m, m.location(), other, other.location());
     }
 
     /** A customized "override" warning message.
@@ -1044,7 +1046,7 @@ public class Check {
      *  @param other  The overridden method.
      *  @return       An internationalized string.
      */
-    static Object uncheckedOverrides(MethodSymbol m, MethodSymbol other) {
+    Object uncheckedOverrides(MethodSymbol m, MethodSymbol other) {
         String key;
         if ((other.owner.flags() & INTERFACE) == 0)
             key = "unchecked.override";
@@ -1052,7 +1054,7 @@ public class Check {
             key = "unchecked.implement";
         else
             key = "unchecked.clash.with";
-        return JCDiagnostic.fragment(key, m, m.location(), other, other.location());
+        return diags.fragment(key, m, m.location(), other, other.location());
     }
 
     /** A customized "override" warning message.
@@ -1060,7 +1062,7 @@ public class Check {
      *  @param other  The overridden method.
      *  @return       An internationalized string.
      */
-    static Object varargsOverrides(MethodSymbol m, MethodSymbol other) {
+    Object varargsOverrides(MethodSymbol m, MethodSymbol other) {
         String key;
         if ((other.owner.flags() & INTERFACE) == 0)
             key = "varargs.override";
@@ -1068,7 +1070,7 @@ public class Check {
             key = "varargs.implement";
         else
             key = "varargs.clash.with";
-        return JCDiagnostic.fragment(key, m, m.location(), other, other.location());
+        return diags.fragment(key, m, m.location(), other, other.location());
     }
 
     /** Check that this method conforms with overridden method 'other'.
@@ -1157,7 +1159,7 @@ public class Check {
                 // allow limited interoperability with covariant returns
             } else {
                 typeError(TreeInfo.diagnosticPositionFor(m, tree),
-                          JCDiagnostic.fragment("override.incompatible.ret",
+                          diags.fragment("override.incompatible.ret",
                                          cannotOverride(m, other)),
                           mtres, otres);
                 return;
@@ -1165,7 +1167,7 @@ public class Check {
         } else if (overrideWarner.warned) {
             warnUnchecked(TreeInfo.diagnosticPositionFor(m, tree),
                           "prob.found.req",
-                          JCDiagnostic.fragment("override.unchecked.ret",
+                          diags.fragment("override.unchecked.ret",
                                               uncheckedOverrides(m, other)),
                           mtres, otres);
         }
@@ -2170,7 +2172,7 @@ public class Check {
             boolean warned = this.warned;
             super.warnUnchecked();
             if (warned) return; // suppress redundant diagnostics
-            Object problem = JCDiagnostic.fragment(key);
+            Object problem = diags.fragment(key);
             Check.this.warnUnchecked(pos(), "prob.found.req", problem, found, expected);
         }
     }

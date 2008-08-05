@@ -29,6 +29,7 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Type.*;
+import com.sun.tools.javac.util.JCDiagnostic;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
@@ -50,6 +51,7 @@ public class Infer {
 
     Symtab syms;
     Types types;
+    JCDiagnostic.Factory diags;
 
     public static Infer instance(Context context) {
         Infer instance = context.get(inferKey);
@@ -62,6 +64,11 @@ public class Infer {
         context.put(inferKey, this);
         syms = Symtab.instance(context);
         types = Types.instance(context);
+        diags = JCDiagnostic.Factory.instance(context);
+        ambiguousNoInstanceException =
+            new NoInstanceException(true, diags);
+        unambiguousNoInstanceException =
+            new NoInstanceException(false, diags);
     }
 
     public static class NoInstanceException extends RuntimeException {
@@ -70,35 +77,35 @@ public class Infer {
         boolean isAmbiguous; // exist several incomparable best instances?
 
         JCDiagnostic diagnostic;
+        JCDiagnostic.Factory diags;
 
-        NoInstanceException(boolean isAmbiguous) {
+        NoInstanceException(boolean isAmbiguous, JCDiagnostic.Factory diags) {
             this.diagnostic = null;
             this.isAmbiguous = isAmbiguous;
+            this.diags = diags;
         }
         NoInstanceException setMessage(String key) {
-            this.diagnostic = JCDiagnostic.fragment(key);
+            this.diagnostic = diags.fragment(key);
             return this;
         }
         NoInstanceException setMessage(String key, Object arg1) {
-            this.diagnostic = JCDiagnostic.fragment(key, arg1);
+            this.diagnostic = diags.fragment(key, arg1);
             return this;
         }
         NoInstanceException setMessage(String key, Object arg1, Object arg2) {
-            this.diagnostic = JCDiagnostic.fragment(key, arg1, arg2);
+            this.diagnostic = diags.fragment(key, arg1, arg2);
             return this;
         }
         NoInstanceException setMessage(String key, Object arg1, Object arg2, Object arg3) {
-            this.diagnostic = JCDiagnostic.fragment(key, arg1, arg2, arg3);
+            this.diagnostic = diags.fragment(key, arg1, arg2, arg3);
             return this;
         }
         public JCDiagnostic getDiagnostic() {
             return diagnostic;
         }
     }
-    private final NoInstanceException ambiguousNoInstanceException =
-        new NoInstanceException(true);
-    private final NoInstanceException unambiguousNoInstanceException =
-        new NoInstanceException(false);
+    private final NoInstanceException ambiguousNoInstanceException;
+    private final NoInstanceException unambiguousNoInstanceException;
 
 /***************************************************************************
  * Auxiliary type values and classes
