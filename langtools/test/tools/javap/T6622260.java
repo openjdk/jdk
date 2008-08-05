@@ -189,6 +189,10 @@ public class T6622260 {
 
     void verify(String output) {
         System.out.println(output);
+        if (output.startsWith("Classfile")) {
+            // make sure to ignore filename
+            output = output.substring(output.indexOf('\n'));
+        }
         if (output.indexOf("-") >= 0)
             throw new Error("- found in output");
         if (output.indexOf("FFFFFF") >= 0)
