@@ -25,6 +25,7 @@
 
 package com.sun.tools.javap;
 
+import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 
@@ -46,6 +47,8 @@ import com.sun.tools.classfile.Signature_attribute;
 import com.sun.tools.classfile.SourceFile_attribute;
 import com.sun.tools.classfile.Type;
 
+import java.text.DateFormat;
+import java.util.Date;
 import static com.sun.tools.classfile.AccessFlags.*;
 
 /*
@@ -73,6 +76,23 @@ public class ClassWriter extends BasicWriter {
         constantWriter = ConstantWriter.instance(context);
     }
 
+    void setDigest(String name, byte[] digest) {
+        this.digestName = name;
+        this.digest = digest;
+    }
+
+    void setFile(URI uri) {
+        this.uri = uri;
+    }
+
+    void setFileSize(int size) {
+        this.size = size;
+    }
+
+    void setLastModified(long lastModified) {
+        this.lastModified = lastModified;
+    }
+
     ClassFile getClassFile() {
         return classFile;
     }
@@ -84,6 +104,32 @@ public class ClassWriter extends BasicWriter {
     public void write(ClassFile cf) {
         classFile = cf;
         constant_pool = classFile.constant_pool;
+
+        if ((options.sysInfo || options.verbose) && !options.compat) {
+            if (uri != null) {
+                if (uri.getScheme().equals("file"))
+                    println("Classfile " + uri.getPath());
+                else
+                    println("Classfile " + uri);
+            }
+            if (lastModified != -1) {
+                Date lm = new Date(lastModified);
+                DateFormat df = DateFormat.getDateInstance();
+                if (size > 0) {
+                    println("Last modified " + df.format(lm) + "; size " + size + " bytes");
+                } else {
+                    println("Last modified " + df.format(lm));
+                }
+            } else if (size > 0) {
+                println("Size " + size + " bytes");
+            }
+            if (digestName != null && digest != null) {
+                StringBuilder sb = new StringBuilder();
+                for (byte b: digest)
+                    sb.append(String.format("%02x", b));
+                println(digestName + " checksum " + sb);
+            }
+        }
 
         Attribute sfa = cf.getAttribute(Attribute.SourceFile);
         if (sfa instanceof SourceFile_attribute) {
@@ -570,6 +616,11 @@ public class ClassWriter extends BasicWriter {
     private CodeWriter codeWriter;
     private ConstantWriter constantWriter;
     private ClassFile classFile;
+    private URI uri;
+    private long lastModified;
+    private String digestName;
+    private byte[] digest;
+    private int size;
     private ConstantPool constant_pool;
     private Method method;
     private static final String NEWLINE = System.getProperty("line.separator", "\n");
