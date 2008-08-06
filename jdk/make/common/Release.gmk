@@ -662,7 +662,7 @@ $(RES_JAR_ARGLIST): $(RES_JAR_FILELIST)
 $(RESOURCES_JAR): $(RES_JAR_ARGLIST) $(JAR_MANIFEST_FILE)
 	$(prep-target)
 	$(BOOT_JAR_CMD) c0mf $(JAR_MANIFEST_FILE) $@ \
-	    @$(RES_JAR_ARGLIST) $(JAR_JFLAGS)
+	    @$(RES_JAR_ARGLIST) $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 # Create jsse.jar containing SunJSSE implementation classes
@@ -671,7 +671,7 @@ $(JSSE_JAR): $(JAR_MANIFEST_FILE)
 	$(prep-target)
 	$(BOOT_JAR_CMD) c0mf $(JAR_MANIFEST_FILE) $@ \
 		$(JSSE_CLASSES_DIRS:%=-C $(CLASSBINDIR) %) \
-		$(JAR_JFLAGS)
+		$(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 # Create sec-bin.zip
@@ -721,7 +721,7 @@ $(RT_JAR_ARGLIST): $(RT_JAR_FILELIST)
 $(RT_JAR): $(RT_JAR_ARGLIST) $(JAR_MANIFEST_FILE)
 	$(prep-target)
 	$(BOOT_JAR_CMD) c0mf $(JAR_MANIFEST_FILE) $@ \
-	    @$(RT_JAR_ARGLIST) $(JAR_JFLAGS)
+	    @$(RT_JAR_ARGLIST) $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 # Meta-index construction to make core class loaders lazier
@@ -955,7 +955,7 @@ initial-image-jdk:: initial-image-jdk-setup \
 	@#
 	$(BOOT_JAR_CMD) c0f $(LIBDIR)/tools.jar $(addprefix \
 		-C $(CLASSBINDIR) , $(TOOLS)) \
-	        $(JAR_JFLAGS)
+	        $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 	$(CP) $(LIBDIR)/tools.jar $(JDK_IMAGE_DIR)/lib/tools.jar
 	@#
@@ -968,7 +968,7 @@ initial-image-jdk:: initial-image-jdk-setup \
 	    -Acom.sun.tools.javac.sym.Dest=$(OUTPUTDIR)/symbols/META-INF/sym/rt.jar \
 	    $(CORE_PKGS) $(NON_CORE_PKGS) $(EXCLUDE_PROPWARN_PKGS)
 	$(BOOT_JAR_CMD) c0f $(LIBDIR)/ct.sym \
-	    -C $(OUTPUTDIR)/symbols META-INF $(JAR_JFLAGS)
+	    -C $(OUTPUTDIR)/symbols META-INF $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 	$(CP) $(LIBDIR)/ct.sym $(JDK_IMAGE_DIR)/lib/ct.sym
 	@#
@@ -1132,11 +1132,11 @@ endef
 COMPARE_FILTER = | $(EGREP) -v /fastdebug/ | $(EGREP) -v /demo/ | $(EGREP) -v /sample/
 
 # If a previuous image is provided, no need to install it.
-ifdef PREVIOUS_JDK_IMAGE
+ifdef PREVIOUS_RELEASE_IMAGE
 
   # Just use the pre-installed images
-  PREV_JRE_IMAGE_DIR=$(PREVIOUS_JDK_IMAGE)/jre
-  PREV_JDK_IMAGE_DIR=$(PREVIOUS_JDK_IMAGE)
+  PREV_JRE_IMAGE_DIR=$(PREVIOUS_RELEASE_IMAGE)/jre
+  PREV_JDK_IMAGE_DIR=$(PREVIOUS_RELEASE_IMAGE)
 
 else
 
