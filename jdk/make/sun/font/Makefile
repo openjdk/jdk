@@ -77,9 +77,6 @@ FILES_export = \
 
 ifeq ($(PLATFORM), windows)
 
-  # Files built here do not compile with warning level 3 if warnings are fatal
-  COMPILER_WARNINGS_FATAL=false
-
   LDLIBS += user32.lib gdi32.lib $(OBJDIR)/../../../sun.awt/awt/$(OBJDIRNAME)/awt.lib  
 
   OTHER_CFLAGS += -DCC_NOEX

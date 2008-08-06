@@ -49,7 +49,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      *
      * @see Group
      */
-    private Map groupPackageMap;
+    private Map<String,List<PackageDoc>> groupPackageMap;
 
     /**
      * List to store the order groups as specified on the command line.
@@ -120,10 +120,9 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     protected void generateIndex() {
         for (int i = 0; i < groupList.size(); i++) {
         String groupname = (String)groupList.get(i);
-        List list = (List)groupPackageMap.get(groupname);
+        List<PackageDoc> list = groupPackageMap.get(groupname);
             if (list != null && list.size() > 0) {
-                printIndexContents((PackageDoc[])list.
-                                       toArray(new PackageDoc[list.size()]),
+                printIndexContents(list.toArray(new PackageDoc[list.size()]),
                                     groupname);
             }
         }

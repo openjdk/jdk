@@ -86,7 +86,7 @@ public class JavadocEnter extends Enter {
         if (tree.sym != null && tree.sym.kind == Kinds.TYP) {
             if (tree.sym == null) return;
             String comment = env.toplevel.docComments.get(tree);
-            ClassSymbol c = (ClassSymbol)tree.sym;
+            ClassSymbol c = tree.sym;
             docenv.makeClassDoc(c, comment, tree, env.toplevel.lineMap);
         }
     }

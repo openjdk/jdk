@@ -450,7 +450,7 @@ class SeeTagImpl extends TagImpl implements SeeTag, LayoutCharacters {
             if (typeId.length() > 0) {
                 paramList.append(typeId.toString());
             }
-            return (String[])paramList.toArray(new String[paramList.length()]);
+            return paramList.toArray(new String[paramList.length()]);
         }
 
         void addTypeToParamList() {

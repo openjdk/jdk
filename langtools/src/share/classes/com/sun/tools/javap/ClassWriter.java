@@ -104,14 +104,10 @@ public class ClassWriter extends BasicWriter {
         Signature_attribute sigAttr = getSignature(cf.attributes);
         if (sigAttr == null) {
             // use info from class file header
-            if (classFile.isClass()) {
-                if (classFile.super_class != 0 ) {
-                    String sn = getJavaSuperclassName(cf);
-                    if (!sn.equals("java.lang.Object") || options.compat) { // BUG XXXXXXXX
-                        print(" extends ");
-                        print(sn);
-                    }
-                }
+            if (classFile.isClass() && classFile.super_class != 0 ) {
+                String sn = getJavaSuperclassName(cf);
+                print(" extends ");
+                print(sn);
             }
             for (int i = 0; i < classFile.interfaces.length; i++) {
                 print(i == 0 ? (classFile.isClass() ? " implements " : " extends ") : ",");
@@ -124,7 +120,7 @@ public class ClassWriter extends BasicWriter {
                 // FieldType and a ClassSignatureType that only contains a superclass type.
                 if (t instanceof Type.ClassSigType)
                     print(t);
-                else if (!t.isObject()) {
+                else {
                     print(" extends ");
                     print(t);
                 }

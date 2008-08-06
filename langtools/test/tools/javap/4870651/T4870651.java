@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 4870651
- * @summary javap should recognize generics, varargs, enum
+ * @bug 4870651 6715757
+ * @summary javap should recognize generics, varargs, enum;
+ *          javap prints "extends java.lang.Object"
  * @build T4870651 Test
  * @run main T4870651
  */
@@ -38,7 +39,9 @@ public class T4870651 {
 
     public void run() throws IOException {
         verify("Test",
-               "class Test<T, E extends java.lang.Exception & java.lang.Comparable<T>, U extends java.lang.Comparable>",
+               "class Test<T extends java.lang.Object, " +
+                   "E extends java.lang.Exception & java.lang.Comparable<T>, " +
+                   "U extends java.lang.Comparable>",
                "v1(java.lang.String...)");
 
         verify("Test$Enum",

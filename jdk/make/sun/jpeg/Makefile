@@ -73,10 +73,5 @@ include $(BUILDDIR)/common/Library.gmk
 #
 vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/image/jpeg
 
-ifeq ($(PLATFORM), windows)
-  # Files built here do not compile with warning level 3 if warnings are fatal
-  COMPILER_WARNINGS_FATAL=false
-endif # PLATFORM
-
 CLASSES.export += java.io.InputStream
 

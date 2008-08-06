@@ -32,6 +32,7 @@ import java.io.RandomAccessFile;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1307,11 +1308,18 @@ public class ZipFileIndex {
             return javatime;
         }
 
-        // From java.util.zip
-        private static long dosToJavaTime(int nativetime) {
-            // Bootstrap build problems prevent me from using the code directly
-            // Convert the raw/native time to a long for now
-            return (long)nativetime;
+        // based on dosToJavaTime in java.util.Zip, but avoiding the
+        // use of deprecated Date constructor
+        private static long dosToJavaTime(int dtime) {
+            Calendar c = Calendar.getInstance();
+            c.set(Calendar.YEAR,        ((dtime >> 25) & 0x7f) + 1980);
+            c.set(Calendar.MONTH,       ((dtime >> 21) & 0x0f) - 1);
+            c.set(Calendar.DATE,        ((dtime >> 16) & 0x1f));
+            c.set(Calendar.HOUR_OF_DAY, ((dtime >> 11) & 0x1f));
+            c.set(Calendar.MINUTE,      ((dtime >>  5) & 0x3f));
+            c.set(Calendar.SECOND,      ((dtime <<  1) & 0x3e));
+            c.set(Calendar.MILLISECOND, 0);
+            return c.getTimeInMillis();
         }
 
         void setNativeTime(int natTime) {

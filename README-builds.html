@@ -5,15 +5,12 @@
     </head>
     <body style="background-color:lightcyan">
         <!-- ====================================================== -->
-        <table width="100%" style="background-color:white">
+        +        <table width="100%">
             <tr>
                 <td align="center">
-                    <a href="http://openjdk.java.net" border="0">    
-                        <img alt="OpenJDK" 
-                             src="http://openjdk.java.net/images/openjdk.png"
-                             width=256
-                             style="border-style: none"/>
-                    </a>
+                    <img alt="OpenJDK" 
+                         src="http://openjdk.java.net/images/openjdk.png" 
+                         width=256 />
                 </td>
             </tr>
             <tr>
@@ -54,6 +51,7 @@
                             <li><a href="#bootjdk">Bootstrap JDK</a> </li>
                             <li><a href="#binaryplugs">Binary Plugs</a> </li>
                             <li><a href="#importjdk">Optional Import JDK</a> </li>
+                            <li><a href="#ant">Ant</a> </li>
                             <li><a href="#cacerts">Certificate Authority File (cacert)</a> </li>
                             <li><a href="#compilers">Compilers</a> 
                                 <ul>
@@ -424,24 +422,37 @@
                     you should use <tt>gmake</tt>
                     which will be located in either the <tt>/opt/sfw/bin</tt> or 
                     <tt>/usr/sfw/bin</tt> directory.
+                    In more recent versions of Solaris GNU make can be found
+                    at <tt>/usr/bin/gmake</tt>. 
                 </li>
                 <li>
                     <strong>Windows:</strong>
                     Make sure you start your build inside a bash/sh/ksh shell.
                     <br>
                     <b>WARNING:</b> Watch out for make version 3.81, it may
-                    not work due to a lack of support for drive letter paths
-                    like <tt>C:/</tt>. See
-                    <a href="#gmake">section on gmake</a>.
+                    not work due to a lack of support for MS-DOS drive letter paths
+                    like <tt>C:/</tt> or <tt>C:\</tt>.
                     Use a 3.80 version, or find a newer
-                    version that has this problem fixed.
+                    version that has this problem fixed, like 3.82.
                     The older 3.80 version of make.exe can be downloaded with this
                     <a href="http://cygwin.paracoda.com/release/make/make-3.80-1.tar.bz2" target="_blank">
                     link</a>.
+                    Use of this older 3.80 make.exe may require that you install the
+                    libintl2.dll library or libintl2 cygwin package which is
+                    no longer installed by default by the cygwin installer.
+                    <br>
                     Also see the
                     <a href="http://developer.mozilla.org/en/docs/Windows_build_prerequisites_using_cygwin#make" target="_blank">
                     mozilla developer center</a>
                     on this topic.
+                    <br>
+                    It's hoped that when make 3.82 starts shipping in a future cygwin
+                    release that this MS-DOS path issue will be fixed.
+                    In addition to the above 3.80 make.exe you can download 
+                    this
+                    <a href="http://www.cmake.org/files/cygwin/make.exe">
+                    www.cmake.org make.exe</a> which will not have a libintl2.dll
+                    dependency.
                 </li>
             </ul>
             <p>
@@ -507,6 +518,11 @@
                     Install or upgrade the <a href="#freetype">FreeType development
                     package</a>.
                 </li>
+                <li>
+                    Install
+                    <a href="#ant">Ant</a>, set
+                    <tt><a href="#ANT_HOME">ANT_HOME</a></tt>.
+                </li>
             </ol>
         </blockquote>
         <!-- ------------------------------------------------------ -->
@@ -566,6 +582,11 @@
                     Install the
                     <a href="#cups">CUPS Include files</a>, set
                     <tt><a href="#ALT_CUPS_HEADERS_PATH">ALT_CUPS_HEADERS_PATH</a></tt>.
+                </li>
+                <li>
+                    Install
+                    <a href="#ant">Ant</a>, set
+                    <tt><a href="#ANT_HOME">ANT_HOME</a></tt>.
                 </li>
             </ol>
         </blockquote>
@@ -654,6 +675,11 @@
                     Install 
                     <a href="#dxsdk">Microsoft DirectX SDK</a>.
                 </li>
+                <li>
+                    Install
+                    <a href="#ant">Ant</a>, set
+                    <tt><a href="#ANT_HOME">ANT_HOME</a></tt>.
+                </li>
             </ol>
         </blockquote>
         <!-- ------------------------------------------------------ -->
@@ -734,6 +760,22 @@
                 wanted to avoid repeatedly building the Hotspot VM, you could
                 set this to the location of the previous JDK install image
                 and the build will copy the needed files from this import area.
+            </blockquote>
+            <!-- ------------------------------------------------------ -->
+            <h4><a name="ant">Ant</a></h4>
+            <blockquote>
+                All OpenJDK builds require access to least Ant 1.6.5.
+                The Ant tool is available from the 
+                <a href="http://ant.apache.org/antlibs/bindownload.cgi" target="_blank">
+                Ant download site</a>.
+                You should always set 
+                <tt><a href="#ANT_HOME">ANT_HOME</a></tt>
+                to point to the location of
+                the Ant installation, this is the directory pathname
+                that contains a <tt>bin and lib</tt>.
+                It's also a good idea to also place its <tt>bin</tt> directory
+                in the <tt>PATH</tt> environment variable, although it's
+                not absolutely required.
             </blockquote>
             <!-- ------------------------------------------------------ -->
             <h4><a name="cacerts">Certificate Authority File (cacert)</a></h4>
@@ -915,6 +957,21 @@
                 and 
                 <tt><a href="#ALT_FREETYPE_HEADERS_PATH">ALT_FREETYPE_HEADERS_PATH</a></tt>
                 to refer to place where library and header files are installed.
+                <p>
+                Building the freetype 2 libraries from scratch is also possible,
+                however on Windows refer to the
+                <a href="http://freetype.freedesktop.org/wiki/FreeType_DLL">
+                Windows FreeType DLL build instructions</a>.
+                <p>
+                Note that by default FreeType is built with byte code hinting
+                support disabled due to licensing restrictions.
+                In this case, text appearance and metrics are expected to
+                differ from Sun's official JDK build.
+                See
+                <a href="http://freetype.sourceforge.net/freetype2/index.html">
+                    the SourceForge FreeType2 Home Page
+                </a>
+                for more information.
             </blockquote>    
             <!-- ------------------------------------------------------ -->
             <h4><a name="alsa">Advanced Linux Sound Architecture (ALSA) (Linux only)</a></h4>
@@ -1036,7 +1093,8 @@
                             <tr>
                                 <td>make.exe</td>
                                 <td>Devel</td>
-                                <td>make: The GNU version of the 'make' utility</td>
+                                <td>make: The GNU version of the 'make' utility<br>
+                                <b>NOTE</b>: See <a href="#gmake">the GNU make section</a></td>
                             </tr>
                             <tr>
                                 <td>m4.exe</td>
@@ -1050,7 +1108,7 @@
                                 <td>cpio: A program to manage archives of files</td>
                             </tr>
                             <tr>
-                                <td>awk.exe</td>
+                                <td>gawk.exe</td>
                                 <td>Utils</td>
                                 <td>awk: Pattern-directed scanning and processing language</td>
                             </tr>
@@ -1061,17 +1119,17 @@
                             </tr>
                             <tr>
                                 <td>zip.exe</td>
-                                <td>Utils</td>
+                                <td>Archive</td>
                                 <td>zip: Package and compress (archive) files</td>
                             </tr>
                             <tr>
                                 <td>unzip.exe</td>
-                                <td>Utils</td>
+                                <td>Archive</td>
                                 <td>unzip: Extract compressed files in a ZIP archive</td>
                             </tr>
                             <tr>
                                 <td>free.exe</td>
-                                <td>Utils</td>
+                                <td>Procps</td>
                                 <td>free: Display amount of free and used memory in the system</td>
                             </tr>
                         </tbody>
@@ -1224,46 +1282,6 @@
         document) that can impact the build are:
         <blockquote>
             <dl>
-                <dt><a name="path"><tt>PATH</tt></a> </dt>
-                <dd>Typically you want to set the <tt>PATH</tt> to include:
-                    <ul>
-                        <li>The location of the GNU make binary</li>
-                        <li>The location of the Bootstrap JDK <tt>java</tt> 
-                        (see <a href="#bootjdk">Bootstrap JDK</a>)</li>
-                        <li>The location of the C/C++ compilers 
-                        (see <a href="#compilers"><tt>compilers</tt></a>)</li>
-                        <li>The location or locations for the Unix command utilities
-                        (e.g. <tt>/usr/bin</tt>)</li>
-                    </ul>
-                </dd>
-                <dt><tt>MILESTONE</tt> </dt>
-                <dd>
-                    The milestone name for the build (<i>e.g.</i>"beta"). 
-                    The default value is "internal".
-                </dd>
-                <dt><tt>BUILD_NUMBER</tt> </dt>
-                <dd>
-                    The build number for the build (<i>e.g.</i> "b27"). 
-                    The default value is "b00".
-                </dd>
-                <dt><a name="arch_data_model"><tt>ARCH_DATA_MODEL</tt></a></dt>
-                <dd>The <tt>ARCH_DATA_MODEL</tt> variable
-                    is used to specify whether the build is to generate 32-bit or 64-bit
-                    binaries. 
-                    The Solaris build supports either 32-bit or 64-bit builds, but
-                    Windows and Linux will support only one, depending on the specific
-                    OS being used.
-                    Normally, setting this variable is only necessary on Solaris.
-                    Set <tt>ARCH_DATA_MODEL</tt> to <tt>32</tt> for generating 32-bit binaries, 
-                    or to <tt>64</tt> for generating 64-bit binaries.
-                </dd>
-                <dt><a name="ALT_BOOTDIR"><tt>ALT_BOOTDIR</tt></a></dt>
-                <dd>
-                    The location of the bootstrap JDK installation. 
-                    See <a href="#bootjdk">Bootstrap JDK</a> for more information.
-                    You should always install your own local Bootstrap JDK and
-                    always set <tt>ALT_BOOTDIR</tt> explicitly.
-                </dd>
                 <dt><a name="ALT_BINARY_PLUGS_PATH"><tt>ALT_BINARY_PLUGS_PATH</tt></a></dt>
                 <dd>
                     The location of the binary plugs installation.
@@ -1272,118 +1290,12 @@
                     recent Binary Plugs install image
                     and set this variable to that location.
                 </dd>
-                <dt><a name="ALT_JDK_IMPORT_PATH"><tt>ALT_JDK_IMPORT_PATH</tt></a></dt>
+                <dt><a name="ALT_BOOTDIR"><tt>ALT_BOOTDIR</tt></a></dt>
                 <dd>
-                    The location of a previously built JDK installation. 
-                    See <a href="#importjdk">Optional Import JDK</a> for more information.
-                </dd>
-                <dt><a name="ALT_OUTPUTDIR"><tt>ALT_OUTPUTDIR</tt></a> </dt>
-                <dd>
-                    An override for specifying the (absolute) path of where the
-                    build output is to go.
-                    The default output directory will be build/<i>platform</i>.
-                </dd>
-                <dt><a name="ALT_COMPILER_PATH"><tt>ALT_COMPILER_PATH</tt></a> </dt>
-                <dd>
-                    The location of the C/C++ compiler.
-                    The default varies depending on the platform. 
-                </dd>
-                <dt><tt><a name="ALT_CACERTS_FILE">ALT_CACERTS_FILE</a></tt></dt>
-                <dd>
-                    The location of the <a href="#cacerts">cacerts</a> file.
-                    The default will refer to 
-                    <tt>jdk/src/share/lib/security/cacerts</tt>.
-                </dd>
-                <dt><a name="ALT_CUPS_HEADERS_PATH"><tt>ALT_CUPS_HEADERS_PATH</tt></a> </dt>
-                <dd>
-                    The location of the CUPS header files.
-                    See <a href="#cups">CUPS information</a> for more information.
-                    If this path does not exist the fallback path is 
-                    <tt>/usr/include</tt>.
-                </dd>
-                <dt><a name="ALT_FREETYPE_LIB_PATH"><tt>ALT_FREETYPE_LIB_PATH</tt></a></dt>
-                <dd>
-                    The location of the FreeType shared library. 
-                    See <a href="#freetype">FreeType information</a> for details. 
-                </dd>
-                <dt><a name="ALT_FREETYPE_HEADERS_PATH"><tt>ALT_FREETYPE_HEADERS_PATH</tt></a></dt>
-                <dd>
-                    The location of the FreeType header files.
-                    See <a href="#freetype">FreeType information</a> for details. 
-                </dd>
-                <dt><a name="ALT_JDK_DEVTOOLS_PATH"><tt>ALT_JDK_DEVTOOLS_PATH</tt></a></dt>
-                <dd>
-                    The default root location of the devtools.
-                    The default value is 
-                    <tt>$(ALT_SLASH_JAVA)/devtools</tt>.
-                </dd>
-                <dt><tt><a name="ALT_DEVTOOLS_PATH">ALT_DEVTOOLS_PATH</a></tt> </dt>
-                <dd>
-                    The location of tools like the 
-                    <a href="#zip"><tt>zip</tt> and <tt>unzip</tt></a>
-                    binaries, but might also contain the GNU make utility
-                    (<tt><i>gmake</i></tt>).
-                    So this area is a bit of a grab bag, especially on Windows.
-                    The default value depends on the platform and
-                    Unix Commands being used.
-                    On Linux the default will be 
-                    <tt>$(ALT_JDK_DEVTOOLS_PATH)/linux/bin</tt>, 
-                    on Solaris
-                    <tt>$(ALT_JDK_DEVTOOLS_PATH)/<i>{sparc,i386}</i>/bin</tt>, 
-                    on Windows with MKS
-                    <tt>%SYSTEMDRIVE%/UTILS</tt>, 
-                    and on Windows with CYGWIN
-                    <tt>/usr/bin</tt>.
-                </dd>
-                <dt><a name="ALT_UNIXCOMMAND_PATH"><tt>ALT_UNIXCOMMAND_PATH</tt></a> </dt>
-                <dd>
-                    An override for specifying where the
-                    Unix command set are located. 
-                    The default location varies depending on the platform,
-                    <tt>"%SYSTEMDRIVE%/MKSNT"</tt> or
-                    <tt>$(ROOTDIR)</tt> on Windows with MKS, otherwise it's 
-                    <tt>"/bin"</tt> or <tt>/usr/bin</tt>.
-                </dd>
-                <dt><a name="ALT_UNIXCCS_PATH"><tt>ALT_UNIXCCS_PATH</tt></a></dt>
-                <dd>
-                    <strong>Solaris only:</strong>
-                    An override for specifying where the Unix CCS
-                    command set are located.
-                    The default location is <tt>/usr/ccs/bin</tt> 
-                </dd>
-                <dt><a name="ALT_USRBIN_PATH"><tt>ALT_USRBIN_PATH</tt></a></dt>
-                <dd>
-                    An override for specifying where the
-                    Unix <tt>/usr/bin</tt> commands are located. You usually do not need
-                    to set this variable: the default location is <tt>/usr/bin</tt>)
-                </dd>
-                <dt><a name="ALT_SLASHJAVA"><tt>ALT_SLASHJAVA</tt></a></dt>
-                <dd>
-                    The default root location for many of the ALT path locations
-                    of the following ALT variables.
-                    The default value is 
-                    <tt>"/java"</tt> on Solaris and Linux, 
-                    <tt>"J:"</tt> on Windows.
-                </dd>
-                <dt><a name="ALT_BUILD_JDK_IMPORT_PATH"><tt>ALT_BUILD_JDK_IMPORT_PATH</tt></a></dt>
-                <dd>
-                    These are useful in managing builds on multiple platforms.
-                    The default network location for all of the import JDK images
-                    for all platforms. 
-                    If <tt><a href="#ALT_JDK_IMPORT_PATH">ALT_JDK_IMPORT_PATH</a></tt>
-                    is not set, this directory will be used and should contain 
-                    the following directories:
-                    <tt>solaris-sparc</tt>,
-                    <tt>solaris-i586</tt>,
-                    <tt>solaris-sparcv9</tt>,
-                    <tt>solaris-amd64</tt>,
-                    <tt>linux-i586</tt>,
-                    <tt>linux-amd64</tt>,
-                    <tt>windows-i586</tt>,
-                    and
-                    <tt>windows-amd64</tt>.
-                    Where each of these directories contain the import JDK image
-                    for that platform.
+                    The location of the bootstrap JDK installation. 
+                    See <a href="#bootjdk">Bootstrap JDK</a> for more information.
+                    You should always install your own local Bootstrap JDK and
+                    always set <tt>ALT_BOOTDIR</tt> explicitly.
                 </dd>
                 <dt><a name="ALT_BUILD_BINARY_PLUGS_PATH"><tt>ALT_BUILD_BINARY_PLUGS_PATH</tt></a></dt>
                 <dd>
@@ -1405,36 +1317,186 @@
                     Where each of these directories contain the binary plugs image
                     for that platform.
                 </dd>
-                <dt><strong>Windows specific:</strong></dt>
+                <dt><a name="ALT_BUILD_JDK_IMPORT_PATH"><tt>ALT_BUILD_JDK_IMPORT_PATH</tt></a></dt>
                 <dd>
-                    <dl>
-                        <dt><a name="ALT_MSDEVTOOLS_PATH"><tt>ALT_MSDEVTOOLS_PATH</tt></a> </dt>
-                        <dd>
-                            The location of the Microsoft Visual Studio .NET 2003
-                            tools 'bin' directory.
-                            The default is usually derived from
-                            <a href="#ALT_COMPILER_PATH"><tt>ALT_COMPILER_PATH</tt></a>.
-                        </dd>
-                        <dt><tt><a name="ALT_DXSDK_PATH">ALT_DXSDK_PATH</a></tt> </dt>
-                        <dd>
-                            The location of the 
-                            <a href="#dxsdk">Microsoft DirectX 9 SDK</a>.
-                            The default will be to try and use the DirectX environment
-                            variable <tt>DXSDK_DIR</tt>,
-                            failing that, look in <tt>C:/DXSDK</tt>.
-                        </dd>
-                        <dt><tt><a name="ALT_MSVCRT_DLL_PATH">ALT_MSVCRT_DLL_PATH</a></tt> </dt>
-                        <dd>
-                            The location of the 
-                            <a href="#msvcrt"><tt>MSVCRT.DLL</tt></a>. 
-                        </dd>
-                        <dt><tt><a name="ALT_MSVCR71_DLL_PATH">ALT_MSVCR71_DLL_PATH</a></tt> </dt>
-                        <dd>
-                            <strong>i586 only:</strong>
-                            The location of the 
-                            <a href="#msvcr71"><tt>MSVCR71.DLL</tt></a>. 
-                        </dd>
-                    </dl>
+                    These are useful in managing builds on multiple platforms.
+                    The default network location for all of the import JDK images
+                    for all platforms. 
+                    If <tt><a href="#ALT_JDK_IMPORT_PATH">ALT_JDK_IMPORT_PATH</a></tt>
+                    is not set, this directory will be used and should contain 
+                    the following directories:
+                    <tt>solaris-sparc</tt>,
+                    <tt>solaris-i586</tt>,
+                    <tt>solaris-sparcv9</tt>,
+                    <tt>solaris-amd64</tt>,
+                    <tt>linux-i586</tt>,
+                    <tt>linux-amd64</tt>,
+                    <tt>windows-i586</tt>,
+                    and
+                    <tt>windows-amd64</tt>.
+                    Where each of these directories contain the import JDK image
+                    for that platform.
+                </dd>
+                <dt><tt><a name="ALT_CACERTS_FILE">ALT_CACERTS_FILE</a></tt></dt>
+                <dd>
+                    The location of the <a href="#cacerts">cacerts</a> file.
+                    The default will refer to 
+                    <tt>jdk/src/share/lib/security/cacerts</tt>.
+                </dd>
+                <dt><a name="ALT_COMPILER_PATH"><tt>ALT_COMPILER_PATH</tt></a> </dt>
+                <dd>
+                    The location of the C/C++ compiler.
+                    The default varies depending on the platform. 
+                </dd>
+                <dt><a name="ALT_CUPS_HEADERS_PATH"><tt>ALT_CUPS_HEADERS_PATH</tt></a> </dt>
+                <dd>
+                    The location of the CUPS header files.
+                    See <a href="#cups">CUPS information</a> for more information.
+                    If this path does not exist the fallback path is 
+                    <tt>/usr/include</tt>.
+                </dd>
+                <dt><tt><a name="ALT_DEVTOOLS_PATH">ALT_DEVTOOLS_PATH</a></tt> </dt>
+                <dd>
+                    The location of tools like the 
+                    <a href="#zip"><tt>zip</tt> and <tt>unzip</tt></a>
+                    binaries, but might also contain the GNU make utility
+                    (<tt><i>gmake</i></tt>).
+                    So this area is a bit of a grab bag, especially on Windows.
+                    The default value depends on the platform and
+                    Unix Commands being used.
+                    On Linux the default will be 
+                    <tt>$(ALT_JDK_DEVTOOLS_PATH)/linux/bin</tt>, 
+                    on Solaris
+                    <tt>$(ALT_JDK_DEVTOOLS_PATH)/<i>{sparc,i386}</i>/bin</tt>, 
+                    on Windows with MKS
+                    <tt>%SYSTEMDRIVE%/UTILS</tt>, 
+                    and on Windows with CYGWIN
+                    <tt>/usr/bin</tt>.
+                </dd>
+                <dt><tt><a name="ALT_DXSDK_PATH">ALT_DXSDK_PATH</a></tt> </dt>
+                <dd>
+                    <strong>Windows Only:</strong>
+                    The location of the 
+                    <a href="#dxsdk">Microsoft DirectX 9 SDK</a>.
+                    The default will be to try and use the DirectX environment
+                    variable <tt>DXSDK_DIR</tt>,
+                    failing that, look in <tt>C:/DXSDK</tt>.
+                </dd>
+                <dt><a name="ALT_FREETYPE_HEADERS_PATH"><tt>ALT_FREETYPE_HEADERS_PATH</tt></a></dt>
+                <dd>
+                    The location of the FreeType header files.
+                    See <a href="#freetype">FreeType information</a> for details. 
+                </dd>
+                <dt><a name="ALT_FREETYPE_LIB_PATH"><tt>ALT_FREETYPE_LIB_PATH</tt></a></dt>
+                <dd>
+                    The location of the FreeType shared library. 
+                    See <a href="#freetype">FreeType information</a> for details. 
+                </dd>
+                <dt><a name="ALT_JDK_DEVTOOLS_PATH"><tt>ALT_JDK_DEVTOOLS_PATH</tt></a></dt>
+                <dd>
+                    The default root location of the devtools.
+                    The default value is 
+                    <tt>$(ALT_SLASH_JAVA)/devtools</tt>.
+                </dd>
+                <dt><a name="ALT_JDK_IMPORT_PATH"><tt>ALT_JDK_IMPORT_PATH</tt></a></dt>
+                <dd>
+                    The location of a previously built JDK installation. 
+                    See <a href="#importjdk">Optional Import JDK</a> for more information.
+                </dd>
+                <dt><a name="ALT_MSDEVTOOLS_PATH"><tt>ALT_MSDEVTOOLS_PATH</tt></a> </dt>
+                <dd>
+                    <strong>Windows Only:</strong>
+                    The location of the Microsoft Visual Studio .NET 2003
+                    tools 'bin' directory.
+                    The default is usually derived from
+                    <a href="#ALT_COMPILER_PATH"><tt>ALT_COMPILER_PATH</tt></a>.
+                </dd>
+                <dt><tt><a name="ALT_MSVCR71_DLL_PATH">ALT_MSVCR71_DLL_PATH</a></tt> </dt>
+                <dd>
+                    <strong>Windows i586 only:</strong>
+                    The location of the 
+                    <a href="#msvcr71"><tt>MSVCR71.DLL</tt></a>. 
+                </dd>
+                <dt><tt><a name="ALT_MSVCRT_DLL_PATH">ALT_MSVCRT_DLL_PATH</a></tt> </dt>
+                <dd>
+                    <strong>Windows Only:</strong>
+                    The location of the 
+                    <a href="#msvcrt"><tt>MSVCRT.DLL</tt></a>. 
+                </dd>
+                <dt><a name="ALT_OUTPUTDIR"><tt>ALT_OUTPUTDIR</tt></a> </dt>
+                <dd>
+                    An override for specifying the (absolute) path of where the
+                    build output is to go.
+                    The default output directory will be build/<i>platform</i>.
+                </dd>
+                <dt><a name="ALT_SLASHJAVA"><tt>ALT_SLASHJAVA</tt></a></dt>
+                <dd>
+                    The default root location for many of the ALT path locations
+                    of the following ALT variables.
+                    The default value is 
+                    <tt>"/java"</tt> on Solaris and Linux, 
+                    <tt>"J:"</tt> on Windows.
+                </dd>
+                <dt><a name="ALT_UNIXCCS_PATH"><tt>ALT_UNIXCCS_PATH</tt></a></dt>
+                <dd>
+                    <strong>Solaris only:</strong>
+                    An override for specifying where the Unix CCS
+                    command set are located.
+                    The default location is <tt>/usr/ccs/bin</tt> 
+                </dd>
+                <dt><a name="ALT_UNIXCOMMAND_PATH"><tt>ALT_UNIXCOMMAND_PATH</tt></a> </dt>
+                <dd>
+                    An override for specifying where the
+                    Unix command set are located. 
+                    The default location varies depending on the platform,
+                    <tt>"%SYSTEMDRIVE%/MKSNT"</tt> or
+                    <tt>$(ROOTDIR)</tt> on Windows with MKS, otherwise it's 
+                    <tt>"/bin"</tt> or <tt>/usr/bin</tt>.
+                </dd>
+                <dt><a name="ALT_USRBIN_PATH"><tt>ALT_USRBIN_PATH</tt></a></dt>
+                <dd>
+                    An override for specifying where the
+                    Unix <tt>/usr/bin</tt> commands are located. You usually do not need
+                    to set this variable: the default location is <tt>/usr/bin</tt>)
+                </dd>
+                <dt><a name="ANT_HOME"><tt>ANT_HOME</tt></a></dt>
+                <dd>
+                    The location of the Ant installation. 
+                    See <a href="#ant">Ant</a> for more information.
+                    You should always set <tt>ANT_HOME</tt> explicitly.
+                </dd>
+                <dt><a name="arch_data_model"><tt>ARCH_DATA_MODEL</tt></a></dt>
+                <dd>The <tt>ARCH_DATA_MODEL</tt> variable
+                    is used to specify whether the build is to generate 32-bit or 64-bit
+                    binaries. 
+                    The Solaris build supports either 32-bit or 64-bit builds, but
+                    Windows and Linux will support only one, depending on the specific
+                    OS being used.
+                    Normally, setting this variable is only necessary on Solaris.
+                    Set <tt>ARCH_DATA_MODEL</tt> to <tt>32</tt> for generating 32-bit binaries, 
+                    or to <tt>64</tt> for generating 64-bit binaries.
+                </dd>
+                <dt><tt>BUILD_NUMBER</tt> </dt>
+                <dd>
+                    The build number for the build (<i>e.g.</i> "b27"). 
+                    The default value is "b00".
+                </dd>
+                <dt><tt>MILESTONE</tt> </dt>
+                <dd>
+                    The milestone name for the build (<i>e.g.</i>"beta"). 
+                    The default value is "internal".
+                </dd>
+                <dt><a name="path"><tt>PATH</tt></a> </dt>
+                <dd>Typically you want to set the <tt>PATH</tt> to include:
+                    <ul>
+                        <li>The location of the GNU make binary</li>
+                        <li>The location of the Bootstrap JDK <tt>java</tt> 
+                        (see <a href="#bootjdk">Bootstrap JDK</a>)</li>
+                        <li>The location of the C/C++ compilers 
+                        (see <a href="#compilers"><tt>compilers</tt></a>)</li>
+                        <li>The location or locations for the Unix command utilities
+                        (e.g. <tt>/usr/bin</tt>)</li>
+                    </ul>
                 </dd>
             </dl>
         </blockquote>
