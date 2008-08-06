@@ -2897,7 +2897,8 @@ public:
   void work(int i) {
     ParKnownGarbageHRClosure parKnownGarbageCl(_hrSorted, _chunk_size, i);
     // Back to zero for the claim value.
-    _g1->heap_region_par_iterate_chunked(&parKnownGarbageCl, i, 0);
+    _g1->heap_region_par_iterate_chunked(&parKnownGarbageCl, i,
+                                         HeapRegion::InitialClaimValue);
     jint regions_added = parKnownGarbageCl.marked_regions_added();
     _hrSorted->incNumMarkedHeapRegions(regions_added);
     if (G1PrintParCleanupStats) {
@@ -2933,6 +2934,9 @@ record_concurrent_mark_cleanup_end(size_t freed_bytes,
     ParKnownGarbageTask parKnownGarbageTask(_collectionSetChooser,
                                             (int) ChunkSize);
     _g1->workers()->run_task(&parKnownGarbageTask);
+
+    assert(_g1->check_heap_region_claim_values(HeapRegion::InitialClaimValue),
+           "sanity check");
   } else {
     KnownGarbageClosure knownGarbagecl(_collectionSetChooser);
     _g1->heap_region_iterate(&knownGarbagecl);

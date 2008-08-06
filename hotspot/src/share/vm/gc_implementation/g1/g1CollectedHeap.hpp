@@ -873,7 +873,6 @@ public:
 
   HeapRegion* region_at(size_t idx);
 
-
   // Divide the heap region sequence into "chunks" of some size (the number
   // of regions divided by the number of parallel threads times some
   // overpartition factor, currently 4).  Assumes that this will be called
@@ -890,6 +889,10 @@ public:
   void heap_region_par_iterate_chunked(HeapRegionClosure* blk,
                                        int worker,
                                        jint claim_value);
+
+#ifdef ASSERT
+  bool check_heap_region_claim_values(jint claim_value);
+#endif // ASSERT
 
   // Iterate over the regions (if any) in the current collection set.
   void collection_set_iterate(HeapRegionClosure* blk);

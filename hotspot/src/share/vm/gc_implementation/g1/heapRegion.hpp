@@ -168,6 +168,12 @@ class HeapRegion: public G1OffsetTableContigSpace {
   friend class VMStructs;
  private:
 
+  enum HumongousType {
+    NotHumongous = 0,
+    StartsHumongous,
+    ContinuesHumongous
+  };
+
   // The next filter kind that should be used for a "new_dcto_cl" call with
   // the "traditional" signature.
   HeapRegionDCTOC::FilterKind _next_fk;
@@ -188,8 +194,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // sequence, otherwise -1.
   int  _hrs_index;
 
-  bool _humongous;         // starts or continues a humongous object
-  bool _humongous_start;   // starts a humongous object
+  HumongousType _humongous_type;
   // For a humongous region, region in which it starts.
   HeapRegion* _humongous_start_region;
   // For the start region of a humongous sequence, it's original end().
@@ -308,6 +313,13 @@ class HeapRegion: public G1OffsetTableContigSpace {
     MaxAge = 2, NoOfAges = MaxAge+1
   };
 
+  enum ClaimValues {
+    InitialClaimValue     = 0,
+    FinalCountClaimValue  = 1,
+    NoteEndClaimValue     = 2,
+    ScrubRemSetClaimValue = 3
+  };
+
   // Concurrent refinement requires contiguous heap regions (in which TLABs
   // might be allocated) to be zero-filled.  Each region therefore has a
   // zero-fill-state.
@@ -355,9 +367,9 @@ class HeapRegion: public G1OffsetTableContigSpace {
     _prev_marked_bytes = _next_marked_bytes = 0;
   }
 
-  bool isHumongous() const { return _humongous; }
-  bool startsHumongous() const { return _humongous_start; }
-  bool continuesHumongous() const { return _humongous && ! _humongous_start; }
+  bool isHumongous() const { return _humongous_type != NotHumongous; }
+  bool startsHumongous() const { return _humongous_type == StartsHumongous; }
+  bool continuesHumongous() const { return _humongous_type == ContinuesHumongous; }
   // For a humongous region, region in which it starts.
   HeapRegion* humongous_start_region() const {
     return _humongous_start_region;
