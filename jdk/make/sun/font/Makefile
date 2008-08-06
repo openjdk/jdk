@@ -35,6 +35,9 @@ PRODUCT = sun
 # Indicate we want the C++ compiler to do the linking.
 CPLUSPLUSLIBRARY=true
 
+# Use higher optimization level
+OPTIMIZATION_LEVEL = HIGHER
+
 include $(BUILDDIR)/common/Defs.gmk
 
 #
@@ -47,11 +50,6 @@ endif
 #
 # Files
 #
-
-#
-# Use higher optimization level
-#
-_OPT = $(CC_HIGHER_OPT)
 
 include FILES_c.gmk
 
