@@ -554,11 +554,11 @@ Java_java_net_NetworkInterface_init(JNIEnv *env, jclass cls)
     ni_childsID = (*env)->GetFieldID(env, ni_class, "childs", "[Ljava/net/NetworkInterface;");
     ni_ctor = (*env)->GetMethodID(env, ni_class, "<init>", "()V");
 
-    ni_iacls = (*env)->FindClass(env, "Ljava/net/InetAddress;");
+    ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
     ni_iacls = (*env)->NewGlobalRef(env, ni_iacls);
     ni_iaAddr = (*env)->GetFieldID(env, ni_iacls, "address", "I");
 
-    ni_ia4cls = (*env)->FindClass(env, "Ljava/net/Inet4Address;");
+    ni_ia4cls = (*env)->FindClass(env, "java/net/Inet4Address");
     ni_ia4cls = (*env)->NewGlobalRef(env, ni_ia4cls);
     ni_ia4Ctor = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
 
