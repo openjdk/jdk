@@ -193,7 +193,11 @@ class os: AllStatic {
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint);
   static bool   uncommit_memory(char* addr, size_t bytes);
   static bool   release_memory(char* addr, size_t bytes);
-  static bool   protect_memory(char* addr, size_t bytes);
+
+  enum ProtType { MEM_PROT_NONE, MEM_PROT_READ, MEM_PROT_RW, MEM_PROT_RWX };
+  static bool   protect_memory(char* addr, size_t bytes, ProtType prot,
+                               bool is_committed = false);
+
   static bool   guard_memory(char* addr, size_t bytes);
   static bool   unguard_memory(char* addr, size_t bytes);
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,

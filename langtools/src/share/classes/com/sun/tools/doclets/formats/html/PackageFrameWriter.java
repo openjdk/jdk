@@ -73,7 +73,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
         super(configuration, DirectoryManager.getDirectoryPath(packageDoc), OUTPUT_FILE_NAME, DirectoryManager.getRelativePath(packageDoc));
         this.packageDoc = packageDoc;
         if (configuration.root.specifiedPackages().length == 0) {
-            documentedClasses = new HashSet(Arrays.asList(configuration.root.classes()));
+            documentedClasses = new HashSet<ClassDoc>(Arrays.asList(configuration.root.classes()));
         }
     }
 

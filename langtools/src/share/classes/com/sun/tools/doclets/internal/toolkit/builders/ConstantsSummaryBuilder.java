@@ -63,12 +63,12 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     /**
      * The set of ClassDocs that have constant fields.
      */
-    protected Set classDocsWithConstFields;
+    protected Set<ClassDoc> classDocsWithConstFields;
 
     /**
      * The set of printed package headers.
      */
-    protected Set printedPackageHeaders;
+    protected Set<String> printedPackageHeaders;
 
     /**
      * The current package being documented.
@@ -102,7 +102,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
         ConstantsSummaryBuilder builder = new ConstantsSummaryBuilder(
             configuration);
         builder.writer = writer;
-        builder.classDocsWithConstFields = new HashSet();
+        builder.classDocsWithConstFields = new HashSet<ClassDoc>();
         return builder;
     }
 
@@ -169,7 +169,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     public void buildContents() {
         writer.writeContentsHeader();
         PackageDoc[] packages = configuration.packages;
-        printedPackageHeaders = new HashSet();
+        printedPackageHeaders = new HashSet<String>();
         for (int i = 0; i < packages.length; i++) {
             if (hasConstantField(packages[i]) && ! hasPrintedPackageIndex(packages[i].name())) {
                 writer.writeLinkToPackageContent(packages[i],
@@ -188,7 +188,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      */
     public void buildConstantSummaries(List elements) {
         PackageDoc[] packages = configuration.packages;
-        printedPackageHeaders = new HashSet();
+        printedPackageHeaders = new HashSet<String>();
         for (int i = 0; i < packages.length; i++) {
             if (hasConstantField(packages[i])) {
                 currentPackage = packages[i];
@@ -315,7 +315,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @param pkgname the name of the package to check.
      */
     private boolean hasPrintedPackageIndex(String pkgname) {
-        String[] list = (String[])printedPackageHeaders.toArray(new String[] {});
+        String[] list = printedPackageHeaders.toArray(new String[] {});
         for (int i = 0; i < list.length; i++) {
             if (pkgname.startsWith(list[i])) {
                 return true;
@@ -363,7 +363,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
          * Builds the table of constants for a given class.
          */
         protected void buildMembersSummary() {
-            List members = new ArrayList(members());
+            List<FieldDoc> members = new ArrayList<FieldDoc>(members());
             if (members.size() > 0) {
                 Collections.sort(members);
                 writer.writeConstantMembers(classdoc, members);
@@ -375,17 +375,17 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
          * @param cd the classdoc to examine.
          * @return the list of visible constant fields for the given classdoc.
          */
-        protected List members() {
-            List l = visibleMemberMapFields.getLeafClassMembers(configuration);
+        protected List<FieldDoc> members() {
+            List<ProgramElementDoc> l = visibleMemberMapFields.getLeafClassMembers(configuration);
             l.addAll(visibleMemberMapEnumConst.getLeafClassMembers(configuration));
-            Iterator iter;
+            Iterator<ProgramElementDoc> iter;
 
             if(l != null){
                 iter = l.iterator();
             } else {
                 return null;
             }
-            List inclList = new LinkedList();
+            List<FieldDoc> inclList = new LinkedList<FieldDoc>();
             FieldDoc member;
             while(iter.hasNext()){
                 member = (FieldDoc)iter.next();

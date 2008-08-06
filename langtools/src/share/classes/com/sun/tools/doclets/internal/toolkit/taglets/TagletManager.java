@@ -61,7 +61,7 @@ public class TagletManager {
     /**
      * The map of custom tags.
      */
-    private LinkedHashMap customTags;
+    private LinkedHashMap<String,Taglet> customTags;
 
     /**
      * The array of custom tags that can appear in packages.
@@ -111,31 +111,31 @@ public class TagletManager {
     /**
      * Keep track of standard tags.
      */
-    private Set standardTags;
+    private Set<String> standardTags;
 
     /**
      * Keep track of standard tags in lowercase to compare for better
      * error messages when a tag like @docRoot is mistakenly spelled
      * lowercase @docroot.
      */
-    private Set standardTagsLowercase;
+    private Set<String> standardTagsLowercase;
 
     /**
      * Keep track of overriden standard tags.
      */
-    private Set overridenStandardTags;
+    private Set<String> overridenStandardTags;
 
     /**
      * Keep track of the tags that may conflict
      * with standard tags in the future (any custom tag without
      * a period in its name).
      */
-    private Set potentiallyConflictingTags;
+    private Set<String> potentiallyConflictingTags;
 
     /**
      * The set of unseen custom tags.
      */
-    private Set unseenCustomTags;
+    private Set<String> unseenCustomTags;
 
     /**
      * True if we do not want to use @since tags.
@@ -161,12 +161,12 @@ public class TagletManager {
      */
     public TagletManager(boolean nosince, boolean showversion,
                          boolean showauthor, MessageRetriever message){
-        overridenStandardTags = new HashSet();
-        potentiallyConflictingTags = new HashSet();
-        standardTags = new HashSet();
-        standardTagsLowercase = new HashSet();
-        unseenCustomTags = new HashSet();
-        customTags = new LinkedHashMap();
+        overridenStandardTags = new HashSet<String>();
+        potentiallyConflictingTags = new HashSet<String>();
+        standardTags = new HashSet<String>();
+        standardTagsLowercase = new HashSet<String>();
+        unseenCustomTags = new HashSet<String>();
+        customTags = new LinkedHashMap<String,Taglet>();
         this.nosince = nosince;
         this.showversion = showversion;
         this.showauthor = showauthor;
@@ -201,7 +201,7 @@ public class TagletManager {
      */
     public void addCustomTag(String classname, String tagletPath) {
         try {
-            Class customTagClass = null;
+            Class<?> customTagClass = null;
             // construct class loader
             String cpString = null;   // make sure env.class.path defaults to dot
 
@@ -219,7 +219,7 @@ public class TagletManager {
             meth.invoke(null, new Object[] {customTags});
             list = customTags.values().toArray();
             Object newLastTag = (list != null&& list.length > 0)
-                ? (Object) list[list.length-1] : null;
+                ? list[list.length-1] : null;
             if (lastTag != newLastTag) {
                 //New taglets must always be added to the end of the LinkedHashMap.
                 //If the current and previous last taglet are not equal, that
@@ -315,7 +315,7 @@ public class TagletManager {
         if (tagName == null || locations == null) {
             return;
         }
-        Taglet tag = (Taglet) customTags.get(tagName);
+        Taglet tag = customTags.get(tagName);
         locations = locations.toLowerCase();
         if (tag == null || header != null) {
             customTags.remove(tagName);
@@ -396,7 +396,7 @@ public class TagletManager {
                 }
             }
             //Check if this tag is being used in the wrong location.
-            if((taglet = (Taglet) customTags.get(name)) != null) {
+            if ((taglet = customTags.get(name)) != null) {
                 if (areInlineTags && ! taglet.isInlineTag()) {
                     printTagMisuseWarn(taglet, tags[i], "inline");
                 }
@@ -425,7 +425,7 @@ public class TagletManager {
      * @param holderType the type of documentation that the misused tag was found in.
      */
     private void printTagMisuseWarn(Taglet taglet, Tag tag, String holderType) {
-        Set locationsSet = new LinkedHashSet();
+        Set<String> locationsSet = new LinkedHashSet<String>();
         if (taglet.inOverview()) {
             locationsSet.add("overview");
         }
@@ -447,7 +447,7 @@ public class TagletManager {
         if (taglet.isInlineTag()) {
             locationsSet.add("inline text");
         }
-        String[] locations = (String[]) locationsSet.toArray(new String[]{});
+        String[] locations = locationsSet.toArray(new String[]{});
         if (locations == null || locations.length == 0) {
             //This known tag is excluded.
             return;
@@ -592,17 +592,17 @@ public class TagletManager {
      * Initialize the custom tag arrays.
      */
     private void initCustomTagArrays() {
-        Iterator it = customTags.values().iterator();
-        ArrayList pTags = new ArrayList(customTags.size());
-        ArrayList tTags = new ArrayList(customTags.size());
-        ArrayList fTags = new ArrayList(customTags.size());
-        ArrayList cTags = new ArrayList(customTags.size());
-        ArrayList mTags = new ArrayList(customTags.size());
-        ArrayList iTags = new ArrayList(customTags.size());
-        ArrayList oTags = new ArrayList(customTags.size());
+        Iterator<Taglet> it = customTags.values().iterator();
+        ArrayList<Taglet> pTags = new ArrayList<Taglet>(customTags.size());
+        ArrayList<Taglet> tTags = new ArrayList<Taglet>(customTags.size());
+        ArrayList<Taglet> fTags = new ArrayList<Taglet>(customTags.size());
+        ArrayList<Taglet> cTags = new ArrayList<Taglet>(customTags.size());
+        ArrayList<Taglet> mTags = new ArrayList<Taglet>(customTags.size());
+        ArrayList<Taglet> iTags = new ArrayList<Taglet>(customTags.size());
+        ArrayList<Taglet> oTags = new ArrayList<Taglet>(customTags.size());
         Taglet current;
         while (it.hasNext()) {
-            current = (Taglet) it.next();
+            current = it.next();
             if (current.inPackage() && !current.isInlineTag()) {
                 pTags.add(current);
             }
@@ -625,20 +625,20 @@ public class TagletManager {
                 oTags.add(current);
             }
         }
-        packageTags =  (Taglet[]) pTags.toArray(new Taglet[] {});
-        typeTags =  (Taglet[]) tTags.toArray(new Taglet[] {});
-        fieldTags =  (Taglet[]) fTags.toArray(new Taglet[] {});
-        constructorTags =  (Taglet[]) cTags.toArray(new Taglet[] {});
-        methodTags =  (Taglet[]) mTags.toArray(new Taglet[] {});
-        overviewTags = (Taglet[]) oTags.toArray(new Taglet[] {});
-        inlineTags =  (Taglet[]) iTags.toArray(new Taglet[] {});
+        packageTags = pTags.toArray(new Taglet[] {});
+        typeTags = tTags.toArray(new Taglet[] {});
+        fieldTags = fTags.toArray(new Taglet[] {});
+        constructorTags = cTags.toArray(new Taglet[] {});
+        methodTags = mTags.toArray(new Taglet[] {});
+        overviewTags = oTags.toArray(new Taglet[] {});
+        inlineTags = iTags.toArray(new Taglet[] {});
 
         //Init the serialized form tags
         serializedFormTags = new Taglet[4];
-        serializedFormTags[0] = (Taglet) customTags.get("serialData");
-        serializedFormTags[1] = (Taglet) customTags.get("throws");
-        serializedFormTags[2] = (Taglet) customTags.get("since");
-        serializedFormTags[3] = (Taglet) customTags.get("see");
+        serializedFormTags[0] = customTags.get("serialData");
+        serializedFormTags[1] = customTags.get("throws");
+        serializedFormTags[2] = customTags.get("since");
+        serializedFormTags[3] = customTags.get("see");
     }
 
     /**
@@ -726,10 +726,9 @@ public class TagletManager {
         printReportHelper("doclet.Notice_taglet_unseen", unseenCustomTags);
     }
 
-    private void printReportHelper(String noticeKey, Set names) {
+    private void printReportHelper(String noticeKey, Set<String> names) {
         if (names.size() > 0) {
-            String[] namesArray =
-                (String[]) names.toArray(new String[] {});
+            String[] namesArray = names.toArray(new String[] {});
             String result = " ";
             for (int i = 0; i < namesArray.length; i++) {
                 result += "@" + namesArray[i];
@@ -751,9 +750,9 @@ public class TagletManager {
      */
     public Taglet getTaglet(String name) {
         if (name.indexOf("@") == 0) {
-            return (Taglet) customTags.get(name.substring(1));
+            return customTags.get(name.substring(1));
         } else {
-            return (Taglet) customTags.get(name);
+            return customTags.get(name);
         }
 
     }

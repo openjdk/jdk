@@ -1,19 +1,7 @@
-QualifiedAccess_2.java:38: A.B has private access in A
-    class C extends A.B {}              // ERROR - B is inaccessible
-                     ^
-QualifiedAccess_2.java:39: A.B has private access in A
-    class D extends A.B.Inner {}        // ERROR - B is inaccessible
-                     ^
-QualifiedAccess_2.java:43: pack1.P1.Foo is not public in pack1.P1; cannot be accessed from outside package
-            P1.Foo.Bar x;               // ERROR - Foo is inaccessible
-              ^
-QualifiedAccess_2.java:50: Y.Quux.Quem has private access in Y.Quux
-    void foo() throws Y.Quux.Quem.MyError {
-                            ^
-QualifiedAccess_2.java:28: pack1.P1.R.S has private access in pack1.P1.R
-        Object z = new R.S.T();         // ERROR - S is inaccessible
-                        ^
-QualifiedAccess_2.java:52: Y.Quux.Quem has private access in Y.Quux
-        throw new Y.Quux.Quem.MyError();
-                        ^
+QualifiedAccess_2.java:40:22: compiler.err.report.access: A.B, private, A
+QualifiedAccess_2.java:41:22: compiler.err.report.access: A.B, private, A
+QualifiedAccess_2.java:45:15: compiler.err.not.def.public.cant.access: pack1.P1.Foo, pack1.P1
+QualifiedAccess_2.java:52:29: compiler.err.report.access: Y.Quux.Quem, private, Y.Quux
+QualifiedAccess_2.java:30:25: compiler.err.report.access: pack1.P1.R.S, private, pack1.P1.R
+QualifiedAccess_2.java:54:25: compiler.err.report.access: Y.Quux.Quem, private, Y.Quux
 6 errors

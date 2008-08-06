@@ -53,11 +53,6 @@ ifneq ($(PLATFORM), windows)
 endif # PLATFORM
 
 #
-# This turns off all assert() checking in the optimized library
-#
-CPPFLAGS_OPT += -DNDEBUG
-
-#
 # This controls the ability to do logging in the library.
 #
 CPPFLAGS_DBG += -DJDWP_LOGGING
