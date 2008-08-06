@@ -1423,7 +1423,8 @@ public:
                                   NULL /* CO tracker */);
     calccl.no_yield();
     if (ParallelGCThreads > 0) {
-      _g1h->heap_region_par_iterate_chunked(&calccl, i, 1);
+      _g1h->heap_region_par_iterate_chunked(&calccl, i,
+                                            HeapRegion::FinalCountClaimValue);
     } else {
       _g1h->heap_region_iterate(&calccl);
     }
@@ -1502,7 +1503,8 @@ public:
                                            &_par_cleanup_thread_state[i]->list,
                                            i);
     if (ParallelGCThreads > 0) {
-      _g1h->heap_region_par_iterate_chunked(&g1_note_end, i, 2);
+      _g1h->heap_region_par_iterate_chunked(&g1_note_end, i,
+                                            HeapRegion::NoteEndClaimValue);
     } else {
       _g1h->heap_region_iterate(&g1_note_end);
     }
@@ -1545,7 +1547,8 @@ public:
 
   void work(int i) {
     if (ParallelGCThreads > 0) {
-      _g1rs->scrub_par(_region_bm, _card_bm, i, 3);
+      _g1rs->scrub_par(_region_bm, _card_bm, i,
+                       HeapRegion::ScrubRemSetClaimValue);
     } else {
       _g1rs->scrub(_region_bm, _card_bm);
     }
@@ -1610,10 +1613,18 @@ void ConcurrentMark::cleanup() {
   G1ParFinalCountTask g1_par_count_task(g1h, nextMarkBitMap(),
                                         &_region_bm, &_card_bm);
   if (ParallelGCThreads > 0) {
+    assert(g1h->check_heap_region_claim_values(
+                                               HeapRegion::InitialClaimValue),
+           "sanity check");
+
     int n_workers = g1h->workers()->total_workers();
     g1h->set_par_threads(n_workers);
     g1h->workers()->run_task(&g1_par_count_task);
     g1h->set_par_threads(0);
+
+    assert(g1h->check_heap_region_claim_values(
+                                             HeapRegion::FinalCountClaimValue),
+           "sanity check");
   } else {
     g1_par_count_task.work(0);
   }
@@ -1654,6 +1665,9 @@ void ConcurrentMark::cleanup() {
     g1h->set_par_threads(n_workers);
     g1h->workers()->run_task(&g1_par_note_end_task);
     g1h->set_par_threads(0);
+
+    assert(g1h->check_heap_region_claim_values(HeapRegion::NoteEndClaimValue),
+           "sanity check");
   } else {
     g1_par_note_end_task.work(0);
   }
@@ -1665,7 +1679,7 @@ void ConcurrentMark::cleanup() {
                            (note_end_end - note_end_start)*1000.0);
   }
 
-  // Now we "scrub" remembered sets.  Note that we must do this before the
+
   // call below, since it affects the metric by which we sort the heap
   // regions.
   if (G1ScrubRemSets) {
@@ -1676,6 +1690,10 @@ void ConcurrentMark::cleanup() {
       g1h->set_par_threads(n_workers);
       g1h->workers()->run_task(&g1_par_scrub_rs_task);
       g1h->set_par_threads(0);
+
+      assert(g1h->check_heap_region_claim_values(
+                                            HeapRegion::ScrubRemSetClaimValue),
+             "sanity check");
     } else {
       g1_par_scrub_rs_task.work(0);
     }

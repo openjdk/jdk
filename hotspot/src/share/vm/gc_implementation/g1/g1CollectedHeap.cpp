@@ -1715,38 +1715,129 @@ G1CollectedHeap::heap_region_iterate_from(int idx, HeapRegionClosure* cl) {
 
 HeapRegion* G1CollectedHeap::region_at(size_t idx) { return _hrs->at(idx); }
 
-const int OverpartitionFactor = 4;
 void
 G1CollectedHeap::heap_region_par_iterate_chunked(HeapRegionClosure* cl,
                                                  int worker,
                                                  jint claim_value) {
-  // We break up the heap regions into blocks of size ParallelGCThreads (to
-  // decrease iteration costs).
-  const size_t nregions = n_regions();
-  const size_t n_thrds = (ParallelGCThreads > 0 ? ParallelGCThreads : 1);
-  const size_t partitions = n_thrds * OverpartitionFactor;
-  const size_t BlkSize = MAX2(nregions/partitions, (size_t)1);
-  const size_t n_blocks = (nregions + BlkSize - 1)/BlkSize;
-  assert(ParallelGCThreads > 0 || worker == 0, "Precondition");
-  const int init_idx = (int) (n_blocks/n_thrds * worker);
-  for (size_t blk = 0; blk < n_blocks; blk++) {
-    size_t idx = init_idx + blk;
-    if (idx >= n_blocks) idx = idx - n_blocks;
-    size_t reg_idx = idx * BlkSize;
-    assert(reg_idx < nregions, "Because we rounded blk up.");
-    HeapRegion* r = region_at(reg_idx);
+  const size_t regions = n_regions();
+  const size_t worker_num = (ParallelGCThreads > 0 ? ParallelGCThreads : 1);
+  // try to spread out the starting points of the workers
+  const size_t start_index = regions / worker_num * (size_t) worker;
+
+  // each worker will actually look at all regions
+  for (size_t count = 0; count < regions; ++count) {
+    const size_t index = (start_index + count) % regions;
+    assert(0 <= index && index < regions, "sanity");
+    HeapRegion* r = region_at(index);
+    // we'll ignore "continues humongous" regions (we'll process them
+    // when we come across their corresponding "start humongous"
+    // region) and regions already claimed
+    if (r->claim_value() == claim_value || r->continuesHumongous()) {
+      continue;
+    }
+    // OK, try to claim it
     if (r->claimHeapRegion(claim_value)) {
-      for (size_t j = 0; j < BlkSize; j++) {
-        size_t reg_idx2 = reg_idx + j;
-        if (reg_idx2 == nregions) break;
-        HeapRegion* r2 = region_at(reg_idx2);
-        if (j > 0) r2->set_claim_value(claim_value);
-        bool res = cl->doHeapRegion(r2);
-        guarantee(!res, "Should not abort.");
+      // success!
+      assert(!r->continuesHumongous(), "sanity");
+      if (r->startsHumongous()) {
+        // If the region is "starts humongous" we'll iterate over its
+        // "continues humongous" first; in fact we'll do them
+        // first. The order is important. In on case, calling the
+        // closure on the "starts humongous" region might de-allocate
+        // and clear all its "continues humongous" regions and, as a
+        // result, we might end up processing them twice. So, we'll do
+        // them first (notice: most closures will ignore them anyway) and
+        // then we'll do the "starts humongous" region.
+        for (size_t ch_index = index + 1; ch_index < regions; ++ch_index) {
+          HeapRegion* chr = region_at(ch_index);
+
+          // if the region has already been claimed or it's not
+          // "continues humongous" we're done
+          if (chr->claim_value() == claim_value ||
+              !chr->continuesHumongous()) {
+            break;
+          }
+
+          // Noone should have claimed it directly. We can given
+          // that we claimed its "starts humongous" region.
+          assert(chr->claim_value() != claim_value, "sanity");
+          assert(chr->humongous_start_region() == r, "sanity");
+
+          if (chr->claimHeapRegion(claim_value)) {
+            // we should always be able to claim it; noone else should
+            // be trying to claim this region
+
+            bool res2 = cl->doHeapRegion(chr);
+            assert(!res2, "Should not abort");
+
+            // Right now, this holds (i.e., no closure that actually
+            // does something with "continues humongous" regions
+            // clears them). We might have to weaken it in the future,
+            // but let's leave these two asserts here for extra safety.
+            assert(chr->continuesHumongous(), "should still be the case");
+            assert(chr->humongous_start_region() == r, "sanity");
+          } else {
+            guarantee(false, "we should not reach here");
+          }
+        }
       }
+
+      assert(!r->continuesHumongous(), "sanity");
+      bool res = cl->doHeapRegion(r);
+      assert(!res, "Should not abort");
     }
   }
 }
+
+#ifdef ASSERT
+// This checks whether all regions in the heap have the correct claim
+// value. I also piggy-backed on this a check to ensure that the
+// humongous_start_region() information on "continues humongous"
+// regions is correct.
+
+class CheckClaimValuesClosure : public HeapRegionClosure {
+private:
+  jint _claim_value;
+  size_t _failures;
+  HeapRegion* _sh_region;
+public:
+  CheckClaimValuesClosure(jint claim_value) :
+    _claim_value(claim_value), _failures(0), _sh_region(NULL) { }
+  bool doHeapRegion(HeapRegion* r) {
+    if (r->claim_value() != _claim_value) {
+      gclog_or_tty->print_cr("Region ["PTR_FORMAT","PTR_FORMAT"), "
+                             "claim value = %d, should be %d",
+                             r->bottom(), r->end(), r->claim_value(),
+                             _claim_value);
+      ++_failures;
+    }
+    if (!r->isHumongous()) {
+      _sh_region = NULL;
+    } else if (r->startsHumongous()) {
+      _sh_region = r;
+    } else if (r->continuesHumongous()) {
+      if (r->humongous_start_region() != _sh_region) {
+        gclog_or_tty->print_cr("Region ["PTR_FORMAT","PTR_FORMAT"), "
+                               "HS = "PTR_FORMAT", should be "PTR_FORMAT,
+                               r->bottom(), r->end(),
+                               r->humongous_start_region(),
+                               _sh_region);
+        ++_failures;
+      }
+    }
+    return false;
+  }
+  size_t failures() {
+    return _failures;
+  }
+};
+
+bool G1CollectedHeap::check_heap_region_claim_values(jint claim_value) {
+  CheckClaimValuesClosure cl(claim_value);
+  heap_region_iterate(&cl);
+  return cl.failures() == 0;
+}
+#endif // ASSERT
 
 void G1CollectedHeap::collection_set_iterate(HeapRegionClosure* cl) {
   HeapRegion* r = g1_policy()->collection_set();

@@ -263,8 +263,7 @@ HeapRegion::new_dcto_closure(OopClosure* cl,
 }
 
 void HeapRegion::hr_clear(bool par, bool clear_space) {
-  _humongous = false;
-  _humongous_start = false;
+  _humongous_type = NotHumongous;
   _humongous_start_region = NULL;
   _in_collection_set = false;
   _is_gc_alloc_region = false;
@@ -284,7 +283,7 @@ void HeapRegion::hr_clear(bool par, bool clear_space) {
     // If this is parallel, this will be done later.
     HeapRegionRemSet* hrrs = rem_set();
     if (hrrs != NULL) hrrs->clear();
-    _claimed = 0;
+    _claimed = InitialClaimValue;
   }
   zero_marked_bytes();
   set_sort_index(-1);
@@ -305,7 +304,7 @@ void HeapRegion::calc_gc_efficiency() {
 // </PREDICTION>
 
 void HeapRegion::set_startsHumongous() {
-  _humongous_start = true; _humongous = true;
+  _humongous_type = StartsHumongous;
   _humongous_start_region = this;
   assert(end() == _orig_end, "Should be normal before alloc.");
 }
@@ -368,11 +367,11 @@ HeapRegion(G1BlockOffsetSharedArray* sharedOffsetArray,
   : G1OffsetTableContigSpace(sharedOffsetArray, mr, is_zeroed),
     _next_fk(HeapRegionDCTOC::NoFilterKind),
     _hrs_index(-1),
-    _humongous(false), _humongous_start(false), _humongous_start_region(NULL),
+    _humongous_type(NotHumongous), _humongous_start_region(NULL),
     _in_collection_set(false), _is_gc_alloc_region(false),
     _is_on_free_list(false), _is_on_unclean_list(false),
     _next_in_special_set(NULL), _orig_end(NULL),
-    _claimed(0), _evacuation_failed(false),
+    _claimed(InitialClaimValue), _evacuation_failed(false),
     _prev_marked_bytes(0), _next_marked_bytes(0), _sort_index(-1),
     _popularity(NotPopular),
     _young_type(NotYoung), _next_young_region(NULL),
@@ -426,7 +425,7 @@ CompactibleSpace* HeapRegion::next_compaction_space() const {
 void HeapRegion::set_continuesHumongous(HeapRegion* start) {
   // The order is important here.
   start->add_continuingHumongousRegion(this);
-  _humongous = true; _humongous_start = false;
+  _humongous_type = ContinuesHumongous;
   _humongous_start_region = start;
 }
 
