@@ -1081,9 +1081,10 @@ public interface Node {
       MXBean is determined as follows.</p>
 
     <ul>
-      <li><p>If an {@link JMX.MBeanOptions} argument is supplied to
+      <li><p>If a {@link JMX.MBeanOptions} argument is supplied to
           the {@link StandardMBean} constructor that makes an MXBean,
-          or to the {@link JMX#newMXBeanProxy JMX.newMXBeanProxy}
+          or to the {@link JMX#newMBeanProxy(MBeanServerConnection,
+          ObjectName, Class, JMX.MBeanOptions) JMX.newMBeanProxy}
           method, and the {@code MBeanOptions} object defines a non-null
           {@code MXBeanMappingFactory}, then that is the value of
           <code><em>f</em></code>.</p></li>
