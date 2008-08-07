@@ -57,6 +57,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
 import java.util.Iterator;
+import java.util.HashSet;
 
 
 public class IPPPrintService implements PrintService, SunPrinterJobService {
@@ -822,7 +823,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 boolean psSupported = false;
                 String[] docFlavors = attribClass.getArrayOfStringValues();
                 DocFlavor[] flavors;
-                ArrayList docList = new ArrayList();
+                HashSet docList = new HashSet();
                 int j;
                 String hostEnc = DocFlavor.hostEncoding.
                     toLowerCase(Locale.ENGLISH);
@@ -838,18 +839,6 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                         if (mimeType.startsWith(docFlavors[i])) {
 
                             docList.addAll(Arrays.asList(flavors));
-
-                            if (isCupsPrinter) {
-                            /*
-                              Always add Pageable and Printable for CUPS
-                              since it uses Filters to convert from Postscript
-                              to device printer language.
-                             */
-                                docList.add(
-                                        DocFlavor.SERVICE_FORMATTED.PAGEABLE);
-                                docList.add(
-                                        DocFlavor.SERVICE_FORMATTED.PRINTABLE);
-                            }
 
                             if (mimeType.equals("text/plain") &&
                                 addHostEncoding) {
@@ -880,16 +869,19 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 }
 
                 // check if we need to add image DocFlavors
+                // and Pageable/Printable flavors
                 if (psSupported || isCupsPrinter) {
-                    if (!jpgImagesAdded) {
-                        docList.addAll(Arrays.asList(imageJPG));
-                    }
-                    if (!pngImagesAdded) {
-                        docList.addAll(Arrays.asList(imagePNG));
-                    }
-                    if (!gifImagesAdded) {
-                        docList.addAll(Arrays.asList(imageGIF));
-                    }
+                    /*
+                     Always add Pageable and Printable for CUPS
+                     since it uses Filters to convert from Postscript
+                     to device printer language.
+                    */
+                    docList.add(DocFlavor.SERVICE_FORMATTED.PAGEABLE);
+                    docList.add(DocFlavor.SERVICE_FORMATTED.PRINTABLE);
+
+                    docList.addAll(Arrays.asList(imageJPG));
+                    docList.addAll(Arrays.asList(imagePNG));
+                    docList.addAll(Arrays.asList(imageGIF));
                 }
                 supportedDocFlavors = new DocFlavor[docList.size()];
                 docList.toArray(supportedDocFlavors);
