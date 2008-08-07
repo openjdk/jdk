@@ -770,11 +770,9 @@ Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
     glyphInfo->topLeftX  = (float)  ftglyph->bitmap_left;
     glyphInfo->topLeftY  = (float) -ftglyph->bitmap_top;
 
-    if (context->aaType == TEXT_AA_LCD_HRGB ||
-        context->aaType == TEXT_AA_LCD_HBGR) {
+    if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_LCD) {
         glyphInfo->width = width/3;
-    } else if (context->aaType == TEXT_AA_LCD_VRGB ||
-               context->aaType == TEXT_AA_LCD_VBGR) {
+    } else if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_LCD_V) {
         glyphInfo->height = glyphInfo->height/3;
     }
 
