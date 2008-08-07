@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,8 +88,9 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
     while (b < end) {
         jint opcode = NEXT_INT(b);
 
-        J2dTraceLn1(J2D_TRACE_VERBOSE,
-                    "OGLRenderQueue_flushBuffer: opcode=%d", opcode);
+        J2dTraceLn2(J2D_TRACE_VERBOSE,
+                    "OGLRenderQueue_flushBuffer: opcode=%d, rem=%d",
+                    opcode, (end-b));
 
         switch (opcode) {
 
@@ -148,6 +149,40 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
                 SKIP_BYTES(b, count * BYTES_PER_SCANLINE);
             }
             break;
+        case sun_java2d_pipe_BufferedOpCodes_DRAW_PARALLELOGRAM:
+            {
+                jfloat x11 = NEXT_FLOAT(b);
+                jfloat y11 = NEXT_FLOAT(b);
+                jfloat dx21 = NEXT_FLOAT(b);
+                jfloat dy21 = NEXT_FLOAT(b);
+                jfloat dx12 = NEXT_FLOAT(b);
+                jfloat dy12 = NEXT_FLOAT(b);
+                jfloat lwr21 = NEXT_FLOAT(b);
+                jfloat lwr12 = NEXT_FLOAT(b);
+                OGLRenderer_DrawParallelogram(oglc,
+                                              x11, y11,
+                                              dx21, dy21,
+                                              dx12, dy12,
+                                              lwr21, lwr12);
+            }
+            break;
+        case sun_java2d_pipe_BufferedOpCodes_DRAW_AAPARALLELOGRAM:
+            {
+                jfloat x11 = NEXT_FLOAT(b);
+                jfloat y11 = NEXT_FLOAT(b);
+                jfloat dx21 = NEXT_FLOAT(b);
+                jfloat dy21 = NEXT_FLOAT(b);
+                jfloat dx12 = NEXT_FLOAT(b);
+                jfloat dy12 = NEXT_FLOAT(b);
+                jfloat lwr21 = NEXT_FLOAT(b);
+                jfloat lwr12 = NEXT_FLOAT(b);
+                OGLRenderer_DrawAAParallelogram(oglc, dstOps,
+                                                x11, y11,
+                                                dx21, dy21,
+                                                dx12, dy12,
+                                                lwr21, lwr12);
+            }
+            break;
 
         // fill ops
         case sun_java2d_pipe_BufferedOpCodes_FILL_RECT:
@@ -164,6 +199,34 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
                 jint count = NEXT_INT(b);
                 OGLRenderer_FillSpans(oglc, count, (jint *)b);
                 SKIP_BYTES(b, count * BYTES_PER_SPAN);
+            }
+            break;
+        case sun_java2d_pipe_BufferedOpCodes_FILL_PARALLELOGRAM:
+            {
+                jfloat x11 = NEXT_FLOAT(b);
+                jfloat y11 = NEXT_FLOAT(b);
+                jfloat dx21 = NEXT_FLOAT(b);
+                jfloat dy21 = NEXT_FLOAT(b);
+                jfloat dx12 = NEXT_FLOAT(b);
+                jfloat dy12 = NEXT_FLOAT(b);
+                OGLRenderer_FillParallelogram(oglc,
+                                              x11, y11,
+                                              dx21, dy21,
+                                              dx12, dy12);
+            }
+            break;
+        case sun_java2d_pipe_BufferedOpCodes_FILL_AAPARALLELOGRAM:
+            {
+                jfloat x11 = NEXT_FLOAT(b);
+                jfloat y11 = NEXT_FLOAT(b);
+                jfloat dx21 = NEXT_FLOAT(b);
+                jfloat dy21 = NEXT_FLOAT(b);
+                jfloat dx12 = NEXT_FLOAT(b);
+                jfloat dy12 = NEXT_FLOAT(b);
+                OGLRenderer_FillAAParallelogram(oglc, dstOps,
+                                                x11, y11,
+                                                dx21, dy21,
+                                                dx12, dy12);
             }
             break;
 
@@ -438,6 +501,31 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
                 dstOps = NULL;
             }
             break;
+        case sun_java2d_pipe_BufferedOpCodes_SAVE_STATE:
+            {
+                j2d_glPushAttrib(GL_ALL_ATTRIB_BITS);
+                j2d_glPushClientAttrib(GL_CLIENT_ALL_ATTRIB_BITS);
+                j2d_glMatrixMode(GL_MODELVIEW);
+                j2d_glPushMatrix();
+                j2d_glMatrixMode(GL_PROJECTION);
+                j2d_glPushMatrix();
+                j2d_glMatrixMode(GL_TEXTURE);
+                j2d_glPushMatrix();
+            }
+            break;
+
+        case sun_java2d_pipe_BufferedOpCodes_RESTORE_STATE:
+            {
+                j2d_glPopAttrib();
+                j2d_glPopClientAttrib();
+                j2d_glMatrixMode(GL_MODELVIEW);
+                j2d_glPopMatrix();
+                j2d_glMatrixMode(GL_PROJECTION);
+                j2d_glPopMatrix();
+                j2d_glMatrixMode(GL_TEXTURE);
+                j2d_glPopMatrix();
+            }
+            break;
         case sun_java2d_pipe_BufferedOpCodes_SYNC:
             {
                 sync = JNI_TRUE;
@@ -691,6 +779,9 @@ OGLRenderQueue_CheckPreviousOp(jint op)
         return;
     }
 
+    J2dTraceLn1(J2D_TRACE_VERBOSE,
+                "OGLRenderQueue_CheckPreviousOp: new op=%d", op);
+
     switch (previousOp) {
     case GL_TEXTURE_2D:
     case GL_TEXTURE_RECTANGLE_ARB:
@@ -718,6 +809,9 @@ OGLRenderQueue_CheckPreviousOp(jint op)
     case OGL_STATE_GLYPH_OP:
         OGLTR_DisableGlyphVertexCache(oglc);
         break;
+    case OGL_STATE_PGRAM_OP:
+        OGLRenderer_DisableAAParallelogramProgram();
+        break;
     case OGL_STATE_RESET:
     case OGL_STATE_CHANGE:
         // No-op
@@ -744,6 +838,9 @@ OGLRenderQueue_CheckPreviousOp(jint op)
         break;
     case OGL_STATE_GLYPH_OP:
         OGLTR_EnableGlyphVertexCache(oglc);
+        break;
+    case OGL_STATE_PGRAM_OP:
+        OGLRenderer_EnableAAParallelogramProgram();
         break;
     case OGL_STATE_RESET:
     case OGL_STATE_CHANGE:
