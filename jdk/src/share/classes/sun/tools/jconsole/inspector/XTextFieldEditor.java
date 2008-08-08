@@ -26,22 +26,30 @@
 package sun.tools.jconsole.inspector;
 
 import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.util.EventObject;
-import java.awt.event.*;
-import java.awt.dnd.DragSourceDropEvent;
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.table.*;
+import javax.swing.JMenuItem;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.event.CellEditorListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.EventListenerList;
+import javax.swing.table.TableCellEditor;
 
 @SuppressWarnings("serial")
 public class XTextFieldEditor extends XTextField implements TableCellEditor {
 
-    protected EventListenerList listenerList = new EventListenerList();
+    protected EventListenerList evtListenerList = new EventListenerList();
     protected ChangeEvent changeEvent = new ChangeEvent(this);
 
     private FocusListener editorFocusListener = new FocusAdapter() {
+        @Override
         public void focusLost(FocusEvent e) {
-            fireEditingStopped();
+            // fireEditingStopped();
+            // must not call fireEditingStopped() here!
         }
     };
 
@@ -51,6 +59,7 @@ public class XTextFieldEditor extends XTextField implements TableCellEditor {
     }
 
     //edition stopped ou JMenuItem selection & JTextField selection
+    @Override
     public void  actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
         if ((e.getSource() instanceof JMenuItem) ||
@@ -67,16 +76,16 @@ public class XTextFieldEditor extends XTextField implements TableCellEditor {
     //TableCellEditor implementation
 
     public void addCellEditorListener(CellEditorListener listener) {
-        listenerList.add(CellEditorListener.class,listener);
+        evtListenerList.add(CellEditorListener.class,listener);
     }
 
     public void removeCellEditorListener(CellEditorListener listener) {
-        listenerList.remove(CellEditorListener.class, listener);
+        evtListenerList.remove(CellEditorListener.class, listener);
     }
 
     protected void fireEditingStopped() {
         CellEditorListener listener;
-        Object[] listeners = listenerList.getListenerList();
+        Object[] listeners = evtListenerList.getListenerList();
         for (int i=0;i< listeners.length;i++) {
             if (listeners[i] == CellEditorListener.class) {
                 listener = (CellEditorListener) listeners[i+1];
@@ -87,7 +96,7 @@ public class XTextFieldEditor extends XTextField implements TableCellEditor {
 
     protected void fireEditingCanceled() {
         CellEditorListener listener;
-        Object[] listeners = listenerList.getListenerList();
+        Object[] listeners = evtListenerList.getListenerList();
         for (int i=0;i< listeners.length;i++) {
             if (listeners[i] == CellEditorListener.class) {
                 listener = (CellEditorListener) listeners[i+1];
