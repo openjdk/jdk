@@ -63,15 +63,6 @@ endif
 
 JTG_DOCS            = $(JDK_TOPDIR)/src/solaris/doc
 
-# Choose the right set of documents for the images
-ifdef OPENJDK
-  SHARE_JDK_DOC_SRC = $(JDK_TOPDIR)/make
-  SHARE_JRE_DOC_SRC = $(JDK_TOPDIR)/make
-else
-  SHARE_JDK_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jdk
-  SHARE_JRE_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jre
-endif
-
 #We use this for man page header
 jdkversion := $(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION)
 
@@ -81,13 +72,20 @@ ifeq ($(PLATFORM), windows)
 endif
 
 # The base names of all the license and document files for the jdk and jre
+#   (These files get placed in the jdk and jre install images)
 ifdef OPENJDK
+  # Where to find these files
+  SHARE_JDK_DOC_SRC = $(JDK_TOPDIR)
+  SHARE_JRE_DOC_SRC = $(JDK_TOPDIR)
   # Same files for jdk and jre, no name changes
   LICENSE_DOCLIST_JDK = LICENSE     ASSEMBLY_EXCEPTION
   LICENSE_DOCLIST_JRE = LICENSE     ASSEMBLY_EXCEPTION
-  OTHER_DOCLIST_JDK   = README.html THIRD_PARTY_README
-  OTHER_DOCLIST_JRE   = README.html THIRD_PARTY_README
+  OTHER_DOCLIST_JDK   = THIRD_PARTY_README
+  OTHER_DOCLIST_JRE   = THIRD_PARTY_README
 else
+  # Where to find these files
+  SHARE_JDK_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jdk
+  SHARE_JRE_DOC_SRC = $(CLOSED_SHARE_SRC)/doc/jre
   # Select the pre-release or FCS license version based on the build milestone.
   LICENSE_VERSION=.pre
   ifeq ($(MILESTONE), fcs)
