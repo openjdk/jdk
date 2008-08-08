@@ -72,6 +72,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private final Todo todo;
     private final Annotate annotate;
     private final Types types;
+    private final JCDiagnostic.Factory diags;
     private final Target target;
 
     private final boolean skipAnnotations;
@@ -96,6 +97,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         todo = Todo.instance(context);
         annotate = Annotate.instance(context);
         types = Types.instance(context);
+        diags = JCDiagnostic.Factory.instance(context);
         target = Target.instance(context);
         skipAnnotations =
             Options.instance(context).get("skipAnnotations") != null;
@@ -133,7 +135,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         if (tsym.kind == PCK && tsym.members().elems == null && !tsym.exists()) {
             // If we can't find java.lang, exit immediately.
             if (((PackageSymbol)tsym).fullname.equals(names.java_lang)) {
-                JCDiagnostic msg = JCDiagnostic.fragment("fatal.err.no.java.lang");
+                JCDiagnostic msg = diags.fragment("fatal.err.no.java.lang");
                 throw new FatalError(msg);
             } else {
                 log.error(pos, "doesnt.exist", tsym);
@@ -319,7 +321,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                         log.error(pos, "cant.resolve.location",
                                   KindName.STATIC,
                                   name, List.<Type>nil(), List.<Type>nil(),
-                                  typeKindName(tsym.type),
+                                  Kinds.typeKindName(tsym.type),
                                   tsym.type);
                     }
                 } finally {
