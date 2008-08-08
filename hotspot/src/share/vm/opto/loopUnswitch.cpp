@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,7 @@ ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
 
   Node *cont      = _igvn.intcon(1);
   set_ctrl(cont, C->root());
-  Node* opq       = new (C, 2) Opaque1Node(cont);
+  Node* opq       = new (C, 2) Opaque1Node(C, cont);
   register_node(opq, outer_loop, entry, dom_depth(entry));
   Node *bol       = new (C, 2) Conv2BNode(opq);
   register_node(bol, outer_loop, entry, dom_depth(entry));

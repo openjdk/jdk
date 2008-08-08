@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,6 +352,9 @@ public class FtpClient extends TransferProtocolClient {
                 s = new Socket(Proxy.NO_PROXY);
         } else
             s = new Socket();
+        // Bind the socket to the same address as the control channel. This
+        // is needed in case of multi-homed systems.
+        s.bind(new InetSocketAddress(serverSocket.getLocalAddress(),0));
         if (connectTimeout >= 0) {
             s.connect(dest, connectTimeout);
         } else {
@@ -417,8 +420,10 @@ public class FtpClient extends TransferProtocolClient {
             // since we can't accept a connection through SOCKS (yet)
             // throw an exception
             throw new FtpProtocolException("Passive mode failed");
-        } else
-            portSocket = new ServerSocket(0, 1);
+        }
+        // Bind the ServerSocket to the same address as the control channel
+        // This is needed for multi-homed systems
+        portSocket = new ServerSocket(0, 1, serverSocket.getLocalAddress());
         try {
             myAddress = portSocket.getInetAddress();
             if (myAddress.isAnyLocalAddress())

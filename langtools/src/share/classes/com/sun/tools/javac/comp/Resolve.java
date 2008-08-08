@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,7 +228,7 @@ public class Resolve {
                 // another symbol which is a member of `site'
                 // (because, if it is overridden, `sym' is not strictly
                 // speaking a member of `site'.)
-                (sym.kind != MTH || sym.isConstructor() ||
+                (sym.kind != MTH || sym.isConstructor() || sym.isStatic() ||
                  ((MethodSymbol)sym).implementation(site.tsym, types, true) == sym);
         default: // this case includes erroneous combinations as well
             return isAccessible(env, site);

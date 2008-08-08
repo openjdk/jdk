@@ -1,5 +1,5 @@
 #
-# Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -92,12 +92,12 @@ XARCH = $(subst sparcv9,v9,$(shell echo $(ISA)))
 $(XLIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS).h $(LIBJVM_DB_MAPFILE)
 	@echo Making $@
 	$(QUIETLY) mkdir -p 64/ ; \
-	$(CC) $(SYMFLAG) -xarch=$(XARCH) -D$(TYPE) -I. -I$(GENERATED) \
+	$(CC) $(SYMFLAG) $(ARCHFLAG/$(XARCH)) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -lc
 $(XLIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
 	@echo Making $@
 	$(QUIETLY) mkdir -p 64/ ; \
-	$(CC) $(SYMFLAG) -xarch=$(XARCH) -D$(TYPE) -I. \
+	$(CC) $(SYMFLAG) $(ARCHFLAG/$(XARCH)) -D$(TYPE) -I. \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
 endif # ifneq ("${ISA}","${BUILDARCH}")
 

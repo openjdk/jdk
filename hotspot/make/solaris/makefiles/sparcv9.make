@@ -1,5 +1,5 @@
 #
-# Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 #
 
 Obj_Files += solaris_sparc.o
-ASFLAGS += $(ARCHFLAG)
+ASFLAGS += $(AS_ARCHFLAG)
 
 ifeq ("${Platform_compiler}", "sparcWorks")
 ifeq ($(shell expr $(COMPILER_REV) \< 5.5), 1)

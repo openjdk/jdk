@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -388,9 +388,6 @@ public:
   void               set_next_exception(SafePointNode* n);
   bool                   has_exceptions() const { return next_exception() != NULL; }
 
-  // Does this node have a use of n other than in debug information?
-  virtual bool           has_non_debug_use(Node *n)  {return false; }
-
   // Standard Node stuff
   virtual int            Opcode() const;
   virtual bool           pinned() const { return true; }
@@ -497,7 +494,7 @@ public:
   // Returns true if the call may modify n
   virtual bool        may_modify(const TypePtr *addr_t, PhaseTransform *phase);
   // Does this node have a use of n other than in debug information?
-  virtual bool        has_non_debug_use(Node *n);
+  bool                has_non_debug_use(Node *n);
   // Returns the unique CheckCastPP of a call
   // or result projection is there are several CheckCastPP
   // or returns NULL if there is no one.

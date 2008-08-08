@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@
 #include "sun_font_StrikeCache.h"
 
 static void *theNullScalerContext = NULL;
+extern void AccelGlyphCache_RemoveAllCellInfos(GlyphInfo *glyph);
+
 
 JNIEXPORT jlong JNICALL
 Java_sun_font_NullFontScaler_getNullScalerContext
@@ -294,7 +296,7 @@ JNIEXPORT void JNICALL Java_sun_font_StrikeCache_freeIntMemory
                 GlyphInfo *ginfo = (GlyphInfo *)ptrs[i];
                 if (ginfo->cellInfo != NULL) {
                     // invalidate this glyph's accelerated cache cell
-                    ginfo->cellInfo->glyphInfo = NULL;
+                    AccelGlyphCache_RemoveAllCellInfos(ginfo);
                 }
                 free((void*)ginfo);
             }
@@ -324,8 +326,7 @@ JNIEXPORT void JNICALL Java_sun_font_StrikeCache_freeLongMemory
             if (ptrs[i] != 0L) {
                 GlyphInfo *ginfo = (GlyphInfo *) jlong_to_ptr(ptrs[i]);
                 if (ginfo->cellInfo != NULL) {
-                    // invalidate this glyph's accelerated cache cell
-                    ginfo->cellInfo->glyphInfo = NULL;
+                    AccelGlyphCache_RemoveAllCellInfos(ginfo);
                 }
                 free((void*)ginfo);
             }

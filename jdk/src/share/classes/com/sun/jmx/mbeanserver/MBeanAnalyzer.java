@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,14 @@ import static com.sun.jmx.mbeanserver.Util.*;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import javax.management.MBean;
+import javax.management.MXBean;
+import javax.management.ManagedAttribute;
+import javax.management.ManagedOperation;
 import javax.management.NotCompliantMBeanException;
 
 /**
@@ -54,15 +55,15 @@ import javax.management.NotCompliantMBeanException;
  */
 class MBeanAnalyzer<M> {
 
-    static interface MBeanVisitor<M> {
+    static interface MBeanVisitor<M, X extends Exception> {
         public void visitAttribute(String attributeName,
                 M getter,
-                M setter);
+                M setter) throws X;
         public void visitOperation(String operationName,
-                M operation);
+                M operation) throws X;
     }
 
-    void visit(MBeanVisitor<M> visitor) {
+    <X extends Exception> void visit(MBeanVisitor<M, X> visitor) throws X {
         // visit attributes
         for (Map.Entry<String, AttrMethods<M>> entry : attrMap.entrySet()) {
             String name = entry.getKey();
@@ -98,21 +99,21 @@ class MBeanAnalyzer<M> {
     // cached PerInterface object for an MBean interface means that
     // an analyzer will not be recreated for a second MBean using the
     // same interface.
-    static <M> MBeanAnalyzer<M> analyzer(Class<?> mbeanInterface,
+    static <M> MBeanAnalyzer<M> analyzer(Class<?> mbeanType,
             MBeanIntrospector<M> introspector)
             throws NotCompliantMBeanException {
-        return new MBeanAnalyzer<M>(mbeanInterface, introspector);
+        return new MBeanAnalyzer<M>(mbeanType, introspector);
     }
 
-    private MBeanAnalyzer(Class<?> mbeanInterface,
+    private MBeanAnalyzer(Class<?> mbeanType,
             MBeanIntrospector<M> introspector)
             throws NotCompliantMBeanException {
-        introspector.checkCompliance(mbeanInterface);
+        introspector.checkCompliance(mbeanType);
 
         try {
-            initMaps(mbeanInterface, introspector);
+            initMaps(mbeanType, introspector);
         } catch (Exception x) {
-            throw Introspector.throwException(mbeanInterface,x);
+            throw Introspector.throwException(mbeanType,x);
         }
     }
 
@@ -126,19 +127,28 @@ class MBeanAnalyzer<M> {
         /* Run through the methods to detect inconsistencies and to enable
            us to give getter and setter together to visitAttribute. */
         for (Method m : methods) {
-            String name = m.getName();
+            final String name = m.getName();
+            final int nParams = m.getParameterTypes().length;
+            final boolean managedOp = m.isAnnotationPresent(ManagedOperation.class);
+            final boolean managedAttr = m.isAnnotationPresent(ManagedAttribute.class);
+            if (managedOp && managedAttr) {
+                throw new NotCompliantMBeanException("Method " + name +
+                        " has both @ManagedOperation and @ManagedAttribute");
+            }
 
             final M cm = introspector.mFrom(m);
 
             String attrName = "";
-            if (name.startsWith("get"))
-                attrName = name.substring(3);
-            else if (name.startsWith("is")
-            && m.getReturnType() == boolean.class)
-                attrName = name.substring(2);
+            if (!managedOp) {
+                if (name.startsWith("get"))
+                    attrName = name.substring(3);
+                else if (name.startsWith("is")
+                         && m.getReturnType() == boolean.class)
+                    attrName = name.substring(2);
+            }
 
-            if (attrName.length() != 0 && m.getParameterTypes().length == 0
-                    && m.getReturnType() != void.class) {
+            if (attrName.length() != 0 && nParams == 0
+                    && m.getReturnType() != void.class && !managedOp) {
                 // It's a getter
                 // Check we don't have both isX and getX
                 AttrMethods<M> am = attrMap.get(attrName);
@@ -154,8 +164,8 @@ class MBeanAnalyzer<M> {
                 am.getter = cm;
                 attrMap.put(attrName, am);
             } else if (name.startsWith("set") && name.length() > 3
-                    && m.getParameterTypes().length == 1 &&
-                    m.getReturnType() == void.class) {
+                    && nParams == 1 &&
+                    m.getReturnType() == void.class && !managedOp) {
                 // It's a setter
                 attrName = name.substring(3);
                 AttrMethods<M> am = attrMap.get(attrName);
@@ -168,6 +178,9 @@ class MBeanAnalyzer<M> {
                 }
                 am.setter = cm;
                 attrMap.put(attrName, am);
+            } else if (managedAttr) {
+                throw new NotCompliantMBeanException("Method " + name +
+                        " has @ManagedAttribute but is not a valid getter or setter");
             } else {
                 // It's an operation
                 List<M> cms = opMap.get(name);
@@ -228,7 +241,11 @@ class MBeanAnalyzer<M> {
        but only the overriding one is of interest.  We return the methods
        in the same order they arrived in.  This isn't required by the spec
        but existing code may depend on it and users may be used to seeing
-       operations or attributes appear in a particular order.  */
+       operations or attributes appear in a particular order.
+
+       Because of the way this method works, if the same Method appears
+       more than once in the given List then it will be completely deleted!
+       So don't do that.  */
     static List<Method>
             eliminateCovariantMethods(List<Method> startMethods) {
         // We are assuming that you never have very many methods with the
@@ -243,7 +260,7 @@ class MBeanAnalyzer<M> {
             final Method m0 = sorted[i-1];
             final Method m1 = sorted[i];
 
-            // Methods that don't have the same name can't override each others
+            // Methods that don't have the same name can't override each other
             if (!m0.getName().equals(m1.getName())) continue;
 
             // Methods that have the same name and same signature override
@@ -251,7 +268,8 @@ class MBeanAnalyzer<M> {
             // due to the way we have sorted them in MethodOrder.
             if (Arrays.equals(m0.getParameterTypes(),
                     m1.getParameterTypes())) {
-                overridden.add(m0);
+                if (!overridden.add(m0))
+                    throw new RuntimeException("Internal error: duplicate Method");
             }
         }
 

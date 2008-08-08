@@ -345,18 +345,18 @@ public abstract class AbstractMemberWriter {
     /**
      * Print use info.
      */
-    protected void printUseInfo(Object mems, String heading) {
+    protected void printUseInfo(List<? extends ProgramElementDoc> mems, String heading) {
         if (mems == null) {
             return;
         }
-        List members = (List)mems;
+        List<? extends ProgramElementDoc> members = mems;
         if (members.size() > 0) {
             writer.tableIndexSummary();
             writer.tableUseInfoHeaderStart("#CCCCFF");
             writer.print(heading);
             writer.tableHeaderEnd();
-            for (Iterator it = members.iterator(); it.hasNext(); ) {
-                ProgramElementDoc pgmdoc = (ProgramElementDoc)it.next();
+            for (Iterator<? extends ProgramElementDoc> it = members.iterator(); it.hasNext(); ) {
+                ProgramElementDoc pgmdoc = it.next();
                 ClassDoc cd = pgmdoc.containingClass();
 
                 writer.printSummaryLinkType(this, pgmdoc);

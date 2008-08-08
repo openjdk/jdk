@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,6 +291,9 @@ class CommandLineFlags {
             "Use 32-bit object references in 64-bit VM. "                   \
             "lp64_product means flag is always constant in 32 bit VM")      \
                                                                             \
+  lp64_product(bool, CheckCompressedOops, trueInDebug,                      \
+            "generate checks in encoding/decoding code")                    \
+                                                                            \
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
    * been re-added (see 6401008) */                                         \
@@ -456,6 +459,9 @@ class CommandLineFlags {
                                                                             \
   develop(bool, SpecialStringIndexOf, true,                                 \
           "special version of string indexOf")                              \
+                                                                            \
+  product(bool, SpecialArraysEquals, false,                                 \
+          "special version of Arrays.equals(char[],char[])")                \
                                                                             \
   develop(bool, TraceCallFixup, false,                                      \
           "traces all call fixups")                                         \
@@ -939,6 +945,9 @@ class CommandLineFlags {
                                                                             \
   diagnostic(bool, UseIncDec, true,                                         \
           "Use INC, DEC instructions on x86")                               \
+                                                                            \
+  product(bool, UseNewLongLShift, false,                                    \
+          "Use optimized bitwise shift left")                               \
                                                                             \
   product(bool, UseStoreImmI16, true,                                       \
           "Use store immediate 16-bits value instruction on x86")           \
@@ -2239,6 +2248,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, AggressiveOpts, false,                                      \
           "Enable aggressive optimizations - see arguments.cpp")            \
+                                                                            \
+  product(bool, UseStringCache, false,                                      \
+          "Enable String cache capabilities on String.java")                \
                                                                             \
   /* statistics */                                                          \
   develop(bool, UseVTune, false,                                            \

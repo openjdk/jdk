@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,13 @@
 
 package com.sun.tools.javac.util;
 
-import java.net.URI;
-import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 
 import javax.tools.Diagnostic;
-import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.tree.JCTree;
 
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticType.*;
@@ -177,18 +173,6 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
                               "compiler." + FRAGMENT.key + "." + key,
                               args);
     }
-
-    /**
-     * A simple abstraction of a source file, as needed for use in a diagnostic message.
-     */
-    // Note: This class may be superceded by a more general abstraction
-    public interface DiagnosticSource {
-        JavaFileObject getFile();
-        CharSequence getName();
-        int getLineNumber(int pos);
-        int getColumnNumber(int pos);
-        Map<JCTree, Integer> getEndPosTable();
-    };
 
     /**
      * A DiagnosticType defines the type of the diagnostic.

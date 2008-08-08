@@ -74,7 +74,11 @@ import sun.awt.dnd.SunDropTargetEvent;
 import sun.awt.im.CompositionArea;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.pipe.Region;
+import sun.awt.image.VSyncedBSManager;
+import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
+import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.*;
 import sun.awt.RequestFocusController;
+import sun.java2d.SunGraphicsEnvironment;
 
 /**
  * A <em>component</em> is an object having a graphical representation
@@ -3542,12 +3546,36 @@ public abstract class Component implements ImageObserver, MenuContainer,
         if (numBuffers == 1) {
             bufferStrategy = new SingleBufferStrategy(caps);
         } else {
+            SunGraphicsEnvironment sge = (SunGraphicsEnvironment)
+                GraphicsEnvironment.getLocalGraphicsEnvironment();
+            if (!caps.isPageFlipping() && sge.isFlipStrategyPreferred(peer)) {
+                caps = new ProxyCapabilities(caps);
+            }
             // assert numBuffers > 1;
             if (caps.isPageFlipping()) {
                 bufferStrategy = new FlipSubRegionBufferStrategy(numBuffers, caps);
             } else {
                 bufferStrategy = new BltSubRegionBufferStrategy(numBuffers, caps);
             }
+        }
+    }
+
+    /**
+     * This is a proxy capabilities class used when a FlipBufferStrategy
+     * is created instead of the requested Blit strategy.
+     *
+     * @see sun.awt.SunGraphicsEnvironment#isFlipStrategyPreferred(ComponentPeer)
+     */
+    private class ProxyCapabilities extends ExtendedBufferCapabilities {
+        private BufferCapabilities orig;
+        private ProxyCapabilities(BufferCapabilities orig) {
+            super(orig.getFrontBufferCapabilities(),
+                  orig.getBackBufferCapabilities(),
+                  orig.getFlipContents() ==
+                      BufferCapabilities.FlipContents.BACKGROUND ?
+                      BufferCapabilities.FlipContents.BACKGROUND :
+                      BufferCapabilities.FlipContents.COPIED);
+            this.orig = orig;
         }
     }
 
@@ -3680,16 +3708,30 @@ public abstract class Component implements ImageObserver, MenuContainer,
             width = getWidth();
             height = getHeight();
 
-            if (drawBuffer == null) {
-                peer.createBuffers(numBuffers, caps);
-            } else {
+            if (drawBuffer != null) {
                 // dispose the existing backbuffers
                 drawBuffer = null;
                 drawVBuffer = null;
                 destroyBuffers();
                 // ... then recreate the backbuffers
-                peer.createBuffers(numBuffers, caps);
             }
+
+            if (caps instanceof ExtendedBufferCapabilities) {
+                ExtendedBufferCapabilities ebc =
+                    (ExtendedBufferCapabilities)caps;
+                if (ebc.getVSync() == VSYNC_ON) {
+                    // if this buffer strategy is not allowed to be v-synced,
+                    // change the caps that we pass to the peer but keep on
+                    // trying to create v-synced buffers;
+                    // do not throw IAE here in case it is disallowed, see
+                    // ExtendedBufferCapabilities for more info
+                    if (!VSyncedBSManager.vsyncAllowed(this)) {
+                        caps = ebc.derive(VSYNC_DEFAULT);
+                    }
+                }
+            }
+
+            peer.createBuffers(numBuffers, caps);
             updateInternalBuffers();
         }
 
@@ -3734,7 +3776,23 @@ public abstract class Component implements ImageObserver, MenuContainer,
          */
         protected void flip(BufferCapabilities.FlipContents flipAction) {
             if (peer != null) {
-                peer.flip(flipAction);
+                Image backBuffer = getBackBuffer();
+                if (backBuffer != null) {
+                    peer.flip(0, 0,
+                              backBuffer.getWidth(null),
+                              backBuffer.getHeight(null), flipAction);
+                }
+            } else {
+                throw new IllegalStateException(
+                    "Component must have a valid peer");
+            }
+        }
+
+        void flipSubRegion(int x1, int y1, int x2, int y2,
+                      BufferCapabilities.FlipContents flipAction)
+        {
+            if (peer != null) {
+                peer.flip(x1, y1, x2, y2, flipAction);
             } else {
                 throw new IllegalStateException(
                     "Component must have a valid peer");
@@ -3745,6 +3803,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * Destroys the buffers created through this object
          */
         protected void destroyBuffers() {
+            VSyncedBSManager.releaseVsync(this);
             if (peer != null) {
                 peer.destroyBuffers();
             } else {
@@ -3757,7 +3816,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * @return the buffering capabilities of this strategy
          */
         public BufferCapabilities getCapabilities() {
-            return caps;
+            if (caps instanceof ProxyCapabilities) {
+                return ((ProxyCapabilities)caps).orig;
+            } else {
+                return caps;
+            }
         }
 
         /**
@@ -3842,6 +3905,14 @@ public abstract class Component implements ImageObserver, MenuContainer,
          */
         public void show() {
             flip(caps.getFlipContents());
+        }
+
+        /**
+         * Makes specified region of the the next available buffer visible
+         * by either blitting or flipping.
+         */
+        void showSubRegion(int x1, int y1, int x2, int y2) {
+            flipSubRegion(x1, y1, x2, y2, caps.getFlipContents());
         }
 
         /**
@@ -4114,8 +4185,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     /**
      * Private class to perform sub-region flipping.
-     * REMIND: this subclass currently punts on subregions and
-     * flips the entire buffer.
      */
     private class FlipSubRegionBufferStrategy extends FlipBufferStrategy
         implements SubRegionShowable
@@ -4129,14 +4198,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
 
         public void show(int x1, int y1, int x2, int y2) {
-            show();
+            showSubRegion(x1, y1, x2, y2);
         }
 
         // This is invoked by Swing on the toolkit thread.
-        public boolean validateAndShow(int x1, int y1, int x2, int y2) {
-            revalidate(false);
-            if (!contentsRestored() && !contentsLost()) {
-                show();
+        public boolean showIfNotLost(int x1, int y1, int x2, int y2) {
+            if (!contentsLost()) {
+                showSubRegion(x1, y1, x2, y2);
                 return !contentsLost();
             }
             return false;
@@ -4164,9 +4232,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
 
         // This method is called by Swing on the toolkit thread.
-        public boolean validateAndShow(int x1, int y1, int x2, int y2) {
-            revalidate(false);
-            if (!contentsRestored() && !contentsLost()) {
+        public boolean showIfNotLost(int x1, int y1, int x2, int y2) {
+            if (!contentsLost()) {
                 showSubRegion(x1, y1, x2, y2);
                 return !contentsLost();
             }

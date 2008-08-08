@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,5 +98,5 @@ class MutableSpace: public ImmutableSpace {
   virtual void print_on(outputStream* st) const;
   virtual void print_short() const;
   virtual void print_short_on(outputStream* st) const;
-  virtual void verify(bool allow_dirty) const;
+  virtual void verify(bool allow_dirty);
 };

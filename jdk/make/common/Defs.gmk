@@ -1,5 +1,5 @@
 #
-# Copyright 1995-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -703,7 +703,7 @@ endif
 ifdef ALT_COPYRIGHT_YEAR
   COPYRIGHT_YEAR = $(ALT_COPYRIGHT_YEAR)
 else
-  COPYRIGHT_YEAR = $(shell $(DATE) '+%Y')
+  COPYRIGHT_YEAR := $(shell $(DATE) '+%Y')
 endif
 
 # Install of imported file (JDK_IMPORT_PATH, or some other external location)

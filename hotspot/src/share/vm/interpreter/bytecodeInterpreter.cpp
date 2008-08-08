@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1931,6 +1931,7 @@ run:
               } else {
                 result->set_mark(markOopDesc::prototype());
               }
+              result->set_klass_gap(0);
               result->set_klass(k_entry);
               SET_STACK_OBJECT(result, 0);
               UPDATE_PC_AND_TOS_AND_CONTINUE(3, 1);

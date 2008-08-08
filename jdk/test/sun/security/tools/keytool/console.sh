@@ -1,7 +1,7 @@
 #! /bin/sh
 
 #
-# Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #
 # @run shell/manual console.sh
 
-if [ "$ALT_PASS" == "" ]; then
+if [ "$ALT_PASS" = "" ]; then
   export PASS=äöäöäöäö
 else
   export PASS=$ALT_PASS
@@ -54,7 +54,7 @@ echo "If you see both the prompts appear, say --"
 echo "   Enter key password for <mykey>"
 echo "         (RETURN if same as keystore password):  Enter keystore password:"
 echo "only response to the last prompt by typing $PASS and press ENTER"
-echo 
+echo
 echo "Only if all the command run correctly without showing any error "
 echo "or warning, this test passes."
 echo
@@ -87,3 +87,6 @@ echo $PASS| $J5/bin/keytool -keystore kkk -genkey -dname CN=olala
 $JM/bin/keytool -keystore kkk -list
 echo $PASS| $J5/bin/keytool -keystore kkk -list
 echo $PASS| $JM/bin/keytool -keystore kkk -list
+rm kkk
+
+exit 0

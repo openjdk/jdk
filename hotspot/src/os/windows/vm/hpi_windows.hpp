@@ -102,6 +102,10 @@ HPIDECL(send, "send", _socket, Send, int, "%d",
          fd, buf, nBytes, flags),
         (fd, buf, nBytes, flags));
 
+inline int hpi::raw_send(int fd, char *buf, int nBytes, int flags) {
+  return send(fd, buf, nBytes, flags);
+}
+
 HPIDECL(timeout, "timeout", _socket, Timeout, int, "%d",
         (int fd, long timeout),
         ("fd = %d, timeout = %ld", fd, timeout),

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @author  Peter von der Ah\u00e9
  */
 
-import com.sun.tools.javac.util.JavacFileManager;
+import com.sun.tools.javac.file.JavacFileManager;
 
 public class TestName {
     public static void main(String... args) {

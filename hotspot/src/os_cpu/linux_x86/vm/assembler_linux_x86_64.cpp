@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,4 @@ void MacroAssembler::get_thread(Register thread) {
        movq(thread, rax);
        popq(rax);
    }
-}
-
-// NOTE: since the linux kernel resides at the low end of
-// user address space, no null pointer check is needed.
-bool MacroAssembler::needs_explicit_null_check(int offset) {
-  return offset < 0 || offset >= 0x100000;
 }

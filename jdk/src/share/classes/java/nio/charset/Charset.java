@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,21 +188,22 @@ import sun.security.action.GetPropertyAction;
  * <ul>
  *
  *   <li><p> When decoding, the <tt>UTF-16BE</tt> and <tt>UTF-16LE</tt>
- *   charsets ignore byte-order marks; when encoding, they do not write
+ *   charsets interpret the initial byte-order marks as a <small>ZERO-WIDTH
+ *   NON-BREAKING SPACE</small>; when encoding, they do not write
  *   byte-order marks. </p></li>
+
  *
- *   <li><p> When decoding, the <tt>UTF-16</tt> charset interprets a byte-order
- *   mark to indicate the byte order of the stream but defaults to big-endian
- *   if there is no byte-order mark; when encoding, it uses big-endian byte
- *   order and writes a big-endian byte-order mark. </p></li>
+ *   <li><p> When decoding, the <tt>UTF-16</tt> charset interprets the
+ *   byte-order mark at the beginning of the input stream to indicate the
+ *   byte-order of the stream but defaults to big-endian if there is no
+ *   byte-order mark; when encoding, it uses big-endian byte order and writes
+ *   a big-endian byte-order mark. </p></li>
  *
  * </ul>
  *
- * In any case, when a byte-order mark is read at the beginning of a decoding
- * operation it is omitted from the resulting sequence of characters.  Byte
- * order marks occuring after the first element of an input sequence are not
- * omitted since the same code is used to represent <small>ZERO-WIDTH
- * NON-BREAKING SPACE</small>.
+ * In any case, byte order marks occuring after the first element of an
+ * input sequence are not omitted since the same code is used to represent
+ * <small>ZERO-WIDTH NON-BREAKING SPACE</small>.
  *
  * <p> Every instance of the Java virtual machine has a default charset, which
  * may or may not be one of the standard charsets.  The default charset is
@@ -378,7 +379,7 @@ public abstract class Charset
     }
 
     // Thread-local gate to prevent recursive provider lookups
-    private static ThreadLocal gate = new ThreadLocal();
+    private static ThreadLocal<ThreadLocal> gate = new ThreadLocal<ThreadLocal>();
 
     private static Charset lookupViaProviders(final String charsetName) {
 
@@ -538,9 +539,9 @@ public abstract class Charset
     // Fold charsets from the given iterator into the given map, ignoring
     // charsets whose names already have entries in the map.
     //
-    private static void put(Iterator i, Map m) {
+    private static void put(Iterator<Charset> i, Map<String,Charset> m) {
         while (i.hasNext()) {
-            Charset cs = (Charset)i.next();
+            Charset cs = i.next();
             if (!m.containsKey(cs.name()))
                 m.put(cs.name(), cs);
         }
@@ -622,7 +623,7 @@ public abstract class Charset
 
     private final String name;          // tickles a bug in oldjavac
     private final String[] aliases;     // tickles a bug in oldjavac
-    private Set aliasSet = null;
+    private Set<String> aliasSet = null;
 
     /**
      * Initializes a new charset with the given canonical name and alias
@@ -664,7 +665,7 @@ public abstract class Charset
         if (aliasSet != null)
             return aliasSet;
         int n = aliases.length;
-        HashSet hs = new HashSet(n);
+        HashSet<String> hs = new HashSet<String>(n);
         for (int i = 0; i < n; i++)
             hs.add(aliases[i]);
         aliasSet = Collections.unmodifiableSet(hs);

@@ -422,6 +422,13 @@ public class SPARCFrame extends Frame {
     if (getFP().addOffsetTo(INTERPRETER_FRAME_VM_LOCAL_WORDS * VM.getVM().getAddressSize()).lessThan(getSP())) {
       return false;
     }
+
+    OopHandle methodHandle = addressOfInterpreterFrameMethod().getOopHandleAt(0);
+
+    if (VM.getVM().getObjectHeap().isValidMethod(methodHandle) == false) {
+      return false;
+    }
+
     // These are hacks to keep us out of trouble.
     // The problem with these is that they mask other problems
     if (getFP().lessThanOrEqual(getSP())) {        // this attempts to deal with unsigned comparison above
@@ -433,9 +440,18 @@ public class SPARCFrame extends Frame {
     // FIXME: this is not atomic with respect to GC and is unsuitable
     // for use in a non-debugging, or reflective, system. Need to
     // figure out how to express this.
-    if (addressOfInterpreterFrameBCX().getAddressAt(0) == null) {
-      return false; // BCP not yet set up
+    Address bcx =  addressOfInterpreterFrameBCX().getAddressAt(0);
+
+    Method method;
+    try {
+       method = (Method) VM.getVM().getObjectHeap().newOop(methodHandle);
+    } catch (UnknownOopException ex) {
+       return false;
     }
+    int  bci = bcpToBci(bcx, method);
+    //validate bci
+    if (bci < 0) return false;
+
     return true;
   }
 
@@ -471,7 +487,7 @@ public class SPARCFrame extends Frame {
     // will update it accordingly
     map.setIncludeArgumentOops(false);
 
-    if (cb == null && isEntryFrame()) {
+    if (isEntryFrame()) {
       return senderForEntryFrame(map);
     }
 
@@ -539,7 +555,6 @@ public class SPARCFrame extends Frame {
         int SP_OFFSET_IN_GREGSET = 17;
         raw_sp = fp.getAddressAt(VM.getVM().getAddressSize() * SP_OFFSET_IN_GREGSET);
         Address pc = fp.getAddressAt(VM.getVM().getAddressSize() * PC_OFFSET_IN_GREGSET);
-        // System.out.println("  next frame's SP: " + sp + " PC: " + pc);
         return new SPARCFrame(raw_sp, pc);
       }
     }
@@ -562,10 +577,8 @@ public class SPARCFrame extends Frame {
       // sender's _interpreter_sp_adjustment field.
       if (VM.getVM().getInterpreter().contains(pc)) {
         isInterpreted = true;
-        if (VM.getVM().isClientCompiler()) {
-          map.makeIntegerRegsUnsaved();
-          map.shiftWindow(sp, youngerSP);
-        }
+        map.makeIntegerRegsUnsaved();
+        map.shiftWindow(sp, youngerSP);
       } else {
         // Find a CodeBlob containing this frame's pc or elide the lookup and use the
         // supplied blob which is already known to be associated with this frame.

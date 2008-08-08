@@ -1,5 +1,5 @@
 #
-# Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -283,7 +283,7 @@ CPPFLAGS_COMMON = -DWIN32 -DIAL -D_LITTLE_ENDIAN
 ifeq ($(ARCH), amd64)
   CPPFLAGS_COMMON += -D_AMD64_ -Damd64
 else
-  CPPFLAGS_COMMON += -DWIN32 -D_X86_ -Dx86 
+  CPPFLAGS_COMMON += -D_X86_ -Dx86 
 endif
 CPPFLAGS_COMMON += -DWIN32_LEAN_AND_MEAN
 
@@ -293,16 +293,23 @@ CPPFLAGS_COMMON += -DWIN32_LEAN_AND_MEAN
 CFLAGS_COMMON += -Fd$(OBJDIR)/$(basename $(@F)).pdb -Fm$(OBJDIR)/$(basename $(@F)).map
 
 #
+# Use -wdNNNN to disable warning NNNN.
+#   C4800 is a warning about bool performance casts (can't make go away)
+#
+COMPILER_WARNINGS_TO_IGNORE = 4800
+CFLAGS_COMMON += $(COMPILER_WARNINGS_TO_IGNORE:%=-wd%)
+
+#
 # Add warnings and extra on 64bit issues
 #
 ifeq ($(ARCH_DATA_MODEL), 64)
   CFLAGS_COMMON += -Wp64 
 endif
-CFLAGS_COMMON += -W$(COMPILER_WARNING_LEVEL)
 
 #
 # Treat compiler warnings as errors, if requested
 #
+CFLAGS_COMMON += -W$(COMPILER_WARNING_LEVEL)
 ifeq ($(COMPILER_WARNINGS_FATAL),true)
   CFLAGS_COMMON += -WX
 endif
@@ -352,17 +359,9 @@ else
   #    BUILD_WIN_SA=1
   # on the make command.
   ifdef BUILD_WIN_SA
-    ifeq ($(ARCH), amd64)
-      INCLUDE_SA = true
-    else
-      INCLUDE_SA = true
-    endif
+    INCLUDE_SA = true
   else
-    ifeq ($(ARCH), amd64)
-      INCLUDE_SA = false
-    else
-      INCLUDE_SA = false
-    endif
+    INCLUDE_SA = false
   endif
 endif
 
@@ -404,7 +403,6 @@ ifdef JDK_UPDATE_VERSION
 else
   JDK_UPDATE_VER := 0
 endif
-JDK_VER = $(JDK_MINOR_VERSION),$(JDK_MICRO_VERSION),$(JDK_UPDATE_VER),$(COOKED_BUILD_NUMBER)
 
 RC_FLAGS = /l 0x409 /r
 
@@ -414,15 +412,23 @@ else
   RC_FLAGS += $(MS_RC_DEBUG_OPTION)
 endif 
 
-ifndef COPYRIGHT_YEAR
-    COPYRIGHT_YEAR = 2007 
-endif
+# Values for the RC variables defined in RC_FLAGS
+JDK_RC_BUILD_ID = $(FULL_VERSION)
+JDK_RC_COMPANY = $(COMPANY_NAME)
+JDK_RC_COMPONENT = $(PRODUCT_NAME) $(JDK_RC_PLATFORM_NAME) binary
+JDK_RC_VER = \
+    $(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION).$(JDK_UPDATE_VER).$(COOKED_BUILD_NUMBER)
+JDK_RC_COPYRIGHT = Copyright \xA9 $(COPYRIGHT_YEAR)
+JDK_RC_NAME = \
+    $(PRODUCT_NAME) $(JDK_RC_PLATFORM_NAME) $(JDK_MINOR_VERSION) $(JDK_UPDATE_META_TAG)
+JDK_RC_FVER = \
+    $(JDK_MINOR_VERSION),$(JDK_MICRO_VERSION),$(JDK_UPDATE_VER),$(COOKED_BUILD_NUMBER)
 
 # J2SE name required here
-RC_FLAGS += -d "J2SE_BUILD_ID=$(FULL_VERSION)" \
-            -d "J2SE_COMPANY=$(COMPANY_NAME)" \
-            -d "J2SE_COMPONENT=$(PRODUCT_NAME) Platform SE binary" \
-            -d "J2SE_VER=$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION).$(JDK_UPDATE_VER).$(COOKED_BUILD_NUMBER)" \
-            -d "J2SE_COPYRIGHT=Copyright \xA9 $(COPYRIGHT_YEAR)" \
-            -d "J2SE_NAME=$(PRODUCT_NAME) Platform SE $(JDK_MINOR_VERSION) $(JDK_UPDATE_META_TAG)" \
-            -d "J2SE_FVER=$(JDK_VER)"
+RC_FLAGS += -d "J2SE_BUILD_ID=$(JDK_RC_BUILD_ID)" \
+            -d "J2SE_COMPANY=$(JDK_RC_COMPANY)" \
+            -d "J2SE_COMPONENT=$(JDK_RC_COMPONENT)" \
+            -d "J2SE_VER=$(JDK_RC_VER)" \
+            -d "J2SE_COPYRIGHT=$(JDK_RC_COPYRIGHT)" \
+            -d "J2SE_NAME=$(JDK_RC_NAME)" \
+            -d "J2SE_FVER=$(JDK_RC_FVER)"
