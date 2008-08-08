@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,21 @@
  * have any questions.
  */
 
-/**
- * @test
- * @bug 5045412 6627366
- * @compile -Xlint:serial -XDfailcomplete=java.io.Serializable Foo.java
- */
+package java.lang;
 
-/**
- * @test
- * @bug 5045412 6627366
- * @compile -Xlint:serial -XDfailcomplete=java.io.Serializable Foo.java Bar.java
- */
+public class Short extends Number
+{
+    public static Short valueOf(short v) {
+        return new Short(v);
+    }
 
-class Foo { }
+    public Short(short v) {
+        value = v;
+    }
+
+    public short shortValue() {
+        return value;
+    }
+
+    private short value;
+}
