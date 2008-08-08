@@ -79,6 +79,7 @@ public class Attr extends JCTree.Visitor {
     final Enter enter;
     final Target target;
     final Types types;
+    final JCDiagnostic.Factory diags;
     final Annotate annotate;
 
     public static Attr instance(Context context) {
@@ -102,6 +103,7 @@ public class Attr extends JCTree.Visitor {
         cfolder = ConstFold.instance(context);
         target = Target.instance(context);
         types = Types.instance(context);
+        diags = JCDiagnostic.Factory.instance(context);
         annotate = Annotate.instance(context);
 
         Options options = Options.instance(context);
@@ -2419,7 +2421,7 @@ public class Attr extends JCTree.Visitor {
 
         if (false) {
             // TODO: make assertConvertible work
-            chk.typeError(tree.pos(), JCDiagnostic.fragment("incompatible.types"), actual, formal);
+            chk.typeError(tree.pos(), diags.fragment("incompatible.types"), actual, formal);
             throw new AssertionError("Tree: " + tree
                                      + " actual:" + actual
                                      + " formal: " + formal);
