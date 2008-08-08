@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class TypeSignature {
      * Returns java type signature of a parameter.
      */
     public String getParametersHelper(String parameterdes){
-        Vector parameters = new Vector();
+        Vector<String> parameters = new Vector<String>();
         int startindex = -1;
         int endindex = -1;
         String param = "";
@@ -187,7 +187,7 @@ public class TypeSignature {
         int i;
 
         for(i = 0; i < parameters.size(); i++){
-            parametersignature += (String)parameters.elementAt(i);
+            parametersignature += parameters.elementAt(i);
             if(i != parameters.size()-1){
                 parametersignature += ", ";
             }

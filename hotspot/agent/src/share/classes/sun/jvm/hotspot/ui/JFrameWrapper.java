@@ -1,5 +1,5 @@
 /*
- * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class JFrameWrapper implements FrameWrapper {
   public void       setVisible(boolean visible) { frame.setVisible(visible);     }
   public void       setSize(int x, int y)       { frame.setSize(x, y);           }
   public void       pack()                      { frame.pack();                  }
-  public void       show()                      { frame.show();                  }
+  public void       show()                      { frame.setVisible(true);        }
   public void       dispose()                   { frame.dispose();               }
   public void       setBackground(Color color)  { frame.setBackground(color);    }
   public void       setResizable(boolean resizable) { frame.setResizable(resizable); }

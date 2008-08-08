@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,11 +142,10 @@ class Util {
             || ((sel = selWrapper.get()) == null)
             || (sel.provider() != sc.provider())) {
             sel = sc.provider().openSelector();
-            localSelector.set(new SoftReference<SelectorWrapper>(
-                                  new SelectorWrapper(sel)));
-        } else {
-            localSelectorWrapper.set(selWrapper);
+            selWrapper = new SelectorWrapper(sel);
+            localSelector.set(new SoftReference<SelectorWrapper>(selWrapper));
         }
+        localSelectorWrapper.set(selWrapper);
         return sel;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2000 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package javax.swing.plaf;
 
-import javax.swing.JFileChooser;
+import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileView;
 import java.io.File;
@@ -46,4 +46,15 @@ public abstract class FileChooserUI extends ComponentUI
 
     public abstract void rescanCurrentDirectory(JFileChooser fc);
     public abstract void ensureFileIsVisible(JFileChooser fc, File f);
+
+    /**
+     * Returns default button for current <code>LookAndFeel</code>.
+     * <code>JFileChooser</code> will use this button as default button
+     * for dialog windows.
+     *
+     * @since 1.7
+     */
+    public JButton getDefaultButton(JFileChooser fc) {
+        return null;
+    }
 }

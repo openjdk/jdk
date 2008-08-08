@@ -3713,6 +3713,7 @@ text: .text%__1cITemplateKinitialize6MinITosState_1pFi_vi_v_;
 text: .text%__1cITemplateIgenerate6MpnZInterpreterMacroAssembler__v_;
 text: .text%__1cQregI_to_stkINodeHis_Copy6kM_I_: ad_sparc_misc.o;
 text: .text%JVM_FindClassFromClassLoader;
+text: .text%JVM_FindClassFromBootLoader;
 text: .text%signalHandler;
 text: .text%__1cTtypeArrayKlassKlassIoop_size6kMpnHoopDesc__i_: typeArrayKlassKlass.o;
 text: .text%JVM_handle_solaris_signal;

@@ -1463,7 +1463,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 int originalLength = result.length();
                 TagletOutput output = TagletWriter.getInlineTagOuput(
                     configuration.tagletManager, holderTag,
-                    (Tag) tagelem, getTagletWriterInstance(isFirstSentence));
+                    tagelem, getTagletWriterInstance(isFirstSentence));
                 result.append(output == null ? "" : output.toString());
                 if (originalLength == 0 && isFirstSentence && tagelem.name().equals("@inheritDoc") && result.length() > 0) {
                     break;
@@ -1750,8 +1750,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return an array of strings representing the annotations being
      *         documented.
      */
-    private List getAnnotations(int indent, AnnotationDesc[] descList, boolean linkBreak) {
-        List results = new ArrayList();
+    private List<String> getAnnotations(int indent, AnnotationDesc[] descList, boolean linkBreak) {
+        List<String> results = new ArrayList<String>();
         StringBuffer annotation;
         for (int i = 0; i < descList.length; i++) {
             AnnotationTypeDoc annotationDoc = descList[i].annotationType();
@@ -1781,7 +1781,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                         pairs[j].element(), pairs[j].element().name(), false));
                     annotation.append('=');
                     AnnotationValue annotationValue = pairs[j].value();
-                    List annotationTypeValues = new ArrayList();
+                    List<AnnotationValue> annotationTypeValues = new ArrayList<AnnotationValue>();
                     if (annotationValue.value() instanceof AnnotationValue[]) {
                         AnnotationValue[] annotationArray =
                             (AnnotationValue[]) annotationValue.value();

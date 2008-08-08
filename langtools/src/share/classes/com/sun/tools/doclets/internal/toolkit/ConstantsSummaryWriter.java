@@ -79,7 +79,7 @@ public interface ConstantsSummaryWriter {
      *                              something more than once.
      */
     public abstract void writeLinkToPackageContent(PackageDoc pkg, String parsedPackageName,
-        Set WriteedPackageHeaders);
+        Set<String> WriteedPackageHeaders);
 
     /**
      * Write the given package name.

@@ -1,5 +1,5 @@
 #
-# Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -73,23 +73,18 @@ ifeq ($(PLATFORM), linux)
     REQUIRED_CC_VER = 4.0
     REQUIRED_GCC_VER = 4.0.*
   else
-  ifeq ($(ARCH_DATA_MODEL), 32)
-    # i586
     REQUIRED_CC_VER = 3.2
-    REQUIRED_GCC_VER = 3.2.1*
-    REQUIRED_GCC_VER_INT = 3.2.1-7a
-  else
-  ifeq ($(ARCH), amd64)
-    # amd64
-    REQUIRED_CC_VER = 3.2
-    REQUIRED_GCC_VER = 3.2.*
-  endif
-  ifeq ($(ARCH), ia64)
-    # ia64
-    REQUIRED_CC_VER = 3.2
-    REQUIRED_GCC_VER = 2.9[56789].*
-  endif
-  endif
+    ifeq ($(ARCH_DATA_MODEL), 32)
+      REQUIRED_GCC_VER = 3.2.1*
+      REQUIRED_GCC_VER_INT = 3.2.1-7a
+    else
+      ifeq ($(ARCH), amd64)
+        REQUIRED_GCC_VER = 3.2.*
+      endif
+      ifeq ($(ARCH), ia64)
+        REQUIRED_GCC_VER = 2.9[56789].*
+      endif
+    endif
   endif
   # Option used to create a shared library
   SHARED_LIBRARY_FLAG = -shared -mimpure-text

@@ -1500,6 +1500,7 @@ text: .text%__1cQjava_lang_StringGlength6FpnHoopDesc__i_;
 text: .text%jni_GetStringUTFRegion: jni.o;
 text: .text%__1cQjava_lang_StringOas_utf8_string6FpnHoopDesc_ii_pc_;
 text: .text%JVM_FindClassFromClassLoader;
+text: .text%JVM_FindClassFromBootLoader;
 text: .text%JVM_IsInterface;
 text: .text%JVM_GetClassDeclaredConstructors;
 text: .text%__1cNmethodOopDescOis_initializer6kM_i_;

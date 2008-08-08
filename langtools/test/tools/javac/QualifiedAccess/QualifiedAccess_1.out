@@ -1,55 +1,19 @@
-QualifiedAccess_1.java:22: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-    P1.P3 bar;                                  // ERROR
-      ^
-QualifiedAccess_1.java:23: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-    P1.P3.P4 baz;                               // ERROR
-      ^
-QualifiedAccess_1.java:24: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-    P1.P3.P4.P5 quux;                           // ERROR
-      ^
-QualifiedAccess_1.java:27: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-    P1.P3 m12() {return null;}                  // ERROR
-      ^
-QualifiedAccess_1.java:28: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-    P1.P3.P4 m13() {return null;}               // ERROR
-      ^
-QualifiedAccess_1.java:29: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-    P1.P3.P4.P5 m14() {return null;}            // ERROR
-      ^
-QualifiedAccess_1.java:32: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-    void m22(P1.P3 x) {}                        // ERROR
-               ^
-QualifiedAccess_1.java:33: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-    void m23(P1.P3.P4 x) {}                     // ERROR
-               ^
-QualifiedAccess_1.java:34: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-    void m24(P1.P3.P4.P5 x) {}                  // ERROR
-               ^
-QualifiedAccess_1.java:44: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-        P1.P3 bar = null;                       // ERROR
-          ^
-QualifiedAccess_1.java:45: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-        P1.P3.P4 baz = null;                    // ERROR
-          ^
-QualifiedAccess_1.java:46: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-        P1.P3.P4.P5 quux = null;                // ERROR
-          ^
-QualifiedAccess_1.java:57: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-        Object bar = (P1.P3)null;               // ERROR
-                        ^
-QualifiedAccess_1.java:58: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-        Object baz = (P1.P3.P4)null;            // ERROR
-                        ^
-QualifiedAccess_1.java:59: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-        Object quux = (P1.P3.P4.P5)null;        // ERROR
-                         ^
-QualifiedAccess_1.java:70: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-        boolean bar = null instanceof P1.P3;            // ERROR
-                                        ^
-QualifiedAccess_1.java:71: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-        boolean baz = null instanceof P1.P3.P4;         // ERROR
-                                        ^
-QualifiedAccess_1.java:72: pack1.P1.P3 is not public in pack1.P1; cannot be accessed from outside package
-        boolean quux = null instanceof P1.P3.P4.P5;     // ERROR
-                                         ^
+QualifiedAccess_1.java:24:7: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:25:7: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:26:7: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:29:7: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:30:7: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:31:7: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:34:16: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:35:16: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:36:16: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:46:11: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:47:11: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:48:11: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:59:25: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:60:25: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:61:26: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:72:41: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:73:41: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
+QualifiedAccess_1.java:74:42: compiler.err.not.def.public.cant.access: pack1.P1.P3, pack1.P1
 18 errors

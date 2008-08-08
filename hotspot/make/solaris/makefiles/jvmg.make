@@ -1,5 +1,5 @@
 #
-# Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,8 @@ DEBUG_CFLAGS/DEFAULT= $(DEBUG_CFLAGS)
 DEBUG_CFLAGS/BYFILE = $(DEBUG_CFLAGS/$@)$(DEBUG_CFLAGS/DEFAULT$(DEBUG_CFLAGS/$@))
 
 ifeq ("${Platform_compiler}", "sparcWorks")
-ifeq ($(shell expr $(COMPILER_REV) \>= 5.8), 1)
+
+ifeq ($(COMPILER_REV),5.8)
   # SS11 SEGV when compiling with -g and -xarch=v8, using different backend
   DEBUG_CFLAGS/compileBroker.o = $(DEBUG_CFLAGS) -xO0
   DEBUG_CFLAGS/jvmtiTagMap.o   = $(DEBUG_CFLAGS) -xO0

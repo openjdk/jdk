@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,94 +95,24 @@ static int marker_fd = -1;
  */
 static int getMarkerFD()
 {
-    int server_fd, child_fd, connect_fd;
-    SOCKADDR him;
-    int type, len, port;
+    int sv[2];
 
-    type = AF_INET;
-#ifdef AF_INET6
-    if (ipv6_available()) {
-        type = AF_INET6;
+#ifdef AF_UNIX
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == -1) {
+        return -1;
     }
+#else
+    return -1;
 #endif
 
     /*
-     * Create listener on any port
-     */
-    server_fd = JVM_Socket(type, SOCK_STREAM, 0);
-    if (server_fd < 0) {
-        return -1;
-    }
-    if (JVM_Listen(server_fd, 1) == -1) {
-        JVM_SocketClose(server_fd);
-        return -1;
-    }
-    len = SOCKADDR_LEN;
-    if (JVM_GetSockName(server_fd, (struct sockaddr *)&him, &len) == -1) {
-        JVM_SocketClose(server_fd);
-        return -1;
-    }
-    port = NET_GetPortFromSockaddr((struct sockaddr *)&him);
-
-    /*
-     * Establish connection from client socket.
-     * Server is bound to 0.0.0.0/X or ::/X
-     * We connect to 127.0.0.1/X or ::1/X
-     */
-#ifdef AF_INET6
-    if (ipv6_available()) {
-        struct sockaddr_in6 *him6 = (struct sockaddr_in6 *)&him;
-        jbyte caddr[16];
-        memset((char *) caddr, 0, 16);
-        caddr[15] = 1;
-        memset((char *)him6, 0, sizeof(struct sockaddr_in6));
-        memcpy((void *)&(him6->sin6_addr), caddr, sizeof(struct in6_addr) );
-        him6->sin6_port = htons((short) port);
-        him6->sin6_family = AF_INET6;
-        len = sizeof(struct sockaddr_in6) ;
-    } else
-#endif /* AF_INET6 */
-    {
-        struct sockaddr_in *him4 = (struct sockaddr_in*)&him;
-        memset((char *) him4, 0, sizeof(struct sockaddr_in));
-        him4->sin_port = htons((short) port);
-        him4->sin_addr.s_addr = (uint32_t) htonl(0x7f000001);
-        him4->sin_family = AF_INET;
-        len = sizeof(struct sockaddr_in);
-    }
-    connect_fd = JVM_Socket(type, SOCK_STREAM, 0);
-    if (connect_fd < 0) {
-        JVM_SocketClose(server_fd);
-        return -1;
-    }
-    if (JVM_Connect(connect_fd, (struct sockaddr *) &him, len) == -1) {
-        JVM_SocketClose(server_fd);
-        JVM_SocketClose(connect_fd);
-        return -1;
-    }
-
-    /*
-     * Server accepts connection - do in in non-blocking mode to avoid
-     * hanging if there's an error (should never happen!!!)
-     */
-    SET_NONBLOCKING(server_fd);
-    len = SOCKADDR_LEN;
-    child_fd = JVM_Accept(server_fd, (struct sockaddr *)&him, (jint *)&len);
-    if (child_fd == -1) {
-        JVM_SocketClose(server_fd);
-        JVM_SocketClose(connect_fd);
-        return -1;
-    }
-
-    /*
-     * Finally shutdown connect_fd (any reads to this fd will get
+     * Finally shutdown sv[0] (any reads to this fd will get
      * EOF; any writes will get an error).
      */
-    JVM_SocketShutdown(connect_fd, 2);
-    JVM_SocketClose(child_fd);
-    JVM_SocketClose(server_fd);
+    JVM_SocketShutdown(sv[0], 2);
+    JVM_SocketClose(sv[1]);
 
-    return connect_fd;
+    return sv[0];
 }
 
 
@@ -358,15 +288,28 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
              * See 6343810.
              */
             while (1) {
-                fd_set wr, ex;
+#ifndef USE_SELECT
+                {
+fprintf(stdout,"\nNATIVE: fd = %d] ", fd);
+                    struct pollfd pfd;
+                    pfd.fd = fd;
+                    pfd.events = POLLOUT;
 
-                FD_ZERO(&wr);
-                FD_SET(fd, &wr);
-                FD_ZERO(&ex);
-                FD_SET(fd, &ex);
+                    connect_rv = NET_Poll(&pfd, 1, -1);
+                }
+#else
+                {
+                    fd_set wr, ex;
 
-                errno = 0;
-                connect_rv = NET_Select(fd+1, 0, &wr, &ex, 0);
+                    FD_ZERO(&wr);
+                    FD_SET(fd, &wr);
+                    FD_ZERO(&ex);
+                    FD_SET(fd, &ex);
+
+                    connect_rv = NET_Select(fd+1, 0, &wr, &ex, 0);
+                }
+#endif
+
                 if (connect_rv == JVM_IO_ERR) {
                     if (errno == EINTR) {
                         continue;
@@ -1074,7 +1017,7 @@ Java_java_net_PlainSocketImpl_socketGetOption(JNIEnv *env, jobject this,
      */
     if (cmd == java_net_SocketOptions_SO_BINDADDR) {
         SOCKADDR him;
-        int len = 0;
+        socklen_t len = 0;
         int port;
         jobject iaObj;
         jclass iaCntrClass;

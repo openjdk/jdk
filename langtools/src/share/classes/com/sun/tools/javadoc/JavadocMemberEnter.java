@@ -63,7 +63,7 @@ class JavadocMemberEnter extends MemberEnter {
 
     public void visitMethodDef(JCMethodDecl tree) {
         super.visitMethodDef(tree);
-        MethodSymbol meth = (MethodSymbol)tree.sym;
+        MethodSymbol meth = tree.sym;
         if (meth == null || meth.kind != Kinds.MTH) return;
         String docComment = env.toplevel.docComments.get(tree);
         Position.LineMap lineMap = env.toplevel.lineMap;
@@ -82,7 +82,7 @@ class JavadocMemberEnter extends MemberEnter {
                 !isParameter(tree.sym)) {
             String docComment = env.toplevel.docComments.get(tree);
             Position.LineMap lineMap = env.toplevel.lineMap;
-            docenv.makeFieldDoc((VarSymbol)tree.sym, docComment, tree, lineMap);
+            docenv.makeFieldDoc(tree.sym, docComment, tree, lineMap);
         }
     }
 

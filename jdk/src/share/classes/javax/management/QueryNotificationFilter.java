@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,6 @@ import java.util.Set;
  * class.  Writing a custom implementation requires you to deploy it
  * on both the client and the server in the remote case, so using this class
  * instead is recommended where possible.</p>
- *
- * <!-- <p>Because this class was introduced in version 2.0 of the JMX API,
- * it may not be present on a remote JMX agent that is running an earlier
- * version.  The method {@link JMX#addListenerWithFilter JMX.addListenerWithFilter}
- * can be used when you cannot be sure whether this class is present in the
- * agent you are connecting to.</p> -->
  *
  * <p>This class uses the {@linkplain Query Query API} to specify the
  * filtering logic.  For example, to select only notifications where the

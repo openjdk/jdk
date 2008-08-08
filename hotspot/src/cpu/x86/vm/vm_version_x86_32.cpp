@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,6 +306,10 @@ void VM_Version::get_processor_features() {
     if( supports_sse2() && FLAG_IS_DEFAULT(UseAddressNop) ) {
       // Use it on new AMD cpus starting from Opteron.
       UseAddressNop = true;
+    }
+    if( supports_sse2() && FLAG_IS_DEFAULT(UseNewLongLShift) ) {
+      // Use it on new AMD cpus starting from Opteron.
+      UseNewLongLShift = true;
     }
     if( FLAG_IS_DEFAULT(UseXmmLoadAndClearUpper) ) {
       if( supports_sse4a() ) {

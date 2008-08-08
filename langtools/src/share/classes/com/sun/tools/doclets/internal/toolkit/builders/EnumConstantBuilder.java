@@ -61,7 +61,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
         /**
          * The list of enum constants being documented.
          */
-        private List enumConstants;
+        private List<ProgramElementDoc> enumConstants;
 
         /**
          * The index of the current enum constant that is being documented at this point
@@ -99,7 +99,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
                                 VisibleMemberMap.ENUM_CONSTANTS,
                                 configuration.nodeprecated);
                 builder.enumConstants =
-                        new ArrayList(builder.visibleMemberMap.getMembersFor(classDoc));
+                        new ArrayList<ProgramElementDoc>(builder.visibleMemberMap.getMembersFor(classDoc));
                 if (configuration.getMemberComparator() != null) {
                         Collections.sort(
                                 builder.enumConstants,
