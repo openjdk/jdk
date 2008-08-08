@@ -1,10 +1,4 @@
-DeprecatedDocComment.java:26: warning: [deprecation] deprecatedTest1() in DeprecatedDocComment2 has been deprecated
-      DeprecatedDocComment2.deprecatedTest1();
-                           ^
-DeprecatedDocComment.java:30: warning: [deprecation] deprecatedTest5() in DeprecatedDocComment2 has been deprecated
-      DeprecatedDocComment2.deprecatedTest5();
-                           ^
-DeprecatedDocComment.java:31: warning: [deprecation] deprecatedTest6() in DeprecatedDocComment2 has been deprecated
-      DeprecatedDocComment2.deprecatedTest6();
-                           ^
+DeprecatedDocComment.java:27:28: compiler.warn.has.been.deprecated: deprecatedTest1(), DeprecatedDocComment2
+DeprecatedDocComment.java:31:28: compiler.warn.has.been.deprecated: deprecatedTest5(), DeprecatedDocComment2
+DeprecatedDocComment.java:32:28: compiler.warn.has.been.deprecated: deprecatedTest6(), DeprecatedDocComment2
 3 warnings

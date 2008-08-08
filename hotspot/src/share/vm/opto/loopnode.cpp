@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1072,8 +1072,6 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
       phase->_igvn.add_users_to_worklist(l->fast_out(i));
   }
 
-  phase->C->print_method("After beautify loops", 3);
-
   // Now recursively beautify nested loops
   if( _child ) result |= _child->beautify_loops( phase );
   if( _next  ) result |= _next ->beautify_loops( phase );
@@ -1470,6 +1468,8 @@ PhaseIdealLoop::PhaseIdealLoop( PhaseIterGVN &igvn, const PhaseIdealLoop *verify
       }
       // Reset loop nesting depth
       _ltree_root->set_nest( 0 );
+
+      C->print_method("After beautify loops", 3);
     }
   }
 
@@ -2632,6 +2632,7 @@ void PhaseIdealLoop::build_loop_late_post( Node *n, const PhaseIdealLoop *verify
     case Op_LoadD_unaligned:
     case Op_LoadL_unaligned:
     case Op_StrComp:            // Does a bunch of load-like effects
+    case Op_AryEq:
       pinned = false;
     }
     if( pinned ) {

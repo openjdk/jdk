@@ -1,5 +1,5 @@
 #
-# Copyright 2004-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,10 +44,6 @@ OPT_CFLAGS/os_solaris_x86_64.o = -xO1
 # Temporary until SS10 C++ compiler is fixed
 OPT_CFLAGS/generateOptoStub.o = -xO2
 OPT_CFLAGS/thread.o = -xO2
-
-# Work around for 6624782
-OPT_CFLAGS/instanceKlass.o = -Qoption ube -no_a2lf
-OPT_CFLAGS/objArrayKlass.o = -Qoption ube -no_a2lf
 
 else
 

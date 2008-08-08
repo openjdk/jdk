@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,6 @@
 #include "incls/_assembler_linux_sparc.cpp.incl"
 
 #include <asm-sparc/traps.h>
-
-bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
-  // Since the linux kernel resides at the low end of
-  // user address space, no null pointer check is needed.
-  return offset < 0 || offset >= 0x100000;
-}
 
 void MacroAssembler::read_ccr_trap(Register ccr_save) {
   // No implementation

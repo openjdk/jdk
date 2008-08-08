@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 
 package sun.awt;
 
+import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
+import java.awt.peer.ComponentPeer;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -44,6 +46,7 @@ import sun.font.FontManager;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceManagerFactory;
 import sun.java2d.WindowsSurfaceManagerFactory;
+import sun.java2d.d3d.D3DGraphicsDevice;
 import sun.java2d.windows.WindowsFlags;
 
 /**
@@ -333,17 +336,61 @@ public class Win32GraphicsEnvironment
     protected static native void deRegisterFontWithPlatform(String fontName);
 
     protected GraphicsDevice makeScreenDevice(int screennum) {
-        return new Win32GraphicsDevice(screennum);
+        GraphicsDevice device = null;
+        if (WindowsFlags.isD3DEnabled()) {
+            device = D3DGraphicsDevice.createDevice(screennum);
+        }
+        if (device == null) {
+            device = new Win32GraphicsDevice(screennum);
+        }
+        return device;
     }
 
     // Implements SunGraphicsEnvironment.createFontConfiguration.
     protected FontConfiguration createFontConfiguration() {
-        return new WFontConfiguration(this);
+       FontConfiguration fc = new WFontConfiguration(this);
+       fc.init();
+       return fc;
     }
 
     public FontConfiguration createFontConfiguration(boolean preferLocaleFonts,
                                                      boolean preferPropFonts) {
 
         return new WFontConfiguration(this, preferLocaleFonts,preferPropFonts);
+    }
+
+    @Override
+    public boolean isFlipStrategyPreferred(ComponentPeer peer) {
+        GraphicsConfiguration gc;
+        if (peer != null && (gc = peer.getGraphicsConfiguration()) != null) {
+            GraphicsDevice gd = gc.getDevice();
+            if (gd instanceof D3DGraphicsDevice) {
+                return ((D3DGraphicsDevice)gd).isD3DEnabledOnDevice();
+            }
+        }
+        return false;
+    }
+
+    private static volatile boolean isDWMCompositionEnabled;
+    /**
+     * Returns true if dwm composition is currently enabled, false otherwise.
+     *
+     * @return true if dwm composition is enabled, false otherwise
+     */
+    public static boolean isDWMCompositionEnabled() {
+        return isDWMCompositionEnabled;
+    }
+
+    /**
+     * Called from the native code when DWM composition state changed.
+     * May be called multiple times during the lifetime of the application.
+     * REMIND: we may want to create a listener mechanism for this.
+     *
+     * Note: called on the Toolkit thread, no user code or locks are allowed.
+     *
+     * @param enabled indicates the state of dwm composition
+     */
+    private static void dwmCompositionChanged(boolean enabled) {
+        isDWMCompositionEnabled = enabled;
     }
 }

@@ -4,7 +4,7 @@
  * @summary Test that recursive 'extends' and 'implements' clauses are detected
  * and disallowed.
  *
- * @run shell CyclicInheritance.sh
+ * @compile/fail/ref=CyclicInheritance.out -XDrawDiagnostics -XDstdout CyclicInheritance.java
  */
 
 

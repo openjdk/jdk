@@ -1,5 +1,5 @@
 #
-# Copyright 2006-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -228,6 +228,7 @@ endif
 
 # Required make macro settings for all platforms
 MAKE_ARGS += JAVA_HOME=$(ABS_BOOTDIR)
+MAKE_ARGS += OUTPUTDIR=$(ABS_OUTPUTDIR)
 MAKE_ARGS += GAMMADIR=$(ABS_GAMMADIR)
 MAKE_ARGS += MAKE_VERBOSE=$(MAKE_VERBOSE)
 MAKE_ARGS += HOTSPOT_RELEASE_VERSION=$(HOTSPOT_RELEASE_VERSION)

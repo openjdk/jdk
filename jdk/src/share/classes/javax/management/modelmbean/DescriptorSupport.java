@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ package javax.management.modelmbean;
 import static com.sun.jmx.defaults.JmxProperties.MODELMBEAN_LOGGER;
 import static com.sun.jmx.mbeanserver.Util.cast;
 import com.sun.jmx.mbeanserver.GetPropertyAction;
+import com.sun.jmx.mbeanserver.Util;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -774,6 +775,7 @@ public class DescriptorSupport
      * fails for any reason, this exception will be thrown.
      */
 
+    @Override
     public synchronized Object clone() throws RuntimeOperationsException {
         if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
             MODELMBEAN_LOGGER.logp(Level.FINEST,
@@ -814,13 +816,16 @@ public class DescriptorSupport
      * otherwise.
      *
      */
-    // XXXX TODO: This is not very efficient!
     // Note: this Javadoc is copied from javax.management.Descriptor
     //       due to 6369229.
+    @Override
     public synchronized boolean equals(Object o) {
         if (o == this)
             return true;
-
+        if (! (o instanceof Descriptor))
+            return false;
+        if (o instanceof ImmutableDescriptor)
+            return o.equals(this);
         return new ImmutableDescriptor(descriptorMap).equals(o);
     }
 
@@ -844,11 +849,16 @@ public class DescriptorSupport
      * @return A hash code value for this object.
      *
      */
-    // XXXX TODO: This is not very efficient!
     // Note: this Javadoc is copied from javax.management.Descriptor
     //       due to 6369229.
+    @Override
     public synchronized int hashCode() {
-        return new ImmutableDescriptor(descriptorMap).hashCode();
+        final int size = descriptorMap.size();
+        // descriptorMap is sorted with a comparator that ignores cases.
+        //
+        return Util.hashCode(
+                descriptorMap.keySet().toArray(new String[size]),
+                descriptorMap.values().toArray(new Object[size]));
     }
 
     /**
@@ -1278,6 +1288,7 @@ public class DescriptorSupport
      * field Names or field Values.  If the descriptor string fails
      * for any reason, this exception will be thrown.
      */
+    @Override
     public synchronized String toString() {
         if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
             MODELMBEAN_LOGGER.logp(Level.FINEST,

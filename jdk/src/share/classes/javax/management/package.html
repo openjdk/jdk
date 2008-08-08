@@ -56,41 +56,41 @@ have any questions.
 	resource.  It has a <em>management interface</em> consisting
 	of:</p>
 
-      <ul>
-	<li>named and typed attributes that can be read and/or
-	  written</li>
-	
-	<li>named and typed operations that can be invoked</li>
+        <ul>
+            <li>named and typed attributes that can be read and/or
+            written</li>
 
-	<li>typed notifications that can be emitted by the MBean.</li>
-      </ul>
+            <li>named and typed operations that can be invoked</li>
 
-      <p>For example, an MBean representing an application's
-	configuration could have attributes representing the different
-	configuration items.  Reading the <code>CacheSize</code>
-	attribute would return the current value of that item.
-	Writing it would update the item, potentially changing the
-	behavior of the running application.  An operation such as
-	<code>save</code> could store the current configuration
-	persistently.  A notification such as
-	<code>ConfigurationChangedNotification</code> could be sent
-	every time the configuration is changed.</p>
+            <li>typed notifications that can be emitted by the MBean.</li>
+        </ul>
 
-      <p>In the standard usage of the JMX API, MBeans are implemented
-	as Java objects.  However, as explained below, these objects are
-	not usually referenced directly.</p>
+        <p>For example, an MBean representing an application's
+            configuration could have attributes representing the different
+            configuration items.  Reading the <code>CacheSize</code>
+            attribute would return the current value of that item.
+            Writing it would update the item, potentially changing the
+            behavior of the running application.  An operation such as
+            <code>save</code> could store the current configuration
+            persistently.  A notification such as
+            <code>ConfigurationChangedNotification</code> could be sent
+        every time the configuration is changed.</p>
+
+        <p>In the standard usage of the JMX API, MBeans are implemented
+            as Java objects.  However, as explained below, these objects are
+        not usually referenced directly.</p>
 
 
-      <h3>Standard MBeans</h3>
+        <h3>Standard MBeans</h3>
 
-      <p>To make MBean implementation simple, the JMX API includes the
-	notion of <em>Standard MBeans</em>.  A Standard MBean is one
-	whose attributes and operations are deduced from a Java
-	interface using certain naming patterns, similar to those used
-	by JavaBeans<sup><font size="-1">TM</font></sup>.  For
-	example, consider an interface like this:</p>
+        <p>To make MBean implementation simple, the JMX API includes the
+            notion of <em>Standard MBeans</em>.  A Standard MBean is one
+            whose attributes and operations are deduced from a Java
+            interface using certain naming patterns, similar to those used
+            by JavaBeans<sup><font size="-1">TM</font></sup>.  For
+        example, consider an interface like this:</p>
 
-      <pre>
+        <pre>
     public interface ConfigurationMBean {
 	public int getCacheSize();
 	public void setCacheSize(int size);
@@ -128,107 +128,148 @@ have any questions.
 	class.</p>
 
 
-      <h3>MXBeans</h3>
-      
-      <p>An <em>MXBean</em> is a variant of Standard MBean where complex
-        types are mapped to a standard set of types defined in the
-        {@link javax.management.openmbean} package.  MXBeans are appropriate
-        if you would otherwise need to reference application-specific
-        classes in your MBean interface.  They are described in detail
-        in the specification for {@link javax.management.MXBean MXBean}.
+        <h3 id="stdannot">Defining Standard MBeans with annotations</h3>
+
+        <p>As an alternative to creating an interface such as
+            <code>ConfigurationMBean</code> and a class that implements it,
+            you can write just the class, and use annotations to pick out the
+            public methods that will make up the management interface. For
+            example, the following class has the same management interface
+            as a <code>Configuration</code> class that implements the
+        <code>ConfigurationMBean</code> interface above.</p>
+
+        <pre>
+    {@link javax.management.MBean @MBean}
+    public class Configuration {
+        {@link javax.management.ManagedAttribute @ManagedAttribute}
+        public int getCacheSize() {...}
+        &#64;ManagedAttribute
+        public void setCacheSize(int size) {...}
+
+        &#64;ManagedAttribute
+        public long getLastChangedTime() {...}
+
+        {@link javax.management.ManagedOperation @ManagedOperation}
+        public void save() {...}
+        ...
+    }
+        </pre>
+
+        <p>This approach simplifies development, but it does have two
+            potential drawbacks.  First, if you run the Javadoc tool on
+            this class, the documentation of the management interface may
+            be mixed in with the documentation of non-management methods
+            in the class.  Second, you cannot make a proxy
+            as described <a href="#proxy">below</a> if you do not have an
+        interface like <code>ConfigurationMBean</code>.</p>
 
 
-      <h3>Dynamic MBeans</h3>
+        <h3>MXBeans</h3>
 
-      <p>A <em>Dynamic MBean</em> is an MBean that defines its
-	management interface at run-time.  For example, a configuration
-	MBean could determine the names and types of the attributes it
-	exposes by parsing an XML file.</p>
+        <p>An <em>MXBean</em> is a variant of Standard MBean where complex
+            types are mapped to a standard set of types defined in the
+            {@link javax.management.openmbean} package.  MXBeans are appropriate
+            if you would otherwise need to reference application-specific
+            classes in your MBean interface.  They are described in detail
+        in the specification for {@link javax.management.MXBean MXBean}.</p>
 
-      <p>Any Java object of a class that implements the {@link
-	javax.management.DynamicMBean DynamicMBean} interface is a
-	Dynamic MBean.</p>
-
-
-      <h3>Open MBeans</h3>
-
-      <p>An <em>Open MBean</em> is a kind of Dynamic MBean where the
-	types of attributes and of operation parameters and return
-	values are built using a small set of predefined Java classes.
-	Open MBeans facilitate operation with remote management programs
-	that do not necessarily have access to application-specific
-	types, including non-Java programs.  Open MBeans are defined by
-	the package <a href="openmbean/package-summary.html"><code>
-	    javax.management.openmbean</code></a>.</p>
+        <p>You can define MXBeans using annotations as described
+            in the <a href="#stdannot">previous section</a>, but
+            using the <code>&#64;MXBean</code> annotation instead of
+        <code>&#64;MBean</code>.</p>
 
 
-      <h3>Model MBeans</h3>
+        <h3>Dynamic MBeans</h3>
 
-      <p>A <em>Model MBean</em> is a kind of Dynamic MBean that acts
-	as a bridge between the management interface and the
-	underlying managed resource.  Both the management interface and
-	the managed resource are specified as Java objects.  The same
-	Model MBean implementation can be reused many times with
-	different management interfaces and managed resources, and it can
-	provide common functionality such as persistence and caching.
-	Model MBeans are defined by the package
-	<a href="modelmbean/package-summary.html"><code>
-	    javax.management.modelmbean</code></a>.</p>
+        <p>A <em>Dynamic MBean</em> is an MBean that defines its
+            management interface at run-time.  For example, a configuration
+            MBean could determine the names and types of the attributes it
+        exposes by parsing an XML file.</p>
+
+        <p>Any Java object of a class that implements the {@link
+            javax.management.DynamicMBean DynamicMBean} interface is a
+        Dynamic MBean.</p>
 
 
-      <h2>MBean Server</h2>
-      
-      <p>To be useful, an MBean must be registered in an <em>MBean
-	  Server</em>.  An MBean Server is a repository of MBeans.
-	Usually the only access to the MBeans is through the MBean
-	Server.  In other words, code no longer accesses the Java
-	object implementing the MBean directly, but instead accesses
-	the MBean by name through the MBean Server.  Each MBean has a
-	unique name within the MBean Server, defined by the {@link
-	javax.management.ObjectName ObjectName} class.</p>
-      
-      <p>An MBean Server is an object implementing the interface
-        {@link javax.management.MBeanServer MBeanServer}.  
-        The most convenient MBean Server to use is the 
-        <em>Platform MBean Server</em>.  This is a
-	single MBean Server that can be shared by different managed
-	components running within the same Java Virtual Machine.  The
-	Platform MBean Server is accessed with the method {@link
-	java.lang.management.ManagementFactory#getPlatformMBeanServer()}.</p>
+        <h3>Open MBeans</h3>
 
-      <p>Application code can also create a new MBean Server, or
-	access already-created MBean Servers, using the {@link
-	javax.management.MBeanServerFactory MBeanServerFactory} class.</p>
+        <p>An <em>Open MBean</em> is a kind of Dynamic MBean where the
+            types of attributes and of operation parameters and return
+            values are built using a small set of predefined Java classes.
+            Open MBeans facilitate operation with remote management programs
+            that do not necessarily have access to application-specific
+            types, including non-Java programs.  Open MBeans are defined by
+            the package <a href="openmbean/package-summary.html"><code>
+        javax.management.openmbean</code></a>.</p>
 
 
-      <h3>Creating MBeans in the MBean Server</h3>
+        <h3>Model MBeans</h3>
 
-      <p>There are two ways to create an MBean.  One is to construct a
-	Java object that will be the MBean, then use the {@link
-	javax.management.MBeanServer#registerMBean registerMBean}
-	method to register it in the MBean Server.  The other is to
-	create and register the MBean in a single operation using one
-	of the {@link javax.management.MBeanServer#createMBean(String,
-	javax.management.ObjectName) createMBean} methods.</p>
-
-      <p>The <code>registerMBean</code> method is simpler for local
-	use, but cannot be used remotely.  The
-	<code>createMBean</code> method can be used remotely, but
-	sometimes requires attention to class loading issues.</p>
-
-      <p>An MBean can perform actions when it is registered in or
-	unregistered from an MBean Server if it implements the {@link
-	javax.management.MBeanRegistration MBeanRegistration}
-	interface.</p>
+        <p>A <em>Model MBean</em> is a kind of Dynamic MBean that acts
+            as a bridge between the management interface and the
+            underlying managed resource.  Both the management interface and
+            the managed resource are specified as Java objects.  The same
+            Model MBean implementation can be reused many times with
+            different management interfaces and managed resources, and it can
+            provide common functionality such as persistence and caching.
+            Model MBeans are defined by the package
+            <a href="modelmbean/package-summary.html"><code>
+        javax.management.modelmbean</code></a>.</p>
 
 
-      <h3>Accessing MBeans in the MBean Server</h3>
+        <h2>MBean Server</h2>
 
-      <p>Given an <code>ObjectName</code> <code>name</code> and an
-	<code>MBeanServer</code> <code>mbs</code>, you can access
-	attributes and operations as in this example:</p>
+        <p>To be useful, an MBean must be registered in an <em>MBean
+            Server</em>.  An MBean Server is a repository of MBeans.
+            Usually the only access to the MBeans is through the MBean
+            Server.  In other words, code no longer accesses the Java
+            object implementing the MBean directly, but instead accesses
+            the MBean by name through the MBean Server.  Each MBean has a
+            unique name within the MBean Server, defined by the {@link
+        javax.management.ObjectName ObjectName} class.</p>
 
-      <pre>
+        <p>An MBean Server is an object implementing the interface
+            {@link javax.management.MBeanServer MBeanServer}.
+            The most convenient MBean Server to use is the
+            <em>Platform MBean Server</em>.  This is a
+            single MBean Server that can be shared by different managed
+            components running within the same Java Virtual Machine.  The
+            Platform MBean Server is accessed with the method {@link
+        java.lang.management.ManagementFactory#getPlatformMBeanServer()}.</p>
+
+        <p>Application code can also create a new MBean Server, or
+            access already-created MBean Servers, using the {@link
+        javax.management.MBeanServerFactory MBeanServerFactory} class.</p>
+
+
+        <h3>Creating MBeans in the MBean Server</h3>
+
+        <p>There are two ways to create an MBean.  One is to construct a
+            Java object that will be the MBean, then use the {@link
+            javax.management.MBeanServer#registerMBean registerMBean}
+            method to register it in the MBean Server.  The other is to
+            create and register the MBean in a single operation using one
+            of the {@link javax.management.MBeanServer#createMBean(String,
+        javax.management.ObjectName) createMBean} methods.</p>
+
+        <p>The <code>registerMBean</code> method is simpler for local
+            use, but cannot be used remotely.  The
+            <code>createMBean</code> method can be used remotely, but
+        sometimes requires attention to class loading issues.</p>
+
+        <p>An MBean can perform actions when it is registered in or
+            unregistered from an MBean Server if it implements the {@link
+            javax.management.MBeanRegistration MBeanRegistration}
+        interface.</p>
+
+
+        <h3>Accessing MBeans in the MBean Server</h3>
+
+        <p>Given an <code>ObjectName</code> <code>name</code> and an
+            <code>MBeanServer</code> <code>mbs</code>, you can access
+        attributes and operations as in this example:</p>
+
+        <pre>
     int cacheSize = mbs.getAttribute(name, "CacheSize");
     {@link javax.management.Attribute Attribute} newCacheSize =
     	new Attribute("CacheSize", new Integer(2000));
@@ -236,9 +277,9 @@ have any questions.
     mbs.invoke(name, "save", new Object[0], new Class[0]);
       </pre>
 
-      <p>Alternatively, if you have a Java interface that corresponds
-	to the management interface for the MBean, you can use an
-	<em>MBean proxy</em> like this:</p>
+        <p id="proxy">Alternatively, if you have a Java interface that
+            corresponds to the management interface for the MBean, you can use an
+        <em>MBean proxy</em> like this:</p>
 
       <pre>
     ConfigurationMBean conf =
@@ -264,66 +305,116 @@ have any questions.
 	perform the query.</p>
 
 
-      <h2>Notifications</h2>
+        <h3>MBean lifecycle and resource injection</h3>
 
-      <p>A <em>notification</em> is an instance of the {@link
-	javax.management.Notification Notification} class or a
-	subclass.  In addition to its Java class, it has a
-	<em>type</em> string that can distinguish it from other
-	notifications of the same class.</p>
+        <p>An MBean can implement the {@link javax.management.MBeanRegistration
+            MBeanRegistration} interface in order to be told when it is registered
+            and unregistered in the MBean Server. Additionally, the {@link
+            javax.management.MBeanRegistration#preRegister preRegister} method
+            allows the MBean to get a reference to the <code>MBeanServer</code>
+            object and to get its <code>ObjectName</code> within the MBean
+        Server.</p>
 
-      <p>An MBean that will emit notifications must implement the
-	{@link javax.management.NotificationBroadcaster
-	NotificationBroadcaster} or {@link
-	javax.management.NotificationEmitter NotificationEmitter}
-	interface.  Usually, it does this by subclassing {@link
-	javax.management.NotificationBroadcasterSupport
-	NotificationBroadcasterSupport} or by delegating to an instance
-	of that class.</p>
-
-      <p>Notifications can be received by a <em>listener</em>, which
-	is an object that implements the {@link
-	javax.management.NotificationListener NotificationListener}
-	interface.  You can add a listener to an MBean with the method
-	{@link
-	javax.management.MBeanServer#addNotificationListener(ObjectName,
-	NotificationListener, NotificationFilter, Object)}.
-	You can optionally supply a <em>filter</em> to this method, to
-	select only notifications of interest.  A filter is an object
-	that implements the {@link javax.management.NotificationFilter
-	NotificationFilter} interface.</p>
-
-      <p>An MBean can be a listener for notifications emitted by other
-	MBeans in the same MBean Server.  In this case, it implements
-	{@link javax.management.NotificationListener
-	NotificationListener} and the method {@link
-	javax.management.MBeanServer#addNotificationListener(ObjectName,
-	ObjectName, NotificationFilter, Object)} is used to listen.</p>
+        <p>If the only reason to implement <code>MBeanRegistration</code> is to
+            discover the <code>MBeanServer</code> and <code>ObjectName</code>, <a
+                href="MBeanRegistration.html#injection">resource injection</a> may be
+        more convenient.</p>
 
 
-      <h2>Remote Access to MBeans</h2>
+        <h2>Notifications</h2>
 
-      <p>An MBean Server can be accessed remotely through a
-	<em>connector</em>.  A connector allows a remote Java
-	application to access an MBean Server in essentially the same
-	way as a local one.  The package
-	<a href="remote/package-summary.html"><code>
-	    javax.management.remote</code></a> defines connectors.</p>
+        <p>A <em>notification</em> is an instance of the {@link
+            javax.management.Notification Notification} class or a
+            subclass.  In addition to its Java class, it has a
+            <em>type</em> string that can distinguish it from other
+        notifications of the same class.</p>
 
-      <p>The JMX specification also defines the notion of an
-	<em>adaptor</em>.  An adaptor translates between requests in a
-	protocol such as SNMP or HTML and accesses to an MBean Server.
-	So for example an SNMP GET operation might result in a
-	<code>getAttribute</code> on the MBean Server.</p>
+        <p>If an MBean is to emit notifications, it must do one of two things.</p>
 
-      <p id="spec">
-    @see <a href="{@docRoot}/../technotes/guides/jmx/index.html">
-      Java SE 6 Platform documentation on JMX technology</a>
-      in particular the 
-      <a href="{@docRoot}/../technotes/guides/jmx/JMX_1_4_specification.pdf">
-      JMX Specification, version 1.4(pdf).</a> 
+        <ul>
+            <li>It can implement the interface {@link
+                javax.management.NotificationEmitter NotificationEmitter} (or
+                its parent {@link javax.management.NotificationBroadcaster
+                NotificationBroadcaster}), usually by subclassing
+                {@link javax.management.NotificationBroadcasterSupport
+                NotificationBroadcasterSupport} or delegating to an instance of
+            that class.</li>
+            <li>It can use <a href="MBeanRegistration.html#injection">resource
+                injection</a> to obtain a {@link javax.management.SendNotification
+                SendNotification} object that it can use to send
+            notifications.</li>
+        </ul>
 
-	@since 1.5
+        <p>The two classes below illustrate these two techniques:</p>
+
+        <pre>
+    // Implementing NotificationEmitter (via NotificationBroadcasterSupport)
+    public class Configuration <b>extends NotificationBroadcasterSupport</b>
+            implements ConfigurationMBean {
+        ...
+        private void updated() {
+            Notification n = new Notification(...);
+            <b>{@link javax.management.NotificationBroadcasterSupport#sendNotification
+            sendNotification}(n)</b>;
+        }
+    }
+
+    // Getting a SendNotification through resource injection
+    public class Configuration implements ConfigurationMBean {
+        <b>&#64;Resource</b>
+        private volatile SendNotification sender;
+        ...
+        private void updated() {
+            Notification n = new Notification(...);
+            <b>sender.sendNotification(n)</b>;
+        }
+    }
+        </pre>
+
+
+        <p>Notifications can be received by a <em>listener</em>, which
+            is an object that implements the {@link
+            javax.management.NotificationListener NotificationListener}
+            interface.  You can add a listener to an MBean with the method
+            {@link
+            javax.management.MBeanServer#addNotificationListener(ObjectName,
+            NotificationListener, NotificationFilter, Object)}.
+            You can optionally supply a <em>filter</em> to this method, to
+            select only notifications of interest.  A filter is an object
+            that implements the {@link javax.management.NotificationFilter
+        NotificationFilter} interface.</p>
+
+        <p>An MBean can be a listener for notifications emitted by other
+            MBeans in the same MBean Server.  In this case, it implements
+            {@link javax.management.NotificationListener
+            NotificationListener} and the method {@link
+            javax.management.MBeanServer#addNotificationListener(ObjectName,
+        ObjectName, NotificationFilter, Object)} is used to listen.</p>
+
+
+        <h2>Remote Access to MBeans</h2>
+
+        <p>An MBean Server can be accessed remotely through a
+            <em>connector</em>.  A connector allows a remote Java
+            application to access an MBean Server in essentially the same
+            way as a local one.  The package
+            <a href="remote/package-summary.html"><code>
+        javax.management.remote</code></a> defines connectors.</p>
+
+        <p>The JMX specification also defines the notion of an
+            <em>adaptor</em>.  An adaptor translates between requests in a
+            protocol such as SNMP or HTML and accesses to an MBean Server.
+            So for example an SNMP GET operation might result in a
+        <code>getAttribute</code> on the MBean Server.</p>
+
+        <p id="spec">
+        @see <a href="{@docRoot}/../technotes/guides/jmx/index.html">
+        Java SE 6 Platform documentation on JMX technology</a>
+        in particular the
+        <a href="{@docRoot}/../technotes/guides/jmx/JMX_1_4_specification.pdf">
+        JMX Specification, version 1.4(pdf).</a>
+
+        @since 1.5
 
     </body>
 </html>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3163,7 +3163,9 @@ void TemplateTable::_new() {
       __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()),
                (intptr_t) markOopDesc::prototype()); // header (address 0x1)
     }
-    __ store_klass(rax, rsi);  // klass
+    __ xorl(rcx, rcx); // use zero reg to clear memory (shorter code)
+    __ store_klass_gap(rax, rcx);  // zero klass gap for compressed oops
+    __ store_klass(rax, rsi);      // store klass last
     __ jmp(done);
   }
 

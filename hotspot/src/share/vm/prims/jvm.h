@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -388,6 +388,17 @@ JVM_ResolveClass(JNIEnv *env, jclass cls);
 JNIEXPORT jclass JNICALL
 JVM_FindClassFromClassLoader(JNIEnv *env, const char *name, jboolean init,
                              jobject loader, jboolean throwError);
+
+/*
+ * Find a class from a boot class loader. Throw ClassNotFoundException
+ * or NoClassDefFoundError depending on the value of the last
+ * argument. This is the same as FindClassFromClassLoader but provided
+ * as a convenience method exported correctly on all platforms for
+ * JSR 277 launcher class loading.
+ */
+JNIEXPORT jclass JNICALL
+JVM_FindClassFromBootLoader(JNIEnv *env, const char *name,
+                            jboolean throwError);
 
 /*
  * Find a class from a given class.

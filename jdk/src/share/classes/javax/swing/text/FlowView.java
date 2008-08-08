@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -333,17 +333,24 @@ public abstract class FlowView extends BoxView {
      * @since 1.3
      */
     public static class FlowStrategy {
-        int damageStart = Integer.MAX_VALUE;
+        Position damageStart = null;
         Vector<View> viewBuffer;
 
         void addDamage(FlowView fv, int offset) {
             if (offset >= fv.getStartOffset() && offset < fv.getEndOffset()) {
-                damageStart = Math.min(damageStart, offset);
+                if (damageStart == null || offset < damageStart.getOffset()) {
+                    try {
+                        damageStart = fv.getDocument().createPosition(offset);
+                    } catch (BadLocationException e) {
+                        // shouldn't happen since offset is inside view bounds
+                        assert(false);
+                    }
+                }
             }
         }
 
         void unsetDamage() {
-            damageStart = Integer.MAX_VALUE;
+            damageStart = null;
         }
 
         /**
@@ -438,13 +445,14 @@ public abstract class FlowView extends BoxView {
             int p1 = fv.getEndOffset();
 
             if (fv.majorAllocValid) {
-                if (damageStart == Integer.MAX_VALUE) {
+                if (damageStart == null) {
                     return;
                 }
                 // In some cases there's no view at position damageStart, so
                 // step back and search again. See 6452106 for details.
-                while ((rowIndex = fv.getViewIndexAtPosition(damageStart)) < 0) {
-                    damageStart--;
+                int offset = damageStart.getOffset();
+                while ((rowIndex = fv.getViewIndexAtPosition(offset)) < 0) {
+                    offset--;
                 }
                 if (rowIndex > 0) {
                     rowIndex--;

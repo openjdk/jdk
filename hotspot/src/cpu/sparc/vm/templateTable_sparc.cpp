@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3222,7 +3222,8 @@ void TemplateTable::_new() {
     __ set((intptr_t)markOopDesc::prototype(), G4_scratch);
   }
   __ st_ptr(G4_scratch, RallocatedObject, oopDesc::mark_offset_in_bytes());       // mark
-  __ store_klass(RinstanceKlass, RallocatedObject); // klass
+  __ store_klass_gap(G0, RallocatedObject);         // klass gap if compressed
+  __ store_klass(RinstanceKlass, RallocatedObject); // klass (last for cms)
 
   {
     SkipIfEqual skip_if(

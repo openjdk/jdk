@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <sys/types.h>
+#include <process.h>
 
 #include "java_net_InetAddress.h"
 #include "java_net_Inet4AddressImpl.h"
@@ -137,12 +138,10 @@ JNIEXPORT jobjectArray JNICALL
 Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                                                 jstring host) {
     const char *hostname;
-    jobject name;
     struct hostent *hp;
     unsigned int addr[4];
 
     jobjectArray ret = NULL;
-    jclass byteArrayCls;
 
     if (!initialized) {
       ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
@@ -229,10 +228,6 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
             addrp++;
         }
 
-        name = (*env)->NewStringUTF(env, hostname);
-        if (IS_NULL(name)) {
-          goto cleanupAndReturn;
-        }
         ret = (*env)->NewObjectArray(env, i, ni_iacls, NULL);
 
         if (IS_NULL(ret)) {
@@ -249,7 +244,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
           }
           (*env)->SetIntField(env, iaObj, ni_iaaddressID,
                               ntohl((*addrp)->s_addr));
-          (*env)->SetObjectField(env, iaObj, ni_iahostID, name);
+          (*env)->SetObjectField(env, iaObj, ni_iahostID, host);
           (*env)->SetObjectArrayElement(env, ret, i, iaObj);
           addrp++;
           i++;
@@ -320,7 +315,7 @@ ping4(JNIEnv *env, jint fd, struct sockaddr_in* him, jint timeout,
     seq = ((unsigned short)rand()) >> 1;
 
     /* icmp_id is a 16 bit data type, therefore down cast the pid */
-    pid = (u_short) getpid();
+    pid = (u_short) _getpid();
     size = 60*1024;
     setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (const char *) &size, sizeof(size));
     /**

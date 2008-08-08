@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,15 @@ void Relocation::pd_set_data_value(address x, intptr_t o) {
 #ifdef AMD64
   x += o;
   typedef Assembler::WhichOperand WhichOperand;
-  WhichOperand which = (WhichOperand) format(); // that is, disp32 or imm64, call32
+  WhichOperand which = (WhichOperand) format(); // that is, disp32 or imm64, call32, narrow oop
   assert(which == Assembler::disp32_operand ||
+         which == Assembler::narrow_oop_operand ||
          which == Assembler::imm64_operand, "format unpacks ok");
   if (which == Assembler::imm64_operand) {
     *pd_address_in_code() = x;
+  } else if (which == Assembler::narrow_oop_operand) {
+    address disp = Assembler::locate_operand(addr(), which);
+    *(int32_t*) disp = oopDesc::encode_heap_oop((oop)x);
   } else {
     // Note:  Use runtime_call_type relocations for call32_operand.
     address ip = addr();

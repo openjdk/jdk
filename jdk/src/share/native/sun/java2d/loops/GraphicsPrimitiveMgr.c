@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ static jfieldID eargbID;
 static jfieldID clipRegionID;
 static jfieldID compositeID;
 static jfieldID lcdTextContrastID;
-static jfieldID valueID;
 static jfieldID xorPixelID;
 static jfieldID xorColorID;
 static jfieldID alphaMaskID;
@@ -63,6 +62,8 @@ static jfieldID m02ID;
 static jfieldID m10ID;
 static jfieldID m11ID;
 static jfieldID m12ID;
+
+static jmethodID getRgbID;
 
 static jboolean InitPrimTypes(JNIEnv *env);
 static jboolean InitSurfaceTypes(JNIEnv *env, jclass SurfaceType);
@@ -114,7 +115,7 @@ Java_sun_java2d_loops_GraphicsPrimitiveMgr_initIDs
                                      "Ljava/awt/Composite;");
     lcdTextContrastID =
         (*env)->GetFieldID(env, SG2D, "lcdTextContrast", "I");
-    valueID = (*env)->GetFieldID(env, Color, "value", "I");
+    getRgbID = (*env)->GetMethodID(env, Color, "getRGB", "()I");
     xorPixelID = (*env)->GetFieldID(env, XORComp, "xorPixel", "I");
     xorColorID = (*env)->GetFieldID(env, XORComp, "xorColor",
                                     "Ljava/awt/Color;");
@@ -138,7 +139,6 @@ Java_sun_java2d_loops_GraphicsPrimitiveMgr_initIDs
     sg2dStrokeHintID = (*env)->GetFieldID(env, SG2D, "strokeHint", "I");
     fid = (*env)->GetStaticFieldID(env, SHints, "INTVAL_STROKE_PURE", "I");
     sunHints_INTVAL_STROKE_PURE = (*env)->GetStaticIntField(env, SHints, fid);
-
 }
 
 void GrPrim_RefineBounds(SurfaceDataBounds *bounds, jint transX, jint transY,
@@ -467,7 +467,7 @@ GrPrim_CompGetXorColor(JNIEnv *env, jobject comp)
     jint rgb;
 
     color = (*env)->GetObjectField(env, comp, xorColorID);
-    rgb = (*env)->GetIntField(env, color, valueID);
+    rgb = (*env)->CallIntMethod(env, color, getRgbID);
     (*env)->DeleteLocalRef(env, color);
 
     return rgb;
@@ -490,11 +490,6 @@ JNIEXPORT jint JNICALL
 GrPrim_Sg2dGetEaRGB(JNIEnv *env, jobject sg2d)
 {
     return (*env)->GetIntField(env, sg2d, eargbID);
-}
-
-jint GrPrim_ColorGetRGB(JNIEnv *env, jobject color)
-{
-    return (*env)->GetIntField(env, color, valueID);
 }
 
 JNIEXPORT jint JNICALL

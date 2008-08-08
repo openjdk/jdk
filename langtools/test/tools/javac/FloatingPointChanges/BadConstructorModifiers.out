@@ -1,4 +1,2 @@
-BadConstructorModifiers.java:12: modifier strictfp not allowed here
-    strictfp BadConstructorModifiers (double abra) { }
-             ^
+BadConstructorModifiers.java:12:14: compiler.err.mod.not.allowed.here: strictfp
 1 error

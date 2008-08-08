@@ -82,222 +82,42 @@ private:
   static const char *METHOD_SHORT_NAME_PROPERTY;
   static const char *ASSEMBLY_ELEMENT;
 
-  class Property {
-
-  private:
-
-    const char *_name;
-    const char *_value;
-
-  public:
-
-    Property();
-    Property(const Property* p);
-    ~Property();
-    Property(const char *name, const char *value);
-    Property(const char *name, int value);
-    bool equals(Property* p);
-    void print(IdealGraphPrinter *printer);
-    void print_as_attribute(IdealGraphPrinter *printer);
-    bool is_null();
-    void clean();
-    const char *name();
-
-    static const char* dup(const char *str) {
-      char * copy = new char[strlen(str)+1];
-      strcpy(copy, str);
-      return copy;
-    }
-
-  };
-
-  class Properties {
-
-  private:
-
-    GrowableArray<Property *> *list;
-
-  public:
-
-    Properties();
-    ~Properties();
-    void add(Property *p);
-    void remove(const char *name);
-    bool equals(Properties* p);
-    void print(IdealGraphPrinter *printer);
-    void print_as_attributes(IdealGraphPrinter *printer);
-    void clean();
-
-  };
-
-
-  class Description {
-
-  private:
-
-    State _state;
-
-  public:
-
-    Description();
-
-    State state();
-    void set_state(State s);
-    void print(IdealGraphPrinter *printer);
-    virtual void print_changed(IdealGraphPrinter *printer) = 0;
-    virtual void print_removed(IdealGraphPrinter *printer) = 0;
-
-  };
-
-  class NodeDescription : public Description{
-
-  public:
-
-    static int count;
-
-  private:
-
-    GrowableArray<NodeDescription *> _succs;
-    int _block_index;
-    uintptr_t _id;
-    Properties _properties;
-    Node* _node;
-
-  public:
-
-    NodeDescription(Node* node);
-    ~NodeDescription();
-    Node* node();
-
-    // void set_node(Node* node);
-    GrowableArray<NodeDescription *>* succs();
-    void init_succs();
-    void clear_succs();
-    void add_succ(NodeDescription *desc);
-    int block_index();
-    void set_block_index(int i);
-    Properties* properties();
-    virtual void print_changed(IdealGraphPrinter *printer);
-    virtual void print_removed(IdealGraphPrinter *printer);
-    bool equals(NodeDescription *desc);
-    uint id();
-
-  };
-
-  class Block {
-
-  private:
-
-    NodeDescription *_start;
-    NodeDescription *_proj;
-    GrowableArray<int> _succs;
-    GrowableArray<NodeDescription *> _nodes;
-    GrowableArray<int> _dominates;
-    GrowableArray<int> _children;
-    int _semi;
-    int _parent;
-    GrowableArray<int> _pred;
-    GrowableArray<int> _bucket;
-    int _index;
-    int _dominator;
-    int _ancestor;
-    int _label;
-
-  public:
-
-    Block();
-    Block(int index);
-
-    void add_node(NodeDescription *n);
-    GrowableArray<NodeDescription *>* nodes();
-    GrowableArray<int>* children();
-    void add_child(int i);
-    void add_succ(int index);
-    GrowableArray<int>* succs();
-    GrowableArray<int>* dominates();
-    void add_dominates(int i);
-    NodeDescription *start();
-    NodeDescription *proj();
-    void set_start(NodeDescription *n);
-    void set_proj(NodeDescription *n);
-
-    int label();
-    void set_label(int i);
-    int ancestor();
-    void set_ancestor(int i);
-    int index();
-    int dominator();
-    void set_dominator(int i);
-    int parent();
-    void set_parent(int i);
-    int semi();
-    GrowableArray<int>* bucket();
-    void add_to_bucket(int i);
-    void clear_bucket();
-    GrowableArray<int>* pred();
-    void set_semi(int i);
-    void add_pred(int i);
-
-  };
-
-  class EdgeDescription : public Description {
-
-  private:
-
-    int _from;
-    int _to;
-    int _index;
-  public:
-
-    EdgeDescription(int from, int to, int index);
-    ~EdgeDescription();
-
-    virtual void print_changed(IdealGraphPrinter *printer);
-    virtual void print_removed(IdealGraphPrinter *printer);
-    bool equals(EdgeDescription *desc);
-    int from();
-    int to();
-  };
-
+  elapsedTimer _walk_time;
+  elapsedTimer _output_time;
+  elapsedTimer _build_blocks_time;
 
   static int _file_count;
   networkStream *_stream;
+  xmlStream *_xml;
   outputStream *_output;
   ciMethod *_current_method;
-  GrowableArray<NodeDescription *> _nodes;
-  GrowableArray<EdgeDescription *> _edges;
   int _depth;
-  Arena *_arena;
   char buffer[128];
   bool _should_send_method;
   PhaseChaitin* _chaitin;
-  bool _clear_nodes;
-  Matcher* _matcher;
   bool _traverse_outs;
-
-  void start_element_helper(const char *name, Properties *properties, bool endElement, bool print_indent = false, bool print_return = true);
-  NodeDescription *create_node_description(Node* node);
+  Compile *C;
 
   static void pre_node(Node* node, void *env);
   static void post_node(Node* node, void *env);
 
-  void schedule_latest(int **common_dominator, GrowableArray<Block>* blocks);
-  void build_common_dominator(int **common_dominator, int index, GrowableArray<Block>* blocks);
-  void compress(int index, GrowableArray<Block>* blocks);
-  int eval(int index, GrowableArray<Block>* blocks);
-  void link(int index1, int index2, GrowableArray<Block>* blocks);
-  void build_dominators(GrowableArray<Block>* blocks);
-  void build_blocks(Node *node);
-  void walk(Node *n);
-  void start_element(const char *name, Properties *properties = NULL, bool print_indent = false, bool print_return = true);
-  void simple_element(const char *name, Properties *properties = NULL, bool print_indent = false);
-  void end_element(const char *name, bool print_indent = false, bool print_return = true);
-  void print_edge(int from, int to, int index);
   void print_indent();
   void print_method(ciMethod *method, int bci, InlineTree *tree);
   void print_inline_tree(InlineTree *tree);
-  void clear_nodes();
-
+  void visit_node(Node *n, void *param);
+  void walk_nodes(Node *start, void *param);
+  void begin_elem(const char *s);
+  void end_elem();
+  void begin_head(const char *s);
+  void end_head();
+  void print_attr(const char *name, const char *val);
+  void print_attr(const char *name, intptr_t val);
+  void print_prop(const char *name, const char *val);
+  void print_prop(const char *name, int val);
+  void tail(const char *name);
+  void head(const char *name);
+  void text(const char *s);
+  intptr_t get_node_id(Node *n);
   IdealGraphPrinter();
   ~IdealGraphPrinter();
 
@@ -308,7 +128,6 @@ public:
 
   bool traverse_outs();
   void set_traverse_outs(bool b);
-  void print_ifg(PhaseIFG* ifg);
   outputStream *output();
   void print_inlining(Compile* compile);
   void begin_method(Compile* compile);

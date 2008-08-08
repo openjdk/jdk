@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import javax.management.*;
 import javax.swing.Icon;
 import sun.tools.jconsole.JConsole;
 import sun.tools.jconsole.MBeansTab;
+import sun.tools.jconsole.ProxyClient.SnapshotMBeanServerConnection;
 
 public class XMBean {
 
@@ -58,6 +59,10 @@ public class XMBean {
 
     MBeanServerConnection getMBeanServerConnection() {
         return mbeansTab.getMBeanServerConnection();
+    }
+
+    SnapshotMBeanServerConnection getSnapshotMBeanServerConnection() {
+        return mbeansTab.getSnapshotMBeanServerConnection();
     }
 
     public Boolean isBroadcaster() {
@@ -103,14 +108,14 @@ public class XMBean {
     public Object getAttribute(String attributeName)
             throws AttributeNotFoundException, InstanceNotFoundException,
             MBeanException, ReflectionException, IOException {
-        return getMBeanServerConnection().getAttribute(
+        return getSnapshotMBeanServerConnection().getAttribute(
                 getObjectName(), attributeName);
     }
 
     public AttributeList getAttributes(String attributeNames[])
             throws AttributeNotFoundException, InstanceNotFoundException,
             MBeanException, ReflectionException, IOException {
-        return getMBeanServerConnection().getAttributes(
+        return getSnapshotMBeanServerConnection().getAttributes(
                 getObjectName(), attributeNames);
     }
 

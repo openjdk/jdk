@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@
 #include <sun_awt_Win32GraphicsDevice.h>
 #include "awt_Canvas.h"
 #include "awt_Win32GraphicsDevice.h"
-#include "ddrawUtils.h"
 #include "java_awt_Transparency.h"
 #include "java_awt_color_ColorSpace.h"
 #include "sun_awt_Win32GraphicsDevice.h"
@@ -60,7 +59,6 @@ jclass      AwtWin32GraphicsDevice::wToolkitClass;
 jfieldID    AwtWin32GraphicsDevice::dynamicColorModelID;
 jfieldID    AwtWin32GraphicsDevice::indexCMrgbID;
 jfieldID    AwtWin32GraphicsDevice::indexCMcacheID;
-jfieldID    AwtWin32GraphicsDevice::accelerationEnabledID;
 jmethodID   AwtWin32GraphicsDevice::paletteChangedMID;
 BOOL        AwtWin32GraphicsDevice::primaryPalettized;
 int         AwtWin32GraphicsDevice::primaryIndex = 0;
@@ -455,7 +453,7 @@ void AwtWin32GraphicsDevice::SetGrayness(int grayValue)
 /**
  * Update our dynamic IndexedColorModel.  This happens after
  * a change to the system palette.  Any surfaces stored in vram
- * (Win32OffScreenSurfaceData and Win32SurfaceData objects)
+ * (Win32OffScreenSurfaceData and GDIWindowSurfaceData objects)
  * refer to this colorModel and use its lookup table and inverse
  * lookup to calculate correct index values for rgb colors.  So
  * the colorModel must always reflect the current state of the
@@ -602,14 +600,6 @@ void AwtWin32GraphicsDevice::Release()
 void AwtWin32GraphicsDevice::SetJavaDevice(JNIEnv *env, jobject objPtr)
 {
     javaDevice = env->NewWeakGlobalRef(objPtr);
-    // We may have discovered earlier that the device is not
-    // accelerated, but there were no way to notify the GraphicsDevice
-    // about it because the DirectDraw initialization happens before those
-    // are created (from the static initializer of Win32GraphicsEnvironment).
-    DDrawObjectStruct *tmpDdInstance = GetDDInstanceForDevice((HMONITOR)monitor);
-    if (tmpDdInstance == NULL || !tmpDdInstance->accelerated) {
-        DisableOffscreenAcceleration();
-    }
 }
 
 /**
@@ -619,10 +609,7 @@ void AwtWin32GraphicsDevice::SetJavaDevice(JNIEnv *env, jobject objPtr)
  */
 void AwtWin32GraphicsDevice::DisableOffscreenAcceleration()
 {
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    if (!JNU_IsNull(env, javaDevice)) {
-        env->SetBooleanField(javaDevice, accelerationEnabledID, JNI_FALSE);
-    }
+    // REMIND: noop for now
 }
 
 /**
@@ -693,23 +680,6 @@ void AwtWin32GraphicsDevice::DisableOffscreenAccelerationForDevice(
             }
         }
     }
-}
-
-DxCapabilities *AwtWin32GraphicsDevice::GetDxCapsForDevice(MHND hMonitor)
-{
-    Devices::InstanceAccess devices;
-
-    if (hMonitor == NULL) {
-        return devices->GetDevice(0)->GetDxCaps();
-    } else {
-        int devicesNum = devices->GetNumDevices();
-        for (int i = 0; i < devicesNum; ++i) {
-            if (devices->GetDevice(i)->GetMonitor() == hMonitor) {
-                return devices->GetDevice(i)->GetDxCaps();
-            }
-        }
-    }
-    return (DxCapabilities*)NULL;
 }
 
 MHND AwtWin32GraphicsDevice::GetMonitor(int deviceIndex)
@@ -860,8 +830,6 @@ Java_sun_awt_Win32GraphicsDevice_initIDs(JNIEnv *env, jclass cls)
     AwtWin32GraphicsDevice::indexCMcacheID =
         env->GetFieldID(AwtWin32GraphicsDevice::indexCMClass,
         "lookupcache", "[I");
-    AwtWin32GraphicsDevice::accelerationEnabledID =
-        env->GetFieldID(cls, "offscreenAccelerationEnabled", "Z");
 
     /* method ids */
     AwtWin32GraphicsDevice::paletteChangedMID = env->GetStaticMethodID(
@@ -871,7 +839,6 @@ Java_sun_awt_Win32GraphicsDevice_initIDs(JNIEnv *env, jclass cls)
     DASSERT(AwtWin32GraphicsDevice::dynamicColorModelID);
     DASSERT(AwtWin32GraphicsDevice::indexCMrgbID);
     DASSERT(AwtWin32GraphicsDevice::indexCMcacheID);
-    DASSERT(AwtWin32GraphicsDevice::accelerationEnabledID);
 
     DASSERT(AwtWin32GraphicsDevice::paletteChangedMID);
 
@@ -1012,7 +979,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_Win32GraphicsDevice_getDefaultPixIDImpl
 JNIEXPORT void JNICALL
 Java_sun_awt_Win32GraphicsDevice_enterFullScreenExclusive(
         JNIEnv* env, jobject graphicsDevice,
-        jboolean useDD, jint screen, jobject windowPeer) {
+        jint screen, jobject windowPeer) {
 
     TRY;
 
@@ -1023,39 +990,12 @@ Java_sun_awt_Win32GraphicsDevice_enterFullScreenExclusive(
                                              // with the WWindowPeer object
     HWND hWnd = window->GetHWnd();
 
-    if (useDD) {
-        HMONITOR monitor = (HMONITOR)AwtWin32GraphicsDevice::GetMonitor(screen);
-        /**
-         * We call SendMessage with a timeout of 1000 ms because we would like
-         * this call to be synchronous, but we want to avoid any possibility
-         * of deadlocking here.
-         */
-        DWORD_PTR eventResult;
-        LRESULT sendResult;
-        sendResult = ::SendMessageTimeout(hWnd, WM_AWT_DD_ENTER_FULLSCREEN,
-                                          (WPARAM)monitor, NULL,
-                                          SMTO_NORMAL, 1000, &eventResult);
-        if (sendResult == 0) {
-            // Not the end of the world, but we would like to know about
-            // it and fix the problem/deadlock if one exists
-            int error = GetLastError();
-            if (error == 0) {
-                J2dTraceLn(J2D_TRACE_ERROR,
-                           "SendMessage(ENTER_FULLSCREEN) timed out");
-            } else {
-                J2dTraceLn1(J2D_TRACE_ERROR,
-                            "SendMessage(ENTER_FULLSCREEN) failed with error %d",
-                            error);
-            }
-        }
-    } else {
-        if (!::SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0,
-                            SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOSIZE))
-        {
-            J2dTraceLn1(J2D_TRACE_ERROR,
-                        "Error %d setting topmost attribute to fs window",
-                        ::GetLastError());
-        }
+    if (!::SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0,
+                        SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOSIZE))
+    {
+        J2dTraceLn1(J2D_TRACE_ERROR,
+                    "Error %d setting topmost attribute to fs window",
+                    ::GetLastError());
     }
 
     CATCH_BAD_ALLOC;
@@ -1070,7 +1010,7 @@ Java_sun_awt_Win32GraphicsDevice_enterFullScreenExclusive(
 JNIEXPORT void JNICALL
 Java_sun_awt_Win32GraphicsDevice_exitFullScreenExclusive(
         JNIEnv* env, jobject graphicsDevice,
-        jboolean useDD, jint screen, jobject windowPeer) {
+        jint screen, jobject windowPeer) {
 
     TRY;
 
@@ -1081,52 +1021,25 @@ Java_sun_awt_Win32GraphicsDevice_exitFullScreenExclusive(
                                              // with the WWindowPeer object
     HWND hWnd = window->GetHWnd();
 
-    if (useDD) {
-        HMONITOR monitor = (HMONITOR)AwtWin32GraphicsDevice::GetMonitor(screen);
-        /**
-         * We call SendMessage with a timeout of 1000 ms because we would like
-         * this call to be synchronous, but we want to avoid any possibility
-         * of deadlocking here.
-         */
-        DWORD_PTR eventResult;
-        LRESULT sendResult;
-        sendResult = ::SendMessageTimeout(hWnd, WM_AWT_DD_EXIT_FULLSCREEN,
-                                          (WPARAM)monitor, NULL,
-                                          SMTO_NORMAL, 1000, &eventResult);
-        if (sendResult == 0) {
-            // Not the end of the world, but we would like to know about
-            // it and fix the problem/deadlock if one exists
-            int error = GetLastError();
-            if (error == 0) {
-                J2dTraceLn(J2D_TRACE_ERROR,
-                           "SendMessage(EXIT_FULLSCREEN) timed out");
-            } else {
-                J2dTraceLn1(J2D_TRACE_ERROR,
-                            "SendMessage(EXIT_FULLSCREEN) failed with error %d",
-                            error);
-            }
-        }
-    } else {
-        jobject target = env->GetObjectField(windowPeer, AwtObject::targetID);
-        jboolean alwaysOnTop = JNU_GetFieldByName(env, NULL, target, "alwaysOnTop", "Z").z;
-        env->DeleteLocalRef(target);
+    jobject target = env->GetObjectField(windowPeer, AwtObject::targetID);
+    jboolean alwaysOnTop = JNU_GetFieldByName(env, NULL, target, "alwaysOnTop", "Z").z;
+    env->DeleteLocalRef(target);
 
-        if (!::SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0,
-                            SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOSIZE))
-        {
-            J2dTraceLn1(J2D_TRACE_ERROR,
-                        "Error %d unsetting topmost attribute to fs window",
-                        ::GetLastError());
-        }
-
-        // We should restore alwaysOnTop state as it's anyway dropped here
-        Java_sun_awt_windows_WWindowPeer_setAlwaysOnTopNative(env, windowPeer, alwaysOnTop);
+    if (!::SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0,
+                        SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOSIZE))
+    {
+        J2dTraceLn1(J2D_TRACE_ERROR,
+                    "Error %d unsetting topmost attribute to fs window",
+                    ::GetLastError());
     }
+
+    // We should restore alwaysOnTop state as it's anyway dropped here
+    Java_sun_awt_windows_WWindowPeer_setAlwaysOnTopNative(env, windowPeer, alwaysOnTop);
 
     CATCH_BAD_ALLOC;
 }
 
-static jobject CreateDisplayMode(JNIEnv* env, jint width, jint height,
+jobject CreateDisplayMode(JNIEnv* env, jint width, jint height,
     jint bitDepth, jint refreshRate) {
 
     TRY;
@@ -1152,24 +1065,6 @@ static jobject CreateDisplayMode(JNIEnv* env, jint width, jint height,
 
     CATCH_BAD_ALLOC_RET(NULL);
 }
-
-/*
- * Class:     sun_awt_Win32GraphicsDevice
- * Method:    isDDEnabledOnDeviceNative
- * Signature: (I)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_sun_awt_Win32GraphicsDevice_isDDEnabledOnDeviceNative
-    (JNIEnv* env, jobject graphicsDevice, jint screen)
-{
-    TRY;
-
-    HMONITOR monitor = (HMONITOR)AwtWin32GraphicsDevice::GetMonitor(screen);
-    return DeviceUseDDraw(monitor);
-
-    CATCH_BAD_ALLOC_RET(FALSE);
-}
-
 
 /**
  * A utility function which retrieves a DISPLAY_DEVICE information
@@ -1213,37 +1108,23 @@ Java_sun_awt_Win32GraphicsDevice_getCurrentDisplayMode
 {
     TRY;
 
-    HMONITOR monitor = (HMONITOR)AwtWin32GraphicsDevice::GetMonitor(screen);
-    if (DeviceUseDDraw(monitor)) {
-        DDrawDisplayMode dm;
+    DEVMODE dm;
+    LPTSTR pName = NULL;
 
-        if (!DDGetDisplayMode(monitor, dm)) {
-            JNU_ThrowInternalError(env,
-                "Could not get display mode");
-            return NULL;
-        }
+    dm.dmSize = sizeof(dm);
+    dm.dmDriverExtra = 0;
 
-        return CreateDisplayMode(env, dm.width,
-            dm.height, dm.bitDepth, dm.refreshRate);
-    } else {
-        DEVMODE dm;
-        LPTSTR pName = NULL;
-
-        dm.dmSize = sizeof(dm);
-        dm.dmDriverExtra = 0;
-
-        _DISPLAY_DEVICE displayDevice;
-        if (GetAttachedDisplayDevice(screen, &displayDevice)) {
-            pName = displayDevice.strDevName;
-        }
-        if (!EnumDisplaySettings(pName, ENUM_CURRENT_SETTINGS, &dm))
-        {
-            return NULL;
-        }
-
-        return CreateDisplayMode(env, dm.dmPelsWidth,
-            dm.dmPelsHeight, dm.dmBitsPerPel, dm.dmDisplayFrequency);
+    _DISPLAY_DEVICE displayDevice;
+    if (GetAttachedDisplayDevice(screen, &displayDevice)) {
+        pName = displayDevice.strDevName;
     }
+    if (!EnumDisplaySettings(pName, ENUM_CURRENT_SETTINGS, &dm))
+    {
+        return NULL;
+    }
+
+    return CreateDisplayMode(env, dm.dmPelsWidth,
+        dm.dmPelsHeight, dm.dmBitsPerPel, dm.dmDisplayFrequency);
 
     CATCH_BAD_ALLOC_RET(NULL);
 }
@@ -1260,96 +1141,43 @@ Java_sun_awt_Win32GraphicsDevice_configDisplayMode
 {
     TRY;
 
-    HMONITOR monitor = (HMONITOR)AwtWin32GraphicsDevice::GetMonitor(screen);
-    if (DeviceUseDDraw(monitor)) {
-        PDATA pData;
-
-        JNI_CHECK_PEER_RETURN(windowPeer);
-
-        AwtWindow * window = (AwtWindow * )pData; // safe cast; we are called
-                                                  // with the WWindowPeer object
-        HWND hWnd = window->GetHWnd();
-
-        DDrawDisplayMode *dm = new DDrawDisplayMode(width, height, bitDepth,
-                                                    refreshRate);
-
-        /**
-         * We call SendMessage with a timeout of 1000 ms because we would like
-         * this call to be synchronous, but we want to avoid any possibility
-         * of deadlocking here.
-         * Also, note that we have to free the dm object in the message
-         * processing code since we may return from the SendMessageTimeout
-         * before that object has been used.
-         */
-        DWORD_PTR eventResult;
-        LRESULT sendResult;
-        sendResult = ::SendMessageTimeout(hWnd, WM_AWT_DD_SET_DISPLAY_MODE,
-                                          (WPARAM)monitor, (LPARAM)dm,
-                                          SMTO_NORMAL, 1000, &eventResult);
-        if (sendResult == 0) {
-            // Not the end of the world, but we would like to know about
-            // it and fix the problem/deadlock if one exists
-            int error = GetLastError();
-            if (error == 0) {
-                J2dTraceLn(J2D_TRACE_ERROR,
-                           "SendMessage(SET_DISPLAY_MODE) timed out");
-            } else {
-                J2dTraceLn1(J2D_TRACE_ERROR,
-                           "SendMessage(SET_DISPLAY_MODE) failed with error %d",
-                           error);
-            }
-        } else {
-            // see comment in awt_Window.cpp WmDDEnterFullScreenMode
-            // Since the event to reshape the window will come to the owner
-            // frame, we need to reshape the window by ourselves.
-            // Note that we do not need to reshape it on the exit
-            // from full screen mode, this is already handled in
-            // GraphicsDevice.setFullScreenWindow .
-            if (window->GetOwningFrameOrDialog() != NULL) {
-                RECT* r = new RECT;
-                ::SetRect(r, 0, 0, width, height);
-                window->SendMessage(WM_AWT_RESHAPE_COMPONENT, 0, (LPARAM)r);
-            }
-        }
-    } else {
         DEVMODE dm;
 
-        dm.dmSize = sizeof(dm);
-        dm.dmDriverExtra = 0;
-        dm.dmPelsWidth = width;
-        dm.dmPelsHeight = height;
-        dm.dmBitsPerPel = bitDepth;
-        dm.dmDisplayFrequency = refreshRate;
-        dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT |
-            DM_BITSPERPEL | DM_DISPLAYFREQUENCY;
+    dm.dmSize = sizeof(dm);
+    dm.dmDriverExtra = 0;
+    dm.dmPelsWidth = width;
+    dm.dmPelsHeight = height;
+    dm.dmBitsPerPel = bitDepth;
+    dm.dmDisplayFrequency = refreshRate;
+    dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT |
+        DM_BITSPERPEL | DM_DISPLAYFREQUENCY;
 
-        // ChangeDisplaySettings works only on the primary screen.
-        // ChangeDisplaySettingsEx is not available on NT,
-        // so it'd be nice not to break it if we can help it.
-        if (screen == AwtWin32GraphicsDevice::GetDefaultDeviceIndex()) {
-            if (ChangeDisplaySettings(&dm, CDS_FULLSCREEN) !=
-                DISP_CHANGE_SUCCESSFUL)
-            {
-                JNU_ThrowInternalError(env,
-                                       "Could not set display mode");
-            }
-            return;
-        }
-
-        // make sure the function pointer for fn_change_display_settings_ex
-        // is initialized
-        load_user_procs();
-
-        _DISPLAY_DEVICE displayDevice;
-        if (fn_change_display_settings_ex == NULL ||
-            !GetAttachedDisplayDevice(screen, &displayDevice) ||
-            ((*fn_change_display_settings_ex)
-                 (displayDevice.strDevName, &dm, NULL, CDS_FULLSCREEN, NULL) !=
-              DISP_CHANGE_SUCCESSFUL))
+    // ChangeDisplaySettings works only on the primary screen.
+    // ChangeDisplaySettingsEx is not available on NT,
+    // so it'd be nice not to break it if we can help it.
+    if (screen == AwtWin32GraphicsDevice::GetDefaultDeviceIndex()) {
+        if (ChangeDisplaySettings(&dm, CDS_FULLSCREEN) !=
+            DISP_CHANGE_SUCCESSFUL)
         {
             JNU_ThrowInternalError(env,
                                    "Could not set display mode");
         }
+        return;
+    }
+
+    // make sure the function pointer for fn_change_display_settings_ex
+    // is initialized
+    load_user_procs();
+
+    _DISPLAY_DEVICE displayDevice;
+    if (fn_change_display_settings_ex == NULL ||
+        !GetAttachedDisplayDevice(screen, &displayDevice) ||
+        ((*fn_change_display_settings_ex)
+             (displayDevice.strDevName, &dm, NULL, CDS_FULLSCREEN, NULL) !=
+          DISP_CHANGE_SUCCESSFUL))
+    {
+        JNU_ThrowInternalError(env,
+                               "Could not set display mode");
     }
 
     CATCH_BAD_ALLOC;
@@ -1362,7 +1190,7 @@ public:
     jobject arrayList;
 };
 
-static void addDisplayMode(JNIEnv* env, jobject arrayList, jint width,
+void addDisplayMode(JNIEnv* env, jobject arrayList, jint width,
     jint height, jint bitDepth, jint refreshRate) {
 
     TRY;
@@ -1390,22 +1218,6 @@ static void addDisplayMode(JNIEnv* env, jobject arrayList, jint width,
     CATCH_BAD_ALLOC;
 }
 
-static void enumDMCallback(DDrawDisplayMode& dm, void* pContext) {
-
-    TRY;
-
-    EnumDisplayModeParam* pParam = (EnumDisplayModeParam*)pContext;
-    JNIEnv* env = pParam->env;
-    jobject arrayList = pParam->arrayList;
-
-    if (dm.bitDepth >= 8) {
-        addDisplayMode(env, arrayList, dm.width, dm.height,
-                       dm.bitDepth, dm.refreshRate);
-    }
-
-    CATCH_BAD_ALLOC;
-}
-
 /*
  * Class:     sun_awt_Win32GraphicsDevice
  * Method:    enumDisplayModes
@@ -1417,70 +1229,28 @@ JNIEXPORT void JNICALL Java_sun_awt_Win32GraphicsDevice_enumDisplayModes
 
     TRY;
 
-    HMONITOR monitor = (HMONITOR)AwtWin32GraphicsDevice::GetMonitor(screen);
-    if (DeviceUseDDraw(monitor)) {
-        EnumDisplayModeParam param(env, arrayList);
-
-        if (!DDEnumDisplayModes(monitor, NULL, enumDMCallback, &param)) {
-            JNU_ThrowInternalError(env,
-                "Could not get display modes");
-            return;
-        }
-    } else {
-        DEVMODE dm;
-        LPTSTR pName = NULL;
-        _DISPLAY_DEVICE displayDevice;
+    DEVMODE dm;
+    LPTSTR pName = NULL;
+    _DISPLAY_DEVICE displayDevice;
 
 
-        if (GetAttachedDisplayDevice(screen, &displayDevice)) {
-            pName = displayDevice.strDevName;
-        }
+    if (GetAttachedDisplayDevice(screen, &displayDevice)) {
+        pName = displayDevice.strDevName;
+    }
 
-        dm.dmSize = sizeof(dm);
-        dm.dmDriverExtra = 0;
+    dm.dmSize = sizeof(dm);
+    dm.dmDriverExtra = 0;
 
-        BOOL bContinue = TRUE;
-        for (int i = 0; bContinue; i++) {
-            bContinue = EnumDisplaySettings(pName, i, &dm);
-            if (dm.dmBitsPerPel >= 8) {
-                addDisplayMode(env, arrayList, dm.dmPelsWidth, dm.dmPelsHeight,
-                               dm.dmBitsPerPel, dm.dmDisplayFrequency);
-            }
+    BOOL bContinue = TRUE;
+    for (int i = 0; bContinue; i++) {
+        bContinue = EnumDisplaySettings(pName, i, &dm);
+        if (dm.dmBitsPerPel >= 8) {
+            addDisplayMode(env, arrayList, dm.dmPelsWidth, dm.dmPelsHeight,
+                           dm.dmBitsPerPel, dm.dmDisplayFrequency);
         }
     }
 
     CATCH_BAD_ALLOC;
-}
-
-void checkDMCallback(DDrawDisplayMode& dm, void* pContext) {
-    jboolean* isCalled = (jboolean*)pContext;
-    *isCalled = JNI_TRUE;
-}
-
-/*
- * Class:     sun_awt_Win32GraphicsDevice
- * Method:    isDisplayModeAvailable
- * Signature: (IIII)Z
- */
-JNIEXPORT jboolean JNICALL Java_sun_awt_Win32GraphicsDevice_isDisplayModeAvailable
-    (JNIEnv* env, jobject graphicsDevice, jint screen, jint width, jint height,
-    jint bitDepth, jint refreshRate) {
-
-    TRY;
-
-    DDrawDisplayMode dm(width, height, bitDepth, refreshRate);
-    jboolean isCalled = JNI_FALSE;
-    HMONITOR monitor = (HMONITOR)AwtWin32GraphicsDevice::GetMonitor(screen);
-
-    if (!DDEnumDisplayModes(monitor, &dm, checkDMCallback, &isCalled)) {
-            JNU_ThrowInternalError(env,
-                    "Could not get display modes");
-            return JNI_FALSE;
-    }
-
-    return isCalled;
-
-    CATCH_BAD_ALLOC_RET(JNI_FALSE);
 }
 
 /*
@@ -1508,18 +1278,4 @@ JNIEXPORT void JNICALL
 {
     Devices::InstanceAccess devices;
     devices->GetDevice(screen)->SetJavaDevice(env, thisPtr);
-}
-
-/*
- * Class:     sun_awt_Win32GraphicsDevice
- * Method:    getDeviceMemoryNative
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL
-    Java_sun_awt_Win32GraphicsDevice_getDeviceMemoryNative
-    (JNIEnv *env, jobject thisPtr, jint screen)
-{
-    Devices::InstanceAccess devices;
-    return DDGetAvailableMemory(
-        (HMONITOR)devices->GetDevice(screen)->GetMonitor());
 }

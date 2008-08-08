@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,6 @@ public class Main {
                                            4.0f/3.0f, 0.85f, Toolkit.getDefaultToolkit().getScreenSize());
     GraphicsUtilities.centerInContainer(frame,
                                         Toolkit.getDefaultToolkit().getScreenSize());
-    frame.show();
+    frame.setVisible(true);
   }
 }

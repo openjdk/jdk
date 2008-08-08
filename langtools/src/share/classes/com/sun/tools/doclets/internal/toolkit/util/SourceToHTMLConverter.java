@@ -260,12 +260,12 @@ public class SourceToHTMLConverter {
      * @param docs the array of <code>Doc</code>s to add anchors for.
      * @param hash the <code>HashMap</code> to add to.
      */
-    protected static void addToHash(Doc[] docs, HashMap hash) {
+    protected static void addToHash(Doc[] docs, HashMap<Integer,String> hash) {
         if(docs == null) {
             return;
         }
         for(int i = 0; i < docs.length; i++) {
-            hash.put(new Integer(docs[i].position().line()), getAnchor(docs[i]));
+            hash.put(docs[i].position().line(), getAnchor(docs[i]));
         }
     }
 
