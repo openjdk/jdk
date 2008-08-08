@@ -25,7 +25,6 @@
 
 package com.sun.jmx.mbeanserver;
 
-import static com.sun.jmx.mbeanserver.Util.*;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;

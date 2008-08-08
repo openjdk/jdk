@@ -576,6 +576,7 @@ public abstract class ClientNotifForwarder {
             int notFoundCount = 0;
 
             NotificationResult result = null;
+            long firstEarliest = -1;
 
             while (result == null && !shouldStop()) {
                 NotificationResult nr;
@@ -598,6 +599,8 @@ public abstract class ClientNotifForwarder {
                     return null;
 
                 startSequenceNumber = nr.getNextSequenceNumber();
+                if (firstEarliest < 0)
+                    firstEarliest = nr.getEarliestSequenceNumber();
 
                 try {
                     // 1 notif to skip possible missing class
@@ -628,6 +631,17 @@ public abstract class ClientNotifForwarder {
                     (notFoundCount == 1 ? "" : "s") +
                     " because classes were missing locally";
                 lostNotifs(msg, notFoundCount);
+                // Even if result.getEarliestSequenceNumber() is now greater than
+                // it was initially, meaning some notifs have been dropped
+                // from the buffer, we don't want the caller to see that
+                // because it is then likely to renotify about the lost notifs.
+                // So we put back the first value of earliestSequenceNumber
+                // that we saw.
+                if (result != null) {
+                    result = new NotificationResult(
+                            firstEarliest, result.getNextSequenceNumber(),
+                            result.getTargetedNotifications());
+                }
             }
 
             return result;
