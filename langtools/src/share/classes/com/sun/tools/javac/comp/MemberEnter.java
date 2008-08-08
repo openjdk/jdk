@@ -828,15 +828,15 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             // Save class environment for later member enter (2) processing.
             halfcompleted.append(env);
 
+            // Mark class as not yet attributed.
+            c.flags_field |= UNATTRIBUTED;
+
             // If this is a toplevel-class, make sure any preceding import
             // clauses have been seen.
             if (c.owner.kind == PCK) {
                 memberEnter(env.toplevel, env.enclosing(JCTree.TOPLEVEL));
                 todo.append(env);
             }
-
-            // Mark class as not yet attributed.
-            c.flags_field |= UNATTRIBUTED;
 
             if (c.owner.kind == TYP)
                 c.owner.complete();
