@@ -3,7 +3,7 @@
    @summary Verify that ClassModifier "synchronized" is not allowed.
    @author dps
 
-   @run shell SynchronizedClass.sh
+   @compile/fail/ref=SynchronizedClass.out -XDrawDiagnostics -XDstdout SynchronizedClass.java
 */
 
 public synchronized class SynchronizedClass { } // ERROR

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,8 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   if (_virtual_space != NULL) {
     delete _virtual_space;
     _virtual_space = NULL;
+    // Release memory reserved in the space.
+    rs.release();
   }
   return false;
 }

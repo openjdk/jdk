@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,11 +70,6 @@ public:
     else
       return new (C, 1) ConPNode( TypeRawPtr::make(con) );
   }
-
-  static ConPNode* make( Compile *C, ciObject* con ) {
-    return new (C, 1) ConPNode( TypeOopPtr::make_from_constant(con) );
-  }
-
 };
 
 
@@ -84,11 +79,6 @@ class ConNNode : public ConNode {
 public:
   ConNNode( const TypeNarrowOop *t ) : ConNode(t) {}
   virtual int Opcode() const;
-
-  static ConNNode* make( Compile *C, ciObject* con ) {
-    return new (C, 1) ConNNode( TypeNarrowOop::make_from_constant(con) );
-  }
-
 };
 
 
@@ -210,7 +200,14 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------ConstraintCastNode-------------------------------------
+//------------------------------CMoveNNode-------------------------------------
+class CMoveNNode : public CMoveNode {
+public:
+  CMoveNNode( Node *c, Node *bol, Node *left, Node *right, const Type* t ) : CMoveNode(bol,left,right,t) { init_req(Control,c); }
+  virtual int Opcode() const;
+};
+
+//------------------------------ConstraintCastNode-----------------------------
 // cast to a different range
 class ConstraintCastNode: public TypeNode {
 public:
@@ -274,6 +271,7 @@ class EncodePNode : public TypeNode {
  public:
   EncodePNode(Node* value, const Type* type):
     TypeNode(type, 2) {
+    init_class_id(Class_EncodeP);
     init_req(0, NULL);
     init_req(1, value);
   }
@@ -282,7 +280,7 @@ class EncodePNode : public TypeNode {
   virtual const Type *Value( PhaseTransform *phase ) const;
   virtual uint  ideal_reg() const { return Op_RegN; }
 
-  static Node* encode(PhaseGVN* phase, Node* value);
+  virtual Node *Ideal_DU_postCCP( PhaseCCP *ccp );
 };
 
 //------------------------------DecodeN--------------------------------
@@ -293,6 +291,7 @@ class DecodeNNode : public TypeNode {
  public:
   DecodeNNode(Node* value, const Type* type):
     TypeNode(type, 2) {
+    init_class_id(Class_DecodeN);
     init_req(0, NULL);
     init_req(1, value);
   }
@@ -300,8 +299,6 @@ class DecodeNNode : public TypeNode {
   virtual Node *Identity( PhaseTransform *phase );
   virtual const Type *Value( PhaseTransform *phase ) const;
   virtual uint  ideal_reg() const { return Op_RegP; }
-
-  static Node* decode(PhaseGVN* phase, Node* value);
 };
 
 //------------------------------Conv2BNode-------------------------------------
@@ -549,10 +546,18 @@ class Opaque1Node : public Node {
   virtual uint hash() const ;                  // { return NO_HASH; }
   virtual uint cmp( const Node &n ) const;
 public:
-  Opaque1Node( Node *n ) : Node(0,n) {}
+  Opaque1Node( Compile* C, Node *n ) : Node(0,n) {
+    // Put it on the Macro nodes list to removed during macro nodes expansion.
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
   // Special version for the pre-loop to hold the original loop limit
   // which is consumed by range check elimination.
-  Opaque1Node( Node *n, Node* orig_limit ) : Node(0,n,orig_limit) {}
+  Opaque1Node( Compile* C, Node *n, Node* orig_limit ) : Node(0,n,orig_limit) {
+    // Put it on the Macro nodes list to removed during macro nodes expansion.
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
   Node* original_loop_limit() { return req()==3 ? in(2) : NULL; }
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::INT; }
@@ -572,7 +577,11 @@ class Opaque2Node : public Node {
   virtual uint hash() const ;                  // { return NO_HASH; }
   virtual uint cmp( const Node &n ) const;
 public:
-  Opaque2Node( Node *n ) : Node(0,n) {}
+  Opaque2Node( Compile* C, Node *n ) : Node(0,n) {
+    // Put it on the Macro nodes list to removed during macro nodes expansion.
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::INT; }
 };

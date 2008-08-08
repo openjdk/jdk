@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ macro(Allocate)
 macro(AllocateArray)
 macro(AndI)
 macro(AndL)
+macro(AryEq)
 macro(AtanD)
 macro(Binary)
 macro(Bool)
@@ -64,6 +65,7 @@ macro(CMoveF)
 macro(CMoveI)
 macro(CMoveL)
 macro(CMoveP)
+macro(CMoveN)
 macro(CmpN)
 macro(CmpD)
 macro(CmpD3)
@@ -133,6 +135,7 @@ macro(LoadD_unaligned)
 macro(LoadF)
 macro(LoadI)
 macro(LoadKlass)
+macro(LoadNKlass)
 macro(LoadL)
 macro(LoadL_unaligned)
 macro(LoadPLocked)

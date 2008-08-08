@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.tools.jconsole;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.tools.jconsole.JConsoleContext;
 import com.sun.tools.jconsole.JConsoleContext.ConnectionState;
-import java.awt.Component;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
@@ -78,6 +77,7 @@ public class ProxyClient implements JConsoleContext {
     private String advancedUrl = null;
 
     private JMXServiceURL jmxUrl = null;
+    private MBeanServerConnection mbsc = null;
     private SnapshotMBeanServerConnection server = null;
     private JMXConnector jmxc = null;
     private RMIServer stub = null;
@@ -103,7 +103,6 @@ public class ProxyClient implements JConsoleContext {
 
     private List<MemoryPoolProxy>           memoryPoolProxies = null;
     private List<GarbageCollectorMXBean>    garbageCollectorMBeans = null;
-    private String detectDeadlocksOperation = null;
 
     final static private String HOTSPOT_DIAGNOSTIC_MXBEAN_NAME =
         "com.sun.management:type=HotSpotDiagnostic";
@@ -326,8 +325,8 @@ public class ProxyClient implements JConsoleContext {
         if (jmxUrl == null && "localhost".equals(hostName) && port == 0) {
             // Monitor self
             this.jmxc = null;
-            this.server = Snapshot.newSnapshot(
-                    ManagementFactory.getPlatformMBeanServer());
+            this.mbsc = ManagementFactory.getPlatformMBeanServer();
+            this.server = Snapshot.newSnapshot(mbsc);
         } else {
             // Monitor another process
             if (lvm != null) {
@@ -369,7 +368,8 @@ public class ProxyClient implements JConsoleContext {
                     this.jmxc = JMXConnectorFactory.connect(jmxUrl, env);
                 }
             }
-            this.server = Snapshot.newSnapshot(jmxc.getMBeanServerConnection());
+            this.mbsc = jmxc.getMBeanServerConnection();
+            this.server = Snapshot.newSnapshot(mbsc);
         }
         this.isDead = false;
 
@@ -518,7 +518,11 @@ public class ProxyClient implements JConsoleContext {
         }
     }
 
-    public MBeanServerConnection getMBeanServerConnection() {
+   public MBeanServerConnection getMBeanServerConnection() {
+       return mbsc;
+   }
+
+    public SnapshotMBeanServerConnection getSnapshotMBeanServerConnection() {
         return server;
     }
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,6 @@ ifeq ($(PLATFORM),windows)
      $(OBJDIR)/../../../java.lang/java/$(OBJDIRNAME)/FileDescriptor_md.obj
 endif
 ifeq ($(PLATFORM), linux)
-COMPILER_WARNINGS_FATAL=true
 OTHER_LDLIBS += -L$(LIBDIR)/$(LIBARCH) -ljava -lnet -lpthread -ldl
 endif
 ifeq ($(PLATFORM), solaris)

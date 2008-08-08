@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2000 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,7 @@ class instanceOopDesc : public oopDesc {
 
   static bool contains_field_offset(int offset, int nonstatic_field_size) {
     int base_in_bytes = base_offset_in_bytes();
-    if (UseCompressedOops) {
-      return (offset >= base_in_bytes &&
-              // field can be embedded in header, or is after header.
-              (offset < (int)sizeof(instanceOopDesc) ||
-              (offset-(int)sizeof(instanceOopDesc))/wordSize < nonstatic_field_size));
-    } else {
-      return (offset >= base_in_bytes &&
-              (offset-base_in_bytes)/wordSize < nonstatic_field_size);
-    }
+    return (offset >= base_in_bytes &&
+            (offset-base_in_bytes) < nonstatic_field_size * heapOopSize);
   }
 };

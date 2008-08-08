@@ -107,7 +107,10 @@ JAVACFLAGS =
 ifeq ($(DEBUG_CLASSFILES),true)
   JAVACFLAGS += -g
 endif
-ifeq ($(COMPILER_WARNINGS_FATAL), true)
+ifeq ($(JAVAC_MAX_WARNINGS), true)
+  JAVACFLAGS  += -Xlint:all
+endif
+ifeq ($(JAVAC_WARNINGS_FATAL), true)
   JAVACFLAGS  += -Werror
 endif
 
@@ -180,7 +183,10 @@ endif
 # The javac options supplied to the boot javac is limited. This compiler
 #   should only be used to build the 'make/tools' sources, which are not
 #   class files that end up in the classes directory.
-ifeq ($(COMPILER_WARNINGS_FATAL), true)
+ifeq ($(JAVAC_MAX_WARNINGS), true)
+  BOOT_JAVACFLAGS  += -Xlint:all
+endif
+ifeq ($(JAVAC_WARNINGS_FATAL), true)
   BOOT_JAVACFLAGS  += -Werror
 endif
 BOOT_JAVACFLAGS  += -encoding ascii

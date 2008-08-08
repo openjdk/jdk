@@ -72,7 +72,6 @@ PLATFORM_SHARED=done
 #     ISA_DIR                     solaris only: /sparcv9 or /amd64
 #     LIBARCH32                   solaris only: sparc or i386
 #     LIBARCH64                   solaris only: sparcv9 or amd64
-#     REQUIRED_WINDOWS_NAME       windows only: basic name of windows 
 #     REQUIRED_WINDOWS_VERSION    windows only: specific version of windows 
 #     USING_CYGWIN                windows only: true or false
 #     WINDOWS_NT_VERSION_STRING   windows only: long version name
@@ -311,19 +310,11 @@ ifeq ($(PLATFORM), windows)
     endif
   endif
   export ARCH_DATA_MODEL
-  # LIBARCH is used to preserve the jre/lib/i386 directory name for 32-bit intel
-  ARCH=i586
-  LIBARCH=i386
-  # Value of Java os.arch property
-  ARCHPROP=x86
-  REQUIRED_WINDOWS_NAME=Windows Professional 2000
-  REQUIRED_WINDOWS_VERSION=5 0 Service Pack 4
   ifeq ($(ARCH_DATA_MODEL), 64)
     # If the user wants to perform a cross compile build then they must
     # - set ARCH_DATA_MODEL=64 and either
     #      + set ARCH to ia64 or amd64, or
-    REQUIRED_WINDOWS_NAME=Windows Server 2003
-    REQUIRED_WINDOWS_VERSION=5 2 Service Pack 1
+    REQUIRED_WINDOWS_VERSION=Server 2003 Enterprise x64 Edition
     ifeq ($(word 1, $(PROCESSOR_IDENTIFIER)), AMD64)
       ARCH=amd64
     else
@@ -332,6 +323,14 @@ ifeq ($(PLATFORM), windows)
     LIBARCH=$(ARCH)
     # Value of Java os.arch property
     ARCHPROP=$(LIBARCH)
+  else
+    REQUIRED_WINDOWS_VERSION=2000 or Unknown
+    #REQUIRED_WINDOWS_VERSION=XP Professional
+    # LIBARCH is used to preserve the jre/lib/i386 directory name for 32-bit intel
+    ARCH=i586
+    LIBARCH=i386
+    # Value of Java os.arch property
+    ARCHPROP=x86
   endif
   ARCH_FAMILY = $(ARCH)
   # Where is unwanted output to be delivered?
@@ -374,34 +373,40 @@ ifeq ($(PLATFORM), windows)
   REQUIRED_DXSDK_VER = 0x0900
   OS_VENDOR = Microsoft
   # How much RAM does this machine have:
-  ifeq ($(USING_CYGWIN),true)
-    # CYGWIN has the 'free' utility
-    _MB_OF_MEMORY := \
-	 $(shell free -m | grep Mem: | awk '{print $$2;}' )
-  else
-    # Windows 2000 has the mem utility, but two memory areas
-    #    extended memory is what is beyond 1024M
-    _B_OF_EXT_MEMORY := \
-	 $(shell mem 2> $(DEV_NULL) | grep 'total contiguous extended memory' | awk '{print $$1;}')
-    ifeq ($(_B_OF_EXT_MEMORY),)
-      _B_OF_MEMORY := \
-	 $(shell mem 2> $(DEV_NULL) | grep 'total conventional memory' | awk '{print $$1;}')
-    else
-      _B_OF_MEMORY := \
-         $(shell expr 1048576 '+' $(_B_OF_EXT_MEMORY) 2> $(DEV_NULL))
-    endif
-    ifeq ($(_B_OF_MEMORY),)
-      # Windows 2003 has the systeminfo utility use it if mem doesn't work
+  ifeq ($(JDK_HAS_MEM_INFO),)
+    ifeq ($(USING_CYGWIN),true)
+      # CYGWIN has the 'free' utility
       _MB_OF_MEMORY := \
-	  $(shell systeminfo 2> $(DEV_NULL) | grep 'Total Physical Memory:' | awk '{print $$4;}' | sed -e 's@,@@')
+	   $(shell free -m | grep Mem: | awk '{print $$2;}' )
     else
-      _MB_OF_MEMORY := $(shell expr $(_B_OF_MEMORY) '/' 1024 2> $(DEV_NULL))
+      # Windows 2000 has the mem utility, but two memory areas
+      #    extended memory is what is beyond 1024M
+      _B_OF_EXT_MEMORY := \
+	   $(shell mem 2> $(DEV_NULL) | \
+		   grep 'total contiguous extended memory' | awk '{print $$1;}')
+      ifeq ($(_B_OF_EXT_MEMORY),)
+          _B_OF_MEMORY := \
+	   $(shell mem 2> $(DEV_NULL) | \
+		   grep 'total conventional memory' | awk '{print $$1;}')
+      else
+        _B_OF_MEMORY := \
+           $(shell expr 1048576 '+' $(_B_OF_EXT_MEMORY) 2> $(DEV_NULL))
+      endif
+      ifeq ($(_B_OF_MEMORY),)
+        # Windows 2003 has the systeminfo utility use it if mem doesn't work
+        _MB_OF_MEMORY := \
+	    $(shell systeminfo 2> $(DEV_NULL) | \
+		    grep 'Total Physical Memory:' | \
+		    awk '{print $$4;}' | sed -e 's@,@@')
+      else
+        _MB_OF_MEMORY := $(shell expr $(_B_OF_MEMORY) '/' 1024 2> $(DEV_NULL))
+      endif
     endif
-  endif
-  ifeq ($(shell expr $(_MB_OF_MEMORY) '+' 0 2> $(DEV_NULL)), $(_MB_OF_MEMORY))
-    MB_OF_MEMORY := $(_MB_OF_MEMORY)
-  else
-    MB_OF_MEMORY := 512
+    ifeq ($(shell expr $(_MB_OF_MEMORY) '+' 0 2> $(DEV_NULL)), $(_MB_OF_MEMORY))
+      MB_OF_MEMORY := $(_MB_OF_MEMORY)
+    else
+      MB_OF_MEMORY := 512
+    endif
   endif
 endif
 
@@ -447,30 +452,38 @@ endif
 #    system swapping during the build.
 #    If we don't know, assume 512. Subtract 128 from MB for VM MAX.
 #    Don't set VM max over 1024-128=896.
-ifneq ($(MB_OF_MEMORY),)
-  LOW_MEMORY_MACHINE := $(shell \
-    if [ $(MB_OF_MEMORY) -le 512 ] ; then \
-      echo "true"; \
-    else \
-      echo "false"; \
-    fi)
-  MAX_VM_MEMORY := $(shell \
-    if [ $(MB_OF_MEMORY) -le 1024 ] ; then \
-      expr $(MB_OF_MEMORY) '-' 128 2> $(DEV_NULL) ; \
-    else \
-      echo "896"; \
-    fi)
-  MIN_VM_MEMORY := $(shell \
-    if [ $(MAX_VM_MEMORY) -le 128 ] ; then \
-      expr $(MAX_VM_MEMORY) '-' 8 2> $(DEV_NULL) ; \
-    else \
-      echo "128"; \
-    fi)
-else
-  MB_OF_MEMORY       := unknown
-  LOW_MEMORY_MACHINE := true
-  MAX_VM_MEMORY      := 384
-  MIN_VM_MEMORY      := 128
+ifeq ($(JDK_HAS_MEM_INFO),)
+  JDK_HAS_MEM_INFO=true
+  export JDK_HAS_MEM_INFO
+  ifneq ($(MB_OF_MEMORY),)
+    LOW_MEMORY_MACHINE := $(shell \
+      if [ $(MB_OF_MEMORY) -le 512 ] ; then \
+        echo "true"; \
+      else \
+        echo "false"; \
+      fi)
+    MAX_VM_MEMORY := $(shell \
+      if [ $(MB_OF_MEMORY) -le 1024 ] ; then \
+        expr $(MB_OF_MEMORY) '-' 128 2> $(DEV_NULL) ; \
+      else \
+        echo "896"; \
+      fi)
+    MIN_VM_MEMORY := $(shell \
+      if [ $(MAX_VM_MEMORY) -le 128 ] ; then \
+        expr $(MAX_VM_MEMORY) '-' 8 2> $(DEV_NULL) ; \
+      else \
+        echo "128"; \
+      fi)
+  else
+    MB_OF_MEMORY       := unknown
+    LOW_MEMORY_MACHINE := true
+    MAX_VM_MEMORY      := 384
+    MIN_VM_MEMORY      := 128
+  endif
+  export MB_OF_MEMORY
+  export LOW_MEMORY_MACHINE
+  export MAX_VM_MEMORY
+  export MIN_VM_MEMORY
 endif
 
 # If blanks in the username, use the first 4 words and pack them together

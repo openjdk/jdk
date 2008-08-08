@@ -817,6 +817,7 @@ public:
 private:
     AwtComponent* SearchChild(UINT id);
     void RemoveChild(UINT id) ;
+    static BOOL IsNavigationKey(UINT wkey);
 
     ChildListItem* m_childList;
 

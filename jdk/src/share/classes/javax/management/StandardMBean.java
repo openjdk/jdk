@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,20 @@
 
 package javax.management;
 
-import static com.sun.jmx.defaults.JmxProperties.MISC_LOGGER;
 import com.sun.jmx.mbeanserver.DescriptorCache;
 import com.sun.jmx.mbeanserver.Introspector;
+import com.sun.jmx.mbeanserver.MBeanInjector;
 import com.sun.jmx.mbeanserver.MBeanSupport;
 import com.sun.jmx.mbeanserver.MXBeanSupport;
 import com.sun.jmx.mbeanserver.StandardMBeanSupport;
 import com.sun.jmx.mbeanserver.Util;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
+import javax.management.openmbean.MXBeanMappingFactory;
 import javax.management.openmbean.OpenMBeanAttributeInfo;
 import javax.management.openmbean.OpenMBeanAttributeInfoSupport;
 import javax.management.openmbean.OpenMBeanConstructorInfo;
@@ -49,6 +47,9 @@ import javax.management.openmbean.OpenMBeanOperationInfo;
 import javax.management.openmbean.OpenMBeanOperationInfoSupport;
 import javax.management.openmbean.OpenMBeanParameterInfo;
 import javax.management.openmbean.OpenMBeanParameterInfoSupport;
+
+import static com.sun.jmx.defaults.JmxProperties.MISC_LOGGER;
+import static javax.management.JMX.MBeanOptions;
 
 /**
  * <p>An MBean whose management interface is determined by reflection
@@ -125,7 +126,78 @@ import javax.management.openmbean.OpenMBeanParameterInfoSupport;
  *
  * @since 1.5
  */
-public class StandardMBean implements DynamicMBean, MBeanRegistration {
+public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
+
+    /**
+     * <p>Options controlling the behavior of {@code StandardMBean} instances.</p>
+     */
+    public static class Options extends JMX.MBeanOptions {
+        private static final long serialVersionUID = 5107355471177517164L;
+
+        private boolean wrappedVisible;
+
+        /**
+         * <p>Construct an {@code Options} object where all options have
+         * their default values.</p>
+         */
+        public Options() {}
+
+        @Override
+        public Options clone() {
+            return (Options) super.clone();
+        }
+
+        /**
+         * <p>Defines whether the {@link StandardMBean#getWrappedObject()
+         * getWrappedObject} method returns the wrapped object.</p>
+         *
+         * <p>If this option is true, then {@code getWrappedObject()} will return
+         * the same object as {@link StandardMBean#getImplementation()
+         * getImplementation}.  Otherwise, it will return the
+         * StandardMBean instance itself.  The setting of this option
+         * affects the behavior of {@link MBeanServer#getClassLoaderFor
+         * MBeanServer.getClassLoaderFor} and {@link MBeanServer#isInstanceOf
+         * MBeanServer.isInstanceOf}.  The default value is false for
+         * compatibility reasons, but true is a better value for most new code.</p>
+         *
+         * @return true if this StandardMBean's {@link
+         * StandardMBean#getWrappedObject getWrappedObject} returns the wrapped
+         * object.
+         */
+        public boolean isWrappedObjectVisible() {
+            return this.wrappedVisible;
+        }
+
+        /**
+         * <p>Set the {@link #isWrappedObjectVisible WrappedObjectVisible} option
+         * to the given value.</p>
+         * @param visible the new value.
+         */
+        public void setWrappedObjectVisible(boolean visible) {
+            this.wrappedVisible = visible;
+        }
+
+        // Canonical objects for each of (MXBean,!MXBean) x (WVisible,!WVisible)
+        private static final Options[] CANONICALS = {
+            new Options(), new Options(), new Options(), new Options(),
+        };
+        static {
+            CANONICALS[1].setMXBeanMappingFactory(MXBeanMappingFactory.DEFAULT);
+            CANONICALS[2].setWrappedObjectVisible(true);
+            CANONICALS[3].setMXBeanMappingFactory(MXBeanMappingFactory.DEFAULT);
+            CANONICALS[3].setWrappedObjectVisible(true);
+        }
+        @Override
+        MBeanOptions[] canonicals() {
+            return CANONICALS;
+        }
+
+        @Override
+        boolean same(MBeanOptions opts) {
+            return (super.same(opts) && opts instanceof Options &&
+                    ((Options) opts).wrappedVisible == wrappedVisible);
+        }
+    }
 
     private final static DescriptorCache descriptors =
         DescriptorCache.getInstance(JMX.proof);
@@ -139,6 +211,11 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      * The cached MBeanInfo.
      **/
     private volatile MBeanInfo cachedMBeanInfo;
+
+    /**
+     * The MBeanOptions for this StandardMBean.
+     **/
+    private MBeanOptions options;
 
     /**
      * Make a DynamicMBean out of <var>implementation</var>, using the
@@ -155,12 +232,14 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      *        implementation is allowed. If null implementation is allowed,
      *        and a null implementation is passed, then the implementation
      *        is assumed to be <var>this</var>.
+     * @param options MBeanOptions to apply to this instance.
      * @exception IllegalArgumentException if the given
      *    <var>implementation</var> is null, and null is not allowed.
      **/
+    @SuppressWarnings("unchecked")  // cast to T
     private <T> void construct(T implementation, Class<T> mbeanInterface,
                                boolean nullImplementationAllowed,
-                               boolean isMXBean)
+                               MBeanOptions options)
                                throws NotCompliantMBeanException {
         if (implementation == null) {
             // Have to use (T)this rather than mbeanInterface.cast(this)
@@ -169,20 +248,23 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
                 implementation = Util.<T>cast(this);
             else throw new IllegalArgumentException("implementation is null");
         }
-        if (isMXBean) {
-            if (mbeanInterface == null) {
-                mbeanInterface = Util.cast(Introspector.getMXBeanInterface(
-                        implementation.getClass()));
-            }
-            this.mbean = new MXBeanSupport(implementation, mbeanInterface);
+        if (options == null)
+            options = new MBeanOptions();
+        MXBeanMappingFactory mappingFactory = options.getMXBeanMappingFactory();
+        boolean mx = (mappingFactory != null);
+        if (mbeanInterface == null) {
+            mbeanInterface = Util.cast(Introspector.getStandardOrMXBeanInterface(
+                                       implementation.getClass(), mx));
+        }
+        if (mx) {
+            this.mbean =
+                    new MXBeanSupport(implementation, mbeanInterface,
+                                      mappingFactory);
         } else {
-            if (mbeanInterface == null) {
-                mbeanInterface = Util.cast(Introspector.getStandardMBeanInterface(
-                        implementation.getClass()));
-            }
             this.mbean =
                     new StandardMBeanSupport(implementation, mbeanInterface);
         }
+        this.options = options.canonical();
     }
 
     /**
@@ -211,14 +293,14 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      **/
     public <T> StandardMBean(T implementation, Class<T> mbeanInterface)
         throws NotCompliantMBeanException {
-        construct(implementation, mbeanInterface, false, false);
+        construct(implementation, mbeanInterface, false, null);
     }
 
     /**
      * <p>Make a DynamicMBean out of <var>this</var>, using the specified
      * <var>mbeanInterface</var> class.</p>
      *
-     * <p>Call {@link #StandardMBean(java.lang.Object, java.lang.Class)
+     * <p>Calls {@link #StandardMBean(java.lang.Object, java.lang.Class)
      *       this(this,mbeanInterface)}.
      * This constructor is reserved to subclasses.</p>
      *
@@ -231,13 +313,14 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      **/
     protected StandardMBean(Class<?> mbeanInterface)
         throws NotCompliantMBeanException {
-        construct(null, mbeanInterface, true, false);
+        construct(null, mbeanInterface, true, null);
     }
 
     /**
      * <p>Make a DynamicMBean out of the object
      * <var>implementation</var>, using the specified
-     * <var>mbeanInterface</var> class.  This constructor can be used
+     * <var>mbeanInterface</var> class, and choosing whether the
+     * resultant MBean is an MXBean.  This constructor can be used
      * to make either Standard MBeans or MXBeans.  Unlike the
      * constructor {@link #StandardMBean(Object, Class)}, it
      * does not throw NotCompliantMBeanException.</p>
@@ -267,7 +350,17 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
     public <T> StandardMBean(T implementation, Class<T> mbeanInterface,
                              boolean isMXBean) {
         try {
-            construct(implementation, mbeanInterface, false, isMXBean);
+            MBeanOptions opts = new MBeanOptions();
+            if (mbeanInterface == null) {
+                mbeanInterface = Util.cast(Introspector.getStandardOrMXBeanInterface(
+                        implementation.getClass(), isMXBean));
+            }
+            if (isMXBean) {
+                MXBeanMappingFactory f = MXBeanMappingFactory.forInterface(
+                        mbeanInterface);
+                opts.setMXBeanMappingFactory(f);
+            }
+            construct(implementation, mbeanInterface, false, opts);
         } catch (NotCompliantMBeanException e) {
             throw new IllegalArgumentException(e);
         }
@@ -275,12 +368,13 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
 
     /**
      * <p>Make a DynamicMBean out of <var>this</var>, using the specified
-     * <var>mbeanInterface</var> class.  This constructor can be used
+     * <var>mbeanInterface</var> class, and choosing whether the resulting
+     * MBean is an MXBean.  This constructor can be used
      * to make either Standard MBeans or MXBeans.  Unlike the
      * constructor {@link #StandardMBean(Object, Class)}, it
      * does not throw NotCompliantMBeanException.</p>
      *
-     * <p>Call {@link #StandardMBean(java.lang.Object, java.lang.Class, boolean)
+     * <p>Calls {@link #StandardMBean(java.lang.Object, java.lang.Class, boolean)
      *       this(this, mbeanInterface, isMXBean)}.
      * This constructor is reserved to subclasses.</p>
      *
@@ -297,7 +391,77 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      **/
     protected StandardMBean(Class<?> mbeanInterface, boolean isMXBean) {
         try {
-            construct(null, mbeanInterface, true, isMXBean);
+            MBeanOptions opts = new MBeanOptions();
+            if (mbeanInterface == null) {
+                mbeanInterface = Introspector.getStandardOrMXBeanInterface(
+                        getClass(), isMXBean);
+            }
+            if (isMXBean) {
+                MXBeanMappingFactory f = MXBeanMappingFactory.forInterface(
+                        mbeanInterface);
+                opts.setMXBeanMappingFactory(f);
+            }
+            construct(null, mbeanInterface, true, opts);
+        } catch (NotCompliantMBeanException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    /**
+     * <p>Make a DynamicMBean out of the object
+     * <var>implementation</var>, using the specified
+     * <var>mbeanInterface</var> class and the specified options.</p>
+     *
+     * @param implementation The implementation of this MBean.
+     * @param mbeanInterface The Management Interface exported by this
+     *        MBean's implementation. If <code>null</code>, then this
+     *        object will use standard JMX design pattern to determine
+     *        the management interface associated with the given
+     *        implementation.
+     * @param options MBeanOptions that control the operation of the resulting
+     *        MBean.
+     * @param <T> Allows the compiler to check
+     * that {@code implementation} does indeed implement the class
+     * described by {@code mbeanInterface}.  The compiler can only
+     * check this if {@code mbeanInterface} is a class literal such
+     * as {@code MyMBean.class}.
+     *
+     * @exception IllegalArgumentException if the given
+     *    <var>implementation</var> is null, or if the <var>mbeanInterface</var>
+     *    does not follow JMX design patterns for Management Interfaces, or
+     *    if the given <var>implementation</var> does not implement the
+     *    specified interface.
+     **/
+    public <T> StandardMBean(T implementation,
+                             Class<T> mbeanInterface,
+                             MBeanOptions options) {
+        try {
+            construct(implementation, mbeanInterface, false, options);
+        } catch (NotCompliantMBeanException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    /**
+     * <p>Make a DynamicMBean out of <var>this</var>, using the specified
+     * <var>mbeanInterface</var> class and the specified options.</p>
+     *
+     * <p>Calls {@link #StandardMBean(Object, Class, JMX.MBeanOptions)
+     *       this(this,mbeanInterface,options)}.
+     * This constructor is reserved to subclasses.</p>
+     *
+     * @param mbeanInterface The Management Interface exported by this
+     *        MBean.
+     * @param options MBeanOptions that control the operation of the resulting
+     *        MBean.
+     *
+     * @exception IllegalArgumentException if the <var>mbeanInterface</var>
+     *    does not follow JMX design patterns for Management Interfaces, or
+     *    if <var>this</var> does not implement the specified interface.
+     **/
+    protected StandardMBean(Class<?> mbeanInterface, MBeanOptions options) {
+        try {
+            construct(null, mbeanInterface, true, options);
         } catch (NotCompliantMBeanException e) {
             throw new IllegalArgumentException(e);
         }
@@ -326,13 +490,19 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
 
         if (implementation == null)
             throw new IllegalArgumentException("implementation is null");
+        setImplementation2(implementation);
+    }
 
-        if (isMXBean()) {
+    private <T> void setImplementation2(T implementation)
+    throws NotCompliantMBeanException {
+        Class<? super T> intf = Util.cast(getMBeanInterface());
+
+        if (this.mbean.isMXBean()) {
             this.mbean = new MXBeanSupport(implementation,
-                    Util.<Class<Object>>cast(getMBeanInterface()));
+                    intf,
+                    options.getMXBeanMappingFactory());
         } else {
-            this.mbean = new StandardMBeanSupport(implementation,
-                    Util.<Class<Object>>cast(getMBeanInterface()));
+            this.mbean = new StandardMBeanSupport(implementation, intf);
         }
     }
 
@@ -343,7 +513,67 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      * @see #setImplementation
      **/
     public Object getImplementation() {
-        return mbean.getResource();
+        return mbean.getWrappedObject();
+    }
+
+    /**
+     * <p>Get the wrapped implementation object or return this object.</p>
+     *
+     * <p>For compatibility reasons, this method only returns the wrapped
+     * implementation object if the {@link Options#isWrappedObjectVisible
+     * WrappedObjectVisible} option was specified when this StandardMBean
+     * was created.  Otherwise it returns {@code this}.</p>
+     *
+     * <p>If you want the MBeanServer's {@link MBeanServer#getClassLoaderFor
+     * getClassLoaderFor} and {@link MBeanServer#isInstanceOf
+     * isInstanceOf} methods to refer to the wrapped implementation and
+     * not this StandardMBean object, then you must set the
+     * {@code WrappedObjectVisible} option, for example using:</p>
+     *
+     * <pre>
+     * StandardMBean.Options opts = new StandardMBean.Options();
+     * opts.setWrappedObjectVisible(true);
+     * StandardMBean mbean = new StandardMBean(impl, MyMBean.class, opts);
+     * </pre>
+     *
+     * @return The wrapped implementation object, or this StandardMBean
+     * instance.
+     */
+    public Object getWrappedObject() {
+        if (options instanceof Options &&
+                ((Options) options).isWrappedObjectVisible())
+            return getImplementation();
+        else
+            return this;
+    }
+
+    /**
+     * <p>Get the ClassLoader of the wrapped implementation object or of this
+     * object.</p>
+     *
+     * <p>For compatibility reasons, this method only returns the ClassLoader
+     * of the wrapped implementation object if the {@link
+     * Options#isWrappedObjectVisible WrappedObjectVisible} option was
+     * specified when this StandardMBean was created. Otherwise it returns
+     * {@code this.getClass().getClassLoader()}.</p>
+     *
+     * <p>If you want the MBeanServer's {@link MBeanServer#getClassLoaderFor
+     * getClassLoaderFor} and {@link MBeanServer#isInstanceOf
+     * isInstanceOf} methods to refer to the wrapped implementation and
+     * not this StandardMBean object, then you must set the
+     * {@code WrappedObjectVisible} option, for example using:</p>
+     *
+     * <pre>
+     * StandardMBean.Options opts = new StandardMBean.Options();
+     * opts.setWrappedObjectVisible(true);
+     * StandardMBean mbean = new StandardMBean(impl, MyMBean.class, opts);
+     * </pre>
+     *
+     * @return The ClassLoader of the wrapped Cimplementation object, or of
+     * this StandardMBean instance.
+     */
+    public ClassLoader getWrappedClassLoader() {
+        return getWrappedObject().getClass().getClassLoader();
     }
 
     /**
@@ -359,7 +589,20 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      * @return The class of the implementation of this Standard MBean (or MXBean).
      **/
     public Class<?> getImplementationClass() {
-        return mbean.getResource().getClass();
+        return mbean.getWrappedObject().getClass();
+    }
+
+    /**
+     * Return the MBeanOptions that were specified or implied for this StandardMBean
+     * instance.  If an MBeanOptions object was supplied when this StandardMBean
+     * instance was constructed, and if that object has not been modified in the
+     * meantime, then the returned object will be equal to that object, although
+     * it might not be the same object.
+     * @return The MBeanOptions that were specified or implied for this StandardMBean
+     * instance.
+     */
+    public MBeanOptions getOptions() {
+        return options.uncanonical();
     }
 
     // ------------------------------------------------------------------
@@ -448,7 +691,7 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
 
         MBeanSupport msupport = mbean;
         final MBeanInfo bi = msupport.getMBeanInfo();
-        final Object impl = msupport.getResource();
+        final Object impl = msupport.getWrappedObject();
 
         final boolean immutableInfo = immutableInfo(this.getClass());
 
@@ -726,7 +969,7 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      * @return the MBeanNotificationInfo[] for the new MBeanInfo.
      **/
     MBeanNotificationInfo[] getNotifications(MBeanInfo info) {
-        return null;
+        return info.getNotifications();
     }
 
     /**
@@ -1073,6 +1316,7 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
     public ObjectName preRegister(MBeanServer server, ObjectName name)
             throws Exception {
         mbean.register(server, name);
+        MBeanInjector.inject(mbean.getWrappedObject(), server, name);
         return name;
     }
 
@@ -1234,5 +1478,4 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
             return true;
         }
     }
-
 }

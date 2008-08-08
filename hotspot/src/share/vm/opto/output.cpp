@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ void Compile::Output() {
   // Initialize the space for the BufferBlob used to find and verify
   // instruction size in MachNode::emit_size()
   init_scratch_buffer_blob();
+  if (failing())  return; // Out of memory
 
   // Make sure I can find the Start Node
   Block_Array& bbs = _cfg->_bbs;
@@ -446,6 +447,7 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
             // We've got a winner.  Replace this branch.
             MachNode *replacement = mach->short_branch_version(this);
             b->_nodes.map(j, replacement);
+            mach->subsume_by(replacement);
 
             // Update the jmp_end size to save time in our
             // next pass.

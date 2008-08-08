@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -42,13 +41,13 @@ import javax.lang.model.SourceVersion;
 import javax.tools.*;
 
 import com.sun.source.util.JavacTask;
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.JavacOption.OptionKind;
 import com.sun.tools.javac.main.JavacOption;
 import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.main.RecognizedOptions.GrumpyHelper;
 import com.sun.tools.javac.main.RecognizedOptions;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JavacFileManager;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Pair;

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -729,6 +729,7 @@ bool InstructForm::captures_bottom_type() const {
         !strcmp(_matrule->_rChild->_opType,"DecodeN")    ||
         !strcmp(_matrule->_rChild->_opType,"EncodeP")    ||
         !strcmp(_matrule->_rChild->_opType,"LoadN")      ||
+        !strcmp(_matrule->_rChild->_opType,"LoadNKlass") ||
         !strcmp(_matrule->_rChild->_opType,"CreateEx")   ||  // type of exception
         !strcmp(_matrule->_rChild->_opType,"CheckCastPP")) ) return true;
   else if ( is_ideal_load() == Form::idealP )                return true;
@@ -3313,7 +3314,7 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "Store8B","Store4B","Store8C","Store4C","Store2C",
     "Load4I" ,"Load2I" ,"Load2L" ,"Load2D" ,"Load4F" ,"Load2F" ,"Load16B" ,
     "Load8B" ,"Load4B" ,"Load8C" ,"Load4C" ,"Load2C" ,"Load8S", "Load4S","Load2S",
-    "LoadRange", "LoadKlass", "LoadL_unaligned", "LoadD_unaligned",
+    "LoadRange", "LoadKlass", "LoadNKlass", "LoadL_unaligned", "LoadD_unaligned",
     "LoadPLocked", "LoadLLocked",
     "StorePConditional", "StoreLConditional",
     "CompareAndSwapI", "CompareAndSwapL", "CompareAndSwapP", "CompareAndSwapN",

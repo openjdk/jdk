@@ -3,7 +3,7 @@
    @author dps
    @summary field: instance access through types is not allowed
 
-   @run shell NonStaticFieldExpr1.sh
+   @compile/fail/ref=NonStaticFieldExpr1.out -XDrawDiagnostics -XDstdout NonStaticFieldExpr1.java
 */
 class NonStaticFieldExpr1 {
   public int x;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1169,18 +1169,18 @@ ParNewGeneration::take_from_overflow_list(ParScanThreadState* par_scan_state) {
   // Trim off a prefix of at most objsFromOverflow items
   int i = 1;
   oop cur = prefix;
-  while (i < objsFromOverflow && cur->klass() != NULL) {
+  while (i < objsFromOverflow && cur->klass_or_null() != NULL) {
     i++; cur = oop(cur->klass());
   }
 
   // Reattach remaining (suffix) to overflow list
-  if (cur->klass() != NULL) {
+  if (cur->klass_or_null() != NULL) {
     oop suffix = oop(cur->klass());
     cur->set_klass_to_list_ptr(NULL);
 
     // Find last item of suffix list
     oop last = suffix;
-    while (last->klass() != NULL) {
+    while (last->klass_or_null() != NULL) {
       last = oop(last->klass());
     }
     // Atomically prepend suffix to current overflow list
