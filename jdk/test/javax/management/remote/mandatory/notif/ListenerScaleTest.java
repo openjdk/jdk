@@ -51,18 +51,29 @@
  * been compiled by the second.
  */
 
-import java.lang.management.ManagementFactory;
-import javax.management.*;
-import javax.management.remote.*;
-import java.util.concurrent.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.Semaphore;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerFactory;
+import javax.management.MalformedObjectNameException;
+import javax.management.Notification;
+import javax.management.NotificationBroadcasterSupport;
+import javax.management.NotificationListener;
+import javax.management.ObjectName;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXConnectorServer;
+import javax.management.remote.JMXConnectorServerFactory;
+import javax.management.remote.JMXServiceURL;
+import javax.management.remote.rmi.RMIConnectorServer;
 
 public class ListenerScaleTest {
     private static final int WARMUP_WITH_ONE_MBEAN = 1000;
     private static final int NOTIFS_TO_TIME = 100;
     private static final int EXTRA_MBEANS = 20000;
 
-    private static final MBeanServer mbs =
-        ManagementFactory.getPlatformMBeanServer();
     private static final ObjectName testObjectName;
     static {
         try {
@@ -87,7 +98,7 @@ public class ListenerScaleTest {
             }
         };
 
-    private static final long timeNotif() {
+    private static final long timeNotif(MBeanServer mbs) {
         try {
             startTime = System.nanoTime();
             nnotifs = 0;
@@ -117,12 +128,20 @@ public class ListenerScaleTest {
         };
 
     public static void main(String[] args) throws Exception {
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        test(false);
+        test(true);
+    }
+
+    private static void test(boolean eventService) throws Exception {
+        MBeanServer mbs = MBeanServerFactory.newMBeanServer();
         Sender sender = new Sender();
         mbs.registerMBean(sender, testObjectName);
         JMXServiceURL url = new JMXServiceURL("service:jmx:rmi://");
+        Map<String, String> env = Collections.singletonMap(
+                RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE,
+                Boolean.toString(eventService));
         JMXConnectorServer cs =
-            JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs);
+            JMXConnectorServerFactory.newJMXConnectorServer(url, env, mbs);
         cs.start();
         JMXServiceURL addr = cs.getAddress();
         JMXConnector cc = JMXConnectorFactory.connect(addr);
@@ -140,7 +159,7 @@ public class ListenerScaleTest {
         mbsc.addNotificationListener(testObjectName, timingListener, null, null);
         long singleMBeanTime = 0;
         for (int i = 0; i < WARMUP_WITH_ONE_MBEAN; i++)
-            singleMBeanTime = timeNotif();
+            singleMBeanTime = timeNotif(mbs);
         if (singleMBeanTime == 0)
             singleMBeanTime = 1;
         System.out.println("Time with a single MBean: " + singleMBeanTime + "ns");
@@ -165,7 +184,7 @@ public class ListenerScaleTest {
         }
         System.out.println();
         System.out.println("Timing a notification send now");
-        long manyMBeansTime = timeNotif();
+        long manyMBeansTime = timeNotif(mbs);
         System.out.println("Time with many MBeans: " + manyMBeansTime + "ns");
         double ratio = (double) manyMBeansTime / singleMBeanTime;
         if (ratio > 100.0)
