@@ -37,6 +37,7 @@ public class XPlotter extends Plotter {
         super(unit);
         this.table = table;
     }
+    @Override
     public void addValues(long time, long... values) {
         super.addValues(time, values);
         table.repaint();
