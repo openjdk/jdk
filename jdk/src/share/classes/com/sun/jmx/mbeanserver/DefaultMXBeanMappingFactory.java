@@ -825,7 +825,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             final TabularData table = (TabularData) openValue;
             final Collection<CompositeData> rows = cast(table.values());
             final Map<Object, Object> valueMap =
-                sortedMap ? newSortedMap() : newMap();
+                sortedMap ? newSortedMap() : newInsertionOrderMap();
             for (CompositeData row : rows) {
                 final Object key =
                     keyMapping.fromOpenValue(row.get("key"));
