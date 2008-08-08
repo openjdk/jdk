@@ -66,6 +66,11 @@ public class AttrContext {
      */
     Lint lint;
 
+    /** The variable whose initializer is being attributed
+     * useful for detecting self-references in variable initializers
+     */
+    Symbol enclVar = null;
+
     /** Duplicate this context, replacing scope field and copying all others.
      */
     AttrContext dup(Scope scope) {
@@ -77,6 +82,7 @@ public class AttrContext {
         info.varArgs = varArgs;
         info.tvars = tvars;
         info.lint = lint;
+        info.enclVar = enclVar;
         return info;
     }
 
