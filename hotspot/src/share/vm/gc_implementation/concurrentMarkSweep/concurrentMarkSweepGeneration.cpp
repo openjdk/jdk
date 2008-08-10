@@ -3195,31 +3195,16 @@ ConcurrentMarkSweepGeneration::expand_and_allocate(size_t word_size,
 // YSR: All of this generation expansion/shrinking stuff is an exact copy of
 // OneContigSpaceCardGeneration, which makes me wonder if we should move this
 // to CardGeneration and share it...
+bool ConcurrentMarkSweepGeneration::expand(size_t bytes, size_t expand_bytes) {
+  return CardGeneration::expand(bytes, expand_bytes);
+}
+
 void ConcurrentMarkSweepGeneration::expand(size_t bytes, size_t expand_bytes,
   CMSExpansionCause::Cause cause)
 {
-  assert_locked_or_safepoint(Heap_lock);
 
-  size_t aligned_bytes  = ReservedSpace::page_align_size_up(bytes);
-  size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
-  bool success = false;
-  if (aligned_expand_bytes > aligned_bytes) {
-    success = grow_by(aligned_expand_bytes);
-  }
-  if (!success) {
-    success = grow_by(aligned_bytes);
-  }
-  if (!success) {
-    size_t remaining_bytes = _virtual_space.uncommitted_size();
-    if (remaining_bytes > 0) {
-      success = grow_by(remaining_bytes);
-    }
-  }
-  if (GC_locker::is_active()) {
-    if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("Garbage collection disabled, expanded heap instead");
-    }
-  }
+  bool success = expand(bytes, expand_bytes);
+
   // remember why we expanded; this information is used
   // by shouldConcurrentCollect() when making decisions on whether to start
   // a new CMS cycle.
