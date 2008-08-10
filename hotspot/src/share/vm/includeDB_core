@@ -1406,6 +1406,7 @@ defNewGeneration.cpp                    java.hpp
 defNewGeneration.cpp                    oop.inline.hpp
 defNewGeneration.cpp                    referencePolicy.hpp
 defNewGeneration.cpp                    space.inline.hpp
+defNewGeneration.cpp                    spaceDecorator.hpp
 defNewGeneration.cpp                    thread_<os_family>.inline.hpp
 
 defNewGeneration.hpp                    ageTable.hpp
@@ -1790,6 +1791,7 @@ generation.cpp                          generation.inline.hpp
 generation.cpp                          java.hpp
 generation.cpp                          oop.hpp
 generation.cpp                          oop.inline.hpp
+generation.cpp                          spaceDecorator.hpp
 generation.cpp                          space.inline.hpp
 
 generation.hpp                          allocation.hpp
@@ -3723,6 +3725,7 @@ space.cpp                               oop.inline2.hpp
 space.cpp                               safepoint.hpp
 space.cpp                               space.hpp
 space.cpp                               space.inline.hpp
+space.cpp                               spaceDecorator.hpp
 space.cpp                               systemDictionary.hpp
 space.cpp                               universe.inline.hpp
 space.cpp                               vmSymbols.hpp
@@ -3744,6 +3747,13 @@ space.inline.hpp                        collectedHeap.hpp
 space.inline.hpp                        safepoint.hpp
 space.inline.hpp                        space.hpp
 space.inline.hpp                        universe.hpp
+
+spaceDecorator.hpp                      globalDefinitions.hpp
+spaceDecorator.hpp                      mutableSpace.hpp
+spaceDecorator.hpp                      space.hpp
+
+spaceDecorator.cpp                      copy.hpp
+spaceDecorator.cpp                      spaceDecorator.hpp
 
 specialized_oop_closures.cpp            ostream.hpp
 specialized_oop_closures.cpp            specialized_oop_closures.hpp
