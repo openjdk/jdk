@@ -627,8 +627,11 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         tree.sym = v;
         if (tree.init != null) {
             v.flags_field |= HASINIT;
-            if ((v.flags_field & FINAL) != 0 && tree.init.getTag() != JCTree.NEWCLASS)
-                v.setLazyConstValue(initEnv(tree, env), log, attr, tree.init);
+            if ((v.flags_field & FINAL) != 0 && tree.init.getTag() != JCTree.NEWCLASS) {
+                Env<AttrContext> initEnv = getInitEnv(tree, env);
+                initEnv.info.enclVar = v;
+                v.setLazyConstValue(initEnv(tree, initEnv), log, attr, tree.init);
+            }
         }
         if (chk.checkUnique(tree.pos(), v, enclScope)) {
             chk.checkTransparentVar(tree.pos(), v, enclScope);
@@ -828,15 +831,15 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             // Save class environment for later member enter (2) processing.
             halfcompleted.append(env);
 
+            // Mark class as not yet attributed.
+            c.flags_field |= UNATTRIBUTED;
+
             // If this is a toplevel-class, make sure any preceding import
             // clauses have been seen.
             if (c.owner.kind == PCK) {
                 memberEnter(env.toplevel, env.enclosing(JCTree.TOPLEVEL));
                 todo.append(env);
             }
-
-            // Mark class as not yet attributed.
-            c.flags_field |= UNATTRIBUTED;
 
             if (c.owner.kind == TYP)
                 c.owner.complete();

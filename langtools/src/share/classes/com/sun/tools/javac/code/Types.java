@@ -305,6 +305,11 @@ public class Types {
         else if (t.tag == TYPEVAR) {
             return isSubtypeUnchecked(t.getUpperBound(), s, warn);
         }
+        else if (s.tag == UNDETVAR) {
+            UndetVar uv = (UndetVar)s;
+            if (uv.inst != null)
+                return isSubtypeUnchecked(t, uv.inst, warn);
+        }
         else if (!s.isRaw()) {
             Type t2 = asSuper(t, s.tsym);
             if (t2 != null && t2.isRaw()) {
