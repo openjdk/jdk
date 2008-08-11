@@ -215,7 +215,7 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
     protected void showSystemMenu() {
         Insets insets = frame.getInsets();
         if (!frame.isIcon()) {
-            systemPopupMenu.show(frame, insets.left, getY() + getHeight());
+            systemPopupMenu.show(frame, menuButton.getX(), getY() + getHeight());
         } else {
             systemPopupMenu.show(menuButton,
                 getX() - insets.left - insets.right,
