@@ -194,9 +194,10 @@ void PhaseMacroExpand::eliminate_card_mark(Node *p2x) {
 }
 
 // Search for a memory operation for the specified memory slice.
-static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_mem, Node *alloc) {
+static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_mem, Node *alloc, PhaseGVN *phase) {
   Node *orig_mem = mem;
   Node *alloc_mem = alloc->in(TypeFunc::Memory);
+  const TypeOopPtr *tinst = phase->C->get_adr_type(alias_idx)->isa_oopptr();
   while (true) {
     if (mem == alloc_mem || mem == start_mem ) {
       return mem;  // hit one of our sentinals
@@ -208,7 +209,13 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
       // already know that the object is safe to eliminate.
       if (in->is_Initialize() && in->as_Initialize()->allocation() == alloc) {
         return in;
-      } else if (in->is_Call() || in->is_MemBar()) {
+      } else if (in->is_Call()) {
+        CallNode *call = in->as_Call();
+        if (!call->may_modify(tinst, phase)) {
+          mem = call->in(TypeFunc::Memory);
+        }
+        mem = in->in(TypeFunc::Memory);
+      } else if (in->is_MemBar()) {
         mem = in->in(TypeFunc::Memory);
       } else {
         assert(false, "unexpected projection");
@@ -231,8 +238,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
     } else {
       return mem;
     }
-    if (mem == orig_mem)
-      return mem;
+    assert(mem != orig_mem, "dead memory loop");
   }
 }
 
@@ -241,27 +247,50 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
 // on the input paths.
 // Note: this function is recursive, its depth is limied by the "level" argument
 // Returns the computed Phi, or NULL if it cannot compute it.
-Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *phi_type, const TypeOopPtr *adr_t, Node *alloc, int level) {
-
-  if (level <= 0) {
-    return NULL;
-  }
+Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *phi_type, const TypeOopPtr *adr_t, Node *alloc, Node_Stack *value_phis, int level) {
+  assert(mem->is_Phi(), "sanity");
   int alias_idx = C->get_alias_index(adr_t);
   int offset = adr_t->offset();
   int instance_id = adr_t->instance_id();
 
+  // Check if an appropriate value phi already exists.
+  Node* region = mem->in(0);
+  for (DUIterator_Fast kmax, k = region->fast_outs(kmax); k < kmax; k++) {
+    Node* phi = region->fast_out(k);
+    if (phi->is_Phi() && phi != mem &&
+        phi->as_Phi()->is_same_inst_field(phi_type, instance_id, alias_idx, offset)) {
+      return phi;
+    }
+  }
+  // Check if an appropriate new value phi already exists.
+  Node* new_phi = NULL;
+  uint size = value_phis->size();
+  for (uint i=0; i < size; i++) {
+    if ( mem->_idx == value_phis->index_at(i) ) {
+      return value_phis->node_at(i);
+    }
+  }
+
+  if (level <= 0) {
+    return NULL; // Give up: phi tree too deep
+  }
   Node *start_mem = C->start()->proj_out(TypeFunc::Memory);
   Node *alloc_mem = alloc->in(TypeFunc::Memory);
 
   uint length = mem->req();
   GrowableArray <Node *> values(length, length, NULL);
 
+  // create a new Phi for the value
+  PhiNode *phi = new (C, length) PhiNode(mem->in(0), phi_type, NULL, instance_id, alias_idx, offset);
+  transform_later(phi);
+  value_phis->push(phi, mem->_idx);
+
   for (uint j = 1; j < length; j++) {
     Node *in = mem->in(j);
     if (in == NULL || in->is_top()) {
       values.at_put(j, in);
     } else  {
-      Node *val = scan_mem_chain(in, alias_idx, offset, start_mem, alloc);
+      Node *val = scan_mem_chain(in, alias_idx, offset, start_mem, alloc, &_igvn);
       if (val == start_mem || val == alloc_mem) {
         // hit a sentinel, return appropriate 0 value
         values.at_put(j, _igvn.zerocon(ft));
@@ -280,33 +309,18 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
       } else if(val->is_Proj() && val->in(0) == alloc) {
         values.at_put(j, _igvn.zerocon(ft));
       } else if (val->is_Phi()) {
-        // Check if an appropriate node already exists.
-        Node* region = val->in(0);
-        Node* old_phi = NULL;
-        for (DUIterator_Fast kmax, k = region->fast_outs(kmax); k < kmax; k++) {
-          Node* phi = region->fast_out(k);
-          if (phi->is_Phi() && phi != val &&
-              phi->as_Phi()->is_same_inst_field(phi_type, instance_id, alias_idx, offset)) {
-            old_phi = phi;
-            break;
-          }
+        val = value_from_mem_phi(val, ft, phi_type, adr_t, alloc, value_phis, level-1);
+        if (val == NULL) {
+          return NULL;
         }
-        if (old_phi == NULL) {
-          val = value_from_mem_phi(val, ft, phi_type, adr_t, alloc, level-1);
-          if (val == NULL) {
-            return NULL;
-          }
-          values.at_put(j, val);
-        } else {
-          values.at_put(j, old_phi);
-        }
+        values.at_put(j, val);
       } else {
-        return NULL;  // unknown node  on this path
+        assert(false, "unknown node on this path");
+        return NULL;  // unknown node on this path
       }
     }
   }
-  // create a new Phi for the value
-  PhiNode *phi = new (C, length) PhiNode(mem->in(0), phi_type, NULL, instance_id, alias_idx, offset);
+  // Set Phi's inputs
   for (uint j = 1; j < length; j++) {
     if (values.at(j) == mem) {
       phi->init_req(j, phi);
@@ -314,7 +328,6 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
       phi->init_req(j, values.at(j));
     }
   }
-  transform_later(phi);
   return phi;
 }
 
@@ -329,7 +342,8 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type 
   Node *start_mem = C->start()->proj_out(TypeFunc::Memory);
   Node *alloc_ctrl = alloc->in(TypeFunc::Control);
   Node *alloc_mem = alloc->in(TypeFunc::Memory);
-  VectorSet visited(Thread::current()->resource_area());
+  Arena *a = Thread::current()->resource_area();
+  VectorSet visited(a);
 
 
   bool done = sfpt_mem == alloc_mem;
@@ -338,7 +352,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type 
     if (visited.test_set(mem->_idx)) {
       return NULL;  // found a loop, give up
     }
-    mem = scan_mem_chain(mem, alias_idx, offset, start_mem, alloc);
+    mem = scan_mem_chain(mem, alias_idx, offset, start_mem, alloc, &_igvn);
     if (mem == start_mem || mem == alloc_mem) {
       done = true;  // hit a sentinel, return appropriate 0 value
     } else if (mem->is_Initialize()) {
@@ -362,7 +376,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type 
       Node *unique_input = NULL;
       Node *top = C->top();
       for (uint i = 1; i < mem->req(); i++) {
-        Node *n = scan_mem_chain(mem->in(i), alias_idx, offset, start_mem, alloc);
+        Node *n = scan_mem_chain(mem->in(i), alias_idx, offset, start_mem, alloc, &_igvn);
         if (n == NULL || n == top || n == mem) {
           continue;
         } else if (unique_input == NULL) {
@@ -389,9 +403,18 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type 
       return mem->in(MemNode::ValueIn);
     } else if (mem->is_Phi()) {
       // attempt to produce a Phi reflecting the values on the input paths of the Phi
-      Node * phi = value_from_mem_phi(mem, ft, ftype, adr_t, alloc, 8);
+      Node_Stack value_phis(a, 8);
+      Node * phi = value_from_mem_phi(mem, ft, ftype, adr_t, alloc, &value_phis, ValueSearchLimit);
       if (phi != NULL) {
         return phi;
+      } else {
+        // Kill all new Phis
+        while(value_phis.is_nonempty()) {
+          Node* n = value_phis.node();
+          _igvn.hash_delete(n);
+          _igvn.subsume_node(n, C->top());
+          value_phis.pop();
+        }
       }
     }
   }
@@ -448,7 +471,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
           Node* n = use->fast_out(k);
           if (!n->is_Store() && n->Opcode() != Op_CastP2X) {
             DEBUG_ONLY(disq_node = n;)
-            if (n->is_Load()) {
+            if (n->is_Load() || n->is_LoadStore()) {
               NOT_PRODUCT(fail_eliminate = "Field load";)
             } else {
               NOT_PRODUCT(fail_eliminate = "Not store field referrence";)

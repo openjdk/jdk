@@ -51,6 +51,7 @@ dump.cpp                                oop.hpp
 dump.cpp                                oopFactory.hpp
 dump.cpp                                resourceArea.hpp
 dump.cpp                                signature.hpp
+dump.cpp                                spaceDecorator.hpp
 dump.cpp                                symbolTable.hpp
 dump.cpp                                systemDictionary.hpp
 dump.cpp                                vmThread.hpp
