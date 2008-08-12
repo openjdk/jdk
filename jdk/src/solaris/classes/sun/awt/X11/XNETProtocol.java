@@ -189,6 +189,8 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
                 req.set_format(32);
                 req.set_data(0, (!set) ? _NET_WM_STATE_REMOVE : _NET_WM_STATE_ADD);
                 req.set_data(1, state.getAtom());
+                // Fix for 6735584: req.data[2] must be set to 0 when only one property is changed
+                req.set_data(2, 0);
                 log.log(Level.FINE, "Setting _NET_STATE atom {0} on {1} for {2}", new Object[] {state, window, Boolean.valueOf(set)});
                 XToolkit.awtLock();
                 try {
