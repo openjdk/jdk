@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,10 @@
 #include "sun_java2d_windows_GDIRenderer.h"
 #include "java_awt_geom_PathIterator.h"
 
-#include "Win32SurfaceData.h"
+#include "GDIWindowSurfaceData.h"
 #include "awt_Component.h"
 #include "awt_Pen.h"
 #include "awt_Brush.h"
-#include "ddrawUtils.h"
 
 #include "jni.h"
 
@@ -133,7 +132,7 @@ Java_sun_java2d_windows_GDIRenderer_doDrawLine
     J2dTraceLn5(J2D_TRACE_VERBOSE,
                 "  color=0x%x x1=%-4d y1=%-4d x2=%-4d y2=%-4d",
                 color, x1, y1, x2, y2);
-    Win32SDOps *wsdo = Win32SurfaceData_GetOps(env, sData);
+    GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, sData);
     if (wsdo == NULL) {
         return;
     }
@@ -184,7 +183,7 @@ Java_sun_java2d_windows_GDIRenderer_doDrawRect
         return;
     }
 
-    Win32SDOps *wsdo = Win32SurfaceData_GetOps(env, sData);
+    GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, sData);
     if (wsdo == NULL) {
         return;
     }
@@ -241,7 +240,7 @@ Java_sun_java2d_windows_GDIRenderer_doDrawRoundRect
         return;
     }
 
-    Win32SDOps *wsdo = Win32SurfaceData_GetOps(env, sData);
+    GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, sData);
     if (wsdo == NULL) {
         return;
     }
@@ -279,7 +278,7 @@ Java_sun_java2d_windows_GDIRenderer_doDrawOval
         return;
     }
 
-    Win32SDOps *wsdo = Win32SurfaceData_GetOps(env, sData);
+    GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, sData);
     if (wsdo == NULL) {
         return;
     }
@@ -315,7 +314,7 @@ Java_sun_java2d_windows_GDIRenderer_doDrawArc
         return;
     }
 
-    Win32SDOps *wsdo = Win32SurfaceData_GetOps(env, sData);
+    GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, sData);
     if (wsdo == NULL) {
         return;
     }
@@ -385,7 +384,7 @@ Java_sun_java2d_windows_GDIRenderer_doDrawPoly
         return;
     }
 
-    Win32SDOps *wsdo = Win32SurfaceData_GetOps(env, sData);
+    GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, sData);
     if (wsdo == NULL) {
         return;
     }
@@ -432,7 +431,7 @@ Java_sun_java2d_windows_GDIRenderer_doFillRect
         return;
     }
 
-    Win32SDOps *wsdo = Win32SurfaceData_GetOps(env, sData);
+    GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, sData);
     if (wsdo == NULL) {
         return;
     }
@@ -476,7 +475,7 @@ Java_sun_java2d_windows_GDIRenderer_doFillRoundRect
         return;
     }
 
-    Win32SDOps *wsdo = Win32SurfaceData_GetOps(env, sData);
+    GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, sData);
     if (wsdo == NULL) {
         return;
     }
@@ -543,7 +542,7 @@ Java_sun_java2d_windows_GDIRenderer_doFillOval
         return;
     }
 
-    Win32SDOps *wsdo = Win32SurfaceData_GetOps(env, sData);
+    GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, sData);
     if (wsdo == NULL) {
         return;
     }
@@ -589,7 +588,7 @@ Java_sun_java2d_windows_GDIRenderer_doFillArc
         return;
     }
 
-    Win32SDOps *wsdo = Win32SurfaceData_GetOps(env, sData);
+    GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, sData);
     if (wsdo == NULL) {
         return;
     }
@@ -652,7 +651,7 @@ Java_sun_java2d_windows_GDIRenderer_doFillPoly
         return;
     }
 
-    Win32SDOps *wsdo = Win32SurfaceData_GetOps(env, sData);
+    GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, sData);
     if (wsdo == NULL) {
         return;
     }
@@ -698,7 +697,7 @@ Java_sun_java2d_windows_GDIRenderer_doShape
     J2dTraceLn4(J2D_TRACE_VERBOSE,
                 "  color=0x%x transx=%-4d transy=%-4d isfill=%-4d",
                 color, transX, transY, isfill);
-    Win32SDOps *wsdo = Win32SurfaceData_GetOps(env, sData);
+    GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, sData);
     if (wsdo == NULL) {
         return;
     }
@@ -849,8 +848,6 @@ Java_sun_java2d_windows_GDIRenderer_doShape
 
 } /* extern "C" */
 
-extern int currNumDevices;
-
 INLINE BOOL RectInMonitorRect(RECT *rCheck, RECT *rContainer)
 {
     // Assumption: left <= right, top <= bottom
@@ -878,8 +875,8 @@ Java_sun_java2d_windows_GDIRenderer_devCopyArea
      jint dx, jint dy,
      jint width, jint height)
 {
-    Win32SDOps *wsdo = Win32SurfaceData_GetOps(env, wsd);
-    J2dTraceLn(J2D_TRACE_INFO, "Win32SurfaceData_devCopyArea");
+    GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, wsd);
+    J2dTraceLn(J2D_TRACE_INFO, "GDIWindowSurfaceData_devCopyArea");
     J2dTraceLn4(J2D_TRACE_VERBOSE, "   srcx=%-4d srcy=%-4d dx=%-4d dy=%-4d",
                 srcx, srcy, dx, dy);
     J2dTraceLn2(J2D_TRACE_VERBOSE, "     w=%-4d h=%-4d", width, height);
@@ -892,61 +889,6 @@ Java_sun_java2d_windows_GDIRenderer_devCopyArea
         return;
     }
 
-    if (DDCanBlt(wsdo)) {
-        // We try to use ddraw for this copy because it tends to be faster
-        // than GDI.  We punt if:
-        //      - the source rect is clipped (GDI does a better job of
-        //      validating the clipped area)
-        //      - there is only one monitor
-        //       OR
-        //      - the src and dest rectangles are both wholly within the device
-        //      associated with this surfaceData
-        // REMIND: There may be a bug looming out here where the user
-        // moves an overlapping window between the time that we check the
-        // clip and the time that the Blt is executed, then we may not be
-        // invalidating the src region the way we should.
-
-        // Here, rSrc, rDst are the src/dst rectangles in screen coordinates.
-        // r[Src|Dst]Absolute are the src/dst rectangles in virtual
-        // screen space (where all monitors occupy the same coords).
-        RECT rSrc = {srcx, srcy, srcx + width, srcy + height};
-        RECT rDst, rSrcAbsolute, rDstAbsolute;
-        POINT clientOrigin = {0, 0};
-        MONITOR_INFO *mi = wsdo->device->GetMonitorInfo();
-        ::ScreenToClient(wsdo->window, &clientOrigin);
-        ::OffsetRect(&rSrc,
-            (-clientOrigin.x - wsdo->insets.left),
-            (-clientOrigin.y - wsdo->insets.top));
-        rSrcAbsolute = rSrc;
-        ::OffsetRect(&rSrc, (-mi->rMonitor.left), (-mi->rMonitor.top));
-        rDst = rSrc;
-        ::OffsetRect(&rDst, dx, dy);
-        rDstAbsolute = rSrcAbsolute;
-        ::OffsetRect(&rDstAbsolute, dx, dy);
-
-        if (DDClipCheck(wsdo, &rSrc) &&
-            (currNumDevices <= 1 ||
-             (RectInMonitorRect(&rSrcAbsolute, &mi->rMonitor) &&
-              RectInMonitorRect(&rDstAbsolute, &mi->rMonitor))))
-        {
-            AwtComponent *comp = NULL;
-
-            // Bug 4362500: Win2k pointer garbage on screen->screen DD blts
-            if (IS_WIN2000) {
-                comp = Win32SurfaceData_GetComp(env, wsdo);
-                if (comp != NULL) {
-                    comp->SendMessage(WM_AWT_HIDECURSOR, NULL);
-                }
-            }
-
-            DDBlt(env,wsdo, wsdo, &rDst, &rSrc);
-
-            if (comp != NULL) {
-                comp->SendMessage(WM_AWT_SHOWCURSOR, NULL);
-            }
-            return;
-        }
-    }
     HDC hDC = wsdo->GetDC(env, wsdo, 0, NULL, NULL, NULL, 0);
     if (hDC == NULL) {
         return;

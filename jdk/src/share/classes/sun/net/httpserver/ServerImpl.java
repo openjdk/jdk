@@ -120,14 +120,8 @@ class ServerImpl implements TimeSource {
         if (executor == null) {
             executor = new DefaultExecutor();
         }
+        Thread t = new Thread (dispatcher);
         started = true;
-        final Dispatcher d = dispatcher;
-        Thread t = AccessController.doPrivileged(new PrivilegedAction<Thread>() {
-            public Thread run() {
-                Thread t = new Thread (d);
-                return t;
-            }
-        });
         t.start();
     }
 
@@ -355,10 +349,8 @@ class ServerImpl implements TimeSource {
                             }
                         }
                     }
-                } catch (CancelledKeyException  e) {
+                } catch (Exception e) {
                     logger.log (Level.FINER, "Dispatcher (3)", e);
-                } catch (IOException e) {
-                    logger.log (Level.FINER, "Dispatcher (4)", e);
                 }
             }
         }
@@ -370,10 +362,10 @@ class ServerImpl implements TimeSource {
                 Exchange t = new Exchange (chan, protocol, conn);
                 executor.execute (t);
             } catch (HttpError e1) {
-                logger.log (Level.FINER, "Dispatcher (5)", e1);
+                logger.log (Level.FINER, "Dispatcher (4)", e1);
                 conn.close();
             } catch (IOException e) {
-                logger.log (Level.FINER, "Dispatcher (6)", e);
+                logger.log (Level.FINER, "Dispatcher (5)", e);
                 conn.close();
             }
         }
