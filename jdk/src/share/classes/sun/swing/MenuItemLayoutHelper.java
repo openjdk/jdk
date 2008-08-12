@@ -572,9 +572,6 @@ public class MenuItemLayoutHelper {
 
         alignRects(lr, alignment);
 
-        // Take into account the left side bearings for text and accelerator text.
-        fixTextRects(lr);
-
         // Set Y coordinate for text and icon.
         // Y coordinates for other rects
         // will be calculated later in layoutMenuItem.
@@ -606,10 +603,6 @@ public class MenuItemLayoutHelper {
         }
 
         alignRects(lr, alignment);
-
-        // Take into account the left side bearing for accelerator text.
-        // The LSB for text is taken into account in layoutCompoundLabel() below.
-        fixAccTextRect(lr);
 
         // Center labelRect vertically
         calcLabelYPosition(lr);
@@ -645,9 +638,6 @@ public class MenuItemLayoutHelper {
 
         alignRects(lr, alignment);
 
-        // Take into account the left side bearings for text and accelerator text.
-        fixTextRects(lr);
-
         // Set Y coordinates for text and icon.
         // Y coordinates for other rects
         // will be calculated later in layoutMenuItem.
@@ -679,10 +669,6 @@ public class MenuItemLayoutHelper {
         }
 
         alignRects(lr, alignment);
-
-        // Take into account the left side bearing for accelerator text.
-        // The LSB for text is taken into account in layoutCompoundLabel() below.
-        fixAccTextRect(lr);
 
         // Center labelRect vertically
         calcLabelYPosition(lr);
@@ -738,29 +724,6 @@ public class MenuItemLayoutHelper {
             if (rect.width > 0) {
                 curXPos -= rect.width + gap;
             }
-        }
-    }
-
-    /**
-     * Takes into account the left side bearings for text and accelerator text
-     */
-    private void fixTextRects(LayoutResult lr) {
-        if (htmlView == null) { // The text isn't a HTML
-            int lsb = SwingUtilities2.getLeftSideBearing(mi, fm, text);
-            if (lsb < 0) {
-                lr.textRect.x -= lsb;
-            }
-        }
-        fixAccTextRect(lr);
-    }
-
-    /**
-     * Takes into account the left side bearing for accelerator text
-     */
-    private void fixAccTextRect(LayoutResult lr) {
-        int lsb = SwingUtilities2.getLeftSideBearing(mi, accFm, accText);
-        if (lsb < 0) {
-            lr.accRect.x -= lsb;
         }
     }
 
