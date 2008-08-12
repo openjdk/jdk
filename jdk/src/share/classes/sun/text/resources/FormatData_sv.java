@@ -104,6 +104,12 @@ public class FormatData_sv extends ListResourceBundle {
                     "l\u00f6" // abb Saturday
                 }
             },
+            { "AmPmMarkers",
+                new String[] {
+                    "fm", // am marker
+                    "em" // pm marker
+                }
+            },
             { "NumberElements",
                 new String[] {
                     ",", // decimal separator

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                         (SubRegionShowable)bufferStrategy;
                 boolean paintAllOnExpose = info.getPaintAllOnExpose();
                 info.setPaintAllOnExpose(false);
-                if (bsSubRegion.validateAndShow(x, y, (x + w), (y + h))) {
+                if (bsSubRegion.showIfNotLost(x, y, (x + w), (y + h))) {
                     return !paintAllOnExpose;
                 }
                 // Mark the buffer as needing to be repainted.  We don't

@@ -130,7 +130,7 @@ public class MonitoredHostProvider extends MonitoredHost {
             }
 
             int oldInterval = interval;
-            super.setInterval(interval);
+            super.setInterval(newInterval);
 
             if (task != null) {
                 task.cancel();

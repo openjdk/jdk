@@ -75,7 +75,6 @@ extern int enumInterfaces_win9x(JNIEnv *, netif **);
 extern int enumAddresses_win9x(JNIEnv *, netif *, netaddr **);
 extern int init_win9x(void);
 #endif
-extern int enumInterfaces_win(JNIEnv *env, netif **netifPP);
 
 
 /* Windows 95/98/ME running */
@@ -209,7 +208,6 @@ int enumInterfaces_win(JNIEnv *env, netif **netifPP)
     int count;
     netif *netifP;
     DWORD i;
-    wchar_t wName[128];
     int lo=0, eth=0, tr=0, fddi=0, ppp=0, sl=0, net=0;
 
     /*

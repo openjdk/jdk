@@ -88,7 +88,8 @@ Java_sun_nio_ch_InheritedChannel_peerPort0(JNIEnv *env, jclass cla, jint fd)
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_InheritedChannel_soType0(JNIEnv *env, jclass cla, jint fd)
 {
-    int sotype, arglen=sizeof(sotype);
+    int sotype;
+    socklen_t arglen=sizeof(sotype);
     if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (void *)&sotype, &arglen) == 0) {
         if (sotype == SOCK_STREAM)
             return sun_nio_ch_InheritedChannel_SOCK_STREAM;

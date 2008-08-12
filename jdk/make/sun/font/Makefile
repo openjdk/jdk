@@ -80,8 +80,6 @@ ifeq ($(PLATFORM), windows)
   OTHER_CFLAGS += -DCC_NOEX
   OTHER_CXXFLAGS += -DCC_NOEX
 
-  FILES_export += sun/java2d/d3d/D3DTextRenderer.java
-
 else # PLATFORM unix
 
   FILES_export += \
@@ -166,7 +164,6 @@ endif
 
 ifeq ($(PLATFORM), windows)
 vpath %.cpp   $(PLATFORM_SRC)/native/sun/windows
-vpath %.cpp   $(PLATFORM_SRC)/native/sun/java2d/d3d
 else # PLATFORM
 
 #
@@ -201,7 +198,6 @@ CPPFLAGS += -I$(SHARE_SRC)/native/$(PKGDIR) \
 	    -I$(TEMPDIR)/../../sun.awt/awt/CClassHeaders
 
 ifeq ($(PLATFORM), windows)
-CPPFLAGS += -I$(PLATFORM_SRC)/native/sun/windows \
-	    -I$(PLATFORM_SRC)/native/sun/java2d/d3d
+CPPFLAGS += -I$(PLATFORM_SRC)/native/sun/windows
 endif
 
