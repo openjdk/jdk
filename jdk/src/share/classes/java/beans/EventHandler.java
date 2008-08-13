@@ -404,7 +404,7 @@ public class EventHandler implements InvocationHandler {
             Object newTarget = MethodUtil.invoke(getter, target, new Object[]{});
             return applyGetters(newTarget, rest);
         }
-        catch (Throwable e) {
+        catch (Exception e) {
             throw new RuntimeException("Failed to call method: " + first +
                                        " on " + target, e);
         }
