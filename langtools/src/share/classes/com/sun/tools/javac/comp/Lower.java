@@ -2944,8 +2944,10 @@ public class Lower extends TreeTranslator {
                                        itvar.type,
                                        List.<Type>nil());
             JCExpression vardefinit = make.App(make.Select(make.Ident(itvar), next));
-            if (iteratorTarget != syms.objectType)
-                vardefinit = make.TypeCast(iteratorTarget, vardefinit);
+            if (tree.var.type.isPrimitive())
+                vardefinit = make.TypeCast(types.upperBound(iteratorTarget), vardefinit);
+            else
+                vardefinit = make.TypeCast(tree.var.type, vardefinit);
             JCVariableDecl indexDef = (JCVariableDecl)make.VarDef(tree.var.mods,
                                                   tree.var.name,
                                                   tree.var.vartype,
