@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@
 extern jlong OGLSD_GetNativeConfigInfo(OGLSDOps *oglsdo);
 extern jboolean OGLSD_InitOGLWindow(JNIEnv *env, OGLSDOps *oglsdo);
 extern void OGLSD_DestroyOGLSurface(JNIEnv *env, OGLSDOps *oglsdo);
+
+void OGLSD_SetNativeDimensions(JNIEnv *env, OGLSDOps *oglsdo, jint w, jint h);
 
 /**
  * This table contains the "pixel formats" for all system memory surfaces
@@ -269,6 +271,9 @@ Java_sun_java2d_opengl_OGLSurfaceData_initTexture
         return JNI_FALSE;
     }
 
+    OGLSD_SetNativeDimensions(env, oglsdo,
+                              oglsdo->textureWidth, oglsdo->textureHeight);
+
     oglsdo->drawableType = OGLSD_TEXTURE;
     // other fields (e.g. width, height) are set in OGLSD_InitTextureObject()
 
@@ -427,6 +432,9 @@ Java_sun_java2d_opengl_OGLSurfaceData_initFBObject
     oglsdo->fbobjectID = fbobjectID;
     oglsdo->depthID = depthID;
 
+    OGLSD_SetNativeDimensions(env, oglsdo,
+                              oglsdo->textureWidth, oglsdo->textureHeight);
+
     // framebuffer objects differ from other OpenGL surfaces in that the
     // value passed to glRead/DrawBuffer() must be GL_COLOR_ATTACHMENTn_EXT,
     // rather than GL_FRONT (or GL_BACK)
@@ -476,6 +484,8 @@ Java_sun_java2d_opengl_OGLSurfaceData_initFlipBackbuffer
     //         explicitly use BACK_LEFT rather than BACK...
     oglsdo->activeBuffer = GL_BACK_LEFT;
 
+    OGLSD_SetNativeDimensions(env, oglsdo, oglsdo->width, oglsdo->height);
+
     return JNI_TRUE;
 }
 
@@ -495,6 +505,45 @@ Java_sun_java2d_opengl_OGLSurfaceData_getTextureTarget
     }
 
     return (jint)oglsdo->textureTarget;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_java2d_opengl_OGLSurfaceData_getTextureID
+    (JNIEnv *env, jobject oglsd,
+     jlong pData)
+{
+    OGLSDOps *oglsdo = (OGLSDOps *)jlong_to_ptr(pData);
+
+    J2dTraceLn(J2D_TRACE_INFO, "OGLSurfaceData_getTextureID");
+
+    if (oglsdo == NULL) {
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+            "OGLSurfaceData_getTextureID: ops are null");
+        return 0L;
+    }
+
+    return (jint)oglsdo->textureID;
+}
+
+/**
+ * Initializes nativeWidth/Height fields of the surfaceData object with
+ * passed arguments.
+ */
+void
+OGLSD_SetNativeDimensions(JNIEnv *env, OGLSDOps *oglsdo,
+                          jint width, jint height)
+{
+    jobject sdObject;
+
+    sdObject = (*env)->NewLocalRef(env, oglsdo->sdOps.sdObject);
+    if (sdObject == NULL) {
+        return;
+    }
+
+    JNU_SetFieldByName(env, NULL, sdObject, "nativeWidth", "I", width);
+    JNU_SetFieldByName(env, NULL, sdObject, "nativeHeight", "I", height);
+
+    (*env)->DeleteLocalRef(env, sdObject);
 }
 
 /**

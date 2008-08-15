@@ -1,2 +1,2 @@
-Bar.java:13:29: compiler.err.cant.resolve.location: (- compiler.misc.kindname.class), Serializable, , , (- compiler.misc.kindname.package), java.io
+Bar.java:13:29: compiler.err.cant.resolve.location: kindname.class, Serializable, , , kindname.package, java.io
 1 error

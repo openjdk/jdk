@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -852,28 +852,58 @@ OGLContext_GetExtensionInfo(JNIEnv *env, jint *caps)
 
     J2dTraceLn(J2D_TRACE_INFO, "OGLContext_GetExtensionInfo");
 
+    *caps |= CAPS_TEXNONSQUARE;
     if (OGLContext_IsExtensionAvailable(e, "GL_ARB_multitexture")) {
-        *caps |= sun_java2d_opengl_OGLContext_CAPS_EXT_MULTITEXTURE;
+        *caps |= CAPS_MULTITEXTURE;
     }
     if (OGLContext_IsExtensionAvailable(e, "GL_ARB_texture_non_power_of_two")){
-        *caps |= sun_java2d_opengl_OGLContext_CAPS_EXT_TEXNONPOW2;
+        *caps |= CAPS_TEXNONPOW2;
     }
-    if (OGLContext_IsExtensionAvailable(e, "GL_ARB_texture_rectangle")) {
-        *caps |= sun_java2d_opengl_OGLContext_CAPS_EXT_TEXRECT;
+    // 6656574: Use of the GL_ARB_texture_rectangle extension by Java 2D
+    // complicates any third-party libraries that try to interact with
+    // the OGL pipeline (and we've run into driver bugs in the past related
+    // to this extension), so for now we will disable its use by default (unless
+    // forced). We will still make use of the GL_ARB_texture_non_power_of_two
+    // extension when available, which is the better choice going forward
+    // anyway.
+    if (OGLContext_IsExtensionAvailable(e, "GL_ARB_texture_rectangle") &&
+        getenv("J2D_OGL_TEXRECT") != NULL)
+    {
+        *caps |= CAPS_EXT_TEXRECT;
     }
     if (OGLContext_IsFBObjectExtensionAvailable(env, e)) {
-        *caps |= sun_java2d_opengl_OGLContext_CAPS_EXT_FBOBJECT;
+        *caps |= CAPS_EXT_FBOBJECT;
     }
     if (OGLContext_IsLCDShaderSupportAvailable(env, fragShaderAvail)) {
-        *caps |= sun_java2d_opengl_OGLContext_CAPS_EXT_LCD_SHADER;
+        *caps |= CAPS_EXT_LCD_SHADER | CAPS_PS20;
     }
     if (OGLContext_IsBIOpShaderSupportAvailable(env, fragShaderAvail)) {
-        *caps |= sun_java2d_opengl_OGLContext_CAPS_EXT_BIOP_SHADER;
+        *caps |= CAPS_EXT_BIOP_SHADER | CAPS_PS20;
     }
     if (OGLContext_IsGradShaderSupportAvailable(env, fragShaderAvail)) {
-        *caps |= sun_java2d_opengl_OGLContext_CAPS_EXT_GRAD_SHADER;
+        *caps |= CAPS_EXT_GRAD_SHADER | CAPS_PS20;
     }
-
+    if (OGLContext_IsExtensionAvailable(e, "GL_NV_fragment_program")) {
+        // this is an Nvidia board, at least PS 2.0, but we can't
+        // use the "max instructions" heuristic since GeForce FX
+        // boards report 1024 even though they're only PS 2.0,
+        // so we'll check the following, which does imply PS 3.0
+        if (OGLContext_IsExtensionAvailable(e, "GL_NV_fragment_program2")) {
+            *caps |= CAPS_PS30;
+        }
+    } else {
+        // for all other boards, we look at the "max instructions"
+        // count reported by the GL_ARB_fragment_program extension
+        // as a heuristic for detecting PS 3.0 compatible hardware
+        if (OGLContext_IsExtensionAvailable(e, "GL_ARB_fragment_program")) {
+            GLint instr;
+            j2d_glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB,
+                                  GL_MAX_PROGRAM_INSTRUCTIONS_ARB, &instr);
+            if (instr > 512) {
+                *caps |= CAPS_PS30;
+            }
+        }
+    }
     // stuff vendor descriptor in the upper bits of the caps
     if (vendor != NULL) {
         if (strncmp(vendor, "ATI", 3) == 0) {
@@ -883,8 +913,10 @@ OGLContext_GetExtensionInfo(JNIEnv *env, jint *caps)
         } else if (strncmp(vendor, "Sun", 3) == 0) {
             vcap = OGLC_VENDOR_SUN;
         }
+        // REMIND: new in 7 - check if needs fixing
+        *caps |= ((vcap & OGLC_VCAP_MASK) << OGLC_VCAP_OFFSET);
     }
-    *caps |= ((vcap & OGLC_VCAP_MASK) << OGLC_VCAP_OFFSET);
+
 }
 
 /**
@@ -981,6 +1013,51 @@ OGLContext_CreateFragmentProgram(const char *fragmentShaderSource)
     }
 
     return fragmentProgram;
+}
+
+/*
+ * Class:     sun_java2d_opengl_OGLContext
+ * Method:    getOGLIdString
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_sun_java2d_opengl_OGLContext_getOGLIdString
+  (JNIEnv *env, jclass oglcc)
+{
+    char *vendor, *renderer, *version;
+    char *pAdapterId;
+    jobject ret = NULL;
+    int len;
+
+    J2dTraceLn(J2D_TRACE_INFO, "OGLContext_getOGLIdString");
+
+    vendor = (char*)j2d_glGetString(GL_VENDOR);
+    if (vendor == NULL) {
+        vendor = "Unknown Vendor";
+    }
+    renderer = (char*)j2d_glGetString(GL_RENDERER);
+    if (renderer == NULL) {
+        renderer = "Unknown Renderer";
+    }
+    version = (char*)j2d_glGetString(GL_VERSION);
+    if (version == NULL) {
+        version = "unknown version";
+    }
+
+    // 'vendor renderer (version)0'
+    len = strlen(vendor) + 1 + strlen(renderer) + 1 + 1+strlen(version)+1 + 1;
+    pAdapterId = malloc(len);
+    if (pAdapterId != NULL) {
+
+        jio_snprintf(pAdapterId, len, "%s %s (%s)", vendor, renderer, version);
+
+        J2dTraceLn1(J2D_TRACE_VERBOSE, "  id=%s", pAdapterId);
+
+        ret = JNU_NewStringPlatform(env, pAdapterId);
+
+        free(pAdapterId);
+    }
+
+    return ret;
 }
 
 #endif /* !HEADLESS */

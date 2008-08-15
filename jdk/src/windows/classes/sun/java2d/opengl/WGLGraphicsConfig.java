@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,11 @@ package sun.java2d.opengl;
 
 import java.awt.AWTException;
 import java.awt.BufferCapabilities;
+import java.awt.BufferCapabilities.FlipContents;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.ImageCapabilities;
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
@@ -39,10 +42,22 @@ import java.awt.image.VolatileImage;
 import sun.awt.Win32GraphicsConfig;
 import sun.awt.Win32GraphicsDevice;
 import sun.awt.image.SunVolatileImage;
+import sun.awt.image.SurfaceManager;
 import sun.awt.windows.WComponentPeer;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
+import sun.java2d.SunGraphics2D;
+import sun.java2d.Surface;
 import sun.java2d.SurfaceData;
+import sun.java2d.pipe.hw.AccelSurface;
+import sun.java2d.pipe.hw.AccelTypedVolatileImage;
+import sun.java2d.pipe.hw.ContextCapabilities;
+import static sun.java2d.opengl.OGLContext.OGLContextCaps.*;
+import static sun.java2d.opengl.WGLSurfaceData.*;
+import sun.java2d.opengl.OGLContext.OGLContextCaps;
+import sun.java2d.pipe.hw.AccelDeviceEventListener;
+import sun.java2d.pipe.hw.AccelDeviceEventNotifier;
+import sun.java2d.windows.GDIWindowSurfaceData;
 
 public class WGLGraphicsConfig
     extends Win32GraphicsConfig
@@ -53,7 +68,7 @@ public class WGLGraphicsConfig
 
     private BufferCapabilities bufferCaps;
     private long pConfigInfo;
-    private int oglCaps;
+    private ContextCapabilities oglCaps;
     private OGLContext context;
     private Object disposerReferent = new Object();
 
@@ -67,17 +82,18 @@ public class WGLGraphicsConfig
     }
 
     protected WGLGraphicsConfig(Win32GraphicsDevice device, int visualnum,
-                                long configInfo, int oglCaps)
+                                long configInfo, ContextCapabilities oglCaps)
     {
         super(device, visualnum);
         this.pConfigInfo = configInfo;
         this.oglCaps = oglCaps;
-        context = new OGLContext(OGLRenderQueue.getInstance());
+        context = new OGLContext(OGLRenderQueue.getInstance(), this);
 
         // add a record to the Disposer so that we destroy the native
         // WGLGraphicsConfigInfo data when this object goes away
         Disposer.addRecord(disposerReferent,
-                           new WGLGCDisposerRecord(pConfigInfo));
+                           new WGLGCDisposerRecord(pConfigInfo,
+                                                   device.getScreen()));
     }
 
     public Object getProxyKey() {
@@ -99,6 +115,7 @@ public class WGLGraphicsConfig
         }
 
         long cfginfo = 0;
+        final String ids[] = new String[1];
         OGLRenderQueue rq = OGLRenderQueue.getInstance();
         rq.lock();
         try {
@@ -110,6 +127,12 @@ public class WGLGraphicsConfig
                 new WGLGetConfigInfo(device.getScreen(), pixfmt);
             rq.flushAndInvokeNow(action);
             cfginfo = action.getConfigInfo();
+            OGLContext.setScratchSurface(cfginfo);
+            rq.flushAndInvokeNow(new Runnable() {
+                public void run() {
+                    ids[0] = OGLContext.getOGLIdString();
+                }
+            });
         } finally {
             rq.unlock();
         }
@@ -118,8 +141,9 @@ public class WGLGraphicsConfig
         }
 
         int oglCaps = getOGLCapabilities(cfginfo);
+        ContextCapabilities caps = new OGLContextCaps(oglCaps, ids[0]);
 
-        return new WGLGraphicsConfig(device, pixfmt, cfginfo, oglCaps);
+        return new WGLGraphicsConfig(device, pixfmt, cfginfo, caps);
     }
 
     /**
@@ -150,24 +174,49 @@ public class WGLGraphicsConfig
      * Returns true if the provided capability bit is present for this config.
      * See OGLContext.java for a list of supported capabilities.
      */
+    @Override
     public final boolean isCapPresent(int cap) {
-        return ((oglCaps & cap) != 0);
+        return ((oglCaps.getCaps() & cap) != 0);
     }
 
+    @Override
     public final long getNativeConfigInfo() {
         return pConfigInfo;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @see sun.java2d.pipe.hw.BufferedContextProvider#getContext
+     */
+    @Override
     public final OGLContext getContext() {
         return context;
     }
 
     private static class WGLGCDisposerRecord implements DisposerRecord {
         private long pCfgInfo;
-        public WGLGCDisposerRecord(long pCfgInfo) {
+        private int screen;
+        public WGLGCDisposerRecord(long pCfgInfo, int screen) {
             this.pCfgInfo = pCfgInfo;
         }
         public void dispose() {
+            OGLRenderQueue rq = OGLRenderQueue.getInstance();
+            rq.lock();
+            try {
+                rq.flushAndInvokeNow(new Runnable() {
+                    public void run() {
+                        AccelDeviceEventNotifier.
+                            eventOccured(screen,
+                                AccelDeviceEventNotifier.DEVICE_RESET);
+                        AccelDeviceEventNotifier.
+                            eventOccured(screen,
+                                AccelDeviceEventNotifier.DEVICE_DISPOSED);
+                    }
+                });
+            } finally {
+                rq.unlock();
+            }
             if (pCfgInfo != 0) {
                 OGLRenderQueue.disposeGraphicsConfig(pCfgInfo);
                 pCfgInfo = 0;
@@ -230,7 +279,11 @@ public class WGLGraphicsConfig
     public SurfaceData createSurfaceData(WComponentPeer peer,
                                          int numBackBuffers)
     {
-        return WGLSurfaceData.createData(peer);
+        SurfaceData sd = WGLSurfaceData.createData(peer);
+        if (sd == null) {
+            sd = GDIWindowSurfaceData.createData(peer);
+        }
+        return sd;
     }
 
     /**
@@ -279,16 +332,36 @@ public class WGLGraphicsConfig
     @Override
     public void flip(WComponentPeer peer,
                      Component target, VolatileImage backBuffer,
+                     int x1, int y1, int x2, int y2,
                      BufferCapabilities.FlipContents flipAction)
     {
         if (flipAction == BufferCapabilities.FlipContents.COPIED) {
-            Graphics g = peer.getGraphics();
-            try {
-                g.drawImage(backBuffer, 0, 0, null);
-            } finally {
-                g.dispose();
+            SurfaceManager vsm = SurfaceManager.getManager(backBuffer);
+            SurfaceData sd = vsm.getPrimarySurfaceData();
+
+            if (sd instanceof WGLVSyncOffScreenSurfaceData) {
+                WGLVSyncOffScreenSurfaceData vsd =
+                    (WGLVSyncOffScreenSurfaceData)sd;
+                SurfaceData bbsd = vsd.getFlipSurface();
+                Graphics2D bbg =
+                    new SunGraphics2D(bbsd, Color.black, Color.white, null);
+                try {
+                    bbg.drawImage(backBuffer, 0, 0, null);
+                } finally {
+                    bbg.dispose();
+                }
+            } else {
+                Graphics g = peer.getGraphics();
+                try {
+                    g.drawImage(backBuffer,
+                                x1, y1, x2, y2,
+                                x1, y1, x2, y2,
+                                null);
+                } finally {
+                    g.dispose();
+                }
+                return;
             }
-            return;
         } else if (flipAction == BufferCapabilities.FlipContents.PRIOR) {
             // not supported by WGL...
             return;
@@ -319,7 +392,7 @@ public class WGLGraphicsConfig
     @Override
     public BufferCapabilities getBufferCapabilities() {
         if (bufferCaps == null) {
-            boolean dblBuf = isCapPresent(OGLContext.CAPS_DOUBLEBUFFERED);
+            boolean dblBuf = isCapPresent(CAPS_DOUBLEBUFFERED);
             bufferCaps = new WGLBufferCaps(dblBuf);
         }
         return bufferCaps;
@@ -337,5 +410,65 @@ public class WGLGraphicsConfig
     @Override
     public ImageCapabilities getImageCapabilities() {
         return imageCaps;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see sun.java2d.pipe.hw.AccelGraphicsConfig#createCompatibleVolatileImage
+     */
+    @Override
+    public VolatileImage
+        createCompatibleVolatileImage(int width, int height,
+                                      int transparency, int type)
+    {
+        if (type == FLIP_BACKBUFFER || type == WINDOW || type == UNDEFINED ||
+            transparency == Transparency.BITMASK)
+        {
+            return null;
+        }
+
+        if (type == FBOBJECT) {
+            if (!isCapPresent(CAPS_EXT_FBOBJECT)) {
+                return null;
+            }
+        } else if (type == PBUFFER) {
+            boolean isOpaque = transparency == Transparency.OPAQUE;
+            if (!isOpaque && !isCapPresent(CAPS_STORED_ALPHA)) {
+                return null;
+            }
+        }
+
+        SunVolatileImage vi = new AccelTypedVolatileImage(this, width, height,
+                                                          transparency, type);
+        Surface sd = vi.getDestSurface();
+        if (!(sd instanceof AccelSurface) ||
+            ((AccelSurface)sd).getType() != type)
+        {
+            vi.flush();
+            vi = null;
+        }
+
+        return vi;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see sun.java2d.pipe.hw.AccelGraphicsConfig#getContextCapabilities
+     */
+    @Override
+    public ContextCapabilities getContextCapabilities() {
+        return oglCaps;
+    }
+
+    @Override
+    public void addDeviceEventListener(AccelDeviceEventListener l) {
+        AccelDeviceEventNotifier.addListener(l, screen.getScreen());
+    }
+
+    @Override
+    public void removeDeviceEventListener(AccelDeviceEventListener l) {
+        AccelDeviceEventNotifier.removeListener(l);
     }
 }

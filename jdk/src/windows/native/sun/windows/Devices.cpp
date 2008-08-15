@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,7 @@
 #include "Devices.h"
 #include "Trace.h"
 #include "awt_Multimon.h"
+#include "D3DPipelineManager.h"
 
 Devices* Devices::theInstance = NULL;
 CriticalSection Devices::arrayLock;
@@ -133,13 +134,12 @@ BOOL Devices::UpdateInstance(JNIEnv *env)
     AwtWin32GraphicsDevice** rawDevices = newDevices->GetRawArray();
     int i;
     for (i = 0; i < numScreens; ++i) {
+        J2dTraceLn2(J2D_TRACE_VERBOSE, "  hmon[%d]=0x%x", i, monHds[i]);
         rawDevices[i] = new AwtWin32GraphicsDevice(i, monHds[i], newDevices);
     }
     for (i = 0; i < numScreens; ++i) {
         rawDevices[i]->Initialize();
     }
-    free(monHds);
-
     {
         CriticalSection::Lock l(arrayLock);
 
@@ -161,12 +161,14 @@ BOOL Devices::UpdateInstance(JNIEnv *env)
                             "Devices::UpdateInstance: device removed: %d", i);
                 oldDevices->GetDevice(i)->Invalidate(env);
             }
-
             // Now that we have a new array in place, remove this (possibly the
             // last) reference to the old instance.
             oldDevices->Release();
         }
+        D3DPipelineManager::HandleAdaptersChange((HMONITOR*)monHds,
+                                                 theInstance->GetNumDevices());
     }
+    free(monHds);
 
     return TRUE;
 }

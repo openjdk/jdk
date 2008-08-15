@@ -35,5 +35,6 @@ FILES_java = \
 	com/sun/corba/se/spi/monitoring/MonitoredObjectFactory.java \
 	com/sun/corba/se/spi/monitoring/MonitoredAttribute.java \
 	com/sun/corba/se/spi/monitoring/MonitoredAttributeInfoFactory.java \
+	com/sun/corba/se/spi/monitoring/MonitoringConstants.java \
 	com/sun/corba/se/spi/monitoring/MonitoringManager.java \
 	com/sun/corba/se/spi/monitoring/MonitoringManagerFactory.java 

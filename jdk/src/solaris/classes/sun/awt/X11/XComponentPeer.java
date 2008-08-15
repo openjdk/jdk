@@ -70,9 +70,12 @@ import sun.awt.*;
 import sun.awt.event.IgnorePaintEvent;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.ToolkitImage;
+import sun.java2d.BackBufferCapsProvider;
 import sun.java2d.pipe.Region;
 
-public class XComponentPeer extends XWindow implements ComponentPeer, DropTargetPeer {
+public class XComponentPeer extends XWindow implements ComponentPeer, DropTargetPeer,
+    BackBufferCapsProvider
+{
     /* FIX ME: these constants copied from java.awt.KeyboardFocusManager */
     static final int SNFH_FAILURE = 0;
     static final int SNFH_SUCCESS_HANDLED = 1;
@@ -1274,25 +1277,37 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
      * native windowing system specific actions.
      */
 
+    private BufferCapabilities backBufferCaps;
+
     public void createBuffers(int numBuffers, BufferCapabilities caps)
       throws AWTException
     {
         if (buffersLog.isLoggable(Level.FINE)) {
             buffersLog.fine("createBuffers(" + numBuffers + ", " + caps + ")");
         }
+        // set the caps first, they're used when creating the bb
+        backBufferCaps = caps;
         backBuffer = graphicsConfig.createBackBuffer(this, numBuffers, caps);
         xBackBuffer = graphicsConfig.createBackBufferImage(target,
                                                            backBuffer);
     }
 
-    public void flip(BufferCapabilities.FlipContents flipAction) {
+    @Override
+    public BufferCapabilities getBackBufferCaps() {
+        return backBufferCaps;
+    }
+
+    public void flip(int x1, int y1, int x2, int y2,
+                     BufferCapabilities.FlipContents flipAction)
+    {
         if (buffersLog.isLoggable(Level.FINE)) {
             buffersLog.fine("flip(" + flipAction + ")");
         }
         if (backBuffer == 0) {
             throw new IllegalStateException("Buffers have not been created");
         }
-        graphicsConfig.flip(this, target, xBackBuffer, flipAction);
+        graphicsConfig.flip(this, target, xBackBuffer,
+                            x1, y1, x2, y2, flipAction);
     }
 
     public Image getBackBuffer() {

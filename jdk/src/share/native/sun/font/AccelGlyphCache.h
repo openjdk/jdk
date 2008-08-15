@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@
 #ifndef AccelGlyphCache_h_Included
 #define AccelGlyphCache_h_Included
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "jni.h"
 #include "fontscalerdefs.h"
 
@@ -48,10 +52,18 @@ typedef struct {
 struct _CacheCellInfo {
     GlyphCacheInfo   *cacheInfo;
     struct GlyphInfo *glyphInfo;
+    // next cell info in the cache's list
     CacheCellInfo    *next;
+    // REMIND: find better name?
+    // next cell info in the glyph's cell list (next Glyph Cache Info)
+    CacheCellInfo    *nextGCI;
     jint             timesRendered;
     jint             x;
     jint             y;
+    // number of pixels from the left or right edge not considered touched
+    // by the glyph
+    jint             leftOff;
+    jint             rightOff;
     jfloat           tx1;
     jfloat           ty1;
     jfloat           tx2;
@@ -62,9 +74,24 @@ GlyphCacheInfo *
 AccelGlyphCache_Init(jint width, jint height,
                      jint cellWidth, jint cellHeight,
                      FlushFunc *func);
-void
+CacheCellInfo *
 AccelGlyphCache_AddGlyph(GlyphCacheInfo *cache, struct GlyphInfo *glyph);
 void
 AccelGlyphCache_Invalidate(GlyphCacheInfo *cache);
+void
+AccelGlyphCache_AddCellInfo(struct GlyphInfo *glyph, CacheCellInfo *cellInfo);
+void
+AccelGlyphCache_RemoveCellInfo(struct GlyphInfo *glyph, CacheCellInfo *cellInfo);
+CacheCellInfo *
+AccelGlyphCache_GetCellInfoForCache(struct GlyphInfo *glyph,
+                                    GlyphCacheInfo *cache);
+JNIEXPORT void
+AccelGlyphCache_RemoveAllCellInfos(struct GlyphInfo *glyph);
+void
+AccelGlyphCache_Free(GlyphCacheInfo *cache);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* AccelGlyphCache_h_Included */

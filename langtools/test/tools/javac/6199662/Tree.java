@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6199662 6325201
+ * @bug 6199662 6325201 6726015
  * @summary javac: compilation success depends on compilation order
  *
  * @compile Tree.java TreeScanner.java TreeInfo.java
