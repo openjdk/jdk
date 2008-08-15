@@ -29,11 +29,13 @@ import java.io.*;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.Locale;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 
@@ -68,10 +70,6 @@ public class Log extends AbstractLog {
     public final int MaxErrors;
     public final int MaxWarnings;
 
-    /** Whether or not to display the line of source containing a diagnostic.
-     */
-    private final boolean showSourceLine;
-
     /** Switch: prompt user on each error.
      */
     public boolean promptOnError;
@@ -97,7 +95,7 @@ public class Log extends AbstractLog {
     /**
      * Formatter for diagnostics
      */
-    private DiagnosticFormatter diagFormatter;
+    private DiagnosticFormatter<JCDiagnostic> diagFormatter;
 
     /** Construct a log with given I/O redirections.
      */
@@ -115,9 +113,11 @@ public class Log extends AbstractLog {
         this.emitWarnings = options.get("-Xlint:none") == null;
         this.MaxErrors = getIntOption(options, "-Xmaxerrs", 100);
         this.MaxWarnings = getIntOption(options, "-Xmaxwarns", 100);
-        this.showSourceLine = options.get("rawDiagnostics") == null;
 
-        this.diagFormatter = DiagnosticFormatter.instance(context);
+        boolean rawDiagnostics = options.get("rawDiagnostics") != null;
+        Messages msgs = Messages.instance(context);
+        this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(msgs) :
+                                              new BasicDiagnosticFormatter(options, msgs);
         @SuppressWarnings("unchecked") // FIXME
         DiagnosticListener<? super JavaFileObject> diagListener =
             context.get(DiagnosticListener.class);
@@ -335,8 +335,8 @@ public class Log extends AbstractLog {
 
         PrintWriter writer = getWriterForDiagnosticType(diag.getType());
 
-        printLines(writer, diagFormatter.format(diag));
-        if (showSourceLine) {
+        printLines(writer, diagFormatter.format(diag, Locale.getDefault()));
+        if (diagFormatter.displaySource(diag)) {
             int pos = diag.getIntPosition();
             if (pos != Position.NOPOS) {
                 JavaFileObject prev = useSource(diag.getSource());

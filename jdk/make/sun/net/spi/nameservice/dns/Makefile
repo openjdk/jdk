@@ -67,7 +67,7 @@ $(JARFILE): $(CLASSDESTDIR)/META-INF/services/$(SERVICE_DESCRIPTION) \
 	$(BOOT_JAR_CMD) -cf $(JARFILE) \
 	     -C $(CLASSDESTDIR) sun \
 	     -C $(CLASSDESTDIR) META-INF \
-	     $(JAR_JFLAGS)
+	     $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 include $(BUILDDIR)/common/Classes.gmk

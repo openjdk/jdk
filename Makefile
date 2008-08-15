@@ -49,27 +49,17 @@ ifndef JDK_MAKE_SHARED_DIR
   JDK_MAKE_SHARED_DIR=$(JDK_TOPDIR)/make/common/shared
 endif
 
+# For start and finish echo lines
+TITLE_TEXT = Control $(PLATFORM) $(ARCH) $(RELEASE)
+DAYE_STAMP = `$(DATE) '+%y-%m-%d %H:%M'`
+START_ECHO  = echo "$(TITLE_TEXT) $@ build started: $(DATE_STAMP)"
+FINISH_ECHO = echo "$(TITLE_TEXT) $@ build finished: $(DATE_STAMP)"
+
+default: all
+
 include $(JDK_MAKE_SHARED_DIR)/Defs-control.gmk
-
 include ./make/Defs-internal.gmk
-
-all::
-	@$(ECHO) $(PLATFORM) $(ARCH) $(RELEASE) build started: `$(DATE) '+%y-%m-%d %H:%M'`
-	$(MKDIR) -p $(OUTPUTDIR)
-
-# Rules for sanity checks
 include ./make/sanity-rules.gmk
-
-dev : dev-build
-
-dev-build:
-	$(MAKE) DEV_ONLY=true all
-dev-sanity:
-	$(MAKE) DEV_ONLY=true sanity
-dev-clobber:
-	$(MAKE) DEV_ONLY=true clobber
-
-# Rules for various components
 include ./make/hotspot-rules.gmk
 include ./make/langtools-rules.gmk
 include ./make/corba-rules.gmk
@@ -80,10 +70,202 @@ include ./make/install-rules.gmk
 include ./make/sponsors-rules.gmk
 include ./make/deploy-rules.gmk
 
-all:: setup build
+# What "all" means
+all::
+	@$(START_ECHO)
 
-setup: openjdk_check
+all:: openjdk_check sanity all_product_build 
+
+ifeq ($(SKIP_FASTDEBUG_BUILD), false)
+  all:: fastdebug_build
+endif
+
+ifeq ($(SKIP_DEBUG_BUILD), false)
+  all:: debug_build
+endif
+
+ifneq ($(SKIP_OPENJDK_BUILD), true)
+  all:: openjdk_build
+endif
+
+all:: 
+	@$(FINISH_ECHO)
+
+# Everything for a full product build
+all_product_build::
+	@$(START_ECHO)
+
+ifeq ($(SKIP_PRODUCT_BUILD), false)
+  
+  all_product_build:: product_build
+
+  ifeq ($(BUILD_INSTALL), true)
+    all_product_build:: $(INSTALL)
+    clobber:: install-clobber
+  endif
+  
+  ifeq ($(BUILD_SPONSORS), true)
+    all_product_build:: $(SPONSORS)
+    clobber:: sponsors-clobber
+  endif
+  
+  ifneq ($(SKIP_COMPARE_IMAGES), true)
+    all_product_build:: compare-image
+  endif
+
+endif
+
+all_product_build:: 
+	@$(FINISH_ECHO)
+
+# Generis build of basic repo series
+generic_build_repo_series::
+	$(MKDIR) -p $(OUTPUTDIR)
 	$(MKDIR) -p $(OUTPUTDIR)/j2sdk-image
+
+ifeq ($(BUILD_LANGTOOLS), true)
+  generic_build_repo_series:: langtools
+  clobber:: langtools-clobber
+endif
+
+ifeq ($(BUILD_CORBA), true)
+  generic_build_repo_series:: corba
+  clobber:: corba-clobber
+endif
+
+ifeq ($(BUILD_JAXP), true)
+  generic_build_repo_series:: jaxp
+  clobber:: jaxp-clobber
+endif
+
+ifeq ($(BUILD_JAXWS), true)
+  generic_build_repo_series:: jaxws
+  clobber:: jaxws-clobber
+endif
+
+ifeq ($(BUILD_HOTSPOT), true)
+  generic_build_repo_series:: $(HOTSPOT) 
+  clobber:: hotspot-clobber
+endif
+
+ifeq ($(BUILD_JDK), true)
+  generic_build_repo_series:: $(JDK_JAVA_EXE)
+  clobber:: jdk-clobber
+endif
+
+ifeq ($(BUILD_DEPLOY), true)
+  generic_build_repo_series:: $(DEPLOY)
+  clobber:: deploy-clobber
+endif
+
+ifeq ($(BUILD_JDK), true)
+  ifeq ($(BUNDLE_RULES_AVAILABLE), true)
+    generic_build_repo_series:: openjdk-binary-plugs-bundles
+  endif
+endif
+
+# The debug build, fastdebug or debug. Needs special handling.
+#  Note that debug builds do NOT do INSTALL steps, but must be done
+#  after the product build and before the INSTALL step of the product build.
+#
+#   DEBUG_NAME is fastdebug or debug
+#   ALT_OUTPUTDIR is changed to have -debug or -fastdebug suffix
+#   The resulting j2sdk-image is used by the install makefiles to create a
+#     debug install bundle jdk-*-debug-** bundle (tar or zip) 
+#     which will install in the debug or fastdebug subdirectory of the
+#     normal product install area.
+#     The install process needs to know what the DEBUG_NAME is, so
+#     look for INSTALL_DEBUG_NAME in the install rules.
+#
+
+# Location of fresh bootdir output
+ABS_BOOTDIR_OUTPUTDIR=$(ABS_OUTPUTDIR)/bootjdk
+FRESH_BOOTDIR=$(ABS_BOOTDIR_OUTPUTDIR)/j2sdk-image
+FRESH_DEBUG_BOOTDIR=$(ABS_BOOTDIR_OUTPUTDIR)-$(DEBUG_NAME)/j2sdk-image
+  
+create_fresh_product_bootdir: FRC
+	@$(START_ECHO)
+	$(MAKE) ALT_OUTPUTDIR=$(ABS_BOOTDIR_OUTPUTDIR) \
+		NO_DOCS=true \
+		BOOT_CYCLE_SETTINGS= \
+		build_product_image
+	@$(FINISH_ECHO)
+
+create_fresh_debug_bootdir: FRC
+	@$(START_ECHO)
+	$(MAKE) ALT_OUTPUTDIR=$(ABS_BOOTDIR_OUTPUTDIR) \
+		NO_DOCS=true \
+		BOOT_CYCLE_DEBUG_SETTINGS= \
+		build_debug_image
+	@$(FINISH_ECHO)
+
+create_fresh_fastdebug_bootdir: FRC
+	@$(START_ECHO)
+	$(MAKE) ALT_OUTPUTDIR=$(ABS_BOOTDIR_OUTPUTDIR) \
+		NO_DOCS=true \
+		BOOT_CYCLE_DEBUG_SETTINGS= \
+		build_fastdebug_image
+	@$(FINISH_ECHO)
+
+# Create boot image?
+ifeq ($(SKIP_BOOT_CYCLE),false)
+  ifneq ($(PLATFORM)$(ARCH_DATA_MODEL),solaris64)
+    DO_BOOT_CYCLE=true
+  endif
+endif
+
+ifeq ($(DO_BOOT_CYCLE),true)
+  
+  # Create the bootdir to use in the build
+  product_build:: create_fresh_product_bootdir
+  debug_build:: create_fresh_debug_bootdir
+  fastdebug_build:: create_fresh_fastdebug_bootdir
+
+  # Define variables to be used now for the boot jdk
+  BOOT_CYCLE_SETTINGS= \
+     ALT_BOOTDIR=$(FRESH_BOOTDIR) \
+     ALT_JDK_IMPORT_PATH=$(FRESH_BOOTDIR)
+  BOOT_CYCLE_DEBUG_SETTINGS= \
+     ALT_BOOTDIR=$(FRESH_DEBUG_BOOTDIR) \
+     ALT_JDK_IMPORT_PATH=$(FRESH_DEBUG_BOOTDIR)
+
+else
+
+  # Use the supplied ALT_BOOTDIR as the boot
+  BOOT_CYCLE_SETTINGS=
+  BOOT_CYCLE_DEBUG_SETTINGS=
+
+endif
+
+build_product_image:
+	@$(START_ECHO)
+	$(MAKE) \
+	        SKIP_FASTDEBUG_BUILD=true \
+	        SKIP_DEBUG_BUILD=true \
+	        $(BOOT_CYCLE_SETTINGS) \
+	        generic_build_repo_series
+	@$(FINISH_ECHO)
+
+generic_debug_build:
+	@$(START_ECHO)
+	$(MAKE) \
+		ALT_OUTPUTDIR=$(ABS_OUTPUTDIR)-$(DEBUG_NAME) \
+	        DEBUG_NAME=$(DEBUG_NAME) \
+		NO_DOCS=true \
+	        $(BOOT_CYCLE_DEBUG_SETTINGS) \
+		generic_build_repo_series
+	@$(FINISH_ECHO)
+
+build_debug_image:
+	$(MAKE) DEBUG_NAME=debug generic_debug_build
+
+build_fastdebug_image:
+	$(MAKE) DEBUG_NAME=fastdebug generic_debug_build
+
+# Build final image
+product_build:: build_product_image
+debug_build:: build_debug_image
+fastdebug_build:: build_fastdebug_image
 
 # Check on whether we really can build the openjdk, need source etc.
 openjdk_check: FRC
@@ -99,113 +281,6 @@ ifneq ($(SKIP_OPENJDK_BUILD), true)
 	fi
 	@$(ECHO) "================================================="
 	@$(ECHO) " "
-endif
-
-build:: sanity 
-
-clobber::
-
-ifeq ($(BUILD_LANGTOOLS), true)
-  build:: langtools
-  clobber:: langtools-clobber
-endif
-
-ifeq ($(BUILD_CORBA), true)
-  build:: corba
-  clobber:: corba-clobber
-endif
-
-ifeq ($(BUILD_JAXP), true)
-  build:: jaxp
-  clobber:: jaxp-clobber
-endif
-
-ifeq ($(BUILD_JAXWS), true)
-  build:: jaxws
-  clobber:: jaxws-clobber
-endif
-
-ifeq ($(BUILD_HOTSPOT), true)
-  build:: $(HOTSPOT) 
-  clobber:: hotspot-clobber
-endif
-
-ifeq ($(BUILD_JDK), true)
-  build:: $(JDK_JAVA_EXE)
-  clobber:: jdk-clobber
-endif
-
-ifeq ($(BUILD_DEPLOY), true)
-  build:: $(DEPLOY)
-  clobber:: deploy-clobber
-endif
-
-#
-# Generic debug build, fastdebug or debug. Needs special handling.
-#  Note that debug builds do NOT do INSTALL steps, but must be done
-#  after the product build and before the INSTALL step of the product build.
-#
-#   DEBUG_NAME is fastdebug or debug
-#   ALT_OUTPUTDIR is changed to have -debug or -fastdebug suffix
-#   The resulting j2sdk-image is used by the install makefiles to create a
-#     debug install bundle jdk-*-debug-** bundle (tar or zip) 
-#     which will install in the debug or fastdebug subdirectory of the
-#     normal product install area.
-#     The install process needs to know what the DEBUG_NAME is, so
-#     look for INSTALL_DEBUG_NAME in the install rules.
-#
-
-COMMON_DEBUG_FLAGS= \
-	DEBUG_NAME=$(DEBUG_NAME) \
-	ALT_OUTPUTDIR=$(ABS_OUTPUTDIR)-$(DEBUG_NAME) \
-	NO_DOCS=true
-
-product_build: setup
-	@$(ECHO) $@ build started: `$(DATE) '+%y-%m-%d %H:%M'`
-	$(MAKE) SKIP_FASTDEBUG_BUILD=true SKIP_DEBUG_BUILD=true all
-	@$(ECHO) $@ build finished: `$(DATE) '+%y-%m-%d %H:%M'`
-
-generic_debug_build:
-	@$(ECHO) $@ build started: `$(DATE) '+%y-%m-%d %H:%M'`
-	$(MAKE) $(COMMON_DEBUG_FLAGS) setup build
-	@$(ECHO) $@ build finished: `$(DATE) '+%y-%m-%d %H:%M'`
-
-debug_build: setup
-	$(MAKE) DEBUG_NAME=debug generic_debug_build
-
-fastdebug_build: setup
-	$(MAKE) DEBUG_NAME=fastdebug generic_debug_build
-
-ifeq ($(SKIP_FASTDEBUG_BUILD), false)
-  all:: fastdebug_build
-endif
-
-ifeq ($(SKIP_DEBUG_BUILD), false)
-  all:: debug_build
-endif
-
-ifeq ($(BUILD_JDK), true)
-  ifeq ($(BUNDLE_RULES_AVAILABLE), true)
-    all:: openjdk-binary-plugs-bundles
-  endif
-endif
-
-ifeq ($(BUILD_INSTALL), true)
-  all :: $(INSTALL)
-  clobber:: install-clobber
-endif
-
-ifeq ($(BUILD_SPONSORS), true)
-  all :: $(SPONSORS)
-  clobber:: sponsors-clobber
-endif
-
-ifneq ($(SKIP_COMPARE_IMAGES), true)
-  all :: compare-image
-endif
-
-ifneq ($(SKIP_OPENJDK_BUILD), true)
-  all :: openjdk_build
 endif
 
 # If we have bundle rules, we have a chance here to do a complete cycle
@@ -235,6 +310,7 @@ else
 endif
 
 openjdk_build:
+	@$(START_ECHO)
 	@$(ECHO) " "
 	@$(ECHO) "================================================="
 	@$(ECHO) "Starting openjdk build"
@@ -245,6 +321,7 @@ openjdk_build:
 	$(MKDIR) -p $(OPENJDK_OUTPUTDIR)
 	($(CD) $(OPENJDK_BUILDDIR) && $(MAKE) \
 	  OPENJDK=true \
+	  NO_DOCS=true \
 	  ALT_JDK_DEVTOOLS_DIR=$(JDK_DEVTOOLS_DIR) \
 	  ALT_OUTPUTDIR=$(OPENJDK_OUTPUTDIR) \
 	  ALT_BINARY_PLUGS_PATH=$(OPENJDK_PLUGS) \
@@ -261,6 +338,7 @@ openjdk_build:
 	@$(ECHO) " Binary Bundle: $(OPENJDK_BUILD_BINARY_ZIP)"
 	@$(ECHO) "================================================="
 	@$(ECHO) " "
+	@$(FINISH_ECHO)
     
     endif
   endif
@@ -274,8 +352,18 @@ clobber::
 
 clean: clobber
 
-all:: 
-	@$(ECHO) Control build finished: `$(DATE) '+%y-%m-%d %H:%M'`
+#
+# Dev builds
+#
+
+dev : dev-build
+
+dev-build:
+	$(MAKE) DEV_ONLY=true all
+dev-sanity:
+	$(MAKE) DEV_ONLY=true sanity
+dev-clobber:
+	$(MAKE) DEV_ONLY=true clobber
 
 #
 # Quick jdk verification build
@@ -461,16 +549,6 @@ ifeq ($(BUNDLE_RULES_AVAILABLE), true)
 endif
 
 ################################################################
-# Cycle build. Build the jdk, use it to build the jdk again.
-################################################################
-  
-ABS_BOOTDIR_OUTPUTDIR=$(ABS_OUTPUTDIR)/bootjdk
-  
-boot_cycle:
-	$(MAKE) ALT_OUTPUTDIR=$(ABS_BOOTDIR_OUTPUTDIR) product_build
-	$(MAKE) ALT_BOOTDIR=$(ABS_BOOTDIR_OUTPUTDIR)/j2sdk-image product_build
-
-################################################################
 # JPRT rule to build
 ################################################################
 
@@ -480,9 +558,20 @@ include ./make/jprt.gmk
 #  PHONY
 ################################################################
 
-.PHONY: all build what clobber insane \
-	fastdebug_build debug_build product_build setup \
-        dev dev-build dev-sanity dev-clobber
+.PHONY: all \
+	generic_build_repo_series \
+	what clobber insane \
+        dev dev-build dev-sanity dev-clobber \
+        product_build \
+        fastdebug_build \
+        debug_build  \
+        build_product_image  \
+        build_debug_image  \
+        build_fastdebug_image \
+        create_fresh_product_bootdir \
+        create_fresh_debug_bootdir \
+        create_fresh_fastdebug_bootdir \
+        generic_debug_build
 
 # Force target
 FRC:
