@@ -6867,11 +6867,9 @@ void MarkFromRootsClosure::do_bit(size_t offset) {
         // during the preclean or remark phase. (CMSCleanOnEnter)
         if (CMSCleanOnEnter) {
           size_t sz = _collector->block_size_using_printezis_bits(addr);
-          HeapWord* start_card_addr = (HeapWord*)round_down(
-                                         (intptr_t)addr, CardTableModRefBS::card_size);
           HeapWord* end_card_addr   = (HeapWord*)round_to(
                                          (intptr_t)(addr+sz), CardTableModRefBS::card_size);
-          MemRegion redirty_range = MemRegion(start_card_addr, end_card_addr);
+          MemRegion redirty_range = MemRegion(addr, end_card_addr);
           assert(!redirty_range.is_empty(), "Arithmetical tautology");
           // Bump _threshold to end_card_addr; note that
           // _threshold cannot possibly exceed end_card_addr, anyhow.
@@ -7460,12 +7458,25 @@ void PushAndMarkClosure::do_oop(oop obj) {
     )
     if (simulate_overflow || !_mark_stack->push(obj)) {
       if (_concurrent_precleaning) {
-         // During precleaning we can just dirty the appropriate card
+         // During precleaning we can just dirty the appropriate card(s)
          // in the mod union table, thus ensuring that the object remains
-         // in the grey set  and continue. Note that no one can be intefering
-         // with us in this action of dirtying the mod union table, so
-         // no locking is required.
-         _mod_union_table->mark(addr);
+         // in the grey set  and continue. In the case of object arrays
+         // we need to dirty all of the cards that the object spans,
+         // since the rescan of object arrays will be limited to the
+         // dirty cards.
+         // Note that no one can be intefering with us in this action
+         // of dirtying the mod union table, so no locking or atomics
+         // are required.
+         if (obj->is_objArray()) {
+           size_t sz = obj->size();
+           HeapWord* end_card_addr = (HeapWord*)round_to(
+                                        (intptr_t)(addr+sz), CardTableModRefBS::card_size);
+           MemRegion redirty_range = MemRegion(addr, end_card_addr);
+           assert(!redirty_range.is_empty(), "Arithmetical tautology");
+           _mod_union_table->mark_range(redirty_range);
+         } else {
+           _mod_union_table->mark(addr);
+         }
          _collector->_ser_pmc_preclean_ovflw++;
       } else {
          // During the remark phase, we need to remember this oop
