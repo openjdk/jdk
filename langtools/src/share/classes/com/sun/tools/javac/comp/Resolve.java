@@ -1442,107 +1442,6 @@ public class Resolve {
     }
 
 /* ***************************************************************************
- *  Methods related to kinds
- ****************************************************************************/
-
-    /** A localized string describing a given kind.
-     */
-    static JCDiagnostic kindName(int kind) {
-        switch (kind) {
-        case PCK: return JCDiagnostic.fragment("kindname.package");
-        case TYP: return JCDiagnostic.fragment("kindname.class");
-        case VAR: return JCDiagnostic.fragment("kindname.variable");
-        case VAL: return JCDiagnostic.fragment("kindname.value");
-        case MTH: return JCDiagnostic.fragment("kindname.method");
-        default : return JCDiagnostic.fragment("kindname",
-                                               Integer.toString(kind)); //debug
-        }
-    }
-
-    static JCDiagnostic kindName(Symbol sym) {
-        switch (sym.getKind()) {
-        case PACKAGE:
-            return JCDiagnostic.fragment("kindname.package");
-
-        case ENUM:
-        case ANNOTATION_TYPE:
-        case INTERFACE:
-        case CLASS:
-            return JCDiagnostic.fragment("kindname.class");
-
-        case TYPE_PARAMETER:
-            return JCDiagnostic.fragment("kindname.type.variable");
-
-        case ENUM_CONSTANT:
-        case FIELD:
-        case PARAMETER:
-        case LOCAL_VARIABLE:
-        case EXCEPTION_PARAMETER:
-            return JCDiagnostic.fragment("kindname.variable");
-
-        case METHOD:
-        case CONSTRUCTOR:
-        case STATIC_INIT:
-        case INSTANCE_INIT:
-            return JCDiagnostic.fragment("kindname.method");
-
-        default:
-            if (sym.kind == VAL)
-                // I don't think this can happen but it can't harm
-                // playing it safe --ahe
-                return JCDiagnostic.fragment("kindname.value");
-            else
-                return JCDiagnostic.fragment("kindname", sym.getKind()); // debug
-        }
-    }
-
-    /** A localized string describing a given set of kinds.
-     */
-    static JCDiagnostic kindNames(int kind) {
-        StringBuffer key = new StringBuffer();
-        key.append("kindname");
-        if ((kind & VAL) != 0)
-            key.append(((kind & VAL) == VAR) ? ".variable" : ".value");
-        if ((kind & MTH) != 0) key.append(".method");
-        if ((kind & TYP) != 0) key.append(".class");
-        if ((kind & PCK) != 0) key.append(".package");
-        return JCDiagnostic.fragment(key.toString(), kind);
-    }
-
-    /** A localized string describing the kind -- either class or interface --
-     *  of a given type.
-     */
-    static JCDiagnostic typeKindName(Type t) {
-        if (t.tag == TYPEVAR ||
-            t.tag == CLASS && (t.tsym.flags() & COMPOUND) != 0)
-            return JCDiagnostic.fragment("kindname.type.variable.bound");
-        else if (t.tag == PACKAGE)
-            return JCDiagnostic.fragment("kindname.package");
-        else if ((t.tsym.flags_field & ANNOTATION) != 0)
-            return JCDiagnostic.fragment("kindname.annotation");
-        else if ((t.tsym.flags_field & INTERFACE) != 0)
-            return JCDiagnostic.fragment("kindname.interface");
-        else
-            return JCDiagnostic.fragment("kindname.class");
-    }
-
-    /** A localized string describing the kind of a missing symbol, given an
-     *  error kind.
-     */
-    static JCDiagnostic absentKindName(int kind) {
-        switch (kind) {
-        case ABSENT_VAR:
-            return JCDiagnostic.fragment("kindname.variable");
-        case WRONG_MTHS: case WRONG_MTH: case ABSENT_MTH:
-            return JCDiagnostic.fragment("kindname.method");
-        case ABSENT_TYP:
-            return JCDiagnostic.fragment("kindname.class");
-        default:
-            return JCDiagnostic.fragment("kindname", kind);
-        }
-    }
-
-/* ***************************************************************************
  *  ResolveError classes, indicating error situations when accessing symbols
  ****************************************************************************/
 
@@ -1633,55 +1532,77 @@ public class Resolve {
          */
         void report(Log log, DiagnosticPosition pos, Type site, Name name,
                     List<Type> argtypes, List<Type> typeargtypes) {
+            if (argtypes == null)
+                argtypes = List.nil();
+            if (typeargtypes == null)
+                typeargtypes = List.nil();
             if (name != name.table.error) {
-                JCDiagnostic kindname = absentKindName(kind);
-                String idname = name.toString();
-                String args = "";
-                String typeargs = "";
+                KindName kindname = absentKind(kind);
+                Name idname = name;
                 if (kind >= WRONG_MTHS && kind <= ABSENT_MTH) {
                     if (isOperator(name)) {
                         log.error(pos, "operator.cant.be.applied",
-                                  name, Type.toString(argtypes));
+                                  name, argtypes);
                         return;
                     }
                     if (name == name.table.init) {
-                        kindname = JCDiagnostic.fragment("kindname.constructor");
-                        idname = site.tsym.name.toString();
+                        kindname = KindName.CONSTRUCTOR;
+                        idname = site.tsym.name;
                     }
-                    args = "(" + Type.toString(argtypes) + ")";
-                    if (typeargtypes != null && typeargtypes.nonEmpty())
-                        typeargs = "<" + Type.toString(typeargtypes) + ">";
                 }
                 if (kind == WRONG_MTH) {
+                    Symbol ws = wrongSym.asMemberOf(site, types);
                     log.error(pos,
                               "cant.apply.symbol" + (explanation != null ? ".1" : ""),
-                              wrongSym.asMemberOf(site, types),
-                              wrongSym.location(site, types),
-                              typeargs,
-                              Type.toString(argtypes),
+                              kindname,
+                              ws.name == names.init ? ws.owner.name : ws.name,
+                              ws.type.getParameterTypes(),
+                              argtypes,
+                              kindName(ws.owner),
+                              ws.owner.type,
                               explanation);
                 } else if (site.tsym.name.len != 0) {
                     if (site.tsym.kind == PCK && !site.tsym.exists())
                         log.error(pos, "doesnt.exist", site.tsym);
-                    else
-                        log.error(pos, "cant.resolve.location",
-                                  kindname, idname, args, typeargs,
-                                  typeKindName(site), site);
+                    else {
+                        String errKey = getErrorKey("cant.resolve.location",
+                                                    argtypes, typeargtypes,
+                                                    kindname);
+                        log.error(pos, errKey, kindname, idname, //symbol kindname, name
+                                  typeargtypes, argtypes, //type parameters and arguments (if any)
+                                  typeKindName(site), site); //location kindname, type
+                    }
                 } else {
-                    log.error(pos, "cant.resolve", kindname, idname, args, typeargs);
+                    String errKey = getErrorKey("cant.resolve",
+                                                argtypes, typeargtypes,
+                                                kindname);
+                    log.error(pos, errKey, kindname, idname, //symbol kindname, name
+                              typeargtypes, argtypes); //type parameters and arguments (if any)
                 }
             }
         }
-//where
-            /** A name designates an operator if it consists
-             *  of a non-empty sequence of operator symbols +-~!/*%&|^<>=
-             */
-            boolean isOperator(Name name) {
-                int i = 0;
-                while (i < name.len &&
-                       "+-~!*/%&|^<>=".indexOf(name.byteAt(i)) >= 0) i++;
-                return i > 0 && i == name.len;
+        //where
+        String getErrorKey(String key, List<Type> argtypes, List<Type> typeargtypes, KindName kindname) {
+            String suffix = "";
+            switch (kindname) {
+                case METHOD:
+                case CONSTRUCTOR: {
+                    suffix += ".args";
+                    suffix += typeargtypes.nonEmpty() ? ".params" : "";
+                }
             }
+            return key + suffix;
+        }
+
+        /** A name designates an operator if it consists
+         *  of a non-empty sequence of operator symbols +-~!/*%&|^<>=
+         */
+        boolean isOperator(Name name) {
+            int i = 0;
+            while (i < name.len &&
+                   "+-~!*/%&|^<>=".indexOf(name.byteAt(i)) >= 0) i++;
+            return i > 0 && i == name.len;
+        }
     }
 
     /** Resolve error class indicating that a symbol is not accessible.
@@ -1726,7 +1647,7 @@ public class Resolve {
                         sym, sym.location());
                 else if ((sym.flags() & (PRIVATE | PROTECTED)) != 0)
                     log.error(pos, "report.access", sym,
-                              TreeInfo.flagNames(sym.flags() & (PRIVATE | PROTECTED)),
+                              asFlagSet(sym.flags() & (PRIVATE | PROTECTED)),
                               sym.location());
                 else
                     log.error(pos, "not.def.public.cant.access",
@@ -1759,11 +1680,11 @@ public class Resolve {
                     Name name,
                     List<Type> argtypes,
                     List<Type> typeargtypes) {
-            String symstr = ((sym.kind == TYP && sym.type.tag == CLASS)
-                ? types.erasure(sym.type)
-                : sym).toString();
+            Symbol errSym = ((sym.kind == TYP && sym.type.tag == CLASS)
+                ? types.erasure(sym.type).tsym
+                : sym);
             log.error(pos, "non-static.cant.be.ref",
-                      kindName(sym), symstr);
+                      kindName(sym), errSym);
         }
     }
 

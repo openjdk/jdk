@@ -93,7 +93,8 @@ endif
 include $(BUILDDIR)/common/Library.gmk
 
 $(AGENTJAR): $(LIBDIR) $(TEMPDIR)/manifest
-	$(BOOT_JAR_CMD) -cfm $(AGENTJAR) $(TEMPDIR)/manifest
+	$(BOOT_JAR_CMD) -cfm $(AGENTJAR) $(TEMPDIR)/manifest $(BOOT_JAR_JFLAGS)
+	@$(java-vm-cleanup)
 
 $(TEMPDIR)/manifest: $(MANIFEST)
 	$(install-file)

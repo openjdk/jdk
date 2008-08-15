@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <sys/types.h>
+#include <process.h>
 
 #include "java_net_InetAddress.h"
 #include "java_net_Inet4AddressImpl.h"
@@ -141,7 +142,6 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     unsigned int addr[4];
 
     jobjectArray ret = NULL;
-    jclass byteArrayCls;
 
     if (!initialized) {
       ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
@@ -315,7 +315,7 @@ ping4(JNIEnv *env, jint fd, struct sockaddr_in* him, jint timeout,
     seq = ((unsigned short)rand()) >> 1;
 
     /* icmp_id is a 16 bit data type, therefore down cast the pid */
-    pid = (u_short) getpid();
+    pid = (u_short) _getpid();
     size = 60*1024;
     setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (const char *) &size, sizeof(size));
     /**

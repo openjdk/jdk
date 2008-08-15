@@ -25,6 +25,13 @@
 
 package com.sun.tools.javac.code;
 
+import java.util.EnumSet;
+import java.util.ResourceBundle;
+
+import com.sun.tools.javac.api.Formattable;
+
+import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.Flags.*;
 
 /** Internal symbol kinds, which distinguish between elements of
  *  different subclasses of Symbol. Symbol kinds are organized so they can be
@@ -82,4 +89,133 @@ public class Kinds {
     public static final int WRONG_MTH    = ERRONEOUS+6; // one method with wrong arguments
     public static final int ABSENT_MTH   = ERRONEOUS+7; // missing method
     public static final int ABSENT_TYP   = ERRONEOUS+8; // missing type
+
+    public enum KindName implements Formattable {
+        ANNOTATION("kindname.interface"),
+        CONSTRUCTOR("kindname.constructor"),
+        INTERFACE("kindname.interface"),
+        STATIC("kindname.static"),
+        TYPEVAR("kindname.type.variable"),
+        BOUND("kindname.type.variable.bound"),
+        VAR("kindname.variable"),
+        VAL("kindname.value"),
+        METHOD("kindname.method"),
+        CLASS("kindname.class"),
+        PACKAGE("kindname.package");
+
+        private String name;
+
+        KindName(String name) {
+            this.name = name;
+        }
+
+        public String toString() {
+            return name;
+        }
+
+        public String getKind() {
+            return "Kindname";
+        }
+
+        public String toString(ResourceBundle bundle) {
+            String s = toString();
+            return bundle.getString("compiler.misc." + s);
+        }
+    }
+
+    /** A KindName representing a given symbol kind
+     */
+    public static KindName kindName(int kind) {
+        switch (kind) {
+        case PCK: return KindName.PACKAGE;
+        case TYP: return KindName.CLASS;
+        case VAR: return KindName.VAR;
+        case VAL: return KindName.VAL;
+        case MTH: return KindName.METHOD;
+            default : throw new AssertionError("Unexpected kind: "+kind);
+        }
+    }
+
+    /** A KindName representing a given symbol
+     */
+    public static KindName kindName(Symbol sym) {
+        switch (sym.getKind()) {
+        case PACKAGE:
+            return KindName.PACKAGE;
+
+        case ENUM:
+        case ANNOTATION_TYPE:
+        case INTERFACE:
+        case CLASS:
+            return KindName.CLASS;
+
+        case TYPE_PARAMETER:
+            return KindName.TYPEVAR;
+
+        case ENUM_CONSTANT:
+        case FIELD:
+        case PARAMETER:
+        case LOCAL_VARIABLE:
+        case EXCEPTION_PARAMETER:
+            return KindName.VAR;
+
+        case METHOD:
+        case CONSTRUCTOR:
+        case STATIC_INIT:
+        case INSTANCE_INIT:
+            return KindName.METHOD;
+
+        default:
+            if (sym.kind == VAL)
+                // I don't think this can happen but it can't harm
+                // playing it safe --ahe
+                return KindName.VAL;
+            else
+                throw new AssertionError("Unexpected kind: "+sym.getKind());
+        }
+    }
+
+    /** A set of KindName(s) representing a set of symbol's kinds.
+     */
+    public static EnumSet<KindName> kindNames(int kind) {
+        EnumSet<KindName> kinds = EnumSet.noneOf(KindName.class);
+        if ((kind & VAL) != 0)
+            kinds.add(((kind & VAL) == VAR) ? KindName.VAR : KindName.VAL);
+        if ((kind & MTH) != 0) kinds.add(KindName.METHOD);
+        if ((kind & TYP) != 0) kinds.add(KindName.CLASS);
+        if ((kind & PCK) != 0) kinds.add(KindName.PACKAGE);
+        return kinds;
+    }
+
+    /** A KindName representing the kind of a given class/interface type.
+     */
+    public static KindName typeKindName(Type t) {
+        if (t.tag == TYPEVAR ||
+            t.tag == CLASS && (t.tsym.flags() & COMPOUND) != 0)
+            return KindName.BOUND;
+        else if (t.tag == PACKAGE)
+            return KindName.PACKAGE;
+        else if ((t.tsym.flags_field & ANNOTATION) != 0)
+            return KindName.ANNOTATION;
+        else if ((t.tsym.flags_field & INTERFACE) != 0)
+            return KindName.INTERFACE;
+        else
+            return KindName.CLASS;
+    }
+
+    /** A KindName representing the kind of a a missing symbol, given an
+     *  error kind.
+     * */
+    public static KindName absentKind(int kind) {
+        switch (kind) {
+        case ABSENT_VAR:
+            return KindName.VAR;
+        case WRONG_MTHS: case WRONG_MTH: case ABSENT_MTH:
+            return KindName.METHOD;
+        case ABSENT_TYP:
+            return KindName.CLASS;
+        default:
+            throw new AssertionError("Unexpected kind: "+kind);
+        }
+    }
 }
