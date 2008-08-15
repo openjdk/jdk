@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,291 +23,611 @@
  * have any questions.
  */
 
+#include <jni.h>
+#include <jni_util.h>
+#include <jlong.h>
 #include "D3DSurfaceData.h"
-#include "D3DContext.h"
-#include "jlong.h"
-#include "jni_util.h"
+#include "D3DPipelineManager.h"
 #include "Trace.h"
-#include "ddrawUtils.h"
-#include "Devices.h"
+#include "awt_Toolkit.h"
+#include "awt_Window.h"
+#include "awt_BitmapUtil.h"
+#include "D3DRenderQueue.h"
 
-#include "Win32SurfaceData.h"
-#include "sun_java2d_d3d_D3DBackBufferSurfaceData.h"
+// REMIND: move to awt_Component.h
+extern "C" HWND AwtComponent_GetHWnd(JNIEnv *env, jlong pData);
 
-extern LockFunc Win32OSSD_Lock;
-extern GetRasInfoFunc Win32OSSD_GetRasInfo;
-extern UnlockFunc Win32OSSD_Unlock;
-extern DisposeFunc Win32OSSD_Dispose;
-extern GetDCFunc Win32OSSD_GetDC;
-extern ReleaseDCFunc Win32OSSD_ReleaseDC;
-extern InvalidateSDFunc Win32OSSD_InvalidateSD;
-extern RestoreSurfaceFunc Win32OSSD_RestoreSurface;
-extern DisposeFunc Win32BBSD_Dispose;
-
-extern "C" {
-
-RestoreSurfaceFunc D3DSD_RestoreSurface;
-
-/*
- * D3D-surface specific restore function.
- * We need to make sure the D3DContext is notified if the
- * surface is lost (only if this surface is the current target,
- * otherwise it's possible that it'll get restored (along with its
- * depth buffer), and the context will still think that the clipping
- * that's set for this surface is valid.
- * Consider this scenario:
- * do {
- *     vi.validate(gc); // validated, vi's surface is restored, clipping is lost
- *     // render stuff using d3d, clipping is reset
- *     // -> surface loss event happens
- *     // do a DD blit of the VI to the screen
- *     // at this point the VI surface will be marked lost
- *     // and will be restored in validate() next time around,
- *     // losing the clipping w/o notifying the D3D context
- * } while (vi.surfaceLost());
+/**
+ * Initializes nativeWidth/Height fields of the SurfaceData object with
+ * dimensions on the native surface.
  */
-void D3DSD_RestoreSurface(JNIEnv *env, Win32SDOps *wsdo) {
-    J2dTraceLn(J2D_TRACE_INFO, "D3DSD_RestoreSurface");
-    D3DSDOps *d3dsdo = (D3DSDOps *)wsdo;
-    // This is needed only for non-textures, since textures can't
-    // lose their surfaces, as they're managed.
-    if (!(d3dsdo->d3dType & D3D_TEXTURE_SURFACE) && wsdo->lpSurface != NULL)
-    {
-        if (wsdo->ddInstance != NULL && wsdo->ddInstance->ddObject != NULL) {
-            D3DContext *d3dContext =
-                wsdo->ddInstance->ddObject->GetD3dContext();
-            if (d3dContext != NULL) {
-                d3dContext->InvalidateIfTarget(env, wsdo->lpSurface);
+void D3DSD_SetNativeDimensions(JNIEnv *env, D3DSDOps *d3dsdo) {
+    jobject sdObject;
+    jint width, height;
+
+    RETURN_IF_NULL(sdObject = env->NewLocalRef(d3dsdo->sdOps.sdObject));
+
+    if (d3dsdo->pResource != NULL) {
+        width = d3dsdo->pResource->GetDesc()->Width;
+        height = d3dsdo->pResource->GetDesc()->Height;
+    } else {
+        width = d3dsdo->width;
+        height = d3dsdo->height;
+    }
+
+    JNU_SetFieldByName(env, NULL, sdObject, "nativeWidth", "I", width);
+    JNU_SetFieldByName(env, NULL, sdObject, "nativeHeight", "I", height);
+
+    env->DeleteLocalRef(sdObject);
+}
+
+void D3DSD_Flush(void *pData)
+{
+    J2dTraceLn(J2D_TRACE_INFO, "D3DSD_Flush");
+    RETURN_IF_NULL(pData);
+
+    D3DSDOps *d3dsdo = (D3DSDOps*)pData;
+    if (d3dsdo->pResource != NULL) {
+        D3DContext *pCtx;
+        D3DPipelineManager *pMgr;
+
+        d3dsdo->pResource->SetSDOps(NULL);
+
+        if ((pMgr = D3DPipelineManager::GetInstance()) != NULL &&
+            SUCCEEDED(pMgr->GetD3DContext(d3dsdo->adapter, &pCtx)))
+        {
+            if (pCtx->GetResourceManager()) {
+                pCtx->GetResourceManager()->ReleaseResource(d3dsdo->pResource);
             }
         }
+        d3dsdo->pResource = NULL;
     }
-    Win32OSSD_RestoreSurface(env, wsdo);
 }
+
+void
+D3DSD_MarkLost(void *pData)
+{
+    D3DSDOps *d3dsdo;
+    jobject sdObject;
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DSD_MarkLost");
+
+    RETURN_IF_NULL(pData);
+
+    d3dsdo = (D3DSDOps*)pData;
+    RETURN_IF_NULL(sdObject = env->NewLocalRef(d3dsdo->sdOps.sdObject));
+
+    JNU_CallMethodByName(env, NULL, sdObject,
+                         "setSurfaceLost", "(Z)V", JNI_TRUE);
+
+    env->DeleteLocalRef(sdObject);
+}
+
+// ------------ generic SurfaceData.h functions ----------------
+
+void
+D3DSD_Dispose(JNIEnv *env, SurfaceDataOps *ops)
+{
+    D3DSDOps *d3dsdo = (D3DSDOps *)ops;
+    RETURN_IF_NULL(d3dsdo);
+
+    JNU_CallStaticMethodByName(env, NULL, "sun/java2d/d3d/D3DSurfaceData",
+                               "dispose", "(J)V",
+                               ptr_to_jlong(ops));
+}
+
+/**
+ * This is the implementation of the general surface LockFunc defined in
+ * SurfaceData.h.
+ */
+jint
+D3DSD_Lock(JNIEnv *env,
+           SurfaceDataOps *ops,
+           SurfaceDataRasInfo *pRasInfo,
+           jint lockflags)
+{
+    JNU_ThrowInternalError(env, "D3DSD_Lock not implemented!");
+    return SD_FAILURE;
+}
+
+/**
+ * This is the implementation of the general GetRasInfoFunc defined in
+ * SurfaceData.h.
+ */
+void
+D3DSD_GetRasInfo(JNIEnv *env,
+                 SurfaceDataOps *ops,
+                 SurfaceDataRasInfo *pRasInfo)
+{
+    JNU_ThrowInternalError(env, "D3DSD_GetRasInfo not implemented!");
+}
+
+/**
+ * This is the implementation of the general surface UnlockFunc defined in
+ * SurfaceData.h.
+ */
+void
+D3DSD_Unlock(JNIEnv *env,
+             SurfaceDataOps *ops,
+             SurfaceDataRasInfo *pRasInfo)
+{
+    JNU_ThrowInternalError(env, "D3DSD_Unlock not implemented!");
+}
+
+// ------------ D3DSurfaceData's JNI methods ----------------
+
+
+extern "C" {
 
 /*
  * Class:     sun_java2d_d3d_D3DSurfaceData
  * Method:    initOps
- * Signature: (Ljava/lang/Object;)V
+ * Signature: (III)V
  */
-JNIEXPORT void JNICALL
-Java_sun_java2d_d3d_D3DSurfaceData_initOps(JNIEnv *env,
-                                           jobject wsd,
-                                           jint depth,
-                                           jint transparency)
+JNIEXPORT void
+JNICALL Java_sun_java2d_d3d_D3DSurfaceData_initOps
+  (JNIEnv *env, jobject d3dsd, jint gdiScreen, jint width, jint height)
 {
+    D3DPipelineManager *pMgr;
+    D3DSDOps *d3dsdo = (D3DSDOps *)SurfaceData_InitOps(env, d3dsd,
+                                                       sizeof(D3DSDOps));
+
     J2dTraceLn(J2D_TRACE_INFO, "D3DSurfaceData_initOps");
-    Win32SDOps *wsdo = (Win32SDOps *)SurfaceData_InitOps(env, wsd,
-                                                         sizeof(D3DSDOps));
-    wsdo->sdOps.Lock = Win32OSSD_Lock;
-    wsdo->sdOps.GetRasInfo = Win32OSSD_GetRasInfo;
-    wsdo->sdOps.Unlock = Win32OSSD_Unlock;
-    wsdo->sdOps.Dispose = Win32OSSD_Dispose;
-    wsdo->RestoreSurface = D3DSD_RestoreSurface;
-    wsdo->GetDC = Win32OSSD_GetDC;
-    wsdo->ReleaseDC = Win32OSSD_ReleaseDC;
-    wsdo->InvalidateSD = Win32OSSD_InvalidateSD;
-    wsdo->invalid = JNI_FALSE;
-    wsdo->lockType = WIN32SD_LOCK_UNLOCKED;
-    wsdo->window = NULL;
-    wsdo->backBufferCount = 0;
-    wsdo->depth = depth;
-    switch (depth) {
-        case 8:
-            wsdo->pixelStride = 1;
-            break;
-        case 15: //555
-            wsdo->pixelStride = 2;
-            wsdo->pixelMasks[0] = 0x1f << 10;
-            wsdo->pixelMasks[1] = 0x1f << 5;
-            wsdo->pixelMasks[2] = 0x1f;
-            break;
-        case 16: //565
-            wsdo->pixelStride = 2;
-            wsdo->pixelMasks[0] = 0x1f << 11;
-            wsdo->pixelMasks[1] = 0x3f << 5;
-            wsdo->pixelMasks[2] = 0x1f;
-            break;
-        case 24:
-            wsdo->pixelStride = 3;
-            break;
-        case 32: //x888
-            wsdo->pixelStride = 4;
-            wsdo->pixelMasks[0] = 0xff0000;
-            wsdo->pixelMasks[1] = 0x00ff00;
-            wsdo->pixelMasks[2] = 0x0000ff;
-            break;
+
+    if (d3dsdo == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "creating native d3d ops");
+        return;
     }
-    wsdo->surfaceLock = new CriticalSection();
-    wsdo->surfaceLost = FALSE;
-    wsdo->transparency = transparency;
-    wsdo->surfacePuntData.usingDDSystem = FALSE;
-    wsdo->surfacePuntData.lpSurfaceSystem = NULL;
-    wsdo->surfacePuntData.lpSurfaceVram = NULL;
-    wsdo->surfacePuntData.numBltsSinceRead = 0;
-    wsdo->surfacePuntData.pixelsReadSinceBlt = 0;
-    wsdo->surfacePuntData.numBltsThreshold = 2;
-    wsdo->gdiOpPending = FALSE;
+
+    d3dsdo->sdOps.Lock       = D3DSD_Lock;
+    d3dsdo->sdOps.GetRasInfo = D3DSD_GetRasInfo;
+    d3dsdo->sdOps.Unlock     = D3DSD_Unlock;
+    d3dsdo->sdOps.Dispose    = D3DSD_Dispose;
+
+    d3dsdo->xoff = 0;
+    d3dsdo->yoff = 0;
+    d3dsdo->width = width;
+    d3dsdo->height = height;
+
+    d3dsdo->pResource = NULL;
+
+    d3dsdo->adapter =
+        (pMgr = D3DPipelineManager::GetInstance()) == NULL ?
+            D3DADAPTER_DEFAULT :
+            pMgr->GetAdapterOrdinalForScreen(gdiScreen);
 }
 
-jboolean init_D3DSDO(JNIEnv* env, Win32SDOps* wsdo, jint width, jint height,
-                     jint d3dSurfaceType, jint screen)
-{
-    // default in case of an error
-    wsdo->lpSurface = NULL;
-    wsdo->ddInstance = NULL;
 
-    {
-        Devices::InstanceAccess devices;
-        wsdo->device = devices->GetDeviceReference(screen, FALSE);
-    }
-    if (wsdo->device == NULL) {
-        J2dTraceLn1(J2D_TRACE_WARNING,
-                    "init_D3DSDO: Incorrect "\
-                    "screen number (screen=%d)", screen);
-        wsdo->invalid = TRUE;
+/*
+ * Class:     sun_java2d_d3d_D3DSurfaceData
+ * Method:    initTexture
+ * Signature: (JZZ)Z
+ */
+JNIEXPORT jboolean
+JNICALL Java_sun_java2d_d3d_D3DSurfaceData_initTexture
+  (JNIEnv *env, jobject d3dsd,
+  jlong pData, jboolean isRTT, jboolean isOpaque)
+{
+    HRESULT res;
+    D3DSDOps *d3dsdo;
+    D3DContext *pCtx;
+    D3DPipelineManager *pMgr;
+    D3DFORMAT format;
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DSurfaceData_initTexture");
+
+    RETURN_STATUS_IF_NULL(d3dsdo = (D3DSDOps *)jlong_to_ptr(pData), JNI_FALSE);
+    RETURN_STATUS_IF_NULL(pMgr = D3DPipelineManager::GetInstance(), JNI_FALSE);
+
+    if (FAILED(res = pMgr->GetD3DContext(d3dsdo->adapter, &pCtx))) {
+        D3DRQ_MarkLostIfNeeded(res, d3dsdo);
         return JNI_FALSE;
     }
-    wsdo->w = width;
-    wsdo->h = height;
-    wsdo->surfacePuntData.disablePunts = TRUE;
-    return JNI_TRUE;
+    RETURN_STATUS_IF_NULL(pCtx->GetResourceManager(), JNI_FALSE);
+
+    pCtx->GetResourceManager()->ReleaseResource(d3dsdo->pResource);
+    d3dsdo->pResource = NULL;
+
+    if (isRTT && isOpaque) {
+        format = pCtx->GetPresentationParams()->BackBufferFormat;
+    } else {
+        format = D3DFMT_UNKNOWN;
+    }
+
+    res = pCtx->GetResourceManager()->
+        CreateTexture(d3dsdo->width, d3dsdo->height,
+                      isRTT, isOpaque,
+                      &format, 0/*usage*/, &d3dsdo->pResource);
+    if (SUCCEEDED(res)) {
+        J2dTraceLn1(J2D_TRACE_VERBOSE,
+                    "  created texture pResource=%x", d3dsdo->pResource);
+        d3dsdo->pResource->SetSDOps(d3dsdo);
+    } else {
+        D3DRQ_MarkLostIfNeeded(res, d3dsdo);
+    }
+    D3DSD_SetNativeDimensions(env, d3dsdo);
+
+    return SUCCEEDED(res);
 }
 
 /*
  * Class:     sun_java2d_d3d_D3DSurfaceData
- * Method:    initOffScreenSurface
- * Signature: (JJJIIII)I
+ * Method:    initPlain
+ * Signature: (JZ)Z
  */
-JNIEXPORT jint JNICALL
-Java_sun_java2d_d3d_D3DSurfaceData_initOffScreenSurface
-    (JNIEnv *env, jobject sData,
-     jlong pCtx,
-     jlong pData, jlong parentPdata,
-     jint width, jint height,
-     jint d3dSurfaceType, jint screen)
+JNIEXPORT jboolean JNICALL
+Java_sun_java2d_d3d_D3DSurfaceData_initRTSurface
+  (JNIEnv *env, jobject d3dsd, jlong pData, jboolean isOpaque)
 {
-    Win32SDOps *wsdo = (Win32SDOps *)jlong_to_ptr(pData);
-    D3DContext *pd3dc = (D3DContext *)jlong_to_ptr(pCtx);
-
-    J2dTraceLn(J2D_TRACE_INFO, "D3DSurfaceData_initOffScreenSurface");
-    J2dTraceLn4(J2D_TRACE_VERBOSE,
-                "  width=%-4d height=%-4d type=%-3d scr=%-3d",
-                width, height, d3dSurfaceType, screen);
-
-    // REMIND: ideally this should be done in initOps
-    if (d3dSurfaceType == D3D_ATTACHED_SURFACE) {
-        wsdo->sdOps.Dispose = Win32BBSD_Dispose;
-    }
-
-    if (init_D3DSDO(env, wsdo, width, height,
-                    d3dSurfaceType, screen) == JNI_FALSE)
-    {
-        SurfaceData_ThrowInvalidPipeException(env,
-            "Can't create offscreen surface");
-        return PF_INVALID;
-    }
-
-    HMONITOR hMon = (HMONITOR)wsdo->device->GetMonitor();
-    DDrawObjectStruct *ddInstance = GetDDInstanceForDevice(hMon);
-    if (!ddInstance || !ddInstance->valid || !pd3dc) {
-        return PF_INVALID;
-    }
-
-    if (d3dSurfaceType == D3D_ATTACHED_SURFACE) {
-        // REMIND: still using the old path. ideally the creation of attached
-        // surface shoudld be done in the same way as other types of surfaces,
-        // that is, in D3DContext::CreateSurface, but we really don't use
-        // anything from D3DContext to get an attached surface, so this
-        // was left here.
-
-        Win32SDOps *wsdo_parent = (Win32SDOps *)jlong_to_ptr(parentPdata);
-        // we're being explicit here: requesting backbuffer, and render target
-        DDrawSurface* pNew = wsdo_parent->lpSurface == NULL ?
-            NULL :
-            wsdo_parent->lpSurface->
-                GetDDAttachedSurface(DDSCAPS_BACKBUFFER|DDSCAPS_3DDEVICE);
-        if (pNew == NULL ||
-            FAILED(pd3dc->AttachDepthBuffer(pNew->GetDXSurface())))
-        {
-            J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                           "D3DSD_initSurface: GetAttachedSurface for parent"\
-                           " wsdo_parent->lpSurface=0x%x failed",
-                           wsdo_parent->lpSurface);
-            if (pNew != NULL) {
-                delete pNew;
-            }
-            SurfaceData_ThrowInvalidPipeException(env,
-                "Can't create attached offscreen surface");
-            return PF_INVALID;
-        }
-
-        wsdo->lpSurface = pNew;
-        wsdo->ddInstance = ddInstance;
-        J2dTraceLn2(J2D_TRACE_VERBOSE,
-                    "D3DSD_initSurface: created attached surface: "\
-                    "wsdo->lpSurface=0x%x for parent "\
-                    "wsdo_parent->lpSurface=0x%x",
-                    wsdo->lpSurface, wsdo_parent->lpSurface);
-        // we don't care about pixel format for non-texture surfaces
-        return PF_INVALID;
-    }
-
-    DXSurface *dxSurface = NULL;
-    jint pf = PF_INVALID;
     HRESULT res;
-    if (SUCCEEDED(res = pd3dc->CreateSurface(env, wsdo->w, wsdo->h,
-                                             wsdo->depth, wsdo->transparency,
-                                             d3dSurfaceType,
-                                             &dxSurface, &pf)))
-    {
-        // REMIND: put all the error-handling stuff here from
-        // DDCreateOffScreenSurface
-        wsdo->lpSurface = new DDrawSurface(ddInstance->ddObject, dxSurface);
-        wsdo->surfacePuntData.lpSurfaceVram = wsdo->lpSurface;
-        wsdo->ddInstance = ddInstance;
-        // the dimensions of the surface may be adjusted in case of
-        // textures
-        wsdo->w = dxSurface->GetWidth();
-        wsdo->h = dxSurface->GetHeight();
-        J2dTraceLn1(J2D_TRACE_VERBOSE,
-                    "D3DSurfaceData_initSurface: created surface: "\
-                    "wsdo->lpSurface=0x%x", wsdo->lpSurface);
-    } else {
-        DebugPrintDirectDrawError(res,
-                                  "D3DSurfaceData_initSurface: "\
-                                  "CreateSurface failed");
-        // REMIND: should use some other way to signal that
-        // surface creation was unsuccessful
-        SurfaceData_ThrowInvalidPipeException(env,
-                                              "Can't create offscreen surf");
+    D3DSDOps *d3dsdo;
+    D3DContext *pCtx;
+    D3DPipelineManager *pMgr;
+    D3DFORMAT format = D3DFMT_UNKNOWN;
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DSurfaceData_initRTSurface");
+
+    RETURN_STATUS_IF_NULL(d3dsdo = (D3DSDOps *)jlong_to_ptr(pData), JNI_FALSE);
+    RETURN_STATUS_IF_NULL(pMgr = D3DPipelineManager::GetInstance(), JNI_FALSE);
+
+    if (FAILED(res = pMgr->GetD3DContext(d3dsdo->adapter, &pCtx))) {
+        D3DRQ_MarkLostIfNeeded(res, d3dsdo);
+        return JNI_FALSE;
     }
-    return pf;
+    RETURN_STATUS_IF_NULL(pCtx->GetResourceManager(), JNI_FALSE);
+
+    pCtx->GetResourceManager()->ReleaseResource(d3dsdo->pResource);
+    d3dsdo->pResource = NULL;
+
+    res = pCtx->GetResourceManager()->
+            CreateRTSurface(d3dsdo->width, d3dsdo->height,
+                            isOpaque, FALSE /*lockable*/,
+                            &format, &d3dsdo->pResource);
+    if (SUCCEEDED(res)) {
+        J2dTraceLn1(J2D_TRACE_VERBOSE, "  created RT surface pResource=0x%x",
+                    d3dsdo->pResource);
+        d3dsdo->pResource->SetSDOps(d3dsdo);
+    } else {
+        D3DRQ_MarkLostIfNeeded(res, d3dsdo);
+    }
+    D3DSD_SetNativeDimensions(env, d3dsdo);
+
+    return SUCCEEDED(res);
 }
 
 /*
- * Class:     sun_java2d_d3d_D3DBackBufferSurfaceData
- * Method:    restoreDepthBuffer
- * Signature: ()V
+ * Class:     sun_java2d_d3d_D3DSurfaceData
+ * Method:    initFlipBackbuffer
+ * Signature: (JJIZ)Z
  */
-JNIEXPORT void JNICALL
-Java_sun_java2d_d3d_D3DBackBufferSurfaceData_restoreDepthBuffer(JNIEnv *env,
-                                                                jobject sData)
+JNIEXPORT jboolean
+JNICALL Java_sun_java2d_d3d_D3DSurfaceData_initFlipBackbuffer
+  (JNIEnv *env, jobject d3dsd, jlong pData, jlong pPeerData,
+  jint numBuffers, jint swapEffect,
+  jint vSyncType)
 {
-    Win32SDOps *wsdo = Win32SurfaceData_GetOpsNoSetup(env, sData);
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "D3DBBSD_restoreDepthBuffer: wsdo=0x%x", wsdo);
+    HRESULT res;
+    D3DSDOps *d3dsdo;
+    D3DContext *pCtx;
+    D3DPipelineManager *pMgr;
+    HWND hWnd;
+    UINT presentationInterval;
+    AwtComponent *pPeer;
+    RECT r = { 0, 0, 0, 0 };
 
-    if (wsdo != NULL) {
-        if (!DDRestoreSurface(wsdo)) {
-            // Failure - throw exception
-            J2dRlsTraceLn(J2D_TRACE_ERROR,
-                          "D3DBBSD_restoreDepthBuffer: failed to "\
-                          "restore depth buffer");
+    J2dTraceLn(J2D_TRACE_INFO, "D3DSurfaceData_initFlipBackbuffer");
 
-            SurfaceData_ThrowInvalidPipeException(env,
-                                                  "RestoreDepthBuffer failure");
+    RETURN_STATUS_IF_NULL(d3dsdo = (D3DSDOps *)jlong_to_ptr(pData), JNI_FALSE);
+    RETURN_STATUS_IF_NULL(pMgr = D3DPipelineManager::GetInstance(), JNI_FALSE);
+    RETURN_STATUS_IF_NULL(pPeer = (AwtComponent *)jlong_to_ptr(pPeerData),
+                          JNI_FALSE);
+
+    hWnd = pPeer->GetHWnd();
+    if (!IsWindow(hWnd)) {
+        J2dTraceLn(J2D_TRACE_WARNING,
+                   "D3DSurfaceData_initFlipBackbuffer: disposed component");
+        return JNI_FALSE;
+    }
+
+    pPeer->GetInsets(&r);
+    d3dsdo->xoff = -r.left;
+    d3dsdo->yoff = -r.top;
+
+    if (FAILED(res = pMgr->GetD3DContext(d3dsdo->adapter, &pCtx))) {
+        D3DRQ_MarkLostIfNeeded(res, d3dsdo);
+        return JNI_FALSE;
+    }
+    RETURN_STATUS_IF_NULL(pCtx->GetResourceManager(), JNI_FALSE);
+
+    pCtx->GetResourceManager()->ReleaseResource(d3dsdo->pResource);
+    d3dsdo->pResource = NULL;
+
+    d3dsdo->swapEffect = (D3DSWAPEFFECT)swapEffect;
+
+    // in full-screen mode we should v-sync
+    if (pCtx->GetPresentationParams()->Windowed) {
+        if (vSyncType == VSYNC_ON) {
+            presentationInterval = D3DPRESENT_INTERVAL_ONE;
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                       "  windowed, forced interval: ONE");
+        } else {
+            presentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                       "  windowed, default interval: IMMEDIATE");
+        }
+
+        // REMIND: this is a workaround for the current issue
+        // we have with non-copy flip chains: since we can not specify
+        // the dest rectangle for Present for these modes, the result of
+        // Present(NULL, NULL) is scaled to the client area.
+        if (d3dsdo->xoff != 0 || d3dsdo->yoff != 0) {
+            d3dsdo->swapEffect = D3DSWAPEFFECT_COPY;
+        }
+    } else {
+        if (vSyncType == VSYNC_OFF) {
+            presentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                       "  full-screen, forced interval: IMMEDIATE");
+        } else {
+            presentationInterval = D3DPRESENT_INTERVAL_ONE;
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                       "  full-screen, default interval: ONE");
         }
     }
+
+    res = pCtx->GetResourceManager()->
+        CreateSwapChain(hWnd, numBuffers,
+                        d3dsdo->width, d3dsdo->height,
+                        d3dsdo->swapEffect, presentationInterval,
+                        &d3dsdo->pResource);
+    if (SUCCEEDED(res)) {
+        J2dTraceLn1(J2D_TRACE_VERBOSE, "  created swap chain pResource=0x%x",
+                    d3dsdo->pResource);
+        d3dsdo->pResource->SetSDOps(d3dsdo);
+    } else {
+        D3DRQ_MarkLostIfNeeded(res, d3dsdo);
+    }
+    D3DSD_SetNativeDimensions(env, d3dsdo);
+
+    return SUCCEEDED(res);
 }
 
+/*
+ * Class:     sun_java2d_d3d_D3DSurfaceData
+ * Method:    dbGetPixelNative
+ * Signature: (JII)I
+ */
+JNIEXPORT jint JNICALL Java_sun_java2d_d3d_D3DSurfaceData_dbGetPixelNative
+  (JNIEnv *env, jclass clazz, jlong pData, jint x, jint y)
+{
+    HRESULT res;
+    D3DSDOps *d3dsdo;
+    D3DContext *pCtx;
+    D3DPipelineManager *pMgr;
+    D3DResource *pLockableRes;
+    jint pixel = 0;
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DSurfaceData_dbGetPixelNative");
+
+    RETURN_STATUS_IF_NULL(d3dsdo = (D3DSDOps *)jlong_to_ptr(pData), pixel);
+    RETURN_STATUS_IF_NULL(d3dsdo->pResource, pixel);
+    RETURN_STATUS_IF_NULL(pMgr = D3DPipelineManager::GetInstance(), pixel);
+
+    if (FAILED(res = pMgr->GetD3DContext(d3dsdo->adapter, &pCtx))) {
+        D3DRQ_MarkLostIfNeeded(res, d3dsdo);
+        return pixel;
+    }
+    RETURN_STATUS_IF_NULL(pCtx->GetResourceManager(), 0);
+
+    IDirect3DDevice9 *pd3dDevice = pCtx->Get3DDevice();
+    IDirect3DSurface9 *pSrc = d3dsdo->pResource->GetSurface();
+    D3DFORMAT srcFmt = d3dsdo->pResource->GetDesc()->Format;
+
+    pCtx->UpdateState(STATE_OTHEROP);
+
+    res = pCtx->GetResourceManager()->
+            GetLockableRTSurface(1, 1, srcFmt, &pLockableRes);
+    if (SUCCEEDED(res)) {
+        IDirect3DSurface9 *pTmpSurface;
+        RECT srcRect = { x, y, x+1, y+1};
+        RECT dstRect = { 0l, 0l, 1, 1 };
+
+        pTmpSurface = pLockableRes->GetSurface();
+        res = pd3dDevice->StretchRect(pSrc, &srcRect, pTmpSurface, &dstRect,
+                                      D3DTEXF_NONE);
+        if (SUCCEEDED(res)) {
+            D3DLOCKED_RECT lRect;
+
+            res = pTmpSurface->LockRect(&lRect, &dstRect, D3DLOCK_NOSYSLOCK);
+            if (SUCCEEDED(res)) {
+                if (srcFmt == D3DFMT_X8R8G8B8) {
+                    pixel = *(jint*)lRect.pBits;
+                } else {
+                    pixel = *(unsigned short*)lRect.pBits;
+                }
+                pTmpSurface->UnlockRect();
+            }
+        }
+    }
+    D3DRQ_MarkLostIfNeeded(res, d3dsdo);
+
+    return pixel;
+}
+
+/*
+ * Class:     sun_java2d_d3d_D3DSurfaceData
+ * Method:    dbSetPixelNative
+ * Signature: (JIII)V
+ */
+JNIEXPORT void JNICALL Java_sun_java2d_d3d_D3DSurfaceData_dbSetPixelNative
+  (JNIEnv *env, jclass clazz, jlong pData, jint x, jint y, jint pixel)
+{
+    HRESULT res;
+    D3DSDOps *d3dsdo;
+    D3DResource *pLockableRes;
+    D3DContext *pCtx;
+    D3DPipelineManager *pMgr;
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DSurfaceData_dbSetPixelNative");
+
+    RETURN_IF_NULL(d3dsdo = (D3DSDOps *)jlong_to_ptr(pData));
+    RETURN_IF_NULL(d3dsdo->pResource);
+    RETURN_IF_NULL(pMgr = D3DPipelineManager::GetInstance());
+
+    if (FAILED(res = pMgr->GetD3DContext(d3dsdo->adapter, &pCtx))) {
+        D3DRQ_MarkLostIfNeeded(res, d3dsdo);
+        return;
+    }
+    RETURN_IF_NULL(pCtx->GetResourceManager());
+
+    IDirect3DDevice9 *pd3dDevice = pCtx->Get3DDevice();
+    IDirect3DSurface9 *pSrc = d3dsdo->pResource->GetSurface();
+    D3DFORMAT srcFmt = d3dsdo->pResource->GetDesc()->Format;
+
+    pCtx->UpdateState(STATE_OTHEROP);
+
+    res = pCtx->GetResourceManager()->
+            GetLockableRTSurface(1, 1, srcFmt, &pLockableRes);
+    if (SUCCEEDED(res)) {
+        IDirect3DSurface9 *pTmpSurface;
+        D3DLOCKED_RECT lRect;
+        RECT srcRect = { 0l, 0l, 1, 1 };
+        RECT dstRect = { x, y, x+1, y+1};
+
+        pTmpSurface = pLockableRes->GetSurface();
+        res = pTmpSurface->LockRect(&lRect, &srcRect, D3DLOCK_NOSYSLOCK);
+        if (SUCCEEDED(res)) {
+            if (srcFmt == D3DFMT_X8R8G8B8) {
+                *(jint*)lRect.pBits = pixel;
+            } else {
+                *(unsigned short*)lRect.pBits = (unsigned short)pixel;
+            }
+            pTmpSurface->UnlockRect();
+
+            res = pd3dDevice->StretchRect(pTmpSurface, &srcRect, pSrc, &dstRect,
+                                          D3DTEXF_NONE);
+        }
+    }
+    D3DRQ_MarkLostIfNeeded(res, d3dsdo);
+}
+
+/*
+ * Class:     sun_java2d_d3d_D3DSurfaceData
+ * Method:    getNativeResourceNative
+ * Signature: (JI)J
+ */
+JNIEXPORT jlong JNICALL
+    Java_sun_java2d_d3d_D3DSurfaceData_getNativeResourceNative
+        (JNIEnv *env, jclass d3sdc, jlong pData, jint resType)
+{
+    D3DSDOps *d3dsdo;
+
+    J2dTraceLn(J2D_TRACE_INFO, "D3DSurfaceData_getNativeResourceNative")
+
+    RETURN_STATUS_IF_NULL(d3dsdo = (D3DSDOps *)jlong_to_ptr(pData), 0L);
+
+    if (resType == D3D_DEVICE_RESOURCE) {
+        HRESULT res;
+        D3DPipelineManager *pMgr;
+        D3DContext *pCtx;
+
+        RETURN_STATUS_IF_NULL(pMgr = D3DPipelineManager::GetInstance(), 0L);
+        if (FAILED(res = pMgr->GetD3DContext(d3dsdo->adapter, &pCtx))) {
+            D3DRQ_MarkLostIfNeeded(res, d3dsdo);
+            return 0L;
+        }
+        return ptr_to_jlong(pCtx->Get3DDevice());
+    }
+
+    RETURN_STATUS_IF_NULL(d3dsdo->pResource, 0L);
+
+    if (resType == RT_PLAIN || resType == RT_TEXTURE) {
+        return ptr_to_jlong(d3dsdo->pResource->GetSurface());
+    }
+    if (resType == TEXTURE) {
+        return ptr_to_jlong(d3dsdo->pResource->GetTexture());
+    }
+    if (resType == FLIP_BACKBUFFER) {
+        return ptr_to_jlong(d3dsdo->pResource->GetSwapChain());
+    }
+
+    return 0L;
+}
+
+/*
+ * Class:     sun_java2d_d3d_D3DSurfaceData
+ * Method:    updateWindowAccelImpl
+ * Signature: (JJII)Z
+ */
+JNIEXPORT jboolean
+JNICALL Java_sun_java2d_d3d_D3DSurfaceData_updateWindowAccelImpl
+  (JNIEnv *env, jclass clazz, jlong pd3dsd, jlong pData, jint w, jint h)
+{
+    HRESULT res;
+    AwtWindow *window;
+    HBITMAP hBitmap = NULL;
+    D3DSDOps *d3dsdo;
+    D3DResource *pSrcRes;
+    D3DContext *pCtx;
+    D3DPipelineManager *pMgr;
+    D3DResource *pLockableRes = NULL;
+    IDirect3DSurface9 *pTmpSurface = NULL;
+    IDirect3DDevice9 *pd3dDevice = NULL;
+    D3DLOCKED_RECT lockedRect;
+
+    J2dTraceLn(J2D_TRACE_ERROR, "D3DSurfaceData_updateWindowAccelImpl");
+
+    if (w <= 0 || h <= 0) {
+        return JNI_TRUE;
+    }
+
+    RETURN_STATUS_IF_NULL(window = (AwtWindow *)jlong_to_ptr(pData), JNI_FALSE);
+    RETURN_STATUS_IF_NULL(d3dsdo = (D3DSDOps *)jlong_to_ptr(pd3dsd), JNI_FALSE);
+    RETURN_STATUS_IF_NULL(pMgr = D3DPipelineManager::GetInstance(), JNI_FALSE);
+    RETURN_STATUS_IF_NULL(pSrcRes = d3dsdo->pResource, JNI_FALSE);
+
+    if (FAILED(res = pMgr->GetD3DContext(d3dsdo->adapter, &pCtx))) {
+        D3DRQ_MarkLostIfNeeded(res, d3dsdo);
+        return JNI_FALSE;
+    }
+
+    RETURN_STATUS_IF_NULL(pd3dDevice = pCtx->Get3DDevice(), JNI_FALSE);
+    pCtx->UpdateState(STATE_OTHEROP);
+
+    res = pCtx->GetResourceManager()->
+            GetBlitOSPSurface(pSrcRes->GetDesc()->Width,
+                              pSrcRes->GetDesc()->Height,
+                              pSrcRes->GetDesc()->Format,
+                              &pLockableRes);
+    if (FAILED(res)) {
+        D3DRQ_MarkLostIfNeeded(res, d3dsdo);
+        return JNI_FALSE;
+    }
+    pTmpSurface = pLockableRes->GetSurface();
+
+    res = pd3dDevice->GetRenderTargetData(pSrcRes->GetSurface(), pTmpSurface);
+    if (FAILED(res)) {
+        D3DRQ_MarkLostIfNeeded(res, d3dsdo);
+        return JNI_FALSE;
+    }
+
+    res = pTmpSurface->LockRect(&lockedRect, NULL, D3DLOCK_NOSYSLOCK);
+    if (SUCCEEDED(res)) {
+        // REMIND: commented until translucent window support is integrated
+//        hBitmap =
+//            BitmapUtil::CreateBitmapFromARGBPre(w, h,
+//                                                lockedRect.Pitch,
+//                                                (int*)lockedRect.pBits);
+        pTmpSurface->UnlockRect();
+    }
+    RETURN_STATUS_IF_NULL(hBitmap, JNI_FALSE);
+
+    // REMIND: commented until translucent window support is integrated
+//    window->UpdateWindow(env, NULL, w, h, hBitmap);
+
+    // hBitmap is released in UpdateWindow
+
+    return JNI_TRUE;
+}
 }

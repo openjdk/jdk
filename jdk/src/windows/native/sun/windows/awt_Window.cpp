@@ -33,7 +33,6 @@
 #include "awt_Toolkit.h"
 #include "awt_Window.h"
 #include "awt_dlls.h"
-#include "ddrawUtils.h"
 #include "awt_Win32GraphicsDevice.h"
 #include "awt_BitmapUtil.h"
 #include "awt_IconCursor.h"
@@ -742,7 +741,7 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
     insetsChanged = !::EqualRect( &m_old_insets, &m_insets );
     ::CopyRect( &m_old_insets, &m_insets );
 
-    if (insetsChanged && DDCanReplaceSurfaces(GetHWnd())) {
+    if (insetsChanged) {
         // Since insets are changed we need to update the surfaceData object
         // to reflect that change
         env->CallVoidMethod(peer, AwtComponent::replaceSurfaceDataLaterMID);
@@ -929,50 +928,6 @@ void AwtWindow::BounceActivation(void *self) {
             sm_suppressFocusAndActivation = FALSE;
         }
     }
-}
-
-MsgRouting AwtWindow::WmDDEnterFullScreen(HMONITOR monitor) {
-    /**
-     * DirectDraw expects to receive a top-level window. This object may
-     * be an AwtWindow instance, which has an owning AwtFrame window, or
-     * an AwtFrame object which does not have an owner.
-     * What we want is the top-level Frame hWnd, whether we were handed a
-     * top-level AwtFrame, or some owned AwtWindow.  We get this by calling
-     * GetTopLevelHWnd(), which returns the hwnd of a top-level AwtFrame
-     * object (if this window has an owner) which we then pass
-     * into DirectDraw.
-     */
-    HWND hWnd = GetTopLevelHWnd();
-    if (!::IsWindowVisible(hWnd)) {
-        // Sometimes there are problems going into fullscreen on an owner frame
-        // that is not yet visible; make sure the FS window is visible first
-        ::ShowWindow(hWnd, SW_SHOWNA);
-    }
-    /*
-     * Fix for 6225472.
-     * Non-focusable window should be set alwaysOnTop to overlap the taskbar.
-     */
-    AwtWindow* window = (AwtWindow *)AwtComponent::GetComponent(GetHWnd());
-    if (window != NULL && !window->IsFocusableWindow()) {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        Java_sun_awt_windows_WWindowPeer_setAlwaysOnTopNative(env, GetPeer(env), (jboolean)TRUE);
-    }
-
-    DDEnterFullScreen(monitor, GetHWnd(), hWnd);
-    return mrDoDefault;
-}
-
-MsgRouting AwtWindow::WmDDExitFullScreen(HMONITOR monitor) {
-    HWND hWnd = GetTopLevelHWnd();
-    DDExitFullScreen(monitor, hWnd);
-
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    jboolean alwaysOnTop = JNU_CallMethodByName(env, NULL, GetTarget(env),
-                                                "isAlwaysOnTop", "()Z").z;
-
-    // We should restore alwaysOnTop state as it's anyway dropped here.
-    Java_sun_awt_windows_WWindowPeer_setAlwaysOnTopNative(env, GetPeer(env), alwaysOnTop);
-    return mrDoDefault;
 }
 
 MsgRouting AwtWindow::WmCreate()
@@ -1333,10 +1288,8 @@ void AwtWindow::WindowResized()
     SendComponentEvent(java_awt_event_ComponentEvent_COMPONENT_RESIZED);
     // Need to replace surfaceData on resize to catch changes to
     // various component-related values, such as insets
-    if (DDCanReplaceSurfaces(GetHWnd())) {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        env->CallVoidMethod(m_peerObject, AwtComponent::replaceSurfaceDataLaterMID);
-    }
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    env->CallVoidMethod(m_peerObject, AwtComponent::replaceSurfaceDataLaterMID);
 }
 
 BOOL CALLBACK InvalidateChildRect(HWND hWnd, LPARAM)

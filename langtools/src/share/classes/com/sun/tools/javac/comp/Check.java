@@ -422,9 +422,34 @@ public class Check {
      *  @param bs            The bound.
      */
     private void checkExtends(DiagnosticPosition pos, Type a, TypeVar bs) {
-        if (a.isUnbound()) {
-            return;
-        } else if (a.tag != WILDCARD) {
+        if (a.tag == TYPEVAR && ((TypeVar)a).isCaptured()) {
+            CapturedType ct = (CapturedType)a;
+            boolean ok;
+            if (ct.bound.isErroneous()) {//capture doesn't exist
+                ok = false;
+            }
+            else {
+                switch (ct.wildcard.kind) {
+                    case EXTENDS:
+                        ok = types.isCastable(bs.getUpperBound(),
+                                types.upperBound(a),
+                                Warner.noWarnings);
+                        break;
+                    case SUPER:
+                        ok = !types.notSoftSubtype(types.lowerBound(a),
+                                bs.getUpperBound());
+                        break;
+                    case UNBOUND:
+                        ok = true;
+                        break;
+                    default:
+                        throw new AssertionError("Invalid bound kind");
+                }
+            }
+            if (!ok)
+                log.error(pos, "not.within.bounds", a);
+        }
+        else {
             a = types.upperBound(a);
             for (List<Type> l = types.getBounds(bs); l.nonEmpty(); l = l.tail) {
                 if (!types.isSubtype(a, l.head)) {
@@ -432,12 +457,6 @@ public class Check {
                     return;
                 }
             }
-        } else if (a.isExtendsBound()) {
-            if (!types.isCastable(bs.getUpperBound(), types.upperBound(a), Warner.noWarnings))
-                log.error(pos, "not.within.bounds", a);
-        } else if (a.isSuperBound()) {
-            if (types.notSoftSubtype(types.lowerBound(a), bs.getUpperBound()))
-                log.error(pos, "not.within.bounds", a);
         }
     }
 
@@ -557,8 +576,8 @@ public class Check {
         if ((flags & set1) != 0 && (flags & set2) != 0) {
             log.error(pos,
                       "illegal.combination.of.modifiers",
-                      TreeInfo.flagNames(TreeInfo.firstFlag(flags & set1)),
-                      TreeInfo.flagNames(TreeInfo.firstFlag(flags & set2)));
+                      asFlagSet(TreeInfo.firstFlag(flags & set1)),
+                      asFlagSet(TreeInfo.firstFlag(flags & set2)));
             return false;
         } else
             return true;
@@ -651,7 +670,7 @@ public class Check {
             }
             else {
                 log.error(pos,
-                          "mod.not.allowed.here", TreeInfo.flagNames(illegal));
+                          "mod.not.allowed.here", asFlagSet(illegal));
             }
         }
         else if ((sym.kind == TYP ||
@@ -776,7 +795,7 @@ public class Check {
         public void visitTypeApply(JCTypeApply tree) {
             if (tree.type.tag == CLASS) {
                 List<Type> formals = tree.type.tsym.type.getTypeArguments();
-                List<Type> actuals = tree.type.getTypeArguments();
+                List<Type> actuals = types.capture(tree.type).getTypeArguments();
                 List<JCExpression> args = tree.arguments;
                 List<Type> forms = formals;
                 ListBuffer<TypeVar> tvars_buf = new ListBuffer<TypeVar>();
@@ -792,7 +811,7 @@ public class Check {
                     // bounds substed with actuals.
                     tvars_buf.append(types.substBound(((TypeVar)forms.head),
                                                       formals,
-                                                      Type.removeBounds(actuals)));
+                                                      actuals));
 
                     args = args.tail;
                     forms = forms.tail;
@@ -811,10 +830,11 @@ public class Check {
                 tvars = tvars_buf.toList();
                 while (args.nonEmpty() && tvars.nonEmpty()) {
                     checkExtends(args.head.pos(),
-                                 args.head.type,
+                                 actuals.head,
                                  tvars.head);
                     args = args.tail;
                     tvars = tvars.tail;
+                    actuals = actuals.tail;
                 }
 
                 // Check that this type is either fully parameterized, or
@@ -1003,14 +1023,6 @@ public class Check {
         }
     }
 
-    /** A string describing the access permission given by a flag set.
-     *  This always returns a space-separated list of Java Keywords.
-     */
-    private static String protectionString(long flags) {
-        long flags1 = flags & AccessFlags;
-        return (flags1 == 0) ? "package" : TreeInfo.flagNames(flags1);
-    }
-
     /** A customized "cannot override" error message.
      *  @param m      The overriding method.
      *  @param other  The overridden method.
@@ -1104,7 +1116,7 @@ public class Check {
                  (other.flags() & STATIC) != 0) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.meth",
                       cannotOverride(m, other),
-                      TreeInfo.flagNames(other.flags() & (FINAL | STATIC)));
+                      asFlagSet(other.flags() & (FINAL | STATIC)));
             return;
         }
 
@@ -1118,9 +1130,10 @@ public class Check {
                  protection(m.flags()) > protection(other.flags())) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.weaker.access",
                       cannotOverride(m, other),
-                      protectionString(other.flags()));
+                      other.flags() == 0 ?
+                          Flag.PACKAGE :
+                          asFlagSet(other.flags() & AccessFlags));
             return;
-
         }
 
         Type mt = types.memberType(origin.type, m);
@@ -2015,7 +2028,7 @@ public class Check {
             log.error(pos,
                       "operator.cant.be.applied",
                       treeinfo.operatorName(tag),
-                      left + "," + right);
+                      List.of(left, right));
         }
         return operator.opcode;
     }

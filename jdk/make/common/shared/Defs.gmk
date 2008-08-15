@@ -279,9 +279,6 @@ PROMOTED_BUILD_LATEST = latest
 PROMOTED_BUILD_BASEDIR = $(PROMOTED_RE_AREA)/$(PROMOTED_BUILD_LATEST)
 PROMOTED_BUILD_BINARIES = $(PROMOTED_BUILD_BASEDIR)/binaries
 
-# OPT: Changes what the optimizations settings (in _OPT)
-POPT = $(_OPT$(ALT_OPT))$(ALT_OPT)
-
 # PARALLEL_COMPILE_JOBS: is the number of compiles done in parallel.
 #  If the user sets ALT_PARALLEL_COMPILE_JOBS, then COMPILE_APPROACH is set
 #  to parallel.
