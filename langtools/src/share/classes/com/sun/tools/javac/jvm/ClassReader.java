@@ -1331,7 +1331,7 @@ public class ClassReader extends ClassFile implements Completer {
                     log.warning("annotation.method.not.found.reason",
                                 container,
                                 name,
-                                failure.getMessage());
+                                failure.getDetailValue());//diagnostic, if present
                 }
             } finally {
                 log.useSource(prevSource);

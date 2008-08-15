@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.awt.geom.Path2D;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.loops.GraphicsPrimitive;
 import sun.java2d.pipe.BufferedRenderPipe;
+import sun.java2d.pipe.ParallelogramPipe;
 import sun.java2d.pipe.RenderQueue;
 import sun.java2d.pipe.SpanIterator;
 import static sun.java2d.pipe.BufferedOpCodes.*;
@@ -45,6 +46,15 @@ class OGLRenderer extends BufferedRenderPipe {
         int ctxflags =
             sg2d.paint.getTransparency() == Transparency.OPAQUE ?
                 OGLContext.SRC_IS_OPAQUE : OGLContext.NO_CONTEXT_FLAGS;
+        OGLSurfaceData dstData = (OGLSurfaceData)sg2d.surfaceData;
+        OGLContext.validateContext(dstData, dstData,
+                                   sg2d.getCompClip(), sg2d.composite,
+                                   null, sg2d.paint, sg2d, ctxflags);
+    }
+
+    @Override
+    protected void validateContextAA(SunGraphics2D sg2d) {
+        int ctxflags = OGLContext.NO_CONTEXT_FLAGS;
         OGLSurfaceData dstData = (OGLSurfaceData)sg2d.surfaceData;
         OGLContext.validateContext(dstData, dstData,
                                    sg2d.getCompClip(), sg2d.composite,
@@ -88,6 +98,31 @@ class OGLRenderer extends BufferedRenderPipe {
             super(oglr.rq);
             this.oglr = oglr;
         }
+        public ParallelogramPipe getAAParallelogramPipe() {
+            final ParallelogramPipe realpipe = oglr.getAAParallelogramPipe();
+            return new ParallelogramPipe() {
+                public void fillParallelogram(SunGraphics2D sg2d,
+                                              double x, double y,
+                                              double dx1, double dy1,
+                                              double dx2, double dy2)
+                {
+                    GraphicsPrimitive.tracePrimitive("OGLFillAAParallelogram");
+                    realpipe.fillParallelogram(sg2d,
+                                               x, y, dx1, dy1, dx2, dy2);
+                }
+                public void drawParallelogram(SunGraphics2D sg2d,
+                                              double x, double y,
+                                              double dx1, double dy1,
+                                              double dx2, double dy2,
+                                              double lw1, double lw2)
+                {
+                    GraphicsPrimitive.tracePrimitive("OGLDrawAAParallelogram");
+                    realpipe.drawParallelogram(sg2d,
+                                               x, y, dx1, dy1, dx2, dy2,
+                                               lw1, lw2);
+                }
+            };
+        }
         protected void validateContext(SunGraphics2D sg2d) {
             oglr.validateContext(sg2d);
         }
@@ -129,6 +164,23 @@ class OGLRenderer extends BufferedRenderPipe {
         {
             GraphicsPrimitive.tracePrimitive("OGLFillSpans");
             oglr.fillSpans(sg2d, si, transx, transy);
+        }
+        public void fillParallelogram(SunGraphics2D sg2d,
+                                      double x, double y,
+                                      double dx1, double dy1,
+                                      double dx2, double dy2)
+        {
+            GraphicsPrimitive.tracePrimitive("OGLFillParallelogram");
+            oglr.fillParallelogram(sg2d, x, y, dx1, dy1, dx2, dy2);
+        }
+        public void drawParallelogram(SunGraphics2D sg2d,
+                                      double x, double y,
+                                      double dx1, double dy1,
+                                      double dx2, double dy2,
+                                      double lw1, double lw2)
+        {
+            GraphicsPrimitive.tracePrimitive("OGLDrawParallelogram");
+            oglr.drawParallelogram(sg2d, x, y, dx1, dy1, dx2, dy2, lw1, lw2);
         }
         public void copyArea(SunGraphics2D sg2d,
                              int x, int y, int w, int h, int dx, int dy)

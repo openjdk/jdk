@@ -155,6 +155,7 @@ typedef AwtObject* PDATA;
 #endif
 #define IS_NT      (IS_WIN32 && !(::GetVersion() & 0x80000000))
 #define IS_WIN2000 (IS_NT && LOBYTE(LOWORD(::GetVersion())) >= 5)
+#define IS_WIN2003 (IS_NT && LOBYTE(LOWORD(::GetVersion())) == 5 && HIBYTE(LOWORD(::GetVersion())) >= 2)
 #define IS_WINXP   (IS_NT && (IS_WIN2000 && HIBYTE(LOWORD(::GetVersion())) >= 1) || LOBYTE(LOWORD(::GetVersion())) > 5)
 #define IS_WINVISTA (IS_NT && LOBYTE(LOWORD(::GetVersion())) >= 6)
 #define IS_WIN32S  (IS_WIN32 && !IS_NT && LOBYTE(LOWORD(::GetVersion())) < 4)

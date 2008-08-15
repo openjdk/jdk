@@ -47,6 +47,7 @@ NS_GENERATED_java = \
 	org/omg/CosNaming/NamingContext.java \
 	org/omg/CosNaming/NamingContextHelper.java \
 	org/omg/CosNaming/NamingContextHolder.java \
+	org/omg/CosNaming/NamingContextOperations.java \
 	org/omg/CosNaming/_NamingContextStub.java \
 	org/omg/CosNaming/NamingContextPackage/AlreadyBound.java \
 	org/omg/CosNaming/NamingContextPackage/AlreadyBoundHelper.java \

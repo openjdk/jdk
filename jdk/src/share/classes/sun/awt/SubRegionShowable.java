@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,11 @@ public interface SubRegionShowable {
     public void show(int x1, int y1, int x2, int y2);
 
     /**
-     * Validates the buffer and if successful shows the specified region.
+     * Shows the specified region if the buffer is not lost and the dimensions
+     * of the back-buffer match those of the component.
      *
      * @return true if successful
      */
     // NOTE: this is invoked by swing on the toolkit thread!
-    public boolean validateAndShow(int x1, int y1, int x2, int y2);
+    public boolean showIfNotLost(int x1, int y1, int x2, int y2);
 }

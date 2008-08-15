@@ -167,7 +167,7 @@ setLastErrorMsg(char *newmsg) {
 
     msg = (char *)sysTlsGet(tlsIndex);
     if (msg == NULL) {
-        msg = (*callback->alloc)(strlen(newmsg)+1);
+        msg = (*callback->alloc)((int)strlen(newmsg)+1);
         if (msg != NULL) {
            strcpy(msg, newmsg);
         }

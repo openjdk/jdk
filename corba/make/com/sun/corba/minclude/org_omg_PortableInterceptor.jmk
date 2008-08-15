@@ -106,6 +106,7 @@ PI_GENERATED_java = \
 	org/omg/IOP/CodecPackage/TypeMismatchHelper.java \
 	org/omg/IOP/ENCODING_CDR_ENCAPS.java \
 	org/omg/IOP/Encoding.java \
+	org/omg/IOP/ExceptionDetailMessage.java \
 	org/omg/Dynamic/Parameter.java 
 
 # Helper and Holder files to be removed:

@@ -116,7 +116,7 @@ ifeq ($(PLATFORM),windows)
 FILES_c_platform = fontpath.c \
                    lcdglyph.c
 
-FILES_cpp_platform = D3DTextRenderer.cpp
+FILES_cpp_platform =
 else
 FILES_c_platform = X11FontScaler.c \
                    X11TextRenderer.c
