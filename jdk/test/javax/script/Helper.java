@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,28 +20,22 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
-/*
- * @test
- * @bug 6346732 6705893
- * @summary should be able to assign null and undefined
- * value to JavaScript global variables.
- */
-
 import javax.script.*;
 
-public class NullUndefinedVarTest {
+/**
+ * Helper class to consolidate testing requirements for a js engine.
+ * A js engine is required as part of Sun's product JDK.
+ */
+public class Helper {
+    private Helper() {}; // Don't instantiate
 
-        public static void main(String[] args) throws Exception {
-            ScriptEngineManager manager = new ScriptEngineManager();
-            ScriptEngine jsengine = Helper.getJsEngine(manager);
-            if (jsengine == null) {
-                System.out.println("Warning: No js engine found; test vacuously passes.");
-                return;
-            }
-            jsengine.eval("var n = null; " +
-                          "if (n !== null) throw 'expecting null';" +
-                          "var u = undefined; " +
-                          "if (u !== undefined) throw 'undefined expected';");
+    public static ScriptEngine getJsEngine(ScriptEngineManager m) {
+        ScriptEngine e  = m.getEngineByName("js");
+        if (e == null &&
+            System.getProperty("java.runtime.name").startsWith("Java(TM)")) {
+            // A js engine is requied for Sun's product JDK
+            throw new RuntimeException("no js engine found");
         }
+        return e;
+    }
 }
