@@ -1200,10 +1200,12 @@ public:
     mapinfo->write_space(CompactingPermGenGen::rw, _rw_space, false);
     _rw_space->set_saved_mark();
     mapinfo->write_region(CompactingPermGenGen::md, _md_vs->low(),
-                          md_top - _md_vs->low(), SharedMiscDataSize,
+                          pointer_delta(md_top, _md_vs->low(), sizeof(char)),
+                          SharedMiscDataSize,
                           false, false);
     mapinfo->write_region(CompactingPermGenGen::mc, _mc_vs->low(),
-                          mc_top - _mc_vs->low(), SharedMiscCodeSize,
+                          pointer_delta(mc_top, _mc_vs->low(), sizeof(char)),
+                          SharedMiscCodeSize,
                           true, true);
 
     // Pass 2 - write data.
@@ -1212,10 +1214,12 @@ public:
     mapinfo->write_space(CompactingPermGenGen::ro, _ro_space, true);
     mapinfo->write_space(CompactingPermGenGen::rw, _rw_space, false);
     mapinfo->write_region(CompactingPermGenGen::md, _md_vs->low(),
-                          md_top - _md_vs->low(), SharedMiscDataSize,
+                          pointer_delta(md_top, _md_vs->low(), sizeof(char)),
+                          SharedMiscDataSize,
                           false, false);
     mapinfo->write_region(CompactingPermGenGen::mc, _mc_vs->low(),
-                          mc_top - _mc_vs->low(), SharedMiscCodeSize,
+                          pointer_delta(mc_top, _mc_vs->low(), sizeof(char)),
+                          SharedMiscCodeSize,
                           true, true);
     mapinfo->close();
 
