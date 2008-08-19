@@ -267,7 +267,7 @@ class SerializedForm {
      * @return an array of MethodDocImpl for serialization methods in this class.
      */
     MethodDoc[] methods() {
-        return (MethodDoc[])methods.toArray(new MethodDoc[methods.length()]);
+        return methods.toArray(new MethodDoc[methods.length()]);
     }
 
     /**

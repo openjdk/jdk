@@ -632,7 +632,9 @@ Java_sun_awt_windows_WPrinterJob_getDefaultPage(JNIEnv *env, jobject self,
         return ;
     }
 
-    if (pDevMode->dmFields & DM_PAPERSIZE) {
+    if ((pDevMode->dmFields & DM_PAPERSIZE) ||
+          (pDevMode->dmFields & DM_PAPERWIDTH) ||
+          (pDevMode->dmFields & DM_PAPERLENGTH)) {
         POINT paperSize;
         RECT margins;
         jint orientation = PAGEFORMAT_PORTRAIT;

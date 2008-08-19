@@ -23,7 +23,7 @@
 
 /**
  *  @test
- *  @bug 4836939
+ *  @bug 4836939 6646613
  *  @summary JDI add addSourceNameFilter to ClassPrepareRequest
  *
  *  @author jjh
@@ -31,7 +31,11 @@
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g SourceNameFilterTest.java
  *  @run main SourceNameFilterTest
+ *  @run compile -g:none SourceNameFilterTest.java
+ *  @run main SourceNameFilterTest
  */
+// The compile -g:none suppresses the lineNumber table to trigger bug 6646613.
+
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
@@ -84,7 +88,6 @@ public class SourceNameFilterTest extends TestScaffold {
     boolean gotEvent1 = false;
     boolean gotEvent2 = false;
     boolean gotEvent3 = false;
-
     ClassPrepareRequest cpReq;
     boolean shouldResume = false;
     SourceNameFilterTest (String args[]) {
@@ -151,6 +154,18 @@ public class SourceNameFilterTest extends TestScaffold {
          */
         BreakpointEvent bpe = startToMain("SourceNameFilterTarg");
         targetClass = bpe.location().declaringType();
+        boolean noSourceName = false;
+        try {
+            targetClass.sourceName();
+        } catch (AbsentInformationException ee) {
+            noSourceName = true;
+        }
+        if (noSourceName) {
+            println("-- Running with no source names");
+        } else {
+            println("-- Running with source names");
+        }
+
         mainThread = bpe.thread();
         EventRequestManager erm = vm().eventRequestManager();
         addListener(this);
@@ -175,7 +190,9 @@ public class SourceNameFilterTest extends TestScaffold {
 
         /*
          * This should cause us to get a class prepare event for
-         * LoadedLater3
+         * LoadedLater3 except in the case where -g:none
+         * was used to compile so that there is no LineNumberTable
+         * and therefore, no source name for the class.
          */
         cpReq = erm.createClassPrepareRequest();
         cpReq.addSourceNameFilter("SourceNameFilterTest.java");
@@ -186,17 +203,21 @@ public class SourceNameFilterTest extends TestScaffold {
 
         if (!gotEvent1) {
             failure("failure: Did not get a class prepare request " +
-                    "for Loadedlater1");
+                    "for LoadedLater1");
         }
 
         if (gotEvent2) {
             failure("failure: Did get a class prepare request " +
-                    "for Loadedlater2");
+                    "for LoadedLater2");
         }
 
-        if (!gotEvent3) {
+        if (gotEvent3 && noSourceName) {
+            failure("failure: Did get a class prepare request " +
+                    "for LoadedLater3");
+        }
+        else if (!gotEvent3 && !noSourceName) {
             failure("failure: Did not get a class prepare request " +
-                    "for Loadedlater3");
+                    "for LoadedLater3");
         }
 
         /*

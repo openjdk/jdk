@@ -208,8 +208,9 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
         }
 
         public String toString() {
-            return eventName() + "@" + location().toString() +
-                                 " in thread " + thread().name();
+            return eventName() + "@" +
+                   ((location() == null) ? " null" : location().toString()) +
+                   " in thread " + thread().name();
         }
     }
 

@@ -36,10 +36,6 @@ import java.util.List;
 public class Type {
     protected Type() { }
 
-    public boolean isObject() {
-        return false;
-    }
-
     protected static void append(StringBuilder sb, String prefix, List<? extends Type> types, String suffix) {
         sb.append(prefix);
         String sep = "";
@@ -64,11 +60,6 @@ public class Type {
         @Override
         public String toString() {
             return name;
-        }
-
-        @Override
-        public boolean isObject() {
-            return name.equals("java.lang.Object");
         }
 
         public final String name;
@@ -129,7 +120,7 @@ public class Type {
         public String toString() {
             StringBuilder sb = new StringBuilder();
             appendIfNotEmpty(sb, "<", typeArgTypes, ">");
-            if (superclassType != null && !superclassType.isObject()) {
+            if (superclassType != null) {
                 sb.append(" extends ");
                 sb.append(superclassType);
             }
@@ -188,7 +179,7 @@ public class Type {
             StringBuilder sb = new StringBuilder();
             sb.append(name);
             String sep = " extends ";
-            if (classBound != null && !classBound.isObject()) {
+            if (classBound != null) {
                 sb.append(sep);
                 sb.append(classBound);
                 sep = " & ";

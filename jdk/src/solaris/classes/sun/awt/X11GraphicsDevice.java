@@ -385,6 +385,9 @@ public class X11GraphicsDevice
             throw new IllegalStateException("Must be in fullscreen mode " +
                                             "in order to set display mode");
         }
+        if (getDisplayMode().equals(dm)) {
+            return;
+        }
         if (dm == null ||
             (dm = getMatchingDisplayMode(dm)) == null)
         {

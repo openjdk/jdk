@@ -47,7 +47,7 @@ import java.util.StringTokenizer;
  */
 public class DocletInvoker {
 
-    private final Class docletClass;
+    private final Class<?> docletClass;
 
     private final String docletClassName;
 

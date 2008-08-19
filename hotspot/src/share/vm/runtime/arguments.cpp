@@ -1201,7 +1201,8 @@ void Arguments::set_ergonomics_flags() {
   // by ergonomics.
   if (MaxHeapSize <= max_heap_for_compressed_oops()) {
     if (FLAG_IS_DEFAULT(UseCompressedOops)) {
-      FLAG_SET_ERGO(bool, UseCompressedOops, true);
+      // Turn off until bug is fixed.
+      // FLAG_SET_ERGO(bool, UseCompressedOops, true);
     }
   } else {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
@@ -2494,6 +2495,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     }
     if (match_option(option, "-XX:+PrintVMOptions", &tail)) {
       PrintVMOptions = true;
+    }
+    if (match_option(option, "-XX:-PrintVMOptions", &tail)) {
+      PrintVMOptions = false;
     }
   }
 

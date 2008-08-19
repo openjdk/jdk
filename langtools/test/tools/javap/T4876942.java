@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4876942
+ * @bug 4876942 6715251
  * @summary javap invoked without args does not print help screen
  */
 
@@ -48,7 +48,7 @@ public class T4876942 {
         PrintWriter out = new PrintWriter(sw);
         //sun.tools.javap.Main.entry(args);
         int rc = com.sun.tools.javap.Main.run(args, out);
-        if (rc != 0)
+        if (rc != (args.length == 0 ? 2 : 0))
             throw new Error("javap failed. rc=" + rc);
         out.close();
         return sw.toString();

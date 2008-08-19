@@ -381,8 +381,8 @@ public class JavacTaskImpl extends JavacTask {
         return results;
     }
     // where
-        private void handleFlowResults(List<Env<AttrContext>> list, ListBuffer<Element> elems) {
-            for (Env<AttrContext> env: list) {
+        private void handleFlowResults(Queue<Env<AttrContext>> queue, ListBuffer<Element> elems) {
+            for (Env<AttrContext> env: queue) {
                 switch (env.tree.getTag()) {
                     case JCTree.CLASSDEF:
                         JCClassDecl cdef = (JCClassDecl) env.tree;
@@ -396,7 +396,7 @@ public class JavacTaskImpl extends JavacTask {
                         break;
                 }
             }
-            genList.appendList(list);
+            genList.addAll(queue);
         }
 
 
@@ -424,13 +424,13 @@ public class JavacTaskImpl extends JavacTask {
             analyze(null);  // ensure all classes have been parsed, entered, and analyzed
 
             if (classes == null) {
-                compiler.generate(compiler.desugar(genList.toList()), results);
+                compiler.generate(compiler.desugar(genList), results);
                 genList.clear();
             }
             else {
                 Filter f = new Filter() {
                         public void process(Env<AttrContext> env) {
-                            compiler.generate(compiler.desugar(List.of(env)), results);
+                            compiler.generate(compiler.desugar(ListBuffer.of(env)), results);
                         }
                     };
                 f.run(genList, classes);

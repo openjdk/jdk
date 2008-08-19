@@ -140,25 +140,27 @@ public abstract class Symbol implements Element {
     }
 
     /** A Java source description of the location of this symbol; used for
-     *  error reporting.  Use of this method may result in the loss of the
-     *  symbol's description.
+     *  error reporting.
+     *
+     * @return null if the symbol is a package or a toplevel class defined in
+     * the default package; otherwise, the owner symbol is returned
      */
-    public String location() {
+    public Symbol location() {
         if (owner.name == null || (owner.name.len == 0 && owner.kind != PCK)) {
-            return "";
+            return null;
         }
-        return owner.toString();
+        return owner;
     }
 
-    public String location(Type site, Types types) {
+    public Symbol location(Type site, Types types) {
         if (owner.name == null || owner.name.len == 0) {
             return location();
         }
         if (owner.type.tag == CLASS) {
             Type ownertype = types.asOuterSuper(site, owner);
-            if (ownertype != null) return ownertype.toString();
+            if (ownertype != null) return ownertype.tsym;
         }
-        return owner.toString();
+        return owner;
     }
 
     /** The symbol's erased type.
@@ -451,8 +453,8 @@ public abstract class Symbol implements Element {
             this.other = other;
         }
         public String toString() { return other.toString(); }
-        public String location() { return other.location(); }
-        public String location(Type site, Types types) { return other.location(site, types); }
+        public Symbol location() { return other.location(); }
+        public Symbol location(Type site, Types types) { return other.location(site, types); }
         public Type erasure(Types types) { return other.erasure(types); }
         public Type externalType(Types types) { return other.externalType(types); }
         public boolean isLocal() { return other.isLocal(); }

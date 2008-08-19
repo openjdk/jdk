@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,7 +171,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"Entry type: <type>", "Entry type: {0}"},
         {"Certificate chain length: ", "Certificate chain length: "},
         {"Certificate[(i + 1)]:", "Certificate[{0,number,integer}]:"},
-        {"Certificate fingerprint (MD5): ", "Certificate fingerprint (MD5): "},
+        {"Certificate fingerprint (SHA1): ", "Certificate fingerprint (SHA1): "},
         {"Entry type: trustedCertEntry\n", "Entry type: trustedCertEntry\n"},
         {"trustedCertEntry,", "trustedCertEntry,"},
         {"Keystore type: ", "Keystore type: "},
@@ -386,8 +386,10 @@ public class Resources extends java.util.ListResourceBundle {
         {"\t     [-alias <alias>]", "\t     [-alias <alias>]"},
         /** rest is same as -certreq starting from -keystore **/
 
-        {"-printcert   [-v] [-file <cert_file>]",
-                "-printcert   [-v] [-file <cert_file>]"},
+        {"-printcert   [-v] [-rfc] [-file <cert_file> | -sslserver <host[:port]>]",
+                "-printcert   [-v] [-rfc] [-file <cert_file> | -sslserver <host[:port]>]"},
+        {"No certificate from the SSL server",
+                "No certificate from the SSL server"},
 
         //{"-selfcert    [-v] [-protected]",
         //      "-selfcert    [-v] [-protected]"},

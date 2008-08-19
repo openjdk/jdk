@@ -41,12 +41,10 @@ CPLUSPLUSLIBRARY=true
 # for a few ones with native methods) so shouldn't clobber them.
 DONT_CLOBBER_CLASSES=true
 
-include $(BUILDDIR)/common/Defs.gmk
-
-#
 # Use higher optimization level
-#
-_OPT = $(CC_HIGHER_OPT)
+OPTIMIZATION_LEVEL = HIGHER
+
+include $(BUILDDIR)/common/Defs.gmk
 
 #
 # Files
@@ -63,9 +61,6 @@ FILES_export = \
     sun/font/T2KFontScaler.java 
 
 ifeq ($(PLATFORM), windows)
-
-  # Files built here do not compile with warning level 3 if warnings are fatal
-  COMPILER_WARNINGS_FATAL=false
 
   # t2k imports several shared methods from fontmanager.dll
   LDLIBS += user32.lib $(OBJDIR)/../../../sun.font/fontmanager/$(OBJDIRNAME)/fontmanager.lib

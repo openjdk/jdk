@@ -41,24 +41,17 @@ import java.awt.image.renderable.RenderableImage;
 import java.awt.image.renderable.RenderContext;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.Raster;
-import java.awt.image.SampleModel;
-import java.awt.image.VolatileImage;
 import java.awt.image.WritableRaster;
 import java.awt.Image;
 import java.awt.Composite;
 import java.awt.Color;
-import java.awt.color.ColorSpace;
-import java.awt.image.DataBuffer;
 import java.awt.image.ColorModel;
-import java.awt.image.IndexColorModel;
-import java.awt.image.DirectColorModel;
 import java.awt.GraphicsConfiguration;
 import java.awt.Paint;
 import java.awt.GradientPaint;
 import java.awt.LinearGradientPaint;
 import java.awt.RadialGradientPaint;
 import java.awt.TexturePaint;
-import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.GeneralPath;
@@ -69,19 +62,16 @@ import java.awt.Rectangle;
 import java.text.AttributedCharacterIterator;
 import java.awt.Font;
 import java.awt.image.ImageObserver;
-import java.awt.image.ColorConvertOp;
 import java.awt.Transparency;
 import java.awt.font.GlyphVector;
 import java.awt.font.TextLayout;
 import sun.font.FontDesignMetrics;
-import sun.font.StandardGlyphVector;
 import sun.java2d.pipe.PixelDrawPipe;
 import sun.java2d.pipe.PixelFillPipe;
 import sun.java2d.pipe.ShapeDrawPipe;
 import sun.java2d.pipe.ValidatePipe;
 import sun.java2d.pipe.ShapeSpanIterator;
 import sun.java2d.pipe.Region;
-import sun.java2d.pipe.RegionIterator;
 import sun.java2d.pipe.TextPipe;
 import sun.java2d.pipe.DrawImagePipe;
 import sun.java2d.pipe.LoopPipe;
@@ -90,7 +80,6 @@ import sun.java2d.loops.RenderLoops;
 import sun.java2d.loops.CompositeType;
 import sun.java2d.loops.SurfaceType;
 import sun.java2d.loops.Blit;
-import sun.java2d.loops.BlitBg;
 import sun.java2d.loops.MaskFill;
 import sun.font.FontManager;
 import java.awt.font.FontRenderContext;
@@ -99,7 +88,7 @@ import sun.awt.ConstrainableGraphics;
 import sun.awt.SunHints;
 import java.util.Map;
 import java.util.Iterator;
-import sun.awt.image.OffScreenImage;
+import sun.java2d.DestSurfaceProvider;
 import sun.misc.PerformanceLogger;
 
 /**
@@ -113,7 +102,7 @@ import sun.misc.PerformanceLogger;
  */
 public final class SunGraphics2D
     extends Graphics2D
-    implements ConstrainableGraphics, Cloneable
+    implements ConstrainableGraphics, Cloneable, DestSurfaceProvider
 {
     /*
      * Attribute States
@@ -3305,5 +3294,15 @@ public final class SunGraphics2D
      */
     public Object getDestination() {
         return surfaceData.getDestination();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see sun.java2d.DestSurfaceProvider#getDestSurface
+     */
+    @Override
+    public Surface getDestSurface() {
+        return surfaceData;
     }
 }
