@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1863,5 +1863,9 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         return  (obj == this ||
                  (obj instanceof IPPPrintService &&
                   ((IPPPrintService)obj).getName().equals(getName())));
+    }
+
+    public int hashCode() {
+        return this.getClass().hashCode()+getName().hashCode();
     }
 }
