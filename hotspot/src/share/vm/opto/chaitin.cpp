@@ -43,7 +43,7 @@ void LRG::dump( ) const {
   if( _degree_valid ) tty->print( "%d ", _eff_degree );
   else tty->print("? ");
 
-  if( _def == NodeSentinel ) {
+  if( is_multidef() ) {
     tty->print("MultiDef ");
     if (_defs != NULL) {
       tty->print("(");
@@ -765,7 +765,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         // if the LRG is an unaligned pair, we will have to spill
         // so clear the LRG's register mask if it is not already spilled
         if ( !n->is_SpillCopy() &&
-               (lrg._def == NULL || lrg._def == NodeSentinel || !lrg._def->is_SpillCopy()) &&
+               (lrg._def == NULL || lrg.is_multidef() || !lrg._def->is_SpillCopy()) &&
                lrgmask.is_misaligned_Pair()) {
           lrg.Clear();
         }
@@ -1282,7 +1282,7 @@ uint PhaseChaitin::Select( ) {
     // Live range is live and no colors available
     else {
       assert( lrg->alive(), "" );
-      assert( !lrg->_fat_proj || lrg->_def == NodeSentinel ||
+      assert( !lrg->_fat_proj || lrg->is_multidef() ||
               lrg->_def->outcnt() > 0, "fat_proj cannot spill");
       assert( !orig_mask.is_AllStack(), "All Stack does not spill" );
 
