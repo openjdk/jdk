@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,25 @@
  * have any questions.
  */
 
-/*
- * @test
- * @bug 6346732 6705893
- * @summary should be able to assign null and undefined
- * value to JavaScript global variables.
- */
-
 import javax.script.*;
 
-public class NullUndefinedVarTest {
+/*
+ * If the JDK being tested is <b>not</b> a Sun product JDK and a js
+ * engine is not present, return an exit code of 2 to indicate that
+ * the jrunscript tests which assume a js engine can be vacuously
+ * passed.
+ */
+public class CheckEngine {
+    public static void main(String... args) {
+        int exitCode = 0;
+        ScriptEngine engine =
+            (new ScriptEngineManager()).getEngineByName("js");
 
-        public static void main(String[] args) throws Exception {
-            ScriptEngineManager manager = new ScriptEngineManager();
-            ScriptEngine jsengine = Helper.getJsEngine(manager);
-            if (jsengine == null) {
-                System.out.println("Warning: No js engine found; test vacuously passes.");
-                return;
-            }
-            jsengine.eval("var n = null; " +
-                          "if (n !== null) throw 'expecting null';" +
-                          "var u = undefined; " +
-                          "if (u !== undefined) throw 'undefined expected';");
+        if (engine == null &&
+            !(System.getProperty("java.runtime.name").startsWith("Java(TM)"))) {
+            exitCode = 2;
         }
+
+        System.exit(exitCode);
+    }
 }

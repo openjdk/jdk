@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 6474943
- * @summary Test that Rhion exception messages are
+ * @bug 6474943 6705893
+ * @summary Test that Rhino exception messages are
  * available from ScriptException.
  */
 
@@ -36,7 +36,11 @@ public class RhinoExceptionTest {
 
     public static void main(String[] args) throws Exception {
         ScriptEngineManager m = new ScriptEngineManager();
-        ScriptEngine engine = m.getEngineByName("js");
+        ScriptEngine engine = Helper.getJsEngine(m);
+        if (engine == null) {
+            System.out.println("Warning: No js engine found; test vacuously passes.");
+            return;
+        }
         engine.put("msg", ERROR_MSG);
         try {
             engine.eval("throw new Error(msg);");

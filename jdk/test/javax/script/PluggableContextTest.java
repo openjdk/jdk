@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6398614
+ * @bug 6398614 6705893
  * @summary Create a user defined ScriptContext and check
  * that script can access variables from non-standard scopes
  */
@@ -35,7 +35,11 @@ public class PluggableContextTest {
         ScriptEngineManager m = new ScriptEngineManager();
         ScriptContext ctx = new MyContext();
         ctx.setAttribute("x", "hello", MyContext.APP_SCOPE);
-        ScriptEngine e = m.getEngineByName("js");
+        ScriptEngine e = Helper.getJsEngine(m);
+        if (e == null) {
+            System.out.println("Warning: No js engine found; test vacuously passes.");
+            return;
+        }
         // the following reference to 'x' throws exception
         // if APP_SCOPE is not searched.
         e.eval("x", ctx);
