@@ -197,8 +197,12 @@ public class Locks {
             synchronized (ready) {
                 // wait until WaitingThread about to wait for objC
                 thrsync.waitForSignal();
-                // give chance to enter wait.
-                goSleep(100);
+
+                int retryCount = 0;
+                while (waiter.getState() != Thread.State.WAITING
+                       && retryCount++ < 500) {
+                   goSleep(100);
+                }
                 checkBlockedObject(waiter, objC, null, Thread.State.WAITING);
 
                 synchronized (objC) {
