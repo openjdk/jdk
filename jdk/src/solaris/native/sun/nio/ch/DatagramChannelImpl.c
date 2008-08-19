@@ -123,7 +123,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
     jint fd = fdval(env, fdo);
     void *buf = (void *)jlong_to_ptr(address);
     SOCKADDR sa;
-    int sa_len = SOCKADDR_LEN;
+    socklen_t sa_len = SOCKADDR_LEN;
     jboolean retry = JNI_FALSE;
     jint n = 0;
     jobject senderAddr;

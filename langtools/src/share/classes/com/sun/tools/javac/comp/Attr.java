@@ -172,8 +172,8 @@ public class Attr extends JCTree.Visitor {
                 owntype = chk.checkType(tree.pos(), owntype, pt);
             } else {
                 log.error(tree.pos(), "unexpected.type",
-                          Resolve.kindNames(pkind),
-                          Resolve.kindName(ownkind));
+                          kindNames(pkind),
+                          kindName(ownkind));
                 owntype = syms.errType;
             }
         }
@@ -2664,7 +2664,7 @@ public class Attr extends JCTree.Visitor {
                 // Enums may not be extended by source-level classes
                 if (st.tsym != null &&
                     ((st.tsym.flags_field & Flags.ENUM) != 0) &&
-                    ((c.flags_field & Flags.ENUM) == 0) &&
+                    ((c.flags_field & (Flags.ENUM | Flags.COMPOUND)) == 0) &&
                     !target.compilerBootstrap(c)) {
                     log.error(env.tree.pos(), "enum.types.not.extensible");
                 }

@@ -91,34 +91,6 @@ public class Keywords {
      */
     private Name[] tokenName = new Name[Token.values().length];
 
-    public String token2string(Token token) {
-        switch (token) {
-        case IDENTIFIER:
-            return log.getLocalizedString("token.identifier");
-        case CHARLITERAL:
-            return log.getLocalizedString("token.character");
-        case STRINGLITERAL:
-            return log.getLocalizedString("token.string");
-        case INTLITERAL:
-            return log.getLocalizedString("token.integer");
-        case LONGLITERAL:
-            return log.getLocalizedString("token.long-integer");
-        case FLOATLITERAL:
-            return log.getLocalizedString("token.float");
-        case DOUBLELITERAL:
-            return log.getLocalizedString("token.double");
-        case ERROR:
-            return log.getLocalizedString("token.bad-symbol");
-        case EOF:
-            return log.getLocalizedString("token.end-of-input");
-        case DOT: case COMMA: case SEMI: case LPAREN: case RPAREN:
-        case LBRACKET: case RBRACKET: case LBRACE: case RBRACE:
-            return "'" + token.name + "'";
-        default:
-            return token.name;
-        }
-    }
-
     private void enterKeyword(String s, Token token) {
         Name n = names.fromString(s);
         tokenName[token.ordinal()] = n;

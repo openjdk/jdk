@@ -645,7 +645,7 @@ public:
 class ClearSpaceClosure : public SpaceClosure {
 public:
   void do_space(Space* s) {
-    s->clear();
+    s->clear(SpaceDecorator::Mangle);
   }
 };
 

@@ -317,8 +317,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     importFrom(tsym);
                     if (!found) {
                         log.error(pos, "cant.resolve.location",
-                                  JCDiagnostic.fragment("kindname.static"),
-                                  name, "", "", Resolve.typeKindName(tsym.type),
+                                  KindName.STATIC,
+                                  name, List.<Type>nil(), List.<Type>nil(),
+                                  typeKindName(tsym.type),
                                   tsym.type);
                     }
                 } finally {
@@ -719,7 +720,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                             annotations.nonEmpty())
                             log.error(annotations.head.pos,
                                       "already.annotated",
-                                      Resolve.kindName(s), s);
+                                      kindName(s), s);
                         enterAnnotations(annotations, localEnv, s);
                     } finally {
                         log.useSource(prev);

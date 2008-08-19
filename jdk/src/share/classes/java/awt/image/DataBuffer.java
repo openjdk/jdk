@@ -530,6 +530,12 @@ public abstract class DataBuffer {
             public StateTrackableDelegate getTrackable(DataBuffer db) {
                 return db.theTrackable;
             }
+
+            public void setTrackable(DataBuffer db,
+                                     StateTrackableDelegate trackable)
+            {
+                db.theTrackable = trackable;
+            }
         });
     }
 }

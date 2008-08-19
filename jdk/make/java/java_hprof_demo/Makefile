@@ -28,13 +28,13 @@ LIBRARY = hprof
 PRODUCT = sun
 LIBRARY_OUTPUT = hprof_jvmti
 
-# Configure the CFLAGS for this library.
+# Use highest optimization
+OPTIMIZATION_LEVEL = HIGHEST
 
+# Configure the CFLAGS for this library.
 FILES_m = mapfile-vers
 
 include $(BUILDDIR)/common/Defs.gmk
-
-_OPT=$(CC_HIGHEST_OPT)
 
 SRCDIR=$(SHARE_SRC)/demo/jvmti/hprof
 PSRCDIR=$(PLATFORM_SRC)/demo/jvmti/hprof
@@ -90,11 +90,6 @@ endif
 # Tell library.gmk to copy the txt file first
 #
 INIT += $(LIBDIR)/jvm.hprof.txt
-
-#
-# This removes all asserts in the optimized version
-#
-CPPFLAGS_OPT += -DNDEBUG
 
 #
 # This puts logging code in

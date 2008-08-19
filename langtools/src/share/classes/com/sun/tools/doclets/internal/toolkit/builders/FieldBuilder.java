@@ -61,7 +61,7 @@ public class FieldBuilder extends AbstractMemberBuilder {
         /**
          * The list of fields being documented.
          */
-        private List fields;
+        private List<ProgramElementDoc> fields;
 
         /**
          * The index of the current field that is being documented at this point
@@ -99,8 +99,8 @@ public class FieldBuilder extends AbstractMemberBuilder {
                                 VisibleMemberMap.FIELDS,
                                 configuration.nodeprecated);
                 builder.fields =
-                        new ArrayList(builder.visibleMemberMap.getLeafClassMembers(
-                configuration));
+                        new ArrayList<ProgramElementDoc>(builder.visibleMemberMap.getLeafClassMembers(
+                            configuration));
                 if (configuration.getMemberComparator() != null) {
                         Collections.sort(
                                 builder.fields,

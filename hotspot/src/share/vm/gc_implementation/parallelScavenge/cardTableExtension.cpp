@@ -666,9 +666,9 @@ void CardTableExtension::resize_commit_uncommit(int changed_region,
 
     HeapWord* new_end_for_commit =
       MIN2(cur_committed.end(), _guard_region.start());
-    MemRegion new_committed =
-      MemRegion(new_start_aligned, new_end_for_commit);
-    if(!new_committed.is_empty()) {
+    if(new_start_aligned < new_end_for_commit) {
+      MemRegion new_committed =
+        MemRegion(new_start_aligned, new_end_for_commit);
       if (!os::commit_memory((char*)new_committed.start(),
                              new_committed.byte_size())) {
         vm_exit_out_of_memory(new_committed.byte_size(),

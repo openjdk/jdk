@@ -46,7 +46,7 @@ public class LiteralTaglet implements Taglet {
 
     private static final String NAME = "literal";
 
-    public static void register(Map map) {
+    public static void register(Map<String,Taglet> map) {
            map.remove(NAME);
            map.put(NAME, new LiteralTaglet());
     }

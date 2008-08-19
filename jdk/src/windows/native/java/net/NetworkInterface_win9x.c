@@ -417,8 +417,8 @@ static int getAdapters(JNIEnv *env, adapter **adapterPP)
         return -1;
     }
     curr->index = ++adapterCount;
-    curr->name = strdup("lo");
-    curr->displayName = strdup("TCP Loopback interface");
+    curr->name = _strdup("lo");
+    curr->displayName = _strdup("TCP Loopback interface");
     curr->next = adapterP;
     *adapterPP = curr;
 
@@ -513,12 +513,11 @@ static int getStaticAddresses(JNIEnv *env, char *reg_key, netaddr **netaddrPP)
     HKEY enumKey, bindingKey;
     DWORD dwLen;
     ULONG ulType;
-    TCHAR driver[MAX_STR_LEN];
     char addresses[MAX_STR_LEN];
     unsigned long addr;     /* IPv4 address */
     unsigned char byte;
     netaddr *netaddrP, *curr;
-    int i, addrCount, if_count;
+    int i, addrCount;
 
     /*
      * Open the HKEY_LOCAL_MACHINE\Enum\%s\%s\%s key
@@ -1055,8 +1054,8 @@ int enumInterfaces_win9x(JNIEnv *env, netif **netifPP) {
             return -1;
         }
 
-        ifs->name = strdup(adapterP->name);
-        ifs->displayName = strdup(adapterP->displayName);
+        ifs->name = _strdup(adapterP->name);
+        ifs->displayName = _strdup(adapterP->displayName);
         ifs->dwIndex = adapterP->index;
         ifs->index = adapterP->index;
         ifs->next = netifP;

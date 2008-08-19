@@ -194,7 +194,7 @@ public class CoderResult {
 
     private static abstract class Cache {
 
-        private Map cache = null;
+        private Map<Integer,WeakReference<CoderResult>> cache = null;
 
         protected abstract CoderResult create(int len);
 
@@ -202,16 +202,16 @@ public class CoderResult {
             if (len <= 0)
                 throw new IllegalArgumentException("Non-positive length");
             Integer k = new Integer(len);
-            WeakReference w;
+            WeakReference<CoderResult> w;
             CoderResult e = null;
             if (cache == null) {
-                cache = new HashMap();
-            } else if ((w = (WeakReference)cache.get(k)) != null) {
-                e = (CoderResult)w.get();
+                cache = new HashMap<Integer,WeakReference<CoderResult>>();
+            } else if ((w = cache.get(k)) != null) {
+                e = w.get();
             }
             if (e == null) {
                 e = create(len);
-                cache.put(k, new WeakReference(e));
+                cache.put(k, new WeakReference<CoderResult>(e));
             }
             return e;
         }

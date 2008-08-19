@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 4880663
+ * @bug 4880663 6715757
  * @summary javap could output whitespace between class name and opening brace
+ *          javap prints "extends java.lang.Object"
  */
 
 
@@ -38,7 +39,7 @@ public class T4880663 {
     public void run() throws IOException {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
-        verify(classFile, "class Test {");
+        verify(classFile, "class Test extends java.lang.Object {");
 
         if (errors > 0)
             throw new Error(errors + " found.");

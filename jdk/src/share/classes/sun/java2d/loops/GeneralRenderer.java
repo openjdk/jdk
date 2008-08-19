@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,6 +159,10 @@ public final class GeneralRenderer {
     {
         int mx, my, x1, y1;
         int[] tmp = null;
+
+        if (nPoints <= 0) {
+            return;
+        }
         mx = x1 = xPoints[off] + transx;
         my = y1 = yPoints[off] + transy;
         while (--nPoints > 0) {
