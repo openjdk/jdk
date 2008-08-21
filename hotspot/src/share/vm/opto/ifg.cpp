@@ -594,7 +594,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
 
           // Insure high score for immediate-use spill copies so they get a color
           if( n->is_SpillCopy()
-              && lrgs(r)._def != NodeSentinel     // MultiDef live range can still split
+              && lrgs(r).is_singledef()        // MultiDef live range can still split
               && n->outcnt() == 1              // and use must be in this block
               && _cfg._bbs[n->unique_out()->_idx] == b ) {
             // All single-use MachSpillCopy(s) that immediately precede their

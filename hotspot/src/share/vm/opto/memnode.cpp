@@ -1231,6 +1231,10 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
       // our new node, even though we may throw the node away.
       // (This tweaking with igvn only works because x is a new node.)
       igvn->set_type(x, t);
+      // If x is a TypeNode, capture any more-precise type permanently into Node
+      // othewise it will be not updated during igvn->transform since
+      // igvn->type(x) is set to x->Value() already.
+      x->raise_bottom_type(t);
       Node *y = x->Identity(igvn);
       if( y != x ) {
         wins++;
@@ -1409,7 +1413,7 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
     // had an original form like p1:(AddP x x (LShiftL quux 3)), where the
     // expression (LShiftL quux 3) independently optimized to the constant 8.
     if ((t->isa_int() == NULL) && (t->isa_long() == NULL)
-        && Opcode() != Op_LoadKlass) {
+        && Opcode() != Op_LoadKlass && Opcode() != Op_LoadNKlass) {
       // t might actually be lower than _type, if _type is a unique
       // concrete subclass of abstract class t.
       // Make sure the reference is not into the header, by comparing

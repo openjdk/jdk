@@ -264,8 +264,14 @@ static Node *long_by_long_mulhi( PhaseGVN *phase, Node *dividend, jlong magic_co
 
   Node *t1 = phase->transform(new (phase->C, 3) URShiftLNode(lolo_product, phase->intcon(N / 2)));
   Node *t2 = phase->transform(new (phase->C, 3) AddLNode(hilo_product, t1));
-  Node *t3 = phase->transform(new (phase->C, 3) RShiftLNode(t2, phase->intcon(N / 2)));
-  Node *t4 = phase->transform(new (phase->C, 3) AndLNode(t2, phase->longcon(0xFFFFFFFF)));
+
+  // Construct both t3 and t4 before transforming so t2 doesn't go dead
+  // prematurely.
+  Node *t3 = new (phase->C, 3) RShiftLNode(t2, phase->intcon(N / 2));
+  Node *t4 = new (phase->C, 3) AndLNode(t2, phase->longcon(0xFFFFFFFF));
+  t3 = phase->transform(t3);
+  t4 = phase->transform(t4);
+
   Node *t5 = phase->transform(new (phase->C, 3) AddLNode(t4, lohi_product));
   Node *t6 = phase->transform(new (phase->C, 3) RShiftLNode(t5, phase->intcon(N / 2)));
   Node *t7 = phase->transform(new (phase->C, 3) AddLNode(t3, hihi_product));

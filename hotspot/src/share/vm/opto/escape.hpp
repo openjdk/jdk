@@ -286,7 +286,7 @@ private:
                         // MemNode       - new memory input for this node
                         // ChecCastPP    - allocation that this is a cast of
                         // allocation    - CheckCastPP of the allocation
-  void split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn);
+  bool split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn);
   PhiNode *create_split_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *>  &orig_phi_worklist, PhaseGVN  *igvn, bool &new_created);
   PhiNode *split_memory_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *>  &orig_phi_worklist, PhaseGVN  *igvn);
   Node *find_mem(Node *mem, int alias_idx, PhaseGVN  *igvn);
