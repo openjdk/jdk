@@ -108,7 +108,7 @@ public class RelationService extends NotificationBroadcasterSupport
     // the value HashMap mapping:
     //       <relation id> -> ArrayList of <role name>
     // to track where a given MBean is referenced.
-    private Map<ObjectName,Map<String,List<String>>>
+    private final Map<ObjectName,Map<String,List<String>>>
         myRefedMBeanObjName2RelIdsMap =
             new HashMap<ObjectName,Map<String,List<String>>>();
 
@@ -1492,7 +1492,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // Clones the list of notifications to be able to still receive new
         // notifications while proceeding those ones
         List<MBeanServerNotification> localUnregNtfList;
-        synchronized(myUnregNtfList) {
+        synchronized(myRefedMBeanObjName2RelIdsMap) {
             localUnregNtfList =
                 new ArrayList<MBeanServerNotification>(myUnregNtfList);
             // Resets list

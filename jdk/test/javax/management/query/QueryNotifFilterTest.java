@@ -98,7 +98,7 @@ public class QueryNotifFilterTest {
             this.queryString = queryString;
         }
         abstract boolean apply(MBeanServer mbs, ObjectName name) throws Exception;
-        @Override
+        //@Override - doesn't override in JDK5
         public boolean apply(ObjectName name) {
             try {
                 return apply(getMBeanServer(), name);

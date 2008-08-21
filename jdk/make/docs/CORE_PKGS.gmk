@@ -155,6 +155,7 @@ CORE_PKGS =                                      \
   javax.lang.model.type                          \
   javax.lang.model.util                          \
   javax.management                               \
+  javax.management.event                         \
   javax.management.loading                       \
   javax.management.monitor                       \
   javax.management.relation                      \
