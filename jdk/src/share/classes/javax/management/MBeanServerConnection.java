@@ -29,6 +29,7 @@ package javax.management;
 // java import
 import java.io.IOException;
 import java.util.Set;
+import javax.management.event.NotificationManager;
 
 
 /**
@@ -39,7 +40,7 @@ import java.util.Set;
  *
  * @since 1.5
  */
-public interface MBeanServerConnection {
+public interface MBeanServerConnection extends NotificationManager {
     /**
      * <p>Instantiates and registers an MBean in the MBean server.  The
      * MBean server will use its {@link
@@ -75,6 +76,24 @@ public interface MBeanServerConnection {
      * <CODE>preRegister</CODE> (<CODE>MBeanRegistration</CODE>
      * interface) method of the MBean has thrown an exception. The
      * MBean will not be registered.
+     * @exception RuntimeMBeanException If the <CODE>postRegister</CODE>
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws a
+     * <CODE>RuntimeException</CODE>, the <CODE>createMBean<CODE> method will
+     * throw a <CODE>RuntimeMBeanException</CODE>, although the MBean creation
+     * and registration succeeded. In such a case, the MBean will be actually
+     * registered even though the <CODE>createMBean<CODE> method
+     * threw an exception. Note that <CODE>RuntimeMBeanException</CODE> can
+     * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
+     * will not be registered.
+     * @exception RuntimeErrorException If the <CODE>postRegister</CODE>
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws an
+     * <CODE>Error</CODE>, the <CODE>createMBean<CODE> method will
+     * throw a <CODE>RuntimeErrorException</CODE>, although the MBean creation
+     * and registration succeeded. In such a case, the MBean will be actually
+     * registered even though the <CODE>createMBean<CODE> method
+     * threw an exception.  Note that <CODE>RuntimeErrorException</CODE> can
+     * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
+     * will not be registered.
      * @exception MBeanException The constructor of the MBean has
      * thrown an exception
      * @exception NotCompliantMBeanException This class is not a JMX
@@ -86,7 +105,7 @@ public interface MBeanServerConnection {
      * is specified for the MBean.
      * @exception IOException A communication problem occurred when
      * talking to the MBean server.
-     *
+     * @see javax.management.MBeanRegistration
      */
     public ObjectInstance createMBean(String className, ObjectName name)
             throws ReflectionException, InstanceAlreadyExistsException,
@@ -129,6 +148,24 @@ public interface MBeanServerConnection {
      * <CODE>preRegister</CODE> (<CODE>MBeanRegistration</CODE>
      * interface) method of the MBean has thrown an exception. The
      * MBean will not be registered.
+     * @exception RuntimeMBeanException If the <CODE>postRegister</CODE>
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws a
+     * <CODE>RuntimeException</CODE>, the <CODE>createMBean<CODE> method will
+     * throw a <CODE>RuntimeMBeanException</CODE>, although the MBean creation
+     * and registration succeeded. In such a case, the MBean will be actually
+     * registered even though the <CODE>createMBean<CODE> method
+     * threw an exception.  Note that <CODE>RuntimeMBeanException</CODE> can
+     * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
+     * will not be registered.
+     * @exception RuntimeErrorException If the <CODE>postRegister</CODE>
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws an
+     * <CODE>Error</CODE>, the <CODE>createMBean<CODE> method will
+     * throw a <CODE>RuntimeErrorException</CODE>, although the MBean creation
+     * and registration succeeded. In such a case, the MBean will be actually
+     * registered even though the <CODE>createMBean<CODE> method
+     * threw an exception.  Note that <CODE>RuntimeErrorException</CODE> can
+     * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
+     * will not be registered.
      * @exception MBeanException The constructor of the MBean has
      * thrown an exception
      * @exception NotCompliantMBeanException This class is not a JMX
@@ -142,6 +179,7 @@ public interface MBeanServerConnection {
      * is specified for the MBean.
      * @exception IOException A communication problem occurred when
      * talking to the MBean server.
+     * @see javax.management.MBeanRegistration
      */
     public ObjectInstance createMBean(String className, ObjectName name,
                                       ObjectName loaderName)
@@ -185,6 +223,24 @@ public interface MBeanServerConnection {
      * <CODE>preRegister</CODE> (<CODE>MBeanRegistration</CODE>
      * interface) method of the MBean has thrown an exception. The
      * MBean will not be registered.
+     * @exception RuntimeMBeanException If the <CODE>postRegister</CODE>
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws a
+     * <CODE>RuntimeException</CODE>, the <CODE>createMBean<CODE> method will
+     * throw a <CODE>RuntimeMBeanException</CODE>, although the MBean creation
+     * and registration succeeded. In such a case, the MBean will be actually
+     * registered even though the <CODE>createMBean<CODE> method
+     * threw an exception.  Note that <CODE>RuntimeMBeanException</CODE> can
+     * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
+     * will not be registered.
+     * @exception RuntimeErrorException If the <CODE>postRegister</CODE>
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws an
+     * <CODE>Error</CODE>, the <CODE>createMBean<CODE> method will
+     * throw a <CODE>RuntimeErrorException</CODE>, although the MBean creation
+     * and registration succeeded. In such a case, the MBean will be actually
+     * registered even though the <CODE>createMBean<CODE> method
+     * threw an exception.  Note that <CODE>RuntimeErrorException</CODE> can
+     * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
+     * will not be registered.
      * @exception MBeanException The constructor of the MBean has
      * thrown an exception
      * @exception NotCompliantMBeanException This class is not a JMX
@@ -196,7 +252,7 @@ public interface MBeanServerConnection {
      * is specified for the MBean.
      * @exception IOException A communication problem occurred when
      * talking to the MBean server.
-     *
+     * @see javax.management.MBeanRegistration
      */
     public ObjectInstance createMBean(String className, ObjectName name,
                                       Object params[], String signature[])
@@ -239,6 +295,24 @@ public interface MBeanServerConnection {
      * <CODE>preRegister</CODE> (<CODE>MBeanRegistration</CODE>
      * interface) method of the MBean has thrown an exception. The
      * MBean will not be registered.
+     * @exception RuntimeMBeanException If the <CODE>postRegister</CODE>
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws a
+     * <CODE>RuntimeException</CODE>, the <CODE>createMBean<CODE> method will
+     * throw a <CODE>RuntimeMBeanException</CODE>, although the MBean creation
+     * and registration succeeded. In such a case, the MBean will be actually
+     * registered even though the <CODE>createMBean<CODE> method
+     * threw an exception.  Note that <CODE>RuntimeMBeanException</CODE> can
+     * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
+     * will not be registered.
+     * @exception RuntimeErrorException If the <CODE>postRegister</CODE> method
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws an
+     * <CODE>Error</CODE>, the <CODE>createMBean<CODE> method will
+     * throw a <CODE>RuntimeErrorException</CODE>, although the MBean creation
+     * and registration succeeded. In such a case, the MBean will be actually
+     * registered even though the <CODE>createMBean<CODE> method
+     * threw an exception.  Note that <CODE>RuntimeErrorException</CODE> can
+     * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
+     * will not be registered.
      * @exception MBeanException The constructor of the MBean has
      * thrown an exception
      * @exception NotCompliantMBeanException This class is not a JMX
@@ -252,7 +326,7 @@ public interface MBeanServerConnection {
      * is specified for the MBean.
      * @exception IOException A communication problem occurred when
      * talking to the MBean server.
-     *
+     * @see javax.management.MBeanRegistration
      */
     public ObjectInstance createMBean(String className, ObjectName name,
                                       ObjectName loaderName, Object params[],
@@ -275,6 +349,24 @@ public interface MBeanServerConnection {
      * @exception MBeanRegistrationException The preDeregister
      * ((<CODE>MBeanRegistration</CODE> interface) method of the MBean
      * has thrown an exception.
+     * @exception RuntimeMBeanException If the <CODE>postDeregister</CODE>
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws a
+     * <CODE>RuntimeException</CODE>, the <CODE>unregisterMBean<CODE> method
+     * will throw a <CODE>RuntimeMBeanException</CODE>, although the MBean
+     * unregistration succeeded. In such a case, the MBean will be actually
+     * unregistered even though the <CODE>unregisterMBean<CODE> method
+     * threw an exception.  Note that <CODE>RuntimeMBeanException</CODE> can
+     * also be thrown by <CODE>preDeregister</CODE>, in which case the MBean
+     * will remain registered.
+     * @exception RuntimeErrorException If the <CODE>postDeregister</CODE>
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws an
+     * <CODE>Error</CODE>, the <CODE>unregisterMBean<CODE> method will
+     * throw a <CODE>RuntimeErrorException</CODE>, although the MBean
+     * unregistration succeeded. In such a case, the MBean will be actually
+     * unregistered even though the <CODE>unregisterMBean<CODE> method
+     * threw an exception.  Note that <CODE>RuntimeMBeanException</CODE> can
+     * also be thrown by <CODE>preDeregister</CODE>, in which case the MBean
+     * will remain registered.
      * @exception RuntimeOperationsException Wraps a
      * <CODE>java.lang.IllegalArgumentException</CODE>: The object
      * name in parameter is null or the MBean you are when trying to
@@ -282,7 +374,7 @@ public interface MBeanServerConnection {
      * MBeanServerDelegate} MBean.
      * @exception IOException A communication problem occurred when
      * talking to the MBean server.
-     *
+     * @see javax.management.MBeanRegistration
      */
     public void unregisterMBean(ObjectName name)
             throws InstanceNotFoundException, MBeanRegistrationException,
@@ -585,32 +677,7 @@ public interface MBeanServerConnection {
     public String[] getDomains()
             throws IOException;
 
-    /**
-     * <p>Adds a listener to a registered MBean.</p>
-     *
-     * <P> A notification emitted by an MBean will be forwarded by the
-     * MBeanServer to the listener.  If the source of the notification
-     * is a reference to an MBean object, the MBean server will replace it
-     * by that MBean's ObjectName.  Otherwise the source is unchanged.
-     *
-     * @param name The name of the MBean on which the listener should
-     * be added.
-     * @param listener The listener object which will handle the
-     * notifications emitted by the registered MBean.
-     * @param filter The filter object. If filter is null, no
-     * filtering will be performed before handling notifications.
-     * @param handback The context to be sent to the listener when a
-     * notification is emitted.
-     *
-     * @exception InstanceNotFoundException The MBean name provided
-     * does not match any of the registered MBeans.
-     * @exception IOException A communication problem occurred when
-     * talking to the MBean server.
-     *
-     * @see #removeNotificationListener(ObjectName, NotificationListener)
-     * @see #removeNotificationListener(ObjectName, NotificationListener,
-     * NotificationFilter, Object)
-     */
+    // doc inherited from NotificationManager
     public void addNotificationListener(ObjectName name,
                                         NotificationListener listener,
                                         NotificationFilter filter,
@@ -727,65 +794,13 @@ public interface MBeanServerConnection {
             throws InstanceNotFoundException, ListenerNotFoundException,
                    IOException;
 
-
-    /**
-     * <p>Removes a listener from a registered MBean.</p>
-     *
-     * <P> If the listener is registered more than once, perhaps with
-     * different filters or callbacks, this method will remove all
-     * those registrations.
-     *
-     * @param name The name of the MBean on which the listener should
-     * be removed.
-     * @param listener The listener to be removed.
-     *
-     * @exception InstanceNotFoundException The MBean name provided
-     * does not match any of the registered MBeans.
-     * @exception ListenerNotFoundException The listener is not
-     * registered in the MBean.
-     * @exception IOException A communication problem occurred when
-     * talking to the MBean server.
-     *
-     * @see #addNotificationListener(ObjectName, NotificationListener,
-     * NotificationFilter, Object)
-     */
+    // doc inherited from NotificationManager
     public void removeNotificationListener(ObjectName name,
                                            NotificationListener listener)
             throws InstanceNotFoundException, ListenerNotFoundException,
                    IOException;
 
-    /**
-     * <p>Removes a listener from a registered MBean.</p>
-     *
-     * <p>The MBean must have a listener that exactly matches the
-     * given <code>listener</code>, <code>filter</code>, and
-     * <code>handback</code> parameters.  If there is more than one
-     * such listener, only one is removed.</p>
-     *
-     * <p>The <code>filter</code> and <code>handback</code> parameters
-     * may be null if and only if they are null in a listener to be
-     * removed.</p>
-     *
-     * @param name The name of the MBean on which the listener should
-     * be removed.
-     * @param listener The listener to be removed.
-     * @param filter The filter that was specified when the listener
-     * was added.
-     * @param handback The handback that was specified when the
-     * listener was added.
-     *
-     * @exception InstanceNotFoundException The MBean name provided
-     * does not match any of the registered MBeans.
-     * @exception ListenerNotFoundException The listener is not
-     * registered in the MBean, or it is not registered with the given
-     * filter and handback.
-     * @exception IOException A communication problem occurred when
-     * talking to the MBean server.
-     *
-     * @see #addNotificationListener(ObjectName, NotificationListener,
-     * NotificationFilter, Object)
-     *
-     */
+    // doc inherited from NotificationManager
     public void removeNotificationListener(ObjectName name,
                                            NotificationListener listener,
                                            NotificationFilter filter,

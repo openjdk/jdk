@@ -50,8 +50,8 @@ import javax.management.loading.ClassLoaderRepository;
  * server.  A Java object cannot be registered in the MBean server
  * unless it is a JMX compliant MBean.</p>
  *
- * <p id="notif">When an MBean is registered or unregistered in the MBean server
- * a {@link javax.management.MBeanServerNotification
+ * <p id="notif">When an MBean is registered or unregistered in the
+ * MBean server a {@link javax.management.MBeanServerNotification
  * MBeanServerNotification} Notification is emitted. To register an
  * object as listener to MBeanServerNotifications you should call the
  * MBean server method {@link #addNotificationListener
@@ -262,6 +262,8 @@ public interface MBeanServer extends MBeanServerConnection {
      * {@inheritDoc}
      * <p>If this method successfully creates an MBean, a notification
      * is sent as described <a href="#notif">above</a>.</p>
+     *
+     * @throws RuntimeOperationsException {@inheritDoc}
      */
     public ObjectInstance createMBean(String className, ObjectName name)
             throws ReflectionException, InstanceAlreadyExistsException,
@@ -272,6 +274,8 @@ public interface MBeanServer extends MBeanServerConnection {
      * {@inheritDoc}
      * <p>If this method successfully creates an MBean, a notification
      * is sent as described <a href="#notif">above</a>.</p>
+     *
+     * @throws RuntimeOperationsException {@inheritDoc}
      */
     public ObjectInstance createMBean(String className, ObjectName name,
                                       ObjectName loaderName)
@@ -283,6 +287,8 @@ public interface MBeanServer extends MBeanServerConnection {
      * {@inheritDoc}
      * <p>If this method successfully creates an MBean, a notification
      * is sent as described <a href="#notif">above</a>.</p>
+     *
+     * @throws RuntimeOperationsException {@inheritDoc}
      */
     public ObjectInstance createMBean(String className, ObjectName name,
                                       Object params[], String signature[])
@@ -294,6 +300,8 @@ public interface MBeanServer extends MBeanServerConnection {
      * {@inheritDoc}
      * <p>If this method successfully creates an MBean, a notification
      * is sent as described <a href="#notif">above</a>.</p>
+     *
+     * @throws RuntimeOperationsException {@inheritDoc}
      */
     public ObjectInstance createMBean(String className, ObjectName name,
                                       ObjectName loaderName, Object params[],
@@ -328,11 +336,30 @@ public interface MBeanServer extends MBeanServerConnection {
      * <CODE>preRegister</CODE> (<CODE>MBeanRegistration</CODE>
      * interface) method of the MBean has thrown an exception. The
      * MBean will not be registered.
+     * @exception RuntimeMBeanException If the <CODE>postRegister</CODE>
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws a
+     * <CODE>RuntimeException</CODE>, the <CODE>registerMBean<CODE> method will
+     * throw a <CODE>RuntimeMBeanException</CODE>, although the MBean
+     * registration succeeded. In such a case, the MBean will be actually
+     * registered even though the <CODE>registerMBean<CODE> method
+     * threw an exception.  Note that <CODE>RuntimeMBeanException</CODE> can
+     * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
+     * will not be registered.
+     * @exception RuntimeErrorException If the <CODE>postRegister</CODE>
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws an
+     * <CODE>Error</CODE>, the <CODE>registerMBean<CODE> method will
+     * throw a <CODE>RuntimeErrorException</CODE>, although the MBean
+     * registration succeeded. In such a case, the MBean will be actually
+     * registered even though the <CODE>registerMBean<CODE> method
+     * threw an exception.  Note that <CODE>RuntimeErrorException</CODE> can
+     * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
+     * will not be registered.
      * @exception NotCompliantMBeanException This object is not a JMX
      * compliant MBean
      * @exception RuntimeOperationsException Wraps a
      * <CODE>java.lang.IllegalArgumentException</CODE>: The object
      * passed in parameter is null or no object name is specified.
+     * @see javax.management.MBeanRegistration
      */
     public ObjectInstance registerMBean(Object object, ObjectName name)
             throws InstanceAlreadyExistsException, MBeanRegistrationException,
@@ -343,6 +370,8 @@ public interface MBeanServer extends MBeanServerConnection {
      *
      * <p>If this method successfully unregisters an MBean, a notification
      * is sent as described <a href="#notif">above</a>.</p>
+     *
+     * @throws RuntimeOperationsException {@inheritDoc}
      */
     public void unregisterMBean(ObjectName name)
             throws InstanceNotFoundException, MBeanRegistrationException;
@@ -358,6 +387,9 @@ public interface MBeanServer extends MBeanServerConnection {
     public Set<ObjectName> queryNames(ObjectName name, QueryExp query);
 
     // doc comment inherited from MBeanServerConnection
+    /**
+     * @throws RuntimeOperationsException {@inheritDoc}
+     */
     public boolean isRegistered(ObjectName name);
 
     /**
@@ -370,21 +402,33 @@ public interface MBeanServer extends MBeanServerConnection {
     public Integer getMBeanCount();
 
     // doc comment inherited from MBeanServerConnection
+    /**
+     * @throws RuntimeOperationsException {@inheritDoc}
+     */
     public Object getAttribute(ObjectName name, String attribute)
             throws MBeanException, AttributeNotFoundException,
                    InstanceNotFoundException, ReflectionException;
 
     // doc comment inherited from MBeanServerConnection
+    /**
+     * @throws RuntimeOperationsException {@inheritDoc}
+     */
     public AttributeList getAttributes(ObjectName name, String[] attributes)
             throws InstanceNotFoundException, ReflectionException;
 
     // doc comment inherited from MBeanServerConnection
+    /**
+     * @throws RuntimeOperationsException {@inheritDoc}
+     */
     public void setAttribute(ObjectName name, Attribute attribute)
             throws InstanceNotFoundException, AttributeNotFoundException,
                    InvalidAttributeValueException, MBeanException,
                    ReflectionException;
 
     // doc comment inherited from MBeanServerConnection
+    /**
+     * @throws RuntimeOperationsException {@inheritDoc}
+     */
     public AttributeList setAttributes(ObjectName name,
                                        AttributeList attributes)
         throws InstanceNotFoundException, ReflectionException;
@@ -401,14 +445,23 @@ public interface MBeanServer extends MBeanServerConnection {
     // doc comment inherited from MBeanServerConnection
     public String[] getDomains();
 
-    // doc comment inherited from MBeanServerConnection
+    // doc comment inherited from MBeanServerConnection, plus:
+    /**
+     * {@inheritDoc}
+     * If the source of the notification
+     * is a reference to an MBean object, the MBean server will replace it
+     * by that MBean's ObjectName.  Otherwise the source is unchanged.
+     */
     public void addNotificationListener(ObjectName name,
                                         NotificationListener listener,
                                         NotificationFilter filter,
                                         Object handback)
             throws InstanceNotFoundException;
 
-    // doc comment inherited from MBeanServerConnection
+    /**
+     * {@inheritDoc}
+     * @throws RuntimeOperationsException {@inheritDoc}
+     */
     public void addNotificationListener(ObjectName name,
                                         ObjectName listener,
                                         NotificationFilter filter,
