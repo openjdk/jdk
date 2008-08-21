@@ -695,6 +695,8 @@ const Type *AddPNode::mach_bottom_type( const MachNode* n) {
         guarantee(tptr == NULL, "must be only one pointer operand");
         tptr = et->isa_oopptr();
         guarantee(tptr != NULL, "non-int operand must be pointer");
+        if (tptr->higher_equal(tp->add_offset(tptr->offset())))
+          tp = tptr; // Set more precise type for bailout
         continue;
       }
       if ( eti->_hi != eti->_lo )  goto bottom_out;
