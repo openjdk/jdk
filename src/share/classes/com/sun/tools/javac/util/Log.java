@@ -244,7 +244,7 @@ public class Log extends AbstractLog {
         String line = (source == null ? null : source.getLine(pos));
         if (line == null)
             return;
-        int col = source.getColumnNumber(pos);
+        int col = source.getColumnNumber(pos, false);
 
         printLines(writer, line);
         for (int i = 0; i < col - 1; i++) {
