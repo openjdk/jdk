@@ -108,11 +108,11 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
     protected String formatMeta(char c, JCDiagnostic d, Locale l) {
         switch (c) {
             case 'b':
-                return formatSource(d, l);
+                return formatSource(d, false, l);
             case 'e':
                 return formatPosition(d, END, l);
             case 'f':
-                return formatSource(d, l);
+                return formatSource(d, true, l);
             case 'l':
                 return formatPosition(d, LINE, l);
             case 'c':
