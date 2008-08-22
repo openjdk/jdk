@@ -183,8 +183,6 @@ public:
   void compact();
   void post_compact();
   size_t contiguous_available() const;
-  bool grow_by(size_t bytes);
-  virtual bool grow_to_reserved();
 
   void clear_remembered_set();
   void invalidate_remembered_set();
