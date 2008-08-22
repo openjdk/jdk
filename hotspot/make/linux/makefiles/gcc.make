@@ -1,5 +1,5 @@
 #
-# Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -84,8 +84,17 @@ endif
 
 # Compiler warnings are treated as errors
 WARNINGS_ARE_ERRORS = -Werror
+
 # Except for a few acceptable ones
+# Since GCC 4.3, -Wconversion has changed its meanings to warn these implicit
+# conversions which might affect the values. To avoid that, we need to turn
+# it off explicitly. 
+ifneq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 3 \) \))" "0"
+ACCEPTABLE_WARNINGS = -Wpointer-arith -Wsign-compare
+else
 ACCEPTABLE_WARNINGS = -Wpointer-arith -Wconversion -Wsign-compare
+endif
+
 CFLAGS_WARN/DEFAULT = $(WARNINGS_ARE_ERRORS) $(ACCEPTABLE_WARNINGS)
 # Special cases
 CFLAGS_WARN/BYFILE = $(CFLAGS_WARN/$@)$(CFLAGS_WARN/DEFAULT$(CFLAGS_WARN/$@)) 

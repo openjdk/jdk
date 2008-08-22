@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,14 +432,16 @@ bool CompactingPermGenGen::grow_by(size_t bytes) {
 }
 
 
-void CompactingPermGenGen::grow_to_reserved() {
+bool CompactingPermGenGen::grow_to_reserved() {
   // Don't allow _virtual_size to expand into shared spaces.
+  bool success = false;
   if (_virtual_space.uncommitted_size() > _shared_space_size) {
     size_t remaining_bytes =
       _virtual_space.uncommitted_size() - _shared_space_size;
-    bool success = OneContigSpaceCardGeneration::grow_by(remaining_bytes);
+    success = OneContigSpaceCardGeneration::grow_by(remaining_bytes);
     DEBUG_ONLY(if (!success) warning("grow to reserved failed");)
   }
+  return success;
 }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3196,31 +3196,16 @@ ConcurrentMarkSweepGeneration::expand_and_allocate(size_t word_size,
 // YSR: All of this generation expansion/shrinking stuff is an exact copy of
 // OneContigSpaceCardGeneration, which makes me wonder if we should move this
 // to CardGeneration and share it...
+bool ConcurrentMarkSweepGeneration::expand(size_t bytes, size_t expand_bytes) {
+  return CardGeneration::expand(bytes, expand_bytes);
+}
+
 void ConcurrentMarkSweepGeneration::expand(size_t bytes, size_t expand_bytes,
   CMSExpansionCause::Cause cause)
 {
-  assert_locked_or_safepoint(Heap_lock);
 
-  size_t aligned_bytes  = ReservedSpace::page_align_size_up(bytes);
-  size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
-  bool success = false;
-  if (aligned_expand_bytes > aligned_bytes) {
-    success = grow_by(aligned_expand_bytes);
-  }
-  if (!success) {
-    success = grow_by(aligned_bytes);
-  }
-  if (!success) {
-    size_t remaining_bytes = _virtual_space.uncommitted_size();
-    if (remaining_bytes > 0) {
-      success = grow_by(remaining_bytes);
-    }
-  }
-  if (GC_locker::is_active()) {
-    if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("Garbage collection disabled, expanded heap instead");
-    }
-  }
+  bool success = expand(bytes, expand_bytes);
+
   // remember why we expanded; this information is used
   // by shouldConcurrentCollect() when making decisions on whether to start
   // a new CMS cycle.
@@ -6886,11 +6871,9 @@ bool MarkFromRootsClosure::do_bit(size_t offset) {
         // during the preclean or remark phase. (CMSCleanOnEnter)
         if (CMSCleanOnEnter) {
           size_t sz = _collector->block_size_using_printezis_bits(addr);
-          HeapWord* start_card_addr = (HeapWord*)round_down(
-                                         (intptr_t)addr, CardTableModRefBS::card_size);
           HeapWord* end_card_addr   = (HeapWord*)round_to(
                                          (intptr_t)(addr+sz), CardTableModRefBS::card_size);
-          MemRegion redirty_range = MemRegion(start_card_addr, end_card_addr);
+          MemRegion redirty_range = MemRegion(addr, end_card_addr);
           assert(!redirty_range.is_empty(), "Arithmetical tautology");
           // Bump _threshold to end_card_addr; note that
           // _threshold cannot possibly exceed end_card_addr, anyhow.
@@ -7486,12 +7469,25 @@ void PushAndMarkClosure::do_oop(oop obj) {
     )
     if (simulate_overflow || !_mark_stack->push(obj)) {
       if (_concurrent_precleaning) {
-         // During precleaning we can just dirty the appropriate card
+         // During precleaning we can just dirty the appropriate card(s)
          // in the mod union table, thus ensuring that the object remains
-         // in the grey set  and continue. Note that no one can be intefering
-         // with us in this action of dirtying the mod union table, so
-         // no locking is required.
-         _mod_union_table->mark(addr);
+         // in the grey set  and continue. In the case of object arrays
+         // we need to dirty all of the cards that the object spans,
+         // since the rescan of object arrays will be limited to the
+         // dirty cards.
+         // Note that no one can be intefering with us in this action
+         // of dirtying the mod union table, so no locking or atomics
+         // are required.
+         if (obj->is_objArray()) {
+           size_t sz = obj->size();
+           HeapWord* end_card_addr = (HeapWord*)round_to(
+                                        (intptr_t)(addr+sz), CardTableModRefBS::card_size);
+           MemRegion redirty_range = MemRegion(addr, end_card_addr);
+           assert(!redirty_range.is_empty(), "Arithmetical tautology");
+           _mod_union_table->mark_range(redirty_range);
+         } else {
+           _mod_union_table->mark(addr);
+         }
          _collector->_ser_pmc_preclean_ovflw++;
       } else {
          // During the remark phase, we need to remember this oop

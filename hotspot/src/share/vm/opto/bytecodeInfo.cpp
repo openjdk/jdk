@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ static bool is_init_with_ea(ciMethod* callee_method,
                             ciMethod* caller_method, Compile* C) {
   // True when EA is ON and a java constructor is called or
   // a super constructor is called from an inlined java constructor.
-  return DoEscapeAnalysis && EliminateAllocations &&
+  return C->do_escape_analysis() && EliminateAllocations &&
          ( callee_method->is_initializer() ||
            (caller_method->is_initializer() &&
             caller_method != C->method() &&

@@ -72,7 +72,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
     private int threadsCount = 0;
 
     // A list of helper threads for select.
-    private final List threads = new ArrayList();
+    private final List<Thread> threads = new ArrayList<Thread>();
 
     //Pipe used as a wakeup object.
     private final Pipe wakeupPipe;
@@ -82,6 +82,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
 
     // Maps file descriptors to their indices in  pollArray
     private final static class FdMap extends HashMap<Integer, MapEntry> {
+        static final long serialVersionUID = 0L;
         private MapEntry get(int desc) {
             return get(new Integer(desc));
         }

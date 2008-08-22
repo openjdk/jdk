@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,6 @@ ifeq ($(PLATFORM),windows)
      $(OBJDIR)/../../../java.lang/java/$(OBJDIRNAME)/FileDescriptor_md.obj
 endif
 ifeq ($(PLATFORM), linux)
-COMPILER_WARNINGS_FATAL=true
 OTHER_LDLIBS += -L$(LIBDIR)/$(LIBARCH) -ljava -lnet -lpthread -ldl
 endif
 ifeq ($(PLATFORM), solaris)
@@ -166,8 +165,8 @@ include $(BUILDDIR)/common/Library.gmk
 # Generate source files
 #
 
-SPP = spp.sh
-SPP_CMD = $(SH) $(SPP)
+SPP_JARFILE = $(BUILDTOOLJARDIR)/spp.jar
+SPP_CMD = $(BOOT_JAVA_CMD) -jar $(SPP_JARFILE)
 
 FILES_genout = $(FILES_gen:%.java=$(GENSRCDIR)/%.java)
 
@@ -183,7 +182,7 @@ CS_GEN=$(NIO_GEN)/charset
 SCH_GEN=$(SNIO_GEN)/ch
 SCS_GEN=$(SNIO_GEN)/cs
 
-sources: $(SPP) $(FILES_genout)
+sources: $(SPP_JARFILE) $(FILES_genout)
 
 #
 # Generated buffer classes

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,11 @@ class os: AllStatic {
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint);
   static bool   uncommit_memory(char* addr, size_t bytes);
   static bool   release_memory(char* addr, size_t bytes);
-  static bool   protect_memory(char* addr, size_t bytes);
+
+  enum ProtType { MEM_PROT_NONE, MEM_PROT_READ, MEM_PROT_RW, MEM_PROT_RWX };
+  static bool   protect_memory(char* addr, size_t bytes, ProtType prot,
+                               bool is_committed = false);
+
   static bool   guard_memory(char* addr, size_t bytes);
   static bool   unguard_memory(char* addr, size_t bytes);
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
@@ -398,6 +402,10 @@ class os: AllStatic {
   static const char*    get_temp_directory();
   static const char*    get_current_directory(char *buf, int buflen);
 
+  // Builds a platform-specific full library path given a ld path and lib name
+  static void           dll_build_name(char* buffer, size_t size,
+                                       const char* pathname, const char* fname);
+
   // Symbol lookup, find nearest function name; basically it implements
   // dladdr() for all platforms. Name of the nearest function is copied
   // to buf. Distance from its base address is returned as offset.
@@ -420,6 +428,9 @@ class os: AllStatic {
   // in case of error it checks if .dll/.so was built for the
   // same architecture as Hotspot is running on
   static void* dll_load(const char *name, char *ebuf, int ebuflen);
+
+  // lookup symbol in a shared library
+  static void* dll_lookup(void* handle, const char* name);
 
   // Print out system information; they are called by fatal error handler.
   // Output format may be different on different platforms.

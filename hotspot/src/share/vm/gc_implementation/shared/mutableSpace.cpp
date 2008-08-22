@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,17 @@
 # include "incls/_precompiled.incl"
 # include "incls/_mutableSpace.cpp.incl"
 
-void MutableSpace::initialize(MemRegion mr, bool clear_space) {
+MutableSpace::MutableSpace(): ImmutableSpace(), _top(NULL) {
+  _mangler = new MutableSpaceMangler(this);
+}
+
+MutableSpace::~MutableSpace() {
+  delete _mangler;
+}
+
+void MutableSpace::initialize(MemRegion mr,
+                              bool clear_space,
+                              bool mangle_space) {
   HeapWord* bottom = mr.start();
   HeapWord* end    = mr.end();
 
@@ -34,13 +44,50 @@ void MutableSpace::initialize(MemRegion mr, bool clear_space) {
   set_bottom(bottom);
   set_end(end);
 
-  if (clear_space) clear();
+  if (clear_space) {
+    clear(mangle_space);
+  }
 }
 
-void MutableSpace::clear() {
+void MutableSpace::clear(bool mangle_space) {
   set_top(bottom());
-  if (ZapUnusedHeapArea) mangle_unused_area();
+  if (ZapUnusedHeapArea && mangle_space) {
+    mangle_unused_area();
+  }
 }
+
+#ifndef PRODUCT
+void MutableSpace::check_mangled_unused_area(HeapWord* limit) {
+  mangler()->check_mangled_unused_area(limit);
+}
+
+void MutableSpace::check_mangled_unused_area_complete() {
+  mangler()->check_mangled_unused_area_complete();
+}
+
+// Mangle only the unused space that has not previously
+// been mangled and that has not been allocated since being
+// mangled.
+void MutableSpace::mangle_unused_area() {
+  mangler()->mangle_unused_area();
+}
+
+void MutableSpace::mangle_unused_area_complete() {
+  mangler()->mangle_unused_area_complete();
+}
+
+void MutableSpace::mangle_region(MemRegion mr) {
+  SpaceMangler::mangle_region(mr);
+}
+
+void MutableSpace::set_top_for_allocations(HeapWord* v) {
+  mangler()->set_top_for_allocations(v);
+}
+
+void MutableSpace::set_top_for_allocations() {
+  mangler()->set_top_for_allocations(top());
+}
+#endif
 
 // This version requires locking. */
 HeapWord* MutableSpace::allocate(size_t size) {

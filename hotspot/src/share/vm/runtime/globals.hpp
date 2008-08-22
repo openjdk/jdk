@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -604,8 +604,14 @@ class CommandLineFlags {
   develop(bool, ZapJNIHandleArea, trueInDebug,                              \
           "Zap freed JNI handle space with 0xFEFEFEFE")                     \
                                                                             \
-  develop(bool, ZapUnusedHeapArea, false,                                   \
+  develop(bool, ZapUnusedHeapArea, trueInDebug,                             \
           "Zap unused heap space with 0xBAADBABE")                          \
+                                                                            \
+  develop(bool, TraceZapUnusedHeapArea, false,                              \
+          "Trace zapping of unused heap space")                             \
+                                                                            \
+  develop(bool, CheckZapUnusedHeapArea, false,                              \
+          "Check zapping of unused heap space")                             \
                                                                             \
   develop(bool, PrintVMMessages, true,                                      \
           "Print vm messages on console")                                   \

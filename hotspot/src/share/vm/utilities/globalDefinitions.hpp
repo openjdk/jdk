@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,8 +97,12 @@ const int SerializePageShiftCount = 3;
 // object size.
 class HeapWord {
   friend class VMStructs;
-private:
+ private:
   char* i;
+#ifdef ASSERT
+ public:
+  char* value() { return i; }
+#endif
 };
 
 // HeapWordSize must be 2^LogHeapWordSize.

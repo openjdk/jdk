@@ -147,8 +147,8 @@ class G1OffsetTableContigSpace: public ContiguousSpace {
   virtual void set_saved_mark();
   void reset_gc_time_stamp() { _gc_time_stamp = 0; }
 
-  virtual void initialize(MemRegion mr, bool clear_space);
-  virtual void clear();
+  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
+  virtual void clear(bool mangle_space);
 
   HeapWord* block_start(const void* p);
   HeapWord* block_start_const(const void* p) const;
@@ -485,7 +485,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // Reset HR stuff to default values.
   void hr_clear(bool par, bool clear_space);
 
-  void initialize(MemRegion mr, bool clear_space);
+  void initialize(MemRegion mr, bool clear_space, bool mangle_space);
 
   // Ensure that "this" is zero-filled.
   void ensure_zero_filled();

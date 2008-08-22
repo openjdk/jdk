@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -996,6 +996,28 @@ const char * os::get_temp_directory()
     }
 }
 
+void os::dll_build_name(char *holder, size_t holderlen,
+                        const char* pname, const char* fname)
+{
+    // copied from libhpi
+    const size_t pnamelen = pname ? strlen(pname) : 0;
+    const char c = (pnamelen > 0) ? pname[pnamelen-1] : 0;
+
+    /* Quietly truncates on buffer overflow. Should be an error. */
+    if (pnamelen + strlen(fname) + 10 > holderlen) {
+        *holder = '\0';
+        return;
+    }
+
+    if (pnamelen == 0) {
+        sprintf(holder, "%s.dll", fname);
+    } else if (c == ':' || c == '\\') {
+        sprintf(holder, "%s%s.dll", pname, fname);
+    } else {
+        sprintf(holder, "%s\\%s.dll", pname, fname);
+    }
+}
+
 // Needs to be in os specific directory because windows requires another
 // header file <direct.h>
 const char* os::get_current_directory(char *buf, int buflen) {
@@ -1259,6 +1281,10 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   return false;
 }
 
+void* os::dll_lookup(void* handle, const char* name) {
+  return GetProcAddress((HMODULE)handle, name);
+}
+
 // save the start and end address of jvm.dll into param[0] and param[1]
 static int _locate_jvm_dll(int pid, char* mod_fname, address base_addr,
                     unsigned size, void * param) {
@@ -1432,44 +1458,78 @@ void os::print_dll_info(outputStream *st) {
    enumerate_modules(pid, _print_module, (void *)st);
 }
 
+// function pointer to Windows API "GetNativeSystemInfo".
+typedef void (WINAPI *GetNativeSystemInfo_func_type)(LPSYSTEM_INFO);
+static GetNativeSystemInfo_func_type _GetNativeSystemInfo;
+
 void os::print_os_info(outputStream* st) {
-   st->print("OS:");
+  st->print("OS:");
 
-   OSVERSIONINFOEX osvi;
-   ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
-   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+  OSVERSIONINFOEX osvi;
+  ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
+  osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 
-   if (!GetVersionEx((OSVERSIONINFO *)&osvi)) {
-      st->print_cr("N/A");
-      return;
-   }
+  if (!GetVersionEx((OSVERSIONINFO *)&osvi)) {
+    st->print_cr("N/A");
+    return;
+  }
 
-   int os_vers = osvi.dwMajorVersion * 1000 + osvi.dwMinorVersion;
-
-   if (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT) {
-     switch (os_vers) {
-       case 3051: st->print(" Windows NT 3.51"); break;
-       case 4000: st->print(" Windows NT 4.0"); break;
-       case 5000: st->print(" Windows 2000"); break;
-       case 5001: st->print(" Windows XP"); break;
-       case 5002: st->print(" Windows Server 2003 family"); break;
-       case 6000: st->print(" Windows Vista"); break;
-       default: // future windows, print out its major and minor versions
-                st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
-     }
-   } else {
-     switch (os_vers) {
-       case 4000: st->print(" Windows 95"); break;
-       case 4010: st->print(" Windows 98"); break;
-       case 4090: st->print(" Windows Me"); break;
-       default: // future windows, print out its major and minor versions
-                st->print(" Windows %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
-     }
-   }
-
-   st->print(" Build %d", osvi.dwBuildNumber);
-   st->print(" %s", osvi.szCSDVersion);           // service pack
-   st->cr();
+  int os_vers = osvi.dwMajorVersion * 1000 + osvi.dwMinorVersion;
+  if (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT) {
+    switch (os_vers) {
+    case 3051: st->print(" Windows NT 3.51"); break;
+    case 4000: st->print(" Windows NT 4.0"); break;
+    case 5000: st->print(" Windows 2000"); break;
+    case 5001: st->print(" Windows XP"); break;
+    case 5002:
+    case 6000: {
+      // Retrieve SYSTEM_INFO from GetNativeSystemInfo call so that we could
+      // find out whether we are running on 64 bit processor or not.
+      SYSTEM_INFO si;
+      ZeroMemory(&si, sizeof(SYSTEM_INFO));
+      // Check to see if _GetNativeSystemInfo has been initialized.
+      if (_GetNativeSystemInfo == NULL) {
+        HMODULE hKernel32 = GetModuleHandle(TEXT("kernel32.dll"));
+        _GetNativeSystemInfo =
+            CAST_TO_FN_PTR(GetNativeSystemInfo_func_type,
+                           GetProcAddress(hKernel32,
+                                          "GetNativeSystemInfo"));
+        if (_GetNativeSystemInfo == NULL)
+          GetSystemInfo(&si);
+      } else {
+        _GetNativeSystemInfo(&si);
+      }
+      if (os_vers == 5002) {
+        if (osvi.wProductType == VER_NT_WORKSTATION &&
+            si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+          st->print(" Windows XP x64 Edition");
+        else
+            st->print(" Windows Server 2003 family");
+      } else { // os_vers == 6000
+        if (osvi.wProductType == VER_NT_WORKSTATION)
+            st->print(" Windows Vista");
+        else
+            st->print(" Windows Server 2008");
+        if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+            st->print(" , 64 bit");
+      }
+      break;
+    }
+    default: // future windows, print out its major and minor versions
+      st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
+    }
+  } else {
+    switch (os_vers) {
+    case 4000: st->print(" Windows 95"); break;
+    case 4010: st->print(" Windows 98"); break;
+    case 4090: st->print(" Windows Me"); break;
+    default: // future windows, print out its major and minor versions
+      st->print(" Windows %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
+    }
+  }
+  st->print(" Build %d", osvi.dwBuildNumber);
+  st->print(" %s", osvi.szCSDVersion);           // service pack
+  st->cr();
 }
 
 void os::print_memory_info(outputStream* st) {
@@ -2181,6 +2241,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             // Windows 98 reports faulting addresses incorrectly
             if (!MacroAssembler::needs_explicit_null_check((intptr_t)addr) ||
                 !os::win32::is_nt()) {
+
               return Handle_Exception(exceptionInfo,
                   SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL));
             }
@@ -2574,9 +2635,33 @@ bool os::release_memory(char* addr, size_t bytes) {
   return VirtualFree(addr, 0, MEM_RELEASE) != 0;
 }
 
-bool os::protect_memory(char* addr, size_t bytes) {
+// Set protections specified
+bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
+                        bool is_committed) {
+  unsigned int p = 0;
+  switch (prot) {
+  case MEM_PROT_NONE: p = PAGE_NOACCESS; break;
+  case MEM_PROT_READ: p = PAGE_READONLY; break;
+  case MEM_PROT_RW:   p = PAGE_READWRITE; break;
+  case MEM_PROT_RWX:  p = PAGE_EXECUTE_READWRITE; break;
+  default:
+    ShouldNotReachHere();
+  }
+
   DWORD old_status;
-  return VirtualProtect(addr, bytes, PAGE_READONLY, &old_status) != 0;
+
+  // Strange enough, but on Win32 one can change protection only for committed
+  // memory, not a big deal anyway, as bytes less or equal than 64K
+  if (!is_committed && !commit_memory(addr, bytes)) {
+    fatal("cannot commit protection page");
+  }
+  // One cannot use os::guard_memory() here, as on Win32 guard page
+  // have different (one-shot) semantics, from MSDN on PAGE_GUARD:
+  //
+  // Pages in the region become guard pages. Any attempt to access a guard page
+  // causes the system to raise a STATUS_GUARD_PAGE exception and turn off
+  // the guard page status. Guard pages thus act as a one-time access alarm.
+  return VirtualProtect(addr, bytes, p, &old_status) != 0;
 }
 
 bool os::guard_memory(char* addr, size_t bytes) {

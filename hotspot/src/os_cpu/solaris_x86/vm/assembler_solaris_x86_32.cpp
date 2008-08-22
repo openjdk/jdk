@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,10 +78,4 @@ void MacroAssembler::get_thread(Register thread) {
   popl(rcx);
   if (thread != rax) popl(rax);
   popl(thread);
-}
-
-bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
-  // Identical to Sparc/Solaris code
-  bool offset_in_first_page =   0 <= offset  &&  offset < os::vm_page_size();
-  return !offset_in_first_page;
 }

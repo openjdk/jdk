@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.awt.Graphics;
 import java.awt.Rectangle;
 
 import sun.awt.EmbeddedFrame;
+import sun.awt.Win32GraphicsEnvironment;
 
 public class WEmbeddedFramePeer extends WFramePeer {
 
@@ -70,5 +71,14 @@ public class WEmbeddedFramePeer extends WFramePeer {
     Rectangle constrainBounds(int x, int y, int width, int height) {
         // We don't constrain the bounds of the EmbeddedFrames
         return new Rectangle(x, y, width, height);
+    }
+
+    @Override
+    public boolean isAccelCapable() {
+        // REMIND: Temp workaround for issues with using HW acceleration
+        // in the browser on Vista when DWM is enabled
+        // Note: isDWMCompositionEnabled is only relevant on Vista, returns
+        // false on other systems.
+        return !Win32GraphicsEnvironment.isDWMCompositionEnabled();
     }
 }

@@ -1,13 +1,5 @@
-InnerNamedConstant_2.java:22: inner classes cannot have static declarations
-        static int x = 1;                  // ERROR - static not final
-                   ^
-InnerNamedConstant_2.java:23: inner classes cannot have static declarations
-        static final String z;             // ERROR - static blank final
-                            ^
-InnerNamedConstant_2.java:25: cannot assign a value to final variable z
-            z = "foobar";                  // Error may be reported here. See 4278961.
-            ^
-InnerNamedConstant_2.java:34: inner classes cannot have static declarations
-        static final int y = Inner1.x * 5; // ERROR - initializer not constant
-                         ^
+InnerNamedConstant_2.java:22:20: compiler.err.icls.cant.have.static.decl
+InnerNamedConstant_2.java:23:29: compiler.err.icls.cant.have.static.decl
+InnerNamedConstant_2.java:25:13: compiler.err.cant.assign.val.to.final.var: z
+InnerNamedConstant_2.java:34:26: compiler.err.icls.cant.have.static.decl
 4 errors

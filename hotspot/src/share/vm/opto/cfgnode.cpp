@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -713,7 +713,9 @@ PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) cons
   assert(type() == Type::MEMORY &&
          (t == TypePtr::BOTTOM || t == TypeRawPtr::BOTTOM ||
           t->isa_oopptr() && !t->is_oopptr()->is_known_instance() &&
-          t->is_oopptr()->cast_to_instance_id(t_oop->instance_id()) == t_oop),
+          t->is_oopptr()->cast_to_exactness(true)
+           ->is_oopptr()->cast_to_ptr_type(t_oop->ptr())
+           ->is_oopptr()->cast_to_instance_id(t_oop->instance_id()) == t_oop),
          "bottom or raw memory required");
 
   // Check if an appropriate node already exists.
@@ -1089,6 +1091,8 @@ Node* PhiNode::unique_input(PhaseTransform* phase) {
     if (rc == NULL || phase->type(rc) == Type::TOP)
       continue;                 // ignore unreachable control path
     Node* n = in(i);
+    if (n == NULL)
+      continue;
     Node* un = n->uncast();
     if (un == NULL || un == this || phase->type(un) == Type::TOP) {
       continue; // ignore if top, or in(i) and "this" are in a data cycle

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1227,8 +1227,16 @@ class StubGenerator: public StubCodeGenerator {
            __ shrq(end, CardTableModRefBS::card_shift);
            __ subq(end, start); // number of bytes to copy
 
+          intptr_t disp = (intptr_t) ct->byte_map_base;
+          if (__ is_simm32(disp)) {
+            Address cardtable(noreg, noreg, Address::no_scale, disp);
+            __ lea(scratch, cardtable);
+          } else {
+            ExternalAddress cardtable((address)disp);
+            __ lea(scratch, cardtable);
+          }
+
           const Register count = end; // 'end' register contains bytes count now
-          __ lea(scratch, ExternalAddress((address)ct->byte_map_base));
           __ addq(start, scratch);
         __ BIND(L_loop);
           __ movb(Address(start, count, Address::times_1), 0);

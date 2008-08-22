@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1398,6 +1398,10 @@ public:
   }
   uint index() const {
     return _inode_top->indx;
+  }
+  uint index_at(uint i) const {
+    assert(_inodes + i <= _inode_top, "in range");
+    return _inodes[i].indx;
   }
   void set_node(Node *n) {
     _inode_top->node = n;

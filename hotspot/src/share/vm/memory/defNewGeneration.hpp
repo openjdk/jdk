@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,6 +279,9 @@ protected:
   virtual void gc_prologue(bool full);
   virtual void gc_epilogue(bool full);
 
+  // Save the tops for eden, from, and to
+  virtual void record_spaces_top();
+
   // Doesn't require additional work during GC prologue and epilogue
   virtual bool performs_in_place_marking() const { return false; }
 
@@ -299,8 +302,11 @@ protected:
 
   // For non-youngest collection, the DefNewGeneration can contribute
   // "to-space".
-  void contribute_scratch(ScratchBlock*& list, Generation* requestor,
+  virtual void contribute_scratch(ScratchBlock*& list, Generation* requestor,
                           size_t max_alloc_words);
+
+  // Reset for contribution of "to-space".
+  virtual void reset_scratch();
 
   // GC support
   virtual void compute_new_size();
@@ -331,7 +337,12 @@ protected:
   void verify(bool allow_dirty);
 
  protected:
-  void compute_space_boundaries(uintx minimum_eden_size);
+  // If clear_space is true, clear the survivor spaces.  Eden is
+  // cleared if the minimum size of eden is 0.  If mangle_space
+  // is true, also mangle the space in debug mode.
+  void compute_space_boundaries(uintx minimum_eden_size,
+                                bool clear_space,
+                                bool mangle_space);
   // Scavenge support
   void swap_spaces();
 };

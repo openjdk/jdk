@@ -46,6 +46,8 @@ CORBA_JMK_DIRECTORY=$(TOPDIR)/make/com/sun/corba/minclude/
 include $(CORBA_JMK_DIRECTORY)com_sun_corba_se_PortableActivationIDL.jmk
 include $(CORBA_JMK_DIRECTORY)com_sun_corba_se_impl_logging.jmk
 
+FILES_java += com/sun/corba/se/org/omg/CORBA/ORB.java
+
 #
 # Dirs
 #

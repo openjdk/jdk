@@ -56,11 +56,11 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      *               check.
      * @return a name-rank number map.
      */
-    private static Map getRankMap(Object[] params){
+    private static Map<String,String> getRankMap(Object[] params){
         if (params == null) {
             return null;
         }
-        HashMap result = new HashMap();
+        HashMap<String,String> result = new HashMap<String,String>();
         for (int i = 0; i < params.length; i++) {
             String name = params[i] instanceof Parameter ?
                 ((Parameter) params[i]).name() :
@@ -192,7 +192,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     private TagletOutput getTagletOutput(boolean isNonTypeParams, Doc holder,
             TagletWriter writer, Object[] formalParameters, ParamTag[] paramTags) {
         TagletOutput result = writer.getOutputInstance();
-        Set alreadyDocumented = new HashSet();
+        Set<String> alreadyDocumented = new HashSet<String>();
         if (paramTags.length > 0) {
             result.appendOutput(
                 processParamTags(isNonTypeParams, paramTags,
@@ -214,7 +214,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      */
     private TagletOutput getInheritedTagletOutput(boolean isNonTypeParams, Doc holder,
             TagletWriter writer, Object[] formalParameters,
-            Set alreadyDocumented) {
+            Set<String> alreadyDocumented) {
         TagletOutput result = writer.getOutputInstance();
         if ((! alreadyDocumented.contains(null)) &&
                 holder instanceof MethodDoc) {
@@ -263,7 +263,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      */
     private TagletOutput processParamTags(boolean isNonTypeParams,
             ParamTag[] paramTags, Map rankMap, TagletWriter writer,
-            Set alreadyDocumented) {
+            Set<String> alreadyDocumented) {
         TagletOutput result = writer.getOutputInstance();
         if (paramTags.length > 0) {
             for (int i = 0; i < paramTags.length; ++i) {

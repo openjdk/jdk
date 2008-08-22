@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,8 @@ class FreeChunk VALUE_OBJ_CLASS_SPEC {
   }
 
   debug_only(void* prev_addr() const { return (void*)&_prev; })
+  debug_only(void* next_addr() const { return (void*)&_next; })
+  debug_only(void* size_addr() const { return (void*)&_size; })
 
   size_t size() const volatile {
     LP64_ONLY(if (UseCompressedOops) return mark()->get_size(); else )

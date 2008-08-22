@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1196,8 +1196,10 @@ void SuperWord::construct_bb() {
     Node *n = lp()->fast_out(i);
     if (in_bb(n) && (n->is_Phi() && n->bottom_type() == Type::MEMORY)) {
       Node* n_tail  = n->in(LoopNode::LoopBackControl);
-      _mem_slice_head.push(n);
-      _mem_slice_tail.push(n_tail);
+      if (n_tail != n->in(LoopNode::EntryControl)) {
+        _mem_slice_head.push(n);
+        _mem_slice_tail.push(n_tail);
+      }
     }
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2944,8 +2944,10 @@ public class Lower extends TreeTranslator {
                                        itvar.type,
                                        List.<Type>nil());
             JCExpression vardefinit = make.App(make.Select(make.Ident(itvar), next));
-            if (iteratorTarget != syms.objectType)
-                vardefinit = make.TypeCast(iteratorTarget, vardefinit);
+            if (tree.var.type.isPrimitive())
+                vardefinit = make.TypeCast(types.upperBound(iteratorTarget), vardefinit);
+            else
+                vardefinit = make.TypeCast(tree.var.type, vardefinit);
             JCVariableDecl indexDef = (JCVariableDecl)make.VarDef(tree.var.mods,
                                                   tree.var.name,
                                                   tree.var.vartype,

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-1999 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,13 @@
  */
 
 /* @test
-   @bug 4091757
+   @bug 4091757 6652379
    @summary Basic test for setLastModified method
  */
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 
 
 public class SetLastModified {
@@ -95,13 +97,24 @@ public class SetLastModified {
         if (f.setLastModified(nt))
             throw new Exception("Succeeded on non-existent file: " + f);
 
-        OutputStream o = new FileOutputStream(f);
-        o.write('x');
-        o.close();
-        ot = f.lastModified();
-        if (!f.setLastModified(nt))
-            throw new Exception("setLastModified failed on file: " + f);
-        ck(f, nt, f.lastModified());
+        // set/check last modified on files of size 1, 1GB+1, 2GB+1, ..
+        // On Windows we only test with a tiny file as that platform doesn't
+        // support sparse files by default and so the test takes too long.
+        final long G = 1024L * 1024L * 1024L;
+        final long MAX_POSITION =
+            System.getProperty("os.name").startsWith("Windows") ? 0L : 3L*G;
+        long pos = 0L;
+        while (pos <= MAX_POSITION) {
+            FileChannel fc = new FileOutputStream(f).getChannel();
+            fc.position(pos).write(ByteBuffer.wrap("x".getBytes()));
+            fc.close();
+            ot = f.lastModified();
+            System.out.format("check with file size: %d\n", f.length());
+            if (!f.setLastModified(nt))
+                throw new Exception("setLastModified failed on file: " + f);
+            ck(f, nt, f.lastModified());
+            pos += G;
+        }
 
         if (!f.delete()) throw new Exception("Can't delete test file " + f);
         if (!d2.delete()) throw new Exception("Can't delete test directory " + d2);

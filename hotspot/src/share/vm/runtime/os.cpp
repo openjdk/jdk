@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,29 +336,38 @@ void* os::native_java_library() {
     char buffer[JVM_MAXPATHLEN];
     char ebuf[1024];
 
-    // Try to load verify dll first. In 1.3 java dll depends on it and is not always
-    // able to find it when the loading executable is outside the JDK.
+    // Try to load verify dll first. In 1.3 java dll depends on it and is not
+    // always able to find it when the loading executable is outside the JDK.
     // In order to keep working with 1.2 we ignore any loading errors.
-    hpi::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), "verify");
-    hpi::dll_load(buffer, ebuf, sizeof(ebuf));
+    dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), "verify");
+    dll_load(buffer, ebuf, sizeof(ebuf));
 
     // Load java dll
-    hpi::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), "java");
-    _native_java_library = hpi::dll_load(buffer, ebuf, sizeof(ebuf));
+    dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), "java");
+    _native_java_library = dll_load(buffer, ebuf, sizeof(ebuf));
     if (_native_java_library == NULL) {
       vm_exit_during_initialization("Unable to load native library", ebuf);
     }
-    // The JNI_OnLoad handling is normally done by method load in java.lang.ClassLoader$NativeLibrary,
-    // but the VM loads the base library explicitly so we have to check for JNI_OnLoad as well
-    const char *onLoadSymbols[] = JNI_ONLOAD_SYMBOLS;
-    JNI_OnLoad_t JNI_OnLoad = CAST_TO_FN_PTR(JNI_OnLoad_t, hpi::dll_lookup(_native_java_library, onLoadSymbols[0]));
-    if (JNI_OnLoad != NULL) {
-      JavaThread* thread = JavaThread::current();
-      ThreadToNativeFromVM ttn(thread);
-      HandleMark hm(thread);
-      jint ver = (*JNI_OnLoad)(&main_vm, NULL);
-      if (!Threads::is_supported_jni_version_including_1_1(ver)) {
-        vm_exit_during_initialization("Unsupported JNI version");
+  }
+  static jboolean onLoaded = JNI_FALSE;
+  if (onLoaded) {
+    // We may have to wait to fire OnLoad until TLS is initialized.
+    if (ThreadLocalStorage::is_initialized()) {
+      // The JNI_OnLoad handling is normally done by method load in
+      // java.lang.ClassLoader$NativeLibrary, but the VM loads the base library
+      // explicitly so we have to check for JNI_OnLoad as well
+      const char *onLoadSymbols[] = JNI_ONLOAD_SYMBOLS;
+      JNI_OnLoad_t JNI_OnLoad = CAST_TO_FN_PTR(
+          JNI_OnLoad_t, dll_lookup(_native_java_library, onLoadSymbols[0]));
+      if (JNI_OnLoad != NULL) {
+        JavaThread* thread = JavaThread::current();
+        ThreadToNativeFromVM ttn(thread);
+        HandleMark hm(thread);
+        jint ver = (*JNI_OnLoad)(&main_vm, NULL);
+        onLoaded = JNI_TRUE;
+        if (!Threads::is_supported_jni_version_including_1_1(ver)) {
+          vm_exit_during_initialization("Unsupported JNI version");
+        }
       }
     }
   }
@@ -922,8 +931,9 @@ void os::serialize_thread_states() {
   // time and expensive page trap spinning, 'SerializePageLock' is used to block
   // the mutator thread if such case is encountered. See bug 6546278 for details.
   Thread::muxAcquire(&SerializePageLock, "serialize_thread_states");
-  os::protect_memory( (char *)os::get_memory_serialize_page(), os::vm_page_size() );
-  os::unguard_memory( (char *)os::get_memory_serialize_page(), os::vm_page_size() );
+  os::protect_memory((char *)os::get_memory_serialize_page(),
+                     os::vm_page_size(), MEM_PROT_READ, /*is_committed*/true );
+  os::unguard_memory((char *)os::get_memory_serialize_page(), os::vm_page_size());
   Thread::muxRelease(&SerializePageLock);
 }
 

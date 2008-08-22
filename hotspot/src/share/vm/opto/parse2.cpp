@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -875,6 +875,8 @@ bool Parse::seems_never_taken(float prob) {
   return prob < PROB_MIN;
 }
 
+//-------------------------------repush_if_args--------------------------------
+// Push arguments of an "if" bytecode back onto the stack by adjusting _sp.
 inline void Parse::repush_if_args() {
 #ifndef PRODUCT
   if (PrintOpto && WizardMode) {
@@ -892,7 +894,7 @@ inline void Parse::repush_if_args() {
 }
 
 //----------------------------------do_ifnull----------------------------------
-void Parse::do_ifnull(BoolTest::mask btest) {
+void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   int target_bci = iter().get_dest();
 
   Block* branch_block = successor_for_bci(target_bci);
@@ -904,7 +906,7 @@ void Parse::do_ifnull(BoolTest::mask btest) {
     // (An earlier version of do_ifnull omitted this trap for OSR methods.)
 #ifndef PRODUCT
     if (PrintOpto && Verbose)
-      tty->print_cr("Never-taken backedge stops compilation at bci %d",bci());
+      tty->print_cr("Never-taken edge stops compilation at bci %d",bci());
 #endif
     repush_if_args(); // to gather stats on loop
     // We need to mark this branch as taken so that if we recompile we will
@@ -923,18 +925,7 @@ void Parse::do_ifnull(BoolTest::mask btest) {
     return;
   }
 
-  // If this is a backwards branch in the bytecodes, add Safepoint
-  maybe_add_safepoint(target_bci);
-
   explicit_null_checks_inserted++;
-  Node* a = null();
-  Node* b = pop();
-  Node* c = _gvn.transform( new (C, 3) CmpPNode(b, a) );
-
-  // Make a cast-away-nullness that is control dependent on the test
-  const Type *t = _gvn.type(b);
-  const Type *t_not_null = t->join(TypePtr::NOTNULL);
-  Node *cast = new (C, 2) CastPPNode(b,t_not_null);
 
   // Generate real control flow
   Node   *tst = _gvn.transform( new (C, 2) BoolNode( c, btest ) );
@@ -996,7 +987,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   if (prob == PROB_UNKNOWN) {
 #ifndef PRODUCT
     if (PrintOpto && Verbose)
-      tty->print_cr("Never-taken backedge stops compilation at bci %d",bci());
+      tty->print_cr("Never-taken edge stops compilation at bci %d",bci());
 #endif
     repush_if_args(); // to gather stats on loop
     // We need to mark this branch as taken so that if we recompile we will
@@ -2100,11 +2091,15 @@ void Parse::do_one_bytecode() {
     break;
   }
 
-  case Bytecodes::_ifnull:
-    do_ifnull(BoolTest::eq);
-    break;
-  case Bytecodes::_ifnonnull:
-    do_ifnull(BoolTest::ne);
+  case Bytecodes::_ifnull:    btest = BoolTest::eq; goto handle_if_null;
+  case Bytecodes::_ifnonnull: btest = BoolTest::ne; goto handle_if_null;
+  handle_if_null:
+    // If this is a backwards branch in the bytecodes, add Safepoint
+    maybe_add_safepoint(iter().get_dest());
+    a = null();
+    b = pop();
+    c = _gvn.transform( new (C, 3) CmpPNode(b, a) );
+    do_ifnull(btest, c);
     break;
 
   case Bytecodes::_if_acmpeq: btest = BoolTest::eq; goto handle_if_acmp;

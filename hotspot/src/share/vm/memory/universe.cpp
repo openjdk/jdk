@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,26 +367,31 @@ void Universe::genesis(TRAPS) {
   // Only 1.3 or later has the java.lang.Shutdown class.
   // Only 1.4 or later has the java.lang.CharSequence interface.
   // Only 1.5 or later has the java.lang.management.MemoryUsage class.
-  if (JDK_Version::is_pre_jdk16_version()) {
-    klassOop k = SystemDictionary::resolve_or_null(vmSymbolHandles::java_lang_management_MemoryUsage(), THREAD);
+  if (JDK_Version::is_partially_initialized()) {
+    uint8_t jdk_version;
+    klassOop k = SystemDictionary::resolve_or_null(
+        vmSymbolHandles::java_lang_management_MemoryUsage(), THREAD);
     CLEAR_PENDING_EXCEPTION; // ignore exceptions
     if (k == NULL) {
-      k = SystemDictionary::resolve_or_null(vmSymbolHandles::java_lang_CharSequence(), THREAD);
+      k = SystemDictionary::resolve_or_null(
+          vmSymbolHandles::java_lang_CharSequence(), THREAD);
       CLEAR_PENDING_EXCEPTION; // ignore exceptions
       if (k == NULL) {
-        k = SystemDictionary::resolve_or_null(vmSymbolHandles::java_lang_Shutdown(), THREAD);
+        k = SystemDictionary::resolve_or_null(
+            vmSymbolHandles::java_lang_Shutdown(), THREAD);
         CLEAR_PENDING_EXCEPTION; // ignore exceptions
         if (k == NULL) {
-          JDK_Version::set_jdk12x_version();
+          jdk_version = 2;
         } else {
-          JDK_Version::set_jdk13x_version();
+          jdk_version = 3;
         }
       } else {
-          JDK_Version::set_jdk14x_version();
+        jdk_version = 4;
       }
     } else {
-          JDK_Version::set_jdk15x_version();
+      jdk_version = 5;
     }
+    JDK_Version::fully_initialize(jdk_version);
   }
 
   #ifdef ASSERT

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -716,6 +716,99 @@ class BitBlockUpdateClosure: public ParMarkBitMapClosure {
   virtual IterationStatus do_addr(HeapWord* addr, size_t words);
 };
 
+// The UseParallelOldGC collector is a stop-the-world garbage
+// collector that does parts of the collection using parallel threads.
+// The collection includes the tenured generation and the young
+// generation.  The permanent generation is collected at the same
+// time as the other two generations but the permanent generation
+// is collect by a single GC thread.  The permanent generation is
+// collected serially because of the requirement that during the
+// processing of a klass AAA, any objects reference by AAA must
+// already have been processed.  This requirement is enforced by
+// a left (lower address) to right (higher address) sliding compaction.
+//
+// There are four phases of the collection.
+//
+//      - marking phase
+//      - summary phase
+//      - compacting phase
+//      - clean up phase
+//
+// Roughly speaking these phases correspond, respectively, to
+//      - mark all the live objects
+//      - calculate the destination of each object at the end of the collection
+//      - move the objects to their destination
+//      - update some references and reinitialize some variables
+//
+// These three phases are invoked in PSParallelCompact::invoke_no_policy().
+// The marking phase is implemented in PSParallelCompact::marking_phase()
+// and does a complete marking of the heap.
+// The summary phase is implemented in PSParallelCompact::summary_phase().
+// The move and update phase is implemented in PSParallelCompact::compact().
+//
+// A space that is being collected is divided into chunks and with
+// each chunk is associated an object of type ParallelCompactData.
+// Each chunk is of a fixed size and typically will contain more than
+// 1 object and may have parts of objects at the front and back of the
+// chunk.
+//
+// chunk            -----+---------------------+----------
+// objects covered   [ AAA  )[ BBB )[ CCC   )[ DDD     )
+//
+// The marking phase does a complete marking of all live objects in the
+// heap.  The marking also compiles the size of the data for
+// all live objects covered by the chunk.  This size includes the
+// part of any live object spanning onto the chunk (part of AAA
+// if it is live) from the front, all live objects contained in the chunk
+// (BBB and/or CCC if they are live), and the part of any live objects
+// covered by the chunk that extends off the chunk (part of DDD if it is
+// live).  The marking phase uses multiple GC threads and marking is
+// done in a bit array of type ParMarkBitMap.  The marking of the
+// bit map is done atomically as is the accumulation of the size of the
+// live objects covered by a chunk.
+//
+// The summary phase calculates the total live data to the left of
+// each chunk XXX.  Based on that total and the bottom of the space,
+// it can calculate the starting location of the live data in XXX.
+// The summary phase calculates for each chunk XXX quantites such as
+//
+//      - the amount of live data at the beginning of a chunk from an object
+//      entering the chunk.
+//      - the location of the first live data on the chunk
+//      - a count of the number of chunks receiving live data from XXX.
+//
+// See ParallelCompactData for precise details.  The summary phase also
+// calculates the dense prefix for the compaction.  The dense prefix
+// is a portion at the beginning of the space that is not moved.  The
+// objects in the dense prefix do need to have their object references
+// updated.  See method summarize_dense_prefix().
+//
+// The summary phase is done using 1 GC thread.
+//
+// The compaction phase moves objects to their new location and updates
+// all references in the object.
+//
+// A current exception is that objects that cross a chunk boundary
+// are moved but do not have their references updated.  References are
+// not updated because it cannot easily be determined if the klass
+// pointer KKK for the object AAA has been updated.  KKK likely resides
+// in a chunk to the left of the chunk containing AAA.  These AAA's
+// have there references updated at the end in a clean up phase.
+// See the method PSParallelCompact::update_deferred_objects().  An
+// alternate strategy is being investigated for this deferral of updating.
+//
+// Compaction is done on a chunk basis.  A chunk that is ready to be
+// filled is put on a ready list and GC threads take chunk off the list
+// and fill them.  A chunk is ready to be filled if it
+// empty of live objects.  Such a chunk may have been initially
+// empty (only contained
+// dead objects) or may have had all its live objects copied out already.
+// A chunk that compacts into itself is also ready for filling.  The
+// ready list is initially filled with empty chunks and chunks compacting
+// into themselves.  There is always at least 1 chunk that can be put on
+// the ready list.  The chunks are atomically added and removed from
+// the ready list.
+//
 class PSParallelCompact : AllStatic {
  public:
   // Convenient access to type names.

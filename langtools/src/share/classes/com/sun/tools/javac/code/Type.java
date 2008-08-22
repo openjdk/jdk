@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -979,6 +979,10 @@ public class Type implements PrimitiveType {
             return TypeKind.TYPEVAR;
         }
 
+        public boolean isCaptured() {
+            return false;
+        }
+
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitTypeVariable(this, p);
         }
@@ -1012,6 +1016,11 @@ public class Type implements PrimitiveType {
 
         public Type getLowerBound() {
             return lower;
+        }
+
+        @Override
+        public boolean isCaptured() {
+            return true;
         }
 
         @Override

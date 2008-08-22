@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -761,8 +761,9 @@ static inline uint64_t cast_uint64_t(size_t x)
   static_field(Abstract_VM_Version,            _vm_minor_version,                             int)                                   \
   static_field(Abstract_VM_Version,            _vm_build_number,                              int)                                   \
                                                                                                                                      \
-  static_field(JDK_Version,                    _pre_jdk16_version,                            bool)                                  \
-  static_field(JDK_Version,                    _jdk_version,                                  int)                                   \
+  static_field(JDK_Version,                    _current,                                      JDK_Version)                           \
+  nonstatic_field(JDK_Version,                 _partially_initialized,                        bool)                                  \
+  nonstatic_field(JDK_Version,                 _major,                                        unsigned char)                         \
                                                                                                                                      \
                                                                                                                                      \
                                                                                                                                      \

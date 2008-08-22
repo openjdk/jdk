@@ -120,12 +120,12 @@ public abstract class Configuration {
     /**
      * The list of doc-file subdirectories to exclude
      */
-    protected Set excludedDocFileDirs;
+    protected Set<String> excludedDocFileDirs;
 
     /**
      * The list of qualifiers to exclude
      */
-    protected Set excludedQualifiers;
+    protected Set<String> excludedQualifiers;
 
     /**
      * The Root of the generated Program Structure from the Doclet API.
@@ -255,8 +255,8 @@ public abstract class Configuration {
         message =
             new MessageRetriever(this,
             "com.sun.tools.doclets.internal.toolkit.resources.doclets");
-        excludedDocFileDirs = new HashSet();
-        excludedQualifiers = new HashSet();
+        excludedDocFileDirs = new HashSet<String>();
+        excludedQualifiers = new HashSet<String>();
     }
 
     /**
@@ -329,14 +329,14 @@ public abstract class Configuration {
         DocErrorReporter reporter);
 
     private void initPackageArray() {
-        Set set = new HashSet(Arrays.asList(root.specifiedPackages()));
+        Set<PackageDoc> set = new HashSet<PackageDoc>(Arrays.asList(root.specifiedPackages()));
         ClassDoc[] classes = root.specifiedClasses();
         for (int i = 0; i < classes.length; i++) {
             set.add(classes[i].containingPackage());
         }
-        ArrayList results = new ArrayList(set);
+        ArrayList<PackageDoc> results = new ArrayList<PackageDoc>(set);
         Collections.sort(results);
-        packages = (PackageDoc[]) results.toArray(new PackageDoc[] {});
+        packages = results.toArray(new PackageDoc[] {});
     }
 
     /**
@@ -345,7 +345,7 @@ public abstract class Configuration {
      * @param options the two dimensional array of options.
      */
     public void setOptions(String[][] options) {
-        LinkedHashSet customTagStrs = new LinkedHashSet();
+        LinkedHashSet<String[]> customTagStrs = new LinkedHashSet<String[]>();
         for (int oi = 0; oi < options.length; ++oi) {
             String[] os = options[oi];
             String opt = os[0].toLowerCase();
@@ -476,7 +476,7 @@ public abstract class Configuration {
         }
     }
 
-    private void addToSet(Set s, String str){
+    private void addToSet(Set<String> s, String str){
         StringTokenizer st = new StringTokenizer(str, ":");
         String current;
         while(st.hasMoreTokens()){
@@ -712,5 +712,5 @@ public abstract class Configuration {
      *
      * @return the {@link java.util.Comparator} used to sort members.
      */
-    public abstract Comparator getMemberComparator();
+    public abstract Comparator<ProgramElementDoc> getMemberComparator();
 }
