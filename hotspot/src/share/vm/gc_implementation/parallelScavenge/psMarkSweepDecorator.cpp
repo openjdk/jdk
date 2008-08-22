@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -438,5 +438,7 @@ void PSMarkSweepDecorator::compact(bool mangle_free_space ) {
          "should point inside space");
   space()->set_top(compaction_top());
 
-  if (mangle_free_space) space()->mangle_unused_area();
+  if (mangle_free_space) {
+    space()->mangle_unused_area();
+  }
 }

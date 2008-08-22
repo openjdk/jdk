@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,9 +100,12 @@ public class Check {
 
         boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
         boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
+        boolean enforceMandatoryWarnings = source.enforceMandatoryWarnings();
 
-        deprecationHandler = new MandatoryWarningHandler(log,verboseDeprecated, "deprecated");
-        uncheckedHandler = new MandatoryWarningHandler(log, verboseUnchecked, "unchecked");
+        deprecationHandler = new MandatoryWarningHandler(log, verboseDeprecated,
+                enforceMandatoryWarnings, "deprecated");
+        uncheckedHandler = new MandatoryWarningHandler(log, verboseUnchecked,
+                enforceMandatoryWarnings, "unchecked");
     }
 
     /** Switch: generics enabled?
@@ -419,9 +422,34 @@ public class Check {
      *  @param bs            The bound.
      */
     private void checkExtends(DiagnosticPosition pos, Type a, TypeVar bs) {
-        if (a.isUnbound()) {
-            return;
-        } else if (a.tag != WILDCARD) {
+        if (a.tag == TYPEVAR && ((TypeVar)a).isCaptured()) {
+            CapturedType ct = (CapturedType)a;
+            boolean ok;
+            if (ct.bound.isErroneous()) {//capture doesn't exist
+                ok = false;
+            }
+            else {
+                switch (ct.wildcard.kind) {
+                    case EXTENDS:
+                        ok = types.isCastable(bs.getUpperBound(),
+                                types.upperBound(a),
+                                Warner.noWarnings);
+                        break;
+                    case SUPER:
+                        ok = !types.notSoftSubtype(types.lowerBound(a),
+                                bs.getUpperBound());
+                        break;
+                    case UNBOUND:
+                        ok = true;
+                        break;
+                    default:
+                        throw new AssertionError("Invalid bound kind");
+                }
+            }
+            if (!ok)
+                log.error(pos, "not.within.bounds", a);
+        }
+        else {
             a = types.upperBound(a);
             for (List<Type> l = types.getBounds(bs); l.nonEmpty(); l = l.tail) {
                 if (!types.isSubtype(a, l.head)) {
@@ -429,12 +457,6 @@ public class Check {
                     return;
                 }
             }
-        } else if (a.isExtendsBound()) {
-            if (!types.isCastable(bs.getUpperBound(), types.upperBound(a), Warner.noWarnings))
-                log.error(pos, "not.within.bounds", a);
-        } else if (a.isSuperBound()) {
-            if (types.notSoftSubtype(types.lowerBound(a), bs.getUpperBound()))
-                log.error(pos, "not.within.bounds", a);
         }
     }
 
@@ -554,8 +576,8 @@ public class Check {
         if ((flags & set1) != 0 && (flags & set2) != 0) {
             log.error(pos,
                       "illegal.combination.of.modifiers",
-                      TreeInfo.flagNames(TreeInfo.firstFlag(flags & set1)),
-                      TreeInfo.flagNames(TreeInfo.firstFlag(flags & set2)));
+                      asFlagSet(TreeInfo.firstFlag(flags & set1)),
+                      asFlagSet(TreeInfo.firstFlag(flags & set2)));
             return false;
         } else
             return true;
@@ -648,7 +670,7 @@ public class Check {
             }
             else {
                 log.error(pos,
-                          "mod.not.allowed.here", TreeInfo.flagNames(illegal));
+                          "mod.not.allowed.here", asFlagSet(illegal));
             }
         }
         else if ((sym.kind == TYP ||
@@ -773,7 +795,7 @@ public class Check {
         public void visitTypeApply(JCTypeApply tree) {
             if (tree.type.tag == CLASS) {
                 List<Type> formals = tree.type.tsym.type.getTypeArguments();
-                List<Type> actuals = tree.type.getTypeArguments();
+                List<Type> actuals = types.capture(tree.type).getTypeArguments();
                 List<JCExpression> args = tree.arguments;
                 List<Type> forms = formals;
                 ListBuffer<TypeVar> tvars_buf = new ListBuffer<TypeVar>();
@@ -789,7 +811,7 @@ public class Check {
                     // bounds substed with actuals.
                     tvars_buf.append(types.substBound(((TypeVar)forms.head),
                                                       formals,
-                                                      Type.removeBounds(actuals)));
+                                                      actuals));
 
                     args = args.tail;
                     forms = forms.tail;
@@ -808,10 +830,11 @@ public class Check {
                 tvars = tvars_buf.toList();
                 while (args.nonEmpty() && tvars.nonEmpty()) {
                     checkExtends(args.head.pos(),
-                                 args.head.type,
+                                 actuals.head,
                                  tvars.head);
                     args = args.tail;
                     tvars = tvars.tail;
+                    actuals = actuals.tail;
                 }
 
                 // Check that this type is either fully parameterized, or
@@ -1000,14 +1023,6 @@ public class Check {
         }
     }
 
-    /** A string describing the access permission given by a flag set.
-     *  This always returns a space-separated list of Java Keywords.
-     */
-    private static String protectionString(long flags) {
-        long flags1 = flags & AccessFlags;
-        return (flags1 == 0) ? "package" : TreeInfo.flagNames(flags1);
-    }
-
     /** A customized "cannot override" error message.
      *  @param m      The overriding method.
      *  @param other  The overridden method.
@@ -1101,7 +1116,7 @@ public class Check {
                  (other.flags() & STATIC) != 0) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.meth",
                       cannotOverride(m, other),
-                      TreeInfo.flagNames(other.flags() & (FINAL | STATIC)));
+                      asFlagSet(other.flags() & (FINAL | STATIC)));
             return;
         }
 
@@ -1115,9 +1130,10 @@ public class Check {
                  protection(m.flags()) > protection(other.flags())) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.weaker.access",
                       cannotOverride(m, other),
-                      protectionString(other.flags()));
+                      other.flags() == 0 ?
+                          Flag.PACKAGE :
+                          asFlagSet(other.flags() & AccessFlags));
             return;
-
         }
 
         Type mt = types.memberType(origin.type, m);
@@ -1367,12 +1383,46 @@ public class Check {
                         types.isSameType(rt1, rt2) ||
                         rt1.tag >= CLASS && rt2.tag >= CLASS &&
                         (types.covariantReturnType(rt1, rt2, Warner.noWarnings) ||
-                         types.covariantReturnType(rt2, rt1, Warner.noWarnings));
+                         types.covariantReturnType(rt2, rt1, Warner.noWarnings)) ||
+                         checkCommonOverriderIn(s1,s2,site);
                     if (!compat) return s2;
                 }
             }
         }
         return null;
+    }
+    //WHERE
+    boolean checkCommonOverriderIn(Symbol s1, Symbol s2, Type site) {
+        Map<TypeSymbol,Type> supertypes = new HashMap<TypeSymbol,Type>();
+        Type st1 = types.memberType(site, s1);
+        Type st2 = types.memberType(site, s2);
+        closure(site, supertypes);
+        for (Type t : supertypes.values()) {
+            for (Scope.Entry e = t.tsym.members().lookup(s1.name); e.scope != null; e = e.next()) {
+                Symbol s3 = e.sym;
+                if (s3 == s1 || s3 == s2 || s3.kind != MTH || (s3.flags() & (BRIDGE|SYNTHETIC)) != 0) continue;
+                Type st3 = types.memberType(site,s3);
+                if (types.overrideEquivalent(st3, st1) && types.overrideEquivalent(st3, st2)) {
+                    if (s3.owner == site.tsym) {
+                        return true;
+                    }
+                    List<Type> tvars1 = st1.getTypeArguments();
+                    List<Type> tvars2 = st2.getTypeArguments();
+                    List<Type> tvars3 = st3.getTypeArguments();
+                    Type rt1 = st1.getReturnType();
+                    Type rt2 = st2.getReturnType();
+                    Type rt13 = types.subst(st3.getReturnType(), tvars3, tvars1);
+                    Type rt23 = types.subst(st3.getReturnType(), tvars3, tvars2);
+                    boolean compat =
+                        rt13.tag >= CLASS && rt23.tag >= CLASS &&
+                        (types.covariantReturnType(rt13, rt1, Warner.noWarnings) &&
+                         types.covariantReturnType(rt23, rt2, Warner.noWarnings));
+                    if (compat)
+                        return true;
+                }
+            }
+        }
+        return false;
     }
 
     /** Check that a given method conforms with any method it overrides.
@@ -1978,7 +2028,7 @@ public class Check {
             log.error(pos,
                       "operator.cant.be.applied",
                       treeinfo.operatorName(tag),
-                      left + "," + right);
+                      List.of(left, right));
         }
         return operator.opcode;
     }

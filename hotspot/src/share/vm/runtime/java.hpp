@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ extern void vm_direct_exit(int code);
 // Shutdown the VM but do not exit the process
 extern void vm_shutdown();
 // Shutdown the VM and abort the process
-extern void vm_abort();
+extern void vm_abort(bool dump_core=true);
 
 // Trigger any necessary notification of the VM being shutdown
 extern void notify_vm_shutdown();
@@ -48,100 +48,163 @@ extern void vm_exit_during_initialization(symbolHandle exception_name, const cha
 extern void vm_exit_during_initialization(const char* error, const char* message = NULL);
 extern void vm_shutdown_during_initialization(const char* error, const char* message = NULL);
 
-class JDK_Version : AllStatic {
+/**
+ * Discovering the JDK_Version during initialization is tricky when the
+ * running JDK is less than JDK6.  For JDK6 and greater, a "GetVersion"
+ * function exists in libjava.so and we simply call it during the
+ * 'initialize()' call to find the version.  For JDKs with version < 6, no
+ * such call exists and we have to probe the JDK in order to determine
+ * the exact version.  This probing cannot happen during late in
+ * the VM initialization process so there's a period of time during
+ * initialization when we don't know anything about the JDK version other than
+ * that it less than version 6.  This is the "partially initialized" time,
+ * when we can answer only certain version queries (such as, is the JDK
+ * version greater than 5?  Answer: no).  Once the JDK probing occurs, we
+ * know the version and are considered fully initialized.
+ */
+class JDK_Version VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
+  friend class Universe;
+  friend void JDK_Version_init();
  private:
-  static jdk_version_info _version_info;
-  static bool             _pre_jdk16_version;
-  static int              _jdk_version;  // JDK version number representing the release
-                                         //  i.e. n in 1.n.x (= jdk_minor_version())
+
+  static JDK_Version _current;
+
+  // In this class, we promote the minor version of release to be the
+  // major version for releases >= 5 in anticipation of the JDK doing the
+  // same thing.  For example, we represent "1.5.0" as major version 5 (we
+  // drop the leading 1 and use 5 as the 'major').
+
+  uint8_t _major;
+  uint8_t _minor;
+  uint8_t _micro;
+  uint8_t _update;
+  uint8_t _special;
+  uint8_t _build;
+
+  // If partially initialized, the above fields are invalid and we know
+  // that we're less than major version 6.
+  bool _partially_initialized;
+
+  bool _thread_park_blocker;
+
+  bool is_valid() const {
+    return (_major != 0 || _partially_initialized);
+  }
+
+  // initializes or partially initializes the _current static field
+  static void initialize();
+
+  // Completes initialization for a pre-JDK6 version.
+  static void fully_initialize(uint8_t major, uint8_t minor = 0,
+                               uint8_t micro = 0, uint8_t update = 0);
 
  public:
-  static void initialize();
-  static int  jdk_major_version() { return JDK_VERSION_MAJOR(_version_info.jdk_version); }
-  static int  jdk_minor_version() { return JDK_VERSION_MINOR(_version_info.jdk_version); }
-  static int  jdk_micro_version() { return JDK_VERSION_MICRO(_version_info.jdk_version); }
-  static int  jdk_build_number()  { return JDK_VERSION_BUILD(_version_info.jdk_version); }
 
-  static bool is_pre_jdk16_version()        { return _pre_jdk16_version; }
-  static bool is_jdk12x_version()           { assert(is_jdk_version_initialized(), "must have been initialized"); return _jdk_version == 2; }
-  static bool is_jdk13x_version()           { assert(is_jdk_version_initialized(), "must have been initialized"); return _jdk_version == 3; }
-  static bool is_jdk14x_version()           { assert(is_jdk_version_initialized(), "must have been initialized"); return _jdk_version == 4; }
-  static bool is_jdk15x_version()           { assert(is_jdk_version_initialized(), "must have been initialized"); return _jdk_version == 5; }
+  // Returns true if the the current version has only been partially initialized
+  static bool is_partially_initialized() {
+    return _current._partially_initialized;
+  }
+
+  JDK_Version() : _major(0), _minor(0), _micro(0), _update(0),
+                  _special(0), _build(0), _partially_initialized(false),
+                  _thread_park_blocker(false) {}
+
+  JDK_Version(uint8_t major, uint8_t minor = 0, uint8_t micro = 0,
+              uint8_t update = 0, uint8_t special = 0, uint8_t build = 0,
+              bool thread_park_blocker = false) :
+      _major(major), _minor(minor), _micro(micro), _update(update),
+      _special(special), _build(build), _partially_initialized(false),
+      _thread_park_blocker(thread_park_blocker) {}
+
+  // Returns the current running JDK version
+  static JDK_Version current() { return _current; }
+
+  // Factory methods for convenience
+  static JDK_Version jdk(uint8_t m) {
+    return JDK_Version(m);
+  }
+
+  static JDK_Version jdk_update(uint8_t major, uint8_t update_number) {
+    return JDK_Version(major, 0, 0, update_number);
+  }
+
+  uint8_t major_version() const          { return _major; }
+  uint8_t minor_version() const          { return _minor; }
+  uint8_t micro_version() const          { return _micro; }
+  uint8_t update_version() const         { return _update; }
+  uint8_t special_update_version() const { return _special; }
+  uint8_t build_number() const           { return _build; }
+
+  bool supports_thread_park_blocker() const {
+    return _thread_park_blocker;
+  }
+
+  // Performs a full ordering comparison using all fields (update, build, etc.)
+  int compare(const JDK_Version& other) const;
+
+  /**
+   * Performs comparison using only the major version, returning negative
+   * if the major version of 'this' is less than the parameter, 0 if it is
+   * equal, and a positive value if it is greater.
+   */
+  int compare_major(int version) const {
+    if (_partially_initialized) {
+      if (version >= 6) {
+        return -1;
+      } else {
+        assert(false, "Can't make this comparison during init time");
+        return -1; // conservative
+      }
+    } else {
+      return major_version() - version;
+    }
+  }
+
+  void to_string(char* buffer, size_t buflen) const;
+
+  // Convenience methods for queries on the current major/minor version
+  static bool is_jdk12x_version() {
+    return current().compare_major(2) == 0;
+  }
+
+  static bool is_jdk13x_version() {
+    return current().compare_major(3) == 0;
+  }
+
+  static bool is_jdk14x_version() {
+    return current().compare_major(4) == 0;
+  }
+
+  static bool is_jdk15x_version() {
+    return current().compare_major(5) == 0;
+  }
 
   static bool is_jdk16x_version() {
-    if (is_jdk_version_initialized()) {
-      return _jdk_version == 6;
-    } else {
-      assert(is_pre_jdk16_version(), "must have been initialized");
-      return false;
-    }
+    return current().compare_major(6) == 0;
   }
 
   static bool is_jdk17x_version() {
-    if (is_jdk_version_initialized()) {
-      return _jdk_version == 7;
-    } else {
-      assert(is_pre_jdk16_version(), "must have been initialized");
-      return false;
-    }
+    return current().compare_major(7) == 0;
   }
 
-  static bool supports_thread_park_blocker() { return _version_info.thread_park_blocker; }
+  static bool is_gte_jdk13x_version() {
+    return current().compare_major(3) >= 0;
+  }
 
   static bool is_gte_jdk14x_version() {
-    // Keep the semantics of this that the version number is >= 1.4
-    assert(is_jdk_version_initialized(), "Not initialized");
-    return _jdk_version >= 4;
+    return current().compare_major(4) >= 0;
   }
+
   static bool is_gte_jdk15x_version() {
-    // Keep the semantics of this that the version number is >= 1.5
-    assert(is_jdk_version_initialized(), "Not initialized");
-    return _jdk_version >= 5;
+    return current().compare_major(5) >= 0;
   }
+
   static bool is_gte_jdk16x_version() {
-    // Keep the semantics of this that the version number is >= 1.6
-    if (is_jdk_version_initialized()) {
-      return _jdk_version >= 6;
-    } else {
-      assert(is_pre_jdk16_version(), "Not initialized");
-      return false;
-    }
+    return current().compare_major(6) >= 0;
   }
 
   static bool is_gte_jdk17x_version() {
-    // Keep the semantics of this that the version number is >= 1.7
-    if (is_jdk_version_initialized()) {
-      return _jdk_version >= 7;
-    } else {
-      assert(is_pre_jdk16_version(), "Not initialized");
-      return false;
-    }
-  }
-
-  static bool is_jdk_version_initialized() {
-    return _jdk_version > 0;
-  }
-
-  // These methods are defined to deal with pre JDK 1.6 versions
-  static void set_jdk12x_version() {
-    assert(_pre_jdk16_version && !is_jdk_version_initialized(), "must not initialize");
-    _jdk_version = 2;
-    _version_info.jdk_version = (1 << 24) | (2 << 16);
-  }
-  static void set_jdk13x_version() {
-    assert(_pre_jdk16_version && !is_jdk_version_initialized(), "must not initialize");
-    _jdk_version = 3;
-    _version_info.jdk_version = (1 << 24) | (3 << 16);
-  }
-  static void set_jdk14x_version() {
-    assert(_pre_jdk16_version && !is_jdk_version_initialized(), "must not initialize");
-    _jdk_version = 4;
-    _version_info.jdk_version = (1 << 24) | (4 << 16);
-  }
-  static void set_jdk15x_version() {
-    assert(_pre_jdk16_version && !is_jdk_version_initialized(), "must not initialize");
-    _jdk_version = 5;
-    _version_info.jdk_version = (1 << 24) | (5 << 16);
+    return current().compare_major(7) >= 0;
   }
 };

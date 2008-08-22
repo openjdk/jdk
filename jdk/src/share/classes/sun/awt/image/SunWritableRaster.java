@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.awt.image.DataBufferInt;
 import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 
+import sun.java2d.StateTrackable.State;
 import sun.java2d.SurfaceData;
 import sun.java2d.StateTrackableDelegate;
 
@@ -54,6 +55,7 @@ public class SunWritableRaster extends WritableRaster {
         public short[] getData(DataBufferUShort dbus, int bank);
         public int[] getData(DataBufferInt dbi, int bank);
         public StateTrackableDelegate getTrackable(DataBuffer db);
+        public void setTrackable(DataBuffer db, StateTrackableDelegate trackable);
     }
 
     public static void setDataStealer(DataStealer ds) {
@@ -77,6 +79,14 @@ public class SunWritableRaster extends WritableRaster {
 
     public static StateTrackableDelegate stealTrackable(DataBuffer db) {
         return stealer.getTrackable(db);
+    }
+
+    public static void setTrackable(DataBuffer db, StateTrackableDelegate trackable) {
+        stealer.setTrackable(db, trackable);
+    }
+
+    public static void makeTrackable(DataBuffer db) {
+        stealer.setTrackable(db, StateTrackableDelegate.createInstance(State.STABLE));
     }
 
     public static void markDirty(DataBuffer db) {

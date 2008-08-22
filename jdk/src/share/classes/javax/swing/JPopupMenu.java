@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import javax.swing.plaf.PopupMenuUI;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicComboPopup;
 import javax.swing.event.*;
+import sun.security.util.SecurityConstants;
 
 import java.applet.Applet;
 
@@ -320,17 +321,67 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * This adustment may be cancelled by invoking the application with
      * -Djavax.swing.adjustPopupLocationToFit=false
      */
-    Point adjustPopupLocationToFitScreen(int xposition, int yposition) {
-        Point p = new Point(xposition, yposition);
+    Point adjustPopupLocationToFitScreen(int xPosition, int yPosition) {
+        Point popupLocation = new Point(xPosition, yPosition);
 
-        if(popupPostionFixDisabled == true || GraphicsEnvironment.isHeadless())
-            return p;
+        if(popupPostionFixDisabled == true || GraphicsEnvironment.isHeadless()) {
+            return popupLocation;
+        }
 
+        // Get screen bounds
+        Rectangle scrBounds;
+        GraphicsConfiguration gc = getCurrentGraphicsConfiguration(popupLocation);
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        Rectangle screenBounds;
+        if(gc != null) {
+            // If we have GraphicsConfiguration use it to get screen bounds
+            scrBounds = gc.getBounds();
+        } else {
+            // If we don't have GraphicsConfiguration use primary screen
+            scrBounds = new Rectangle(toolkit.getScreenSize());
+        }
+
+        // Calculate the screen size that popup should fit
+        Dimension popupSize = JPopupMenu.this.getPreferredSize();
+        int popupRightX = popupLocation.x + popupSize.width;
+        int popupBottomY = popupLocation.y + popupSize.height;
+        int scrWidth = scrBounds.width;
+        int scrHeight = scrBounds.height;
+        if (!canPopupOverlapTaskBar()) {
+            // Insets include the task bar. Take them into account.
+            Insets scrInsets = toolkit.getScreenInsets(gc);
+            scrBounds.x += scrInsets.left;
+            scrBounds.y += scrInsets.top;
+            scrWidth -= scrInsets.left + scrInsets.right;
+            scrHeight -= scrInsets.top + scrInsets.bottom;
+        }
+        int scrRightX = scrBounds.x + scrWidth;
+        int scrBottomY = scrBounds.y + scrHeight;
+
+        // Ensure that popup menu fits the screen
+        if (popupRightX > scrRightX) {
+            popupLocation.x = scrRightX - popupSize.width;
+            if( popupLocation.x < scrBounds.x ) {
+                popupLocation.x = scrBounds.x ;
+            }
+        }
+        if (popupBottomY > scrBottomY) {
+            popupLocation.y = scrBottomY - popupSize.height;
+            if( popupLocation.y < scrBounds.y ) {
+                popupLocation.y = scrBounds.y;
+            }
+        }
+
+        return popupLocation;
+    }
+
+    /**
+     * Tries to find GraphicsConfiguration
+     * that contains the mouse cursor position.
+     * Can return null.
+     */
+    private GraphicsConfiguration getCurrentGraphicsConfiguration(
+            Point popupLocation) {
         GraphicsConfiguration gc = null;
-        // Try to find GraphicsConfiguration, that includes mouse
-        // pointer position
         GraphicsEnvironment ge =
             GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gd = ge.getScreenDevices();
@@ -338,50 +389,36 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
             if(gd[i].getType() == GraphicsDevice.TYPE_RASTER_SCREEN) {
                 GraphicsConfiguration dgc =
                     gd[i].getDefaultConfiguration();
-                if(dgc.getBounds().contains(p)) {
+                if(dgc.getBounds().contains(popupLocation)) {
                     gc = dgc;
                     break;
                 }
             }
         }
-
         // If not found and we have invoker, ask invoker about his gc
         if(gc == null && getInvoker() != null) {
             gc = getInvoker().getGraphicsConfiguration();
         }
+        return gc;
+    }
 
-        if(gc != null) {
-            // If we have GraphicsConfiguration use it to get
-            // screen bounds
-            screenBounds = gc.getBounds();
-        } else {
-            // If we don't have GraphicsConfiguration use primary screen
-            screenBounds = new Rectangle(toolkit.getScreenSize());
+    /**
+     * Checks that there are enough security permissions
+     * to make popup "always on top", which allows to show it above the task bar.
+     */
+    static boolean canPopupOverlapTaskBar() {
+        boolean result = true;
+        try {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPermission(
+                        SecurityConstants.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
+            }
+        } catch (SecurityException se) {
+            // There is no permission to show popups over the task bar
+            result = false;
         }
-
-        Dimension size;
-
-        size = JPopupMenu.this.getPreferredSize();
-
-        // Use long variables to prevent overflow
-        long pw = (long) p.x + (long) size.width;
-        long ph = (long) p.y + (long) size.height;
-
-        if( pw > screenBounds.x + screenBounds.width )
-             p.x = screenBounds.x + screenBounds.width - size.width;
-
-        if( ph > screenBounds.y + screenBounds.height)
-             p.y = screenBounds.y + screenBounds.height - size.height;
-
-        /* Change is made to the desired (X,Y) values, when the
-           PopupMenu is too tall OR too wide for the screen
-        */
-        if( p.x < screenBounds.x )
-            p.x = screenBounds.x ;
-        if( p.y < screenBounds.y )
-            p.y = screenBounds.y;
-
-        return p;
+        return result;
     }
 
 

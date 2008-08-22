@@ -36,13 +36,6 @@ FILES_m = mapfile-vers
 
 include $(BUILDDIR)/common/Defs.gmk
 
-# 64-bit windows does not build at -W3 if warnings are fatal
-ifeq ($(PLATFORM), windows)
-  ifeq ($(ARCH_DATA_MODEL), 64)
-    COMPILER_WARNINGS_FATAL=false
-  endif
-endif
-
 FILES_c = \
         SharedMemoryTransport.c \
         SharedMemoryConnection.c \

@@ -66,7 +66,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
         /**
          * The methods being documented.
          */
-        private List methods;
+        private List<ProgramElementDoc> methods;
 
         private MethodBuilder(Configuration configuration) {
                 super(configuration);
@@ -94,7 +94,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
                                 VisibleMemberMap.METHODS,
                                 configuration.nodeprecated);
                 builder.methods =
-                        new ArrayList(builder.visibleMemberMap.getLeafClassMembers(
+                        new ArrayList<ProgramElementDoc>(builder.visibleMemberMap.getLeafClassMembers(
                 configuration));
                 if (configuration.getMemberComparator() != null) {
                         Collections.sort(

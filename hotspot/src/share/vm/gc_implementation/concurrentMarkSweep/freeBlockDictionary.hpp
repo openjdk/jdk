@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * have any questions.
  *
  */
-
 
 // A FreeBlockDictionary is an abstract superclass that will allow
 // a number of alternative implementations in the future.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,6 +190,12 @@ void GenMarkSweep::allocate_stacks() {
 
 
 void GenMarkSweep::deallocate_stacks() {
+
+  if (!UseG1GC) {
+    GenCollectedHeap* gch = GenCollectedHeap::heap();
+    gch->release_scratch();
+  }
+
   if (_preserved_oop_stack) {
     delete _preserved_mark_stack;
     _preserved_mark_stack = NULL;

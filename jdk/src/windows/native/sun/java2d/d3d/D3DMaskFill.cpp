@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,187 +23,102 @@
  * have any questions.
  */
 
-#include <stdlib.h>
-#include <jni.h>
-#include "ddrawUtils.h"
-#include "GraphicsPrimitiveMgr.h"
-#include "j2d_md.h"
-#include "jlong.h"
-
 #include "sun_java2d_d3d_D3DMaskFill.h"
 
-#include "Win32SurfaceData.h"
+#include "D3DMaskFill.h"
+#include "D3DRenderQueue.h"
 
-#include "D3DContext.h"
-#include "D3DUtils.h"
-
-
-extern "C" {
-
-inline static HRESULT doMaskFill
-    (JNIEnv *env, jobject self,
-     Win32SDOps *wsdo, D3DContext *d3dc,
-     jint x, jint y, jint w, jint h,
-     jbyteArray maskArray,
-     jint maskoff, jint maskscan);
-
-
-JNIEXPORT void JNICALL
-Java_sun_java2d_d3d_D3DMaskFill_MaskFill
-    (JNIEnv *env, jobject self,
-     jlong pData, jlong pCtx,
-     jint x, jint y, jint w, jint h,
-     jbyteArray maskArray,
-     jint maskoff, jint maskscan)
+/**
+ * This implementation first copies the alpha tile into a texture and then
+ * maps that texture to the destination surface.  This approach appears to
+ * offer the best performance despite being a two-step process.
+ *
+ * Here are some descriptions of the many variables used in this method:
+ *   x,y     - upper left corner of the tile destination
+ *   w,h     - width/height of the mask tile
+ *   x0      - placekeeper for the original destination x location
+ *   tw,th   - width/height of the actual texture tile in pixels
+ *   sx1,sy1 - upper left corner of the mask tile source region
+ *   sx2,sy2 - lower left corner of the mask tile source region
+ *   sx,sy   - "current" upper left corner of the mask tile region of interest
+ */
+HRESULT
+D3DMaskFill_MaskFill(D3DContext *d3dc,
+                     jint x, jint y, jint w, jint h,
+                     jint maskoff, jint maskscan, jint masklen,
+                     unsigned char *pMask)
 {
-    Win32SDOps *wsdo = (Win32SDOps *)jlong_to_ptr(pData);
-    D3DContext *d3dc = (D3DContext *)jlong_to_ptr(pCtx);
+    HRESULT res = S_OK;
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DMaskFill_MaskFill");
-    J2dTraceLn4(J2D_TRACE_VERBOSE, "  x=%-4d y=%-4d w=%-4d h=%-4d",
-                x, y, w, h);
-    J2dTraceLn2(J2D_TRACE_VERBOSE, "  maskoff=%-4d maskscan=%-4d",
+
+    RETURN_STATUS_IF_NULL(d3dc, E_FAIL);
+
+    J2dTraceLn4(J2D_TRACE_VERBOSE, "  x=%d y=%d w=%d h=%d", x, y, w, h);
+    J2dTraceLn2(J2D_TRACE_VERBOSE, "  maskoff=%d maskscan=%d",
                 maskoff, maskscan);
 
-    if (d3dc == NULL || wsdo == NULL) {
-        J2dTraceLn(J2D_TRACE_WARNING,
-                   "D3DMaskFill_MaskFill: context is null");
-        return;
-    }
-
-    HRESULT res;
-    D3D_EXEC_PRIM_LOOP(env, res, wsdo,
-                  doMaskFill(env, self, wsdo, d3dc,
-                             x, y, w, h,
-                             maskArray, maskoff, maskscan));
-}
-
-inline static HRESULT doMaskFill
-    (JNIEnv *env, jobject self,
-     Win32SDOps *wsdo, D3DContext *d3dc,
-     jint x, jint y, jint w, jint h,
-     jbyteArray maskArray,
-     jint maskoff, jint maskscan)
-{
-    DXSurface *maskTexture;
-    static J2DLVERTEX quadVerts[4] = {
-        { 0.0f, 0.0f, 0.0f, 0x0, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 0.0f, 0x0, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 0.0f, 0x0, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 0.0f, 0x0, 0.0f, 0.0f }
-    };
-
-    DDrawSurface *ddTargetSurface = d3dc->GetTargetSurface();
-    if (ddTargetSurface == NULL) {
-        return DDERR_GENERIC;
-    }
-
-    ddTargetSurface->GetExclusiveAccess();
-    d3dc->GetExclusiveAccess();
-
-    IDirect3DDevice7 *d3dDevice = d3dc->Get3DDevice();
-
-    HRESULT res = D3D_OK;
-    if (maskArray) {
-        jubyte *pMask =
-            (jubyte*)env->GetPrimitiveArrayCritical(maskArray, 0);
-        float tx1, ty1, tx2, ty2;
+    {
+        D3DMaskCache *maskCache = d3dc->GetMaskCache();
         jint tw, th, x0;
         jint sx1, sy1, sx2, sy2;
         jint sx, sy, sw, sh;
 
-        if (pMask == NULL) {
-            d3dc->ReleaseExclusiveAccess();
-            ddTargetSurface->ReleaseExclusiveAccess();
-            return DDERR_GENERIC;
-        }
-
-        maskTexture = d3dc->GetMaskTexture();
-        if (maskTexture == NULL ||
-            FAILED(res = d3dc->BeginScene(STATE_MASKOP)))
-        {
-            env->ReleasePrimitiveArrayCritical(maskArray, pMask, JNI_ABORT);
-            d3dc->ReleaseExclusiveAccess();
-            ddTargetSurface->ReleaseExclusiveAccess();
-            return DDERR_GENERIC;
-        }
-
-        if (FAILED(res = d3dc->SetTexture(maskTexture))) {
-            d3dc->EndScene(res);
-            env->ReleasePrimitiveArrayCritical(maskArray, pMask, JNI_ABORT);
-            d3dc->ReleaseExclusiveAccess();
-            ddTargetSurface->ReleaseExclusiveAccess();
-            return res;
-        }
+        res = d3dc->BeginScene(STATE_MASKOP);
+        RETURN_STATUS_IF_FAILED(res);
 
         x0 = x;
-        tx1 = 0.0f;
-        ty1 = 0.0f;
-        tw = D3DSD_MASK_TILE_SIZE;
-        th = D3DSD_MASK_TILE_SIZE;
+        tw = D3D_MASK_CACHE_TILE_WIDTH;
+        th = D3D_MASK_CACHE_TILE_HEIGHT;
         sx1 = maskoff % maskscan;
         sy1 = maskoff / maskscan;
         sx2 = sx1 + w;
         sy2 = sy1 + h;
 
-        D3DU_INIT_VERTEX_QUAD_COLOR(quadVerts, d3dc->colorPixel);
-        for (sy = sy1; (sy < sy2) && SUCCEEDED(res); sy += th, y += th) {
+        for (sy = sy1; sy < sy2; sy += th, y += th) {
             x = x0;
             sh = ((sy + th) > sy2) ? (sy2 - sy) : th;
 
-            for (sx = sx1; (sx < sx2) && SUCCEEDED(res); sx += tw, x += tw) {
+            for (sx = sx1; sx < sx2; sx += tw, x += tw) {
                 sw = ((sx + tw) > sx2) ? (sx2 - sx) : tw;
 
-                if (FAILED(d3dc->UploadImageToTexture(maskTexture,
-                                                      pMask,
-                                                      0, 0, sx, sy, sw, sh,
-                                                      maskscan)))
-                {
-                    continue;
-                }
-
-                // update the lower right texture coordinates
-                tx2 = ((float)sw) / tw;
-                ty2 = ((float)sh) / th;
-
-                D3DU_INIT_VERTEX_QUAD_XYUV(quadVerts,
-                                           (float)x, (float)y,
-                                           (float)(x+sw), (float)(y+sh),
-                                           tx1, ty1, tx2, ty2);
-                if (SUCCEEDED(res = ddTargetSurface->IsLost())) {
-                    // render texture tile to the destination surface
-                    res = d3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN,
-                                                   D3DFVF_J2DLVERTEX,
-                                                   quadVerts, 4, 0);
-                }
-
+                res = maskCache->AddMaskQuad(sx, sy, x, y, sw, sh,
+                                             maskscan, pMask);
             }
-        }
-
-        d3dc->EndScene(res);
-
-        env->ReleasePrimitiveArrayCritical(maskArray, pMask, JNI_ABORT);
-    } else {
-        float x1 = (float)x;
-        float y1 = (float)y;
-        float x2 = x1 + (float)w;
-        float y2 = y1 + (float)h;
-        D3DU_INIT_VERTEX_QUAD_COLOR(quadVerts, d3dc->colorPixel);
-        D3DU_INIT_VERTEX_QUAD_XY(quadVerts, x1, y1, x2, y2);
-        if (SUCCEEDED(res = d3dc->BeginScene(STATE_RENDEROP))) {
-            if (SUCCEEDED(res = ddTargetSurface->IsLost())) {
-                res = d3dDevice->DrawPrimitive(D3DPT_TRIANGLEFAN,
-                                               D3DFVF_J2DLVERTEX,
-                                               quadVerts, 4, 0);
-            }
-            d3dc->EndScene(res);
         }
     }
-
-    d3dc->ReleaseExclusiveAccess();
-    ddTargetSurface->ReleaseExclusiveAccess();
-
     return res;
 }
 
+JNIEXPORT void JNICALL
+Java_sun_java2d_d3d_D3DMaskFill_maskFill
+    (JNIEnv *env, jobject self,
+     jint x, jint y, jint w, jint h,
+     jint maskoff, jint maskscan, jint masklen,
+     jbyteArray maskArray)
+{
+    D3DContext *d3dc = D3DRQ_GetCurrentContext();
+    unsigned char *mask;
+
+    J2dTraceLn(J2D_TRACE_ERROR, "D3DMaskFill_maskFill");
+
+    if (maskArray != NULL) {
+        mask = (unsigned char *)
+            env->GetPrimitiveArrayCritical(maskArray, NULL);
+    } else {
+        mask = NULL;
+    }
+
+    D3DMaskFill_MaskFill(d3dc,
+                         x, y, w, h,
+                         maskoff, maskscan, masklen, mask);
+
+    // reset current state, and ensure rendering is flushed to dest
+    if (d3dc != NULL) {
+        d3dc->FlushVertexQueue();
+    }
+
+    if (mask != NULL) {
+        env->ReleasePrimitiveArrayCritical(maskArray, mask, JNI_ABORT);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * have any questions.
  */
 /*
- * @author    IBM Corp.
+ * @(#)author    IBM Corp.
  *
  * Copyright IBM Corp. 1999-2000.  All rights reserved.
  */
@@ -55,6 +55,7 @@ import javax.management.AttributeChangeNotificationFilter;
 import javax.management.AttributeList;
 import javax.management.AttributeNotFoundException;
 import javax.management.Descriptor;
+import javax.management.DynamicWrapperMBean;
 import javax.management.InstanceNotFoundException;
 import javax.management.InvalidAttributeValueException;
 import javax.management.ListenerNotFoundException;
@@ -115,7 +116,7 @@ import sun.reflect.misc.ReflectUtil;
  */
 
 public class RequiredModelMBean
-    implements ModelMBean, MBeanRegistration, NotificationEmitter {
+    implements ModelMBean, MBeanRegistration, NotificationEmitter, DynamicWrapperMBean {
 
     /*************************************/
     /* attributes                        */
@@ -132,6 +133,9 @@ public class RequiredModelMBean
     /* handle, name, or reference for instance on which the actual invoke
      * and operations will be executed */
     private Object managedResource = null;
+
+    /* true if getWrappedObject returns the wrapped resource */
+    private boolean visible;
 
     /* records the registering in MBeanServer */
     private boolean registered = false;
@@ -318,9 +322,13 @@ public class RequiredModelMBean
      *
      * @param mr Object that is the managed resource
      * @param mr_type The type of reference for the managed resource.
-     *     <br>Can be: "ObjectReference", "Handle", "IOR", "EJBHandle",
-     *         or "RMIReference".
-     *     <br>In this implementation only "ObjectReference" is supported.
+     *     <br>Can be: "ObjectReference", "VisibleObjectReference",
+     *         "Handle", "IOR", "EJBHandle", or "RMIReference".
+     *     <br>In this implementation only "ObjectReference" and
+     *         "VisibleObjectReference" are supported.  The two
+     *         types are equivalent except for the behavior of the
+     *         {@link #getWrappedObject()} and {@link #getWrappedClassLoader()}
+     *         methods.
      *
      * @exception MBeanException The initializer of the object has
      *            thrown an exception.
@@ -340,10 +348,11 @@ public class RequiredModelMBean
                 "setManagedResource(Object,String)","Entry");
         }
 
+        visible = "visibleObjectReference".equalsIgnoreCase(mr_type);
+
         // check that the mr_type is supported by this JMXAgent
         // only "objectReference" is supported
-        if ((mr_type == null) ||
-            (! mr_type.equalsIgnoreCase("objectReference"))) {
+        if (!"objectReference".equalsIgnoreCase(mr_type) && !visible) {
             if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
                 MODELMBEAN_LOGGER.logp(Level.FINER,
                         RequiredModelMBean.class.getName(),
@@ -366,6 +375,51 @@ public class RequiredModelMBean
                     RequiredModelMBean.class.getName(),
                 "setManagedResource(Object, String)", "Exit");
         }
+    }
+
+    /**
+     * <p>Get the managed resource for this Model MBean. For compatibility
+     * reasons, the managed resource is only returned if the resource type
+     * specified to {@link #setManagedResource setManagedResource} was {@code
+     * "visibleObjectReference"}. Otherwise, {@code this} is returned.</p>
+     *
+     * @return The value that was specified to {@link #setManagedResource
+     * setManagedResource}, if the resource type is {@code
+     * "visibleObjectReference"}. Otherwise, {@code this}.
+     */
+    public Object getWrappedObject() {
+        if (visible)
+            return managedResource;
+        else
+            return this;
+    }
+
+    /**
+     * <p>Get the ClassLoader of the managed resource for this Model MBean. For
+     * compatibility reasons, the ClassLoader of the managed resource is only
+     * returned if the resource type specified to {@link #setManagedResource
+     * setManagedResource} was {@code "visibleObjectReference"}. Otherwise,
+     * {@code this.getClass().getClassLoader()} is returned.</p>
+     *
+     * @return The ClassLoader of the value that was specified to
+     * {@link #setManagedResource setManagedResource}, if the resource
+     * type is {@code "visibleObjectReference"}. Otherwise, {@code
+     * this.getClass().getClassLoader()}.
+     */
+    public ClassLoader getWrappedClassLoader() {
+        return getWrappedObject().getClass().getClassLoader();
+    }
+
+    private static boolean isTrue(Descriptor d, String field) {
+        if (d == null)
+            return false;
+        Object x = d.getFieldValue(field);
+        if (x instanceof Boolean)
+            return (Boolean) x;
+        if (!(x instanceof String))
+            return false;
+        String s = (String) x;
+        return ("true".equalsIgnoreCase(s) || "T".equalsIgnoreCase(s));
     }
 
     /**

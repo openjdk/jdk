@@ -252,8 +252,6 @@ void HeapRegion::reset_after_compaction() {
   init_top_at_mark_start();
 }
 
-
-
 DirtyCardToOopClosure*
 HeapRegion::new_dcto_closure(OopClosure* cl,
                              CardTableModRefBS::PrecisionStyle precision,
@@ -292,7 +290,7 @@ void HeapRegion::hr_clear(bool par, bool clear_space) {
 
   _offsets.resize(HeapRegion::GrainWords);
   init_top_at_mark_start();
-  if (clear_space) clear();
+  if (clear_space) clear(SpaceDecorator::Mangle);
 }
 
 // <PREDICTION>
@@ -352,8 +350,8 @@ void HeapRegion::set_on_unclean_list(bool b) {
   _is_on_unclean_list = b;
 }
 
-void HeapRegion::initialize(MemRegion mr, bool clear_space) {
-  G1OffsetTableContigSpace::initialize(mr, false);
+void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
+  G1OffsetTableContigSpace::initialize(mr, false, mangle_space);
   hr_clear(false/*par*/, clear_space);
 }
 #ifdef _MSC_VER // the use of 'this' below gets a warning, make it go away
@@ -381,7 +379,9 @@ HeapRegion(G1BlockOffsetSharedArray* sharedOffsetArray,
   _orig_end = mr.end();
   // Note that initialize() will set the start of the unmarked area of the
   // region.
-  this->initialize(mr, !is_zeroed);
+  this->initialize(mr, !is_zeroed, SpaceDecorator::Mangle);
+  set_top(bottom());
+  set_saved_mark();
 
   _rem_set =  new HeapRegionRemSet(sharedOffsetArray, this);
 
@@ -729,16 +729,16 @@ void HeapRegion::verify(bool allow_dirty) const {
 // G1OffsetTableContigSpace code; copied from space.cpp.  Hope this can go
 // away eventually.
 
-void G1OffsetTableContigSpace::initialize(MemRegion mr, bool clear_space) {
+void G1OffsetTableContigSpace::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
   // false ==> we'll do the clearing if there's clearing to be done.
-  ContiguousSpace::initialize(mr, false);
+  ContiguousSpace::initialize(mr, false, mangle_space);
   _offsets.zero_bottom_entry();
   _offsets.initialize_threshold();
-  if (clear_space) clear();
+  if (clear_space) clear(mangle_space);
 }
 
-void G1OffsetTableContigSpace::clear() {
-  ContiguousSpace::clear();
+void G1OffsetTableContigSpace::clear(bool mangle_space) {
+  ContiguousSpace::clear(mangle_space);
   _offsets.zero_bottom_entry();
   _offsets.initialize_threshold();
 }
@@ -805,7 +805,7 @@ G1OffsetTableContigSpace(G1BlockOffsetSharedArray* sharedOffsetArray,
   _gc_time_stamp(0)
 {
   _offsets.set_space(this);
-  initialize(mr, !is_zeroed);
+  initialize(mr, !is_zeroed, SpaceDecorator::Mangle);
 }
 
 size_t RegionList::length() {

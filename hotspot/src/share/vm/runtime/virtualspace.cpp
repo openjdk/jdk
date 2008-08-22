@@ -28,12 +28,15 @@
 
 // ReservedSpace
 ReservedSpace::ReservedSpace(size_t size) {
-  initialize(size, 0, false, NULL);
+  initialize(size, 0, false, NULL, 0);
 }
 
 ReservedSpace::ReservedSpace(size_t size, size_t alignment,
-                             bool large, char* requested_address) {
-  initialize(size, alignment, large, requested_address);
+                             bool large,
+                             char* requested_address,
+                             const size_t noaccess_prefix) {
+  initialize(size+noaccess_prefix, alignment, large, requested_address,
+             noaccess_prefix);
 }
 
 char *
@@ -105,7 +108,8 @@ char* ReservedSpace::reserve_and_align(const size_t reserve_size,
 ReservedSpace::ReservedSpace(const size_t prefix_size,
                              const size_t prefix_align,
                              const size_t suffix_size,
-                             const size_t suffix_align)
+                             const size_t suffix_align,
+                             const size_t noaccess_prefix)
 {
   assert(prefix_size != 0, "sanity");
   assert(prefix_align != 0, "sanity");
@@ -118,12 +122,16 @@ ReservedSpace::ReservedSpace(const size_t prefix_size,
   assert((suffix_align & prefix_align - 1) == 0,
     "suffix_align not divisible by prefix_align");
 
+  // Add in noaccess_prefix to prefix_size;
+  const size_t adjusted_prefix_size = prefix_size + noaccess_prefix;
+  const size_t size = adjusted_prefix_size + suffix_size;
+
   // On systems where the entire region has to be reserved and committed up
   // front, the compound alignment normally done by this method is unnecessary.
   const bool try_reserve_special = UseLargePages &&
     prefix_align == os::large_page_size();
   if (!os::can_commit_large_page_memory() && try_reserve_special) {
-    initialize(prefix_size + suffix_size, prefix_align, true);
+    initialize(size, prefix_align, true, NULL, noaccess_prefix);
     return;
   }
 
@@ -131,15 +139,19 @@ ReservedSpace::ReservedSpace(const size_t prefix_size,
   _size = 0;
   _alignment = 0;
   _special = false;
+  _noaccess_prefix = 0;
+
+  // Assert that if noaccess_prefix is used, it is the same as prefix_align.
+  assert(noaccess_prefix == 0 ||
+         noaccess_prefix == prefix_align, "noaccess prefix wrong");
 
   // Optimistically try to reserve the exact size needed.
-  const size_t size = prefix_size + suffix_size;
   char* addr = os::reserve_memory(size, NULL, prefix_align);
   if (addr == NULL) return;
 
   // Check whether the result has the needed alignment (unlikely unless
   // prefix_align == suffix_align).
-  const size_t ofs = size_t(addr) + prefix_size & suffix_align - 1;
+  const size_t ofs = size_t(addr) + adjusted_prefix_size & suffix_align - 1;
   if (ofs != 0) {
     // Wrong alignment.  Release, allocate more space and do manual alignment.
     //
@@ -153,11 +165,11 @@ ReservedSpace::ReservedSpace(const size_t prefix_size,
     }
 
     const size_t extra = MAX2(ofs, suffix_align - ofs);
-    addr = reserve_and_align(size + extra, prefix_size, prefix_align,
+    addr = reserve_and_align(size + extra, adjusted_prefix_size, prefix_align,
                              suffix_size, suffix_align);
     if (addr == NULL) {
       // Try an even larger region.  If this fails, address space is exhausted.
-      addr = reserve_and_align(size + suffix_align, prefix_size,
+      addr = reserve_and_align(size + suffix_align, adjusted_prefix_size,
                                prefix_align, suffix_size, suffix_align);
     }
   }
@@ -165,10 +177,12 @@ ReservedSpace::ReservedSpace(const size_t prefix_size,
   _base = addr;
   _size = size;
   _alignment = prefix_align;
+  _noaccess_prefix = noaccess_prefix;
 }
 
 void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
-                               char* requested_address) {
+                               char* requested_address,
+                               const size_t noaccess_prefix) {
   const size_t granularity = os::vm_allocation_granularity();
   assert((size & granularity - 1) == 0,
          "size not aligned to os::vm_allocation_granularity()");
@@ -181,6 +195,7 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
   _size = 0;
   _special = false;
   _alignment = 0;
+  _noaccess_prefix = 0;
   if (size == 0) {
     return;
   }
@@ -220,7 +235,8 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
     // important.  If available space is not detected, return NULL.
 
     if (requested_address != 0) {
-      base = os::attempt_reserve_memory_at(size, requested_address);
+      base = os::attempt_reserve_memory_at(size,
+                                           requested_address-noaccess_prefix);
     } else {
       base = os::reserve_memory(size, NULL, alignment);
     }
@@ -251,6 +267,11 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
   _base = base;
   _size = size;
   _alignment = MAX2(alignment, (size_t) os::vm_page_size());
+  _noaccess_prefix = noaccess_prefix;
+
+  // Assert that if noaccess_prefix is used, it is the same as alignment.
+  assert(noaccess_prefix == 0 ||
+         noaccess_prefix == _alignment, "noaccess prefix wrong");
 
   assert(markOopDesc::encode_pointer_as_mark(_base)->decode_pointer() == _base,
          "area must be distinguisable from marks for mark-sweep");
@@ -266,6 +287,7 @@ ReservedSpace::ReservedSpace(char* base, size_t size, size_t alignment,
   _base = base;
   _size = size;
   _alignment = alignment;
+  _noaccess_prefix = 0;
   _special = special;
 }
 
@@ -312,17 +334,58 @@ size_t ReservedSpace::allocation_align_size_down(size_t size) {
 
 void ReservedSpace::release() {
   if (is_reserved()) {
+    char *real_base = _base - _noaccess_prefix;
+    const size_t real_size = _size + _noaccess_prefix;
     if (special()) {
-      os::release_memory_special(_base, _size);
+      os::release_memory_special(real_base, real_size);
     } else{
-      os::release_memory(_base, _size);
+      os::release_memory(real_base, real_size);
     }
     _base = NULL;
     _size = 0;
+    _noaccess_prefix = 0;
     _special = false;
   }
 }
 
+void ReservedSpace::protect_noaccess_prefix(const size_t size) {
+  // If there is noaccess prefix, return.
+  if (_noaccess_prefix == 0) return;
+
+  assert(_noaccess_prefix >= (size_t)os::vm_page_size(),
+         "must be at least page size big");
+
+  // Protect memory at the base of the allocated region.
+  // If special, the page was committed (only matters on windows)
+  if (!os::protect_memory(_base, _noaccess_prefix, os::MEM_PROT_NONE,
+                          _special)) {
+    fatal("cannot protect protection page");
+  }
+
+  _base += _noaccess_prefix;
+  _size -= _noaccess_prefix;
+  assert((size == _size) && ((uintptr_t)_base % _alignment == 0),
+         "must be exactly of required size and alignment");
+}
+
+ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment,
+                                     bool large, char* requested_address) :
+  ReservedSpace(size, alignment, large,
+                requested_address,
+                UseCompressedOops ? lcm(os::vm_page_size(), alignment) : 0) {
+  // Only reserved space for the java heap should have a noaccess_prefix
+  // if using compressed oops.
+  protect_noaccess_prefix(size);
+}
+
+ReservedHeapSpace::ReservedHeapSpace(const size_t prefix_size,
+                                     const size_t prefix_align,
+                                     const size_t suffix_size,
+                                     const size_t suffix_align) :
+  ReservedSpace(prefix_size, prefix_align, suffix_size, suffix_align,
+                UseCompressedOops ? lcm(os::vm_page_size(), prefix_align) : 0) {
+  protect_noaccess_prefix(prefix_size+suffix_size);
+}
 
 // VirtualSpace
 
@@ -340,6 +403,7 @@ VirtualSpace::VirtualSpace() {
   _lower_alignment        = 0;
   _middle_alignment       = 0;
   _upper_alignment        = 0;
+  _special                = false;
 }
 
 
@@ -394,7 +458,8 @@ VirtualSpace::~VirtualSpace() {
 
 
 void VirtualSpace::release() {
-  (void)os::release_memory(low_boundary(), reserved_size());
+  // This does not release memory it never reserved.
+  // Caller must release via rs.release();
   _low_boundary           = NULL;
   _high_boundary          = NULL;
   _low                    = NULL;

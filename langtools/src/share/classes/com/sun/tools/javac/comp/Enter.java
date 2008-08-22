@@ -260,8 +260,11 @@ public class Enter extends JCTree.Visitor {
      */
     <T extends JCTree> List<Type> classEnter(List<T> trees, Env<AttrContext> env) {
         ListBuffer<Type> ts = new ListBuffer<Type>();
-        for (List<T> l = trees; l.nonEmpty(); l = l.tail)
-            ts.append(classEnter(l.head, env));
+        for (List<T> l = trees; l.nonEmpty(); l = l.tail) {
+            Type t = classEnter(l.head, env);
+            if (t != null)
+                ts.append(t);
+        }
         return ts.toList();
     }
 

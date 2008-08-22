@@ -1,5 +1,5 @@
 #
-# Copyright 2006-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ ifeq ($(USING_CYGWIN), true)
   ABS_OUTPUTDIR   := $(subst /,\\,$(shell /bin/cygpath -m -a "$(OUTPUTDIR)"))
   ABS_BOOTDIR     := $(subst /,\\,$(shell /bin/cygpath -m -a "$(BOOTDIR)"))
   ABS_GAMMADIR    := $(subst /,\\,$(shell /bin/cygpath -m -a "$(GAMMADIR)"))
-  ABS_OS_MAKEFILE := $(shell /bin/cygpath -m -a "$(HS_BUILD_DIR)/$(OSNAME)")/build.make
+  ABS_OS_MAKEFILE := $(shell /bin/cygpath -m -a "$(HS_MAKE_DIR)/$(OSNAME)")/build.make
 else
   ABS_OUTPUTDIR   := $(subst /,\\,$(shell $(CD) $(OUTPUTDIR);$(PWD)))
   ABS_BOOTDIR     := $(subst /,\\,$(shell $(CD) $(BOOTDIR);$(PWD)))

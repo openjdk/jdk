@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1817,6 +1817,24 @@ const char* os::dll_file_extension() { return ".so"; }
 
 const char* os::get_temp_directory() { return "/tmp/"; }
 
+void os::dll_build_name(
+    char* buffer, size_t buflen, const char* pname, const char* fname) {
+  // copied from libhpi
+  const size_t pnamelen = pname ? strlen(pname) : 0;
+
+  /* Quietly truncate on buffer overflow.  Should be an error. */
+  if (pnamelen + strlen(fname) + 10 > (size_t) buflen) {
+      *buffer = '\0';
+      return;
+  }
+
+  if (pnamelen == 0) {
+      sprintf(buffer, "lib%s.so", fname);
+  } else {
+      sprintf(buffer, "%s/lib%s.so", pname, fname);
+  }
+}
+
 const char* os::get_current_directory(char *buf, int buflen) {
   return getcwd(buf, buflen);
 }
@@ -2068,6 +2086,9 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
   return NULL;
 }
 
+void* os::dll_lookup(void* handle, const char* name) {
+  return dlsym(handle, name);
+}
 
 
 bool _print_ascii_file(const char* filename, outputStream* st) {
@@ -2692,6 +2713,12 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
      top += r;
      cur++;
    }
+   if (bottom == 0) {
+     // Handle a situation, when the OS reports no memory available.
+     // Assume UMA architecture.
+     ids[0] = 0;
+     return 1;
+   }
    return bottom;
 }
 
@@ -2999,10 +3026,21 @@ static bool solaris_mprotect(char* addr, size_t bytes, int prot) {
   return retVal == 0;
 }
 
-// Protect memory (make it read-only. (Used to pass readonly pages through
+// Protect memory (Used to pass readonly pages through
 // JNI GetArray<type>Elements with empty arrays.)
-bool os::protect_memory(char* addr, size_t bytes) {
-  return solaris_mprotect(addr, bytes, PROT_READ);
+bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
+                        bool is_committed) {
+  unsigned int p = 0;
+  switch (prot) {
+  case MEM_PROT_NONE: p = PROT_NONE; break;
+  case MEM_PROT_READ: p = PROT_READ; break;
+  case MEM_PROT_RW:   p = PROT_READ|PROT_WRITE; break;
+  case MEM_PROT_RWX:  p = PROT_READ|PROT_WRITE|PROT_EXEC; break;
+  default:
+    ShouldNotReachHere();
+  }
+  // is_committed is unused.
+  return solaris_mprotect(addr, bytes, p);
 }
 
 // guard_memory and unguard_memory only happens within stack guard pages.
@@ -4604,7 +4642,7 @@ void os::Solaris::synchronization_init() {
 }
 
 void os::Solaris::liblgrp_init() {
-  void *handle = dlopen("liblgrp.so", RTLD_LAZY);
+  void *handle = dlopen("liblgrp.so.1", RTLD_LAZY);
   if (handle != NULL) {
     os::Solaris::set_lgrp_home(CAST_TO_FN_PTR(lgrp_home_func_t, dlsym(handle, "lgrp_home")));
     os::Solaris::set_lgrp_init(CAST_TO_FN_PTR(lgrp_init_func_t, dlsym(handle, "lgrp_init")));

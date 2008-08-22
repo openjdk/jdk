@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,4 @@ void MacroAssembler::get_thread(Register thread) {
   assert(ThreadLocalStorage::get_thread_ptr_offset() != 0,
          "Thread Pointer Offset has not been initialized");
   movl(thread, Address(thread, ThreadLocalStorage::get_thread_ptr_offset()));
-}
-
-bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
-  return offset < 0 || (int)os::vm_page_size() <= offset;
 }

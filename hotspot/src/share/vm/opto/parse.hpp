@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -479,7 +479,7 @@ class Parse : public GraphKit {
   float   branch_prediction(float &cnt, BoolTest::mask btest, int target_bci);
   bool    seems_never_taken(float prob);
 
-  void    do_ifnull(BoolTest::mask btest);
+  void    do_ifnull(BoolTest::mask btest, Node* c);
   void    do_if(BoolTest::mask btest, Node* c);
   void    repush_if_args();
   void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,

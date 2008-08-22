@@ -264,6 +264,7 @@ heapRegion.cpp                          iterator.hpp
 heapRegion.cpp                          oop.inline.hpp
 
 heapRegion.hpp                          space.hpp
+heapRegion.hpp                          spaceDecorator.hpp
 heapRegion.hpp                          g1BlockOffsetTable.hpp
 heapRegion.hpp                          watermark.hpp
 heapRegion.hpp				g1_specialized_oop_closures.hpp

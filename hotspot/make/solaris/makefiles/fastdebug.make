@@ -1,5 +1,5 @@
 #
-# Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ OPT_CFLAGS/SLOWER = -xO2
 
 # Problem with SS12 compiler, dtrace doesn't like the .o files  (bug 6693876)
 ifeq ($(COMPILER_REV), 5.9)
+  # To avoid jvm98 crash
+  OPT_CFLAGS/instanceKlass.o = $(OPT_CFLAGS/SLOWER)
   # Not clear this workaround could be skipped in some cases.
   OPT_CFLAGS/vmGCOperations.o = $(OPT_CFLAGS/SLOWER)
   OPT_CFLAGS/java.o = $(OPT_CFLAGS/SLOWER)

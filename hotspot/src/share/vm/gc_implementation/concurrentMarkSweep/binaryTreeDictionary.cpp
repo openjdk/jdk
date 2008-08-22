@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,15 @@ TreeList* TreeList::as_TreeList(TreeChunk* tc) {
 TreeList* TreeList::as_TreeList(HeapWord* addr, size_t size) {
   TreeChunk* tc = (TreeChunk*) addr;
   assert(size >= sizeof(TreeChunk), "Chunk is too small for a TreeChunk");
-  assert(tc->size() == 0 && tc->prev() == NULL && tc->next() == NULL,
-    "Space should be clear");
+  // The space in the heap will have been mangled initially but
+  // is not remangled when a free chunk is returned to the free list
+  // (since it is used to maintain the chunk on the free list).
+  assert((ZapUnusedHeapArea &&
+          SpaceMangler::is_mangled((HeapWord*) tc->size_addr()) &&
+          SpaceMangler::is_mangled((HeapWord*) tc->prev_addr()) &&
+          SpaceMangler::is_mangled((HeapWord*) tc->next_addr())) ||
+          (tc->size() == 0 && tc->prev() == NULL && tc->next() == NULL),
+    "Space should be clear or mangled");
   tc->setSize(size);
   tc->linkPrev(NULL);
   tc->linkNext(NULL);

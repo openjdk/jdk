@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,7 +351,7 @@ void ciBlock::set_exception_range(int start_bci, int limit_bci)  {
 }
 
 #ifndef PRODUCT
-static char *flagnames[] = {
+static const char *flagnames[] = {
   "Processed",
   "Handler",
   "MayThrow",

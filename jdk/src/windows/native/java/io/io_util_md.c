@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,23 +104,56 @@ currentDirLength(const WCHAR* ps, int pathlen) {
     }
 }
 
+/*
+  The "abpathlen" is the size of the buffer needed by _wfullpath. If the
+  "path" is a relative path, it is "the length of the current dir" + "the
+  length of the path", if it's "absolute" already, it's the same as
+  pathlen which is the length of "path".
+ */
+WCHAR* prefixAbpath(const WCHAR* path, int pathlen, int abpathlen) {
+    WCHAR* pathbuf = NULL;
+    WCHAR* abpath = NULL;
+
+    abpathlen += 10;  //padding
+    abpath = (WCHAR*)malloc(abpathlen * sizeof(WCHAR));
+    if (abpath) {
+        /* Collapse instances of "foo\.." and ensure absoluteness before
+           going down to prefixing.
+        */
+        if (_wfullpath(abpath, path, abpathlen)) {
+            pathbuf = getPrefixed(abpath, abpathlen);
+        } else {
+            /* _wfullpath fails if the pathlength exceeds 32k wchar.
+               Instead of doing more fancy things we simply copy the
+               ps into the return buffer, the subsequent win32 API will
+               probably fail with FileNotFoundException, which is expected
+            */
+            pathbuf = (WCHAR*)malloc((pathlen + 6) * sizeof(WCHAR));
+            if (pathbuf != 0) {
+                wcscpy(pathbuf, path);
+            }
+        }
+        free(abpath);
+    }
+    return pathbuf;
+}
+
 /* If this returns NULL then an exception is pending */
 WCHAR*
 pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
     int pathlen = 0;
     WCHAR *pathbuf = NULL;
-    int max_path = 248;   /* Since CreateDirectoryW() has the limit of
-                             248 instead of the normal MAX_PATH, we
-                             use 248 as the max_path to satisfy both
-                           */
+    int max_path = 248; /* CreateDirectoryW() has the limit of 248 */
+
     WITH_UNICODE_STRING(env, path, ps) {
         pathlen = wcslen(ps);
         if (pathlen != 0) {
             if (pathlen > 2 &&
                 (ps[0] == L'\\' && ps[1] == L'\\' ||   //UNC
-                 ps[1] == L':' && ps[2] == L'\\')) {   //absolute
+                 ps[1] == L':' && ps[2] == L'\\'))     //absolute
+            {
                  if (pathlen > max_path - 1) {
-                     pathbuf = getPrefixed(ps, pathlen);
+                     pathbuf = prefixAbpath(ps, pathlen, pathlen);
                  } else {
                      pathbuf = (WCHAR*)malloc((pathlen + 6) * sizeof(WCHAR));
                      if (pathbuf != 0) {
@@ -132,7 +165,7 @@ pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
                    its absolute form is bigger than max_path or not, if yes
                    need to (1)convert it to absolute and (2)prefix. This is
                    obviously a burden to all relative paths (The current dir/len
-                   for "dirve & directory" relative path is cached, so we only
+                   for "drive & directory" relative path is cached, so we only
                    calculate it once but for "drive-relative path we call
                    _wgetdcwd() and wcslen() everytime), but a hit we have
                    to take if we want to support relative path beyond max_path.
@@ -143,24 +176,7 @@ pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
                 WCHAR *abpath = NULL;
                 int dirlen = currentDirLength(ps, pathlen);
                 if (dirlen + pathlen + 1 > max_path - 1) {
-                    int abpathlen = dirlen + pathlen + 10;
-                    abpath = (WCHAR*)malloc(abpathlen * sizeof(WCHAR));
-                    if (abpath) {
-                        if (_wfullpath(abpath, ps, abpathlen)) {
-                            pathbuf = getPrefixed(abpath, abpathlen);
-                        } else {
-                            /* _wfullpath fails if the pathlength exceeds 32k wchar.
-                               Instead of doing more fancy things we simply copy the
-                               ps into the return buffer, the subsequent win32 API will
-                               probably fail with FileNotFoundException, which is expected
-                             */
-                            pathbuf = (WCHAR*)malloc((pathlen + 6) * sizeof(WCHAR));
-                            if (pathbuf != 0) {
-                                wcscpy(pathbuf, ps);
-                            }
-                        }
-                        free(abpath);
-                    }
+                    pathbuf = prefixAbpath(ps, pathlen, dirlen + pathlen);
                 } else {
                     pathbuf = (WCHAR*)malloc((pathlen + 6) * sizeof(WCHAR));
                     if (pathbuf != 0) {

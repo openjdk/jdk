@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3830,6 +3830,8 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ConvL2D")==0 ||
         strcmp(opType,"ConvL2F")==0 ||
         strcmp(opType,"ConvL2I")==0 ||
+        strcmp(opType,"DecodeN")==0 ||
+        strcmp(opType,"EncodeP")==0 ||
         strcmp(opType,"RoundDouble")==0 ||
         strcmp(opType,"RoundFloat")==0 ||
         strcmp(opType,"ReverseBytesI")==0 ||

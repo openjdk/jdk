@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,10 @@ ifeq    ($(findstring j,$(MFLAGS)),j)
 COMPILE_DONE    = && { echo Done with $<; }
 endif
 
-include $(GAMMADIR)/make/defs.make
+# Include NONPIC_OBJ_FILES definition
+ifndef LP64
+include $(GAMMADIR)/make/pic.make
+endif
 
 # Sun compiler for 64 bit Solaris does not support building non-PIC object files.
 ifdef LP64

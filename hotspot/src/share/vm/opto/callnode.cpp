@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -631,61 +631,13 @@ uint CallNode::match_edge(uint idx) const {
 bool CallNode::may_modify(const TypePtr *addr_t, PhaseTransform *phase) {
   const TypeOopPtr *adrInst_t  = addr_t->isa_oopptr();
 
-  // if not an InstPtr or not an instance type, assume the worst
-  if (adrInst_t == NULL || !adrInst_t->is_known_instance_field()) {
+  // If not an OopPtr or not an instance type, assume the worst.
+  // Note: currently this method is called only for instance types.
+  if (adrInst_t == NULL || !adrInst_t->is_known_instance()) {
     return true;
   }
-  Compile *C = phase->C;
-  int offset = adrInst_t->offset();
-  assert(adrInst_t->klass_is_exact() && offset >= 0, "should be valid offset");
-  ciKlass* adr_k = adrInst_t->klass();
-  assert(adr_k->is_loaded() &&
-         adr_k->is_java_klass() &&
-         !adr_k->is_interface(),
-         "only non-abstract classes are expected");
-
-  int base_idx = C->get_alias_index(adrInst_t);
-  int size = BytesPerLong; // If we don't know the size, assume largest.
-  if (adrInst_t->isa_instptr()) {
-    ciField* field = C->alias_type(base_idx)->field();
-    if (field != NULL) {
-      size = field->size_in_bytes();
-    }
-  } else {
-    assert(adrInst_t->isa_aryptr(), "only arrays are expected");
-    size = type2aelembytes(adr_k->as_array_klass()->element_type()->basic_type());
-  }
-
-  ciMethod * meth = is_CallStaticJava() ?  as_CallStaticJava()->method() : NULL;
-  BCEscapeAnalyzer *bcea = (meth != NULL) ? meth->get_bcea() : NULL;
-
-  const TypeTuple * d = tf()->domain();
-  for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
-    const Type* t = d->field_at(i);
-    Node *arg = in(i);
-    const Type *at = phase->type(arg);
-    if (at == TypePtr::NULL_PTR || at == Type::TOP)
-      continue;  // null can't affect anything
-
-    const TypeOopPtr *at_ptr = at->isa_oopptr();
-    if (!arg->is_top() && (t->isa_oopptr() != NULL ||
-                           t->isa_ptr() && at_ptr != NULL)) {
-      assert(at_ptr != NULL, "expecting an OopPtr");
-      ciKlass* at_k = at_ptr->klass();
-      if ((adrInst_t->base() == at_ptr->base()) &&
-          at_k->is_loaded() &&
-          at_k->is_java_klass()) {
-        // If we have found an argument matching addr_t, check if the field
-        // at the specified offset is modified.
-        if ((at_k->is_interface() || adr_k == at_k ||
-             adr_k->is_subclass_of(at_k) && !at_ptr->klass_is_exact()) &&
-            (bcea == NULL ||
-             bcea->is_arg_modified(i - TypeFunc::Parms, offset, size))) {
-          return true;
-        }
-      }
-    }
-  }
+  // The instance_id is set only for scalar-replaceable allocations which
+  // are not passed as arguments according to Escape Analysis.
   return false;
 }
 

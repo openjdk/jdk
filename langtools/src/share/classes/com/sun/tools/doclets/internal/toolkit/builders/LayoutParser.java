@@ -45,7 +45,7 @@ public class LayoutParser extends DefaultHandler {
     /**
      * The map of XML elements that have been parsed.
      */
-    private Map xmlElementsMap;
+    private Map<String,List<Object>> xmlElementsMap;
 
     private Configuration configuration;
     private static LayoutParser instance;
@@ -56,7 +56,7 @@ public class LayoutParser extends DefaultHandler {
      * This class is a singleton.
      */
     private LayoutParser(Configuration configuration) {
-        xmlElementsMap = new HashMap();
+        xmlElementsMap = new HashMap<String,List<Object>>();
         this.configuration = configuration;
     }
 
@@ -83,7 +83,7 @@ public class LayoutParser extends DefaultHandler {
             return (List) xmlElementsMap.get(root);
         }
         try {
-            List xmlElements = new ArrayList();
+            List<Object> xmlElements = new ArrayList<Object>();
             xmlElementsMap.put(root, xmlElements);
             currentRoot = root;
             isParsing = false;
@@ -106,7 +106,7 @@ public class LayoutParser extends DefaultHandler {
     throws SAXException {
         if (isParsing || qName.equals(currentRoot)) {
             isParsing = true;
-            List xmlElements = (List) xmlElementsMap.get(currentRoot);
+            List<Object> xmlElements = xmlElementsMap.get(currentRoot);
             xmlElements.add(qName);
         }
     }
@@ -120,11 +120,11 @@ public class LayoutParser extends DefaultHandler {
             isParsing = false;
             return;
         }
-        List xmlElements = (List) xmlElementsMap.get(currentRoot);
+        List<Object> xmlElements = xmlElementsMap.get(currentRoot);
         if (xmlElements.get(xmlElements.size()-1).equals(qName)) {
             return;
         } else {
-            List subElements = new ArrayList();
+            List<Object> subElements = new ArrayList<Object>();
             int targetIndex = xmlElements.indexOf(qName);
             int size = xmlElements.size();
             for (int i = targetIndex; i < size; i++) {

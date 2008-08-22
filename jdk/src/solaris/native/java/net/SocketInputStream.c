@@ -65,7 +65,6 @@ Java_java_net_SocketInputStream_socketRead0(JNIEnv *env, jobject this,
     char BUF[MAX_BUFFER_LEN];
     char *bufP;
     jint fd, nread;
-    jint n;
 
     if (IS_NULL(fdObj)) {
         /* should't this be a NullPointerException? -br */

@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,12 @@ ifeq "x$(GAMMADIR)" "x"
 include ../../make/defs.make
 else
 include $(GAMMADIR)/make/defs.make
+endif
+
+ifeq "x$(HOTSPOT_BUILD_VERSION)" "x"
+SA_BUILD_VERSION=$(HOTSPOT_RELEASE_VERSION)
+else
+SA_BUILD_VERSION=$(HOTSPOT_RELEASE_VERSION)-$(HOTSPOT_BUILD_VERSION)
 endif
 
 PKGLIST = \
@@ -117,7 +123,9 @@ sun.jvm.hotspot.ui.tree \
 sun.jvm.hotspot.ui.treetable \
 sun.jvm.hotspot.utilities \
 sun.jvm.hotspot.utilities.memo \
-sun.jvm.hotspot.utilities.soql
+sun.jvm.hotspot.utilities.soql \
+com.sun.java.swing.action \
+com.sun.java.swing.ui
 #END PKGLIST
 
 # Generated using the build-filelist script
@@ -198,7 +206,9 @@ sun/jvm/hotspot/ui/tree/*.java \
 sun/jvm/hotspot/ui/treetable/*.java \
 sun/jvm/hotspot/utilities/*.java \
 sun/jvm/hotspot/utilities/memo/*.java \
-sun/jvm/hotspot/utilities/soql/*.java 
+sun/jvm/hotspot/utilities/soql/*.java \
+com/sun/java/swing/action/*.java \
+com/sun/java/swing/ui/*.java 
 #END FILELIST
 
 ifneq "x$(ALT_BOOTDIR)" "x"
@@ -220,8 +230,6 @@ else
 endif
 
 SRC_DIR    = ../src/share/classes
-LIB_DIR    = ../src/share/lib
-CLOSED_LIB_DIR    = ../closed/src/share/lib
 BUILD_DIR  = ../build
 OUTPUT_DIR = $(BUILD_DIR)/classes
 DOC_DIR    = $(BUILD_DIR)/doc
@@ -231,9 +239,9 @@ DOC_DIR    = $(BUILD_DIR)/doc
 ALLFILES := $(patsubst %,$(SRC_DIR)/%,$(FILELIST))
 ALLFILES := $(shell /bin/ls $(ALLFILES))
 
+# tools.jar is used by the sa-jdi binding
+CLASSPATH = $(JDK_HOME)/lib/tools.jar
 
-# tools.jar is needed by the JDI - SA binding
-CLASSPATH = $(LIB_DIR)/maf-1_0.jar$(CPS)$(JDK_HOME)/lib/tools.jar
 CLASSPATH := $(subst \,/,$(CLASSPATH))
 
 # FIXME: autogenerate call to rmic
@@ -241,24 +249,36 @@ CLASSPATH := $(subst \,/,$(CLASSPATH))
 SA_BUILD_VERSION_PROP = "sun.jvm.hotspot.runtime.VM.saBuildVersion=$(SA_BUILD_VERSION)"
 
 SA_PROPERTIES = $(OUTPUT_DIR)/sa.properties
+JAVAC = $(JDK_HOME)/bin/javac
+JAVADOC = $(JDK_HOME)/bin/javadoc
+RMIC = $(JDK_HOME)/bin/rmic
 
 # Tagging it on because there's no reason not to run it
 all: filelist
 	@mkdir -p $(OUTPUT_DIR)
 	@echo "$(SA_BUILD_VERSION_PROP)" > $(SA_PROPERTIES)
-	@${JDK_HOME}/bin/javac -source 1.4 -classpath $(CLASSPATH) -deprecation -sourcepath $(SRC_DIR) -g -d $(OUTPUT_DIR) @filelist
-	@${JDK_HOME}/bin/rmic -classpath $(OUTPUT_DIR) -d $(OUTPUT_DIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
+	$(JAVAC) -source 1.4 -classpath $(CLASSPATH) -deprecation -sourcepath $(SRC_DIR) -g -d $(OUTPUT_DIR) @filelist
+	$(RMIC) -classpath $(OUTPUT_DIR) -d $(OUTPUT_DIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
 	rm -f $(OUTPUT_DIR)/sun/jvm/hotspot/utilities/soql/sa.js
 	cp $(SRC_DIR)/sun/jvm/hotspot/utilities/soql/sa.js $(OUTPUT_DIR)/sun/jvm/hotspot/utilities/soql
+	mkdir -p $(OUTPUT_DIR)/sun/jvm/hotspot/ui/resources
+	rm -f $(OUTPUT_DIR)/sun/jvm/hotspot/ui/resources/*
+	cp $(SRC_DIR)/sun/jvm/hotspot/ui/resources/*.png $(OUTPUT_DIR)/sun/jvm/hotspot/ui/resources/
+	cp -r $(SRC_DIR)/images/*  $(OUTPUT_DIR)/
 
 allprof: filelist
 	@mkdir -p $(OUTPUT_DIR)
 	@echo "$(SA_BUILD_VERSION_PROP)" > $(SA_PROPERTIES)
-	@${JDK_HOME}/bin/javac -source 1.4 -J-Xprof -classpath $(CLASSPATH) -deprecation -sourcepath $(SRC_DIR) -g -d $(OUTPUT_DIR) @filelist
-	@${JDK_HOME}/bin/rmic -classpath $(OUTPUT_DIR) -d $(OUTPUT_DIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
+	$(JAVAC) -source 1.4 -J-Xprof -classpath $(CLASSPATH) -deprecation -sourcepath $(SRC_DIR) -g -d $(OUTPUT_DIR) @filelist
+	$(RMIC) -classpath $(OUTPUT_DIR) -d $(OUTPUT_DIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
 	rm -f $(OUTPUT_DIR)/sun/jvm/hotspot/utilities/soql/sa.js
 	cp $(SRC_DIR)/sun/jvm/hotspot/utilities/soql/sa.js $(OUTPUT_DIR)/sun/jvm/hotspot/utilities/soql
+	mkdir -p $(OUTPUT_DIR)/sun/jvm/hotspot/ui/resources
+	rm -f $(OUTPUT_DIR)/sun/jvm/hotspot/ui/resources/*
+	cp $(SRC_DIR)/sun/jvm/hotspot/ui/resources/*.png $(OUTPUT_DIR)/sun/jvm/hotspot/ui/resources/
+	cp -r $(SRC_DIR)/images/*  $(OUTPUT_DIR)/
 
+.PHONY: filelist
 filelist: $(ALLFILES)
 	@if [ ! -f $(JDK_HOME)/lib/tools.jar ] ; then \
           echo "Missing $(JDK_HOME)/lib/tools.jar file. Use 1.6.0 or later version jdk to build SA."; \
@@ -274,36 +294,23 @@ natives:
 
 .PHONY: sa-jdi.jar
 sa-jdi.jar:
-	if [ ! -f $(JDK_HOME)/lib/tools.jar ] ; then \
-          echo "Missing $(JDK_HOME)/lib/tools.jar file. Use 1.6.0 or later version jdk to build SA.";\
-          exit 1; \
-        fi
-	rm -f $(BUILD_DIR)/sa-jdi.jar
-	rm -f $(OUTPUT_DIR)/jdi_class_files
-	javac -source 1.4 ClosureFinder.java -d $(OUTPUT_DIR)
-	cd $(OUTPUT_DIR) ; find sun/jvm/hotspot/jdi -name "*.class" > jdi_class_files
-	cd $(OUTPUT_DIR) ; jar cvf ../sa-jdi.jar `java ClosureFinder jdi_class_files .`
-	cd $(BUILD_DIR) ; jar uvf sa-jdi.jar -C $(SRC_DIR) META-INF/services/com.sun.jdi.connect.Connector
-	cd $(BUILD_DIR) ; jar uvf sa-jdi.jar -C $(OUTPUT_DIR) sa.properties
-	rm -f $(OUTPUT_DIR)/ClosureFinder.class
-	rm -f $(OUTPUT_DIR)/jdi_class_files
+	echo "sa-jdi.jar is built by a hotspot build."
 
 docs:
-	@javadoc -private -classpath $(CLASSPATH) -sourcepath $(SRC_DIR) -d $(DOC_DIR) $(PKGLIST)
+	@$(JAVADOC) -private -classpath $(CLASSPATH) -sourcepath $(SRC_DIR) -d $(DOC_DIR) $(PKGLIST)
 
 sizes: $(ALLFILES)
 	wc -l $(ALLFILES)
 
 cscope: $(ALLFILES)
+	rm -f java.files
 	echo $(ALLFILES) > java.files
 	cscope -b -i java.files -f java.out 
+	rm -f java.files
 
 .PHONY: sa.jar
 sa.jar:
 	rm -f $(BUILD_DIR)/sa.jar
-	mkdir -p $(OUTPUT_DIR)/sun/jvm/hotspot/ui/resources
-	rm -f $(OUTPUT_DIR)/sun/jvm/hotspot/ui/resources/*
-	cp $(SRC_DIR)/sun/jvm/hotspot/ui/resources/*.png $(OUTPUT_DIR)/sun/jvm/hotspot/ui/resources/
 	cd $(OUTPUT_DIR) ; jar cvf ../sa.jar *
 
 clean::

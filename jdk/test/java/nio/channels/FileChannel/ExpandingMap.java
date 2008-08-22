@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4938372
+ * @bug 4938372 6541641
  * @summary Flushing dirty pages prior to unmap can cause Cleaner thread to
  *          abort VM if memory system has pages locked
  */
@@ -39,7 +39,7 @@ import java.util.ArrayList;
 
 public class ExpandingMap {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
 
         int initialSize = 20480*1024;
         int maximumMapSize = 16*1024*1024;
@@ -103,6 +103,13 @@ public class ExpandingMap {
             }
         }
 
+        fc.close();
+        // cleanup the ref to mapped buffers so they can be GCed
+        for (int i = 0; i < buffers.length; i++)
+            buffers[i] = null;
+        System.gc();
+        // Take a nap to wait for the Cleaner to cleanup those unrefed maps
+        Thread.sleep(1000);
         System.out.println("TEST PASSED");
     }
 

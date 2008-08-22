@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   _collector(NULL)
 {
   _bt.set_space(this);
-  initialize(mr, true);
+  initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
   // We have all of "mr", all of which we place in the dictionary
   // as one big chunk. We'll need to decide here which of several
   // possible alternative dictionary implementations to use. For

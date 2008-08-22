@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
+import javax.management.openmbean.MXBeanMappingFactory;
 
 /**
  * Base class for MBeans.  There is one instance of this class for
@@ -121,24 +122,26 @@ import javax.management.ReflectionException;
 public abstract class MBeanSupport<M>
         implements DynamicMBean2, MBeanRegistration {
 
-    <T> MBeanSupport(T resource, Class<T> mbeanInterface)
+    <T> MBeanSupport(T resource, Class<T> mbeanInterfaceType,
+                     MXBeanMappingFactory mappingFactory)
             throws NotCompliantMBeanException {
-        if (mbeanInterface == null)
+        if (mbeanInterfaceType == null)
             throw new NotCompliantMBeanException("Null MBean interface");
-        if (!mbeanInterface.isInstance(resource)) {
+        if (!mbeanInterfaceType.isInstance(resource)) {
             final String msg =
                 "Resource class " + resource.getClass().getName() +
-                " is not an instance of " + mbeanInterface.getName();
+                " is not an instance of " + mbeanInterfaceType.getName();
             throw new NotCompliantMBeanException(msg);
         }
         this.resource = resource;
-        MBeanIntrospector<M> introspector = getMBeanIntrospector();
-        this.perInterface = introspector.getPerInterface(mbeanInterface);
+        MBeanIntrospector<M> introspector = getMBeanIntrospector(mappingFactory);
+        this.perInterface = introspector.getPerInterface(mbeanInterfaceType);
         this.mbeanInfo = introspector.getMBeanInfo(resource, perInterface);
     }
 
     /** Return the appropriate introspector for this type of MBean. */
-    abstract MBeanIntrospector<M> getMBeanIntrospector();
+    abstract MBeanIntrospector<M>
+            getMBeanIntrospector(MXBeanMappingFactory mappingFactory);
 
     /**
      * Return a cookie for this MBean.  This cookie will be passed to
@@ -162,9 +165,8 @@ public abstract class MBeanSupport<M>
     public final ObjectName preRegister(MBeanServer server, ObjectName name)
             throws Exception {
         if (resource instanceof MBeanRegistration)
-            return ((MBeanRegistration) resource).preRegister(server, name);
-        else
-            return name;
+            name = ((MBeanRegistration) resource).preRegister(server, name);
+        return name;
     }
 
     public final void preRegister2(MBeanServer server, ObjectName name)
@@ -261,8 +263,12 @@ public abstract class MBeanSupport<M>
         return resource.getClass().getName();
     }
 
-    public final Object getResource() {
+    public final Object getWrappedObject() {
         return resource;
+    }
+
+    public final ClassLoader getWrappedClassLoader() {
+        return resource.getClass().getClassLoader();
     }
 
     public final Class<?> getMBeanInterface() {

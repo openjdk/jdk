@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,8 +108,8 @@ jint ParallelScavengeHeap::initialize() {
   // size than is needed or wanted for the perm gen.  Use the "compound
   // alignment" ReservedSpace ctor to avoid having to use the same page size for
   // all gens.
-  ReservedSpace heap_rs(pg_max_size, pg_align, og_max_size + yg_max_size,
-                        og_align);
+  ReservedHeapSpace heap_rs(pg_max_size, pg_align, og_max_size + yg_max_size,
+                            og_align);
   os::trace_page_sizes("ps perm", pg_min_size, pg_max_size, pg_page_sz,
                        heap_rs.base(), pg_max_size);
   os::trace_page_sizes("ps main", og_min_size + yg_min_size,
@@ -938,3 +938,23 @@ void ParallelScavengeHeap::resize_old_gen(size_t desired_free_space) {
   // Delegate the resize to the generation.
   _old_gen->resize(desired_free_space);
 }
+
+#ifndef PRODUCT
+void ParallelScavengeHeap::record_gen_tops_before_GC() {
+  if (ZapUnusedHeapArea) {
+    young_gen()->record_spaces_top();
+    old_gen()->record_spaces_top();
+    perm_gen()->record_spaces_top();
+  }
+}
+
+void ParallelScavengeHeap::gen_mangle_unused_area() {
+  if (ZapUnusedHeapArea) {
+    young_gen()->eden_space()->mangle_unused_area();
+    young_gen()->to_space()->mangle_unused_area();
+    young_gen()->from_space()->mangle_unused_area();
+    old_gen()->object_space()->mangle_unused_area();
+    perm_gen()->object_space()->mangle_unused_area();
+  }
+}
+#endif
