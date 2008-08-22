@@ -50,6 +50,10 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
 
   allocate_stacks();
 
+  // We should save the marks of the currently locked biased monitors.
+  // The marking doesn't preserve the marks of biased objects.
+  BiasedLocking::preserve_marks();
+
   mark_sweep_phase1(marked_for_unloading, clear_all_softrefs);
 
   if (G1VerifyConcMark) {
@@ -67,7 +71,7 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   mark_sweep_phase4();
 
   GenMarkSweep::restore_marks();
-
+  BiasedLocking::restore_marks();
   GenMarkSweep::deallocate_stacks();
 
   // We must invalidate the perm-gen rs, so that it gets rebuilt.

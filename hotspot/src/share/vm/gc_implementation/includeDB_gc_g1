@@ -19,7 +19,7 @@
 // Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
 // CA 95054 USA or visit www.sun.com if you need additional information or
 // have any questions.
-//  
+//
 //
 
 // NOTE: DO NOT CHANGE THIS COPYRIGHT TO NEW STYLE - IT WILL BREAK makeDeps!
@@ -100,7 +100,7 @@ concurrentZFThread.cpp			space.inline.hpp
 
 concurrentZFThread.hpp			concurrentGCThread.hpp
 concurrentZFThread.hpp			coTracker.hpp
-	  
+
 dirtyCardQueue.cpp                      atomic.hpp
 dirtyCardQueue.cpp                      dirtyCardQueue.hpp
 dirtyCardQueue.cpp			heapRegionRemSet.hpp
@@ -183,6 +183,7 @@ globals.cpp                             g1_globals.hpp
 top.hpp                                 g1_globals.hpp
 
 g1MarkSweep.cpp                         aprofiler.hpp
+g1MarkSweep.cpp                         biasedLocking.hpp
 g1MarkSweep.cpp                         codeCache.hpp
 g1MarkSweep.cpp                         events.hpp
 g1MarkSweep.cpp                         fprofiler.hpp
