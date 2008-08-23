@@ -51,9 +51,6 @@ import java.nio.charset.CoderResult;
  *     U+40000..U+FFFFF         F1..F3      80..BF      80..BF      80..BF
  *    U+100000..U10FFFF         F4          80..8F      80..BF      80..BF
  *
- * @author  Xueming Shen
- * @author  Martin Buchholz
- *
  */
 
 class UTF_8 extends Unicode
