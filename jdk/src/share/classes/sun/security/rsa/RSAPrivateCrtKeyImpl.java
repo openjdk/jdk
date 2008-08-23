@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public final class RSAPrivateCrtKeyImpl
      */
     RSAPrivateCrtKeyImpl(byte[] encoded) throws InvalidKeyException {
         decode(encoded);
-        RSAKeyFactory.checkKeyLength(n);
+        RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
     }
 
     /**
@@ -107,7 +107,8 @@ public final class RSAPrivateCrtKeyImpl
         this.pe = pe;
         this.qe = qe;
         this.coeff = coeff;
-        RSAKeyFactory.checkKeyLength(n);
+        RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
+
         // generate the encoding
         algid = rsaId;
         try {
