@@ -762,17 +762,17 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0
 
 /*
  * Class:     NetworkInterface
- * Method:    getByIndex
+ * Method:    getByIndex0
  * Signature: (I)LNetworkInterface;
  */
-JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex
+JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0
   (JNIEnv *env, jclass cls, jint index)
 {
     netif *ifList, *curr;
     jobject netifObj = NULL;
 
     if (os_supports_ipv6 && ipv6_available()) {
-        return Java_java_net_NetworkInterface_getByIndex_XP (env, cls, index);
+        return Java_java_net_NetworkInterface_getByIndex0_XP (env, cls, index);
     }
 
     /* get the list of interfaces */
