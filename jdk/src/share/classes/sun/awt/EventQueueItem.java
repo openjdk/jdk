@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,15 @@
  * have any questions.
  */
 
-#include "jni_util.h"
+package sun.awt;
 
-/* fieldIDs for TextField fields that may be accessed from C */
-static struct TextFieldIDs {
-    jfieldID echoChar;
-};
+import java.awt.AWTEvent;
 
-/* fieldIDs for MTextFieldPeer fields that may be accessed from C */
-struct MTextFieldPeerIDs {
-    jfieldID firstChangeSkipped;
-};
+public class EventQueueItem {
+    public AWTEvent event;
+    public EventQueueItem next;
+
+    public EventQueueItem(AWTEvent evt) {
+        event = evt;
+    }
+}

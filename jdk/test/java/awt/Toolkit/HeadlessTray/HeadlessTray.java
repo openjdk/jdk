@@ -1,12 +1,10 @@
 /*
- * Copyright 1996-1998 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,11 +21,29 @@
  * have any questions.
  */
 
-package sun.awt.motif;
+/*
+  @test
+  @bug 6737722
+  @summary no tray support in headless mode
+  @author dmitry.cherepanov: area=awt.headless
+  @run main HeadlessTray
+*/
 
-interface X11SelectionHolder {
+import java.awt.*;
 
-    // NOTE: This method may be called by privileged threads.
-    //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
-    public void lostSelectionOwnership();
+public class HeadlessTray
+{
+    public static void main (String args[]) {
+
+        System.setProperty("java.awt.headless", "true");
+
+        // We expect the method returns false and no exception thrown
+        boolean isSupported = SystemTray.isSupported();
+
+        if (isSupported) {
+            throw new RuntimeException("Tray shouldn't be supported in headless mode ");
+        }
+
+    }
+
 }
