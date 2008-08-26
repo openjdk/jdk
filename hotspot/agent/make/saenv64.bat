@@ -43,7 +43,7 @@ set SA_JAVA=java
 
 :sa_java_set
 
-set SA_CLASSPATH=..\build\classes;..\src\share\lib\maf-1_0.jar;..\src\share\lib\jlfgr-1_0.jar;..\src\share\lib\js.jar;sa.jar;lib\maf-1_0.jar;lib\jlfgr-1_0.jar;lib\js.jar
+set SA_CLASSPATH=..\build\classes;..\src\share\lib\js.jar;sa.jar;lib\js.jar
 
 REM For now, only AMD-64, IA-64 stack walking is not working anyway
 set SA_LIBPATH=.\src\os\win32\windbg\amd64;.\win32\amd64

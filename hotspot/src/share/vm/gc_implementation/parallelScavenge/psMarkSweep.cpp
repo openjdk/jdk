@@ -98,6 +98,9 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
   // Increment the invocation count
   heap->increment_total_collections(true /* full */);
 
+  // Save information needed to minimize mangling
+  heap->record_gen_tops_before_GC();
+
   // We need to track unique mark sweep invocations as well.
   _total_invocations++;
 
@@ -188,6 +191,12 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
     deallocate_stacks();
 
+    if (ZapUnusedHeapArea) {
+      // Do a complete mangle (top to end) because the usage for
+      // scratch does not maintain a top pointer.
+      young_gen->to_space()->mangle_unused_area_complete();
+    }
+
     eden_empty = young_gen->eden_space()->is_empty();
     if (!eden_empty) {
       eden_empty = absorb_live_data_from_eden(size_policy, young_gen, old_gen);
@@ -198,7 +207,7 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     Universe::update_heap_info_at_gc();
 
     survivors_empty = young_gen->from_space()->is_empty() &&
-      young_gen->to_space()->is_empty();
+                      young_gen->to_space()->is_empty();
     young_gen_empty = eden_empty && survivors_empty;
 
     BarrierSet* bs = heap->barrier_set();
@@ -342,6 +351,11 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
       VerifyAfterGC) {
     old_gen->verify_object_start_array();
     perm_gen->verify_object_start_array();
+  }
+
+  if (ZapUnusedHeapArea) {
+    old_gen->object_space()->check_mangled_unused_area_complete();
+    perm_gen->object_space()->check_mangled_unused_area_complete();
   }
 
   NOT_PRODUCT(ref_processor()->verify_no_references_recorded());

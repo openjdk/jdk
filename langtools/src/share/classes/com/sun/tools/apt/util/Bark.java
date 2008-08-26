@@ -87,7 +87,7 @@ public class Bark extends Log {
         context.put(barkKey, this);
 
         // register additional resource bundle for APT messages.
-        Messages aptMessages = new Messages(Messages.getDefaultBundle());
+        Messages aptMessages = Messages.instance(context);
         aptMessages.add("com.sun.tools.apt.resources.apt");
         aptDiags = new JCDiagnostic.Factory(aptMessages, "apt");
 
