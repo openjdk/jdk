@@ -546,8 +546,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
     public static void addActionsToMap(ActionMap map, Action[] actions) {
         if (map != null && actions != null) {
-            for (int i = 0; i < actions.length; i++) {
-                Action a = actions[i];
+            for (Action a : actions) {
                 String cmd = (String)a.getValue(Action.ACTION_COMMAND_KEY);
                 if (cmd == null) {
                     cmd = (String)a.getValue(Action.NAME);
@@ -715,13 +714,13 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             visibleColumns.toArray(columns);
             columnMap = Arrays.copyOf(columnMap, columns.length);
 
-            List<RowSorter.SortKey> sortKeys =
+            List<? extends RowSorter.SortKey> sortKeys =
                     (rowSorter == null) ? null : rowSorter.getSortKeys();
             fireTableStructureChanged();
             restoreSortKeys(sortKeys);
         }
 
-        private void restoreSortKeys(List<RowSorter.SortKey> sortKeys) {
+        private void restoreSortKeys(List<? extends RowSorter.SortKey> sortKeys) {
             if (sortKeys != null) {
                 // check if preserved sortKeys are valid for this folder
                 for (int i = 0; i < sortKeys.size(); i++) {
@@ -886,7 +885,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         return rowSorter;
     }
 
-    private class DetailsTableRowSorter extends TableRowSorter {
+    private class DetailsTableRowSorter extends TableRowSorter<TableModel> {
         public DetailsTableRowSorter() {
             setModelWrapper(new SorterModelWrapper());
         }
@@ -906,8 +905,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             updateComparators(detailsTableModel.getColumns());
         }
 
-        private class SorterModelWrapper extends ModelWrapper {
-            public Object getModel() {
+        private class SorterModelWrapper extends ModelWrapper<TableModel, Integer> {
+            public TableModel getModel() {
                 return getDetailsTableModel();
             }
 
@@ -923,7 +922,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                 return FilePane.this.getModel().getElementAt(row);
             }
 
-            public Object getIdentifier(int row) {
+            public Integer getIdentifier(int row) {
                 return row;
             }
         }
@@ -1718,9 +1717,9 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     private void updateViewMenu() {
         if (viewMenu != null) {
             Component[] comps = viewMenu.getMenuComponents();
-            for (int i = 0; i < comps.length; i++) {
-                if (comps[i] instanceof JRadioButtonMenuItem) {
-                    JRadioButtonMenuItem mi = (JRadioButtonMenuItem)comps[i];
+            for (Component comp : comps) {
+                if (comp instanceof JRadioButtonMenuItem) {
+                    JRadioButtonMenuItem mi = (JRadioButtonMenuItem) comp;
                     if (((ViewTypeAction)mi.getAction()).viewType == viewType) {
                         mi.setSelected(true);
                     }
