@@ -251,8 +251,14 @@ endif # PLATFORM
 ifeq ($(PLATFORM), windows)
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv WINDOWS
 OTHER_LDLIBS = kernel32.lib user32.lib gdi32.lib winspool.lib \
-               imm32.lib ole32.lib uuid.lib $(JVMLIB) \
-               shell32.lib
+               imm32.lib ole32.lib uuid.lib shell32.lib \
+               comdlg32.lib winmm.lib comctl32.lib delayimp.lib \
+               $(JVMLIB) \
+               /DELAYLOAD:user32.dll /DELAYLOAD:gdi32.dll \
+               /DELAYLOAD:shell32.dll /DELAYLOAD:winmm.dll \
+               /DELAYLOAD:winspool.drv /DELAYLOAD:imm32.dll \
+               /DELAYLOAD:ole32.dll /DELAYLOAD:comdlg32.dll \
+               /DELAYLOAD:comctl32.dll
 
 clean:: awt.clean
 

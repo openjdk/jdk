@@ -58,7 +58,7 @@ class AwtInputTextInfor {
     ~AwtInputTextInfor();
  private:
     /* helper function to return a java string.*/
-    static jstring MakeJavaString(JNIEnv* env, LPWSTR lpStrW, int cStrW);
+    static jstring MakeJavaString(JNIEnv* env, LPWSTR lpStrW);
 
 
     LPARAM m_flags;            /* The message LPARAM. */
