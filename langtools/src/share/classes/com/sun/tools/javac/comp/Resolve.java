@@ -59,6 +59,7 @@ public class Resolve {
     ClassReader reader;
     TreeInfo treeinfo;
     Types types;
+    JCDiagnostic.Factory diags;
     public final boolean boxingEnabled; // = source.allowBoxing();
     public final boolean varargsEnabled; // = source.allowVarargs();
     private final boolean debugResolve;
@@ -92,6 +93,7 @@ public class Resolve {
         reader = ClassReader.instance(context);
         treeinfo = TreeInfo.instance(context);
         types = Types.instance(context);
+        diags = JCDiagnostic.Factory.instance(context);
         Source source = Source.instance(context);
         boxingEnabled = source.allowBoxing();
         varargsEnabled = source.allowVarargs();
@@ -449,7 +451,7 @@ public class Resolve {
         Symbol sym = findField(env, site, name, site.tsym);
         if (sym.kind == VAR) return (VarSymbol)sym;
         else throw new FatalError(
-                 JCDiagnostic.fragment("fatal.err.cant.locate.field",
+                 diags.fragment("fatal.err.cant.locate.field",
                                 name));
     }
 
@@ -1248,7 +1250,7 @@ public class Resolve {
             pos, env, site, name, argtypes, typeargtypes);
         if (sym.kind == MTH) return (MethodSymbol)sym;
         else throw new FatalError(
-                 JCDiagnostic.fragment("fatal.err.cant.locate.meth",
+                 diags.fragment("fatal.err.cant.locate.meth",
                                 name));
     }
 
@@ -1320,7 +1322,7 @@ public class Resolve {
             pos, env, site, argtypes, typeargtypes);
         if (sym.kind == MTH) return (MethodSymbol)sym;
         else throw new FatalError(
-                 JCDiagnostic.fragment("fatal.err.cant.locate.ctor", site));
+                 diags.fragment("fatal.err.cant.locate.ctor", site));
     }
 
     /** Resolve operator.

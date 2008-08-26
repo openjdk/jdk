@@ -23,14 +23,14 @@
 
 /**
  * @test
- * @bug 5045412
+ * @bug 5045412 6627366
  * @compile -Xlint:serial -XDfailcomplete=java.io.Serializable Foo.java
  */
 
 /**
  * @test
- * @bug 5045412
- * @compile/fail/ref=out -XDstdout -XDrawDiagnostics -Xlint:serial -XDfailcomplete=java.io.Serializable Foo.java Bar.java
+ * @bug 5045412 6627366
+ * @compile -Xlint:serial -XDfailcomplete=java.io.Serializable Foo.java Bar.java
  */
 
 class Foo { }
