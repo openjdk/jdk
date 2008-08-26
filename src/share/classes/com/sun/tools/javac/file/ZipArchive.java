@@ -25,18 +25,8 @@
 
 package com.sun.tools.javac.file;
 
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import javax.tools.JavaFileObject;
-
-import com.sun.tools.javac.file.JavacFileManager.Archive;
-import com.sun.tools.javac.util.List;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
@@ -44,13 +34,35 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import javax.tools.JavaFileObject;
+
+import com.sun.tools.javac.file.JavacFileManager.Archive;
+import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
+import com.sun.tools.javac.file.RelativePath.RelativeFile;
+import com.sun.tools.javac.util.List;
 
 public class ZipArchive implements Archive {
 
     public ZipArchive(JavacFileManager fm, ZipFile zdir) throws IOException {
+        this(fm, zdir, true);
+    }
+
+    protected ZipArchive(JavacFileManager fm, ZipFile zdir, boolean initMap) throws IOException {
         this.fileManager = fm;
         this.zdir = zdir;
-        this.map = new HashMap<String,List<String>>();
+        this.map = new HashMap<RelativeDirectory,List<String>>();
+        if (initMap)
+            initMap();
+    }
+
+    protected void initMap() throws IOException {
         for (Enumeration<? extends ZipEntry> e = zdir.entries(); e.hasMoreElements(); ) {
             ZipEntry entry;
             try {
@@ -67,7 +79,7 @@ public class ZipArchive implements Archive {
     void addZipEntry(ZipEntry entry) {
         String name = entry.getName();
         int i = name.lastIndexOf('/');
-        String dirname = name.substring(0, i+1);
+        RelativeDirectory dirname = new RelativeDirectory(name.substring(0, i+1));
         String basename = name.substring(i+1);
         if (basename.length() == 0)
             return;
@@ -78,26 +90,25 @@ public class ZipArchive implements Archive {
         map.put(dirname, list);
     }
 
-    public boolean contains(String name) {
-        int i = name.lastIndexOf('/');
-        String dirname = name.substring(0, i+1);
-        String basename = name.substring(i+1);
+    public boolean contains(RelativePath name) {
+        RelativeDirectory dirname = name.dirname();
+        String basename = name.basename();
         if (basename.length() == 0)
             return false;
         List<String> list = map.get(dirname);
         return (list != null && list.contains(basename));
     }
 
-    public List<String> getFiles(String subdirectory) {
+    public List<String> getFiles(RelativeDirectory subdirectory) {
         return map.get(subdirectory);
     }
 
-    public JavaFileObject getFileObject(String subdirectory, String file) {
-        ZipEntry ze = zdir.getEntry(subdirectory + file);
+    public JavaFileObject getFileObject(RelativeDirectory subdirectory, String file) {
+        ZipEntry ze = new RelativeFile(subdirectory, file).getZipEntry(zdir);
         return new ZipFileObject(this, file, ze);
     }
 
-    public Set<String> getSubdirectories() {
+    public Set<RelativeDirectory> getSubdirectories() {
         return map.keySet();
     }
 
@@ -105,8 +116,12 @@ public class ZipArchive implements Archive {
         zdir.close();
     }
 
+    public String toString() {
+        return "ZipArchive[" + zdir.getName() + "]";
+    }
+
     protected JavacFileManager fileManager;
-    protected final Map<String,List<String>> map;
+    protected final Map<RelativeDirectory,List<String>> map;
     protected final ZipFile zdir;
 
     /**
@@ -118,7 +133,7 @@ public class ZipArchive implements Archive {
         ZipArchive zarch;
         ZipEntry entry;
 
-        public ZipFileObject(ZipArchive zarch, String name, ZipEntry entry) {
+        protected ZipFileObject(ZipArchive zarch, String name, ZipEntry entry) {
             super(zarch.fileManager);
             this.zarch = zarch;
             this.name = name;
@@ -222,11 +237,6 @@ public class ZipArchive implements Archive {
         @Override
         protected String inferBinaryName(Iterable<? extends File> path) {
             String entryName = getZipEntryName();
-            if (zarch instanceof SymbolArchive) {
-                String prefix = ((SymbolArchive) zarch).prefix;
-                if (entryName.startsWith(prefix))
-                    entryName = entryName.substring(prefix.length());
-            }
             return removeExtension(entryName).replace('/', '.');
         }
     }

@@ -27,8 +27,6 @@ package javax.tools;
 
 import javax.tools.JavaFileManager.Location;
 
-import java.io.File;
-import java.util.*;
 import java.util.concurrent.*;
 
 /**
