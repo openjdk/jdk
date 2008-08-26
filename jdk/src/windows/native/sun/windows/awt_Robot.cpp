@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  * have any questions.
  */
 
+#include "awt.h"
 #include "awt_Toolkit.h"
 #include "awt_Component.h"
 #include "awt_Robot.h"
@@ -44,11 +45,11 @@ AwtRobot::~AwtRobot()
 }
 
 #ifndef SPI_GETMOUSESPEED
-#define SPI_GETMOUSESPEED   112
+#define SPI_GETMOUSESPEED 112
 #endif
 
 #ifndef SPI_SETMOUSESPEED
-#define   SPI_SETMOUSESPEED   113
+#define SPI_SETMOUSESPEED 113
 #endif
 
 void AwtRobot::MouseMove( jint x, jint y)
@@ -141,45 +142,7 @@ void AwtRobot::MouseRelease( jint buttonMask )
 }
 
 void AwtRobot::MouseWheel (jint wheelAmt) {
-    if (IS_WIN95 && !IS_WIN98) {
-        // Other win32 platforms do nothing for mouse_event(0), so
-        // do nothing on 95, too.
-        if (wheelAmt == 0) {
-            return;
-        }
-
-        // Win95 doesn't understand MOUSEEVENTF_WHEEL, so use PostEvent
-        POINT curPos;
-        HWND mouseOver = NULL;
-        HWND topLevel = NULL;
-        UINT wheelMsg = NULL;
-
-        if (::GetCursorPos((LPPOINT)&curPos) == 0) {
-            return;
-        }
-        // get hwnd of top-level container
-        mouseOver = ::WindowFromPoint(curPos);
-        DASSERT(mouseOver);
-        topLevel = AwtComponent::GetTopLevelParentForWindow(mouseOver);
-        DASSERT(topLevel);
-
-        if (::ScreenToClient(topLevel, (LPPOINT)&curPos) == 0) {
-            return;
-        }
-        wheelMsg = AwtComponent::Wheel95GetMsg();
-
-        if (wheelMsg == NULL) {
-            return;
-        }
-
-        ::PostMessage(topLevel,
-                      wheelMsg,
-                      wheelAmt * -1 * WHEEL_DELTA,
-                      MAKELPARAM((WORD)curPos.x, (WORD)curPos.y));
-    }
-    else {
-        mouse_event(MOUSEEVENTF_WHEEL, 0, 0, wheelAmt * -1 * WHEEL_DELTA, 0);
-    }
+    mouse_event(MOUSEEVENTF_WHEEL, 0, 0, wheelAmt * -1 * WHEEL_DELTA, 0);
 }
 
 inline jint AwtRobot::WinToJavaPixel(USHORT r, USHORT g, USHORT b)

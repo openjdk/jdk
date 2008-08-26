@@ -23,6 +23,7 @@
  * have any questions.
  */
 
+#include "awt.h"
 #include "sun_java2d_windows_GDIRenderer.h"
 #include "java_awt_geom_PathIterator.h"
 
@@ -31,11 +32,8 @@
 #include "awt_Pen.h"
 #include "awt_Brush.h"
 
-#include "jni.h"
-
 #include "GraphicsPrimitiveMgr.h"
 
-#include <windows.h>
 #include <math.h>                /* for cos(), sin(), etc */
 
 #define MAX_CLAMP_BND (1<<26)
