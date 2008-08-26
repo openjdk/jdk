@@ -71,11 +71,13 @@ class Direct$Type$Buffer$RW$$BO$
         private static Unsafe unsafe = Unsafe.getUnsafe();
 
         private long address;
+        private long size;
         private int capacity;
 
-        private Deallocator(long address, int capacity) {
+        private Deallocator(long address, long size, int capacity) {
             assert (address != 0);
             this.address = address;
+            this.size = size;
             this.capacity = capacity;
         }
 
@@ -86,7 +88,7 @@ class Direct$Type$Buffer$RW$$BO$
             }
             unsafe.freeMemory(address);
             address = 0;
-            Bits.unreserveMemory(capacity);
+            Bits.unreserveMemory(size, capacity);
         }
 
     }
@@ -110,23 +112,25 @@ class Direct$Type$Buffer$RW$$BO$
     Direct$Type$Buffer$RW$(int cap) {                   // package-private
 #if[rw]
         super(-1, 0, cap, cap, false);
-        Bits.reserveMemory(cap);
         int ps = Bits.pageSize();
+        int size = cap + ps;
+        Bits.reserveMemory(size, cap);
+
         long base = 0;
         try {
-            base = unsafe.allocateMemory(cap + ps);
+            base = unsafe.allocateMemory(size);
         } catch (OutOfMemoryError x) {
-            Bits.unreserveMemory(cap);
+            Bits.unreserveMemory(size, cap);
             throw x;
         }
-        unsafe.setMemory(base, cap + ps, (byte) 0);
+        unsafe.setMemory(base, size, (byte) 0);
         if (base % ps != 0) {
             // Round up to page boundary
             address = base + ps - (base & (ps - 1));
         } else {
             address = base;
         }
-        cleaner = Cleaner.create(this, new Deallocator(base, cap));
+        cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
 #else[rw]
         super(cap);
 #end[rw]

@@ -29,6 +29,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.misc.Unsafe;
 import sun.misc.VM;
+import javax.management.ObjectName;
+import javax.management.MalformedObjectNameException;
 
 /**
  * Access to bits, native and otherwise.
@@ -625,13 +627,15 @@ class Bits {                            // package-private
     // direct buffer memory.  This value may be changed during VM
     // initialization if it is launched with "-XX:MaxDirectMemorySize=<size>".
     private static volatile long maxMemory = VM.maxDirectMemory();
-    private static volatile long reservedMemory = 0;
+    private static volatile long reservedMemory;
+    private static volatile long usedMemory;
+    private static volatile long count;
     private static boolean memoryLimitSet = false;
 
     // These methods should be called whenever direct memory is allocated or
     // freed.  They allow the user to control the amount of direct memory
     // which a process may access.  All sizes are specified in bytes.
-    static void reserveMemory(long size) {
+    static void reserveMemory(long size, int cap) {
 
         synchronized (Bits.class) {
             if (!memoryLimitSet && VM.isBooted()) {
@@ -640,6 +644,8 @@ class Bits {                            // package-private
             }
             if (size <= maxMemory - reservedMemory) {
                 reservedMemory += size;
+                usedMemory += cap;
+                count++;
                 return;
             }
         }
@@ -655,17 +661,71 @@ class Bits {                            // package-private
             if (reservedMemory + size > maxMemory)
                 throw new OutOfMemoryError("Direct buffer memory");
             reservedMemory += size;
+            usedMemory += cap;
+            count++;
         }
 
     }
 
-    static synchronized void unreserveMemory(long size) {
+    static synchronized void unreserveMemory(long size, int cap) {
         if (reservedMemory > 0) {
             reservedMemory -= size;
+            usedMemory -= cap;
+            count--;
             assert (reservedMemory > -1);
         }
     }
 
+    // -- Management interface for monitoring of direct buffer usage --
+
+    static {
+        // setup access to this package in SharedSecrets
+        sun.misc.SharedSecrets.setJavaNioAccess(
+            new sun.misc.JavaNioAccess() {
+                @Override
+                public BufferPoolMXBean getDirectBufferPoolMXBean() {
+                    return LazyInitialization.directBufferPoolMXBean;
+                }
+            }
+        );
+    }
+
+    // Lazy initialization of management interface
+    private static class LazyInitialization {
+        static final BufferPoolMXBean directBufferPoolMXBean = directBufferPoolMXBean();
+
+        private static BufferPoolMXBean directBufferPoolMXBean() {
+            final String pool = "direct";
+            final ObjectName obj;
+            try {
+                obj = new ObjectName("java.nio:type=BufferPool,name=" + pool);
+            } catch (MalformedObjectNameException x) {
+                throw new AssertionError(x);
+            }
+            return new BufferPoolMXBean() {
+                @Override
+                public ObjectName getObjectName() {
+                    return obj;
+                }
+                @Override
+                public String getName() {
+                    return pool;
+                }
+                @Override
+                public long getCount() {
+                    return Bits.count;
+                }
+                @Override
+                public long getTotalCapacity() {
+                    return Bits.usedMemory;
+                }
+                @Override
+                public long getMemoryUsed() {
+                    return Bits.reservedMemory;
+                }
+            };
+        }
+    }
 
     // -- Bulk get/put acceleration --
 
