@@ -1,12 +1,10 @@
 /*
- * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,7 +21,24 @@
  * have any questions.
  */
 
-#include <stddef.h> /* For uintprt_t */
-#include <stdlib.h>
+/*
+ * @test
+ * @bug 6731685
+ * @summary CertificateFactory.generateCertificates throws IOException on PKCS7 cert chain
+ */
 
-#define MAXPATHLEN  _MAX_PATH
+import java.io.*;
+import sun.security.util.*;
+
+public class Indefinite {
+
+    public static void main(String[] args) throws Exception {
+        byte[] input = {
+            // An OCTET-STRING in 2 parts
+            4, (byte)0x80, 4, 2, 'a', 'b', 4, 2, 'c', 'd', 0, 0,
+            // Garbage follows, may be falsely recognized as EOC
+            0, 0, 0, 0
+        };
+        new DerValue(new ByteArrayInputStream(input));
+    }
+}
