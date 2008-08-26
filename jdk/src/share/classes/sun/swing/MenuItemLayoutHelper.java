@@ -83,6 +83,9 @@ public class MenuItemLayoutHelper {
     private int afterCheckIconGap;
     private int minTextOffset;
 
+    private int leftTextExtraWidth;
+    private int rightTextExtraWidth;
+
     private Rectangle viewRect;
 
     private RectSize iconSize;
@@ -143,12 +146,36 @@ public class MenuItemLayoutHelper {
         this.checkSize = new RectSize();
         this.arrowSize = new RectSize();
         this.labelSize = new RectSize();
+        calcExtraWidths();
         calcWidthsAndHeights();
         setOriginalWidths();
         calcMaxWidths();
 
         this.leadingGap = getLeadingGap(propertyPrefix);
         calcMaxTextOffset(viewRect);
+    }
+
+    private void calcExtraWidths() {
+        leftTextExtraWidth = getLeftExtraWidth(text);
+        rightTextExtraWidth = getRightExtraWidth(text);
+    }
+
+    private int getLeftExtraWidth(String str) {
+        int lsb = SwingUtilities2.getLeftSideBearing(mi, fm, str);
+        if (lsb < 0) {
+            return -lsb;
+        } else {
+            return 0;
+        }
+    }
+
+    private int getRightExtraWidth(String str) {
+        int rsb = SwingUtilities2.getRightSideBearing(mi, fm, str);
+        if (rsb > 0) {
+            return rsb;
+        } else {
+            return 0;
+        }
     }
 
     private void setOriginalWidths() {
@@ -286,6 +313,7 @@ public class MenuItemLayoutHelper {
                     verticalAlignment, horizontalAlignment,
                     verticalTextPosition, horizontalTextPosition,
                     viewRect, iconRect, textRect, gap);
+            textRect.width += leftTextExtraWidth + rightTextExtraWidth;
             Rectangle labelRect = iconRect.union(textRect);
             labelSize.height = labelRect.height;
             labelSize.width = labelRect.width;
@@ -727,7 +755,7 @@ public class MenuItemLayoutHelper {
         }
     }
 
-    /**
+   /**
      * Sets Y coordinates of text and icon
      * taking into account the vertical alignment
      */
@@ -1087,6 +1115,14 @@ public class MenuItemLayoutHelper {
 
     protected void setLabelSize(RectSize labelSize) {
         this.labelSize = labelSize;
+    }
+
+    public int getLeftTextExtraWidth() {
+        return leftTextExtraWidth;
+    }
+
+    public int getRightTextExtraWidth() {
+        return rightTextExtraWidth;
     }
 
     /**

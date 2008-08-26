@@ -136,7 +136,7 @@ class SynthMenuItemLayoutHelper extends MenuItemLayoutHelper {
 
         // accRect
         if (!getAccText().equals("")) {
-            getAccSize().setWidth(accGu.computeStringWidth(getAccContext(),
+             getAccSize().setWidth(accGu.computeStringWidth(getAccContext(),
                     getAccFontMetrics().getFont(), getAccFontMetrics(),
                     getAccText()));
             getAccSize().setHeight(getAccFontMetrics().getHeight());
@@ -195,6 +195,7 @@ class SynthMenuItemLayoutHelper extends MenuItemLayoutHelper {
                     getHorizontalAlignment(), getVerticalAlignment(),
                     getHorizontalTextPosition(), getVerticalTextPosition(),
                     getViewRect(), iconRect, textRect, getGap());
+            textRect.width += getLeftTextExtraWidth() + getRightTextExtraWidth();
             Rectangle labelRect = iconRect.union(textRect);
             getLabelSize().setHeight(labelRect.height);
             getLabelSize().setWidth(labelRect.width);
