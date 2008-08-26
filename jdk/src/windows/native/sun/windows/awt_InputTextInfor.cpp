@@ -131,7 +131,7 @@ AwtInputTextInfor::GetContextData(HIMC hIMC, const LPARAM flags) {
 
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     if (m_cStrW > 0) {
-        m_jtext = MakeJavaString(env, m_lpStrW);
+        m_jtext = MakeJavaString(env, m_lpStrW, m_cStrW);
     }
 
     // Merge the string if necessary
@@ -182,12 +182,12 @@ AwtInputTextInfor::~AwtInputTextInfor() {
 }
 
 
-jstring AwtInputTextInfor::MakeJavaString(JNIEnv* env, LPWSTR lpStrW) {
+jstring AwtInputTextInfor::MakeJavaString(JNIEnv* env, LPWSTR lpStrW, int cStrW) {
 
-    if (env == NULL || lpStrW == NULL) {
+    if (env == NULL || lpStrW == NULL || cStrW == 0) {
         return NULL;
     } else {
-        return JNU_NewStringPlatform(env, lpStrW);
+        return env->NewString(reinterpret_cast<jchar*>(lpStrW), cStrW);
     }
 }
 
@@ -246,14 +246,14 @@ int AwtInputTextInfor::GetClauseInfor(int*& lpBndClauseW, jstring*& lpReadingCla
                 }
 
                 ::LCMapString(lcJPN, LCMAP_FULLWIDTH, lpHWStrW, cHWStrW, lpFWStrW, cFWStrW);
-                readingClauseW[cls] = MakeJavaString(env, lpFWStrW);
+                readingClauseW[cls] = MakeJavaString(env, lpFWStrW, cFWStrW);
                 delete [] lpFWStrW;
             } else {
-                readingClauseW[cls] = MakeJavaString(env, lpHWStrW);
+                readingClauseW[cls] = MakeJavaString(env, lpHWStrW, cHWStrW);
             }
         }
         else {
-            readingClauseW[cls] = MakeJavaString(env, (LPWSTR)NULL);
+            readingClauseW[cls] = NULL;
         }
     }
 
