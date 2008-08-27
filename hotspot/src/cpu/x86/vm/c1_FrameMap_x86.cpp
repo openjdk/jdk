@@ -39,10 +39,15 @@ LIR_Opr FrameMap::map_to_opr(BasicType type, VMRegPair* reg, bool) {
     opr = LIR_OprFact::address(new LIR_Address(rsp_opr, st_off, type));
   } else if (r_1->is_Register()) {
     Register reg = r_1->as_Register();
-    if (r_2->is_Register()) {
+    if (r_2->is_Register() && (type == T_LONG || type == T_DOUBLE)) {
       Register reg2 = r_2->as_Register();
+#ifdef _LP64
+      assert(reg2 == reg, "must be same register");
+      opr = as_long_opr(reg);
+#else
       opr = as_long_opr(reg2, reg);
-    } else if (type == T_OBJECT) {
+#endif // _LP64
+    } else if (type == T_OBJECT || type == T_ARRAY) {
       opr = as_oop_opr(reg);
     } else {
       opr = as_opr(reg);
@@ -88,18 +93,39 @@ LIR_Opr FrameMap::rax_oop_opr;
 LIR_Opr FrameMap::rdx_oop_opr;
 LIR_Opr FrameMap::rcx_oop_opr;
 
-LIR_Opr FrameMap::rax_rdx_long_opr;
-LIR_Opr FrameMap::rbx_rcx_long_opr;
+LIR_Opr FrameMap::long0_opr;
+LIR_Opr FrameMap::long1_opr;
 LIR_Opr FrameMap::fpu0_float_opr;
 LIR_Opr FrameMap::fpu0_double_opr;
 LIR_Opr FrameMap::xmm0_float_opr;
 LIR_Opr FrameMap::xmm0_double_opr;
 
+#ifdef _LP64
+
+LIR_Opr  FrameMap::r8_opr;
+LIR_Opr  FrameMap::r9_opr;
+LIR_Opr FrameMap::r10_opr;
+LIR_Opr FrameMap::r11_opr;
+LIR_Opr FrameMap::r12_opr;
+LIR_Opr FrameMap::r13_opr;
+LIR_Opr FrameMap::r14_opr;
+LIR_Opr FrameMap::r15_opr;
+
+// r10 and r15 can never contain oops since they aren't available to
+// the allocator
+LIR_Opr  FrameMap::r8_oop_opr;
+LIR_Opr  FrameMap::r9_oop_opr;
+LIR_Opr FrameMap::r11_oop_opr;
+LIR_Opr FrameMap::r12_oop_opr;
+LIR_Opr FrameMap::r13_oop_opr;
+LIR_Opr FrameMap::r14_oop_opr;
+#endif // _LP64
+
 LIR_Opr FrameMap::_caller_save_cpu_regs[] = { 0, };
 LIR_Opr FrameMap::_caller_save_fpu_regs[] = { 0, };
 LIR_Opr FrameMap::_caller_save_xmm_regs[] = { 0, };
 
-XMMRegister FrameMap::_xmm_regs [8] = { 0, };
+XMMRegister FrameMap::_xmm_regs [] = { 0, };
 
 XMMRegister FrameMap::nr2xmmreg(int rnr) {
   assert(_init_done, "tables not initialized");
@@ -113,18 +139,39 @@ XMMRegister FrameMap::nr2xmmreg(int rnr) {
 void FrameMap::init() {
   if (_init_done) return;
 
-  assert(nof_cpu_regs == 8, "wrong number of CPU registers");
-  map_register(0, rsi);  rsi_opr = LIR_OprFact::single_cpu(0);  rsi_oop_opr = LIR_OprFact::single_cpu_oop(0);
-  map_register(1, rdi);  rdi_opr = LIR_OprFact::single_cpu(1);  rdi_oop_opr = LIR_OprFact::single_cpu_oop(1);
-  map_register(2, rbx);  rbx_opr = LIR_OprFact::single_cpu(2);  rbx_oop_opr = LIR_OprFact::single_cpu_oop(2);
-  map_register(3, rax);  rax_opr = LIR_OprFact::single_cpu(3);  rax_oop_opr = LIR_OprFact::single_cpu_oop(3);
-  map_register(4, rdx);  rdx_opr = LIR_OprFact::single_cpu(4);  rdx_oop_opr = LIR_OprFact::single_cpu_oop(4);
-  map_register(5, rcx);  rcx_opr = LIR_OprFact::single_cpu(5);  rcx_oop_opr = LIR_OprFact::single_cpu_oop(5);
-  map_register(6, rsp);  rsp_opr = LIR_OprFact::single_cpu(6);
-  map_register(7, rbp);  rbp_opr = LIR_OprFact::single_cpu(7);
+  assert(nof_cpu_regs == LP64_ONLY(16) NOT_LP64(8), "wrong number of CPU registers");
+  map_register(0, rsi);  rsi_opr = LIR_OprFact::single_cpu(0);
+  map_register(1, rdi);  rdi_opr = LIR_OprFact::single_cpu(1);
+  map_register(2, rbx);  rbx_opr = LIR_OprFact::single_cpu(2);
+  map_register(3, rax);  rax_opr = LIR_OprFact::single_cpu(3);
+  map_register(4, rdx);  rdx_opr = LIR_OprFact::single_cpu(4);
+  map_register(5, rcx);  rcx_opr = LIR_OprFact::single_cpu(5);
 
-  rax_rdx_long_opr = LIR_OprFact::double_cpu(3 /*eax*/, 4 /*edx*/);
-  rbx_rcx_long_opr = LIR_OprFact::double_cpu(2 /*ebx*/, 5 /*ecx*/);
+#ifndef _LP64
+  // The unallocatable registers are at the end
+  map_register(6, rsp);
+  map_register(7, rbp);
+#else
+  map_register( 6, r8);    r8_opr = LIR_OprFact::single_cpu(6);
+  map_register( 7, r9);    r9_opr = LIR_OprFact::single_cpu(7);
+  map_register( 8, r11);  r11_opr = LIR_OprFact::single_cpu(8);
+  map_register( 9, r12);  r12_opr = LIR_OprFact::single_cpu(9);
+  map_register(10, r13);  r13_opr = LIR_OprFact::single_cpu(10);
+  map_register(11, r14);  r14_opr = LIR_OprFact::single_cpu(11);
+  // The unallocatable registers are at the end
+  map_register(12, r10);  r10_opr = LIR_OprFact::single_cpu(12);
+  map_register(13, r15);  r15_opr = LIR_OprFact::single_cpu(13);
+  map_register(14, rsp);
+  map_register(15, rbp);
+#endif // _LP64
+
+#ifdef _LP64
+  long0_opr = LIR_OprFact::double_cpu(3 /*eax*/, 3 /*eax*/);
+  long1_opr = LIR_OprFact::double_cpu(2 /*ebx*/, 2 /*ebx*/);
+#else
+  long0_opr = LIR_OprFact::double_cpu(3 /*eax*/, 4 /*edx*/);
+  long1_opr = LIR_OprFact::double_cpu(2 /*ebx*/, 5 /*ecx*/);
+#endif // _LP64
   fpu0_float_opr   = LIR_OprFact::single_fpu(0);
   fpu0_double_opr  = LIR_OprFact::double_fpu(0);
   xmm0_float_opr   = LIR_OprFact::single_xmm(0);
@@ -137,6 +184,15 @@ void FrameMap::init() {
   _caller_save_cpu_regs[4] = rdx_opr;
   _caller_save_cpu_regs[5] = rcx_opr;
 
+#ifdef _LP64
+  _caller_save_cpu_regs[6]  = r8_opr;
+  _caller_save_cpu_regs[7]  = r9_opr;
+  _caller_save_cpu_regs[8]  = r11_opr;
+  _caller_save_cpu_regs[9]  = r12_opr;
+  _caller_save_cpu_regs[10] = r13_opr;
+  _caller_save_cpu_regs[11] = r14_opr;
+#endif // _LP64
+
 
   _xmm_regs[0] = xmm0;
   _xmm_regs[1] = xmm1;
@@ -147,18 +203,51 @@ void FrameMap::init() {
   _xmm_regs[6] = xmm6;
   _xmm_regs[7] = xmm7;
 
+#ifdef _LP64
+  _xmm_regs[8]   = xmm8;
+  _xmm_regs[9]   = xmm9;
+  _xmm_regs[10]  = xmm10;
+  _xmm_regs[11]  = xmm11;
+  _xmm_regs[12]  = xmm12;
+  _xmm_regs[13]  = xmm13;
+  _xmm_regs[14]  = xmm14;
+  _xmm_regs[15]  = xmm15;
+#endif // _LP64
+
   for (int i = 0; i < 8; i++) {
     _caller_save_fpu_regs[i] = LIR_OprFact::single_fpu(i);
+  }
+
+  for (int i = 0; i < nof_caller_save_xmm_regs ; i++) {
     _caller_save_xmm_regs[i] = LIR_OprFact::single_xmm(i);
   }
 
   _init_done = true;
 
+  rsi_oop_opr = as_oop_opr(rsi);
+  rdi_oop_opr = as_oop_opr(rdi);
+  rbx_oop_opr = as_oop_opr(rbx);
+  rax_oop_opr = as_oop_opr(rax);
+  rdx_oop_opr = as_oop_opr(rdx);
+  rcx_oop_opr = as_oop_opr(rcx);
+
+  rsp_opr = as_pointer_opr(rsp);
+  rbp_opr = as_pointer_opr(rbp);
+
+#ifdef _LP64
+  r8_oop_opr = as_oop_opr(r8);
+  r9_oop_opr = as_oop_opr(r9);
+  r11_oop_opr = as_oop_opr(r11);
+  r12_oop_opr = as_oop_opr(r12);
+  r13_oop_opr = as_oop_opr(r13);
+  r14_oop_opr = as_oop_opr(r14);
+#endif // _LP64
+
   VMRegPair regs;
   BasicType sig_bt = T_OBJECT;
   SharedRuntime::java_calling_convention(&sig_bt, &regs, 1, true);
   receiver_opr = as_oop_opr(regs.first()->as_Register());
-  assert(receiver_opr == rcx_oop_opr, "rcvr ought to be rcx");
+
 }
 
 

@@ -235,16 +235,15 @@ class NativeMovConstRegPatching: public NativeMovConstReg {
   }
 };
 
-#ifndef AMD64
-
 // An interface for accessing/manipulating native moves of the form:
-//      mov[b/w/l] [reg + offset], reg   (instruction_code_reg2mem)
-//      mov[b/w/l] reg, [reg+offset]     (instruction_code_mem2reg
-//      mov[s/z]x[w/b] [reg + offset], reg
+//      mov[b/w/l/q] [reg + offset], reg   (instruction_code_reg2mem)
+//      mov[b/w/l/q] reg, [reg+offset]     (instruction_code_mem2reg
+//      mov[s/z]x[w/b/q] [reg + offset], reg
 //      fld_s  [reg+offset]
 //      fld_d  [reg+offset]
 //      fstp_s [reg + offset]
 //      fstp_d [reg + offset]
+//      mov_literal64  scratch,<pointer> ; mov[b/w/l/q] 0(scratch),reg | mov[b/w/l/q] reg,0(scratch)
 //
 // Warning: These routines must be able to handle any instruction sequences
 // that are generated as a result of the load/store byte,word,long
@@ -255,15 +254,18 @@ class NativeMovConstRegPatching: public NativeMovConstReg {
 class NativeMovRegMem: public NativeInstruction {
  public:
   enum Intel_specific_constants {
+    instruction_prefix_wide_lo          = Assembler::REX,
+    instruction_prefix_wide_hi          = Assembler::REX_WRXB,
     instruction_code_xor                = 0x33,
     instruction_extended_prefix         = 0x0F,
+    instruction_code_mem2reg_movslq     = 0x63,
     instruction_code_mem2reg_movzxb     = 0xB6,
     instruction_code_mem2reg_movsxb     = 0xBE,
     instruction_code_mem2reg_movzxw     = 0xB7,
     instruction_code_mem2reg_movsxw     = 0xBF,
     instruction_operandsize_prefix      = 0x66,
-    instruction_code_reg2meml           = 0x89,
-    instruction_code_mem2regl           = 0x8b,
+    instruction_code_reg2mem            = 0x89,
+    instruction_code_mem2reg            = 0x8b,
     instruction_code_reg2memb           = 0x88,
     instruction_code_mem2regb           = 0x8a,
     instruction_code_float_s            = 0xd9,
@@ -282,73 +284,18 @@ class NativeMovRegMem: public NativeInstruction {
     next_instruction_offset             = 4
   };
 
-  address instruction_address() const {
-    if (*addr_at(instruction_offset)   == instruction_operandsize_prefix &&
-        *addr_at(instruction_offset+1) != instruction_code_xmm_code) {
-      return addr_at(instruction_offset+1); // Not SSE instructions
-    }
-    else if (*addr_at(instruction_offset) == instruction_extended_prefix) {
-      return addr_at(instruction_offset+1);
-    }
-    else if (*addr_at(instruction_offset) == instruction_code_xor) {
-      return addr_at(instruction_offset+2);
-    }
-    else return addr_at(instruction_offset);
-  }
+  // helper
+  int instruction_start() const;
 
-  address next_instruction_address() const {
-    switch (*addr_at(instruction_offset)) {
-    case instruction_operandsize_prefix:
-      if (*addr_at(instruction_offset+1) == instruction_code_xmm_code)
-        return instruction_address() + instruction_size; // SSE instructions
-    case instruction_extended_prefix:
-      return instruction_address() + instruction_size + 1;
-    case instruction_code_reg2meml:
-    case instruction_code_mem2regl:
-    case instruction_code_reg2memb:
-    case instruction_code_mem2regb:
-    case instruction_code_xor:
-      return instruction_address() + instruction_size + 2;
-    default:
-      return instruction_address() + instruction_size;
-    }
-  }
-  int   offset() const{
-    if (*addr_at(instruction_offset)   == instruction_operandsize_prefix &&
-        *addr_at(instruction_offset+1) != instruction_code_xmm_code) {
-      return int_at(data_offset+1); // Not SSE instructions
-    }
-    else if (*addr_at(instruction_offset) == instruction_extended_prefix) {
-      return int_at(data_offset+1);
-    }
-    else if (*addr_at(instruction_offset) == instruction_code_xor ||
-             *addr_at(instruction_offset) == instruction_code_xmm_ss_prefix ||
-             *addr_at(instruction_offset) == instruction_code_xmm_sd_prefix ||
-             *addr_at(instruction_offset) == instruction_operandsize_prefix) {
-      return int_at(data_offset+2);
-    }
-    else return int_at(data_offset);
-  }
+  address instruction_address() const;
 
-  void  set_offset(int x) {
-    if (*addr_at(instruction_offset)   == instruction_operandsize_prefix &&
-        *addr_at(instruction_offset+1) != instruction_code_xmm_code) {
-      set_int_at(data_offset+1, x); // Not SSE instructions
-    }
-    else if (*addr_at(instruction_offset) == instruction_extended_prefix) {
-      set_int_at(data_offset+1, x);
-    }
-    else if (*addr_at(instruction_offset) == instruction_code_xor ||
-             *addr_at(instruction_offset) == instruction_code_xmm_ss_prefix ||
-             *addr_at(instruction_offset) == instruction_code_xmm_sd_prefix ||
-             *addr_at(instruction_offset) == instruction_operandsize_prefix) {
-      set_int_at(data_offset+2, x);
-    }
-    else set_int_at(data_offset, x);
-  }
+  address next_instruction_address() const;
+
+  int   offset() const;
+
+  void  set_offset(int x);
 
   void  add_offset_in_bytes(int add_offset)     { set_offset ( ( offset() + add_offset ) ); }
-  void  copy_instruction_to(address new_instruction_address);
 
   void verify();
   void print ();
@@ -385,9 +332,19 @@ class NativeMovRegMemPatching: public NativeMovRegMem {
 //        leal reg, [reg + offset]
 
 class NativeLoadAddress: public NativeMovRegMem {
+#ifdef AMD64
+  static const bool has_rex = true;
+  static const int rex_size = 1;
+#else
+  static const bool has_rex = false;
+  static const int rex_size = 0;
+#endif // AMD64
  public:
   enum Intel_specific_constants {
-    instruction_code            = 0x8D
+    instruction_prefix_wide             = Assembler::REX_W,
+    instruction_prefix_wide_extended    = Assembler::REX_WB,
+    lea_instruction_code                = 0x8D,
+    mov64_instruction_code              = 0xB8
   };
 
   void verify();
@@ -406,8 +363,6 @@ class NativeLoadAddress: public NativeMovRegMem {
   }
 };
 
-#endif // AMD64
-
 // jump rel32off
 
 class NativeJump: public NativeInstruction {
@@ -424,22 +379,20 @@ class NativeJump: public NativeInstruction {
   address next_instruction_address() const  { return addr_at(next_instruction_offset); }
   address jump_destination() const          {
      address dest = (int_at(data_offset)+next_instruction_address());
-#ifdef AMD64 // What is this about?
+     // 32bit used to encode unresolved jmp as jmp -1
+     // 64bit can't produce this so it used jump to self.
+     // Now 32bit and 64bit use jump to self as the unresolved address
+     // which the inline cache code (and relocs) know about
+
      // return -1 if jump to self
     dest = (dest == (address) this) ? (address) -1 : dest;
-#endif // AMD64
     return dest;
   }
 
   void  set_jump_destination(address dest)  {
     intptr_t val = dest - next_instruction_address();
 #ifdef AMD64
-    if (dest == (address) -1) { // can't encode jump to -1
-      val = -5; // jump to self
-    } else {
-      assert((labs(val)  & 0xFFFFFFFF00000000) == 0,
-             "must be 32bit offset");
-    }
+    assert((labs(val)  & 0xFFFFFFFF00000000) == 0 || dest == (address)-1, "must be 32bit offset or -1");
 #endif // AMD64
     set_int_at(data_offset, (jint)val);
   }
@@ -568,11 +521,15 @@ inline bool NativeInstruction::is_cond_jump()    { return (int_at(0) & 0xF0FF) =
                                                           (ubyte_at(0) & 0xF0) == 0x70;  /* short jump */ }
 inline bool NativeInstruction::is_safepoint_poll() {
 #ifdef AMD64
-  return ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
-         ubyte_at(1) == 0x05 && // 00 rax 101
-         ((intptr_t) addr_at(6)) + int_at(2) == (intptr_t) os::get_polling_page();
+  if ( ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
+       ubyte_at(1) == 0x05 ) { // 00 rax 101
+     address fault = addr_at(6) + int_at(2);
+     return os::is_poll_address(fault);
+  } else {
+    return false;
+  }
 #else
-  return ( ubyte_at(0) == NativeMovRegMem::instruction_code_mem2regl ||
+  return ( ubyte_at(0) == NativeMovRegMem::instruction_code_mem2reg ||
            ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl ) &&
            (ubyte_at(1)&0xC7) == 0x05 && /* Mod R/M == disp32 */
            (os::is_poll_address((address)int_at(2)));
