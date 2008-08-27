@@ -18,6 +18,8 @@ SUNWprivate_1.1 {
 		Java_sun_nio_ch_EPollArrayWrapper_fdLimit;
 		Java_sun_nio_ch_EPollArrayWrapper_init;
 		Java_sun_nio_ch_EPollArrayWrapper_interrupt;
+		Java_sun_nio_ch_EPollArrayWrapper_offsetofData;
+		Java_sun_nio_ch_EPollArrayWrapper_sizeofEPollEvent;
                 Java_sun_nio_ch_FileChannelImpl_close0;
                 Java_sun_nio_ch_FileChannelImpl_force0;
                 Java_sun_nio_ch_FileChannelImpl_initIDs;
