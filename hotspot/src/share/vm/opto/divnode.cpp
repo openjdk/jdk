@@ -402,6 +402,8 @@ Node *DivINode::Identity( PhaseTransform *phase ) {
 // Divides can be changed to multiplies and/or shifts
 Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
+  // Don't bother trying to transform a dead node
+  if( in(0) && in(0)->is_top() )  return NULL;
 
   const Type *t = phase->type( in(2) );
   if( t == TypeInt::ONE )       // Identity?
@@ -499,6 +501,8 @@ Node *DivLNode::Identity( PhaseTransform *phase ) {
 // Dividing by a power of 2 is a shift.
 Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
+  // Don't bother trying to transform a dead node
+  if( in(0) && in(0)->is_top() )  return NULL;
 
   const Type *t = phase->type( in(2) );
   if( t == TypeLong::ONE )      // Identity?
@@ -640,6 +644,8 @@ Node *DivFNode::Identity( PhaseTransform *phase ) {
 //------------------------------Idealize---------------------------------------
 Node *DivFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
+  // Don't bother trying to transform a dead node
+  if( in(0) && in(0)->is_top() )  return NULL;
 
   const Type *t2 = phase->type( in(2) );
   if( t2 == TypeF::ONE )         // Identity?
@@ -725,6 +731,8 @@ Node *DivDNode::Identity( PhaseTransform *phase ) {
 //------------------------------Idealize---------------------------------------
 Node *DivDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
+  // Don't bother trying to transform a dead node
+  if( in(0) && in(0)->is_top() )  return NULL;
 
   const Type *t2 = phase->type( in(2) );
   if( t2 == TypeD::ONE )         // Identity?
@@ -760,7 +768,9 @@ Node *DivDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //------------------------------Idealize---------------------------------------
 Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for dead control input
-  if( remove_dead_region(phase, can_reshape) )  return this;
+  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
+  // Don't bother trying to transform a dead node
+  if( in(0) && in(0)->is_top() )  return NULL;
 
   // Get the modulus
   const Type *t = phase->type( in(2) );
@@ -929,7 +939,9 @@ const Type *ModINode::Value( PhaseTransform *phase ) const {
 //------------------------------Idealize---------------------------------------
 Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for dead control input
-  if( remove_dead_region(phase, can_reshape) )  return this;
+  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
+  // Don't bother trying to transform a dead node
+  if( in(0) && in(0)->is_top() )  return NULL;
 
   // Get the modulus
   const Type *t = phase->type( in(2) );
