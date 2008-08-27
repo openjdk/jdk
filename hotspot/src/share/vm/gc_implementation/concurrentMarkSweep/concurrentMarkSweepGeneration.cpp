@@ -3650,6 +3650,7 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
   CompactibleFreeListSpace*  _cms_space;
   CompactibleFreeListSpace* _perm_space;
   HeapWord*     _global_finger;
+  HeapWord*     _restart_addr;
 
   //  Exposed here for yielding support
   Mutex* const _bit_map_lock;
@@ -3680,7 +3681,7 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
     _term.set_task(this);
     assert(_cms_space->bottom() < _perm_space->bottom(),
            "Finger incorrectly initialized below");
-    _global_finger = _cms_space->bottom();
+    _restart_addr = _global_finger = _cms_space->bottom();
   }
 
 
@@ -3698,6 +3699,10 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
   bool result() { return _result; }
 
   void reset(HeapWord* ra) {
+    assert(_global_finger >= _cms_space->end(),  "Postcondition of ::work(i)");
+    assert(_global_finger >= _perm_space->end(), "Postcondition of ::work(i)");
+    assert(ra             <  _perm_space->end(), "ra too large");
+    _restart_addr = _global_finger = ra;
     _term.reset_for_reuse();
   }
 
@@ -3842,16 +3847,24 @@ void CMSConcMarkingTask::do_scan_and_mark(int i, CompactibleFreeListSpace* sp) {
   int n_tasks = pst->n_tasks();
   // We allow that there may be no tasks to do here because
   // we are restarting after a stack overflow.
-  assert(pst->valid() || n_tasks == 0, "Uninitializd use?");
+  assert(pst->valid() || n_tasks == 0, "Uninitialized use?");
   int nth_task = 0;
 
-  HeapWord* start = sp->bottom();
+  HeapWord* aligned_start = sp->bottom();
+  if (sp->used_region().contains(_restart_addr)) {
+    // Align down to a card boundary for the start of 0th task
+    // for this space.
+    aligned_start =
+      (HeapWord*)align_size_down((uintptr_t)_restart_addr,
+                                 CardTableModRefBS::card_size);
+  }
+
   size_t chunk_size = sp->marking_task_size();
   while (!pst->is_task_claimed(/* reference */ nth_task)) {
     // Having claimed the nth task in this space,
     // compute the chunk that it corresponds to:
-    MemRegion span = MemRegion(start + nth_task*chunk_size,
-                               start + (nth_task+1)*chunk_size);
+    MemRegion span = MemRegion(aligned_start + nth_task*chunk_size,
+                               aligned_start + (nth_task+1)*chunk_size);
     // Try and bump the global finger via a CAS;
     // note that we need to do the global finger bump
     // _before_ taking the intersection below, because
@@ -3866,26 +3879,40 @@ void CMSConcMarkingTask::do_scan_and_mark(int i, CompactibleFreeListSpace* sp) {
     // beyond the "top" address of the space.
     span = span.intersection(sp->used_region());
     if (!span.is_empty()) {  // Non-null task
-      // We want to skip the first object because
-      // the protocol is to scan any object in its entirety
-      // that _starts_ in this span; a fortiori, any
-      // object starting in an earlier span is scanned
-      // as part of an earlier claimed task.
-      // Below we use the "careful" version of block_start
-      // so we do not try to navigate uninitialized objects.
-      HeapWord* prev_obj = sp->block_start_careful(span.start());
-      // Below we use a variant of block_size that uses the
-      // Printezis bits to avoid waiting for allocated
-      // objects to become initialized/parsable.
-      while (prev_obj < span.start()) {
-        size_t sz = sp->block_size_no_stall(prev_obj, _collector);
-        if (sz > 0) {
-          prev_obj += sz;
+      HeapWord* prev_obj;
+      assert(!span.contains(_restart_addr) || nth_task == 0,
+             "Inconsistency");
+      if (nth_task == 0) {
+        // For the 0th task, we'll not need to compute a block_start.
+        if (span.contains(_restart_addr)) {
+          // In the case of a restart because of stack overflow,
+          // we might additionally skip a chunk prefix.
+          prev_obj = _restart_addr;
         } else {
-          // In this case we may end up doing a bit of redundant
-          // scanning, but that appears unavoidable, short of
-          // locking the free list locks; see bug 6324141.
-          break;
+          prev_obj = span.start();
+        }
+      } else {
+        // We want to skip the first object because
+        // the protocol is to scan any object in its entirety
+        // that _starts_ in this span; a fortiori, any
+        // object starting in an earlier span is scanned
+        // as part of an earlier claimed task.
+        // Below we use the "careful" version of block_start
+        // so we do not try to navigate uninitialized objects.
+        prev_obj = sp->block_start_careful(span.start());
+        // Below we use a variant of block_size that uses the
+        // Printezis bits to avoid waiting for allocated
+        // objects to become initialized/parsable.
+        while (prev_obj < span.start()) {
+          size_t sz = sp->block_size_no_stall(prev_obj, _collector);
+          if (sz > 0) {
+            prev_obj += sz;
+          } else {
+            // In this case we may end up doing a bit of redundant
+            // scanning, but that appears unavoidable, short of
+            // locking the free list locks; see bug 6324141.
+            break;
+          }
         }
       }
       if (prev_obj < span.end()) {
@@ -3938,12 +3965,14 @@ class Par_ConcMarkingClosure: public OopClosure {
   void handle_stack_overflow(HeapWord* lost);
 };
 
-// Grey object rescan during work stealing phase --
-// the salient assumption here is that stolen oops must
-// always be initialized, so we do not need to check for
-// uninitialized objects before scanning here.
+// Grey object scanning during work stealing phase --
+// the salient assumption here is that any references
+// that are in these stolen objects being scanned must
+// already have been initialized (else they would not have
+// been published), so we do not need to check for
+// uninitialized objects before pushing here.
 void Par_ConcMarkingClosure::do_oop(oop obj) {
-  assert(obj->is_oop_or_null(), "expected an oop or NULL");
+  assert(obj->is_oop_or_null(true), "expected an oop or NULL");
   HeapWord* addr = (HeapWord*)obj;
   // Check if oop points into the CMS generation
   // and is not marked
@@ -4001,7 +4030,7 @@ void Par_ConcMarkingClosure::trim_queue(size_t max) {
 // in CMSCollector's _restart_address.
 void Par_ConcMarkingClosure::handle_stack_overflow(HeapWord* lost) {
   // We need to do this under a mutex to prevent other
-  // workers from interfering with the expansion below.
+  // workers from interfering with the work done below.
   MutexLockerEx ml(_overflow_stack->par_lock(),
                    Mutex::_no_safepoint_check_flag);
   // Remember the least grey address discarded
@@ -6554,7 +6583,7 @@ void Par_MarkRefsIntoAndScanClosure::do_oop(oop obj) {
   if (obj != NULL) {
     // Ignore mark word because this could be an already marked oop
     // that may be chained at the end of the overflow list.
-    assert(obj->is_oop(), "expected an oop");
+    assert(obj->is_oop(true), "expected an oop");
     HeapWord* addr = (HeapWord*)obj;
     if (_span.contains(addr) &&
         !_bit_map->isMarked(addr)) {
@@ -7289,6 +7318,8 @@ Par_PushOrMarkClosure::Par_PushOrMarkClosure(CMSCollector* collector,
   _should_remember_klasses(collector->should_unload_classes())
 { }
 
+// Assumes thread-safe access by callers, who are
+// responsible for mutual exclusion.
 void CMSCollector::lower_restart_addr(HeapWord* low) {
   assert(_span.contains(low), "Out of bounds addr");
   if (_restart_addr == NULL) {
@@ -7314,7 +7345,7 @@ void PushOrMarkClosure::handle_stack_overflow(HeapWord* lost) {
 // in CMSCollector's _restart_address.
 void Par_PushOrMarkClosure::handle_stack_overflow(HeapWord* lost) {
   // We need to do this under a mutex to prevent other
-  // workers from interfering with the expansion below.
+  // workers from interfering with the work done below.
   MutexLockerEx ml(_overflow_stack->par_lock(),
                    Mutex::_no_safepoint_check_flag);
   // Remember the least grey address discarded
