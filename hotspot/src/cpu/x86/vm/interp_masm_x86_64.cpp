@@ -35,8 +35,13 @@ void InterpreterMacroAssembler::call_VM_leaf_base(address entry_point,
   // Note: No need to save/restore bcp & locals (r13 & r14) pointer
   //       since these are callee saved registers and no blocking/
   //       GC can happen in leaf calls.
+  // Further Note: DO NOT save/restore bcp/locals. If a caller has
+  // already saved them so that it can use esi/edi as temporaries
+  // then a save/restore here will DESTROY the copy the caller
+  // saved! There used to be a save_bcp() that only happened in
+  // the ASSERT path (no restore_bcp). Which caused bizarre failures
+  // when jvm built with ASSERTs.
 #ifdef ASSERT
-  save_bcp();
   {
     Label L;
     cmpq(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int)NULL_WORD);
@@ -49,24 +54,9 @@ void InterpreterMacroAssembler::call_VM_leaf_base(address entry_point,
   // super call
   MacroAssembler::call_VM_leaf_base(entry_point, number_of_arguments);
   // interpreter specific
-#ifdef ASSERT
-  {
-    Label L;
-    cmpq(r13, Address(rbp, frame::interpreter_frame_bcx_offset * wordSize));
-    jcc(Assembler::equal, L);
-    stop("InterpreterMacroAssembler::call_VM_leaf_base:"
-         " r13 not callee saved?");
-    bind(L);
-  }
-  {
-    Label L;
-    cmpq(r14, Address(rbp, frame::interpreter_frame_locals_offset * wordSize));
-    jcc(Assembler::equal, L);
-    stop("InterpreterMacroAssembler::call_VM_leaf_base:"
-         " r14 not callee saved?");
-    bind(L);
-  }
-#endif
+  // Used to ASSERT that r13/r14 were equal to frame's bcp/locals
+  // but since they may not have been saved (and we don't want to
+  // save thme here (see note above) the assert is invalid.
 }
 
 void InterpreterMacroAssembler::call_VM_base(Register oop_result,

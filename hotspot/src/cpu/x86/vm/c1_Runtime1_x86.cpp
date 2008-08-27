@@ -1385,6 +1385,136 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
+#ifndef SERIALGC
+    case g1_pre_barrier_slow_id:
+      {
+        StubFrame f(sasm, "g1_pre_barrier", dont_gc_arguments);
+        // arg0 : previous value of memory
+
+        BarrierSet* bs = Universe::heap()->barrier_set();
+        if (bs->kind() != BarrierSet::G1SATBCTLogging) {
+          __ movl(rax, (int)id);
+          __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), rax);
+          __ should_not_reach_here();
+          break;
+        }
+
+        __ pushl(rax);
+        __ pushl(rdx);
+
+        const Register pre_val = rax;
+        const Register thread = rax;
+        const Register tmp = rdx;
+
+        __ get_thread(thread);
+
+        Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
+                                             PtrQueue::byte_offset_of_active()));
+
+        Address queue_index(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
+                                             PtrQueue::byte_offset_of_index()));
+        Address buffer(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
+                                        PtrQueue::byte_offset_of_buf()));
+
+
+        Label done;
+        Label runtime;
+
+        // Can we store original value in the thread's buffer?
+
+        __ cmpl(queue_index, 0);
+        __ jcc(Assembler::equal, runtime);
+        __ subl(queue_index, wordSize);
+        __ movl(tmp, buffer);
+        __ addl(tmp, queue_index);
+        // prev_val (rax)
+        f.load_argument(0, pre_val);
+        __ movl(Address(tmp, 0), pre_val);
+        __ jmp(done);
+
+        __ bind(runtime);
+        // load the pre-value
+        __ pushl(rcx);
+        f.load_argument(0, rcx);
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), rcx, thread);
+        __ popl(rcx);
+
+        __ bind(done);
+        __ popl(rdx);
+        __ popl(rax);
+      }
+      break;
+
+    case g1_post_barrier_slow_id:
+      {
+        StubFrame f(sasm, "g1_post_barrier", dont_gc_arguments);
+
+
+        // arg0: store_address
+        Address store_addr(rbp, 2*BytesPerWord);
+
+        BarrierSet* bs = Universe::heap()->barrier_set();
+        CardTableModRefBS* ct = (CardTableModRefBS*)bs;
+        Label done;
+        Label runtime;
+
+        // At this point we know new_value is non-NULL and the new_value crosses regsion.
+        // Must check to see if card is already dirty
+
+        const Register card_index = rdx;
+
+        const Register thread = rax;
+        Address queue_index(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
+                                             PtrQueue::byte_offset_of_index()));
+        Address buffer(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
+                                        PtrQueue::byte_offset_of_buf()));
+
+        __ pushl(rax);
+        __ pushl(rdx);
+
+        __ movl(card_index, store_addr);
+        __ get_thread(rax);
+        __ shrl(card_index, CardTableModRefBS::card_shift);
+        assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+
+        ExternalAddress cardtable((address)ct->byte_map_base);
+        Address index(noreg, card_index, Address::times_1);
+        const Register card_addr = rdx;
+        __ leal(card_addr, __ as_Address(ArrayAddress(cardtable, index)));
+        __ cmpb(Address(card_addr, 0), 0);
+        __ jcc(Assembler::equal, done);
+
+        // storing region crossing non-NULL, card is clean.
+        // dirty card and log.
+
+        __ movb(Address(card_addr, 0), 0);
+
+        __ cmpl(queue_index, 0);
+        __ jcc(Assembler::equal, runtime);
+        __ subl(queue_index, wordSize);
+
+        const Register buffer_addr = rbx;
+        __ pushl(rbx);
+
+        __ movl(buffer_addr, buffer);
+        __ addl(buffer_addr, queue_index);
+        __ movl(Address(buffer_addr, 0), card_addr);
+        __ popl(rbx);
+        __ jmp(done);
+
+        __ bind(runtime);
+        __ pushl(rcx);
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), card_addr, thread);
+        __ popl(rcx);
+
+        __ bind(done);
+        __ popl(rdx);
+        __ popl(rax);
+
+      }
+      break;
+#endif // !SERIALGC
+
     default:
       { StubFrame f(sasm, "unimplemented entry", dont_gc_arguments);
         __ movl(rax, (int)id);

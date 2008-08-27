@@ -222,6 +222,18 @@ class Address VALUE_OBJ_CLASS_SPEC {
   static Address make_raw(int base, int index, int scale, int disp);
 
   static Address make_array(ArrayAddress);
+  Register base() const {
+    return _base;
+  }
+
+  Register index() const {
+    return _index;
+  }
+
+  int disp() const {
+    return _disp;
+  }
+
 
  private:
   bool base_needs_rex() const {
@@ -1203,6 +1215,9 @@ class MacroAssembler : public Assembler {
                                                  // is exact store
                                                  // location (reg. is
                                                  // destroyed)
+
+  void g1_write_barrier_pre(Register obj, Register tmp, Register tmp2, bool tosca_live );
+  void g1_write_barrier_post(Register store_addr, Register new_val, Register tmp, Register tmp2);
 
   // split store_check(Register obj) to enhance instruction interleaving
   void store_check_part_1(Register obj);

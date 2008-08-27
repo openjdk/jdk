@@ -168,6 +168,8 @@ void Runtime1::generate_blob_for(StubID id) {
   switch (id) {
     // These stubs don't need to have an oopmap
     case dtrace_object_alloc_id:
+    case g1_pre_barrier_slow_id:
+    case g1_post_barrier_slow_id:
     case slow_subtype_check_id:
     case fpu2long_stub_id:
     case unwind_exception_id:
