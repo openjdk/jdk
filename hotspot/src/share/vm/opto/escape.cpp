@@ -501,7 +501,7 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
     // compute an appropriate address type (cases #3 and #5).
     assert(igvn->type(addp) == TypeRawPtr::NOTNULL, "must be raw pointer");
     assert(addp->in(AddPNode::Address)->is_Proj(), "base of raw address must be result projection from allocation");
-    int offs = (int)igvn->find_intptr_t_con(addp->in(AddPNode::Offset), Type::OffsetBot);
+    intptr_t offs = (int)igvn->find_intptr_t_con(addp->in(AddPNode::Offset), Type::OffsetBot);
     assert(offs != Type::OffsetBot, "offset must be a constant");
     t = base_t->add_offset(offs)->is_oopptr();
   }
