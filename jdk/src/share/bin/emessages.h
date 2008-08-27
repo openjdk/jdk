@@ -25,8 +25,8 @@
 
 /*
  * This file primarily consists of all the error and warning messages, that
- * are used in ReportErrorMessage. All message must be defined here, in order
- * to help in I18N/L10N the messages.
+ * are used in JLI_ReportErrorMessage. All message must be defined here, in
+ * order to help with localizing the messages.
  */
 
 #ifndef _EMESSAGES_H
