@@ -143,7 +143,8 @@ class YieldingFlexibleWorkGang: public AbstractWorkGang {
   // Here's the public interface to this class.
 public:
   // Constructor and destructor.
-  YieldingFlexibleWorkGang(const char* name, int workers, bool are_GC_threads);
+  YieldingFlexibleWorkGang(const char* name, int workers,
+                           bool are_GC_task_threads);
 
   YieldingFlexibleGangTask* yielding_task() const {
     assert(task() == NULL || task()->is_YieldingFlexibleGang_task(),

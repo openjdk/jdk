@@ -251,24 +251,16 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
       // increase size to a multiple of the desired alignment
       size = align_size_up(size, alignment);
       size_t extra_size = size + alignment;
-      char* extra_base = os::reserve_memory(extra_size, NULL, alignment);
-      if (extra_base == NULL) return;
-      // Do manual alignement
-      base = (char*) align_size_up((uintptr_t) extra_base, alignment);
-      assert(base >= extra_base, "just checking");
-      // Release unused areas
-      size_t unused_bottom_size = base - extra_base;
-      size_t unused_top_size = extra_size - size - unused_bottom_size;
-      assert(unused_bottom_size % os::vm_allocation_granularity() == 0,
-             "size not allocation aligned");
-      assert(unused_top_size % os::vm_allocation_granularity() == 0,
-             "size not allocation aligned");
-      if (unused_bottom_size > 0) {
-        os::release_memory(extra_base, unused_bottom_size);
-      }
-      if (unused_top_size > 0) {
-        os::release_memory(base + size, unused_top_size);
-      }
+      do {
+        char* extra_base = os::reserve_memory(extra_size, NULL, alignment);
+        if (extra_base == NULL) return;
+        // Do manual alignement
+        base = (char*) align_size_up((uintptr_t) extra_base, alignment);
+        assert(base >= extra_base, "just checking");
+        // Re-reserve the region at the aligned base address.
+        os::release_memory(extra_base, extra_size);
+        base = os::reserve_memory(size, base);
+      } while (base == NULL);
     }
   }
   // Done

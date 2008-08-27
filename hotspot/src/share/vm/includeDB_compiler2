@@ -461,10 +461,13 @@ globals.cpp                             c2_globals.hpp
 graphKit.cpp                            addnode.hpp
 graphKit.cpp                            barrierSet.hpp
 graphKit.cpp                            cardTableModRefBS.hpp
+graphKit.cpp                            g1SATBCardTableModRefBS.hpp
 graphKit.cpp                            collectedHeap.hpp
 graphKit.cpp                            compileLog.hpp
 graphKit.cpp                            deoptimization.hpp
 graphKit.cpp                            graphKit.hpp
+graphKit.cpp                            heapRegion.hpp
+graphKit.cpp                            idealKit.hpp
 graphKit.cpp                            locknode.hpp
 graphKit.cpp                            machnode.hpp
 graphKit.cpp                            parse.hpp
@@ -484,6 +487,7 @@ idealKit.cpp                            addnode.hpp
 idealKit.cpp                            callnode.hpp
 idealKit.cpp                            cfgnode.hpp
 idealKit.cpp                            idealKit.hpp
+idealKit.cpp				runtime.hpp
 
 idealKit.hpp                            connode.hpp
 idealKit.hpp                            mulnode.hpp
@@ -915,9 +919,11 @@ runtime.cpp                             compilerOracle.hpp
 runtime.cpp                             connode.hpp
 runtime.cpp                             copy.hpp
 runtime.cpp                             fprofiler.hpp
+runtime.cpp                             g1SATBCardTableModRefBS.hpp
 runtime.cpp                             gcLocker.inline.hpp
 runtime.cpp                             graphKit.hpp
 runtime.cpp                             handles.inline.hpp
+runtime.cpp                             heapRegion.hpp
 runtime.cpp                             icBuffer.hpp
 runtime.cpp                             interfaceSupport.hpp
 runtime.cpp                             interpreter.hpp

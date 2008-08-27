@@ -790,7 +790,7 @@ CompactibleFreeListSpace::object_iterate_careful_m(MemRegion mr,
 }
 
 
-HeapWord* CompactibleFreeListSpace::block_start(const void* p) const {
+HeapWord* CompactibleFreeListSpace::block_start_const(const void* p) const {
   NOT_PRODUCT(verify_objects_initialized());
   return _bt.block_start(p);
 }
@@ -2286,9 +2286,9 @@ void CompactibleFreeListSpace::verifyIndexedFreeLists() const {
 }
 
 void CompactibleFreeListSpace::verifyIndexedFreeList(size_t size) const {
-  guarantee(size % 2 == 0, "Odd slots should be empty");
-  for (FreeChunk* fc = _indexedFreeList[size].head(); fc != NULL;
-    fc = fc->next()) {
+  FreeChunk* fc =  _indexedFreeList[size].head();
+  guarantee((size % 2 == 0) || fc == NULL, "Odd slots should be empty");
+  for (; fc != NULL; fc = fc->next()) {
     guarantee(fc->size() == size, "Size inconsistency");
     guarantee(fc->isFree(), "!free?");
     guarantee(fc->next() == NULL || fc->next()->prev() == fc, "Broken list");

@@ -36,6 +36,9 @@ c1_CFGPrinter.cpp                       c1_ValueStack.hpp
 c1_CFGPrinter.hpp                       c1_Compilation.hpp
 c1_CFGPrinter.hpp                       c1_Instruction.hpp
 
+cardTableModRefBS.cpp			c1_LIR.hpp
+cardTableModRefBS.cpp			c1_LIRGenerator.hpp
+
 c1_Canonicalizer.cpp                    c1_Canonicalizer.hpp
 c1_Canonicalizer.cpp                    c1_InstructionPrinter.hpp
 c1_Canonicalizer.cpp                    ciArray.hpp
@@ -55,6 +58,7 @@ c1_CodeStubs_<arch>.cpp                 c1_FrameMap.hpp
 c1_CodeStubs_<arch>.cpp                 c1_LIRAssembler.hpp
 c1_CodeStubs_<arch>.cpp                 c1_MacroAssembler.hpp
 c1_CodeStubs_<arch>.cpp                 c1_Runtime1.hpp
+c1_CodeStubs_<arch>.cpp                 g1SATBCardTableModRefBS.hpp
 c1_CodeStubs_<arch>.cpp                 nativeInst_<arch>.hpp
 c1_CodeStubs_<arch>.cpp                 sharedRuntime.hpp
 c1_CodeStubs_<arch>.cpp                 vmreg_<arch>.inline.hpp
@@ -141,6 +145,7 @@ c1_globals_<arch>.hpp                   macros.hpp
 c1_globals_<os_family>.hpp              globalDefinitions.hpp
 c1_globals_<os_family>.hpp              macros.hpp
 
+c1_GraphBuilder.cpp                     bitMap.inline.hpp
 c1_GraphBuilder.cpp                     bytecode.hpp
 c1_GraphBuilder.cpp                     c1_CFGPrinter.hpp
 c1_GraphBuilder.cpp                     c1_Canonicalizer.hpp
@@ -158,6 +163,7 @@ c1_GraphBuilder.hpp                     c1_ValueStack.hpp
 c1_GraphBuilder.hpp                     ciMethodData.hpp
 c1_GraphBuilder.hpp                     ciStreams.hpp
 
+c1_IR.cpp                               bitMap.inline.hpp
 c1_IR.cpp                               c1_Compilation.hpp
 c1_IR.cpp                               c1_FrameMap.hpp
 c1_IR.cpp                               c1_GraphBuilder.hpp
@@ -232,33 +238,36 @@ c1_LIRAssembler_<arch>.cpp              sharedRuntime.hpp
 
 c1_LIRAssembler_<arch>.hpp              generate_platform_dependent_include
 
-c1_LIRGenerator.cpp                    c1_Compilation.hpp
-c1_LIRGenerator.cpp                    c1_FrameMap.hpp
-c1_LIRGenerator.cpp                    c1_Instruction.hpp
-c1_LIRGenerator.cpp                    c1_LIRAssembler.hpp
-c1_LIRGenerator.cpp                    c1_LIRGenerator.hpp
-c1_LIRGenerator.cpp                    c1_ValueStack.hpp
-c1_LIRGenerator.cpp                    ciArrayKlass.hpp
-c1_LIRGenerator.cpp                    ciInstance.hpp
-c1_LIRGenerator.cpp                    sharedRuntime.hpp
+c1_LIRGenerator.cpp                     bitMap.inline.hpp
+c1_LIRGenerator.cpp                     c1_Compilation.hpp
+c1_LIRGenerator.cpp                     c1_FrameMap.hpp
+c1_LIRGenerator.cpp                     c1_Instruction.hpp
+c1_LIRGenerator.cpp                     c1_LIRAssembler.hpp
+c1_LIRGenerator.cpp                     c1_LIRGenerator.hpp
+c1_LIRGenerator.cpp                     c1_ValueStack.hpp
+c1_LIRGenerator.cpp                     ciArrayKlass.hpp
+c1_LIRGenerator.cpp                     ciInstance.hpp
+c1_LIRGenerator.cpp                     heapRegion.hpp
+c1_LIRGenerator.cpp                     sharedRuntime.hpp
 
-c1_LIRGenerator.hpp                    c1_Instruction.hpp
-c1_LIRGenerator.hpp                    c1_LIR.hpp
-c1_LIRGenerator.hpp                    ciMethodData.hpp
-c1_LIRGenerator.hpp                    sizes.hpp
+c1_LIRGenerator.hpp                     c1_Instruction.hpp
+c1_LIRGenerator.hpp                     c1_LIR.hpp
+c1_LIRGenerator.hpp                     ciMethodData.hpp
+c1_LIRGenerator.hpp                     sizes.hpp
 
-c1_LIRGenerator_<arch>.cpp             c1_Compilation.hpp
-c1_LIRGenerator_<arch>.cpp             c1_FrameMap.hpp
-c1_LIRGenerator_<arch>.cpp             c1_Instruction.hpp
-c1_LIRGenerator_<arch>.cpp             c1_LIRAssembler.hpp
-c1_LIRGenerator_<arch>.cpp             c1_LIRGenerator.hpp
-c1_LIRGenerator_<arch>.cpp             c1_Runtime1.hpp
-c1_LIRGenerator_<arch>.cpp             c1_ValueStack.hpp
-c1_LIRGenerator_<arch>.cpp             ciArray.hpp
-c1_LIRGenerator_<arch>.cpp             ciObjArrayKlass.hpp
-c1_LIRGenerator_<arch>.cpp             ciTypeArrayKlass.hpp
-c1_LIRGenerator_<arch>.cpp             sharedRuntime.hpp
+c1_LIRGenerator_<arch>.cpp              c1_Compilation.hpp
+c1_LIRGenerator_<arch>.cpp              c1_FrameMap.hpp
+c1_LIRGenerator_<arch>.cpp              c1_Instruction.hpp
+c1_LIRGenerator_<arch>.cpp              c1_LIRAssembler.hpp
+c1_LIRGenerator_<arch>.cpp              c1_LIRGenerator.hpp
+c1_LIRGenerator_<arch>.cpp              c1_Runtime1.hpp
+c1_LIRGenerator_<arch>.cpp              c1_ValueStack.hpp
+c1_LIRGenerator_<arch>.cpp              ciArray.hpp
+c1_LIRGenerator_<arch>.cpp              ciObjArrayKlass.hpp
+c1_LIRGenerator_<arch>.cpp              ciTypeArrayKlass.hpp
+c1_LIRGenerator_<arch>.cpp              sharedRuntime.hpp
 
+c1_LinearScan.cpp                       bitMap.inline.hpp
 c1_LinearScan.cpp                       c1_CFGPrinter.hpp
 c1_LinearScan.cpp                       c1_Compilation.hpp
 c1_LinearScan.cpp                       c1_FrameMap.hpp
@@ -275,6 +284,7 @@ c1_LinearScan.hpp                       c1_Instruction.hpp
 c1_LinearScan.hpp                       c1_LIR.hpp
 c1_LinearScan.hpp                       c1_LIRGenerator.hpp
 
+c1_LinearScan_<arch>.cpp                bitMap.inline.hpp
 c1_LinearScan_<arch>.cpp                c1_Instruction.hpp
 c1_LinearScan_<arch>.cpp                c1_LinearScan.hpp
 
@@ -297,6 +307,7 @@ c1_MacroAssembler_<arch>.cpp            systemDictionary.hpp
 
 c1_MacroAssembler_<arch>.hpp            generate_platform_dependent_include
 
+c1_Optimizer.cpp                        bitMap.inline.hpp
 c1_Optimizer.cpp                        c1_Canonicalizer.hpp
 c1_Optimizer.cpp                        c1_Optimizer.hpp
 c1_Optimizer.cpp                        c1_ValueMap.hpp
@@ -362,6 +373,7 @@ c1_Runtime1_<arch>.cpp                  signature.hpp
 c1_Runtime1_<arch>.cpp                  vframeArray.hpp
 c1_Runtime1_<arch>.cpp                  vmreg_<arch>.inline.hpp
 
+c1_ValueMap.cpp                         bitMap.inline.hpp
 c1_ValueMap.cpp                         c1_Canonicalizer.hpp
 c1_ValueMap.cpp                         c1_IR.hpp
 c1_ValueMap.cpp                         c1_ValueMap.hpp
@@ -432,4 +444,3 @@ thread.cpp                              c1_Compiler.hpp
 top.hpp                                 c1_globals.hpp
 
 vmStructs.hpp                           c1_Runtime1.hpp
-

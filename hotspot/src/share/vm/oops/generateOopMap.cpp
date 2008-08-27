@@ -370,21 +370,8 @@ void CellTypeState::print(outputStream *os) {
 void GenerateOopMap ::initialize_bb() {
   _gc_points = 0;
   _bb_count  = 0;
-  int size = binsToHold(method()->code_size());
-  _bb_hdr_bits = NEW_RESOURCE_ARRAY(uintptr_t,size);
-  memset(_bb_hdr_bits, 0, size*sizeof(uintptr_t));
-}
-
-void GenerateOopMap ::set_bbmark_bit(int bci) {
-  int idx  = bci >> LogBitsPerWord;
-  uintptr_t bit = (uintptr_t)1 << (bci & (BitsPerWord-1));
-  _bb_hdr_bits[idx] |= bit;
-}
-
-void GenerateOopMap ::clear_bbmark_bit(int bci) {
-  int idx   = bci >> LogBitsPerWord;
-  uintptr_t bit = (uintptr_t)1 << (bci & (BitsPerWord-1));
-  _bb_hdr_bits[idx] &= (~bit);
+  _bb_hdr_bits.clear();
+  _bb_hdr_bits.resize(method()->code_size());
 }
 
 void GenerateOopMap::bb_mark_fct(GenerateOopMap *c, int bci, int *data) {
@@ -952,6 +939,17 @@ void GenerateOopMap::init_basic_blocks() {
   _basic_blocks[bbNo-1]._end_bci = prev_bci;
 
 
+  // Check that the correct number of basicblocks was found
+  if (bbNo !=_bb_count) {
+    if (bbNo < _bb_count) {
+      verify_error("jump into the middle of instruction?");
+      return;
+    } else {
+      verify_error("extra basic blocks - should not happen?");
+      return;
+    }
+  }
+
   _max_monitors = monitor_count;
 
   // Now that we have a bound on the depth of the monitor stack, we can
@@ -985,17 +983,6 @@ void GenerateOopMap::init_basic_blocks() {
   }
 #endif
 
-  // Check that the correct number of basicblocks was found
-  if (bbNo !=_bb_count) {
-    if (bbNo < _bb_count) {
-      verify_error("jump into the middle of instruction?");
-      return;
-    } else {
-      verify_error("extra basic blocks - should not happen?");
-      return;
-    }
-  }
-
   // Mark all alive blocks
   mark_reachable_code();
 }
@@ -1022,21 +1009,22 @@ void GenerateOopMap::update_basic_blocks(int bci, int delta,
                                          int new_method_size) {
   assert(new_method_size >= method()->code_size() + delta,
          "new method size is too small");
-  int newWords = binsToHold(new_method_size);
 
-  uintptr_t * new_bb_hdr_bits = NEW_RESOURCE_ARRAY(uintptr_t, newWords);
+  BitMap::bm_word_t* new_bb_hdr_bits =
+    NEW_RESOURCE_ARRAY(BitMap::bm_word_t,
+                       BitMap::word_align_up(new_method_size));
+  _bb_hdr_bits.set_map(new_bb_hdr_bits);
+  _bb_hdr_bits.set_size(new_method_size);
+  _bb_hdr_bits.clear();
 
-  BitMap bb_bits(new_bb_hdr_bits, new_method_size);
-  bb_bits.clear();
 
   for(int k = 0; k < _bb_count; k++) {
     if (_basic_blocks[k]._bci > bci) {
       _basic_blocks[k]._bci     += delta;
       _basic_blocks[k]._end_bci += delta;
     }
-    bb_bits.at_put(_basic_blocks[k]._bci, true);
+    _bb_hdr_bits.at_put(_basic_blocks[k]._bci, true);
   }
-  _bb_hdr_bits = new_bb_hdr_bits ;
 }
 
 //

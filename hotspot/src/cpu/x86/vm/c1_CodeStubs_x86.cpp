@@ -455,5 +455,50 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   __ jmp(_continuation);
 }
 
+/////////////////////////////////////////////////////////////////////////////
+#ifndef SERIALGC
+
+void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
+
+  // At this point we know that marking is in progress
+
+  __ bind(_entry);
+  assert(pre_val()->is_register(), "Precondition.");
+
+  Register pre_val_reg = pre_val()->as_register();
+
+  ce->mem2reg(addr(), pre_val(), T_OBJECT, patch_code(), info(), false);
+
+  __ cmpl(pre_val_reg, NULL_WORD);
+  __ jcc(Assembler::equal, _continuation);
+  ce->store_parameter(pre_val()->as_register(), 0);
+  __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::g1_pre_barrier_slow_id)));
+  __ jmp(_continuation);
+
+}
+
+jbyte* G1PostBarrierStub::_byte_map_base = NULL;
+
+jbyte* G1PostBarrierStub::byte_map_base_slow() {
+  BarrierSet* bs = Universe::heap()->barrier_set();
+  assert(bs->is_a(BarrierSet::G1SATBCTLogging),
+         "Must be if we're using this.");
+  return ((G1SATBCardTableModRefBS*)bs)->byte_map_base;
+}
+
+void G1PostBarrierStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  assert(addr()->is_register(), "Precondition.");
+  assert(new_val()->is_register(), "Precondition.");
+  Register new_val_reg = new_val()->as_register();
+  __ cmpl(new_val_reg, NULL_WORD);
+  __ jcc(Assembler::equal, _continuation);
+  ce->store_parameter(addr()->as_register(), 0);
+  __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::g1_post_barrier_slow_id)));
+  __ jmp(_continuation);
+}
+
+#endif // SERIALGC
+/////////////////////////////////////////////////////////////////////////////
 
 #undef __

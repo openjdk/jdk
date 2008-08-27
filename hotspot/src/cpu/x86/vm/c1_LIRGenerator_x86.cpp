@@ -294,6 +294,8 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
   }
 
   if (obj_store) {
+    // Needs GC write barriers.
+    pre_barrier(LIR_OprFact::address(array_addr), false, NULL);
     __ move(value.result(), array_addr, null_check_info);
     // Seems to be a precise
     post_barrier(LIR_OprFact::address(array_addr), value.result());
@@ -745,7 +747,10 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   __ move(obj.result(), addr);
   __ add(addr, offset.result(), addr);
 
-
+  if (type == objectType) {  // Write-barrier needed for Object fields.
+    // Do the pre-write barrier, if any.
+    pre_barrier(addr, false, NULL);
+  }
 
   LIR_Opr ill = LIR_OprFact::illegalOpr;  // for convenience
   if (type == objectType)
@@ -1250,6 +1255,8 @@ void LIRGenerator::put_Object_unsafe(LIR_Opr src, LIR_Opr offset, LIR_Opr data,
     LIR_Address* addr = new LIR_Address(src, offset, type);
     bool is_obj = (type == T_ARRAY || type == T_OBJECT);
     if (is_obj) {
+      // Do the pre-write barrier, if any.
+      pre_barrier(LIR_OprFact::address(addr), false, NULL);
       __ move(data, addr);
       assert(src->is_register(), "must be register");
       // Seems to be a precise address
