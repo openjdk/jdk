@@ -36,6 +36,7 @@ import java.awt.datatransfer.*;
 import java.beans.*;
 import java.io.*;
 import java.util.*;
+import java.util.List;
 import java.util.regex.*;
 import sun.awt.shell.ShellFolder;
 import sun.swing.*;
@@ -829,11 +830,17 @@ public class BasicFileChooserUI extends FileChooserUI {
             File dir = chooser.getCurrentDirectory();
 
             if (filename != null) {
-                // Remove whitespace from beginning and end of filename
-                filename = filename.trim();
+                // Remove whitespaces from end of filename
+                int i = filename.length() - 1;
+
+                while (i >=0 && filename.charAt(i) <= ' ') {
+                    i--;
+                }
+
+                filename = filename.substring(0, i + 1);
             }
 
-            if (filename == null || filename.equals("")) {
+            if (filename == null || filename.length() == 0) {
                 // no file selected, multiple selection off, therefore cancel the approve action
                 resetGlobFilter();
                 return;
@@ -842,100 +849,93 @@ public class BasicFileChooserUI extends FileChooserUI {
             File selectedFile = null;
             File[] selectedFiles = null;
 
-            if (filename != null && !filename.equals("")) {
-                // Unix: Resolve '~' to user's home directory
-                if (File.separatorChar == '/') {
-                    if (filename.startsWith("~/")) {
-                        filename = System.getProperty("user.home") + filename.substring(1);
-                    } else if (filename.equals("~")) {
-                        filename = System.getProperty("user.home");
-                    }
-                }
-
-                if (chooser.isMultiSelectionEnabled() && filename.startsWith("\"")) {
-                    ArrayList<File> fList = new ArrayList<File>();
-
-                    filename = filename.substring(1);
-                    if (filename.endsWith("\"")) {
-                        filename = filename.substring(0, filename.length()-1);
-                    }
-                    File[] children = null;
-                    int childIndex = 0;
-                    do {
-                        String str;
-                        int i = filename.indexOf("\" \"");
-                        if (i > 0) {
-                            str = filename.substring(0, i);
-                            filename = filename.substring(i+3);
-                        } else {
-                            str = filename;
-                            filename = "";
-                        }
-                        File file = fs.createFileObject(str);
-                        if (!file.isAbsolute()) {
-                            if (children == null) {
-                                children = fs.getFiles(dir, false);
-                                Arrays.sort(children);
-                            }
-                            for (int k = 0; k < children.length; k++) {
-                                int l = (childIndex + k) % children.length;
-                                if (children[l].getName().equals(str)) {
-                                    file = children[l];
-                                    childIndex = l + 1;
-                                    break;
-                                }
-                            }
-                        }
-                        fList.add(file);
-                    } while (filename.length() > 0);
-                    if (fList.size() > 0) {
-                        selectedFiles = fList.toArray(new File[fList.size()]);
-                    }
-                    resetGlobFilter();
-                } else {
-                    selectedFile = fs.createFileObject(filename);
-                    if(!selectedFile.isAbsolute()) {
-                       selectedFile = fs.getChild(dir, filename);
-                    }
-                    // check for wildcard pattern
-                    FileFilter currentFilter = chooser.getFileFilter();
-                    if (!selectedFile.exists() && isGlobPattern(filename)) {
-                        changeDirectory(selectedFile.getParentFile());
-                        if (globFilter == null) {
-                            globFilter = new GlobFilter();
-                        }
-                        try {
-                            globFilter.setPattern(selectedFile.getName());
-                            if (!(currentFilter instanceof GlobFilter)) {
-                                actualFileFilter = currentFilter;
-                            }
-                            chooser.setFileFilter(null);
-                            chooser.setFileFilter(globFilter);
-                            return;
-                        } catch (PatternSyntaxException pse) {
-                            // Not a valid glob pattern. Abandon filter.
-                        }
-                    }
-
-                    resetGlobFilter();
-
-                    // Check for directory change action
-                    boolean isDir = (selectedFile != null && selectedFile.isDirectory());
-                    boolean isTrav = (selectedFile != null && chooser.isTraversable(selectedFile));
-                    boolean isDirSelEnabled = chooser.isDirectorySelectionEnabled();
-                    boolean isFileSelEnabled = chooser.isFileSelectionEnabled();
-                    boolean isCtrl = (e != null && (e.getModifiers() & ActionEvent.CTRL_MASK) != 0);
-
-                    if (isDir && isTrav && (isCtrl || !isDirSelEnabled)) {
-                        changeDirectory(selectedFile);
-                        return;
-                    } else if ((isDir || !isFileSelEnabled)
-                               && (!isDir || !isDirSelEnabled)
-                               && (!isDirSelEnabled || selectedFile.exists())) {
-                        selectedFile = null;
-                    }
+            // Unix: Resolve '~' to user's home directory
+            if (File.separatorChar == '/') {
+                if (filename.startsWith("~/")) {
+                    filename = System.getProperty("user.home") + filename.substring(1);
+                } else if (filename.equals("~")) {
+                    filename = System.getProperty("user.home");
                 }
             }
+
+            if (chooser.isMultiSelectionEnabled() && filename.length() > 1 &&
+                    filename.charAt(0) == '"' && filename.charAt(filename.length() - 1) == '"') {
+                List<File> fList = new ArrayList<File>();
+
+                String[] files = filename.substring(1, filename.length() - 1).split("\" \"");
+                // Optimize searching files by names in "children" array
+                Arrays.sort(files);
+
+                File[] children = null;
+                int childIndex = 0;
+
+                for (String str : files) {
+                    File file = fs.createFileObject(str);
+                    if (!file.isAbsolute()) {
+                        if (children == null) {
+                            children = fs.getFiles(dir, false);
+                            Arrays.sort(children);
+                        }
+                        for (int k = 0; k < children.length; k++) {
+                            int l = (childIndex + k) % children.length;
+                            if (children[l].getName().equals(str)) {
+                                file = children[l];
+                                childIndex = l + 1;
+                                break;
+                            }
+                        }
+                    }
+                    fList.add(file);
+                }
+
+                if (!fList.isEmpty()) {
+                    selectedFiles = fList.toArray(new File[fList.size()]);
+                }
+                resetGlobFilter();
+            } else {
+                selectedFile = fs.createFileObject(filename);
+                if (!selectedFile.isAbsolute()) {
+                    selectedFile = fs.getChild(dir, filename);
+                }
+                // check for wildcard pattern
+                FileFilter currentFilter = chooser.getFileFilter();
+                if (!selectedFile.exists() && isGlobPattern(filename)) {
+                    changeDirectory(selectedFile.getParentFile());
+                    if (globFilter == null) {
+                        globFilter = new GlobFilter();
+                    }
+                    try {
+                        globFilter.setPattern(selectedFile.getName());
+                        if (!(currentFilter instanceof GlobFilter)) {
+                            actualFileFilter = currentFilter;
+                        }
+                        chooser.setFileFilter(null);
+                        chooser.setFileFilter(globFilter);
+                        return;
+                    } catch (PatternSyntaxException pse) {
+                        // Not a valid glob pattern. Abandon filter.
+                    }
+                }
+
+                resetGlobFilter();
+
+                // Check for directory change action
+                boolean isDir = (selectedFile != null && selectedFile.isDirectory());
+                boolean isTrav = (selectedFile != null && chooser.isTraversable(selectedFile));
+                boolean isDirSelEnabled = chooser.isDirectorySelectionEnabled();
+                boolean isFileSelEnabled = chooser.isFileSelectionEnabled();
+                boolean isCtrl = (e != null && (e.getModifiers() & ActionEvent.CTRL_MASK) != 0);
+
+                if (isDir && isTrav && (isCtrl || !isDirSelEnabled)) {
+                    changeDirectory(selectedFile);
+                    return;
+                } else if ((isDir || !isFileSelEnabled)
+                        && (!isDir || !isDirSelEnabled)
+                        && (!isDirSelEnabled || selectedFile.exists())) {
+                    selectedFile = null;
+                }
+            }
+
             if (selectedFiles != null || selectedFile != null) {
                 if (selectedFiles != null || chooser.isMultiSelectionEnabled()) {
                     if (selectedFiles == null) {
