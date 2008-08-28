@@ -47,6 +47,7 @@ extern "C" BlitFunc IntArgbToIntArgbPreConvert;
 extern "C" BlitFunc IntArgbPreToIntArgbConvert;
 extern "C" BlitFunc IntArgbBmToIntArgbConvert;
 extern "C" BlitFunc IntRgbToIntArgbConvert;
+extern "C" BlitFunc ThreeByteBgrToIntArgbConvert;
 extern "C" BlitFunc Ushort565RgbToIntArgbConvert;
 extern "C" BlitFunc Ushort555RgbToIntArgbConvert;
 extern "C" BlitFunc IntBgrToIntArgbConvert;
@@ -267,6 +268,11 @@ D3DBL_CopyImageToIntXrgbSurface(SurfaceDataRasInfo *pSrcInfo,
             IntBgrToIntArgbConvert(pSrcBase, pDstBase,
                                    srcWidth, srcHeight,
                                    pSrcInfo, &dstInfo, NULL, NULL);
+            break;
+        case ST_3BYTE_BGR:
+            ThreeByteBgrToIntArgbConvert(pSrcBase, pDstBase,
+                                         srcWidth, srcHeight,
+                                         pSrcInfo, &dstInfo, NULL, NULL);
             break;
         case ST_USHORT_555_RGB:
             Ushort555RgbToIntArgbConvert(pSrcBase, pDstBase,

@@ -135,6 +135,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
     public static final int ST_USHORT_555_RGB  = 6;
     public static final int ST_BYTE_INDEXED    = 7;
     public static final int ST_BYTE_INDEXED_BM = 8;
+    public static final int ST_3BYTE_BGR       = 9;
 
     /** Equals to D3DSWAPEFFECT_DISCARD */
     public static final int SWAP_DISCARD       = 1;
