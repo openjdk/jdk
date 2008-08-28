@@ -120,6 +120,7 @@ public abstract class OGLSurfaceData extends SurfaceData
     public static final int PF_USHORT_555_RGBX = 8;
     public static final int PF_BYTE_GRAY       = 9;
     public static final int PF_USHORT_GRAY     = 10;
+    public static final int PF_3BYTE_BGR       = 11;
 
     /**
      * SurfaceTypes
