@@ -32,7 +32,6 @@ import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.element.NestingKind.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
-import static javax.lang.model.util.ElementFilter.*;
 
 import java.io.PrintWriter;
 import java.io.Writer;
