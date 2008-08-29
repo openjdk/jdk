@@ -25,9 +25,6 @@
 
 package com.sun.tools.javac;
 
-import com.sun.tools.javac.main.JavacOption.Option;
-import com.sun.tools.javac.main.RecognizedOptions.GrumpyHelper;
-import com.sun.tools.javac.main.RecognizedOptions;
 import java.io.*;
 import java.net.*;
 import java.util.*;

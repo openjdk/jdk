@@ -31,7 +31,6 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
 
 import com.sun.tools.javac.jvm.ClassReader;
-import com.sun.tools.javac.comp.Infer;
 import com.sun.tools.javac.comp.Check;
 
 import static com.sun.tools.javac.code.Type.*;
