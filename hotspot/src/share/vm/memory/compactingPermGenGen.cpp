@@ -421,30 +421,6 @@ size_t CompactingPermGenGen::max_capacity() const {
 }
 
 
-
-bool CompactingPermGenGen::grow_by(size_t bytes) {
-  // Don't allow _virtual_size to expand into shared spaces.
-  size_t max_bytes = _virtual_space.uncommitted_size() - _shared_space_size;
-  if (bytes > _shared_space_size) {
-    bytes = _shared_space_size;
-  }
-  return OneContigSpaceCardGeneration::grow_by(bytes);
-}
-
-
-bool CompactingPermGenGen::grow_to_reserved() {
-  // Don't allow _virtual_size to expand into shared spaces.
-  bool success = false;
-  if (_virtual_space.uncommitted_size() > _shared_space_size) {
-    size_t remaining_bytes =
-      _virtual_space.uncommitted_size() - _shared_space_size;
-    success = OneContigSpaceCardGeneration::grow_by(remaining_bytes);
-    DEBUG_ONLY(if (!success) warning("grow to reserved failed");)
-  }
-  return success;
-}
-
-
 // No young generation references, clear this generation's main space's
 // card table entries.  Do NOT clear the card table entries for the
 // read-only space (always clear) or the read-write space (valuable
