@@ -314,8 +314,7 @@ public class MetalSliderUI extends BasicSliderUI {
             }
             else {
                 g.setColor( MetalLookAndFeel.getControlShadow() );
-                g.fillRect( fillLeft, fillTop,
-                            fillRight - fillLeft, trackBottom - trackTop );
+                g.fillRect(fillLeft, fillTop, fillRight - fillLeft, fillBottom - fillTop);
             }
         }
 
