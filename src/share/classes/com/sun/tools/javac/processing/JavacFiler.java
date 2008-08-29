@@ -34,18 +34,14 @@ import javax.lang.model.element.Element;
 import java.util.*;
 
 import java.io.Closeable;
-import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.FilterOutputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.io.FilterWriter;
 import java.io.PrintWriter;
 import java.io.IOException;
-import java.net.URI;
-import javax.tools.FileObject;
 
 import javax.tools.*;
 import static java.util.Collections.*;

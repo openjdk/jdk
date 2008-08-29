@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.util;
 
-import com.sun.tools.javac.Main;
 import java.util.*;
 
 /**
