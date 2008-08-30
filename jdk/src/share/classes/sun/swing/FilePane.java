@@ -308,44 +308,80 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     }
 
     public void setViewType(int viewType) {
-        int oldValue = this.viewType;
-        if (viewType == oldValue) {
+        if (viewType == this.viewType) {
             return;
         }
+
+        int oldValue = this.viewType;
         this.viewType = viewType;
+
+        JPanel createdViewPanel = null;
+        Component newFocusOwner = null;
 
         switch (viewType) {
           case VIEWTYPE_LIST:
             if (viewPanels[viewType] == null) {
-                JPanel p = fileChooserUIAccessor.createList();
-                if (p == null) {
-                    p = createList();
+                createdViewPanel = fileChooserUIAccessor.createList();
+                if (createdViewPanel == null) {
+                    createdViewPanel = createList();
                 }
-                setViewPanel(viewType, p);
+
+                list = (JList) findChildComponent(createdViewPanel, JList.class);
+                if (listSelectionModel == null) {
+                    listSelectionModel = list.getSelectionModel();
+                    if (detailsTable != null) {
+                        detailsTable.setSelectionModel(listSelectionModel);
+                    }
+                } else {
+                    list.setSelectionModel(listSelectionModel);
+                }
             }
             list.setLayoutOrientation(JList.VERTICAL_WRAP);
+            newFocusOwner = list;
             break;
 
           case VIEWTYPE_DETAILS:
             if (viewPanels[viewType] == null) {
-                JPanel p = fileChooserUIAccessor.createDetailsView();
-                if (p == null) {
-                    p = createDetailsView();
+                createdViewPanel = fileChooserUIAccessor.createDetailsView();
+                if (createdViewPanel == null) {
+                    createdViewPanel = createDetailsView();
                 }
-                setViewPanel(viewType, p);
+
+                detailsTable = (JTable) findChildComponent(createdViewPanel, JTable.class);
+                detailsTable.setRowHeight(Math.max(detailsTable.getFont().getSize() + 4, 16 + 1));
+                if (listSelectionModel != null) {
+                    detailsTable.setSelectionModel(listSelectionModel);
+                }
             }
+            newFocusOwner = detailsTable;
             break;
         }
-        JPanel oldViewPanel = currentViewPanel;
-        currentViewPanel = viewPanels[viewType];
-        if (currentViewPanel != oldViewPanel) {
-            if (oldViewPanel != null) {
-                remove(oldViewPanel);
-            }
-            add(currentViewPanel, BorderLayout.CENTER);
-            revalidate();
-            repaint();
+
+        if (createdViewPanel != null) {
+            viewPanels[viewType] = createdViewPanel;
+            recursivelySetInheritsPopupMenu(createdViewPanel, true);
         }
+
+        boolean isFocusOwner = false;
+
+        if (currentViewPanel != null) {
+            Component owner = DefaultKeyboardFocusManager.
+                    getCurrentKeyboardFocusManager().getPermanentFocusOwner();
+
+            isFocusOwner = owner == detailsTable || owner == list;
+
+            remove(currentViewPanel);
+        }
+
+        currentViewPanel = viewPanels[viewType];
+        add(currentViewPanel, BorderLayout.CENTER);
+
+        if (isFocusOwner && newFocusOwner != null) {
+            newFocusOwner.requestFocusInWindow();
+        }
+
+        revalidate();
+        repaint();
         updateViewMenu();
         firePropertyChange("viewType", oldValue, viewType);
     }
@@ -382,42 +418,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         int n = container.getComponentCount();
         for (int i = 0; i < n; i++) {
             recursivelySetInheritsPopupMenu((Container)container.getComponent(i), b);
-        }
-    }
-
-    public void setViewPanel(int viewType, JPanel viewPanel) {
-        viewPanels[viewType] = viewPanel;
-        recursivelySetInheritsPopupMenu(viewPanel, true);
-
-        switch (viewType) {
-          case VIEWTYPE_LIST:
-            list = (JList)findChildComponent(viewPanels[viewType], JList.class);
-            if (listSelectionModel == null) {
-                listSelectionModel = list.getSelectionModel();
-                if (detailsTable != null) {
-                    detailsTable.setSelectionModel(listSelectionModel);
-                }
-            } else {
-                list.setSelectionModel(listSelectionModel);
-            }
-            break;
-
-          case VIEWTYPE_DETAILS:
-            detailsTable = (JTable)findChildComponent(viewPanels[viewType], JTable.class);
-            detailsTable.setRowHeight(Math.max(detailsTable.getFont().getSize() + 4, 16+1));
-            if (listSelectionModel != null) {
-                detailsTable.setSelectionModel(listSelectionModel);
-            }
-            break;
-        }
-        if (this.viewType == viewType) {
-            if (currentViewPanel != null) {
-                remove(currentViewPanel);
-            }
-            currentViewPanel = viewPanel;
-            add(currentViewPanel, BorderLayout.CENTER);
-            revalidate();
-            repaint();
         }
     }
 
