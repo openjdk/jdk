@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.comp;
 
-import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.tree.*;
 import java.util.Iterator;
 import java.util.NoSuchElementException;

@@ -25,12 +25,10 @@
 
 package com.sun.tools.javac.tree;
 
-import com.sun.source.tree.Tree;
 import com.sun.source.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import java.util.Map;
 
 /**
  * Creates a copy of a tree, using a given TreeMaker.

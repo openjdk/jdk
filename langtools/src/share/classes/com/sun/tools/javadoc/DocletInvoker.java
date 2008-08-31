@@ -82,6 +82,7 @@ public class DocletInvoker {
         cpString = appendPath(System.getProperty("java.class.path"), cpString);
         cpString = appendPath(docletPath, cpString);
         URL[] urls = pathToURLs(cpString);
+        System.err.println("DocletInvoker urls=" + urls);
         appClassLoader = new URLClassLoader(urls);
 
         // attempt to find doclet

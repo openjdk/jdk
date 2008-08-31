@@ -26,8 +26,6 @@
 package com.sun.tools.javac.processing;
 
 import java.lang.annotation.Annotation;
-import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.comp.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
