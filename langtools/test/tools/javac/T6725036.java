@@ -35,6 +35,7 @@ import java.util.jar.JarFile;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.file.RelativePath.RelativeFile;
 import com.sun.tools.javac.file.ZipFileIndex;
 import com.sun.tools.javac.file.ZipFileIndexArchive;
 import com.sun.tools.javac.util.Context;
@@ -45,7 +46,7 @@ public class T6725036 {
     }
 
     void run() throws Exception {
-        String TEST_ENTRY_NAME = "java/lang/String.class";
+        RelativeFile TEST_ENTRY_NAME = new RelativeFile("java/lang/String.class");
 
         File f = new File(System.getProperty("java.home"));
         if (!f.getName().equals("jre"))
@@ -53,22 +54,21 @@ public class T6725036 {
         File rt_jar = new File(new File(f, "lib"), "rt.jar");
 
         JarFile j = new JarFile(rt_jar);
-        JarEntry je = j.getJarEntry(TEST_ENTRY_NAME);
+        JarEntry je = j.getJarEntry(TEST_ENTRY_NAME.getPath());
         long jarEntryTime = je.getTime();
 
         ZipFileIndex zfi =
                 ZipFileIndex.getZipFileIndex(rt_jar, null, false, null, false);
         long zfiTime = zfi.getLastModified(TEST_ENTRY_NAME);
 
-        check(je, jarEntryTime, zfi + ":" + TEST_ENTRY_NAME, zfiTime);
+        check(je, jarEntryTime, zfi + ":" + TEST_ENTRY_NAME.getPath(), zfiTime);
 
         Context context = new Context();
         JavacFileManager fm = new JavacFileManager(context, false, null);
         ZipFileIndexArchive zfia = new ZipFileIndexArchive(fm, zfi);
-        int sep = TEST_ENTRY_NAME.lastIndexOf("/");
         JavaFileObject jfo =
-                zfia.getFileObject(TEST_ENTRY_NAME.substring(0, sep + 1),
-                    TEST_ENTRY_NAME.substring(sep + 1));
+            zfia.getFileObject(TEST_ENTRY_NAME.dirname(),
+                                   TEST_ENTRY_NAME.basename());
         long jfoTime = jfo.getLastModified();
 
         check(je, jarEntryTime, jfo, jfoTime);

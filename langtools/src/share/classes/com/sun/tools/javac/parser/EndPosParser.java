@@ -29,8 +29,6 @@ import java.util.Map;
 import java.util.HashMap;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeInfo;
-import com.sun.tools.javac.util.Position;
-import com.sun.tools.javac.util.List;
 
 import static com.sun.tools.javac.tree.JCTree.*;
 

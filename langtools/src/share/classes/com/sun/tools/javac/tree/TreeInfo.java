@@ -35,7 +35,6 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
-import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 
 /** Utility class containing inspector methods for trees.
  *
