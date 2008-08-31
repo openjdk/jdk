@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,23 @@
  * have any questions.
  */
 
-#include "jni.h"
-#include "jni_util.h"
-#include "jvm.h"
-#include "jlong.h"
-#include <errno.h>
-#include <sys/types.h>
+package java.net;
 
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
+/**
+ * Defines the standard family of communication protocols.
+ *
+ * @since 1.7
+ */
 
+public enum StandardProtocolFamily implements ProtocolFamily {
 
-/* NIO utility procedures */
+    /**
+     * Internet Protocol Version 4 (IPv4)
+     */
+    INET,
 
-
-/* Defined in IOUtil.c */
-
-jint fdval(JNIEnv *env, jobject fdo);
-
-jint convertReturnVal(JNIEnv *env, jint n, jboolean reading);
-jlong convertLongReturnVal(JNIEnv *env, jlong n, jboolean reading);
-
-
-/* Defined in Net.c */
-
-jint handleSocketError(JNIEnv *env, jint errorValue);
+    /**
+     * Internet Protocol Version 6 (IPv6)
+     */
+    INET6
+}
