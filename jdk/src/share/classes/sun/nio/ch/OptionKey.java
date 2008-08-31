@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,26 @@
  * have any questions.
  */
 
-#include "jni.h"
-#include "jni_util.h"
-#include "jvm.h"
-#include "jlong.h"
-#include <errno.h>
-#include <sys/types.h>
+package sun.nio.ch;
 
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
+/**
+ * Represents the level/name of a socket option
+ */
 
+class OptionKey {
+    private int level;
+    private int name;
 
-/* NIO utility procedures */
+    OptionKey(int level, int name) {
+        this.level = level;
+        this.name = name;
+    }
 
+    int level() {
+        return level;
+    }
 
-/* Defined in IOUtil.c */
-
-jint fdval(JNIEnv *env, jobject fdo);
-
-jint convertReturnVal(JNIEnv *env, jint n, jboolean reading);
-jlong convertLongReturnVal(JNIEnv *env, jlong n, jboolean reading);
-
-
-/* Defined in Net.c */
-
-jint handleSocketError(JNIEnv *env, jint errorValue);
+    int name() {
+        return name;
+    }
+}
