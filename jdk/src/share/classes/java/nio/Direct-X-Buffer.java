@@ -47,6 +47,9 @@ class Direct$Type$Buffer$RW$$BO$
     // Cached unsafe-access object
     protected static final Unsafe unsafe = Bits.unsafe();
 
+    // Cached array base offset
+    private static final long arrayBaseOffset = (long)unsafe.arrayBaseOffset($type$[].class);
+
     // Cached unaligned-access capability
     protected static final boolean unaligned = Bits.unaligned();
 
@@ -242,14 +245,16 @@ class Direct$Type$Buffer$RW$$BO$
             if (length > rem)
                 throw new BufferUnderflowException();
 
+#if[!byte]
             if (order() != ByteOrder.nativeOrder())
                 Bits.copyTo$Memtype$Array(ix(pos), dst,
                                           offset << $LG_BYTES_PER_VALUE$,
                                           length << $LG_BYTES_PER_VALUE$);
             else
-                Bits.copyToByteArray(ix(pos), dst,
-                                     offset << $LG_BYTES_PER_VALUE$,
-                                     length << $LG_BYTES_PER_VALUE$);
+#end[!byte]
+                Bits.copyToArray(ix(pos), dst, arrayBaseOffset,
+                                 offset << $LG_BYTES_PER_VALUE$,
+                                 length << $LG_BYTES_PER_VALUE$);
             position(pos + length);
         } else {
             super.get(dst, offset, length);
@@ -332,12 +337,14 @@ class Direct$Type$Buffer$RW$$BO$
             if (length > rem)
                 throw new BufferOverflowException();
 
+#if[!byte]
             if (order() != ByteOrder.nativeOrder())
                 Bits.copyFrom$Memtype$Array(src, offset << $LG_BYTES_PER_VALUE$,
                                             ix(pos), length << $LG_BYTES_PER_VALUE$);
             else
-                Bits.copyFromByteArray(src, offset << $LG_BYTES_PER_VALUE$,
-                                       ix(pos), length << $LG_BYTES_PER_VALUE$);
+#end[!byte]
+                Bits.copyFromArray(src, arrayBaseOffset, offset << $LG_BYTES_PER_VALUE$,
+                                   ix(pos), length << $LG_BYTES_PER_VALUE$);
             position(pos + length);
         } else {
             super.put(src, offset, length);
