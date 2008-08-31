@@ -2756,13 +2756,17 @@ void Threads::threads_do(ThreadClosure* tc) {
   // For now, just manually iterate through them.
   tc->do_thread(VMThread::vm_thread());
   Universe::heap()->gc_threads_do(tc);
-  {
-    // Grab the Terminator_lock to prevent watcher_thread from being terminated.
-    MutexLockerEx mu(Terminator_lock, Mutex::_no_safepoint_check_flag);
-    WatcherThread *wt = WatcherThread::watcher_thread();
-    if (wt != NULL)
-      tc->do_thread(wt);
-  }
+  WatcherThread *wt = WatcherThread::watcher_thread();
+  // Strictly speaking, the following NULL check isn't sufficient to make sure
+  // the data for WatcherThread is still valid upon being examined. However,
+  // considering that WatchThread terminates when the VM is on the way to
+  // exit at safepoint, the chance of the above is extremely small. The right
+  // way to prevent termination of WatcherThread would be to acquire
+  // Terminator_lock, but we can't do that without violating the lock rank
+  // checking in some cases.
+  if (wt != NULL)
+    tc->do_thread(wt);
+
   // If CompilerThreads ever become non-JavaThreads, add them here
 }
 
