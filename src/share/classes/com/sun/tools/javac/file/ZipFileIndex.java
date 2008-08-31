@@ -25,11 +25,12 @@
 
 package com.sun.tools.javac.file;
 
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.text.MessageFormat;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -44,6 +45,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 import java.util.zip.ZipException;
+
+import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
+import com.sun.tools.javac.file.RelativePath.RelativeFile;
 
 /** This class implements building of index of a zip archive and access to it's context.
  *  It also uses prebuild index if available. It supports invocations where it will
@@ -75,8 +79,8 @@ public class ZipFileIndex {
 
     private static boolean NON_BATCH_MODE = System.getProperty("nonBatchMode") != null;// TODO: Use -XD compiler switch for this.
 
-    private Map<String, DirectoryEntry> directories = Collections.<String, DirectoryEntry>emptyMap();
-    private Set<String> allDirs = Collections.<String>emptySet();
+    private Map<RelativeDirectory, DirectoryEntry> directories = Collections.<RelativeDirectory, DirectoryEntry>emptyMap();
+    private Set<RelativeDirectory> allDirs = Collections.<RelativeDirectory>emptySet();
 
     // ZipFileIndex data entries
     private File zipFile;
@@ -87,7 +91,7 @@ public class ZipFileIndex {
     private boolean readFromIndex = false;
     private File zipIndexFile = null;
     private boolean triedToReadIndex = false;
-    final String symbolFilePrefix;
+    final RelativeDirectory symbolFilePrefix;
     private int symbolFilePrefixLength = 0;
     private boolean hasPopulatedData = false;
     private long lastReferenceTimeStamp = NOT_MODIFIED;
@@ -96,6 +100,9 @@ public class ZipFileIndex {
     private String preindexedCacheLocation = null;
 
     private boolean writeIndex = false;
+
+    private Map <String, SoftReference<RelativeDirectory>> relativeDirectoryCache =
+            new HashMap<String, SoftReference<RelativeDirectory>>();
 
     /**
      * Returns a list of all ZipFileIndex entries
@@ -143,7 +150,10 @@ public class ZipFileIndex {
         }
     }
 
-    public static ZipFileIndex getZipFileIndex(File zipFile, String symbolFilePrefix, boolean useCache, String cacheLocation, boolean writeIndex) throws IOException {
+    public static ZipFileIndex getZipFileIndex(File zipFile,
+            RelativeDirectory symbolFilePrefix,
+            boolean useCache, String cacheLocation,
+            boolean writeIndex) throws IOException {
         ZipFileIndex zi = null;
         lock.lock();
         try {
@@ -231,12 +241,12 @@ public class ZipFileIndex {
         }
     }
 
-    private ZipFileIndex(File zipFile, String symbolFilePrefix, boolean writeIndex,
+    private ZipFileIndex(File zipFile, RelativeDirectory symbolFilePrefix, boolean writeIndex,
             boolean useCache, String cacheLocation) throws IOException {
         this.zipFile = zipFile;
         this.symbolFilePrefix = symbolFilePrefix;
         this.symbolFilePrefixLength = (symbolFilePrefix == null ? 0 :
-            symbolFilePrefix.getBytes("UTF-8").length);
+            symbolFilePrefix.getPath().getBytes("UTF-8").length);
         this.writeIndex = writeIndex;
         this.usePreindexedCache = useCache;
         this.preindexedCacheLocation = cacheLocation;
@@ -250,7 +260,7 @@ public class ZipFileIndex {
     }
 
     public String toString() {
-        return "ZipFileIndex of file:(" + zipFile + ")";
+        return "ZipFileIndex[" + zipFile + "]";
     }
 
     // Just in case...
@@ -291,8 +301,8 @@ public class ZipFileIndex {
             return;
         }
 
-        directories = Collections.<String, DirectoryEntry>emptyMap();
-        allDirs = Collections.<String>emptySet();
+        directories = Collections.<RelativeDirectory, DirectoryEntry>emptyMap();
+        allDirs = Collections.<RelativeDirectory>emptySet();
 
         try {
             openFile();
@@ -317,9 +327,9 @@ public class ZipFileIndex {
     private void cleanupState() {
         // Make sure there is a valid but empty index if the file doesn't exist
         entries = Entry.EMPTY_ARRAY;
-        directories = Collections.<String, DirectoryEntry>emptyMap();
+        directories = Collections.<RelativeDirectory, DirectoryEntry>emptyMap();
         zipFileLastModified = NOT_MODIFIED;
-        allDirs = Collections.<String>emptySet();
+        allDirs = Collections.<RelativeDirectory>emptySet();
     }
 
     public void close() {
@@ -346,24 +356,12 @@ public class ZipFileIndex {
     /**
      * Returns the ZipFileIndexEntry for an absolute path, if there is one.
      */
-    Entry getZipIndexEntry(String path) {
-        if (File.separatorChar != '/') {
-            path = path.replace('/', File.separatorChar);
-        }
+    Entry getZipIndexEntry(RelativePath path) {
         lock.lock();
         try {
             checkIndex();
-            String lookFor = "";
-            int lastSepIndex = path.lastIndexOf(File.separatorChar);
-            boolean noSeparator = false;
-            if (lastSepIndex == -1) {
-                noSeparator = true;
-            }
-
-            DirectoryEntry de = directories.get(noSeparator ? "" : path.substring(0, lastSepIndex));
-
-            lookFor = path.substring(noSeparator ? 0 : lastSepIndex + 1);
-
+            DirectoryEntry de = directories.get(path.dirname());
+            String lookFor = path.basename();
             return de == null ? null : de.getEntry(lookFor);
         }
         catch (IOException e) {
@@ -377,11 +375,7 @@ public class ZipFileIndex {
     /**
      * Returns a javac List of filenames within an absolute path in the ZipFileIndex.
      */
-    public com.sun.tools.javac.util.List<String> getFiles(String path) {
-        if (File.separatorChar != '/') {
-            path = path.replace('/', File.separatorChar);
-        }
-
+    public com.sun.tools.javac.util.List<String> getFiles(RelativeDirectory path) {
         lock.lock();
         try {
             checkIndex();
@@ -402,16 +396,10 @@ public class ZipFileIndex {
         }
     }
 
-    public List<String> getAllDirectories(String path) {
-
-        if (File.separatorChar != '/') {
-            path = path.replace('/', File.separatorChar);
-        }
-
+    public List<String> getDirectories(RelativeDirectory path) {
         lock.lock();
         try {
             checkIndex();
-            path = path.intern();
 
             DirectoryEntry de = directories.get(path);
             com.sun.tools.javac.util.List<String> ret = de == null ? null : de.getDirectories();
@@ -430,24 +418,18 @@ public class ZipFileIndex {
         }
     }
 
-    public Set<String> getAllDirectories() {
+    public Set<RelativeDirectory> getAllDirectories() {
         lock.lock();
         try {
             checkIndex();
             if (allDirs == Collections.EMPTY_SET) {
-                Set<String> alldirs = new HashSet<String>();
-                Iterator<String> dirsIter = directories.keySet().iterator();
-                while (dirsIter.hasNext()) {
-                    alldirs.add(new String(dirsIter.next()));
-                }
-
-                allDirs = alldirs;
+                allDirs = new HashSet<RelativeDirectory>(directories.keySet());
             }
 
             return allDirs;
         }
         catch (IOException e) {
-            return Collections.<String>emptySet();
+            return Collections.<RelativeDirectory>emptySet();
         }
         finally {
             lock.unlock();
@@ -461,7 +443,7 @@ public class ZipFileIndex {
      * @param path A path within the zip.
      * @return True if the path is a file or dir, false otherwise.
      */
-    public boolean contains(String path) {
+    public boolean contains(RelativePath path) {
         lock.lock();
         try {
             checkIndex();
@@ -475,17 +457,15 @@ public class ZipFileIndex {
         }
     }
 
-    public boolean isDirectory(String path) throws IOException {
+    public boolean isDirectory(RelativePath path) throws IOException {
         lock.lock();
         try {
             // The top level in a zip file is always a directory.
-            if (path.length() == 0) {
+            if (path.getPath().length() == 0) {
                 lastReferenceTimeStamp = System.currentTimeMillis();
                 return true;
             }
 
-            if (File.separatorChar != '/')
-                path = path.replace('/', File.separatorChar);
             checkIndex();
             return directories.get(path) != null;
         }
@@ -494,7 +474,7 @@ public class ZipFileIndex {
         }
     }
 
-    public long getLastModified(String path) throws IOException {
+    public long getLastModified(RelativeFile path) throws IOException {
         lock.lock();
         try {
             Entry entry = getZipIndexEntry(path);
@@ -507,7 +487,7 @@ public class ZipFileIndex {
         }
     }
 
-    public int length(String path) throws IOException {
+    public int length(RelativeFile path) throws IOException {
         lock.lock();
         try {
             Entry entry = getZipIndexEntry(path);
@@ -531,12 +511,12 @@ public class ZipFileIndex {
         }
     }
 
-    public byte[] read(String path) throws IOException {
+    public byte[] read(RelativeFile path) throws IOException {
         lock.lock();
         try {
             Entry entry = getZipIndexEntry(path);
             if (entry == null)
-                throw new FileNotFoundException(MessageFormat.format("Path not found in ZIP: {0}", path));
+                throw new FileNotFoundException("Path not found in ZIP: " + path.path);
             return read(entry);
         }
         finally {
@@ -557,7 +537,7 @@ public class ZipFileIndex {
         }
     }
 
-    public int read(String path, byte[] buffer) throws IOException {
+    public int read(RelativeFile path, byte[] buffer) throws IOException {
         lock.lock();
         try {
             Entry entry = getZipIndexEntry(path);
@@ -690,7 +670,7 @@ public class ZipFileIndex {
      * ----------------------------------------------------------------------------*/
 
     private class ZipDirectory {
-        private String lastDir;
+        private RelativeDirectory lastDir;
         private int lastStart;
         private int lastLen;
 
@@ -747,13 +727,13 @@ public class ZipFileIndex {
             }
             throw new ZipException("cannot read zip file");
         }
+
         private void buildIndex() throws IOException {
             int entryCount = get2ByteLittleEndian(zipDir, 0);
 
-            entries = new Entry[entryCount];
             // Add each of the files
             if (entryCount > 0) {
-                directories = new HashMap<String, DirectoryEntry>();
+                directories = new HashMap<RelativeDirectory, DirectoryEntry>();
                 ArrayList<Entry> entryList = new ArrayList<Entry>();
                 int pos = 2;
                 for (int i = 0; i < entryCount; i++) {
@@ -761,9 +741,11 @@ public class ZipFileIndex {
                 }
 
                 // Add the accumulated dirs into the same list
-                Iterator i = directories.keySet().iterator();
-                while (i.hasNext()) {
-                    Entry zipFileIndexEntry = new Entry( (String) i.next());
+                for (RelativeDirectory d: directories.keySet()) {
+                    // use shared RelativeDirectory objects for parent dirs
+                    RelativeDirectory parent = getRelativeDirectory(d.dirname().getPath());
+                    String file = d.basename();
+                    Entry zipFileIndexEntry = new Entry(parent, file);
                     zipFileIndexEntry.isDir = true;
                     entryList.add(zipFileIndexEntry);
                 }
@@ -776,7 +758,7 @@ public class ZipFileIndex {
         }
 
         private int readEntry(int pos, List<Entry> entryList,
-                Map<String, DirectoryEntry> directories) throws IOException {
+                Map<RelativeDirectory, DirectoryEntry> directories) throws IOException {
             if (get4ByteLittleEndian(zipDir, pos) != 0x02014b50) {
                 throw new ZipException("cannot read zip file entry");
             }
@@ -790,19 +772,20 @@ public class ZipFileIndex {
                 dirStart += zipFileIndex.symbolFilePrefixLength;
                fileStart += zipFileIndex.symbolFilePrefixLength;
             }
-
-            // Use the OS's path separator. Keep the position of the last one.
+            // Force any '\' to '/'. Keep the position of the last separator.
             for (int index = fileStart; index < fileEnd; index++) {
                 byte nextByte = zipDir[index];
-                if (nextByte == (byte)'\\' || nextByte == (byte)'/') {
-                    zipDir[index] = (byte)File.separatorChar;
+                if (nextByte == (byte)'\\') {
+                    zipDir[index] = (byte)'/';
+                    fileStart = index + 1;
+                } else if (nextByte == (byte)'/') {
                     fileStart = index + 1;
                 }
             }
 
-            String directory = null;
+            RelativeDirectory directory = null;
             if (fileStart == dirStart)
-                directory = "";
+                directory = getRelativeDirectory("");
             else if (lastDir != null && lastLen == fileStart - dirStart - 1) {
                 int index = lastLen - 1;
                 while (zipDir[lastStart + index] == zipDir[dirStart + index]) {
@@ -819,22 +802,23 @@ public class ZipFileIndex {
                 lastStart = dirStart;
                 lastLen = fileStart - dirStart - 1;
 
-                directory = new String(zipDir, dirStart, lastLen, "UTF-8").intern();
+                directory = getRelativeDirectory(new String(zipDir, dirStart, lastLen, "UTF-8"));
                 lastDir = directory;
 
                 // Enter also all the parent directories
-                String tempDirectory = directory;
+                RelativeDirectory tempDirectory = directory;
 
                 while (directories.get(tempDirectory) == null) {
                     directories.put(tempDirectory, new DirectoryEntry(tempDirectory, zipFileIndex));
-                    int separator = tempDirectory.lastIndexOf(File.separatorChar);
-                    if (separator == -1)
+                    if (tempDirectory.path.indexOf("/") == tempDirectory.path.length() - 1)
                         break;
-                    tempDirectory = tempDirectory.substring(0, separator);
+                    else {
+                        // use shared RelativeDirectory objects for parent dirs
+                        tempDirectory = getRelativeDirectory(tempDirectory.dirname().getPath());
+                    }
                 }
             }
             else {
-                directory = directory.intern();
                 if (directories.get(directory) == null) {
                     directories.put(directory, new DirectoryEntry(directory, zipFileIndex));
                 }
@@ -886,7 +870,7 @@ public class ZipFileIndex {
 
         private long writtenOffsetOffset = 0;
 
-        private String dirName;
+        private RelativeDirectory dirName;
 
         private com.sun.tools.javac.util.List<String> zipFileEntriesFiles = com.sun.tools.javac.util.List.<String>nil();
         private com.sun.tools.javac.util.List<String> zipFileEntriesDirectories = com.sun.tools.javac.util.List.<String>nil();
@@ -898,70 +882,50 @@ public class ZipFileIndex {
 
         private int numEntries;
 
-        DirectoryEntry(String dirName, ZipFileIndex index) {
-        filesInited = false;
+        DirectoryEntry(RelativeDirectory dirName, ZipFileIndex index) {
+            filesInited = false;
             directoriesInited = false;
             entriesInited = false;
 
-            if (File.separatorChar == '/') {
-                dirName.replace('\\', '/');
-            }
-            else {
-                dirName.replace('/', '\\');
-            }
-
-            this.dirName = dirName.intern();
+            this.dirName = dirName;
             this.zipFileIndex = index;
         }
 
         private com.sun.tools.javac.util.List<String> getFiles() {
-            if (filesInited) {
-                return zipFileEntriesFiles;
-            }
-
-            initEntries();
-
-            for (Entry e : entries) {
-                if (!e.isDir) {
-                    zipFileEntriesFiles = zipFileEntriesFiles.append(e.name);
+            if (!filesInited) {
+                initEntries();
+                for (Entry e : entries) {
+                    if (!e.isDir) {
+                        zipFileEntriesFiles = zipFileEntriesFiles.append(e.name);
+                    }
                 }
+                filesInited = true;
             }
-            filesInited = true;
             return zipFileEntriesFiles;
         }
 
         private com.sun.tools.javac.util.List<String> getDirectories() {
-            if (directoriesInited) {
-                return zipFileEntriesFiles;
-            }
-
-            initEntries();
-
-            for (Entry e : entries) {
-                if (e.isDir) {
-                    zipFileEntriesDirectories = zipFileEntriesDirectories.append(e.name);
+            if (!directoriesInited) {
+                initEntries();
+                for (Entry e : entries) {
+                    if (e.isDir) {
+                        zipFileEntriesDirectories = zipFileEntriesDirectories.append(e.name);
+                    }
                 }
+                directoriesInited = true;
             }
-
-            directoriesInited = true;
-
             return zipFileEntriesDirectories;
         }
 
         private com.sun.tools.javac.util.List<Entry> getEntries() {
-            if (zipFileEntriesInited) {
-                return zipFileEntries;
+            if (!zipFileEntriesInited) {
+                initEntries();
+                zipFileEntries = com.sun.tools.javac.util.List.nil();
+                for (Entry zfie : entries) {
+                    zipFileEntries = zipFileEntries.append(zfie);
+                }
+                zipFileEntriesInited = true;
             }
-
-            initEntries();
-
-            zipFileEntries = com.sun.tools.javac.util.List.nil();
-            for (Entry zfie : entries) {
-                zipFileEntries = zipFileEntries.append(zfie);
-            }
-
-            zipFileEntriesInited = true;
-
             return zipFileEntries;
         }
 
@@ -985,8 +949,6 @@ public class ZipFileIndex {
                         new Entry(dirName, ZipFileIndex.MIN_CHAR)) - 1;
                 int to = -Arrays.binarySearch(zipFileIndex.entries,
                         new Entry(dirName, MAX_CHAR)) - 1;
-
-                boolean emptyList = false;
 
                 for (int i = from; i < to; i++) {
                     entries.add(zipFileIndex.entries[i]);
@@ -1071,14 +1033,14 @@ public class ZipFileIndex {
                 if (zipFile.lastModified() != fileStamp) {
                     ret = false;
                 } else {
-                    directories = new HashMap<String, DirectoryEntry>();
+                    directories = new HashMap<RelativeDirectory, DirectoryEntry>();
                     int numDirs = raf.readInt();
                     for (int nDirs = 0; nDirs < numDirs; nDirs++) {
                         int dirNameBytesLen = raf.readInt();
                         byte [] dirNameBytes = new byte[dirNameBytesLen];
                         raf.read(dirNameBytes);
 
-                        String dirNameStr = new String(dirNameBytes, "UTF-8");
+                        RelativeDirectory dirNameStr = getRelativeDirectory(new String(dirNameBytes, "UTF-8"));
                         DirectoryEntry de = new DirectoryEntry(dirNameStr, this);
                         de.numEntries = raf.readInt();
                         de.writtenOffsetOffset = raf.readLong();
@@ -1132,21 +1094,18 @@ public class ZipFileIndex {
             raf.writeLong(zipFileLastModified);
             writtenSoFar += 8;
 
-
-            Iterator<String> iterDirName = directories.keySet().iterator();
             List<DirectoryEntry> directoriesToWrite = new ArrayList<DirectoryEntry>();
-            Map<String, Long> offsets = new HashMap<String, Long>();
+            Map<RelativeDirectory, Long> offsets = new HashMap<RelativeDirectory, Long>();
             raf.writeInt(directories.keySet().size());
             writtenSoFar += 4;
 
-            while(iterDirName.hasNext()) {
-                String dirName = iterDirName.next();
+            for (RelativeDirectory dirName: directories.keySet()) {
                 DirectoryEntry dirEntry = directories.get(dirName);
 
                 directoriesToWrite.add(dirEntry);
 
                 // Write the dir name bytes
-                byte [] dirNameBytes = dirName.getBytes("UTF-8");
+                byte [] dirNameBytes = dirName.getPath().getBytes("UTF-8");
                 int dirNameBytesLen = dirNameBytes.length;
                 raf.writeInt(dirNameBytesLen);
                 writtenSoFar += 4;
@@ -1251,12 +1210,24 @@ public class ZipFileIndex {
         return zipFile;
     }
 
+    private RelativeDirectory getRelativeDirectory(String path) {
+        RelativeDirectory rd;
+        SoftReference<RelativeDirectory> ref = relativeDirectoryCache.get(path);
+        if (ref != null) {
+            rd = ref.get();
+            if (rd != null)
+                return rd;
+        }
+        rd = new RelativeDirectory(path);
+        relativeDirectoryCache.put(path, new SoftReference<RelativeDirectory>(rd));
+        return rd;
+    }
 
     static class Entry implements Comparable<Entry> {
         public static final Entry[] EMPTY_ARRAY = {};
 
         // Directory related
-        String dir;
+        RelativeDirectory dir;
         boolean isDir;
 
         // File related
@@ -1269,32 +1240,17 @@ public class ZipFileIndex {
 
         private int nativetime;
 
-        public Entry(String path) {
-            int separator = path.lastIndexOf(File.separatorChar);
-            if (separator == -1) {
-                dir = "".intern();
-                name = path;
-            } else {
-                dir = path.substring(0, separator).intern();
-                name = path.substring(separator + 1);
-            }
+        public Entry(RelativePath path) {
+            this(path.dirname(), path.basename());
         }
 
-        public Entry(String directory, String name) {
-            this.dir = directory.intern();
+        public Entry(RelativeDirectory directory, String name) {
+            this.dir = directory;
             this.name = name;
         }
 
         public String getName() {
-            if (dir == null || dir.length() == 0) {
-                return name;
-            }
-
-            StringBuilder sb = new StringBuilder();
-            sb.append(dir);
-            sb.append(File.separatorChar);
-            sb.append(name);
-            return sb.toString();
+            return new RelativeFile(dir, name).getPath();
         }
 
         public String getFileName() {
@@ -1331,13 +1287,29 @@ public class ZipFileIndex {
         }
 
         public int compareTo(Entry other) {
-            String otherD = other.dir;
+            RelativeDirectory otherD = other.dir;
             if (dir != otherD) {
                 int c = dir.compareTo(otherD);
                 if (c != 0)
                     return c;
             }
             return name.compareTo(other.name);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof Entry))
+                return false;
+            Entry other = (Entry) o;
+            return dir.equals(other.dir) && name.equals(other.name);
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 97 * hash + (this.dir != null ? this.dir.hashCode() : 0);
+            hash = 97 * hash + (this.name != null ? this.name.hashCode() : 0);
+            return hash;
         }
 
 

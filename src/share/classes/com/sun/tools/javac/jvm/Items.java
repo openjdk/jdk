@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.jvm;
 
-import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.code.*;
 
 import com.sun.tools.javac.code.Symbol.*;
@@ -33,7 +32,6 @@ import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.jvm.Code.*;
 import com.sun.tools.javac.tree.JCTree;
 
-import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 
 /** A helper class for code generation. Items are objects
@@ -449,9 +447,7 @@ public class Items {
 
         Item invoke() {
             MethodType mtype = (MethodType)member.erasure(types);
-            int argsize = Code.width(mtype.argtypes);
             int rescode = Code.typecode(mtype.restype);
-            int sdiff = Code.width(rescode) - argsize;
             code.emitInvokestatic(pool.put(member), mtype);
             return stackItem[rescode];
         }

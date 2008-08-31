@@ -27,15 +27,12 @@ package com.sun.tools.javac.processing;
 
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.comp.*;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
-import com.sun.tools.javac.util.Position;
 import javax.lang.model.element.*;
 import javax.tools.JavaFileObject;
 import javax.tools.Diagnostic;
 import javax.annotation.processing.*;
-import java.util.*;
 
 /**
  * An implementation of the Messager built on top of log.

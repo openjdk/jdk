@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.model;
 
-import com.sun.tools.javac.util.*;
 import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.NoSuchElementException;

@@ -27,9 +27,7 @@ package com.sun.tools.javac.jvm;
 
 import java.util.*;
 
-import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.code.Type;
 
 /** An internal structure that corresponds to the constant pool of a classfile.
  *

@@ -39,7 +39,6 @@ import com.sun.tools.javac.jvm.Pool;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Pair;
-import com.sun.tools.javac.util.Name;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,7 +46,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
 
