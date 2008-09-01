@@ -469,8 +469,8 @@ public class MemoryPool
       <em>J</em>, then <em>J</em> cannot be the type of a method
       parameter or return value in an MXBean interface.</p>
 
-    <p>If there is a way to convert <em>opendata(J)</em> back to
-      <em>J</em> then we say that <em>J</em> is
+    <p id="reconstructible-def">If there is a way to convert
+      <em>opendata(J)</em> back to <em>J</em> then we say that <em>J</em> is
       <em>reconstructible</em>.  All method parameters in an MXBean
       interface must be reconstructible, because when the MXBean
       framework is invoking a method it will need to convert those
