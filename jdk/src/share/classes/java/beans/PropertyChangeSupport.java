@@ -34,12 +34,49 @@ import java.util.Map.Entry;
 
 /**
  * This is a utility class that can be used by beans that support bound
- * properties.  You can use an instance of this class as a member field
- * of your bean and delegate various work to it.
+ * properties.  It manages a list of listeners and dispatches
+ * {@link PropertyChangeEvent}s to them.  You can use an instance of this class
+ * as a member field of your bean and delegate these types of work to it.
+ * The {@link PropertyChangeListener} can be registered for all properties
+ * or for a property specified by name.
+ * <p>
+ * Here is an example of {@code PropertyChangeSupport} usage that follows
+ * the rules and recommendations laid out in the JavaBeans&trade; specification:
+ * <pre>
+ * public class MyBean {
+ *     private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
  *
+ *     public void addPropertyChangeListener(PropertyChangeListener listener) {
+ *         this.pcs.addPropertyChangeListener(listener);
+ *     }
+ *
+ *     public void removePropertyChangeListener(PropertyChangeListener listener) {
+ *         this.pcs.removePropertyChangeListener(listener);
+ *     }
+ *
+ *     private String value;
+ *
+ *     public String getValue() {
+ *         return this.value;
+ *     }
+ *
+ *     public void setValue(String newValue) {
+ *         String oldValue = this.value;
+ *         this.value = newValue;
+ *         this.pcs.firePropertyChange("value", oldValue, newValue);
+ *     }
+ *
+ *     [...]
+ * }
+ * </pre>
+ * <p>
+ * A {@code PropertyChangeSupport} instance is thread-safe.
+ * <p>
  * This class is serializable.  When it is serialized it will save
  * (and restore) any listeners that are themselves serializable.  Any
  * non-serializable listeners will be skipped during serialization.
+ *
+ * @see VetoableChangeSupport
  */
 public class PropertyChangeSupport implements Serializable {
     private PropertyChangeListenerMap map = new PropertyChangeListenerMap();
