@@ -101,6 +101,8 @@ matter ever).
 // Move constants to the right.
 Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( in(0) && remove_dead_region(phase, can_reshape) ) return this;
+  // Don't bother trying to transform a dead node
+  if( in(0) && in(0)->is_top() )  return NULL;
   assert( !phase->eqv(in(Condition), this) &&
           !phase->eqv(in(IfFalse), this) &&
           !phase->eqv(in(IfTrue), this), "dead loop in CMoveNode::Ideal" );

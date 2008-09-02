@@ -214,6 +214,9 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   Node *ctl = in(MemNode::Control);
   if (ctl && remove_dead_region(phase, can_reshape))
     return this;
+  ctl = in(MemNode::Control);
+  // Don't bother trying to transform a dead node
+  if( ctl && ctl->is_top() )  return NodeSentinel;
 
   // Ignore if memory is dead, or self-loop
   Node *mem = in(MemNode::Memory);
@@ -244,6 +247,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
 
   if (mem != old_mem) {
     set_req(MemNode::Memory, mem);
+    if (phase->type( mem ) == Type::TOP) return NodeSentinel;
     return this;
   }
 
@@ -1316,6 +1320,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node* opt_mem = MemNode::optimize_memory_chain(mem, addr_t, phase);
     if (opt_mem != mem) {
       set_req(MemNode::Memory, opt_mem);
+      if (phase->type( opt_mem ) == Type::TOP) return NULL;
       return this;
     }
     const TypeOopPtr *t_oop = addr_t->isa_oopptr();
@@ -2447,8 +2452,7 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (remove_dead_region(phase, can_reshape))  return this;
-  return NULL;
+  return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
 //------------------------------Value------------------------------------------

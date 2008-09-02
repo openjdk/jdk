@@ -501,7 +501,7 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
     // compute an appropriate address type (cases #3 and #5).
     assert(igvn->type(addp) == TypeRawPtr::NOTNULL, "must be raw pointer");
     assert(addp->in(AddPNode::Address)->is_Proj(), "base of raw address must be result projection from allocation");
-    int offs = (int)igvn->find_intptr_t_con(addp->in(AddPNode::Offset), Type::OffsetBot);
+    intptr_t offs = (int)igvn->find_intptr_t_con(addp->in(AddPNode::Offset), Type::OffsetBot);
     assert(offs != Type::OffsetBot, "offset must be a constant");
     t = base_t->add_offset(offs)->is_oopptr();
   }
@@ -1810,6 +1810,7 @@ void ConnectionGraph::process_call_result(ProjNode *resproj, PhaseTransform *pha
         } else if (call_analyzer->is_return_local()) {
           // determine whether any arguments are returned
           set_escape_state(call_idx, PointsToNode::NoEscape);
+          bool ret_arg = false;
           for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
             const Type* at = d->field_at(i);
 
@@ -1817,6 +1818,7 @@ void ConnectionGraph::process_call_result(ProjNode *resproj, PhaseTransform *pha
               Node *arg = call->in(i)->uncast();
 
               if (call_analyzer->is_arg_returned(i - TypeFunc::Parms)) {
+                ret_arg = true;
                 PointsToNode *arg_esp = ptnode_adr(arg->_idx);
                 if (arg_esp->node_type() == PointsToNode::UnknownType)
                   done = false;
@@ -1827,6 +1829,11 @@ void ConnectionGraph::process_call_result(ProjNode *resproj, PhaseTransform *pha
                 arg_esp->_hidden_alias = true;
               }
             }
+          }
+          if (done && !ret_arg) {
+            // Returns unknown object.
+            set_escape_state(call_idx, PointsToNode::GlobalEscape);
+            add_pointsto_edge(resproj_idx, _phantom_object);
           }
           copy_dependencies = true;
         } else {
@@ -2234,7 +2241,9 @@ void ConnectionGraph::build_connection_graph(Node *n, PhaseTransform *phase) {
         if (in->is_top() || in == n)
           continue;  // ignore top or inputs which go back this node
         int ti = in->_idx;
-        if (ptnode_adr(in->_idx)->node_type() == PointsToNode::JavaObject) {
+        PointsToNode::NodeType nt = ptnode_adr(ti)->node_type();
+        assert(nt != PointsToNode::UnknownType, "all nodes should be known");
+        if (nt == PointsToNode::JavaObject) {
           add_pointsto_edge(n_idx, ti);
         } else {
           add_deferred_edge(n_idx, ti);

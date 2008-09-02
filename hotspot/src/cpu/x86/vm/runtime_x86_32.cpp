@@ -78,18 +78,18 @@ void OptoRuntime::generate_exception_blob() {
 
   address start = __ pc();
 
-  __ pushl(rdx);
-  __ subl(rsp, return_off * wordSize);   // Prolog!
+  __ push(rdx);
+  __ subptr(rsp, return_off * wordSize);   // Prolog!
 
   // rbp, location is implicitly known
-  __ movl(Address(rsp,rbp_off  *wordSize),rbp);
+  __ movptr(Address(rsp,rbp_off  *wordSize), rbp);
 
   // Store exception in Thread object. We cannot pass any arguments to the
   // handle_exception call, since we do not want to make any assumption
   // about the size of the frame where the exception happened in.
   __ get_thread(rcx);
-  __ movl(Address(rcx, JavaThread::exception_oop_offset()), rax);
-  __ movl(Address(rcx, JavaThread::exception_pc_offset()),  rdx);
+  __ movptr(Address(rcx, JavaThread::exception_oop_offset()), rax);
+  __ movptr(Address(rcx, JavaThread::exception_pc_offset()),  rdx);
 
   // This call does all the hard work.  It checks if an exception handler
   // exists in the method.
@@ -97,7 +97,7 @@ void OptoRuntime::generate_exception_blob() {
   // If not, it prepares for stack-unwinding, restoring the callee-save
   // registers of the frame being removed.
   //
-  __ movl(Address(rsp, thread_off * wordSize), rcx); // Thread is first argument
+  __ movptr(Address(rsp, thread_off * wordSize), rcx); // Thread is first argument
   __ set_last_Java_frame(rcx, noreg, noreg, NULL);
 
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C)));
@@ -108,10 +108,10 @@ void OptoRuntime::generate_exception_blob() {
   __ reset_last_Java_frame(rcx, false, false);
 
   // Restore callee-saved registers
-  __ movl(rbp, Address(rsp, rbp_off * wordSize));
+  __ movptr(rbp, Address(rsp, rbp_off * wordSize));
 
-  __ addl(rsp, return_off * wordSize);   // Epilog!
-  __ popl(rdx); // Exception pc
+  __ addptr(rsp, return_off * wordSize);   // Epilog!
+  __ pop(rdx); // Exception pc
 
 
   // rax,: exception handler for given <exception oop/exception pc>
@@ -119,23 +119,23 @@ void OptoRuntime::generate_exception_blob() {
   // We have a handler in rax, (could be deopt blob)
   // rdx - throwing pc, deopt blob will need it.
 
-  __ pushl(rax);
+  __ push(rax);
 
   // rcx contains handler address
 
   __ get_thread(rcx);           // TLS
   // Get the exception
-  __ movl(rax, Address(rcx, JavaThread::exception_oop_offset()));
+  __ movptr(rax, Address(rcx, JavaThread::exception_oop_offset()));
   // Get the exception pc in case we are deoptimized
-  __ movl(rdx, Address(rcx, JavaThread::exception_pc_offset()));
+  __ movptr(rdx, Address(rcx, JavaThread::exception_pc_offset()));
 #ifdef ASSERT
-  __ movl(Address(rcx, JavaThread::exception_handler_pc_offset()), 0);
-  __ movl(Address(rcx, JavaThread::exception_pc_offset()), 0);
+  __ movptr(Address(rcx, JavaThread::exception_handler_pc_offset()), (int32_t)NULL_WORD);
+  __ movptr(Address(rcx, JavaThread::exception_pc_offset()), (int32_t)NULL_WORD);
 #endif
   // Clear the exception oop so GC no longer processes it as a root.
-  __ movl(Address(rcx, JavaThread::exception_oop_offset()), 0);
+  __ movptr(Address(rcx, JavaThread::exception_oop_offset()), (int32_t)NULL_WORD);
 
-  __ popl(rcx);
+  __ pop(rcx);
 
   // rax,: exception oop
   // rcx: exception handler
