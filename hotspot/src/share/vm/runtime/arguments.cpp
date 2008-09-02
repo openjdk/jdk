@@ -1204,15 +1204,17 @@ void Arguments::set_ergonomics_flags() {
       // Turn off until bug is fixed.
       // FLAG_SET_ERGO(bool, UseCompressedOops, true);
     }
+#ifdef _WIN64
+    if (UseLargePages && UseCompressedOops) {
+      // Cannot allocate guard pages for implicit checks in indexed addressing
+      // mode, when large pages are specified on windows.
+      FLAG_SET_DEFAULT(UseImplicitNullCheckForNarrowOop, false);
+    }
+#endif //  _WIN64
   } else {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
       // If specified, give a warning
-      if (UseConcMarkSweepGC){
-        warning("Compressed Oops does not work with CMS");
-      } else {
-        warning(
-          "Max heap size too large for Compressed Oops");
-      }
+      warning( "Max heap size too large for Compressed Oops");
       FLAG_SET_DEFAULT(UseCompressedOops, false);
     }
   }

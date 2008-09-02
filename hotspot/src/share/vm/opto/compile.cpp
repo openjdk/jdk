@@ -2082,7 +2082,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
         in2 = n->in(2)->in(1);
       } else if ( n->in(2)->Opcode() == Op_ConP ) {
         const Type* t = n->in(2)->bottom_type();
-        if (t == TypePtr::NULL_PTR) {
+        if (t == TypePtr::NULL_PTR && UseImplicitNullCheckForNarrowOop) {
           Node *in1 = n->in(1);
           if (Matcher::clone_shift_expressions) {
             // x86, ARM and friends can handle 2 adds in addressing mode.
