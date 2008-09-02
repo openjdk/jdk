@@ -932,7 +932,7 @@ void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
             // to fold a StoreP and an AddP together (as part of an
             // address expression) and the AddP and StoreP have
             // different controls.
-            if( !x->is_Load() ) _igvn._worklist.yank(x);
+            if( !x->is_Load() && !x->is_DecodeN() ) _igvn._worklist.yank(x);
           }
           _igvn.remove_dead_node(n);
         }
