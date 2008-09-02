@@ -264,6 +264,8 @@ public interface MBeanServer extends MBeanServerConnection {
      * is sent as described <a href="#notif">above</a>.</p>
      *
      * @throws RuntimeOperationsException {@inheritDoc}
+     * @throws RuntimeMBeanException {@inheritDoc}
+     * @throws RuntimeErrorException {@inheritDoc}
      */
     public ObjectInstance createMBean(String className, ObjectName name)
             throws ReflectionException, InstanceAlreadyExistsException,
@@ -276,6 +278,8 @@ public interface MBeanServer extends MBeanServerConnection {
      * is sent as described <a href="#notif">above</a>.</p>
      *
      * @throws RuntimeOperationsException {@inheritDoc}
+     * @throws RuntimeMBeanException {@inheritDoc}
+     * @throws RuntimeErrorException {@inheritDoc}
      */
     public ObjectInstance createMBean(String className, ObjectName name,
                                       ObjectName loaderName)
@@ -289,6 +293,8 @@ public interface MBeanServer extends MBeanServerConnection {
      * is sent as described <a href="#notif">above</a>.</p>
      *
      * @throws RuntimeOperationsException {@inheritDoc}
+     * @throws RuntimeMBeanException {@inheritDoc}
+     * @throws RuntimeErrorException {@inheritDoc}
      */
     public ObjectInstance createMBean(String className, ObjectName name,
                                       Object params[], String signature[])
@@ -302,6 +308,8 @@ public interface MBeanServer extends MBeanServerConnection {
      * is sent as described <a href="#notif">above</a>.</p>
      *
      * @throws RuntimeOperationsException {@inheritDoc}
+     * @throws RuntimeMBeanException {@inheritDoc}
+     * @throws RuntimeErrorException {@inheritDoc}
      */
     public ObjectInstance createMBean(String className, ObjectName name,
                                       ObjectName loaderName, Object params[],
