@@ -48,7 +48,7 @@ void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flu
 
   __ bind(flush_line);
   __ clflush(Address(addr, 0));
-  __ addq(addr, ICache::line_size);
+  __ addptr(addr, ICache::line_size);
   __ decrementl(lines);
   __ jcc(Assembler::notZero, flush_line);
 
@@ -60,7 +60,7 @@ void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flu
   const Address magic(rsp, 3*wordSize);
   __ lock(); __ addl(Address(rsp, 0), 0);
 #endif // AMD64
-  __ movl(rax, magic); // Handshake with caller to make sure it happened!
+  __ movptr(rax, magic); // Handshake with caller to make sure it happened!
   __ ret(0);
 
   // Must be set here so StubCodeMark destructor can call the flush stub.

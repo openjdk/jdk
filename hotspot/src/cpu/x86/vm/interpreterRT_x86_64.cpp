@@ -93,49 +93,49 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_long() {
 #ifdef _WIN64
   switch (_num_args) {
   case 0:
-    __ movq(c_rarg1, src);
+    __ movptr(c_rarg1, src);
     _num_args++;
     break;
   case 1:
-    __ movq(c_rarg2, src);
+    __ movptr(c_rarg2, src);
     _num_args++;
     break;
   case 2:
-    __ movq(c_rarg3, src);
+    __ movptr(c_rarg3, src);
     _num_args++;
     break;
   case 3:
   default:
-    __ movq(rax, src);
-    __ movq(Address(to(), _stack_offset), rax);
+    __ movptr(rax, src);
+    __ movptr(Address(to(), _stack_offset), rax);
     _stack_offset += wordSize;
     break;
   }
 #else
   switch (_num_int_args) {
   case 0:
-    __ movq(c_rarg1, src);
+    __ movptr(c_rarg1, src);
     _num_int_args++;
     break;
   case 1:
-    __ movq(c_rarg2, src);
+    __ movptr(c_rarg2, src);
     _num_int_args++;
     break;
   case 2:
-    __ movq(c_rarg3, src);
+    __ movptr(c_rarg3, src);
     _num_int_args++;
     break;
   case 3:
-    __ movq(c_rarg4, src);
+    __ movptr(c_rarg4, src);
     _num_int_args++;
     break;
   case 4:
-    __ movq(c_rarg5, src);
+    __ movptr(c_rarg5, src);
     _num_int_args++;
     break;
   default:
-    __ movq(rax, src);
-    __ movq(Address(to(), _stack_offset), rax);
+    __ movptr(rax, src);
+    __ movptr(Address(to(), _stack_offset), rax);
     _stack_offset += wordSize;
     break;
   }
@@ -171,16 +171,16 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_double() {
   if (_num_args < Argument::n_float_register_parameters_c-1) {
     __ movdbl(as_XMMRegister(++_num_args), src);
   } else {
-    __ movq(rax, src);
-    __ movq(Address(to(), _stack_offset), rax);
+    __ movptr(rax, src);
+    __ movptr(Address(to(), _stack_offset), rax);
     _stack_offset += wordSize;
   }
 #else
   if (_num_fp_args < Argument::n_float_register_parameters_c) {
     __ movdbl(as_XMMRegister(_num_fp_args++), src);
   } else {
-    __ movq(rax, src);
-    __ movq(Address(to(), _stack_offset), rax);
+    __ movptr(rax, src);
+    __ movptr(Address(to(), _stack_offset), rax);
     _stack_offset += wordSize;
   }
 #endif
@@ -193,29 +193,29 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
   switch (_num_args) {
   case 0:
     assert(offset() == 0, "argument register 1 can only be (non-null) receiver");
-    __ leaq(c_rarg1, src);
+    __ lea(c_rarg1, src);
     _num_args++;
     break;
   case 1:
-    __ leaq(rax, src);
+    __ lea(rax, src);
     __ xorl(c_rarg2, c_rarg2);
-    __ cmpq(src, 0);
-    __ cmovq(Assembler::notEqual, c_rarg2, rax);
+    __ cmpptr(src, 0);
+    __ cmov(Assembler::notEqual, c_rarg2, rax);
     _num_args++;
     break;
   case 2:
-    __ leaq(rax, src);
+    __ lea(rax, src);
     __ xorl(c_rarg3, c_rarg3);
-    __ cmpq(src, 0);
-    __ cmovq(Assembler::notEqual, c_rarg3, rax);
+    __ cmpptr(src, 0);
+    __ cmov(Assembler::notEqual, c_rarg3, rax);
     _num_args++;
     break;
   default:
-    __ leaq(rax, src);
+    __ lea(rax, src);
     __ xorl(temp(), temp());
-    __ cmpq(src, 0);
-    __ cmovq(Assembler::notEqual, temp(), rax);
-    __ movq(Address(to(), _stack_offset), temp());
+    __ cmpptr(src, 0);
+    __ cmov(Assembler::notEqual, temp(), rax);
+    __ movptr(Address(to(), _stack_offset), temp());
     _stack_offset += wordSize;
     break;
   }
@@ -223,43 +223,43 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
   switch (_num_int_args) {
   case 0:
     assert(offset() == 0, "argument register 1 can only be (non-null) receiver");
-    __ leaq(c_rarg1, src);
+    __ lea(c_rarg1, src);
     _num_int_args++;
     break;
   case 1:
-    __ leaq(rax, src);
+    __ lea(rax, src);
     __ xorl(c_rarg2, c_rarg2);
-    __ cmpq(src, 0);
-    __ cmovq(Assembler::notEqual, c_rarg2, rax);
+    __ cmpptr(src, 0);
+    __ cmov(Assembler::notEqual, c_rarg2, rax);
     _num_int_args++;
     break;
   case 2:
-    __ leaq(rax, src);
+    __ lea(rax, src);
     __ xorl(c_rarg3, c_rarg3);
-    __ cmpq(src, 0);
-    __ cmovq(Assembler::notEqual, c_rarg3, rax);
+    __ cmpptr(src, 0);
+    __ cmov(Assembler::notEqual, c_rarg3, rax);
     _num_int_args++;
     break;
   case 3:
-    __ leaq(rax, src);
+    __ lea(rax, src);
     __ xorl(c_rarg4, c_rarg4);
-    __ cmpq(src, 0);
-    __ cmovq(Assembler::notEqual, c_rarg4, rax);
+    __ cmpptr(src, 0);
+    __ cmov(Assembler::notEqual, c_rarg4, rax);
     _num_int_args++;
     break;
   case 4:
-    __ leaq(rax, src);
+    __ lea(rax, src);
     __ xorl(c_rarg5, c_rarg5);
-    __ cmpq(src, 0);
-    __ cmovq(Assembler::notEqual, c_rarg5, rax);
+    __ cmpptr(src, 0);
+    __ cmov(Assembler::notEqual, c_rarg5, rax);
     _num_int_args++;
     break;
   default:
-    __ leaq(rax, src);
+    __ lea(rax, src);
     __ xorl(temp(), temp());
-    __ cmpq(src, 0);
-    __ cmovq(Assembler::notEqual, temp(), rax);
-    __ movq(Address(to(), _stack_offset), temp());
+    __ cmpptr(src, 0);
+    __ cmov(Assembler::notEqual, temp(), rax);
+    __ movptr(Address(to(), _stack_offset), temp());
     _stack_offset += wordSize;
     break;
   }
