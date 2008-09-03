@@ -55,7 +55,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipFile;
 
 import javax.lang.model.SourceVersion;
@@ -88,10 +87,6 @@ public class JavacFileManager implements StandardJavaFileManager {
 
     boolean useZipFileIndex;
 
-    private static boolean CHECK_ZIP_TIMESTAMP = false;
-    private static Map<File, Boolean> isDirectory = new ConcurrentHashMap<File, Boolean>();
-
-
     public static char[] toArray(CharBuffer buffer) {
         if (buffer.hasArray())
             return ((CharBuffer)buffer.compact().flip()).array();
@@ -109,6 +104,8 @@ public class JavacFileManager implements StandardJavaFileManager {
     private Paths paths;
 
     private Options options;
+
+    private FSInfo fsInfo;
 
     private final File uninited = new File("U N I N I T E D");
 
@@ -172,9 +169,9 @@ public class JavacFileManager implements StandardJavaFileManager {
         }
 
         options = Options.instance(context);
+        fsInfo = FSInfo.instance(context);
 
         useZipFileIndex = System.getProperty("useJavaUtilZip") == null;// TODO: options.get("useJavaUtilZip") == null;
-        CHECK_ZIP_TIMESTAMP = System.getProperty("checkZipIndexTimestamp") != null;// TODO: options.get("checkZipIndexTimestamp") != null;
 
         mmappedIO = options.get("mmappedIO") != null;
         ignoreSymbolFile = options.get("ignore.symbol.file") != null;
@@ -289,20 +286,7 @@ public class JavacFileManager implements StandardJavaFileManager {
                                ListBuffer<JavaFileObject> l) {
         Archive archive = archives.get(directory);
 
-        boolean isFile = false;
-        if (CHECK_ZIP_TIMESTAMP) {
-            Boolean isf = isDirectory.get(directory);
-            if (isf == null) {
-                isFile = directory.isFile();
-                isDirectory.put(directory, isFile);
-            }
-            else {
-                isFile = directory.isFile();
-            }
-        }
-        else {
-            isFile = directory.isFile();
-        }
+        boolean isFile = fsInfo.isFile(directory);
 
         if (archive != null || isFile) {
             if (archive == null) {
