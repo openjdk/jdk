@@ -391,6 +391,9 @@ class NativeJump: public NativeInstruction {
 
   void  set_jump_destination(address dest)  {
     intptr_t val = dest - next_instruction_address();
+    if (dest == (address) -1) {
+      val = -5; // jump to self
+    }
 #ifdef AMD64
     assert((labs(val)  & 0xFFFFFFFF00000000) == 0 || dest == (address)-1, "must be 32bit offset or -1");
 #endif // AMD64
