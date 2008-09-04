@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-package com.sun.jmx.interceptor;
+package javax.management.namespace;
 
+import com.sun.jmx.defaults.JmxProperties;
 import com.sun.jmx.mbeanserver.Util;
 import java.io.ObjectInputStream;
 import java.util.Collections;
@@ -47,7 +48,6 @@ import javax.management.MBeanException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationBroadcaster;
 import javax.management.NotificationEmitter;
@@ -343,7 +343,7 @@ import javax.management.loading.ClassLoaderRepository;
  * vem.publish}<code>(<em>name</em>, <em>n</em>)</code>.  See the example
  * <a href="#virtual-notif-example">above</a>.</p>
  *
- * @since Java SE 7
+ * @since 1.7
  */
 public abstract class MBeanServerSupport implements MBeanServer {
 
@@ -351,7 +351,7 @@ public abstract class MBeanServerSupport implements MBeanServer {
      * A logger for this class.
      */
     private static final Logger LOG =
-            Logger.getLogger(MBeanServerSupport.class.getName());
+            JmxProperties.NAMESPACE_LOGGER;
 
     /**
      * <p>Make a new {@code MBeanServerSupport} instance.</p>
@@ -1314,9 +1314,7 @@ public abstract class MBeanServerSupport implements MBeanServer {
         if (name.getDomain().equals("")) {
             String defaultDomain = getDefaultDomain();
             try {
-                // XXX change to ObjectName.switchDomain
-                // current code DOES NOT PRESERVE the order of keys
-                name = new ObjectName(defaultDomain, name.getKeyPropertyList());
+                name = name.withDomain(getDefaultDomain());
             } catch (Exception e) {
                 throw newIllegalArgumentException(
                         "Illegal default domain: " + defaultDomain);
