@@ -31,6 +31,7 @@ import java.io.PrintWriter;
 import java.util.MissingResourceException;
 
 import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.JavacOption.Option;
@@ -367,6 +368,12 @@ public class Main {
             }
 
             context.put(Log.outKey, out);
+
+            // allow System property in following line as a Mustang legacy
+            boolean batchMode = (options.get("nonBatchMode") == null
+                        && System.getProperty("nonBatchMode") == null);
+            if (batchMode)
+                CacheFSInfo.preRegister(context);
 
             fileManager = context.get(JavaFileManager.class);
 
