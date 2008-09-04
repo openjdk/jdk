@@ -675,10 +675,6 @@ public:
     static HWND sm_focusOwner;
     static HWND sm_focusedWindow;
 
-    static BOOL m_isWin95;
-    static BOOL m_isWin2000;
-    static BOOL m_isWinNT;
-
     static BOOL sm_bMenuLoop;
     static INLINE BOOL isMenuLoopActive() {
         return sm_bMenuLoop;
