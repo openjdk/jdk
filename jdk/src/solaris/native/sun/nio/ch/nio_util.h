@@ -27,7 +27,14 @@
 #include "jni_util.h"
 #include "jvm.h"
 #include "jlong.h"
+#include <errno.h>
 #include <sys/types.h>
+
+#define RESTARTABLE(_cmd, _result) do { \
+  do { \
+    _result = _cmd; \
+  } while((_result == -1) && (errno == EINTR)); \
+} while(0)
 
 
 /* NIO utility procedures */
