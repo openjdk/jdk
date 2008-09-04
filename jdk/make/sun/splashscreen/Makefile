@@ -67,7 +67,7 @@ ifneq ($(PLATFORM), windows)
   OTHER_LDLIBS += -L$(OPENWIN_LIB) -lX11 -lXext $(LIBM) -lpthread
 else # PLATFORM
   CFLAGS += -DWITH_WIN32
-  OTHER_LDLIBS += kernel32.lib user32.lib gdi32.lib 
+  OTHER_LDLIBS += kernel32.lib user32.lib gdi32.lib delayimp.lib /DELAYLOAD:user32.dll
 #$(JVMLIB) $(OBJDIR)/../../jpeg/$(OBJDIRNAME)/jpeg$(SUFFIX).lib
 endif # PLATFORM
 

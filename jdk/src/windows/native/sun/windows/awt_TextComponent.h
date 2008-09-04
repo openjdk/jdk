@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,15 +70,6 @@ public:
     static jstring _GetText(void *param);
 
     BOOL ActMouseMessage(MSG* pMsg);
-    /*
-     * For TextComponents that contains WCHAR strings or messages with
-     * WCHAR parameters.
-     */
-    INLINE LRESULT SendMessageW(UINT msg, WPARAM wParam = 0, LPARAM lParam = 0)
-    {
-        DASSERT(GetHWnd());
-        return ::SendMessageW(GetHWnd(), msg, wParam, lParam);
-    }
 
     void SetFont(AwtFont* font);
 

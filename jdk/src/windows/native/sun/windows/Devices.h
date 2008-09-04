@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,5 +69,9 @@ static Devices*                 theInstance;
 static CriticalSection          arrayLock;
 
 };
+
+// Some helper functions (from awt_MMStub.h/cpp)
+
+BOOL WINAPI MonitorBounds (HMONITOR, RECT*);
 
 #endif _DEVICES_H_

@@ -1,12 +1,10 @@
 /*
- * Copyright 1996-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,24 +21,29 @@
  * have any questions.
  */
 
-#include "awt.h"
+/*
+  @test
+  @bug 6737722
+  @summary no tray support in headless mode
+  @author dmitry.cherepanov: area=awt.headless
+  @run main HeadlessTray
+*/
 
-LPWSTR J2WHelper1(LPWSTR lpw, LPWSTR lpj, int offset, int nChars) {
-    memcpy(lpw, lpj + offset, nChars*2);
-    lpw[nChars] = '\0';
-    return lpw;
-}
+import java.awt.*;
 
-LPWSTR JNI_J2WHelper1(JNIEnv *env, LPWSTR lpwstr, jstring jstr) {
+public class HeadlessTray
+{
+    public static void main (String args[]) {
 
-    int len = env->GetStringLength(jstr);
+        System.setProperty("java.awt.headless", "true");
 
-    env->GetStringRegion(jstr, 0, len, lpwstr);
-    lpwstr[len] = '\0';
+        // We expect the method returns false and no exception thrown
+        boolean isSupported = SystemTray.isSupported();
 
-    return lpwstr;
-}
+        if (isSupported) {
+            throw new RuntimeException("Tray shouldn't be supported in headless mode ");
+        }
 
-LPWSTR J2WHelper(LPWSTR lpw, LPWSTR lpj,  int nChars) {
-    return J2WHelper1(lpw, lpj, 0, nChars);
+    }
+
 }

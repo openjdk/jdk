@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,13 +108,6 @@ AwtScrollPane* AwtScrollPane::Create(jobject self, jobject parent)
 
         {
             DWORD style = WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
-            if (!IS_WIN4X) {
-                /*
-                 * It's been decided by the UI folks that 3.X ScrollPanes
-                 * should have borders...
-                 */
-                style |= WS_BORDER;
-            }
             jint scrollbarDisplayPolicy =
                 env->GetIntField(target, scrollbarDisplayPolicyID);
 
@@ -122,7 +115,7 @@ AwtScrollPane* AwtScrollPane::Create(jobject self, jobject parent)
                     == java_awt_ScrollPane_SCROLLBARS_ALWAYS) {
                 style |= WS_HSCROLL | WS_VSCROLL;
             }
-            DWORD exStyle = IS_WIN4X ? WS_EX_CLIENTEDGE : 0;
+            DWORD exStyle = WS_EX_CLIENTEDGE;
 
             if (GetRTL()) {
                 exStyle |= WS_EX_RIGHT | WS_EX_LEFTSCROLLBAR;
@@ -225,15 +218,8 @@ void AwtScrollPane::RecalcSizes(int parentWidth, int parentHeight,
     }
 
     /* Determine border width without scrollbars. */
-    int horzBorder;
-    int vertBorder;
-    if (IS_WIN4X) {
-        horzBorder = ::GetSystemMetrics(SM_CXEDGE);
-        vertBorder = ::GetSystemMetrics(SM_CYEDGE);
-    } else {
-        horzBorder = ::GetSystemMetrics(SM_CXBORDER);
-        vertBorder = ::GetSystemMetrics(SM_CYBORDER);
-    }
+    int horzBorder = ::GetSystemMetrics(SM_CXEDGE);;
+    int vertBorder = ::GetSystemMetrics(SM_CYEDGE);;
 
     parentWidth -= (horzBorder * 2);
     parentHeight -= (vertBorder * 2);
