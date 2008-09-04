@@ -889,7 +889,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
     return 0;
 }
 
-jint
+JNIEXPORT jint JNICALL
 NET_GetPortFromSockaddr(struct sockaddr *him) {
     if (him->sa_family == AF_INET6) {
         return ntohs(((struct sockaddr_in6*)him)->sin6_port);

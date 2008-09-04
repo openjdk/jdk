@@ -37,17 +37,109 @@
 #include "net_util.h"
 #include "net_util_md.h"
 #include "nio_util.h"
-#include "java_net_SocketOptions.h"
 #include "nio.h"
 
-#ifdef __linux__
-#include <sys/utsname.h>
+/**
+ * Definitions for source-specific multicast to allow for building
+ * with older header files.
+ */
 
-#define IPV6_MULTICAST_IF 17
-#ifndef SO_BSDCOMPAT
-#define SO_BSDCOMPAT  14
+#ifdef __solaris__
+
+#ifndef IP_BLOCK_SOURCE
+
+#define IP_BLOCK_SOURCE                 0x15
+#define IP_UNBLOCK_SOURCE               0x16
+#define IP_ADD_SOURCE_MEMBERSHIP        0x17
+#define IP_DROP_SOURCE_MEMBERSHIP       0x18
+
+#define MCAST_BLOCK_SOURCE              0x2b
+#define MCAST_UNBLOCK_SOURCE            0x2c
+#define MCAST_JOIN_SOURCE_GROUP         0x2d
+#define MCAST_LEAVE_SOURCE_GROUP        0x2e
+
+#endif  /* IP_BLOCK_SOURCE */
+
+struct my_ip_mreq_source {
+        struct in_addr  imr_multiaddr;
+        struct in_addr  imr_sourceaddr;
+        struct in_addr  imr_interface;
+};
+
+/*
+ * Use #pragma pack() construct to force 32-bit alignment on amd64.
+ */
+#if defined(amd64)
+#pragma pack(4)
 #endif
+
+struct my_group_source_req {
+        uint32_t                gsr_interface;  /* interface index */
+        struct sockaddr_storage gsr_group;      /* group address */
+        struct sockaddr_storage gsr_source;     /* source address */
+};
+
+#if defined(amd64)
+#pragma pack()
 #endif
+
+#endif  /* __solaris__ */
+
+
+#ifdef __linux__
+
+#ifndef IP_BLOCK_SOURCE
+
+#define IP_BLOCK_SOURCE                 38
+#define IP_UNBLOCK_SOURCE               37
+#define IP_ADD_SOURCE_MEMBERSHIP        39
+#define IP_DROP_SOURCE_MEMBERSHIP       40
+
+#define MCAST_BLOCK_SOURCE              43
+#define MCAST_UNBLOCK_SOURCE            44
+#define MCAST_JOIN_SOURCE_GROUP         42
+#define MCAST_LEAVE_SOURCE_GROUP        45
+
+#endif  /* IP_BLOCK_SOURCE */
+
+struct my_ip_mreq_source {
+        struct in_addr  imr_multiaddr;
+        struct in_addr  imr_interface;
+        struct in_addr  imr_sourceaddr;
+};
+
+struct my_group_source_req {
+        uint32_t                gsr_interface;  /* interface index */
+        struct sockaddr_storage gsr_group;      /* group address */
+        struct sockaddr_storage gsr_source;     /* source address */
+};
+
+#endif   /* __linux__ */
+
+
+#define COPY_INET6_ADDRESS(env, source, target) \
+    (*env)->GetByteArrayRegion(env, source, 0, 16, target)
+
+/*
+ * Copy IPv6 group, interface index, and IPv6 source address
+ * into group_source_req structure.
+ */
+static void initGroupSourceReq(JNIEnv* env, jbyteArray group, jint index,
+                               jbyteArray source, struct my_group_source_req* req)
+{
+    struct sockaddr_in6* sin6;
+
+    req->gsr_interface = (uint32_t)index;
+
+    sin6 = (struct sockaddr_in6*)&(req->gsr_group);
+    sin6->sin6_family = AF_INET6;
+    COPY_INET6_ADDRESS(env, group, (jbyte*)&(sin6->sin6_addr));
+
+    sin6 = (struct sockaddr_in6*)&(req->gsr_source);
+    sin6->sin6_family = AF_INET6;
+    COPY_INET6_ADDRESS(env, source, (jbyte*)&(sin6->sin6_addr));
+}
+
 
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_initIDs(JNIEnv *env, jclass clazz)
@@ -55,43 +147,61 @@ Java_sun_nio_ch_Net_initIDs(JNIEnv *env, jclass clazz)
     /* Here because Windows native code does need to init IDs */
 }
 
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_Net_isIPv6Available0(JNIEnv* env, jclass cl)
+{
+    return (ipv6_available()) ? JNI_TRUE : JNI_FALSE;
+}
+
 JNIEXPORT int JNICALL
-Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean stream,
-                            jboolean reuse)
+Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
+                            jboolean stream, jboolean reuse)
 {
     int fd;
+    int type = (stream ? SOCK_STREAM : SOCK_DGRAM);
+    int domain = (ipv6_available() && preferIPv6) ? AF_INET6 : AF_INET;
 
-#ifdef AF_INET6
-    if (ipv6_available())
-        fd = socket(AF_INET6, (stream ? SOCK_STREAM : SOCK_DGRAM), 0);
-    else
-#endif /* AF_INET6 */
-        fd = socket(AF_INET, (stream ? SOCK_STREAM : SOCK_DGRAM), 0);
-
+    fd = socket(domain, type, 0);
     if (fd < 0) {
         return handleSocketError(env, errno);
     }
     if (reuse) {
         int arg = 1;
-        if (NET_SetSockOpt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&arg,
-                           sizeof(arg)) < 0) {
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&arg,
+                       sizeof(arg)) < 0) {
             JNU_ThrowByNameWithLastError(env,
                                          JNU_JAVANETPKG "SocketException",
                                          "sun.nio.ch.Net.setIntOption");
+            close(fd);
+            return -1;
         }
     }
+#ifdef __linux__
+    /* By default, Linux uses the route default */
+    if (domain == AF_INET6 && type == SOCK_DGRAM) {
+        int arg = 1;
+        if (setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &arg,
+                       sizeof(arg)) < 0) {
+            JNU_ThrowByNameWithLastError(env,
+                                         JNU_JAVANETPKG "SocketException",
+                                         "sun.nio.ch.Net.setIntOption");
+            close(fd);
+            return -1;
+        }
+    }
+#endif
     return fd;
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_Net_bind(JNIEnv *env, jclass clazz, /* ## Needs rest of PSI gunk */
-                         jobject fdo, jobject ia, int port)
+Java_sun_nio_ch_Net_bind0(JNIEnv *env, jclass clazz, jboolean preferIPv6,
+                          jobject fdo, jobject iao, int port)
 {
     SOCKADDR sa;
     int sa_len = SOCKADDR_LEN;
     int rv = 0;
 
-    if (NET_InetAddressToSockaddr(env, ia, port, (struct sockaddr *)&sa, &sa_len, JNI_TRUE) != 0) {
+    if (NET_InetAddressToSockaddr(env, iao, port, (struct sockaddr *)&sa, &sa_len, preferIPv6) != 0) {
       return;
     }
 
@@ -101,26 +211,26 @@ Java_sun_nio_ch_Net_bind(JNIEnv *env, jclass clazz, /* ## Needs rest of PSI gunk
     }
 }
 
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_Net_listen(JNIEnv *env, jclass cl, jobject fdo, jint backlog)
+{
+    if (listen(fdval(env, fdo), backlog) < 0)
+        handleSocketError(env, errno);
+}
+
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_Net_connect(JNIEnv *env, jclass clazz,
-                                jobject fdo, jobject iao, jint port,
-                                jint trafficClass)
+Java_sun_nio_ch_Net_connect0(JNIEnv *env, jclass clazz, jboolean preferIPv6,
+                             jobject fdo, jobject iao, jint port)
 {
     SOCKADDR sa;
     int sa_len = SOCKADDR_LEN;
     int rv;
 
-    if (NET_InetAddressToSockaddr(env, iao, port, (struct sockaddr *) &sa, &sa_len, JNI_TRUE) != 0) {
+    if (NET_InetAddressToSockaddr(env, iao, port, (struct sockaddr *) &sa,
+                                  &sa_len, preferIPv6) != 0)
+    {
       return IOS_THROWN;
     }
-
-#ifdef AF_INET6
-#if 0
-    if (trafficClass != 0 && ipv6_available()) { /* ## FIX */
-        NET_SetTrafficClass((struct sockaddr *)&sa, trafficClass);
-    }
-#endif
-#endif
 
     rv = connect(fdval(env, fdo), (struct sockaddr *)&sa, sa_len);
     if (rv != 0) {
@@ -159,119 +269,79 @@ Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
     return NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, &port);
 }
 
-
-#ifdef NEEDED
-
-/* ## This is gross.  We should generate platform-specific constant
- * ## definitions into a .java file and use those directly.
- */
-
-static int
-mapOption(JNIEnv *env, int opt, int *klevel, int *kopt)
-{
-
-    switch (opt) {
-
-    case java_net_SocketOptions_IP_TOS:
-        *klevel = IPPROTO_IP;
-        *kopt = IP_TOS;
-        break;
-
-    case java_net_SocketOptions_SO_BROADCAST:
-    case java_net_SocketOptions_SO_KEEPALIVE:
-    case java_net_SocketOptions_SO_LINGER:
-    case java_net_SocketOptions_SO_OOBINLINE:
-    case java_net_SocketOptions_SO_RCVBUF:
-    case java_net_SocketOptions_SO_REUSEADDR:
-    case java_net_SocketOptions_SO_SNDBUF:
-        *klevel = SOL_SOCKET;
-        break;
-
-    case java_net_SocketOptions_TCP_NODELAY:
-        *klevel = IPPROTO_IP;
-        *kopt = TCP_NODELAY;
-        return 0;
-
-    default:
-        JNU_ThrowByName(env, "java/lang/IllegalArgumentException", NULL);
-        return -1;
-    }
-
-    switch (opt) {
-
-    case java_net_SocketOptions_SO_BROADCAST:   *kopt = SO_BROADCAST;  break;
-    case java_net_SocketOptions_SO_KEEPALIVE:   *kopt = SO_KEEPALIVE;  break;
-    case java_net_SocketOptions_SO_LINGER:      *kopt = SO_LINGER;  break;
-    case java_net_SocketOptions_SO_OOBINLINE:   *kopt = SO_OOBINLINE;  break;
-    case java_net_SocketOptions_SO_RCVBUF:      *kopt = SO_RCVBUF;  break;
-    case java_net_SocketOptions_SO_REUSEADDR:   *kopt = SO_REUSEADDR;  break;
-    case java_net_SocketOptions_SO_SNDBUF:      *kopt = SO_SNDBUF;  break;
-
-    default:
-        return -1;
-    }
-
-    return 0;
-}
-#endif
-
-
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_Net_getIntOption0(JNIEnv *env, jclass clazz,
-                                  jobject fdo, jint opt)
+Java_sun_nio_ch_Net_getIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
+                                  jboolean mayNeedConversion, jint level, jint opt)
 {
-    int klevel, kopt;
     int result;
     struct linger linger;
+    u_char carg;
     void *arg;
-    int arglen;
+    int arglen, n;
 
-    if (NET_MapSocketOption(opt, &klevel, &kopt) < 0) {
-        JNU_ThrowByNameWithLastError(env,
-                                     JNU_JAVANETPKG "SocketException",
-                                     "Unsupported socket option");
-        return -1;
+    /* Option value is an int except for a few specific cases */
+
+    arg = (void *)&result;
+    arglen = sizeof(result);
+
+    if (level == IPPROTO_IP &&
+        (opt == IP_MULTICAST_TTL || opt == IP_MULTICAST_LOOP)) {
+        arg = (void*)&carg;
+        arglen = sizeof(carg);
     }
 
-    if (opt == java_net_SocketOptions_SO_LINGER) {
+    if (level == SOL_SOCKET && opt == SO_LINGER) {
         arg = (void *)&linger;
         arglen = sizeof(linger);
-    } else {
-        arg = (void *)&result;
-        arglen = sizeof(result);
     }
 
-    if (NET_GetSockOpt(fdval(env, fdo), klevel, kopt, arg, &arglen) < 0) {
+    if (mayNeedConversion) {
+        n = NET_GetSockOpt(fdval(env, fdo), level, opt, arg, &arglen);
+    } else {
+        n = getsockopt(fdval(env, fdo), level, opt, arg, &arglen);
+    }
+    if (n < 0) {
         JNU_ThrowByNameWithLastError(env,
                                      JNU_JAVANETPKG "SocketException",
                                      "sun.nio.ch.Net.getIntOption");
         return -1;
     }
 
-    if (opt == java_net_SocketOptions_SO_LINGER)
-        return linger.l_onoff ? linger.l_linger : -1;
-    else
-        return result;
+    if (level == IPPROTO_IP &&
+        (opt == IP_MULTICAST_TTL || opt == IP_MULTICAST_LOOP))
+    {
+        return (jint)carg;
+    }
+
+    if (level == SOL_SOCKET && opt == SO_LINGER)
+        return linger.l_onoff ? (jint)linger.l_linger : (jint)-1;
+
+    return (jint)result;
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz,
-                                  jobject fdo, jint opt, jint arg)
+Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
+                                  jboolean mayNeedConversion, jint level, jint opt, jint arg)
 {
-    int klevel, kopt;
     int result;
     struct linger linger;
+    u_char carg;
     void *parg;
-    int arglen;
+    int arglen, n;
 
-    if (NET_MapSocketOption(opt, &klevel, &kopt) < 0) {
-        JNU_ThrowByNameWithLastError(env,
-                                     JNU_JAVANETPKG "SocketException",
-                                     "Unsupported socket option");
-        return;
+    /* Option value is an int except for a few specific cases */
+
+    parg = (void*)&arg;
+    arglen = sizeof(arg);
+
+    if (level == IPPROTO_IP &&
+        (opt == IP_MULTICAST_TTL || opt == IP_MULTICAST_LOOP)) {
+        parg = (void*)&carg;
+        arglen = sizeof(carg);
+        carg = (u_char)arg;
     }
 
-    if (opt == java_net_SocketOptions_SO_LINGER) {
+    if (level == SOL_SOCKET && opt == SO_LINGER) {
         parg = (void *)&linger;
         arglen = sizeof(linger);
         if (arg >= 0) {
@@ -281,19 +351,199 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz,
             linger.l_onoff = 0;
             linger.l_linger = 0;
         }
-    } else {
-        parg = (void *)&arg;
-        arglen = sizeof(arg);
     }
 
-    if (NET_SetSockOpt(fdval(env, fdo), klevel, kopt, parg, arglen) < 0) {
+    if (mayNeedConversion) {
+        n = NET_SetSockOpt(fdval(env, fdo), level, opt, parg, arglen);
+    } else {
+        n = setsockopt(fdval(env, fdo), level, opt, parg, arglen);
+    }
+    if (n < 0) {
         JNU_ThrowByNameWithLastError(env,
                                      JNU_JAVANETPKG "SocketException",
                                      "sun.nio.ch.Net.setIntOption");
     }
 }
 
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobject fdo,
+                                jint group, jint interf, jint source)
+{
+    struct ip_mreq mreq;
+    struct my_ip_mreq_source mreq_source;
+    int opt, n, optlen;
+    void* optval;
 
+    if (source == 0) {
+        mreq.imr_multiaddr.s_addr = htonl(group);
+        mreq.imr_interface.s_addr = htonl(interf);
+        opt = (join) ? IP_ADD_MEMBERSHIP : IP_DROP_MEMBERSHIP;
+        optval = (void*)&mreq;
+        optlen = sizeof(mreq);
+    } else {
+        mreq_source.imr_multiaddr.s_addr = htonl(group);
+        mreq_source.imr_sourceaddr.s_addr = htonl(source);
+        mreq_source.imr_interface.s_addr = htonl(interf);
+        opt = (join) ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP;
+        optval = (void*)&mreq_source;
+        optlen = sizeof(mreq_source);
+    }
+
+    n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
+    if (n < 0) {
+        if (join && (errno == ENOPROTOOPT))
+            return IOS_UNAVAILABLE;
+        handleSocketError(env, errno);
+    }
+    return 0;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_blockOrUnblock4(JNIEnv *env, jobject this, jboolean block, jobject fdo,
+                                    jint group, jint interf, jint source)
+{
+    struct my_ip_mreq_source mreq_source;
+    int n;
+    int opt = (block) ? IP_BLOCK_SOURCE : IP_UNBLOCK_SOURCE;
+
+    mreq_source.imr_multiaddr.s_addr = htonl(group);
+    mreq_source.imr_sourceaddr.s_addr = htonl(source);
+    mreq_source.imr_interface.s_addr = htonl(interf);
+
+    n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt,
+                   (void*)&mreq_source, sizeof(mreq_source));
+    if (n < 0) {
+        if (block && (errno == ENOPROTOOPT))
+            return IOS_UNAVAILABLE;
+        handleSocketError(env, errno);
+    }
+    return 0;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobject fdo,
+                                jbyteArray group, jint index, jbyteArray source)
+{
+    struct ipv6_mreq mreq6;
+    struct my_group_source_req req;
+    int opt, n, optlen;
+    void* optval;
+
+    if (source == NULL) {
+        COPY_INET6_ADDRESS(env, group, (jbyte*)&(mreq6.ipv6mr_multiaddr));
+        mreq6.ipv6mr_interface = (int)index;
+        opt = (join) ? IPV6_ADD_MEMBERSHIP : IPV6_DROP_MEMBERSHIP;
+        optval = (void*)&mreq6;
+        optlen = sizeof(mreq6);
+    } else {
+#ifdef __linux__
+        /* Include-mode filtering broken on Linux at least to 2.6.24 */
+        return IOS_UNAVAILABLE;
+#else
+        initGroupSourceReq(env, group, index, source, &req);
+        opt = (join) ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP;
+        optval = (void*)&req;
+        optlen = sizeof(req);
+#endif
+    }
+
+    n = setsockopt(fdval(env,fdo), IPPROTO_IPV6, opt, optval, optlen);
+    if (n < 0) {
+        if (join && (errno == ENOPROTOOPT))
+            return IOS_UNAVAILABLE;
+        handleSocketError(env, errno);
+    }
+    return 0;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_blockOrUnblock6(JNIEnv *env, jobject this, jboolean block, jobject fdo,
+                                    jbyteArray group, jint index, jbyteArray source)
+{
+    struct my_group_source_req req;
+    int n;
+    int opt = (block) ? MCAST_BLOCK_SOURCE : MCAST_UNBLOCK_SOURCE;
+
+    initGroupSourceReq(env, group, index, source, &req);
+
+    n = setsockopt(fdval(env,fdo), IPPROTO_IPV6, opt,
+        (void*)&req, sizeof(req));
+    if (n < 0) {
+        if (block && (errno == ENOPROTOOPT))
+            return IOS_UNAVAILABLE;
+        handleSocketError(env, errno);
+    }
+    return 0;
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_Net_setInterface4(JNIEnv* env, jobject this, jobject fdo, jint interf)
+{
+    struct in_addr in;
+    int arglen = sizeof(struct in_addr);
+    int n;
+
+    in.s_addr = htonl(interf);
+
+    n = setsockopt(fdval(env, fdo), IPPROTO_IP, IP_MULTICAST_IF,
+                   (void*)&(in.s_addr), arglen);
+    if (n < 0) {
+        handleSocketError(env, errno);
+    }
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_getInterface4(JNIEnv* env, jobject this, jobject fdo)
+{
+    struct in_addr in;
+    int arglen = sizeof(struct in_addr);
+    int n;
+
+    n = getsockopt(fdval(env, fdo), IPPROTO_IP, IP_MULTICAST_IF, (void*)&in, &arglen);
+    if (n < 0) {
+        handleSocketError(env, errno);
+        return -1;
+    }
+    return ntohl(in.s_addr);
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_Net_setInterface6(JNIEnv* env, jobject this, jobject fdo, jint index)
+{
+    int value = (jint)index;
+    int arglen = sizeof(value);
+    int n;
+
+    n = setsockopt(fdval(env, fdo), IPPROTO_IPV6, IPV6_MULTICAST_IF,
+                   (void*)&(index), arglen);
+    if (n < 0) {
+        handleSocketError(env, errno);
+    }
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_getInterface6(JNIEnv* env, jobject this, jobject fdo)
+{
+    int index;
+    int arglen = sizeof(index);
+    int n;
+
+    n = getsockopt(fdval(env, fdo), IPPROTO_IPV6, IPV6_MULTICAST_IF, (void*)&index, &arglen);
+    if (n < 0) {
+        handleSocketError(env, errno);
+        return -1;
+    }
+    return (jint)index;
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_Net_shutdown(JNIEnv *env, jclass cl, jobject fdo, jint jhow)
+{
+    int how = (jhow == sun_nio_ch_Net_SHUT_RD) ? SHUT_RD :
+        (jhow == sun_nio_ch_Net_SHUT_WR) ? SHUT_WR : SHUT_RDWR;
+    if (shutdown(fdval(env, fdo), how) < 0)
+        handleSocketError(env, errno);
+}
 
 /* Declared in nio_util.h */
 
