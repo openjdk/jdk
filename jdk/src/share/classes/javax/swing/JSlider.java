@@ -270,8 +270,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
     {
         checkOrientation(orientation);
         this.orientation = orientation;
-        sliderModel = new DefaultBoundedRangeModel(value, 0, min, max);
-        sliderModel.addChangeListener(changeListener);
+        setModel(new DefaultBoundedRangeModel(value, 0, min, max));
         updateUI();
     }
 
@@ -284,7 +283,6 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
     {
         this.orientation = JSlider.HORIZONTAL;
         setModel(brm);
-        sliderModel.addChangeListener(changeListener);
         updateUI();
     }
 
@@ -476,15 +474,15 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
 
         if (newModel != null) {
             newModel.addChangeListener(changeListener);
+        }
 
-            if (accessibleContext != null) {
-                accessibleContext.firePropertyChange(
-                                                    AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
-                                                    (oldModel == null
-                                                     ? null : Integer.valueOf(oldModel.getValue())),
-                                                    (newModel == null
-                                                     ? null : Integer.valueOf(newModel.getValue())));
-            }
+        if (accessibleContext != null) {
+            accessibleContext.firePropertyChange(
+                                                AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
+                                                (oldModel == null
+                                                 ? null : Integer.valueOf(oldModel.getValue())),
+                                                (newModel == null
+                                                 ? null : Integer.valueOf(newModel.getValue())));
         }
 
         firePropertyChange("model", oldModel, sliderModel);
