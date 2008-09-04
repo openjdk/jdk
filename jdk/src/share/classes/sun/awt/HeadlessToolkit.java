@@ -456,6 +456,10 @@ public class HeadlessToolkit extends Toolkit
         return tk.getAWTEventListeners();
     }
 
+    public AWTEventListener[] getAWTEventListeners(long eventMask) {
+        return tk.getAWTEventListeners(eventMask);
+    }
+
     public boolean isDesktopSupported() {
         return false;
     }
