@@ -98,24 +98,24 @@ void CompactingPermGenGen::generate_vtable_methods(void** vtbl_list,
   // table.
 
 #ifdef WIN32
-  __ pushl(rcx);                        // save "this"
+  __ push(rcx);                         // save "this"
 #endif
-  __ movl(rcx, rax);
-  __ shrl(rcx, 8);                      // isolate vtable identifier.
-  __ shll(rcx, LogBytesPerWord);
+  __ mov(rcx, rax);
+  __ shrptr(rcx, 8);                    // isolate vtable identifier.
+  __ shlptr(rcx, LogBytesPerWord);
   Address index(noreg, rcx,  Address::times_1);
   ExternalAddress vtbl((address)vtbl_list);
   __ movptr(rdx, ArrayAddress(vtbl, index)); // get correct vtable address.
 #ifdef WIN32
-  __ popl(rcx);                         // restore "this"
+  __ pop(rcx);                          // restore "this"
 #else
-  __ movl(rcx, Address(rsp, 4));        // fetch "this"
+  __ movptr(rcx, Address(rsp, BytesPerWord));   // fetch "this"
 #endif
-  __ movl(Address(rcx, 0), rdx);        // update vtable pointer.
+  __ movptr(Address(rcx, 0), rdx);      // update vtable pointer.
 
-  __ andl(rax, 0x00ff);                 // isolate vtable method index
-  __ shll(rax, LogBytesPerWord);
-  __ addl(rax, rdx);                    // address of real method pointer.
+  __ andptr(rax, 0x00ff);                       // isolate vtable method index
+  __ shlptr(rax, LogBytesPerWord);
+  __ addptr(rax, rdx);                  // address of real method pointer.
   __ jmp(Address(rax, 0));              // get real method pointer.
 
   __ flush();

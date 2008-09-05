@@ -43,11 +43,12 @@ void ConversionStub::emit_code(LIR_Assembler* ce) {
     __ comisd(input()->as_xmm_double_reg(),
               ExternalAddress((address)&double_zero));
   } else {
-    __ pushl(rax);
+    LP64_ONLY(ShouldNotReachHere());
+    __ push(rax);
     __ ftst();
     __ fnstsw_ax();
     __ sahf();
-    __ popl(rax);
+    __ pop(rax);
   }
 
   Label NaN, do_return;
@@ -61,7 +62,7 @@ void ConversionStub::emit_code(LIR_Assembler* ce) {
 
   // input is NaN -> return 0
   __ bind(NaN);
-  __ xorl(result()->as_register(), result()->as_register());
+  __ xorptr(result()->as_register(), result()->as_register());
 
   __ bind(do_return);
   __ jmp(_continuation);
@@ -139,7 +140,7 @@ NewInstanceStub::NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKl
 void NewInstanceStub::emit_code(LIR_Assembler* ce) {
   assert(__ rsp_offset() == 0, "frame size should be fixed");
   __ bind(_entry);
-  __ movl(rdx, _klass_reg->as_register());
+  __ movptr(rdx, _klass_reg->as_register());
   __ call(RuntimeAddress(Runtime1::entry_for(_stub_id)));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
@@ -306,10 +307,10 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     assert(_obj != noreg, "must be a valid register");
     Register tmp = rax;
     if (_obj == tmp) tmp = rbx;
-    __ pushl(tmp);
+    __ push(tmp);
     __ get_thread(tmp);
-    __ cmpl(tmp, Address(_obj, instanceKlass::init_thread_offset_in_bytes() + sizeof(klassOopDesc)));
-    __ popl(tmp);
+    __ cmpptr(tmp, Address(_obj, instanceKlass::init_thread_offset_in_bytes() + sizeof(klassOopDesc)));
+    __ pop(tmp);
     __ jcc(Assembler::notEqual, call_patch);
 
     // access_field patches may execute the patched code before it's
@@ -434,7 +435,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
     VMReg r_1 = args[i].first();
     if (r_1->is_stack()) {
       int st_off = r_1->reg2stack() * wordSize;
-      __ movl (Address(rsp, st_off), r[i]);
+      __ movptr (Address(rsp, st_off), r[i]);
     } else {
       assert(r[i] == args[i].first()->as_Register(), "Wrong register for arg ");
     }
@@ -449,7 +450,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   ce->add_call_info_here(info());
 
 #ifndef PRODUCT
-  __ increment(ExternalAddress((address)&Runtime1::_arraycopy_slowcase_cnt));
+  __ incrementl(ExternalAddress((address)&Runtime1::_arraycopy_slowcase_cnt));
 #endif
 
   __ jmp(_continuation);
