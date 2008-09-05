@@ -96,6 +96,10 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
       // our new node, even though we may throw the node away.
       // (Note: This tweaking with igvn only works because x is a new node.)
       _igvn.set_type(x, t);
+      // If x is a TypeNode, capture any more-precise type permanently into Node
+      // othewise it will be not updated during igvn->transform since
+      // igvn->type(x) is set to x->Value() already.
+      x->raise_bottom_type(t);
       Node *y = x->Identity(&_igvn);
       if( y != x ) {
         wins++;
@@ -464,11 +468,11 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     case T_FLOAT:
     case T_DOUBLE:
     case T_ADDRESS:             // (RawPtr)
-    case T_NARROWOOP:
       cost++;
       break;
+    case T_NARROWOOP: // Fall through
     case T_OBJECT: {            // Base oops are OK, but not derived oops
-      const TypeOopPtr *tp = phi->type()->isa_oopptr();
+      const TypeOopPtr *tp = phi->type()->make_ptr()->isa_oopptr();
       // Derived pointers are Bad (tm): what's the Base (for GC purposes) of a
       // CMOVE'd derived pointer?  It's a CMOVE'd derived base.  Thus
       // CMOVE'ing a derived pointer requires we also CMOVE the base.  If we
@@ -499,11 +503,11 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
             return NULL;        // Too much speculative goo
       }
     }
-    // See if the Phi is used by a Cmp.  This will likely Split-If, a
-    // higher-payoff operation.
+    // See if the Phi is used by a Cmp or Narrow oop Decode/Encode.
+    // This will likely Split-If, a higher-payoff operation.
     for (DUIterator_Fast kmax, k = phi->fast_outs(kmax); k < kmax; k++) {
       Node* use = phi->fast_out(k);
-      if( use->is_Cmp() )
+      if( use->is_Cmp() || use->is_DecodeN() || use->is_EncodeP() )
         return NULL;
     }
   }
