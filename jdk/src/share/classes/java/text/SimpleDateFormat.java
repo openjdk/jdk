@@ -1482,10 +1482,13 @@ public class SimpleDateFormat extends DateFormat {
             // If the time zone matched uses the same name
             // (abbreviation) for both standard and daylight time,
             // let the time zone in the Calendar decide which one.
-            if (!useSameName) {
+            //
+            // Also if tz.getDSTSaving() returns 0 for DST, use tz to
+            // determine the local time. (6645292)
+            int dstAmount = (nameIndex >= 3) ? tz.getDSTSavings() : 0;
+            if (!(useSameName || (nameIndex >= 3 && dstAmount == 0))) {
                 calendar.set(Calendar.ZONE_OFFSET, tz.getRawOffset());
-                calendar.set(Calendar.DST_OFFSET,
-                             nameIndex >= 3 ? tz.getDSTSavings() : 0);
+                calendar.set(Calendar.DST_OFFSET, dstAmount);
             }
             return (start + zoneNames[nameIndex].length());
         }
