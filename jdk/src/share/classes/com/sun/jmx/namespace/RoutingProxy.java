@@ -30,31 +30,97 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.management.AttributeNotFoundException;
-import javax.management.InstanceNotFoundException;
 import javax.management.MBeanException;
 import javax.management.MBeanRegistrationException;
 
 import javax.management.MBeanServerConnection;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import javax.management.ReflectionException;
 import javax.management.namespace.JMXNamespaces;
 
 
 /**
- * An RoutingProxy narrows on a given name space in a
+ * A RoutingProxy narrows on a given name space in a
  * source object implementing MBeanServerConnection.
  * It is used to implement
  * {@code JMXNamespaces.narrowToNamespace(...)}.
  * This abstract class has two concrete subclasses:
- * <p>{@link RoutingConnectionProxy}: to cd in an MBeanServerConnection.</p>
- * <p>{@link RoutingServerProxy}: to cd in an MBeanServer.</p>
+ * <p>{@link RoutingConnectionProxy}: to narrow down into an
+ *    MBeanServerConnection.</p>
+ * <p>{@link RoutingServerProxy}: to narrow down into an MBeanServer.</p>
  * <p><b>
  * This API is a Sun internal API and is subject to changes without notice.
  * </b></p>
  * @since 1.7
  */
+//
+// RoutingProxies are client side objects which are used to narrow down
+// into a namespace. They are used to perform ObjectName translation,
+// adding the namespace to the routing ObjectName before sending it over
+// to the source connection, and removing that prefix from results of
+// queries, createMBean, registerMBean, and getObjectInstance.
+// This translation is the opposite to that which is performed by
+// NamespaceInterceptors.
+//
+// There is however a special case where routing proxies are used on the
+// 'server' side to remove a namespace - rather than to add it:
+// This the case of ClientContext.
+// When an ObjectName like "jmx.context//c1=v1,c2=v2//D:k=v" reaches the
+// jmx.context namespace, a routing proxy is used to remove the prefix
+// c1=v1,c2=v2// from the routing objectname.
+//
+// For a RoutingProxy used in a narrowDownToNamespace operation, we have:
+//     targetNs="" // targetNS is the namespace 'to remove'
+//     sourceNS=<namespace-we-narrow-down-to> // namespace 'to add'
+//
+// For a RoutingProxy used in a ClientContext operation, we have:
+//     targetNs=<encoded-context> // context must be removed from object name
+//     sourceNs="" // nothing to add...
+//
+// RoutingProxies can also be used on the client side to implement
+// "withClientContext" operations. In that case, the boolean parameter
+// 'forwards context' is set to true, targetNs is "", and sourceNS may
+// also be "". When forwardsContext is true, the RoutingProxy dynamically
+// creates an ObjectNameRouter for each operation - in order to dynamically add
+// the context attached to the thread to the routing ObjectName. This is
+// performed in the getObjectNameRouter() method.
+//
+// Finally, in order to avoid too many layers of wrapping,
+// RoutingConnectionProxy and RoutingServerProxy can be created through a
+// factory method that can concatenate namespace pathes in order to
+// return a single RoutingProxy - rather than wrapping a RoutingProxy inside
+// another RoutingProxy. See RoutingConnectionProxy.cd and
+// RoutingServerProxy.cd
+//
+// The class hierarchy is as follows:
+//
+//                           RoutingMBeanServerConnection
+//                   [abstract class for all routing interceptors,
+//                    such as RoutingProxies and HandlerInterceptors]
+//                            /                          \
+//                           /                            \
+//                    RoutingProxy                HandlerInterceptor
+//          [base class for                   [base class for server side
+//           client-side objects used          objects, created by
+//           in narrowDownTo]                  DispatchInterceptors]
+//           /                  \                   |          \
+//  RoutingConnectionProxy       \                  |      NamespaceInterceptor
+//  [wraps MBeanServerConnection  \                 |     [used to remove
+//   objects]                      \                |      namespace prefix and
+//                        RoutingServerProxy        |      wrap  JMXNamespace]
+//                        [wraps MBeanServer        |
+//                         Objects]                 |
+//                                            DomainInterceptor
+//                                            [used to wrap JMXDomain]
+//
+// RoutingProxies also differ from HandlerInterceptors in that they transform
+// calls to MBeanServerConnection operations that do not have any parameters
+// into a call to the underlying JMXNamespace MBean.
+// So for instance a call to:
+//    JMXNamespaces.narrowDownToNamespace(conn,"foo").getDomains()
+// is transformed into
+//    conn.getAttribute("foo//type=JMXNamespace","Domains");
+//
 public abstract class RoutingProxy<T extends MBeanServerConnection>
         extends RoutingMBeanServerConnection<T> {
 
@@ -179,17 +245,11 @@ public abstract class RoutingProxy<T extends MBeanServerConnection>
              throw x;
          } catch (MBeanException ex) {
              throw new IOException("Failed to get "+attributeName+": "+
-                     ex.getMessage(),
+                     ex,
                      ex.getTargetException());
-         } catch (AttributeNotFoundException ex) {
+         } catch (Exception ex) {
              throw new IOException("Failed to get "+attributeName+": "+
-                     ex.getMessage(),ex);
-         } catch (InstanceNotFoundException ex) {
-             throw new IOException("Failed to get "+attributeName+": "+
-                     ex.getMessage(),ex);
-         } catch (ReflectionException ex) {
-             throw new IOException("Failed to get "+attributeName+": "+
-                     ex.getMessage(),ex);
+                     ex,ex);
          }
     }
 
@@ -279,4 +339,62 @@ public abstract class RoutingProxy<T extends MBeanServerConnection>
                     (" mounted on targetNs="+targetNs));
     }
 
+    // Creates an instance of a subclass 'R' of RoutingProxy<T>
+    // RoutingServerProxy and RoutingConnectionProxy have their own factory
+    // instance.
+    static interface RoutingProxyFactory<T extends MBeanServerConnection,
+            R extends RoutingProxy<T>> {
+            R newInstance(T source,
+                    String sourcePath, String targetPath,
+                    boolean forwardsContext);
+            R newInstance(T source,
+                    String sourcePath);
+    }
+
+    // Performs a narrowDownToNamespace operation.
+    // This method will attempt to merge two RoutingProxies in a single
+    // one if they are of the same class.
+    //
+    // This method is never called directly - it should be called only by
+    // subclasses of RoutingProxy.
+    //
+    // As for now it is called by:
+    // RoutingServerProxy.cd and RoutingConnectionProxy.cd.
+    //
+    static <T extends MBeanServerConnection, R extends RoutingProxy<T>>
+           R cd(Class<R> routingProxyClass,
+              RoutingProxyFactory<T,R> factory,
+              T source, String sourcePath) {
+        if (source == null) throw new IllegalArgumentException("null");
+        if (source.getClass().equals(routingProxyClass)) {
+            // cast is OK here, but findbugs complains unless we use class.cast
+            final R other = routingProxyClass.cast(source);
+            final String target = other.getTargetNamespace();
+
+            // Avoid multiple layers of serialization.
+            //
+            // We construct a new proxy from the original source instead of
+            // stacking a new proxy on top of the old one.
+            // - that is we replace
+            //      cd ( cd ( x, dir1), dir2);
+            // by
+            //      cd (x, dir1//dir2);
+            //
+            // We can do this only when the source class is exactly
+            //    RoutingServerProxy.
+            //
+            if (target == null || target.equals("")) {
+                final String path =
+                    JMXNamespaces.concat(other.getSourceNamespace(),
+                    sourcePath);
+                return factory.newInstance(other.source(),path,"",
+                                           other.forwardsContext);
+            }
+            // Note: we could do possibly something here - but it would involve
+            //       removing part of targetDir, and possibly adding
+            //       something to sourcePath.
+            //       Too complex to bother! => simply default to stacking...
+        }
+        return factory.newInstance(source,sourcePath);
+    }
 }

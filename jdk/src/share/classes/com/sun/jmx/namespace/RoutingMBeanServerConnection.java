@@ -83,18 +83,32 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
     }
 
     /**
-     * Returns the wrapped source connection.
+     * Returns the wrapped source connection. The {@code source} connection
+     * is a connection to the MBeanServer that contains the actual MBean.
+     * In the case of cascading, that would be a connection to the sub
+     * agent.
      **/
     protected abstract T source() throws IOException;
 
     /**
      * Converts a target ObjectName to a source ObjectName.
+     * The target ObjectName is the name of the MBean in the mount point
+     * target. In the case of cascading, that would be the name of the
+     * MBean in the master agent. So if a subagent S containing an MBean
+     * named "X" is mounted in the target namespace "foo//" of a master agent M,
+     * the source is S, the target is "foo//" in M, the source name is "X", and
+     * the target name is "foo//X".
+     * In the case of cascading - such as in NamespaceInterceptor, this method
+     * will convert "foo//X" (the targetName) into "X", the source name.
      **/
     protected abstract ObjectName toSource(ObjectName targetName)
         throws MalformedObjectNameException;
 
     /**
      * Converts a source ObjectName to a target ObjectName.
+     * (see description of toSource above for explanations)
+     * In the case of cascading - such as in NamespaceInterceptor, this method
+     * will convert "X" (the sourceName) into "foo//X", the target name.
      **/
     protected abstract ObjectName toTarget(ObjectName sourceName)
         throws MalformedObjectNameException;
@@ -142,44 +156,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         return new RuntimeOperationsException(x2);
     }
 
-    /**
-     * This method is a hook to implement permission checking in subclasses.
-     * By default, this method does nothing and simply returns
-     * {@code attribute}.
-     *
-     * @param routingName The name of the MBean in the enclosing context.
-     *        This is of the form {@code <namespace>//<ObjectName>}.
-     * @param attributes  The list of attributes to check permission for.
-     * @param action one of "getAttribute" or "setAttribute"
-     * @return The list of attributes for which the callers has the
-     *         appropriate {@link
-     *         javax.management.namespace.JMXNamespacePermission}.
-     */
-    String[] checkAttributes(ObjectName routingName,
-            String[] attributes, String action) {
-        check(routingName,null,action);
-        return attributes;
-    }
-
-    /**
-     * This method is a hook to implement permission checking in subclasses.
-     * By default, this method does nothing and simply returns
-     * {@code attribute}.
-     *
-     * @param routingName The name of the MBean in the enclosing context.
-     *        This is of the form {@code <namespace>//<ObjectName>}.
-     * @param attributes The list of attributes to check permission for.
-     * @param action one of "getAttribute" or "setAttribute"
-     * @return The list of attributes for which the callers has the
-     *         appropriate {@link
-     *         javax.management.namespace.JMXNamespacePermission}.
-     */
-    AttributeList checkAttributes(ObjectName routingName,
-            AttributeList attributes, String action) {
-        check(routingName,null,action);
-        return attributes;
-    }
-
     // from MBeanServerConnection
     public AttributeList getAttributes(ObjectName name, String[] attributes)
         throws InstanceNotFoundException, ReflectionException, IOException {
@@ -193,37 +169,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         } catch (RuntimeException ex) {
             throw makeCompliantRuntimeException(ex);
         }
-    }
-
-   /**
-     * This method is a hook to implement permission checking in subclasses.
-     * By default, this method does nothing.
-     * A subclass may override this method and throw a {@link
-     * SecurityException} if the permission is denied.
-     *
-     * @param routingName The name of the MBean in the enclosing context.
-     *        This is of the form {@code <namespace>//<ObjectName>}.
-     * @param member The {@link
-     *  javax.management.namespace.JMXNamespacePermission#getMember member}
-     *  name.
-     * @param action The {@link
-     *  javax.management.namespace.JMXNamespacePermission#getActions action}
-     *  name.
-     */
-    void check(ObjectName routingName,
-               String member, String action) {
-    }
-
-    void checkPattern(ObjectName routingPattern,
-               String member, String action) {
-        // pattern is checked only at posteriori by checkQuery.
-        // checking it a priori usually doesn't work, because ObjectName.apply
-        // does not work between two patterns.
-        check(null,null,action);
-    }
-
-    void checkCreate(ObjectName routingName, String className,
-                     String action) {
     }
 
     // from MBeanServerConnection
@@ -446,24 +391,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         return result;
     }
 
-    /**
-     * This is a hook to implement permission checking in subclasses.
-     *
-     * Checks that the caller has sufficient permission for returning
-     * information about {@code sourceName} in {@code action}.
-     *
-     * By default always return true. Subclass may override this method
-     * and return false if the caller doesn't have sufficient permissions.
-     *
-     * @param routingName The name of the MBean to include or exclude from
-     *        the query, expressed in the enclosing context.
-     *        This is of the form {@code <namespace>//<ObjectName>}.
-     * @param action one of "queryNames" or "queryMBeans"
-     * @return true if {@code sourceName} can be returned.
-     */
-    boolean checkQuery(ObjectName routingName, String action) {
-        return true;
-    }
 
     // Return names in the target's context.
     ObjectInstance processOutputInstance(ObjectInstance source) {
@@ -643,6 +570,111 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         }
     }
 
+    // from MBeanServerConnection
+    public String getDefaultDomain() throws IOException {
+        try {
+            return source().getDefaultDomain();
+        } catch (RuntimeException ex) {
+            throw makeCompliantRuntimeException(ex);
+        }
+    }
+
+    //----------------------------------------------------------------------
+    // Hooks for checking permissions
+    //----------------------------------------------------------------------
+
+    /**
+     * This method is a hook to implement permission checking in subclasses.
+     * By default, this method does nothing and simply returns
+     * {@code attribute}.
+     *
+     * @param routingName The name of the MBean in the enclosing context.
+     *        This is of the form {@code <namespace>//<ObjectName>}.
+     * @param attributes  The list of attributes to check permission for.
+     * @param action one of "getAttribute" or "setAttribute"
+     * @return The list of attributes for which the callers has the
+     *         appropriate {@link
+     *         javax.management.namespace.JMXNamespacePermission}.
+     */
+    String[] checkAttributes(ObjectName routingName,
+            String[] attributes, String action) {
+        check(routingName,null,action);
+        return attributes;
+    }
+
+    /**
+     * This method is a hook to implement permission checking in subclasses.
+     * By default, this method does nothing and simply returns
+     * {@code attribute}.
+     *
+     * @param routingName The name of the MBean in the enclosing context.
+     *        This is of the form {@code <namespace>//<ObjectName>}.
+     * @param attributes The list of attributes to check permission for.
+     * @param action one of "getAttribute" or "setAttribute"
+     * @return The list of attributes for which the callers has the
+     *         appropriate {@link
+     *         javax.management.namespace.JMXNamespacePermission}.
+     */
+    AttributeList checkAttributes(ObjectName routingName,
+            AttributeList attributes, String action) {
+        check(routingName,null,action);
+        return attributes;
+    }
+
+   /**
+     * This method is a hook to implement permission checking in subclasses.
+     * By default, this method does nothing.
+     * A subclass may override this method and throw a {@link
+     * SecurityException} if the permission is denied.
+     *
+     * @param routingName The name of the MBean in the enclosing context.
+     *        This is of the form {@code <namespace>//<ObjectName>}.
+     * @param member The {@link
+     *  javax.management.namespace.JMXNamespacePermission#getMember member}
+     *  name.
+     * @param action The {@link
+     *  javax.management.namespace.JMXNamespacePermission#getActions action}
+     *  name.
+     */
+    void check(ObjectName routingName,
+               String member, String action) {
+    }
+
+    // called in createMBean and registerMBean
+    void checkCreate(ObjectName routingName, String className,
+                     String action) {
+    }
+
+    // A priori check for queryNames/queryMBeans/
+    void checkPattern(ObjectName routingPattern,
+               String member, String action) {
+        // pattern is checked only at posteriori by checkQuery.
+        // checking it a priori usually doesn't work, because ObjectName.apply
+        // does not work between two patterns.
+        // We only check that we have the permission requested for 'action'.
+        check(null,null,action);
+    }
+
+
+    /**
+     * This is a hook to implement permission checking in subclasses.
+     *
+     * Checks that the caller has sufficient permission for returning
+     * information about {@code sourceName} in {@code action}.
+     *
+     * By default always return true. Subclass may override this method
+     * and return false if the caller doesn't have sufficient permissions.
+     *
+     * @param routingName The name of the MBean to include or exclude from
+     *        the query, expressed in the enclosing context.
+     *        This is of the form {@code <namespace>//<ObjectName>}.
+     * @param action one of "queryNames" or "queryMBeans"
+     * @return true if {@code sourceName} can be returned.
+     */
+    boolean checkQuery(ObjectName routingName, String action) {
+        return true;
+    }
+
     /**
      * This method is a hook to implement permission checking in subclasses.
      * Checks that the caller as the necessary permissions to view the
@@ -658,14 +690,4 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
     String[] checkDomains(String[] domains, String action) {
         return domains;
     }
-
-    // from MBeanServerConnection
-    public String getDefaultDomain() throws IOException {
-        try {
-            return source().getDefaultDomain();
-        } catch (RuntimeException ex) {
-            throw makeCompliantRuntimeException(ex);
-        }
-    }
-
 }

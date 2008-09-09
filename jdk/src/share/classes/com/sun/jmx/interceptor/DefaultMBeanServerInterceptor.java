@@ -2021,7 +2021,7 @@ public class DefaultMBeanServerInterceptor
     private void addJMXNamespace(JMXNamespace namespace,
             final ObjectName logicalName,
             final Queue<Runnable> postQueue) {
-        dispatcher.addNamespace(logicalName, namespace, postQueue);
+        dispatcher.addInterceptorFor(logicalName, namespace, postQueue);
     }
 
     /**
@@ -2035,7 +2035,7 @@ public class DefaultMBeanServerInterceptor
     private void removeJMXNamespace(JMXNamespace namespace,
             final ObjectName logicalName,
             final Queue<Runnable> postQueue) {
-        dispatcher.removeNamespace(logicalName, namespace, postQueue);
+        dispatcher.removeInterceptorFor(logicalName, namespace, postQueue);
     }
 
     /**
