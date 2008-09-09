@@ -98,6 +98,7 @@ public class Enter extends JCTree.Visitor {
     ClassReader reader;
     Annotate annotate;
     MemberEnter memberEnter;
+    Types types;
     Lint lint;
     JavaFileManager fileManager;
 
@@ -119,6 +120,7 @@ public class Enter extends JCTree.Visitor {
         syms = Symtab.instance(context);
         chk = Check.instance(context);
         memberEnter = MemberEnter.instance(context);
+        types = Types.instance(context);
         annotate = Annotate.instance(context);
         lint = Lint.instance(context);
 
@@ -355,7 +357,7 @@ public class Enter extends JCTree.Visitor {
         // Enter class into `compiled' table and enclosing scope.
         if (chk.compiled.get(c.flatname) != null) {
             duplicateClass(tree.pos(), c);
-            result = new ErrorType(tree.name, (TypeSymbol)owner);
+            result = types.createErrorType(tree.name, (TypeSymbol)owner, Type.noType);
             tree.sym = (ClassSymbol)result.tsym;
             return;
         }

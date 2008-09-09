@@ -2187,6 +2187,20 @@ public class Types {
         };
     // </editor-fold>
 
+    // <editor-fold defaultstate="collapsed" desc="createErrorType">
+    public Type createErrorType(Type originalType) {
+        return new ErrorType(originalType, syms.errSymbol);
+    }
+
+    public Type createErrorType(ClassSymbol c, Type originalType) {
+        return new ErrorType(c, originalType);
+    }
+
+    public Type createErrorType(Name name, TypeSymbol container, Type originalType) {
+        return new ErrorType(name, container, originalType);
+    }
+    // </editor-fold>
+
     // <editor-fold defaultstate="collapsed" desc="rank">
     /**
      * The rank of a class is the length of the longest path between
@@ -2604,7 +2618,7 @@ public class Types {
                 if (!bound.isInterface())
                     classCount++;
             if (classCount > 1)
-                return syms.errType;
+                return createErrorType(t);
         }
         return makeCompoundType(bounds);
     }

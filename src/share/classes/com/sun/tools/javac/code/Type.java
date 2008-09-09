@@ -1194,21 +1194,24 @@ public class Type implements PrimitiveType {
     public static class ErrorType extends ClassType
             implements javax.lang.model.type.ErrorType {
 
-        public ErrorType() {
+        private Type originalType = null;
+
+        public ErrorType(Type originalType, TypeSymbol tsym) {
             super(noType, List.<Type>nil(), null);
             tag = ERROR;
+            this.tsym = tsym;
+            this.originalType = (originalType == null ? noType : originalType);
         }
 
-        public ErrorType(ClassSymbol c) {
-            this();
-            tsym = c;
+        public ErrorType(ClassSymbol c, Type originalType) {
+            this(originalType, c);
             c.type = this;
             c.kind = ERR;
             c.members_field = new Scope.ErrorScope(c);
         }
 
-        public ErrorType(Name name, TypeSymbol container) {
-            this(new ClassSymbol(PUBLIC|STATIC|ACYCLIC, name, null, container));
+        public ErrorType(Name name, TypeSymbol container, Type originalType) {
+            this(new ClassSymbol(PUBLIC|STATIC|ACYCLIC, name, null, container), originalType);
         }
 
         @Override
@@ -1232,6 +1235,10 @@ public class Type implements PrimitiveType {
 
         public TypeKind getKind() {
             return TypeKind.ERROR;
+        }
+
+        public Type getOriginalType() {
+            return originalType;
         }
 
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
