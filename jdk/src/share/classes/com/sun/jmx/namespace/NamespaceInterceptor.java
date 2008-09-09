@@ -54,10 +54,6 @@ import javax.management.namespace.JMXNamespacePermission;
  */
 public class NamespaceInterceptor extends HandlerInterceptor<JMXNamespace> {
 
-    /**
-     * A logger for this class.
-     **/
-    private static final Logger LOG = JmxProperties.NAMESPACE_LOGGER;
     private static final Logger PROBE_LOG = Logger.getLogger(
             JmxProperties.NAMESPACE_LOGGER+".probe");
 

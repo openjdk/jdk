@@ -63,8 +63,8 @@ import javax.management.namespace.JMXNamespace;
 /**
  * This interceptor wraps a JMXNamespace, and performs
  * {@code ObjectName} rewriting. {@code HandlerInterceptor} are
- * usually created and managed by a {@link NamespaceDispatcher} or
- * {@link DomainDispatcher}.
+ * created and managed by a {@link NamespaceDispatchInterceptor} or a
+ * {@link DomainDispatchInterceptor}.
  * <p><b>
  * This API is a Sun internal API and is subject to changes without notice.
  * </b></p>
@@ -90,6 +90,12 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         this.handler = handler;
     }
 
+    //
+    // The {@code source} connection is a connection to the MBeanServer
+    // that contains the actual MBeans.
+    // In the case of cascading, that would be a connection to the sub
+    // agent. Practically, this is JMXNamespace.getSourceServer();
+    //
     @Override
     protected MBeanServer source() {
          return handler.getSourceServer();
@@ -105,7 +111,9 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
          return source();
     }
 
-    T getNamespace() {
+    // The namespace or domain handler - this either a JMXNamespace or a
+    // a JMXDomain
+    T getHandlerInterceptorMBean() {
         return handler;
     }
 
@@ -122,7 +130,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
                     Util.newRuntimeIOException(x));
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public AttributeList getAttributes(ObjectName name, String[] attributes)
         throws InstanceNotFoundException, ReflectionException {
@@ -172,7 +180,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void removeNotificationListener(ObjectName name, ObjectName listener)
         throws InstanceNotFoundException, ListenerNotFoundException {
@@ -183,7 +191,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public String getDefaultDomain() {
         try {
@@ -193,7 +201,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public String[] getDomains() {
         try {
@@ -203,7 +211,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public Integer getMBeanCount() {
         try {
@@ -213,7 +221,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void setAttribute(ObjectName name, Attribute attribute)
         throws InstanceNotFoundException, AttributeNotFoundException,
@@ -226,7 +234,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public Set<ObjectName> queryNames(ObjectName name, QueryExp query) {
         try {
@@ -236,7 +244,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query) {
         try {
@@ -246,7 +254,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public boolean isInstanceOf(ObjectName name, String className)
         throws InstanceNotFoundException {
@@ -257,7 +265,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public ObjectInstance createMBean(String className, ObjectName name)
         throws ReflectionException, InstanceAlreadyExistsException,
@@ -270,7 +278,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public ObjectInstance createMBean(String className, ObjectName name,
                         ObjectName loaderName)
@@ -284,7 +292,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public Object getAttribute(ObjectName name, String attribute)
         throws MBeanException, AttributeNotFoundException,
@@ -296,7 +304,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void removeNotificationListener(ObjectName name, ObjectName listener,
                             NotificationFilter filter, Object handback)
@@ -309,7 +317,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void removeNotificationListener(ObjectName name,
                       NotificationListener listener, NotificationFilter filter,
@@ -323,7 +331,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void removeNotificationListener(ObjectName name,
                 NotificationListener listener)
@@ -336,7 +344,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void addNotificationListener(ObjectName name,
                     NotificationListener listener, NotificationFilter filter,
@@ -349,7 +357,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void addNotificationListener(ObjectName name, ObjectName listener,
                 NotificationFilter filter, Object handback)
@@ -362,7 +370,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public boolean isRegistered(ObjectName name) {
         try {
@@ -372,7 +380,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void unregisterMBean(ObjectName name)
         throws InstanceNotFoundException, MBeanRegistrationException {
@@ -383,7 +391,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public MBeanInfo getMBeanInfo(ObjectName name)
         throws InstanceNotFoundException, IntrospectionException,
@@ -395,7 +403,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public ObjectInstance getObjectInstance(ObjectName name)
         throws InstanceNotFoundException {
@@ -406,7 +414,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public ObjectInstance createMBean(String className, ObjectName name,
                 Object[] params, String[] signature)
@@ -421,7 +429,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public ObjectInstance createMBean(String className, ObjectName name,
                 ObjectName loaderName, Object[] params, String[] signature)
@@ -437,7 +445,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public AttributeList setAttributes(ObjectName name,AttributeList attributes)
     throws InstanceNotFoundException, ReflectionException {
@@ -448,7 +456,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public Object invoke(ObjectName name, String operationName, Object[] params,
                 String[] signature)

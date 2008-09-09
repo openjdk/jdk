@@ -57,7 +57,8 @@ import static javax.management.namespace.JMXNamespaces.NAMESPACE_SEPARATOR;
 public class Util {
     private final static int NAMESPACE_SEPARATOR_LENGTH =
             NAMESPACE_SEPARATOR.length();
-    public final static String ILLEGAL_MBEANSERVER_NAME_CHARS=";:*?";
+    public final static char[] ILLEGAL_MBEANSERVER_NAME_CHARS=";:*?".
+            toCharArray();
 
 
     static <K, V> Map<K, V> newMap() {
@@ -621,7 +622,7 @@ public class Util {
      * is {@code null}.
      * @throws IllegalArgumentException if mbeanServerName contains illegal
      *         characters, or is empty, or is {@code "-"}.
-     *         Illegal characters are {@value #ILLEGAL_MBEANSERVER_NAME_CHARS}.
+     *         Illegal characters are {@link #ILLEGAL_MBEANSERVER_NAME_CHARS}.
      */
     public static String checkServerName(String mbeanServerName) {
         if ("".equals(mbeanServerName))
@@ -632,7 +633,7 @@ public class Util {
                     "\"-\" is not a valid MBean server name");
         if (isMBeanServerNameUndefined(mbeanServerName))
             return MBeanServerFactory.DEFAULT_MBEANSERVER_NAME;
-        for (char c : ILLEGAL_MBEANSERVER_NAME_CHARS.toCharArray()) {
+        for (char c : ILLEGAL_MBEANSERVER_NAME_CHARS) {
             if (mbeanServerName.indexOf(c) >= 0)
                 throw new IllegalArgumentException(
                         "invalid character in MBeanServer name: "+c);
@@ -662,15 +663,15 @@ public class Util {
     }
 
     // Log the exception and its causes without logging the stack trace.
-    // Use with care - it is usally preferable to log the whole stack trace!
+    // Use with care - it is usually preferable to log the whole stack trace!
     // We don't want to log the whole stack trace here: logshort() is
     // called in those cases where the exception might not be abnormal.
     private static void logshort(String msg, Throwable t) {
         if (JmxProperties.MISC_LOGGER.isLoggable(Level.FINE)) {
             StringBuilder toprint = new StringBuilder(msg);
-               toprint.append("\nCaused By: ").append(String.valueOf(t));
-            while ((t=t.getCause())!=null)
-               toprint.append("\nCaused By: ").append(String.valueOf(t));
+            do {
+                toprint.append("\nCaused By: ").append(String.valueOf(t));
+            } while ((t=t.getCause())!=null);
             JmxProperties.MISC_LOGGER.fine(toprint.toString());
        }
     }

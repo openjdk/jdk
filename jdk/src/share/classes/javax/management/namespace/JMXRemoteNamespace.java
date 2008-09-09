@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.security.AccessControlException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -125,10 +126,8 @@ public class JMXRemoteNamespace
     // the underlying JMXConnector. It is used in particular to maintain the
     // "connected" state in this MBean.
     //
-    private static class ConnectionListener implements NotificationListener {
-        private final JMXRemoteNamespace handler;
-        private ConnectionListener(JMXRemoteNamespace handler) {
-            this.handler = handler;
+    private class ConnectionListener implements NotificationListener {
+        private ConnectionListener() {
         }
         public void handleNotification(Notification notification,
                 Object handback) {
@@ -136,7 +135,11 @@ public class JMXRemoteNamespace
                 return;
             final JMXConnectionNotification cn =
                     (JMXConnectionNotification)notification;
-            handler.checkState(this,cn,(JMXConnector)handback);
+            final String type = cn.getType();
+            if (JMXConnectionNotification.CLOSED.equals(type)
+                    || JMXConnectionNotification.FAILED.equals(type)) {
+                checkState(this,cn,(JMXConnector)handback);
+            }
         }
     }
 
@@ -188,7 +191,7 @@ public class JMXRemoteNamespace
             "Connected",
             "Emitted when the Connected state of this object changes");
 
-    private static long seqNumber=0;
+    private static AtomicLong seqNumber = new AtomicLong(0);
 
     private final NotificationBroadcasterSupport broadcaster;
     private final ConnectionListener listener;
@@ -237,7 +240,7 @@ public class JMXRemoteNamespace
         this.optionsMap = JMXNamespaceUtils.unmodifiableMap(optionsMap);
 
         // handles (dis)connection events
-        this.listener = new ConnectionListener(this);
+        this.listener = new ConnectionListener();
 
         // XXX TODO: remove the probe, or simplify it.
         this.probed = false;
@@ -313,8 +316,8 @@ public class JMXRemoteNamespace
         broadcaster.removeNotificationListener(listener, filter, handback);
     }
 
-    private static synchronized long getNextSeqNumber() {
-        return seqNumber++;
+    private static long getNextSeqNumber() {
+        return seqNumber.getAndIncrement();
     }
 
 
@@ -362,14 +365,18 @@ public class JMXRemoteNamespace
         // lock while evaluating the true value of the connected state,
         // while anyone might also call close() or connect() from a
         // different thread.
-        //
         // The method switchConnection() (called from here too) also has the
-        // same kind of complex logic.
+        // same kind of complex logic:
         //
         // We use the JMXConnector has a handback to the notification listener
         // (emittingConnector) in order to be able to determine whether the
         // notification concerns the current connector in use, or an older
-        // one.
+        // one. The 'emittingConnector' is the connector from which the
+        // notification originated. This could be an 'old' connector - as
+        // closed() and connect() could already have been called before the
+        // notification arrived. So what we do is to compare the
+        // 'emittingConnector' with the current connector, to see if the
+        // notification actually comes from the curent connector.
         //
         boolean remove = false;
 
@@ -486,14 +493,12 @@ public class JMXRemoteNamespace
         }
     }
 
-    private void closeall(JMXConnector... a) {
-        for (JMXConnector c : a) {
-            try {
-                if (c != null) c.close();
-            } catch (Exception x) {
-                // OK: we're gonna throw the original exception later.
-                LOG.finest("Ignoring exception when closing connector: "+x);
-            }
+    private void close(JMXConnector c) {
+        try {
+            if (c != null) c.close();
+        } catch (Exception x) {
+            // OK: we're gonna throw the original exception later.
+            LOG.finest("Ignoring exception when closing connector: "+x);
         }
     }
 
@@ -640,10 +645,10 @@ public class JMXRemoteNamespace
             msc = aconn.getMBeanServerConnection();
             aconn.addConnectionNotificationListener(listener,null,aconn);
         } catch (IOException io) {
-            closeall(aconn);
+            close(aconn);
             throw io;
         } catch (RuntimeException x) {
-            closeall(aconn);
+            close(aconn);
             throw x;
         }
 
