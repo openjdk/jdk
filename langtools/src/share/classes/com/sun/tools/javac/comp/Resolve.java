@@ -656,7 +656,7 @@ public class Resolve {
                     return new AmbiguityError(m1, m2);
                 // both abstract, neither overridden; merge throws clause and result type
                 Symbol result;
-                Type result2 = mt2.getReturnType();;
+                Type result2 = mt2.getReturnType();
                 if (mt2.tag == FORALL)
                     result2 = types.subst(result2, ((ForAll)mt2).tvars, ((ForAll)mt1).tvars);
                 if (types.isSubtype(mt1.getReturnType(), result2)) {
@@ -1099,7 +1099,7 @@ public class Resolve {
             if (sym == syms.errSymbol // preserve the symbol name through errors
                 || ((sym.kind & ERRONEOUS) == 0 // make sure an error symbol is returned
                     && (sym.kind & TYP) != 0))
-                sym = new ErrorType(name, qualified?site.tsym:syms.noSymbol).tsym;
+                sym = types.createErrorType(name, qualified ? site.tsym : syms.noSymbol, sym.type).tsym;
         }
         return sym;
     }

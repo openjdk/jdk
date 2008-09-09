@@ -322,4 +322,18 @@ public class JavacTrees extends Trees {
             return t2;
         }
     }
+
+    /**
+     * Gets the original type from the ErrorType object.
+     * @param errorType The errorType for which we want to get the original type.
+     * @returns TypeMirror corresponding to the original type, replaced by the ErrorType.
+     *          noType (type.tag == NONE) is returned if there is no original type.
+     */
+    public TypeMirror getOriginalType(javax.lang.model.type.ErrorType errorType) {
+        if (errorType instanceof com.sun.tools.javac.code.Type.ErrorType) {
+            return ((com.sun.tools.javac.code.Type.ErrorType)errorType).getOriginalType();
+        }
+
+        return com.sun.tools.javac.code.Type.noType;
+    }
 }
