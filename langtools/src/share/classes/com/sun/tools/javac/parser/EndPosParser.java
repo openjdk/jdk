@@ -41,10 +41,10 @@ import static com.sun.tools.javac.tree.JCTree.*;
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b></p>
  */
-public class EndPosParser extends Parser {
+public class EndPosParser extends JavacParser {
 
-    public EndPosParser(Factory fac, Lexer S, boolean keepDocComments) {
-        super(fac, S, keepDocComments);
+    public EndPosParser(ParserFactory fac, Lexer S, boolean keepDocComments, boolean keepLineMap) {
+        super(fac, S, keepDocComments, keepLineMap);
         this.S = S;
         endPositions = new HashMap<JCTree,Integer>();
     }
@@ -79,8 +79,8 @@ public class EndPosParser extends Parser {
     }
 
     @Override
-    public JCCompilationUnit compilationUnit() {
-        JCCompilationUnit t = super.compilationUnit();
+    public JCCompilationUnit parseCompilationUnit() {
+        JCCompilationUnit t = super.parseCompilationUnit();
         t.endPositions = endPositions;
         return t;
     }
