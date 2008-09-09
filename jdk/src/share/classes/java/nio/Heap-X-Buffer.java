@@ -566,7 +566,7 @@ class Heap$Type$Buffer$RW$
 
     // --- Methods to support CharSequence ---
 
-    public CharSequence subSequence(int start, int end) {
+    public CharBuffer subSequence(int start, int end) {
         if ((start < 0)
             || (end > length())
             || (start > end))
