@@ -186,7 +186,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
     // --- Methods to support CharSequence ---
 
-    public CharSequence subSequence(int start, int end) {
+    public CharBuffer subSequence(int start, int end) {
         int pos = position();
         int lim = limit();
         assert (pos <= lim);
