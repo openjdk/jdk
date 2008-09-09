@@ -276,7 +276,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     /** Factory for parsers.
      */
-    protected Parser.Factory parserFactory;
+    protected ParserFactory parserFactory;
 
     /** Optional listener for progress events
      */
@@ -320,7 +320,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         todo = Todo.instance(context);
 
         fileManager = context.get(JavaFileManager.class);
-        parserFactory = Parser.Factory.instance(context);
+        parserFactory = ParserFactory.instance(context);
 
         try {
             // catch completion problems with predefineds
@@ -510,10 +510,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         return parseErrors;
     }
 
-    protected Scanner.Factory getScannerFactory() {
-        return Scanner.Factory.instance(context);
-    }
-
     /** Try to open input stream with given name.
      *  Report an error if this fails.
      *  @param filename   The file name of the input stream to be opened.
@@ -545,13 +541,9 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 taskListener.started(e);
             }
             int initialErrorCount = log.nerrors;
-            Scanner scanner = getScannerFactory().newScanner(content);
-            Parser parser = parserFactory.newParser(scanner, keepComments(), genEndPos);
-            tree = parser.compilationUnit();
+            Parser parser = parserFactory.newParser(content, keepComments(), genEndPos, lineDebugInfo);
+            tree = parser.parseCompilationUnit();
             parseErrors |= (log.nerrors > initialErrorCount);
-            if (lineDebugInfo) {
-                tree.lineMap = scanner.getLineMap();
-            }
             if (verbose) {
                 printVerbose("parsing.done", Long.toString(elapsed(msec)));
             }

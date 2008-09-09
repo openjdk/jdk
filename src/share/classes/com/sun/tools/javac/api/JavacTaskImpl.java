@@ -27,6 +27,7 @@ package com.sun.tools.javac.api;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.CharBuffer;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -45,7 +46,7 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.*;
 import com.sun.tools.javac.model.*;
 import com.sun.tools.javac.parser.Parser;
-import com.sun.tools.javac.parser.Scanner;
+import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
@@ -93,6 +94,9 @@ public class JavacTaskImpl extends JavacTask {
         args.getClass();
         context.getClass();
         fileObjects.getClass();
+
+        // force the use of the scanner that captures Javadoc comments
+        com.sun.tools.javac.parser.DocCommentScanner.Factory.preRegister(context);
     }
 
     JavacTaskImpl(JavacTool tool,
@@ -166,8 +170,6 @@ public class JavacTaskImpl extends JavacTask {
             if (!filenames.isEmpty())
                 throw new IllegalArgumentException("Malformed arguments " + filenames.toString(" "));
             compiler = JavaCompiler.instance(context);
-            // force the use of the scanner that captures Javadoc comments
-            com.sun.tools.javac.parser.DocCommentScanner.Factory.preRegister(context);
             compiler.keepComments = true;
             compiler.genEndPos = true;
             // NOTE: this value will be updated after annotation processing
@@ -519,14 +521,12 @@ public class JavacTaskImpl extends JavacTask {
             throw new IllegalArgumentException();
         compiler = JavaCompiler.instance(context);
         JavaFileObject prev = compiler.log.useSource(null);
-        Scanner.Factory scannerFactory = Scanner.Factory.instance(context);
-        Parser.Factory parserFactory = Parser.Factory.instance(context);
+        ParserFactory parserFactory = ParserFactory.instance(context);
         Attr attr = Attr.instance(context);
         try {
-            Scanner scanner = scannerFactory.newScanner((expr+"\u0000").toCharArray(),
-                                                        expr.length());
-            Parser parser = parserFactory.newParser(scanner, false, false);
-            JCTree tree = parser.type();
+            CharBuffer buf = CharBuffer.wrap((expr+"\u0000").toCharArray(), 0, expr.length());
+            Parser parser = parserFactory.newParser(buf, false, false, false);
+            JCTree tree = parser.parseType();
             return attr.attribType(tree, (Symbol.TypeSymbol)scope);
         } finally {
             compiler.log.useSource(prev);
