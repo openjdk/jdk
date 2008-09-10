@@ -110,7 +110,7 @@ public class DomainInterceptor extends HandlerInterceptor<JMXDomain> {
         super(handler);
         this.domainName = domainName;
         this.serverName = serverName;
-        ALL = Util.newObjectName(domainName+":*");
+        ALL = ObjectName.valueOf(domainName+":*");
     }
 
     @Override
@@ -437,7 +437,7 @@ public class DomainInterceptor extends HandlerInterceptor<JMXDomain> {
          int count=0;
          for (int i=0;i<domains.length;i++) {
              try {
-                 check(Util.newObjectName(domains[i]+":x=x"),"-",
+                 check(ObjectName.valueOf(domains[i]+":x=x"),"-",
                          "-","getDomains");
              } catch (SecurityException x) { // DLS: OK
                  count++;

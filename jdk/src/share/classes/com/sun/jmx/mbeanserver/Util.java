@@ -110,14 +110,6 @@ public class Util {
         return new ArrayList<E>(c);
     }
 
-    public static ObjectName newObjectName(String s) {
-        try {
-            return new ObjectName(s);
-        } catch (MalformedObjectNameException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
     /* This method can be used by code that is deliberately violating the
      * allowed checked casts.  Rather than marking the whole method containing
      * the code with @SuppressWarnings, you can use a call to this method for
