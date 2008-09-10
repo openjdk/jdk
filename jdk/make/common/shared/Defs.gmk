@@ -540,9 +540,11 @@ JDK_CUPS_HEADERS_PATH=$(JDK_DEVTOOLS_DIR)/share/cups/include
   endif
 endif
 
-# Utilities ant and findbugs
-ifeq ($(ANT_HOME),)
-  ANT_HOME := $(call DirExists,/usr/share/ant,$(JDK_DEVTOOLS_DIR)/share/ant/latest,)
+# Utilities ant
+ifeq ($(PLATFORM), windows)
+  ifeq ($(ANT_HOME),)
+    ANT_HOME := $(call DirExists,$(JDK_DEVTOOLS_DIR)/share/ant/latest,,)
+  endif
 endif
 ifeq ($(ANT_HOME),)
   ANT = ant
