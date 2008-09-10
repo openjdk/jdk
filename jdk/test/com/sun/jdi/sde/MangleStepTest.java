@@ -10,7 +10,11 @@
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
  *  @run compile MangleStepTest.java
  *  @run compile -g  onion/pickle/Mangle.java
- *  @run main MangleStepTest unset Java XYZ Rats bogus
+ *  @run main MangleStepTest unset
+ *  @run main MangleStepTest Java
+ *  @run main MangleStepTest XYZ
+ *  @run main MangleStepTest Rats
+ *  @run main MangleStepTest bogus
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
@@ -32,9 +36,7 @@ public class MangleStepTest extends TestScaffold {
 
     public static void main(String[] args)      throws Exception {
         testSetUp();
-        for (int i = 0; i < args.length; ++i) {
-            new MangleStepTest(args[i]).startTests();
-        }
+        new MangleStepTest(args[0]).startTests();
         if (aTestFailed) {
             throw new Exception("MangleStepTest: failed");
         }

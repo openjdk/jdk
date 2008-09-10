@@ -72,25 +72,25 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ testb (rcx, 1);
   __ jcc (Assembler::notZero, slow);
   if (os::is_MP()) {
-    __ movl (rax, rcx);
-    __ andl (rax, 1);                         // rax, must end up 0
-    __ movl (rdx, Address(rsp, rax, Address::times_1, 2*wordSize));
+    __ mov(rax, rcx);
+    __ andptr(rax, 1);                         // rax, must end up 0
+    __ movptr(rdx, Address(rsp, rax, Address::times_1, 2*wordSize));
                                               // obj, notice rax, is 0.
                                               // rdx is data dependent on rcx.
   } else {
-    __ movl (rdx, Address(rsp, 2*wordSize));  // obj
+    __ movptr (rdx, Address(rsp, 2*wordSize));  // obj
   }
-  __ movl (rax, Address(rsp, 3*wordSize));  // jfieldID
-  __ movl (rdx, Address(rdx, 0));           // *obj
-  __ shrl (rax, 2);                         // offset
+  __ movptr(rax, Address(rsp, 3*wordSize));  // jfieldID
+  __ movptr(rdx, Address(rdx, 0));           // *obj
+  __ shrptr (rax, 2);                         // offset
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();
   switch (type) {
-    case T_BOOLEAN: __ movzxb (rax, Address(rdx, rax, Address::times_1)); break;
-    case T_BYTE:    __ movsxb (rax, Address(rdx, rax, Address::times_1)); break;
-    case T_CHAR:    __ movzxw (rax, Address(rdx, rax, Address::times_1)); break;
-    case T_SHORT:   __ movsxw (rax, Address(rdx, rax, Address::times_1)); break;
+    case T_BOOLEAN: __ movzbl (rax, Address(rdx, rax, Address::times_1)); break;
+    case T_BYTE:    __ movsbl (rax, Address(rdx, rax, Address::times_1)); break;
+    case T_CHAR:    __ movzwl (rax, Address(rdx, rax, Address::times_1)); break;
+    case T_SHORT:   __ movswl (rax, Address(rdx, rax, Address::times_1)); break;
     case T_INT:     __ movl   (rax, Address(rdx, rax, Address::times_1)); break;
     default:        ShouldNotReachHere();
   }
@@ -98,8 +98,8 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   Address ca1;
   if (os::is_MP()) {
     __ lea(rdx, counter);
-    __ xorl(rdx, rax);
-    __ xorl(rdx, rax);
+    __ xorptr(rdx, rax);
+    __ xorptr(rdx, rax);
     __ cmp32(rcx, Address(rdx, 0));
     // ca1 is the same as ca because
     // rax, ^ counter_addr ^ rax, = address
@@ -184,35 +184,37 @@ address JNI_FastGetField::generate_fast_get_long_field() {
 
   ExternalAddress counter(SafepointSynchronize::safepoint_counter_addr());
 
-  __ pushl (rsi);
+  __ push  (rsi);
   __ mov32 (rcx, counter);
   __ testb (rcx, 1);
   __ jcc (Assembler::notZero, slow);
   if (os::is_MP()) {
-    __ movl (rax, rcx);
-    __ andl (rax, 1);                         // rax, must end up 0
-    __ movl (rdx, Address(rsp, rax, Address::times_1, 3*wordSize));
+    __ mov(rax, rcx);
+    __ andptr(rax, 1);                         // rax, must end up 0
+    __ movptr(rdx, Address(rsp, rax, Address::times_1, 3*wordSize));
                                               // obj, notice rax, is 0.
                                               // rdx is data dependent on rcx.
   } else {
-    __ movl (rdx, Address(rsp, 3*wordSize));  // obj
+    __ movptr(rdx, Address(rsp, 3*wordSize));  // obj
   }
-  __ movl (rsi, Address(rsp, 4*wordSize));  // jfieldID
-  __ movl (rdx, Address(rdx, 0));           // *obj
-  __ shrl (rsi, 2);                         // offset
+  __ movptr(rsi, Address(rsp, 4*wordSize));  // jfieldID
+  __ movptr(rdx, Address(rdx, 0));           // *obj
+  __ shrptr(rsi, 2);                         // offset
 
   assert(count < LIST_CAPACITY-1, "LIST_CAPACITY too small");
   speculative_load_pclist[count++] = __ pc();
-  __ movl (rax, Address(rdx, rsi, Address::times_1));
+  __ movptr(rax, Address(rdx, rsi, Address::times_1));
+#ifndef _LP64
   speculative_load_pclist[count] = __ pc();
-  __ movl (rdx, Address(rdx, rsi, Address::times_1, 4));
+  __ movl(rdx, Address(rdx, rsi, Address::times_1, 4));
+#endif // _LP64
 
   if (os::is_MP()) {
-    __ lea  (rsi, counter);
-    __ xorl (rsi, rdx);
-    __ xorl (rsi, rax);
-    __ xorl (rsi, rdx);
-    __ xorl (rsi, rax);
+    __ lea(rsi, counter);
+    __ xorptr(rsi, rdx);
+    __ xorptr(rsi, rax);
+    __ xorptr(rsi, rdx);
+    __ xorptr(rsi, rax);
     __ cmp32(rcx, Address(rsi, 0));
     // ca1 is the same as ca because
     // rax, ^ rdx ^ counter_addr ^ rax, ^ rdx = address
@@ -222,7 +224,7 @@ address JNI_FastGetField::generate_fast_get_long_field() {
   }
   __ jcc (Assembler::notEqual, slow);
 
-  __ popl (rsi);
+  __ pop (rsi);
 
 #ifndef _WINDOWS
   __ ret (0);
@@ -234,7 +236,7 @@ address JNI_FastGetField::generate_fast_get_long_field() {
   slowcase_entry_pclist[count-1] = __ pc();
   slowcase_entry_pclist[count++] = __ pc();
   __ bind (slow);
-  __ popl (rsi);
+  __ pop  (rsi);
   address slow_case_addr = jni_GetLongField_addr();;
   // tail call
   __ jump (ExternalAddress(slow_case_addr));
@@ -276,23 +278,28 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
   __ testb (rcx, 1);
   __ jcc (Assembler::notZero, slow);
   if (os::is_MP()) {
-    __ movl (rax, rcx);
-    __ andl (rax, 1);                         // rax, must end up 0
-    __ movl (rdx, Address(rsp, rax, Address::times_1, 2*wordSize));
+    __ mov(rax, rcx);
+    __ andptr(rax, 1);                         // rax, must end up 0
+    __ movptr(rdx, Address(rsp, rax, Address::times_1, 2*wordSize));
                                               // obj, notice rax, is 0.
                                               // rdx is data dependent on rcx.
   } else {
-    __ movl (rdx, Address(rsp, 2*wordSize)); // obj
+    __ movptr(rdx, Address(rsp, 2*wordSize)); // obj
   }
-  __ movl (rax, Address(rsp, 3*wordSize));  // jfieldID
-  __ movl (rdx, Address(rdx, 0));           // *obj
-  __ shrl (rax, 2);                         // offset
+  __ movptr(rax, Address(rsp, 3*wordSize));  // jfieldID
+  __ movptr(rdx, Address(rdx, 0));           // *obj
+  __ shrptr(rax, 2);                         // offset
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();
   switch (type) {
+#ifndef _LP64
     case T_FLOAT:  __ fld_s (Address(rdx, rax, Address::times_1)); break;
     case T_DOUBLE: __ fld_d (Address(rdx, rax, Address::times_1)); break;
+#else
+    case T_FLOAT:  __ movflt (xmm0, Address(robj, roffset, Address::times_1)); break;
+    case T_DOUBLE: __ movdbl (xmm0, Address(robj, roffset, Address::times_1)); break;
+#endif // _LP64
     default:       ShouldNotReachHere();
   }
 
@@ -301,8 +308,9 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
     __ fst_s (Address(rsp, -4));
     __ lea(rdx, counter);
     __ movl (rax, Address(rsp, -4));
-    __ xorl(rdx, rax);
-    __ xorl(rdx, rax);
+    // garbage hi-order bits on 64bit are harmless.
+    __ xorptr(rdx, rax);
+    __ xorptr(rdx, rax);
     __ cmp32(rcx, Address(rdx, 0));
                                           // rax, ^ counter_addr ^ rax, = address
                                           // ca1 is data dependent on the field

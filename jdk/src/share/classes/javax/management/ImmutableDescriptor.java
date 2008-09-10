@@ -128,13 +128,13 @@ public class ImmutableDescriptor implements Descriptor {
      * @throws InvalidObjectException if the read object has invalid fields.
      */
     private Object readResolve() throws InvalidObjectException {
-        if (names.length == 0 && getClass() == ImmutableDescriptor.class)
-            return EMPTY_DESCRIPTOR;
 
         boolean bad = false;
         if (names == null || values == null || names.length != values.length)
             bad = true;
         if (!bad) {
+            if (names.length == 0 && getClass() == ImmutableDescriptor.class)
+                return EMPTY_DESCRIPTOR;
             final Comparator<String> compare = String.CASE_INSENSITIVE_ORDER;
             String lastName = ""; // also catches illegal null name
             for (int i = 0; i < names.length; i++) {

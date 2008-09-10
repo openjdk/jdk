@@ -25,13 +25,19 @@
 
 
 # @test
-# @bug 6265810
+# @bug 6265810 6705893
+# @build CheckEngine
 # @run shell jrunscriptTest.sh
 # @summary Test that output of 'jrunscript' interactive matches the repl.out file
 
 . ${TESTSRC-.}/common.sh
 
 setup
+${JAVA} -cp ${TESTCLASSES} CheckEngine
+if [ $? -eq 2 ]; then
+    echo "No js engine found and engine not required; test vacuously passes."
+    exit 0
+fi
 
 rm -f jrunscriptTest.out 2>/dev/null
 ${JRUNSCRIPT} > jrunscriptTest.out 2>&1 <<EOF

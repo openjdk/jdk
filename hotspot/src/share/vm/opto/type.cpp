@@ -1956,14 +1956,25 @@ const Type *TypePtr::xdual() const {
   return new TypePtr( AnyPtr, dual_ptr(), dual_offset() );
 }
 
+//------------------------------xadd_offset------------------------------------
+int TypePtr::xadd_offset( intptr_t offset ) const {
+  // Adding to 'TOP' offset?  Return 'TOP'!
+  if( _offset == OffsetTop || offset == OffsetTop ) return OffsetTop;
+  // Adding to 'BOTTOM' offset?  Return 'BOTTOM'!
+  if( _offset == OffsetBot || offset == OffsetBot ) return OffsetBot;
+  // Addition overflows or "accidentally" equals to OffsetTop? Return 'BOTTOM'!
+  offset += (intptr_t)_offset;
+  if (offset != (int)offset || offset == OffsetTop) return OffsetBot;
+
+  // assert( _offset >= 0 && _offset+offset >= 0, "" );
+  // It is possible to construct a negative offset during PhaseCCP
+
+  return (int)offset;        // Sum valid offsets
+}
+
 //------------------------------add_offset-------------------------------------
-const TypePtr *TypePtr::add_offset( int offset ) const {
-  if( offset == 0 ) return this; // No change
-  if( _offset == OffsetBot ) return this;
-  if(  offset == OffsetBot ) offset = OffsetBot;
-  else if( _offset == OffsetTop || offset == OffsetTop ) offset = OffsetTop;
-  else offset += _offset;
-  return make( AnyPtr, _ptr, offset );
+const TypePtr *TypePtr::add_offset( intptr_t offset ) const {
+  return make( AnyPtr, _ptr, xadd_offset(offset) );
 }
 
 //------------------------------eq---------------------------------------------
@@ -2096,7 +2107,7 @@ const Type *TypeRawPtr::xdual() const {
 }
 
 //------------------------------add_offset-------------------------------------
-const TypePtr *TypeRawPtr::add_offset( int offset ) const {
+const TypePtr *TypeRawPtr::add_offset( intptr_t offset ) const {
   if( offset == OffsetTop ) return BOTTOM; // Undefined offset-> undefined pointer
   if( offset == OffsetBot ) return BOTTOM; // Unknown offset-> unknown pointer
   if( offset == 0 ) return this; // No change
@@ -2545,21 +2556,8 @@ bool TypeOopPtr::singleton(void) const {
   return (_offset == 0) && !below_centerline(_ptr);
 }
 
-//------------------------------xadd_offset------------------------------------
-int TypeOopPtr::xadd_offset( int offset ) const {
-  // Adding to 'TOP' offset?  Return 'TOP'!
-  if( _offset == OffsetTop || offset == OffsetTop ) return OffsetTop;
-  // Adding to 'BOTTOM' offset?  Return 'BOTTOM'!
-  if( _offset == OffsetBot || offset == OffsetBot ) return OffsetBot;
-
-  // assert( _offset >= 0 && _offset+offset >= 0, "" );
-  // It is possible to construct a negative offset during PhaseCCP
-
-  return _offset+offset;        // Sum valid offsets
-}
-
 //------------------------------add_offset-------------------------------------
-const TypePtr *TypeOopPtr::add_offset( int offset ) const {
+const TypePtr *TypeOopPtr::add_offset( intptr_t offset ) const {
   return make( _ptr, xadd_offset(offset) );
 }
 
@@ -3076,7 +3074,7 @@ void TypeInstPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 #endif
 
 //------------------------------add_offset-------------------------------------
-const TypePtr *TypeInstPtr::add_offset( int offset ) const {
+const TypePtr *TypeInstPtr::add_offset( intptr_t offset ) const {
   return make( _ptr, klass(), klass_is_exact(), const_oop(), xadd_offset(offset), _instance_id );
 }
 
@@ -3427,7 +3425,7 @@ bool TypeAryPtr::empty(void) const {
 }
 
 //------------------------------add_offset-------------------------------------
-const TypePtr *TypeAryPtr::add_offset( int offset ) const {
+const TypePtr *TypeAryPtr::add_offset( intptr_t offset ) const {
   return make( _ptr, _const_oop, _ary, _klass, _klass_is_exact, xadd_offset(offset), _instance_id );
 }
 
@@ -3654,7 +3652,7 @@ ciKlass* TypeAryPtr::klass() const {
 
 //------------------------------add_offset-------------------------------------
 // Access internals of klass object
-const TypePtr *TypeKlassPtr::add_offset( int offset ) const {
+const TypePtr *TypeKlassPtr::add_offset( intptr_t offset ) const {
   return make( _ptr, klass(), xadd_offset(offset) );
 }
 

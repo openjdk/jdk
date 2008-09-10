@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6249843
+ * @bug 6249843 6705893
  * @summary Tests importPackage and java access in script
  */
 
@@ -37,7 +37,11 @@ public class Test7 {
                 new File(System.getProperty("test.src", "."), "Test7.js");
             Reader r = new FileReader(file);
             ScriptEngineManager m = new ScriptEngineManager();
-            ScriptEngine eng = m.getEngineByName("js");
+            ScriptEngine eng = Helper.getJsEngine(m);
+            if (eng == null) {
+                System.out.println("Warning: No js engine found; test vacuously passes.");
+                return;
+            }
             eng.put("filename", file.getAbsolutePath());
             eng.eval(r);
             String str = (String)eng.get("firstLine");
