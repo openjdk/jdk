@@ -114,14 +114,6 @@ else
 endif
 ANT_VER:=$(call GetVersion,"$(_ANT_VER)")
 
-REQUIRED_FINDBUGS_VER := 1.2
-ifeq ($(FINDBUGS_HOME),)
-  _FINDBUGS_VER:=$(shell $(FINDBUGS) -javahome "$(BOOTDIR)" -textui -version 2>&1 )
-else
-  _FINDBUGS_VER:=$(shell FINDBUGS_HOME="$(FINDBUGS_HOME)" $(FINDBUGS) -javahome "$(BOOTDIR)" -textui -version 2>&1 )
-endif
-FINDBUGS_VER:=$(call GetVersion,"$(_FINDBUGS_VER)")
-
 ifdef ALT_BINDIR
   ALT_BINDIR_VERSION := $(shell $(ALT_BINDIR)/java$(EXE_SUFFIX) -version 2>&1  | $(NAWK) -F'"' '{ print $$2 }')
   ALT_BINDIR_OK := $(shell $(ECHO) $(ALT_BINDIR_VERSION) | $(EGREP) -c '^$(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION)')
@@ -182,7 +174,6 @@ include $(JDK_MAKE_SHARED_DIR)/Sanity-Settings.gmk
 	sane-alsa-versioncheck \
 	sane-alsa-headers \
 	sane-ant_version \
-	sane-findbugs_version \
 	sane-zip_version \
 	sane-unzip_version \
  	sane-msvcrt_path \
@@ -1213,19 +1204,6 @@ sane-ant_version:
 	  $(ECHO) "WARNING: The version of ant being used is older than \n" \
 	    "      the required version of '$(REQUIRED_ANT_VER)'. \n" \
 	    "      The version of ant found was '$(ANT_VER)'. \n" \
-	    "" >> $(WARNING_FILE) ; \
-	fi
-
-######################################################
-# Check the findbugs version
-######################################################
-FINDBUGS_CHECK :=$(call CheckVersions,$(FINDBUGS_VER),$(REQUIRED_FINDBUGS_VER))
-sane-findbugs_version:
-	@if [ "$(FINDBUGS_CHECK)" != "same" \
-	      -a "$(FINDBUGS_CHECK)" != "newer" ]; then \
-	  $(ECHO) "WARNING: The version of findbugs being used is older than \n" \
-	    "      the required version of '$(REQUIRED_FINDBUGS_VER)'. \n" \
-	    "      The version of findbugs found was '$(FINDBUGS_VER)'. \n" \
 	    "" >> $(WARNING_FILE) ; \
 	fi
 
