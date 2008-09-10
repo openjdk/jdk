@@ -704,7 +704,20 @@ endif
 # Install of imported file (JDK_IMPORT_PATH, or some other external location)
 define install-import-file
 @$(ECHO) "ASSEMBLY_IMPORT: $@"
-$(install-file)
+$(prep-target)
+$(CP) $< $@
+@if [ "$(PLATFORM)" = "linux" -a "$(@F)" = "libjvm.so" ] ; then     \
+  if [ -x /usr/sbin/selinuxenabled ] ; then                         \
+    /usr/sbin/selinuxenabled;                                       \
+    if [ $$? = 0 ] ; then                                           \
+      $(ECHO) "/usr/bin/chcon -t textrel_shlib_t $@";               \
+      /usr/bin/chcon -t textrel_shlib_t $@;                         \
+      if [ $$? != 0 ]; then                                         \
+        echo "ERROR: Cannot chcon $@";                              \
+      fi;                                                           \
+    fi;                                                             \
+  fi;                                                               \
+fi
 endef
 
 .PHONY: all build clean clobber
