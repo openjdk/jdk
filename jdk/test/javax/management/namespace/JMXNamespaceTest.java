@@ -25,6 +25,7 @@
  *
  * @test JMXNamespaceTest.java
  * @summary General JMXNamespace test.
+ * @bug 5072476
  * @author Daniel Fuchs
  * @run clean JMXNamespaceTest
  *            Wombat WombatMBean JMXRemoteTargetNamespace
