@@ -107,11 +107,7 @@ UNZIP_VER  :=$(call GetVersion,"$(_UNZIP_VER)")
 BOOT_VER   :=$(call GetVersion,"$(_BOOT_VER)")
 
 REQUIRED_ANT_VER := 1.6.3
-ifeq ($(ANT_HOME),)
-  _ANT_VER:=$(shell JAVACMD="$(BOOTDIR)/bin/java" $(ANT) -version 2>&1 )
-else
-  _ANT_VER:=$(shell JAVACMD="$(BOOTDIR)/bin/java" ANT_HOME="$(ANT_HOME)" $(ANT) -version 2>&1 )
-endif
+_ANT_VER:=$(shell $(ANT) -version 2>&1 )
 ANT_VER:=$(call GetVersion,"$(_ANT_VER)")
 
 ifdef ALT_BINDIR
