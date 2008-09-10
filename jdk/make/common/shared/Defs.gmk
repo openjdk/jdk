@@ -549,14 +549,6 @@ ifeq ($(ANT_HOME),)
 else
   ANT = $(ANT_HOME)/bin/ant
 endif
-ifeq ($(FINDBUGS_HOME),)
-  FINDBUGS_HOME := $(call DirExists,/usr/share/findbugs,$(JDK_DEVTOOLS_DIR)/share/findbugs/latest,)
-endif
-ifeq ($(FINDBUGS_HOME),)
-  FINDBUGS = findbugs
-else
-  FINDBUGS = $(FINDBUGS_HOME)/bin/findbugs
-endif
 
 ifdef ALT_COPYRIGHT_YEAR
   COPYRIGHT_YEAR = $(ALT_COPYRIGHT_YEAR)
