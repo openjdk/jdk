@@ -527,6 +527,7 @@ uint PhaseChaitin::Split( uint maxlrg ) {
       // Initialize needs_phi and needs_split
       bool needs_phi = false;
       bool needs_split = false;
+      bool has_phi = false;
       // Walk the predecessor blocks to check inputs for that live range
       // Grab predecessor block header
       n1 = b->pred(1);
@@ -570,28 +571,30 @@ uint PhaseChaitin::Split( uint maxlrg ) {
         }
       }  // End for all potential Phi inputs
 
-      // If a phi is needed, check for it
-      if( needs_phi ) {
-        // check block for appropriate phinode & update edges
-        for( insidx = 1; insidx <= b->end_idx(); insidx++ ) {
-          n1 = b->_nodes[insidx];
-          // bail if this is not a phi
-          phi = n1->is_Phi() ? n1->as_Phi() : NULL;
-          if( phi == NULL ) {
-            // Keep track of index of first non-PhiNode instruction in block
-            non_phi = insidx;
-            // break out of the for loop as we have handled all phi nodes
-            break;
-          }
-          // must be looking at a phi
-          if( Find_id(n1) == lidxs.at(slidx) ) {
-            // found the necessary phi
-            needs_phi = false;
-            // initialize the Reaches entry for this LRG
-            Reachblock[slidx] = phi;
-            break;
-          }  // end if found correct phi
-        }  // end for all phi's
+      // check block for appropriate phinode & update edges
+      for( insidx = 1; insidx <= b->end_idx(); insidx++ ) {
+        n1 = b->_nodes[insidx];
+        // bail if this is not a phi
+        phi = n1->is_Phi() ? n1->as_Phi() : NULL;
+        if( phi == NULL ) {
+          // Keep track of index of first non-PhiNode instruction in block
+          non_phi = insidx;
+          // break out of the for loop as we have handled all phi nodes
+          break;
+        }
+        // must be looking at a phi
+        if( Find_id(n1) == lidxs.at(slidx) ) {
+          // found the necessary phi
+          needs_phi = false;
+          has_phi = true;
+          // initialize the Reaches entry for this LRG
+          Reachblock[slidx] = phi;
+          break;
+        }  // end if found correct phi
+      }  // end for all phi's
+
+      // If a phi is needed or exist, check for it
+      if( needs_phi || has_phi ) {
         // add new phinode if one not already found
         if( needs_phi ) {
           // create a new phi node and insert it into the block
@@ -695,7 +698,8 @@ uint PhaseChaitin::Split( uint maxlrg ) {
               }
             }
             assert( u, "at least 1 valid input expected" );
-            if( i >= cnt ) {    // Didn't find 2+ unique inputs?
+            if( i >= cnt ) {    // Found one unique input
+              assert(Find_id(n) == Find_id(u), "should be the same lrg");
               n->replace_by(u); // Then replace with unique input
               n->disconnect_inputs(NULL);
               b->_nodes.remove(insidx);
