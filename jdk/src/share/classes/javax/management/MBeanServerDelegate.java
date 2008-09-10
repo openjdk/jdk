@@ -304,7 +304,7 @@ public class MBeanServerDelegate implements MBeanServerDelegateMBean,
      * @since 1.6
      */
     public static final ObjectName DELEGATE_NAME =
-            Util.newObjectName("JMImplementation:type=MBeanServerDelegate");
+            ObjectName.valueOf("JMImplementation:type=MBeanServerDelegate");
 
     /* Return a timestamp that is monotonically increasing even if
        System.currentTimeMillis() isn't (for example, if you call this

@@ -613,8 +613,7 @@ public class DefaultMBeanServerInterceptor
             List<String> result = new ArrayList<String>(domains.length);
             for (int i = 0; i < domains.length; i++) {
                 try {
-                    ObjectName dom =
-                            Util.newObjectName(domains[i] + ":x=x");
+                    ObjectName dom = ObjectName.valueOf(domains[i] + ":x=x");
                     checkMBeanPermission(mbeanServerName, (String) null, null, dom, "getDomains");
                     result.add(domains[i]);
                 } catch (SecurityException e) {
@@ -1170,7 +1169,7 @@ public class DefaultMBeanServerInterceptor
            if one is supplied where it shouldn't be).  */
         final String completeName = domain + name;
 
-        return Util.newObjectName(completeName);
+        return ObjectName.valueOf(completeName);
     }
 
     public String getDefaultDomain()  {
