@@ -583,7 +583,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   /***********************************/                                                                                              \
                                                                                                                                      \
      static_field(StubRoutines,                _call_stub_return_address,                     address)                               \
-     IA32_ONLY(static_field(StubRoutines::i486,_call_stub_compiled_return,                    address))                              \
+     IA32_ONLY(static_field(StubRoutines::x86,_call_stub_compiled_return,                     address))                              \
                                                                                                                                      \
   /***************************************/                                                                                          \
   /* PcDesc and other compiled code info */                                                                                          \
@@ -1107,7 +1107,7 @@ static inline uint64_t cast_uint64_t(size_t x)
                                                                           \
   declare_toplevel_type(StubQueue)                                        \
   declare_toplevel_type(StubRoutines)                                     \
-  IA32_ONLY(declare_toplevel_type(StubRoutines::i486))                    \
+  IA32_ONLY(declare_toplevel_type(StubRoutines::x86))                     \
   declare_toplevel_type(Stub)                                             \
            declare_type(InterpreterCodelet, Stub)                         \
                                                                           \

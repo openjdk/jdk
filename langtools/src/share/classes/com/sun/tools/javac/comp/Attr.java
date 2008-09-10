@@ -79,6 +79,7 @@ public class Attr extends JCTree.Visitor {
     final Enter enter;
     final Target target;
     final Types types;
+    final JCDiagnostic.Factory diags;
     final Annotate annotate;
 
     public static Attr instance(Context context) {
@@ -102,6 +103,7 @@ public class Attr extends JCTree.Visitor {
         cfolder = ConstFold.instance(context);
         target = Target.instance(context);
         types = Types.instance(context);
+        diags = JCDiagnostic.Factory.instance(context);
         annotate = Annotate.instance(context);
 
         Options options = Options.instance(context);
@@ -728,9 +730,8 @@ public class Attr extends JCTree.Visitor {
                     // In order to catch self-references, we set the variable's
                     // declaration position to maximal possible value, effectively
                     // marking the variable as undefined.
-                    v.pos = Position.MAXPOS;
+                    initEnv.info.enclVar = v;
                     attribExpr(tree.init, initEnv, v.type);
-                    v.pos = tree.pos;
                 }
             }
             result = tree.type = v.type;
@@ -2196,18 +2197,19 @@ public class Attr extends JCTree.Visitor {
             // This check applies only to class and instance
             // variables.  Local variables follow different scope rules,
             // and are subject to definite assignment checking.
-            if (v.pos > tree.pos &&
+            if ((env.info.enclVar == v || v.pos > tree.pos) &&
                 v.owner.kind == TYP &&
                 canOwnInitializer(env.info.scope.owner) &&
                 v.owner == env.info.scope.owner.enclClass() &&
                 ((v.flags() & STATIC) != 0) == Resolve.isStatic(env) &&
                 (env.tree.getTag() != JCTree.ASSIGN ||
                  TreeInfo.skipParens(((JCAssign) env.tree).lhs) != tree)) {
-
+                String suffix = (env.info.enclVar == v) ?
+                                "self.ref" : "forward.ref";
                 if (!onlyWarning || isStaticEnumField(v)) {
-                    log.error(tree.pos(), "illegal.forward.ref");
+                    log.error(tree.pos(), "illegal." + suffix);
                 } else if (useBeforeDeclarationWarning) {
-                    log.warning(tree.pos(), "forward.ref", v);
+                    log.warning(tree.pos(), suffix, v);
                 }
             }
 
@@ -2419,7 +2421,7 @@ public class Attr extends JCTree.Visitor {
 
         if (false) {
             // TODO: make assertConvertible work
-            chk.typeError(tree.pos(), JCDiagnostic.fragment("incompatible.types"), actual, formal);
+            chk.typeError(tree.pos(), diags.fragment("incompatible.types"), actual, formal);
             throw new AssertionError("Tree: " + tree
                                      + " actual:" + actual
                                      + " formal: " + formal);

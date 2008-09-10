@@ -50,6 +50,8 @@ import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 import com.sun.jmx.remote.util.EnvHelp;
+import java.util.Collections;
+import javax.management.remote.rmi.RMIConnectorServer;
 
 public class IdleTimeoutTest {
     public static void main(String[] args) throws Exception {
@@ -88,8 +90,13 @@ public class IdleTimeoutTest {
 
     private static long getIdleTimeout(MBeanServer mbs, JMXServiceURL url)
         throws Exception {
+        // If the connector server is using the Event Service, then connections
+        // never time out.  This is by design.
+        Map<String, String> env =
+            Collections.singletonMap(
+                RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE, "false");
         JMXConnectorServer server =
-            JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs);
+            JMXConnectorServerFactory.newJMXConnectorServer(url, env, mbs);
         server.start();
         try {
             url = server.getAddress();
@@ -164,6 +171,7 @@ public class IdleTimeoutTest {
 
         Map idleMap = new HashMap();
         idleMap.put(EnvHelp.SERVER_CONNECTION_TIMEOUT, new Long(timeout));
+        idleMap.put(RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE, "false");
         JMXConnectorServer server =
             JMXConnectorServerFactory.newJMXConnectorServer(url,idleMap,mbs);
 

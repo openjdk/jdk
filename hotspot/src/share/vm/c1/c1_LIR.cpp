@@ -37,7 +37,7 @@ Register LIR_OprDesc::as_register_hi() const {
   return FrameMap::cpu_rnr2reg(cpu_regnrHi());
 }
 
-#ifdef IA32
+#if defined(X86)
 
 XMMRegister LIR_OprDesc::as_xmm_float_reg() const {
   return FrameMap::nr2xmmreg(xmm_regnr());
@@ -48,7 +48,7 @@ XMMRegister LIR_OprDesc::as_xmm_double_reg() const {
   return FrameMap::nr2xmmreg(xmm_regnrLo());
 }
 
-#endif
+#endif // X86
 
 
 #ifdef SPARC
@@ -81,7 +81,7 @@ LIR_Opr LIR_OprFact::value_type(ValueType* type) {
   case floatTag  : return LIR_OprFact::floatConst(type->as_FloatConstant()->value());
   case longTag   : return LIR_OprFact::longConst(type->as_LongConstant()->value());
   case doubleTag : return LIR_OprFact::doubleConst(type->as_DoubleConstant()->value());
-  default: ShouldNotReachHere();
+  default: ShouldNotReachHere(); return LIR_OprFact::intConst(-1);
   }
 }
 
@@ -94,7 +94,7 @@ LIR_Opr LIR_OprFact::dummy_value_type(ValueType* type) {
     case floatTag:  return LIR_OprFact::floatConst(0.0);
     case longTag:   return LIR_OprFact::longConst(0);
     case doubleTag: return LIR_OprFact::doubleConst(0.0);
-    default:        ShouldNotReachHere();
+    default:        ShouldNotReachHere(); return LIR_OprFact::intConst(-1);
   }
   return illegalOpr;
 }
@@ -162,6 +162,7 @@ char LIR_OprDesc::type_char(BasicType t) {
 
     default:
       ShouldNotReachHere();
+      return '?';
   }
 }
 
@@ -1374,7 +1375,7 @@ void LIR_OprDesc::print(outputStream* out) const {
   } else if (is_double_cpu()) {
     out->print(as_register_hi()->name());
     out->print(as_register_lo()->name());
-#ifdef IA32
+#if defined(X86)
   } else if (is_single_xmm()) {
     out->print(as_xmm_float_reg()->name());
   } else if (is_double_xmm()) {

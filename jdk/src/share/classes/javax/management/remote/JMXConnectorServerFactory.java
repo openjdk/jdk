@@ -35,10 +35,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.ServiceLoader;
 
 import javax.management.MBeanServer;
-import javax.management.ObjectName;
 
 /**
  * <p>Factory to create JMX API connector servers.  There
@@ -172,7 +170,8 @@ public class JMXConnectorServerFactory {
      * loader MBean name.  This class loader is used to deserialize objects in
      * requests received from the client, possibly after consulting an
      * MBean-specific class loader.  The value associated with this
-     * attribute is an instance of {@link ObjectName}.</p>
+     * attribute is an instance of {@link javax.management.ObjectName
+     * ObjectName}.</p>
      */
     public static final String DEFAULT_CLASS_LOADER_NAME =
         "jmx.remote.default.class.loader.name";

@@ -60,17 +60,17 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     //
     // rcx and rdx are first and second argument registers on windows
 
-    __ pushq(rbp);
-    __ movq(rbp, c_rarg0); // cpuid_info address
-    __ pushq(rbx);
-    __ pushq(rsi);
+    __ push(rbp);
+    __ mov(rbp, c_rarg0); // cpuid_info address
+    __ push(rbx);
+    __ push(rsi);
 
     //
     // we have a chip which supports the "cpuid" instruction
     //
     __ xorl(rax, rax);
     __ cpuid();
-    __ leaq(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid0_offset())));
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid0_offset())));
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rbx);
     __ movl(Address(rsi, 8), rcx);
@@ -85,13 +85,13 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(rax, 4);
     __ xorl(rcx, rcx);   // L1 cache
     __ cpuid();
-    __ pushq(rax);
+    __ push(rax);
     __ andl(rax, 0x1f);  // Determine if valid cache parameters used
     __ orl(rax, rax);    // eax[4:0] == 0 indicates invalid cache
-    __ popq(rax);
+    __ pop(rax);
     __ jccb(Assembler::equal, std_cpuid1);
 
-    __ leaq(rsi, Address(rbp, in_bytes(VM_Version::dcp_cpuid4_offset())));
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::dcp_cpuid4_offset())));
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rbx);
     __ movl(Address(rsi, 8), rcx);
@@ -103,7 +103,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ bind(std_cpuid1);
     __ movl(rax, 1);
     __ cpuid();
-    __ leaq(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid1_offset())));
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid1_offset())));
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rbx);
     __ movl(Address(rsi, 8), rcx);
@@ -122,7 +122,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     //
     __ movl(rax, 0x80000008);
     __ cpuid();
-    __ leaq(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid8_offset())));
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid8_offset())));
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rbx);
     __ movl(Address(rsi, 8), rcx);
@@ -134,7 +134,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ bind(ext_cpuid5);
     __ movl(rax, 0x80000005);
     __ cpuid();
-    __ leaq(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid5_offset())));
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid5_offset())));
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rbx);
     __ movl(Address(rsi, 8), rcx);
@@ -146,7 +146,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ bind(ext_cpuid1);
     __ movl(rax, 0x80000001);
     __ cpuid();
-    __ leaq(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid1_offset())));
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid1_offset())));
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rbx);
     __ movl(Address(rsi, 8), rcx);
@@ -156,9 +156,9 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     // return
     //
     __ bind(done);
-    __ popq(rsi);
-    __ popq(rbx);
-    __ popq(rbp);
+    __ pop(rsi);
+    __ pop(rbx);
+    __ pop(rbp);
     __ ret(0);
 
 #   undef __

@@ -31,8 +31,6 @@ import java.io.ObjectOutput;
 import java.lang.reflect.Method;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.rmi.server.Operation;
-import java.rmi.server.RemoteCall;
 import java.rmi.server.RemoteObject;
 import java.rmi.server.RemoteRef;
 
@@ -54,7 +52,11 @@ public class ProxyRef implements RemoteRef {
         ref.writeExternal(out);
     }
 
-    public void invoke(RemoteCall call) throws Exception {
+    /**
+     * @deprecated
+     */
+    @Deprecated
+    public void invoke(java.rmi.server.RemoteCall call) throws Exception {
         ref.invoke(call);
     }
 
@@ -63,7 +65,11 @@ public class ProxyRef implements RemoteRef {
         return ref.invoke(obj, method, params, opnum);
     }
 
-    public void done(RemoteCall call) throws RemoteException {
+    /**
+     * @deprecated
+     */
+    @Deprecated
+    public void done(java.rmi.server.RemoteCall call) throws RemoteException {
         ref.done(call);
     }
 
@@ -71,7 +77,12 @@ public class ProxyRef implements RemoteRef {
         return ref.getRefClass(out);
     }
 
-    public RemoteCall newCall(RemoteObject obj, Operation[] op, int opnum,
+    /**
+     * @deprecated
+     */
+    @Deprecated
+    public java.rmi.server.RemoteCall newCall(RemoteObject obj,
+            java.rmi.server.Operation[] op, int opnum,
                               long hash) throws RemoteException {
         return ref.newCall(obj, op, opnum, hash);
     }

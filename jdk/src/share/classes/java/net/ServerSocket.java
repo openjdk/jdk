@@ -142,14 +142,18 @@ class ServerSocket implements java.io.Closeable {
      * as its argument to ensure the operation is allowed.
      * This could result in a SecurityException.
      *
-     * <P>The <code>backlog</code> argument must be a positive
-     * value greater than 0. If the value passed is equal or less
-     * than 0, then the default value will be assumed.
+     * The <code>backlog</code> argument is the requested maximum number of
+     * pending connections on the socket. Its exact semantics are implementation
+     * specific. In particular, an implementation may impose a maximum length
+     * or may choose to ignore the parameter altogther. The value provided
+     * should be greater than <code>0</code>. If it is less than or equal to
+     * <code>0</code>, then an implementation specific default will be used.
      * <P>
      *
      * @param      port     the port number, or <code>0</code> to use a port
      *                      number that is automatically allocated.
-     * @param      backlog  the maximum length of the queue.
+     * @param      backlog  requested maximum length of the queue of incoming
+     *                      connections.
      *
      * @exception  IOException  if an I/O error occurs when opening the socket.
      * @exception  SecurityException
@@ -187,13 +191,17 @@ class ServerSocket implements java.io.Closeable {
      * as its argument to ensure the operation is allowed.
      * This could result in a SecurityException.
      *
-     * <P>The <code>backlog</code> argument must be a positive
-     * value greater than 0. If the value passed is equal or less
-     * than 0, then the default value will be assumed.
+     * The <code>backlog</code> argument is the requested maximum number of
+     * pending connections on the socket. Its exact semantics are implementation
+     * specific. In particular, an implementation may impose a maximum length
+     * or may choose to ignore the parameter altogther. The value provided
+     * should be greater than <code>0</code>. If it is less than or equal to
+     * <code>0</code>, then an implementation specific default will be used.
      * <P>
      * @param port  the port number, or <code>0</code> to use a port
      *              number that is automatically allocated.
-     * @param backlog the listen backlog
+     * @param backlog requested maximum length of the queue of incoming
+     *                connections.
      * @param bindAddr the local InetAddress the server will bind to
      *
      * @throws  SecurityException if a security manager exists and
@@ -321,11 +329,15 @@ class ServerSocket implements java.io.Closeable {
      * If the address is <code>null</code>, then the system will pick up
      * an ephemeral port and a valid local address to bind the socket.
      * <P>
-     * The <code>backlog</code> argument must be a positive
-     * value greater than 0. If the value passed is equal or less
-     * than 0, then the default value will be assumed.
+     * The <code>backlog</code> argument is the requested maximum number of
+     * pending connections on the socket. Its exact semantics are implementation
+     * specific. In particular, an implementation may impose a maximum length
+     * or may choose to ignore the parameter altogther. The value provided
+     * should be greater than <code>0</code>. If it is less than or equal to
+     * <code>0</code>, then an implementation specific default will be used.
      * @param   endpoint        The IP address & port number to bind to.
-     * @param   backlog         The listen backlog length.
+     * @param   backlog         requested maximum length of the queue of
+     *                          incoming connections.
      * @throws  IOException if the bind operation fails, or if the socket
      *                     is already bound.
      * @throws  SecurityException       if a <code>SecurityManager</code> is present and

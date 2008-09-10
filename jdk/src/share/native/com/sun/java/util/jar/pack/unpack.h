@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,7 +314,7 @@ struct unpacker {
     void readBandData(band** body, uint count);  // recursive helper
 
     layout_definition* getLayout(uint idx) {
-      if (idx >= layouts.length())  return null;
+      if (idx >= (uint)layouts.length())  return null;
       return (layout_definition*) layouts.get(idx);
     }
 
@@ -332,12 +332,12 @@ struct unpacker {
     int predefCount(uint idx);
 
     bool isRedefined(uint idx) {
-     assert(idx < flag_limit);
-      return ((redef >> idx) & 1);
+      if (idx >= flag_limit) return false;
+      return (bool)((redef >> idx) & 1);
     }
     bool isPredefined(uint idx) {
-      assert(idx < flag_limit);
-      return (((predef & ~redef) >> idx) & 1);
+      if (idx >= flag_limit) return false;
+      return (bool)(((predef & ~redef) >> idx) & 1);
     }
     julong flagIndexMask() {
       return (predef | redef);
@@ -345,9 +345,9 @@ struct unpacker {
     bool isIndex(uint idx) {
       assert(flag_limit != 0);  // must be set up already
       if (idx < flag_limit)
-        return (((predef | redef) >> idx) & 1);
+        return (bool)(((predef | redef) >> idx) & 1);
       else
-        return (idx - flag_limit < overflow_count.length());
+        return (idx - flag_limit < (uint)overflow_count.length());
     }
     int& getCount(uint idx) {
       assert(isIndex(idx));

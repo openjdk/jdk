@@ -38,9 +38,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.QueryExp;
 
 /**
  * <p>Represents the object name of an MBean, or a pattern that can
@@ -1160,9 +1157,19 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
             //
             //in.defaultReadObject();
             final ObjectInputStream.GetField fields = in.readFields();
+            String propListString =
+                    (String)fields.get("propertyListString", "");
+
+            // 6616825: take care of property patterns
+            final boolean propPattern =
+                    fields.get("propertyPattern" , false);
+            if (propPattern) {
+                propListString =
+                        (propListString.length()==0?"*":(propListString+",*"));
+            }
+
             cn = (String)fields.get("domain", "default")+
-                ":"+
-                (String)fields.get("propertyListString", "");
+                ":"+ propListString;
         } else {
             // Read an object serialized in the new serial form
             //
@@ -1796,6 +1803,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * @return True if <code>object</code> is an ObjectName whose
      * canonical form is equal to that of this ObjectName.
      */
+    @Override
     public boolean equals(Object object)  {
 
         // same object case
@@ -1819,6 +1827,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * Returns a hash code for this object name.
      *
      */
+    @Override
     public int hashCode() {
         return _canonicalName.hashCode();
     }
