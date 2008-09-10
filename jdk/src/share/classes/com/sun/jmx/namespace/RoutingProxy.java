@@ -48,6 +48,19 @@ import javax.management.namespace.JMXNamespaces;
  * <p>{@link RoutingConnectionProxy}: to narrow down into an
  *    MBeanServerConnection.</p>
  * <p>{@link RoutingServerProxy}: to narrow down into an MBeanServer.</p>
+ *
+ * <p>This class can also be used to "broaden" from a namespace.  The same
+ * class is used for both purposes because in both cases all that happens
+ * is that ObjectNames are rewritten in one way on the way in (e.g. the
+ * parameter of getMBeanInfo) and another way on the way out (e.g. the
+ * return value of queryNames).</p>
+ *
+ * <p>Specifically, if you narrow into "a//" then you want to add the
+ * "a//" prefix to ObjectNames on the way in and subtract it on the way
+ * out.  But ClientContext uses this class to subtract the
+ * "jmx.context//foo=bar//" prefix on the way in and add it back on the
+ * way out.</p>
+ *
  * <p><b>
  * This API is a Sun internal API and is subject to changes without notice.
  * </b></p>
@@ -245,8 +258,8 @@ public abstract class RoutingProxy<T extends MBeanServerConnection>
              throw x;
          } catch (MBeanException ex) {
              throw new IOException("Failed to get "+attributeName+": "+
-                     ex,
-                     ex.getTargetException());
+                     ex.getCause(),
+                     ex.getCause());
          } catch (Exception ex) {
              throw new IOException("Failed to get "+attributeName+": "+
                      ex,ex);
