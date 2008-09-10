@@ -3692,7 +3692,7 @@ void AwtComponent::OpenCandidateWindow(int x, int y)
             SetCandidateWindow(iCandType, x-rc.left, y-rc.top);
     }
     if (m_bitsCandType != 0) {
-        DefWindowProc(WM_IME_NOTIFY, IMN_OPENCANDIDATE, m_bitsCandType);
+        ::DefWindowProc(GetHWnd(), WM_IME_NOTIFY, IMN_OPENCANDIDATE, m_bitsCandType);
     }
 }
 
