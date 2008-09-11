@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,49 +19,23 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
- *
  */
+import javax.script.*;
 
-#include "incls/_precompiled.incl"
-#include "incls/_assembler_windows_x86_64.cpp.incl"
+/**
+ * Helper class to consolidate testing requirements for a js engine.
+ * A js engine is required as part of Sun's product JDK.
+ */
+public class Helper {
+    private Helper() {}; // Don't instantiate
 
-
-void MacroAssembler::int3() {
-  emit_byte(0xCC);
-}
-
-// call (Thread*)TlsGetValue(thread_index());
-void MacroAssembler::get_thread(Register thread) {
-   if (thread != rax) {
-     pushq(rax);
-   }
-   pushq(rdi);
-   pushq(rsi);
-   pushq(rdx);
-   pushq(rcx);
-   pushq(r8);
-   pushq(r9);
-   pushq(r10);
-   // XXX
-   movq(r10, rsp);
-   andq(rsp, -16);
-   pushq(r10);
-   pushq(r11);
-
-   movl(c_rarg0, ThreadLocalStorage::thread_index());
-   call(RuntimeAddress((address)TlsGetValue));
-
-   popq(r11);
-   popq(rsp);
-   popq(r10);
-   popq(r9);
-   popq(r8);
-   popq(rcx);
-   popq(rdx);
-   popq(rsi);
-   popq(rdi);
-   if (thread != rax) {
-       movq(thread, rax);
-       popq(rax);
-   }
+    public static ScriptEngine getJsEngine(ScriptEngineManager m) {
+        ScriptEngine e  = m.getEngineByName("js");
+        if (e == null &&
+            System.getProperty("java.runtime.name").startsWith("Java(TM)")) {
+            // A js engine is requied for Sun's product JDK
+            throw new RuntimeException("no js engine found");
+        }
+        return e;
+    }
 }

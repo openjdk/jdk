@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,8 @@ static jlong read_input_via_jni(unpacker* self,
                                 void* buf, jlong minlen, jlong maxlen);
 
 static unpacker* get_unpacker(JNIEnv *env, jobject pObj, bool noCreate=false) {
-  unpacker* uPtr = (unpacker*) env->GetLongField(pObj, unpackerPtrFID);
+  unpacker* uPtr;
+  uPtr = (unpacker*)jlong2ptr(env->GetLongField(pObj, unpackerPtrFID));
   //fprintf(stderr, "get_unpacker(%p) uPtr=%p\n", pObj, uPtr);
   if (uPtr == null) {
     if (noCreate)  return null;
@@ -71,7 +72,7 @@ static unpacker* get_unpacker(JNIEnv *env, jobject pObj, bool noCreate=false) {
     //fprintf(stderr, "get_unpacker(%p) uPtr=%p initializing\n", pObj, uPtr);
     uPtr->init(read_input_via_jni);
     uPtr->jniobj = (void*) env->NewGlobalRef(pObj);
-    env->SetLongField(pObj, unpackerPtrFID, (jlong)uPtr);
+    env->SetLongField(pObj, unpackerPtrFID, ptr2jlong(uPtr));
   }
   uPtr->jnienv = env;  // keep refreshing this in case of MT access
   return uPtr;
@@ -150,7 +151,7 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_start(JNIEnv *env, jobject pObj,
   size_t buflen = 0;
   if (pBuf != null) {
     buf    = env->GetDirectBufferAddress(pBuf);
-    buflen = env->GetDirectBufferCapacity(pBuf);
+    buflen = (size_t)env->GetDirectBufferCapacity(pBuf);
     if (buflen == 0)  buf = null;
     if (buf == null) { THROW_IOE(ERROR_INTERNAL); return 0; }
     if ((size_t)offset >= buflen)

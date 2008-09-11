@@ -50,7 +50,7 @@ public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
         try {
             StringBuffer buf = new StringBuffer();
             if (d.getPosition() != Position.NOPOS) {
-                buf.append(formatSource(d, null));
+                buf.append(formatSource(d, false, null));
                 buf.append(':');
                 buf.append(formatPosition(d, LINE, null));
                 buf.append(':');
@@ -67,12 +67,6 @@ public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
             e.printStackTrace();
             return null;
         }
-    }
-
-    @Override
-    public String formatSource(JCDiagnostic d,Locale l) {
-        assert(d.getSource() != null);
-        return d.getSource().getName();
     }
 
     @Override

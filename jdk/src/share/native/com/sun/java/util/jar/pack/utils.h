@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 void* must_malloc(int size);
 #ifndef USE_MTRACE
-#define mtrace(c, ptr, size) (0)
+#define mtrace(c, ptr, size)
 #else
 void mtrace(char c, void* ptr, size_t size);
 #endif

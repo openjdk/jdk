@@ -594,7 +594,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
 
     // Scan object's fields adding an input to the safepoint for each field.
     for (int j = 0; j < nfields; j++) {
-      int offset;
+      intptr_t offset;
       ciField* field = NULL;
       if (iklass != NULL) {
         field = iklass->nonstatic_field_at(j);
@@ -602,7 +602,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
         elem_type = field->type();
         basic_elem_type = field->layout_type();
       } else {
-        offset = array_base + j * element_size;
+        offset = array_base + j * (intptr_t)element_size;
       }
 
       const Type *field_type;

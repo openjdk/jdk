@@ -52,4 +52,5 @@ setup() {
 
     JRUNSCRIPT="${TESTJAVA}/bin/jrunscript"
     JAVAC="${TESTJAVA}/bin/javac"
+    JAVA="${TESTJAVA}/bin/java"
 }

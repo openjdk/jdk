@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,14 @@
  * have any questions.
  */
 
-
 #include    <jni.h>
 
 #include    "JPLISAgent.h"
 #include    "JPLISAssert.h"
 #include    "Utilities.h"
 #include    "JavaExceptions.h"
+#include    "FileSystemSupport.h"   /* For uintptr_t */
 #include    "sun_instrument_InstrumentationImpl.h"
-#include    "typedefs.h"
 
 /*
  * Copyright 2003 Wily Technology, Inc.
