@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.security.provider.certpath;
 
 import java.util.*;
 import java.security.cert.*;
+import java.security.cert.PKIXReason;
 
 import sun.security.util.Debug;
 import sun.security.x509.PKIXExtensions;
@@ -75,11 +76,12 @@ class KeyChecker extends PKIXCertPathChecker {
         if (!forward) {
             remainingCerts = certPathLen;
         } else {
-            throw new CertPathValidatorException("forward checking not supported");
+            throw new CertPathValidatorException
+                ("forward checking not supported");
         }
     }
 
-    public boolean isForwardCheckingSupported() {
+    public final boolean isForwardCheckingSupported() {
         return false;
     }
 
@@ -155,8 +157,9 @@ class KeyChecker extends PKIXCertPathChecker {
 
         // throw an exception if the keyCertSign bit is not set
         if (!keyUsageBits[keyCertSign]) {
-            throw new CertPathValidatorException(msg + " check failed: "
-                + "keyCertSign bit is not set");
+            throw new CertPathValidatorException
+                (msg + " check failed: keyCertSign bit is not set", null,
+                 null, -1, PKIXReason.INVALID_KEY_USAGE);
         }
 
         if (debug != null) {
