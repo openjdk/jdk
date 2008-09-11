@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,15 +126,15 @@ void band::readData(int expectedLength) {
     (*save_meta_rp) = (byte) XB;
     cm.init(u->rp, u->rplimit, u->meta_rp, 0, defc, length, null);
     (*save_meta_rp) = save_meta_xb;  // put it back, just to be tidy
-    NOT_PRODUCT(cp2 = (u->meta_rp - meta_rp0));
+    NOT_PRODUCT(cp2 = (int)(u->meta_rp - meta_rp0));
   }
   rplimit = u->rp;
 
   rewind();
 
 #ifndef PRODUCT
-  printcr(3,"readFrom %s at %p [%d values, %d bytes, cp=%d/%d]",
-           (name?name:"(band)"), minRP(), length, size(), cp1, cp2);
+  PRINTCR((3,"readFrom %s at %p [%d values, %d bytes, cp=%d/%d]",
+           (name?name:"(band)"), minRP(), length, size(), cp1, cp2));
   if (u->verbose_bands || u->verbose >= 4) dump();
 
   if (ix != null && u->verbose != 0 && length > 0) {
@@ -421,18 +421,22 @@ const band_init all_band_inits[] = {
   BAND_INIT(file_modtime, DELTA5_spec, 0),
   BAND_INIT(file_options, UNSIGNED5_spec, 0),
 //BAND_INIT(file_bits, BYTE1_spec, 0),
-  {0}
+#ifndef PRODUCT
+  { 0, 0, 0, 0 }
+#else
+  { 0, 0 }
+#endif
 };
 #define NUM_BAND_INITS \
         (sizeof(all_band_inits)/sizeof(all_band_inits[0]))
 
 band* band::makeBands(unpacker* u) {
-  band* all_bands = U_NEW(band, BAND_LIMIT);
+  band* tmp_all_bands = U_NEW(band, BAND_LIMIT);
   for (int i = 0; i < BAND_LIMIT; i++) {
     assert((byte*)&all_band_inits[i+1]
            < (byte*)all_band_inits+sizeof(all_band_inits));
     const band_init& bi = all_band_inits[i];
-    band&            b  = all_bands[i];
+    band&            b  = tmp_all_bands[i];
     coding*          defc = coding::findBySpec(bi.defc);
     assert((defc == null) == (bi.defc == -1));  // no garbage, please
     assert(defc == null || !defc->isMalloc);
@@ -446,13 +450,13 @@ band* band::makeBands(unpacker* u) {
     b.name = bi.name;
 #endif
   }
-  return all_bands;
+  return tmp_all_bands;
 }
 
 void band::initIndexes(unpacker* u) {
-  band* all_bands = u->all_bands;
+  band* tmp_all_bands = u->all_bands;
   for (int i = 0; i < BAND_LIMIT; i++) {
-    band* scan = &all_bands[i];
+    band* scan = &tmp_all_bands[i];
     uint tag = scan->ixTag;  // Cf. #define INDEX(tag) above
     if (tag != 0 && tag != CONSTANT_Literal && (tag & SUBINDEX_BIT) == 0) {
       scan->setIndex(u->cp.getIndex(tag));

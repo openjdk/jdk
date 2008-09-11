@@ -228,7 +228,7 @@ arrayOop.hpp                            universe.inline.hpp
 
 assembler.cpp                           assembler.hpp
 assembler.cpp                           assembler.inline.hpp
-assembler.cpp                           assembler_<arch_model>.inline.hpp
+assembler.cpp                           assembler_<arch>.inline.hpp
 assembler.cpp                           codeBuffer.hpp
 assembler.cpp                           icache.hpp
 assembler.cpp                           os.hpp
@@ -248,29 +248,29 @@ assembler.inline.hpp                    codeBuffer.hpp
 assembler.inline.hpp                    disassembler.hpp
 assembler.inline.hpp                    threadLocalStorage.hpp
 
-assembler_<arch_model>.cpp              assembler_<arch_model>.inline.hpp
-assembler_<arch_model>.cpp              biasedLocking.hpp
-assembler_<arch_model>.cpp              cardTableModRefBS.hpp
-assembler_<arch_model>.cpp              collectedHeap.inline.hpp
-assembler_<arch_model>.cpp              interfaceSupport.hpp
-assembler_<arch_model>.cpp              interpreter.hpp
-assembler_<arch_model>.cpp              objectMonitor.hpp
-assembler_<arch_model>.cpp              os.hpp
-assembler_<arch_model>.cpp              resourceArea.hpp
-assembler_<arch_model>.cpp              sharedRuntime.hpp
-assembler_<arch_model>.cpp              stubRoutines.hpp
+assembler_<arch>.cpp              assembler_<arch>.inline.hpp
+assembler_<arch>.cpp              biasedLocking.hpp
+assembler_<arch>.cpp              cardTableModRefBS.hpp
+assembler_<arch>.cpp              collectedHeap.inline.hpp
+assembler_<arch>.cpp              interfaceSupport.hpp
+assembler_<arch>.cpp              interpreter.hpp
+assembler_<arch>.cpp              objectMonitor.hpp
+assembler_<arch>.cpp              os.hpp
+assembler_<arch>.cpp              resourceArea.hpp
+assembler_<arch>.cpp              sharedRuntime.hpp
+assembler_<arch>.cpp              stubRoutines.hpp
 
-assembler_<arch_model>.hpp              generate_platform_dependent_include
+assembler_<arch>.hpp              generate_platform_dependent_include
 
-assembler_<arch_model>.inline.hpp       assembler.inline.hpp
-assembler_<arch_model>.inline.hpp       codeBuffer.hpp
-assembler_<arch_model>.inline.hpp       codeCache.hpp
-assembler_<arch_model>.inline.hpp       handles.inline.hpp
+assembler_<arch>.inline.hpp       assembler.inline.hpp
+assembler_<arch>.inline.hpp       codeBuffer.hpp
+assembler_<arch>.inline.hpp       codeCache.hpp
+assembler_<arch>.inline.hpp       handles.inline.hpp
 
-assembler_<os_arch_model>.cpp           assembler.hpp
-assembler_<os_arch_model>.cpp           assembler_<arch_model>.inline.hpp
-assembler_<os_arch_model>.cpp           os.hpp
-assembler_<os_arch_model>.cpp           threadLocalStorage.hpp
+assembler_<os_arch>.cpp           assembler.hpp
+assembler_<os_arch>.cpp           assembler_<arch>.inline.hpp
+assembler_<os_arch>.cpp           os.hpp
+assembler_<os_arch>.cpp           threadLocalStorage.hpp
 
 atomic.cpp                              atomic.hpp
 atomic.cpp                              atomic_<os_arch>.inline.hpp
@@ -1926,7 +1926,7 @@ hpi_<os_family>.cpp                     os.hpp
 
 hpi_imported.h                          jni.h
 
-icBuffer.cpp                            assembler_<arch_model>.inline.hpp
+icBuffer.cpp                            assembler_<arch>.inline.hpp
 icBuffer.cpp                            collectedHeap.inline.hpp
 icBuffer.cpp                            compiledIC.hpp
 icBuffer.cpp                            icBuffer.hpp
@@ -1947,7 +1947,7 @@ icBuffer.hpp                            bytecodes.hpp
 icBuffer.hpp                            stubs.hpp
 
 icBuffer_<arch>.cpp                     assembler.hpp
-icBuffer_<arch>.cpp                     assembler_<arch_model>.inline.hpp
+icBuffer_<arch>.cpp                     assembler_<arch>.inline.hpp
 icBuffer_<arch>.cpp                     bytecodes.hpp
 icBuffer_<arch>.cpp                     collectedHeap.inline.hpp
 icBuffer_<arch>.cpp                     icBuffer.hpp
@@ -1962,7 +1962,7 @@ icache.cpp                              resourceArea.hpp
 icache.hpp                              allocation.hpp
 icache.hpp                              stubCodeGenerator.hpp
 
-icache_<arch>.cpp                       assembler_<arch_model>.inline.hpp
+icache_<arch>.cpp                       assembler_<arch>.inline.hpp
 icache_<arch>.cpp                       icache.hpp
 
 icache_<arch>.hpp                       generate_platform_dependent_include
@@ -2095,7 +2095,7 @@ interp_masm_<arch_model>.cpp            sharedRuntime.hpp
 interp_masm_<arch_model>.cpp            synchronizer.hpp
 interp_masm_<arch_model>.cpp            thread_<os_family>.inline.hpp
 
-interp_masm_<arch_model>.hpp            assembler_<arch_model>.inline.hpp
+interp_masm_<arch_model>.hpp            assembler_<arch>.inline.hpp
 interp_masm_<arch_model>.hpp            invocationCounter.hpp
 
 interpreter.cpp                         allocation.inline.hpp
@@ -2402,7 +2402,7 @@ jniFastGetField.cpp                     jniFastGetField.hpp
 jniFastGetField.hpp                     allocation.hpp
 jniFastGetField.hpp                     jvm_misc.hpp
 
-jniFastGetField_<arch_model>.cpp        assembler_<arch_model>.inline.hpp
+jniFastGetField_<arch_model>.cpp        assembler_<arch>.inline.hpp
 jniFastGetField_<arch_model>.cpp        jniFastGetField.hpp
 jniFastGetField_<arch_model>.cpp        jvm_misc.hpp
 jniFastGetField_<arch_model>.cpp        resourceArea.hpp
@@ -2905,7 +2905,7 @@ mutex_<os_family>.inline.hpp            interfaceSupport.hpp
 mutex_<os_family>.inline.hpp            os_<os_family>.inline.hpp
 mutex_<os_family>.inline.hpp            thread_<os_family>.inline.hpp
 
-nativeInst_<arch>.cpp                   assembler_<arch_model>.inline.hpp
+nativeInst_<arch>.cpp                   assembler_<arch>.inline.hpp
 nativeInst_<arch>.cpp                   handles.hpp
 nativeInst_<arch>.cpp                   nativeInst_<arch>.hpp
 nativeInst_<arch>.cpp                   oop.hpp
@@ -3174,7 +3174,7 @@ os.hpp                                  top.hpp
 
 os_<os_arch>.cpp                        allocation.inline.hpp
 os_<os_arch>.cpp                        arguments.hpp
-os_<os_arch>.cpp                        assembler_<arch_model>.inline.hpp
+os_<os_arch>.cpp                        assembler_<arch>.inline.hpp
 os_<os_arch>.cpp                        classLoader.hpp
 os_<os_arch>.cpp                        events.hpp
 os_<os_arch>.cpp                        extendedPC.hpp
@@ -3208,7 +3208,7 @@ os_<os_arch>.hpp                        generate_platform_dependent_include
 
 os_<os_family>.cpp                      allocation.inline.hpp
 os_<os_family>.cpp                      arguments.hpp
-os_<os_family>.cpp                      assembler_<arch_model>.inline.hpp
+os_<os_family>.cpp                      assembler_<arch>.inline.hpp
 os_<os_family>.cpp                      attachListener.hpp
 os_<os_family>.cpp                      classLoader.hpp
 os_<os_family>.cpp                      compileBroker.hpp
@@ -3267,7 +3267,7 @@ osThread.hpp                            javaFrameAnchor.hpp
 osThread.hpp                            objectMonitor.hpp
 osThread.hpp                            top.hpp
 
-osThread_<os_family>.cpp                assembler_<arch_model>.inline.hpp
+osThread_<os_family>.cpp                assembler_<arch>.inline.hpp
 osThread_<os_family>.cpp                atomic.hpp
 osThread_<os_family>.cpp                handles.inline.hpp
 osThread_<os_family>.cpp                mutexLocker.hpp
@@ -3480,7 +3480,7 @@ register_definitions_<arch>.cpp         interp_masm_<arch_model>.hpp
 register_definitions_<arch>.cpp         register.hpp
 register_definitions_<arch>.cpp         register_<arch>.hpp
 
-relocInfo.cpp                           assembler_<arch_model>.inline.hpp
+relocInfo.cpp                           assembler_<arch>.inline.hpp
 relocInfo.cpp                           compiledIC.hpp
 relocInfo.cpp                           copy.hpp
 relocInfo.cpp                           nativeInst_<arch>.hpp
@@ -3493,7 +3493,7 @@ relocInfo.hpp                           allocation.hpp
 relocInfo.hpp                           top.hpp
 
 relocInfo_<arch>.cpp                    assembler.inline.hpp
-relocInfo_<arch>.cpp                    assembler_<arch_model>.inline.hpp
+relocInfo_<arch>.cpp                    assembler_<arch>.inline.hpp
 relocInfo_<arch>.cpp                    nativeInst_<arch>.hpp
 relocInfo_<arch>.cpp                    oop.inline.hpp
 relocInfo_<arch>.cpp                    relocInfo.hpp
@@ -3676,7 +3676,7 @@ sharedRuntime.hpp                       resourceArea.hpp
 sharedRuntime.hpp                       threadLocalStorage.hpp
 
 sharedRuntime_<arch_model>.cpp          assembler.hpp
-sharedRuntime_<arch_model>.cpp          assembler_<arch_model>.inline.hpp
+sharedRuntime_<arch_model>.cpp          assembler_<arch>.inline.hpp
 sharedRuntime_<arch_model>.cpp          compiledICHolderOop.hpp
 sharedRuntime_<arch_model>.cpp          debugInfoRec.hpp
 sharedRuntime_<arch_model>.cpp          icBuffer.hpp
@@ -3819,7 +3819,7 @@ statSampler.cpp                         vm_version_<arch_model>.hpp
 statSampler.hpp                         perfData.hpp
 statSampler.hpp                         task.hpp
 
-stubCodeGenerator.cpp                   assembler_<arch_model>.inline.hpp
+stubCodeGenerator.cpp                   assembler_<arch>.inline.hpp
 stubCodeGenerator.cpp                   disassembler.hpp
 stubCodeGenerator.cpp                   forte.hpp
 stubCodeGenerator.cpp                   oop.inline.hpp
@@ -3830,7 +3830,7 @@ stubCodeGenerator.hpp                   allocation.hpp
 stubCodeGenerator.hpp                   assembler.hpp
 
 stubGenerator_<arch_model>.cpp          assembler.hpp
-stubGenerator_<arch_model>.cpp          assembler_<arch_model>.inline.hpp
+stubGenerator_<arch_model>.cpp          assembler_<arch>.inline.hpp
 stubGenerator_<arch_model>.cpp          frame.inline.hpp
 stubGenerator_<arch_model>.cpp          handles.inline.hpp
 stubGenerator_<arch_model>.cpp          instanceOop.hpp
@@ -4562,7 +4562,7 @@ vm_version.cpp                          vm_version_<arch_model>.hpp
 vm_version.hpp                          allocation.hpp
 vm_version.hpp                          ostream.hpp
 
-vm_version_<arch_model>.cpp             assembler_<arch_model>.inline.hpp
+vm_version_<arch_model>.cpp             assembler_<arch>.inline.hpp
 vm_version_<arch_model>.cpp             java.hpp
 vm_version_<arch_model>.cpp             os_<os_family>.inline.hpp
 vm_version_<arch_model>.cpp             resourceArea.hpp
@@ -4603,7 +4603,7 @@ vtableStubs.cpp                         vtune.hpp
 vtableStubs.hpp                         allocation.hpp
 
 vtableStubs_<arch_model>.cpp            assembler.hpp
-vtableStubs_<arch_model>.cpp            assembler_<arch_model>.inline.hpp
+vtableStubs_<arch_model>.cpp            assembler_<arch>.inline.hpp
 vtableStubs_<arch_model>.cpp            instanceKlass.hpp
 vtableStubs_<arch_model>.cpp            interp_masm_<arch_model>.hpp
 vtableStubs_<arch_model>.cpp            klassVtable.hpp

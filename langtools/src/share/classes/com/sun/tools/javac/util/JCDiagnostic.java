@@ -296,7 +296,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             line = column = -1;
         else {
             line = source.getLineNumber(n);
-            column = source.getColumnNumber(n);
+            column = source.getColumnNumber(n, true);
         }
     }
 

@@ -1443,7 +1443,7 @@ class CommandLineFlags {
           "CMSPrecleanNumerator:CMSPrecleanDenominator yields convergence"  \
           " ratio")                                                         \
                                                                             \
-  product(bool, CMSPrecleanRefLists1, true,                                 \
+  product(bool, CMSPrecleanRefLists1, false,                                \
           "Preclean ref lists during (initial) preclean phase")             \
                                                                             \
   product(bool, CMSPrecleanRefLists2, false,                                \
