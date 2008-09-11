@@ -229,7 +229,7 @@ void ParGCAllocBufferWithBOT::retire(bool end_of_gc, bool retain) {
     HeapWord* first_card_start = _bsa->address_for_index(first_card_index);
     if (first_card_start < pre_top) {
       HeapWord* second_card_start =
-        _bsa->address_for_index(first_card_index + 1);
+        _bsa->inc_by_region_size(first_card_start);
 
       // Ensure enough room to fill with the smallest block
       second_card_start = MAX2(second_card_start, pre_top + AlignmentReserve);

@@ -204,3 +204,9 @@ void Relocation::pd_swap_out_breakpoint(address x, short* instrs, int instrlen) 
   NativeInstruction* ni = nativeInstruction_at(x);
   ni->set_long_at(0, u.l);
 }
+
+void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
+}
+
+void poll_return_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "bag.h"
 #include "commonRef.h"
 #include "FrameID.h"
-#include "typedefs.h"
 
 #define INITIAL_REF_ALLOC 50
 #define SMALLEST(a, b) ((a) < (b)) ? (a) : (b)

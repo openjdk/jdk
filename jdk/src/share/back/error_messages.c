@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@
 
 #include "util.h"
 #include "proc_md.h"
-#include "typedefs.h"
 
 /* Maximim length of a message */
 #define MAX_MESSAGE_LEN MAXPATHLEN*2+512

@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,10 +87,7 @@
 
 #include "jni.h"
 #include "jvm.h"
-#include "typedefs.h"
-
-#include "opcodes.h"
-#include "opcodes.length"
+#include "classfile_constants.h"
 #include "opcodes.in_out"
 
 #define MAX_ARRAY_DIMENSIONS 255
@@ -161,8 +158,8 @@ typedef unsigned int *bitvector;
 
 #define NULL_FULLINFO MAKE_FULLINFO(ITEM_Object, 0, 0)
 
-/* opc_invokespecial calls to <init> need to be treated special */
-#define opc_invokeinit 0x100
+/* JVM_OPC_invokespecial calls to <init> need to be treated special */
+#define JVM_OPC_invokeinit 0x100
 
 /* A hash mechanism used by the verifier.
  * Maps class names to unique 16 bit integers.
@@ -301,7 +298,7 @@ struct mask_type {
 typedef unsigned short flag_type;
 
 struct instruction_data_type {
-    opcode_type opcode;         /* may turn into "canonical" opcode */
+    int opcode;         /* may turn into "canonical" opcode */
     unsigned changed:1;         /* has it changed */
     unsigned protected:1;       /* must accessor be a subclass of "this" */
     union {
@@ -345,7 +342,7 @@ static void free_all_code(int num_methods, int* lengths, unsigned char** code);
 static void verify_field(context_type *context, jclass cb, int index);
 
 static void verify_opcode_operands (context_type *, unsigned int inumber, int offset);
-static void set_protected(context_type *, unsigned int inumber, int key, opcode_type);
+static void set_protected(context_type *, unsigned int inumber, int key, int);
 static jboolean is_superclass(context_type *, fullinfo_type);
 
 static void initialize_exception_table(context_type *);
@@ -1084,7 +1081,7 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
     int *code_data = context->code_data;
     int mi = context->method_index;
     unsigned char *code = context->code;
-    opcode_type opcode = this_idata->opcode;
+    int opcode = this_idata->opcode;
     int var;
 
     /*
@@ -1096,17 +1093,17 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
 
     switch (opcode) {
 
-    case opc_jsr:
+    case JVM_OPC_jsr:
         /* instruction of ret statement */
         this_idata->operand2.i = UNKNOWN_RET_INSTRUCTION;
         /* FALLTHROUGH */
-    case opc_ifeq: case opc_ifne: case opc_iflt:
-    case opc_ifge: case opc_ifgt: case opc_ifle:
-    case opc_ifnull: case opc_ifnonnull:
-    case opc_if_icmpeq: case opc_if_icmpne: case opc_if_icmplt:
-    case opc_if_icmpge: case opc_if_icmpgt: case opc_if_icmple:
-    case opc_if_acmpeq: case opc_if_acmpne:
-    case opc_goto: {
+    case JVM_OPC_ifeq: case JVM_OPC_ifne: case JVM_OPC_iflt:
+    case JVM_OPC_ifge: case JVM_OPC_ifgt: case JVM_OPC_ifle:
+    case JVM_OPC_ifnull: case JVM_OPC_ifnonnull:
+    case JVM_OPC_if_icmpeq: case JVM_OPC_if_icmpne: case JVM_OPC_if_icmplt:
+    case JVM_OPC_if_icmpge: case JVM_OPC_if_icmpgt: case JVM_OPC_if_icmple:
+    case JVM_OPC_if_acmpeq: case JVM_OPC_if_acmpne:
+    case JVM_OPC_goto: {
         /* Set the ->operand to be the instruction number of the target. */
         int jump = (((signed char)(code[offset+1])) << 8) + code[offset+2];
         int target = offset + jump;
@@ -1116,11 +1113,11 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         break;
     }
 
-    case opc_jsr_w:
+    case JVM_OPC_jsr_w:
         /* instruction of ret statement */
         this_idata->operand2.i = UNKNOWN_RET_INSTRUCTION;
         /* FALLTHROUGH */
-    case opc_goto_w: {
+    case JVM_OPC_goto_w: {
         /* Set the ->operand to be the instruction number of the target. */
         int jump = (((signed char)(code[offset+1])) << 24) +
                      (code[offset+2] << 16) + (code[offset+3] << 8) +
@@ -1132,8 +1129,8 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         break;
     }
 
-    case opc_tableswitch:
-    case opc_lookupswitch: {
+    case JVM_OPC_tableswitch:
+    case JVM_OPC_lookupswitch: {
         /* Set the ->operand to be a table of possible instruction targets. */
         int *lpc = (int *) UCALIGN(code + offset + 1);
         int *lptr;
@@ -1147,7 +1144,7 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
                 CCerror(context, "Non zero padding bytes in switch");
             }
         }
-        if (opcode == opc_tableswitch) {
+        if (opcode == JVM_OPC_tableswitch) {
             keys = ntohl(lpc[2]) -  ntohl(lpc[1]) + 1;
             delta = 1;
         } else {
@@ -1169,7 +1166,7 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         for (k = keys, lptr = &lpc[3]; --k >= 0; lptr += delta) {
             int target = offset + ntohl(lptr[0]);
             if (!isLegalTarget(context, target))
-                CCerror(context, "Illegal branch in opc_tableswitch");
+                CCerror(context, "Illegal branch in tableswitch");
             saved_operand[k + 1] = code_data[target];
         }
         saved_operand[0] = keys + 1; /* number of successors */
@@ -1177,7 +1174,7 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         break;
     }
 
-    case opc_ldc: {
+    case JVM_OPC_ldc: {
         /* Make sure the constant pool item is the right type. */
         int key = code[offset + 1];
         int types = (1 << JVM_CONSTANT_Integer) | (1 << JVM_CONSTANT_Float) |
@@ -1190,7 +1187,7 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         break;
     }
 
-    case opc_ldc_w: {
+    case JVM_OPC_ldc_w: {
         /* Make sure the constant pool item is the right type. */
         int key = (code[offset + 1] << 8) + code[offset + 2];
         int types = (1 << JVM_CONSTANT_Integer) | (1 << JVM_CONSTANT_Float) |
@@ -1203,7 +1200,7 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         break;
     }
 
-    case opc_ldc2_w: {
+    case JVM_OPC_ldc2_w: {
         /* Make sure the constant pool item is the right type. */
         int key = (code[offset + 1] << 8) + code[offset + 2];
         int types = (1 << JVM_CONSTANT_Double) | (1 << JVM_CONSTANT_Long);
@@ -1212,28 +1209,28 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         break;
     }
 
-    case opc_getfield: case opc_putfield:
-    case opc_getstatic: case opc_putstatic: {
+    case JVM_OPC_getfield: case JVM_OPC_putfield:
+    case JVM_OPC_getstatic: case JVM_OPC_putstatic: {
         /* Make sure the constant pool item is the right type. */
         int key = (code[offset + 1] << 8) + code[offset + 2];
         this_idata->operand.i = key;
         verify_constant_pool_type(context, key, 1 << JVM_CONSTANT_Fieldref);
-        if (opcode == opc_getfield || opcode == opc_putfield)
+        if (opcode == JVM_OPC_getfield || opcode == JVM_OPC_putfield)
             set_protected(context, inumber, key, opcode);
         break;
     }
 
-    case opc_invokevirtual:
-    case opc_invokespecial:
-    case opc_invokestatic:
-    case opc_invokeinterface: {
+    case JVM_OPC_invokevirtual:
+    case JVM_OPC_invokespecial:
+    case JVM_OPC_invokestatic:
+    case JVM_OPC_invokeinterface: {
         /* Make sure the constant pool item is the right type. */
         int key = (code[offset + 1] << 8) + code[offset + 2];
         const char *methodname;
         jclass cb = context->class;
         fullinfo_type clazz_info;
         int is_constructor, is_internal;
-        int kind = (opcode == opc_invokeinterface
+        int kind = (opcode == JVM_OPC_invokeinterface
                             ? 1 << JVM_CONSTANT_InterfaceMethodref
                             : 1 << JVM_CONSTANT_Methodref);
         /* Make sure the constant pool item is the right type. */
@@ -1249,16 +1246,16 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         this_idata->operand.i = key;
         this_idata->operand2.fi = clazz_info;
         if (is_constructor) {
-            if (opcode != opc_invokespecial) {
+            if (opcode != JVM_OPC_invokespecial) {
                 CCerror(context,
                         "Must call initializers using invokespecial");
             }
-            this_idata->opcode = opc_invokeinit;
+            this_idata->opcode = JVM_OPC_invokeinit;
         } else {
             if (is_internal) {
                 CCerror(context, "Illegal call to internal method");
             }
-            if (opcode == opc_invokespecial
+            if (opcode == JVM_OPC_invokespecial
                    && clazz_info != context->currentclass_info
                    && clazz_info != context->superclass_info) {
                 int not_found = 1;
@@ -1290,7 +1287,7 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
                 }
             }
         }
-        if (opcode == opc_invokeinterface) {
+        if (opcode == JVM_OPC_invokeinterface) {
             unsigned int args1;
             unsigned int args2;
             const char *signature =
@@ -1300,25 +1297,25 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
             args2 = code[offset + 3];
             if (args1 != args2) {
                 CCerror(context,
-                        "Inconsistent args_size for opc_invokeinterface");
+                        "Inconsistent args_size for invokeinterface");
             }
             if (code[offset + 4] != 0) {
                 CCerror(context,
                         "Fourth operand byte of invokeinterface must be zero");
             }
             pop_and_free(context);
-        } else if (opcode == opc_invokevirtual
-                      || opcode == opc_invokespecial)
+        } else if (opcode == JVM_OPC_invokevirtual
+                      || opcode == JVM_OPC_invokespecial)
             set_protected(context, inumber, key, opcode);
         break;
     }
 
 
-    case opc_instanceof:
-    case opc_checkcast:
-    case opc_new:
-    case opc_anewarray:
-    case opc_multianewarray: {
+    case JVM_OPC_instanceof:
+    case JVM_OPC_checkcast:
+    case JVM_OPC_new:
+    case JVM_OPC_anewarray:
+    case JVM_OPC_multianewarray: {
         /* Make sure the constant pool item is a class */
         int key = (code[offset + 1] << 8) + code[offset + 2];
         fullinfo_type target;
@@ -1327,14 +1324,14 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         if (GET_ITEM_TYPE(target) == ITEM_Bogus)
             CCerror(context, "Illegal type");
         switch(opcode) {
-        case opc_anewarray:
+        case JVM_OPC_anewarray:
             if ((GET_INDIRECTION(target)) >= MAX_ARRAY_DIMENSIONS)
                 CCerror(context, "Array with too many dimensions");
             this_idata->operand.fi = MAKE_FULLINFO(GET_ITEM_TYPE(target),
                                                    GET_INDIRECTION(target) + 1,
                                                    GET_EXTRA_INFO(target));
             break;
-        case opc_new:
+        case JVM_OPC_new:
             if (WITH_ZERO_EXTRA_INFO(target) !=
                              MAKE_FULLINFO(ITEM_Object, 0, 0))
                 CCerror(context, "Illegal creation of multi-dimensional array");
@@ -1343,10 +1340,10 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
             this_idata->operand.fi = MAKE_FULLINFO(ITEM_NewObject, 0, inumber);
             this_idata->operand2.fi = target;
             break;
-        case opc_multianewarray:
+        case JVM_OPC_multianewarray:
             this_idata->operand.fi = target;
             this_idata->operand2.i = code[offset + 3];
-            if (    (this_idata->operand2.i > GET_INDIRECTION(target))
+            if (    (this_idata->operand2.i > (int)GET_INDIRECTION(target))
                  || (this_idata->operand2.i == 0))
                 CCerror(context, "Illegal dimension argument");
             break;
@@ -1356,8 +1353,8 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         break;
     }
 
-    case opc_newarray: {
-        /* Cache the result of the opc_newarray into the operand slot */
+    case JVM_OPC_newarray: {
+        /* Cache the result of the JVM_OPC_newarray into the operand slot */
         fullinfo_type full_info;
         switch (code[offset + 1]) {
             case JVM_T_INT:
@@ -1376,78 +1373,78 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
                 full_info = MAKE_FULLINFO(ITEM_Short, 1, 0); break;
             default:
                 full_info = 0;          /* Keep lint happy */
-                CCerror(context, "Bad type passed to opc_newarray");
+                CCerror(context, "Bad type passed to newarray");
         }
         this_idata->operand.fi = full_info;
         break;
     }
 
     /* Fudge iload_x, aload_x, etc to look like their generic cousin. */
-    case opc_iload_0: case opc_iload_1: case opc_iload_2: case opc_iload_3:
-        this_idata->opcode = opc_iload;
-        var = opcode - opc_iload_0;
+    case JVM_OPC_iload_0: case JVM_OPC_iload_1: case JVM_OPC_iload_2: case JVM_OPC_iload_3:
+        this_idata->opcode = JVM_OPC_iload;
+        var = opcode - JVM_OPC_iload_0;
         goto check_local_variable;
 
-    case opc_fload_0: case opc_fload_1: case opc_fload_2: case opc_fload_3:
-        this_idata->opcode = opc_fload;
-        var = opcode - opc_fload_0;
+    case JVM_OPC_fload_0: case JVM_OPC_fload_1: case JVM_OPC_fload_2: case JVM_OPC_fload_3:
+        this_idata->opcode = JVM_OPC_fload;
+        var = opcode - JVM_OPC_fload_0;
         goto check_local_variable;
 
-    case opc_aload_0: case opc_aload_1: case opc_aload_2: case opc_aload_3:
-        this_idata->opcode = opc_aload;
-        var = opcode - opc_aload_0;
+    case JVM_OPC_aload_0: case JVM_OPC_aload_1: case JVM_OPC_aload_2: case JVM_OPC_aload_3:
+        this_idata->opcode = JVM_OPC_aload;
+        var = opcode - JVM_OPC_aload_0;
         goto check_local_variable;
 
-    case opc_lload_0: case opc_lload_1: case opc_lload_2: case opc_lload_3:
-        this_idata->opcode = opc_lload;
-        var = opcode - opc_lload_0;
+    case JVM_OPC_lload_0: case JVM_OPC_lload_1: case JVM_OPC_lload_2: case JVM_OPC_lload_3:
+        this_idata->opcode = JVM_OPC_lload;
+        var = opcode - JVM_OPC_lload_0;
         goto check_local_variable2;
 
-    case opc_dload_0: case opc_dload_1: case opc_dload_2: case opc_dload_3:
-        this_idata->opcode = opc_dload;
-        var = opcode - opc_dload_0;
+    case JVM_OPC_dload_0: case JVM_OPC_dload_1: case JVM_OPC_dload_2: case JVM_OPC_dload_3:
+        this_idata->opcode = JVM_OPC_dload;
+        var = opcode - JVM_OPC_dload_0;
         goto check_local_variable2;
 
-    case opc_istore_0: case opc_istore_1: case opc_istore_2: case opc_istore_3:
-        this_idata->opcode = opc_istore;
-        var = opcode - opc_istore_0;
+    case JVM_OPC_istore_0: case JVM_OPC_istore_1: case JVM_OPC_istore_2: case JVM_OPC_istore_3:
+        this_idata->opcode = JVM_OPC_istore;
+        var = opcode - JVM_OPC_istore_0;
         goto check_local_variable;
 
-    case opc_fstore_0: case opc_fstore_1: case opc_fstore_2: case opc_fstore_3:
-        this_idata->opcode = opc_fstore;
-        var = opcode - opc_fstore_0;
+    case JVM_OPC_fstore_0: case JVM_OPC_fstore_1: case JVM_OPC_fstore_2: case JVM_OPC_fstore_3:
+        this_idata->opcode = JVM_OPC_fstore;
+        var = opcode - JVM_OPC_fstore_0;
         goto check_local_variable;
 
-    case opc_astore_0: case opc_astore_1: case opc_astore_2: case opc_astore_3:
-        this_idata->opcode = opc_astore;
-        var = opcode - opc_astore_0;
+    case JVM_OPC_astore_0: case JVM_OPC_astore_1: case JVM_OPC_astore_2: case JVM_OPC_astore_3:
+        this_idata->opcode = JVM_OPC_astore;
+        var = opcode - JVM_OPC_astore_0;
         goto check_local_variable;
 
-    case opc_lstore_0: case opc_lstore_1: case opc_lstore_2: case opc_lstore_3:
-        this_idata->opcode = opc_lstore;
-        var = opcode - opc_lstore_0;
+    case JVM_OPC_lstore_0: case JVM_OPC_lstore_1: case JVM_OPC_lstore_2: case JVM_OPC_lstore_3:
+        this_idata->opcode = JVM_OPC_lstore;
+        var = opcode - JVM_OPC_lstore_0;
         goto check_local_variable2;
 
-    case opc_dstore_0: case opc_dstore_1: case opc_dstore_2: case opc_dstore_3:
-        this_idata->opcode = opc_dstore;
-        var = opcode - opc_dstore_0;
+    case JVM_OPC_dstore_0: case JVM_OPC_dstore_1: case JVM_OPC_dstore_2: case JVM_OPC_dstore_3:
+        this_idata->opcode = JVM_OPC_dstore;
+        var = opcode - JVM_OPC_dstore_0;
         goto check_local_variable2;
 
-    case opc_wide:
+    case JVM_OPC_wide:
         this_idata->opcode = code[offset + 1];
         var = (code[offset + 2] << 8) + code[offset + 3];
         switch(this_idata->opcode) {
-            case opc_lload:  case opc_dload:
-            case opc_lstore: case opc_dstore:
+            case JVM_OPC_lload:  case JVM_OPC_dload:
+            case JVM_OPC_lstore: case JVM_OPC_dstore:
                 goto check_local_variable2;
             default:
                 goto check_local_variable;
         }
 
-    case opc_iinc:              /* the increment amount doesn't matter */
-    case opc_ret:
-    case opc_aload: case opc_iload: case opc_fload:
-    case opc_astore: case opc_istore: case opc_fstore:
+    case JVM_OPC_iinc:              /* the increment amount doesn't matter */
+    case JVM_OPC_ret:
+    case JVM_OPC_aload: case JVM_OPC_iload: case JVM_OPC_fload:
+    case JVM_OPC_astore: case JVM_OPC_istore: case JVM_OPC_fstore:
         var = code[offset + 1];
     check_local_variable:
         /* Make sure that the variable number isn't illegal. */
@@ -1456,7 +1453,7 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
             CCerror(context, "Illegal local variable number");
         break;
 
-    case opc_lload: case opc_dload: case opc_lstore: case opc_dstore:
+    case JVM_OPC_lload: case JVM_OPC_dload: case JVM_OPC_lstore: case JVM_OPC_dstore:
         var = code[offset + 1];
     check_local_variable2:
         /* Make sure that the variable number isn't illegal. */
@@ -1466,7 +1463,7 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         break;
 
     default:
-        if (opcode >= opc_breakpoint)
+        if (opcode > JVM_OPC_MAX)
             CCerror(context, "Quick instructions shouldn't appear yet.");
         break;
     } /* of switch */
@@ -1474,11 +1471,11 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
 
 
 static void
-set_protected(context_type *context, unsigned int inumber, int key, opcode_type opcode)
+set_protected(context_type *context, unsigned int inumber, int key, int opcode)
 {
     JNIEnv *env = context->env;
     fullinfo_type clazz_info;
-    if (opcode != opc_invokevirtual && opcode != opc_invokespecial) {
+    if (opcode != JVM_OPC_invokevirtual && opcode != JVM_OPC_invokespecial) {
         clazz_info = cp_index_to_class_fullinfo(context, key,
                                                 JVM_CONSTANT_Fieldref);
     } else {
@@ -1497,7 +1494,7 @@ set_protected(context_type *context, unsigned int inumber, int key, opcode_type 
         calledClass = (*env)->NewLocalRef(env, calledClass);
         do {
             jclass tmp_cb;
-            if (opcode != opc_invokevirtual && opcode != opc_invokespecial) {
+            if (opcode != JVM_OPC_invokevirtual && opcode != JVM_OPC_invokespecial) {
                 access = JVM_GetCPFieldModifiers
                     (env, context->class, key, calledClass);
             } else {
@@ -1607,9 +1604,10 @@ initialize_exception_table(context_type *context)
  */
 static int instruction_length(unsigned char *iptr, unsigned char *end)
 {
+    static unsigned char opcode_length[] = JVM_OPCODE_LENGTH_INITIALIZER;
     int instruction = *iptr;
     switch (instruction) {
-        case opc_tableswitch: {
+        case JVM_OPC_tableswitch: {
             int *lpc = (int *)UCALIGN(iptr + 1);
             int index;
             if (lpc + 2 >= (int *)end) {
@@ -1623,7 +1621,7 @@ static int instruction_length(unsigned char *iptr, unsigned char *end)
             }
         }
 
-        case opc_lookupswitch: {
+        case JVM_OPC_lookupswitch: {
             int *lpc = (int *) UCALIGN(iptr + 1);
             int npairs;
             if (lpc + 1 >= (int *)end)
@@ -1638,18 +1636,18 @@ static int instruction_length(unsigned char *iptr, unsigned char *end)
                 return (unsigned char *)(&lpc[2 * (npairs + 1)]) - iptr;
         }
 
-        case opc_wide:
+        case JVM_OPC_wide:
             if (iptr + 1 >= end)
                 return -1; /* do not read pass the end */
             switch(iptr[1]) {
-                case opc_ret:
-                case opc_iload: case opc_istore:
-                case opc_fload: case opc_fstore:
-                case opc_aload: case opc_astore:
-                case opc_lload: case opc_lstore:
-                case opc_dload: case opc_dstore:
+                case JVM_OPC_ret:
+                case JVM_OPC_iload: case JVM_OPC_istore:
+                case JVM_OPC_fload: case JVM_OPC_fstore:
+                case JVM_OPC_aload: case JVM_OPC_astore:
+                case JVM_OPC_lload: case JVM_OPC_lstore:
+                case JVM_OPC_dload: case JVM_OPC_dstore:
                     return 4;
-                case opc_iinc:
+                case JVM_OPC_iinc:
                     return 6;
                 default:
                     return -1;
@@ -1767,7 +1765,7 @@ run_dataflow(context_type *context) {
     jclass cb = context->class;
     int max_stack_size = JVM_GetMethodIxMaxStack(env, cb, mi);
     instruction_data_type *idata = context->instruction_data;
-    int icount = context->instruction_count;
+    unsigned int icount = context->instruction_count;
     jboolean work_to_do = JNI_TRUE;
     unsigned int inumber;
 
@@ -1839,7 +1837,7 @@ check_register_values(context_type *context, unsigned int inumber)
 {
     instruction_data_type *idata = context->instruction_data;
     instruction_data_type *this_idata = &idata[inumber];
-    opcode_type opcode = this_idata->opcode;
+    int opcode = this_idata->opcode;
     int operand = this_idata->operand.i;
     int register_count = this_idata->register_info.register_count;
     fullinfo_type *registers = this_idata->register_info.registers;
@@ -1849,17 +1847,17 @@ check_register_values(context_type *context, unsigned int inumber)
     switch (opcode) {
         default:
             return;
-        case opc_iload: case opc_iinc:
+        case JVM_OPC_iload: case JVM_OPC_iinc:
             type = ITEM_Integer; break;
-        case opc_fload:
+        case JVM_OPC_fload:
             type = ITEM_Float; break;
-        case opc_aload:
+        case JVM_OPC_aload:
             type = ITEM_Object; break;
-        case opc_ret:
+        case JVM_OPC_ret:
             type = ITEM_ReturnAddress; break;
-        case opc_lload:
+        case JVM_OPC_lload:
             type = ITEM_Long; double_word = JNI_TRUE; break;
-        case opc_dload:
+        case JVM_OPC_dload:
             type = ITEM_Double; double_word = JNI_TRUE; break;
     }
     if (!double_word) {
@@ -1871,7 +1869,7 @@ check_register_values(context_type *context, unsigned int inumber)
         }
         reg = registers[operand];
 
-        if (WITH_ZERO_EXTRA_INFO(reg) == MAKE_FULLINFO(type, 0, 0)) {
+        if (WITH_ZERO_EXTRA_INFO(reg) == (unsigned)MAKE_FULLINFO(type, 0, 0)) {
             /* the register is obviously of the given type */
             return;
         } else if (GET_INDIRECTION(reg) > 0 && type == ITEM_Object) {
@@ -1882,7 +1880,7 @@ check_register_values(context_type *context, unsigned int inumber)
                               operand);
             /* alternatively
                       (GET_ITEM_TYPE(reg) == ITEM_ReturnAddress)
-                   && (opcode == opc_iload)
+                   && (opcode == JVM_OPC_iload)
                    && (type == ITEM_Object || type == ITEM_Integer)
                but this never occurs
             */
@@ -1902,8 +1900,8 @@ check_register_values(context_type *context, unsigned int inumber)
                     "Accessing value from uninitialized register pair %d/%d",
                     operand, operand+1);
         } else {
-            if ((registers[operand] == MAKE_FULLINFO(type, 0, 0)) &&
-                (registers[operand + 1] == MAKE_FULLINFO(type + 1, 0, 0))) {
+            if ((registers[operand] == (unsigned)MAKE_FULLINFO(type, 0, 0)) &&
+                (registers[operand + 1] == (unsigned)MAKE_FULLINFO(type + 1, 0, 0))) {
                 return;
             } else {
                 CCerror(context, "Register pair %d/%d contains wrong type",
@@ -1922,16 +1920,16 @@ check_flags(context_type *context, unsigned int inumber)
 {
     instruction_data_type *idata = context->instruction_data;
     instruction_data_type *this_idata = &idata[inumber];
-    opcode_type opcode = this_idata->opcode;
+    int opcode = this_idata->opcode;
     switch (opcode) {
-        case opc_return:
+        case JVM_OPC_return:
             /* We need a constructor, but we aren't guaranteed it's called */
             if ((this_idata->or_flags & FLAG_NEED_CONSTRUCTOR) &&
                    !(this_idata->and_flags & FLAG_CONSTRUCTED))
                 CCerror(context, "Constructor must call super() or this()");
             /* fall through */
-        case opc_ireturn: case opc_lreturn:
-        case opc_freturn: case opc_dreturn: case opc_areturn:
+        case JVM_OPC_ireturn: case JVM_OPC_lreturn:
+        case JVM_OPC_freturn: case JVM_OPC_dreturn: case JVM_OPC_areturn:
             if (this_idata->or_flags & FLAG_NO_RETURN)
                 /* This method cannot exit normally */
                 CCerror(context, "Cannot return normally");
@@ -1950,7 +1948,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
 {
     instruction_data_type *idata = context->instruction_data;
     instruction_data_type *this_idata = &idata[inumber];
-    opcode_type opcode = this_idata->opcode;
+    int opcode = this_idata->opcode;
     stack_item_type *stack = this_idata->stack_info.stack;
     int stack_size = this_idata->stack_info.stack_size;
     char *stack_operands, *p;
@@ -1958,7 +1956,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
     fullinfo_type stack_extra_info_buffer[256]; /* save info popped off stack */
     fullinfo_type *stack_extra_info = &stack_extra_info_buffer[256];
     fullinfo_type full_info;    /* only used in case of invoke instructions */
-    fullinfo_type put_full_info; /* only used in case opc_putstatic and opc_putfield */
+    fullinfo_type put_full_info; /* only used in case JVM_OPC_putstatic and JVM_OPC_putfield */
 
     switch(opcode) {
         default:
@@ -1966,7 +1964,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
             stack_operands = opcode_in_out[opcode][0];
             break;
 
-        case opc_putstatic: case opc_putfield: {
+        case JVM_OPC_putstatic: case JVM_OPC_putfield: {
             /* The top thing on the stack depends on the signature of
              * the object.                         */
             int operand = this_idata->operand.i;
@@ -1981,7 +1979,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
                 print_formatted_fieldname(context, operand);
             }
 #endif
-            if (opcode == opc_putfield)
+            if (opcode == JVM_OPC_putfield)
                 *ip++ = 'A';    /* object for putfield */
             *ip++ = signature_to_fieldtype(context, &signature, &put_full_info);
             *ip = '\0';
@@ -1990,9 +1988,9 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
             break;
         }
 
-        case opc_invokevirtual: case opc_invokespecial:
-        case opc_invokeinit:    /* invokespecial call to <init> */
-        case opc_invokestatic: case opc_invokeinterface: {
+        case JVM_OPC_invokevirtual: case JVM_OPC_invokespecial:
+        case JVM_OPC_invokeinit:    /* invokespecial call to <init> */
+        case JVM_OPC_invokestatic: case JVM_OPC_invokeinterface: {
             /* The top stuff on the stack depends on the method signature */
             int operand = this_idata->operand.i;
             const char *signature =
@@ -2007,9 +2005,9 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
                 print_formatted_methodname(context, operand);
             }
 #endif
-            if (opcode != opc_invokestatic)
+            if (opcode != JVM_OPC_invokestatic)
                 /* First, push the object */
-                *ip++ = (opcode == opc_invokeinit ? '@' : 'A');
+                *ip++ = (opcode == JVM_OPC_invokeinit ? '@' : 'A');
             for (p = signature + 1; *p != JVM_SIGNATURE_ENDFUNC; ) {
                 *ip++ = signature_to_fieldtype(context, &p, &full_info);
                 if (ip >= buffer + sizeof(buffer) - 1)
@@ -2022,7 +2020,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
             break;
         }
 
-        case opc_multianewarray: {
+        case JVM_OPC_multianewarray: {
             /* Count can't be larger than 255. So can't overflow buffer */
             int count = this_idata->operand2.i; /* number of ints on stack */
             memset(buffer, 'I', count);
@@ -2062,19 +2060,19 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
                      * one of the special cases  */
                     if (  (WITH_ZERO_EXTRA_INFO(top_type) ==
                                 MAKE_FULLINFO(ITEM_ReturnAddress, 0, 0))
-                        && (opcode == opc_astore))
+                        && (opcode == JVM_OPC_astore))
                         break;
                     if (   (GET_ITEM_TYPE(top_type) == ITEM_NewObject
                             || (GET_ITEM_TYPE(top_type) == ITEM_InitObject))
-                        && ((opcode == opc_astore) || (opcode == opc_aload)
-                            || (opcode == opc_ifnull) || (opcode == opc_ifnonnull)))
+                        && ((opcode == JVM_OPC_astore) || (opcode == JVM_OPC_aload)
+                            || (opcode == JVM_OPC_ifnull) || (opcode == JVM_OPC_ifnonnull)))
                         break;
                     /* The 2nd edition VM of the specification allows field
                      * initializations before the superclass initializer,
                      * if the field is defined within the current class.
                      */
                      if (   (GET_ITEM_TYPE(top_type) == ITEM_InitObject)
-                         && (opcode == opc_putfield)) {
+                         && (opcode == JVM_OPC_putfield)) {
                         int operand = this_idata->operand.i;
                         int access_bits = JVM_GetCPFieldModifiers(context->env,
                                                                   context->class,
@@ -2231,7 +2229,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
      */
     switch (opcode) {
         default: break;
-        case opc_aastore: {     /* array index object  */
+        case JVM_OPC_aastore: {     /* array index object  */
             fullinfo_type array_type = stack_extra_info[0];
             fullinfo_type object_type = stack_extra_info[2];
             fullinfo_type target_type = decrement_indirection(array_type);
@@ -2246,12 +2244,12 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
             break;
         }
 
-        case opc_putfield:
-        case opc_getfield:
-        case opc_putstatic: {
+        case JVM_OPC_putfield:
+        case JVM_OPC_getfield:
+        case JVM_OPC_putstatic: {
             int operand = this_idata->operand.i;
             fullinfo_type stack_object = stack_extra_info[0];
-            if (opcode == opc_putfield || opcode == opc_getfield) {
+            if (opcode == JVM_OPC_putfield || opcode == JVM_OPC_getfield) {
                 if (!isAssignableTo
                         (context,
                          stack_object,
@@ -2266,8 +2264,8 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
                     CCerror(context, "Bad access to protected data");
                 }
             }
-            if (opcode == opc_putfield || opcode == opc_putstatic) {
-                int item = (opcode == opc_putfield ? 1 : 0);
+            if (opcode == JVM_OPC_putfield || opcode == JVM_OPC_putstatic) {
+                int item = (opcode == JVM_OPC_putfield ? 1 : 0);
                 if (!isAssignableTo(context,
                                     stack_extra_info[item], put_full_info)) {
                     CCerror(context, "Bad type in putfield/putstatic");
@@ -2276,23 +2274,23 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
             break;
         }
 
-        case opc_athrow:
+        case JVM_OPC_athrow:
             if (!isAssignableTo(context, stack_extra_info[0],
                                 context->throwable_info)) {
                 CCerror(context, "Can only throw Throwable objects");
             }
             break;
 
-        case opc_aaload: {      /* array index */
+        case JVM_OPC_aaload: {      /* array index */
             /* We need to pass the information to the stack updater */
             fullinfo_type array_type = stack_extra_info[0];
             context->swap_table[0] = decrement_indirection(array_type);
             break;
         }
 
-        case opc_invokevirtual: case opc_invokespecial:
-        case opc_invokeinit:
-        case opc_invokeinterface: case opc_invokestatic: {
+        case JVM_OPC_invokevirtual: case JVM_OPC_invokespecial:
+        case JVM_OPC_invokeinit:
+        case JVM_OPC_invokeinterface: case JVM_OPC_invokestatic: {
             int operand = this_idata->operand.i;
             const char *signature =
                 JVM_GetCPMethodSignatureUTF(context->env,
@@ -2301,15 +2299,15 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
             int item;
             const char *p;
             check_and_push(context, signature, VM_STRING_UTF);
-            if (opcode == opc_invokestatic) {
+            if (opcode == JVM_OPC_invokestatic) {
                 item = 0;
-            } else if (opcode == opc_invokeinit) {
+            } else if (opcode == JVM_OPC_invokeinit) {
                 fullinfo_type init_type = this_idata->operand2.fi;
                 fullinfo_type object_type = stack_extra_info[0];
                 context->swap_table[0] = object_type; /* save value */
                 if (GET_ITEM_TYPE(stack_extra_info[0]) == ITEM_NewObject) {
                     /* We better be calling the appropriate init.  Find the
-                     * inumber of the "opc_new" instruction", and figure
+                     * inumber of the "JVM_OPC_new" instruction", and figure
                      * out what the type really is.
                      */
                     unsigned int new_inumber = GET_EXTRA_INFO(stack_extra_info[0]);
@@ -2341,7 +2339,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
                     CCerror(context,
                             "Incompatible object argument for function call");
                 }
-                if (opcode == opc_invokespecial
+                if (opcode == JVM_OPC_invokespecial
                     && !isAssignableTo(context, object_type,
                                        context->currentclass_info)) {
                     /* Make sure object argument is assignment compatible to current class */
@@ -2381,13 +2379,13 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
             break;
         }
 
-        case opc_return:
+        case JVM_OPC_return:
             if (context->return_type != MAKE_FULLINFO(ITEM_Void, 0, 0))
                 CCerror(context, "Wrong return type in function");
             break;
 
-        case opc_ireturn: case opc_lreturn: case opc_freturn:
-        case opc_dreturn: case opc_areturn: {
+        case JVM_OPC_ireturn: case JVM_OPC_lreturn: case JVM_OPC_freturn:
+        case JVM_OPC_dreturn: case JVM_OPC_areturn: {
             fullinfo_type target_type = context->return_type;
             fullinfo_type object_type = stack_extra_info[0];
             if (!isAssignableTo(context, object_type, target_type)) {
@@ -2396,7 +2394,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
             break;
         }
 
-        case opc_new: {
+        case JVM_OPC_new: {
             /* Make sure that nothing on the stack already looks like what
              * we want to create.  I can't image how this could possibly happen
              * but we should test for it anyway, since if it could happen, the
@@ -2433,7 +2431,7 @@ update_registers(context_type *context, unsigned int inumber,
 {
     instruction_data_type *idata = context->instruction_data;
     instruction_data_type *this_idata = &idata[inumber];
-    opcode_type opcode = this_idata->opcode;
+    int opcode = this_idata->opcode;
     int operand = this_idata->operand.i;
     int register_count = this_idata->register_info.register_count;
     fullinfo_type *registers = this_idata->register_info.registers;
@@ -2453,11 +2451,11 @@ update_registers(context_type *context, unsigned int inumber,
     /* Remember, we've already verified the type at the top of the stack. */
     switch (opcode) {
         default: break;
-        case opc_istore: case opc_fstore: case opc_astore:
+        case JVM_OPC_istore: case JVM_OPC_fstore: case JVM_OPC_astore:
             access = ACCESS_SINGLE;
             goto continue_store;
 
-        case opc_lstore: case opc_dstore:
+        case JVM_OPC_lstore: case JVM_OPC_dstore:
             access = ACCESS_DOUBLE;
             goto continue_store;
 
@@ -2484,16 +2482,16 @@ update_registers(context_type *context, unsigned int inumber,
             break;
         }
 
-        case opc_iload: case opc_fload: case opc_aload:
-        case opc_iinc: case opc_ret:
+        case JVM_OPC_iload: case JVM_OPC_fload: case JVM_OPC_aload:
+        case JVM_OPC_iinc: case JVM_OPC_ret:
             access = ACCESS_SINGLE;
             break;
 
-        case opc_lload: case opc_dload:
+        case JVM_OPC_lload: case JVM_OPC_dload:
             access = ACCESS_DOUBLE;
             break;
 
-        case opc_jsr: case opc_jsr_w:
+        case JVM_OPC_jsr: case JVM_OPC_jsr_w:
             for (i = 0; i < new_mask_count; i++)
                 if (new_masks[i].entry == operand)
                     CCerror(context, "Recursive call to jsr entry");
@@ -2501,8 +2499,8 @@ update_registers(context_type *context, unsigned int inumber,
             new_mask_count++;
             break;
 
-        case opc_invokeinit:
-        case opc_new: {
+        case JVM_OPC_invokeinit:
+        case JVM_OPC_new: {
             /* For invokeinit, an uninitialized object has been initialized.
              * For new, all previous occurrences of an uninitialized object
              * from the same instruction must be made bogus.
@@ -2588,7 +2586,7 @@ update_flags(context_type *context, unsigned int inumber,
     flag_type or_flags = this_idata->or_flags;
 
     /* Set the "we've done a constructor" flag */
-    if (this_idata->opcode == opc_invokeinit) {
+    if (this_idata->opcode == JVM_OPC_invokeinit) {
         fullinfo_type from = context->swap_table[0];
         if (from == MAKE_FULLINFO(ITEM_InitObject, 0, 0))
             and_flags |= FLAG_CONSTRUCTED;
@@ -2611,7 +2609,7 @@ push_stack(context_type *context, unsigned int inumber, stack_info_type *new_sta
 {
     instruction_data_type *idata = context->instruction_data;
     instruction_data_type *this_idata = &idata[inumber];
-    opcode_type opcode = this_idata->opcode;
+    int opcode = this_idata->opcode;
     int operand = this_idata->operand.i;
 
     int stack_size = new_stack_info->stack_size;
@@ -2631,7 +2629,7 @@ push_stack(context_type *context, unsigned int inumber, stack_info_type *new_sta
             stack_results = opcode_in_out[opcode][1];
             break;
 
-        case opc_ldc: case opc_ldc_w: case opc_ldc2_w: {
+        case JVM_OPC_ldc: case JVM_OPC_ldc_w: case JVM_OPC_ldc2_w: {
             /* Look to constant pool to determine correct result. */
             unsigned char *type_table = context->constant_types;
             switch (type_table[operand]) {
@@ -2661,7 +2659,7 @@ push_stack(context_type *context, unsigned int inumber, stack_info_type *new_sta
             break;
         }
 
-        case opc_getstatic: case opc_getfield: {
+        case JVM_OPC_getstatic: case JVM_OPC_getfield: {
             /* Look to signature to determine correct result. */
             int operand = this_idata->operand.i;
             const char *signature = JVM_GetCPFieldSignatureUTF(context->env,
@@ -2680,9 +2678,9 @@ push_stack(context_type *context, unsigned int inumber, stack_info_type *new_sta
             break;
         }
 
-        case opc_invokevirtual: case opc_invokespecial:
-        case opc_invokeinit:
-        case opc_invokestatic: case opc_invokeinterface: {
+        case JVM_OPC_invokevirtual: case JVM_OPC_invokespecial:
+        case JVM_OPC_invokeinit:
+        case JVM_OPC_invokestatic: case JVM_OPC_invokeinterface: {
             /* Look to signature to determine correct result. */
             int operand = this_idata->operand.i;
             const char *signature = JVM_GetCPMethodSignatureUTF(context->env,
@@ -2703,28 +2701,28 @@ push_stack(context_type *context, unsigned int inumber, stack_info_type *new_sta
             break;
         }
 
-        case opc_aconst_null:
+        case JVM_OPC_aconst_null:
             stack_results = opcode_in_out[opcode][1];
             full_info = NULL_FULLINFO; /* special NULL */
             break;
 
-        case opc_new:
-        case opc_checkcast:
-        case opc_newarray:
-        case opc_anewarray:
-        case opc_multianewarray:
+        case JVM_OPC_new:
+        case JVM_OPC_checkcast:
+        case JVM_OPC_newarray:
+        case JVM_OPC_anewarray:
+        case JVM_OPC_multianewarray:
             stack_results = opcode_in_out[opcode][1];
             /* Conveniently, this result type is stored here */
             full_info = this_idata->operand.fi;
             break;
 
-        case opc_aaload:
+        case JVM_OPC_aaload:
             stack_results = opcode_in_out[opcode][1];
             /* pop_stack() saved value for us. */
             full_info = context->swap_table[0];
             break;
 
-        case opc_aload:
+        case JVM_OPC_aload:
             stack_results = opcode_in_out[opcode][1];
             /* The register hasn't been modified, so we can use its value. */
             full_info = this_idata->register_info.registers[operand];
@@ -2772,7 +2770,7 @@ push_stack(context_type *context, unsigned int inumber, stack_info_type *new_sta
         stack_size++;
     } /* outer for loop */
 
-    if (opcode == opc_invokeinit) {
+    if (opcode == JVM_OPC_invokeinit) {
         /* If there are any instances of "from" on the stack, we need to
          * replace it with "to", since calling <init> initializes all versions
          * of the object, obviously.     */
@@ -2807,7 +2805,7 @@ merge_into_successors(context_type *context, unsigned int inumber,
 {
     instruction_data_type *idata = context->instruction_data;
     instruction_data_type *this_idata = &idata[inumber];
-    opcode_type opcode = this_idata->opcode;
+    int opcode = this_idata->opcode;
     int operand = this_idata->operand.i;
     struct handler_info_type *handler_info = context->handler_info;
     int handler_info_length =
@@ -2827,35 +2825,35 @@ merge_into_successors(context_type *context, unsigned int inumber,
         buffer[0] = inumber + 1;
         break;
 
-    case opc_ifeq: case opc_ifne: case opc_ifgt:
-    case opc_ifge: case opc_iflt: case opc_ifle:
-    case opc_ifnull: case opc_ifnonnull:
-    case opc_if_icmpeq: case opc_if_icmpne: case opc_if_icmpgt:
-    case opc_if_icmpge: case opc_if_icmplt: case opc_if_icmple:
-    case opc_if_acmpeq: case opc_if_acmpne:
+    case JVM_OPC_ifeq: case JVM_OPC_ifne: case JVM_OPC_ifgt:
+    case JVM_OPC_ifge: case JVM_OPC_iflt: case JVM_OPC_ifle:
+    case JVM_OPC_ifnull: case JVM_OPC_ifnonnull:
+    case JVM_OPC_if_icmpeq: case JVM_OPC_if_icmpne: case JVM_OPC_if_icmpgt:
+    case JVM_OPC_if_icmpge: case JVM_OPC_if_icmplt: case JVM_OPC_if_icmple:
+    case JVM_OPC_if_acmpeq: case JVM_OPC_if_acmpne:
         successors_count = 2;
         buffer[0] = inumber + 1;
         buffer[1] = operand;
         break;
 
-    case opc_jsr: case opc_jsr_w:
+    case JVM_OPC_jsr: case JVM_OPC_jsr_w:
         if (this_idata->operand2.i != UNKNOWN_RET_INSTRUCTION)
             idata[this_idata->operand2.i].changed = JNI_TRUE;
         /* FALLTHROUGH */
-    case opc_goto: case opc_goto_w:
+    case JVM_OPC_goto: case JVM_OPC_goto_w:
         successors_count = 1;
         buffer[0] = operand;
         break;
 
 
-    case opc_ireturn: case opc_lreturn: case opc_return:
-    case opc_freturn: case opc_dreturn: case opc_areturn:
-    case opc_athrow:
+    case JVM_OPC_ireturn: case JVM_OPC_lreturn: case JVM_OPC_return:
+    case JVM_OPC_freturn: case JVM_OPC_dreturn: case JVM_OPC_areturn:
+    case JVM_OPC_athrow:
         /* The testing for the returns is handled in pop_stack() */
         successors_count = 0;
         break;
 
-    case opc_ret: {
+    case JVM_OPC_ret: {
         /* This is slightly slow, but good enough for a seldom used instruction.
          * The EXTRA_ITEM_INFO of the ITEM_ReturnAddress indicates the
          * address of the first instruction of the subroutine.  We can return
@@ -2866,16 +2864,16 @@ merge_into_successors(context_type *context, unsigned int inumber,
             int called_instruction = GET_EXTRA_INFO(registers[operand]);
             int i, count, *ptr;;
             for (i = context->instruction_count, count = 0; --i >= 0; ) {
-                if (((idata[i].opcode == opc_jsr) ||
-                     (idata[i].opcode == opc_jsr_w)) &&
+                if (((idata[i].opcode == JVM_OPC_jsr) ||
+                     (idata[i].opcode == JVM_OPC_jsr_w)) &&
                     (idata[i].operand.i == called_instruction))
                     count++;
             }
             this_idata->operand2.ip = ptr = NEW(int, count + 1);
             *ptr++ = count;
             for (i = context->instruction_count, count = 0; --i >= 0; ) {
-                if (((idata[i].opcode == opc_jsr) ||
-                     (idata[i].opcode == opc_jsr_w)) &&
+                if (((idata[i].opcode == JVM_OPC_jsr) ||
+                     (idata[i].opcode == JVM_OPC_jsr_w)) &&
                     (idata[i].operand.i == called_instruction))
                     *ptr++ = i + 1;
             }
@@ -2886,8 +2884,8 @@ merge_into_successors(context_type *context, unsigned int inumber,
 
     }
 
-    case opc_tableswitch:
-    case opc_lookupswitch:
+    case JVM_OPC_tableswitch:
+    case JVM_OPC_lookupswitch:
         successors = this_idata->operand.ip; /* use this instead */
         successors_count = *successors++;
         break;
@@ -2907,9 +2905,9 @@ merge_into_successors(context_type *context, unsigned int inumber,
 
     handler_info = context->handler_info;
     for (i = handler_info_length; --i >= 0; handler_info++) {
-        if (handler_info->start <= inumber && handler_info->end > inumber) {
+        if (handler_info->start <= (int)inumber && handler_info->end > (int)inumber) {
             int handler = handler_info->handler;
-            if (opcode != opc_invokeinit) {
+            if (opcode != JVM_OPC_invokeinit) {
                 merge_into_one_successor(context, inumber, handler,
                                          &this_idata->register_info, /* old */
                                          &handler_info->stack_info,
@@ -2984,9 +2982,9 @@ merge_into_one_successor(context_type *context,
      * ret are executed. Thus uninitialized objects can't propagate
      * into or out of a subroutine.
      */
-    if (idata[from_inumber].opcode == opc_ret ||
-        idata[from_inumber].opcode == opc_jsr ||
-        idata[from_inumber].opcode == opc_jsr_w) {
+    if (idata[from_inumber].opcode == JVM_OPC_ret ||
+        idata[from_inumber].opcode == JVM_OPC_jsr ||
+        idata[from_inumber].opcode == JVM_OPC_jsr_w) {
         int new_register_count = new_register_info->register_count;
         fullinfo_type *new_registers = new_register_info->registers;
         int i;
@@ -3036,7 +3034,7 @@ merge_into_one_successor(context_type *context,
      * that needs to get merged into the new instruction is a joining
      * of info from the ret instruction with stuff in the jsr instruction
      */
-    if (idata[from_inumber].opcode == opc_ret && !isException) {
+    if (idata[from_inumber].opcode == JVM_OPC_ret && !isException) {
         int new_register_count = new_register_info->register_count;
         fullinfo_type *new_registers = new_register_info->registers;
         int new_mask_count = new_register_info->mask_count;
@@ -3045,7 +3043,7 @@ merge_into_one_successor(context_type *context,
         int called_instruction = GET_EXTRA_INFO(new_registers[operand]);
         instruction_data_type *jsr_idata = &idata[to_inumber - 1];
         register_info_type *jsr_reginfo = &jsr_idata->register_info;
-        if (jsr_idata->operand2.i != from_inumber) {
+        if (jsr_idata->operand2.i != (int)from_inumber) {
             if (jsr_idata->operand2.i != UNKNOWN_RET_INSTRUCTION)
                 CCerror(context, "Multiple returns to single jsr");
             jsr_idata->operand2.i = from_inumber;
@@ -3675,7 +3673,7 @@ signature_to_fieldtype(context_type *context,
                 char *buffer = buffer_space;
                 char *finish = strchr(p, JVM_SIGNATURE_ENDCLASS);
                 int length = finish - p;
-                if (length + 1 > sizeof(buffer_space)) {
+                if (length + 1 > (int)sizeof(buffer_space)) {
                     buffer = malloc(length + 1);
                     check_and_push(context, buffer, VM_MALLOC_BLK);
                 }
