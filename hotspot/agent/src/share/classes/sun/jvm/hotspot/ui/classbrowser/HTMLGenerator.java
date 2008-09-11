@@ -1135,6 +1135,8 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
             buf.append("normal");
          } else if (type == Location.Type.OOP) {
             buf.append("oop");
+         } else if (type == Location.Type.NARROWOOP) {
+            buf.append("narrowoop");
          } else if (type == Location.Type.INT_IN_LONG) {
             buf.append("int");
          } else if (type == Location.Type.LNG) {

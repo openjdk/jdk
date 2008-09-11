@@ -1577,6 +1577,7 @@ static inline uint64_t cast_uint64_t(size_t x)
                                                                           \
   declare_constant(Location::normal)                                      \
   declare_constant(Location::oop)                                         \
+  declare_constant(Location::narrowoop)                                   \
   declare_constant(Location::int_in_long)                                 \
   declare_constant(Location::lng)                                         \
   declare_constant(Location::float_in_dbl)                                \
