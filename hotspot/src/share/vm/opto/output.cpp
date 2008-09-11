@@ -685,6 +685,8 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     } else if( t->base() == Type::Int && OptoReg::is_reg(regnum) ) {
       array->append(new_loc_value( _regalloc, regnum, Matcher::int_in_long
                                    ? Location::int_in_long : Location::normal ));
+    } else if( t->base() == Type::NarrowOop ) {
+      array->append(new_loc_value( _regalloc, regnum, Location::narrowoop ));
     } else {
       array->append(new_loc_value( _regalloc, regnum, _regalloc->is_oop(local) ? Location::oop : Location::normal ));
     }
@@ -703,6 +705,13 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
   case Type::InstPtr:
   case Type::KlassPtr:          // fall through
     array->append(new ConstantOopWriteValue(t->isa_oopptr()->const_oop()->encoding()));
+    break;
+  case Type::NarrowOop:
+    if (t == TypeNarrowOop::NULL_PTR) {
+      array->append(new ConstantOopWriteValue(NULL));
+    } else {
+      array->append(new ConstantOopWriteValue(t->make_ptr()->isa_oopptr()->const_oop()->encoding()));
+    }
     break;
   case Type::Int:
     array->append(new ConstantIntValue(t->is_int()->get_con()));
@@ -878,9 +887,14 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
         }
       } else if( !obj_node->is_Con() ) {
         OptoReg::Name obj_reg = _regalloc->get_reg_first(obj_node);
-        scval = new_loc_value( _regalloc, obj_reg, Location::oop );
+        if( obj_node->bottom_type()->base() == Type::NarrowOop ) {
+          scval = new_loc_value( _regalloc, obj_reg, Location::narrowoop );
+        } else {
+          scval = new_loc_value( _regalloc, obj_reg, Location::oop );
+        }
       } else {
-        scval = new ConstantOopWriteValue(obj_node->bottom_type()->is_instptr()->const_oop()->encoding());
+        const TypePtr *tp = obj_node->bottom_type()->make_ptr();
+        scval = new ConstantOopWriteValue(tp->is_instptr()->const_oop()->encoding());
       }
 
       OptoReg::Name box_reg = BoxLockNode::stack_slot(box_node);
