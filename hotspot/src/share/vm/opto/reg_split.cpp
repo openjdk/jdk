@@ -284,7 +284,7 @@ Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint 
       // Check for single-def (LRG cannot redefined)
       uint lidx = n2lidx(in);
       if( lidx >= _maxlrg ) continue; // Value is a recent spill-copy
-      if( lrgs(lidx)._def != NodeSentinel ) continue;
+      if (lrgs(lidx).is_singledef()) continue;
 
       Block *b_def = _cfg._bbs[def->_idx];
       int idx_def = b_def->find_node(def);
@@ -311,11 +311,19 @@ Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint 
       uint lidx = Find_id(in);
 
       // Walk backwards thru spill copy node intermediates
-      if( walkThru )
+      if (walkThru) {
         while ( in->is_SpillCopy() && lidx >= _maxlrg ) {
           in = in->in(1);
           lidx = Find_id(in);
         }
+
+        if (lidx < _maxlrg && lrgs(lidx).is_multidef()) {
+          // walkThru found a multidef LRG, which is unsafe to use, so
+          // just keep the original def used in the clone.
+          in = spill->in(i);
+          lidx = Find_id(in);
+        }
+      }
 
       if( lidx < _maxlrg && lrgs(lidx).reg() >= LRG::SPILL_REG ) {
         Node *rdef = Reachblock[lrg2reach[lidx]];
@@ -505,7 +513,7 @@ uint PhaseChaitin::Split( uint maxlrg ) {
       // Do not bother splitting or putting in Phis for single-def
       // rematerialized live ranges.  This happens alot to constants
       // with long live ranges.
-      if( lrgs(lidx)._def != NodeSentinel &&
+      if( lrgs(lidx).is_singledef() &&
           lrgs(lidx)._def->rematerialize() ) {
         // reset the Reaches & UP entries
         Reachblock[slidx] = lrgs(lidx)._def;

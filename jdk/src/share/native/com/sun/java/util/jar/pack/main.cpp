@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,13 +86,13 @@ static jlong read_input_via_stdio(unpacker* u,
       readlen = (int)(maxlen - numread);
     int nr = 0;
     if (u->infileptr != null) {
-      nr = fread(bufptr, 1, readlen, u->infileptr);
+      nr = (int)fread(bufptr, 1, readlen, u->infileptr);
     } else {
 #ifndef WIN32
       // we prefer unbuffered inputs
-      nr = read(u->infileno, bufptr, readlen);
+      nr = (int)read(u->infileno, bufptr, readlen);
 #else
-      nr = fread(bufptr, 1, readlen, stdin);
+      nr = (int)fread(bufptr, 1, readlen, stdin);
 #endif
     }
     if (nr <= 0) {
@@ -279,7 +279,6 @@ int unpacker::run(int argc, char **argv) {
   char** argbuf = init_args(argc, argv, envargc);
   char** arg0 = argbuf+envargc;
   char** argp = argbuf;
-  int ach;
 
   int verbose = 0;
   char* logfile = null;
@@ -370,7 +369,7 @@ int unpacker::run(int argc, char **argv) {
   int magic;
 
   // check for GZIP input
-  magic = read_magic(&u, peek, sizeof(peek));
+  magic = read_magic(&u, peek, (int)sizeof(peek));
   if ((magic & GZIP_MAGIC_MASK) == GZIP_MAGIC) {
     // Oops; must slap an input filter on this data.
     setup_gzin(&u);
@@ -397,8 +396,8 @@ int unpacker::run(int argc, char **argv) {
     if (u.aborting())  break;
 
     // Peek ahead for more data.
-    magic = read_magic(&u, peek, sizeof(peek));
-    if (magic != JAVA_PACKAGE_MAGIC) {
+    magic = read_magic(&u, peek, (int)sizeof(peek));
+    if (magic != (int)JAVA_PACKAGE_MAGIC) {
       if (magic != EOF_MAGIC)
         u.abort("garbage after end of pack archive");
       break;   // all done

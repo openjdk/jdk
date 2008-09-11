@@ -94,9 +94,9 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         }
     }
 
-    public String formatSource(JCDiagnostic d,Locale l) {
+    public String formatSource(JCDiagnostic d, boolean fullname, Locale l) {
         assert (d.getSource() != null);
-        return d.getSource().getName();
+        return fullname ? d.getSourceName() : d.getSource().getName();
     }
 
     /**
