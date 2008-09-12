@@ -156,7 +156,7 @@ jboolean isDisplayLocal(JNIEnv *env) {
 
     isLocal = JNU_CallStaticMethodByName(env, NULL,
                                          "sun/awt/X11GraphicsEnvironment",
-                                         "isDisplayLocal",
+                                         "_isDisplayLocal",
                                          "()Z").z;
     isLocalSet = True;
     return isLocal;

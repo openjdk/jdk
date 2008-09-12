@@ -1272,6 +1272,13 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
         displayChanger.notifyPaletteChanged();
     }
 
+    /**
+     * Returns true when the display is local, false for remote displays.
+     *
+     * @return true when the display is local, false for remote displays
+     */
+    public abstract boolean isDisplayLocal();
+
     /*
      * ----DISPLAY CHANGE SUPPORT----
      */
