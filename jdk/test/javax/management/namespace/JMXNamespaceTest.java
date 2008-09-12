@@ -35,7 +35,6 @@
  *            NamespaceController.java NamespaceControllerMBean.java
  * @run main/othervm JMXNamespaceTest
  */
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.reflect.InvocationTargetException;
@@ -52,10 +51,10 @@ import javax.management.InvalidAttributeValueException;
 import javax.management.JMX;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerFactory;
 import javax.management.NotificationEmitter;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
-import javax.management.RuntimeOperationsException;
 import javax.management.StandardMBean;
 import javax.management.namespace.JMXNamespaces;
 import javax.management.namespace.JMXNamespace;
@@ -155,7 +154,7 @@ public class JMXNamespaceTest {
             }
     }
 
-    private static class SimpleTestConf {
+    public static class SimpleTestConf {
         public final  Wombat wombat;
         public final  StandardMBean mbean;
         public final  String dirname;
@@ -457,259 +456,56 @@ public class JMXNamespaceTest {
         }
     }
 
-    /**
-     * Test cycle detection.
-     * mkdir test ; cd test ; ln -s . kanga ; ln -s kanga/kanga/roo/kanga roo
-     * touch kanga/roo/wombat
-     **/
-    public static void probeKangaRooTest(String[] args) {
-        final SimpleTestConf conf;
+    public static void verySimpleTest(String[] args) {
+        System.err.println("verySimpleTest: starting");
         try {
-            conf = new SimpleTestConf(args);
-            try {
-                final JMXServiceURL url =
-                        new JMXServiceURL("rmi","localHost",0);
-                final Map<String,Object> empty = Collections.emptyMap();
-                final JMXConnectorServer server =
-                        JMXConnectorServerFactory.newJMXConnectorServer(url,
-                        empty,conf.server);
-                server.start();
-                final JMXServiceURL address = server.getAddress();
-                final JMXConnector client =
-                        JMXConnectorFactory.connect(address,
-                        empty);
-                final String[] signature = {
-                    JMXServiceURL.class.getName(),
-                    Map.class.getName(),
-                };
-
-                final Object[] params = {
-                    address,
-                    null,
-                };
-                final MBeanServerConnection c =
-                        client.getMBeanServerConnection();
-
-                // ln -s . kanga
-                final ObjectName dirName1 =
-                        new ObjectName("kanga//:type=JMXNamespace");
-                c.createMBean(JMXRemoteTargetNamespace.class.getName(),
-                              dirName1, params,signature);
-                c.invoke(dirName1, "connect", null, null);
-                try {
-                    // ln -s kanga//kanga//roo//kanga roo
-                    final JMXNamespace local = new JMXNamespace(
-                            new MBeanServerConnectionWrapper(null,
-                            JMXNamespaceTest.class.getClassLoader()){
-
-                        @Override
-                        protected MBeanServerConnection getMBeanServerConnection() {
-                            return JMXNamespaces.narrowToNamespace(c,
-                                    "kanga//kanga//roo//kanga"
-                                    );
-                        }
-
-                    });
-                    final ObjectName dirName2 =
-                            new ObjectName("roo//:type=JMXNamespace");
-                    conf.server.registerMBean(local,dirName2);
-                    System.out.println(dirName2 + " created!");
-                    try {
-                        // touch kanga/roo/wombat
-                        final ObjectName wombatName1 =
-                                new ObjectName("kanga//roo//"+conf.wombatName);
-                        final WombatMBean wombat1 =
-                                JMX.newMBeanProxy(c,wombatName1,WombatMBean.class);
-                        final String newCaption="I am still the same old wombat";
-                        Exception x = null;
-                        try {
-                            wombat1.setCaption(newCaption);
-                        } catch (RuntimeOperationsException r) {
-                            x=r.getTargetException();
-                            System.out.println("Got expected exception: " + x);
-                            // r.printStackTrace();
-                        }
-                        if (x == null)
-                            throw new RuntimeException("cycle not detected!");
-                    } finally {
-                        c.unregisterMBean(dirName2);
-                    }
-                } finally {
-                    c.unregisterMBean(dirName1);
-                    client.close();
-                    server.stop();
-                }
-            } finally {
-                conf.close();
-            }
-            System.err.println("probeKangaRooTest PASSED");
+            final MBeanServer srv = MBeanServerFactory.createMBeanServer();
+            srv.registerMBean(new JMXNamespace(
+                    JMXNamespaces.narrowToNamespace(srv, "foo")),
+                    JMXNamespaces.getNamespaceObjectName("foo"));
+            throw new Exception("Excpected IllegalArgumentException not raised.");
+        } catch (IllegalArgumentException x) {
+            System.err.println("verySimpleTest: got expected exception: "+x);
         } catch (Exception x) {
-            System.err.println("probeKangaRooTest FAILED: " +x);
+            System.err.println("verySimpleTest FAILED: " +x);
             x.printStackTrace();
             throw new RuntimeException(x);
         }
+        System.err.println("verySimpleTest: PASSED");
     }
-    /**
-     * Test cycle detection 2.
-     * mkdir test ; cd test ; ln -s . roo ; ln -s roo/roo kanga
-     * touch kanga/roo/wombat ; rm roo ; ln -s kanga roo ;
-     * touch kanga/roo/wombat
-     *
-     **/
-    public static void probeKangaRooCycleTest(String[] args) {
-        final SimpleTestConf conf;
-        try {
-            conf = new SimpleTestConf(args);
-            Exception failed = null;
-            try {
-                final JMXServiceURL url =
-                        new JMXServiceURL("rmi","localHost",0);
-                final Map<String,Object> empty = Collections.emptyMap();
-                final JMXConnectorServer server =
-                        JMXConnectorServerFactory.newJMXConnectorServer(url,
-                        empty,conf.server);
-                server.start();
-                final JMXServiceURL address = server.getAddress();
-                final JMXConnector client =
-                        JMXConnectorFactory.connect(address,
-                        empty);
-                final String[] signature = {
-                    JMXServiceURL.class.getName(),
-                    Map.class.getName(),
-                };
-                final String[] signature2 = {
-                    JMXServiceURL.class.getName(),
-                    Map.class.getName(),
-                    String.class.getName()
-                };
-                final Object[] params = {
-                    address,
-                    Collections.emptyMap(),
-                };
-                final Object[] params2 = {
-                    address,
-                    null,
-                    "kanga",
-                };
-                final MBeanServerConnection c =
-                        client.getMBeanServerConnection();
 
-                // ln -s . roo
-                final ObjectName dirName1 =
-                        new ObjectName("roo//:type=JMXNamespace");
-                c.createMBean(JMXRemoteTargetNamespace.class.getName(),
-                              dirName1, params,signature);
-                c.invoke(dirName1, "connect",null,null);
-                try {
-                    final Map<String,Object> emptyMap =
-                            Collections.emptyMap();
-                    final JMXNamespace local = new JMXNamespace(
-                            new MBeanServerConnectionWrapper(
-                            JMXNamespaces.narrowToNamespace(c,
-                            "roo//roo//"),
-                            JMXNamespaceTest.class.getClassLoader())) {
-                    };
-                    // ln -s roo/roo kanga
-                    final ObjectName dirName2 =
-                            new ObjectName("kanga//:type=JMXNamespace");
-                    conf.server.registerMBean(local,dirName2);
-                    System.out.println(dirName2 + " created!");
-                    try {
-                        // touch kanga/roo/wombat
-                        final ObjectName wombatName1 =
-                                new ObjectName("kanga//roo//"+conf.wombatName);
-                        final WombatMBean wombat1 =
-                                JMX.newMBeanProxy(c,wombatName1,WombatMBean.class);
-                        final String newCaption="I am still the same old wombat";
-                        wombat1.setCaption(newCaption);
-                        // rm roo
-                        c.unregisterMBean(dirName1);
-                        // ln -s kanga roo
-                        System.err.println("**** Creating " + dirName1 +
-                                " ****");
-                        c.createMBean(JMXRemoteTargetNamespace.class.getName(),
-                              dirName1, params2,signature2);
-                        System.err.println("**** Created " + dirName1 +
-                                " ****");
-                        Exception x = null;
-                        try {
-                            // touch kanga/roo/wombat
-                            wombat1.setCaption(newCaption+" I hope");
-                        } catch (RuntimeOperationsException r) {
-                            x=(Exception)r.getCause();
-                            System.out.println("Got expected exception: " + x);
-                            //r.printStackTrace();
-                        }
-                        if (x == null)
-                            throw new RuntimeException("should have failed!");
-                        x = null;
-                        try {
-                            // ls kanga/roo/wombat
-                            System.err.println("**** Connecting " + dirName1 +
-                                    " ****");
-                            JMX.newMBeanProxy(c,dirName1,
-                                    JMXRemoteNamespaceMBean.class).connect();
-                            System.err.println("**** Connected " + dirName1 +
-                                    " ****");
-                        } catch (IOException r) {
-                            x=r;
-                            System.out.println("Got expected exception: " + x);
-                            //r.printStackTrace();
-                        }
-                        System.err.println("**** Expected Exception Not Raised ****");
-                        if (x == null) {
-                            System.out.println(dirName1+" contains: "+
-                                    c.queryNames(new ObjectName(
-                                    dirName1.getDomain()+"*:*"),null));
-                            throw new RuntimeException("cycle not detected!");
-                        }
-                    } catch (Exception t) {
-                        if (failed == null) failed = t;
-                    } finally {
-                            c.unregisterMBean(dirName2);
-                    }
-                } finally {
-                    try {
-                        c.unregisterMBean(dirName1);
-                    } catch (Exception t) {
-                        if (failed == null) failed = t;
-                        System.err.println("Failed to unregister "+dirName1+
-                                ": "+t);
-                    }
-                    try {
-                        client.close();
-                    } catch (Exception t) {
-                        if (failed == null) failed = t;
-                        System.err.println("Failed to close client: "+t);
-                    }
-                    try {
-                        server.stop();
-                    } catch (Exception t) {
-                        if (failed == null) failed = t;
-                        System.err.println("Failed to stop server: "+t);
-                    }
-                }
-            } finally {
-                try {
-                    conf.close();
-                } catch (Exception t) {
-                    if (failed == null) failed = t;
-                    System.err.println("Failed to stop server: "+t);
-                }
-            }
-            if (failed != null) throw failed;
-            System.err.println("probeKangaRooCycleTest PASSED");
+    public static void verySimpleTest2(String[] args) {
+        System.err.println("verySimpleTest2: starting");
+        try {
+            final MBeanServer srv = MBeanServerFactory.createMBeanServer();
+            final JMXConnectorServer cs = JMXConnectorServerFactory.
+                    newJMXConnectorServer(new JMXServiceURL("rmi",null,0),
+                    null, srv);
+            cs.start();
+            final JMXConnector cc = JMXConnectorFactory.connect(cs.getAddress());
+
+            srv.registerMBean(new JMXNamespace(
+                    new MBeanServerConnectionWrapper(
+                            JMXNamespaces.narrowToNamespace(
+                                cc.getMBeanServerConnection(),
+                                "foo"))),
+                    JMXNamespaces.getNamespaceObjectName("foo"));
+            throw new Exception("Excpected IllegalArgumentException not raised.");
+        } catch (IllegalArgumentException x) {
+            System.err.println("verySimpleTest2: got expected exception: "+x);
         } catch (Exception x) {
-            System.err.println("probeKangaRooCycleTest FAILED: " +x);
+            System.err.println("verySimpleTest2 FAILED: " +x);
             x.printStackTrace();
             throw new RuntimeException(x);
         }
+        System.err.println("verySimpleTest2: PASSED");
     }
+
     public static void main(String[] args) {
         simpleTest(args);
         recursiveTest(args);
-        probeKangaRooTest(args);
-        probeKangaRooCycleTest(args);
+        verySimpleTest(args);
+        verySimpleTest2(args);
     }
 
 }

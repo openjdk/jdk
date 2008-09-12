@@ -25,22 +25,15 @@
 package com.sun.jmx.namespace;
 
 import com.sun.jmx.defaults.JmxProperties;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.MBeanServer;
-import javax.management.MBeanServerConnection;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import javax.management.QueryExp;
-import javax.management.namespace.JMXNamespaces;
 import javax.management.namespace.JMXNamespace;
 import javax.management.namespace.JMXNamespacePermission;
 
@@ -54,8 +47,6 @@ import javax.management.namespace.JMXNamespacePermission;
  */
 public class NamespaceInterceptor extends HandlerInterceptor<JMXNamespace> {
 
-    private static final Logger PROBE_LOG = Logger.getLogger(
-            JmxProperties.NAMESPACE_LOGGER+".probe");
 
     // The target name space in which the NamepsaceHandler is mounted.
     private final String           targetNs;
@@ -63,21 +54,6 @@ public class NamespaceInterceptor extends HandlerInterceptor<JMXNamespace> {
     private final String           serverName;
 
     private final ObjectNameRouter proc;
-
-    /**
-     * Internal hack. The JMXRemoteNamespace can be closed and reconnected.
-     * Each time the JMXRemoteNamespace connects, a probe should be sent
-     * to detect cycle. The MBeanServer exposed by JMXRemoteNamespace thus
-     * implements the DynamicProbe interface, which makes it possible for
-     * this handler to know that it should send a new probe.
-     *
-     * XXX: TODO this probe thing is way too complex and fragile.
-     *      This *must* go away or be replaced by something simpler.
-     *      ideas are welcomed.
-     **/
-    public static interface DynamicProbe {
-        public boolean isProbeRequested();
-    }
 
     /**
      * Creates a new instance of NamespaceInterceptor
@@ -100,164 +76,6 @@ public class NamespaceInterceptor extends HandlerInterceptor<JMXNamespace> {
                 ", namespace="+this.targetNs+")";
     }
 
-    /*
-     * XXX: TODO this probe thing is way too complex and fragile.
-     *      This *must* go away or be replaced by something simpler.
-     *      ideas are welcomed.
-     */
-    private volatile boolean probed = false;
-    private volatile ObjectName probe;
-
-    // Query Pattern that we will send through the source server in order
-    // to detect self-linking namespaces.
-    //
-    // XXX: TODO this probe thing is way too complex and fragile.
-    //      This *must* go away or be replaced by something simpler.
-    //      ideas are welcomed.
-    final ObjectName makeProbePattern(ObjectName probe)
-            throws MalformedObjectNameException {
-
-        // we could probably link the probe pattern with the probe - e.g.
-        // using the UUID as key in the pattern - but is it worth it? it
-        // also has some side effects on the context namespace - because
-        // such a probe may get rejected by the jmx.context// namespace.
-        //
-        // The trick here is to devise a pattern that is not likely to
-        // be blocked by intermediate levels. Querying for all namespace
-        // handlers in the source (or source namespace) is more likely to
-        // achieve this goal.
-        //
-        return ObjectName.getInstance("*" +
-                JMXNamespaces.NAMESPACE_SEPARATOR + ":" +
-                JMXNamespace.TYPE_ASSIGNMENT);
-    }
-
-    // tell whether the name pattern corresponds to what might have been
-    // sent as a probe.
-    // XXX: TODO this probe thing is way too complex and fragile.
-    //      This *must* go away or be replaced by something simpler.
-    //      ideas are welcomed.
-    final boolean isProbePattern(ObjectName name) {
-        final ObjectName p = probe;
-        if (p == null) return false;
-        try {
-            return String.valueOf(name).endsWith(targetNs+
-                JMXNamespaces.NAMESPACE_SEPARATOR + "*" +
-                JMXNamespaces.NAMESPACE_SEPARATOR + ":" +
-                JMXNamespace.TYPE_ASSIGNMENT);
-        } catch (RuntimeException x) {
-            // should not happen.
-            PROBE_LOG.finest("Ignoring unexpected exception in self link detection: "+
-                    x);
-            return false;
-        }
-    }
-
-    // The first time a request reaches this NamespaceInterceptor, the
-    // interceptor will send a probe to detect whether the underlying
-    // JMXNamespace links to itslef.
-    //
-    // One way to create such self-linking namespace would be for instance
-    // to create a JMXNamespace whose getSourceServer() method would return:
-    // JMXNamespaces.narrowToNamespace(getMBeanServer(),
-    //                                 getObjectName().getDomain())
-    //
-    // If such an MBeanServer is returned, then any call to that MBeanServer
-    // will trigger an infinite loop.
-    // There can be even trickier configurations if remote connections are
-    // involved.
-    //
-    // In order to prevent this from happening, the NamespaceInterceptor will
-    // send a probe, in an attempt to detect whether it will receive it at
-    // the other end. If the probe is received, an exception will be thrown
-    // in order to break the recursion. The probe is only sent once - when
-    // the first request to the namespace occurs. The DynamicProbe interface
-    // can also be used by a Sun JMXNamespace implementation to request the
-    // emission of a probe at any time (see JMXRemoteNamespace
-    // implementation).
-    //
-    // Probes work this way: the NamespaceInterceptor sets a flag and sends
-    // a queryNames() request. If a queryNames() request comes in when the flag
-    // is on, then it deduces that there is a self-linking loop - and instead
-    // of calling queryNames() on the source MBeanServer of the JMXNamespace
-    // handler (which would cause the loop to go on) it breaks the recursion
-    // by returning the probe ObjectName.
-    // If the NamespaceInterceptor receives the probe ObjectName as result of
-    // its original sendProbe() request it knows that it has been looping
-    // back on itslef and throws an IOException...
-    //
-    //
-    // XXX: TODO this probe thing is way too complex and fragile.
-    //      This *must* go away or be replaced by something simpler.
-    //      ideas are welcomed.
-    //
-    final void sendProbe(MBeanServerConnection msc)
-            throws IOException {
-        try {
-            PROBE_LOG.fine("Sending probe");
-
-            // This is just to prevent any other thread to modify
-            // the probe while the detection cycle is in progress.
-            //
-            final ObjectName probePattern;
-            // we don't want to synchronize on this - we use targetNs
-            // because it's non null and final.
-            synchronized (targetNs) {
-                probed = false;
-                if (probe != null) {
-                    throw new IOException("concurent connection in progress");
-                }
-                final String uuid = UUID.randomUUID().toString();
-                final String endprobe =
-                        JMXNamespaces.NAMESPACE_SEPARATOR + uuid +
-                        ":type=Probe,key="+uuid;
-                final ObjectName newprobe =
-                        ObjectName.getInstance(endprobe);
-                probePattern = makeProbePattern(newprobe);
-                probe = newprobe;
-            }
-
-            try {
-                PROBE_LOG.finer("Probe query: "+probePattern+" expecting: "+probe);
-                final Set<ObjectName> res = msc.queryNames(probePattern, null);
-                final ObjectName expected = probe;
-                PROBE_LOG.finer("Probe res: "+res);
-                if (res.contains(expected)) {
-                    throw new IOException("namespace " +
-                            targetNs + " is linking to itself: " +
-                            "cycle detected by probe");
-                }
-            } catch (SecurityException x) {
-                PROBE_LOG.finer("Can't check for cycles: " + x);
-                // can't do anything....
-            } catch (RuntimeException x) {
-                PROBE_LOG.finer("Exception raised by queryNames: " + x);
-                throw x;
-            } finally {
-                probe = null;
-            }
-        } catch (MalformedObjectNameException x) {
-            final IOException io =
-                    new IOException("invalid name space: probe failed");
-            io.initCause(x);
-            throw io;
-        }
-        PROBE_LOG.fine("Probe returned - no cycles");
-        probed = true;
-    }
-
-    // allows a Sun implementation JMX Namespace, such as the
-    // JMXRemoteNamespace, to control when a probe should be sent.
-    //
-    // XXX: TODO this probe thing is way too complex and fragile.
-    //      This *must* go away or be replaced by something simpler.
-    //      ideas are welcomed.
-    private boolean isProbeRequested(Object o) {
-        if (o instanceof DynamicProbe)
-            return ((DynamicProbe)o).isProbeRequested();
-        return false;
-    }
-
     /**
      * This method will send a probe to detect self-linking name spaces.
      * A self linking namespace is a namespace that links back directly
@@ -277,29 +95,9 @@ public class NamespaceInterceptor extends HandlerInterceptor<JMXNamespace> {
      * (see JMXRemoteNamespace implementation).
      */
     private MBeanServer connection() {
-        try {
-            final MBeanServer c = super.source();
-            if (probe != null) // should not happen
-                throw new RuntimeException("connection is being probed");
-
-            if (probed == false || isProbeRequested(c)) {
-                try {
-                    // Should not happen if class well behaved.
-                    // Never probed. Force it.
-                    //System.err.println("sending probe for " +
-                    //        "target="+targetNs+", source="+srcNs);
-                    sendProbe(c);
-                } catch (IOException io) {
-                    throw new RuntimeException(io.getMessage(), io);
-                }
-            }
-
-            if (c != null) {
-                return c;
-            }
-        } catch (RuntimeException x) {
-            throw x;
-        }
+        final MBeanServer c = super.source();
+        if (c != null) return c;
+        // should not come here
         throw new NullPointerException("getMBeanServerConnection");
     }
 
@@ -313,24 +111,6 @@ public class NamespaceInterceptor extends HandlerInterceptor<JMXNamespace> {
     protected MBeanServer getServerForLoading() {
         // don't want to send probe on getClassLoader/getClassLoaderFor
         return super.source();
-    }
-
-    /**
-     * Calls {@link MBeanServerConnection#queryNames queryNames}
-     * on the underlying
-     * {@link #getMBeanServerConnection MBeanServerConnection}.
-     **/
-    @Override
-    public final Set<ObjectName> queryNames(ObjectName name, QueryExp query) {
-        // XXX: TODO this probe thing is way too complex and fragile.
-        //      This *must* go away or be replaced by something simpler.
-        //      ideas are welcomed.
-        PROBE_LOG.finer("probe is: "+probe+" pattern is: "+name);
-        if (probe != null && isProbePattern(name)) {
-            PROBE_LOG.finer("Return probe: "+probe);
-            return Collections.singleton(probe);
-        }
-        return super.queryNames(name, query);
     }
 
     @Override
