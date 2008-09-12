@@ -31,10 +31,8 @@ import com.sun.jmx.remote.util.ClassLogger;
 import java.io.IOException;
 import java.io.NotSerializableException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import javax.management.MBeanException;
@@ -215,50 +213,47 @@ public class FetchingEventRelay implements EventRelay {
         this.maxNotifs = maxNotifs;
 
         if (executor == null) {
-            executor = Executors.newSingleThreadScheduledExecutor(
+            ScheduledThreadPoolExecutor stpe = new ScheduledThreadPoolExecutor(1,
                     daemonThreadFactory);
-        }
+            stpe.setKeepAliveTime(1, TimeUnit.SECONDS);
+            stpe.allowCoreThreadTimeOut(true);
+            executor = stpe;
+            this.defaultExecutor = stpe;
+        } else
+            this.defaultExecutor = null;
         this.executor = executor;
-        if (executor instanceof ScheduledExecutorService)
-            leaseScheduler = (ScheduledExecutorService) executor;
-        else {
-            leaseScheduler = Executors.newSingleThreadScheduledExecutor(
-                    daemonThreadFactory);
-        }
 
         startSequenceNumber = 0;
         fetchingJob = new MyJob();
     }
 
-    public void setEventReceiver(EventReceiver eventReceiver) {
+    public synchronized void setEventReceiver(EventReceiver eventReceiver) {
         if (logger.traceOn()) {
             logger.trace("setEventReceiver", ""+eventReceiver);
         }
 
         EventReceiver old = this.eventReceiver;
-        synchronized(fetchingJob) {
-            this.eventReceiver = eventReceiver;
-            if (old == null && eventReceiver != null)
-                fetchingJob.resume();
-        }
+        this.eventReceiver = eventReceiver;
+        if (old == null && eventReceiver != null)
+            fetchingJob.resume();
     }
 
     public String getClientId() {
         return clientId;
     }
 
-    public void stop() {
+    public synchronized void stop() {
         if (logger.traceOn()) {
             logger.trace("stop", "");
         }
-        synchronized(fetchingJob) {
-            if (stopped) {
-                return;
-            }
-
-            stopped = true;
-            clientId = null;
+        if (stopped) {
+            return;
         }
+
+        stopped = true;
+        clientId = null;
+        if (defaultExecutor != null)
+            defaultExecutor.shutdown();
     }
 
     private class MyJob extends RepeatedSingletonJob {
@@ -372,10 +367,9 @@ public class FetchingEventRelay implements EventRelay {
     private final EventClientDelegateMBean delegate;
     private String clientId;
     private boolean stopped = false;
-    private volatile ScheduledFuture<?> leaseRenewalFuture;
 
     private final Executor executor;
-    private final ScheduledExecutorService leaseScheduler;
+    private final ExecutorService defaultExecutor;
     private final MyJob fetchingJob;
 
     private final long timeout;
@@ -385,5 +379,5 @@ public class FetchingEventRelay implements EventRelay {
             new ClassLogger("javax.management.event",
             "FetchingEventRelay");
     private static final ThreadFactory daemonThreadFactory =
-                    new DaemonThreadFactory("FetchingEventRelay-executor");
+                    new DaemonThreadFactory("JMX FetchingEventRelay executor %d");
 }
