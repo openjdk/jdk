@@ -161,11 +161,7 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         throws InstanceNotFoundException, ReflectionException, IOException {
         final ObjectName sourceName = toSourceOrRuntime(name);
         try {
-            final String[] authorized =
-                    checkAttributes(name,attributes,"getAttribute");
-            final AttributeList attrList =
-                    source().getAttributes(sourceName,authorized);
-            return attrList;
+            return source().getAttributes(sourceName, attributes);
         } catch (RuntimeException ex) {
             throw makeCompliantRuntimeException(ex);
         }
@@ -178,7 +174,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
             IOException {
         final ObjectName sourceName = toSourceOrRuntime(name);
         try {
-            check(name, operationName, "invoke");
             final Object result =
                     source().invoke(sourceName,operationName,params,
                                    signature);
@@ -194,7 +189,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
             IOException {
         final ObjectName sourceName = toSourceOrRuntime(name);
         try {
-            check(name, null, "unregisterMBean");
             source().unregisterMBean(sourceName);
         } catch (RuntimeException ex) {
             throw makeCompliantRuntimeException(ex);
@@ -207,7 +201,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
             ReflectionException, IOException {
         final ObjectName sourceName = toSourceOrRuntime(name);
         try {
-            check(name, null, "getMBeanInfo");
             return source().getMBeanInfo(sourceName);
         } catch (RuntimeException ex) {
             throw makeCompliantRuntimeException(ex);
@@ -219,7 +212,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         throws InstanceNotFoundException, IOException {
         final ObjectName sourceName = toSourceOrRuntime(name);
         try {
-            check(name, null, "getObjectInstance");
             return processOutputInstance(
                     source().getObjectInstance(sourceName));
         } catch (RuntimeException ex) {
@@ -246,9 +238,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
             ReflectionException, IOException {
         final ObjectName sourceName = toSourceOrRuntime(name);
         try {
-            check(name,
-                  (attribute==null?null:attribute.getName()),
-                  "setAttribute");
             source().setAttribute(sourceName,attribute);
         } catch (RuntimeException ex) {
             throw makeCompliantRuntimeException(ex);
@@ -266,8 +255,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         // Loader Name is already a sourceLoaderName.
         final ObjectName sourceLoaderName = loaderName;
         try {
-            checkCreate(name, className, "instantiate");
-            checkCreate(name, className, "registerMBean");
             final ObjectInstance instance =
                     source().createMBean(className,sourceName,
                                          sourceLoaderName,
@@ -286,8 +273,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
             NotCompliantMBeanException, IOException {
         final ObjectName sourceName = newSourceMBeanName(name);
         try {
-            checkCreate(name, className, "instantiate");
-            checkCreate(name, className, "registerMBean");
             return processOutputInstance(source().createMBean(className,
                     sourceName,params,signature));
         } catch (RuntimeException ex) {
@@ -305,8 +290,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         // Loader Name is already a source Loader Name.
         final ObjectName sourceLoaderName = loaderName;
         try {
-            checkCreate(name, className, "instantiate");
-            checkCreate(name, className, "registerMBean");
             return processOutputInstance(source().createMBean(className,
                     sourceName,sourceLoaderName));
         } catch (RuntimeException ex) {
@@ -321,8 +304,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
             NotCompliantMBeanException, IOException {
         final ObjectName sourceName = newSourceMBeanName(name);
         try {
-            checkCreate(name, className, "instantiate");
-            checkCreate(name, className, "registerMBean");
             return processOutputInstance(source().
                     createMBean(className,sourceName));
         } catch (RuntimeException ex) {
@@ -336,7 +317,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
             InstanceNotFoundException, ReflectionException, IOException {
         final ObjectName sourceName = toSourceOrRuntime(name);
         try {
-            check(name, attribute, "getAttribute");
             return source().getAttribute(sourceName,attribute);
         } catch (RuntimeException ex) {
             throw makeCompliantRuntimeException(ex);
@@ -348,7 +328,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         throws InstanceNotFoundException, IOException {
         final ObjectName sourceName = toSourceOrRuntime(name);
         try {
-            check(name, null, "isInstanceOf");
             return source().isInstanceOf(sourceName,className);
         } catch (RuntimeException ex) {
             throw makeCompliantRuntimeException(ex);
@@ -360,10 +339,8 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         throws InstanceNotFoundException, ReflectionException, IOException {
         final ObjectName sourceName = toSourceOrRuntime(name);
         try {
-            final AttributeList authorized =
-                    checkAttributes(name, attributes, "setAttribute");
             return source().
-                    setAttributes(sourceName,authorized);
+                    setAttributes(sourceName,attributes);
         } catch (RuntimeException ex) {
             throw makeCompliantRuntimeException(ex);
         }
@@ -376,7 +353,7 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         for (ObjectInstance i : sources) {
             try {
                 final ObjectInstance target = processOutputInstance(i);
-                if (!checkQuery(target.getObjectName(), "queryMBeans"))
+                if (excludesFromResult(target.getObjectName(), "queryMBeans"))
                     continue;
                 result.add(target);
             } catch (Exception x) {
@@ -415,7 +392,7 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         for (ObjectName n : sourceNames) {
             try {
                 final ObjectName targetName = toTarget(n);
-                if (!checkQuery(targetName, "queryNames")) continue;
+                if (excludesFromResult(targetName, "queryNames")) continue;
                 names.add(targetName);
             } catch (Exception x) {
                 if (LOG.isLoggable(Level.FINE)) {
@@ -435,7 +412,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         if (name == null) name=ObjectName.WILDCARD;
         final ObjectName sourceName = toSourceOrRuntime(name);
         try {
-            checkPattern(name,null,"queryMBeans");
             return processOutputInstances(
                     source().queryMBeans(sourceName,query));
         } catch (RuntimeException ex) {
@@ -450,7 +426,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         if (name == null) name=ObjectName.WILDCARD;
         final ObjectName sourceName = toSourceOrRuntime(name);
         try {
-            checkPattern(name,null,"queryNames");
             final Set<ObjectName> tmp = source().queryNames(sourceName,query);
             final Set<ObjectName> out = processOutputNames(tmp);
             //System.err.println("queryNames: out: "+out);
@@ -467,7 +442,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         ListenerNotFoundException, IOException {
         final ObjectName sourceName = toSourceOrRuntime(name);
         try {
-            check(name,null,"removeNotificationListener");
             source().removeNotificationListener(sourceName,listener);
         } catch (RuntimeException ex) {
             throw makeCompliantRuntimeException(ex);
@@ -481,7 +455,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         final ObjectName sourceName = toSourceOrRuntime(name);
         // Listener name is already a source listener name.
         try {
-            check(name,null,"addNotificationListener");
             source().addNotificationListener(sourceName,listener,
                     filter,handback);
         } catch (RuntimeException ex) {
@@ -495,7 +468,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
                 Object handback) throws InstanceNotFoundException, IOException {
         final ObjectName sourceName = toSourceOrRuntime(name);
         try {
-            check(name,null,"addNotificationListener");
             source().addNotificationListener(sourceName, listener, filter,
                     handback);
         } catch (RuntimeException ex) {
@@ -512,7 +484,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
                 IOException {
         final ObjectName sourceName = toSourceOrRuntime(name);
         try {
-            check(name,null,"removeNotificationListener");
             source().removeNotificationListener(sourceName,listener,filter,
                     handback);
         } catch (RuntimeException ex) {
@@ -527,7 +498,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
             IOException {
         final ObjectName sourceName = toSourceOrRuntime(name);
         try {
-            check(name,null,"removeNotificationListener");
             source().removeNotificationListener(sourceName,listener,
                     filter,handback);
         } catch (RuntimeException ex) {
@@ -543,7 +513,6 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         // listener name is already a source name...
         final ObjectName sourceListener = listener;
         try {
-            check(name,null,"removeNotificationListener");
             source().removeNotificationListener(sourceName,sourceListener);
         } catch (RuntimeException ex) {
             throw makeCompliantRuntimeException(ex);
@@ -562,9 +531,7 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
     // from MBeanServerConnection
     public String[] getDomains() throws IOException {
         try {
-            check(null,null,"getDomains");
-            final String[] domains = source().getDomains();
-            return checkDomains(domains,"getDomains");
+            return source().getDomains();
         } catch (RuntimeException ex) {
             throw makeCompliantRuntimeException(ex);
         }
@@ -579,115 +546,22 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         }
     }
 
-    //----------------------------------------------------------------------
-    // Hooks for checking permissions
-    //----------------------------------------------------------------------
-
     /**
-     * This method is a hook to implement permission checking in subclasses.
-     * By default, this method does nothing and simply returns
-     * {@code attribute}.
+     * Returns true if the given targetName must be excluded from the
+     * query result.
+     * In this base class, always return {@code false}.
+     * By default all object names returned by the sources are
+     * transmitted to the caller - there is no filtering.
      *
-     * @param routingName The name of the MBean in the enclosing context.
-     *        This is of the form {@code <namespace>//<ObjectName>}.
-     * @param attributes  The list of attributes to check permission for.
-     * @param action one of "getAttribute" or "setAttribute"
-     * @return The list of attributes for which the callers has the
-     *         appropriate {@link
-     *         javax.management.namespace.JMXNamespacePermission}.
+     * @param name         A target object name expressed in the caller's
+     *                     context. In the case of cascading, where the source
+     *                     is a sub agent mounted on e.g. namespace "foo",
+     *                     that would be a name prefixed by "foo//"...
+     * @param queryMethod  either "queryNames" or "queryMBeans".
+     * @return true if the name must be excluded.
      */
-    String[] checkAttributes(ObjectName routingName,
-            String[] attributes, String action) {
-        check(routingName,null,action);
-        return attributes;
+    boolean excludesFromResult(ObjectName targetName, String queryMethod) {
+        return false;
     }
 
-    /**
-     * This method is a hook to implement permission checking in subclasses.
-     * By default, this method does nothing and simply returns
-     * {@code attribute}.
-     *
-     * @param routingName The name of the MBean in the enclosing context.
-     *        This is of the form {@code <namespace>//<ObjectName>}.
-     * @param attributes The list of attributes to check permission for.
-     * @param action one of "getAttribute" or "setAttribute"
-     * @return The list of attributes for which the callers has the
-     *         appropriate {@link
-     *         javax.management.namespace.JMXNamespacePermission}.
-     */
-    AttributeList checkAttributes(ObjectName routingName,
-            AttributeList attributes, String action) {
-        check(routingName,null,action);
-        return attributes;
-    }
-
-   /**
-     * This method is a hook to implement permission checking in subclasses.
-     * By default, this method does nothing.
-     * A subclass may override this method and throw a {@link
-     * SecurityException} if the permission is denied.
-     *
-     * @param routingName The name of the MBean in the enclosing context.
-     *        This is of the form {@code <namespace>//<ObjectName>}.
-     * @param member The {@link
-     *  javax.management.namespace.JMXNamespacePermission#getMember member}
-     *  name.
-     * @param action The {@link
-     *  javax.management.namespace.JMXNamespacePermission#getActions action}
-     *  name.
-     */
-    void check(ObjectName routingName,
-               String member, String action) {
-    }
-
-    // called in createMBean and registerMBean
-    void checkCreate(ObjectName routingName, String className,
-                     String action) {
-    }
-
-    // A priori check for queryNames/queryMBeans/
-    void checkPattern(ObjectName routingPattern,
-               String member, String action) {
-        // pattern is checked only at posteriori by checkQuery.
-        // checking it a priori usually doesn't work, because ObjectName.apply
-        // does not work between two patterns.
-        // We only check that we have the permission requested for 'action'.
-        check(null,null,action);
-    }
-
-
-    /**
-     * This is a hook to implement permission checking in subclasses.
-     *
-     * Checks that the caller has sufficient permission for returning
-     * information about {@code sourceName} in {@code action}.
-     *
-     * By default always return true. Subclass may override this method
-     * and return false if the caller doesn't have sufficient permissions.
-     *
-     * @param routingName The name of the MBean to include or exclude from
-     *        the query, expressed in the enclosing context.
-     *        This is of the form {@code <namespace>//<ObjectName>}.
-     * @param action one of "queryNames" or "queryMBeans"
-     * @return true if {@code sourceName} can be returned.
-     */
-    boolean checkQuery(ObjectName routingName, String action) {
-        return true;
-    }
-
-    /**
-     * This method is a hook to implement permission checking in subclasses.
-     * Checks that the caller as the necessary permissions to view the
-     * given domain. If not remove the domains for which the caller doesn't
-     * have permission from the list.
-     * <p>
-     * By default, this method always returns {@code domains}
-     *
-     * @param domains The domains to return.
-     * @param action  "getDomains"
-     * @return a filtered list of domains.
-     */
-    String[] checkDomains(String[] domains, String action) {
-        return domains;
-    }
 }
