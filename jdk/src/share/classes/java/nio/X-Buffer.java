@@ -1239,13 +1239,13 @@ public abstract class $Type$Buffer
      *         smaller than <tt>start</tt> and no larger than
      *         <tt>remaining()</tt>
      *
-     * @return  The new character sequence
+     * @return  The new character buffer
      *
      * @throws  IndexOutOfBoundsException
      *          If the preconditions on <tt>start</tt> and <tt>end</tt>
      *          do not hold
      */
-    public abstract CharSequence subSequence(int start, int end);
+    public abstract CharBuffer subSequence(int start, int end);
 
 
     // --- Methods to support Appendable ---

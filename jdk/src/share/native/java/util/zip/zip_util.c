@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -722,16 +722,22 @@ ZIP_Put_In_Cache(const char *name, ZFILE zfd, char **pmsg, jlong lastModified)
     }
 
     len = zip->len = ZFILE_Lseek(zfd, 0, SEEK_END);
-    if (len == -1) {
-        if (pmsg && JVM_GetLastErrorString(errbuf, sizeof(errbuf)) > 0)
-            *pmsg = errbuf;
+    if (len <= 0) {
+        if (len == 0) { /* zip file is empty */
+            if (pmsg) {
+                *pmsg = "zip file is empty";
+            }
+        } else { /* error */
+            if (pmsg && JVM_GetLastErrorString(errbuf, sizeof(errbuf)) > 0)
+                *pmsg = errbuf;
+        }
         ZFILE_Close(zfd);
         freeZip(zip);
         return NULL;
     }
 
     zip->zfd = zfd;
-    if (readCEN(zip, -1) <= 0) {
+    if (readCEN(zip, -1) < 0) {
         /* An error occurred while trying to read the zip file */
         if (pmsg != 0) {
             /* Set the zip error message */
@@ -947,10 +953,15 @@ jzentry *
 ZIP_GetEntry(jzfile *zip, char *name, jint ulen)
 {
     unsigned int hsh = hash(name);
-    jint idx = zip->table[hsh % zip->tablelen];
-    jzentry *ze;
+    jint idx;
+    jzentry *ze = 0;
 
     ZIP_Lock(zip);
+    if (zip->total == 0) {
+        goto Finally;
+    }
+
+    idx = zip->table[hsh % zip->tablelen];
 
     /*
      * This while loop is an optimization where a double lookup
@@ -1025,6 +1036,7 @@ ZIP_GetEntry(jzfile *zip, char *name, jint ulen)
         ulen = 0;
     }
 
+Finally:
     ZIP_Unlock(zip);
     return ze;
 }

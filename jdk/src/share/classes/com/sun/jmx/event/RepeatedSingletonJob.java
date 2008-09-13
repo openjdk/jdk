@@ -95,7 +95,9 @@ public abstract class RepeatedSingletonJob implements Runnable {
             executor.execute(this);
         } catch (RejectedExecutionException e) {
             logger.warning(
-                    "setEventReceiver", "Executor threw exception", e);
+                    "execute",
+                    "Executor threw exception (" + this.getClass().getName() + ")",
+                    e);
             throw new RejectedExecutionException(
                     "Executor.execute threw exception -" +
                     "should not be possible", e);

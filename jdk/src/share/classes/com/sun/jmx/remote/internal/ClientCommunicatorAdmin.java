@@ -32,13 +32,15 @@ import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 
 public abstract class ClientCommunicatorAdmin {
+    private static volatile long threadNo = 1;
+
     public ClientCommunicatorAdmin(long period) {
         this.period = period;
 
         if (period > 0) {
             checker = new Checker();
 
-            Thread t = new Thread(checker);
+            Thread t = new Thread(checker, "JMX client heartbeat " + ++threadNo);
             t.setDaemon(true);
             t.start();
         } else

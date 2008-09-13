@@ -69,6 +69,9 @@ import javax.management.namespace.JMXNamespaces;
  *
  * @since 1.7
  */
+// See class hierarchy and detailled explanations in RoutingProxy in this
+// package.
+//
 public class RoutingServerProxy
         extends RoutingProxy<MBeanServer>
         implements MBeanServer {
@@ -564,39 +567,24 @@ public class RoutingServerProxy
         }
     }
 
+    static final RoutingProxyFactory<MBeanServer,RoutingServerProxy>
+        FACTORY = new RoutingProxyFactory<MBeanServer,RoutingServerProxy>() {
+
+        public RoutingServerProxy newInstance(MBeanServer source,
+                String sourcePath, String targetPath,
+                boolean forwardsContext) {
+            return new RoutingServerProxy(source,sourcePath,
+                    targetPath,forwardsContext);
+        }
+
+        public RoutingServerProxy newInstance(
+                MBeanServer source, String sourcePath) {
+            return new RoutingServerProxy(source,sourcePath);
+        }
+    };
 
     public static MBeanServer cd(MBeanServer source, String sourcePath) {
-        if (source == null) throw new IllegalArgumentException("null");
-        if (source.getClass().equals(RoutingServerProxy.class)) {
-            // cast is OK here, but findbugs complains unless we use class.cast
-            final RoutingServerProxy other =
-                    RoutingServerProxy.class.cast(source);
-            final String target = other.getTargetNamespace();
-
-            // Avoid multiple layers of serialization.
-            //
-            // We construct a new proxy from the original source instead of
-            // stacking a new proxy on top of the old one.
-            // - that is we replace
-            //      cd ( cd ( x, dir1), dir2);
-            // by
-            //      cd (x, dir1//dir2);
-            //
-            // We can do this only when the source class is exactly
-            //    NamespaceServerProxy.
-            //
-            if (target == null || target.equals("")) {
-                final String path =
-                    JMXNamespaces.concat(other.getSourceNamespace(),
-                    sourcePath);
-                return new RoutingServerProxy(other.source(),path,"",
-                                              other.forwardsContext);
-            }
-            // Note: we could do possibly something here - but it would involve
-            //       removing part of targetDir, and possibly adding
-            //       something to sourcePath.
-            //       Too complex to bother! => simply default to stacking...
-        }
-        return new RoutingServerProxy(source,sourcePath);
+        return RoutingProxy.cd(RoutingServerProxy.class, FACTORY,
+                source, sourcePath);
     }
 }

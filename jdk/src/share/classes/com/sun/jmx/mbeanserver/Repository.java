@@ -396,7 +396,7 @@ public class Repository {
 
         // Set domain to default if domain is empty and not already set
         if (dom.length() == 0)
-            name = Util.newObjectName(domain + name.toString());
+            name = ObjectName.valueOf(domain + name.toString());
 
         // Do we have default domain ?
         if (dom == domain) {  // ES: OK (dom & domain are interned)
