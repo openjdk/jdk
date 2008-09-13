@@ -194,7 +194,7 @@ public abstract class DispatchInterceptor
     // found in the handlerMap. Note: there doesn't need to be an interceptor
     // for that key in the Map.
     //
-    public abstract String getHandlerKey(ObjectName name);
+    abstract String getHandlerKey(ObjectName name);
 
     // Returns an interceptor for that name, or null if there's no interceptor
     // for that name.
@@ -277,7 +277,7 @@ public abstract class DispatchInterceptor
     // of JMXNamespace (or a subclass of it) is registered as an MBean.
     // This method is usually invoked from within the repository lock,
     // hence the necessity of the postRegisterQueue.
-    public void addNamespace(ObjectName name, N jmxNamespace,
+    public void addInterceptorFor(ObjectName name, N jmxNamespace,
             Queue<Runnable> postRegisterQueue) {
         final String key = getHandlerKey(name);
         validateHandlerNameFor(key,name);
@@ -298,7 +298,7 @@ public abstract class DispatchInterceptor
     // of JMXNamespace (or a subclass of it) is deregistered.
     // This method is usually invoked from within the repository lock,
     // hence the necessity of the postDeregisterQueue.
-    public void removeNamespace(ObjectName name, N jmxNamespace,
+    public void removeInterceptorFor(ObjectName name, N jmxNamespace,
             Queue<Runnable> postDeregisterQueue) {
         final String key = getHandlerKey(name);
         final T ns;
@@ -330,7 +330,7 @@ public abstract class DispatchInterceptor
     }
 
     // From MBeanServer
-    public ObjectInstance createMBean(String className, ObjectName name)
+    public final ObjectInstance createMBean(String className, ObjectName name)
             throws ReflectionException, InstanceAlreadyExistsException,
                    MBeanRegistrationException, MBeanException,
                    NotCompliantMBeanException {
@@ -338,7 +338,7 @@ public abstract class DispatchInterceptor
     }
 
     // From MBeanServer
-    public ObjectInstance createMBean(String className, ObjectName name,
+    public final ObjectInstance createMBean(String className, ObjectName name,
                                       ObjectName loaderName)
             throws ReflectionException, InstanceAlreadyExistsException,
                    MBeanRegistrationException, MBeanException,
@@ -347,7 +347,7 @@ public abstract class DispatchInterceptor
     }
 
     // From MBeanServer
-    public ObjectInstance createMBean(String className, ObjectName name,
+    public final ObjectInstance createMBean(String className, ObjectName name,
                                       Object params[], String signature[])
             throws ReflectionException, InstanceAlreadyExistsException,
                    MBeanRegistrationException, MBeanException,
@@ -357,7 +357,7 @@ public abstract class DispatchInterceptor
     }
 
     // From MBeanServer
-    public ObjectInstance createMBean(String className, ObjectName name,
+    public final ObjectInstance createMBean(String className, ObjectName name,
                                       ObjectName loaderName, Object params[],
                                       String signature[])
             throws ReflectionException, InstanceAlreadyExistsException,
@@ -368,42 +368,43 @@ public abstract class DispatchInterceptor
     }
 
     // From MBeanServer
-    public ObjectInstance registerMBean(Object object, ObjectName name)
+    public final ObjectInstance registerMBean(Object object, ObjectName name)
             throws InstanceAlreadyExistsException, MBeanRegistrationException,
                    NotCompliantMBeanException {
         return getInterceptorForCreate(name).registerMBean(object,name);
     }
 
     // From MBeanServer
-    public void unregisterMBean(ObjectName name)
+    public final void unregisterMBean(ObjectName name)
             throws InstanceNotFoundException, MBeanRegistrationException {
         getInterceptorForInstance(name).unregisterMBean(name);
     }
 
     // From MBeanServer
-    public ObjectInstance getObjectInstance(ObjectName name)
+    public final ObjectInstance getObjectInstance(ObjectName name)
             throws InstanceNotFoundException {
         return getInterceptorForInstance(name).getObjectInstance(name);
     }
 
     // From MBeanServer
-    public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query) {
-        final QueryInterceptor mbs =
+    public final Set<ObjectInstance> queryMBeans(ObjectName name,
+            QueryExp query) {
+        final QueryInterceptor queryInvoker =
                 getInterceptorForQuery(name);
-        if (mbs == null)  return Collections.emptySet();
-        else return mbs.queryMBeans(name,query);
+        if (queryInvoker == null)  return Collections.emptySet();
+        else return queryInvoker.queryMBeans(name,query);
     }
 
     // From MBeanServer
-    public Set<ObjectName> queryNames(ObjectName name, QueryExp query) {
-        final QueryInterceptor mbs =
+    public final Set<ObjectName> queryNames(ObjectName name, QueryExp query) {
+        final QueryInterceptor queryInvoker =
                 getInterceptorForQuery(name);
-        if (mbs == null)  return Collections.emptySet();
-        else return mbs.queryNames(name,query);
+        if (queryInvoker == null)  return Collections.emptySet();
+        else return queryInvoker.queryNames(name,query);
     }
 
     // From MBeanServer
-    public boolean isRegistered(ObjectName name) {
+    public final boolean isRegistered(ObjectName name) {
         final MBeanServer mbs = getInterceptorOrNullFor(name);
         if (mbs == null) return false;
         else return mbs.isRegistered(name);
@@ -415,20 +416,21 @@ public abstract class DispatchInterceptor
     }
 
     // From MBeanServer
-    public Object getAttribute(ObjectName name, String attribute)
+    public final Object getAttribute(ObjectName name, String attribute)
             throws MBeanException, AttributeNotFoundException,
                    InstanceNotFoundException, ReflectionException {
         return getInterceptorForInstance(name).getAttribute(name,attribute);
     }
 
     // From MBeanServer
-    public AttributeList getAttributes(ObjectName name, String[] attributes)
+    public final AttributeList getAttributes(ObjectName name,
+            String[] attributes)
             throws InstanceNotFoundException, ReflectionException {
         return getInterceptorForInstance(name).getAttributes(name,attributes);
     }
 
     // From MBeanServer
-    public void setAttribute(ObjectName name, Attribute attribute)
+    public final void setAttribute(ObjectName name, Attribute attribute)
             throws InstanceNotFoundException, AttributeNotFoundException,
                    InvalidAttributeValueException, MBeanException,
                    ReflectionException {
@@ -436,14 +438,14 @@ public abstract class DispatchInterceptor
     }
 
     // From MBeanServer
-    public AttributeList setAttributes(ObjectName name,
+    public final AttributeList setAttributes(ObjectName name,
                                        AttributeList attributes)
         throws InstanceNotFoundException, ReflectionException {
         return getInterceptorForInstance(name).setAttributes(name,attributes);
     }
 
     // From MBeanServer
-    public Object invoke(ObjectName name, String operationName,
+    public final Object invoke(ObjectName name, String operationName,
                          Object params[], String signature[])
             throws InstanceNotFoundException, MBeanException,
                    ReflectionException {
@@ -463,63 +465,69 @@ public abstract class DispatchInterceptor
     public abstract String[] getDomains();
 
     // From MBeanServer
-    public void addNotificationListener(ObjectName name,
+    public final void addNotificationListener(ObjectName name,
                                         NotificationListener listener,
                                         NotificationFilter filter,
                                         Object handback)
             throws InstanceNotFoundException {
-        getInterceptorForInstance(name).addNotificationListener(name,listener,filter,
+        getInterceptorForInstance(name).
+                addNotificationListener(name,listener,filter,
                 handback);
     }
 
 
     // From MBeanServer
-    public void addNotificationListener(ObjectName name,
+    public final void addNotificationListener(ObjectName name,
                                         ObjectName listener,
                                         NotificationFilter filter,
                                         Object handback)
             throws InstanceNotFoundException {
-        getInterceptorForInstance(name).addNotificationListener(name,listener,filter,
+        getInterceptorForInstance(name).
+                addNotificationListener(name,listener,filter,
                 handback);
     }
 
     // From MBeanServer
-    public void removeNotificationListener(ObjectName name,
+    public final void removeNotificationListener(ObjectName name,
                                            ObjectName listener)
         throws InstanceNotFoundException, ListenerNotFoundException {
-        getInterceptorForInstance(name).removeNotificationListener(name,listener);
+        getInterceptorForInstance(name).
+                removeNotificationListener(name,listener);
     }
 
     // From MBeanServer
-    public void removeNotificationListener(ObjectName name,
+    public final void removeNotificationListener(ObjectName name,
                                            ObjectName listener,
                                            NotificationFilter filter,
                                            Object handback)
             throws InstanceNotFoundException, ListenerNotFoundException {
-        getInterceptorForInstance(name).removeNotificationListener(name,listener,filter,
+        getInterceptorForInstance(name).
+                removeNotificationListener(name,listener,filter,
                 handback);
     }
 
 
     // From MBeanServer
-    public void removeNotificationListener(ObjectName name,
+    public final void removeNotificationListener(ObjectName name,
                                            NotificationListener listener)
             throws InstanceNotFoundException, ListenerNotFoundException {
-        getInterceptorForInstance(name).removeNotificationListener(name,listener);
+        getInterceptorForInstance(name).
+                removeNotificationListener(name,listener);
     }
 
     // From MBeanServer
-    public void removeNotificationListener(ObjectName name,
+    public final void removeNotificationListener(ObjectName name,
                                            NotificationListener listener,
                                            NotificationFilter filter,
                                            Object handback)
             throws InstanceNotFoundException, ListenerNotFoundException {
-        getInterceptorForInstance(name).removeNotificationListener(name,listener,filter,
+        getInterceptorForInstance(name).
+                removeNotificationListener(name,listener,filter,
                 handback);
     }
 
     // From MBeanServer
-    public MBeanInfo getMBeanInfo(ObjectName name)
+    public final MBeanInfo getMBeanInfo(ObjectName name)
             throws InstanceNotFoundException, IntrospectionException,
                    ReflectionException {
         return getInterceptorForInstance(name).getMBeanInfo(name);
@@ -527,21 +535,23 @@ public abstract class DispatchInterceptor
 
 
     // From MBeanServer
-    public boolean isInstanceOf(ObjectName name, String className)
+    public final boolean isInstanceOf(ObjectName name, String className)
             throws InstanceNotFoundException {
         return getInterceptorForInstance(name).isInstanceOf(name,className);
     }
 
     // From MBeanServer
-    public ClassLoader getClassLoaderFor(ObjectName mbeanName)
+    public final ClassLoader getClassLoaderFor(ObjectName mbeanName)
         throws InstanceNotFoundException {
-        return getInterceptorForInstance(mbeanName).getClassLoaderFor(mbeanName);
+        return getInterceptorForInstance(mbeanName).
+                getClassLoaderFor(mbeanName);
     }
 
     // From MBeanServer
-    public ClassLoader getClassLoader(ObjectName loaderName)
+    public final ClassLoader getClassLoader(ObjectName loaderName)
         throws InstanceNotFoundException {
-        return getInterceptorForInstance(loaderName).getClassLoader(loaderName);
+        return getInterceptorForInstance(loaderName).
+                getClassLoader(loaderName);
     }
 
 }

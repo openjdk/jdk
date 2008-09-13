@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5108776
+ * @bug 5108776 5072476
  * @summary Test the properties use case for Virtual MBeans that is documented
  * in MBeanServerSupport.
  * @author Eamonn McManus
