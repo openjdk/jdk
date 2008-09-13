@@ -25,10 +25,6 @@
 
 package javax.lang.model.type;
 
-
-import javax.lang.model.element.TypeElement;
-
-
 /**
  * Represents a class or interface type that cannot be properly modeled.
  * This may be the result of a processing error,

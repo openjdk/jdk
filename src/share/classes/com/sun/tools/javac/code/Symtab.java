@@ -93,8 +93,7 @@ public class Symtab {
      */
     public final ClassSymbol errSymbol;
 
-    /** An instance of the error type.
-     */
+    /** A value for the errType, with a originalType of noType */
     public final Type errType;
 
     /** A value for the unknown type. */
@@ -348,7 +347,7 @@ public class Symtab {
 
         // create the error symbols
         errSymbol = new ClassSymbol(PUBLIC|STATIC|ACYCLIC, names.any, null, rootPackage);
-        errType = new ErrorType(errSymbol);
+        errType = new ErrorType(errSymbol, Type.noType);
 
         // initialize builtin types
         initType(byteType, "byte", "Byte");
@@ -388,6 +387,9 @@ public class Symtab {
         scope.enter(doubleType.tsym);
         scope.enter(booleanType.tsym);
         scope.enter(errType.tsym);
+
+        // Enter symbol for the errSymbol
+        scope.enter(errSymbol);
 
         classes.put(predefClass.fullname, predefClass);
 
