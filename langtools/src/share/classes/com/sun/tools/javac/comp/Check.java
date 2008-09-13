@@ -192,12 +192,12 @@ public class Check {
     Type typeError(DiagnosticPosition pos, Object problem, Type found, Type req) {
         log.error(pos, "prob.found.req",
                   problem, found, req);
-        return syms.errType;
+        return types.createErrorType(found);
     }
 
     Type typeError(DiagnosticPosition pos, String problem, Type found, Type req, Object explanation) {
         log.error(pos, "prob.found.req.1", problem, found, req, explanation);
-        return syms.errType;
+        return types.createErrorType(found);
     }
 
     /** Report an error that wrong type tag was found.
@@ -208,7 +208,7 @@ public class Check {
      */
     Type typeTagError(DiagnosticPosition pos, Object required, Object found) {
         log.error(pos, "type.found.req", found, required);
-        return syms.errType;
+        return types.createErrorType(found instanceof Type ? (Type)found : syms.errType);
     }
 
     /** Report an error that symbol cannot be referenced before super
@@ -348,11 +348,11 @@ public class Check {
             return typeError(pos, diags.fragment("possible.loss.of.precision"), found, req);
         if (found.isSuperBound()) {
             log.error(pos, "assignment.from.super-bound", found);
-            return syms.errType;
+            return types.createErrorType(found);
         }
         if (req.isExtendsBound()) {
             log.error(pos, "assignment.to.extends-bound", req);
-            return syms.errType;
+            return types.createErrorType(found);
         }
         return typeError(pos, diags.fragment("incompatible.types"), found, req);
     }
@@ -378,7 +378,7 @@ public class Check {
                     log.error(pos,
                               "undetermined.type" + (d!=null ? ".1" : ""),
                               t, d);
-                    return syms.errType;
+                    return types.createErrorType(pt);
                 } else {
                     JCDiagnostic d = ex.getDiagnostic();
                     return typeError(pos,
@@ -469,7 +469,7 @@ public class Check {
     Type checkNonVoid(DiagnosticPosition pos, Type t) {
         if (t.tag == VOID) {
             log.error(pos, "void.not.allowed.here");
-            return syms.errType;
+            return types.createErrorType(t);
         } else {
             return t;
         }
@@ -521,7 +521,7 @@ public class Check {
                                 t);
         } else if (!types.isReifiable(t)) {
             log.error(pos, "illegal.generic.type.for.instof");
-            return syms.errType;
+            return types.createErrorType(t);
         } else {
             return t;
         }
@@ -1542,7 +1542,7 @@ public class Check {
             return;
         if (seen.contains(t)) {
             tv = (TypeVar)t;
-            tv.bound = new ErrorType();
+            tv.bound = types.createErrorType(t);
             log.error(pos, "cyclic.inheritance", t);
         } else if (t.tag == TYPEVAR) {
             tv = (TypeVar)t;
@@ -1597,11 +1597,11 @@ public class Check {
     private void noteCyclic(DiagnosticPosition pos, ClassSymbol c) {
         log.error(pos, "cyclic.inheritance", c);
         for (List<Type> l=types.interfaces(c.type); l.nonEmpty(); l=l.tail)
-            l.head = new ErrorType((ClassSymbol)l.head.tsym);
+            l.head = types.createErrorType((ClassSymbol)l.head.tsym, Type.noType);
         Type st = types.supertype(c.type);
         if (st.tag == CLASS)
-            ((ClassType)c.type).supertype_field = new ErrorType((ClassSymbol)st.tsym);
-        c.type = new ErrorType(c);
+            ((ClassType)c.type).supertype_field = types.createErrorType((ClassSymbol)st.tsym, Type.noType);
+        c.type = types.createErrorType(c, c.type);
         c.flags_field |= ACYCLIC;
     }
 

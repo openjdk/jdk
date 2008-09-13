@@ -159,7 +159,7 @@ public class Attr extends JCTree.Visitor {
      *  If check succeeds, store type in tree and return it.
      *  If check fails, store errType in tree and return it.
      *  No checks are performed if the prototype is a method type.
-     *  Its not necessary in this case since we know that kind and type
+     *  It is not necessary in this case since we know that kind and type
      *  are correct.
      *
      *  @param tree     The tree whose kind and type is checked
@@ -176,7 +176,7 @@ public class Attr extends JCTree.Visitor {
                 log.error(tree.pos(), "unexpected.type",
                           kindNames(pkind),
                           kindName(ownkind));
-                owntype = syms.errType;
+                owntype = types.createErrorType(owntype);
             }
         }
         tree.type = owntype;
@@ -524,7 +524,7 @@ public class Attr extends JCTree.Visitor {
             // check that type variable is already visible
             if (t.getUpperBound() == null) {
                 log.error(tree.pos(), "illegal.forward.ref");
-                return syms.errType;
+                return types.createErrorType(t);
             }
         } else {
             t = chk.checkClassType(tree.pos(), t, checkExtensible|!allowGenerics);
@@ -533,12 +533,12 @@ public class Attr extends JCTree.Visitor {
             log.error(tree.pos(), "intf.expected.here");
             // return errType is necessary since otherwise there might
             // be undetected cycles which cause attribution to loop
-            return syms.errType;
+            return types.createErrorType(t);
         } else if (checkExtensible &&
                    classExpected &&
                    (t.tsym.flags() & INTERFACE) != 0) {
             log.error(tree.pos(), "no.intf.expected.here");
-            return syms.errType;
+            return types.createErrorType(t);
         }
         if (checkExtensible &&
             ((t.tsym.flags() & FINAL) != 0)) {
@@ -804,7 +804,7 @@ public class Attr extends JCTree.Visitor {
             Type base = types.asSuper(exprType, syms.iterableType.tsym);
             if (base == null) {
                 log.error(tree.expr.pos(), "foreach.not.applicable.to.type");
-                elemtype = syms.errType;
+                elemtype = types.createErrorType(exprType);
             } else {
                 List<Type> iterableParams = base.allparams();
                 elemtype = iterableParams.isEmpty()
@@ -1219,7 +1219,7 @@ public class Attr extends JCTree.Visitor {
                 if (methName == names._super) {
                     if (site == syms.objectType) {
                         log.error(tree.meth.pos(), "no.superclass", site);
-                        site = syms.errType;
+                        site = types.createErrorType(syms.objectType);
                     } else {
                         site = types.supertype(site);
                     }
@@ -1351,7 +1351,7 @@ public class Attr extends JCTree.Visitor {
         }
 
     public void visitNewClass(JCNewClass tree) {
-        Type owntype = syms.errType;
+        Type owntype = types.createErrorType(tree.type);
 
         // The local environment of a class creation is
         // a new environment nested in the current one.
@@ -1551,7 +1551,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitNewArray(JCNewArray tree) {
-        Type owntype = syms.errType;
+        Type owntype = types.createErrorType(tree.type);
         Type elemtype;
         if (tree.elemtype != null) {
             elemtype = attribType(tree.elemtype, env);
@@ -1571,7 +1571,7 @@ public class Attr extends JCTree.Visitor {
                     log.error(tree.pos(), "illegal.initializer.for.type",
                               pt);
                 }
-                elemtype = syms.errType;
+                elemtype = types.createErrorType(pt);
             }
         }
         if (tree.elems != null) {
@@ -1631,7 +1631,7 @@ public class Attr extends JCTree.Visitor {
         Symbol operator = tree.operator =
             rs.resolveUnaryOperator(tree.pos(), tree.getTag(), env, argtype);
 
-        Type owntype = syms.errType;
+        Type owntype = types.createErrorType(tree.type);
         if (operator.kind == MTH) {
             owntype = (JCTree.PREINC <= tree.getTag() && tree.getTag() <= JCTree.POSTDEC)
                 ? tree.arg.type
@@ -1667,7 +1667,7 @@ public class Attr extends JCTree.Visitor {
         Symbol operator = tree.operator =
             rs.resolveBinaryOperator(tree.pos(), tree.getTag(), env, left, right);
 
-        Type owntype = syms.errType;
+        Type owntype = types.createErrorType(tree.type);
         if (operator.kind == MTH) {
             owntype = operator.type.getReturnType();
             int opc = chk.checkOperator(tree.lhs.pos(),
@@ -1728,7 +1728,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitIndexed(JCArrayAccess tree) {
-        Type owntype = syms.errType;
+        Type owntype = types.createErrorType(tree.type);
         Type atype = attribExpr(tree.indexed, env);
         attribExpr(tree.index, env, syms.intType);
         if (types.isArray(atype))
@@ -1849,7 +1849,7 @@ public class Attr extends JCTree.Visitor {
                 elt = ((ArrayType)elt).elemtype;
             if (elt.tag == TYPEVAR) {
                 log.error(tree.pos(), "type.var.cant.be.deref");
-                result = syms.errType;
+                result = types.createErrorType(tree.type);
                 return;
             }
         }
@@ -2009,7 +2009,7 @@ public class Attr extends JCTree.Visitor {
                 }
             case ERROR:
                 // preserve identifier names through errors
-                return new ErrorType(name, site.tsym).tsym;
+                return types.createErrorType(name, site.tsym, site).tsym;
             default:
                 // The qualifier expression is of a primitive type -- only
                 // .class is allowed for these.
@@ -2059,7 +2059,7 @@ public class Attr extends JCTree.Visitor {
                      int pkind,
                      Type pt,
                      boolean useVarargs) {
-            if (pt.isErroneous()) return syms.errType;
+            if (pt.isErroneous()) return types.createErrorType(site);
             Type owntype; // The computed type of this identifier occurrence.
             switch (sym.kind) {
             case TYP:
@@ -2129,7 +2129,7 @@ public class Attr extends JCTree.Visitor {
                     for (List<Type> l = env.info.tvars; l.nonEmpty(); l = l.tail)
                         if (!owntype.contains(l.head)) {
                             log.error(tree.pos(), "undetermined.type", owntype1);
-                            owntype1 = syms.errType;
+                            owntype1 = types.createErrorType(owntype1);
                         }
                     owntype = owntype1;
                 }
@@ -2332,7 +2332,7 @@ public class Attr extends JCTree.Visitor {
                           "internal.error.cant.instantiate",
                           sym, site,
                           Type.toString(pt.getParameterTypes()));
-            owntype = syms.errType;
+            owntype = types.createErrorType(site);
         } else {
             // System.out.println("call   : " + env.tree);
             // System.out.println("method : " + owntype);
@@ -2454,7 +2454,7 @@ public class Attr extends JCTree.Visitor {
      *  before supertype structure is completely known
      */
     public void visitTypeApply(JCTypeApply tree) {
-        Type owntype = syms.errType;
+        Type owntype = types.createErrorType(tree.type);
 
         // Attribute functor part of application and make sure it's a class.
         Type clazztype = chk.checkClassType(tree.clazz.pos(), attribType(tree.clazz, env));
@@ -2498,7 +2498,7 @@ public class Attr extends JCTree.Visitor {
                 } else {
                     log.error(tree.pos(), "type.doesnt.take.params", clazztype.tsym);
                 }
-                owntype = syms.errType;
+                owntype = types.createErrorType(tree.type);
             }
         }
         result = check(tree, owntype, TYP, pkind, pt);

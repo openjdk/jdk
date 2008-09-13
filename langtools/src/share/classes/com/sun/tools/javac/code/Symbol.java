@@ -776,7 +776,7 @@ public abstract class Symbol implements Element {
             } catch (CompletionFailure ex) {
                 // quiet error recovery
                 flags_field |= (PUBLIC|STATIC);
-                this.type = new ErrorType(this);
+                this.type = new ErrorType(this, Type.noType);
                 throw ex;
             }
         }
