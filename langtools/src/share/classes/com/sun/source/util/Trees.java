@@ -33,6 +33,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaCompiler.CompilationTask;
 
@@ -177,4 +178,11 @@ public abstract class Trees {
      * @return true if {@code member} is accessible in {@code type}
      */
     public abstract boolean isAccessible(Scope scope, Element member, DeclaredType type);
+
+    /**
+      * Gets the original type from the ErrorType object.
+      * @param errorType The errorType for which we want to get the original type.
+      * @returns javax.lang.model.type.TypeMirror corresponding to the original type, replaced by the ErrorType.
+      */
+    public abstract TypeMirror getOriginalType(ErrorType errorType);
 }

@@ -204,7 +204,7 @@ public class Infer {
             return true;
         }
 
-    /** Instaniate undetermined type variable to the lub of all its lower bounds.
+    /** Instantiate undetermined type variable to the lub of all its lower bounds.
      *  Throw a NoInstanceException if this not possible.
      */
     void minimizeInst(UndetVar that, Warner warn) throws NoInstanceException {
@@ -216,7 +216,7 @@ public class Infer {
             else {
                 that.inst = types.lub(that.lobounds);
             }
-            if (that.inst == null || that.inst == syms.errType)
+            if (that.inst == null || that.inst.tag == ERROR)
                     throw ambiguousNoInstanceException
                         .setMessage("no.unique.minimal.instance.exists",
                                     that.qtype, that.lobounds);
