@@ -175,6 +175,8 @@ public:
     BOOL IsDynamicLayoutSet();
     BOOL IsDynamicLayoutSupported();
     BOOL IsDynamicLayoutActive();
+    BOOL areExtraMouseButtonsEnabled();
+    void setExtraMouseButtonsEnabled(BOOL enable);
 
     INLINE BOOL localPump() { return m_localPump; }
     INLINE BOOL VerifyComponents() { return FALSE; } // TODO: Use new DebugHelper class to set this flag
@@ -351,6 +353,7 @@ private:
     BOOL m_verbose;
     BOOL m_isActive; // set to FALSE at beginning of Dispose
     BOOL m_isDisposed; // set to TRUE at end of Dispose
+    BOOL m_areExtraMouseButtonsEnabled;
 
     BOOL m_vmSignalled; // set to TRUE if QUERYENDSESSION has successfully
                         // raised SIGTERM

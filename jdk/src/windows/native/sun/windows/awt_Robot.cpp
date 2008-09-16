@@ -31,8 +31,6 @@
 #include "java_awt_event_InputEvent.h"
 #include <winuser.h>
 
-static const int MOUSE_MAX = 65535;
-
 AwtRobot::AwtRobot( jobject peer )
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -103,19 +101,38 @@ void AwtRobot::MousePress( jint buttonMask )
     // left handed mouse setup
     BOOL bSwap = ::GetSystemMetrics(SM_SWAPBUTTON);
 
-    if ( buttonMask & java_awt_event_InputEvent_BUTTON1_MASK ) {
+    if ( buttonMask & java_awt_event_InputEvent_BUTTON1_MASK ||
+        buttonMask & java_awt_event_InputEvent_BUTTON1_DOWN_MASK)
+    {
         dwFlags |= !bSwap ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_RIGHTDOWN;
     }
 
-    if ( buttonMask & java_awt_event_InputEvent_BUTTON3_MASK ) {
+    if ( buttonMask & java_awt_event_InputEvent_BUTTON3_MASK ||
+         buttonMask & java_awt_event_InputEvent_BUTTON3_DOWN_MASK)
+    {
         dwFlags |= !bSwap ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_LEFTDOWN;
     }
 
-    if ( buttonMask & java_awt_event_InputEvent_BUTTON2_MASK ) {
+    if ( buttonMask & java_awt_event_InputEvent_BUTTON2_MASK ||
+         buttonMask & java_awt_event_InputEvent_BUTTON2_DOWN_MASK)
+    {
         dwFlags |= MOUSEEVENTF_MIDDLEDOWN;
     }
 
-    mouse_event(dwFlags, 0, 0, 0, 0 );
+    INPUT mouseInput = {0};
+    mouseInput.type = INPUT_MOUSE;
+    mouseInput.mi.time = 0;
+    mouseInput.mi.dwFlags = dwFlags;
+    if ( buttonMask & AwtComponent::masks[3] ) {
+        mouseInput.mi.dwFlags = mouseInput.mi.dwFlags | MOUSEEVENTF_XDOWN;
+        mouseInput.mi.mouseData = XBUTTON1;
+    }
+
+    if ( buttonMask & AwtComponent::masks[4] ) {
+        mouseInput.mi.dwFlags = mouseInput.mi.dwFlags | MOUSEEVENTF_XDOWN;
+        mouseInput.mi.mouseData = XBUTTON2;
+    }
+    ::SendInput(1, &mouseInput, sizeof(mouseInput));
 }
 
 void AwtRobot::MouseRelease( jint buttonMask )
@@ -126,19 +143,39 @@ void AwtRobot::MouseRelease( jint buttonMask )
     // left handed mouse setup
     BOOL bSwap = ::GetSystemMetrics(SM_SWAPBUTTON);
 
-    if ( buttonMask & java_awt_event_InputEvent_BUTTON1_MASK ) {
+    if ( buttonMask & java_awt_event_InputEvent_BUTTON1_MASK ||
+        buttonMask & java_awt_event_InputEvent_BUTTON1_DOWN_MASK)
+    {
         dwFlags |= !bSwap ? MOUSEEVENTF_LEFTUP : MOUSEEVENTF_RIGHTUP;
     }
 
-    if ( buttonMask & java_awt_event_InputEvent_BUTTON3_MASK ) {
+    if ( buttonMask & java_awt_event_InputEvent_BUTTON3_MASK ||
+         buttonMask & java_awt_event_InputEvent_BUTTON3_DOWN_MASK)
+    {
         dwFlags |= !bSwap ? MOUSEEVENTF_RIGHTUP : MOUSEEVENTF_LEFTUP;
     }
 
-    if ( buttonMask & java_awt_event_InputEvent_BUTTON2_MASK ) {
+    if ( buttonMask & java_awt_event_InputEvent_BUTTON2_MASK ||
+        buttonMask & java_awt_event_InputEvent_BUTTON2_DOWN_MASK)
+    {
         dwFlags |= MOUSEEVENTF_MIDDLEUP;
     }
 
-    mouse_event(dwFlags, 0, 0, 0, 0 );
+    INPUT mouseInput = {0};
+    mouseInput.type = INPUT_MOUSE;
+    mouseInput.mi.time = 0;
+    mouseInput.mi.dwFlags = dwFlags;
+
+    if ( buttonMask & AwtComponent::masks[3] ) {
+        mouseInput.mi.dwFlags = mouseInput.mi.dwFlags | MOUSEEVENTF_XUP;
+        mouseInput.mi.mouseData = XBUTTON1;
+    }
+
+    if ( buttonMask & AwtComponent::masks[4] ) {
+        mouseInput.mi.dwFlags = mouseInput.mi.dwFlags | MOUSEEVENTF_XUP;
+        mouseInput.mi.mouseData = XBUTTON2;
+    }
+    ::SendInput(1, &mouseInput, sizeof(mouseInput));
 }
 
 void AwtRobot::MouseWheel (jint wheelAmt) {
@@ -399,4 +436,10 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WRobotPeer_keyRelease(
     AwtRobot::GetRobot(self)->KeyRelease(javakey);
 
     CATCH_BAD_ALLOC;
+}
+
+JNIEXPORT jint JNICALL Java_sun_awt_windows_WRobotPeer_getNumberOfButtons(
+  JNIEnv *, jobject self)
+{
+    return GetSystemMetrics(SM_CMOUSEBUTTONS);
 }

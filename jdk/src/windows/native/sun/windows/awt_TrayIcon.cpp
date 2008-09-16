@@ -393,7 +393,7 @@ MsgRouting AwtTrayIcon::WmMouseMove(UINT flags, int x, int y)
         lastX = x;
         lastY = y;
         AwtComponent::InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
-        if ((flags & AwtComponent::ALL_MK_BUTTONS) != 0) {
+        if ((flags & ALL_MK_BUTTONS) != 0) {
             m_mouseButtonClickAllowed = 0;
         } else {
             SendMouseEvent(java_awt_event_MouseEvent_MOUSE_MOVED, TimeHelper::windowsToUTC(::GetTickCount()), x, y,

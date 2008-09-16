@@ -322,6 +322,7 @@ AwtToolkit::AwtToolkit() {
     m_vmSignalled = FALSE;
 
     m_isDynamicLayoutSet = FALSE;
+    m_areExtraMouseButtonsEnabled = TRUE;
 
     m_verifyComponents = FALSE;
     m_breakOnError = FALSE;
@@ -2091,4 +2092,27 @@ Java_sun_awt_SunToolkit_closeSplashScreen(JNIEnv *env, jclass cls)
     if (splashClose) {
         splashClose();
     }
+}
+
+/*
+ * accessible from awt_Component
+ */
+BOOL AwtToolkit::areExtraMouseButtonsEnabled() {
+    return m_areExtraMouseButtonsEnabled;
+}
+
+/*
+ * Class:     sun_awt_windows_WToolkit
+ * Method:    setExtraMouseButtonsEnabledNative
+ * Signature: (Z)V
+ */
+extern "C" JNIEXPORT void JNICALL Java_sun_awt_windows_WToolkit_setExtraMouseButtonsEnabledNative
+(JNIEnv *env, jclass self, jboolean enable){
+    TRY;
+    AwtToolkit::GetInstance().setExtraMouseButtonsEnabled(enable);
+    CATCH_BAD_ALLOC;
+}
+
+void AwtToolkit::setExtraMouseButtonsEnabled(BOOL enable) {
+    m_areExtraMouseButtonsEnabled = enable;
 }
