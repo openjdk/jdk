@@ -187,6 +187,8 @@ LANGID AwtComponent::m_idLang = LOWORD(::GetKeyboardLayout(0));
 UINT   AwtComponent::m_CodePage
                        = AwtComponent::LangToCodePage(m_idLang);
 
+jint *AwtComponent::masks;
+
 static BOOL bLeftShiftIsDown = false;
 static BOOL bRightShiftIsDown = false;
 static UINT lastShiftKeyPressed = 0; // init to safe value
@@ -1177,6 +1179,9 @@ void SpyWinMessage(HWND hwnd, UINT message, LPCTSTR szComment) {
         WIN_MSG(WM_MBUTTONDOWN)
         WIN_MSG(WM_MBUTTONUP)
         WIN_MSG(WM_MBUTTONDBLCLK)
+        WIN_MSG(WM_XBUTTONDBLCLK)
+        WIN_MSG(WM_XBUTTONDOWN)
+        WIN_MSG(WM_XBUTTONUP)
         WIN_MSG(WM_MOUSEWHEEL)
         WIN_MSG(WM_PARENTNOTIFY)
         WIN_MSG(WM_ENTERMENULOOP)
@@ -1612,6 +1617,9 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
       case WM_MBUTTONDOWN:
       case WM_MBUTTONDBLCLK:
       case WM_MBUTTONUP:
+      case WM_XBUTTONDBLCLK:
+      case WM_XBUTTONDOWN:
+      case WM_XBUTTONUP:
       case WM_MOUSEMOVE:
       case WM_MOUSEWHEEL:
       case WM_AWT_MOUSEENTER:
@@ -1641,6 +1649,31 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
           case WM_MBUTTONDBLCLK:
               mr = WmMouseDown(static_cast<UINT>(wParam), myPos.x, myPos.y,
                                MIDDLE_BUTTON);
+              break;
+          case WM_XBUTTONDOWN:
+          case WM_XBUTTONDBLCLK:
+              if (AwtToolkit::GetInstance().areExtraMouseButtonsEnabled()) {
+                  if (HIWORD(wParam) == 1) {
+                      mr = WmMouseDown(static_cast<UINT>(wParam), myPos.x, myPos.y,
+                                       X1_BUTTON);
+                  }
+                  if (HIWORD(wParam) == 2) {
+                      mr = WmMouseDown(static_cast<UINT>(wParam), myPos.x, myPos.y,
+                                       X2_BUTTON);
+                  }
+              }
+              break;
+          case WM_XBUTTONUP:
+              if (AwtToolkit::GetInstance().areExtraMouseButtonsEnabled()) {
+                  if (HIWORD(wParam) == 1) {
+                      mr = WmMouseUp(static_cast<UINT>(wParam), myPos.x, myPos.y,
+                                     X1_BUTTON);
+                  }
+                  if (HIWORD(wParam) == 2) {
+                      mr = WmMouseUp(static_cast<UINT>(wParam), myPos.x, myPos.y,
+                                     X2_BUTTON);
+                  }
+              }
               break;
           case WM_RBUTTONDOWN:
           case WM_RBUTTONDBLCLK:
@@ -2549,8 +2582,12 @@ MsgRouting AwtComponent::WmMouseMove(UINT flags, int x, int y)
         lastComp = this;
         lastX = x;
         lastY = y;
-
-        if ( (flags & ALL_MK_BUTTONS) != 0 ) {
+        BOOL extraButtonsEnabled = AwtToolkit::GetInstance().areExtraMouseButtonsEnabled();
+        if (((flags & (ALL_MK_BUTTONS)) != 0) ||
+            (extraButtonsEnabled && (flags & (X_BUTTONS)) != 0))
+//        if (( extraButtonsEnabled && ( (flags & (ALL_MK_BUTTONS | X_BUTTONS)) != 0 )) ||
+//            ( !extraButtonsEnabled && (((flags & (ALL_MK_BUTTONS)) != 0 )) && ((flags & (X_BUTTONS)) == 0) ))
+        {
             // 6404008 : if Dragged event fired we shouldn't fire
             // Clicked event: m_firstDragSent set to TRUE.
             // This is a partial backout of 5039416 fix.
@@ -2728,13 +2765,20 @@ AwtComponent::GetJavaModifiers()
         modifiers |= java_awt_event_InputEvent_ALT_DOWN_MASK;
     }
     if (HIBYTE(::GetKeyState(VK_MBUTTON)) != 0) {
-        modifiers |= java_awt_event_InputEvent_BUTTON2_DOWN_MASK;
+       modifiers |= java_awt_event_InputEvent_BUTTON2_DOWN_MASK;
     }
     if (HIBYTE(::GetKeyState(VK_RBUTTON)) != 0) {
         modifiers |= java_awt_event_InputEvent_BUTTON3_DOWN_MASK;
     }
     if (HIBYTE(::GetKeyState(VK_LBUTTON)) != 0) {
         modifiers |= java_awt_event_InputEvent_BUTTON1_DOWN_MASK;
+    }
+
+    if (HIBYTE(::GetKeyState(VK_XBUTTON1)) != 0) {
+        modifiers |= masks[3];
+    }
+    if (HIBYTE(::GetKeyState(VK_XBUTTON2)) != 0) {
+        modifiers |= masks[4];
     }
     return modifiers;
 }
@@ -2750,6 +2794,11 @@ AwtComponent::GetButton(int mouseButton)
         return java_awt_event_MouseEvent_BUTTON2;
     case RIGHT_BUTTON:
         return java_awt_event_MouseEvent_BUTTON3;
+    case X1_BUTTON: //16 :
+        //just assign 4 and 5 numbers because MouseEvent class doesn't contain const identifier for them now
+        return 4;
+    case X2_BUTTON: //32
+        return 5;
     }
     return java_awt_event_MouseEvent_NOBUTTON;
 }
@@ -2764,6 +2813,10 @@ AwtComponent::GetButtonMK(int mouseButton)
         return MK_MBUTTON;
     case RIGHT_BUTTON:
         return MK_RBUTTON;
+    case X1_BUTTON:
+        return MK_XBUTTON1;
+    case X2_BUTTON:
+        return MK_XBUTTON2;
     }
     return 0;
 }
@@ -2779,6 +2832,14 @@ AwtComponent::GetButtonMK(int mouseButton)
 #define VK_KANJI          0x19
 #define VK_CONVERT        0x1C
 #define VK_NONCONVERT     0x1D
+#endif
+
+#ifndef VK_XBUTTON1
+#define VK_XBUTTON1      0x05
+#endif
+
+#ifndef VK_XBUTTON2
+#define VK_XBUTTON2      0x06
 #endif
 
 typedef struct {
@@ -5068,7 +5129,12 @@ void AwtComponent::SynthesizeMouseMessage(JNIEnv *env, jobject mouseEvent)
           if (modifiers & java_awt_event_InputEvent_BUTTON3_DOWN_MASK) {
               wLow |= MK_MBUTTON;
           }
-
+          if (modifiers & X1_BUTTON) {
+              wLow |= GetButtonMK(X1_BUTTON);
+          }
+          if (modifiers & X2_BUTTON) {
+              wLow |= GetButtonMK(X2_BUTTON);
+          }
 
           wheelAmt = (jint)JNU_CallMethodByName(env,
                                                NULL,
@@ -6165,6 +6231,18 @@ JNIEXPORT void JNICALL
 Java_java_awt_Component_initIDs(JNIEnv *env, jclass cls)
 {
     TRY;
+    jclass inputEventClazz = env->FindClass("java/awt/event/InputEvent");
+    jmethodID getButtonDownMasksID = env->GetStaticMethodID(inputEventClazz, "getButtonDownMasks", "()[I");
+    jintArray obj = (jintArray)env->CallStaticObjectMethod(inputEventClazz, getButtonDownMasksID);
+    jint * tmp = env->GetIntArrayElements(obj, JNI_FALSE);
+
+    jsize len = env->GetArrayLength(obj);
+    AwtComponent::masks = new jint[len];
+    for (int i = 0; i < len; i++) {
+        AwtComponent::masks[i] = tmp[i];
+    }
+    env->ReleaseIntArrayElements(obj, tmp, 0);
+    env->DeleteLocalRef(obj);
 
     /* class ids */
     jclass peerCls = env->FindClass("sun/awt/windows/WComponentPeer");

@@ -74,6 +74,10 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     // Dynamic Layout Resize client code setting
     protected static boolean dynamicLayoutSetting = false;
 
+    //Is it allowed to generate events assigned to extra mouse buttons.
+    //Set to true by default.
+    private static boolean areExtraMouseButtonsEnabled = true;
+
     /**
      * True when the x settings have been loaded.
      */
@@ -273,6 +277,9 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
             arrowCursor = XlibWrapper.XCreateFontCursor(XToolkit.getDisplay(),
                 XCursorFontConstants.XC_arrow);
+            areExtraMouseButtonsEnabled = Boolean.parseBoolean(System.getProperty("sun.awt.enableExtraMouseButtons", "true"));
+            //set system property if not yet assigned
+            System.setProperty("sun.awt.enableExtraMouseButtons", ""+areExtraMouseButtonsEnabled);
         } finally {
             awtUnlock();
         }
@@ -1383,7 +1390,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
     }
 
-    private int getNumMouseButtons() {
+    public static int getNumMouseButtons() {
         awtLock();
         try {
             return XlibWrapper.XGetPointerMapping(XToolkit.getDisplay(), 0, 0);
@@ -2166,4 +2173,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     public static native void setNoisyXErrorHandler();
+
+    public boolean areExtraMouseButtonsEnabled() throws HeadlessException {
+        return areExtraMouseButtonsEnabled;
+    }
 }
