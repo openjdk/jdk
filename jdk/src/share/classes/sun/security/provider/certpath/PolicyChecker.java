@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,12 @@ import java.io.IOException;
 
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.PKIXCertPathChecker;
+import java.security.cert.PKIXReason;
 import java.security.cert.PolicyNode;
 import java.security.cert.PolicyQualifierInfo;
+import java.security.cert.X509Certificate;
 
 import sun.security.util.Debug;
 import sun.security.x509.CertificatePoliciesExtension;
@@ -482,8 +483,9 @@ class PolicyChecker extends PKIXCertPathChecker {
                     // the policyQualifiersRejected flag is set in the params
                     if (!pQuals.isEmpty() && rejectPolicyQualifiers &&
                         policiesCritical) {
-                            throw new CertPathValidatorException("critical " +
-                                "policy qualifiers present in certificate");
+                        throw new CertPathValidatorException(
+                            "critical policy qualifiers present in certificate",
+                            null, null, -1, PKIXReason.INVALID_POLICY);
                     }
 
                     // PKIX: Section 6.1.3: Step (d)(1)(i)
@@ -567,7 +569,8 @@ class PolicyChecker extends PKIXCertPathChecker {
 
         if ((explicitPolicy == 0) && (rootNode == null)) {
             throw new CertPathValidatorException
-                ("non-null policy tree required and policy tree is null");
+                ("non-null policy tree required and policy tree is null",
+                 null, null, -1, PKIXReason.INVALID_POLICY);
         }
 
         return rootNode;
@@ -776,12 +779,14 @@ class PolicyChecker extends PKIXCertPathChecker {
 
             if (issuerDomain.equals(ANY_POLICY)) {
                 throw new CertPathValidatorException
-                    ("encountered an issuerDomainPolicy of ANY_POLICY");
+                    ("encountered an issuerDomainPolicy of ANY_POLICY",
+                     null, null, -1, PKIXReason.INVALID_POLICY);
             }
 
             if (subjectDomain.equals(ANY_POLICY)) {
                 throw new CertPathValidatorException
-                    ("encountered a subjectDomainPolicy of ANY_POLICY");
+                    ("encountered a subjectDomainPolicy of ANY_POLICY",
+                     null, null, -1, PKIXReason.INVALID_POLICY);
             }
 
             Set<PolicyNodeImpl> validNodes =
