@@ -1205,6 +1205,13 @@ void Arguments::set_ergonomics_flags() {
       warning(" UseCompressedOops does not currently work with UseG1GC; switching off UseCompressedOops. ");
       FLAG_SET_DEFAULT(UseCompressedOops, false);
     }
+#ifdef _WIN64
+    if (UseLargePages && UseCompressedOops) {
+      // Cannot allocate guard pages for implicit checks in indexed addressing
+      // mode, when large pages are specified on windows.
+      FLAG_SET_DEFAULT(UseImplicitNullCheckForNarrowOop, false);
+    }
+#endif //  _WIN64
   } else {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
       warning("Max heap size too large for Compressed Oops");

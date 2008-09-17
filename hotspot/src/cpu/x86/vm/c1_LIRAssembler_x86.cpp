@@ -1129,8 +1129,8 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
 #else
     __ pushl(frame_map()->address_for_slot(src ->double_stack_ix(), 0));
     // push and pop the part at src + wordSize, adding wordSize for the previous push
-    __ pushl(frame_map()->address_for_slot(src ->double_stack_ix(), wordSize));
-    __ popl (frame_map()->address_for_slot(dest->double_stack_ix(), wordSize));
+    __ pushl(frame_map()->address_for_slot(src ->double_stack_ix(), 2 * wordSize));
+    __ popl (frame_map()->address_for_slot(dest->double_stack_ix(), 2 * wordSize));
     __ popl (frame_map()->address_for_slot(dest->double_stack_ix(), 0));
 #endif // _LP64
 

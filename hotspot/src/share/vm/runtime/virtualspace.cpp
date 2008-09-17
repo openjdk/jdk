@@ -372,7 +372,8 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment,
                                      bool large, char* requested_address) :
   ReservedSpace(size, alignment, large,
                 requested_address,
-                UseCompressedOops ? lcm(os::vm_page_size(), alignment) : 0) {
+                UseCompressedOops && UseImplicitNullCheckForNarrowOop ?
+                  lcm(os::vm_page_size(), alignment) : 0) {
   // Only reserved space for the java heap should have a noaccess_prefix
   // if using compressed oops.
   protect_noaccess_prefix(size);
@@ -383,7 +384,8 @@ ReservedHeapSpace::ReservedHeapSpace(const size_t prefix_size,
                                      const size_t suffix_size,
                                      const size_t suffix_align) :
   ReservedSpace(prefix_size, prefix_align, suffix_size, suffix_align,
-                UseCompressedOops ? lcm(os::vm_page_size(), prefix_align) : 0) {
+                UseCompressedOops && UseImplicitNullCheckForNarrowOop ?
+                  lcm(os::vm_page_size(), prefix_align) : 0) {
   protect_noaccess_prefix(prefix_size+suffix_size);
 }
 

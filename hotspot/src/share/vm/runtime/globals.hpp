@@ -306,6 +306,9 @@ class CommandLineFlags {
   lp64_product(bool, CheckCompressedOops, trueInDebug,                      \
             "generate checks in encoding/decoding code")                    \
                                                                             \
+  product(bool, UseImplicitNullCheckForNarrowOop, true,                     \
+            "generate implicit null check in indexed addressing mode.")     \
+                                                                            \
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
    * been re-added (see 6401008) */                                         \
