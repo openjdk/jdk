@@ -1034,6 +1034,39 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
 //=============================================================================
 uint AllocateArrayNode::size_of() const { return sizeof(*this); }
 
+// Retrieve the length from the AllocateArrayNode. Narrow the type with a
+// CastII, if appropriate.  If we are not allowed to create new nodes, and
+// a CastII is appropriate, return NULL.
+Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTransform *phase, bool allow_new_nodes) {
+  Node *length = in(AllocateNode::ALength);
+  assert(length != NULL, "length is not null");
+
+  const TypeInt* length_type = phase->find_int_type(length);
+  const TypeAryPtr* ary_type = oop_type->isa_aryptr();
+
+  if (ary_type != NULL && length_type != NULL) {
+    const TypeInt* narrow_length_type = ary_type->narrow_size_type(length_type);
+    if (narrow_length_type != length_type) {
+      // Assert one of:
+      //   - the narrow_length is 0
+      //   - the narrow_length is not wider than length
+      assert(narrow_length_type == TypeInt::ZERO ||
+             (narrow_length_type->_hi <= length_type->_hi &&
+              narrow_length_type->_lo >= length_type->_lo),
+             "narrow type must be narrower than length type");
+
+      // Return NULL if new nodes are not allowed
+      if (!allow_new_nodes) return NULL;
+      // Create a cast which is control dependent on the initialization to
+      // propagate the fact that the array length must be positive.
+      length = new (phase->C, 2) CastIINode(length, narrow_length_type);
+      length->set_req(0, initialization()->proj_out(0));
+    }
+  }
+
+  return length;
+}
+
 //=============================================================================
 uint LockNode::size_of() const { return sizeof(*this); }
 
