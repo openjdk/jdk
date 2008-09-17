@@ -712,7 +712,6 @@ class StubGenerator: public StubCodeGenerator {
   //     end     -  element count
   void  gen_write_ref_array_pre_barrier(Register start, Register count) {
     assert_different_registers(start, count);
-#if 0 // G1 only
     BarrierSet* bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
       case BarrierSet::G1SATBCT:
@@ -721,8 +720,8 @@ class StubGenerator: public StubCodeGenerator {
           __ pusha();                      // push registers
           __ push(count);
           __ push(start);
-          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre));
-          __ addl(esp, wordSize * 2);
+          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre)));
+          __ addptr(rsp, 2*wordSize);
           __ popa();
         }
         break;
@@ -734,7 +733,6 @@ class StubGenerator: public StubCodeGenerator {
         ShouldNotReachHere();
 
     }
-#endif // 0 - G1 only
   }
 
 
@@ -750,20 +748,18 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSet* bs = Universe::heap()->barrier_set();
     assert_different_registers(start, count);
     switch (bs->kind()) {
-#if 0 // G1 only
       case BarrierSet::G1SATBCT:
       case BarrierSet::G1SATBCTLogging:
         {
           __ pusha();                      // push registers
           __ push(count);
           __ push(start);
-          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post));
-          __ addl(esp, wordSize * 2);
+          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post)));
+          __ addptr(rsp, 2*wordSize);
           __ popa();
 
         }
         break;
-#endif // 0 G1 only
 
       case BarrierSet::CardTableModRef:
       case BarrierSet::CardTableExtension:
@@ -1378,9 +1374,9 @@ class StubGenerator: public StubCodeGenerator {
     Address elem_klass_addr(elem, oopDesc::klass_offset_in_bytes());
 
     // Copy from low to high addresses, indexed from the end of each array.
+    gen_write_ref_array_pre_barrier(to, count);
     __ lea(end_from, end_from_addr);
     __ lea(end_to,   end_to_addr);
-    gen_write_ref_array_pre_barrier(to, count);
     assert(length == count, "");        // else fix next line:
     __ negptr(count);                   // negate and test the length
     __ jccb(Assembler::notZero, L_load_element);

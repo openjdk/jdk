@@ -99,7 +99,7 @@ class HeapWord {
   friend class VMStructs;
  private:
   char* i;
-#ifdef ASSERT
+#ifndef PRODUCT
  public:
   char* value() { return i; }
 #endif

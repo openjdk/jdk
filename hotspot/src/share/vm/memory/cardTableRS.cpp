@@ -27,10 +27,25 @@
 
 CardTableRS::CardTableRS(MemRegion whole_heap,
                          int max_covered_regions) :
-  GenRemSet(&_ct_bs),
-  _ct_bs(whole_heap, max_covered_regions),
-  _cur_youngergen_card_val(youngergenP1_card)
+  GenRemSet(),
+  _cur_youngergen_card_val(youngergenP1_card),
+  _regions_to_iterate(max_covered_regions - 1)
 {
+#ifndef SERIALGC
+  if (UseG1GC) {
+    if (G1RSBarrierUseQueue) {
+      _ct_bs = new G1SATBCardTableLoggingModRefBS(whole_heap,
+                                                  max_covered_regions);
+    } else {
+      _ct_bs = new G1SATBCardTableModRefBS(whole_heap, max_covered_regions);
+    }
+  } else {
+    _ct_bs = new CardTableModRefBSForCTRS(whole_heap, max_covered_regions);
+  }
+#else
+  _ct_bs = new CardTableModRefBSForCTRS(whole_heap, max_covered_regions);
+#endif
+  set_bs(_ct_bs);
   _last_cur_val_in_gen = new jbyte[GenCollectedHeap::max_gens + 1];
   if (_last_cur_val_in_gen == NULL) {
     vm_exit_during_initialization("Could not last_cur_val_in_gen array.");
@@ -38,20 +53,19 @@ CardTableRS::CardTableRS(MemRegion whole_heap,
   for (int i = 0; i < GenCollectedHeap::max_gens + 1; i++) {
     _last_cur_val_in_gen[i] = clean_card_val();
   }
-  _ct_bs.set_CTRS(this);
+  _ct_bs->set_CTRS(this);
 }
 
 void CardTableRS::resize_covered_region(MemRegion new_region) {
-  _ct_bs.resize_covered_region(new_region);
+  _ct_bs->resize_covered_region(new_region);
 }
 
 jbyte CardTableRS::find_unused_youngergenP_card_value() {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
   for (jbyte v = youngergenP1_card;
        v < cur_youngergen_and_prev_nonclean_card;
        v++) {
     bool seen = false;
-    for (int g = 0; g < gch->n_gens()+1; g++) {
+    for (int g = 0; g < _regions_to_iterate; g++) {
       if (_last_cur_val_in_gen[g] == v) {
         seen = true;
         break;
@@ -221,11 +235,11 @@ void CardTableRS::write_ref_field_gc_par(void* field, oop new_val) {
 
 void CardTableRS::younger_refs_in_space_iterate(Space* sp,
                                                 OopsInGenClosure* cl) {
-  DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, _ct_bs.precision(),
+  DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, _ct_bs->precision(),
                                                    cl->gen_boundary());
   ClearNoncleanCardWrapper clear_cl(dcto_cl, this);
 
-  _ct_bs.non_clean_card_iterate(sp, sp->used_region_at_save_marks(),
+  _ct_bs->non_clean_card_iterate(sp, sp->used_region_at_save_marks(),
                                 dcto_cl, &clear_cl, false);
 }
 
@@ -549,7 +563,7 @@ void CardTableRS::verify() {
 
   if (ch->kind() == CollectedHeap::GenCollectedHeap) {
     GenCollectedHeap::heap()->generation_iterate(&blk, false);
-    _ct_bs.verify();
+    _ct_bs->verify();
 
     // If the old gen collections also collect perm, then we are only
     // interested in perm-to-young pointers, not perm-to-old pointers.

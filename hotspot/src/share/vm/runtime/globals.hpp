@@ -255,7 +255,19 @@ class CommandLineFlags {
 // diagnostic information about VM problems.  To use a VM diagnostic
 // option, you must first specify +UnlockDiagnosticVMOptions.
 // (This master switch also affects the behavior of -Xprintflags.)
-
+//
+// experimental flags are in support of features that are not
+//    part of the officially supported product, but are available
+//    for experimenting with. They could, for example, be performance
+//    features that may not have undergone full or rigorous QA, but which may
+//    help performance in some cases and released for experimentation
+//    by the community of users and developers. This flag also allows one to
+//    be able to build a fully supported product that nonetheless also
+//    ships with some unsupported, lightly tested, experimental features.
+//    Like the UnlockDiagnosticVMOptions flag above, there is a corresponding
+//    UnlockExperimentalVMOptions flag, which allows the control and
+//    modification of the experimental flags.
+//
 // manageable flags are writeable external product flags.
 //    They are dynamically writeable through the JDK management interface
 //    (com.sun.management.HotSpotDiagnosticMXBean API) and also through JConsole.
@@ -285,7 +297,7 @@ class CommandLineFlags {
 // Note that when there is a need to support develop flags to be writeable,
 // it can be done in the same way as product_rw.
 
-#define RUNTIME_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct, manageable, product_rw, lp64_product) \
+#define RUNTIME_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw, lp64_product) \
                                                                             \
   lp64_product(bool, UseCompressedOops, false,                              \
             "Use 32-bit object references in 64-bit VM. "                   \
@@ -304,7 +316,10 @@ class CommandLineFlags {
           "Prints flags that appeared on the command line")                 \
                                                                             \
   diagnostic(bool, UnlockDiagnosticVMOptions, trueInDebug,                  \
-          "Enable processing of flags relating to field diagnostics")       \
+          "Enable normal processing of flags relating to field diagnostics")\
+                                                                            \
+  experimental(bool, UnlockExperimentalVMOptions, false,                    \
+          "Enable normal processing of flags relating to experimental features")\
                                                                             \
   product(bool, JavaMonitorsInStackTrace, true,                             \
           "Print info. about Java monitor locks when the stacks are dumped")\
@@ -1121,7 +1136,10 @@ class CommandLineFlags {
   /* gc */                                                                  \
                                                                             \
   product(bool, UseSerialGC, false,                                         \
-          "Tells whether the VM should use serial garbage collector")       \
+          "Use the serial garbage collector")                               \
+                                                                            \
+  experimental(bool, UseG1GC, false,                                        \
+          "Use the Garbage-First garbage collector")                        \
                                                                             \
   product(bool, UseParallelGC, false,                                       \
           "Use the Parallel Scavenge garbage collector")                    \
@@ -1183,6 +1201,9 @@ class CommandLineFlags {
                                                                             \
   develop(bool, TraceChunkTasksQueuing, false,                              \
           "Trace the queuing of the chunk tasks")                           \
+                                                                            \
+  product(uintx, ParallelMarkingThreads, 0,                                 \
+          "Number of marking threads concurrent gc will use")               \
                                                                             \
   product(uintx, YoungPLABSize, 4096,                                       \
           "Size of young gen promotion labs (in HeapWords)")                \
@@ -1279,6 +1300,12 @@ class CommandLineFlags {
   product(intx, CMSYoungGenPerWorker, 16*M,                                 \
           "The amount of young gen chosen by default per GC worker "        \
           "thread available ")                                              \
+                                                                            \
+  product(bool, GCOverheadReporting, false,                                 \
+         "Enables the GC overhead reporting facility")                      \
+                                                                            \
+  product(intx, GCOverheadReportingPeriodMS, 100,                           \
+          "Reporting period for conc GC overhead reporting, in ms ")        \
                                                                             \
   product(bool, CMSIncrementalMode, false,                                  \
           "Whether CMS GC should operate in \"incremental\" mode")          \
@@ -1607,6 +1634,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, ZeroTLAB, false,                                            \
           "Zero out the newly created TLAB")                                \
+                                                                            \
+  product(bool, FastTLABRefill, true,                                       \
+          "Use fast TLAB refill code")                                      \
                                                                             \
   product(bool, PrintTLAB, false,                                           \
           "Print various TLAB related information")                         \
@@ -2808,6 +2838,12 @@ class CommandLineFlags {
           "how many entries we'll try to leave on the stack during "        \
           "parallel GC")                                                    \
                                                                             \
+  product(intx, DCQBarrierQueueBufferSize, 256,                             \
+          "Number of elements in a dirty card queue buffer")                \
+                                                                            \
+  product(intx, DCQBarrierProcessCompletedThreshold, 5,                     \
+          "Number of completed dirty card buffers to trigger processing.")  \
+                                                                            \
   /* stack parameters */                                                    \
   product_pd(intx, StackYellowPages,                                        \
           "Number of yellow zone (recoverable overflows) pages")            \
@@ -3229,6 +3265,7 @@ class CommandLineFlags {
 #define DECLARE_PRODUCT_FLAG(type, name, value, doc)    extern "C" type name;
 #define DECLARE_PD_PRODUCT_FLAG(type, name, doc)        extern "C" type name;
 #define DECLARE_DIAGNOSTIC_FLAG(type, name, value, doc) extern "C" type name;
+#define DECLARE_EXPERIMENTAL_FLAG(type, name, value, doc) extern "C" type name;
 #define DECLARE_MANAGEABLE_FLAG(type, name, value, doc) extern "C" type name;
 #define DECLARE_PRODUCT_RW_FLAG(type, name, value, doc) extern "C" type name;
 #ifdef PRODUCT
@@ -3251,6 +3288,7 @@ class CommandLineFlags {
 #define MATERIALIZE_PRODUCT_FLAG(type, name, value, doc)   type name = value;
 #define MATERIALIZE_PD_PRODUCT_FLAG(type, name, doc)       type name = pd_##name;
 #define MATERIALIZE_DIAGNOSTIC_FLAG(type, name, value, doc) type name = value;
+#define MATERIALIZE_EXPERIMENTAL_FLAG(type, name, value, doc) type name = value;
 #define MATERIALIZE_MANAGEABLE_FLAG(type, name, value, doc) type name = value;
 #define MATERIALIZE_PRODUCT_RW_FLAG(type, name, value, doc) type name = value;
 #ifdef PRODUCT
@@ -3268,6 +3306,6 @@ class CommandLineFlags {
 #define MATERIALIZE_LP64_PRODUCT_FLAG(type, name, value, doc) /* flag is constant */
 #endif // _LP64
 
-RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG, DECLARE_LP64_PRODUCT_FLAG)
+RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG, DECLARE_LP64_PRODUCT_FLAG)
 
 RUNTIME_OS_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG)

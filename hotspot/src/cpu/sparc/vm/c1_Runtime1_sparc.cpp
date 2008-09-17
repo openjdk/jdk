@@ -832,6 +832,163 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
+#ifndef SERIALGC
+    case g1_pre_barrier_slow_id:
+      { // G4: previous value of memory
+        BarrierSet* bs = Universe::heap()->barrier_set();
+        if (bs->kind() != BarrierSet::G1SATBCTLogging) {
+          __ save_frame(0);
+          __ set((int)id, O1);
+          __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), I0);
+          __ should_not_reach_here();
+          break;
+        }
+
+        __ set_info("g1_pre_barrier_slow_id", dont_gc_arguments);
+
+        Register pre_val = G4;
+        Register tmp  = G1_scratch;
+        Register tmp2 = G3_scratch;
+
+        Label refill, restart;
+        bool with_frame = false; // I don't know if we can do with-frame.
+        int satb_q_index_byte_offset =
+          in_bytes(JavaThread::satb_mark_queue_offset() +
+                   PtrQueue::byte_offset_of_index());
+        int satb_q_buf_byte_offset =
+          in_bytes(JavaThread::satb_mark_queue_offset() +
+                   PtrQueue::byte_offset_of_buf());
+        __ bind(restart);
+        __ ld_ptr(G2_thread, satb_q_index_byte_offset, tmp);
+
+        __ br_on_reg_cond(Assembler::rc_z, /*annul*/false,
+                          Assembler::pn, tmp, refill);
+
+        // If the branch is taken, no harm in executing this in the delay slot.
+        __ delayed()->ld_ptr(G2_thread, satb_q_buf_byte_offset, tmp2);
+        __ sub(tmp, oopSize, tmp);
+
+        __ st_ptr(pre_val, tmp2, tmp);  // [_buf + index] := <address_of_card>
+        // Use return-from-leaf
+        __ retl();
+        __ delayed()->st_ptr(tmp, G2_thread, satb_q_index_byte_offset);
+
+        __ bind(refill);
+        __ save_frame(0);
+
+        __ mov(pre_val, L0);
+        __ mov(tmp,     L1);
+        __ mov(tmp2,    L2);
+
+        __ call_VM_leaf(L7_thread_cache,
+                        CAST_FROM_FN_PTR(address,
+                                         SATBMarkQueueSet::handle_zero_index_for_thread),
+                                         G2_thread);
+
+        __ mov(L0, pre_val);
+        __ mov(L1, tmp);
+        __ mov(L2, tmp2);
+
+        __ br(Assembler::always, /*annul*/false, Assembler::pt, restart);
+        __ delayed()->restore();
+      }
+      break;
+
+    case g1_post_barrier_slow_id:
+      {
+        BarrierSet* bs = Universe::heap()->barrier_set();
+        if (bs->kind() != BarrierSet::G1SATBCTLogging) {
+          __ save_frame(0);
+          __ set((int)id, O1);
+          __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), I0);
+          __ should_not_reach_here();
+          break;
+        }
+
+        __ set_info("g1_post_barrier_slow_id", dont_gc_arguments);
+
+        Register addr = G4;
+        Register cardtable = G5;
+        Register tmp  = G1_scratch;
+        Register tmp2 = G3_scratch;
+        jbyte* byte_map_base = ((CardTableModRefBS*)bs)->byte_map_base;
+
+        Label not_already_dirty, restart, refill;
+
+#ifdef _LP64
+        __ srlx(addr, CardTableModRefBS::card_shift, addr);
+#else
+        __ srl(addr, CardTableModRefBS::card_shift, addr);
+#endif
+
+        Address rs(cardtable, (address)byte_map_base);
+        __ load_address(rs); // cardtable := <card table base>
+        __ ldub(addr, cardtable, tmp); // tmp := [addr + cardtable]
+
+        __ br_on_reg_cond(Assembler::rc_nz, /*annul*/false, Assembler::pt,
+                          tmp, not_already_dirty);
+        // Get cardtable + tmp into a reg by itself -- useful in the take-the-branch
+        // case, harmless if not.
+        __ delayed()->add(addr, cardtable, tmp2);
+
+        // We didn't take the branch, so we're already dirty: return.
+        // Use return-from-leaf
+        __ retl();
+        __ delayed()->nop();
+
+        // Not dirty.
+        __ bind(not_already_dirty);
+        // First, dirty it.
+        __ stb(G0, tmp2, 0);  // [cardPtr] := 0  (i.e., dirty).
+
+        Register tmp3 = cardtable;
+        Register tmp4 = tmp;
+
+        // these registers are now dead
+        addr = cardtable = tmp = noreg;
+
+        int dirty_card_q_index_byte_offset =
+          in_bytes(JavaThread::dirty_card_queue_offset() +
+                   PtrQueue::byte_offset_of_index());
+        int dirty_card_q_buf_byte_offset =
+          in_bytes(JavaThread::dirty_card_queue_offset() +
+                   PtrQueue::byte_offset_of_buf());
+        __ bind(restart);
+        __ ld_ptr(G2_thread, dirty_card_q_index_byte_offset, tmp3);
+
+        __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pn,
+                          tmp3, refill);
+        // If the branch is taken, no harm in executing this in the delay slot.
+        __ delayed()->ld_ptr(G2_thread, dirty_card_q_buf_byte_offset, tmp4);
+        __ sub(tmp3, oopSize, tmp3);
+
+        __ st_ptr(tmp2, tmp4, tmp3);  // [_buf + index] := <address_of_card>
+        // Use return-from-leaf
+        __ retl();
+        __ delayed()->st_ptr(tmp3, G2_thread, dirty_card_q_index_byte_offset);
+
+        __ bind(refill);
+        __ save_frame(0);
+
+        __ mov(tmp2, L0);
+        __ mov(tmp3, L1);
+        __ mov(tmp4, L2);
+
+        __ call_VM_leaf(L7_thread_cache,
+                        CAST_FROM_FN_PTR(address,
+                                         DirtyCardQueueSet::handle_zero_index_for_thread),
+                                         G2_thread);
+
+        __ mov(L0, tmp2);
+        __ mov(L1, tmp3);
+        __ mov(L2, tmp4);
+
+        __ br(Assembler::always, /*annul*/false, Assembler::pt, restart);
+        __ delayed()->restore();
+      }
+      break;
+#endif // !SERIALGC
+
     default:
       { __ set_info("unimplemented entry", dont_gc_arguments);
         __ save_frame(0);
