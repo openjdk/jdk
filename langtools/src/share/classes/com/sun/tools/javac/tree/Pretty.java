@@ -336,7 +336,7 @@ public class Pretty extends JCTree.Visitor {
             if (l.head.getTag() == JCTree.IMPORT) {
                 JCImport imp = (JCImport)l.head;
                 Name name = TreeInfo.name(imp.qualid);
-                if (name == name.table.asterisk ||
+                if (name == name.table.names.asterisk ||
                         cdef == null ||
                         isUsed(TreeInfo.symbol(imp.qualid), cdef)) {
                     if (firstImport) {
@@ -439,14 +439,14 @@ public class Pretty extends JCTree.Visitor {
     public void visitMethodDef(JCMethodDecl tree) {
         try {
             // when producing source output, omit anonymous constructors
-            if (tree.name == tree.name.table.init &&
+            if (tree.name == tree.name.table.names.init &&
                     enclClassName == null &&
                     sourceOutput) return;
             println(); align();
             printDocComment(tree);
             printExpr(tree.mods);
             printTypeParameters(tree.typarams);
-            if (tree.name == tree.name.table.init) {
+            if (tree.name == tree.name.table.names.init) {
                 print(enclClassName != null ? enclClassName : tree.name);
             } else {
                 printExpr(tree.restype);
@@ -835,8 +835,8 @@ public class Pretty extends JCTree.Visitor {
                 Name enclClassNamePrev = enclClassName;
                 enclClassName =
                         tree.def.name != null ? tree.def.name :
-                            tree.type != null && tree.type.tsym.name != tree.type.tsym.name.table.empty ? tree.type.tsym.name :
-                                null;
+                            tree.type != null && tree.type.tsym.name != tree.type.tsym.name.table.names.empty
+                                ? tree.type.tsym.name : null;
                 if ((tree.def.mods.flags & Flags.ENUM) != 0) print("/*enum*/");
                 printBlock(tree.def.defs);
                 enclClassName = enclClassNamePrev;

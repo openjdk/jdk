@@ -61,7 +61,7 @@ public class TreeInfo {
     private TreeInfo(Context context) {
         context.put(treeInfoKey, this);
 
-        Name.Table names = Name.Table.instance(context);
+        Names names = Names.instance(context);
         opname[JCTree.POS     - JCTree.POS] = names.fromString("+");
         opname[JCTree.NEG     - JCTree.POS] = names.hyphen;
         opname[JCTree.NOT     - JCTree.POS] = names.fromString("!");
@@ -104,7 +104,7 @@ public class TreeInfo {
     public static boolean isConstructor(JCTree tree) {
         if (tree.getTag() == JCTree.METHODDEF) {
             Name name = ((JCMethodDecl) tree).name;
-            return name == name.table.init;
+            return name == name.table.names.init;
         } else {
             return false;
         }
@@ -130,7 +130,7 @@ public class TreeInfo {
                     if (select.sym != null &&
                         (select.sym.flags() & SYNTHETIC) != 0) {
                         Name selected = name(select.selected);
-                        if (selected != null && selected == selected.table._this)
+                        if (selected != null && selected == selected.table.names._this)
                             return true;
                     }
                 }
@@ -157,7 +157,7 @@ public class TreeInfo {
     public static boolean isSelfCall(JCTree tree) {
         Name name = calledMethodName(tree);
         if (name != null) {
-            Name.Table names = name.table;
+            Names names = name.table.names;
             return name==names._this || name==names._super;
         } else {
             return false;
@@ -169,7 +169,7 @@ public class TreeInfo {
     public static boolean isSuperCall(JCTree tree) {
         Name name = calledMethodName(tree);
         if (name != null) {
-            Name.Table names = name.table;
+            Names names = name.table.names;
             return name==names._super;
         } else {
             return false;
@@ -183,14 +183,14 @@ public class TreeInfo {
         JCMethodInvocation app = firstConstructorCall(tree);
         if (app == null) return false;
         Name meth = name(app.meth);
-        return meth == null || meth != meth.table._this;
+        return meth == null || meth != meth.table.names._this;
     }
 
     /** Return the first call in a constructor definition. */
     public static JCMethodInvocation firstConstructorCall(JCTree tree) {
         if (tree.getTag() != JCTree.METHODDEF) return null;
         JCMethodDecl md = (JCMethodDecl) tree;
-        Name.Table names = md.name.table;
+        Names names = md.name.table.names;
         if (md.name != names.init) return null;
         if (md.body == null) return null;
         List<JCStatement> stats = md.body.stats;

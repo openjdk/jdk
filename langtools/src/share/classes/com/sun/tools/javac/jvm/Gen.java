@@ -61,7 +61,7 @@ public class Gen extends JCTree.Visitor {
     private final Check chk;
     private final Resolve rs;
     private final TreeMaker make;
-    private final Name.Table names;
+    private final Names names;
     private final Target target;
     private final Type stringBufferType;
     private final Map<Type,Symbol> stringBufferAppend;
@@ -92,7 +92,7 @@ public class Gen extends JCTree.Visitor {
     protected Gen(Context context) {
         context.put(genKey, this);
 
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         log = Log.instance(context);
         syms = Symtab.instance(context);
         chk = Check.instance(context);
@@ -365,7 +365,7 @@ public class Gen extends JCTree.Visitor {
     private boolean isOddAccessName(Name name) {
         return
             name.startsWith(accessDollar) &&
-            (name.byteAt(name.len - 1) & 1) == 1;
+            (name.getByteAt(name.getByteLength() - 1) & 1) == 1;
     }
 
 /* ************************************************************************

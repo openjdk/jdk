@@ -73,7 +73,7 @@ public class Symtab {
     public final Type botType = new BottomType();
     public final JCNoType voidType = new JCNoType(TypeTags.VOID);
 
-    private final Name.Table names;
+    private final Names names;
     private final ClassReader reader;
     private final Target target;
 
@@ -328,7 +328,7 @@ public class Symtab {
     protected Symtab(Context context) throws CompletionFailure {
         context.put(symtabKey, this);
 
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         target = Target.instance(context);
 
         // Create the unknown type

@@ -73,7 +73,7 @@ public class JavacParser implements Parser {
     private Source source;
 
     /** The name table. */
-    private Name.Table names;
+    private Names names;
 
     /** Construct a parser from a given scanner, tree factory and log.
      */
@@ -549,7 +549,7 @@ public class JavacParser implements Parser {
 
         String strval(Name prefix) {
             String s = S.stringVal();
-            return (prefix.len == 0) ? s : prefix + s;
+            return prefix.isEmpty() ? s : prefix + s;
         }
 
     /** terms can be either expressions or types.

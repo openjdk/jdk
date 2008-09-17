@@ -25,8 +25,6 @@
 
 package com.sun.tools.javadoc;
 
-import java.util.*;
-
 import com.sun.javadoc.*;
 
 import static com.sun.javadoc.LanguageVersion.*;
@@ -40,7 +38,6 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
@@ -55,9 +52,9 @@ import com.sun.tools.javac.tree.JCTree.JCImport;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.TreeInfo;
 
+import com.sun.tools.javac.util.Names;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
-import static com.sun.tools.javac.code.TypeTags.*;
 
 import java.io.File;
 import java.util.Set;
@@ -549,7 +546,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      * methods in this class.  Does not include constructors.
      */
     public MethodDoc[] methods(boolean filter) {
-        Name.Table names = tsym.name.table;
+        Names names = tsym.name.table.names;
         List<MethodDocImpl> methods = List.nil();
         for (Scope.Entry e = tsym.members().elems; e != null; e = e.sibling) {
             if (e.sym != null &&
@@ -582,7 +579,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      * constructors in this class.
      */
     public ConstructorDoc[] constructors(boolean filter) {
-        Name.Table names = tsym.name.table;
+        Names names = tsym.name.table.names;
         List<ConstructorDocImpl> constructors = List.nil();
         for (Scope.Entry e = tsym.members().elems; e != null; e = e.sibling) {
             if (e.sym != null &&
@@ -696,7 +693,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
     }
 
     private ClassDoc searchClass(String className) {
-        Name.Table names = tsym.name.table;
+        Names names = tsym.name.table.names;
 
         // search by qualified name first
         ClassDoc cd = env.lookupClass(className);
@@ -848,7 +845,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
          *---------------------------------*/
 
         // search current class
-        Name.Table names = tsym.name.table;
+        Names names = tsym.name.table.names;
         Scope.Entry e = tsym.members().lookup(names.fromString(methodName));
 
         //### Using modifier filter here isn't really correct,
@@ -936,7 +933,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      */
     public ConstructorDoc findConstructor(String constrName,
                                           String[] paramTypes) {
-        Name.Table names = tsym.name.table;
+        Names names = tsym.name.table.names;
         for (Scope.Entry e = tsym.members().lookup(names.fromString("<init>")); e.scope != null; e = e.next()) {
             if (e.sym.kind == Kinds.MTH) {
                 if (hasParameterTypes((MethodSymbol)e.sym, paramTypes)) {
@@ -973,7 +970,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
     }
 
     private FieldDocImpl searchField(String fieldName, Set<ClassDocImpl> searched) {
-        Name.Table names = tsym.name.table;
+        Names names = tsym.name.table.names;
         if (searched.contains(this)) {
             return null;
         }
@@ -1040,7 +1037,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         Env<AttrContext> compenv = env.enter.getEnv(tsym);
         if (compenv == null) return new ClassDocImpl[0];
 
-        Name asterisk = tsym.name.table.asterisk;
+        Name asterisk = tsym.name.table.names.asterisk;
         for (JCTree t : compenv.toplevel.defs) {
             if (t.getTag() == JCTree.IMPORT) {
                 JCTree imp = ((JCImport) t).qualid;
@@ -1076,7 +1073,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         ListBuffer<PackageDocImpl> importedPackages = new ListBuffer<PackageDocImpl>();
 
         //### Add the implicit "import java.lang.*" to the result
-        Name.Table names = tsym.name.table;
+        Names names = tsym.name.table.names;
         importedPackages.append(env.getPackageDoc(env.reader.enterPackage(names.java_lang)));
 
         Env<AttrContext> compenv = env.enter.getEnv(tsym);

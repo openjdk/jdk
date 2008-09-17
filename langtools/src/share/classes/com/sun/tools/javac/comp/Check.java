@@ -56,7 +56,7 @@ public class Check {
     protected static final Context.Key<Check> checkKey =
         new Context.Key<Check>();
 
-    private final Name.Table names;
+    private final Names names;
     private final Log log;
     private final Symtab syms;
     private final Infer infer;
@@ -82,7 +82,7 @@ public class Check {
     protected Check(Context context) {
         context.put(checkKey, this);
 
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         log = Log.instance(context);
         syms = Symtab.instance(context);
         infer = Infer.instance(context);
@@ -628,7 +628,7 @@ public class Check {
         case TYP:
             if (sym.isLocal()) {
                 mask = LocalClassFlags;
-                if (sym.name.len == 0) { // Anonymous class
+                if (sym.name.isEmpty()) { // Anonymous class
                     // Anonymous classes in static methods are themselves static;
                     // that's why we admit STATIC here.
                     mask |= STATIC;

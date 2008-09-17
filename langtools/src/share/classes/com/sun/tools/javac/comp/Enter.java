@@ -333,7 +333,7 @@ public class Enter extends JCTree.Visitor {
                           "class.public.should.be.in.file", tree.name);
             }
         } else {
-            if (tree.name.len != 0 &&
+            if (!tree.name.isEmpty() &&
                 !chk.checkUniqueClassName(tree.pos(), tree.name, enclScope)) {
                 result = null;
                 return;
@@ -348,7 +348,7 @@ public class Enter extends JCTree.Visitor {
                 // We are seeing a local class.
                 c = reader.defineClass(tree.name, owner);
                 c.flatname = chk.localClassName(c);
-                if (c.name.len != 0)
+                if (!c.name.isEmpty())
                     chk.checkTransparentClass(tree.pos(), c, env.info.scope);
             }
         }

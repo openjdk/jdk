@@ -289,7 +289,7 @@ public class Convert {
      */
     public static Name shortName(Name classname) {
         return classname.subName(
-            classname.lastIndexOf((byte)'.') + 1, classname.len);
+            classname.lastIndexOf((byte)'.') + 1, classname.getByteLength());
     }
 
     public static String shortName(String classname) {

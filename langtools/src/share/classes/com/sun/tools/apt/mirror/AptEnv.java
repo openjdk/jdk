@@ -33,7 +33,7 @@ import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Names;
 
 
 /**
@@ -42,7 +42,7 @@ import com.sun.tools.javac.util.Name;
 
 public class AptEnv {
 
-    public Name.Table names;            // javac's name table
+    public Names names;                 // javac's name table
     public Symtab symtab;               // javac's predefined symbols
     public Types jctypes;               // javac's type utilities
     public Enter enter;                 // javac's enter phase
@@ -66,7 +66,7 @@ public class AptEnv {
     private AptEnv(Context context) {
         context.put(aptEnvKey, this);
 
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         symtab = Symtab.instance(context);
         jctypes = Types.instance(context);
         enter = Enter.instance(context);

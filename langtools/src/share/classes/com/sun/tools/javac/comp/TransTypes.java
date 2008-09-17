@@ -59,7 +59,7 @@ public class TransTypes extends TreeTranslator {
         return instance;
     }
 
-    private Name.Table names;
+    private Names names;
     private Log log;
     private Symtab syms;
     private TreeMaker make;
@@ -77,7 +77,7 @@ public class TransTypes extends TreeTranslator {
 
     protected TransTypes(Context context) {
         context.put(transTypesKey, this);
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         log = Log.instance(context);
         syms = Symtab.instance(context);
         enter = Enter.instance(context);

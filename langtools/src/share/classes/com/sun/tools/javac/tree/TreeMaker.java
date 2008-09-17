@@ -67,7 +67,7 @@ public class TreeMaker implements JCTree.Factory {
     public JCCompilationUnit toplevel;
 
     /** The current name table. */
-    Name.Table names;
+    Names names;
 
     Types types;
 
@@ -80,14 +80,14 @@ public class TreeMaker implements JCTree.Factory {
         context.put(treeMakerKey, this);
         this.pos = Position.NOPOS;
         this.toplevel = null;
-        this.names = Name.Table.instance(context);
+        this.names = Names.instance(context);
         this.syms = Symtab.instance(context);
         this.types = Types.instance(context);
     }
 
     /** Create a tree maker with a given toplevel and FIRSTPOS as initial position.
      */
-    TreeMaker(JCCompilationUnit toplevel, Name.Table names, Types types, Symtab syms) {
+    TreeMaker(JCCompilationUnit toplevel, Names names, Types types, Symtab syms) {
         this.pos = Position.FIRSTPOS;
         this.toplevel = toplevel;
         this.names = names;
