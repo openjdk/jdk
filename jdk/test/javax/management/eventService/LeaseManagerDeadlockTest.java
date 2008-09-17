@@ -26,6 +26,7 @@
  * @bug 6717789
  * @summary Check that a lock is not held when a LeaseManager expires.
  * @author Eamonn McManus
+ * @compile -XDignore.symbol.file=true LeaseManagerDeadlockTest.java
  */
 
 import com.sun.jmx.event.LeaseManager;

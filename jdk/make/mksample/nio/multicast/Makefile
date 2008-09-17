@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,30 @@
 # have any questions.
 #
 
-# Generated exception classes for sun.nio.ch
+#
+# Makefile for the nio/multicast sample code
+#
 
-SINCE=1.4
-PACKAGE=sun.nio.ch
-# This year should only change if the generated source is modified.
-COPYRIGHT_YEARS=2000-2007
+BUILDDIR = ../../..
 
+PRODUCT = java
 
-SUPER=IllegalStateException
+include $(BUILDDIR)/common/Defs.gmk
 
-gen AlreadyBoundException "
- * Unchecked exception thrown when an attempt is made to bind a {@link
- * SocketChannel} that is already bound." \
- 9002280723481772026L
+SAMPLE_SRC_DIR = $(SHARE_SRC)/sample/nio/multicast
+SAMPLE_DST_DIR = $(SAMPLEDIR)/nio/multicast
+
+SAMPLE_FILES =							\
+	$(SAMPLE_DST_DIR)/Reader.java				\
+	$(SAMPLE_DST_DIR)/Sender.java				\
+	$(SAMPLE_DST_DIR)/MulticastAddress.java
+
+all build: $(SAMPLE_FILES)
+
+$(SAMPLE_DST_DIR)/%: $(SAMPLE_SRC_DIR)/%
+	$(install-file)
+
+clean clobber:
+	$(RM) -r $(SAMPLE_DST_DIR)
+
+.PHONY: all build clean clobber

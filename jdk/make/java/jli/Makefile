@@ -113,7 +113,11 @@ ifeq ($(PLATFORM), windows)
 	JAVALIB =
 	OTHER_LCF =  -export:JLI_Launch \
 		     -export:JLI_ManifestIterate \
-		     -export:JLI_SetTraceLauncher
+		     -export:JLI_SetTraceLauncher \
+		     -export:JLI_ReportErrorMessage \
+		     -export:JLI_ReportErrorMessageSys \
+		     -export:JLI_ReportMessage \
+		     -export:JLI_ReportExceptionDescription
 
 endif
 

@@ -51,4 +51,16 @@ public class InstanceNotFoundException extends OperationsException   {
     public InstanceNotFoundException(String message) {
         super(message);
     }
+
+    /**
+     * Constructor for the frequent case where the message is the ObjectName
+     * of the missing MBean.
+     *
+     * @param name the ObjectName of the missing MBean.
+     *
+     * @since 1.7
+     */
+    public InstanceNotFoundException(ObjectName name) {
+        this(name.toString());
+    }
 }

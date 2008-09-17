@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.LoggingMXBean;
 import java.util.logging.LogManager;
+import java.nio.BufferPoolMXBean;
 import javax.management.MBeanServerConnection;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -187,6 +188,23 @@ enum PlatformComponent {
                 return Collections.singletonList(LogManager.getLoggingMXBean());
             }
         }),
+
+
+    /**
+     * Buffer pools.
+     */
+    BUFFER_POOL(
+        "java.nio.BufferPoolMXBean",
+        "java.nio", "BufferPool", keyProperties("name"),
+        new MXBeanFetcher<BufferPoolMXBean>() {
+            public List<BufferPoolMXBean> getMXBeans() {
+                List<BufferPoolMXBean> pools = new ArrayList<BufferPoolMXBean>(2);
+                pools.add( sun.misc.SharedSecrets.getJavaNioAccess().getDirectBufferPoolMXBean() );
+                pools.add( sun.nio.ch.FileChannelImpl.getMappedBufferPoolMXBean() );
+                return pools;
+            }
+        }),
+
 
     // Sun Platform Extension
 
