@@ -39,15 +39,14 @@ import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
-import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.processing.PrintingProcessor;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
-import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.Name;
 
 import static javax.lang.model.util.ElementFilter.methodsIn;
 
@@ -63,10 +62,9 @@ public class JavacElements implements Elements {
 
     private JavaCompiler javaCompiler;
     private Symtab syms;
-    private Name.Table names;
+    private Names names;
     private Types types;
     private Enter enter;
-    private ClassReader reader;
 
     private static final Context.Key<JavacElements> KEY =
             new Context.Key<JavacElements>();
@@ -96,10 +94,9 @@ public class JavacElements implements Elements {
     public void setContext(Context context) {
         javaCompiler = JavaCompiler.instance(context);
         syms = Symtab.instance(context);
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         types = Types.instance(context);
         enter = Enter.instance(context);
-        reader = ClassReader.instance(context);
     }
 
 
@@ -126,7 +123,7 @@ public class JavacElements implements Elements {
                                                          Class<A> annoType) {
         boolean inherited = annoType.isAnnotationPresent(Inherited.class);
         A result = null;
-        while (annotated.name != annotated.name.table.java_lang_Object) {
+        while (annotated.name != annotated.name.table.names.java_lang_Object) {
             result = getAnnotation((Symbol)annotated, annoType);
             if (result != null || !inherited)
                 break;
@@ -568,7 +565,7 @@ public class JavacElements implements Elements {
     }
 
     public Name getName(CharSequence cs) {
-        return Name.fromString(names, cs.toString());
+        return names.fromString(cs.toString());
     }
 
     /**

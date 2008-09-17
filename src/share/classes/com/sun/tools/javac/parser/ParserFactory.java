@@ -29,7 +29,7 @@ import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
 /**
@@ -52,7 +52,7 @@ public class ParserFactory {
     final Log log;
     final Keywords keywords;
     final Source source;
-    final Name.Table names;
+    final Names names;
     final Options options;
     final Scanner.Factory scannerFactory;
 
@@ -61,7 +61,7 @@ public class ParserFactory {
         context.put(parserFactoryKey, this);
         this.F = TreeMaker.instance(context);
         this.log = Log.instance(context);
-        this.names = Name.Table.instance(context);
+        this.names = Names.instance(context);
         this.keywords = Keywords.instance(context);
         this.source = Source.instance(context);
         this.options = Options.instance(context);

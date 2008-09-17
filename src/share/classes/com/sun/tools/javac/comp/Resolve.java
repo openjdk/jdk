@@ -51,7 +51,7 @@ public class Resolve {
     protected static final Context.Key<Resolve> resolveKey =
         new Context.Key<Resolve>();
 
-    Name.Table names;
+    Names names;
     Log log;
     Symtab syms;
     Check chk;
@@ -86,7 +86,7 @@ public class Resolve {
         typeNotFound = new
             ResolveError(ABSENT_TYP, syms.errSymbol, "type not found");
 
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         log = Log.instance(context);
         chk = Check.instance(context);
         infer = Infer.instance(context);
@@ -1538,7 +1538,7 @@ public class Resolve {
                 argtypes = List.nil();
             if (typeargtypes == null)
                 typeargtypes = List.nil();
-            if (name != name.table.error) {
+            if (name != names.error) {
                 KindName kindname = absentKind(kind);
                 Name idname = name;
                 if (kind >= WRONG_MTHS && kind <= ABSENT_MTH) {
@@ -1547,7 +1547,7 @@ public class Resolve {
                                   name, argtypes);
                         return;
                     }
-                    if (name == name.table.init) {
+                    if (name == names.init) {
                         kindname = KindName.CONSTRUCTOR;
                         idname = site.tsym.name;
                     }
@@ -1563,7 +1563,7 @@ public class Resolve {
                               kindName(ws.owner),
                               ws.owner.type,
                               explanation);
-                } else if (site.tsym.name.len != 0) {
+                } else if (!site.tsym.name.isEmpty()) {
                     if (site.tsym.kind == PCK && !site.tsym.exists())
                         log.error(pos, "doesnt.exist", site.tsym);
                     else {
@@ -1601,9 +1601,9 @@ public class Resolve {
          */
         boolean isOperator(Name name) {
             int i = 0;
-            while (i < name.len &&
-                   "+-~!*/%&|^<>=".indexOf(name.byteAt(i)) >= 0) i++;
-            return i > 0 && i == name.len;
+            while (i < name.getByteLength() &&
+                   "+-~!*/%&|^<>=".indexOf(name.getByteAt(i)) >= 0) i++;
+            return i > 0 && i == name.getByteLength();
         }
     }
 
@@ -1639,7 +1639,7 @@ public class Resolve {
         void report(Log log, DiagnosticPosition pos, Type site, Name name,
                     List<Type> argtypes, List<Type> typeargtypes) {
             if (sym.owner.type.tag != ERROR) {
-                if (sym.name == sym.name.table.init && sym.owner != site.tsym)
+                if (sym.name == names.init && sym.owner != site.tsym)
                     new ResolveError(ABSENT_MTH, sym.owner, "absent method " + sym).report(
                         log, pos, site, name, argtypes, typeargtypes);
                 if ((sym.flags() & PUBLIC) != 0
@@ -1723,7 +1723,7 @@ public class Resolve {
                 else break;
             }
             Name sname = pair.sym1.name;
-            if (sname == sname.table.init) sname = pair.sym1.owner.name;
+            if (sname == names.init) sname = pair.sym1.owner.name;
             log.error(pos, "ref.ambiguous", sname,
                       kindName(pair.sym1),
                       pair.sym1,

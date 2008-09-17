@@ -236,7 +236,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     /** The name table.
      */
-    protected Name.Table names;
+    protected Names names;
 
     /** The attributor.
      */
@@ -310,7 +310,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         if (context.get(JavaFileManager.class) == null)
             JavacFileManager.preRegister(context);
 
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         log = Log.instance(context);
         diagFactory = JCDiagnostic.Factory.instance(context);
         reader = ClassReader.instance(context);
@@ -1411,7 +1411,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         close(true);
     }
 
-    private void close(boolean disposeNames) {
+    public void close(boolean disposeNames) {
         rootClasses = null;
         reader = null;
         make = null;

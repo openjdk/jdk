@@ -36,7 +36,7 @@ import java.util.Locale;
 
 public class EnclosingCandidates {
 
-    Name.Table names = Name.Table.instance(new Context());
+    Names names = Names.instance(new Context());
 
     void test(String name, String... expected) {
         List<Name> result = enclosingCandidates(names.fromString(name));

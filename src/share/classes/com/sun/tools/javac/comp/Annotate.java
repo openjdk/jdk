@@ -55,7 +55,7 @@ public class Annotate {
     final TreeMaker make;
     final Log log;
     final Symtab syms;
-    final Name.Table names;
+    final Names names;
     final Resolve rs;
     final Types types;
     final ConstFold cfolder;
@@ -67,7 +67,7 @@ public class Annotate {
         make = TreeMaker.instance(context);
         log = Log.instance(context);
         syms = Symtab.instance(context);
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         rs = Resolve.instance(context);
         types = Types.instance(context);
         cfolder = ConstFold.instance(context);

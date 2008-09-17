@@ -145,7 +145,7 @@ public class Scope {
         assert shared == 0;
         if (table != next.table) return next;
         while (elems != null) {
-            int hash = elems.sym.name.index & hashMask;
+            int hash = elems.sym.name.hashCode() & hashMask;
             Entry e = table[hash];
             assert e == elems : elems.sym;
             table[hash] = elems.shadowed;
@@ -180,7 +180,7 @@ public class Scope {
     private void copy(Entry e) {
         if (e.sym != null) {
             copy(e.shadowed);
-            int hash = e.sym.name.index & hashMask;
+            int hash = e.sym.name.hashCode() & hashMask;
             e.shadowed = table[hash];
             table[hash] = e;
         }
@@ -206,7 +206,7 @@ public class Scope {
         assert shared == 0;
         // Temporarily disabled (bug 6460352):
         // if (nelems * 3 >= hashMask * 2) dble();
-        int hash = sym.name.index & hashMask;
+        int hash = sym.name.hashCode() & hashMask;
         Entry e = makeEntry(sym, table[hash], elems, s, origin);
         table[hash] = e;
         elems = e;
@@ -227,9 +227,9 @@ public class Scope {
         if (e.scope == null) return;
 
         // remove e from table and shadowed list;
-        Entry te = table[sym.name.index & hashMask];
+        Entry te = table[sym.name.hashCode() & hashMask];
         if (te == e)
-            table[sym.name.index & hashMask] = e.shadowed;
+            table[sym.name.hashCode() & hashMask] = e.shadowed;
         else while (true) {
             if (te.shadowed == e) {
                 te.shadowed = e.shadowed;
@@ -279,7 +279,7 @@ public class Scope {
      *  for regular entries.
      */
     public Entry lookup(Name name) {
-        Entry e = table[name.index & hashMask];
+        Entry e = table[name.hashCode() & hashMask];
         while (e.scope != null && e.sym.name != name)
             e = e.shadowed;
         return e;
@@ -400,7 +400,7 @@ public class Scope {
         }
 
         public Entry lookup(Name name) {
-            Entry e = table[name.index & hashMask];
+            Entry e = table[name.hashCode() & hashMask];
             while (e.scope != null &&
                    (e.sym.name != name ||
                     /* Since an inner class will show up in package and

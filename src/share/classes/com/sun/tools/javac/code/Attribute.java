@@ -166,7 +166,7 @@ public abstract class Attribute implements AnnotationValue {
                     first = false;
 
                     Name name = value.fst.name;
-                    if (len > 1 || name != name.table.value) {
+                    if (len > 1 || name != name.table.names.value) {
                         buf.append(name);
                         buf.append('=');
                     }

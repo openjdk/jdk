@@ -68,7 +68,7 @@ public class Attr extends JCTree.Visitor {
     protected static final Context.Key<Attr> attrKey =
         new Context.Key<Attr>();
 
-    final Name.Table names;
+    final Names names;
     final Log log;
     final Symtab syms;
     final Resolve rs;
@@ -92,7 +92,7 @@ public class Attr extends JCTree.Visitor {
     protected Attr(Context context) {
         context.put(attrKey, this);
 
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         log = Log.instance(context);
         syms = Symtab.instance(context);
         rs = Resolve.instance(context);

@@ -52,16 +52,16 @@ public class Code {
     public enum StackMapFormat {
         NONE,
         CLDC {
-            Name getAttributeName(Name.Table names) {
+            Name getAttributeName(Names names) {
                 return names.StackMap;
             }
         },
         JSR202 {
-            Name getAttributeName(Name.Table names) {
+            Name getAttributeName(Names names) {
                 return names.StackMapTable;
             }
         };
-        Name getAttributeName(Name.Table names) {
+        Name getAttributeName(Names names) {
             return names.empty;
         }
     }
