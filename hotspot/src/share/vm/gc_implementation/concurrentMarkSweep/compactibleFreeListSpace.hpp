@@ -502,7 +502,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
 
   void blk_iterate(BlkClosure* cl);
   void blk_iterate_careful(BlkClosureCareful* cl);
-  HeapWord* block_start(const void* p) const;
+  HeapWord* block_start_const(const void* p) const;
   HeapWord* block_start_careful(const void* p) const;
   size_t block_size(const HeapWord* p) const;
   size_t block_size_no_stall(HeapWord* p, const CMSCollector* c) const;

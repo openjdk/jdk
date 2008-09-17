@@ -191,8 +191,10 @@ void GenMarkSweep::allocate_stacks() {
 
 void GenMarkSweep::deallocate_stacks() {
 
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  gch->release_scratch();
+  if (!UseG1GC) {
+    GenCollectedHeap* gch = GenCollectedHeap::heap();
+    gch->release_scratch();
+  }
 
   if (_preserved_oop_stack) {
     delete _preserved_mark_stack;

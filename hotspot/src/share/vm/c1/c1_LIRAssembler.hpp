@@ -24,11 +24,13 @@
 
 class Compilation;
 class ScopeValue;
+class BarrierSet;
 
 class LIR_Assembler: public CompilationResourceObj {
  private:
   C1_MacroAssembler* _masm;
   CodeStubList*      _slow_case_stubs;
+  BarrierSet*        _bs;
 
   Compilation*       _compilation;
   FrameMap*          _frame_map;
