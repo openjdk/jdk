@@ -35,6 +35,7 @@ import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Names;
 
 /**
  * The serialized form is the specification of a class' serialization
@@ -149,7 +150,7 @@ class SerializedForm {
      * name SERIALIZABLE_FIELDS.
      */
     private VarSymbol getDefinedSerializableFields(ClassSymbol def) {
-        Name.Table names = def.name.table;
+        Names names = def.name.table.names;
 
         /* SERIALIZABLE_FIELDS can be private,
          * so must lookup by ClassSymbol, not by ClassDocImpl.
@@ -202,7 +203,7 @@ class SerializedForm {
      * @param visibility the visibility flag for the given method.
      */
     private void addMethodIfExist(DocEnv env, ClassSymbol def, String methodName) {
-        Name.Table names = def.name.table;
+        Names names = def.name.table.names;
 
         for (Scope.Entry e = def.members().lookup(names.fromString(methodName)); e.scope != null; e = e.next()) {
             if (e.sym.kind == Kinds.MTH) {
@@ -228,7 +229,7 @@ class SerializedForm {
     private void mapSerialFieldTagImplsToFieldDocImpls(FieldDocImpl spfDoc,
                                                        DocEnv env,
                                                        ClassSymbol def) {
-        Name.Table names = def.name.table;
+        Names names = def.name.table.names;
 
         SerialFieldTag[] sfTag = spfDoc.serialFieldTags();
         for (int i = 0; i < sfTag.length; i++) {

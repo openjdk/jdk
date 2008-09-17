@@ -33,13 +33,11 @@ import com.sun.javadoc.*;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.ClassType;
-import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Position;
 
 
@@ -83,7 +81,7 @@ public class DocEnv {
     JavadocEnter enter;
 
     /** The name table. */
-    Name.Table names;
+    Names names;
 
     /** The encoding name. */
     private String encoding;
@@ -131,7 +129,7 @@ public class DocEnv {
         reader = JavadocClassReader.instance0(context);
         enter = JavadocEnter.instance0(context);
         attr = Attr.instance(context);
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         externalizableSym = reader.enterClass(names.fromString("java.io.Externalizable"));
         chk = Check.instance(context);
         types = Types.instance(context);

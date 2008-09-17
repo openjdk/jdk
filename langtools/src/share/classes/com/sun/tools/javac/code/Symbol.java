@@ -146,14 +146,14 @@ public abstract class Symbol implements Element {
      * the default package; otherwise, the owner symbol is returned
      */
     public Symbol location() {
-        if (owner.name == null || (owner.name.len == 0 && owner.kind != PCK)) {
+        if (owner.name == null || (owner.name.isEmpty() && owner.kind != PCK)) {
             return null;
         }
         return owner;
     }
 
     public Symbol location(Type site, Types types) {
-        if (owner.name == null || owner.name.len == 0) {
+        if (owner.name == null || owner.name.isEmpty()) {
             return location();
         }
         if (owner.type.tag == CLASS) {
@@ -177,7 +177,7 @@ public abstract class Symbol implements Element {
      */
     public Type externalType(Types types) {
         Type t = erasure(types);
-        if (name == name.table.init && owner.hasOuterInstance()) {
+        if (name == name.table.names.init && owner.hasOuterInstance()) {
             Type outerThisType = types.erasure(owner.type.getEnclosingType());
             return new MethodType(t.getParameterTypes().prepend(outerThisType),
                                   t.getReturnType(),
@@ -212,7 +212,7 @@ public abstract class Symbol implements Element {
     /** Is this symbol a constructor?
      */
     public boolean isConstructor() {
-        return name == name.table.init;
+        return name == name.table.names.init;
     }
 
     /** The fully qualified name of this symbol.
@@ -501,7 +501,7 @@ public abstract class Symbol implements Element {
                  || (owner.kind == TYP && owner.type.tag == TYPEVAR)
                  )) return name;
             Name prefix = owner.getQualifiedName();
-            if (prefix == null || prefix == prefix.table.empty)
+            if (prefix == null || prefix == prefix.table.names.empty)
                 return name;
             else return prefix.append('.', name);
         }
@@ -516,7 +516,7 @@ public abstract class Symbol implements Element {
                 ) return name;
             char sep = owner.kind == TYP ? '$' : '.';
             Name prefix = owner.flatName();
-            if (prefix == null || prefix == prefix.table.empty)
+            if (prefix == null || prefix == prefix.table.names.empty)
                 return name;
             else return prefix.append(sep, name);
         }
@@ -737,7 +737,7 @@ public abstract class Symbol implements Element {
         }
 
         public String className() {
-            if (name.len == 0)
+            if (name.isEmpty())
                 return
                     Log.getLocalizedString("anonymous.class", flatname);
             else
@@ -1011,7 +1011,7 @@ public abstract class Symbol implements Element {
             if ((flags() & BLOCK) != 0) {
                 return owner.name.toString();
             } else {
-                String s = (name == name.table.init)
+                String s = (name == name.table.names.init)
                     ? owner.name.toString()
                     : name.toString();
                 if (type != null) {
@@ -1208,9 +1208,9 @@ public abstract class Symbol implements Element {
         }
 
         public ElementKind getKind() {
-            if (name == name.table.init)
+            if (name == name.table.names.init)
                 return ElementKind.CONSTRUCTOR;
-            else if (name == name.table.clinit)
+            else if (name == name.table.names.clinit)
                 return ElementKind.STATIC_INIT;
             else
                 return ElementKind.METHOD;

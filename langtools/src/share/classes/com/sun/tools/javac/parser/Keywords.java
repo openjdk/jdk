@@ -28,6 +28,7 @@ package com.sun.tools.javac.parser;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Names;
 
 import static com.sun.tools.javac.parser.Token.*;
 
@@ -51,12 +52,12 @@ public class Keywords {
     }
 
     private final Log log;
-    private final Name.Table names;
+    private final Names names;
 
     protected Keywords(Context context) {
         context.put(keywordsKey, this);
         log = Log.instance(context);
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
 
         for (Token t : Token.values()) {
             if (t.name != null)
@@ -69,13 +70,13 @@ public class Keywords {
         for (int i = 0; i <= maxKey; i++) key[i] = IDENTIFIER;
         for (Token t : Token.values()) {
             if (t.name != null)
-                key[tokenName[t.ordinal()].index] = t;
+                key[tokenName[t.ordinal()].getIndex()] = t;
         }
     }
 
 
     public Token key(Name name) {
-        return (name.index > maxKey) ? IDENTIFIER : key[name.index];
+        return (name.getIndex() > maxKey) ? IDENTIFIER : key[name.getIndex()];
     }
 
     /**
@@ -94,6 +95,6 @@ public class Keywords {
     private void enterKeyword(String s, Token token) {
         Name n = names.fromString(s);
         tokenName[token.ordinal()] = n;
-        if (n.index > maxKey) maxKey = n.index;
+        if (n.getIndex() > maxKey) maxKey = n.getIndex();
     }
 }

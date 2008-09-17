@@ -36,6 +36,7 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Names;
 
 /**
  * Implementation of <code>TypeVariable</code>, which
@@ -66,7 +67,7 @@ public class TypeVariableImpl extends AbstractTypeImpl implements TypeVariable {
         if ((osym.kind & Kinds.TYP) != 0) {
             return env.getClassDoc((ClassSymbol)osym);
         }
-        Name.Table names = osym.name.table;
+        Names names = osym.name.table.names;
         if (osym.name == names.init) {
             return env.getConstructorDoc((MethodSymbol)osym);
         } else {
@@ -113,7 +114,7 @@ public class TypeVariableImpl extends AbstractTypeImpl implements TypeVariable {
      */
     private static List<Type> getBounds(TypeVar v, DocEnv env) {
         Name boundname = v.getUpperBound().tsym.getQualifiedName();
-        if (boundname == boundname.table.java_lang_Object) {
+        if (boundname == boundname.table.names.java_lang_Object) {
             return List.nil();
         } else {
             return env.types.getBounds(v);

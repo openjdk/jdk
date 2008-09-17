@@ -181,7 +181,7 @@ public class AnnotationProxyMaker {
         public void visitArray(Attribute.Array a) {
             Name elemName = ((ArrayType) a.type).elemtype.tsym.name;
 
-            if (elemName == elemName.table.java_lang_Class) {   // Class[]
+            if (elemName == elemName.table.names.java_lang_Class) {   // Class[]
                 // Construct a proxy for a MirroredTypesException
                 List<TypeMirror> elems = List.nil();
                 for (Attribute value : a.values) {

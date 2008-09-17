@@ -177,7 +177,7 @@ public class Flow extends TreeScanner {
     protected static final Context.Key<Flow> flowKey =
         new Context.Key<Flow>();
 
-    private final Name.Table names;
+    private final Names names;
     private final Log log;
     private final Symtab syms;
     private final Types types;
@@ -195,7 +195,7 @@ public class Flow extends TreeScanner {
     protected Flow(Context context) {
         context.put(flowKey, this);
 
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         log = Log.instance(context);
         syms = Symtab.instance(context);
         types = Types.instance(context);

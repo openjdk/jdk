@@ -599,14 +599,14 @@ public class Type implements PrimitiveType {
         }
 //where
             private String className(Symbol sym, boolean longform) {
-                if (sym.name.len == 0 && (sym.flags() & COMPOUND) != 0) {
+                if (sym.name.isEmpty() && (sym.flags() & COMPOUND) != 0) {
                     StringBuffer s = new StringBuffer(supertype_field.toString());
                     for (List<Type> is=interfaces_field; is.nonEmpty(); is = is.tail) {
                         s.append("&");
                         s.append(is.head.toString());
                     }
                     return s.toString();
-                } else if (sym.name.len == 0) {
+                } else if (sym.name.isEmpty()) {
                     String s;
                     ClassType norm = (ClassType) tsym.type;
                     if (norm == null) {

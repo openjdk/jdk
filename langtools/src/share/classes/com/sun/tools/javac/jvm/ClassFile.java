@@ -108,7 +108,7 @@ public class ClassFile {
      *  converting '/' to '.'.
      */
     public static byte[] internalize(Name name) {
-        return internalize(name.table.names, name.index, name.len);
+        return internalize(name.getByteArray(), name.getByteOffset(), name.getByteLength());
     }
 
     /** Return external representation of buf[offset..offset+len-1],
@@ -128,7 +128,7 @@ public class ClassFile {
      *  converting '/' to '.'.
      */
     public static byte[] externalize(Name name) {
-        return externalize(name.table.names, name.index, name.len);
+        return externalize(name.getByteArray(), name.getByteOffset(), name.getByteLength());
     }
 
 /************************************************************************
