@@ -28,17 +28,16 @@ package com.sun.jmx.mbeanserver;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerDelegate;
 
-import com.sun.jmx.interceptor.MBeanServerInterceptor;
 
 /**
- * Extends the MBeanServer and MBeanServerInterceptor interface to
+ * Extends the MBeanServer interface to
  * provide methods for getting the MetaData and MBeanServerInstantiator
  * objects associated with an MBeanServer.
  *
  * @since 1.5
  */
 public interface SunJmxMBeanServer
-    extends MBeanServerInterceptor, MBeanServer {
+    extends MBeanServer {
 
     /**
      * Return the MBeanInstantiator associated to this MBeanServer.
@@ -68,7 +67,7 @@ public interface SunJmxMBeanServer
      *            are not enabled on this object.
      * @see #interceptorsEnabled
      **/
-    public MBeanServerInterceptor getMBeanServerInterceptor();
+    public MBeanServer getMBeanServerInterceptor();
 
     /**
      * Set the MBeanServerInterceptor.
@@ -77,7 +76,7 @@ public interface SunJmxMBeanServer
      *            are not enabled on this object.
      * @see #interceptorsEnabled
      **/
-    public void setMBeanServerInterceptor(MBeanServerInterceptor interceptor);
+    public void setMBeanServerInterceptor(MBeanServer interceptor);
 
     /**
      * <p>Return the MBeanServerDelegate representing the MBeanServer.
