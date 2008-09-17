@@ -467,6 +467,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
     }
   }
   set_print_assembly(print_opto_assembly);
+  set_parsed_irreducible_loop(false);
 #endif
 
   if (ProfileTraps) {
@@ -550,6 +551,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       rethrow_exceptions(kit.transfer_exceptions_into_jvms());
     }
 
+    print_method("Before RemoveUseless");
+
     // Remove clutter produced by parsing.
     if (!failing()) {
       ResourceMark rm;
@@ -614,8 +617,6 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   Optimize();
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
-
-  print_method("Before Matching");
 
 #ifndef PRODUCT
   if (PrintIdeal) {
@@ -720,6 +721,7 @@ Compile::Compile( ciEnv* ci_env,
   TraceTime t1(NULL, &_t_totalCompilation, TimeCompiler, false);
   TraceTime t2(NULL, &_t_stubCompilation, TimeCompiler, false);
   set_print_assembly(PrintFrameConverterAssembly);
+  set_parsed_irreducible_loop(false);
 #endif
   CompileWrapper cw(this);
   Init(/*AliasLevel=*/ 0);

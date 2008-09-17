@@ -1665,7 +1665,11 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             // compress paths and change unreachable cycles to TOP
             // If not, we can update the input infinitely along a MergeMem cycle
             // Equivalent code is in MemNode::Ideal_common
-            Node         *m  = phase->transform(n);
+            Node *m  = phase->transform(n);
+            if (outcnt() == 0) {  // Above transform() may kill us!
+              progress = phase->C->top();
+              break;
+            }
             // If tranformed to a MergeMem, get the desired slice
             // Otherwise the returned node represents memory for every slice
             Node *new_mem = (m->is_MergeMem()) ?

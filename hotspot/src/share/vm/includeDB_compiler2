@@ -582,6 +582,7 @@ locknode.hpp                            subnode.hpp
 loopTransform.cpp                       addnode.hpp
 loopTransform.cpp                       allocation.inline.hpp
 loopTransform.cpp                       connode.hpp
+loopTransform.cpp                       compileLog.hpp
 loopTransform.cpp                       divnode.hpp
 loopTransform.cpp                       loopnode.hpp
 loopTransform.cpp                       mulnode.hpp
@@ -597,6 +598,7 @@ loopnode.cpp                            addnode.hpp
 loopnode.cpp                            allocation.inline.hpp
 loopnode.cpp                            callnode.hpp
 loopnode.cpp                            ciMethodData.hpp
+loopnode.cpp                            compileLog.hpp
 loopnode.cpp                            connode.hpp
 loopnode.cpp                            divnode.hpp
 loopnode.cpp                            loopnode.hpp

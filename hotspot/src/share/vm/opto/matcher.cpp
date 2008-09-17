@@ -273,7 +273,7 @@ void Matcher::match( ) {
   find_shared( C->root() );
   find_shared( C->top() );
 
-  C->print_method("Before Matching", 2);
+  C->print_method("Before Matching");
 
   // Swap out to old-space; emptying new-space
   Arena *old = C->node_arena()->move_contents(C->old_arena());
