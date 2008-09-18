@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,10 @@ import java.util.HashSet;
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertPathValidatorException;
 import java.security.cert.X509Certificate;
 import java.security.cert.PKIXCertPathChecker;
-import java.security.cert.CertPathValidatorException;
+import java.security.cert.PKIXReason;
 import sun.security.util.Debug;
 import sun.security.x509.PKIXExtensions;
 import sun.security.x509.NameConstraintsExtension;
@@ -147,7 +148,8 @@ class ConstraintsChecker extends PKIXCertPathChecker {
 
             try {
                 if (!prevNC.verify(currCert)) {
-                    throw new CertPathValidatorException(msg + " check failed");
+                    throw new CertPathValidatorException(msg + " check failed",
+                        null, null, -1, PKIXReason.INVALID_NAME);
                 }
             } catch (IOException ioe) {
                 throw new CertPathValidatorException(ioe);
@@ -228,8 +230,9 @@ class ConstraintsChecker extends PKIXCertPathChecker {
         if (i < certPathLength) {
             int pathLenConstraint = currCert.getBasicConstraints();
             if (pathLenConstraint == -1) {
-                throw new CertPathValidatorException(msg + " check failed: "
-                    + "this is not a CA certificate");
+                throw new CertPathValidatorException
+                    (msg + " check failed: this is not a CA certificate", null,
+                     null, -1, PKIXReason.NOT_CA_CERT);
             }
 
             if (!X509CertImpl.isSelfIssued(currCert)) {
@@ -237,7 +240,8 @@ class ConstraintsChecker extends PKIXCertPathChecker {
                    throw new CertPathValidatorException
                         (msg + " check failed: pathLenConstraint violated - "
                          + "this cert must be the last cert in the "
-                         + "certification path");
+                         + "certification path", null, null, -1,
+                         PKIXReason.PATH_TOO_LONG);
                 }
                 maxPathLength--;
             }
