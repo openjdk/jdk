@@ -157,6 +157,7 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node *a12 = add1->in(2);
     const Type *t12 = phase->type( a12 );
     if( t12->singleton() && t12 != Type::TOP && (add1 != add1->in(1)) ) {
+      assert(add1->in(1) != this, "dead loop in AddNode::Ideal");
       add2 = add1->clone();
       add2->set_req(2, in(2));
       add2 = phase->transform(add2);
@@ -173,6 +174,7 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node *a22 = add2->in(2);
     const Type *t22 = phase->type( a22 );
     if( t22->singleton() && t22 != Type::TOP && (add2 != add2->in(1)) ) {
+      assert(add2->in(1) != this, "dead loop in AddNode::Ideal");
       Node *addx = add2->clone();
       addx->set_req(1, in(1));
       addx->set_req(2, add2->in(1));
