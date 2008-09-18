@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,22 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
     case Location::lng:
       // Long   value in an aligned adjacent pair
       return new StackValue(*(intptr_t*)value_addr);
+    case Location::narrowoop: {
+      union { intptr_t p; narrowOop noop;} value;
+      value.p = (intptr_t) CONST64(0xDEADDEAFDEADDEAF);
+      if (loc.is_register()) {
+        // The callee has no clue whether the register holds an int,
+        // long or is unused.  He always saves a long.  Here we know
+        // a long was saved, but we only want an int back.  Narrow the
+        // saved long to the int that the JVM wants.
+        value.noop =  (narrowOop) *(julong*) value_addr;
+      } else {
+        value.noop = *(narrowOop*) value_addr;
+      }
+      // Decode narrowoop and wrap a handle around the oop
+      Handle h(oopDesc::decode_heap_oop(value.noop));
+      return new StackValue(h);
+    }
 #endif
     case Location::oop: {
       Handle h(*(oop *)value_addr); // Wrap a handle around the oop

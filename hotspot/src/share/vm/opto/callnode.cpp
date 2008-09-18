@@ -334,6 +334,9 @@ static void format_helper( PhaseRegAlloc *regalloc, outputStream* st, Node *n, c
     case Type::InstPtr:
       st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,t->isa_oopptr()->const_oop());
       break;
+    case Type::NarrowOop:
+      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,t->make_ptr()->isa_oopptr()->const_oop());
+      break;
     case Type::RawPtr:
       st->print(" %s%d]=#Raw" INTPTR_FORMAT,msg,i,t->is_rawptr());
       break;
