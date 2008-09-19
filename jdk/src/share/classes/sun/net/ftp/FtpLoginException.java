@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-1995 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.io.*;
  * @author      Jonathan Payne
  */
 public class FtpLoginException extends FtpProtocolException {
+    private static final long serialVersionUID = 2218162403237941536L;
+
     FtpLoginException(String s) {
         super(s);
     }
