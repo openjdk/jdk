@@ -220,7 +220,7 @@ public class ManagementFactoryHelper {
      */
     private static void addMBean(MBeanServer mbs, Object mbean, String mbeanName) {
         try {
-            final ObjectName objName = Util.newObjectName(mbeanName);
+            final ObjectName objName = ObjectName.valueOf(mbeanName);
 
             // inner class requires these fields to be final
             final MBeanServer mbs0 = mbs;
@@ -280,7 +280,7 @@ public class ManagementFactoryHelper {
 
     private static void unregisterMBean(MBeanServer mbs, String mbeanName) {
         try {
-            final ObjectName objName = Util.newObjectName(mbeanName);
+            final ObjectName objName = ObjectName.valueOf(mbeanName);
 
             // inner class requires these fields to be final
             final MBeanServer mbs0 = mbs;

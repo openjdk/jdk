@@ -81,7 +81,7 @@ public class DiagnosticSource {
      * for the current source file.  Zero is returned if no column exists
      * for the given position.
      */
-    public int getColumnNumber(int pos) {
+    public int getColumnNumber(int pos, boolean expandTabs) {
         try {
             if (findLine(pos)) {
                 int column = 0;
@@ -89,7 +89,7 @@ public class DiagnosticSource {
                     if (bp >= bufLen) {
                         return 0;
                     }
-                    if (buf[bp] == '\t') {
+                    if (buf[bp] == '\t' && expandTabs) {
                         column = (column / TabInc * TabInc) + TabInc;
                     } else {
                         column++;

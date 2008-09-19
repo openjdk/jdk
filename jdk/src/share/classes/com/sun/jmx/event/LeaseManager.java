@@ -27,7 +27,6 @@ package com.sun.jmx.event;
 
 import com.sun.jmx.remote.util.ClassLogger;
 import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -115,6 +114,7 @@ public class LeaseManager {
                 scheduled = null;
             }
             callback.run();
+            executor.shutdown();
         }
     }
 
@@ -131,6 +131,13 @@ public class LeaseManager {
         logger.trace("stop", "canceling lease");
         scheduled.cancel(false);
         scheduled = null;
+        try {
+            executor.shutdown();
+        } catch (SecurityException e) {
+            // OK: caller doesn't have RuntimePermission("modifyThread")
+            // which is unlikely in reality but triggers a test failure otherwise
+            logger.trace("stop", "exception from executor.shutdown", e);
+        }
     }
 
     private final Runnable callback;
@@ -138,7 +145,7 @@ public class LeaseManager {
 
     private final ScheduledExecutorService executor
             = Executors.newScheduledThreadPool(1,
-            new DaemonThreadFactory("LeaseManager"));
+            new DaemonThreadFactory("JMX LeaseManager %d"));
 
     private static final ClassLogger logger =
             new ClassLogger("javax.management.event", "LeaseManager");

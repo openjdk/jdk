@@ -73,9 +73,10 @@ public interface DiagnosticFormatter<D extends Diagnostic<?>> {
      *
      * @param diag diagnostic to be formatted
      * @param l locale object to be used for i18n
+     * @param fullname whether the source fullname should be printed
      * @return string representation of the diagnostic source
      */
-    public String formatSource(D diag, Locale l);
+    public String formatSource(D diag, boolean fullname, Locale l);
 
     /**
      * Controls the way in which a diagnostic position is displayed.

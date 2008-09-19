@@ -28,16 +28,16 @@
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
-address StubRoutines::amd64::_get_previous_fp_entry = NULL;
+address StubRoutines::x86::_get_previous_fp_entry = NULL;
 
-address StubRoutines::amd64::_verify_mxcsr_entry = NULL;
+address StubRoutines::x86::_verify_mxcsr_entry = NULL;
 
-address StubRoutines::amd64::_f2i_fixup = NULL;
-address StubRoutines::amd64::_f2l_fixup = NULL;
-address StubRoutines::amd64::_d2i_fixup = NULL;
-address StubRoutines::amd64::_d2l_fixup = NULL;
-address StubRoutines::amd64::_float_sign_mask = NULL;
-address StubRoutines::amd64::_float_sign_flip = NULL;
-address StubRoutines::amd64::_double_sign_mask = NULL;
-address StubRoutines::amd64::_double_sign_flip = NULL;
-address StubRoutines::amd64::_mxcsr_std = NULL;
+address StubRoutines::x86::_f2i_fixup = NULL;
+address StubRoutines::x86::_f2l_fixup = NULL;
+address StubRoutines::x86::_d2i_fixup = NULL;
+address StubRoutines::x86::_d2l_fixup = NULL;
+address StubRoutines::x86::_float_sign_mask = NULL;
+address StubRoutines::x86::_float_sign_flip = NULL;
+address StubRoutines::x86::_double_sign_mask = NULL;
+address StubRoutines::x86::_double_sign_flip = NULL;
+address StubRoutines::x86::_mxcsr_std = NULL;
