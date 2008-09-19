@@ -185,4 +185,8 @@ class PSOldGen : public CHeapObj {
 
   // Printing support
   virtual const char* name() const { return _name; }
+
+  // Debugging support
+  // Save the tops of all spaces for later use during mangling.
+  void record_spaces_top() PRODUCT_RETURN;
 };

@@ -1848,6 +1848,19 @@ void ArchDesc::declareClasses(FILE *fp) {
       fprintf(fp,"  const Type            *bottom_type() const { const Type *t = in(oper_input_base()+%d)->bottom_type(); return (req() <= oper_input_base()+%d) ? t : t->meet(in(oper_input_base()+%d)->bottom_type()); } // CMoveP\n",
         offset, offset+1, offset+1);
     }
+    else if( instr->_matrule && instr->_matrule->_rChild && !strcmp(instr->_matrule->_rChild->_opType,"CMoveN") ) {
+      int offset = 1;
+      // Special special hack to see if the Cmp? has been incorporated in the conditional move
+      MatchNode *rl = instr->_matrule->_rChild->_lChild;
+      if( rl && !strcmp(rl->_opType, "Binary") ) {
+          MatchNode *rlr = rl->_rChild;
+          if (rlr && strncmp(rlr->_opType, "Cmp", 3) == 0)
+            offset = 2;
+      }
+      // Special hack for ideal CMoveN; ideal type depends on inputs
+      fprintf(fp,"  const Type            *bottom_type() const { const Type *t = in(oper_input_base()+%d)->bottom_type(); return (req() <= oper_input_base()+%d) ? t : t->meet(in(oper_input_base()+%d)->bottom_type()); } // CMoveN\n",
+        offset, offset+1, offset+1);
+    }
     else if( instr->needs_base_oop_edge(_globalNames) ) {
       // Special hack for ideal AddP.  Bottom type is an oop IFF it has a
       // legal base-pointer input.  Otherwise it is NOT an oop.

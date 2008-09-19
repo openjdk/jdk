@@ -22,16 +22,17 @@
 //
 //
 
-asParNewGeneration.hpp			adaptiveSizePolicy.hpp
-asParNewGeneration.hpp			parNewGeneration.hpp
+asParNewGeneration.hpp                  adaptiveSizePolicy.hpp
+asParNewGeneration.hpp                  parNewGeneration.hpp
 
-asParNewGeneration.cpp			asParNewGeneration.hpp
-asParNewGeneration.cpp			cmsAdaptiveSizePolicy.hpp
+asParNewGeneration.cpp                  asParNewGeneration.hpp
+asParNewGeneration.cpp                  cmsAdaptiveSizePolicy.hpp
 asParNewGeneration.cpp                  cmsGCAdaptivePolicyCounters.hpp
-asParNewGeneration.cpp			defNewGeneration.inline.hpp
-asParNewGeneration.cpp			oop.pcgc.inline.hpp
-asParNewGeneration.cpp			parNewGeneration.hpp
+asParNewGeneration.cpp                  defNewGeneration.inline.hpp
+asParNewGeneration.cpp                  oop.pcgc.inline.hpp
+asParNewGeneration.cpp                  parNewGeneration.hpp
 asParNewGeneration.cpp                  referencePolicy.hpp
+asParNewGeneration.cpp                  spaceDecorator.hpp
 
 parCardTableModRefBS.cpp                allocation.inline.hpp
 parCardTableModRefBS.cpp                cardTableModRefBS.hpp
@@ -75,6 +76,7 @@ parNewGeneration.cpp                    referencePolicy.hpp
 parNewGeneration.cpp                    resourceArea.hpp
 parNewGeneration.cpp                    sharedHeap.hpp
 parNewGeneration.cpp                    space.hpp
+parNewGeneration.cpp                    spaceDecorator.hpp
 parNewGeneration.cpp                    workgroup.hpp
 
 parNewGeneration.hpp                    defNewGeneration.hpp

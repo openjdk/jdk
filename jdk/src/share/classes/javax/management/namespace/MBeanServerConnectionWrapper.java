@@ -28,7 +28,6 @@ package javax.management.namespace;
 import com.sun.jmx.mbeanserver.Util;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.security.AccessController;
 import java.util.Set;
 
 import javax.management.Attribute;

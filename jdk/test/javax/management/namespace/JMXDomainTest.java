@@ -23,6 +23,7 @@
 /*
  *
  * @test JMXDomainTest.java
+ * @bug 5072476
  * @summary Basic test for JMXDomain.
  * @author Daniel Fuchs
  * @run clean JMXDomainTest Wombat WombatMBean

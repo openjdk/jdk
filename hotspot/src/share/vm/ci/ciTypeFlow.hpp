@@ -127,7 +127,7 @@ public:
 
   // Used as a combined index for locals and temps
   enum Cell {
-    Cell_0
+    Cell_0, Cell_max = INT_MAX
   };
 
   // A StateVector summarizes the type information at some
