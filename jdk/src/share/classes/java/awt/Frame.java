@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -590,9 +590,7 @@ public class Frame extends Window implements MenuContainer {
                 if (peer != null) {
                     mbManagement = true;
                     menuBar.addNotify();
-                    if (valid) {
-                        invalidate();
-                    }
+                    invalidateIfValid();
                     peer.setMenuBar(menuBar);
                 }
             }
@@ -633,8 +631,8 @@ public class Frame extends Window implements MenuContainer {
         // the insets of the Frame. If we could, we'd call invalidate()
         // from the peer, but we need to guarantee that we're not holding
         // the Frame lock when we call invalidate().
-        if (testvalid && valid) {
-            invalidate();
+        if (testvalid) {
+            invalidateIfValid();
         }
         firePropertyChange("resizable", oldResizable, resizable);
     }
@@ -907,9 +905,7 @@ public class Frame extends Window implements MenuContainer {
                 FramePeer peer = (FramePeer)this.peer;
                 if (peer != null) {
                     mbManagement = true;
-                    if (valid) {
-                        invalidate();
-                    }
+                    invalidateIfValid();
                     peer.setMenuBar(null);
                     m.removeNotify();
                 }

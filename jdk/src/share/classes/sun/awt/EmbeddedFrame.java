@@ -257,21 +257,27 @@ public abstract class EmbeddedFrame extends Frame
         Set toTest;
         Component currentFocused = e.getComponent();
 
-        Component last = getFocusTraversalPolicy().getLastComponent(this);
         toTest = getFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS);
-        if (toTest.contains(stroke) && (currentFocused == last || last == null)) {
-            if (traverseOut(FORWARD)) {
-                e.consume();
-                return true;
+        if (toTest.contains(stroke)) {
+            // 6581899: performance improvement for SortingFocusTraversalPolicy
+            Component last = getFocusTraversalPolicy().getLastComponent(this);
+            if (currentFocused == last || last == null) {
+                if (traverseOut(FORWARD)) {
+                    e.consume();
+                    return true;
+                }
             }
         }
 
-        Component first = getFocusTraversalPolicy().getFirstComponent(this);
         toTest = getFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS);
-        if (toTest.contains(stroke) && (currentFocused == first || first == null)) {
-            if (traverseOut(BACKWARD)) {
-                e.consume();
-                return true;
+        if (toTest.contains(stroke)) {
+            // 6581899: performance improvement for SortingFocusTraversalPolicy
+            Component first = getFocusTraversalPolicy().getFirstComponent(this);
+            if (currentFocused == first || first == null) {
+                if (traverseOut(BACKWARD)) {
+                    e.consume();
+                    return true;
+                }
             }
         }
         return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,104 +23,84 @@
 
 /*
   @test
-  @bug 6479820
-  @summary verify that after Alt+Space resizing/moving the correct event gets generated.
-  @author Andrei Dmitriev: area=awt.event
-  @run main/manual SpuriousExitEnter_2
+  @bug 6682046
+  @summary Mixing code does not always recalculate shapes correctly when resizing components
+  @author anthony.petrov@...: area=awt.mixing
+  @library ../regtesthelpers
+  @build Util
+  @run main Validating
 */
 
 /**
- * SpuriousExitEnter_2.java
- * There is a JFrame with a JButton in it (Lightweight) and a Frame with a Button in it (Heavyweight).
- * Testcases diveded into two similar activities: first with JFrame and second with Frame.
+ * Validating.java
+ *
+ * summary:  Mixing code does not always recalculate shapes correctly when resizing components
  */
 
 import java.awt.*;
 import java.awt.event.*;
-import javax.swing.*;
+import test.java.awt.regtesthelpers.Util;
 
-public class SpuriousExitEnter_2 {
-    static JFrame frame = new JFrame("SpuriousExitEnter_2(LW)");
-    static JButton jbutton = new JButton("jbutton");
+public class Validating
+{
+    static volatile boolean clickPassed = false;
 
-    static Frame frame1 = new Frame("SpuriousExitEnter_2 (HW)");
-    static Button button1 = new Button("button");
+    private static void init()
+    {
+        //*** Create instructions for the user here ***
 
-    private static void init() {
         String[] instructions =
         {
-            "You see a plain JFrame with JButton in it and Frame with Button in it.",
-            " Following steps should be accomplished for both of them (for Frame and for JFrame).",
-            " If any of the following ",
-            " third steps fails, press Fail.",
-            " Let A area is the area inside Button.",
-            " Let B area is the area inside Frame but not inside Button.",
-            " Let C area is the area outside Frame.",
-            " Stage 1:",
-            " 1) Put the mouse pointer into A area.",
-            " 2) Press Alt+Space (or other sequence opening the system menu from the top-left corner) ",
-            " and resize the Frame so the pointer remains in A.",
-            " 3) Press Enter key. No event should be fired.",
-            " Stage 2:",
-            " Repeat Stage 1 with area B.",
-            " Stage 3:",
-            " Repeat Stage 1 with area C.",
-            " Stage 4:",
-            " 1) Put the mouse pointer into A area.",
-            " 2) Press Alt+Space and resize the Frame so the pointer becomes in B.",
-            " 3) Press Enter key. Exited event on Button and Entered event on Frame should be fired.",
-            " Stage 5:",
-            " 1) Put the mouse pointer into A area.",
-            " 2) Press Alt+Space and resize the Frame so the pointer becomes in C.",
-            " 3) Press Enter key. Exited event on Button should be fired.",
-            " Stage 6:",
-            " 1) Put the mouse pointer into B area.",
-            " 2) Press Alt+Space and resize the Frame so the pointer becomes in A.",
-            " 3) Press Enter key. Exited event on Frame and Entered event on Button should be fired.",
-            " Stage 7:",
-            " 1) Put the mouse pointer into B area.",
-            " 2) Press Alt+Space and resize the Frame so the pointer becomes in C.",
-            " 3) Press Enter key. Exited event on Frame should be fired.",
-            " Stage 8:",
-            " 1) Put the mouse pointer into C area.",
-            " 2) Press Alt+Space and resize the Frame so the pointer becomes in A.",
-            " 3) Press Enter key. Entered event on Button should be fired.",
-            " Stage 9:",
-            " 1) Put the mouse pointer into C area.",
-            " 2) Press Alt+Space and resize the Frame so the pointer becomes in B.",
-            " 3) Press Enter key. Entered event on Frame should be fired.",
-            " Stage 10:",
-            " Repeat Stages from 4 to 9 with using Move command rather then Resize. ",
-            " Note, that when the pointer jumps to the titlebar when you select \"Move window\", ",
-            " it is OK to fire Exited event. Then, if the pointer returns to component back, ",
-            " it should fire Entered event.",
+            "This is an AUTOMATIC test, simply wait until it is done.",
+            "The result (passed or failed) will be shown in the",
+            "message window below."
         };
-
         Sysout.createDialog( );
         Sysout.printInstructions( instructions );
-        Sysout.enableNumbering(true);
 
-        MouseAdapter enterExitAdapter = new MouseAdapter() {
-                public void mouseEntered(MouseEvent e){
-                    Sysout.println("Entered on " + e.getSource().getClass().getName());
-                }
-                public void mouseExited(MouseEvent e){
-                    Sysout.println("Exited on " + e.getSource().getClass().getName());
-                }
-            };
+        if (!Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.MAXIMIZED_BOTH)) {
+            System.out.println("The test environment does not support maximization. The test cannot be performed.");
+            pass();
+            return;
+        }
 
-        frame.addMouseListener(enterExitAdapter);
-        jbutton.addMouseListener(enterExitAdapter);
-        frame.setSize(600, 200);
-        frame.add(jbutton, BorderLayout.NORTH);
-        frame.setVisible(true);
+        // Create the frame with a button.
+        Frame f = new Frame();
+        Button b = new Button("ok");
+        b.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                clickPassed = true;
+            }
+        });
+        f.add(b);
+        // Make the frame maximized
+        f.setExtendedState(Frame.MAXIMIZED_BOTH);
+        f.pack();
+        f.setVisible(true);
 
-        frame1.addMouseListener(enterExitAdapter);
-        button1.addMouseListener(enterExitAdapter);
-        frame1.setSize(600, 200);
-        frame1.add(button1, BorderLayout.NORTH);
-        frame1.setVisible(true);
+        Robot robot = Util.createRobot();
+        robot.setAutoDelay(20);
+
+        Util.waitForIdle(robot);
+
+        // Now let's attempt to click in the middle of the button
+        // (i.e. in the middle of the window).
+        // If the button doesn't receive the click, it means that the test
+        // failed: the shape of the button was not enlarged.
+        Point heavyLoc = b.getLocationOnScreen();
+        robot.mouseMove(heavyLoc.x + b.getWidth() / 2, heavyLoc.y + b.getHeight() / 2);
+
+        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        Util.waitForIdle(robot);
+
+        if (clickPassed) {
+            pass();
+        } else {
+            fail("The button cannot be clicked.");
+        }
     }//End  init()
+
 
 
     /*****************************************************
@@ -132,7 +112,7 @@ public class SpuriousExitEnter_2 {
      * to read and understand someone else's test, as
      * well as insuring that all tests behave correctly
      * with the test harness.
-     * There is a section following this for test-defined
+     * There is a section following this for test-
      * classes
      ******************************************************/
     private static boolean theTestPassed = false;
@@ -143,10 +123,13 @@ public class SpuriousExitEnter_2 {
 
     private static int sleepTime = 300000;
 
+    // Not sure about what happens if multiple of this test are
+    //  instantiated in the same VM.  Being static (and using
+    //  static vars), it aint gonna work.  Not worrying about
+    //  it for now.
     public static void main( String args[] ) throws InterruptedException
     {
         mainThread = Thread.currentThread();
-
         try
         {
             init();
@@ -157,7 +140,7 @@ public class SpuriousExitEnter_2 {
             // interepret this return as a pass
             return;
         }
-        //At this point, neither test passed nor test failed has been
+        //At this point, neither test pass nor test fail has been
         // called -- either would have thrown an exception and ended the
         // test, so we know we have multiple threads.
 
@@ -171,10 +154,13 @@ public class SpuriousExitEnter_2 {
         }
         catch (InterruptedException e)
         {
+            //The test harness may have interrupted the test.  If so, rethrow the exception
+            // so that the harness gets it and deals with it.
             if( ! testGeneratedInterrupt ) throw e;
 
             //reset flag in case hit this code more than once for some reason (just safety)
             testGeneratedInterrupt = false;
+
             if ( theTestPassed == false )
             {
                 throw new RuntimeException( failureMessage );
@@ -201,13 +187,9 @@ public class SpuriousExitEnter_2 {
             theTestPassed = true;
             throw new TestPassedException();
         }
-        //pass was called from a different thread, so set the flag and interrupt
-        // the main thead.
         theTestPassed = true;
         testGeneratedInterrupt = true;
-        if (mainThread != null){
-            mainThread.interrupt();
-        }
+        mainThread.interrupt();
     }//pass()
 
     public static synchronized void fail()
@@ -232,12 +214,11 @@ public class SpuriousExitEnter_2 {
         mainThread.interrupt();
     }//fail()
 
-}// class SpuriousExitEnter_2
+}// class Validating
 
 //This exception is used to exit from any level of call nesting
 // when it's determined that the test has passed, and immediately
 // end the test.
-
 class TestPassedException extends RuntimeException
 {
 }
@@ -247,7 +228,8 @@ class TestPassedException extends RuntimeException
 
 //************ Begin classes defined for the test ****************
 
-// make listeners in a class defined here, and instantiate them in init()
+// if want to make listeners, here is the recommended place for them, then instantiate
+//  them in init()
 
 /* Example of a class which may be written as part of a test
 class NewClass implements anInterface
@@ -263,13 +245,13 @@ class NewClass implements anInterface
        {
          //got enough events, so pass
 
-         ManualMainTest.pass();
+         Validating.pass();
        }
       else if( tries == 20 )
        {
          //tried too many times without getting enough events so fail
 
-         ManualMainTest.fail();
+         Validating.fail();
        }
 
     }// eventDispatched()
@@ -307,8 +289,6 @@ class NewClass implements anInterface
 class Sysout
 {
     private static TestDialog dialog;
-    private static boolean numbering = false;
-    private static int messageNumber = 0;
 
     public static void createDialogWithInstructions( String[] instructions )
     {
@@ -327,10 +307,6 @@ class Sysout
         println( "Any messages for the tester will display here." );
     }
 
-    /* Enables message counting for the tester. */
-    public static void enableNumbering(boolean enable){
-        numbering = enable;
-    }
 
     public static void printInstructions( String[] instructions )
     {
@@ -340,11 +316,8 @@ class Sysout
 
     public static void println( String messageIn )
     {
-        if (numbering) {
-            messageIn = "" + messageNumber + " " + messageIn;
-            messageNumber++;
-        }
         dialog.displayMessage( messageIn );
+        System.out.println(messageIn);
     }
 
 }// Sysout  class
@@ -357,15 +330,12 @@ class Sysout
   To have a message to the user be displayed, see Sysout.
   Do not call anything in this dialog directly.
   */
-class TestDialog extends Dialog implements ActionListener
+class TestDialog extends Dialog
 {
 
     TextArea instructionsText;
     TextArea messageText;
     int maxStringLength = 80;
-    Panel  buttonP = new Panel();
-    Button passB = new Button( "pass" );
-    Button failB = new Button( "fail" );
 
     //DO NOT call this directly, go through Sysout
     public TestDialog( Frame frame, String name )
@@ -378,17 +348,6 @@ class TestDialog extends Dialog implements ActionListener
         messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
         add("Center", messageText);
 
-        passB = new Button( "pass" );
-        passB.setActionCommand( "pass" );
-        passB.addActionListener( this );
-        buttonP.add( "East", passB );
-
-        failB = new Button( "fail" );
-        failB.setActionCommand( "fail" );
-        failB.addActionListener( this );
-        buttonP.add( "West", failB );
-
-        add( "South", buttonP );
         pack();
 
         setVisible(true);
@@ -441,21 +400,6 @@ class TestDialog extends Dialog implements ActionListener
     {
         messageText.append( messageIn + "\n" );
         System.out.println(messageIn);
-    }
-
-    //catch presses of the passed and failed buttons.
-    //simply call the standard pass() or fail() static methods of
-    //ManualMainTest
-    public void actionPerformed( ActionEvent e )
-    {
-        if( e.getActionCommand() == "pass" )
-        {
-            SpuriousExitEnter_2.pass();
-        }
-        else
-        {
-            SpuriousExitEnter_2.fail();
-        }
     }
 
 }// TestDialog  class
