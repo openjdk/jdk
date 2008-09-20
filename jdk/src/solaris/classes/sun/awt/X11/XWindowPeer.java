@@ -129,6 +129,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     private static final int MAXIMUM_BUFFER_LENGTH_NET_WM_ICON = (2<<15) - 1;
 
     void preInit(XCreateWindowParams params) {
+        target = (Component)params.get(TARGET);
         params.put(REPARENTED,
                    Boolean.valueOf(isOverrideRedirect() || isSimpleWindow()));
         super.preInit(params);
@@ -1117,6 +1118,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
     boolean isOverrideRedirect() {
         return (XWM.getWMID() == XWM.OPENLOOK_WM ? true : false) ||
+            ((XToolkit)Toolkit.getDefaultToolkit()).isOverrideRedirect((Window)target) ||
             XTrayIconPeer.isTrayIconStuffWindow((Window)target);
     }
 

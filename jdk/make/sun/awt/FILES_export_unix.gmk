@@ -60,48 +60,15 @@ FILES_export = \
 	sun/awt/image/DataBufferNative.java \
 	\
 	sun/awt/motif/X11FontMetrics.java \
-	sun/awt/motif/X11Clipboard.java \
-	sun/awt/motif/X11Selection.java \
-	sun/awt/motif/X11SelectionHolder.java \
 	sun/awt/X11InputMethod.java \
-	sun/awt/motif/MInputMethod.java \
-	sun/awt/motif/MInputMethodControl.java \
-	sun/awt/motif/MCustomCursor.java \
 	sun/awt/motif/MFontConfiguration.java \
 	sun/awt/motif/MFontPeer.java \
 	sun/awt/motif/MToolkit.java \
-	sun/awt/motif/MComponentPeer.java \
-	sun/awt/motif/MButtonPeer.java \
-	sun/awt/motif/MCanvasPeer.java \
-	sun/awt/motif/MCheckboxPeer.java \
-	sun/awt/motif/MFileDialogPeer.java \
-	sun/awt/motif/MGlobalCursorManager.java \
-	sun/awt/motif/MTextFieldPeer.java \
-	sun/awt/motif/MLabelPeer.java \
-	sun/awt/motif/MListPeer.java \
-	sun/awt/motif/MWindowPeer.java \
-	sun/awt/motif/MMenuBarPeer.java \
-	sun/awt/motif/MMenuPeer.java \
-        sun/awt/motif/MPopupMenuPeer.java \
-	sun/awt/motif/MDialogPeer.java \
-	sun/awt/motif/MMenuItemPeer.java \
-	sun/awt/motif/MCheckboxMenuItemPeer.java \
-	sun/awt/motif/MChoicePeer.java \
-	sun/awt/motif/MTextAreaPeer.java \
-	sun/awt/motif/MScrollbarPeer.java \
-	sun/awt/motif/MScrollPanePeer.java \
-	sun/awt/motif/MFramePeer.java \
         sun/awt/DebugSettings.java \
 	sun/awt/EmbeddedFrame.java \
-	sun/awt/motif/MEmbeddedFramePeer.java \
 	sun/awt/PlatformFont.java \
 	sun/awt/FontDescriptor.java \
 	sun/awt/NativeLibLoader.java \
-	sun/awt/motif/MDropTargetContextPeer.java \
-	sun/awt/motif/MDragSourceContextPeer.java \
-	sun/awt/motif/MRobotPeer.java \
-	sun/awt/motif/X11DragSourceContextPeer.java \
-	sun/awt/motif/X11DropTargetContextPeer.java \
 	sun/awt/X11GraphicsEnvironment.java \
 	sun/awt/X11GraphicsDevice.java \
 	sun/awt/X11GraphicsConfig.java \
@@ -124,7 +91,6 @@ FILES_export = \
         sun/java2d/cmm/ColorTransform.java \
         sun/awt/datatransfer/DataTransferer.java \
 	sun/awt/dnd/SunDragSourceContextPeer.java \
-	sun/awt/motif/MDataTransferer.java \
 	sun/awt/motif/MToolkitThreadBlockedHandler.java \
 	sun/java2d/opengl/OGLBlitLoops.java \
 	sun/java2d/opengl/OGLContext.java \
@@ -220,6 +186,5 @@ FILES_export2 = \
 	java/awt/event/NativeLibLoader.java \
 	java/awt/peer/ComponentPeer.java \
 	java/awt/dnd/DnDConstants.java \
-	sun/awt/CausedFocusEvent.java \
-	sun/awt/motif/MEmbedCanvasPeer.java
+	sun/awt/CausedFocusEvent.java
 

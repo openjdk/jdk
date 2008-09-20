@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2000 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@
  * AwtContainer fields
  */
 
-jfieldID AwtContainer::ncomponentsID;
-jfieldID AwtContainer::componentID;
 jfieldID AwtContainer::layoutMgrID;
 jmethodID AwtContainer::findComponentAtMID;
 
@@ -45,18 +43,12 @@ JNIEXPORT void JNICALL
 Java_java_awt_Container_initIDs(JNIEnv *env, jclass cls) {
     TRY;
 
-    AwtContainer::ncomponentsID = env->GetFieldID(cls, "ncomponents", "I");
-    AwtContainer::componentID =
-        env->GetFieldID(cls, "component", "[Ljava/awt/Component;");
-
     AwtContainer::layoutMgrID =
         env->GetFieldID(cls, "layoutMgr", "Ljava/awt/LayoutManager;");
 
     AwtContainer::findComponentAtMID =
         env->GetMethodID(cls, "findComponentAt", "(IIZ)Ljava/awt/Component;");
 
-    DASSERT(AwtContainer::ncomponentsID != NULL);
-    DASSERT(AwtContainer::componentID != NULL);
     DASSERT(AwtContainer::layoutMgrID != NULL);
     DASSERT(AwtContainer::findComponentAtMID);
 
