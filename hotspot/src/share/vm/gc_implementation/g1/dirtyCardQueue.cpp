@@ -208,12 +208,13 @@ apply_closure_to_completed_buffer_helper(int worker_i,
                                               nd->index, _sz,
                                               true, worker_i);
     void** buf = nd->buf;
+    size_t index = nd->index;
     delete nd;
     if (b) {
       deallocate_buffer(buf);
       return true;  // In normal case, go on to next buffer.
     } else {
-      enqueue_complete_buffer(buf, nd->index, true);
+      enqueue_complete_buffer(buf, index, true);
       return false;
     }
   } else {
