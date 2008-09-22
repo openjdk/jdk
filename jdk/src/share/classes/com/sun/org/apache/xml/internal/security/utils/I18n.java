@@ -20,17 +20,12 @@
  */
 package com.sun.org.apache.xml.internal.security.utils;
 
-
-
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-
 /**
  * The Internationalization (I18N) pack.
- *
- *
  *
  * @author Christian Geuer-Pollmann
  */
@@ -50,8 +45,8 @@ public class I18n {
 
    /** Field resourceBundle */
    private static ResourceBundle resourceBundle =
-      ResourceBundle.getBundle
-        (Constants.exceptionMessagesResourceBundleBase, Locale.US);
+       ResourceBundle.getBundle
+         (Constants.exceptionMessagesResourceBundleBase, Locale.US);
 
    /** Field alreadyInitialized */
    private static boolean alreadyInitialized = false;

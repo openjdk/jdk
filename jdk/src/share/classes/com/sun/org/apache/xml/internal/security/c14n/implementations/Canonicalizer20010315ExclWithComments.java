@@ -28,6 +28,7 @@ import com.sun.org.apache.xml.internal.security.c14n.Canonicalizer;
 /**
  * Class Canonicalizer20010315ExclWithComments
  *
+ * @version $Revision: 1.5 $
  */
 public class Canonicalizer20010315ExclWithComments
         extends Canonicalizer20010315Excl {

@@ -14,6 +14,10 @@
                               JAVACLASS="com.sun.org.apache.xml.internal.security.c14n.implementations.Canonicalizer20010315ExclOmitComments"/>
       <CanonicalizationMethod URI="http://www.w3.org/2001/10/xml-exc-c14n#WithComments"
                               JAVACLASS="com.sun.org.apache.xml.internal.security.c14n.implementations.Canonicalizer20010315ExclWithComments"/>
+      <CanonicalizationMethod URI="http://www.w3.org/2006/12/xml-c14n11"
+                              JAVACLASS="com.sun.org.apache.xml.internal.security.c14n.implementations.Canonicalizer11_OmitComments"/>
+      <CanonicalizationMethod URI="http://www.w3.org/2006/12/xml-c14n11#WithComments"
+                              JAVACLASS="com.sun.org.apache.xml.internal.security.c14n.implementations.Canonicalizer11_WithComments"/>
    </CanonicalizationMethods>
    <TransformAlgorithms>
       <!-- Base64 -->
@@ -25,6 +29,12 @@
       <!-- c14n with comments -->
       <TransformAlgorithm URI="http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.transforms.implementations.TransformC14NWithComments" />
+      <!-- c14n 1.1 omitting comments -->
+      <TransformAlgorithm URI="http://www.w3.org/2006/12/xml-c14n11"
+                          JAVACLASS="com.sun.org.apache.xml.internal.security.transforms.implementations.TransformC14N11" />
+      <!-- c14n 1.1 with comments -->
+      <TransformAlgorithm URI="http://www.w3.org/2006/12/xml-c14n11#WithComments"
+                          JAVACLASS="com.sun.org.apache.xml.internal.security.transforms.implementations.TransformC14N11_WithComments" />
       <!-- exclusive c14n omitting comments -->
       <TransformAlgorithm URI="http://www.w3.org/2001/10/xml-exc-c14n#"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.transforms.implementations.TransformC14NExclusive" />
@@ -66,6 +76,8 @@
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA$SignatureRSASHA384" />
       <SignatureAlgorithm URI="http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA$SignatureRSASHA512" />
+      <SignatureAlgorithm URI="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1"
+                          JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureECDSA$SignatureECDSASHA1" />
 
       <SignatureAlgorithm URI="http://www.w3.org/2001/04/xmldsig-more#hmac-md5"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.IntegrityHmac$IntegrityHmacMD5" />
@@ -166,6 +178,13 @@
                     RequirementLevel="OPTIONAL"
                     SpecificationURL="http://www.ietf.org/internet-drafts/draft-eastlake-xmldsig-uri-02.txt"
                     JCEName="SHA512withRSA"/>
+                    
+         <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1"
+                    Description="ECDSA Signature with SHA-1 message digest"
+                    AlgorithmClass="Signature"
+                    RequirementLevel="OPTIONAL"
+                    SpecificationURL="http://www.ietf.org/internet-drafts/draft-eastlake-xmldsig-uri-02.txt"
+                    JCEName="ECDSAwithSHA1"/>
 
          <!-- MAC Algorithms -->
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#hmac-md5"
