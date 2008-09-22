@@ -20,8 +20,6 @@
  */
 package com.sun.org.apache.xml.internal.security.signature;
 
-
-
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.IdResolver;
@@ -35,15 +33,10 @@ import org.w3c.dom.Node;
  * Handles <code>&lt;ds:Object&gt;</code> elements
  * <code>Object<code> {@link Element} supply facility which can contain any kind data
  *
- *
  * @author Christian Geuer-Pollmann
  * $todo$ if we remove childen, the boolean values are not updated
  */
 public class ObjectContainer extends SignatureElementProxy {
-
-   /** {@link java.util.logging} logging facility */
-   static java.util.logging.Logger log =
-       java.util.logging.Logger.getLogger(ObjectContainer.class.getName());
 
    /**
     * Constructs {@link ObjectContainer}
@@ -75,7 +68,7 @@ public class ObjectContainer extends SignatureElementProxy {
     */
    public void setId(String Id) {
 
-      if ((this._state == MODE_SIGN) && (Id != null)) {
+      if ((Id != null)) {
          this._constructionElement.setAttributeNS(null, Constants._ATT_ID, Id);
          IdResolver.registerElementById(this._constructionElement, Id);
       }
@@ -97,7 +90,7 @@ public class ObjectContainer extends SignatureElementProxy {
     */
    public void setMimeType(String MimeType) {
 
-      if ((this._state == MODE_SIGN) && (MimeType != null)) {
+      if ( (MimeType != null)) {
          this._constructionElement.setAttributeNS(null, Constants._ATT_MIMETYPE,
                                                 MimeType);
       }
@@ -119,7 +112,7 @@ public class ObjectContainer extends SignatureElementProxy {
     */
    public void setEncoding(String Encoding) {
 
-      if ((this._state == MODE_SIGN) && (Encoding != null)) {
+      if ((Encoding != null)) {
          this._constructionElement.setAttributeNS(null, Constants._ATT_ENCODING,
                                                 Encoding);
       }
@@ -135,18 +128,16 @@ public class ObjectContainer extends SignatureElementProxy {
    }
 
    /**
-    * Adds childe Node
+    * Adds child Node
     *
-    * @param node childe Node
+    * @param node child Node
     * @return the new node in the tree.
     */
    public Node appendChild(Node node) {
 
       Node result = null;
 
-      if (this._state == MODE_SIGN) {
-         result = this._constructionElement.appendChild(node);
-      }
+      result = this._constructionElement.appendChild(node);
 
       return result;
    }
