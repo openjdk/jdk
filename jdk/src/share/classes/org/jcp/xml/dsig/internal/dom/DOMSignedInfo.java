@@ -1,29 +1,28 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * reserved comment block
+ * DO NOT REMOVE OR ALTER!
  */
 /*
- * $Id: DOMSignedInfo.java,v 1.30 2005/09/23 20:14:07 mullan Exp $
+ * Copyright 2005 The Apache Software Foundation.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+/*
+ * Copyright 2005 Sun Microsystems, Inc. All rights reserved.
+ */
+/*
+ * $Id: DOMSignedInfo.java,v 1.2 2008/07/24 15:20:32 mullan Exp $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -37,6 +36,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.security.Provider;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -126,8 +126,8 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
      *
      * @param siElem a SignedInfo element
      */
-    public DOMSignedInfo(Element siElem, XMLCryptoContext context)
-        throws MarshalException {
+    public DOMSignedInfo(Element siElem, XMLCryptoContext context,
+        Provider provider) throws MarshalException {
         localSiElem = siElem;
         ownerDoc = siElem.getOwnerDocument();
 
@@ -136,7 +136,8 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
 
         // unmarshal CanonicalizationMethod
         Element cmElem = DOMUtils.getFirstChildElement(siElem);
-        canonicalizationMethod = new DOMCanonicalizationMethod(cmElem, context);
+        canonicalizationMethod = new DOMCanonicalizationMethod
+            (cmElem, context, provider);
 
         // unmarshal SignatureMethod
         Element smElem = DOMUtils.getNextSiblingElement(cmElem);
@@ -146,7 +147,7 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
         ArrayList refList = new ArrayList(5);
         Element refElem = DOMUtils.getNextSiblingElement(smElem);
         while (refElem != null) {
-            refList.add(new DOMReference(refElem, context));
+            refList.add(new DOMReference(refElem, context, provider));
             refElem = DOMUtils.getNextSiblingElement(refElem);
         }
         references = Collections.unmodifiableList(refList);
@@ -188,9 +189,8 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
 
         DOMSubTreeData subTree = new DOMSubTreeData(localSiElem, true);
 
-        OctetStreamData data = null;
         try {
-            data = (OctetStreamData) ((DOMCanonicalizationMethod)
+            Data data = ((DOMCanonicalizationMethod)
                 canonicalizationMethod).canonicalize(subTree, context, os);
         } catch (TransformException te) {
             throw new XMLSignatureException(te);
@@ -205,9 +205,11 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
             char[] siBytes = new char[signedInfoBytes.length];
             try {
                 isr.read(siBytes);
-            } catch (IOException ioex) {} //ignore since this is logging code
-            log.log(Level.FINE, "Canonicalized SignedInfo:\n"
-                + new String(siBytes));
+                log.log(Level.FINE, "Canonicalized SignedInfo:\n"
+                    + new String(siBytes));
+            } catch (IOException ioex) {
+                log.log(Level.FINE, "IOException reading SignedInfo bytes");
+            }
             log.log(Level.FINE, "Data to be signed/verified:"
                 + Base64.encode(signedInfoBytes));
         }

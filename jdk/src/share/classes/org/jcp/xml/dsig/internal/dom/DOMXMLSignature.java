@@ -1,28 +1,26 @@
 /*
- * Portions Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * reserved comment block
+ * DO NOT REMOVE OR ALTER!
  */
-
+/*
+ * Copyright 2005 The Apache Software Foundation.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+/*
+ * Portions copyright 2005 Sun Microsystems, Inc. All rights reserved.
+ */
 /*
  * ===========================================================================
  *
@@ -31,7 +29,7 @@
  * ===========================================================================
  */
 /*
- * $Id: DOMXMLSignature.java,v 1.42 2005/09/23 20:29:04 mullan Exp $
+ * $Id: DOMXMLSignature.java,v 1.2 2008/07/24 15:20:32 mullan Exp $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -45,6 +43,7 @@ import javax.xml.crypto.dsig.keyinfo.KeyInfo;
 import java.io.*;
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.Provider;
 import java.util.Collections;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -128,8 +127,8 @@ public final class DOMXMLSignature extends DOMStructure
      * @param sigElem Signature element
      * @throws MarshalException if XMLSignature cannot be unmarshalled
      */
-    public DOMXMLSignature(Element sigElem, XMLCryptoContext context)
-        throws MarshalException {
+    public DOMXMLSignature(Element sigElem, XMLCryptoContext context,
+        Provider provider) throws MarshalException {
         localSigElem = sigElem;
         ownerDoc = localSigElem.getOwnerDocument();
 
@@ -138,7 +137,7 @@ public final class DOMXMLSignature extends DOMStructure
 
         // unmarshal SignedInfo
         Element siElem = DOMUtils.getFirstChildElement(localSigElem);
-        si = new DOMSignedInfo(siElem, context);
+        si = new DOMSignedInfo(siElem, context, provider);
 
         // unmarshal SignatureValue
         Element sigValElem = DOMUtils.getNextSiblingElement(siElem);
@@ -147,7 +146,7 @@ public final class DOMXMLSignature extends DOMStructure
         // unmarshal KeyInfo, if specified
         Element nextSibling = DOMUtils.getNextSiblingElement(sigValElem);
         if (nextSibling != null && nextSibling.getLocalName().equals("KeyInfo")) {
-            ki = new DOMKeyInfo(nextSibling, context);
+            ki = new DOMKeyInfo(nextSibling, context, provider);
             nextSibling = DOMUtils.getNextSiblingElement(nextSibling);
         }
 
@@ -157,7 +156,8 @@ public final class DOMXMLSignature extends DOMStructure
         } else {
             List tempObjects = new ArrayList();
             while (nextSibling != null) {
-                tempObjects.add(new DOMXMLObject(nextSibling, context));
+                tempObjects.add
+                    (new DOMXMLObject(nextSibling, context, provider));
                 nextSibling = DOMUtils.getNextSiblingElement(nextSibling);
             }
             objects = Collections.unmodifiableList(tempObjects);
@@ -201,9 +201,7 @@ public final class DOMXMLSignature extends DOMStructure
             (ownerDoc, "Signature", XMLSignature.XMLNS, dsPrefix);
 
         // append xmlns attribute
-        //XXX I think this is supposed to be automatically inserted when
-        //XXX serializing a DOM2 tree, but doesn't seem to work with JAXP/Xalan
-        if (dsPrefix == null) {
+        if (dsPrefix == null || dsPrefix.length() == 0) {
             sigElem.setAttributeNS
                 ("http://www.w3.org/2000/xmlns/", "xmlns", XMLSignature.XMLNS);
         } else {
@@ -301,7 +299,7 @@ public final class DOMXMLSignature extends DOMStructure
                             Reference ref = (Reference) manRefs.get(k);
                             boolean refValid = ref.validate(vc);
                             if (log.isLoggable(Level.FINE)) {
-                               log.log(Level.FINE, "Manifest ref["
+                                log.log(Level.FINE, "Manifest ref["
                                     + ref.getURI() + "] is valid: " + refValid);
                             }
                             validateMans &= refValid;

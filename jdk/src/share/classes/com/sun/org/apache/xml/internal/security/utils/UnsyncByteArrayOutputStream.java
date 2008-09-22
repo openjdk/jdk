@@ -20,17 +20,25 @@
  */
 package com.sun.org.apache.xml.internal.security.utils;
 
-import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 
 /**
  * A simple Unsynced ByteArryOutputStream
  * @author raul
  *
  */
-public class UnsyncByteArrayOutputStream extends ByteArrayOutputStream {
-        int size=4*1024;
-        byte []buf=new byte[size];
-        int pos;
+public class UnsyncByteArrayOutputStream extends OutputStream  {
+        private static ThreadLocal bufCahce = new ThreadLocal() {
+        protected synchronized Object initialValue() {
+            return new byte[8*1024];
+        }
+    };
+    byte[] buf;
+        int size=8*1024;//buf.length;
+        int pos=0;
+        public UnsyncByteArrayOutputStream() {
+                buf=(byte[])bufCahce.get();
+        }
         /** @inheritDoc */
         public void write(byte[] arg0) {
                 int newPos=pos+arg0.length;

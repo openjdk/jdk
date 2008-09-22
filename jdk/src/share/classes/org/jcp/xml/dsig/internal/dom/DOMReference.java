@@ -1,28 +1,26 @@
 /*
- * Portions Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * reserved comment block
+ * DO NOT REMOVE OR ALTER!
  */
-
+/*
+ * Copyright 2005 The Apache Software Foundation.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+/*
+ * Portions copyright 2005 Sun Microsystems, Inc. All rights reserved.
+ */
 /*
  * ===========================================================================
  *
@@ -31,7 +29,7 @@
  * ===========================================================================
  */
 /*
- * $Id: DOMReference.java,v 1.40 2005/09/19 18:27:04 mullan Exp $
+ * $Id: DOMReference.java,v 1.2 2008/07/24 15:20:32 mullan Exp $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -67,13 +65,27 @@ import com.sun.org.apache.xml.internal.security.utils.UnsyncBufferedOutputStream
 public final class DOMReference extends DOMStructure
     implements Reference, DOMURIReference {
 
+   /**
+    * Look up useC14N11 system property. If true, an explicit C14N11 transform
+    * will be added if necessary when generating the signature. See section
+    * 3.1.1 of http://www.w3.org/2007/xmlsec/Drafts/xmldsig-core/ for more info.
+    *
+    * If true, overrides the same property if set in the XMLSignContext.
+    */
+    private static boolean useC14N11 =
+        AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+            public Boolean run() {
+                return Boolean.getBoolean
+                    ("com.sun.org.apache.xml.internal.security.useC14N11");
+            }
+        });
+
     private static Logger log = Logger.getLogger("org.jcp.xml.dsig.internal.dom");
 
     private final DigestMethod digestMethod;
     private final String id;
-    private final List appliedTransforms;
     private final List transforms;
-    private final List allTransforms;
+    private List allTransforms;
     private final Data appliedTransformData;
     private Attr here;
     private final String uri;
@@ -87,6 +99,7 @@ public final class DOMReference extends DOMStructure
     private Data derefData;
     private InputStream dis;
     private MessageDigest md;
+    private Provider provider;
 
     /**
      * Creates a <code>Reference</code> from the specified parameters.
@@ -104,24 +117,25 @@ public final class DOMReference extends DOMStructure
      *    not of type <code>Transform</code>
      */
     public DOMReference(String uri, String type, DigestMethod dm,
-        List transforms, String id) {
-        this(uri, type, dm, null, null, transforms, id, null);
-    }
-
-    public DOMReference(String uri, String type, DigestMethod dm,
-        List appliedTransforms, Data result, List transforms, String id) {
-        this(uri, type, dm, appliedTransforms, result, transforms, id, null);
+        List transforms, String id, Provider provider) {
+        this(uri, type, dm, null, null, transforms, id, null, provider);
     }
 
     public DOMReference(String uri, String type, DigestMethod dm,
         List appliedTransforms, Data result, List transforms, String id,
-        byte[] digestValue){
+        Provider provider) {
+        this(uri, type, dm, appliedTransforms,
+             result, transforms, id, null, provider);
+    }
+
+    public DOMReference(String uri, String type, DigestMethod dm,
+        List appliedTransforms, Data result, List transforms, String id,
+        byte[] digestValue, Provider provider) {
         if (dm == null) {
             throw new NullPointerException("DigestMethod must be non-null");
         }
-        if (appliedTransforms == null || appliedTransforms.isEmpty()) {
-            this.appliedTransforms = Collections.EMPTY_LIST;
-        } else {
+        this.allTransforms = new ArrayList();
+        if (appliedTransforms != null) {
             List transformsCopy = new ArrayList(appliedTransforms);
             for (int i = 0, size = transformsCopy.size(); i < size; i++) {
                 if (!(transformsCopy.get(i) instanceof Transform)) {
@@ -129,10 +143,9 @@ public final class DOMReference extends DOMStructure
                         ("appliedTransforms["+i+"] is not a valid type");
                 }
             }
-            this.appliedTransforms =
-                Collections.unmodifiableList(transformsCopy);
+            this.allTransforms = transformsCopy;
         }
-        if (transforms == null || transforms.isEmpty()) {
+        if (transforms == null) {
             this.transforms = Collections.EMPTY_LIST;
         } else {
             List transformsCopy = new ArrayList(transforms);
@@ -142,11 +155,9 @@ public final class DOMReference extends DOMStructure
                         ("transforms["+i+"] is not a valid type");
                 }
             }
-            this.transforms = Collections.unmodifiableList(transformsCopy);
+            this.transforms = transformsCopy;
+            this.allTransforms.addAll(transformsCopy);
         }
-        List all = new ArrayList(this.appliedTransforms);
-        all.addAll(this.transforms);
-        this.allTransforms = Collections.unmodifiableList(all);
         this.digestMethod = dm;
         this.uri = uri;
         if ((uri != null) && (!uri.equals(""))) {
@@ -163,6 +174,7 @@ public final class DOMReference extends DOMStructure
             this.digested = true;
         }
         this.appliedTransformData = result;
+        this.provider = provider;
     }
 
     /**
@@ -170,15 +182,16 @@ public final class DOMReference extends DOMStructure
      *
      * @param refElem a Reference element
      */
-    public DOMReference(Element refElem, XMLCryptoContext context)
-        throws MarshalException {
+    public DOMReference(Element refElem, XMLCryptoContext context,
+        Provider provider) throws MarshalException {
         // unmarshal Transforms, if specified
         Element nextSibling = DOMUtils.getFirstChildElement(refElem);
         List transforms = new ArrayList(5);
         if (nextSibling.getLocalName().equals("Transforms")) {
             Element transformElem = DOMUtils.getFirstChildElement(nextSibling);
             while (transformElem != null) {
-                transforms.add(new DOMTransform(transformElem, context));
+                transforms.add
+                    (new DOMTransform(transformElem, context, provider));
                 transformElem = DOMUtils.getNextSiblingElement(transformElem);
             }
             nextSibling = DOMUtils.getNextSiblingElement(nextSibling);
@@ -203,15 +216,10 @@ public final class DOMReference extends DOMStructure
         this.type = DOMUtils.getAttributeValue(refElem, "Type");
         this.here = refElem.getAttributeNodeNS(null, "URI");
         this.refElem = refElem;
-
-        if (transforms.isEmpty()) {
-            this.transforms = Collections.EMPTY_LIST;
-        } else {
-            this.transforms = Collections.unmodifiableList(transforms);
-        }
-        this.appliedTransforms = Collections.EMPTY_LIST;
+        this.transforms = transforms;
         this.allTransforms = transforms;
         this.appliedTransformData = null;
+        this.provider = provider;
     }
 
     public DigestMethod getDigestMethod() {
@@ -231,7 +239,7 @@ public final class DOMReference extends DOMStructure
     }
 
     public List getTransforms() {
-        return allTransforms;
+        return Collections.unmodifiableList(allTransforms);
     }
 
     public byte[] getDigestValue() {
@@ -259,17 +267,13 @@ public final class DOMReference extends DOMStructure
         DOMUtils.setAttribute(refElem, "Type", type);
 
         // create and append Transforms element
-        if (!transforms.isEmpty() || !appliedTransforms.isEmpty()) {
+        if (!allTransforms.isEmpty()) {
             Element transformsElem = DOMUtils.createElement
                 (ownerDoc, "Transforms", XMLSignature.XMLNS, dsPrefix);
             refElem.appendChild(transformsElem);
-            for (int i = 0, size = appliedTransforms.size(); i < size; i++) {
+            for (int i = 0, size = allTransforms.size(); i < size; i++) {
                 DOMStructure transform =
-                    (DOMStructure) appliedTransforms.get(i);
-                transform.marshal(transformsElem, dsPrefix, context);
-            }
-            for (int i = 0, size = transforms.size(); i < size; i++) {
-                DOMStructure transform = (DOMStructure) transforms.get(i);
+                    (DOMStructure) allTransforms.get(i);
                 transform.marshal(transformsElem, dsPrefix, context);
             }
         }
@@ -416,21 +420,62 @@ public final class DOMReference extends DOMStructure
         try {
             if (data != null) {
                 XMLSignatureInput xi;
+                // explicitly use C14N 1.1 when generating signature
+                // first check system property, then context property
+                boolean c14n11 = useC14N11;
+                String c14nalg = CanonicalizationMethod.INCLUSIVE;
+                if (context instanceof XMLSignContext) {
+                    if (!c14n11) {
+                        Boolean prop = (Boolean) context.getProperty
+                            ("com.sun.org.apache.xml.internal.security.useC14N11");
+                        c14n11 = (prop != null && prop.booleanValue() == true);
+                        if (c14n11) {
+                            c14nalg = "http://www.w3.org/2006/12/xml-c14n11";
+                        }
+                    } else {
+                        c14nalg = "http://www.w3.org/2006/12/xml-c14n11";
+                    }
+                }
                 if (data instanceof ApacheData) {
                     xi = ((ApacheData) data).getXMLSignatureInput();
                 } else if (data instanceof OctetStreamData) {
                     xi = new XMLSignatureInput
                         (((OctetStreamData)data).getOctetStream());
                 } else if (data instanceof NodeSetData) {
-                    TransformService spi = TransformService.getInstance
-                        (CanonicalizationMethod.INCLUSIVE, "DOM");
+                    TransformService spi = null;
+                    try {
+                        spi = TransformService.getInstance(c14nalg, "DOM");
+                    } catch (NoSuchAlgorithmException nsae) {
+                        spi = TransformService.getInstance
+                            (c14nalg, "DOM", provider);
+                    }
                     data = spi.transform(data, context);
                     xi = new XMLSignatureInput
                         (((OctetStreamData)data).getOctetStream());
                 } else {
                     throw new XMLSignatureException("unrecognized Data type");
                 }
-                xi.updateOutputStream(os);
+                if (context instanceof XMLSignContext && c14n11
+                    && !xi.isOctetStream() && !xi.isOutputStreamSet()) {
+                    DOMTransform t = new DOMTransform
+                        (TransformService.getInstance(c14nalg, "DOM"));
+                    Element transformsElem = null;
+                    String dsPrefix = DOMUtils.getSignaturePrefix(context);
+                    if (allTransforms.isEmpty()) {
+                        transformsElem = DOMUtils.createElement(
+                            refElem.getOwnerDocument(),
+                            "Transforms", XMLSignature.XMLNS, dsPrefix);
+                        refElem.insertBefore(transformsElem,
+                            DOMUtils.getFirstChildElement(refElem));
+                    } else {
+                        transformsElem = DOMUtils.getFirstChildElement(refElem);
+                    }
+                    t.marshal(transformsElem, dsPrefix, (DOMCryptoContext) context);
+                    allTransforms.add(t);
+                    xi.updateOutputStream(os, true);
+                } else {
+                    xi.updateOutputStream(os);
+                }
             }
             os.flush();
             if (cache != null && cache.booleanValue() == true) {
@@ -466,7 +511,7 @@ public final class DOMReference extends DOMStructure
             Arrays.equals(digestValue, oref.getDigestValue());
 
         return (digestMethod.equals(oref.getDigestMethod()) && idsEqual &&
-            urisEqual && typesEqual && transforms.equals(oref.getTransforms()));
+            urisEqual && typesEqual && allTransforms.equals(oref.getTransforms()));
     }
 
     boolean isDigested() {
@@ -486,7 +531,7 @@ public final class DOMReference extends DOMStructure
                     };
                 } catch (Exception e) {
                     // log a warning
-                    log.log(Level.WARNING,
+                            log.log(Level.WARNING,
                         "cannot cache dereferenced data: " + e);
                     return null;
                 }
@@ -499,7 +544,7 @@ public final class DOMReference extends DOMStructure
                   (xsi.getOctetStream(), xsi.getSourceURI(), xsi.getMIMEType());
                 } catch (IOException ioe) {
                     // log a warning
-                    log.log(Level.WARNING,
+                            log.log(Level.WARNING,
                         "cannot cache dereferenced data: " + ioe);
                     return null;
                 }
