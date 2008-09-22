@@ -39,7 +39,8 @@ import org.w3c.dom.ProcessingInstruction;
 /**
  * Class XMLSignatureInputDebugger
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
+ * @version $Revision: 1.3 $
  */
 public class XMLSignatureInputDebugger {
 
@@ -599,23 +600,23 @@ public class XMLSignatureInputDebugger {
 
                 length = data.length();
 
-                if ((data != null) && (length > 0)) {
-                        this._writer.write(" ");
+                if (length > 0) {
+                    this._writer.write(" ");
 
-                        for (int i = 0; i < length; i++) {
-                                char c = data.charAt(i);
+                    for (int i = 0; i < length; i++) {
+                        char c = data.charAt(i);
 
-                                switch (c) {
+                        switch (c) {
 
-                                case 0x0D:
-                                        this._writer.write("&amp;#xD;");
-                                        break;
+                            case 0x0D:
+                                this._writer.write("&amp;#xD;");
+                                break;
 
-                                default:
-                                        this._writer.write(c);
-                                        break;
-                                }
+                            default:
+                                this._writer.write(c);
+                                break;
                         }
+                    }
                 }
 
                 this._writer.write("?&gt;");
