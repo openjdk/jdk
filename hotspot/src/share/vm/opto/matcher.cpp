@@ -840,7 +840,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
               _new2old_map.map(m->_idx, n);
 #endif
               if (m->in(0) != NULL) // m might be top
-                collect_null_checks(m);
+                collect_null_checks(m, n);
             } else {                // Else just a regular 'ol guy
               m = n->clone();       // So just clone into new-space
 #ifdef ASSERT
@@ -1478,12 +1478,19 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
         m = _mem_node;
         assert(m != NULL && m->is_Mem(), "expecting memory node");
       }
-      if (m->adr_type() != mach->adr_type()) {
+      const Type* mach_at = mach->adr_type();
+      // DecodeN node consumed by an address may have different type
+      // then its input. Don't compare types for such case.
+      if (m->adr_type() != mach_at && m->in(MemNode::Address)->is_AddP() &&
+          m->in(MemNode::Address)->in(AddPNode::Address)->is_DecodeN()) {
+        mach_at = m->adr_type();
+      }
+      if (m->adr_type() != mach_at) {
         m->dump();
         tty->print_cr("mach:");
         mach->dump(1);
       }
-      assert(m->adr_type() == mach->adr_type(), "matcher should not change adr type");
+      assert(m->adr_type() == mach_at, "matcher should not change adr type");
     }
 #endif
   }
@@ -1995,7 +2002,7 @@ void Matcher::dump_old2new_map() {
 // it.  Used by later implicit-null-check handling.  Actually collects
 // either an IfTrue or IfFalse for the common NOT-null path, AND the ideal
 // value being tested.
-void Matcher::collect_null_checks( Node *proj ) {
+void Matcher::collect_null_checks( Node *proj, Node *orig_proj ) {
   Node *iff = proj->in(0);
   if( iff->Opcode() == Op_If ) {
     // During matching If's have Bool & Cmp side-by-side
@@ -2008,19 +2015,46 @@ void Matcher::collect_null_checks( Node *proj ) {
     if (ct == TypePtr::NULL_PTR ||
         (opc == Op_CmpN && ct == TypeNarrowOop::NULL_PTR)) {
 
+      bool push_it = false;
       if( proj->Opcode() == Op_IfTrue ) {
         extern int all_null_checks_found;
         all_null_checks_found++;
         if( b->_test._test == BoolTest::ne ) {
-          _null_check_tests.push(proj);
-          _null_check_tests.push(cmp->in(1));
+          push_it = true;
         }
       } else {
         assert( proj->Opcode() == Op_IfFalse, "" );
         if( b->_test._test == BoolTest::eq ) {
-          _null_check_tests.push(proj);
-          _null_check_tests.push(cmp->in(1));
+          push_it = true;
         }
+      }
+      if( push_it ) {
+        _null_check_tests.push(proj);
+        Node* val = cmp->in(1);
+#ifdef _LP64
+        if (UseCompressedOops && !Matcher::clone_shift_expressions &&
+            val->bottom_type()->isa_narrowoop()) {
+          //
+          // Look for DecodeN node which should be pinned to orig_proj.
+          // On platforms (Sparc) which can not handle 2 adds
+          // in addressing mode we have to keep a DecodeN node and
+          // use it to do implicit NULL check in address.
+          //
+          // DecodeN node was pinned to non-null path (orig_proj) during
+          // CastPP transformation in final_graph_reshaping_impl().
+          //
+          uint cnt = orig_proj->outcnt();
+          for (uint i = 0; i < orig_proj->outcnt(); i++) {
+            Node* d = orig_proj->raw_out(i);
+            if (d->is_DecodeN() && d->in(1) == val) {
+              val = d;
+              val->set_req(0, NULL); // Unpin now.
+              break;
+            }
+          }
+        }
+#endif
+        _null_check_tests.push(val);
       }
     }
   }
