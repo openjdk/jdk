@@ -474,23 +474,22 @@ public class JavacTaskImpl extends JavacTask {
     }
 
     abstract class Filter {
-        void run(ListBuffer<Env<AttrContext>> list, Iterable<? extends TypeElement> classes) {
+        void run(Queue<Env<AttrContext>> list, Iterable<? extends TypeElement> classes) {
             Set<TypeElement> set = new HashSet<TypeElement>();
             for (TypeElement item: classes)
                 set.add(item);
 
-            List<Env<AttrContext>> defer = List.<Env<AttrContext>>nil();
-            while (list.nonEmpty()) {
-                Env<AttrContext> env = list.next();
+            ListBuffer<Env<AttrContext>> defer = ListBuffer.<Env<AttrContext>>lb();
+            while (list.peek() != null) {
+                Env<AttrContext> env = list.remove();
                 ClassSymbol csym = env.enclClass.sym;
                 if (csym != null && set.contains(csym.outermostClass()))
                     process(env);
                 else
-                    defer = defer.prepend(env);
+                    defer = defer.append(env);
             }
 
-            for (List<Env<AttrContext>> l = defer; l.nonEmpty(); l = l.tail)
-                list.prepend(l.head);
+            list.addAll(defer);
         }
 
         abstract void process(Env<AttrContext> env);
