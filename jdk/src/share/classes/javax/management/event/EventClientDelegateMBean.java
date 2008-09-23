@@ -96,7 +96,7 @@ public interface EventClientDelegateMBean {
      * <code>{@value #OBJECT_NAME_STRING}</code>.
      */
     public final static ObjectName OBJECT_NAME =
-            Util.newObjectName(OBJECT_NAME_STRING);
+            ObjectName.valueOf(OBJECT_NAME_STRING);
 
     /**
      * A unique listener identifier specified for an EventClient.

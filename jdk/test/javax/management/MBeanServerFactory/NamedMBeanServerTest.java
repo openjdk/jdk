@@ -25,6 +25,7 @@
  * @test
  * @summary Test named MBeanServers.
  * @author Daniel Fuchs
+ * @bug 6299231
  * @run clean NamedMBeanServerTest
  * @run build NamedMBeanServerTest
  * @run main NamedMBeanServerTest

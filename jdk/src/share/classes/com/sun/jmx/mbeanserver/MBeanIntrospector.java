@@ -623,7 +623,7 @@ abstract class MBeanIntrospector<M> {
     }
 
     private static MBeanConstructorInfo[] findConstructors(Class<?> c) {
-        Constructor[] cons = c.getConstructors();
+        Constructor<?>[] cons = c.getConstructors();
         MBeanConstructorInfo[] mbc = new MBeanConstructorInfo[cons.length];
         for (int i = 0; i < cons.length; i++) {
             String descr = "Public constructor of the MBean";

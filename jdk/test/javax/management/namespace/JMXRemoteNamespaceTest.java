@@ -25,6 +25,7 @@
  * @test JMXRemoteNamespaceTest.java
  * @summary Basic tests on a JMXRemoteNamespace.
  * @author Daniel Fuchs
+ * @bug 5072476
  * @run clean JMXRemoteNamespaceTest Wombat WombatMBean
  * @run build JMXRemoteNamespaceTest Wombat WombatMBean
  * @run main JMXRemoteNamespaceTest

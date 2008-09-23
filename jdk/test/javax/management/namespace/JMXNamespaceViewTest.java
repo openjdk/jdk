@@ -24,6 +24,7 @@
  *
  * @test JMXNamespaceViewTest.java
  * @summary Test the JMXNamespaceView class.
+ * @bug 5072476
  * @author Daniel Fuchs
  * @run clean JMXNamespaceViewTest Wombat WombatMBean
  * @run build JMXNamespaceViewTest Wombat WombatMBean

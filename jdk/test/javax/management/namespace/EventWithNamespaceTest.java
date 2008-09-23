@@ -24,7 +24,7 @@
 /*
  *
  * @test EventWithNamespaceTest.java 1.8
- * @bug 6539857
+ * @bug 6539857 5072476 5108776
  * @summary General Namespace & Notifications test.
  * @author Daniel Fuchs
  * @run clean EventWithNamespaceTest Wombat WombatMBean

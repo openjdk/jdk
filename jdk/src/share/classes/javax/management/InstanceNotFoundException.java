@@ -61,6 +61,6 @@ public class InstanceNotFoundException extends OperationsException   {
      * @since 1.7
      */
     public InstanceNotFoundException(ObjectName name) {
-        this(name.toString());
+        this(String.valueOf(name));
     }
 }
