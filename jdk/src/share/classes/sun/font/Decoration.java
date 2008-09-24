@@ -267,7 +267,9 @@ public class Decoration {
             CoreMetrics cm = label.getCoreMetrics();
             if (strikethrough) {
                 Stroke savedStroke = g2d.getStroke();
-                g2d.setStroke(new BasicStroke(cm.strikethroughThickness));
+                g2d.setStroke(new BasicStroke(cm.strikethroughThickness,
+                                              BasicStroke.CAP_BUTT,
+                                              BasicStroke.JOIN_MITER));
                 float strikeY = y + cm.strikethroughOffset;
                 g2d.draw(new Line2D.Float(x1, strikeY, x2, strikeY));
                 g2d.setStroke(savedStroke);
@@ -341,7 +343,7 @@ public class Decoration {
 
             Rectangle2D visBounds = label.handleGetVisualBounds();
 
-            if (swapColors || bgPaint != null
+            if (swapColors || bgPaint != null || strikethrough
                         || stdUnderline != null || imUnderline != null) {
 
                 float minX = 0;
@@ -390,7 +392,9 @@ public class Decoration {
             }
 
             if (strikethrough) {
-                Stroke stStroke = new BasicStroke(cm.strikethroughThickness);
+                Stroke stStroke = new BasicStroke(cm.strikethroughThickness,
+                                                  BasicStroke.CAP_BUTT,
+                                                  BasicStroke.JOIN_MITER);
                 float shiftY = y + cm.strikethroughOffset;
                 Line2D line = new Line2D.Float(x1, shiftY, x2, shiftY);
                 Area slArea = new Area(stStroke.createStrokedShape(line));
