@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2000 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ package java.lang;
  * @since   JDK1.0
  */
 public class IllegalAccessException extends Exception {
+    private static final long serialVersionUID = 6616958222490762034L;
+
     /**
      * Constructs an <code>IllegalAccessException</code> without a
      * detail message.
