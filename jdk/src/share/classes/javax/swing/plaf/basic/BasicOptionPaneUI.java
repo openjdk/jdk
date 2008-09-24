@@ -109,7 +109,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
 
 
     static {
-        newline = (String)java.security.AccessController.doPrivileged(
+        newline = java.security.AccessController.doPrivileged(
                                 new GetPropertyAction("line.separator"));
         if (newline == null) {
             newline = "\n";
@@ -262,7 +262,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
      * <code>getMinimumOptionPaneSize</code>.
      */
     public Dimension getPreferredSize(JComponent c) {
-        if ((JOptionPane)c == optionPane) {
+        if (c == optionPane) {
             Dimension            ourMin = getMinimumOptionPaneSize();
             LayoutManager        lm = c.getLayout();
 
@@ -366,8 +366,8 @@ public class BasicOptionPaneUI extends OptionPaneUI {
 
         } else if (msg instanceof Object[]) {
             Object [] msgs = (Object[]) msg;
-            for (int i = 0; i < msgs.length; i++) {
-                addMessageComponents(container, cons, msgs[i], maxll, false);
+            for (Object o : msgs) {
+                addMessageComponents(container, cons, o, maxll, false);
             }
 
         } else if (msg instanceof Icon) {
@@ -381,7 +381,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
             if (len <= 0) {
                 return;
             }
-            int nl = -1;
+            int nl;
             int nll = 0;
 
             if ((nl = s.indexOf(newline)) >= 0) {
@@ -1320,7 +1320,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                 else if (changeName == "componentOrientation") {
                     ComponentOrientation o = (ComponentOrientation)e.getNewValue();
                     JOptionPane op = (JOptionPane)e.getSource();
-                    if (o != (ComponentOrientation)e.getOldValue()) {
+                    if (o != e.getOldValue()) {
                         op.applyComponentOrientation(o);
                     }
                 }
@@ -1418,7 +1418,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
         }
 
         JButton createButton() {
-            JButton button = null;
+            JButton button;
 
             if (minimumWidth > 0) {
                 button = new ConstrainedButton(text, minimumWidth);

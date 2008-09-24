@@ -371,8 +371,8 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @since 1.3
      */
     protected Point getPopupMenuOrigin() {
-        int x = 0;
-        int y = 0;
+        int x;
+        int y;
         JPopupMenu pm = getPopupMenu();
         // Figure out the sizes needed to caclulate the menu position
         Dimension s = getSize();
@@ -900,10 +900,8 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *         on another menu
      */
     public boolean isTopLevelMenu() {
-        if (getParent() instanceof JMenuBar)
-            return true;
+        return getParent() instanceof JMenuBar;
 
-        return false;
     }
 
     /**
@@ -1015,7 +1013,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @since 1.4
      */
     public MenuListener[] getMenuListeners() {
-        return (MenuListener[])listenerList.getListeners(MenuListener.class);
+        return listenerList.getListeners(MenuListener.class);
     }
 
     /**
@@ -1305,7 +1303,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @return the array of menu items
      */
     private MenuElement[] buildMenuElementArray(JMenu leaf) {
-        Vector elements = new Vector();
+        Vector<MenuElement> elements = new Vector<MenuElement>();
         Component current = leaf.getPopupMenu();
         JPopupMenu pop;
         JMenu menu;
@@ -1409,8 +1407,8 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
         public int getAccessibleChildrenCount() {
             Component[] children = getMenuComponents();
             int count = 0;
-            for (int j = 0; j < children.length; j++) {
-                if (children[j] instanceof Accessible) {
+            for (Component child : children) {
+                if (child instanceof Accessible) {
                     count++;
                 }
             }
@@ -1426,18 +1424,18 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
         public Accessible getAccessibleChild(int i) {
             Component[] children = getMenuComponents();
             int count = 0;
-            for (int j = 0; j < children.length; j++) {
-                if (children[j] instanceof Accessible) {
+            for (Component child : children) {
+                if (child instanceof Accessible) {
                     if (count == i) {
-                        if (children[j] instanceof JComponent) {
+                        if (child instanceof JComponent) {
                             // FIXME:  [[[WDW - probably should set this when
                             // the component is added to the menu.  I tried
                             // to do this in most cases, but the separators
                             // added by addSeparator are hard to get to.]]]
-                            AccessibleContext ac = ((Accessible) children[j]).getAccessibleContext();
+                            AccessibleContext ac = child.getAccessibleContext();
                             ac.setAccessibleParent(JMenu.this);
                         }
-                        return (Accessible) children[j];
+                        return (Accessible) child;
                     } else {
                         count++;
                     }
@@ -1581,7 +1579,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
             }
             JMenuItem mi = getItem(i);
             if (mi != null && mi instanceof JMenu) {
-                if (((JMenu) mi).isSelected()) {
+                if (mi.isSelected()) {
                     MenuElement old[] =
                         MenuSelectionManager.defaultManager().getSelectedPath();
                     MenuElement me[] = new MenuElement[old.length-2];

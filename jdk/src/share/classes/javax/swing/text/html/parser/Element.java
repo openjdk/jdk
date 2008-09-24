@@ -159,7 +159,7 @@ class Element implements DTDConstants, Serializable {
     }
 
 
-    static Hashtable contentTypes = new Hashtable();
+    static Hashtable<String, Integer> contentTypes = new Hashtable<String, Integer>();
 
     static {
         contentTypes.put("CDATA", Integer.valueOf(CDATA));
@@ -169,7 +169,7 @@ class Element implements DTDConstants, Serializable {
     }
 
     public static int name2type(String nm) {
-        Integer val = (Integer)contentTypes.get(nm);
+        Integer val = contentTypes.get(nm);
         return (val != null) ? val.intValue() : 0;
     }
 }

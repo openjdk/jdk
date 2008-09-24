@@ -192,7 +192,8 @@ public abstract class JComponent extends Container implements Serializable,
     /**
      * @see #readObject
      */
-    private static final Hashtable readObjectCallbacks = new Hashtable(1);
+    private static final Hashtable<ObjectInputStream, ReadObjectCallback> readObjectCallbacks =
+            new Hashtable<ObjectInputStream, ReadObjectCallback>(1);
 
     /**
      * Keys to use for forward focus traversal when the JComponent is
@@ -356,7 +357,7 @@ public abstract class JComponent extends Container implements Serializable,
     /**
      * Temporary rectangles.
      */
-    private static java.util.List tempRectangles = new java.util.ArrayList(11);
+    private static java.util.List<Rectangle> tempRectangles = new java.util.ArrayList<Rectangle>(11);
 
     /** Used for <code>WHEN_FOCUSED</code> bindings. */
     private InputMap focusInputMap;
@@ -451,7 +452,7 @@ public abstract class JComponent extends Container implements Serializable,
             Rectangle rect;
             int size = tempRectangles.size();
             if (size > 0) {
-                rect = (Rectangle)tempRectangles.remove(size - 1);
+                rect = tempRectangles.remove(size - 1);
             }
             else {
                 rect = new Rectangle(0, 0, 0, 0);
@@ -806,7 +807,7 @@ public abstract class JComponent extends Container implements Serializable,
             // its index.
             if (paintingChild != null &&
                 (paintingChild instanceof JComponent) &&
-                ((JComponent)paintingChild).isOpaque()) {
+                paintingChild.isOpaque()) {
                 for (; i >= 0; i--) {
                     if (getComponent(i) == paintingChild){
                         break;
@@ -875,7 +876,7 @@ public abstract class JComponent extends Container implements Serializable,
                                     shouldSetFlagBack = true;
                                 }
                                 if(!printing) {
-                                    ((JComponent)comp).paint(cg);
+                                    comp.paint(cg);
                                 }
                                 else {
                                     if (!getFlag(IS_PRINTING_ALL)) {
@@ -1098,7 +1099,7 @@ public abstract class JComponent extends Container implements Serializable,
     }
 
     private void adjustPaintFlags() {
-        JComponent jparent = null;
+        JComponent jparent;
         Container parent;
         for(parent = getParent() ; parent != null ; parent =
             parent.getParent()) {
@@ -2096,7 +2097,7 @@ public abstract class JComponent extends Container implements Serializable,
     private void registerWithKeyboardManager(boolean onlyIfNew) {
         InputMap inputMap = getInputMap(WHEN_IN_FOCUSED_WINDOW, false);
         KeyStroke[] strokes;
-        Hashtable registered = (Hashtable)getClientProperty
+        Hashtable<KeyStroke, KeyStroke> registered = (Hashtable)getClientProperty
                                 (WHEN_IN_FOCUSED_WINDOW_BINDINGS);
 
         if (inputMap != null) {
@@ -2120,10 +2121,10 @@ public abstract class JComponent extends Container implements Serializable,
         }
         // Remove any old ones.
         if (registered != null && registered.size() > 0) {
-            Enumeration keys = registered.keys();
+            Enumeration<KeyStroke> keys = registered.keys();
 
             while (keys.hasMoreElements()) {
-                KeyStroke ks = (KeyStroke)keys.nextElement();
+                KeyStroke ks = keys.nextElement();
                 unregisterWithKeyboardManager(ks);
             }
             registered.clear();
@@ -2131,7 +2132,7 @@ public abstract class JComponent extends Container implements Serializable,
         // Updated the registered Hashtable.
         if (strokes != null && strokes.length > 0) {
             if (registered == null) {
-                registered = new Hashtable(strokes.length);
+                registered = new Hashtable<KeyStroke, KeyStroke>(strokes.length);
                 putClientProperty(WHEN_IN_FOCUSED_WINDOW_BINDINGS, registered);
             }
             for (int counter = strokes.length - 1; counter >= 0; counter--) {
@@ -2174,7 +2175,7 @@ public abstract class JComponent extends Container implements Serializable,
         InputMap km = getInputMap(WHEN_IN_FOCUSED_WINDOW, false);
 
         while (km != inputMap && km != null) {
-            km = (ComponentInputMap)km.getParent();
+            km = km.getParent();
         }
         if (km != null) {
             registerWithKeyboardManager(false);
@@ -3673,7 +3674,7 @@ public abstract class JComponent extends Container implements Serializable,
                 if (c != null && c instanceof Accessible) {
                     AccessibleJComponent.this.firePropertyChange(
                         AccessibleContext.ACCESSIBLE_CHILD_PROPERTY,
-                        null, ((Accessible) c).getAccessibleContext());
+                        null, c.getAccessibleContext());
                 }
             }
             public void componentRemoved(ContainerEvent e) {
@@ -3681,7 +3682,7 @@ public abstract class JComponent extends Container implements Serializable,
                 if (c != null && c instanceof Accessible) {
                     AccessibleJComponent.this.firePropertyChange(
                         AccessibleContext.ACCESSIBLE_CHILD_PROPERTY,
-                        ((Accessible) c).getAccessibleContext(), null);
+                        c.getAccessibleContext(), null);
                 }
             }
         }
@@ -4377,7 +4378,7 @@ public abstract class JComponent extends Container implements Serializable,
 //                  System.out.println("A) checking opaque: " + ((JComponent)child).isOpaque() + "  " + child);
 //                  System.out.print("B) ");
 //                  Thread.dumpStack();
-                    return ((JComponent)child).isOpaque();
+                    return child.isOpaque();
                 } else {
                     /** Sometimes a heavy weight can have a bound larger than its peer size
                      *  so we should always draw under heavy weights
@@ -4693,7 +4694,7 @@ public abstract class JComponent extends Container implements Serializable,
             result = (T[])getPropertyChangeListeners();
         }
         else {
-            result = (T[])listenerList.getListeners(listenerType);
+            result = listenerList.getListeners(listenerType);
         }
 
         if (result.length == 0) {
@@ -4904,7 +4905,7 @@ public abstract class JComponent extends Container implements Serializable,
         if(!isShowing()) {
             return;
         }
-        while(!((JComponent)c).isOpaque()) {
+        while(!c.isOpaque()) {
             parent = c.getParent();
             if(parent != null) {
                 x += c.getX();
@@ -5198,7 +5199,7 @@ public abstract class JComponent extends Container implements Serializable,
             Rectangle siblingRect;
             boolean opaque;
             if (sibling instanceof JComponent) {
-                opaque = ((JComponent)sibling).isOpaque();
+                opaque = sibling.isOpaque();
                 if (!opaque) {
                     if (retValue == PARTIALLY_OBSCURED) {
                         continue;
@@ -5345,7 +5346,7 @@ public abstract class JComponent extends Container implements Serializable,
      */
     private class ReadObjectCallback implements ObjectInputValidation
     {
-        private final Vector roots = new Vector(1);
+        private final Vector<JComponent> roots = new Vector<JComponent>(1);
         private final ObjectInputStream inputStream;
 
         ReadObjectCallback(ObjectInputStream s) throws Exception {
@@ -5361,8 +5362,7 @@ public abstract class JComponent extends Container implements Serializable,
          */
         public void validateObject() throws InvalidObjectException {
             try {
-                for(int i = 0; i < roots.size(); i++) {
-                    JComponent root = (JComponent)(roots.elementAt(i));
+                for (JComponent root : roots) {
                     SwingUtilities.updateComponentTreeUI(root);
                 }
             }
@@ -5382,8 +5382,7 @@ public abstract class JComponent extends Container implements Serializable,
             /* If the Component c is a descendant of one of the
              * existing roots (or it IS an existing root), we're done.
              */
-            for(int i = 0; i < roots.size(); i++) {
-                JComponent root = (JComponent)roots.elementAt(i);
+            for (JComponent root : roots) {
                 for(Component p = c; p != null; p = p.getParent()) {
                     if (p == root) {
                         return;
@@ -5396,7 +5395,7 @@ public abstract class JComponent extends Container implements Serializable,
              * to the roots vector.
              */
             for(int i = 0; i < roots.size(); i++) {
-                JComponent root = (JComponent)roots.elementAt(i);
+                JComponent root = roots.elementAt(i);
                 for(Component p = root.getParent(); p != null; p = p.getParent()) {
                     if (p == c) {
                         roots.removeElementAt(i--); // !!
@@ -5428,7 +5427,7 @@ public abstract class JComponent extends Container implements Serializable,
          * in the readObjectCallbacks table.  Note that the ReadObjectCallback
          * constructor takes care of calling s.registerValidation().
          */
-        ReadObjectCallback cb = (ReadObjectCallback)(readObjectCallbacks.get(s));
+        ReadObjectCallback cb = readObjectCallbacks.get(s);
         if (cb == null) {
             try {
                 readObjectCallbacks.put(s, cb = new ReadObjectCallback(s));

@@ -92,7 +92,7 @@ abstract class RTFParser extends AbstractFilter
   // table of non-text characters in rtf
   static final boolean rtfSpecialsTable[];
   static {
-    rtfSpecialsTable = (boolean[])noSpecialsTable.clone();
+    rtfSpecialsTable = noSpecialsTable.clone();
     rtfSpecialsTable['\n'] = true;
     rtfSpecialsTable['\r'] = true;
     rtfSpecialsTable['{'] = true;

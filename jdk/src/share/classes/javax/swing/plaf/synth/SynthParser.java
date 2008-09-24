@@ -40,6 +40,7 @@ import java.net.URLClassLoader;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -136,7 +137,7 @@ class SynthParser extends HandlerBase {
      * Array of state infos for the current style. These are pushed to the
      * style when </style> is received.
      */
-    private java.util.List _stateInfos;
+    private List<ParsedSynthStyle.StateInfo> _stateInfos;
 
     /**
      * Current style.
@@ -151,7 +152,7 @@ class SynthParser extends HandlerBase {
     /**
      * Bindings for the current InputMap
      */
-    private java.util.List _inputMapBindings;
+    private List<String> _inputMapBindings;
 
     /**
      * ID for the input map. This is cached as
@@ -177,30 +178,30 @@ class SynthParser extends HandlerBase {
     /**
      * List of ColorTypes. This is populated in startColorType.
      */
-    private java.util.List _colorTypes;
+    private List<ColorType> _colorTypes;
 
     /**
      * defaultsPropertys are placed here.
      */
-    private Map _defaultsMap;
+    private Map<String, Object> _defaultsMap;
 
     /**
      * List of SynthStyle.Painters that will be applied to the current style.
      */
-    private java.util.List _stylePainters;
+    private List<ParsedSynthStyle.PainterInfo> _stylePainters;
 
     /**
      * List of SynthStyle.Painters that will be applied to the current state.
      */
-    private java.util.List _statePainters;
+    private List<ParsedSynthStyle.PainterInfo> _statePainters;
 
     SynthParser() {
         _mapping = new HashMap<String,Object>();
-        _stateInfos = new ArrayList();
-        _colorTypes = new ArrayList();
-        _inputMapBindings = new ArrayList();
-        _stylePainters = new ArrayList();
-        _statePainters = new ArrayList();
+        _stateInfos = new ArrayList<ParsedSynthStyle.StateInfo>();
+        _colorTypes = new ArrayList<ColorType>();
+        _inputMapBindings = new ArrayList<String>();
+        _stylePainters = new ArrayList<ParsedSynthStyle.PainterInfo>();
+        _statePainters = new ArrayList<ParsedSynthStyle.PainterInfo>();
     }
 
     /**
@@ -219,7 +220,7 @@ class SynthParser extends HandlerBase {
     public void parse(InputStream inputStream,
                       DefaultSynthStyleFactory factory,
                       URL urlResourceBase, Class<?> classResourceBase,
-                      Map defaultsMap)
+                      Map<String, Object> defaultsMap)
                       throws ParseException, IllegalArgumentException {
         if (inputStream == null || factory == null ||
             (urlResourceBase == null && classResourceBase == null)) {
@@ -333,7 +334,7 @@ class SynthParser extends HandlerBase {
      * type type, this will throw an exception.
      */
     private Object lookup(String key, Class type) throws SAXException {
-        Object value = null;
+        Object value;
         if (_handler != null) {
             if ((value = _handler.lookup(key)) != null) {
                 return checkCast(value, type);
@@ -423,15 +424,12 @@ class SynthParser extends HandlerBase {
     private void endStyle() throws SAXException {
         int size = _stylePainters.size();
         if (size > 0) {
-            _style.setPainters((ParsedSynthStyle.PainterInfo[])
-                  _stylePainters.toArray(new ParsedSynthStyle.
-                  PainterInfo[size]));
+            _style.setPainters(_stylePainters.toArray(new ParsedSynthStyle.PainterInfo[size]));
             _stylePainters.clear();
         }
         size = _stateInfos.size();
         if (size > 0) {
-            _style.setStateInfo((ParsedSynthStyle.StateInfo[])_stateInfos.
-                 toArray(new ParsedSynthStyle.StateInfo[size]));
+            _style.setStateInfo(_stateInfos.toArray(new ParsedSynthStyle.StateInfo[size]));
             _stateInfos.clear();
         }
         _style = null;
@@ -501,9 +499,7 @@ class SynthParser extends HandlerBase {
     private void endState() throws SAXException {
         int size = _statePainters.size();
         if (size > 0) {
-            _stateInfo.setPainters((ParsedSynthStyle.PainterInfo[])
-                  _statePainters.toArray(new ParsedSynthStyle.
-                  PainterInfo[size]));
+            _stateInfo.setPainters(_statePainters.toArray(new ParsedSynthStyle.PainterInfo[size]));
             _statePainters.clear();
         }
         _stateInfo = null;
@@ -684,8 +680,7 @@ class SynthParser extends HandlerBase {
             int max = 0;
             for (int counter = _colorTypes.size() - 1; counter >= 0;
                      counter--) {
-                max = Math.max(max, ((ColorType)_colorTypes.get(counter)).
-                               getID());
+                max = Math.max(max, _colorTypes.get(counter).getID());
             }
             if (colors == null || colors.length <= max) {
                 Color[] newColors = new Color[max + 1];
@@ -696,7 +691,7 @@ class SynthParser extends HandlerBase {
             }
             for (int counter = _colorTypes.size() - 1; counter >= 0;
                      counter--) {
-                colors[((ColorType)_colorTypes.get(counter)).getID()] = color;
+                colors[_colorTypes.get(counter).getID()] = color;
             }
             _stateInfo.setColors(colors);
         }
@@ -705,7 +700,7 @@ class SynthParser extends HandlerBase {
     private void startProperty(AttributeList attributes,
                                Object property) throws SAXException {
         Object value = null;
-        Object key = null;
+        String key = null;
         // Type of the value: 0=idref, 1=boolean, 2=dimension, 3=insets,
         // 4=integer,5=string
         int iType = 0;
@@ -1027,7 +1022,7 @@ class SynthParser extends HandlerBase {
         }
     }
 
-    private void addPainterOrMerge(java.util.List painters, String method,
+    private void addPainterOrMerge(List<ParsedSynthStyle.PainterInfo> painters, String method,
                                    SynthPainter painter, int direction) {
         ParsedSynthStyle.PainterInfo painterInfo;
         painterInfo = new ParsedSynthStyle.PainterInfo(method,
