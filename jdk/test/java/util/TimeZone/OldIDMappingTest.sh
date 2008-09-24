@@ -1,5 +1,4 @@
-#
-# Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2003-2004 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,23 +20,40 @@
 # Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
 # CA 95054 USA or visit www.sun.com if you need additional information or
 # have any questions.
-#
 
-#
-# Makefile for building the automulti tool
-#
+# @test
+# @bug 6466476
+# @summary Compatibility test for the old JDK ID mapping and Olson IDs
+# @build OldIDMappingTest
+# @run shell OldIDMappingTest.sh
 
-BUILDDIR = ../..
-PACKAGE = build.tools.automulti
-PRODUCT = tools
-PROGRAM = automulti
-include $(BUILDDIR)/common/Defs.gmk
+: ${TESTJAVA:=${JAVA_HOME}}
+: ${TESTCLASSES:="`pwd`"}
 
-BUILDTOOL_SOURCE_ROOT = $(BUILDDIR)/tools/src
-BUILDTOOL_MAIN        = $(PKGDIR)/AutoMulti.java
+JAVA="${TESTJAVA}/bin/java"
 
-#
-# Build tool jar rules.
-#
-include $(BUILDDIR)/common/BuildToolJar.gmk
+STATUS=0
 
+# Expecting the new (Olson compatible) mapping (default)
+for I in "" " " no No NO false False FALSE Hello
+do
+    if [ x"$I" != x ]; then
+	D="-Dsun.timezone.ids.oldmapping=${I}"
+    fi
+    if ! ${JAVA} ${D} -cp ${TESTCLASSES} OldIDMappingTest -new; then
+	STATUS=1
+    fi
+done
+
+# Expecting the old mapping
+for I in true True TRUE yes Yes YES
+do
+    if [ "x$I" != x ]; then
+	D="-Dsun.timezone.ids.oldmapping=${I}"
+    fi
+    if ! ${JAVA} ${D} -cp ${TESTCLASSES} OldIDMappingTest -old; then
+	STATUS=1
+    fi
+done
+
+exit ${STATUS}

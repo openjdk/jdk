@@ -246,7 +246,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      */
     public Font getFont(String family, int style, int size) {
         fontSearch.setValue(family, style, size);
-        Font f = (Font) fontTable.get(fontSearch);
+        Font f = fontTable.get(fontSearch);
         if (f == null) {
             // haven't seen this one yet.
             Style defaultStyle =
@@ -517,12 +517,11 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
         // PENDING(prinz) should consider finding a alternative to
         // generating extra garbage on search key.
         SmallAttributeSet key = createSmallAttributeSet(search);
-        WeakReference reference = (WeakReference)attributesPool.get(key);
+        WeakReference<SmallAttributeSet> reference = attributesPool.get(key);
         SmallAttributeSet a;
-        if (reference == null
-            || (a = (SmallAttributeSet)reference.get()) == null) {
+        if (reference == null || (a = reference.get()) == null) {
             a = key;
-            attributesPool.put(a, new WeakReference(a));
+            attributesPool.put(a, new WeakReference<SmallAttributeSet>(a));
         }
         return a;
     }
@@ -547,9 +546,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
     public String toString() {
         removeUnusedSets();
         String s = "";
-        Iterator iterator = attributesPool.keySet().iterator();
-        while (iterator.hasNext()) {
-            SmallAttributeSet set = (SmallAttributeSet)iterator.next();
+        for (SmallAttributeSet set : attributesPool.keySet()) {
             s = s + set + "\n";
         }
         return s;
@@ -676,8 +673,8 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
     public static void registerStaticAttributeKey(Object key) {
         String ioFmt = key.getClass().getName() + "." + key.toString();
         if (freezeKeyMap == null) {
-            freezeKeyMap = new Hashtable();
-            thawKeyMap = new Hashtable();
+            freezeKeyMap = new Hashtable<Object, String>();
+            thawKeyMap = new Hashtable<String, Object>();
         }
         freezeKeyMap.put(key, ioFmt);
         thawKeyMap.put(ioFmt, key);
@@ -716,10 +713,10 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
       throws ClassNotFoundException, IOException
     {
         fontSearch = new FontKey(null, 0, 0);
-        fontTable = new Hashtable();
+        fontTable = new Hashtable<FontKey, Font>();
         search = new SimpleAttributeSet();
         attributesPool = Collections.
-            synchronizedMap(new WeakHashMap());
+                synchronizedMap(new WeakHashMap<SmallAttributeSet, WeakReference<SmallAttributeSet>>());
         s.defaultReadObject();
     }
 
@@ -731,15 +728,15 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      */
     public static final String DEFAULT_STYLE = "default";
 
-    private static Hashtable freezeKeyMap;
-    private static Hashtable thawKeyMap;
+    private static Hashtable<Object, String> freezeKeyMap;
+    private static Hashtable<String, Object> thawKeyMap;
 
     private Style styles;
     private transient FontKey fontSearch = new FontKey(null, 0, 0);
-    private transient Hashtable fontTable = new Hashtable();
+    private transient Hashtable<FontKey, Font> fontTable = new Hashtable<FontKey, Font>();
 
-    private transient Map attributesPool = Collections.
-        synchronizedMap(new WeakHashMap());
+    private transient Map<SmallAttributeSet, WeakReference<SmallAttributeSet>> attributesPool = Collections.
+            synchronizedMap(new WeakHashMap<SmallAttributeSet, WeakReference<SmallAttributeSet>>());
     private transient MutableAttributeSet search = new SimpleAttributeSet();
 
     /**
@@ -1176,8 +1173,8 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
             }
         }
 
-        private Vector keys = new Vector();
-        private Vector data = new Vector();
+        private Vector<Object> keys = new Vector<Object>();
+        private Vector<Object> data = new Vector<Object>();
     }
 
     /**
@@ -1344,8 +1341,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
          * @since 1.4
          */
         public ChangeListener[] getChangeListeners() {
-            return (ChangeListener[])listenerList.getListeners(
-                    ChangeListener.class);
+            return listenerList.getListeners(ChangeListener.class);
         }
 
 
