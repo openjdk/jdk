@@ -1153,18 +1153,26 @@ class StubGenerator: public StubCodeGenerator {
   //     Destroy no registers!
   //
   void  gen_write_ref_array_pre_barrier(Register addr, Register count) {
-#if 0 // G1 - only
-    assert_different_registers(addr, c_rarg1);
-    assert_different_registers(count, c_rarg0);
     BarrierSet* bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
       case BarrierSet::G1SATBCT:
       case BarrierSet::G1SATBCTLogging:
         {
           __ pusha();                      // push registers
-          __ movptr(c_rarg0, addr);
-          __ movptr(c_rarg1, count);
-          __ call(RuntimeAddress(BarrierSet::static_write_ref_array_pre));
+          if (count == c_rarg0) {
+            if (addr == c_rarg1) {
+              // exactly backwards!!
+              __ xchgptr(c_rarg1, c_rarg0);
+            } else {
+              __ movptr(c_rarg1, count);
+              __ movptr(c_rarg0, addr);
+            }
+
+          } else {
+            __ movptr(c_rarg0, addr);
+            __ movptr(c_rarg1, count);
+          }
+          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre)));
           __ popa();
         }
         break;
@@ -1172,11 +1180,10 @@ class StubGenerator: public StubCodeGenerator {
       case BarrierSet::CardTableExtension:
       case BarrierSet::ModRef:
         break;
-      default      :
+      default:
         ShouldNotReachHere();
 
     }
-#endif // 0 G1 - only
   }
 
   //
@@ -1193,7 +1200,6 @@ class StubGenerator: public StubCodeGenerator {
     assert_different_registers(start, end, scratch);
     BarrierSet* bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
-#if 0 // G1 - only
       case BarrierSet::G1SATBCT:
       case BarrierSet::G1SATBCTLogging:
 
@@ -1206,11 +1212,10 @@ class StubGenerator: public StubCodeGenerator {
           __ shrptr(scratch, LogBytesPerWord);
           __ mov(c_rarg0, start);
           __ mov(c_rarg1, scratch);
-          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post));
+          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post)));
           __ popa();
         }
         break;
-#endif // 0 G1 - only
       case BarrierSet::CardTableModRef:
       case BarrierSet::CardTableExtension:
         {
@@ -1239,8 +1244,12 @@ class StubGenerator: public StubCodeGenerator {
           __ decrement(count);
           __ jcc(Assembler::greaterEqual, L_loop);
         }
-      }
-   }
+        break;
+      default:
+        ShouldNotReachHere();
+
+    }
+  }
 
   // Copy big chunks forward
   //
@@ -2282,7 +2291,7 @@ class StubGenerator: public StubCodeGenerator {
     // and report their number to the caller.
     assert_different_registers(rax, r14_length, count, to, end_to, rcx);
     __ lea(end_to, to_element_addr);
-    gen_write_ref_array_post_barrier(to, end_to, rcx);
+    gen_write_ref_array_post_barrier(to, end_to, rscratch1);
     __ movptr(rax, r14_length);           // original oops
     __ addptr(rax, count);                // K = (original - remaining) oops
     __ notptr(rax);                       // report (-1^K) to caller
@@ -2291,7 +2300,7 @@ class StubGenerator: public StubCodeGenerator {
     // Come here on success only.
     __ BIND(L_do_card_marks);
     __ addptr(end_to, -wordSize);         // make an inclusive end pointer
-    gen_write_ref_array_post_barrier(to, end_to, rcx);
+    gen_write_ref_array_post_barrier(to, end_to, rscratch1);
     __ xorptr(rax, rax);                  // return 0 on success
 
     // Common exit point (success or failure).

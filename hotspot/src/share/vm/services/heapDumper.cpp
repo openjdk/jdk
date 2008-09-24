@@ -1578,17 +1578,8 @@ void VM_HeapDumper::doit() {
   }
 
   // Write the file header - use 1.0.2 for large heaps, otherwise 1.0.1
-  size_t used;
+  size_t used = ch->used();
   const char* header;
-#ifndef SERIALGC
-  if (Universe::heap()->kind() == CollectedHeap::GenCollectedHeap) {
-    used = GenCollectedHeap::heap()->used();
-  } else {
-    used = ParallelScavengeHeap::heap()->used();
-  }
-#else // SERIALGC
-  used = GenCollectedHeap::heap()->used();
-#endif // SERIALGC
   if (used > (size_t)SegmentedHeapDumpThreshold) {
     set_segmented_dump();
     header = "JAVA PROFILE 1.0.2";

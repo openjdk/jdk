@@ -39,6 +39,12 @@ inline bool markOopDesc::must_be_preserved_with_bias(oop obj_containing_mark) co
   return (!is_unlocked() || !has_no_hash());
 }
 
+inline bool markOopDesc::must_be_preserved(oop obj_containing_mark) const {
+  if (!UseBiasedLocking)
+    return (!is_unlocked() || !has_no_hash());
+  return must_be_preserved_with_bias(obj_containing_mark);
+}
+
 // Should this header (including its age bits) be preserved in the
 // case of a promotion failure during scavenge?
 inline bool markOopDesc::must_be_preserved_with_bias_for_promotion_failure(oop obj_containing_mark) const {
@@ -59,6 +65,13 @@ inline bool markOopDesc::must_be_preserved_with_bias_for_promotion_failure(oop o
   return (this != prototype());
 }
 
+inline bool markOopDesc::must_be_preserved_for_promotion_failure(oop obj_containing_mark) const {
+  if (!UseBiasedLocking)
+    return (this != prototype());
+  return must_be_preserved_with_bias_for_promotion_failure(obj_containing_mark);
+}
+
+
 // Should this header (including its age bits) be preserved in the
 // case of a scavenge in which CMS is the old generation?
 inline bool markOopDesc::must_be_preserved_with_bias_for_cms_scavenge(klassOop klass_of_obj_containing_mark) const {
@@ -69,6 +82,11 @@ inline bool markOopDesc::must_be_preserved_with_bias_for_cms_scavenge(klassOop k
     return true;
   }
   return (this != prototype());
+}
+inline bool markOopDesc::must_be_preserved_for_cms_scavenge(klassOop klass_of_obj_containing_mark) const {
+  if (!UseBiasedLocking)
+    return (this != prototype());
+  return must_be_preserved_with_bias_for_cms_scavenge(klass_of_obj_containing_mark);
 }
 
 inline markOop markOopDesc::prototype_for_object(oop obj) {
