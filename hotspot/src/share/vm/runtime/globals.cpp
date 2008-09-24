@@ -28,7 +28,8 @@
 
 RUNTIME_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PD_DEVELOPER_FLAG, \
               MATERIALIZE_PRODUCT_FLAG, MATERIALIZE_PD_PRODUCT_FLAG, \
-              MATERIALIZE_DIAGNOSTIC_FLAG, MATERIALIZE_NOTPRODUCT_FLAG, \
+              MATERIALIZE_DIAGNOSTIC_FLAG, MATERIALIZE_EXPERIMENTAL_FLAG, \
+              MATERIALIZE_NOTPRODUCT_FLAG, \
               MATERIALIZE_MANAGEABLE_FLAG, MATERIALIZE_PRODUCT_RW_FLAG, \
               MATERIALIZE_LP64_PRODUCT_FLAG)
 
@@ -37,12 +38,16 @@ RUNTIME_OS_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PD_DEVELOPER_FLAG, \
                  MATERIALIZE_DIAGNOSTIC_FLAG, MATERIALIZE_NOTPRODUCT_FLAG)
 
 bool Flag::is_unlocker() const {
-  return strcmp(name, "UnlockDiagnosticVMOptions") == 0;
+  return strcmp(name, "UnlockDiagnosticVMOptions") == 0     ||
+         strcmp(name, "UnlockExperimentalVMOptions") == 0;
+
 }
 
 bool Flag::is_unlocked() const {
   if (strcmp(kind, "{diagnostic}") == 0) {
     return UnlockDiagnosticVMOptions;
+  } else if (strcmp(kind, "{experimental}") == 0) {
+    return UnlockExperimentalVMOptions;
   } else {
     return true;
   }
@@ -125,6 +130,7 @@ void Flag::print_as_flag(outputStream* st) {
 #define RUNTIME_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{product}", DEFAULT },
 #define RUNTIME_PD_PRODUCT_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, "{pd product}", DEFAULT },
 #define RUNTIME_DIAGNOSTIC_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{diagnostic}", DEFAULT },
+#define RUNTIME_EXPERIMENTAL_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{experimental}", DEFAULT },
 #define RUNTIME_MANAGEABLE_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{manageable}", DEFAULT },
 #define RUNTIME_PRODUCT_RW_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{product rw}", DEFAULT },
 
@@ -172,8 +178,11 @@ void Flag::print_as_flag(outputStream* st) {
 
 
 static Flag flagTable[] = {
- RUNTIME_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, RUNTIME_PD_DEVELOP_FLAG_STRUCT, RUNTIME_PRODUCT_FLAG_STRUCT, RUNTIME_PD_PRODUCT_FLAG_STRUCT, RUNTIME_DIAGNOSTIC_FLAG_STRUCT, RUNTIME_NOTPRODUCT_FLAG_STRUCT, RUNTIME_MANAGEABLE_FLAG_STRUCT, RUNTIME_PRODUCT_RW_FLAG_STRUCT, RUNTIME_LP64_PRODUCT_FLAG_STRUCT)
+ RUNTIME_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, RUNTIME_PD_DEVELOP_FLAG_STRUCT, RUNTIME_PRODUCT_FLAG_STRUCT, RUNTIME_PD_PRODUCT_FLAG_STRUCT, RUNTIME_DIAGNOSTIC_FLAG_STRUCT, RUNTIME_EXPERIMENTAL_FLAG_STRUCT, RUNTIME_NOTPRODUCT_FLAG_STRUCT, RUNTIME_MANAGEABLE_FLAG_STRUCT, RUNTIME_PRODUCT_RW_FLAG_STRUCT, RUNTIME_LP64_PRODUCT_FLAG_STRUCT)
  RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, RUNTIME_PD_DEVELOP_FLAG_STRUCT, RUNTIME_PRODUCT_FLAG_STRUCT, RUNTIME_PD_PRODUCT_FLAG_STRUCT, RUNTIME_DIAGNOSTIC_FLAG_STRUCT, RUNTIME_NOTPRODUCT_FLAG_STRUCT)
+#ifndef SERIALGC
+ G1_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, RUNTIME_PD_DEVELOP_FLAG_STRUCT, RUNTIME_PRODUCT_FLAG_STRUCT, RUNTIME_PD_PRODUCT_FLAG_STRUCT, RUNTIME_DIAGNOSTIC_FLAG_STRUCT, RUNTIME_EXPERIMENTAL_FLAG_STRUCT, RUNTIME_NOTPRODUCT_FLAG_STRUCT, RUNTIME_MANAGEABLE_FLAG_STRUCT, RUNTIME_PRODUCT_RW_FLAG_STRUCT)
+#endif // SERIALGC
 #ifdef COMPILER1
  C1_FLAGS(C1_DEVELOP_FLAG_STRUCT, C1_PD_DEVELOP_FLAG_STRUCT, C1_PRODUCT_FLAG_STRUCT, C1_PD_PRODUCT_FLAG_STRUCT, C1_NOTPRODUCT_FLAG_STRUCT)
 #endif
@@ -196,7 +205,8 @@ Flag* Flag::find_flag(char* name, size_t length) {
   for (Flag* current = &flagTable[0]; current->name; current++) {
     if (str_equal(current->name, name, length)) {
       if (!(current->is_unlocked() || current->is_unlocker())) {
-        // disable use of diagnostic flags until they are unlocked
+        // disable use of diagnostic or experimental flags until they
+        // are explicitly unlocked
         return NULL;
       }
       return current;

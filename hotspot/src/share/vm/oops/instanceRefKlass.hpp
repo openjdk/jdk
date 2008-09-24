@@ -72,7 +72,15 @@ class instanceRefKlass: public instanceKlass {
   int oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* blk, MemRegion mr);
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceRefKlass_OOP_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_3(InstanceRefKlass_OOP_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceRefKlass_OOP_OOP_ITERATE_DECL)
+
+#ifndef SERIALGC
+#define InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)      \
+  int oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* blk);
+
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
+#endif // !SERIALGC
 
   static void release_and_notify_pending_list_lock(BasicLock *pending_list_basic_lock);
   static void acquire_pending_list_lock(BasicLock *pending_list_basic_lock);

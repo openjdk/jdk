@@ -26,54 +26,59 @@
 # include "incls/_bitMap.cpp.incl"
 
 
-BitMap::BitMap(idx_t* map, idx_t size_in_bits) {
+BitMap::BitMap(bm_word_t* map, idx_t size_in_bits) :
+  _map(map), _size(size_in_bits)
+{
+  assert(sizeof(bm_word_t) == BytesPerWord, "Implementation assumption.");
   assert(size_in_bits >= 0, "just checking");
-  _map = map;
-  _size = size_in_bits;
 }
 
 
-BitMap::BitMap(idx_t size_in_bits) {
-  assert(size_in_bits >= 0, "just checking");
-  _size = size_in_bits;
-  _map = NEW_RESOURCE_ARRAY(idx_t, size_in_words());
+BitMap::BitMap(idx_t size_in_bits, bool in_resource_area) :
+  _map(NULL), _size(0)
+{
+  assert(sizeof(bm_word_t) == BytesPerWord, "Implementation assumption.");
+  resize(size_in_bits, in_resource_area);
 }
 
 
-void BitMap::resize(idx_t size_in_bits) {
+void BitMap::verify_index(idx_t index) const {
+    assert(index < _size, "BitMap index out of bounds");
+}
+
+void BitMap::verify_range(idx_t beg_index, idx_t end_index) const {
+#ifdef ASSERT
+    assert(beg_index <= end_index, "BitMap range error");
+    // Note that [0,0) and [size,size) are both valid ranges.
+    if (end_index != _size)  verify_index(end_index);
+#endif
+}
+
+void BitMap::resize(idx_t size_in_bits, bool in_resource_area) {
   assert(size_in_bits >= 0, "just checking");
-  size_t old_size_in_words = size_in_words();
-  uintptr_t* old_map = map();
+  idx_t old_size_in_words = size_in_words();
+  bm_word_t* old_map = map();
+
   _size = size_in_bits;
-  size_t new_size_in_words = size_in_words();
-  _map = NEW_RESOURCE_ARRAY(idx_t, new_size_in_words);
-  Copy::disjoint_words((HeapWord*) old_map, (HeapWord*) _map, MIN2(old_size_in_words, new_size_in_words));
+  idx_t new_size_in_words = size_in_words();
+  if (in_resource_area) {
+    _map = NEW_RESOURCE_ARRAY(bm_word_t, new_size_in_words);
+  } else {
+    if (old_map != NULL) FREE_C_HEAP_ARRAY(bm_word_t, _map);
+    _map = NEW_C_HEAP_ARRAY(bm_word_t, new_size_in_words);
+  }
+  Copy::disjoint_words((HeapWord*)old_map, (HeapWord*) _map,
+                       MIN2(old_size_in_words, new_size_in_words));
   if (new_size_in_words > old_size_in_words) {
     clear_range_of_words(old_size_in_words, size_in_words());
   }
-}
-
-// Returns a bit mask for a range of bits [beg, end) within a single word.  Each
-// bit in the mask is 0 if the bit is in the range, 1 if not in the range.  The
-// returned mask can be used directly to clear the range, or inverted to set the
-// range.  Note:  end must not be 0.
-inline BitMap::idx_t
-BitMap::inverted_bit_mask_for_range(idx_t beg, idx_t end) const {
-  assert(end != 0, "does not work when end == 0");
-  assert(beg == end || word_index(beg) == word_index(end - 1),
-         "must be a single-word range");
-  idx_t mask = bit_mask(beg) - 1;       // low (right) bits
-  if (bit_in_word(end) != 0) {
-    mask |= ~(bit_mask(end) - 1);       // high (left) bits
-  }
-  return mask;
 }
 
 void BitMap::set_range_within_word(idx_t beg, idx_t end) {
   // With a valid range (beg <= end), this test ensures that end != 0, as
   // required by inverted_bit_mask_for_range.  Also avoids an unnecessary write.
   if (beg != end) {
-    idx_t mask = inverted_bit_mask_for_range(beg, end);
+    bm_word_t mask = inverted_bit_mask_for_range(beg, end);
     *word_addr(beg) |= ~mask;
   }
 }
@@ -82,7 +87,7 @@ void BitMap::clear_range_within_word(idx_t beg, idx_t end) {
   // With a valid range (beg <= end), this test ensures that end != 0, as
   // required by inverted_bit_mask_for_range.  Also avoids an unnecessary write.
   if (beg != end) {
-    idx_t mask = inverted_bit_mask_for_range(beg, end);
+    bm_word_t mask = inverted_bit_mask_for_range(beg, end);
     *word_addr(beg) &= mask;
   }
 }
@@ -103,20 +108,6 @@ void BitMap::par_put_range_within_word(idx_t beg, idx_t end, bool value) {
       nw = value ? (w | ~mr) : (w & mr);
     }
   }
-}
-
-inline void BitMap::set_large_range_of_words(idx_t beg, idx_t end) {
-  memset(_map + beg, ~(unsigned char)0, (end - beg) * sizeof(uintptr_t));
-}
-
-inline void BitMap::clear_large_range_of_words(idx_t beg, idx_t end) {
-  memset(_map + beg, 0, (end - beg) * sizeof(uintptr_t));
-}
-
-inline BitMap::idx_t BitMap::word_index_round_up(idx_t bit) const {
-  idx_t bit_rounded_up = bit + (BitsPerWord - 1);
-  // Check for integer arithmetic overflow.
-  return bit_rounded_up > bit ? word_index(bit_rounded_up) : size_in_words();
 }
 
 void BitMap::set_range(idx_t beg, idx_t end) {
@@ -185,6 +176,64 @@ void BitMap::clear_large_range(idx_t beg, idx_t end) {
   clear_range_within_word(beg, bit_index(beg_full_word));
   clear_large_range_of_words(beg_full_word, end_full_word);
   clear_range_within_word(bit_index(end_full_word), end);
+}
+
+void BitMap::mostly_disjoint_range_union(BitMap* from_bitmap,
+                                         idx_t   from_start_index,
+                                         idx_t   to_start_index,
+                                         size_t  word_num) {
+  // Ensure that the parameters are correct.
+  // These shouldn't be that expensive to check, hence I left them as
+  // guarantees.
+  guarantee(from_bitmap->bit_in_word(from_start_index) == 0,
+            "it should be aligned on a word boundary");
+  guarantee(bit_in_word(to_start_index) == 0,
+            "it should be aligned on a word boundary");
+  guarantee(word_num >= 2, "word_num should be at least 2");
+
+  intptr_t* from = (intptr_t*) from_bitmap->word_addr(from_start_index);
+  intptr_t* to   = (intptr_t*) word_addr(to_start_index);
+
+  if (*from != 0) {
+    // if it's 0, then there's no point in doing the CAS
+    while (true) {
+      intptr_t old_value = *to;
+      intptr_t new_value = old_value | *from;
+      intptr_t res       = Atomic::cmpxchg_ptr(new_value, to, old_value);
+      if (res == old_value) break;
+    }
+  }
+  ++from;
+  ++to;
+
+  for (size_t i = 0; i < word_num - 2; ++i) {
+    if (*from != 0) {
+      // if it's 0, then there's no point in doing the CAS
+      assert(*to == 0, "nobody else should be writing here");
+      intptr_t new_value = *from;
+      *to = new_value;
+    }
+
+    ++from;
+    ++to;
+  }
+
+  if (*from != 0) {
+    // if it's 0, then there's no point in doing the CAS
+    while (true) {
+      intptr_t old_value = *to;
+      intptr_t new_value = old_value | *from;
+      intptr_t res       = Atomic::cmpxchg_ptr(new_value, to, old_value);
+      if (res == old_value) break;
+    }
+  }
+
+  // the -1 is because we didn't advance them after the final CAS
+  assert(from ==
+           (intptr_t*) from_bitmap->word_addr(from_start_index) + word_num - 1,
+            "invariant");
+  assert(to == (intptr_t*) word_addr(to_start_index) + word_num - 1,
+            "invariant");
 }
 
 void BitMap::at_put(idx_t offset, bool value) {
@@ -282,11 +331,11 @@ void BitMap::par_at_put_large_range(idx_t beg, idx_t end, bool value) {
 
 bool BitMap::contains(const BitMap other) const {
   assert(size() == other.size(), "must have same size");
-  uintptr_t* dest_map = map();
-  uintptr_t* other_map = other.map();
+  bm_word_t* dest_map = map();
+  bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size_in_words(); index++) {
-    uintptr_t word_union = dest_map[index] | other_map[index];
+    bm_word_t word_union = dest_map[index] | other_map[index];
     // If this has more bits set than dest_map[index], then other is not a
     // subset.
     if (word_union != dest_map[index]) return false;
@@ -296,8 +345,8 @@ bool BitMap::contains(const BitMap other) const {
 
 bool BitMap::intersects(const BitMap other) const {
   assert(size() == other.size(), "must have same size");
-  uintptr_t* dest_map = map();
-  uintptr_t* other_map = other.map();
+  bm_word_t* dest_map = map();
+  bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size_in_words(); index++) {
     if ((dest_map[index] & other_map[index]) != 0) return true;
@@ -308,8 +357,8 @@ bool BitMap::intersects(const BitMap other) const {
 
 void BitMap::set_union(BitMap other) {
   assert(size() == other.size(), "must have same size");
-  idx_t* dest_map = map();
-  idx_t* other_map = other.map();
+  bm_word_t* dest_map = map();
+  bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size_in_words(); index++) {
     dest_map[index] = dest_map[index] | other_map[index];
@@ -319,8 +368,8 @@ void BitMap::set_union(BitMap other) {
 
 void BitMap::set_difference(BitMap other) {
   assert(size() == other.size(), "must have same size");
-  idx_t* dest_map = map();
-  idx_t* other_map = other.map();
+  bm_word_t* dest_map = map();
+  bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size_in_words(); index++) {
     dest_map[index] = dest_map[index] & ~(other_map[index]);
@@ -330,8 +379,8 @@ void BitMap::set_difference(BitMap other) {
 
 void BitMap::set_intersection(BitMap other) {
   assert(size() == other.size(), "must have same size");
-  idx_t* dest_map = map();
-  idx_t* other_map = other.map();
+  bm_word_t* dest_map = map();
+  bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size; index++) {
     dest_map[index]  = dest_map[index] & other_map[index];
@@ -339,11 +388,26 @@ void BitMap::set_intersection(BitMap other) {
 }
 
 
+void BitMap::set_intersection_at_offset(BitMap other, idx_t offset) {
+  assert(other.size() >= offset, "offset not in range");
+  assert(other.size() - offset >= size(), "other not large enough");
+  // XXX Ideally, we would remove this restriction.
+  guarantee((offset % (sizeof(bm_word_t) * BitsPerByte)) == 0,
+            "Only handle aligned cases so far.");
+  bm_word_t* dest_map = map();
+  bm_word_t* other_map = other.map();
+  idx_t offset_word_ind = word_index(offset);
+  idx_t size = size_in_words();
+  for (idx_t index = 0; index < size; index++) {
+    dest_map[index] = dest_map[index] & other_map[offset_word_ind + index];
+  }
+}
+
 bool BitMap::set_union_with_result(BitMap other) {
   assert(size() == other.size(), "must have same size");
   bool changed = false;
-  idx_t* dest_map = map();
-  idx_t* other_map = other.map();
+  bm_word_t* dest_map = map();
+  bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size; index++) {
     idx_t temp = map(index) | other_map[index];
@@ -357,11 +421,11 @@ bool BitMap::set_union_with_result(BitMap other) {
 bool BitMap::set_difference_with_result(BitMap other) {
   assert(size() == other.size(), "must have same size");
   bool changed = false;
-  idx_t* dest_map = map();
-  idx_t* other_map = other.map();
+  bm_word_t* dest_map = map();
+  bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size; index++) {
-    idx_t temp = dest_map[index] & ~(other_map[index]);
+    bm_word_t temp = dest_map[index] & ~(other_map[index]);
     changed = changed || (temp != dest_map[index]);
     dest_map[index] = temp;
   }
@@ -372,12 +436,12 @@ bool BitMap::set_difference_with_result(BitMap other) {
 bool BitMap::set_intersection_with_result(BitMap other) {
   assert(size() == other.size(), "must have same size");
   bool changed = false;
-  idx_t* dest_map = map();
-  idx_t* other_map = other.map();
+  bm_word_t* dest_map = map();
+  bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size; index++) {
-    idx_t orig = dest_map[index];
-    idx_t temp = orig & other_map[index];
+    bm_word_t orig = dest_map[index];
+    bm_word_t temp = orig & other_map[index];
     changed = changed || (temp != orig);
     dest_map[index]  = temp;
   }
@@ -387,8 +451,8 @@ bool BitMap::set_intersection_with_result(BitMap other) {
 
 void BitMap::set_from(BitMap other) {
   assert(size() == other.size(), "must have same size");
-  idx_t* dest_map = map();
-  idx_t* other_map = other.map();
+  bm_word_t* dest_map = map();
+  bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size; index++) {
     dest_map[index] = other_map[index];
@@ -398,8 +462,8 @@ void BitMap::set_from(BitMap other) {
 
 bool BitMap::is_same(BitMap other) {
   assert(size() == other.size(), "must have same size");
-  idx_t* dest_map = map();
-  idx_t* other_map = other.map();
+  bm_word_t* dest_map = map();
+  bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size; index++) {
     if (dest_map[index] != other_map[index]) return false;
@@ -408,24 +472,24 @@ bool BitMap::is_same(BitMap other) {
 }
 
 bool BitMap::is_full() const {
-  uintptr_t* word = map();
+  bm_word_t* word = map();
   idx_t rest = size();
   for (; rest >= (idx_t) BitsPerWord; rest -= BitsPerWord) {
-    if (*word != (uintptr_t) AllBits) return false;
+    if (*word != (bm_word_t) AllBits) return false;
     word++;
   }
-  return rest == 0 || (*word | ~right_n_bits((int)rest)) == (uintptr_t) AllBits;
+  return rest == 0 || (*word | ~right_n_bits((int)rest)) == (bm_word_t) AllBits;
 }
 
 
 bool BitMap::is_empty() const {
-  uintptr_t* word = map();
+  bm_word_t* word = map();
   idx_t rest = size();
   for (; rest >= (idx_t) BitsPerWord; rest -= BitsPerWord) {
-    if (*word != (uintptr_t) NoBits) return false;
+    if (*word != (bm_word_t) NoBits) return false;
     word++;
   }
-  return rest == 0 || (*word & right_n_bits((int)rest)) == (uintptr_t) NoBits;
+  return rest == 0 || (*word & right_n_bits((int)rest)) == (bm_word_t) NoBits;
 }
 
 void BitMap::clear_large() {
@@ -436,7 +500,7 @@ void BitMap::clear_large() {
 // then modifications in and to the left of the _bit_ being
 // currently sampled will not be seen. Note also that the
 // interval [leftOffset, rightOffset) is right open.
-void BitMap::iterate(BitMapClosure* blk, idx_t leftOffset, idx_t rightOffset) {
+bool BitMap::iterate(BitMapClosure* blk, idx_t leftOffset, idx_t rightOffset) {
   verify_range(leftOffset, rightOffset);
 
   idx_t startIndex = word_index(leftOffset);
@@ -445,105 +509,70 @@ void BitMap::iterate(BitMapClosure* blk, idx_t leftOffset, idx_t rightOffset) {
        offset < rightOffset && index < endIndex;
        offset = (++index) << LogBitsPerWord) {
     idx_t rest = map(index) >> (offset & (BitsPerWord - 1));
-    for (; offset < rightOffset && rest != (uintptr_t)NoBits; offset++) {
+    for (; offset < rightOffset && rest != (bm_word_t)NoBits; offset++) {
       if (rest & 1) {
-        blk->do_bit(offset);
+        if (!blk->do_bit(offset)) return false;
         //  resample at each closure application
         // (see, for instance, CMS bug 4525989)
         rest = map(index) >> (offset & (BitsPerWord -1));
-        // XXX debugging: remove
-        // The following assertion assumes that closure application
-        // doesn't clear bits (may not be true in general, e.g. G1).
-        assert(rest & 1,
-               "incorrect shift or closure application can clear bits?");
       }
       rest = rest >> 1;
     }
   }
+  return true;
 }
 
-BitMap::idx_t BitMap::get_next_one_offset(idx_t l_offset,
-                                          idx_t r_offset) const {
-  assert(l_offset <= size(), "BitMap index out of bounds");
-  assert(r_offset <= size(), "BitMap index out of bounds");
-  assert(l_offset <= r_offset, "l_offset > r_offset ?");
+BitMap::idx_t* BitMap::_pop_count_table = NULL;
 
-  if (l_offset == r_offset) {
-    return l_offset;
-  }
-  idx_t   index = word_index(l_offset);
-  idx_t r_index = word_index(r_offset-1) + 1;
-  idx_t res_offset = l_offset;
-
-  // check bits including and to the _left_ of offset's position
-  idx_t pos = bit_in_word(res_offset);
-  idx_t res = map(index) >> pos;
-  if (res != (uintptr_t)NoBits) {
-    // find the position of the 1-bit
-    for (; !(res & 1); res_offset++) {
-      res = res >> 1;
+void BitMap::init_pop_count_table() {
+  if (_pop_count_table == NULL) {
+    BitMap::idx_t *table = NEW_C_HEAP_ARRAY(idx_t, 256);
+    for (uint i = 0; i < 256; i++) {
+      table[i] = num_set_bits(i);
     }
-    assert(res_offset >= l_offset, "just checking");
-    return MIN2(res_offset, r_offset);
-  }
-  // skip over all word length 0-bit runs
-  for (index++; index < r_index; index++) {
-    res = map(index);
-    if (res != (uintptr_t)NoBits) {
-      // found a 1, return the offset
-      for (res_offset = index << LogBitsPerWord; !(res & 1);
-           res_offset++) {
-        res = res >> 1;
-      }
-      assert(res & 1, "tautology; see loop condition");
-      assert(res_offset >= l_offset, "just checking");
-      return MIN2(res_offset, r_offset);
+
+    intptr_t res = Atomic::cmpxchg_ptr((intptr_t)  table,
+                                       (intptr_t*) &_pop_count_table,
+                                       (intptr_t)  NULL_WORD);
+    if (res != NULL_WORD) {
+      guarantee( _pop_count_table == (void*) res, "invariant" );
+      FREE_C_HEAP_ARRAY(bm_word_t, table);
     }
   }
-  return r_offset;
 }
 
-BitMap::idx_t BitMap::get_next_zero_offset(idx_t l_offset,
-                                           idx_t r_offset) const {
-  assert(l_offset <= size(), "BitMap index out of bounds");
-  assert(r_offset <= size(), "BitMap index out of bounds");
-  assert(l_offset <= r_offset, "l_offset > r_offset ?");
+BitMap::idx_t BitMap::num_set_bits(bm_word_t w) {
+  idx_t bits = 0;
 
-  if (l_offset == r_offset) {
-    return l_offset;
-  }
-  idx_t   index = word_index(l_offset);
-  idx_t r_index = word_index(r_offset-1) + 1;
-  idx_t res_offset = l_offset;
-
-  // check bits including and to the _left_ of offset's position
-  idx_t pos = res_offset & (BitsPerWord - 1);
-  idx_t res = (map(index) >> pos) | left_n_bits((int)pos);
-
-  if (res != (uintptr_t)AllBits) {
-    // find the position of the 0-bit
-    for (; res & 1; res_offset++) {
-      res = res >> 1;
+  while (w != 0) {
+    while ((w & 1) == 0) {
+      w >>= 1;
     }
-    assert(res_offset >= l_offset, "just checking");
-    return MIN2(res_offset, r_offset);
+    bits++;
+    w >>= 1;
   }
-  // skip over all word length 1-bit runs
-  for (index++; index < r_index; index++) {
-    res = map(index);
-    if (res != (uintptr_t)AllBits) {
-      // found a 0, return the offset
-      for (res_offset = index << LogBitsPerWord; res & 1;
-           res_offset++) {
-        res = res >> 1;
-      }
-      assert(!(res & 1), "tautology; see loop condition");
-      assert(res_offset >= l_offset, "just checking");
-      return MIN2(res_offset, r_offset);
-    }
-  }
-  return r_offset;
+  return bits;
 }
+
+BitMap::idx_t BitMap::num_set_bits_from_table(unsigned char c) {
+  assert(_pop_count_table != NULL, "precondition");
+  return _pop_count_table[c];
+}
+
+BitMap::idx_t BitMap::count_one_bits() const {
+  init_pop_count_table(); // If necessary.
+  idx_t sum = 0;
+  typedef unsigned char uchar;
+  for (idx_t i = 0; i < size_in_words(); i++) {
+    bm_word_t w = map()[i];
+    for (size_t j = 0; j < sizeof(bm_word_t); j++) {
+      sum += num_set_bits_from_table(uchar(w & 255));
+      w >>= 8;
+    }
+  }
+  return sum;
+}
+
 
 #ifndef PRODUCT
 
@@ -558,7 +587,7 @@ void BitMap::print_on(outputStream* st) const {
 #endif
 
 
-BitMap2D::BitMap2D(uintptr_t* map, idx_t size_in_slots, idx_t bits_per_slot)
+BitMap2D::BitMap2D(bm_word_t* map, idx_t size_in_slots, idx_t bits_per_slot)
   : _bits_per_slot(bits_per_slot)
   , _map(map, size_in_slots * bits_per_slot)
 {

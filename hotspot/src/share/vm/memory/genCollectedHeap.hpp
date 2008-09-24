@@ -252,6 +252,21 @@ public:
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
   virtual HeapWord* allocate_new_tlab(size_t size);
 
+  // Can a compiler initialize a new object without store barriers?
+  // This permission only extends from the creation of a new object
+  // via a TLAB up to the first subsequent safepoint.
+  virtual bool can_elide_tlab_store_barriers() const {
+    return true;
+  }
+
+  // Can a compiler elide a store barrier when it writes
+  // a permanent oop into the heap?  Applies when the compiler
+  // is storing x to the heap, where x->is_perm() is true.
+  virtual bool can_elide_permanent_oop_store_barriers() const {
+    // CMS needs to see all, even intra-generational, ref updates.
+    return !UseConcMarkSweepGC;
+  }
+
   // The "requestor" generation is performing some garbage collection
   // action for which it would be useful to have scratch space.  The
   // requestor promises to allocate no more than "max_alloc_words" in any
