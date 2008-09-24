@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ package java.lang;
  * @since      JDK1.0
  */
 public class ClassCircularityError extends LinkageError {
+    private static final long serialVersionUID = 1054362542914539689L;
+
     /**
      * Constructs a {@code ClassCircularityError} with no detail message.
      */
