@@ -355,8 +355,11 @@ bool CommandLineFlags::ccstrAtPut(char* name, size_t len, ccstr* value, FlagValu
   if (result == NULL) return false;
   if (!result->is_ccstr()) return false;
   ccstr old_value = result->get_ccstr();
-  char* new_value = NEW_C_HEAP_ARRAY(char, strlen(*value)+1);
-  strcpy(new_value, *value);
+  char* new_value = NULL;
+  if (*value != NULL) {
+    new_value = NEW_C_HEAP_ARRAY(char, strlen(*value)+1);
+    strcpy(new_value, *value);
+  }
   result->set_ccstr(new_value);
   if (result->origin == DEFAULT && old_value != NULL) {
     // Prior value is NOT heap allocated, but was a literal constant.

@@ -692,7 +692,7 @@ class CommandLineFlags {
   diagnostic(bool, PrintAssembly, false,                                    \
           "Print assembly code (using external disassembler.so)")           \
                                                                             \
-  diagnostic(ccstr, PrintAssemblyOptions, false,                            \
+  diagnostic(ccstr, PrintAssemblyOptions, NULL,                             \
           "Options string passed to disassembler.so")                       \
                                                                             \
   diagnostic(bool, PrintNMethods, false,                                    \
@@ -833,7 +833,7 @@ class CommandLineFlags {
           "Use LWP-based instead of libthread-based synchronization "       \
           "(SPARC only)")                                                   \
                                                                             \
-  product(ccstr, SyncKnobs, "",                                             \
+  product(ccstr, SyncKnobs, NULL,                                           \
           "(Unstable) Various monitor synchronization tunables")            \
                                                                             \
   product(intx, EmitSync, 0,                                                \
@@ -1017,7 +1017,7 @@ class CommandLineFlags {
   notproduct(bool, TraceJVMCalls, false,                                    \
           "Trace JVM calls")                                                \
                                                                             \
-  product(ccstr, TraceJVMTI, "",                                            \
+  product(ccstr, TraceJVMTI, NULL,                                          \
           "Trace flags for JVMTI functions and events")                     \
                                                                             \
   /* This option can change an EMCP method into an obsolete method. */      \
