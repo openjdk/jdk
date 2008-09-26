@@ -2964,10 +2964,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       if (UseStringCache) {
         // Forcibly initialize java/lang/String and mutate the private
         // static final "stringCacheEnabled" field before we start creating instances
-#ifdef ASSERT
-        klassOop tmp_k = SystemDictionary::find(vmSymbolHandles::java_lang_String(), Handle(), Handle(), CHECK_0);
-        assert(tmp_k == NULL, "java/lang/String should not be loaded yet");
-#endif
         klassOop k_o = SystemDictionary::resolve_or_null(vmSymbolHandles::java_lang_String(), Handle(), Handle(), CHECK_0);
         KlassHandle k = KlassHandle(THREAD, k_o);
         guarantee(k.not_null(), "Must find java/lang/String");
