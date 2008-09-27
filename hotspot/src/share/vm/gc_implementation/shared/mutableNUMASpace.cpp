@@ -181,6 +181,25 @@ size_t MutableNUMASpace::unsafe_max_tlab_alloc(Thread *thr) const {
   return lgrp_spaces()->at(i)->space()->free_in_bytes();
 }
 
+
+size_t MutableNUMASpace::capacity_in_words(Thread* thr) const {
+  guarantee(thr != NULL, "No thread");
+  int lgrp_id = thr->lgrp_id();
+  if (lgrp_id == -1) {
+    if (lgrp_spaces()->length() > 0) {
+      return capacity_in_words() / lgrp_spaces()->length();
+    } else {
+      assert(false, "There should be at least one locality group");
+      return 0;
+    }
+  }
+  int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
+  if (i == -1) {
+    return 0;
+  }
+  return lgrp_spaces()->at(i)->space()->capacity_in_words();
+}
+
 // Check if the NUMA topology has changed. Add and remove spaces if needed.
 // The update can be forced by setting the force parameter equal to true.
 bool MutableNUMASpace::update_layout(bool force) {
@@ -722,7 +741,8 @@ HeapWord* MutableNUMASpace::allocate(size_t size) {
     i = os::random() % lgrp_spaces()->length();
   }
 
-  MutableSpace *s = lgrp_spaces()->at(i)->space();
+  LGRPSpace* ls = lgrp_spaces()->at(i);
+  MutableSpace *s = ls->space();
   HeapWord *p = s->allocate(size);
 
   if (p != NULL) {
@@ -743,6 +763,9 @@ HeapWord* MutableNUMASpace::allocate(size_t size) {
       *(int*)i = 0;
     }
   }
+  if (p == NULL) {
+    ls->set_allocation_failed();
+  }
   return p;
 }
 
@@ -761,7 +784,8 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   if (i == -1) {
     i = os::random() % lgrp_spaces()->length();
   }
-  MutableSpace *s = lgrp_spaces()->at(i)->space();
+  LGRPSpace *ls = lgrp_spaces()->at(i);
+  MutableSpace *s = ls->space();
   HeapWord *p = s->cas_allocate(size);
   if (p != NULL) {
     size_t remainder = pointer_delta(s->end(), p + size);
@@ -789,6 +813,9 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
     for (HeapWord *i = p; i < p + size; i += os::vm_page_size() >> LogHeapWordSize) {
       *(int*)i = 0;
     }
+  }
+  if (p == NULL) {
+    ls->set_allocation_failed();
   }
   return p;
 }
