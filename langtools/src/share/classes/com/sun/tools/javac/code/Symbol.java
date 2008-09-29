@@ -132,6 +132,10 @@ public abstract class Symbol implements Element {
         throw new AssertionError();
     }
 
+    public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+        return v.visitSymbol(this, p);
+    }
+
     /** The Java source which this symbol represents.
      *  A description of this symbol; overrides Object.
      */
@@ -477,6 +481,10 @@ public abstract class Symbol implements Element {
         public <R, P> R accept(ElementVisitor<R, P> v, P p) {
             return other.accept(v, p);
         }
+
+        public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+            return v.visitSymbol(other, p);
+        }
     }
 
     /** A class for type symbols. Type variables are represented by instances
@@ -570,6 +578,10 @@ public abstract class Symbol implements Element {
             return v.visitTypeParameter(this, p);
         }
 
+        public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+            return v.visitTypeSymbol(this, p);
+        }
+
         public List<Type> getBounds() {
             TypeVar t = (TypeVar)type;
             Type bound = t.getUpperBound();
@@ -652,6 +664,10 @@ public abstract class Symbol implements Element {
 
         public <R, P> R accept(ElementVisitor<R, P> v, P p) {
             return v.visitPackage(this, p);
+        }
+
+        public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+            return v.visitPackageSymbol(this, p);
         }
     }
 
@@ -843,6 +859,10 @@ public abstract class Symbol implements Element {
         public <R, P> R accept(ElementVisitor<R, P> v, P p) {
             return v.visitType(this, p);
         }
+
+        public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+            return v.visitClassSymbol(this, p);
+        }
     }
 
 
@@ -968,6 +988,10 @@ public abstract class Symbol implements Element {
         public void setData(Object data) {
             assert !(data instanceof Env<?>) : this;
             this.data = data;
+        }
+
+        public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+            return v.visitVarSymbol(this, p);
         }
     }
 
@@ -1232,6 +1256,10 @@ public abstract class Symbol implements Element {
             return v.visitExecutable(this, p);
         }
 
+        public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+            return v.visitMethodSymbol(this, p);
+        }
+
         public Type getReturnType() {
             return asType().getReturnType();
         }
@@ -1250,6 +1278,10 @@ public abstract class Symbol implements Element {
         public OperatorSymbol(Name name, Type type, int opcode, Symbol owner) {
             super(PUBLIC | STATIC, name, type, owner);
             this.opcode = opcode;
+        }
+
+        public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+            return v.visitOperatorSymbol(this, p);
         }
     }
 
@@ -1307,5 +1339,29 @@ public abstract class Symbol implements Element {
             return this;
         }
 
+    }
+
+    /**
+     * A visitor for symbols.  A visitor is used to implement operations
+     * (or relations) on symbols.  Most common operations on types are
+     * binary relations and this interface is designed for binary
+     * relations, that is, operations on the form
+     * Symbol&nbsp;&times;&nbsp;P&nbsp;&rarr;&nbsp;R.
+     * <!-- In plain text: Type x P -> R -->
+     *
+     * @param <R> the return type of the operation implemented by this
+     * visitor; use Void if no return type is needed.
+     * @param <P> the type of the second argument (the first being the
+     * symbol itself) of the operation implemented by this visitor; use
+     * Void if a second argument is not needed.
+     */
+    public interface Visitor<R,P> {
+        R visitClassSymbol(ClassSymbol s, P arg);
+        R visitMethodSymbol(MethodSymbol s, P arg);
+        R visitPackageSymbol(PackageSymbol s, P arg);
+        R visitOperatorSymbol(OperatorSymbol s, P arg);
+        R visitVarSymbol(VarSymbol s, P arg);
+        R visitTypeSymbol(TypeSymbol s, P arg);
+        R visitSymbol(Symbol s, P arg);
     }
 }
