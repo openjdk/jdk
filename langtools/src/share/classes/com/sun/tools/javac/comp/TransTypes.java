@@ -534,7 +534,7 @@ public class TransTypes extends TreeTranslator {
         tree.truepart = translate(tree.truepart, erasure(tree.type));
         tree.falsepart = translate(tree.falsepart, erasure(tree.type));
         tree.type = erasure(tree.type);
-        result = tree;
+        result = retype(tree, tree.type, pt);
     }
 
    public void visitIf(JCIf tree) {
