@@ -37,8 +37,4 @@ public interface ChoicePeer extends ComponentPeer {
     void removeAll();
     void select(int index);
 
-    /*
-     * DEPRECATED:  Replaced by add(String, int).
-     */
-    void addItem(String item, int index);
 }

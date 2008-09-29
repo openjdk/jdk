@@ -35,13 +35,4 @@ public interface MenuItemPeer extends MenuComponentPeer {
     void setLabel(String label);
     void setEnabled(boolean b);
 
-    /**
-     * DEPRECATED:  Replaced by setEnabled(boolean).
-     */
-    void enable();
-
-    /**
-     * DEPRECATED:  Replaced by setEnabled(boolean).
-     */
-    void disable();
 }

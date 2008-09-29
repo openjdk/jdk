@@ -38,18 +38,4 @@ public interface TextFieldPeer extends TextComponentPeer {
     Dimension getPreferredSize(int columns);
     Dimension getMinimumSize(int columns);
 
-    /**
-     * DEPRECATED:  Replaced by setEchoChar(char echoChar).
-     */
-    void setEchoCharacter(char c);
-
-    /**
-     * DEPRECATED:  Replaced by getPreferredSize(int).
-     */
-    Dimension preferredSize(int cols);
-
-    /**
-     * DEPRECATED:  Replaced by getMinimumSize(int).
-     */
-    Dimension minimumSize(int cols);
 }
