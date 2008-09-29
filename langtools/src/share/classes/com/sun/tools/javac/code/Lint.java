@@ -176,6 +176,11 @@ public class Lint
         PATH("path"),
 
         /**
+         * Warn about issues regarding annotation processing.
+         */
+        PROCESSING("processing"),
+
+        /**
          * Warn about Serializable classes that do not provide a serial version ID.
          */
         SERIAL("serial"),
