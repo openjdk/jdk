@@ -367,7 +367,7 @@ MsgRouting AwtTrayIcon::WmMouseUp(UINT flags, int x, int y, int button)
                    (AwtComponent::GetButton(button) == java_awt_event_MouseEvent_BUTTON3 ?
                     TRUE : FALSE), AwtComponent::GetButton(button), &msg);
 
-    if ((m_mouseButtonClickAllowed & AwtComponent::GetButtonMK(button)) != 1) { // No up-button in the drag-state
+    if ((m_mouseButtonClickAllowed & AwtComponent::GetButtonMK(button)) != 0) { // No up-button in the drag-state
         SendMouseEvent(java_awt_event_MouseEvent_MOUSE_CLICKED,
                        TimeHelper::windowsToUTC(::GetTickCount()), x, y, AwtComponent::GetJavaModifiers(),
                        clickCount, JNI_FALSE, AwtComponent::GetButton(button));
