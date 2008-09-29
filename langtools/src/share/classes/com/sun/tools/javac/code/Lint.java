@@ -183,7 +183,12 @@ public class Lint
         /**
          * Warn about unchecked operations on raw types.
          */
-        UNCHECKED("unchecked");
+        UNCHECKED("unchecked"),
+
+        /**
+         * Warn about unchecked operations on raw types.
+         */
+        RAW("rawtypes");
 
         LintCategory(String option) {
             this.option = option;
