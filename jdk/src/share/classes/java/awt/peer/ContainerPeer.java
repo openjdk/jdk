@@ -39,7 +39,6 @@ public interface ContainerPeer extends ComponentPeer {
     void endValidate();
     void beginLayout();
     void endLayout();
-    boolean isPaintPending();
 
     /**
      * Restacks native windows - children of this native window - according to Java container order
@@ -53,11 +52,4 @@ public interface ContainerPeer extends ComponentPeer {
      * @since 1.5
      */
     boolean isRestackSupported();
-    /**
-
-
-
-     * DEPRECATED:  Replaced by getInsets().
-     */
-    Insets insets();
 }

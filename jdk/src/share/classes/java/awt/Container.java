@@ -343,7 +343,7 @@ public class Container extends Component {
         ComponentPeer peer = this.peer;
         if (peer instanceof ContainerPeer) {
             ContainerPeer cpeer = (ContainerPeer)peer;
-            return (Insets)cpeer.insets().clone();
+            return (Insets)cpeer.getInsets().clone();
         }
         return new Insets(0, 0, 0, 0);
     }
@@ -3931,7 +3931,7 @@ public class Container extends Component {
                 if (comp.isVisible()) {
                     ComponentPeer peer = comp.getPeer();
                     if (peer != null) {
-                        peer.show();
+                        peer.setVisible(true);
                     }
                 }
             }
@@ -3952,7 +3952,7 @@ public class Container extends Component {
                 if (comp.isVisible()) {
                     ComponentPeer peer = comp.getPeer();
                     if (peer != null) {
-                        peer.hide();
+                        peer.setVisible(false);
                     }
                 }
             }
