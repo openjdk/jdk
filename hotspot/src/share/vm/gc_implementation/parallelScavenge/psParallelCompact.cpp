@@ -36,15 +36,6 @@ const size_t ParallelCompactData::RegionSizeOffsetMask = RegionSize - 1;
 const size_t ParallelCompactData::RegionAddrOffsetMask = RegionSizeBytes - 1;
 const size_t ParallelCompactData::RegionAddrMask  = ~RegionAddrOffsetMask;
 
-// 32-bit:  128 words covers 4 bitmap words
-// 64-bit:  128 words covers 2 bitmap words
-const size_t ParallelCompactData::Log2BlockSize   = 7; // 128 words
-const size_t ParallelCompactData::BlockSize       = (size_t)1 << Log2BlockSize;
-const size_t ParallelCompactData::BlockOffsetMask = BlockSize - 1;
-const size_t ParallelCompactData::BlockMask       = ~BlockOffsetMask;
-
-const size_t ParallelCompactData::BlocksPerRegion = RegionSize / BlockSize;
-
 const ParallelCompactData::RegionData::region_sz_t
 ParallelCompactData::RegionData::dc_shift = 27;
 
@@ -62,10 +53,6 @@ ParallelCompactData::RegionData::dc_claimed = 0x8U << dc_shift;
 
 const ParallelCompactData::RegionData::region_sz_t
 ParallelCompactData::RegionData::dc_completed = 0xcU << dc_shift;
-
-#ifdef ASSERT
-short   ParallelCompactData::BlockData::_cur_phase = 0;
-#endif
 
 SpaceInfo PSParallelCompact::_space_info[PSParallelCompact::last_space_id];
 bool      PSParallelCompact::_print_phases = false;
@@ -290,10 +277,6 @@ ParallelCompactData::ParallelCompactData()
   _region_vspace = 0;
   _region_data = 0;
   _region_count = 0;
-
-  _block_vspace = 0;
-  _block_data = 0;
-  _block_count = 0;
 }
 
 bool ParallelCompactData::initialize(MemRegion covered_region)
@@ -308,12 +291,6 @@ bool ParallelCompactData::initialize(MemRegion covered_region)
          "region size not a multiple of RegionSize");
 
   bool result = initialize_region_data(region_size);
-
-  // Initialize the block data if it will be used for updating pointers, or if
-  // this is a debug build.
-  if (!UseParallelOldGCRegionPointerCalc || trueInDebug) {
-    result = result && initialize_block_data(region_size);
-  }
 
   return result;
 }
@@ -356,39 +333,16 @@ bool ParallelCompactData::initialize_region_data(size_t region_size)
   return false;
 }
 
-bool ParallelCompactData::initialize_block_data(size_t region_size)
-{
-  const size_t count = (region_size + BlockOffsetMask) >> Log2BlockSize;
-  _block_vspace = create_vspace(count, sizeof(BlockData));
-  if (_block_vspace != 0) {
-    _block_data = (BlockData*)_block_vspace->reserved_low_addr();
-    _block_count = count;
-    return true;
-  }
-  return false;
-}
-
 void ParallelCompactData::clear()
 {
-  if (_block_data) {
-    memset(_block_data, 0, _block_vspace->committed_size());
-  }
   memset(_region_data, 0, _region_vspace->committed_size());
 }
 
 void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
   assert(beg_region <= _region_count, "beg_region out of range");
   assert(end_region <= _region_count, "end_region out of range");
-  assert(RegionSize % BlockSize == 0, "RegionSize not a multiple of BlockSize");
 
   const size_t region_cnt = end_region - beg_region;
-
-  if (_block_data) {
-    const size_t blocks_per_region = RegionSize / BlockSize;
-    const size_t beg_block = beg_region * blocks_per_region;
-    const size_t block_cnt = region_cnt * blocks_per_region;
-    memset(_block_data + beg_block, 0, block_cnt * sizeof(BlockData));
-  }
   memset(_region_data + beg_region, 0, region_cnt * sizeof(RegionData));
 }
 
@@ -565,40 +519,7 @@ bool ParallelCompactData::summarize(HeapWord* target_beg, HeapWord* target_end,
   return true;
 }
 
-bool ParallelCompactData::partial_obj_ends_in_block(size_t block_index) {
-  HeapWord* block_addr = block_to_addr(block_index);
-  HeapWord* block_end_addr = block_addr + BlockSize;
-  size_t region_index = addr_to_region_idx(block_addr);
-  HeapWord* partial_obj_end_addr = partial_obj_end(region_index);
-
-  // An object that ends at the end of the block, ends
-  // in the block (the last word of the object is to
-  // the left of the end).
-  if ((block_addr < partial_obj_end_addr) &&
-      (partial_obj_end_addr <= block_end_addr)) {
-    return true;
-  }
-
-  return false;
-}
-
 HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr) {
-  HeapWord* result = NULL;
-  if (UseParallelOldGCRegionPointerCalc) {
-    result = region_calc_new_pointer(addr);
-  } else {
-    result = block_calc_new_pointer(addr);
-  }
-  return result;
-}
-
-// This method is overly complicated (expensive) to be called
-// for every reference.
-// Try to restructure this so that a NULL is returned if
-// the object is dead.  But don't wast the cycles to explicitly check
-// that it is dead since only live objects should be passed in.
-
-HeapWord* ParallelCompactData::region_calc_new_pointer(HeapWord* addr) {
   assert(addr != NULL, "Should detect NULL oop earlier");
   assert(PSParallelCompact::gc_heap()->is_in(addr), "addr not in heap");
 #ifdef ASSERT
@@ -641,50 +562,6 @@ HeapWord* ParallelCompactData::region_calc_new_pointer(HeapWord* addr) {
   return result;
 }
 
-HeapWord* ParallelCompactData::block_calc_new_pointer(HeapWord* addr) {
-  assert(addr != NULL, "Should detect NULL oop earlier");
-  assert(PSParallelCompact::gc_heap()->is_in(addr), "addr not in heap");
-#ifdef ASSERT
-  if (PSParallelCompact::mark_bitmap()->is_unmarked(addr)) {
-    gclog_or_tty->print_cr("calc_new_pointer:: addr " PTR_FORMAT, addr);
-  }
-#endif
-  assert(PSParallelCompact::mark_bitmap()->is_marked(addr), "obj not marked");
-
-  // Region covering the object.
-  size_t region_index = addr_to_region_idx(addr);
-  const RegionData* const region_ptr = region(region_index);
-  HeapWord* const region_addr = region_align_down(addr);
-
-  assert(addr < region_addr + RegionSize, "Region does not cover object");
-  assert(addr_to_region_ptr(region_addr) == region_ptr, "sanity check");
-
-  HeapWord* result = region_ptr->destination();
-
-  // If all the data in the region is live, then the new location of the object
-  // can be calculated from the destination of the region plus the offset of the
-  // object in the region.
-  if (region_ptr->data_size() == RegionSize) {
-    result += pointer_delta(addr, region_addr);
-    return result;
-  }
-
-  // The new location of the object is
-  //    region destination +
-  //    block offset +
-  //    sizes of the live objects in the Block that are to the left of addr
-  const size_t block_offset = addr_to_block_ptr(addr)->offset();
-  HeapWord* const search_start = region_addr + block_offset;
-
-  const ParMarkBitMap* bitmap = PSParallelCompact::mark_bitmap();
-  size_t live_to_left = bitmap->live_words_in_range(search_start, oop(addr));
-
-  result += block_offset + live_to_left;
-  assert(result <= addr, "object cannot move to the right");
-  assert(result == region_calc_new_pointer(addr), "Should match");
-  return result;
-}
-
 klassOop ParallelCompactData::calc_new_klass(klassOop old_klass) {
   klassOop updated_klass;
   if (PSParallelCompact::should_update_klass(old_klass)) {
@@ -709,7 +586,6 @@ void ParallelCompactData::verify_clear(const PSVirtualSpace* vspace)
 void ParallelCompactData::verify_clear()
 {
   verify_clear(_region_vspace);
-  verify_clear(_block_vspace);
 }
 #endif  // #ifdef ASSERT
 
@@ -1581,18 +1457,6 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
     }
   }
 
-  // Fill in the block data after any changes to the regions have
-  // been made.
-#ifdef  ASSERT
-  summarize_blocks(cm, perm_space_id);
-  summarize_blocks(cm, old_space_id);
-#else
-  if (!UseParallelOldGCRegionPointerCalc) {
-    summarize_blocks(cm, perm_space_id);
-    summarize_blocks(cm, old_space_id);
-  }
-#endif
-
   if (TraceParallelOldGCSummaryPhase) {
     tty->print_cr("summary_phase:  after final summarization");
     Universe::print();
@@ -1601,222 +1465,6 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
       NOT_PRODUCT(print_generic_summary_data(_summary_data, _space_info));
     }
   }
-}
-
-// Fill in the BlockData.
-// Iterate over the spaces and within each space iterate over
-// the regions and fill in the BlockData for each region.
-
-void PSParallelCompact::summarize_blocks(ParCompactionManager* cm,
-                                         SpaceId first_compaction_space_id) {
-#if     0
-  DEBUG_ONLY(ParallelCompactData::BlockData::set_cur_phase(1);)
-  for (SpaceId cur_space_id = first_compaction_space_id;
-       cur_space_id != last_space_id;
-       cur_space_id = next_compaction_space_id(cur_space_id)) {
-    // Iterate over the regions in the space
-    size_t start_region_index =
-      _summary_data.addr_to_region_idx(space(cur_space_id)->bottom());
-    BitBlockUpdateClosure bbu(mark_bitmap(),
-                              cm,
-                              start_region_index);
-    // Iterate over blocks.
-    for (size_t region_index =  start_region_index;
-         region_index < _summary_data.region_count() &&
-           _summary_data.region_to_addr(region_index) <
-           space(cur_space_id)->top();
-         region_index++) {
-
-      // Reset the closure for the new region.  Note that the closure
-      // maintains some data that does not get reset for each region
-      // so a new instance of the closure is no appropriate.
-      bbu.reset_region(region_index);
-
-      // Start the iteration with the first live object.  This
-      // may return the end of the region.  That is acceptable since
-      // it will properly limit the iterations.
-      ParMarkBitMap::idx_t left_offset = mark_bitmap()->addr_to_bit(
-        _summary_data.first_live_or_end_in_region(region_index));
-
-      // End the iteration at the end of the region.
-      HeapWord* region_addr = _summary_data.region_to_addr(region_index);
-      HeapWord* region_end = region_addr + ParallelCompactData::RegionSize;
-      ParMarkBitMap::idx_t right_offset =
-        mark_bitmap()->addr_to_bit(region_end);
-
-      // Blocks that have not objects starting in them can be
-      // skipped because their data will never be used.
-      if (left_offset < right_offset) {
-
-        // Iterate through the objects in the region.
-        ParMarkBitMap::idx_t last_offset =
-          mark_bitmap()->pair_iterate(&bbu, left_offset, right_offset);
-
-        // If last_offset is less than right_offset, then the iterations
-        // terminated while it was looking for an end bit.  "last_offset"
-        // is then the offset for the last start bit.  In this situation
-        // the "offset" field for the next block to the right (_cur_block + 1)
-        // will not have been update although there may be live data
-        // to the left of the region.
-
-        size_t cur_block_plus_1 = bbu.cur_block() + 1;
-        HeapWord* cur_block_plus_1_addr =
-        _summary_data.block_to_addr(bbu.cur_block()) +
-        ParallelCompactData::BlockSize;
-        HeapWord* last_offset_addr = mark_bitmap()->bit_to_addr(last_offset);
- #if 1  // This code works.  The else doesn't but should.  Why does it?
-        // The current block (cur_block()) has already been updated.
-        // The last block that may need to be updated is either the
-        // next block (current block + 1) or the block where the
-        // last object starts (which can be greater than the
-        // next block if there were no objects found in intervening
-        // blocks).
-        size_t last_block =
-          MAX2(bbu.cur_block() + 1,
-               _summary_data.addr_to_block_idx(last_offset_addr));
- #else
-        // The current block has already been updated.  The only block
-        // that remains to be updated is the block where the last
-        // object in the region starts.
-        size_t last_block = _summary_data.addr_to_block_idx(last_offset_addr);
- #endif
-        assert_bit_is_start(last_offset);
-        assert((last_block == _summary_data.block_count()) ||
-             (_summary_data.block(last_block)->raw_offset() == 0),
-          "Should not have been set");
-        // Is the last block still in the current region?  If still
-        // in this region, update the last block (the counting that
-        // included the current block is meant for the offset of the last
-        // block).  If not in this region, do nothing.  Should not
-        // update a block in the next region.
-        if (ParallelCompactData::region_contains_block(bbu.region_index(),
-                                                       last_block)) {
-          if (last_offset < right_offset) {
-            // The last object started in this region but ends beyond
-            // this region.  Update the block for this last object.
-            assert(mark_bitmap()->is_marked(last_offset), "Should be marked");
-            // No end bit was found.  The closure takes care of
-            // the cases where
-            //   an objects crosses over into the next block
-            //   an objects starts and ends in the next block
-            // It does not handle the case where an object is
-            // the first object in a later block and extends
-            // past the end of the region (i.e., the closure
-            // only handles complete objects that are in the range
-            // it is given).  That object is handed back here
-            // for any special consideration necessary.
-            //
-            // Is the first bit in the last block a start or end bit?
-            //
-            // If the partial object ends in the last block L,
-            // then the 1st bit in L may be an end bit.
-            //
-            // Else does the last object start in a block after the current
-            // block? A block AA will already have been updated if an
-            // object ends in the next block AA+1.  An object found to end in
-            // the AA+1 is the trigger that updates AA.  Objects are being
-            // counted in the current block for updaing a following
-            // block.  An object may start in later block
-            // block but may extend beyond the last block in the region.
-            // Updates are only done when the end of an object has been
-            // found. If the last object (covered by block L) starts
-            // beyond the current block, then no object ends in L (otherwise
-            // L would be the current block).  So the first bit in L is
-            // a start bit.
-            //
-            // Else the last objects start in the current block and ends
-            // beyond the region.  The current block has already been
-            // updated and there is no later block (with an object
-            // starting in it) that needs to be updated.
-            //
-            if (_summary_data.partial_obj_ends_in_block(last_block)) {
-              _summary_data.block(last_block)->set_end_bit_offset(
-                bbu.live_data_left());
-            } else if (last_offset_addr >= cur_block_plus_1_addr) {
-              //   The start of the object is on a later block
-              // (to the right of the current block and there are no
-              // complete live objects to the left of this last object
-              // within the region.
-              //   The first bit in the block is for the start of the
-              // last object.
-              _summary_data.block(last_block)->set_start_bit_offset(
-                bbu.live_data_left());
-            } else {
-              //   The start of the last object was found in
-              // the current region (which has already
-              // been updated).
-              assert(bbu.cur_block() ==
-                      _summary_data.addr_to_block_idx(last_offset_addr),
-                "Should be a block already processed");
-            }
-#ifdef ASSERT
-            // Is there enough block information to find this object?
-            // The destination of the region has not been set so the
-            // values returned by calc_new_pointer() and
-            // block_calc_new_pointer() will only be
-            // offsets.  But they should agree.
-            HeapWord* moved_obj_with_regions =
-              _summary_data.region_calc_new_pointer(last_offset_addr);
-            HeapWord* moved_obj_with_blocks =
-              _summary_data.calc_new_pointer(last_offset_addr);
-            assert(moved_obj_with_regions == moved_obj_with_blocks,
-              "Block calculation is wrong");
-#endif
-          } else if (last_block < _summary_data.block_count()) {
-            // Iterations ended looking for a start bit (but
-            // did not run off the end of the block table).
-            _summary_data.block(last_block)->set_start_bit_offset(
-              bbu.live_data_left());
-          }
-        }
-#ifdef ASSERT
-        // Is there enough block information to find this object?
-          HeapWord* left_offset_addr = mark_bitmap()->bit_to_addr(left_offset);
-        HeapWord* moved_obj_with_regions =
-          _summary_data.calc_new_pointer(left_offset_addr);
-        HeapWord* moved_obj_with_blocks =
-          _summary_data.calc_new_pointer(left_offset_addr);
-          assert(moved_obj_with_regions == moved_obj_with_blocks,
-          "Block calculation is wrong");
-#endif
-
-        // Is there another block after the end of this region?
-#ifdef ASSERT
-        if (last_block < _summary_data.block_count()) {
-        // No object may have been found in a block.  If that
-        // block is at the end of the region, the iteration will
-        // terminate without incrementing the current block so
-        // that the current block is not the last block in the
-        // region.  That situation precludes asserting that the
-        // current block is the last block in the region.  Assert
-        // the lesser condition that the current block does not
-        // exceed the region.
-          assert(_summary_data.block_to_addr(last_block) <=
-               (_summary_data.region_to_addr(region_index) +
-                 ParallelCompactData::RegionSize),
-              "Region and block inconsistency");
-          assert(last_offset <= right_offset, "Iteration over ran end");
-        }
-#endif
-      }
-#ifdef ASSERT
-      if (PrintGCDetails && Verbose) {
-        if (_summary_data.region(region_index)->partial_obj_size() == 1) {
-          size_t first_block =
-            region_index / ParallelCompactData::BlocksPerRegion;
-          gclog_or_tty->print_cr("first_block " PTR_FORMAT
-            " _offset " PTR_FORMAT
-            "_first_is_start_bit %d",
-            first_block,
-            _summary_data.block(first_block)->raw_offset(),
-            _summary_data.block(first_block)->first_is_start_bit());
-        }
-      }
-#endif
-    }
-  }
-  DEBUG_ONLY(ParallelCompactData::BlockData::set_cur_phase(16);)
-#endif  // #if 0
 }
 
 // This method should contain all heap-specific policy for invoking a full
@@ -1856,15 +1504,6 @@ void PSParallelCompact::invoke(bool maximum_heap_compaction) {
 bool ParallelCompactData::region_contains(size_t region_index, HeapWord* addr) {
   size_t addr_region_index = addr_to_region_idx(addr);
   return region_index == addr_region_index;
-}
-
-bool ParallelCompactData::region_contains_block(size_t region_index,
-                                                size_t block_index) {
-  size_t first_block_in_region = region_index * BlocksPerRegion;
-  size_t last_block_in_region = (region_index + 1) * BlocksPerRegion - 1;
-
-  return (first_block_in_region <= block_index) &&
-         (block_index <= last_block_in_region);
 }
 
 // This method contains no policy. You should probably
@@ -3339,172 +2978,6 @@ UpdateOnlyClosure::do_addr(HeapWord* addr, size_t words) {
   return ParMarkBitMap::incomplete;
 }
 
-BitBlockUpdateClosure::BitBlockUpdateClosure(ParMarkBitMap* mbm,
-                        ParCompactionManager* cm,
-                        size_t region_index) :
-                        ParMarkBitMapClosure(mbm, cm),
-                        _live_data_left(0),
-                        _cur_block(0) {
-  _region_start =
-    PSParallelCompact::summary_data().region_to_addr(region_index);
-  _region_end =
-    PSParallelCompact::summary_data().region_to_addr(region_index) +
-                 ParallelCompactData::RegionSize;
-  _region_index = region_index;
-  _cur_block =
-    PSParallelCompact::summary_data().addr_to_block_idx(_region_start);
-}
-
-bool BitBlockUpdateClosure::region_contains_cur_block() {
-  return ParallelCompactData::region_contains_block(_region_index, _cur_block);
-}
-
-void BitBlockUpdateClosure::reset_region(size_t region_index) {
-  DEBUG_ONLY(ParallelCompactData::BlockData::set_cur_phase(7);)
-  ParallelCompactData& sd = PSParallelCompact::summary_data();
-  _region_index = region_index;
-  _live_data_left = 0;
-  _region_start = sd.region_to_addr(region_index);
-  _region_end = sd.region_to_addr(region_index) + ParallelCompactData::RegionSize;
-
-  // The first block in this region
-  size_t first_block =  sd.addr_to_block_idx(_region_start);
-  size_t partial_live_size = sd.region(region_index)->partial_obj_size();
-
-  // Set the offset to 0. By definition it should have that value
-  // but it may have been written while processing an earlier region.
-  if (partial_live_size == 0) {
-    // No live object extends onto the region.  The first bit
-    // in the bit map for the first region must be a start bit.
-    // Although there may not be any marked bits, it is safe
-    // to set it as a start bit.
-    sd.block(first_block)->set_start_bit_offset(0);
-    sd.block(first_block)->set_first_is_start_bit(true);
-  } else if (sd.partial_obj_ends_in_block(first_block)) {
-    sd.block(first_block)->set_end_bit_offset(0);
-    sd.block(first_block)->set_first_is_start_bit(false);
-  } else {
-    // The partial object extends beyond the first block.
-    // There is no object starting in the first block
-    // so the offset and bit parity are not needed.
-    // Set the the bit parity to start bit so assertions
-    // work when not bit is found.
-    sd.block(first_block)->set_end_bit_offset(0);
-    sd.block(first_block)->set_first_is_start_bit(false);
-  }
-  _cur_block = first_block;
-#ifdef ASSERT
-  if (sd.block(first_block)->first_is_start_bit()) {
-    assert(!sd.partial_obj_ends_in_block(first_block),
-      "Partial object cannot end in first block");
-  }
-
-  if (PrintGCDetails && Verbose) {
-    if (partial_live_size == 1) {
-    gclog_or_tty->print_cr("first_block " PTR_FORMAT
-      " _offset " PTR_FORMAT
-      " _first_is_start_bit %d",
-      first_block,
-      sd.block(first_block)->raw_offset(),
-      sd.block(first_block)->first_is_start_bit());
-    }
-  }
-#endif
-  DEBUG_ONLY(ParallelCompactData::BlockData::set_cur_phase(17);)
-}
-
-// This method is called when a object has been found (both beginning
-// and end of the object) in the range of iteration.  This method is
-// calculating the words of live data to the left of a block.  That live
-// data includes any object starting to the left of the block (i.e.,
-// the live-data-to-the-left of block AAA will include the full size
-// of any object entering AAA).
-
-ParMarkBitMapClosure::IterationStatus
-BitBlockUpdateClosure::do_addr(HeapWord* addr, size_t words) {
-  // add the size to the block data.
-  HeapWord* obj = addr;
-  ParallelCompactData& sd = PSParallelCompact::summary_data();
-
-  assert(bitmap()->obj_size(obj) == words, "bad size");
-  assert(_region_start <= obj, "object is not in region");
-  assert(obj + words <= _region_end, "object is not in region");
-
-  // Update the live data to the left
-  size_t prev_live_data_left = _live_data_left;
-  _live_data_left = _live_data_left + words;
-
-  // Is this object in the current block.
-  size_t block_of_obj = sd.addr_to_block_idx(obj);
-  size_t block_of_obj_last = sd.addr_to_block_idx(obj + words - 1);
-  HeapWord* block_of_obj_last_addr = sd.block_to_addr(block_of_obj_last);
-  if (_cur_block < block_of_obj) {
-
-    //
-    // No object crossed the block boundary and this object was found
-    // on the other side of the block boundary.  Update the offset for
-    // the new block with the data size that does not include this object.
-    //
-    // The first bit in block_of_obj is a start bit except in the
-    // case where the partial object for the region extends into
-    // this block.
-    if (sd.partial_obj_ends_in_block(block_of_obj)) {
-      sd.block(block_of_obj)->set_end_bit_offset(prev_live_data_left);
-    } else {
-      sd.block(block_of_obj)->set_start_bit_offset(prev_live_data_left);
-    }
-
-    // Does this object pass beyond the its block?
-    if (block_of_obj < block_of_obj_last) {
-      // Object crosses block boundary.  Two blocks need to be udpated:
-      //        the current block where the object started
-      //        the block where the object ends
-      //
-      // The offset for blocks with no objects starting in them
-      // (e.g., blocks between _cur_block and  block_of_obj_last)
-      // should not be needed.
-      // Note that block_of_obj_last may be in another region.  If so,
-      // it should be overwritten later.  This is a problem (writting
-      // into a block in a later region) for parallel execution.
-      assert(obj < block_of_obj_last_addr,
-        "Object should start in previous block");
-
-      // obj is crossing into block_of_obj_last so the first bit
-      // is and end bit.
-      sd.block(block_of_obj_last)->set_end_bit_offset(_live_data_left);
-
-      _cur_block = block_of_obj_last;
-    } else {
-      // _first_is_start_bit has already been set correctly
-      // in the if-then-else above so don't reset it here.
-      _cur_block = block_of_obj;
-    }
-  } else {
-    // The current block only changes if the object extends beyound
-    // the block it starts in.
-    //
-    // The object starts in the current block.
-    // Does this object pass beyond the end of it?
-    if (block_of_obj < block_of_obj_last) {
-      // Object crosses block boundary.
-      // See note above on possible blocks between block_of_obj and
-      // block_of_obj_last
-      assert(obj < block_of_obj_last_addr,
-        "Object should start in previous block");
-
-      sd.block(block_of_obj_last)->set_end_bit_offset(_live_data_left);
-
-      _cur_block = block_of_obj_last;
-    }
-  }
-
-  // Return incomplete if there are more blocks to be done.
-  if (region_contains_cur_block()) {
-    return ParMarkBitMap::incomplete;
-  }
-  return ParMarkBitMap::complete;
-}
-
 // Verify the new location using the forwarding pointer
 // from MarkSweep::mark_sweep_phase2().  Set the mark_word
 // to the initial value.
@@ -3577,12 +3050,3 @@ PSParallelCompact::next_compaction_space_id(SpaceId id) {
       return last_space_id;
   }
 }
-
-// Here temporarily for debugging
-#ifdef ASSERT
-  size_t ParallelCompactData::block_idx(BlockData* block) {
-    size_t index = pointer_delta(block,
-      PSParallelCompact::summary_data()._block_data, sizeof(BlockData));
-    return index;
-  }
-#endif
