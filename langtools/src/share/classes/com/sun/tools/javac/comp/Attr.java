@@ -614,14 +614,14 @@ public class Attr extends JCTree.Visitor {
             }
 
             // Check that type parameters are well-formed.
-            chk.validateTypeParams(tree.typarams);
+            chk.validate(tree.typarams, localEnv);
             if ((owner.flags() & ANNOTATION) != 0 &&
                 tree.typarams.nonEmpty())
                 log.error(tree.typarams.head.pos(),
                           "intf.annotation.members.cant.have.type.params");
 
             // Check that result type is well-formed.
-            chk.validate(tree.restype);
+            chk.validate(tree.restype, localEnv);
             if ((owner.flags() & ANNOTATION) != 0)
                 chk.validateAnnotationType(tree.restype);
 
@@ -707,7 +707,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         // Check that the variable's declared type is well-formed.
-        chk.validate(tree.vartype);
+        chk.validate(tree.vartype, env);
 
         VarSymbol v = tree.sym;
         Lint lint = env.info.lint.augment(v.attributes_field, v.flags());
@@ -1322,7 +1322,7 @@ public class Attr extends JCTree.Visitor {
             // current context.  Also, capture the return type
             result = check(tree, capture(restype), VAL, pkind, pt);
         }
-        chk.validate(tree.typeargs);
+        chk.validate(tree.typeargs, localEnv);
     }
     //where
         /** Check that given application node appears as first statement
@@ -1397,7 +1397,7 @@ public class Attr extends JCTree.Visitor {
         // symbol + type back into the attributed tree.
         Type clazztype = chk.checkClassType(
             tree.clazz.pos(), attribType(clazz, env), true);
-        chk.validate(clazz);
+        chk.validate(clazz, localEnv);
         if (tree.encl != null) {
             // We have to work in this case to store
             // symbol + type back into the attributed tree.
@@ -1533,7 +1533,7 @@ public class Attr extends JCTree.Visitor {
                 owntype = clazztype;
         }
         result = check(tree, owntype, VAL, pkind, pt);
-        chk.validate(tree.typeargs);
+        chk.validate(tree.typeargs, localEnv);
     }
 
     /** Make an attributed null check tree.
@@ -1555,7 +1555,7 @@ public class Attr extends JCTree.Visitor {
         Type elemtype;
         if (tree.elemtype != null) {
             elemtype = attribType(tree.elemtype, env);
-            chk.validate(tree.elemtype);
+            chk.validate(tree.elemtype, env);
             owntype = elemtype;
             for (List<JCExpression> l = tree.dims; l.nonEmpty(); l = l.tail) {
                 attribExpr(l.head, env, syms.intType);
@@ -1711,6 +1711,7 @@ public class Attr extends JCTree.Visitor {
 
     public void visitTypeCast(JCTypeCast tree) {
         Type clazztype = attribType(tree.clazz, env);
+        chk.validate(tree.clazz, env);
         Type exprtype = attribExpr(tree.expr, env, Infer.anyPoly);
         Type owntype = chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
         if (exprtype.constValue() != null)
@@ -1723,6 +1724,7 @@ public class Attr extends JCTree.Visitor {
             tree.expr.pos(), attribExpr(tree.expr, env));
         Type clazztype = chk.checkReifiableReferenceType(
             tree.clazz.pos(), attribType(tree.clazz, env));
+        chk.validate(tree.clazz, env);
         chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
         result = check(tree, syms.booleanType, VAL, pkind, pt);
     }
@@ -2695,9 +2697,9 @@ public class Attr extends JCTree.Visitor {
 
         // Validate type parameters, supertype and interfaces.
         attribBounds(tree.typarams);
-        chk.validateTypeParams(tree.typarams);
-        chk.validate(tree.extending);
-        chk.validate(tree.implementing);
+        chk.validate(tree.typarams, env);
+        chk.validate(tree.extending, env);
+        chk.validate(tree.implementing, env);
 
         // If this is a non-abstract class, check that it has no abstract
         // methods or unimplemented methods of an implemented interface.

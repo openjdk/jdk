@@ -176,6 +176,11 @@ public class Lint
         PATH("path"),
 
         /**
+         * Warn about issues regarding annotation processing.
+         */
+        PROCESSING("processing"),
+
+        /**
          * Warn about Serializable classes that do not provide a serial version ID.
          */
         SERIAL("serial"),
@@ -183,7 +188,12 @@ public class Lint
         /**
          * Warn about unchecked operations on raw types.
          */
-        UNCHECKED("unchecked");
+        UNCHECKED("unchecked"),
+
+        /**
+         * Warn about unchecked operations on raw types.
+         */
+        RAW("rawtypes");
 
         LintCategory(String option) {
             this.option = option;
