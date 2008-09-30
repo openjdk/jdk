@@ -49,7 +49,7 @@ bool ciMethodBlocks::is_block_start(int bci) {
 // first half.  Returns the range beginning at bci.
 ciBlock *ciMethodBlocks::split_block_at(int bci) {
   ciBlock *former_block = block_containing(bci);
-  ciBlock *new_block = new(_arena) ciBlock(_method, _num_blocks++, this, former_block->start_bci());
+  ciBlock *new_block = new(_arena) ciBlock(_method, _num_blocks++, former_block->start_bci());
   _blocks->append(new_block);
   assert(former_block != NULL, "must not be NULL");
   new_block->set_limit_bci(bci);
@@ -83,7 +83,7 @@ ciBlock *ciMethodBlocks::make_block_at(int bci) {
   if (cb == NULL ) {
     // This is our first time visiting this bytecode.  Create
     // a fresh block and assign it this starting point.
-    ciBlock *nb = new(_arena) ciBlock(_method, _num_blocks++, this, bci);
+    ciBlock *nb = new(_arena) ciBlock(_method, _num_blocks++, bci);
     _blocks->append(nb);
      _bci_to_block[bci] = nb;
     return nb;
@@ -96,6 +96,11 @@ ciBlock *ciMethodBlocks::make_block_at(int bci) {
     // be split into two.
     return split_block_at(bci);
   }
+}
+
+ciBlock *ciMethodBlocks::make_dummy_block() {
+  ciBlock *dum = new(_arena) ciBlock(_method, -1, 0);
+  return dum;
 }
 
 void ciMethodBlocks::do_analysis() {
@@ -253,7 +258,7 @@ ciMethodBlocks::ciMethodBlocks(Arena *arena, ciMethod *meth): _method(meth),
   Copy::zero_to_words((HeapWord*) _bci_to_block, b2bsize / sizeof(HeapWord));
 
   // create initial block covering the entire method
-  ciBlock *b = new(arena) ciBlock(_method, _num_blocks++, this, 0);
+  ciBlock *b = new(arena) ciBlock(_method, _num_blocks++, 0);
   _blocks->append(b);
   _bci_to_block[0] = b;
 
@@ -334,7 +339,7 @@ void ciMethodBlocks::dump() {
 #endif
 
 
-ciBlock::ciBlock(ciMethod *method, int index, ciMethodBlocks *mb, int start_bci) :
+ciBlock::ciBlock(ciMethod *method, int index, int start_bci) :
 #ifndef PRODUCT
                          _method(method),
 #endif

@@ -192,6 +192,8 @@ public:
   int is_main_no_pre_loop() const { return _loop_flags & Main_Has_No_Pre_Loop; }
   void set_main_no_pre_loop() { _loop_flags |= Main_Has_No_Pre_Loop; }
 
+  int main_idx() const { return _main_idx; }
+
 
   void set_pre_loop  (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Pre ; _main_idx = main->_idx; }
   void set_main_loop (                     ) { assert(is_normal_loop(),""); _loop_flags |= Main;                         }
