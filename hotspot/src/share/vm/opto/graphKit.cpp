@@ -587,7 +587,7 @@ PreserveJVMState::PreserveJVMState(GraphKit* kit, bool clone_map) {
 #ifdef ASSERT
   _bci    = kit->bci();
   Parse* parser = kit->is_Parse();
-  int block = (parser == NULL || parser->block() == NULL) ? -1 : parser->block()->pre_order();
+  int block = (parser == NULL || parser->block() == NULL) ? -1 : parser->block()->rpo();
   _block  = block;
 #endif
 }
@@ -596,7 +596,7 @@ PreserveJVMState::~PreserveJVMState() {
 #ifdef ASSERT
   assert(kit->bci() == _bci, "bci must not shift");
   Parse* parser = kit->is_Parse();
-  int block = (parser == NULL || parser->block() == NULL) ? -1 : parser->block()->pre_order();
+  int block = (parser == NULL || parser->block() == NULL) ? -1 : parser->block()->rpo();
   assert(block == _block,    "block must not shift");
 #endif
   kit->set_map(_map);
@@ -1049,10 +1049,19 @@ Node* GraphKit::load_object_klass(Node* obj) {
 //-------------------------load_array_length-----------------------------------
 Node* GraphKit::load_array_length(Node* array) {
   // Special-case a fresh allocation to avoid building nodes:
-  Node* alen = AllocateArrayNode::Ideal_length(array, &_gvn);
-  if (alen != NULL)  return alen;
-  Node *r_adr = basic_plus_adr(array, arrayOopDesc::length_offset_in_bytes());
-  return _gvn.transform( new (C, 3) LoadRangeNode(0, immutable_memory(), r_adr, TypeInt::POS));
+  AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(array, &_gvn);
+  Node *alen;
+  if (alloc == NULL) {
+    Node *r_adr = basic_plus_adr(array, arrayOopDesc::length_offset_in_bytes());
+    alen = _gvn.transform( new (C, 3) LoadRangeNode(0, immutable_memory(), r_adr, TypeInt::POS));
+  } else {
+    alen = alloc->Ideal_length();
+    Node* ccast = alloc->make_ideal_length(_gvn.type(array)->is_aryptr(), &_gvn);
+    if (ccast != alen) {
+      alen = _gvn.transform(ccast);
+    }
+  }
+  return alen;
 }
 
 //------------------------------do_null_check----------------------------------
@@ -2847,20 +2856,18 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
   assert(just_allocated_object(control()) == javaoop, "just allocated");
 
 #ifdef ASSERT
-  { // Verify that the AllocateNode::Ideal_foo recognizers work:
-    Node* kn = alloc->in(AllocateNode::KlassNode);
-    Node* ln = alloc->in(AllocateNode::ALength);
-    assert(AllocateNode::Ideal_klass(rawoop, &_gvn) == kn,
-           "Ideal_klass works");
-    assert(AllocateNode::Ideal_klass(javaoop, &_gvn) == kn,
-           "Ideal_klass works");
+  { // Verify that the AllocateNode::Ideal_allocation recognizers work:
+    assert(AllocateNode::Ideal_allocation(rawoop, &_gvn) == alloc,
+           "Ideal_allocation works");
+    assert(AllocateNode::Ideal_allocation(javaoop, &_gvn) == alloc,
+           "Ideal_allocation works");
     if (alloc->is_AllocateArray()) {
-      assert(AllocateArrayNode::Ideal_length(rawoop, &_gvn) == ln,
-             "Ideal_length works");
-      assert(AllocateArrayNode::Ideal_length(javaoop, &_gvn) == ln,
-             "Ideal_length works");
+      assert(AllocateArrayNode::Ideal_array_allocation(rawoop, &_gvn) == alloc->as_AllocateArray(),
+             "Ideal_allocation works");
+      assert(AllocateArrayNode::Ideal_array_allocation(javaoop, &_gvn) == alloc->as_AllocateArray(),
+             "Ideal_allocation works");
     } else {
-      assert(ln->is_top(), "no length, please");
+      assert(alloc->in(AllocateNode::ALength)->is_top(), "no length, please");
     }
   }
 #endif //ASSERT
@@ -3109,25 +3116,20 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
   // (This happens via a non-constant argument to inline_native_newArray.)
   // In any case, the value of klass_node provides the desired array type.
   const TypeInt* length_type = _gvn.find_int_type(length);
-  const TypeInt* narrow_length_type = NULL;
   const TypeOopPtr* ary_type = _gvn.type(klass_node)->is_klassptr()->as_instance_type();
   if (ary_type->isa_aryptr() && length_type != NULL) {
     // Try to get a better type than POS for the size
     ary_type = ary_type->is_aryptr()->cast_to_size(length_type);
-    narrow_length_type = ary_type->is_aryptr()->size();
-    if (narrow_length_type == length_type)
-      narrow_length_type = NULL;
   }
 
   Node* javaoop = set_output_for_allocation(alloc, ary_type, raw_mem_only);
 
-  // Cast length on remaining path to be positive:
-  if (narrow_length_type != NULL) {
-    Node* ccast = new (C, 2) CastIINode(length, narrow_length_type);
-    ccast->set_req(0, control());
-    _gvn.set_type_bottom(ccast);
-    record_for_igvn(ccast);
-    if (map()->find_edge(length) >= 0) {
+  // Cast length on remaining path to be as narrow as possible
+  if (map()->find_edge(length) >= 0) {
+    Node* ccast = alloc->make_ideal_length(ary_type, &_gvn);
+    if (ccast != length) {
+      _gvn.set_type_bottom(ccast);
+      record_for_igvn(ccast);
       replace_in_map(length, ccast);
     }
   }
