@@ -121,7 +121,7 @@ JvmtiEnvBase::JvmtiEnvBase() : _env_event_enable() {
   JvmtiEventController::env_initialize((JvmtiEnv*)this);
 
 #ifdef JVMTI_TRACE
-  _jvmti_external.functions = strlen(TraceJVMTI)? &jvmtiTrace_Interface : &jvmti_Interface;
+  _jvmti_external.functions = TraceJVMTI != NULL ? &jvmtiTrace_Interface : &jvmti_Interface;
 #else
   _jvmti_external.functions = &jvmti_Interface;
 #endif
