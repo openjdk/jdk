@@ -100,93 +100,6 @@ GrowableArray<HeapWord*>* PSParallelCompact::_last_gc_live_oops_moved_to = NULL;
 GrowableArray<size_t>   * PSParallelCompact::_last_gc_live_oops_size = NULL;
 #endif
 
-// XXX beg - verification code; only works while we also mark in object headers
-static void
-verify_mark_bitmap(ParMarkBitMap& _mark_bitmap)
-{
-  ParallelScavengeHeap* heap = PSParallelCompact::gc_heap();
-
-  PSPermGen* perm_gen = heap->perm_gen();
-  PSOldGen* old_gen = heap->old_gen();
-  PSYoungGen* young_gen = heap->young_gen();
-
-  MutableSpace* perm_space = perm_gen->object_space();
-  MutableSpace* old_space = old_gen->object_space();
-  MutableSpace* eden_space = young_gen->eden_space();
-  MutableSpace* from_space = young_gen->from_space();
-  MutableSpace* to_space = young_gen->to_space();
-
-  // 'from_space' here is the survivor space at the lower address.
-  if (to_space->bottom() < from_space->bottom()) {
-    from_space = to_space;
-    to_space = young_gen->from_space();
-  }
-
-  HeapWord* boundaries[12];
-  unsigned int bidx = 0;
-  const unsigned int bidx_max = sizeof(boundaries) / sizeof(boundaries[0]);
-
-  boundaries[0] = perm_space->bottom();
-  boundaries[1] = perm_space->top();
-  boundaries[2] = old_space->bottom();
-  boundaries[3] = old_space->top();
-  boundaries[4] = eden_space->bottom();
-  boundaries[5] = eden_space->top();
-  boundaries[6] = from_space->bottom();
-  boundaries[7] = from_space->top();
-  boundaries[8] = to_space->bottom();
-  boundaries[9] = to_space->top();
-  boundaries[10] = to_space->end();
-  boundaries[11] = to_space->end();
-
-  BitMap::idx_t beg_bit = 0;
-  BitMap::idx_t end_bit;
-  BitMap::idx_t tmp_bit;
-  const BitMap::idx_t last_bit = _mark_bitmap.size();
-  do {
-    HeapWord* addr = _mark_bitmap.bit_to_addr(beg_bit);
-    if (_mark_bitmap.is_marked(beg_bit)) {
-      oop obj = (oop)addr;
-      assert(obj->is_gc_marked(), "obj header is not marked");
-      end_bit = _mark_bitmap.find_obj_end(beg_bit, last_bit);
-      const size_t size = _mark_bitmap.obj_size(beg_bit, end_bit);
-      assert(size == (size_t)obj->size(), "end bit wrong?");
-      beg_bit = _mark_bitmap.find_obj_beg(beg_bit + 1, last_bit);
-      assert(beg_bit > end_bit, "bit set in middle of an obj");
-    } else {
-      if (addr >= boundaries[bidx] && addr < boundaries[bidx + 1]) {
-        // a dead object in the current space.
-        oop obj = (oop)addr;
-        end_bit = _mark_bitmap.addr_to_bit(addr + obj->size());
-        assert(!obj->is_gc_marked(), "obj marked in header, not in bitmap");
-        tmp_bit = beg_bit + 1;
-        beg_bit = _mark_bitmap.find_obj_beg(tmp_bit, end_bit);
-        assert(beg_bit == end_bit, "beg bit set in unmarked obj");
-        beg_bit = _mark_bitmap.find_obj_end(tmp_bit, end_bit);
-        assert(beg_bit == end_bit, "end bit set in unmarked obj");
-      } else if (addr < boundaries[bidx + 2]) {
-        // addr is between top in the current space and bottom in the next.
-        end_bit = beg_bit + pointer_delta(boundaries[bidx + 2], addr);
-        tmp_bit = beg_bit;
-        beg_bit = _mark_bitmap.find_obj_beg(tmp_bit, end_bit);
-        assert(beg_bit == end_bit, "beg bit set above top");
-        beg_bit = _mark_bitmap.find_obj_end(tmp_bit, end_bit);
-        assert(beg_bit == end_bit, "end bit set above top");
-        bidx += 2;
-      } else if (bidx < bidx_max - 2) {
-        bidx += 2; // ???
-      } else {
-        tmp_bit = beg_bit;
-        beg_bit = _mark_bitmap.find_obj_beg(tmp_bit, last_bit);
-        assert(beg_bit == last_bit, "beg bit set outside heap");
-        beg_bit = _mark_bitmap.find_obj_end(tmp_bit, last_bit);
-        assert(beg_bit == last_bit, "end bit set outside heap");
-      }
-    }
-  } while (beg_bit < last_bit);
-}
-// XXX end - verification code; only works while we also mark in object headers
-
 #ifndef PRODUCT
 const char* PSParallelCompact::space_names[] = {
   "perm", "old ", "eden", "from", "to  "
@@ -1584,11 +1497,6 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
   // trace("2");
 
 #ifdef  ASSERT
-  if (VerifyParallelOldWithMarkSweep  &&
-      (PSParallelCompact::total_invocations() %
-         VerifyParallelOldWithMarkSweepInterval) == 0) {
-    verify_mark_bitmap(_mark_bitmap);
-  }
   if (TraceParallelOldGCMarkingPhase) {
     tty->print_cr("add_obj_count=" SIZE_FORMAT " "
                   "add_obj_bytes=" SIZE_FORMAT,
@@ -2038,38 +1946,8 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     }
 #endif  // #ifndef PRODUCT
 
-#ifdef ASSERT
-    if (VerifyParallelOldWithMarkSweep &&
-        (PSParallelCompact::total_invocations() %
-           VerifyParallelOldWithMarkSweepInterval) == 0) {
-      gclog_or_tty->print_cr("Verify marking with mark_sweep_phase1()");
-      if (PrintGCDetails && Verbose) {
-        gclog_or_tty->print_cr("mark_sweep_phase1:");
-      }
-      // Clear the discovered lists so that discovered objects
-      // don't look like they have been discovered twice.
-      ref_processor()->clear_discovered_references();
-
-      PSMarkSweep::allocate_stacks();
-      MemRegion mr = Universe::heap()->reserved_region();
-      PSMarkSweep::ref_processor()->enable_discovery();
-      PSMarkSweep::mark_sweep_phase1(maximum_heap_compaction);
-    }
-#endif
-
     bool max_on_system_gc = UseMaximumCompactionOnSystemGC && is_system_gc;
     summary_phase(vmthread_cm, maximum_heap_compaction || max_on_system_gc);
-
-#ifdef ASSERT
-    if (VerifyParallelOldWithMarkSweep &&
-        (PSParallelCompact::total_invocations() %
-           VerifyParallelOldWithMarkSweepInterval) == 0) {
-      if (PrintGCDetails && Verbose) {
-        gclog_or_tty->print_cr("mark_sweep_phase2:");
-      }
-      PSMarkSweep::mark_sweep_phase2();
-    }
-#endif
 
     COMPILER2_PRESENT(assert(DerivedPointerTable::is_active(), "Sanity"));
     COMPILER2_PRESENT(DerivedPointerTable::set_active(false));
@@ -2077,28 +1955,6 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     // adjust_roots() updates Universe::_intArrayKlassObj which is
     // needed by the compaction for filling holes in the dense prefix.
     adjust_roots();
-
-#ifdef ASSERT
-    if (VerifyParallelOldWithMarkSweep &&
-        (PSParallelCompact::total_invocations() %
-           VerifyParallelOldWithMarkSweepInterval) == 0) {
-      // Do a separate verify phase so that the verify
-      // code can use the the forwarding pointers to
-      // check the new pointer calculation.  The restore_marks()
-      // has to be done before the real compact.
-      vmthread_cm->set_action(ParCompactionManager::VerifyUpdate);
-      compact_perm(vmthread_cm);
-      compact_serial(vmthread_cm);
-      vmthread_cm->set_action(ParCompactionManager::ResetObjects);
-      compact_perm(vmthread_cm);
-      compact_serial(vmthread_cm);
-      vmthread_cm->set_action(ParCompactionManager::UpdateAndCopy);
-
-      // For debugging only
-      PSMarkSweep::restore_marks();
-      PSMarkSweep::deallocate_stacks();
-    }
-#endif
 
     compaction_start.update();
     // Does the perm gen always have to be done serially because
