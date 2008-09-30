@@ -338,6 +338,12 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
       DEBUG_ONLY(((ResourceObj *)res)->_allocation = RESOURCE_AREA;)
       return res;
   }
+  void* operator new(size_t size, void* where, allocation_type type) {
+      void* res = where;
+      // Set allocation type in the resource object
+      DEBUG_ONLY(((ResourceObj *)res)->_allocation = type;)
+      return res;
+  }
   void  operator delete(void* p);
 };
 
