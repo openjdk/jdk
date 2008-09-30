@@ -21,6 +21,14 @@
  * have any questions.
  */
 
+// These tests exercise the various compile policies available via
+// JavaCompiler.CompilePolicy. Like any golden file tests, they are
+// somewhat fragile and susceptible to breakage, but like the canary
+// in the mine, it is useful to know when something is not as it used
+// to be. The golden files should not be taken as a guarantee of
+// future behavior, and should be updated, with due care, if the
+// behavior of the compile policy is deliberately changed.
+
 /*
  * @test
  * @bug 6260188 6290772

@@ -764,26 +764,32 @@ public class Check {
     /** Visitor method: Validate a type expression, if it is not null, catching
      *  and reporting any completion failures.
      */
-    void validate(JCTree tree) {
+    void validate(JCTree tree, Env<AttrContext> env) {
         try {
-            if (tree != null) tree.accept(validator);
+            if (tree != null) {
+                validator.env = env;
+                tree.accept(validator);
+                checkRaw(tree, env);
+            }
         } catch (CompletionFailure ex) {
             completionError(tree.pos(), ex);
+        }
+    }
+    //where
+    void checkRaw(JCTree tree, Env<AttrContext> env) {
+        if (lint.isEnabled(Lint.LintCategory.RAW) &&
+            tree.type.tag == CLASS &&
+            !env.enclClass.name.isEmpty() &&  //anonymous or intersection
+            tree.type.isRaw()) {
+            log.warning(tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
         }
     }
 
     /** Visitor method: Validate a list of type expressions.
      */
-    void validate(List<? extends JCTree> trees) {
+    void validate(List<? extends JCTree> trees, Env<AttrContext> env) {
         for (List<? extends JCTree> l = trees; l.nonEmpty(); l = l.tail)
-            validate(l.head);
-    }
-
-    /** Visitor method: Validate a list of type parameters.
-     */
-    void validateTypeParams(List<JCTypeParameter> trees) {
-        for (List<JCTypeParameter> l = trees; l.nonEmpty(); l = l.tail)
-            validate(l.head);
+            validate(l.head, env);
     }
 
     /** A visitor class for type validation.
@@ -791,7 +797,7 @@ public class Check {
     class Validator extends JCTree.Visitor {
 
         public void visitTypeArray(JCArrayTypeTree tree) {
-            validate(tree.elemtype);
+            validate(tree.elemtype, env);
         }
 
         public void visitTypeApply(JCTypeApply tree) {
@@ -805,7 +811,7 @@ public class Check {
                 // For matching pairs of actual argument types `a' and
                 // formal type parameters with declared bound `b' ...
                 while (args.nonEmpty() && forms.nonEmpty()) {
-                    validate(args.head);
+                    validate(args.head, env);
 
                     // exact type arguments needs to know their
                     // bounds (for upper and lower bound
@@ -849,14 +855,14 @@ public class Check {
         }
 
         public void visitTypeParameter(JCTypeParameter tree) {
-            validate(tree.bounds);
+            validate(tree.bounds, env);
             checkClassBounds(tree.pos(), tree.type);
         }
 
         @Override
         public void visitWildcard(JCWildcard tree) {
             if (tree.inner != null)
-                validate(tree.inner);
+                validate(tree.inner, env);
         }
 
         public void visitSelect(JCFieldAccess tree) {
@@ -870,7 +876,7 @@ public class Check {
             }
         }
         public void visitSelectInternal(JCFieldAccess tree) {
-            if (tree.type.getEnclosingType().tag != CLASS &&
+            if (tree.type.tsym.isStatic() &&
                 tree.selected.type.isParameterized()) {
                 // The enclosing type is not a class, so we are
                 // looking at a static member type.  However, the
@@ -878,7 +884,7 @@ public class Check {
                 log.error(tree.pos(), "cant.select.static.class.from.param.type");
             } else {
                 // otherwise validate the rest of the expression
-                validate(tree.selected);
+                tree.selected.accept(this);
             }
         }
 
@@ -886,6 +892,8 @@ public class Check {
          */
         public void visitTree(JCTree tree) {
         }
+
+        Env<AttrContext> env;
     }
 
 /* *************************************************************************
