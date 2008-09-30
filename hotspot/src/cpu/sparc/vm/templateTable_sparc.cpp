@@ -28,6 +28,79 @@
 #ifndef CC_INTERP
 #define __ _masm->
 
+// Misc helpers
+
+// Do an oop store like *(base + index + offset) = val
+// index can be noreg,
+static void do_oop_store(InterpreterMacroAssembler* _masm,
+                         Register base,
+                         Register index,
+                         int offset,
+                         Register val,
+                         Register tmp,
+                         BarrierSet::Name barrier,
+                         bool precise) {
+  assert(tmp != val && tmp != base && tmp != index, "register collision");
+  assert(index == noreg || offset == 0, "only one offset");
+  switch (barrier) {
+#ifndef SERIALGC
+    case BarrierSet::G1SATBCT:
+    case BarrierSet::G1SATBCTLogging:
+      {
+        __ g1_write_barrier_pre( base, index, offset, tmp, /*preserve_o_regs*/true);
+        if (index == noreg ) {
+          assert(Assembler::is_simm13(offset), "fix this code");
+          __ store_heap_oop(val, base, offset);
+        } else {
+          __ store_heap_oop(val, base, index);
+        }
+
+        // No need for post barrier if storing NULL
+        if (val != G0) {
+          if (precise) {
+            if (index == noreg) {
+              __ add(base, offset, base);
+            } else {
+              __ add(base, index, base);
+            }
+          }
+          __ g1_write_barrier_post(base, val, tmp);
+        }
+      }
+      break;
+#endif // SERIALGC
+    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableExtension:
+      {
+        if (index == noreg ) {
+          assert(Assembler::is_simm13(offset), "fix this code");
+          __ store_heap_oop(val, base, offset);
+        } else {
+          __ store_heap_oop(val, base, index);
+        }
+        // No need for post barrier if storing NULL
+        if (val != G0) {
+          if (precise) {
+            if (index == noreg) {
+              __ add(base, offset, base);
+            } else {
+              __ add(base, index, base);
+            }
+          }
+          __ card_write_barrier_post(base, val, tmp);
+        }
+      }
+      break;
+    case BarrierSet::ModRef:
+    case BarrierSet::Other:
+      ShouldNotReachHere();
+      break;
+    default      :
+      ShouldNotReachHere();
+
+  }
+}
+
 
 //----------------------------------------------------------------------------------------------------
 // Platform-dependent initialization
@@ -758,6 +831,8 @@ void TemplateTable::aastore() {
   // O4:        array element klass
   // O5:        value klass
 
+  // Address element(O1, 0, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
+
   // Generate a fast subtype check.  Branch to store_ok if no
   // failure.  Throw if failure.
   __ gen_subtype_check( O5, O4, G3_scratch, G4_scratch, G1_scratch, store_ok );
@@ -767,18 +842,14 @@ void TemplateTable::aastore() {
 
   // Store is OK.
   __ bind(store_ok);
-  __ store_heap_oop(Otos_i, O1, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
-  // Quote from rememberedSet.hpp: For objArrays, the precise card
-  // corresponding to the pointer store is dirtied so we don't need to
-  // scavenge the entire array.
-  Address element(O1, 0, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
-  __ add(element, O1);              // address the element precisely
-  __ store_check(G3_scratch, O1);
+  do_oop_store(_masm, O1, noreg, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Otos_i, G3_scratch, _bs->kind(), true);
+
   __ ba(false,done);
   __ delayed()->inc(Lesp, 3* Interpreter::stackElementSize()); // adj sp (pops array, index and value)
 
   __ bind(is_null);
-  __ store_heap_oop(Otos_i, element);
+  do_oop_store(_masm, O1, noreg, arrayOopDesc::base_offset_in_bytes(T_OBJECT), G0, G4_scratch, _bs->kind(), true);
+
   __ profile_null_seen(G3_scratch);
   __ inc(Lesp, 3* Interpreter::stackElementSize());     // adj sp (pops array, index and value)
   __ bind(done);
@@ -2449,8 +2520,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
     // atos
     __ pop_ptr();
     __ verify_oop(Otos_i);
-    __ store_heap_oop(Otos_i, Rclass, Roffset);
-    __ store_check(G1_scratch, Rclass, Roffset);
+
+    do_oop_store(_masm, Rclass, Roffset, 0, Otos_i, G1_scratch, _bs->kind(), false);
+
     __ ba(false, checkVolatile);
     __ delayed()->tst(Lscratch);
 
@@ -2491,8 +2563,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
     __ pop_ptr();
     pop_and_check_object(Rclass);
     __ verify_oop(Otos_i);
-    __ store_heap_oop(Otos_i, Rclass, Roffset);
-    __ store_check(G1_scratch, Rclass, Roffset);
+
+    do_oop_store(_masm, Rclass, Roffset, 0, Otos_i, G1_scratch, _bs->kind(), false);
+
     patch_bytecode(Bytecodes::_fast_aputfield, G3_scratch, G4_scratch);
     __ ba(false, checkVolatile);
     __ delayed()->tst(Lscratch);
@@ -2646,8 +2719,7 @@ void TemplateTable::fast_storefield(TosState state) {
       __ stf(FloatRegisterImpl::D, Ftos_d, Rclass, Roffset);
       break;
     case Bytecodes::_fast_aputfield:
-      __ store_heap_oop(Otos_i, Rclass, Roffset);
-      __ store_check(G1_scratch, Rclass, Roffset);
+      do_oop_store(_masm, Rclass, Roffset, 0, Otos_i, G1_scratch, _bs->kind(), false);
       break;
     default:
       ShouldNotReachHere();

@@ -65,7 +65,8 @@ void ParallelTaskTerminator::sleep(uint millis) {
   os::sleep(Thread::current(), millis, false);
 }
 
-bool ParallelTaskTerminator::offer_termination() {
+bool
+ParallelTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   Atomic::inc(&_offered_termination);
 
   juint yield_count = 0;
@@ -91,7 +92,8 @@ bool ParallelTaskTerminator::offer_termination() {
         sleep(WorkStealingSleepMillis);
       }
 
-      if (peek_in_queue_set()) {
+      if (peek_in_queue_set() ||
+          (terminator != NULL && terminator->should_exit_termination())) {
         Atomic::dec(&_offered_termination);
         return false;
       }

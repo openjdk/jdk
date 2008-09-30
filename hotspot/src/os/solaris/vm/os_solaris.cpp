@@ -1691,6 +1691,40 @@ bool os::getTimesSecs(double* process_real_time,
   }
 }
 
+bool os::supports_vtime() { return true; }
+
+bool os::enable_vtime() {
+  int fd = open("/proc/self/ctl", O_WRONLY);
+  if (fd == -1)
+    return false;
+
+  long cmd[] = { PCSET, PR_MSACCT };
+  int res = write(fd, cmd, sizeof(long) * 2);
+  close(fd);
+  if (res != sizeof(long) * 2)
+    return false;
+
+  return true;
+}
+
+bool os::vtime_enabled() {
+  int fd = open("/proc/self/status", O_RDONLY);
+  if (fd == -1)
+    return false;
+
+  pstatus_t status;
+  int res = read(fd, (void*) &status, sizeof(pstatus_t));
+  close(fd);
+  if (res != sizeof(pstatus_t))
+    return false;
+
+  return status.pr_flags & PR_MSACCT;
+}
+
+double os::elapsedVTime() {
+  return (double)gethrvtime() / (double)hrtime_hz;
+}
+
 // Used internally for comparisons only
 // getTimeMillis guaranteed to not move backwards on Solaris
 jlong getTimeMillis() {
@@ -2688,7 +2722,7 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
    return bottom;
 }
 
-// Detect the topology change. Typically happens during CPU pluggin-unplugging.
+// Detect the topology change. Typically happens during CPU plugging-unplugging.
 bool os::numa_topology_changed() {
   int is_stale = Solaris::lgrp_cookie_stale(Solaris::lgrp_cookie());
   if (is_stale != -1 && is_stale) {
