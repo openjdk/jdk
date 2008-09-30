@@ -188,18 +188,18 @@ class StealMarkingTask : public GCTask {
 };
 
 //
-// StealChunkCompactionTask
+// StealRegionCompactionTask
 //
 // This task is used to distribute work to idle threads.
 //
 
-class StealChunkCompactionTask : public GCTask {
+class StealRegionCompactionTask : public GCTask {
  private:
    ParallelTaskTerminator* const _terminator;
  public:
-  StealChunkCompactionTask(ParallelTaskTerminator* t);
+  StealRegionCompactionTask(ParallelTaskTerminator* t);
 
-  char* name() { return (char *)"steal-chunk-task"; }
+  char* name() { return (char *)"steal-region-task"; }
   ParallelTaskTerminator* terminator() { return _terminator; }
 
   virtual void do_it(GCTaskManager* manager, uint which);
@@ -215,15 +215,15 @@ class StealChunkCompactionTask : public GCTask {
 class UpdateDensePrefixTask : public GCTask {
  private:
   PSParallelCompact::SpaceId _space_id;
-  size_t _chunk_index_start;
-  size_t _chunk_index_end;
+  size_t _region_index_start;
+  size_t _region_index_end;
 
  public:
   char* name() { return (char *)"update-dense_prefix-task"; }
 
   UpdateDensePrefixTask(PSParallelCompact::SpaceId space_id,
-                        size_t chunk_index_start,
-                        size_t chunk_index_end);
+                        size_t region_index_start,
+                        size_t region_index_end);
 
   virtual void do_it(GCTaskManager* manager, uint which);
 };
@@ -231,17 +231,17 @@ class UpdateDensePrefixTask : public GCTask {
 //
 // DrainStacksCompactionTask
 //
-// This task processes chunks that have been added to the stacks of each
+// This task processes regions that have been added to the stacks of each
 // compaction manager.
 //
 // Trying to use one draining thread does not work because there are no
 // guarantees about which task will be picked up by which thread.  For example,
-// if thread A gets all the preloaded chunks, thread A may not get a draining
+// if thread A gets all the preloaded regions, thread A may not get a draining
 // task (they may all be done by other threads).
 //
 
 class DrainStacksCompactionTask : public GCTask {
  public:
-  char* name() { return (char *)"drain-chunk-task"; }
+  char* name() { return (char *)"drain-region-task"; }
   virtual void do_it(GCTaskManager* manager, uint which);
 };

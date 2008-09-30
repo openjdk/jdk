@@ -1157,9 +1157,9 @@ class CommandLineFlags {
           "In the Parallel Old garbage collector use parallel dense"        \
           " prefix update")                                                 \
                                                                             \
-  develop(bool, UseParallelOldGCChunkPointerCalc, true,                     \
-          "In the Parallel Old garbage collector use chucks to calculate"   \
-          " new object locations")                                          \
+  develop(bool, UseParallelOldGCRegionPointerCalc, true,                    \
+          "In the Parallel Old garbage collector use regions to calculate"  \
+          "new object locations")                                           \
                                                                             \
   product(uintx, HeapMaximumCompactionInterval, 20,                         \
           "How often should we maximally compact the heap (not allowing "   \
@@ -1195,8 +1195,8 @@ class CommandLineFlags {
   develop(bool, ParallelOldMTUnsafeUpdateLiveData, false,                   \
           "Use the Parallel Old MT unsafe in update of live size")          \
                                                                             \
-  develop(bool, TraceChunkTasksQueuing, false,                              \
-          "Trace the queuing of the chunk tasks")                           \
+  develop(bool, TraceRegionTasksQueuing, false,                             \
+          "Trace the queuing of the region tasks")                          \
                                                                             \
   product(uintx, ParallelMarkingThreads, 0,                                 \
           "Number of marking threads concurrent gc will use")               \
