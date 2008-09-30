@@ -210,10 +210,6 @@ void ParallelScavengeHeap::post_initialize() {
   PSScavenge::initialize();
   if (UseParallelOldGC) {
     PSParallelCompact::post_initialize();
-    if (VerifyParallelOldWithMarkSweep) {
-      // Will be used for verification of par old.
-      PSMarkSweep::initialize();
-    }
   } else {
     PSMarkSweep::initialize();
   }

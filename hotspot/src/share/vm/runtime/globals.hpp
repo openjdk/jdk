@@ -1189,13 +1189,6 @@ class CommandLineFlags {
   product(uintx, ParallelCMSThreads, 0,                                     \
           "Max number of threads CMS will use for concurrent work")         \
                                                                             \
-  develop(bool, VerifyParallelOldWithMarkSweep, false,                      \
-          "Use the MarkSweep code to verify phases of Parallel Old")        \
-                                                                            \
-  develop(uintx, VerifyParallelOldWithMarkSweepInterval, 1,                 \
-          "Interval at which the MarkSweep code is used to verify "         \
-          "phases of Parallel Old")                                         \
-                                                                            \
   develop(bool, ParallelOldMTUnsafeMarkBitMap, false,                       \
           "Use the Parallel Old MT unsafe in marking the bitmap")           \
                                                                             \

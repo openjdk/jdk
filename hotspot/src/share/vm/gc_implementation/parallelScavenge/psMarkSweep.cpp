@@ -35,9 +35,7 @@ void PSMarkSweep::initialize() {
   _ref_processor = new ReferenceProcessor(mr,
                                           true,    // atomic_discovery
                                           false);  // mt_discovery
-  if (!UseParallelOldGC || !VerifyParallelOldWithMarkSweep) {
-    _counters = new CollectorCounters("PSMarkSweep", 1);
-  }
+  _counters = new CollectorCounters("PSMarkSweep", 1);
 }
 
 // This method contains all heap specific policy for invoking mark sweep.
@@ -518,9 +516,6 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   follow_stack();
 
   // Process reference objects found during marking
-
-  // Skipping the reference processing for VerifyParallelOldWithMarkSweep
-  // affects the marking (makes it different).
   {
     ReferencePolicy *soft_ref_policy;
     if (clear_all_softrefs) {
