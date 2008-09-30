@@ -180,4 +180,15 @@ static int ContinueInNewThread(InvocationFunctions* ifn, int argc, char** argv,
  */
 void InitLauncher(jboolean javaw);
 
+/*
+ * This allows for finding classes from the VM's bootstrap class loader directly,
+ * FindClass uses the application class loader internally, this will cause
+ * unnecessary searching of the classpath for the required classes.
+ *
+ */
+typedef jclass (JNICALL FindClassFromBootLoader_t(JNIEnv *env,
+                                                const char *name,
+                                                jboolean throwError));
+
+jclass FindBootStrapClass(JNIEnv *env, const char *classname);
 #endif /* _JAVA_H_ */

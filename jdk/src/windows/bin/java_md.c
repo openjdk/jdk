@@ -993,8 +993,33 @@ ContinueInNewThread0(int (JNICALL *continuation)(void *), jlong stack_size, void
     return rslt;
 }
 
-/* Linux only, empty on windows. */
+/* Unix only, empty on windows. */
 void SetJavaLauncherPlatformProps() {}
+
+/*
+ * The implementation for finding classes from the bootstrap
+ * class loader, refer to java.h
+ */
+static FindClassFromBootLoader_t *findBootClass = NULL;
+
+jclass FindBootStrapClass(JNIEnv *env, const char *classname)
+{
+   HMODULE hJvm;
+
+   if (findBootClass == NULL) {
+       hJvm = GetModuleHandle(JVM_DLL);
+       if (hJvm == NULL) return NULL;
+       /* need to use the demangled entry point */
+       findBootClass = (FindClassFromBootLoader_t *)GetProcAddress(hJvm,
+            "JVM_FindClassFromBootLoader");
+       if (findBootClass == NULL) {
+          JLI_ReportErrorMessage(DLL_ERROR4,
+              "JVM_FindClassBootLoader");
+          return NULL;
+       }
+   }
+   return findBootClass(env, classname, JNI_FALSE);
+}
 
 void
 InitLauncher(boolean javaw)
