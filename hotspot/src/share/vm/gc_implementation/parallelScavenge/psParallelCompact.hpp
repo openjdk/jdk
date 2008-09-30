@@ -87,13 +87,6 @@ public:
   // Mask for the bits in a pointer to get the address of the start of a region.
   static const size_t RegionAddrMask;
 
-  static const size_t Log2BlockSize;
-  static const size_t BlockSize;
-  static const size_t BlockOffsetMask;
-  static const size_t BlockMask;
-
-  static const size_t BlocksPerRegion;
-
   class RegionData
   {
   public:
@@ -216,72 +209,6 @@ public:
 #endif
   };
 
-  // 'Blocks' allow shorter sections of the bitmap to be searched.  Each Block
-  // holds an offset, which is the amount of live data in the Region to the left
-  // of the first live object in the Block.  This amount of live data will
-  // include any object extending into the block. The first block in
-  // a region does not include any partial object extending into the
-  // the region.
-  //
-  // The offset also encodes the
-  // 'parity' of the first 1 bit in the Block:  a positive offset means the
-  // first 1 bit marks the start of an object, a negative offset means the first
-  // 1 bit marks the end of an object.
-  class BlockData
-  {
-   public:
-    typedef short int blk_ofs_t;
-
-    blk_ofs_t offset() const { return _offset >= 0 ? _offset : -_offset; }
-    blk_ofs_t raw_offset() const { return _offset; }
-    void set_first_is_start_bit(bool v) { _first_is_start_bit = v; }
-
-#if 0
-    // The need for this method was anticipated but it is
-    // never actually used.  Do not include it for now.  If
-    // it is needed, consider the problem of what is passed
-    // as "v".  To avoid warning errors the method set_start_bit_offset()
-    // was changed to take a size_t as the parameter and to do the
-    // check for the possible overflow.  Doing the cast in these
-    // methods better limits the potential problems because of
-    // the size of the field to this class.
-    void set_raw_offset(blk_ofs_t v) { _offset = v; }
-#endif
-    void set_start_bit_offset(size_t val) {
-      assert(val >= 0, "sanity");
-      _offset = (blk_ofs_t) val;
-      assert(val == (size_t) _offset, "Value is too large");
-      _first_is_start_bit = true;
-    }
-    void set_end_bit_offset(size_t val) {
-      assert(val >= 0, "sanity");
-      _offset = (blk_ofs_t) val;
-      assert(val == (size_t) _offset, "Value is too large");
-      _offset = - _offset;
-      _first_is_start_bit = false;
-    }
-    bool first_is_start_bit() {
-      assert(_set_phase > 0, "Not initialized");
-      return _first_is_start_bit;
-    }
-    bool first_is_end_bit() {
-      assert(_set_phase > 0, "Not initialized");
-      return !_first_is_start_bit;
-    }
-
-   private:
-    blk_ofs_t _offset;
-    // This is temporary until the mark_bitmap is separated into
-    // a start bit array and an end bit array.
-    bool      _first_is_start_bit;
-#ifdef ASSERT
-    short     _set_phase;
-    static short _cur_phase;
-   public:
-    static void set_cur_phase(short v) { _cur_phase = v; }
-#endif
-  };
-
 public:
   ParallelCompactData();
   bool initialize(MemRegion covered_region);
@@ -294,12 +221,6 @@ public:
 
   // Returns true if the given address is contained within the region
   bool region_contains(size_t region_index, HeapWord* addr);
-
-  size_t block_count() const { return _block_count; }
-  inline BlockData* block(size_t n) const;
-
-  // Returns true if the given block is in the given region.
-  static bool region_contains_block(size_t region_index, size_t block_index);
 
   void add_obj(HeapWord* addr, size_t len);
   void add_obj(oop p, size_t len) { add_obj((HeapWord*)p, len); }
@@ -334,27 +255,12 @@ public:
   inline HeapWord*  region_align_up(HeapWord* addr) const;
   inline bool       is_region_aligned(HeapWord* addr) const;
 
-  // Analogous to region_offset() for blocks.
-  size_t     block_offset(const HeapWord* addr) const;
-  size_t     addr_to_block_idx(const HeapWord* addr) const;
-  size_t     addr_to_block_idx(const oop obj) const {
-    return addr_to_block_idx((HeapWord*) obj);
-  }
-  inline BlockData* addr_to_block_ptr(const HeapWord* addr) const;
-  inline HeapWord*  block_to_addr(size_t block) const;
-
   // Return the address one past the end of the partial object.
   HeapWord* partial_obj_end(size_t region_idx) const;
 
   // Return the new location of the object p after the
   // the compaction.
   HeapWord* calc_new_pointer(HeapWord* addr);
-
-  // Same as calc_new_pointer() using blocks.
-  HeapWord* block_calc_new_pointer(HeapWord* addr);
-
-  // Same as calc_new_pointer() using regions.
-  HeapWord* region_calc_new_pointer(HeapWord* addr);
 
   HeapWord* calc_new_pointer(oop p) {
     return calc_new_pointer((HeapWord*) p);
@@ -363,21 +269,12 @@ public:
   // Return the updated address for the given klass
   klassOop calc_new_klass(klassOop);
 
-  // Given a block returns true if the partial object for the
-  // corresponding region ends in the block.  Returns false, otherwise
-  // If there is no partial object, returns false.
-  bool partial_obj_ends_in_block(size_t block_index);
-
-  // Returns the block index for the block
-  static size_t block_idx(BlockData* block);
-
 #ifdef  ASSERT
   void verify_clear(const PSVirtualSpace* vspace);
   void verify_clear();
 #endif  // #ifdef ASSERT
 
 private:
-  bool initialize_block_data(size_t region_size);
   bool initialize_region_data(size_t region_size);
   PSVirtualSpace* create_vspace(size_t count, size_t element_size);
 
@@ -390,10 +287,6 @@ private:
   PSVirtualSpace* _region_vspace;
   RegionData*     _region_data;
   size_t          _region_count;
-
-  PSVirtualSpace* _block_vspace;
-  BlockData*      _block_data;
-  size_t          _block_count;
 };
 
 inline uint
@@ -502,12 +395,6 @@ ParallelCompactData::region(const RegionData* const region_ptr) const
   return pointer_delta(region_ptr, _region_data, sizeof(RegionData));
 }
 
-inline ParallelCompactData::BlockData*
-ParallelCompactData::block(size_t n) const {
-  assert(n < block_count(), "bad arg");
-  return _block_data + n;
-}
-
 inline size_t
 ParallelCompactData::region_offset(const HeapWord* addr) const
 {
@@ -572,35 +459,6 @@ inline bool
 ParallelCompactData::is_region_aligned(HeapWord* addr) const
 {
   return region_offset(addr) == 0;
-}
-
-inline size_t
-ParallelCompactData::block_offset(const HeapWord* addr) const
-{
-  assert(addr >= _region_start, "bad addr");
-  assert(addr <= _region_end, "bad addr");
-  return pointer_delta(addr, _region_start) & BlockOffsetMask;
-}
-
-inline size_t
-ParallelCompactData::addr_to_block_idx(const HeapWord* addr) const
-{
-  assert(addr >= _region_start, "bad addr");
-  assert(addr <= _region_end, "bad addr");
-  return pointer_delta(addr, _region_start) >> Log2BlockSize;
-}
-
-inline ParallelCompactData::BlockData*
-ParallelCompactData::addr_to_block_ptr(const HeapWord* addr) const
-{
-  return block(addr_to_block_idx(addr));
-}
-
-inline HeapWord*
-ParallelCompactData::block_to_addr(size_t block) const
-{
-  assert(block < _block_count, "block out of range");
-  return _region_start + (block << Log2BlockSize);
 }
 
 // Abstract closure for use with ParMarkBitMap::iterate(), which will invoke the
@@ -687,35 +545,6 @@ inline void ParMarkBitMapClosure::decrement_words_remaining(size_t words) {
   assert(_words_remaining >= words, "processed too many words");
   _words_remaining -= words;
 }
-
-// Closure for updating the block data during the summary phase.
-class BitBlockUpdateClosure: public ParMarkBitMapClosure {
-  // ParallelCompactData::BlockData::blk_ofs_t _live_data_left;
-  size_t    _live_data_left;
-  size_t    _cur_block;
-  HeapWord* _region_start;
-  HeapWord* _region_end;
-  size_t    _region_index;
-
- public:
-  BitBlockUpdateClosure(ParMarkBitMap* mbm,
-                        ParCompactionManager* cm,
-                        size_t region_index);
-
-  size_t cur_block() { return _cur_block; }
-  size_t region_index() { return _region_index; }
-  size_t live_data_left() { return _live_data_left; }
-  // Returns true the first bit in the current block (cur_block) is
-  // a start bit.
-  // Returns true if the current block is within the region for the closure;
-  bool region_contains_cur_block();
-
-  // Set the region index and related region values for
-  // a new region.
-  void reset_region(size_t region_index);
-
-  virtual IterationStatus do_addr(HeapWord* addr, size_t words);
-};
 
 // The UseParallelOldGC collector is a stop-the-world garbage collector that
 // does parts of the collection using parallel threads.  The collection includes
@@ -809,7 +638,6 @@ class PSParallelCompact : AllStatic {
   // Convenient access to type names.
   typedef ParMarkBitMap::idx_t idx_t;
   typedef ParallelCompactData::RegionData RegionData;
-  typedef ParallelCompactData::BlockData BlockData;
 
   typedef enum {
     perm_space_id, old_space_id, eden_space_id,
@@ -1013,12 +841,6 @@ class PSParallelCompact : AllStatic {
   static void summarize_spaces_quick();
   static void summarize_space(SpaceId id, bool maximum_compaction);
   static void summary_phase(ParCompactionManager* cm, bool maximum_compaction);
-
-  static bool block_first_offset(size_t block_index, idx_t* block_offset_ptr);
-
-  // Fill in the BlockData
-  static void summarize_blocks(ParCompactionManager* cm,
-                               SpaceId first_compaction_space_id);
 
   // The space that is compacted after space_id.
   static SpaceId next_compaction_space_id(SpaceId space_id);

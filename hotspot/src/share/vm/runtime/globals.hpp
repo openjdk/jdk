@@ -1157,10 +1157,6 @@ class CommandLineFlags {
           "In the Parallel Old garbage collector use parallel dense"        \
           " prefix update")                                                 \
                                                                             \
-  develop(bool, UseParallelOldGCRegionPointerCalc, true,                    \
-          "In the Parallel Old garbage collector use regions to calculate"  \
-          "new object locations")                                           \
-                                                                            \
   product(uintx, HeapMaximumCompactionInterval, 20,                         \
           "How often should we maximally compact the heap (not allowing "   \
           "any dead space)")                                                \
