@@ -2667,6 +2667,10 @@ void PhaseIdealLoop::reorg_offsets( IdealLoopTree *loop ) {
   // Fix this by adjusting to use the post-increment trip counter.
   Node *phi = cl->phi();
   if( !phi ) return;            // Dead infinite loop
+
+  // Shape messed up, probably by iteration_split_impl
+  if (phi->in(LoopNode::LoopBackControl) != cl->incr()) return;
+
   bool progress = true;
   while (progress) {
     progress = false;

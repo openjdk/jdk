@@ -1012,6 +1012,8 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
     if (!has_ctrl(old))
       set_loop(nnn, loop);
   }
+
+  loop->record_for_igvn();
 }
 
 //------------------------------do_maximally_unroll----------------------------

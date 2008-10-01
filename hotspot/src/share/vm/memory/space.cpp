@@ -105,7 +105,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
          "Only ones we deal with for now.");
 
   assert(_precision != CardTableModRefBS::ObjHeadPreciseArray ||
-         _last_bottom == NULL ||
+         _cl->idempotent() || _last_bottom == NULL ||
          top <= _last_bottom,
          "Not decreasing");
   NOT_PRODUCT(_last_bottom = mr.start());
@@ -144,7 +144,14 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
     walk_mem_region(mr, bottom_obj, top);
   }
 
-  _min_done = bottom;
+  // An idempotent closure might be applied in any order, so we don't
+  // record a _min_done for it.
+  if (!_cl->idempotent()) {
+    _min_done = bottom;
+  } else {
+    assert(_min_done == _last_explicit_min_done,
+           "Don't update _min_done for idempotent cl");
+  }
 }
 
 DirtyCardToOopClosure* Space::new_dcto_cl(OopClosure* cl,
@@ -250,7 +257,8 @@ void Space::clear(bool mangle_space) {
   }
 }
 
-ContiguousSpace::ContiguousSpace(): CompactibleSpace(), _top(NULL) {
+ContiguousSpace::ContiguousSpace(): CompactibleSpace(), _top(NULL),
+    _concurrent_iteration_safe_limit(NULL) {
   _mangler = new GenSpaceMangler(this);
 }
 
@@ -263,17 +271,17 @@ void ContiguousSpace::initialize(MemRegion mr,
                                  bool mangle_space)
 {
   CompactibleSpace::initialize(mr, clear_space, mangle_space);
-  _concurrent_iteration_safe_limit = top();
+  set_concurrent_iteration_safe_limit(top());
 }
 
 void ContiguousSpace::clear(bool mangle_space) {
   set_top(bottom());
   set_saved_mark();
-  Space::clear(mangle_space);
+  CompactibleSpace::clear(mangle_space);
 }
 
 bool Space::is_in(const void* p) const {
-  HeapWord* b = block_start(p);
+  HeapWord* b = block_start_const(p);
   return b != NULL && block_is_obj(b);
 }
 
@@ -342,8 +350,13 @@ void CompactibleSpace::initialize(MemRegion mr,
                                   bool clear_space,
                                   bool mangle_space) {
   Space::initialize(mr, clear_space, mangle_space);
-  _compaction_top = bottom();
+  set_compaction_top(bottom());
   _next_compaction_space = NULL;
+}
+
+void CompactibleSpace::clear(bool mangle_space) {
+  Space::clear(mangle_space);
+  _compaction_top = bottom();
 }
 
 HeapWord* CompactibleSpace::forward(oop q, size_t size,
@@ -520,8 +533,8 @@ void ContiguousSpace::verify(bool allow_dirty) const {
   }
   guarantee(p == top(), "end of last object must match end of space");
   if (top() != end()) {
-    guarantee(top() == block_start(end()-1) &&
-              top() == block_start(top()),
+    guarantee(top() == block_start_const(end()-1) &&
+              top() == block_start_const(top()),
               "top should be start of unallocated block, if it exists");
   }
 }
@@ -753,7 +766,7 @@ ALL_SINCE_SAVE_MARKS_CLOSURES(ContigSpace_OOP_SINCE_SAVE_MARKS_DEFN)
 #undef ContigSpace_OOP_SINCE_SAVE_MARKS_DEFN
 
 // Very general, slow implementation.
-HeapWord* ContiguousSpace::block_start(const void* p) const {
+HeapWord* ContiguousSpace::block_start_const(const void* p) const {
   assert(MemRegion(bottom(), end()).contains(p), "p not in space");
   if (p >= top()) {
     return top();
@@ -957,7 +970,8 @@ void OffsetTableContigSpace::verify(bool allow_dirty) const {
     // For a sampling of objects in the space, find it using the
     // block offset table.
     if (blocks == BLOCK_SAMPLE_INTERVAL) {
-      guarantee(p == block_start(p + (size/2)), "check offset computation");
+      guarantee(p == block_start_const(p + (size/2)),
+                "check offset computation");
       blocks = 0;
     } else {
       blocks++;

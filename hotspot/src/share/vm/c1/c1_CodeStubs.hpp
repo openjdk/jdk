@@ -482,3 +482,81 @@ class ArrayCopyStub: public CodeStub {
   virtual void print_name(outputStream* out) const { out->print("ArrayCopyStub"); }
 #endif // PRODUCT
 };
+
+//////////////////////////////////////////////////////////////////////////////////////////
+#ifndef SERIALGC
+
+// Code stubs for Garbage-First barriers.
+class G1PreBarrierStub: public CodeStub {
+ private:
+  LIR_Opr _addr;
+  LIR_Opr _pre_val;
+  LIR_PatchCode _patch_code;
+  CodeEmitInfo* _info;
+
+ public:
+  // pre_val (a temporary register) must be a register;
+  // addr (the address of the field to be read) must be a LIR_Address
+  G1PreBarrierStub(LIR_Opr addr, LIR_Opr pre_val, LIR_PatchCode patch_code, CodeEmitInfo* info) :
+    _addr(addr), _pre_val(pre_val), _patch_code(patch_code), _info(info)
+  {
+    assert(_pre_val->is_register(), "should be temporary register");
+    assert(_addr->is_address(), "should be the address of the field");
+  }
+
+  LIR_Opr addr() const { return _addr; }
+  LIR_Opr pre_val() const { return _pre_val; }
+  LIR_PatchCode patch_code() const { return _patch_code; }
+  CodeEmitInfo* info() const { return _info; }
+
+  virtual void emit_code(LIR_Assembler* e);
+  virtual void visit(LIR_OpVisitState* visitor) {
+    // don't pass in the code emit info since it's processed in the fast
+    // path
+    if (_info != NULL)
+      visitor->do_slow_case(_info);
+    else
+      visitor->do_slow_case();
+    visitor->do_input(_addr);
+    visitor->do_temp(_pre_val);
+  }
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("G1PreBarrierStub"); }
+#endif // PRODUCT
+};
+
+class G1PostBarrierStub: public CodeStub {
+ private:
+  LIR_Opr _addr;
+  LIR_Opr _new_val;
+
+  static jbyte* _byte_map_base;
+  static jbyte* byte_map_base_slow();
+  static jbyte* byte_map_base() {
+    if (_byte_map_base == NULL) {
+      _byte_map_base = byte_map_base_slow();
+    }
+    return _byte_map_base;
+  }
+
+ public:
+  // addr (the address of the object head) and new_val must be registers.
+  G1PostBarrierStub(LIR_Opr addr, LIR_Opr new_val): _addr(addr), _new_val(new_val) { }
+
+  LIR_Opr addr() const { return _addr; }
+  LIR_Opr new_val() const { return _new_val; }
+
+  virtual void emit_code(LIR_Assembler* e);
+  virtual void visit(LIR_OpVisitState* visitor) {
+    // don't pass in the code emit info since it's processed in the fast path
+    visitor->do_slow_case();
+    visitor->do_input(_addr);
+    visitor->do_input(_new_val);
+  }
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("G1PostBarrierStub"); }
+#endif // PRODUCT
+};
+
+#endif // SERIALGC
+//////////////////////////////////////////////////////////////////////////////////////////

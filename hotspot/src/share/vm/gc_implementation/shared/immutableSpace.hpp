@@ -50,7 +50,8 @@ class ImmutableSpace: public CHeapObj {
   size_t capacity_in_bytes() const            { return capacity_in_words() * HeapWordSize; }
 
   // Size computations.  Sizes are in heapwords.
-  size_t capacity_in_words() const            { return pointer_delta(end(), bottom()); }
+  size_t capacity_in_words() const                { return pointer_delta(end(), bottom()); }
+  virtual size_t capacity_in_words(Thread*) const { return capacity_in_words(); }
 
   // Iteration.
   virtual void oop_iterate(OopClosure* cl);

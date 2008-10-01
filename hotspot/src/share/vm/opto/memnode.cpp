@@ -1887,6 +1887,38 @@ const Type *LoadRangeNode::Value( PhaseTransform *phase ) const {
   return tap->size();
 }
 
+//-------------------------------Ideal---------------------------------------
+// Feed through the length in AllocateArray(...length...)._length.
+Node *LoadRangeNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  Node* p = MemNode::Ideal_common(phase, can_reshape);
+  if (p)  return (p == NodeSentinel) ? NULL : p;
+
+  // Take apart the address into an oop and and offset.
+  // Return 'this' if we cannot.
+  Node*    adr    = in(MemNode::Address);
+  intptr_t offset = 0;
+  Node*    base   = AddPNode::Ideal_base_and_offset(adr, phase,  offset);
+  if (base == NULL)     return NULL;
+  const TypeAryPtr* tary = phase->type(adr)->isa_aryptr();
+  if (tary == NULL)     return NULL;
+
+  // We can fetch the length directly through an AllocateArrayNode.
+  // This works even if the length is not constant (clone or newArray).
+  if (offset == arrayOopDesc::length_offset_in_bytes()) {
+    AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(base, phase);
+    if (alloc != NULL) {
+      Node* allocated_length = alloc->Ideal_length();
+      Node* len = alloc->make_ideal_length(tary, phase);
+      if (allocated_length != len) {
+        // New CastII improves on this.
+        return len;
+      }
+    }
+  }
+
+  return NULL;
+}
+
 //------------------------------Identity---------------------------------------
 // Feed through the length in AllocateArray(...length...)._length.
 Node* LoadRangeNode::Identity( PhaseTransform *phase ) {
@@ -1905,15 +1937,22 @@ Node* LoadRangeNode::Identity( PhaseTransform *phase ) {
   // We can fetch the length directly through an AllocateArrayNode.
   // This works even if the length is not constant (clone or newArray).
   if (offset == arrayOopDesc::length_offset_in_bytes()) {
-    Node* allocated_length = AllocateArrayNode::Ideal_length(base, phase);
-    if (allocated_length != NULL) {
-      return allocated_length;
+    AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(base, phase);
+    if (alloc != NULL) {
+      Node* allocated_length = alloc->Ideal_length();
+      // Do not allow make_ideal_length to allocate a CastII node.
+      Node* len = alloc->make_ideal_length(tary, phase, false);
+      if (allocated_length == len) {
+        // Return allocated_length only if it would not be improved by a CastII.
+        return allocated_length;
+      }
     }
   }
 
   return this;
 
 }
+
 //=============================================================================
 //---------------------------StoreNode::make-----------------------------------
 // Polymorphic factory method:

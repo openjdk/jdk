@@ -59,9 +59,13 @@ void MemoryService::set_universe_heap(CollectedHeap* heap) {
       add_parallel_scavenge_heap_info(ParallelScavengeHeap::heap());
       break;
     }
+    case CollectedHeap::G1CollectedHeap : {
+      G1CollectedHeap::g1_unimplemented();
+      return;
+    }
 #endif // SERIALGC
     default: {
-      guarantee(false, "Not recognized kind of heap");
+      guarantee(false, "Unrecognized kind of heap");
     }
   }
 
