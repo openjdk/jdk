@@ -123,8 +123,6 @@ void PSPermGen::move_and_update(ParCompactionManager* cm) {
 
 void PSPermGen::precompact() {
   // Reset start array first.
-  debug_only(if (!UseParallelOldGC || !VerifyParallelOldWithMarkSweep) {)
   _start_array.reset();
-  debug_only(})
   object_mark_sweep()->precompact();
 }
