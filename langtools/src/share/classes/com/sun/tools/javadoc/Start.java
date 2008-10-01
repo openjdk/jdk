@@ -28,16 +28,10 @@ package com.sun.tools.javadoc;
 import com.sun.javadoc.*;
 
 import com.sun.tools.javac.main.CommandLine;
-import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Options;
-
-import com.sun.tools.javadoc.Messager;
-import com.sun.tools.javadoc.DocletInvoker;
-import com.sun.tools.javadoc.RootDocImpl;
-import com.sun.tools.javadoc.ModifierFilter;
 
 import java.io.IOException;
 import java.io.File;
@@ -139,7 +133,7 @@ class Start {
     /**
      * Main program - external wrapper
      */
-    int begin(String argv[]) {
+    int begin(String... argv) {
         boolean failed = false;
 
         try {
@@ -178,7 +172,7 @@ class Start {
     /**
      * Main program - internal
      */
-    private boolean parseAndExecute(String argv[]) throws IOException {
+    private boolean parseAndExecute(String... argv) throws IOException {
         long tm = System.currentTimeMillis();
 
         ListBuffer<String> javaNames = new ListBuffer<String>();
