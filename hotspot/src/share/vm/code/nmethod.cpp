@@ -1350,11 +1350,7 @@ bool nmethod::can_unload(BoolObjectClosure* is_alive,
       return false;
     }
   }
-  if (!UseParallelOldGC || !VerifyParallelOldWithMarkSweep) {
-    // Cannot do this test if verification of the UseParallelOldGC
-    // code using the PSMarkSweep code is being done.
-    assert(unloading_occurred, "Inconsistency in unloading");
-  }
+  assert(unloading_occurred, "Inconsistency in unloading");
   make_unloaded(is_alive, obj);
   return true;
 }

@@ -886,7 +886,7 @@ static jint get_num_flags() {
   int count = 0;
   for (int i = 0; i < nFlags; i++) {
     Flag* flag = &Flag::flags[i];
-    // Exclude the diagnostic flags
+    // Exclude the locked (diagnostic, experimental) flags
     if (flag->is_unlocked() || flag->is_unlocker()) {
       count++;
     }
@@ -1487,7 +1487,7 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
   int num_entries = 0;
   for (int i = 0; i < nFlags; i++) {
     Flag* flag = &Flag::flags[i];
-    // Exclude the diagnostic flags
+    // Exclude the locked (experimental, diagnostic) flags
     if (flag->is_unlocked() || flag->is_unlocker()) {
       Handle s = java_lang_String::create_from_str(flag->name, CHECK_0);
       flags_ah->obj_at_put(num_entries, s());
@@ -1616,7 +1616,7 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
     int num_entries = 0;
     for (int i = 0; i < nFlags && num_entries < count;  i++) {
       Flag* flag = &Flag::flags[i];
-      // Exclude the diagnostic flags
+      // Exclude the locked (diagnostic, experimental) flags
       if (flag->is_unlocked() || flag->is_unlocker()) {
         add_global_entry(env, null_h, &globals[num_entries], flag, THREAD);
         num_entries++;

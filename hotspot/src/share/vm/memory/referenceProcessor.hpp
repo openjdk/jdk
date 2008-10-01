@@ -54,6 +54,14 @@ class ReferenceProcessor : public CHeapObj {
   bool        _discovery_is_atomic;   // if discovery is atomic wrt
                                       // other collectors in configuration
   bool        _discovery_is_mt;       // true if reference discovery is MT.
+  // If true, setting "next" field of a discovered refs list requires
+  // write barrier(s).  (Must be true if used in a collector in which
+  // elements of a discovered list may be moved during discovery: for
+  // example, a collector like Garbage-First that moves objects during a
+  // long-term concurrent marking phase that does weak reference
+  // discovery.)
+  bool        _discovered_list_needs_barrier;
+  BarrierSet* _bs;                    // Cached copy of BarrierSet.
   bool        _enqueuing_is_done;     // true if all weak references enqueued
   bool        _processing_is_mt;      // true during phases when
                                       // reference processing is MT.
@@ -196,7 +204,6 @@ class ReferenceProcessor : public CHeapObj {
   void verify_ok_to_handle_reflists() PRODUCT_RETURN;
 
   void abandon_partial_discovered_list(DiscoveredList& refs_list);
-  void abandon_partial_discovered_list_arr(DiscoveredList refs_lists[]);
 
   // Calculate the number of jni handles.
   unsigned int count_jni_refs();
@@ -217,6 +224,8 @@ class ReferenceProcessor : public CHeapObj {
     _discovery_is_atomic(true),
     _enqueuing_is_done(false),
     _discovery_is_mt(false),
+    _discovered_list_needs_barrier(false),
+    _bs(NULL),
     _is_alive_non_header(NULL),
     _num_q(0),
     _processing_is_mt(false),
@@ -224,8 +233,10 @@ class ReferenceProcessor : public CHeapObj {
   {}
 
   ReferenceProcessor(MemRegion span, bool atomic_discovery,
-                     bool mt_discovery, int mt_degree = 1,
-                     bool mt_processing = false);
+                     bool mt_discovery,
+                     int mt_degree = 1,
+                     bool mt_processing = false,
+                     bool discovered_list_needs_barrier = false);
 
   // Allocates and initializes a reference processor.
   static ReferenceProcessor* create_ref_processor(
@@ -234,8 +245,8 @@ class ReferenceProcessor : public CHeapObj {
     bool               mt_discovery,
     BoolObjectClosure* is_alive_non_header = NULL,
     int                parallel_gc_threads = 1,
-    bool               mt_processing = false);
-
+    bool               mt_processing = false,
+    bool               discovered_list_needs_barrier = false);
   // RefDiscoveryPolicy values
   enum {
     ReferenceBasedDiscovery = 0,
@@ -295,6 +306,11 @@ class ReferenceProcessor : public CHeapObj {
  public:
   // Enqueue references at end of GC (called by the garbage collector)
   bool enqueue_discovered_references(AbstractRefProcTaskExecutor* task_executor = NULL);
+
+  // If a discovery is in process that is being superceded, abandon it: all
+  // the discovered lists will be empty, and all the objects on them will
+  // have NULL discovered fields.  Must be called only at a safepoint.
+  void abandon_partial_discovery();
 
   // debugging
   void verify_no_references_recorded() PRODUCT_RETURN;
