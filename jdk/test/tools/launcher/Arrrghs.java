@@ -24,7 +24,7 @@
 /**
  * @test
  * @compile  -XDignore.symbol.file Arrrghs.java TestHelper.java
- * @bug 5030233 6214916 6356475 6571029 6684582
+ * @bug 5030233 6214916 6356475 6571029 6684582 6742159 4459600
  * @run main Arrrghs
  * @summary Argument parsing validation.
  */
@@ -232,7 +232,8 @@ public class Arrrghs {
         TestHelper.TestResult tr = null;
 
         // a missing class
-        TestHelper.createJar(new File("some.jar"), new File("Foo"), (String[])null);
+        TestHelper.createJar("MIA", new File("some.jar"), new File("Foo"),
+                (String[])null);
         tr = TestHelper.doExec(TestHelper.javaCmd, "-jar", "some.jar");
         tr.contains("MIA");
         System.out.println(tr);
@@ -276,13 +277,13 @@ public class Arrrghs {
 
         // incorrect method type - non-static
          TestHelper.createJar(new File("some.jar"), new File("Foo"),
-                "public void main(Object[] args){}");
+                "public void main(String[] args){}");
         tr = TestHelper.doExec(TestHelper.javaCmd, "-jar", "some.jar");
-        tr.contains("Error: Main method not found in class Foo");
+        tr.contains("Error: Main method is not static in class Foo");
         System.out.println(tr);
         // use classpath to check
         tr = TestHelper.doExec(TestHelper.javaCmd, "-cp", "some.jar", "Foo");
-        tr.contains("Error: Main method not found in class Foo");
+        tr.contains("Error: Main method is not static in class Foo");
         System.out.println(tr);
 
         // amongst a potpourri of kindred main methods, is the right one chosen ?
@@ -299,6 +300,13 @@ public class Arrrghs {
         // use classpath to check
         tr = TestHelper.doExec(TestHelper.javaCmd, "-cp", "some.jar", "Foo");
         tr.contains("THE_CHOSEN_ONE");
+        System.out.println(tr);
+
+        // test for extraneous whitespace in the Main-Class attribute
+        TestHelper.createJar(" Foo ", new File("some.jar"), new File("Foo"),
+                "public static void main(String... args){}");
+        tr = TestHelper.doExec(TestHelper.javaCmd, "-jar", "some.jar");
+        tr.checkPositive();
         System.out.println(tr);
     }
 

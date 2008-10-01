@@ -72,8 +72,8 @@ public enum TestHelper {
     }
 
     /*
-     * A generic jar file creator which creates the java file, compiles it
-     * and jar's it up for use.
+     * A convenience method to create a java file, compile and jar it up, using
+     * the sole class file name in the jar, as the Main-Class attribute value.
      */
     static void createJar(File jarName, File mainClass, String... mainDefs)
             throws FileNotFoundException {
@@ -81,11 +81,13 @@ public enum TestHelper {
     }
 
     /*
-     * A method which takes manifest entry to specify a specific manifest
-     * Main-Class name.
+     * A generic jar file creator to create a java file, compile it
+     * and jar it up, a specific Main-Class entry name in the
+     * manifest can be specified or a null to use the sole class file name
+     * as the Main-Class attribute value.
      */
-    static void createJar(String mEntry, File jarName, File mainClass, String... mainDefs)
-            throws FileNotFoundException {
+    static void createJar(String mEntry, File jarName, File mainClass,
+            String... mainDefs) throws FileNotFoundException {
         if (jarName.exists()) {
             jarName.delete();
         }
@@ -105,10 +107,7 @@ public enum TestHelper {
         if (compiler.run(null, null, null, compileArgs) != 0) {
             throw new RuntimeException("compilation failed " + mainClass + ".java");
         }
-
-        if (mEntry == null && mainDefs == null) {
-            mEntry = "MIA";
-        } else {
+        if (mEntry == null) {
             mEntry = mainClass.getName();
         }
         String jarArgs[] = {
@@ -125,7 +124,7 @@ public enum TestHelper {
     }
 
     /*
-     * A method which executes a java cmd and returs the results in a container
+     * A method which executes a java cmd and returns the results in a container
      */
     static TestResult doExec(String...cmds) {
         String cmdStr = "";
