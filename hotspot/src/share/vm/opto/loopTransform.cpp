@@ -679,6 +679,10 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   CountedLoopNode *post_head = old_new[main_head->_idx]->as_CountedLoop();
   post_head->set_post_loop(main_head);
 
+  // Reduce the post-loop trip count.
+  CountedLoopEndNode* post_end = old_new[main_end ->_idx]->as_CountedLoopEnd();
+  post_end->_prob = PROB_FAIR;
+
   // Build the main-loop normal exit.
   IfFalseNode *new_main_exit = new (C, 1) IfFalseNode(main_end);
   _igvn.register_new_node_with_optimizer( new_main_exit );
@@ -748,6 +752,9 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   pre_head->set_pre_loop(main_head);
   Node *pre_incr = old_new[incr->_idx];
 
+  // Reduce the pre-loop trip count.
+  pre_end->_prob = PROB_FAIR;
+
   // Find the pre-loop normal exit.
   Node* pre_exit = pre_end->proj_out(false);
   assert( pre_exit->Opcode() == Op_IfFalse, "" );
@@ -767,8 +774,8 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   register_new_node( min_cmp , new_pre_exit );
   register_new_node( min_bol , new_pre_exit );
 
-  // Build the IfNode
-  IfNode *min_iff = new (C, 2) IfNode( new_pre_exit, min_bol, PROB_FAIR, COUNT_UNKNOWN );
+  // Build the IfNode (assume the main-loop is executed always).
+  IfNode *min_iff = new (C, 2) IfNode( new_pre_exit, min_bol, PROB_ALWAYS, COUNT_UNKNOWN );
   _igvn.register_new_node_with_optimizer( min_iff );
   set_idom(min_iff, new_pre_exit, dd_main_head);
   set_loop(min_iff, loop->_parent);
