@@ -707,7 +707,7 @@ class CommandLineFlags {
   diagnostic(bool, PrintAssembly, false,                                    \
           "Print assembly code (using external disassembler.so)")           \
                                                                             \
-  diagnostic(ccstr, PrintAssemblyOptions, false,                            \
+  diagnostic(ccstr, PrintAssemblyOptions, NULL,                             \
           "Options string passed to disassembler.so")                       \
                                                                             \
   diagnostic(bool, PrintNMethods, false,                                    \
@@ -848,7 +848,7 @@ class CommandLineFlags {
           "Use LWP-based instead of libthread-based synchronization "       \
           "(SPARC only)")                                                   \
                                                                             \
-  product(ccstr, SyncKnobs, "",                                             \
+  product(ccstr, SyncKnobs, NULL,                                           \
           "(Unstable) Various monitor synchronization tunables")            \
                                                                             \
   product(intx, EmitSync, 0,                                                \
@@ -1032,7 +1032,7 @@ class CommandLineFlags {
   notproduct(bool, TraceJVMCalls, false,                                    \
           "Trace JVM calls")                                                \
                                                                             \
-  product(ccstr, TraceJVMTI, "",                                            \
+  product(ccstr, TraceJVMTI, NULL,                                          \
           "Trace flags for JVMTI functions and events")                     \
                                                                             \
   /* This option can change an EMCP method into an obsolete method. */      \
@@ -1157,10 +1157,6 @@ class CommandLineFlags {
           "In the Parallel Old garbage collector use parallel dense"        \
           " prefix update")                                                 \
                                                                             \
-  develop(bool, UseParallelOldGCChunkPointerCalc, true,                     \
-          "In the Parallel Old garbage collector use chucks to calculate"   \
-          " new object locations")                                          \
-                                                                            \
   product(uintx, HeapMaximumCompactionInterval, 20,                         \
           "How often should we maximally compact the heap (not allowing "   \
           "any dead space)")                                                \
@@ -1189,21 +1185,14 @@ class CommandLineFlags {
   product(uintx, ParallelCMSThreads, 0,                                     \
           "Max number of threads CMS will use for concurrent work")         \
                                                                             \
-  develop(bool, VerifyParallelOldWithMarkSweep, false,                      \
-          "Use the MarkSweep code to verify phases of Parallel Old")        \
-                                                                            \
-  develop(uintx, VerifyParallelOldWithMarkSweepInterval, 1,                 \
-          "Interval at which the MarkSweep code is used to verify "         \
-          "phases of Parallel Old")                                         \
-                                                                            \
   develop(bool, ParallelOldMTUnsafeMarkBitMap, false,                       \
           "Use the Parallel Old MT unsafe in marking the bitmap")           \
                                                                             \
   develop(bool, ParallelOldMTUnsafeUpdateLiveData, false,                   \
           "Use the Parallel Old MT unsafe in update of live size")          \
                                                                             \
-  develop(bool, TraceChunkTasksQueuing, false,                              \
-          "Trace the queuing of the chunk tasks")                           \
+  develop(bool, TraceRegionTasksQueuing, false,                             \
+          "Trace the queuing of the region tasks")                          \
                                                                             \
   product(uintx, ParallelMarkingThreads, 0,                                 \
           "Number of marking threads concurrent gc will use")               \

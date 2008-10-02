@@ -73,7 +73,7 @@ void JvmtiTrace::initialize() {
 
   const char *very_end;
   const char *curr;
-  if (strlen(TraceJVMTI)) {
+  if (TraceJVMTI != NULL) {
     curr = TraceJVMTI;
   } else {
     curr = "";  // hack in fixed tracing here

@@ -557,32 +557,32 @@ class StarTask {
 typedef GenericTaskQueue<StarTask>     OopStarTaskQueue;
 typedef GenericTaskQueueSet<StarTask>  OopStarTaskQueueSet;
 
-typedef size_t ChunkTask;  // index for chunk
-typedef GenericTaskQueue<ChunkTask>    ChunkTaskQueue;
-typedef GenericTaskQueueSet<ChunkTask> ChunkTaskQueueSet;
+typedef size_t RegionTask;  // index for region
+typedef GenericTaskQueue<RegionTask>    RegionTaskQueue;
+typedef GenericTaskQueueSet<RegionTask> RegionTaskQueueSet;
 
-class ChunkTaskQueueWithOverflow: public CHeapObj {
+class RegionTaskQueueWithOverflow: public CHeapObj {
  protected:
-  ChunkTaskQueue              _chunk_queue;
-  GrowableArray<ChunkTask>*   _overflow_stack;
+  RegionTaskQueue              _region_queue;
+  GrowableArray<RegionTask>*   _overflow_stack;
 
  public:
-  ChunkTaskQueueWithOverflow() : _overflow_stack(NULL) {}
+  RegionTaskQueueWithOverflow() : _overflow_stack(NULL) {}
   // Initialize both stealable queue and overflow
   void initialize();
   // Save first to stealable queue and then to overflow
-  void save(ChunkTask t);
+  void save(RegionTask t);
   // Retrieve first from overflow and then from stealable queue
-  bool retrieve(ChunkTask& chunk_index);
+  bool retrieve(RegionTask& region_index);
   // Retrieve from stealable queue
-  bool retrieve_from_stealable_queue(ChunkTask& chunk_index);
+  bool retrieve_from_stealable_queue(RegionTask& region_index);
   // Retrieve from overflow
-  bool retrieve_from_overflow(ChunkTask& chunk_index);
+  bool retrieve_from_overflow(RegionTask& region_index);
   bool is_empty();
   bool stealable_is_empty();
   bool overflow_is_empty();
-  juint stealable_size() { return _chunk_queue.size(); }
-  ChunkTaskQueue* task_queue() { return &_chunk_queue; }
+  juint stealable_size() { return _region_queue.size(); }
+  RegionTaskQueue* task_queue() { return &_region_queue; }
 };
 
-#define USE_ChunkTaskQueueWithOverflow
+#define USE_RegionTaskQueueWithOverflow
