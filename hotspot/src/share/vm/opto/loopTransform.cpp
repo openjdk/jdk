@@ -1590,10 +1590,10 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
 
 //=============================================================================
 //------------------------------iteration_split_impl---------------------------
-void IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_new ) {
+bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_new ) {
   // Check and remove empty loops (spam micro-benchmarks)
   if( policy_do_remove_empty_loop(phase) )
-    return;                     // Here we removed an empty loop
+    return true;                     // Here we removed an empty loop
 
   bool should_peel = policy_peeling(phase); // Should we peel?
 
@@ -1603,7 +1603,8 @@ void IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
   // This removes loop-invariant tests (usually null checks).
   if( !_head->is_CountedLoop() ) { // Non-counted loop
     if (PartialPeelLoop && phase->partial_peel(this, old_new)) {
-      return;
+      // Partial peel succeeded so terminate this round of loop opts
+      return false;
     }
     if( should_peel ) {            // Should we peel?
 #ifndef PRODUCT
@@ -1613,14 +1614,14 @@ void IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
     } else if( should_unswitch ) {
       phase->do_unswitching(this, old_new);
     }
-    return;
+    return true;
   }
   CountedLoopNode *cl = _head->as_CountedLoop();
 
-  if( !cl->loopexit() ) return; // Ignore various kinds of broken loops
+  if( !cl->loopexit() ) return true; // Ignore various kinds of broken loops
 
   // Do nothing special to pre- and post- loops
-  if( cl->is_pre_loop() || cl->is_post_loop() ) return;
+  if( cl->is_pre_loop() || cl->is_post_loop() ) return true;
 
   // Compute loop trip count from profile data
   compute_profile_trip_cnt(phase);
@@ -1633,11 +1634,11 @@ void IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
       // Here we did some unrolling and peeling.  Eventually we will
       // completely unroll this loop and it will no longer be a loop.
       phase->do_maximally_unroll(this,old_new);
-      return;
+      return true;
     }
     if (should_unswitch) {
       phase->do_unswitching(this, old_new);
-      return;
+      return true;
     }
   }
 
@@ -1698,14 +1699,16 @@ void IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
     if( should_peel )           // Might want to peel but do nothing else
       phase->do_peeling(this,old_new);
   }
+  return true;
 }
 
 
 //=============================================================================
 //------------------------------iteration_split--------------------------------
-void IdealLoopTree::iteration_split( PhaseIdealLoop *phase, Node_List &old_new ) {
+bool IdealLoopTree::iteration_split( PhaseIdealLoop *phase, Node_List &old_new ) {
   // Recursively iteration split nested loops
-  if( _child ) _child->iteration_split( phase, old_new );
+  if( _child && !_child->iteration_split( phase, old_new ))
+    return false;
 
   // Clean out prior deadwood
   DCE_loop_body();
@@ -1727,7 +1730,9 @@ void IdealLoopTree::iteration_split( PhaseIdealLoop *phase, Node_List &old_new )
       _allow_optimizations &&
       !tail()->is_top() ) {     // Also ignore the occasional dead backedge
     if (!_has_call) {
-      iteration_split_impl( phase, old_new );
+      if (!iteration_split_impl( phase, old_new )) {
+        return false;
+      }
     } else if (policy_unswitching(phase)) {
       phase->do_unswitching(this, old_new);
     }
@@ -1736,5 +1741,7 @@ void IdealLoopTree::iteration_split( PhaseIdealLoop *phase, Node_List &old_new )
   // Minor offset re-organization to remove loop-fallout uses of
   // trip counter.
   if( _head->is_CountedLoop() ) phase->reorg_offsets( this );
-  if( _next ) _next->iteration_split( phase, old_new );
+  if( _next && !_next->iteration_split( phase, old_new ))
+    return false;
+  return true;
 }
