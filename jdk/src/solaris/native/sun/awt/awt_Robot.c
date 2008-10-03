@@ -246,7 +246,7 @@ Java_sun_awt_X11_XRobotPeer_setup (JNIEnv * env, jclass cls) {
     AWT_UNLOCK();
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT jint JNICALL
 Java_sun_awt_X11_XRobotPeer_getNumberOfButtonsImpl(JNIEnv *env,
                                                    jclass cls) {
     // At the moment this routine being called we already should have an initialized num_buttons variable.
@@ -376,60 +376,6 @@ Java_sun_awt_X11_XRobotPeer_mouseMoveImpl (JNIEnv *env,
     AWT_UNLOCK();
 }
 
-JNIEXPORT void JNICALL
-Java_sun_awt_X11_XRobotPeer_mousePressImpl (JNIEnv *env,
-                           jclass cls,
-                           jint buttonMask) {
-    mouseAction(env, cls, buttonMask, True);
-/*
-    AWT_LOCK();
-
-    DTRACE_PRINTLN1("RobotPeer: mousePressImpl(%i)", buttonMask);
-
-    if (buttonMask & java_awt_event_InputEvent_BUTTON1_MASK) {
-        XTestFakeButtonEvent(awt_display, 1, True, CurrentTime);
-    }
-    if ((buttonMask & java_awt_event_InputEvent_BUTTON2_MASK) &&
-        (num_buttons >= 2)) {
-        XTestFakeButtonEvent(awt_display, 2, True, CurrentTime);
-    }
-    if ((buttonMask & java_awt_event_InputEvent_BUTTON3_MASK) &&
-        (num_buttons >= 3)) {
-        XTestFakeButtonEvent(awt_display, 3, True, CurrentTime);
-    }
-    XSync(awt_display, False);
-
-    AWT_UNLOCK();
-*/
-}
-
-JNIEXPORT void JNICALL
-Java_sun_awt_X11_XRobotPeer_mouseReleaseImpl (JNIEnv *env,
-                             jclass cls,
-                             jint buttonMask) {
-    mouseAction(env, cls, buttonMask, False);
-/*
-    AWT_LOCK();
-
-    DTRACE_PRINTLN1("RobotPeer: mouseReleaseImpl(%i)", buttonMask);
-
-    if (buttonMask & java_awt_event_InputEvent_BUTTON1_MASK) {
-        XTestFakeButtonEvent(awt_display, 1, False, CurrentTime);
-    }
-    if ((buttonMask & java_awt_event_InputEvent_BUTTON2_MASK) &&
-        (num_buttons >= 2)) {
-        XTestFakeButtonEvent(awt_display, 2, False, CurrentTime);
-    }
-    if ((buttonMask & java_awt_event_InputEvent_BUTTON3_MASK) &&
-        (num_buttons >= 3)) {
-        XTestFakeButtonEvent(awt_display, 3, False, CurrentTime);
-    }
-    XSync(awt_display, False);
-
-    AWT_UNLOCK();
-*/
-}
-
 /*
   * Function joining the code of mousePressImpl and mouseReleaseImpl
   */
@@ -477,6 +423,19 @@ void mouseAction(JNIEnv *env,
     AWT_UNLOCK();
 }
 
+JNIEXPORT void JNICALL
+Java_sun_awt_X11_XRobotPeer_mousePressImpl (JNIEnv *env,
+                           jclass cls,
+                           jint buttonMask) {
+    mouseAction(env, cls, buttonMask, True);
+}
+
+JNIEXPORT void JNICALL
+Java_sun_awt_X11_XRobotPeer_mouseReleaseImpl (JNIEnv *env,
+                             jclass cls,
+                             jint buttonMask) {
+    mouseAction(env, cls, buttonMask, False);
+}
 
 JNIEXPORT void JNICALL
 Java_sun_awt_X11_XRobotPeer_mouseWheelImpl (JNIEnv *env,
