@@ -47,6 +47,19 @@ public class FormatData_th extends ListResourceBundle {
      * Overrides ListResourceBundle
      */
     protected final Object[][] getContents() {
+        String[] dateTimePatterns = new String[] {
+            "H' \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 'm' \u0e19\u0e32\u0e17\u0e35 'ss' \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35'", // full time pattern
+            "H' \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 'm' \u0e19\u0e32\u0e17\u0e35'", // long time pattern
+            "H:mm:ss", // medium time pattern
+            "H:mm' \u0e19.'",  // short time pattern (modified)  -- add ' \u0e19.'
+                               // (it means something like "o'clock" in english)
+            "EEEE'\u0e17\u0e35\u0e48 'd MMMM G yyyy", // full date pattern
+            "d MMMM yyyy", // long date pattern
+            "d MMM yyyy", // medium date pattern
+            "d/M/yyyy", // short date pattern
+            "{1}, {0}" // date-time pattern
+        };
+
         return new Object[][] {
             { "MonthNames",
                 new String[] {
@@ -129,18 +142,10 @@ public class FormatData_th extends ListResourceBundle {
                 }
             },
             { "sun.util.BuddhistCalendar.DateTimePatterns",
-                new String[] {
-                    "H' \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 'm' \u0e19\u0e32\u0e17\u0e35 'ss' \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35'", // full time pattern
-                    "H' \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 'm' \u0e19\u0e32\u0e17\u0e35'", // long time pattern
-                    "H:mm:ss", // medium time pattern
-                    "H:mm' \u0e19.'",  // short time pattern (modified)  -- add ' \u0e19.'
-                                                                            // (it means something like "o'clock" in english)
-                    "EEEE'\u0e17\u0e35\u0e48 'd MMMM G yyyy", // full date pattern
-                    "d MMMM yyyy", // long date pattern
-                    "d MMM yyyy", // medium date pattern
-                    "d/M/yyyy", // short date pattern
-                    "{1}, {0}" // date-time pattern
-                }
+                dateTimePatterns
+            },
+            { "DateTimePatterns",
+                dateTimePatterns
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
         };
