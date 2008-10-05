@@ -45,7 +45,7 @@ public class Main {
      * Command line interface.
      * @param args   The command line parameters.
      */
-    public static void main(String[] args) {
+    public static void main(String... args) {
         System.exit(execute(args));
     }
 
@@ -54,7 +54,7 @@ public class Main {
      * @param args   The command line parameters.
      * @return The return code.
      */
-    public static int execute(String[] args) {
+    public static int execute(String... args) {
         Start jdoc = new Start();
         return jdoc.begin(args);
     }
@@ -65,7 +65,7 @@ public class Main {
      * @param args   The command line parameters.
      * @return The return code.
      */
-    public static int execute(String programName, String[] args) {
+    public static int execute(String programName, String... args) {
         Start jdoc = new Start(programName);
         return jdoc.begin(args);
     }
@@ -79,7 +79,7 @@ public class Main {
      */
     public static int execute(String programName,
                               String defaultDocletClassName,
-                              String[] args) {
+                              String... args) {
         Start jdoc = new Start(programName, defaultDocletClassName);
         return jdoc.begin(args);
     }
@@ -99,7 +99,7 @@ public class Main {
                               PrintWriter warnWriter,
                               PrintWriter noticeWriter,
                               String defaultDocletClassName,
-                              String[] args) {
+                              String... args) {
         Start jdoc = new Start(programName,
                                errWriter, warnWriter, noticeWriter,
                                defaultDocletClassName);
