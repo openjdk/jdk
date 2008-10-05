@@ -67,7 +67,7 @@ public class Types {
         new Context.Key<Types>();
 
     final Symtab syms;
-    final Name.Table names;
+    final Names names;
     final boolean allowBoxing;
     final ClassReader reader;
     final Source source;
@@ -86,7 +86,7 @@ public class Types {
     protected Types(Context context) {
         context.put(typesKey, this);
         syms = Symtab.instance(context);
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         allowBoxing = Source.instance(context).allowBoxing();
         reader = ClassReader.instance(context);
         source = Source.instance(context);
@@ -2187,6 +2187,20 @@ public class Types {
         };
     // </editor-fold>
 
+    // <editor-fold defaultstate="collapsed" desc="createErrorType">
+    public Type createErrorType(Type originalType) {
+        return new ErrorType(originalType, syms.errSymbol);
+    }
+
+    public Type createErrorType(ClassSymbol c, Type originalType) {
+        return new ErrorType(c, originalType);
+    }
+
+    public Type createErrorType(Name name, TypeSymbol container, Type originalType) {
+        return new ErrorType(name, container, originalType);
+    }
+    // </editor-fold>
+
     // <editor-fold defaultstate="collapsed" desc="rank">
     /**
      * The rank of a class is the length of the longest path between
@@ -2199,7 +2213,7 @@ public class Types {
             ClassType cls = (ClassType)t;
             if (cls.rank_field < 0) {
                 Name fullname = cls.tsym.getQualifiedName();
-                if (fullname == fullname.table.java_lang_Object)
+                if (fullname == names.java_lang_Object)
                     cls.rank_field = 0;
                 else {
                     int r = rank(supertype(cls));
@@ -2604,7 +2618,7 @@ public class Types {
                 if (!bound.isInterface())
                     classCount++;
             if (classCount > 1)
-                return syms.errType;
+                return createErrorType(t);
         }
         return makeCompoundType(bounds);
     }
