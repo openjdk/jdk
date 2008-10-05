@@ -482,8 +482,8 @@ public class JMXNamespace
     /**
      * This method is part of the {@link MBeanRegistration} interface.
      * The {@link JMXNamespace} class uses the {@link MBeanRegistration}
-     * interface in order to get a handle to the MBean server in which it is
-     * registered. It also check the validity of its own ObjectName.
+     * interface in order to get a reference to the MBean server in which it is
+     * registered. It also checks the validity of its own ObjectName.
      * <p>
      * This method is called by the MBean server.
      * Application classes should never call this method directly.
@@ -502,11 +502,14 @@ public class JMXNamespace
      */
     public ObjectName preRegister(MBeanServer server, ObjectName name)
         throws Exception {
-        if (objectName != null && ! objectName.equals(name))
-            throw new IllegalStateException(
+        // need to synchronize to protect against multiple registration.
+        synchronized(this) {
+            if (objectName != null && ! objectName.equals(name))
+                throw new IllegalStateException(
                     "Already registered under another name: " + objectName);
-        objectName = validateHandlerName(name);
-        mbeanServer = server;
+            objectName = validateHandlerName(name);
+            mbeanServer = server;
+        }
         return name;
     }
 
@@ -517,23 +520,23 @@ public class JMXNamespace
      * reuse JMXNamespace in order to implement sessions...
      * It is however only available for subclasses in this package.
      **/
-    ObjectName validateHandlerName(ObjectName supliedName) {
-        if (supliedName == null)
+    ObjectName validateHandlerName(ObjectName suppliedName) {
+        if (suppliedName == null)
             throw new IllegalArgumentException("Must supply a valid name");
         final String dirName = JMXNamespaces.
-                normalizeNamespaceName(supliedName.getDomain());
+                normalizeNamespaceName(suppliedName.getDomain());
         final ObjectName handlerName =
                 JMXNamespaces.getNamespaceObjectName(dirName);
-        if (!supliedName.equals(handlerName))
+        if (!suppliedName.equals(handlerName))
             throw new IllegalArgumentException("invalid name space name: "+
-                        supliedName);
-        return supliedName;
+                        suppliedName);
+        return suppliedName;
     }
 
     /**
      * This method is part of the {@link MBeanRegistration} interface.
      * The {@link JMXNamespace} class uses the {@link MBeanRegistration}
-     * interface in order to get a handle to the MBean server in which it is
+     * interface in order to get a reference to the MBean server in which it is
      * registered.
      * <p>
      * This method is called by the MBean server. Application classes should
@@ -549,7 +552,7 @@ public class JMXNamespace
     /**
      * This method is part of the {@link MBeanRegistration} interface.
      * The {@link JMXNamespace} class uses the {@link MBeanRegistration}
-     * interface in order to get a handle to the MBean server in which it is
+     * interface in order to get a reference to the MBean server in which it is
      * registered.
      * <p>
      * This method is called by the MBean server. Application classes should
@@ -573,8 +576,11 @@ public class JMXNamespace
      * @see MBeanRegistration#postDeregister MBeanRegistration
      */
     public void postDeregister() {
-        mbeanServer = null;
-        objectName  = null;
+        // need to synchronize to protect against multiple registration.
+        synchronized(this) {
+            mbeanServer = null;
+            objectName  = null;
+        }
     }
 
 

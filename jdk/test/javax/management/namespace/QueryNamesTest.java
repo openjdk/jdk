@@ -25,6 +25,7 @@
  * @test QueryNamesTest.java 1.4
  * @summary Test how queryNames works with Namespaces.
  * @author Daniel Fuchs
+ * @bug 5072476
  * @run clean QueryNamesTest Wombat WombatMBean
  * @run build QueryNamesTest Wombat WombatMBean
  * @run main QueryNamesTest

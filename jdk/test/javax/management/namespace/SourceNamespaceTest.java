@@ -24,6 +24,7 @@
  *
  * @test SourceNamespaceTest.java
  * @summary Test how queryNames works with Namespaces.
+ * @bug 5072476
  * @author Daniel Fuchs
  * @run clean SourceNamespaceTest Wombat WombatMBean
  * @run build SourceNamespaceTest Wombat WombatMBean

@@ -68,7 +68,12 @@ public class Wombat extends StandardMBean
     }
 
     public Wombat() throws NotCompliantMBeanException {
-        super(WombatMBean.class);
+        this(WombatMBean.class);
+    }
+
+    public Wombat(Class<? extends WombatMBean> clazz)
+            throws NotCompliantMBeanException {
+        super(clazz);
         final Random r = new Random();
         seed = ((r.nextLong() % MAX_SEED) + MAX_SEED)%MAX_SEED;
         period = 200 + (((r.nextLong()%80)+80)%80)*10;
