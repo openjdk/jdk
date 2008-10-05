@@ -151,7 +151,7 @@ public enum LauncherHelper {
                 throw new IOException("no main mainifest attributes, in " +
                         jarname);
             }
-            return mainAttrs.getValue(MAIN_CLASS);
+            return mainAttrs.getValue(MAIN_CLASS).trim();
         } finally {
             if (jarFile != null) {
                 jarFile.close();
@@ -207,22 +207,15 @@ public enum LauncherHelper {
             throw new RuntimeException("Main method not found in " + classname);
         }
         /*
-         * Usually the getMethod (above) will choose the correct method, based
-         * on its modifiers and parameter types, the only check required is the
-         * getReturnType check as getMethod does not check for this, all the
-         * other modifier tests are redundant, and are simply here for safety.
+         * getMethod (above) will choose the correct method, based
+         * on its name and parameter type, however, we still have to
+         * ensure that the method is static and returns a void.
          */
         int mod = method.getModifiers();
         if (!Modifier.isStatic(mod)) {
             ostream.println(getLocalizedMessage("java.launcher.cls.error2",
                     "static", classname));
             throw new RuntimeException("Main method is not static in class " +
-                    classname);
-        }
-        if (!Modifier.isPublic(mod)) {
-            ostream.println(getLocalizedMessage("java.launcher.cls.error2",
-                    "public", classname));
-            throw new RuntimeException("Main method is not public in class " +
                     classname);
         }
         Class<?> rType = method.getReturnType();
