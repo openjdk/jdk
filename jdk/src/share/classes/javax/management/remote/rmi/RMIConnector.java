@@ -420,7 +420,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 new PerThreadGroupPool.Create<ThreadPoolExecutor>() {
             public ThreadPoolExecutor createThreadPool(ThreadGroup group) {
                 ThreadFactory daemonThreadFactory = new DaemonThreadFactory(
-                        "RMIConnector listener dispatch %d");
+                        "JMX RMIConnector listener dispatch %d");
                 ThreadPoolExecutor exec = new ThreadPoolExecutor(
                         1, 10, 1, TimeUnit.SECONDS,
                         new LinkedBlockingDeque<Runnable>(),

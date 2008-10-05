@@ -26,6 +26,7 @@
  * @summary Test that you can export a single namespace through a
  *          JMXConnectorServer.
  * @author Daniel Fuchs
+ * @bug 5072476
  * @run clean ExportNamespaceTest Wombat WombatMBean
  * @run build ExportNamespaceTest Wombat WombatMBean
  * @run main ExportNamespaceTest

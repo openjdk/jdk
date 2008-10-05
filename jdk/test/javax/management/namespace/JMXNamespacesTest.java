@@ -24,6 +24,7 @@
  * @test JMXNamespacesTest.java
  * @summary Test the static method that rewrite ObjectNames in JMXNamespacesTest
  * @author Daniel Fuchs
+ * @bug 5072476
  * @run clean JMXNamespacesTest
  * @compile -XDignore.symbol.file=true JMXNamespacesTest.java
  * @run main JMXNamespacesTest

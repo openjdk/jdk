@@ -193,14 +193,6 @@ import javax.management.loading.ClassLoaderRepository;
  * }
  *
  * <a name="PropsMBS"></a>public class PropsMBS extends MBeanServerSupport {
- *     private static ObjectName newObjectName(String name) {
- *         try {
- *             return new ObjectName(name);
- *         } catch (MalformedObjectNameException e) {
- *             throw new AssertionError(e);
- *         }
- *     }
- *
  *     public static class PropertyImpl implements PropertyMBean {
  *         private final String name;
  *
@@ -219,7 +211,7 @@ import javax.management.loading.ClassLoaderRepository;
  *             throws InstanceNotFoundException {
  *
  *         // Check that the name is a legal one for a Property MBean
- *         ObjectName namePattern = newObjectName(
+ *         ObjectName namePattern = ObjectName.valueOf(
  *                     "com.example:type=Property,name=\"*\"");
  *         if (!namePattern.apply(name))
  *             throw new InstanceNotFoundException(name);
@@ -239,7 +231,7 @@ import javax.management.loading.ClassLoaderRepository;
  *         {@code Set<ObjectName> names = new TreeSet<ObjectName>();}
  *         Properties props = System.getProperties();
  *         for (String propName : props.stringPropertyNames()) {
- *             ObjectName objectName = newObjectName(
+ *             ObjectName objectName = ObjectName.valueOf(
  *                     "com.example:type=Property,name=" +
  *                     ObjectName.quote(propName));
  *             names.add(objectName);
@@ -278,7 +270,7 @@ import javax.management.loading.ClassLoaderRepository;
  *     }
  *
  *     public void propertyChanged(String name, String newValue) {
- *         ObjectName objectName = newObjectName(
+ *         ObjectName objectName = ObjectName.valueOf(
  *                 "com.example:type=Property,name=" + ObjectName.quote(name));
  *         Notification n = new Notification(
  *                 "com.example.property.changed", objectName, 0L,

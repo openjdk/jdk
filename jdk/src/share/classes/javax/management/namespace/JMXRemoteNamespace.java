@@ -28,13 +28,12 @@ package javax.management.namespace;
 import com.sun.jmx.defaults.JmxProperties;
 import com.sun.jmx.mbeanserver.Util;
 import com.sun.jmx.namespace.JMXNamespaceUtils;
-import com.sun.jmx.namespace.NamespaceInterceptor.DynamicProbe;
 import com.sun.jmx.remote.util.EnvHelp;
 
 import java.io.IOException;
-import java.security.AccessControlException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,9 +42,7 @@ import javax.management.AttributeChangeNotification;
 import javax.management.InstanceNotFoundException;
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanNotificationInfo;
-import javax.management.MBeanPermission;
 import javax.management.MBeanServerConnection;
-import javax.management.MalformedObjectNameException;
 import javax.management.Notification;
 import javax.management.NotificationBroadcasterSupport;
 import javax.management.NotificationEmitter;
@@ -117,18 +114,13 @@ public class JMXRemoteNamespace
      */
     private static final Logger LOG = JmxProperties.NAMESPACE_LOGGER;
 
-    private static final Logger PROBE_LOG = Logger.getLogger(
-            JmxProperties.NAMESPACE_LOGGER_NAME+".probe");
-
 
     // This connection listener is used to listen for connection events from
     // the underlying JMXConnector. It is used in particular to maintain the
     // "connected" state in this MBean.
     //
-    private static class ConnectionListener implements NotificationListener {
-        private final JMXRemoteNamespace handler;
-        private ConnectionListener(JMXRemoteNamespace handler) {
-            this.handler = handler;
+    private class ConnectionListener implements NotificationListener {
+        private ConnectionListener() {
         }
         public void handleNotification(Notification notification,
                 Object handback) {
@@ -136,7 +128,11 @@ public class JMXRemoteNamespace
                 return;
             final JMXConnectionNotification cn =
                     (JMXConnectionNotification)notification;
-            handler.checkState(this,cn,(JMXConnector)handback);
+            final String type = cn.getType();
+            if (JMXConnectionNotification.CLOSED.equals(type)
+                    || JMXConnectionNotification.FAILED.equals(type)) {
+                checkState(this,cn,(JMXConnector)handback);
+            }
         }
     }
 
@@ -150,8 +146,7 @@ public class JMXRemoteNamespace
     // because the one that is actually used is the one supplied by the
     // override of getMBeanServerConnection().
     private static class JMXRemoteNamespaceDelegate
-            extends MBeanServerConnectionWrapper
-            implements DynamicProbe {
+            extends MBeanServerConnectionWrapper {
         private volatile JMXRemoteNamespace parent=null;
 
         JMXRemoteNamespaceDelegate() {
@@ -177,9 +172,6 @@ public class JMXRemoteNamespace
 
         }
 
-        public boolean isProbeRequested() {
-            return this.parent.isProbeRequested();
-        }
     }
 
     private static final MBeanNotificationInfo connectNotification =
@@ -188,7 +180,7 @@ public class JMXRemoteNamespace
             "Connected",
             "Emitted when the Connected state of this object changes");
 
-    private static long seqNumber=0;
+    private static AtomicLong seqNumber = new AtomicLong(0);
 
     private final NotificationBroadcasterSupport broadcaster;
     private final ConnectionListener listener;
@@ -198,7 +190,6 @@ public class JMXRemoteNamespace
     private volatile MBeanServerConnection server = null;
     private volatile JMXConnector conn = null;
     private volatile ClassLoader defaultClassLoader = null;
-    private volatile boolean probed;
 
     /**
      * Creates a new instance of {@code JMXRemoteNamespace}.
@@ -237,10 +228,7 @@ public class JMXRemoteNamespace
         this.optionsMap = JMXNamespaceUtils.unmodifiableMap(optionsMap);
 
         // handles (dis)connection events
-        this.listener = new ConnectionListener(this);
-
-        // XXX TODO: remove the probe, or simplify it.
-        this.probed = false;
+        this.listener = new ConnectionListener();
     }
 
    /**
@@ -269,10 +257,6 @@ public class JMXRemoteNamespace
 
     private Map<String,?> getEnvMap() {
         return optionsMap;
-    }
-
-    boolean isProbeRequested() {
-        return probed==false;
     }
 
     public void addNotificationListener(NotificationListener listener,
@@ -313,8 +297,8 @@ public class JMXRemoteNamespace
         broadcaster.removeNotificationListener(listener, filter, handback);
     }
 
-    private static synchronized long getNextSeqNumber() {
-        return seqNumber++;
+    private static long getNextSeqNumber() {
+        return seqNumber.getAndIncrement();
     }
 
 
@@ -362,14 +346,18 @@ public class JMXRemoteNamespace
         // lock while evaluating the true value of the connected state,
         // while anyone might also call close() or connect() from a
         // different thread.
-        //
         // The method switchConnection() (called from here too) also has the
-        // same kind of complex logic.
+        // same kind of complex logic:
         //
         // We use the JMXConnector has a handback to the notification listener
         // (emittingConnector) in order to be able to determine whether the
         // notification concerns the current connector in use, or an older
-        // one.
+        // one. The 'emittingConnector' is the connector from which the
+        // notification originated. This could be an 'old' connector - as
+        // closed() and connect() could already have been called before the
+        // notification arrived. So what we do is to compare the
+        // 'emittingConnector' with the current connector, to see if the
+        // notification actually comes from the curent connector.
         //
         boolean remove = false;
 
@@ -486,14 +474,12 @@ public class JMXRemoteNamespace
         }
     }
 
-    private void closeall(JMXConnector... a) {
-        for (JMXConnector c : a) {
-            try {
-                if (c != null) c.close();
-            } catch (Exception x) {
-                // OK: we're gonna throw the original exception later.
-                LOG.finest("Ignoring exception when closing connector: "+x);
-            }
+    private void close(JMXConnector c) {
+        try {
+            if (c != null) c.close();
+        } catch (Exception x) {
+            // OK: we're gonna throw the original exception later.
+            LOG.finest("Ignoring exception when closing connector: "+x);
         }
     }
 
@@ -598,26 +584,7 @@ public class JMXRemoteNamespace
     }
 
     public void connect() throws IOException {
-        if (conn != null) {
-            try {
-               // This is much too fragile. It must go away!
-               PROBE_LOG.finest("Probing again...");
-               triggerProbe(getMBeanServerConnection());
-            } catch(Exception x) {
-                close();
-                Throwable cause = x;
-                // if the cause is a security exception - rethrows it...
-                while (cause != null) {
-                    if (cause instanceof SecurityException)
-                        throw (SecurityException) cause;
-                    cause = cause.getCause();
-                }
-                throw new IOException("connection failed: cycle?",x);
-            }
-        }
         LOG.fine("connecting...");
-        // TODO remove these traces
-        // System.err.println(getInitParameter()+" connecting");
         final Map<String,Object> env =
                 new HashMap<String,Object>(getEnvMap());
         try {
@@ -640,86 +607,16 @@ public class JMXRemoteNamespace
             msc = aconn.getMBeanServerConnection();
             aconn.addConnectionNotificationListener(listener,null,aconn);
         } catch (IOException io) {
-            closeall(aconn);
+            close(aconn);
             throw io;
         } catch (RuntimeException x) {
-            closeall(aconn);
+            close(aconn);
             throw x;
         }
 
-
-        // XXX Revisit here
-        // Note from the author: This business of switching connection is
-        // incredibly complex. Isn't there any means to simplify it?
-        //
         switchConnection(conn,aconn,msc);
-        try {
-           triggerProbe(msc);
-        } catch(Exception x) {
-            close();
-            Throwable cause = x;
-            // if the cause is a security exception - rethrows it...
-            while (cause != null) {
-                if (cause instanceof SecurityException)
-                    throw (SecurityException) cause;
-                cause = cause.getCause();
-            }
-            throw new IOException("connection failed: cycle?",x);
-        }
-        LOG.fine("connected.");
-    }
 
-    // If this is a self-linking namespace, this method should trigger
-    // the emission of a probe in the wrapping NamespaceInterceptor.
-    // The first call to source() in the wrapping NamespaceInterceptor
-    // causes the emission of the probe.
-    //
-    // Note: the MBeanServer returned by getSourceServer
-    //       (our private JMXRemoteNamespaceDelegate inner class)
-    //       implements a sun private interface (DynamicProbe) which is
-    //       used by the NamespaceInterceptor to determine whether it should
-    //       send a probe or not.
-    //       We needed this interface here because the NamespaceInterceptor
-    //       has otherwise no means to knows that this object has just
-    //       connected, and that a new probe should be sent.
-    //
-    // Probes work this way: the NamespaceInterceptor sets a flag and sends
-    // a queryNames() request. If a queryNames() request comes in when the flag
-    // is on, then it deduces that there is a self-linking loop - and instead
-    // of calling queryNames() on the JMXNamespace (which would cause the
-    // loop to go on) it breaks the recursion by returning the probe ObjectName.
-    // If the NamespaceInterceptor receives the probe ObjectName as result of
-    // its original queryNames() it knows that it has been looping back on
-    // itslef and throws an Exception - which will be raised through this
-    // method, thus preventing the connection to be established...
-    //
-    // More info in the com.sun.jmx.namespace.NamespaceInterceptor class
-    //
-    // XXX: TODO this probe thing is way too complex and fragile.
-    //      This *must* go away or be replaced by something simpler.
-    //      ideas are welcomed.
-    //
-    private void triggerProbe(final MBeanServerConnection msc)
-            throws MalformedObjectNameException, IOException {
-        // Query Pattern that we will send through the source server in order
-        // to detect self-linking namespaces.
-        //
-        //
-        final ObjectName pattern;
-        pattern = ObjectName.getInstance("*" +
-                JMXNamespaces.NAMESPACE_SEPARATOR + ":" +
-                JMXNamespace.TYPE_ASSIGNMENT);
-        probed = false;
-        try {
-            msc.queryNames(pattern, null);
-            probed = true;
-        } catch (AccessControlException x) {
-            // if we have an MBeanPermission missing then do nothing...
-            if (!(x.getPermission() instanceof MBeanPermission))
-                throw x;
-            PROBE_LOG.finer("Can't check for cycles: " + x);
-            probed = false; // no need to do it again...
-        }
+        LOG.fine("connected.");
     }
 
     public void close() throws IOException {
