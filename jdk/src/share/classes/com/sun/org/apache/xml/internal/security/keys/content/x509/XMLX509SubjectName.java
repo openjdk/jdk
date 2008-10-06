@@ -20,8 +20,6 @@
  */
 package com.sun.org.apache.xml.internal.security.keys.content.x509;
 
-
-
 import java.security.cert.X509Certificate;
 
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
@@ -33,14 +31,10 @@ import org.w3c.dom.Element;
 
 /**
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class XMLX509SubjectName extends SignatureElementProxy
         implements XMLX509DataContent {
-
-   /** {@link java.util.logging} logging facility */
-    static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(XMLX509SubjectName.class.getName());
 
    /**
     * Constructor X509SubjectName
@@ -88,23 +82,21 @@ public class XMLX509SubjectName extends SignatureElementProxy
       return RFC2253Parser.normalize(this.getTextFromTextChild());
    }
 
-   /** @inheritDoc */
-   public boolean equals(Object obj) {
+    /** @inheritDoc */
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
 
-      if (!obj.getClass().getName().equals(this.getClass().getName())) {
-         return false;
-      }
+        if (!this.getClass().getName().equals(obj.getClass().getName())) {
+            return false;
+        }
 
-      XMLX509SubjectName other = (XMLX509SubjectName) obj;
-      String otherSubject = other.getSubjectName();
-      String thisSubject = this.getSubjectName();
+        XMLX509SubjectName other = (XMLX509SubjectName) obj;
+        String otherSubject = other.getSubjectName();
+        String thisSubject = this.getSubjectName();
 
-      if (otherSubject.equals(thisSubject)) {
-            return true;
-      }
-
-       return false;
-
+        return thisSubject.equals(otherSubject);
    }
 
    /** @inheritDoc */

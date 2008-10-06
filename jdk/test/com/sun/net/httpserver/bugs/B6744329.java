@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug B6744329
+ * @bug 6744329
  * @summary  Exception in light weight Http server
  */
 
