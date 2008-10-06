@@ -54,10 +54,8 @@ class Start {
     /** Context for this invocation. */
     private final Context context;
 
-    /**
-     * Name of the program
-     */
     private final String defaultDocletClassName;
+    private final ClassLoader docletParentClassLoader;
 
     private static final String javadocName = "javadoc";
 
@@ -91,19 +89,43 @@ class Start {
           PrintWriter warnWriter,
           PrintWriter noticeWriter,
           String defaultDocletClassName) {
+        this(programName, errWriter, warnWriter, noticeWriter, defaultDocletClassName, null);
+    }
+
+    Start(String programName,
+          PrintWriter errWriter,
+          PrintWriter warnWriter,
+          PrintWriter noticeWriter,
+          String defaultDocletClassName,
+          ClassLoader docletParentClassLoader) {
         context = new Context();
         messager = new Messager(context, programName, errWriter, warnWriter, noticeWriter);
         this.defaultDocletClassName = defaultDocletClassName;
+        this.docletParentClassLoader = docletParentClassLoader;
     }
 
     Start(String programName, String defaultDocletClassName) {
+        this(programName, defaultDocletClassName, null);
+    }
+
+    Start(String programName, String defaultDocletClassName,
+          ClassLoader docletParentClassLoader) {
         context = new Context();
         messager = new Messager(context, programName);
         this.defaultDocletClassName = defaultDocletClassName;
+        this.docletParentClassLoader = docletParentClassLoader;
+    }
+
+    Start(String programName, ClassLoader docletParentClassLoader) {
+        this(programName, standardDocletClassName, docletParentClassLoader);
     }
 
     Start(String programName) {
         this(programName, standardDocletClassName);
+    }
+
+    Start(ClassLoader docletParentClassLoader) {
+        this(javadocName, docletParentClassLoader);
     }
 
     Start() {
@@ -390,7 +412,8 @@ class Start {
 
         // attempt to find doclet
         docletInvoker = new DocletInvoker(messager,
-                                          docletClassName, docletPath);
+                                          docletClassName, docletPath,
+                                          docletParentClassLoader);
     }
 
     private void setFilter(long filterBits) {
