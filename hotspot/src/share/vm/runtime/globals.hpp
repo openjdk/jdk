@@ -1825,6 +1825,9 @@ class CommandLineFlags {
   diagnostic(bool, VerifyDuringGC, false,                                   \
           "Verify memory system during GC (between phases)")                \
                                                                             \
+  diagnostic(bool, GCParallelVerificationEnabled, true,                     \
+          "Enable parallel memory system verification")                     \
+                                                                            \
   diagnostic(bool, VerifyRememberedSets, false,                             \
           "Verify GC remembered sets")                                      \
                                                                             \
