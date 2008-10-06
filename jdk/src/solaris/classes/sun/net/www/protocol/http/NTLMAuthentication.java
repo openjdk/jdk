@@ -64,6 +64,7 @@ import java.net.*;
  */
 
 class NTLMAuthentication extends AuthenticationInfo {
+    private static final long serialVersionUID = -2403849171106437142L;
 
     static char NTLM_AUTH = 'N';
 

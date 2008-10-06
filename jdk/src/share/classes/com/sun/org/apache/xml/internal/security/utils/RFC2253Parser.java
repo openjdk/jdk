@@ -28,7 +28,7 @@ import java.io.StringReader;
 
 /**
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class RFC2253Parser {
 
@@ -158,7 +158,13 @@ public class RFC2253Parser {
          return str;
       }
       String attrType = normalizeAT(str.substring(0, i));
-      String attrValue = normalizeV(str.substring(i + 1));
+      // only normalize if value is a String
+      String attrValue = null;
+      if (attrType.charAt(0) >= '0' && attrType.charAt(0) <= '9') {
+          attrValue = str.substring(i + 1);
+      } else {
+          attrValue = normalizeV(str.substring(i + 1));
+      }
 
       return attrType + "=" + attrValue;
 
@@ -474,7 +480,7 @@ public class RFC2253Parser {
    static String trim(String str) {
 
       String trimed = str.trim();
-      int i = str.indexOf(trimed.substring(0)) + trimed.length();
+      int i = str.indexOf(trimed) + trimed.length();
 
       if ((str.length() > i) && trimed.endsWith("\\")
               &&!trimed.endsWith("\\\\")) {
