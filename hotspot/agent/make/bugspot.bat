@@ -22,4 +22,4 @@ REM have any questions.
 REM  
 REM
 
-java -showversion -cp ..\build\classes;..\src\share\lib\maf-1_0.jar;..\src\share\lib\jlfgr-1_0.jar;..\src\share\lib\js.jar;sa.jar;lib\maf-1_0.jar;lib\jlfgr-1_0.jar;lib\js.jar sun.jvm.hotspot.bugspot.Main
+java -showversion -cp ..\build\classes;..\src\share\lib\js.jar;.\sa.jar;lib\js.jar sun.jvm.hotspot.bugspot.Main

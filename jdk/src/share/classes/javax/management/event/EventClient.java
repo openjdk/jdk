@@ -29,6 +29,7 @@ import com.sun.jmx.event.DaemonThreadFactory;
 import com.sun.jmx.event.LeaseRenewer;
 import com.sun.jmx.event.ReceiverBuffer;
 import com.sun.jmx.event.RepeatedSingletonJob;
+import com.sun.jmx.namespace.JMXNamespaceUtils;
 import com.sun.jmx.mbeanserver.PerThreadGroupPool;
 import com.sun.jmx.remote.util.ClassLogger;
 
@@ -263,11 +264,12 @@ public class EventClient implements EventConsumer, NotificationManager {
                 new PerThreadGroupPool.Create<ScheduledThreadPoolExecutor>() {
             public ScheduledThreadPoolExecutor createThreadPool(ThreadGroup group) {
                 ThreadFactory daemonThreadFactory = new DaemonThreadFactory(
-                        "EventClient lease renewer %d");
+                        "JMX EventClient lease renewer %d");
                 ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(
                         20, daemonThreadFactory);
-                exec.setKeepAliveTime(3, TimeUnit.SECONDS);
+                exec.setKeepAliveTime(1, TimeUnit.SECONDS);
                 exec.allowCoreThreadTimeOut(true);
+                exec.setRemoveOnCancelPolicy(true);
                 return exec;
             }
         };
@@ -1061,6 +1063,24 @@ public class EventClient implements EventConsumer, NotificationManager {
      */
     public String getClientId() {
         return clientId;
+    }
+
+    /**
+     * Returns a JMX Connector that will use an {@link EventClient}
+     * to subscribe for notifications. If the server doesn't have
+     * an {@link EventClientDelegateMBean}, then the connector will
+     * use the legacy notification mechanism instead.
+     *
+     * @param wrapped The underlying JMX Connector wrapped by the returned
+     *               connector.
+     *
+     * @return A JMX Connector that will uses an {@link EventClient}, if
+     *         available.
+     *
+     * @see EventClient#getEventClientConnection(MBeanServerConnection)
+     */
+    public static JMXConnector withEventClient(final JMXConnector wrapped) {
+        return JMXNamespaceUtils.withEventClient(wrapped);
     }
 
     private static final PerThreadGroupPool<ScheduledThreadPoolExecutor>

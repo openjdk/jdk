@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,9 +316,6 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
         }
         if (current != null) {
             closeEntry();
-        }
-        if (xentries.size() < 1) {
-            throw new ZipException("ZIP file must have at least one entry");
         }
         // write central directory
         long off = written;

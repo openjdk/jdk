@@ -92,6 +92,7 @@ public class GenerationTests {
     private static Certificate signingCert;
     private static KeyStore ks;
     private final static String DIR = System.getProperty("test.src", ".");
+//    private final static String DIR = ".";
     private final static String DATA_DIR =
         DIR + System.getProperty("file.separator") + "data";
     private final static String KEYSTORE =
@@ -202,6 +203,9 @@ public class GenerationTests {
         DOMSignContext dsc = new DOMSignContext(signingKey, envelope);
 
         sig.sign(dsc);
+//      StringWriter sw = new StringWriter();
+//      dumpDocument(doc, sw);
+//      System.out.println(sw.toString());
 
         DOMValidateContext dvc = new DOMValidateContext
             (kvks, envelope.getFirstChild());

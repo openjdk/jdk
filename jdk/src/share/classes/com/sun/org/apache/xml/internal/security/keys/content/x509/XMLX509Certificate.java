@@ -20,8 +20,6 @@
  */
 package com.sun.org.apache.xml.internal.security.keys.content.x509;
 
-
-
 import java.io.ByteArrayInputStream;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
@@ -34,17 +32,12 @@ import com.sun.org.apache.xml.internal.security.utils.SignatureElementProxy;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-
 /**
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class XMLX509Certificate extends SignatureElementProxy
         implements XMLX509DataContent {
-
-   /** {@link java.util.logging} logging facility */
-    static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(XMLX509Certificate.class.getName());
 
    /** Field JCA_CERT_ID */
    public static final String JCA_CERT_ID = "X.509";
@@ -146,23 +139,25 @@ public class XMLX509Certificate extends SignatureElementProxy
       return null;
    }
 
-   /** @inheritDoc */
-   public boolean equals(Object obj) {
+    /** @inheritDoc */
+    public boolean equals(Object obj) {
 
-      try {
-         if (!obj.getClass().getName().equals(this.getClass().getName())) {
+        if (obj == null) {
             return false;
-         }
+        }
+        if (!this.getClass().getName().equals(obj.getClass().getName())) {
+            return false;
+        }
+        XMLX509Certificate other = (XMLX509Certificate) obj;
+        try {
 
-         XMLX509Certificate other = (XMLX509Certificate) obj;
-
-         /** $todo$ or should be create X509Certificates and use the equals() from the Certs */
-         return java.security.MessageDigest.isEqual(other.getCertificateBytes(),
-                                        this.getCertificateBytes());
-      } catch (XMLSecurityException ex) {
-         return false;
-      }
-   }
+            /** $todo$ or should be create X509Certificates and use the equals() from the Certs */
+            return java.security.MessageDigest.isEqual
+                (other.getCertificateBytes(), this.getCertificateBytes());
+        } catch (XMLSecurityException ex) {
+            return false;
+        }
+    }
 
    /** @inheritDoc */
    public String getBaseLocalName() {

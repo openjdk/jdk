@@ -30,13 +30,14 @@ package javax.management.remote;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 
-import java.beans.ConstructorProperties;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.BitSet;
 import java.util.StringTokenizer;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.InvalidKeyException;
 
 /**
  * <p>The address of a JMX API connector server.  Instances of this class
@@ -273,7 +274,6 @@ public class JMXServiceURL implements Serializable {
      * is not possible to find the local host name, or if
      * <code>port</code> is negative.
      */
-    @ConstructorProperties({"protocol", "host", "port", "URLPath"})
     public JMXServiceURL(String protocol, String host, int port,
                          String urlPath)
             throws MalformedURLException {
@@ -336,6 +336,50 @@ public class JMXServiceURL implements Serializable {
         this.urlPath = urlPath;
 
         validate();
+    }
+
+    /**
+     * <p>Construct a {@code JMXServiceURL} instance from the given
+     * {@code CompositeData}.  The presence of this method means that
+     * {@code JMXServiceURL} is <a href="../MXBean.html#reconstructible-def">
+     * reconstructible</a> in MXBeans.</p>
+     *
+     * <p>(The effect of this method could have been obtained more simply
+     * with a &#64;{@link java.beans.ConstructorProperties ConstructorProperties}
+     * annotation on the four-parameter {@linkplain #JMXServiceURL(
+     * String, String, int, String) constructor}, but that would have meant
+     * that this API could not be implemented on versions of the Java platform
+     * that predated the introduction of that annotation.)</p>
+     *
+     * @param cd a {@code CompositeData} object that must contain items called
+     * {@code protocol}, {@code host}, and {@code URLPath} of type {@code String}
+     * and {@code port} of type {@code Integer}.  Such an object will be produced
+     * by the MXBean framework when <a
+     * href="../MXBean.html#composite-map">mapping</a> a {@code JMXServiceURL}
+     * instance to an Open Data value.
+     *
+     * @return a {@code JMXServiceURL} constructed with the protocol, host,
+     * port, and URL path extracted from the given {@code CompositeData}.
+     *
+     * @throws MalformedURLException if the given {@code CompositeData} does
+     * not contain all the required items with the required types or if the
+     * resultant URL is syntactically incorrect.
+     */
+    public static JMXServiceURL from(CompositeData cd)
+            throws MalformedURLException {
+        try {
+            String proto = (String) cd.get("protocol");
+            String host = (String) cd.get("host");
+            int port = (Integer) cd.get("port");
+            String urlPath = (String) cd.get("URLPath");
+            return new JMXServiceURL(proto, host, port, urlPath);
+        } catch (RuntimeException e) {
+            // Could be InvalidKeyException if the item is missing,
+            // or ClassCastException if it is present but with the wrong type.
+            MalformedURLException x = new MalformedURLException(e.getMessage());
+            x.initCause(e);
+            throw x;
+        }
     }
 
     private void validate() throws MalformedURLException {

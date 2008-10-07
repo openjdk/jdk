@@ -27,6 +27,7 @@ package com.sun.tools.javac.main;
 
 import java.io.*;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.MissingResourceException;
@@ -1185,14 +1186,16 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
          * are processed through attribute and flow before subtypes are translated.
          */
         class ScanNested extends TreeScanner {
-            Set<Env<AttrContext>> dependencies = new HashSet<Env<AttrContext>>();
+            Set<Env<AttrContext>> dependencies = new LinkedHashSet<Env<AttrContext>>();
             public void visitClassDef(JCClassDecl node) {
                 Type st = types.supertype(node.sym.type);
                 if (st.tag == TypeTags.CLASS) {
                     ClassSymbol c = st.tsym.outermostClass();
                     Env<AttrContext> stEnv = enter.getEnv(c);
-                    if (stEnv != null && env != stEnv)
-                        dependencies.add(stEnv);
+                    if (stEnv != null && env != stEnv) {
+                        if (dependencies.add(stEnv))
+                            scan(stEnv.tree);
+                    }
                 }
                 super.visitClassDef(node);
             }
@@ -1203,6 +1206,11 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             if (!compileStates.isDone(dep, CompileState.FLOW))
                 flow(attribute(dep));
         }
+
+        //We need to check for error another time as more classes might
+        //have been attributed and analyzed at this stage
+        if (errorCount() > 0)
+            return;
 
         if (verboseCompilePolicy)
             log.printLines(log.noticeWriter, "[desugar " + env.enclClass.sym + "]");

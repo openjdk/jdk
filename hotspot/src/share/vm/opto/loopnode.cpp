@@ -2625,9 +2625,11 @@ void PhaseIdealLoop::build_loop_late_post( Node *n, const PhaseIdealLoop *verify
     case Op_LoadF:
     case Op_LoadI:
     case Op_LoadKlass:
+    case Op_LoadNKlass:
     case Op_LoadL:
     case Op_LoadS:
     case Op_LoadP:
+    case Op_LoadN:
     case Op_LoadRange:
     case Op_LoadD_unaligned:
     case Op_LoadL_unaligned:

@@ -30,19 +30,25 @@ import org.w3c.dom.Element;
 /**
  * Class SignatureElementProxy
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
+ * @version $Revision: 1.5 $
  */
 public abstract class SignatureElementProxy extends ElementProxy {
-
+        protected SignatureElementProxy() {
+        };
    /**
     * Constructor SignatureElementProxy
     *
     * @param doc
     */
    public SignatureElementProxy(Document doc) {
-      super(doc);
-      //this._constructionElement.setAttributeNS(Constants.NamespaceSpecNS,"xmlns:ds",
-        //          Constants.SignatureSpecNS);
+              if (doc == null) {
+                 throw new RuntimeException("Document is null");
+              }
+
+              this._doc = doc;
+              this._constructionElement =  XMLUtils.createElementInSignatureSpace(this._doc,
+                           this.getBaseLocalName());
    }
 
    /**

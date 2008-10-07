@@ -89,7 +89,7 @@ public class CompositeType extends OpenType<CompositeData> {
      * <br>&nbsp;
      * @param  itemNames  The names of the items contained in the
      *                    composite data values described by this <code>CompositeType</code> instance;
-     *                    cannot be null and should contain at least one element; no element can be a null or empty string.
+     *                    cannot be null; no element can be null or an empty string.
      *                    Note that the order in which the item names are given is not important to differentiate a
      *                    <code>CompositeType</code> instance from another;
      *                    the item names are internally stored sorted in ascending alphanumeric order.
@@ -97,7 +97,7 @@ public class CompositeType extends OpenType<CompositeData> {
      * @param  itemDescriptions  The descriptions, in the same order as <var>itemNames</var>, of the items contained in the
      *                           composite data values described by this <code>CompositeType</code> instance;
      *                           should be of the same size as <var>itemNames</var>;
-     *                           no element can be a null or empty string.
+     *                           no element can be null or an empty string.
      * <br>&nbsp;
      * @param  itemTypes  The open type instances, in the same order as <var>itemNames</var>, describing the items contained
      *                    in the composite data values described by this <code>CompositeType</code> instance;
@@ -125,7 +125,7 @@ public class CompositeType extends OpenType<CompositeData> {
         //
         super(CompositeData.class.getName(), typeName, description, false);
 
-        // Check the 3 arrays are not null or empty (ie length==0) and that there is no null element or empty string in them
+        // Check the 3 arrays are not null and that there is no null element or empty string in them
         //
         checkForNullElement(itemNames, "itemNames");
         checkForNullElement(itemDescriptions, "itemDescriptions");

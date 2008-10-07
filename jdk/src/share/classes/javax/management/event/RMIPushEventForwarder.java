@@ -185,7 +185,7 @@ public class RMIPushEventForwarder implements EventForwarder {
 
     private static final ExecutorService executor =
             Executors.newCachedThreadPool(
-            new DaemonThreadFactory("RMIEventForwarder Executor"));
+            new DaemonThreadFactory("JMX RMIEventForwarder Executor"));
     private final SendingJob sendingJob = new SendingJob();
 
     private final BlockingQueue<TargetedNotification> buffer;

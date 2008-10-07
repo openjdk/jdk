@@ -20,26 +20,19 @@
  */
 package com.sun.org.apache.xml.internal.security.algorithms;
 
-
-
 import java.security.Key;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 
 /**
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public abstract class SignatureAlgorithmSpi {
-
-   /** {@link java.util.logging} logging facility */
-    static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(SignatureAlgorithmSpi.class.getName());
 
    /**
     * Returns the URI representation of <code>Transformation algorithm</code>
@@ -167,20 +160,6 @@ public abstract class SignatureAlgorithmSpi {
    protected abstract void engineSetParameter(AlgorithmParameterSpec params)
       throws XMLSignatureException;
 
-   /** Field _doc */
-   Document _doc = null;
-
-   /**
-    * Method engineSetDocument
-    *
-    * @param doc
-    */
-   protected void engineSetDocument(Document doc) {
-      this._doc = doc;
-   }
-
-   /** Field _constructionElement */
-   Element _constructionElement = null;
 
    /**
     * Method engineGetContextFromElement
@@ -188,7 +167,6 @@ public abstract class SignatureAlgorithmSpi {
     * @param element
     */
    protected void engineGetContextFromElement(Element element) {
-      this._constructionElement = element;
    }
 
    /**
@@ -199,4 +177,7 @@ public abstract class SignatureAlgorithmSpi {
     */
    protected abstract void engineSetHMACOutputLength(int HMACOutputLength)
       throws XMLSignatureException;
+
+    public void reset() {
+        }
 }
