@@ -186,9 +186,22 @@ Rule	Arg	2000	only	-	Mar	3	0:00	0	-
 # From Paul Eggert (2007-12-22):
 # For dates after mid-2008, the following rules are my guesses and
 # are quite possibly wrong, but are more likely than no DST at all.
+
+# From Alexander Krivenyshev (2008-09-05):
+# As per message from Carlos Alberto Fonseca Arauz (Nicaragua),
+# Argentina will start DST on Sunday October 19, 2008.
+#
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_argentina03.html">
+# http://www.worldtimezone.com/dst_news/dst_news_argentina03.html
+# </a>
+# OR
+# <a href="http://www.impulsobaires.com.ar/nota.php?id=57832 (in spanish)">
+# http://www.impulsobaires.com.ar/nota.php?id=57832 (in spanish)
+# </a>
+
 Rule	Arg	2007	only	-	Dec	30	0:00	1:00	S
 Rule	Arg	2008	max	-	Mar	Sun>=15	0:00	0	-
-Rule	Arg	2008	max	-	Oct	Sun>=1	0:00	1:00	S
+Rule	Arg	2008	max	-	Oct	Sun>=15	0:00	1:00	S
  
 # From Mariano Absatz (2004-05-21):
 # Today it was officially published that the Province of Mendoza is changing
@@ -613,6 +626,36 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 # Decretos sobre o Horario de Verao no Brasil
 # </a>.
 
+# From Steffen Thorsen (2008-08-29):
+# As announced by the government and many newspapers in Brazil late
+# yesterday, Brazil will start DST on 2008-10-19 (need to change rule) and
+# it will end on 2009-02-15 (current rule for Brazil is fine). Based on
+# past years experience with the elections, there was a good chance that
+# the start was postponed to November, but it did not happen this year.
+#
+# It has not yet been posted to http://pcdsh01.on.br/DecHV.html
+#
+# An official page about it:
+# <a href="http://www.mme.gov.br/site/news/detail.do?newsId=16722">
+# http://www.mme.gov.br/site/news/detail.do?newsId=16722
+# </a>
+# Note that this link does not always work directly, but must be accessed
+# by going to
+# <a href="http://www.mme.gov.br/first">
+# http://www.mme.gov.br/first
+# </a>
+#
+# One example link that works directly:
+# <a href="http://jornale.com.br/index.php?option=com_content&task=view&id=13530&Itemid=54">
+# http://jornale.com.br/index.php?option=com_content&task=view&id=13530&Itemid=54
+# (Portuguese)
+# </a>
+#
+# We have a written a short article about it as well:
+# <a href="http://www.timeanddate.com/news/time/brazil-dst-2008-2009.html">
+# http://www.timeanddate.com/news/time/brazil-dst-2008-2009.html
+# </a>
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 # Decree <a href="http://pcdsh01.on.br/HV20466.htm">20,466</a> (1931-10-01)
 # Decree <a href="http://pcdsh01.on.br/HV21896.htm">21,896</a> (1932-01-10)
@@ -746,12 +789,34 @@ Rule	Brazil	2006	only	-	Nov	 5	 0:00	1:00	S
 Rule	Brazil	2007	only	-	Feb	25	 0:00	0	-
 # Decree <a href="http://pcdsh01.on.br/DecHV6212.gif">6,212</a> (2007-09-26),
 # adopted by the same states as before.
-Rule	Brazil	2007	max	-	Oct	Sun>=8	 0:00	1:00	S
-Rule	Brazil	2008	max	-	Feb	Sun>=15	 0:00	0	-
+Rule	Brazil	2007	only	-	Oct	Sun>=8	 0:00	1:00	S
+# From Frederico A. C. Neves (2008-09-10):
+# Acording to this decree
+# <a href="http://www.planalto.gov.br/ccivil_03/_Ato2007-2010/2008/Decreto/D6558.htm">
+# http://www.planalto.gov.br/ccivil_03/_Ato2007-2010/2008/Decreto/D6558.htm
+# </a>
+# [t]he DST period in Brazil now on will be from the 3rd Oct Sunday to the
+# 3rd Feb Sunday. There is an exception on the return date when this is
+# the Carnival Sunday then the return date will be the next Sunday...
+Rule	Brazil	2008	max	-	Oct	Sun>=15	0:00	1:00	S
+Rule	Brazil	2008	2011	-	Feb	Sun>=15	0:00	0	-
+Rule	Brazil	2012	only	-	Feb	Sun>=22	0:00	0	-
+Rule	Brazil	2013	2014	-	Feb	Sun>=15	0:00	0	-
+Rule	Brazil	2015	only	-	Feb	Sun>=22	0:00	0	-
+Rule	Brazil	2016	2022	-	Feb	Sun>=15	0:00	0	-
+Rule	Brazil	2023	only	-	Feb	Sun>=22	0:00	0	-
+Rule	Brazil	2024	2025	-	Feb	Sun>=15	0:00	0	-
+Rule	Brazil	2026	only	-	Feb	Sun>=22	0:00	0	-
+Rule	Brazil	2027	2033	-	Feb	Sun>=15	0:00	0	-
+Rule	Brazil	2034	only	-	Feb	Sun>=22	0:00	0	-
+Rule	Brazil	2035	2036	-	Feb	Sun>=15	0:00	0	-
+Rule	Brazil	2037	only	-	Feb	Sun>=22	0:00	0	-
+# From Arthur David Olson (2008-09-29):
+# The next is wrong in some years but is better than nothing.
+Rule	Brazil	2038	max	-	Feb	Sun>=15	0:00	0	-
+
 # The latest ruleset listed above says that the following states observe DST:
 # DF, ES, GO, MG, MS, MT, PR, RJ, RS, SC, SP.
-# For dates after mid-2008, the above rules with TO="max" are guesses
-# and are quite possibly wrong, but are more likely than no DST at all.
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 #
