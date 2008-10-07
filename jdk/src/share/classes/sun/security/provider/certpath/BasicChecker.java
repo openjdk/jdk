@@ -162,7 +162,7 @@ class BasicChecker extends PKIXCertPathChecker {
             throw new CertPathValidatorException
                 (msg + " check failed", e, null, -1,
                  BasicReason.INVALID_SIGNATURE);
-        } catch (GeneralSecurityException e) {
+        } catch (Exception e) {
             throw new CertPathValidatorException(msg + " check failed", e);
         }
 
