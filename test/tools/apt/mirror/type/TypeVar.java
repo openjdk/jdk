@@ -28,7 +28,7 @@
  * @summary TypeVariable tests
  * @library ../../lib
  * @compile -source 1.5 TypeVar.java
- * @run main TypeVar
+ * @run main/othervm TypeVar
  */
 
 

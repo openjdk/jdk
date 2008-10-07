@@ -28,7 +28,7 @@
  * @summary Tests FieldDeclaration.getConstantExpression method
  * @library ../../lib
  * @compile -source 1.5 ConstExpr.java
- * @run main ConstExpr
+ * @run main/othervm ConstExpr
  */
 
 

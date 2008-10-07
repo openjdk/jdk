@@ -28,7 +28,7 @@
  * @summary ArrayType tests
  * @library ../../lib
  * @compile -source 1.5 ArrayTyp.java
- * @run main ArrayTyp
+ * @run main/othervm ArrayTyp
  */
 
 

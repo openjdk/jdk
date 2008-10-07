@@ -28,7 +28,7 @@
  * @summary Tests AnnotationValue methods.
  * @library ../../lib
  * @compile -source 1.5 AnnoVal.java
- * @run main AnnoVal
+ * @run main/othervm AnnoVal
  */
 
 

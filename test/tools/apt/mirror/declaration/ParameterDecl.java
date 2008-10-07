@@ -27,6 +27,7 @@
  * @bug 4853450 5031171
  * @summary ParameterDeclaration tests
  * @library ../../lib
+ * @run main/othervm ParameterDecl
  */
 
 
