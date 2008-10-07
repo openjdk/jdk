@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,15 @@ import java.awt.event.*;
 import java.beans.*;
 import java.io.*;
 import java.lang.reflect.Array;
-import java.text.*;
 import java.util.*;
 
 import javax.accessibility.*;
 import javax.swing.*;
 import javax.swing.border.*;
-import javax.swing.event.*;
 import javax.swing.filechooser.*;
 import javax.swing.filechooser.FileFilter;
 
 import com.sun.tools.jconsole.JConsoleContext;
-import com.sun.tools.jconsole.JConsoleContext.ConnectionState;
 
 import static com.sun.tools.jconsole.JConsoleContext.ConnectionState.*;
 
@@ -130,6 +127,7 @@ public class Plotter extends JComponent
     private int bottomMargin = 45;
     private int leftMargin = 65;
     private int rightMargin = 70;
+    private final boolean displayLegend;
 
     public Plotter() {
         this(Unit.NONE, 0);
@@ -139,15 +137,21 @@ public class Plotter extends JComponent
         this(unit, 0);
     }
 
+    public Plotter(Unit unit, int decimals) {
+        this(unit,decimals,true);
+    }
+
     // Note: If decimals > 0 then values must be decimally shifted left
     // that many places, i.e. multiplied by Math.pow(10.0, decimals).
-    public Plotter(Unit unit, int decimals) {
+    public Plotter(Unit unit, int decimals, boolean displayLegend) {
+        this.displayLegend = displayLegend;
         setUnit(unit);
         setDecimals(decimals);
 
         enableEvents(AWTEvent.MOUSE_EVENT_MASK);
 
         addMouseListener(new MouseAdapter() {
+            @Override
             public void mousePressed(MouseEvent e) {
                 if (getParent() instanceof PlotterPanel) {
                     getParent().requestFocusInWindow();
@@ -240,6 +244,7 @@ public class Plotter extends JComponent
         }
     }
 
+    @Override
     public JPopupMenu getComponentPopupMenu() {
         if (popupMenu == null) {
             popupMenu = new JPopupMenu(Resources.getText("Chart:"));
@@ -330,6 +335,7 @@ public class Plotter extends JComponent
         }
     }
 
+    @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
@@ -670,7 +676,7 @@ public class Plotter extends JComponent
                         curValue += "%";
                     }
                     int valWidth = fm.stringWidth(curValue);
-                    String legend = seq.name;
+                    String legend = (displayLegend?seq.name:"");
                     int legendWidth = fm.stringWidth(legend);
                     if (checkRightMargin(valWidth) || checkRightMargin(legendWidth)) {
                         // Wait for next repaint
@@ -986,10 +992,12 @@ public class Plotter extends JComponent
     }
 
     private static class SaveDataFileChooser extends JFileChooser {
+        private static final long serialVersionUID = -5182890922369369669L;
         SaveDataFileChooser() {
             setFileFilter(new FileNameExtensionFilter("CSV file", "csv"));
         }
 
+        @Override
         public void approveSelection() {
             File file = getSelectedFile();
             if (file != null) {
@@ -1034,6 +1042,7 @@ public class Plotter extends JComponent
         }
     }
 
+    @Override
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessiblePlotter();
@@ -1042,10 +1051,12 @@ public class Plotter extends JComponent
     }
 
     protected class AccessiblePlotter extends AccessibleJComponent {
+        private static final long serialVersionUID = -3847205410473510922L;
         protected AccessiblePlotter() {
             setAccessibleName(getText("Plotter.accessibleName"));
         }
 
+        @Override
         public String getAccessibleName() {
             String name = super.getAccessibleName();
 
@@ -1076,6 +1087,7 @@ public class Plotter extends JComponent
             return name;
         }
 
+        @Override
         public AccessibleRole getAccessibleRole() {
             return AccessibleRole.CANVAS;
         }

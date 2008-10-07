@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,6 @@ public class InstanceNotFoundException extends OperationsException   {
      * @since 1.7
      */
     public InstanceNotFoundException(ObjectName name) {
-        this(name.toString());
+        this(String.valueOf(name));
     }
 }

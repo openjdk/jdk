@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ public class Flow extends TreeScanner {
     protected static final Context.Key<Flow> flowKey =
         new Context.Key<Flow>();
 
-    private final Name.Table names;
+    private final Names names;
     private final Log log;
     private final Symtab syms;
     private final Types types;
@@ -195,7 +195,7 @@ public class Flow extends TreeScanner {
     protected Flow(Context context) {
         context.put(flowKey, this);
 
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         log = Log.instance(context);
         syms = Symtab.instance(context);
         types = Types.instance(context);
