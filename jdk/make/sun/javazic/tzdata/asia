@@ -1563,11 +1563,24 @@ Zone	Asia/Muscat	3:54:20 -	LMT	1920
 # From Arthur David Olson (2008-05-19):
 # XXX--midnight transitions is a guess; 2008 only is a guess.
 
+# From Alexander Krivenyshev (2008-08-28):
+# Pakistan government has decided to keep the watches one-hour advanced
+# for another 2 months--plan to return to Standard Time on October 31
+# instead of August 31.
+#
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_pakistan02.html">
+# http://www.worldtimezone.com/dst_news/dst_news_pakistan02.html
+# </a>
+# OR
+# <a href="http://dailymailnews.com/200808/28/news/dmbrn03.html">
+# http://dailymailnews.com/200808/28/news/dmbrn03.html
+# </a>
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule Pakistan	2002	only	-	Apr	Sun>=2	0:01	1:00	S
 Rule Pakistan	2002	only	-	Oct	Sun>=2	0:01	0	-
 Rule Pakistan	2008	only	-	Jun	1	0:00	1:00	S
-Rule Pakistan	2008	only	-	Sep	1	0:00	0	-
+Rule Pakistan	2008	only	-	Nov	1	0:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Karachi	4:28:12 -	LMT	1907
 			5:30	-	IST	1942 Sep
@@ -1687,6 +1700,23 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # For lack of better information, predict that future changes will be
 # the 2nd Thursday of September at 02:00.
 
+# From Alexander Krivenyshev (2008-08-28):
+# Here is an article, that Mideast running on different clocks at Ramadan.
+#
+# Gaza Strip (as Egypt) ended DST at midnight Thursday (Aug 28, 2008), while
+# the West Bank will end Daylight Saving Time at midnight Sunday (Aug 31, 2008).
+#
+# <a href="http://www.guardian.co.uk/world/feedarticle/7759001">
+# http://www.guardian.co.uk/world/feedarticle/7759001
+# </a>
+# <a href="http://www.abcnews.go.com/International/wireStory?id=5676087">
+# http://www.abcnews.go.com/International/wireStory?id=5676087
+# </a>
+# or
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_gazastrip01.html">
+# http://www.worldtimezone.com/dst_news/dst_news_gazastrip01.html
+# </a>
+
 # The rules for Egypt are stolen from the `africa' file.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
@@ -1702,7 +1732,8 @@ Rule Palestine	2004	only	-	Oct	 1	1:00	0	-
 Rule Palestine	2005	only	-	Oct	 4	2:00	0	-
 Rule Palestine	2006	max	-	Apr	 1	0:00	1:00	S
 Rule Palestine	2006	only	-	Sep	22	0:00	0	-
-Rule Palestine	2007	max	-	Sep	Thu>=8	2:00	0	-
+Rule Palestine	2007	only	-	Sep	Thu>=8	2:00	0	-
+Rule Palestine	2008	max	-	Aug	lastThu	2:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct

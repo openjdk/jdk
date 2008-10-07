@@ -2375,6 +2375,27 @@ Zone	Europe/Zurich	0:34:08 -	LMT	1848 Sep 12
 # (on a non-government server though) describing dates between 2002 and 2006:
 # http://www.alomaliye.com/bkk_2002_3769.htm
 
+# From Sue Williams (2008-08-11):
+# I spotted this news article about a potential change in Turkey.
+#
+# <a href="http://www.hurriyet.com.tr/english/domestic/9626174.asp?scr=1">
+# http://www.hurriyet.com.tr/english/domestic/9626174.asp?scr=1
+# </a>
+
+# From Sue Williams (2008-08-20):
+# This article says that around the end of March 2011, Turkey wants to
+# adjust the clocks forward by 1/2 hour and stay that way permanently.
+# The article indicates that this is a change in timezone offset in addition
+# to stopping observance of DST.
+# This proposal has not yet been approved.
+#
+# Read more here...
+#
+# Turkey to abandon daylight saving time in 2011
+# <a href="http://www.turkishdailynews.com.tr/article.php?enewsid=112989">
+# http://www.turkishdailynews.com.tr/article.php?enewsid=112989
+# </a>
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Turkey	1916	only	-	May	 1	0:00	1:00	S
 Rule	Turkey	1916	only	-	Oct	 1	0:00	0	-
