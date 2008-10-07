@@ -28,7 +28,7 @@
  * @summary MethodDeclaration tests
  * @library ../../lib
  * @compile -source 1.5 MethodDecl.java
- * @run main MethodDecl
+ * @run main/othervm MethodDecl
  */
 
 
