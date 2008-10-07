@@ -923,14 +923,7 @@ public abstract class Symbol implements Element {
                 public Object call() {
                     JavaFileObject source = log.useSource(env.toplevel.sourcefile);
                     try {
-                        // In order to catch self-references, we set
-                        // the variable's declaration position to
-                        // maximal possible value, effectively marking
-                        // the variable as undefined.
-                        int pos = VarSymbol.this.pos;
-                        VarSymbol.this.pos = Position.MAXPOS;
                         Type itype = attr.attribExpr(initializer, env, type);
-                        VarSymbol.this.pos = pos;
                         if (itype.constValue() != null)
                             return attr.coerce(itype, type).constValue();
                         else

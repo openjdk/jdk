@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-15301 USA.
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
@@ -27,11 +27,15 @@ package com.sun.tools.javap;
 
 import java.io.EOFException;
 import java.io.FileNotFoundException;
+import java.io.FilterInputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -199,6 +203,12 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask {
             }
         },
 
+        new Option(false, "-sysinfo") {
+            void process(JavapTask task, String opt, String arg) {
+                task.options.sysInfo = true;
+            }
+        },
+
         new Option(false, "-Xold") {
             void process(JavapTask task, String opt, String arg) throws BadArgs {
                 // -Xold is only supported as first arg when invoked from
@@ -228,6 +238,12 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask {
         new Option(false, "-XDignore.symbol.file") {
             void process(JavapTask task, String opt, String arg) {
                 task.options.ignoreSymbolFile = true;
+            }
+        },
+
+        new Option(false, "-constants") {
+            void process(JavapTask task, String opt, String arg) {
+                task.options.showConstants = true;
             }
         }
 
@@ -488,8 +504,27 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask {
                 Attribute.Factory attributeFactory = new Attribute.Factory();
                 attributeFactory.setCompat(options.compat);
                 attributeFactory.setJSR277(options.jsr277);
-                ClassFile cf = ClassFile.read(fo.openInputStream(), attributeFactory);
+
+                InputStream in = fo.openInputStream();
+                SizeInputStream sizeIn = null;
+                MessageDigest md  = null;
+                if (options.sysInfo || options.verbose) {
+                    md = MessageDigest.getInstance("MD5");
+                    in = new DigestInputStream(in, md);
+                    in = sizeIn = new SizeInputStream(in);
+                }
+
+                ClassFile cf = ClassFile.read(in, attributeFactory);
+
+                if (options.sysInfo || options.verbose) {
+                    classWriter.setFile(fo.toUri());
+                    classWriter.setLastModified(fo.getLastModified());
+                    classWriter.setDigest("MD5", md.digest());
+                    classWriter.setFileSize(sizeIn.size());
+                }
+
                 classWriter.write(cf);
+
             } catch (ConstantPoolException e) {
                 diagnosticListener.report(createDiagnostic("err.bad.constant.pool", className, e.getLocalizedMessage()));
                 ok = false;
@@ -659,4 +694,31 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask {
     Map<Locale, ResourceBundle> bundles;
 
     private static final String progname = "javap";
+
+    private static class SizeInputStream extends FilterInputStream {
+        SizeInputStream(InputStream in) {
+            super(in);
+        }
+
+        int size() {
+            return size;
+        }
+
+        @Override
+        public int read(byte[] buf, int offset, int length) throws IOException {
+            int n = super.read(buf, offset, length);
+            if (n > 0)
+                size += n;
+            return n;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int b = super.read();
+            size += 1;
+            return b;
+        }
+
+        private int size;
+    }
 }

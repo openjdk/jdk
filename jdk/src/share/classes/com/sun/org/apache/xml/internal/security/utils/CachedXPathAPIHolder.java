@@ -23,35 +23,33 @@ package com.sun.org.apache.xml.internal.security.utils;
 import com.sun.org.apache.xpath.internal.CachedXPathAPI;
 import org.w3c.dom.Document;
 
-
 /**
  * @author Raul Benito
  */
 public class CachedXPathAPIHolder {
-         static java.util.logging.Logger log =
-                java.util.logging.Logger.getLogger(CachedXPathAPIHolder.class.getName());
 
     static ThreadLocal  local=new ThreadLocal();
     static ThreadLocal localDoc=new ThreadLocal();
 
-        /**
-         * Sets the doc for the xpath transformation. Resets the cache if needed
-         * @param doc
-         */
-        public static void setDoc(Document doc) {
-       if (localDoc.get()!=doc) {
+    /**
+     * Sets the doc for the xpath transformation. Resets the cache if needed
+     * @param doc
+     */
+    public static void setDoc(Document doc) {
+        if (localDoc.get()!=doc) {
             CachedXPathAPI cx=(CachedXPathAPI)local.get();
             if (cx==null) {
-               cx=new CachedXPathAPI();
-               local.set(cx);
-               localDoc.set(doc);
-               return;
+                cx=new CachedXPathAPI();
+                local.set(cx);
+                localDoc.set(doc);
+                return;
             }
             //Different docs reset.
             cx.getXPathContext().reset();
             localDoc.set(doc);
         }
-        }
+    }
+
     /**
      * @return the cachexpathapi for this thread
      */

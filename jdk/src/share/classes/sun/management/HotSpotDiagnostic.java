@@ -117,6 +117,6 @@ public class HotSpotDiagnostic implements HotSpotDiagnosticMXBean {
     }
 
     public ObjectName getObjectName() {
-        return Util.newObjectName("com.sun.management:type=HotSpotDiagnostic");
+        return ObjectName.valueOf("com.sun.management:type=HotSpotDiagnostic");
     }
 }

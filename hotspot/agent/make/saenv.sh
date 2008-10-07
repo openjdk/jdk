@@ -58,7 +58,7 @@ if [ "x$SA_DISABLE_VERS_CHK" != "x" ]; then
 fi
 
 
-SA_CLASSPATH=$STARTDIR/../build/classes:$STARTDIR/../src/share/lib/maf-1_0.jar:$STARTDIR/../src/share/lib/jlfgr-1_0.jar:$STARTDIR/../src/share/lib/js.jar:$STARTDIR/sa.jar:$STARTDIR/lib/maf-1_0.jar:$STARTDIR/lib/jlfgr-1_0.jar:$STARTDIR/lib/js.jar
+SA_CLASSPATH=$STARTDIR/../build/classes:$STARTDIR/../src/share/lib/js.jar:$STARTDIR/sa.jar:$STARTDIR/lib/js.jar
 
 OPTIONS="-Djava.system.class.loader=sun.jvm.hotspot.SALauncherLoader ${OPTIONS}"
 

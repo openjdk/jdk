@@ -38,7 +38,7 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
   // rcx: temporary
   // rdi: pointer to locals
   // rsp: end of copied parameters area
-  __ movl(rcx, rsp);
+  __ mov(rcx, rsp);
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::slow_signature_handler), rbx, rdi, rcx);
   __ ret(0);
   return entry;
@@ -75,8 +75,8 @@ address InterpreterGenerator::generate_empty_entry(void) {
   // Code: _return
   // _return
   // return w/o popping parameters
-  __ popl(rax);
-  __ movl(rsp, rsi);
+  __ pop(rax);
+  __ mov(rsp, rsi);
   __ jmp(rax);
 
   __ bind(slow_path);
@@ -135,7 +135,7 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
     __ pushl(Address(rsp, 3*wordSize));  // push hi (and note rsp -= wordSize)
     __ pushl(Address(rsp, 2*wordSize));  // push lo
     __ fld_d(Address(rsp, 0));           // get double in ST0
-    __ addl(rsp, 2*wordSize);
+    __ addptr(rsp, 2*wordSize);
   } else {
     __ fld_d(Address(rsp, 1*wordSize));
   }
@@ -173,15 +173,15 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
 
   // return double result in xmm0 for interpreter and compilers.
   if (UseSSE >= 2) {
-    __ subl(rsp, 2*wordSize);
+    __ subptr(rsp, 2*wordSize);
     __ fstp_d(Address(rsp, 0));
     __ movdbl(xmm0, Address(rsp, 0));
-    __ addl(rsp, 2*wordSize);
+    __ addptr(rsp, 2*wordSize);
   }
 
   // done, result in FPU ST(0) or XMM0
-  __ popl(rdi);                              // get return address
-  __ movl(rsp, rsi);                         // set sp to sender sp
+  __ pop(rdi);                               // get return address
+  __ mov(rsp, rsi);                          // set sp to sender sp
   __ jmp(rdi);
 
   return entry_point;
@@ -202,10 +202,10 @@ address InterpreterGenerator::generate_abstract_entry(void) {
 
   // abstract method entry
   // remove return address. Not really needed, since exception handling throws away expression stack
-  __ popl(rbx);
+  __ pop(rbx);
 
   // adjust stack to what a normal return would do
-  __ movl(rsp, rsi);
+  __ mov(rsp, rsi);
   // throw exception
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
   // the call_VM checks for exception, so we should never return here.

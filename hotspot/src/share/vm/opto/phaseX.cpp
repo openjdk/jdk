@@ -986,7 +986,9 @@ Node *PhaseIterGVN::transform_old( Node *n ) {
   // Apply the Ideal call in a loop until it no longer applies
   Node *k = n;
   DEBUG_ONLY(dead_loop_check(k);)
+  DEBUG_ONLY(bool is_new = (k->outcnt() == 0);)
   Node *i = k->Ideal(this, /*can_reshape=*/true);
+  assert(i != k || is_new || i->outcnt() > 0, "don't return dead nodes");
 #ifndef PRODUCT
   if( VerifyIterativeGVN )
     verify_step(k);
@@ -1024,7 +1026,9 @@ Node *PhaseIterGVN::transform_old( Node *n ) {
     }
     DEBUG_ONLY(dead_loop_check(k);)
     // Try idealizing again
+    DEBUG_ONLY(is_new = (k->outcnt() == 0);)
     i = k->Ideal(this, /*can_reshape=*/true);
+    assert(i != k || is_new || i->outcnt() > 0, "don't return dead nodes");
 #ifndef PRODUCT
     if( VerifyIterativeGVN )
       verify_step(k);

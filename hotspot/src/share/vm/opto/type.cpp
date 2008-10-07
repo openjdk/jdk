@@ -804,6 +804,7 @@ const Type *TypeF::xmeet( const Type *t ) const {
   case InstPtr:
   case KlassPtr:
   case AryPtr:
+  case NarrowOop:
   case Int:
   case Long:
   case DoubleTop:
@@ -1955,14 +1956,25 @@ const Type *TypePtr::xdual() const {
   return new TypePtr( AnyPtr, dual_ptr(), dual_offset() );
 }
 
+//------------------------------xadd_offset------------------------------------
+int TypePtr::xadd_offset( intptr_t offset ) const {
+  // Adding to 'TOP' offset?  Return 'TOP'!
+  if( _offset == OffsetTop || offset == OffsetTop ) return OffsetTop;
+  // Adding to 'BOTTOM' offset?  Return 'BOTTOM'!
+  if( _offset == OffsetBot || offset == OffsetBot ) return OffsetBot;
+  // Addition overflows or "accidentally" equals to OffsetTop? Return 'BOTTOM'!
+  offset += (intptr_t)_offset;
+  if (offset != (int)offset || offset == OffsetTop) return OffsetBot;
+
+  // assert( _offset >= 0 && _offset+offset >= 0, "" );
+  // It is possible to construct a negative offset during PhaseCCP
+
+  return (int)offset;        // Sum valid offsets
+}
+
 //------------------------------add_offset-------------------------------------
-const TypePtr *TypePtr::add_offset( int offset ) const {
-  if( offset == 0 ) return this; // No change
-  if( _offset == OffsetBot ) return this;
-  if(  offset == OffsetBot ) offset = OffsetBot;
-  else if( _offset == OffsetTop || offset == OffsetTop ) offset = OffsetTop;
-  else offset += _offset;
-  return make( AnyPtr, _ptr, offset );
+const TypePtr *TypePtr::add_offset( intptr_t offset ) const {
+  return make( AnyPtr, _ptr, xadd_offset(offset) );
 }
 
 //------------------------------eq---------------------------------------------
@@ -2095,7 +2107,7 @@ const Type *TypeRawPtr::xdual() const {
 }
 
 //------------------------------add_offset-------------------------------------
-const TypePtr *TypeRawPtr::add_offset( int offset ) const {
+const TypePtr *TypeRawPtr::add_offset( intptr_t offset ) const {
   if( offset == OffsetTop ) return BOTTOM; // Undefined offset-> undefined pointer
   if( offset == OffsetBot ) return BOTTOM; // Unknown offset-> unknown pointer
   if( offset == 0 ) return this; // No change
@@ -2218,7 +2230,7 @@ const Type *TypeOopPtr::cast_to_ptr_type(PTR ptr) const {
   return make(ptr, _offset);
 }
 
-//-----------------------------cast_to_instance-------------------------------
+//-----------------------------cast_to_instance_id----------------------------
 const TypeOopPtr *TypeOopPtr::cast_to_instance_id(int instance_id) const {
   // There are no instances of a general oop.
   // Return self unchanged.
@@ -2263,6 +2275,7 @@ const Type *TypeOopPtr::xmeet( const Type *t ) const {
   case DoubleTop:
   case DoubleCon:
   case DoubleBot:
+  case NarrowOop:
   case Bottom:                  // Ye Olde Default
     return Type::BOTTOM;
   case Top:
@@ -2543,21 +2556,8 @@ bool TypeOopPtr::singleton(void) const {
   return (_offset == 0) && !below_centerline(_ptr);
 }
 
-//------------------------------xadd_offset------------------------------------
-int TypeOopPtr::xadd_offset( int offset ) const {
-  // Adding to 'TOP' offset?  Return 'TOP'!
-  if( _offset == OffsetTop || offset == OffsetTop ) return OffsetTop;
-  // Adding to 'BOTTOM' offset?  Return 'BOTTOM'!
-  if( _offset == OffsetBot || offset == OffsetBot ) return OffsetBot;
-
-  // assert( _offset >= 0 && _offset+offset >= 0, "" );
-  // It is possible to construct a negative offset during PhaseCCP
-
-  return _offset+offset;        // Sum valid offsets
-}
-
 //------------------------------add_offset-------------------------------------
-const TypePtr *TypeOopPtr::add_offset( int offset ) const {
+const TypePtr *TypeOopPtr::add_offset( intptr_t offset ) const {
   return make( _ptr, xadd_offset(offset) );
 }
 
@@ -2610,8 +2610,7 @@ const TypeInstPtr *TypeInstPtr::make(PTR ptr,
   // Ptr is never Null
   assert( ptr != Null, "NULL pointers are not typed" );
 
-  if ( instance_id > 0 )
-    xk = true;  // instances are always exactly typed
+  assert(instance_id <= 0 || xk || !UseExactTypes, "instances are always exactly typed");
   if (!UseExactTypes)  xk = false;
   if (ptr == Constant) {
     // Note:  This case includes meta-object constants, such as methods.
@@ -2650,16 +2649,10 @@ const Type *TypeInstPtr::cast_to_exactness(bool klass_is_exact) const {
   return make(ptr(), klass(), klass_is_exact, const_oop(), _offset, _instance_id);
 }
 
-//-----------------------------cast_to_instance-------------------------------
+//-----------------------------cast_to_instance_id----------------------------
 const TypeOopPtr *TypeInstPtr::cast_to_instance_id(int instance_id) const {
   if( instance_id == _instance_id ) return this;
-  bool exact = _klass_is_exact;
-  PTR  ptr_t = _ptr;
-  if ( instance_id > 0 ) { // instances are always exactly typed
-    if (UseExactTypes) exact = true;
-    ptr_t = NotNull;
-  }
-  return make(ptr_t, klass(), exact, const_oop(), _offset, instance_id);
+  return make(_ptr, klass(), _klass_is_exact, const_oop(), _offset, instance_id);
 }
 
 //------------------------------xmeet_unloaded---------------------------------
@@ -2899,6 +2892,7 @@ const Type *TypeInstPtr::xmeet( const Type *t ) const {
         xk = above_centerline(ptr) ? tinst_xk : false;
         // Watch out for Constant vs. AnyNull interface.
         if (ptr == Constant)  ptr = NotNull;   // forget it was a constant
+        instance_id = InstanceBot;
       }
       ciObject* o = NULL;  // the Constant value, if any
       if (ptr == Constant) {
@@ -2989,6 +2983,7 @@ const Type *TypeInstPtr::xmeet( const Type *t ) const {
     // class hierarchy - which means we have to fall to at least NotNull.
     if( ptr == TopPTR || ptr == AnyNull || ptr == Constant )
       ptr = NotNull;
+    instance_id = InstanceBot;
 
     // Now we find the LCA of Java classes
     ciKlass* k = this_klass->least_common_ancestor(tinst_klass);
@@ -3079,7 +3074,7 @@ void TypeInstPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 #endif
 
 //------------------------------add_offset-------------------------------------
-const TypePtr *TypeInstPtr::add_offset( int offset ) const {
+const TypePtr *TypeInstPtr::add_offset( intptr_t offset ) const {
   return make( _ptr, klass(), klass_is_exact(), const_oop(), xadd_offset(offset), _instance_id );
 }
 
@@ -3101,8 +3096,7 @@ const TypeAryPtr *TypeAryPtr::make( PTR ptr, const TypeAry *ary, ciKlass* k, boo
   assert(!(k == NULL && ary->_elem->isa_int()),
          "integral arrays must be pre-equipped with a class");
   if (!xk)  xk = ary->ary_must_be_exact();
-  if ( instance_id > 0 )
-    xk = true;  // instances are always exactly typed
+  assert(instance_id <= 0 || xk || !UseExactTypes, "instances are always exactly typed");
   if (!UseExactTypes)  xk = (ptr == Constant);
   return (TypeAryPtr*)(new TypeAryPtr(ptr, NULL, ary, k, xk, offset, instance_id))->hashcons();
 }
@@ -3113,8 +3107,7 @@ const TypeAryPtr *TypeAryPtr::make( PTR ptr, ciObject* o, const TypeAry *ary, ci
          "integral arrays must be pre-equipped with a class");
   assert( (ptr==Constant && o) || (ptr!=Constant && !o), "" );
   if (!xk)  xk = (o != NULL) || ary->ary_must_be_exact();
-  if ( instance_id > 0 )
-    xk = true;  // instances are always exactly typed
+  assert(instance_id <= 0 || xk || !UseExactTypes, "instances are always exactly typed");
   if (!UseExactTypes)  xk = (ptr == Constant);
   return (TypeAryPtr*)(new TypeAryPtr(ptr, o, ary, k, xk, offset, instance_id))->hashcons();
 }
@@ -3134,16 +3127,10 @@ const Type *TypeAryPtr::cast_to_exactness(bool klass_is_exact) const {
   return make(ptr(), const_oop(), _ary, klass(), klass_is_exact, _offset, _instance_id);
 }
 
-//-----------------------------cast_to_instance-------------------------------
+//-----------------------------cast_to_instance_id----------------------------
 const TypeOopPtr *TypeAryPtr::cast_to_instance_id(int instance_id) const {
   if( instance_id == _instance_id ) return this;
-  bool exact = _klass_is_exact;
-  PTR  ptr_t = _ptr;
-  if ( instance_id > 0 ) { // instances are always exactly typed
-    if (UseExactTypes) exact = true;
-    ptr_t = NotNull;
-  }
-  return make(ptr_t, const_oop(), _ary, klass(), exact, _offset, instance_id);
+  return make(_ptr, const_oop(), _ary, klass(), _klass_is_exact, _offset, instance_id);
 }
 
 //-----------------------------narrow_size_type-------------------------------
@@ -3300,6 +3287,7 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
       } else {
         // Something like byte[int+] meets char[int+].
         // This must fall to bottom, not (int[-128..65535])[int+].
+        instance_id = InstanceBot;
         tary = TypeAry::make(Type::BOTTOM, tary->_size);
       }
     }
@@ -3316,6 +3304,7 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
         if( tap->const_oop() != NULL && !o->equals(tap->const_oop()) ) {
           ptr = NotNull;
           o = NULL;
+          instance_id = InstanceBot;
         }
       } else if( above_centerline(_ptr) ) {
         o = tap->const_oop();
@@ -3436,7 +3425,7 @@ bool TypeAryPtr::empty(void) const {
 }
 
 //------------------------------add_offset-------------------------------------
-const TypePtr *TypeAryPtr::add_offset( int offset ) const {
+const TypePtr *TypeAryPtr::add_offset( intptr_t offset ) const {
   return make( _ptr, _const_oop, _ary, _klass, _klass_is_exact, xadd_offset(offset), _instance_id );
 }
 
@@ -3476,7 +3465,7 @@ bool TypeNarrowOop::empty(void) const {
   return _ooptype->empty();
 }
 
-//------------------------------meet-------------------------------------------
+//------------------------------xmeet------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeNarrowOop::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -3494,6 +3483,13 @@ const Type *TypeNarrowOop::xmeet( const Type *t ) const {
   case DoubleTop:
   case DoubleCon:
   case DoubleBot:
+  case AnyPtr:
+  case RawPtr:
+  case OopPtr:
+  case InstPtr:
+  case KlassPtr:
+  case AryPtr:
+
   case Bottom:                  // Ye Olde Default
     return Type::BOTTOM;
   case Top:
@@ -3510,16 +3506,9 @@ const Type *TypeNarrowOop::xmeet( const Type *t ) const {
   default:                      // All else is a mistake
     typerr(t);
 
-  case RawPtr:
-  case AnyPtr:
-  case OopPtr:
-  case InstPtr:
-  case KlassPtr:
-  case AryPtr:
-    typerr(t);
-    return Type::BOTTOM;
-
   } // End of switch
+
+  return this;
 }
 
 const Type *TypeNarrowOop::xdual() const {    // Compute dual right now.
@@ -3663,7 +3652,7 @@ ciKlass* TypeAryPtr::klass() const {
 
 //------------------------------add_offset-------------------------------------
 // Access internals of klass object
-const TypePtr *TypeKlassPtr::add_offset( int offset ) const {
+const TypePtr *TypeKlassPtr::add_offset( intptr_t offset ) const {
   return make( _ptr, klass(), xadd_offset(offset) );
 }
 
@@ -3713,6 +3702,7 @@ const Type    *TypeKlassPtr::xmeet( const Type *t ) const {
   case DoubleTop:
   case DoubleCon:
   case DoubleBot:
+  case NarrowOop:
   case Bottom:                  // Ye Olde Default
     return Type::BOTTOM;
   case Top:

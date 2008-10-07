@@ -44,7 +44,7 @@ import org.w3c.dom.Node;
  * nodes of the parse tree (all descendants, plus all attributes,
  * plus all namespaces nodes).
  *
- * @author $Author: dims $
+ * @author $Author: mullan $
  */
 public class ResolverXPointer extends ResourceResolverSpi {
 
@@ -53,6 +53,9 @@ public class ResolverXPointer extends ResourceResolverSpi {
         java.util.logging.Logger.getLogger(
                             ResolverXPointer.class.getName());
 
+    public boolean engineIsThreadSafe() {
+           return true;
+   }
    /**
     * @inheritDoc
     */
@@ -70,7 +73,7 @@ public class ResolverXPointer extends ResourceResolverSpi {
             String id = getXPointerId(uriStr);
             resultNode =IdResolver.getElementById(doc, id);
 
-            // if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Use #xpointer(id('" + id + "')) on element " + selectedElem);
+            // log.log(java.util.logging.Level.FINE, "Use #xpointer(id('" + id + "')) on element " + selectedElem);
 
             if (resultNode == null) {
                Object exArgs[] = { id };
@@ -148,14 +151,14 @@ public class ResolverXPointer extends ResourceResolverSpi {
                                                      uri.length()
                                                      - 2);
 
-         // if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "idPlusDelim=" + idPlusDelim);
+         // log.log(java.util.logging.Level.FINE, "idPlusDelim=" + idPlusDelim);
                  int idLen=idPlusDelim.length() -1;
          if (((idPlusDelim.charAt(0) == '"') && (idPlusDelim
                  .charAt(idLen) == '"')) || ((idPlusDelim
                  .charAt(0) == '\'') && (idPlusDelim
                  .charAt(idLen) == '\''))) {
-            if (true)
-                if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Id="
+            if (log.isLoggable(java.util.logging.Level.FINE))
+                log.log(java.util.logging.Level.FINE, "Id="
                       + idPlusDelim.substring(1, idLen));
 
             return true;

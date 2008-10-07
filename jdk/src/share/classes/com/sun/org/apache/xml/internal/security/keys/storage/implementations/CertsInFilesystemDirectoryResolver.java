@@ -2,7 +2,6 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-
 /*
  * Copyright  1999-2004 The Apache Software Foundation.
  *
@@ -21,8 +20,6 @@
  */
 package com.sun.org.apache.xml.internal.security.keys.storage.implementations;
 
-
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -40,12 +37,11 @@ import com.sun.org.apache.xml.internal.security.keys.storage.StorageResolverExce
 import com.sun.org.apache.xml.internal.security.keys.storage.StorageResolverSpi;
 import com.sun.org.apache.xml.internal.security.utils.Base64;
 
-
 /**
  * This {@link StorageResolverSpi} makes all raw (binary) {@link X509Certificate}s
  * which reside as files in a single directory available to the {@link com.sun.org.apache.xml.internal.security.keys.storage.StorageResolver}.
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class CertsInFilesystemDirectoryResolver extends StorageResolverSpi {
 
@@ -131,20 +127,20 @@ public class CertsInFilesystemDirectoryResolver extends StorageResolverSpi {
             dn = cert.getSubjectDN().getName();
             added = true;
          } catch (FileNotFoundException ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Could not add certificate from file " + filename, ex);
+            log.log(java.util.logging.Level.FINE, "Could not add certificate from file " + filename, ex);
          } catch (IOException ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Could not add certificate from file " + filename, ex);
+            log.log(java.util.logging.Level.FINE, "Could not add certificate from file " + filename, ex);
          } catch (CertificateNotYetValidException ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Could not add certificate from file " + filename, ex);
+            log.log(java.util.logging.Level.FINE, "Could not add certificate from file " + filename, ex);
          } catch (CertificateExpiredException ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Could not add certificate from file " + filename, ex);
+            log.log(java.util.logging.Level.FINE, "Could not add certificate from file " + filename, ex);
          } catch (CertificateException ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Could not add certificate from file " + filename, ex);
+            log.log(java.util.logging.Level.FINE, "Could not add certificate from file " + filename, ex);
          }
 
          if (added) {
-            if (true)
-                if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Added certificate: " + dn);
+            if (log.isLoggable(java.util.logging.Level.FINE))
+                log.log(java.util.logging.Level.FINE, "Added certificate: " + dn);
          }
       }
    }
@@ -157,9 +153,10 @@ public class CertsInFilesystemDirectoryResolver extends StorageResolverSpi {
    /**
     * Class FilesystemIterator
     *
-    * @author $Author: raul $
+    * @author $Author: mullan $
+    * @version $Revision: 1.5 $
     */
-   class FilesystemIterator implements Iterator {
+   private static class FilesystemIterator implements Iterator {
 
       /** Field _certs */
       List _certs = null;

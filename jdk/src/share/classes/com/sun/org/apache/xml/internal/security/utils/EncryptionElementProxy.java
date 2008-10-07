@@ -31,7 +31,7 @@ import org.w3c.dom.Element;
  * This is the base object for all objects which map directly to an Element from
  * the xenc spec.
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public abstract class EncryptionElementProxy extends ElementProxy {
 

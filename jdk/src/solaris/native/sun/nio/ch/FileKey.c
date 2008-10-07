@@ -33,12 +33,6 @@
 static jfieldID key_st_dev;    /* id for FileKey.st_dev */
 static jfieldID key_st_ino;    /* id for FileKey.st_ino */
 
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while ((_result == -1) && (errno == EINTR)); \
-} while(0)
-
 
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_FileKey_initIDs(JNIEnv *env, jclass clazz)
