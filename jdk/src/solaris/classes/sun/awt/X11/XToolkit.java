@@ -79,6 +79,21 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     private static boolean areExtraMouseButtonsEnabled = true;
 
     /**
+     * Number of buttons.
+     * By default it's taken from the system. If system value does not
+     * fit into int type range, use our own MAX_BUTTONS_SUPPORT value.
+     */
+    private static int numberOfButtons = 0;
+
+    /* XFree standard mention 24 buttons as maximum:
+     * http://www.xfree86.org/current/mouse.4.html
+     * We workaround systems supporting more than 24 buttons.
+     * Otherwise, we have to use long type values as masks
+     * which leads to API change.
+     */
+    private static int MAX_BUTTONS_SUPPORT = 24;
+
+    /**
      * True when the x settings have been loaded.
      */
     private boolean loadedXSettings;
@@ -1393,7 +1408,12 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     public static int getNumMouseButtons() {
         awtLock();
         try {
-            return XlibWrapper.XGetPointerMapping(XToolkit.getDisplay(), 0, 0);
+            if (numberOfButtons == 0) {
+                numberOfButtons = Math.min(
+                    XlibWrapper.XGetPointerMapping(XToolkit.getDisplay(), 0, 0),
+                    MAX_BUTTONS_SUPPORT);
+            }
+            return numberOfButtons;
         } finally {
             awtUnlock();
         }
