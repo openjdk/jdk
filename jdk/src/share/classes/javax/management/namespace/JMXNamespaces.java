@@ -266,11 +266,15 @@ public class JMXNamespaces {
                 ObjectNameRouter.normalizeNamespacePath(namespace,false,
                             true,false);
         try {
+            // We could use Util.newObjectName here - but throwing an
+            // IllegalArgumentException that contains just the supplied
+            // namespace instead of the whole ObjectName seems preferable.
             return ObjectName.getInstance(sourcePath+
                     NAMESPACE_SEPARATOR+":"+
                     JMXNamespace.TYPE_ASSIGNMENT);
         } catch (MalformedObjectNameException x) {
-            throw new IllegalArgumentException(namespace,x);
+            throw new IllegalArgumentException("Invalid namespace: " +
+                                               namespace,x);
         }
     }
 

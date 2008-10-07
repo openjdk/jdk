@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,6 @@ public class DocletInvoker {
         cpString = appendPath(System.getProperty("java.class.path"), cpString);
         cpString = appendPath(docletPath, cpString);
         URL[] urls = pathToURLs(cpString);
-        System.err.println("DocletInvoker urls=" + urls);
         appClassLoader = new URLClassLoader(urls);
 
         // attempt to find doclet

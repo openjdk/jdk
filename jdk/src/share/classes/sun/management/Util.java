@@ -43,12 +43,8 @@ class Util {
         return (String[]) list.toArray(EMPTY_STRING_ARRAY);
     }
 
-    static ObjectName newObjectName(String name) {
-        return com.sun.jmx.mbeanserver.Util.newObjectName(name);
-    }
-
     public static ObjectName newObjectName(String domainAndType, String name) {
-        return newObjectName(domainAndType + ",name=" + name);
+        return ObjectName.valueOf(domainAndType + ",name=" + name);
     }
 
     private static ManagementPermission monitorPermission =

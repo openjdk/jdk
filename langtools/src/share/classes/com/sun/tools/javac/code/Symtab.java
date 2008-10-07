@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class Symtab {
     public final Type botType = new BottomType();
     public final JCNoType voidType = new JCNoType(TypeTags.VOID);
 
-    private final Name.Table names;
+    private final Names names;
     private final ClassReader reader;
     private final Target target;
 
@@ -93,8 +93,7 @@ public class Symtab {
      */
     public final ClassSymbol errSymbol;
 
-    /** An instance of the error type.
-     */
+    /** A value for the errType, with a originalType of noType */
     public final Type errType;
 
     /** A value for the unknown type. */
@@ -329,7 +328,7 @@ public class Symtab {
     protected Symtab(Context context) throws CompletionFailure {
         context.put(symtabKey, this);
 
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         target = Target.instance(context);
 
         // Create the unknown type
@@ -348,7 +347,7 @@ public class Symtab {
 
         // create the error symbols
         errSymbol = new ClassSymbol(PUBLIC|STATIC|ACYCLIC, names.any, null, rootPackage);
-        errType = new ErrorType(errSymbol);
+        errType = new ErrorType(errSymbol, Type.noType);
 
         // initialize builtin types
         initType(byteType, "byte", "Byte");
@@ -388,6 +387,9 @@ public class Symtab {
         scope.enter(doubleType.tsym);
         scope.enter(booleanType.tsym);
         scope.enter(errType.tsym);
+
+        // Enter symbol for the errSymbol
+        scope.enter(errSymbol);
 
         classes.put(predefClass.fullname, predefClass);
 

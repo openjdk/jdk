@@ -61,7 +61,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
      */
     final static boolean checkClash = true;
 
-    private final Name.Table names;
+    private final Names names;
     private final Enter enter;
     private final Log log;
     private final Check chk;
@@ -86,7 +86,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
     protected MemberEnter(Context context) {
         context.put(memberEnterKey, this);
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         enter = Enter.instance(context);
         log = Log.instance(context);
         chk = Check.instance(context);
@@ -919,7 +919,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 List<Type> thrown = List.nil();
                 long ctorFlags = 0;
                 boolean based = false;
-                if (c.name.len == 0) {
+                if (c.name.isEmpty()) {
                     JCNewClass nc = (JCNewClass)env.next.tree;
                     if (nc.constructor != null) {
                         Type superConstrType = types.memberType(c.type,
@@ -1068,7 +1068,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             flags = (flags & ~AccessFlags) | PRIVATE | GENERATEDCONSTR;
         } else
             flags |= (c.flags() & AccessFlags) | GENERATEDCONSTR;
-        if (c.name.len == 0) flags |= ANONCONSTR;
+        if (c.name.isEmpty()) flags |= ANONCONSTR;
         JCTree result = make.MethodDef(
             make.Modifiers(flags),
             names.init,
