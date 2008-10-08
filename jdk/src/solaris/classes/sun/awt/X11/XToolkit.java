@@ -61,6 +61,10 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     private static Logger keyEventLog = Logger.getLogger("sun.awt.X11.kye.XToolkit");
     private static final Logger backingStoreLog = Logger.getLogger("sun.awt.X11.backingStore.XToolkit");
 
+    //There is 400 ms is set by default on Windows and 500 by default on KDE and GNOME.
+    //We use the same hardcoded constant.
+    private final static int AWT_MULTICLICK_DEFAULT_TIME = 500;
+
     static final boolean PRIMARY_LOOP = false;
     static final boolean SECONDARY_LOOP = true;
 
@@ -1211,7 +1215,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 String multiclick_time_query = XlibWrapper.XGetDefault(XToolkit.getDisplay(), "*", "multiClickTime");
                 if (multiclick_time_query != null) {
                     awt_multiclick_time = (int)Long.parseLong(multiclick_time_query);
-    //             awt_multiclick_time = XtGetMultiClickTime(awt_display);
                 } else {
                     multiclick_time_query = XlibWrapper.XGetDefault(XToolkit.getDisplay(),
                                                                     "OpenWindows", "MultiClickTimeout");
@@ -1221,20 +1224,19 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                            milliseconds */
                         awt_multiclick_time = (int)Long.parseLong(multiclick_time_query) * 100;
                     } else {
-                        awt_multiclick_time = 200;
-    //                 awt_multiclick_time = XtGetMultiClickTime(awt_display);
+                        awt_multiclick_time = AWT_MULTICLICK_DEFAULT_TIME;
                     }
                 }
             } catch (NumberFormatException nf) {
-                awt_multiclick_time = 200;
+                awt_multiclick_time = AWT_MULTICLICK_DEFAULT_TIME;
             } catch (NullPointerException npe) {
-                awt_multiclick_time = 200;
+                awt_multiclick_time = AWT_MULTICLICK_DEFAULT_TIME;
             }
         } finally {
             awtUnlock();
         }
         if (awt_multiclick_time == 0) {
-            awt_multiclick_time = 200;
+            awt_multiclick_time = AWT_MULTICLICK_DEFAULT_TIME;
         }
     }
 
