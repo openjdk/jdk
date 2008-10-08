@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1174,9 +1174,10 @@ void Arguments::set_ergonomics_flags() {
   // field offset to determine free list chunk markers.
   // Check that UseCompressedOops can be set with the max heap size allocated
   // by ergonomics.
-  if (!UseConcMarkSweepGC && MaxHeapSize <= max_heap_for_compressed_oops()) {
+  if (MaxHeapSize <= max_heap_for_compressed_oops()) {
     if (FLAG_IS_DEFAULT(UseCompressedOops)) {
-      FLAG_SET_ERGO(bool, UseCompressedOops, true);
+      // Turn off until bug is fixed.
+      // FLAG_SET_ERGO(bool, UseCompressedOops, true);
     }
   } else {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
@@ -1311,6 +1312,9 @@ void Arguments::set_aggressive_opts_flags() {
   }
   if (AggressiveOpts && FLAG_IS_DEFAULT(DoEscapeAnalysis)) {
     FLAG_SET_DEFAULT(DoEscapeAnalysis, true);
+  }
+  if (AggressiveOpts && FLAG_IS_DEFAULT(SpecialArraysEquals)) {
+    FLAG_SET_DEFAULT(SpecialArraysEquals, true);
   }
 #endif
 

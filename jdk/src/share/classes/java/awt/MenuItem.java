@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,7 +268,7 @@ public class MenuItem extends MenuComponent implements Accessible {
         enabled = true;
         MenuItemPeer peer = (MenuItemPeer)this.peer;
         if (peer != null) {
-            peer.enable();
+            peer.setEnabled(true);
         }
     }
 
@@ -294,7 +294,7 @@ public class MenuItem extends MenuComponent implements Accessible {
         enabled = false;
         MenuItemPeer peer = (MenuItemPeer)this.peer;
         if (peer != null) {
-            peer.disable();
+            peer.setEnabled(false);
         }
     }
 

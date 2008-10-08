@@ -164,7 +164,7 @@ public class DocFinder {
          * subclass of IOException.  This subclass of DocFinder.Output allows
          * multiple tag inheritence.
          */
-        public List tagList  = new ArrayList();
+        public List<Tag> tagList  = new ArrayList<Tag>();
     }
 
     /**

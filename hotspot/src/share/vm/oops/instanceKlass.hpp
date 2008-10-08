@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,9 +180,8 @@ class instanceKlass: public Klass {
   // End of the oop block.
   //
 
-  // number of words used by non-static fields in this klass (including
-  // inherited fields but after header_size()).  If fields are compressed into
-  // header, this can be zero so it's not the same as number of static fields.
+  // Number of heapOopSize words used by non-static fields in this klass
+  // (including inherited fields but after header_size()).
   int             _nonstatic_field_size;
   int             _static_field_size;    // number words used by static fields (oop and non-oop) in this klass
   int             _static_oop_field_size;// number of static oop fields in this klass

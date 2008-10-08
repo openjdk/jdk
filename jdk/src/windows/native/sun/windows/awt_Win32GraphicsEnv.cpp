@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,14 @@
  * have any questions.
  */
 
-#include <windows.h>
-#include <jni.h>
 #include <awt.h>
 #include <sun_awt_Win32GraphicsEnvironment.h>
 #include "awt_Canvas.h"
 #include "awt_Win32GraphicsDevice.h"
 #include "Devices.h"
 #include "WindowsFlags.h"
-#include "dxInit.h"
+
+BOOL DWMIsCompositionEnabled();
 
 void initScreens(JNIEnv *env) {
 
@@ -39,8 +38,6 @@ void initScreens(JNIEnv *env) {
         JNU_ThrowInternalError(env, "Could not update the devices array.");
         return;
     }
-
-    InitDirectX();
 }
 
 /**
@@ -54,7 +51,7 @@ void initScreens(JNIEnv *env) {
 static void
 SetProcessDPIAwareProperty()
 {
-    typedef BOOL SetProcessDPIAwareFunc(void);
+    typedef BOOL (WINAPI SetProcessDPIAwareFunc)(void);
     static BOOL bAlreadySet = FALSE;
 
     // setHighDPIAware is set in WindowsFlags.cpp
@@ -64,7 +61,7 @@ SetProcessDPIAwareProperty()
 
     bAlreadySet = TRUE;
 
-    HINSTANCE hLibUser32Dll = ::LoadLibrary(TEXT("user32.dll"));
+    HMODULE hLibUser32Dll = ::LoadLibrary(TEXT("user32.dll"));
 
     if (hLibUser32Dll != NULL) {
         SetProcessDPIAwareFunc *lpSetProcessDPIAware =
@@ -75,6 +72,76 @@ SetProcessDPIAwareProperty()
         }
         ::FreeLibrary(hLibUser32Dll);
     }
+}
+
+#define DWM_COMP_UNDEFINED (~(TRUE|FALSE))
+static int dwmIsCompositionEnabled = DWM_COMP_UNDEFINED;
+
+/**
+ * This function is called from toolkit event handling code when
+ * WM_DWMCOMPOSITIONCHANGED event is received
+ */
+void DWMResetCompositionEnabled() {
+    dwmIsCompositionEnabled = DWM_COMP_UNDEFINED;
+    (void)DWMIsCompositionEnabled();
+}
+
+/**
+ * Returns true if dwm composition is enabled, false if it is not applicable
+ * (if the OS is not Vista) or dwm composition is disabled.
+ *
+ * Note: since DWM composition state changes are very rare we load/unload the
+ * dll on every change.
+ */
+BOOL DWMIsCompositionEnabled() {
+    typedef HRESULT (WINAPI DwmIsCompositionEnabledFunc)(BOOL*);
+
+    // cheaper to check than whether it's vista or not
+    if (dwmIsCompositionEnabled != DWM_COMP_UNDEFINED) {
+        return (BOOL)dwmIsCompositionEnabled;
+    }
+
+    if (!IS_WINVISTA) {
+        dwmIsCompositionEnabled = FALSE;
+        return FALSE;
+    }
+
+    BOOL bRes = FALSE;
+    HMODULE hDwmApiDll = ::LoadLibrary(TEXT("dwmapi.dll"));
+
+    if (hDwmApiDll != NULL) {
+        DwmIsCompositionEnabledFunc *lpDwmIsCompEnabled =
+            (DwmIsCompositionEnabledFunc*)
+                GetProcAddress(hDwmApiDll, "DwmIsCompositionEnabled");
+        if (lpDwmIsCompEnabled != NULL) {
+            BOOL bEnabled;
+            HRESULT res = lpDwmIsCompEnabled(&bEnabled);
+            if (SUCCEEDED(res)) {
+                bRes = bEnabled;
+                J2dTraceLn1(J2D_TRACE_VERBOSE, " composition enabled: %d",bRes);
+            } else {
+                J2dTraceLn1(J2D_TRACE_ERROR,
+                            "IsDWMCompositionEnabled: error %x when detecting"\
+                            "if composition is enabled", res);
+            }
+        } else {
+            J2dTraceLn(J2D_TRACE_ERROR,
+                       "IsDWMCompositionEnabled: no DwmIsCompositionEnabled() "\
+                       "in dwmapi.dll");
+        }
+        ::FreeLibrary(hDwmApiDll);
+    } else {
+        J2dTraceLn(J2D_TRACE_ERROR,
+                   "IsDWMCompositionEnabled: error opening dwmapi.dll");
+    }
+
+    dwmIsCompositionEnabled = bRes;
+
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNU_CallStaticMethodByName(env, NULL,
+                              "sun/awt/Win32GraphicsEnvironment",
+                              "dwmCompositionChanged", "(Z)V", (jboolean)bRes);
+    return bRes;
 }
 
 /*
@@ -88,6 +155,8 @@ Java_sun_awt_Win32GraphicsEnvironment_initDisplay(JNIEnv *env,
 {
     // This method needs to be called prior to any display-related activity
     SetProcessDPIAwareProperty();
+
+    DWMIsCompositionEnabled();
 
     initScreens(env);
 }
@@ -117,44 +186,6 @@ Java_sun_awt_Win32GraphicsEnvironment_getDefaultScreen(JNIEnv *env,
     return AwtWin32GraphicsDevice::GetDefaultDeviceIndex();
 }
 
-#define FR_PRIVATE 0x10 /* from wingdi.h */
-typedef int (WINAPI *AddFontResourceExType)(LPCTSTR,DWORD,VOID*);
-typedef int (WINAPI *RemoveFontResourceExType)(LPCTSTR,DWORD,VOID*);
-
-static AddFontResourceExType procAddFontResourceEx = NULL;
-static RemoveFontResourceExType procRemoveFontResourceEx = NULL;
-
-static int winVer = -1;
-
-static int getWinVer() {
-    if (winVer == -1) {
-        OSVERSIONINFO osvi;
-        osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-        GetVersionEx(&osvi);
-        winVer = osvi.dwMajorVersion;
-        if (winVer >= 5) {
-          // REMIND verify on 64 bit windows
-          HMODULE hGDI = LoadLibrary(TEXT("gdi32.dll"));
-          if (hGDI != NULL) {
-            procAddFontResourceEx =
-              (AddFontResourceExType)GetProcAddress(hGDI,"AddFontResourceExW");
-            if (procAddFontResourceEx == NULL) {
-              winVer = 0;
-            }
-            procRemoveFontResourceEx =
-              (RemoveFontResourceExType)GetProcAddress(hGDI,
-                                                      "RemoveFontResourceExW");
-            if (procRemoveFontResourceEx == NULL) {
-              winVer = 0;
-            }
-            FreeLibrary(hGDI);
-          }
-        }
-    }
-
-    return winVer;
-}
-
 /*
  * Class:     sun_awt_Win32GraphicsEnvironment
  * Method:    registerFontWithPlatform
@@ -165,9 +196,10 @@ Java_sun_awt_Win32GraphicsEnvironment_registerFontWithPlatform(JNIEnv *env,
                                                               jclass cl,
                                                               jstring fontName)
 {
-    if (getWinVer() >= 5 && procAddFontResourceEx != NULL) {
-      LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, NULL);
-      (*procAddFontResourceEx)(file, FR_PRIVATE, NULL);
+    LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, JNI_FALSE);
+    if (file) {
+        ::AddFontResourceEx(file, FR_PRIVATE, NULL);
+        JNU_ReleaseStringPlatformChars(env, fontName, file);
     }
 }
 
@@ -184,9 +216,10 @@ Java_sun_awt_Win32GraphicsEnvironment_deRegisterFontWithPlatform(JNIEnv *env,
                                                               jclass cl,
                                                               jstring fontName)
 {
-    if (getWinVer() >= 5 && procRemoveFontResourceEx != NULL) {
-      LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, NULL);
-      (*procRemoveFontResourceEx)(file, FR_PRIVATE, NULL);
+    LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, JNI_FALSE);
+    if (file) {
+        ::RemoveFontResourceEx(file, FR_PRIVATE, NULL);
+        JNU_ReleaseStringPlatformChars(env, fontName, file);
     }
 }
 
@@ -305,4 +338,15 @@ Java_sun_awt_Win32GraphicsEnvironment_getYResolution(JNIEnv *env, jobject wge)
     return result;
 
     CATCH_BAD_ALLOC_RET(0);
+}
+
+/*
+ * Class:     sun_awt_Win32GraphicsEnvironment
+ * Method:    isVistaOS
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_sun_awt_Win32GraphicsEnvironment_isVistaOS
+  (JNIEnv *env, jclass wgeclass)
+{
+    return IS_WINVISTA;
 }

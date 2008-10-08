@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1640,6 +1640,13 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XdbeSwapBuffers
 {
     AWT_CHECK_HAVE_LOCK();
     return XdbeSwapBuffers((Display*) jlong_to_ptr(display), (XdbeSwapInfo *) jlong_to_ptr(swap_info), num_windows);
+}
+JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XQueryKeymap
+(JNIEnv *env, jclass clazz, jlong display, jlong vector)
+{
+
+    AWT_CHECK_HAVE_LOCK();
+    XQueryKeymap( (Display *) jlong_to_ptr(display), (char *) jlong_to_ptr(vector));
 }
 
 JNIEXPORT jlong JNICALL

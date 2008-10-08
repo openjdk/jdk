@@ -490,8 +490,7 @@ class QueryParser {
                 }
                 AttributeValueExp alhs = (AttributeValueExp) lhs;
                 StringValueExp sve = stringvalue();
-                String s = sve.getValue();
-                q = Query.match(alhs, patternValueExp(s));
+                q = Query.match(alhs, sve);
                 break;
             }
 
@@ -623,41 +622,5 @@ class QueryParser {
         if (!(t instanceof StringLit))
             throw new IllegalArgumentException("Expected string: " + t);
         return Query.value(t.string);
-    }
-
-    // Convert the SQL pattern syntax, using % and _, to the Query.match
-    // syntax, using * and ?.  The tricky part is recognizing \% and
-    // \_ as literal values, and also not replacing them inside [].
-    // But Query.match does not recognize \ inside [], which makes our
-    // job a tad easier.
-    private StringValueExp patternValueExp(String s) {
-        int c;
-        for (int i = 0; i < s.length(); i += Character.charCount(c)) {
-            c = s.codePointAt(i);
-            switch (c) {
-                case '\\':
-                    i++;  // i += Character.charCount(c), but we know it's 1!
-                    if (i >= s.length())
-                        throw new IllegalArgumentException("\\ at end of pattern");
-                    break;
-                case '[':
-                    i = s.indexOf(']', i);
-                    if (i < 0)
-                        throw new IllegalArgumentException("[ without ]");
-                    break;
-                case '%':
-                    s = s.substring(0, i) + "*" + s.substring(i + 1);
-                    break;
-                case '_':
-                    s = s.substring(0, i) + "?" + s.substring(i + 1);
-                    break;
-                case '*':
-                case '?':
-                    s = s.substring(0, i) + '\\' + (char) c + s.substring(i + 1);
-                    i++;
-                    break;
-            }
-        }
-        return Query.value(s);
     }
 }

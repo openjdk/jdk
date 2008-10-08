@@ -39,7 +39,6 @@ public interface WindowPeer extends ContainerPeer {
     void toBack();
     void setAlwaysOnTop(boolean alwaysOnTop);
     void updateFocusableWindowState();
-    boolean requestWindowFocus();
     void setModalBlocked(Dialog blocker, boolean blocked);
     void updateMinimumSize();
     void updateIconImages();

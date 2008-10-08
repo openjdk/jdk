@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,7 +219,7 @@ public abstract class OpenType<T> implements Serializable {
         });
     }
 
-    private static String validClassName(String className) throws OpenDataException {
+    static String validClassName(String className) throws OpenDataException {
         className   = valid("className", className);
 
         // Check if className describes an array class, and determines its elements' class name.

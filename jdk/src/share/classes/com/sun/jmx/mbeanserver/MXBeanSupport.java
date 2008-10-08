@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import javax.management.JMX;
 import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
+import javax.management.openmbean.MXBeanMappingFactory;
+import javax.management.openmbean.MXBeanMappingFactoryClass;
 
 /**
  * Base class for MXBeans.
@@ -61,14 +63,16 @@ public class MXBeanSupport extends MBeanSupport<ConvertingMethod> {
        if it does not implement the class {@code mxbeanInterface} or if
        that class is not a valid MXBean interface.
     */
-    public <T> MXBeanSupport(T resource, Class<T> mxbeanInterface)
+    public <T> MXBeanSupport(T resource, Class<T> mxbeanInterface,
+                             MXBeanMappingFactory mappingFactory)
             throws NotCompliantMBeanException {
-        super(resource, mxbeanInterface);
+        super(resource, mxbeanInterface, mappingFactory);
     }
 
     @Override
-    MBeanIntrospector<ConvertingMethod> getMBeanIntrospector() {
-        return MXBeanIntrospector.getInstance();
+    MBeanIntrospector<ConvertingMethod>
+            getMBeanIntrospector(MXBeanMappingFactory mappingFactory) {
+        return MXBeanIntrospector.getInstance(mappingFactory);
     }
 
     @Override
@@ -76,8 +80,7 @@ public class MXBeanSupport extends MBeanSupport<ConvertingMethod> {
         return mxbeanLookup;
     }
 
-    static Class<?> findMXBeanInterface(Class<?> resourceClass)
-        throws IllegalArgumentException {
+    static <T> Class<? super T> findMXBeanInterface(Class<T> resourceClass) {
         if (resourceClass == null)
             throw new IllegalArgumentException("Null resource class");
         final Set<Class<?>> intfs = transitiveInterfaces(resourceClass);
@@ -104,7 +107,7 @@ public class MXBeanSupport extends MBeanSupport<ConvertingMethod> {
             throw new IllegalArgumentException(msg);
         }
         if (candidates.iterator().hasNext()) {
-            return candidates.iterator().next();
+            return Util.cast(candidates.iterator().next());
         } else {
             final String msg =
                 "Class " + resourceClass.getName() +
@@ -116,7 +119,7 @@ public class MXBeanSupport extends MBeanSupport<ConvertingMethod> {
     /* Return all interfaces inherited by this class, directly or
      * indirectly through the parent class and interfaces.
      */
-    private static Set<Class<?>> transitiveInterfaces(Class c) {
+    private static Set<Class<?>> transitiveInterfaces(Class<?> c) {
         Set<Class<?>> set = newSet();
         transitiveInterfaces(c, set);
         return set;
@@ -127,7 +130,7 @@ public class MXBeanSupport extends MBeanSupport<ConvertingMethod> {
         if (c.isInterface())
             intfs.add(c);
         transitiveInterfaces(c.getSuperclass(), intfs);
-        for (Class sup : c.getInterfaces())
+        for (Class<?> sup : c.getInterfaces())
             transitiveInterfaces(sup, intfs);
     }
 
@@ -157,13 +160,8 @@ public class MXBeanSupport extends MBeanSupport<ConvertingMethod> {
         // eventually we could have some logic to supply a default name
 
         synchronized (lock) {
-            if (this.objectName != null) {
-                final String msg =
-                    "MXBean already registered with name " + this.objectName;
-                throw new InstanceAlreadyExistsException(msg);
-            }
-            this.mxbeanLookup = MXBeanLookup.lookupFor(server);
-            this.mxbeanLookup.addReference(name, getResource());
+            this.mxbeanLookup = MXBeanLookup.Plain.lookupFor(server);
+            this.mxbeanLookup.addReference(name, getWrappedObject());
             this.objectName = name;
         }
     }
@@ -171,12 +169,20 @@ public class MXBeanSupport extends MBeanSupport<ConvertingMethod> {
     @Override
     public void unregister() {
         synchronized (lock) {
-            if (mxbeanLookup.removeReference(objectName, getResource()))
-                objectName = null;
+            if (mxbeanLookup != null) {
+                if (mxbeanLookup.removeReference(objectName, getWrappedObject()))
+                    objectName = null;
+            }
+            // XXX: need to revisit the whole register/unregister logic in
+            // the face of wrapping.  The mxbeanLookup!=null test is a hack.
+            // If you wrap an MXBean in a MyWrapperMBean and register it,
+            // the lookup table should contain the wrapped object.  But that
+            // implies that MyWrapperMBean calls register, which today it
+            // can't within the public API.
         }
     }
+    private final Object lock = new Object(); // for mxbeanLookup and objectName
 
-    private Object lock = new Object(); // for mxbeanLookup and objectName
-    private MXBeanLookup mxbeanLookup;
+    private MXBeanLookup.Plain mxbeanLookup;
     private ObjectName objectName;
 }

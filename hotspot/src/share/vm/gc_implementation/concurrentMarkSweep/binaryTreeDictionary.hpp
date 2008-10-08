@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,7 @@ class TreeChunk : public FreeChunk {
 const size_t MIN_TREE_CHUNK_SIZE  = sizeof(TreeChunk)/HeapWordSize;
 
 class BinaryTreeDictionary: public FreeBlockDictionary {
+  friend class VMStructs;
   bool       _splay;
   size_t     _totalSize;
   size_t     _totalFreeBlocks;

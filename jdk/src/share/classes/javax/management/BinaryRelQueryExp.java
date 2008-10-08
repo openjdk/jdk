@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,6 +192,7 @@ class BinaryRelQueryExp extends QueryEval implements QueryExp {
         return "(" + exp1 + ") " + relOpString() + " (" + exp2 + ")";
     }
 
+    @Override
     String toQueryString() {
         return exp1 + " " + relOpString() + " " + exp2;
     }

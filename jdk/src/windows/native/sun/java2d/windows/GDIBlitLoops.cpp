@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
  * have any questions.
  */
 
+#include "awt.h"
 #include <sun_java2d_windows_GDIBlitLoops.h>
 #include "gdefs.h"
-#include "ddrawUtils.h"
 #include "Trace.h"
+#include "GDIWindowSurfaceData.h"
 
 static RGBQUAD *byteGrayPalette = NULL;
 
@@ -60,7 +61,7 @@ Java_sun_java2d_windows_GDIBlitLoops_nativeBlit
 
     SurfaceDataRasInfo srcInfo;
     SurfaceDataOps *srcOps = SurfaceData_GetOps(env, srcData);
-    Win32SDOps *dstOps = Win32SurfaceData_GetOps(env, dstData);
+    GDIWinSDOps *dstOps = GDIWindowSurfaceData_GetOps(env, dstData);
     jint lockFlags;
 
     srcInfo.bounds.x1 = srcx;

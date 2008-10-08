@@ -161,8 +161,6 @@ public:
     virtual MsgRouting WmClose();
     virtual MsgRouting WmDestroy();
     virtual MsgRouting WmShowWindow(BOOL show, UINT status);
-    virtual MsgRouting WmDDEnterFullScreen(HMONITOR monitor);
-    virtual MsgRouting WmDDExitFullScreen(HMONITOR monitor);
     virtual MsgRouting WmGetMinMaxInfo(LPMINMAXINFO lpmmi);
     virtual MsgRouting WmMove(int x, int y);
     virtual MsgRouting WmSize(UINT type, int w, int h);

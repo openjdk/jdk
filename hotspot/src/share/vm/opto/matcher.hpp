@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ class Matcher : public PhaseTransform {
   void ReduceOper( State *s, int newrule, Node *&mem, MachNode *mach );
 
   // If this node already matched using "rule", return the MachNode for it.
-  MachNode* find_shared_constant(Node* con, uint rule);
+  MachNode* find_shared_node(Node* n, uint rule);
 
   // Convert a dense opcode number to an expanded rule number
   const int *_reduceOp;
@@ -81,9 +81,10 @@ class Matcher : public PhaseTransform {
 
   Node_List &_proj_list;        // For Machine nodes killing many values
 
-  Node_Array _shared_constants;
+  Node_Array _shared_nodes;
 
   debug_only(Node_Array _old2new_map;)   // Map roots of ideal-trees to machine-roots
+  debug_only(Node_Array _new2old_map;)   // Maps machine nodes back to ideal
 
   // Accessors for the inherited field PhaseTransform::_nodes:
   void   grow_new_node_array(uint idx_limit) {
@@ -104,6 +105,8 @@ class Matcher : public PhaseTransform {
 #ifdef ASSERT
   // Make sure only new nodes are reachable from this node
   void verify_new_nodes_only(Node* root);
+
+  Node* _mem_node;   // Ideal memory node consumed by mach node
 #endif
 
 public:
@@ -388,5 +391,9 @@ public:
 
 #ifdef ASSERT
   void dump_old2new_map();      // machine-independent to machine-dependent
+
+  Node* find_old_node(Node* new_node) {
+    return _new2old_map[new_node->_idx];
+  }
 #endif
 };

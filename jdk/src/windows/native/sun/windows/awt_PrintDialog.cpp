@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
  * have any questions.
  */
 
+#include "awt.h"
 #include "awt_PrintDialog.h"
 #include "awt_Dialog.h"
 #include "awt_PrintControl.h"
-#include "awt_dlls.h"
 #include "awt_Window.h"
 #include "ComCtl32Util.h"
 #include <sun_awt_windows_WPrintDialog.h>
@@ -39,11 +39,9 @@ jmethodID AwtPrintDialog::setHWndMID;
 
 BOOL
 AwtPrintDialog::PrintDlg(LPPRINTDLG data) {
-    AwtCommDialog::load_comdlg_procs();
     return static_cast<BOOL>(reinterpret_cast<INT_PTR>(
         AwtToolkit::GetInstance().InvokeFunction(
-            reinterpret_cast<void *(*)(void *)>(AwtCommDialog::PrintDlgWrapper),
-            data)));
+            reinterpret_cast<void *(*)(void *)>(::PrintDlg), data)));
 }
 
 LRESULT CALLBACK PrintDialogWndProc(HWND hWnd, UINT message,

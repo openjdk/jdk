@@ -1,0 +1,2 @@
+split("name", "BoxLock");
+split("name", "(Con.*)|(loadCon.*)");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,16 +203,18 @@ public class SystemTray {
      * functionality is supported for the current platform
      */
     public static boolean isSupported() {
-        initializeSystemTrayIfNeeded();
-
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-
         if (toolkit instanceof SunToolkit) {
+            // connecting tray to native resource
+            initializeSystemTrayIfNeeded();
             return ((SunToolkit)toolkit).isTraySupported();
         } else if (toolkit instanceof HeadlessToolkit) {
+            // skip initialization as the init routine
+            // throws HeadlessException
             return ((HeadlessToolkit)toolkit).isTraySupported();
+        } else {
+            return false;
         }
-        return false;
     }
 
     /**
@@ -476,7 +478,12 @@ public class SystemTray {
 
     synchronized void addNotify() {
         if (peer == null) {
-            peer = ((SunToolkit)Toolkit.getDefaultToolkit()).createSystemTray(this);
+            Toolkit toolkit = Toolkit.getDefaultToolkit();
+            if (toolkit instanceof SunToolkit) {
+                peer = ((SunToolkit)Toolkit.getDefaultToolkit()).createSystemTray(this);
+            } else if (toolkit instanceof HeadlessToolkit) {
+                peer = ((HeadlessToolkit)Toolkit.getDefaultToolkit()).createSystemTray(this);
+            }
         }
     }
 

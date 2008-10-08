@@ -39,23 +39,4 @@ public interface TextAreaPeer extends TextComponentPeer {
     Dimension getPreferredSize(int rows, int columns);
     Dimension getMinimumSize(int rows, int columns);
 
-    /**
-     * DEPRECATED:  Replaced by insert(String, int).
-     */
-    void insertText(String txt, int pos);
-
-    /**
-     * DEPRECATED:  Replaced by ReplaceRange(String, int, int).
-     */
-    void replaceText(String txt, int start, int end);
-
-    /**
-     * DEPRECATED:  Replaced by getPreferredSize(int, int).
-     */
-    Dimension preferredSize(int rows, int cols);
-
-    /**
-     * DEPRECATED:  Replaced by getMinimumSize(int, int).
-     */
-    Dimension minimumSize(int rows, int cols);
 }

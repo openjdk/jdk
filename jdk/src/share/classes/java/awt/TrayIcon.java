@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.EventListener;
 import java.awt.peer.TrayIconPeer;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
+import sun.awt.HeadlessToolkit;
 import java.util.EventObject;
 
 /**
@@ -659,7 +660,12 @@ public class TrayIcon {
     {
         synchronized (this) {
             if (peer == null) {
-                peer = ((SunToolkit)Toolkit.getDefaultToolkit()).createTrayIcon(this);
+                Toolkit toolkit = Toolkit.getDefaultToolkit();
+                if (toolkit instanceof SunToolkit) {
+                    peer = ((SunToolkit)Toolkit.getDefaultToolkit()).createTrayIcon(this);
+                } else if (toolkit instanceof HeadlessToolkit) {
+                    peer = ((HeadlessToolkit)Toolkit.getDefaultToolkit()).createTrayIcon(this);
+                }
             }
         }
         peer.setToolTip(tooltip);

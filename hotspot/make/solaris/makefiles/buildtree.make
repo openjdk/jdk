@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -340,7 +340,7 @@ JAVA_FLAG/64 = -d64
 WRONG_DATA_MODE_MSG = \
 	echo "JAVA_HOME must point to $(DATA_MODE)bit JDK."
 
-test_gamma:  $(BUILDTREE_MAKE)
+test_gamma:  $(BUILDTREE_MAKE) $(GAMMADIR)/make/test/Queens.java
 	@echo Creating $@ ...
 	$(QUIETLY) ( \
 	echo '#!/bin/ksh'; \
@@ -351,7 +351,8 @@ test_gamma:  $(BUILDTREE_MAKE)
 	echo "then"; \
 	echo "  $(WRONG_DATA_MODE_MSG); exit 0;"; \
 	echo "fi"; \
-	echo 'CLASSPATH="$(GAMMADIR)/make/$(OS_FAMILY):$$CLASSPATH"'; \
+	echo "rm -f Queens.class"; \
+	echo "\$${JAVA_HOME}/bin/javac -d . $(GAMMADIR)/make/test/Queens.java"; \
 	echo '[ -f gamma_g ] && { gamma=gamma_g; }'; \
 	echo './$${gamma:-gamma} $(TESTFLAGS) Queens < /dev/null'; \
 	) > $@

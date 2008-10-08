@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -320,9 +320,9 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
 
 // Search the last value stored into the object's field.
 Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, Node *alloc) {
-  assert(adr_t->is_instance_field(), "instance required");
-  uint instance_id = adr_t->instance_id();
-  assert(instance_id == alloc->_idx, "wrong allocation");
+  assert(adr_t->is_known_instance_field(), "instance required");
+  int instance_id = adr_t->instance_id();
+  assert((uint)instance_id == alloc->_idx, "wrong allocation");
 
   int alias_idx = C->get_alias_index(adr_t);
   int offset = adr_t->offset();
@@ -354,7 +354,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, BasicType ft, const Type 
       const TypeOopPtr* atype = mem->as_Store()->adr_type()->isa_oopptr();
       assert(atype != NULL, "address type must be oopptr");
       assert(C->get_alias_index(atype) == alias_idx &&
-             atype->is_instance_field() && atype->offset() == offset &&
+             atype->is_known_instance_field() && atype->offset() == offset &&
              atype->instance_id() == instance_id, "store is correct memory slice");
       done = true;
     } else if (mem->is_Phi()) {
@@ -458,7 +458,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
         }
       } else if (use->is_SafePoint()) {
         SafePointNode* sfpt = use->as_SafePoint();
-        if (sfpt->has_non_debug_use(res)) {
+        if (sfpt->is_Call() && sfpt->as_Call()->has_non_debug_use(res)) {
           // Object is passed as argument.
           DEBUG_ONLY(disq_node = use;)
           NOT_PRODUCT(fail_eliminate = "Object is passed as argument";)
@@ -598,7 +598,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
           field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
         }
         if (UseCompressedOops) {
-          field_type = field_type->is_oopptr()->make_narrowoop();
+          field_type = field_type->make_narrowoop();
           basic_elem_type = T_NARROWOOP;
         }
       } else {
@@ -666,9 +666,11 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
       if (UseCompressedOops && field_type->isa_narrowoop()) {
         // Enable "DecodeN(EncodeP(Allocate)) --> Allocate" transformation
         // to be able scalar replace the allocation.
-        _igvn.set_delay_transform(false);
-        field_val = DecodeNNode::decode(&_igvn, field_val);
-        _igvn.set_delay_transform(true);
+        if (field_val->is_EncodeP()) {
+          field_val = field_val->in(1);
+        } else {
+          field_val = transform_later(new (C, 2) DecodeNNode(field_val, field_val->bottom_type()->make_ptr()));
+        }
       }
       sfpt->add_req(field_val);
     }
@@ -1282,12 +1284,6 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
   }
   rawmem = make_store(control, rawmem, object, oopDesc::mark_offset_in_bytes(), mark_node, T_ADDRESS);
 
-  if (UseCompressedOops) {
-    Node *zeronode = makecon(TypeInt::ZERO);
-    // store uncompressed 0 into klass ptr to zero out gap.  The gap is
-    // used for primitive fields and has to be zeroed.
-    rawmem = make_store(control, rawmem, object, oopDesc::klass_gap_offset_in_bytes(), zeronode, T_INT);
-  }
   rawmem = make_store(control, rawmem, object, oopDesc::klass_offset_in_bytes(), klass_node, T_OBJECT);
   int header_size = alloc->minimum_header_size();  // conservatively small
 
@@ -1680,7 +1676,14 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         success = eliminate_locking_node(n->as_AbstractLock());
         break;
       default:
-        assert(false, "unknown node type in macro list");
+        if (n->Opcode() == Op_Opaque1 || n->Opcode() == Op_Opaque2) {
+          _igvn.add_users_to_worklist(n);
+          _igvn.hash_delete(n);
+          _igvn.subsume_node(n, n->in(1));
+          success = true;
+        } else {
+          assert(false, "unknown node type in macro list");
+        }
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;

@@ -4,7 +4,7 @@
  * @summary Verify that an inner class cannot have the same simple name as an enclosing one.
  * @author William Maddox (maddox)
  *
- * @run shell NestedInnerClassNames.sh
+ * @compile/fail/ref=NestedInnerClassNames.out -XDrawDiagnostics -XDstdout NestedInnerClassNames.java
  */
 
 /*

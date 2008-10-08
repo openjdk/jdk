@@ -82,7 +82,7 @@ public class ThrowsTaglet extends BaseExecutableMemberTaglet
      * Add links for exceptions that are declared but not documented.
      */
     private TagletOutput linkToUndocumentedDeclaredExceptions(
-            Type[] declaredExceptionTypes, Set alreadyDocumented,
+            Type[] declaredExceptionTypes, Set<String> alreadyDocumented,
             TagletWriter writer) {
         TagletOutput result = writer.getOutputInstance();
         //Add links to the exceptions declared but not documented.
@@ -107,11 +107,11 @@ public class ThrowsTaglet extends BaseExecutableMemberTaglet
      * documented.
      */
     private TagletOutput inheritThrowsDocumentation(Doc holder,
-            Type[] declaredExceptionTypes, Set alreadyDocumented,
+            Type[] declaredExceptionTypes, Set<String> alreadyDocumented,
             TagletWriter writer) {
         TagletOutput result = writer.getOutputInstance();
         if (holder instanceof MethodDoc) {
-            Set declaredExceptionTags = new LinkedHashSet();
+            Set<Tag> declaredExceptionTags = new LinkedHashSet<Tag>();
             for (int j = 0; j < declaredExceptionTypes.length; j++) {
                 DocFinder.Output inheritedDoc =
                     DocFinder.search(new DocFinder.Input((MethodDoc) holder, this,
@@ -124,7 +124,7 @@ public class ThrowsTaglet extends BaseExecutableMemberTaglet
                 declaredExceptionTags.addAll(inheritedDoc.tagList);
             }
             result.appendOutput(throwsTagsOutput(
-                (ThrowsTag[]) declaredExceptionTags.toArray(new ThrowsTag[] {}),
+                declaredExceptionTags.toArray(new ThrowsTag[] {}),
                 writer, alreadyDocumented, false));
         }
         return result;
@@ -137,7 +137,7 @@ public class ThrowsTaglet extends BaseExecutableMemberTaglet
         ExecutableMemberDoc execHolder = (ExecutableMemberDoc) holder;
         ThrowsTag[] tags = execHolder.throwsTags();
         TagletOutput result = writer.getOutputInstance();
-        HashSet alreadyDocumented = new HashSet();
+        HashSet<String> alreadyDocumented = new HashSet<String>();
         if (tags.length > 0) {
             result.appendOutput(throwsTagsOutput(
                 execHolder.throwsTags(), writer, alreadyDocumented, true));
@@ -161,7 +161,7 @@ public class ThrowsTaglet extends BaseExecutableMemberTaglet
      * @return the TagletOutput representation of this <code>Tag</code>.
      */
     protected TagletOutput throwsTagsOutput(ThrowsTag[] throwTags,
-        TagletWriter writer, Set alreadyDocumented, boolean allowDups) {
+        TagletWriter writer, Set<String> alreadyDocumented, boolean allowDups) {
         TagletOutput result = writer.getOutputInstance();
         if (throwTags.length > 0) {
             for (int i = 0; i < throwTags.length; ++i) {

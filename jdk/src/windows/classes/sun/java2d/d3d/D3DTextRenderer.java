@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,51 +25,47 @@
 
 package sun.java2d.d3d;
 
-import java.awt.AlphaComposite;
+import java.awt.Composite;
 import sun.font.GlyphList;
 import sun.java2d.SunGraphics2D;
-import sun.java2d.SurfaceData;
 import sun.java2d.loops.GraphicsPrimitive;
-import sun.java2d.pipe.GlyphListPipe;
-import sun.java2d.pipe.Region;
+import sun.java2d.pipe.BufferedTextPipe;
+import sun.java2d.pipe.RenderQueue;
 
-public class D3DTextRenderer extends GlyphListPipe {
+class D3DTextRenderer extends BufferedTextPipe {
 
-    protected native void doDrawGlyphList(long pData, long pCtx,
-                                          Region clip, GlyphList gl);
-
-    protected void drawGlyphList(SunGraphics2D sg2d, GlyphList gl) {
-        AlphaComposite comp = (AlphaComposite)sg2d.composite;
-        // We can only get here if the comp is Src or SrcOver (see
-        // pipeline validation in D3DSurfaceData, so we force
-        // it to be SrcOver.
-        if (comp.getRule() != AlphaComposite.SRC_OVER) {
-            comp = AlphaComposite.SrcOver;
-        }
-
-        synchronized (D3DContext.LOCK) {
-            SurfaceData dstData = sg2d.surfaceData;
-            long pCtx = D3DContext.getContext(dstData, dstData,
-                                              sg2d.getCompClip(), comp,
-                                              null, sg2d.eargb,
-                                              D3DContext.NO_CONTEXT_FLAGS);
-
-            doDrawGlyphList(dstData.getNativeOps(), pCtx,
-                            sg2d.getCompClip(), gl);
-        }
+    D3DTextRenderer(RenderQueue rq) {
+        super(rq);
     }
 
-    public D3DTextRenderer traceWrap() {
-        return new Tracer();
+    @Override
+    protected native void drawGlyphList(int numGlyphs, boolean usePositions,
+                                        boolean subPixPos, boolean rgbOrder,
+                                        int lcdContrast,
+                                        float glOrigX, float glOrigY,
+                                        long[] images, float[] positions);
+
+    @Override
+    protected void validateContext(SunGraphics2D sg2d, Composite comp) {
+        // assert rq.lock.isHeldByCurrentThread();
+        D3DSurfaceData d3dDst = (D3DSurfaceData)sg2d.surfaceData;
+        D3DContext.validateContext(d3dDst, d3dDst,
+                                   sg2d.getCompClip(), comp,
+                                   null, sg2d.paint, sg2d,
+                                   D3DContext.NO_CONTEXT_FLAGS);
     }
 
-    public static class Tracer extends D3DTextRenderer {
-        @Override
-        protected void doDrawGlyphList(long pData, long pCtx,
-                                       Region clip, GlyphList gl)
-        {
+    D3DTextRenderer traceWrap() {
+        return new Tracer(this);
+    }
+
+    private static class Tracer extends D3DTextRenderer {
+        Tracer(D3DTextRenderer d3dtr) {
+            super(d3dtr.rq);
+        }
+        protected void drawGlyphList(SunGraphics2D sg2d, GlyphList gl) {
             GraphicsPrimitive.tracePrimitive("D3DDrawGlyphs");
-            super.doDrawGlyphList(pData, pCtx, clip, gl);
+            super.drawGlyphList(sg2d, gl);
         }
     }
 }

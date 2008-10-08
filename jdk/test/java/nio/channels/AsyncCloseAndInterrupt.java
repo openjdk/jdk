@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4460583 4470470 4840199 6419424
+ * @bug 4460583 4470470 4840199 6419424 6710579 6596323
  * @summary Comprehensive test of asynchronous closing and interruption
  * @author Mark Reinhold
  */
@@ -582,7 +582,7 @@ public class AsyncCloseAndInterrupt {
             log.println("WARNING: transferFrom/close not tested");
             return;
         }
-        if ((op == TRANSFER_TO) && TestUtil.onSolaris()) {
+        if ((op == TRANSFER_TO) && !TestUtil.onWindows()) {
             log.println("WARNING: transferTo/close not tested");
             return;
         }

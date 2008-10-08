@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.file.BaseFileObject;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
 
@@ -1055,7 +1056,7 @@ public class ClassReader extends ClassFile implements Completer {
     void readClassAttr(ClassSymbol c, Name attrName, int attrLen) {
         if (attrName == names.SourceFile) {
             Name n = readName(nextChar());
-            c.sourcefile = new SourceFileObject(n);
+            c.sourcefile = new SourceFileObject(n, c.flatname);
         } else if (attrName == names.InnerClasses) {
             readInnerClasses(c);
         } else if (allowGenerics && attrName == names.Signature) {
@@ -2220,9 +2221,12 @@ public class ClassReader extends ClassFile implements Completer {
         /** The file's name.
          */
         private Name name;
+        private Name flatname;
 
-        public SourceFileObject(Name name) {
+        public SourceFileObject(Name name, Name flatname) {
+            super(null); // no file manager; never referenced for this file object
             this.name = name;
+            this.flatname = flatname;
         }
 
         public InputStream openInputStream() {
@@ -2284,5 +2288,9 @@ public class ClassReader extends ClassFile implements Completer {
             throw new UnsupportedOperationException();
         }
 
+        @Override
+        protected String inferBinaryName(Iterable<? extends File> path) {
+            return flatname.toString();
+        }
     }
 }

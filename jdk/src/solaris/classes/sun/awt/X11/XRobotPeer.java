@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,11 +81,16 @@ class XRobotPeer implements RobotPeer {
         return pixelArray;
     }
 
+    public int getNumberOfButtons(){
+        return getNumberOfButtonsImpl();
+    }
+
     private static native synchronized void setup();
 
     private static native synchronized void mouseMoveImpl(X11GraphicsConfig xgc, int x, int y);
     private static native synchronized void mousePressImpl(int buttons);
     private static native synchronized void mouseReleaseImpl(int buttons);
+    private static native synchronized int getNumberOfButtonsImpl();
     private static native synchronized void mouseWheelImpl(int wheelAmt);
 
     private static native synchronized void keyPressImpl(int keycode);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,7 +301,11 @@ public class Types {
                 : isSubtypeUnchecked(elemtype(t), elemtype(s), warn);
         } else if (isSubtype(t, s)) {
             return true;
-        } else if (!s.isRaw()) {
+        }
+        else if (t.tag == TYPEVAR) {
+            return isSubtypeUnchecked(t.getUpperBound(), s, warn);
+        }
+        else if (!s.isRaw()) {
             Type t2 = asSuper(t, s.tsym);
             if (t2 != null && t2.isRaw()) {
                 if (isReifiable(s))

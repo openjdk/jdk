@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package sun.awt.shell;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.*;
-import javax.swing.SwingConstants;
 
 /**
  * @author Michael Martak
@@ -36,10 +34,6 @@ import javax.swing.SwingConstants;
  */
 
 class ShellFolderManager {
-    private static final String COLUMN_NAME = "FileChooser.fileNameHeaderText";
-    private static final String COLUMN_SIZE = "FileChooser.fileSizeHeaderText";
-    private static final String COLUMN_DATE = "FileChooser.fileDateHeaderText";
-
     /**
      * Create a shell folder from a file.
      * Override to return machine-dependent behavior.
@@ -107,142 +101,4 @@ class ShellFolderManager {
         }
         return (dir.getParentFile() == null);
     }
-
-    public void sortFiles(List files) {
-        Collections.sort(files, fileComparator);
-    }
-
-    private Comparator fileComparator = new Comparator() {
-        public int compare(Object a, Object b) {
-            return compare((File)a, (File)b);
-        }
-
-        public int compare(File f1, File f2) {
-            ShellFolder sf1 = null;
-            ShellFolder sf2 = null;
-
-            if (f1 instanceof ShellFolder) {
-                sf1 = (ShellFolder)f1;
-                if (sf1.isFileSystem()) {
-                    sf1 = null;
-                }
-            }
-            if (f2 instanceof ShellFolder) {
-                sf2 = (ShellFolder)f2;
-                if (sf2.isFileSystem()) {
-                    sf2 = null;
-                }
-            }
-
-            if (sf1 != null && sf2 != null) {
-                return sf1.compareTo(sf2);
-            } else if (sf1 != null) {
-                return -1;      // Non-file shellfolders sort before files
-            } else if (sf2 != null) {
-                return 1;
-            } else {
-                String name1 = f1.getName();
-                String name2 = f2.getName();
-
-                // First ignore case when comparing
-                int diff = name1.toLowerCase().compareTo(name2.toLowerCase());
-                if (diff != 0) {
-                    return diff;
-                } else {
-                    // May differ in case (e.g. "mail" vs. "Mail")
-                    // We need this test for consistent sorting
-                    return name1.compareTo(name2);
-                }
-            }
-        }
-    };
-
-    public ShellFolderColumnInfo[] getFolderColumns(File dir) {
-        ShellFolderColumnInfo[] columns = null;
-
-        if (dir instanceof ShellFolder) {
-            columns = ((ShellFolder)dir).getFolderColumns();
-        }
-
-        if (columns == null) {
-            columns = new ShellFolderColumnInfo[]{
-                new ShellFolderColumnInfo(COLUMN_NAME, 150,
-                        SwingConstants.LEADING, true, null,
-                        fileComparator),
-                new ShellFolderColumnInfo(COLUMN_SIZE, 75,
-                        SwingConstants.RIGHT, true, null,
-                        ComparableComparator.getInstance(), true),
-                new ShellFolderColumnInfo(COLUMN_DATE, 130,
-                        SwingConstants.LEADING, true, null,
-                        ComparableComparator.getInstance(), true)
-            };
-        }
-
-        return columns;
-    }
-
-    public Object getFolderColumnValue(File file, int column) {
-        if (file instanceof ShellFolder) {
-            Object value = ((ShellFolder)file).getFolderColumnValue(column);
-            if (value != null) {
-                return value;
-            }
-        }
-
-        if (file == null || !file.exists()) {
-            return null;
-        }
-
-        switch (column) {
-            case 0:
-                // By default, file name will be rendered using getSystemDisplayName()
-                return file;
-
-            case 1: // size
-                return file.isDirectory() ? null : new Long(file.length());
-
-            case 2: // date
-                if (isFileSystemRoot(file)) {
-                    return null;
-                }
-                long time = file.lastModified();
-                return (time == 0L) ? null : new Date(time);
-
-            default:
-                return null;
-        }
-    }
-
-    /**
-     * This class provides a default comparator for the default column set
-     */
-    private static class ComparableComparator implements Comparator {
-        private static Comparator instance;
-
-        public static Comparator getInstance() {
-            if (instance == null) {
-                instance = new ComparableComparator();
-            }
-            return instance;
-        }
-
-        public int compare(Object o1, Object o2) {
-            int gt;
-
-            if (o1 == null && o2 == null) {
-                gt = 0;
-            } else if (o1 != null && o2 == null) {
-                gt = 1;
-            } else if (o1 == null && o2 != null) {
-                gt = -1;
-            } else if (o1 instanceof Comparable) {
-                gt = ((Comparable) o1).compareTo(o2);
-            } else {
-                gt = 0;
-            }
-
-            return gt;
-        }
-    }
-
 }

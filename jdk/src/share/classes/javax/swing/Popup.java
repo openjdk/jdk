@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 package javax.swing;
 
 import java.awt.*;
+
 import sun.awt.ModalExclude;
+import sun.awt.SunToolkit;
 
 /**
  * Popups are used to display a <code>Component</code> to the user, typically
@@ -225,7 +227,12 @@ public class Popup {
         HeavyWeightWindow(Window parent) {
             super(parent);
             setFocusableWindowState(false);
-            setName("###overrideRedirect###");
+            Toolkit tk = Toolkit.getDefaultToolkit();
+            if (tk instanceof SunToolkit) {
+                // all the short-lived windows like Popups should be
+                // OverrideRedirect on X11 platforms
+                ((SunToolkit)tk).setOverrideRedirect(this);
+            }
             // Popups are typically transient and most likely won't benefit
             // from true double buffering.  Turn it off here.
             getRootPane().setUseTrueDoubleBuffering(false);

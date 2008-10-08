@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ public:
   };
 
   PhiNode( Node *r, const Type *t, const TypePtr* at = NULL,
-           const int iid = TypeOopPtr::UNKNOWN_INSTANCE,
+           const int iid = TypeOopPtr::InstanceTop,
            const int iidx = Compile::AliasIdxTop,
            const int ioffs = Type::OffsetTop )
     : TypeNode(t,r->req()),

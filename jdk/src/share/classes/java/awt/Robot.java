@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,18 @@
 
 package java.awt;
 
-import java.awt.peer.*;
-import java.awt.image.*;
-import java.awt.event.*;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
+import java.awt.image.DirectColorModel;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
+import java.awt.peer.RobotPeer;
 import java.lang.reflect.InvocationTargetException;
 import sun.awt.ComponentFactory;
 import sun.awt.SunToolkit;
+import sun.awt.image.SunWritableRaster;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -64,10 +70,7 @@ public class Robot {
     private RobotPeer peer;
     private boolean isAutoWaitForIdle = false;
     private int autoDelay = 0;
-    private static final int LEGAL_BUTTON_MASK =
-                                            InputEvent.BUTTON1_MASK|
-                                            InputEvent.BUTTON2_MASK|
-                                            InputEvent.BUTTON3_MASK;
+    private static int LEGAL_BUTTON_MASK;
 
     // location of robot's GC, used in mouseMove(), getPixelColor() and captureScreenImage()
     private Point gdLoc;
@@ -92,6 +95,19 @@ public class Robot {
         }
         init(GraphicsEnvironment.getLocalGraphicsEnvironment()
             .getDefaultScreenDevice());
+        int tmpMask = 0;
+        if (Toolkit.getDefaultToolkit().areExtraMouseButtonsEnabled()){
+            for (int i = 0; i < peer.getNumberOfButtons(); i++){
+                tmpMask |= InputEvent.getMaskForButton(i+1);
+            }
+        }
+        tmpMask |= InputEvent.BUTTON1_MASK|
+            InputEvent.BUTTON2_MASK|
+            InputEvent.BUTTON3_MASK|
+            InputEvent.BUTTON1_DOWN_MASK|
+            InputEvent.BUTTON2_DOWN_MASK|
+            InputEvent.BUTTON3_DOWN_MASK;
+        LEGAL_BUTTON_MASK = tmpMask;
     }
 
     /**
@@ -181,18 +197,55 @@ public class Robot {
 
     /**
      * Presses one or more mouse buttons.  The mouse buttons should
-     * be released using the <code>mouseRelease</code> method.
+     * be released using the {@link #mouseRelease(int)} method.
      *
-     * @param buttons   the Button mask; a combination of one or more
-     * of these flags:
+     * @param buttons the Button mask; a combination of one or more
+     * mouse button masks.
+     * <p>
+     * It is allowed to use only a combination of valid values as a {@code buttons} parameter.
+     * A valid combination consists of {@code InputEvent.BUTTON1_DOWN_MASK},
+     * {@code InputEvent.BUTTON2_DOWN_MASK}, {@code InputEvent.BUTTON3_DOWN_MASK}
+     * and values returned by the
+     * {@link InputEvent#getMaskForButton(int) InputEvent.getMaskForButton(button)} method.
+     *
+     * The valid combination also depends on a
+     * {@link Toolkit#areExtraMouseButtonsEnabled() Toolkit.areExtraMouseButtonsEnabled()} value as follows:
      * <ul>
-     * <li><code>InputEvent.BUTTON1_MASK</code>
-     * <li><code>InputEvent.BUTTON2_MASK</code>
-     * <li><code>InputEvent.BUTTON3_MASK</code>
+     * <li> If support for extended mouse buttons is
+     * {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
+     * then it is allowed to use only the following standard button masks:
+     * {@code InputEvent.BUTTON1_DOWN_MASK}, {@code InputEvent.BUTTON2_DOWN_MASK},
+     * {@code InputEvent.BUTTON3_DOWN_MASK}.
+     * <li> If support for extended mouse buttons is
+     * {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
+     * then it is allowed to use the standard button masks
+     * and masks for existing extended mouse buttons, if the mouse has more then three buttons.
+     * In that way, it is allowed to use the button masks corresponding to the buttons
+     * in the range from 1 to {@link java.awt.MouseInfo#getNumberOfButtons() MouseInfo.getNumberOfButtons()}.
+     * <br>
+     * It is recommended to use the {@link InputEvent#getMaskForButton(int) InputEvent.getMaskForButton(button)}
+     * method to obtain the mask for any mouse button by its number.
      * </ul>
-     * @throws  IllegalArgumentException if the button mask is not a
-     *          valid combination
+     * <p>
+     * The following standard button masks are also accepted:
+     * <ul>
+     * <li>{@code InputEvent.BUTTON1_MASK}
+     * <li>{@code InputEvent.BUTTON2_MASK}
+     * <li>{@code InputEvent.BUTTON3_MASK}
+     * </ul>
+     * However, it is recommended to use {@code InputEvent.BUTTON1_DOWN_MASK},
+     * {@code InputEvent.BUTTON2_DOWN_MASK},  {@code InputEvent.BUTTON3_DOWN_MASK} instead.
+     * Either extended {@code _DOWN_MASK} or old {@code _MASK} values
+     * should be used, but both those models should not be mixed.
+     * @throws IllegalArgumentException if the {@code buttons} mask contains the mask for extra mouse button
+     *         and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
+     * @throws IllegalArgumentException if the {@code buttons} mask contains the mask for extra mouse button
+     *         that does not exist on the mouse and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
      * @see #mouseRelease(int)
+     * @see InputEvent#getMaskForButton(int)
+     * @see Toolkit#areExtraMouseButtonsEnabled()
+     * @see java.awt.MouseInfo#getNumberOfButtons()
+     * @see java.awt.event.MouseEvent
      */
     public synchronized void mousePress(int buttons) {
         checkButtonsArgument(buttons);
@@ -203,16 +256,53 @@ public class Robot {
     /**
      * Releases one or more mouse buttons.
      *
-     * @param buttons   the Button mask; a combination of one or more
-     * of these flags:
+     * @param buttons the Button mask; a combination of one or more
+     * mouse button masks.
+     * <p>
+     * It is allowed to use only a combination of valid values as a {@code buttons} parameter.
+     * A valid combination consists of {@code InputEvent.BUTTON1_DOWN_MASK},
+     * {@code InputEvent.BUTTON2_DOWN_MASK}, {@code InputEvent.BUTTON3_DOWN_MASK}
+     * and values returned by the
+     * {@link InputEvent#getMaskForButton(int) InputEvent.getMaskForButton(button)} method.
+     *
+     * The valid combination also depends on a
+     * {@link Toolkit#areExtraMouseButtonsEnabled() Toolkit.areExtraMouseButtonsEnabled()} value as follows:
      * <ul>
-     * <li><code>InputEvent.BUTTON1_MASK</code>
-     * <li><code>InputEvent.BUTTON2_MASK</code>
-     * <li><code>InputEvent.BUTTON3_MASK</code>
+     * <li> If the support for extended mouse buttons is
+     * {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
+     * then it is allowed to use only the following standard button masks:
+     * {@code InputEvent.BUTTON1_DOWN_MASK}, {@code InputEvent.BUTTON2_DOWN_MASK},
+     * {@code InputEvent.BUTTON3_DOWN_MASK}.
+     * <li> If the support for extended mouse buttons is
+     * {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
+     * then it is allowed to use the standard button masks
+     * and masks for existing extended mouse buttons, if the mouse has more then three buttons.
+     * In that way, it is allowed to use the button masks corresponding to the buttons
+     * in the range from 1 to {@link java.awt.MouseInfo#getNumberOfButtons() MouseInfo.getNumberOfButtons()}.
+     * <br>
+     * It is recommended to use the {@link InputEvent#getMaskForButton(int) InputEvent.getMaskForButton(button)}
+     * method to obtain the mask for any mouse button by its number.
      * </ul>
+     * <p>
+     * The following standard button masks are also accepted:
+     * <ul>
+     * <li>{@code InputEvent.BUTTON1_MASK}
+     * <li>{@code InputEvent.BUTTON2_MASK}
+     * <li>{@code InputEvent.BUTTON3_MASK}
+     * </ul>
+     * However, it is recommended to use {@code InputEvent.BUTTON1_DOWN_MASK},
+     * {@code InputEvent.BUTTON2_DOWN_MASK},  {@code InputEvent.BUTTON3_DOWN_MASK} instead.
+     * Either extended {@code _DOWN_MASK} or old {@code _MASK} values
+     * should be used, but both those models should not be mixed.
+     * @throws IllegalArgumentException if the {@code buttons} mask contains the mask for extra mouse button
+     *         and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
+     * @throws IllegalArgumentException if the {@code buttons} mask contains the mask for extra mouse button
+     *         that does not exist on the mouse and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
      * @see #mousePress(int)
-     * @throws  IllegalArgumentException if the button mask is not a valid
-     *          combination
+     * @see InputEvent#getMaskForButton(int)
+     * @see Toolkit#areExtraMouseButtonsEnabled()
+     * @see java.awt.MouseInfo#getNumberOfButtons()
+     * @see java.awt.event.MouseEvent
      */
     public synchronized void mouseRelease(int buttons) {
         checkButtonsArgument(buttons);
@@ -335,6 +425,10 @@ public class Robot {
                                                /* blue mask */   0x000000FF);
         }
 
+        // need to sync the toolkit prior to grabbing the pixels since in some
+        // cases rendering to the screen may be delayed
+        Toolkit.getDefaultToolkit().sync();
+
         int pixels[];
         int[] bandmasks = new int[3];
 
@@ -346,6 +440,7 @@ public class Robot {
         bandmasks[2] = screenCapCM.getBlueMask();
 
         raster = Raster.createPackedRaster(buffer, translatedRect.width, translatedRect.height, translatedRect.width, bandmasks, null);
+        SunWritableRaster.makeTrackable(buffer);
 
         image = new BufferedImage(screenCapCM, raster, false, null);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,7 +326,7 @@ jstring AwtTextComponent::_GetText(void *param)
             WCHAR* buf = new WCHAR[len + 1];
             c->GetText(buf, len + 1);
             c->RemoveCR(buf);
-            result = env->NewString(buf, static_cast<jsize>(wcslen(buf)));
+            result = JNU_NewStringPlatform(env, buf);
             delete [] buf;
         }
     }
@@ -362,7 +362,7 @@ void AwtTextComponent::_SetText(void *param)
     {
         int length = env->GetStringLength(text);
         WCHAR* buffer = new WCHAR[length + 1];
-        env->GetStringRegion(text, 0, length, buffer);
+        env->GetStringRegion(text, 0, length, reinterpret_cast<jchar*>(buffer));
         buffer[length] = 0;
         c->CheckLineSeparator(buffer);
         c->RemoveCR(buffer);

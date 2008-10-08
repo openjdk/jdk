@@ -3,7 +3,7 @@
 #
 
 #
-# Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,7 @@ SUNWprivate_1.1 {
 		JVM_FillInStackTrace;
 		JVM_FindClassFromClass;
 		JVM_FindClassFromClassLoader;
+		JVM_FindClassFromBootLoader;
 		JVM_FindLibraryEntry;
 		JVM_FindLoadedClass;
 		JVM_FindPrimitiveClass;

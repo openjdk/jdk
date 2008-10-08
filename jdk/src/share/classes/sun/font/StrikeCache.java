@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,17 @@
 
 package sun.font;
 
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsEnvironment;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
-import java.awt.Font;
-import java.awt.FontFormatException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import sun.java2d.Disposer;
+import sun.java2d.pipe.BufferedContext;
+import sun.java2d.pipe.RenderQueue;
+import sun.java2d.pipe.hw.AccelGraphicsConfig;
 import sun.misc.Unsafe;
 
 /**
@@ -192,13 +193,13 @@ public final class StrikeCache {
         recentStrikeIndex = index;
     }
 
-    static void disposeStrike(FontStrikeDisposer disposer) {
+    private static final void doDispose(FontStrikeDisposer disposer) {
         if (disposer.intGlyphImages != null) {
             freeIntMemory(disposer.intGlyphImages,
-                          disposer.pScalerContext);
+                    disposer.pScalerContext);
         } else if (disposer.longGlyphImages != null) {
             freeLongMemory(disposer.longGlyphImages,
-                           disposer.pScalerContext);
+                    disposer.pScalerContext);
         } else if (disposer.segIntGlyphImages != null) {
             /* NB Now making multiple JNI calls in this case.
              * But assuming that there's a reasonable amount of locality
@@ -207,7 +208,7 @@ public final class StrikeCache {
             for (int i=0; i<disposer.segIntGlyphImages.length; i++) {
                 if (disposer.segIntGlyphImages[i] != null) {
                     freeIntMemory(disposer.segIntGlyphImages[i],
-                                  disposer.pScalerContext);
+                            disposer.pScalerContext);
                     /* native will only free the scaler context once */
                     disposer.pScalerContext = 0L;
                     disposer.segIntGlyphImages[i] = null;
@@ -223,7 +224,7 @@ public final class StrikeCache {
             for (int i=0; i<disposer.segLongGlyphImages.length; i++) {
                 if (disposer.segLongGlyphImages[i] != null) {
                     freeLongMemory(disposer.segLongGlyphImages[i],
-                                   disposer.pScalerContext);
+                            disposer.pScalerContext);
                     disposer.pScalerContext = 0L;
                     disposer.segLongGlyphImages[i] = null;
                 }
@@ -231,6 +232,44 @@ public final class StrikeCache {
             if (disposer.pScalerContext != 0L) {
                 freeLongMemory(new long[0], disposer.pScalerContext);
             }
+        }
+    }
+
+    static void disposeStrike(final FontStrikeDisposer disposer) {
+        // we need to execute the strike disposal on the rendering thread
+        // because they may be accessed on that thread at the time of the
+        // disposal (for example, when the accel. cache is invalidated)
+
+        // REMIND: this look a bit heavyweight, but should be ok
+        // because strike disposal is a relatively infrequent operation,
+        // more worrisome is the necessity of getting a GC here.
+        RenderQueue rq = null;
+        GraphicsEnvironment ge =
+            GraphicsEnvironment.getLocalGraphicsEnvironment();
+        if (!ge.isHeadless()) {
+            GraphicsConfiguration gc =
+                ge.getDefaultScreenDevice().getDefaultConfiguration();
+            if (gc instanceof AccelGraphicsConfig) {
+                AccelGraphicsConfig agc = (AccelGraphicsConfig)gc;
+                BufferedContext bc = agc.getContext();
+                if (bc != null) {
+                    rq = bc.getRenderQueue();
+                }
+            }
+        }
+        if (rq != null) {
+            rq.lock();
+            try {
+                rq.flushAndInvokeNow(new Runnable() {
+                    public void run() {
+                        doDispose(disposer);
+                    }
+                });
+            } finally {
+                rq.unlock();
+            }
+        } else {
+            doDispose(disposer);
         }
     }
 

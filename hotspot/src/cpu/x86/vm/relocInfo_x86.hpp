@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-1999 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,5 +29,10 @@
     offset_unit        =  1,
 
     // Encodes Assembler::disp32_operand vs. Assembler::imm32_operand.
+#ifndef AMD64
     format_width       =  1
+#else
+    // vs Assembler::narrow_oop_operand.
+    format_width       =  2
+#endif
   };

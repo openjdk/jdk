@@ -53,11 +53,6 @@ FILES_c = 			\
 OTHER_INCLUDES = -I$(SRCDIR) -I$(PSRCDIR)
 
 #
-# This removes all asserts in the optimized version
-#
-CPPFLAGS_OPT += -DNDEBUG
-
-#
 # Library to compile.
 #
 include $(BUILDDIR)/common/Library.gmk
