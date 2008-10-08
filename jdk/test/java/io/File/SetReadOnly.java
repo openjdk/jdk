@@ -1,5 +1,5 @@
 /*
- * Copyright 1998 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4091757
+   @bug 4091757 4939819
    @summary Basic test for setReadOnly method
  */
 
@@ -59,8 +59,15 @@ public class SetReadOnly {
             throw new Exception(f + ": Cannot create directory");
         if (!f.setReadOnly())
             throw new Exception(f + ": Failed on directory");
-        if (f.canWrite())
-            throw new Exception(f + ": Directory is writeable");
+        // The readonly attribute on Windows does not make a folder read-only
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            if (!f.canWrite())
+                throw new Exception(f + ": Directory is not writeable");
+        } else {
+            if (f.canWrite())
+                throw new Exception(f + ": Directory is writeable");
+        }
+
         if (!f.delete())
             throw new Exception(f + ": Cannot delete directory");
 

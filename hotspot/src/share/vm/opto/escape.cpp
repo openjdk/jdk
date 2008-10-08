@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,11 +417,18 @@ static Node* get_addp_base(Node *addp) {
   //       | |
   //       AddP  ( base == address )
   //
+  // case #8. narrow Klass's field reference.
+  //      LoadNKlass
+  //       |
+  //      DecodeN
+  //       | |
+  //       AddP  ( base == address )
+  //
   Node *base = addp->in(AddPNode::Base)->uncast();
   if (base->is_top()) { // The AddP case #3 and #6.
     base = addp->in(AddPNode::Address)->uncast();
     assert(base->Opcode() == Op_ConP || base->Opcode() == Op_ThreadLocal ||
-           base->Opcode() == Op_CastX2P ||
+           base->Opcode() == Op_CastX2P || base->is_DecodeN() ||
            (base->is_Mem() && base->bottom_type() == TypeRawPtr::NOTNULL) ||
            (base->is_Proj() && base->in(0)->is_Allocate()), "sanity");
   }
@@ -476,7 +483,7 @@ static Node* find_second_addp(Node* addp, Node* n) {
 //
 void ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
   const TypeOopPtr *base_t = igvn->type(base)->isa_oopptr();
-  assert(base_t != NULL && base_t->is_instance(), "expecting instance oopptr");
+  assert(base_t != NULL && base_t->is_known_instance(), "expecting instance oopptr");
   const TypeOopPtr *t = igvn->type(addp)->isa_oopptr();
   if (t == NULL) {
     // We are computing a raw address for a store captured by an Initialize
@@ -487,8 +494,8 @@ void ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
     assert(offs != Type::OffsetBot, "offset must be a constant");
     t = base_t->add_offset(offs)->is_oopptr();
   }
-  uint inst_id =  base_t->instance_id();
-  assert(!t->is_instance() || t->instance_id() == inst_id,
+  int inst_id =  base_t->instance_id();
+  assert(!t->is_known_instance() || t->instance_id() == inst_id,
                              "old type must be non-instance or match new type");
   const TypeOopPtr *tinst = base_t->add_offset(t->offset())->is_oopptr();
   // Do NOT remove the next call: ensure an new alias index is allocated
@@ -502,7 +509,7 @@ void ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
   Node *adr = addp->in(AddPNode::Address);
   const TypeOopPtr  *atype = igvn->type(adr)->isa_oopptr();
   if (atype != NULL && atype->instance_id() != inst_id) {
-    assert(!atype->is_instance(), "no conflicting instances");
+    assert(!atype->is_known_instance(), "no conflicting instances");
     const TypeOopPtr *new_atype = base_t->add_offset(atype->offset())->isa_oopptr();
     Node *acast = new (_compile, 2) CastPPNode(adr, new_atype);
     acast->set_req(0, adr->in(0));
@@ -656,7 +663,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
     return orig_mem;
   Compile* C = phase->C;
   const TypeOopPtr *tinst = C->get_adr_type(alias_idx)->isa_oopptr();
-  bool is_instance = (tinst != NULL) && tinst->is_instance();
+  bool is_instance = (tinst != NULL) && tinst->is_known_instance();
   Node *prev = NULL;
   Node *result = orig_mem;
   while (prev != result) {
@@ -686,7 +693,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
         AllocateNode* alloc = proj_in->as_Initialize()->allocation();
         // Stop if this is the initialization for the object instance which
         // which contains this memory slice, otherwise skip over it.
-        if (alloc == NULL || alloc->_idx != tinst->instance_id()) {
+        if (alloc == NULL || alloc->_idx != (uint)tinst->instance_id()) {
           result = proj_in->in(TypeFunc::Memory);
         }
       } else if (proj_in->is_MemBar()) {
@@ -880,7 +887,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       const TypeOopPtr *t = igvn->type(n)->isa_oopptr();
       if (t == NULL)
         continue;  // not a TypeInstPtr
-      tinst = t->cast_to_instance(ni);
+      tinst = t->cast_to_instance_id(ni);
       igvn->hash_delete(n);
       igvn->set_type(n,  tinst);
       n->raise_bottom_type(tinst);
@@ -888,6 +895,23 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       record_for_optimizer(n);
       if (alloc->is_Allocate() && ptn->_scalar_replaceable &&
           (t->isa_instptr() || t->isa_aryptr())) {
+
+        // First, put on the worklist all Field edges from Connection Graph
+        // which is more accurate then putting immediate users from Ideal Graph.
+        for (uint e = 0; e < ptn->edge_count(); e++) {
+          Node *use = _nodes->adr_at(ptn->edge_target(e))->_node;
+          assert(ptn->edge_type(e) == PointsToNode::FieldEdge && use->is_AddP(),
+                 "only AddP nodes are Field edges in CG");
+          if (use->outcnt() > 0) { // Don't process dead nodes
+            Node* addp2 = find_second_addp(use, use->in(AddPNode::Base));
+            if (addp2 != NULL) {
+              assert(alloc->is_AllocateArray(),"array allocation was expected");
+              alloc_worklist.append_if_missing(addp2);
+            }
+            alloc_worklist.append_if_missing(use);
+          }
+        }
+
         // An allocation may have an Initialize which has raw stores. Scan
         // the users of the raw allocation result and push AddP users
         // on alloc_worklist.
@@ -919,6 +943,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       tinst = igvn->type(base)->isa_oopptr();
     } else if (n->is_Phi() ||
                n->is_CheckCastPP() ||
+               n->is_EncodeP() ||
+               n->is_DecodeN() ||
                (n->is_ConstraintCast() && n->Opcode() == Op_CastPP)) {
       if (visited.test_set(n->_idx)) {
         assert(n->is_Phi(), "loops only through Phi's");
@@ -933,15 +959,27 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         Node *val = get_map(elem);   // CheckCastPP node
         TypeNode *tn = n->as_Type();
         tinst = igvn->type(val)->isa_oopptr();
-        assert(tinst != NULL && tinst->is_instance() &&
-               tinst->instance_id() == elem , "instance type expected.");
-        const TypeOopPtr *tn_t = igvn->type(tn)->isa_oopptr();
+        assert(tinst != NULL && tinst->is_known_instance() &&
+               (uint)tinst->instance_id() == elem , "instance type expected.");
+
+        const Type *tn_type = igvn->type(tn);
+        const TypeOopPtr *tn_t;
+        if (tn_type->isa_narrowoop()) {
+          tn_t = tn_type->make_ptr()->isa_oopptr();
+        } else {
+          tn_t = tn_type->isa_oopptr();
+        }
 
         if (tn_t != NULL &&
- tinst->cast_to_instance(TypeOopPtr::UNKNOWN_INSTANCE)->higher_equal(tn_t)) {
+            tinst->cast_to_instance_id(TypeOopPtr::InstanceBot)->higher_equal(tn_t)) {
+          if (tn_type->isa_narrowoop()) {
+            tn_type = tinst->make_narrowoop();
+          } else {
+            tn_type = tinst;
+          }
           igvn->hash_delete(tn);
-          igvn->set_type(tn, tinst);
-          tn->set_type(tinst);
+          igvn->set_type(tn, tn_type);
+          tn->set_type(tn_type);
           igvn->hash_insert(tn);
           record_for_optimizer(n);
         }
@@ -978,6 +1016,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         alloc_worklist.append_if_missing(use);
       } else if (use->is_Phi() ||
                  use->is_CheckCastPP() ||
+                 use->is_EncodeP() ||
+                 use->is_DecodeN() ||
                  (use->is_ConstraintCast() && use->Opcode() == Op_CastPP)) {
         alloc_worklist.append_if_missing(use);
       }
@@ -1199,7 +1239,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
 
 void ConnectionGraph::compute_escape() {
 
-  // 1. Populate Connection Graph with Ideal nodes.
+  // 1. Populate Connection Graph (CG) with Ideal nodes.
 
   Unique_Node_List worklist_init;
   worklist_init.map(_compile->unique(), NULL);  // preallocate space
@@ -1281,11 +1321,13 @@ void ConnectionGraph::compute_escape() {
       remove_deferred(ni, &deferred_edges, &visited);
       if (n->is_AddP()) {
         // If this AddP computes an address which may point to more that one
-        // object, nothing the address points to can be scalar replaceable.
+        // object or more then one field (array's element), nothing the address
+        // points to can be scalar replaceable.
         Node *base = get_addp_base(n);
         ptset.Clear();
         PointsTo(ptset, base, igvn);
-        if (ptset.Size() > 1) {
+        if (ptset.Size() > 1 ||
+            (ptset.Size() != 0 && ptn->offset() == Type::OffsetBot)) {
           for( VectorSetI j(&ptset); j.test(); ++j ) {
             uint pt = j.elem;
             ptnode_adr(pt)->_scalar_replaceable = false;
@@ -1538,6 +1580,7 @@ void ConnectionGraph::process_call_result(ProjNode *resproj, PhaseTransform *pha
       if (k->Opcode() == Op_LoadKlass) {
         kt = k->as_Load()->type()->isa_klassptr();
       } else {
+        // Also works for DecodeN(LoadNKlass).
         kt = k->as_Type()->type()->isa_klassptr();
       }
       assert(kt != NULL, "TypeKlassPtr  required.");
@@ -1776,6 +1819,7 @@ void ConnectionGraph::record_for_escape_analysis(Node *n, PhaseTransform *phase)
       break;
     }
     case Op_LoadKlass:
+    case Op_LoadNKlass:
     {
       add_node(n, PointsToNode::JavaObject, PointsToNode::GlobalEscape, true);
       break;
@@ -1877,9 +1921,7 @@ void ConnectionGraph::record_for_escape_analysis(Node *n, PhaseTransform *phase)
     case Op_StoreN:
     {
       const Type *adr_type = phase->type(n->in(MemNode::Address));
-      if (adr_type->isa_narrowoop()) {
-        adr_type = adr_type->is_narrowoop()->make_oopptr();
-      }
+      adr_type = adr_type->make_ptr();
       if (adr_type->isa_oopptr()) {
         add_node(n, PointsToNode::UnknownType, PointsToNode::UnknownEscape, false);
       } else {
@@ -1904,9 +1946,7 @@ void ConnectionGraph::record_for_escape_analysis(Node *n, PhaseTransform *phase)
     case Op_CompareAndSwapN:
     {
       const Type *adr_type = phase->type(n->in(MemNode::Address));
-      if (adr_type->isa_narrowoop()) {
-        adr_type = adr_type->is_narrowoop()->make_oopptr();
-      }
+      adr_type = adr_type->make_ptr();
       if (adr_type->isa_oopptr()) {
         add_node(n, PointsToNode::UnknownType, PointsToNode::UnknownEscape, false);
       } else {
@@ -1979,12 +2019,18 @@ void ConnectionGraph::build_connection_graph(Node *n, PhaseTransform *phase) {
       assert(false, "Op_ConP");
       break;
     }
+    case Op_ConN:
+    {
+      assert(false, "Op_ConN");
+      break;
+    }
     case Op_CreateEx:
     {
       assert(false, "Op_CreateEx");
       break;
     }
     case Op_LoadKlass:
+    case Op_LoadNKlass:
     {
       assert(false, "Op_LoadKlass");
       break;
@@ -2081,10 +2127,7 @@ void ConnectionGraph::build_connection_graph(Node *n, PhaseTransform *phase) {
     case Op_CompareAndSwapN:
     {
       Node *adr = n->in(MemNode::Address);
-      const Type *adr_type = phase->type(adr);
-      if (adr_type->isa_narrowoop()) {
-        adr_type = adr_type->is_narrowoop()->make_oopptr();
-      }
+      const Type *adr_type = phase->type(adr)->make_ptr();
 #ifdef ASSERT
       if (!adr_type->isa_oopptr())
         assert(phase->type(adr) == TypeRawPtr::NOTNULL, "Op_StoreP");

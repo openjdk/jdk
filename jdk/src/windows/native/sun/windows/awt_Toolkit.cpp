@@ -23,15 +23,16 @@
  * have any questions.
  */
 
+#include "awt.h"
 #include <signal.h>
 #include <windowsx.h>
 
-#if defined(_DEBUG) && defined(_MSC_VER) && _MSC_VER >= 1000
-#include <crtdbg.h>
-#endif
+//#if defined(_DEBUG) && defined(_MSC_VER) && _MSC_VER >= 1000
+//#include <crtdbg.h>
+//#endif
 
 #define _JNI_IMPLEMENTATION_
-#include "stdhdrs.h"
+
 #include "awt_DrawingSurface.h"
 #include "awt_AWTEvent.h"
 #include "awt_Component.h"
@@ -51,12 +52,12 @@
 #include "awt_FileDialog.h"
 #include "CmdIDList.h"
 #include "awt_new.h"
-#include "awt_Unicode.h"
-#include "ddrawUtils.h"
 #include "debug_trace.h"
 #include "debug_mem.h"
 
 #include "ComCtl32Util.h"
+
+#include "D3DPipelineManager.h"
 
 #include <awt_DnDDT.h>
 #include <awt_DnDDS.h>
@@ -78,10 +79,11 @@ extern BOOL windowMoveLockHeld;
 extern jclass jawtVImgClass;
 extern jclass jawtVSMgrClass;
 extern jclass jawtComponentClass;
-extern jclass jawtW32ossdClass;
 extern jfieldID jawtPDataID;
 extern jfieldID jawtSDataID;
 extern jfieldID jawtSMgrID;
+
+extern void DWMResetCompositionEnabled();
 
 /************************************************************************
  * Utilities
@@ -223,8 +225,7 @@ BOOL AwtToolkit::activateKeyboardLayout(HKL hkl) {
     HKL prev = ::ActivateKeyboardLayout(hkl, 0);
 
     // If the above call fails, try loading the layout in case of NT
-    if ((prev == 0) && IS_NT) {
-
+    if (!prev) {
         // create input locale string, e.g., "00000409", from hkl.
         TCHAR inputLocale[9];
         TCHAR buf[9];
@@ -268,20 +269,6 @@ extern "C" BOOL APIENTRY DllMain(HANDLE hInstance, DWORD ul_reason_for_call,
         DTrace_DisableMutex();
         DMem_DisableMutex();
 #endif DEBUG
-        // Release any resources that have not yet been released
-        // Note that releasing DirectX objects is necessary for some
-        // failure situations on win9x (such as the primary remaining
-        // locked on application exit) but cannot be done during
-        // PROCESS_DETACH on XP.  On NT and win2k calling this ends up
-        // in a catch() clause in the calling function, but on XP
-        // the process simply hangs during the release of the ddraw
-        // device object.  Thus we check for NT here and do not bother
-        // with the release on any NT flavored OS.  Note that XP is
-        // based on NT, so the IS_NT check is valid for NT4, win2k,
-        // XP, and presumably XP follow-ons.
-        if (!IS_NT) {
-            DDRelease();
-        }
         break;
     }
     return TRUE;
@@ -309,7 +296,7 @@ JavaStringBuffer::JavaStringBuffer(JNIEnv *env, jstring jstr) {
     if (jstr != NULL) {
         int length = env->GetStringLength(jstr);
         buffer = new TCHAR[length + 1];
-        LPCTSTR tmp = (LPCTSTR)JNU_GetStringPlatformChars(env, jstr, NULL);
+        LPCTSTR tmp = JNU_GetStringPlatformChars(env, jstr, NULL);
         _tcscpy(buffer, tmp);
         JNU_ReleaseStringPlatformChars(env, jstr, tmp);
     } else {
@@ -335,6 +322,7 @@ AwtToolkit::AwtToolkit() {
     m_vmSignalled = FALSE;
 
     m_isDynamicLayoutSet = FALSE;
+    m_areExtraMouseButtonsEnabled = TRUE;
 
     m_verifyComponents = FALSE;
     m_breakOnError = FALSE;
@@ -465,6 +453,11 @@ BOOL AwtToolkit::Dispose() {
     awt_dnd_uninitialize();
     awt_clipboard_uninitialize((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2));
 
+    // dispose Direct3D-related resources. This should be done
+    // before AwtObjectList::Cleanup() as the d3d will attempt to
+    // shutdown when the last of its windows is disposed of
+    D3DPipelineManager::DeleteInstance();
+
     AwtObjectList::Cleanup();
     AwtFont::Cleanup();
 
@@ -496,8 +489,6 @@ BOOL AwtToolkit::Dispose() {
     delete tk.m_cmdIDs;
 
     ::CloseHandle(m_waitEvent);
-
-    ComCtl32Util::GetInstance().FreeLibraries();
 
     tk.m_isDisposed = TRUE;
 
@@ -697,20 +688,6 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           AwtObjectList::Cleanup();
           return 0;
       }
-      case WM_AWT_D3D_CREATE_DEVICE: {
-          DDraw *ddObject = (DDraw*)wParam;
-          if (ddObject != NULL) {
-              ddObject->InitD3DContext();
-          }
-          return 0;
-      }
-      case WM_AWT_D3D_RELEASE_DEVICE: {
-          DDraw *ddObject = (DDraw*)wParam;
-          if (ddObject != NULL) {
-              ddObject->ReleaseD3DContext();
-          }
-          return 0;
-      }
       case WM_SYSCOLORCHANGE: {
 
           jclass systemColorClass = env->FindClass("java/awt/SystemColor");
@@ -745,6 +722,17 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           }
           return 0;
       }
+#ifndef WM_DWMCOMPOSITIONCHANGED
+#define WM_DWMCOMPOSITIONCHANGED        0x031E
+#define WM_DWMNCRENDERINGCHANGED        0x031F
+#define WM_DWMCOLORIZATIONCOLORCHANGED  0x0320
+#define WM_DWMWINDOWMAXIMIZEDCHANGED    0x0321
+#endif // WM_DWMCOMPOSITIONCHANGED
+      case WM_DWMCOMPOSITIONCHANGED: {
+          DWMResetCompositionEnabled();
+          return 0;
+      }
+
       case WM_TIMER: {
           // 6479820. Should check if a window is in manual resizing process: skip
           // sending any MouseExit/Enter events while inside resize-loop.
@@ -896,21 +884,8 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           return (DWORD)ImmGetOpenStatus((HIMC)wParam);
       }
       case WM_DISPLAYCHANGE: {
-          AwtCursor::DirtyAllCustomCursors();
-
           // Reinitialize screens
           initScreens(env);
-
-          // Invalidate current DDraw object; the object must be recreated
-          // when we first try to create a new DDraw surface.  Note that we
-          // don't recreate the ddraw object directly here because of
-          // multi-threading issues; we'll just leave that to the first
-          // time an object tries to create a DDraw surface under the new
-          // display depth (which will happen after the displayChange event
-          // propagation at the end of this case).
-          if (DDCanReplaceSurfaces(NULL)) {
-              DDInvalidateDDInstance(NULL);
-          }
 
           // Notify Java side - call WToolkit.displayChanged()
           jclass clazz = env->FindClass("sun/awt/windows/WToolkit");
@@ -1182,9 +1157,7 @@ BOOL AwtToolkit::PreProcessMsg(MSG& msg)
     if (p && p->PreProcessMsg(msg) == mrConsume)
         return TRUE;
 
-    if ((msg.message >= WM_MOUSEFIRST && msg.message <= WM_AWT_MOUSELAST) ||
-        (IS_WIN95 && !IS_WIN98 &&
-                                msg.message == AwtComponent::Wheel95GetMsg()) ||
+    if ((msg.message >= WM_MOUSEFIRST && msg.message <= WM_MOUSELAST) ||
         (msg.message >= WM_NCMOUSEMOVE && msg.message <= WM_NCMBUTTONDBLCLK)) {
         if (PreProcessMouseMsg(p, msg)) {
             return TRUE;
@@ -1211,9 +1184,7 @@ BOOL AwtToolkit::PreProcessMouseMsg(AwtComponent* p, MSG& msg)
         return FALSE;
     }
 
-    if (msg.message >= WM_MOUSEFIRST && msg.message <= WM_AWT_MOUSELAST ||
-        (IS_WIN95 && !IS_WIN98 && msg.message == AwtComponent::Wheel95GetMsg()))
-    {
+    if (msg.message >= WM_MOUSEFIRST && msg.message <= WM_MOUSELAST) {
         mouseWParam = msg.wParam;
         mouseLParam = msg.lParam;
     } else {
@@ -1307,21 +1278,6 @@ BOOL AwtToolkit::PreProcessMouseMsg(AwtComponent* p, MSG& msg)
         mouseWheelComp != NULL) { //i.e. mouse is over client area for this
                                   //window
         msg.hwnd = hWndForWheel;
-    }
-    else if (IS_WIN95 && !IS_WIN98 &&
-             msg.message == AwtComponent::Wheel95GetMsg() &&
-             mouseWheelComp != NULL) {
-
-        // On Win95, mouse wheels are _always_ delivered to the top level
-        // Frame.  Default behavior only takes place if the message's hwnd
-        // remains that of the Frame.  We only want to change the hwnd if
-        // we're changing it to a Component that DOESN'T handle the
-        // mousewheel natively.
-
-        if (!mouseWheelComp->InheritsNativeMouseWheelBehavior()) {
-            DTRACE_PRINTLN("AwtT::PPMM: changing hwnd on 95");
-            msg.hwnd = hWndForWheel;
-        }
     }
 
     /*
@@ -1545,9 +1501,6 @@ Java_sun_awt_windows_WToolkit_initIDs(JNIEnv *env, jclass cls)
     DASSERT(vSMgrClassLocal != 0);
     jclass componentClassLocal = env->FindClass("java/awt/Component");
     DASSERT(componentClassLocal != 0);
-    jclass w32ossdClassLocal =
-        env->FindClass("sun/java2d/windows/Win32OffScreenSurfaceData");
-    DASSERT(w32ossdClassLocal != 0);
     jawtSMgrID = env->GetFieldID(vImgClassLocal, "volSurfaceManager",
                                  "Lsun/awt/image/VolatileSurfaceManager;");
     DASSERT(jawtSMgrID != 0);
@@ -1560,7 +1513,6 @@ Java_sun_awt_windows_WToolkit_initIDs(JNIEnv *env, jclass cls)
     // Save these classes in global references for later use
     jawtVImgClass = (jclass)env->NewGlobalRef(vImgClassLocal);
     jawtComponentClass = (jclass)env->NewGlobalRef(componentClassLocal);
-    jawtW32ossdClass = (jclass)env->NewGlobalRef(w32ossdClassLocal);
 
     CATCH_BAD_ALLOC;
 }
@@ -1817,7 +1769,7 @@ Java_sun_awt_windows_WToolkit_getScreenInsets(JNIEnv *env,
 {
     jobject insets = NULL;
     RECT rRW;
-    MONITOR_INFO *miInfo;
+    LPMONITORINFO miInfo;
 
     TRY;
 
@@ -1839,10 +1791,10 @@ Java_sun_awt_windows_WToolkit_getScreenInsets(JNIEnv *env,
         if (miInfo) {
             insets = env->NewObject(env->FindClass("java/awt/Insets"),
                 AwtToolkit::insetsMID,
-                miInfo->rWork.top    - miInfo->rMonitor.top,
-                miInfo->rWork.left   - miInfo->rMonitor.left,
-                miInfo->rMonitor.bottom - miInfo->rWork.bottom,
-                miInfo->rMonitor.right - miInfo->rWork.right);
+                miInfo->rcWork.top - miInfo->rcMonitor.top,
+                miInfo->rcWork.left - miInfo->rcMonitor.left,
+                miInfo->rcMonitor.bottom - miInfo->rcWork.bottom,
+                miInfo->rcMonitor.right - miInfo->rcWork.right);
         }
     }
 
@@ -1867,7 +1819,6 @@ Java_sun_awt_windows_WToolkit_nativeSync(JNIEnv *env, jobject self)
 
     // Synchronize both GDI and DDraw
     VERIFY(::GdiFlush());
-    DDSync();
 
     CATCH_BAD_ALLOC;
 }
@@ -2083,29 +2034,15 @@ Java_sun_awt_windows_WToolkit_getWindowsVersion(JNIEnv *env, jclass cls)
     swprintf(szVer, L"0x%x = %ld", version, version);
     int l = lstrlen(szVer);
 
-    if (IS_WIN95) {
-        if (IS_WIN98) {
-            if (IS_WINME) {
-                swprintf(szVer + l, L" (Windows ME)");
+    if (IS_WIN2000) {
+        if (IS_WINXP) {
+            if (IS_WINVISTA) {
+                swprintf(szVer + l, L" (Windows Vista)");
             } else {
-                swprintf(szVer + l, L" (Windows 98)");
+                swprintf(szVer + l, L" (Windows XP)");
             }
         } else {
-            swprintf(szVer + l, L" (Windows 95)");
-        }
-    } else if (IS_NT) {
-        if (IS_WIN2000) {
-            if (IS_WINXP) {
-                if (IS_WINVISTA) {
-                    swprintf(szVer + l, L" (Windows Vista)");
-                } else {
-                    swprintf(szVer + l, L" (Windows XP)");
-                }
-            } else {
-                swprintf(szVer + l, L" (Windows 2000)");
-            }
-        } else {
-            swprintf(szVer + l, L" (Windows NT)");
+            swprintf(szVer + l, L" (Windows 2000)");
         }
     } else {
         swprintf(szVer + l, L" (Unknown)");
@@ -2155,4 +2092,27 @@ Java_sun_awt_SunToolkit_closeSplashScreen(JNIEnv *env, jclass cls)
     if (splashClose) {
         splashClose();
     }
+}
+
+/*
+ * accessible from awt_Component
+ */
+BOOL AwtToolkit::areExtraMouseButtonsEnabled() {
+    return m_areExtraMouseButtonsEnabled;
+}
+
+/*
+ * Class:     sun_awt_windows_WToolkit
+ * Method:    setExtraMouseButtonsEnabledNative
+ * Signature: (Z)V
+ */
+extern "C" JNIEXPORT void JNICALL Java_sun_awt_windows_WToolkit_setExtraMouseButtonsEnabledNative
+(JNIEnv *env, jclass self, jboolean enable){
+    TRY;
+    AwtToolkit::GetInstance().setExtraMouseButtonsEnabled(enable);
+    CATCH_BAD_ALLOC;
+}
+
+void AwtToolkit::setExtraMouseButtonsEnabled(BOOL enable) {
+    m_areExtraMouseButtonsEnabled = enable;
 }

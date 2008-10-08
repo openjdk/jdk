@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,6 @@ public:
     assert(ProfileTraps, "used only under +ProfileTraps");
     uint old_flags = (_header._struct._flags & flag_mask);
     _header._struct._flags = (new_state << trap_shift) | old_flags;
-    assert(trap_state() == new_state, "sanity");
   }
 
   u1 flags() {

@@ -1,4 +1,2 @@
-NameCollision.java:13: interface expected here
-    class Runnable implements Runnable { } // ERROR
-                              ^
+NameCollision.java:13:31: compiler.err.intf.expected.here
 1 error

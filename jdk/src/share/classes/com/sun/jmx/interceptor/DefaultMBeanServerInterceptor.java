@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,8 +84,13 @@ import com.sun.jmx.mbeanserver.MBeanInstantiator;
 import com.sun.jmx.mbeanserver.Repository;
 import com.sun.jmx.mbeanserver.NamedObject;
 import com.sun.jmx.mbeanserver.Introspector;
+import com.sun.jmx.mbeanserver.MBeanInjector;
+import com.sun.jmx.mbeanserver.NotifySupport;
+import com.sun.jmx.mbeanserver.Repository.RegistrationContext;
 import com.sun.jmx.mbeanserver.Util;
 import com.sun.jmx.remote.util.EnvHelp;
+import javax.management.DynamicWrapperMBean;
+import javax.management.NotificationBroadcasterSupport;
 
 /**
  * This is the default class for MBean manipulation on the agent side. It
@@ -433,36 +438,26 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         if (instance instanceof MBeanRegistration)
             preDeregisterInvoke((MBeanRegistration) instance);
 
-        repository.remove(name);
-            // may throw InstanceNotFoundException
+        final Object resource = getResource(instance);
 
-        /**
-         * Checks if the unregistered MBean is a ClassLoader
-         * If so, it removes the  MBean from the default loader repository.
-         */
+        // Unregisters the MBean from the repository.
+        // Returns the resource context that was used.
+        // The returned context does nothing for regular MBeans.
+        // For ClassLoader MBeans and JMXNamespace (and JMXDomain)
+        // MBeans - the context makes it possible to unregister these
+        // objects from the appropriate framework artifacts, such as
+        // the CLR or the dispatcher, from within the repository lock.
+        // In case of success, we also need to call context.done() at the
+        // end of this method.
+        //
+        final ResourceContext context =
+                unregisterFromRepository(resource, instance, name);
 
-        Object resource = getResource(instance);
-        if (resource instanceof ClassLoader
-            && resource != server.getClass().getClassLoader()) {
-            final ModifiableClassLoaderRepository clr =
-                instantiator.getClassLoaderRepository();
-            if (clr != null) clr.removeClassLoader(name);
-        }
-
-        // ---------------------
-        // Send deletion event
-        // ---------------------
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    DefaultMBeanServerInterceptor.class.getName(),
-                    "unregisterMBean", "Send delete notification of object " +
-                    name.getCanonicalName());
-        }
-        sendNotification(MBeanServerNotification.UNREGISTRATION_NOTIFICATION,
-                         name);
 
         if (instance instanceof MBeanRegistration)
             postDeregisterInvoke((MBeanRegistration) instance);
+
+        context.done();
     }
 
     public ObjectInstance getObjectInstance(ObjectName name)
@@ -939,15 +934,22 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         }
 
         ObjectName logicalName = name;
+        logicalName = preRegister(mbean, server, name);
 
-        if (mbean instanceof MBeanRegistration) {
-            MBeanRegistration reg = (MBeanRegistration) mbean;
-            logicalName = preRegisterInvoke(reg, name, server);
+        // preRegister returned successfully, so from this point on we
+        // must call postRegister(false) if there is any problem.
+        boolean registered = false;
+        boolean registerFailed = false;
+        ResourceContext context = null;
+
+        try {
+            mbean = injectResources(mbean, server, logicalName);
+
             if (mbean instanceof DynamicMBean2) {
                 try {
                     ((DynamicMBean2) mbean).preRegister2(server, logicalName);
+                    registerFailed = true;  // until we succeed
                 } catch (Exception e) {
-                    postRegisterInvoke(reg, false, false);
                     if (e instanceof RuntimeException)
                         throw (RuntimeException) e;
                     if (e instanceof InstanceAlreadyExistsException)
@@ -960,86 +962,102 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
                 logicalName =
                     ObjectName.getInstance(nonDefaultDomain(logicalName));
             }
-        }
 
-        checkMBeanPermission(classname, null, logicalName, "registerMBean");
+            checkMBeanPermission(classname, null, logicalName, "registerMBean");
 
-        final ObjectInstance result;
-        if (logicalName!=null) {
-            result = new ObjectInstance(logicalName, classname);
-            internal_addObject(mbean, logicalName);
-        } else {
-            if (mbean instanceof MBeanRegistration)
-                postRegisterInvoke((MBeanRegistration) mbean, false, true);
-            final RuntimeException wrapped =
-                new IllegalArgumentException("No object name specified");
-            throw new RuntimeOperationsException(wrapped,
-                        "Exception occurred trying to register the MBean");
-        }
-
-        if (mbean instanceof MBeanRegistration)
-            postRegisterInvoke((MBeanRegistration) mbean, true, false);
-
-        /**
-         * Checks if the newly registered MBean is a ClassLoader
-         * If so, tell the ClassLoaderRepository (CLR) about it.  We do
-         * this even if the object is a PrivateClassLoader.  In that
-         * case, the CLR remembers the loader for use when it is
-         * explicitly named (e.g. as the loader in createMBean) but
-         * does not add it to the list that is consulted by
-         * ClassLoaderRepository.loadClass.
-         */
-        final Object resource = getResource(mbean);
-        if (resource instanceof ClassLoader) {
-            final ModifiableClassLoaderRepository clr =
-                instantiator.getClassLoaderRepository();
-            if (clr == null) {
+            if (logicalName == null) {
                 final RuntimeException wrapped =
-                    new IllegalArgumentException(
-                     "Dynamic addition of class loaders is not supported");
+                        new IllegalArgumentException("No object name specified");
                 throw new RuntimeOperationsException(wrapped,
-           "Exception occurred trying to register the MBean as a class loader");
+                                                     "Exception occurred trying to register the MBean");
             }
-            clr.addClassLoader(logicalName, (ClassLoader) resource);
+
+            final Object resource = getResource(mbean);
+
+            // Register the MBean with the repository.
+            // Returns the resource context that was used.
+            // The returned context does nothing for regular MBeans.
+            // For ClassLoader MBeans and JMXNamespace (and JMXDomain)
+            // MBeans - the context makes it possible to register these
+            // objects with the appropriate framework artifacts, such as
+            // the CLR or the dispatcher, from within the repository lock.
+            // In case of success, we also need to call context.done() at the
+            // end of this method.
+            //
+            context = registerWithRepository(resource, mbean, logicalName);
+
+            registerFailed = false;
+            registered = true;
+        } finally {
+            postRegister(mbean, registered, registerFailed);
         }
 
-        return result;
+        context.done();
+        return new ObjectInstance(logicalName, classname);
     }
 
-    private static ObjectName preRegisterInvoke(MBeanRegistration moi,
-                                                ObjectName name,
-                                                MBeanServer mbs)
-            throws InstanceAlreadyExistsException, MBeanRegistrationException {
-
-        final ObjectName newName;
-
+    private static void throwMBeanRegistrationException(Throwable t, String where)
+    throws MBeanRegistrationException {
         try {
-            newName = moi.preRegister(mbs, name);
+            throw t;
         } catch (RuntimeException e) {
-                throw new RuntimeMBeanException(e,
-                           "RuntimeException thrown in preRegister method");
+                throw new RuntimeMBeanException(
+                        e, "RuntimeException thrown " + where);
         } catch (Error er) {
-                throw new RuntimeErrorException(er,
-                           "Error thrown in preRegister method");
+                throw new RuntimeErrorException(er, "Error thrown " + where);
         } catch (MBeanRegistrationException r) {
             throw r;
         } catch (Exception ex) {
-            throw new MBeanRegistrationException(ex,
-                          "Exception thrown in preRegister method");
+            throw new MBeanRegistrationException(ex, "Exception thrown " + where);
+        } catch (Throwable t1) {
+            throw new RuntimeException(t);  // neither Error nor Exception??
+        }
+    }
+
+    private static ObjectName preRegister(
+            DynamicMBean mbean, MBeanServer mbs, ObjectName name)
+            throws InstanceAlreadyExistsException, MBeanRegistrationException {
+
+        ObjectName newName = null;
+
+        try {
+            if (mbean instanceof MBeanRegistration)
+                newName = ((MBeanRegistration) mbean).preRegister(mbs, name);
+        } catch (Throwable t) {
+            throwMBeanRegistrationException(t, "in preRegister method");
         }
 
         if (newName != null) return newName;
         else return name;
     }
 
-    private static void postRegisterInvoke(MBeanRegistration moi,
-                                           boolean registrationDone,
-                                           boolean registerFailed) {
-
-        if (registerFailed && moi instanceof DynamicMBean2)
-            ((DynamicMBean2) moi).registerFailed();
+    private static DynamicMBean injectResources(
+            DynamicMBean mbean, MBeanServer mbs, ObjectName name)
+    throws MBeanRegistrationException {
         try {
-            moi.postRegister(registrationDone);
+            Object resource = getResource(mbean);
+            MBeanInjector.inject(resource, mbs, name);
+            if (MBeanInjector.injectsSendNotification(resource)) {
+                NotificationBroadcasterSupport nbs =
+                        new NotificationBroadcasterSupport();
+                MBeanInjector.injectSendNotification(resource, nbs);
+                mbean = NotifySupport.wrap(mbean, nbs);
+            }
+            return mbean;
+        } catch (Throwable t) {
+            throwMBeanRegistrationException(t, "injecting @Resources");
+            return null;  // not reached
+        }
+    }
+
+    private static void postRegister(
+            DynamicMBean mbean, boolean registrationDone, boolean registerFailed) {
+
+        if (registerFailed && mbean instanceof DynamicMBean2)
+            ((DynamicMBean2) mbean).registerFailed();
+        try {
+            if (mbean instanceof MBeanRegistration)
+                ((MBeanRegistration) mbean).postRegister(registrationDone);
         } catch (RuntimeException e) {
             throw new RuntimeMBeanException(e,
                       "RuntimeException thrown in postRegister method");
@@ -1053,17 +1071,8 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             throws MBeanRegistrationException {
         try {
             moi.preDeregister();
-        } catch (RuntimeException e) {
-            throw new RuntimeMBeanException(e,
-                         "RuntimeException thrown in preDeregister method");
-        } catch (Error er) {
-            throw new RuntimeErrorException(er,
-                         "Error thrown in preDeregister method");
-        } catch (MBeanRegistrationException t) {
-            throw t;
-        } catch (Exception ex) {
-            throw new MBeanRegistrationException(ex,
-                         "Exception thrown in preDeregister method");
+        } catch (Throwable t) {
+            throwMBeanRegistrationException(t, "in preDeregister method");
         }
     }
 
@@ -1104,10 +1113,17 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
     }
 
     private static Object getResource(DynamicMBean mbean) {
-        if (mbean instanceof DynamicMBean2)
-            return ((DynamicMBean2) mbean).getResource();
+        if (mbean instanceof DynamicWrapperMBean)
+            return ((DynamicWrapperMBean) mbean).getWrappedObject();
         else
             return mbean;
+    }
+
+    private static ClassLoader getResourceLoader(DynamicMBean mbean) {
+        if (mbean instanceof DynamicWrapperMBean)
+            return ((DynamicWrapperMBean) mbean).getWrappedClassLoader();
+        else
+            return mbean.getClass().getClassLoader();
     }
 
     private ObjectName nonDefaultDomain(ObjectName name) {
@@ -1123,14 +1139,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
            if one is supplied where it shouldn't be).  */
         final String completeName = domain + name;
 
-        try {
-            return new ObjectName(completeName);
-        } catch (MalformedObjectNameException e) {
-            final String msg =
-                "Unexpected default domain problem: " + completeName + ": " +
-                e;
-            throw EnvHelp.initCause(new IllegalArgumentException(msg), e);
-        }
+        return Util.newObjectName(completeName);
     }
 
     public String getDefaultDomain()  {
@@ -1211,7 +1220,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         }
 
         NotificationListener listenerWrapper =
-            getListenerWrapper(listener, name, broadcaster, true);
+            getListenerWrapper(listener, name, instance, true);
         broadcaster.addNotificationListener(listenerWrapper, filter, handback);
     }
 
@@ -1335,7 +1344,6 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         DynamicMBean instance = getMBean(name);
         checkMBeanPermission(instance, null, name,
                              "removeNotificationListener");
-        Object resource = getResource(instance);
 
         /* We could simplify the code by assigning broadcaster after
            assigning listenerWrapper, but that would change the error
@@ -1348,7 +1356,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             getNotificationBroadcaster(name, instance, reqClass);
 
         NotificationListener listenerWrapper =
-            getListenerWrapper(listener, name, resource, false);
+            getListenerWrapper(listener, name, instance, false);
 
         if (listenerWrapper == null)
             throw new ListenerNotFoundException("Unknown listener");
@@ -1366,8 +1374,10 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
     private static <T extends NotificationBroadcaster>
             T getNotificationBroadcaster(ObjectName name, Object instance,
                                          Class<T> reqClass) {
-        if (instance instanceof DynamicMBean2)
-            instance = ((DynamicMBean2) instance).getResource();
+        if (reqClass.isInstance(instance))
+            return reqClass.cast(instance);
+        if (instance instanceof DynamicWrapperMBean)
+            instance = ((DynamicWrapperMBean) instance).getWrappedObject();
         if (reqClass.isInstance(instance))
             return reqClass.cast(instance);
         final RuntimeException exc =
@@ -1415,24 +1425,31 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         checkMBeanPermission(instance, null, name, "isInstanceOf");
 
         try {
-            if (instance instanceof DynamicMBean2) {
-                Object resource = ((DynamicMBean2) instance).getResource();
-                ClassLoader loader = resource.getClass().getClassLoader();
-                Class<?> c = Class.forName(className, false, loader);
-                return c.isInstance(resource);
-            }
+            Object resource = getResource(instance);
 
-            final String cn = getClassName(instance);
-            if (cn.equals(className))
+            final String resourceClassName =
+                    (resource instanceof DynamicMBean) ?
+                        getClassName((DynamicMBean) resource) :
+                        resource.getClass().getName();
+
+            if (resourceClassName.equals(className))
                 return true;
-            final ClassLoader cl = instance.getClass().getClassLoader();
+            final ClassLoader cl = getResourceLoader(instance);
 
             final Class<?> classNameClass = Class.forName(className, false, cl);
-            if (classNameClass.isInstance(instance))
+            if (classNameClass.isInstance(resource))
                 return true;
 
-            final Class<?> instanceClass = Class.forName(cn, false, cl);
-            return classNameClass.isAssignableFrom(instanceClass);
+            // Ensure that isInstanceOf(NotificationEmitter) is true when
+            // the MBean is a NotificationEmitter by virtue of a @Resource
+            // annotation specifying a SendNotification resource.
+            // This is a hack.
+            if (instance instanceof NotificationBroadcaster &&
+                    classNameClass.isAssignableFrom(NotificationEmitter.class))
+                return true;
+
+            final Class<?> resourceClass = Class.forName(resourceClassName, false, cl);
+            return classNameClass.isAssignableFrom(resourceClass);
         } catch (Exception x) {
             /* Could be SecurityException or ClassNotFoundException */
             if (MBEANSERVER_LOGGER.isLoggable(Level.FINEST)) {
@@ -1457,7 +1474,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
 
         DynamicMBean instance = getMBean(mbeanName);
         checkMBeanPermission(instance, null, mbeanName, "getClassLoaderFor");
-        return getResource(instance).getClass().getClassLoader();
+        return getResourceLoader(instance);
     }
 
     /**
@@ -1486,40 +1503,6 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
                                                 " is not a classloader");
 
         return (ClassLoader) resource;
-    }
-
-    /**
-     * Adds a MBean in the repository
-     */
-    private void internal_addObject(DynamicMBean object, ObjectName logicalName)
-        throws InstanceAlreadyExistsException {
-
-        // ------------------------------
-        // ------------------------------
-
-        // Let the repository do the work.
-
-        try {
-           repository.addMBean(object, logicalName);
-        }  catch (InstanceAlreadyExistsException e) {
-            if (object instanceof MBeanRegistration) {
-                postRegisterInvoke((MBeanRegistration) object, false, true);
-            }
-            throw e;
-        }
-
-        // ---------------------
-        // Send create event
-        // ---------------------
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    DefaultMBeanServerInterceptor.class.getName(),
-                    "addObject", "Send create notification of object " +
-                    logicalName.getCanonicalName());
-        }
-
-        sendNotification(MBeanServerNotification.REGISTRATION_NOTIFICATION,
-                         logicalName ) ;
     }
 
     /**
@@ -1712,9 +1695,10 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
      */
     private NotificationListener getListenerWrapper(NotificationListener l,
                                                     ObjectName name,
-                                                    Object mbean,
+                                                    DynamicMBean mbean,
                                                     boolean create) {
-        ListenerWrapper wrapper = new ListenerWrapper(l, name, mbean);
+        Object resource = getResource(mbean);
+        ListenerWrapper wrapper = new ListenerWrapper(l, name, resource);
         synchronized (listenerWrappers) {
             WeakReference<ListenerWrapper> ref = listenerWrappers.get(wrapper);
             if (ref != null) {
@@ -1758,6 +1742,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             listener.handleNotification(notification, handback);
         }
 
+        @Override
         public boolean equals(Object o) {
             if (!(o instanceof ListenerWrapper))
                 return false;
@@ -1774,6 +1759,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
              */
         }
 
+        @Override
         public int hashCode() {
             return (System.identityHashCode(listener) ^
                     System.identityHashCode(mbean));
@@ -1851,4 +1837,213 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         }
     }
 
+    // ------------------------------------------------------------------
+    //
+    // Dealing with registration of special MBeans in the repository.
+    //
+    // ------------------------------------------------------------------
+
+    /**
+     * A RegistrationContext that makes it possible to perform additional
+     * post registration actions (or post unregistration actions) outside
+     * of the repository lock, once postRegister (or postDeregister) has
+     * been called.
+     * The method {@code done()} will be called in registerMBean or
+     * unregisterMBean, at the end.
+     */
+    private static interface ResourceContext extends RegistrationContext {
+        public void done();
+        /** An empty ResourceContext which does nothing **/
+        public static final ResourceContext NONE = new ResourceContext() {
+            public void done() {}
+            public void registering() {}
+            public void unregistered() {}
+        };
+    }
+
+    /**
+     * Adds a MBean in the repository,
+     * sends MBeanServerNotification.REGISTRATION_NOTIFICATION,
+     * returns ResourceContext for special resources such as ClassLoaders
+     * or JMXNamespaces. For regular MBean this method returns
+     * ResourceContext.NONE.
+     * @return a ResourceContext for special resources such as ClassLoaders
+     *         or JMXNamespaces.
+     */
+    private ResourceContext registerWithRepository(
+            final Object resource,
+            final DynamicMBean object,
+            final ObjectName logicalName)
+            throws InstanceAlreadyExistsException,
+            MBeanRegistrationException {
+
+        // Creates a registration context, if needed.
+        //
+        final ResourceContext context =
+                makeResourceContextFor(resource, logicalName);
+
+
+        repository.addMBean(object, logicalName, context);
+        // May throw InstanceAlreadyExistsException
+
+        // ---------------------
+        // Send create event
+        // ---------------------
+        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
+            MBEANSERVER_LOGGER.logp(Level.FINER,
+                    DefaultMBeanServerInterceptor.class.getName(),
+                    "addObject", "Send create notification of object " +
+                    logicalName.getCanonicalName());
+        }
+
+        sendNotification(
+                MBeanServerNotification.REGISTRATION_NOTIFICATION,
+                logicalName);
+
+        return context;
+    }
+
+    /**
+     * Removes a MBean in the repository,
+     * sends MBeanServerNotification.UNREGISTRATION_NOTIFICATION,
+     * returns ResourceContext for special resources such as ClassLoaders
+     * or JMXNamespaces, or null. For regular MBean this method returns
+     * ResourceContext.NONE.
+     *
+     * @return a ResourceContext for special resources such as ClassLoaders
+     *         or JMXNamespaces.
+     */
+    private ResourceContext unregisterFromRepository(
+            final Object resource,
+            final DynamicMBean object,
+            final ObjectName logicalName)
+            throws InstanceNotFoundException {
+
+        // Creates a registration context, if needed.
+        //
+        final ResourceContext context =
+                makeResourceContextFor(resource, logicalName);
+
+
+        repository.remove(logicalName, context);
+
+        // ---------------------
+        // Send deletion event
+        // ---------------------
+        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
+            MBEANSERVER_LOGGER.logp(Level.FINER,
+                    DefaultMBeanServerInterceptor.class.getName(),
+                    "unregisterMBean", "Send delete notification of object " +
+                    logicalName.getCanonicalName());
+        }
+
+        sendNotification(MBeanServerNotification.UNREGISTRATION_NOTIFICATION,
+                logicalName);
+        return context;
+    }
+
+    /**
+     * Registers a ClassLoader with the CLR.
+     * This method is called by the ResourceContext from within the
+     * repository lock.
+     * @param loader       The ClassLoader.
+     * @param logicalName  The ClassLoader MBean ObjectName.
+     */
+    private void addClassLoader(ClassLoader loader,
+            final ObjectName logicalName) {
+        /**
+         * Called when the newly registered MBean is a ClassLoader
+         * If so, tell the ClassLoaderRepository (CLR) about it.  We do
+         * this even if the loader is a PrivateClassLoader.  In that
+         * case, the CLR remembers the loader for use when it is
+         * explicitly named (e.g. as the loader in createMBean) but
+         * does not add it to the list that is consulted by
+         * ClassLoaderRepository.loadClass.
+         */
+        final ModifiableClassLoaderRepository clr =
+                instantiator.getClassLoaderRepository();
+        if (clr == null) {
+            final RuntimeException wrapped =
+                    new IllegalArgumentException(
+                    "Dynamic addition of class loaders" +
+                    " is not supported");
+            throw new RuntimeOperationsException(wrapped,
+                    "Exception occurred trying to register" +
+                    " the MBean as a class loader");
+        }
+        clr.addClassLoader(logicalName, loader);
+    }
+
+    /**
+     * Unregisters a ClassLoader from the CLR.
+     * This method is called by the ResourceContext from within the
+     * repository lock.
+     * @param loader       The ClassLoader.
+     * @param logicalName  The ClassLoader MBean ObjectName.
+     */
+    private void removeClassLoader(ClassLoader loader,
+            final ObjectName logicalName) {
+        /**
+         * Removes the  MBean from the default loader repository.
+         */
+        if (loader != server.getClass().getClassLoader()) {
+            final ModifiableClassLoaderRepository clr =
+                    instantiator.getClassLoaderRepository();
+            if (clr != null) {
+                clr.removeClassLoader(logicalName);
+            }
+        }
+    }
+
+    /**
+     * Creates a ResourceContext for a ClassLoader MBean.
+     * The resource context makes it possible to add the ClassLoader to
+     * (ResourceContext.registering) or resp. remove the ClassLoader from
+     * (ResourceContext.unregistered) the CLR
+     * when the associated MBean is added to or resp. removed from the
+     * repository.
+     *
+     * @param loader       The ClassLoader MBean being registered or
+     *                     unregistered.
+     * @param logicalName  The name of the ClassLoader MBean.
+     * @return a ResourceContext that takes in charge the addition or removal
+     *         of the loader to or from the CLR.
+     */
+    private ResourceContext createClassLoaderContext(
+            final ClassLoader loader,
+            final ObjectName logicalName) {
+        return new ResourceContext() {
+
+            public void registering() {
+                addClassLoader(loader, logicalName);
+            }
+
+            public void unregistered() {
+                removeClassLoader(loader, logicalName);
+            }
+
+            public void done() {
+            }
+        };
+    }
+
+    /**
+     * Creates a ResourceContext for the given resource.
+     * If the resource does not need a ResourceContext, returns
+     * ResourceContext.NONE.
+     * At this time, only JMXNamespaces and ClassLoaders need a
+     * ResourceContext.
+     *
+     * @param resource     The resource being registered or unregistered.
+     * @param logicalName  The name of the associated MBean.
+     * @return
+     */
+    private ResourceContext makeResourceContextFor(Object resource,
+            ObjectName logicalName) {
+        if (resource instanceof ClassLoader) {
+            return createClassLoaderContext((ClassLoader) resource,
+                    logicalName);
+        }
+        return ResourceContext.NONE;
+    }
 }

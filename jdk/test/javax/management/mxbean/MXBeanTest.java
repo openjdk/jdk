@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6175517 6278707 6318827 6305746 6392303
+ * @bug 6175517 6278707 6318827 6305746 6392303 6600709
  * @summary General MXBean test.
  * @author Eamonn McManus
  * @run clean MXBeanTest MerlinMXBean TigerMXBean
@@ -40,7 +40,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import javax.management.Attribute;
+import java.util.Map;
+import java.util.SortedMap;
 import javax.management.JMX;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
@@ -55,10 +56,6 @@ import javax.management.StandardMBean;
 import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataInvocationHandler;
-import javax.management.openmbean.OpenMBeanAttributeInfo;
-import javax.management.openmbean.OpenMBeanInfo;
-import javax.management.openmbean.OpenMBeanOperationInfo;
-import javax.management.openmbean.OpenMBeanParameterInfo;
 import javax.management.openmbean.OpenType;
 import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
@@ -81,10 +78,8 @@ public class MXBeanTest {
 
         if (failures == 0)
             System.out.println("Test passed");
-        else {
-            System.out.println("TEST FAILURES: " + failures);
-            System.exit(1);
-        }
+        else
+            throw new Exception("TEST FAILURES: " + failures);
     }
 
     private static int failures = 0;
@@ -561,6 +556,11 @@ public class MXBeanTest {
                 return false;
             return deepEqual(o1, o2, namedMXBeans);
         }
+        if (o1 instanceof Map) {
+            if (!(o2 instanceof Map))
+                return false;
+            return equalMap((Map) o1, (Map) o2, namedMXBeans);
+        }
         if (o1 instanceof CompositeData && o2 instanceof CompositeData) {
             return compositeDataEqual((CompositeData) o1, (CompositeData) o2,
                                       namedMXBeans);
@@ -595,6 +595,21 @@ public class MXBeanTest {
             Object e1 = Array.get(a1, i);
             Object e2 = Array.get(a2, i);
             if (!equal(e1, e2, namedMXBeans))
+                return false;
+        }
+        return true;
+    }
+
+    private static boolean equalMap(Map<?,?> m1, Map<?,?> m2,
+                                    NamedMXBeans namedMXBeans) {
+        if (m1.size() != m2.size())
+            return false;
+        if ((m1 instanceof SortedMap) != (m2 instanceof SortedMap))
+            return false;
+        for (Object k1 : m1.keySet()) {
+            if (!m2.containsKey(k1))
+                return false;
+            if (!equal(m1.get(k1), m2.get(k1), namedMXBeans))
                 return false;
         }
         return true;
@@ -655,7 +670,7 @@ public class MXBeanTest {
     /* I wanted to call this method toString(Object), but oddly enough
        this meant that I couldn't call it from the inner class
        MXBeanImplInvocationHandler, because the inherited Object.toString()
-       prevented that.  Surprising behaviour.  */
+       prevented that.  */
     static String string(Object o) {
         if (o == null)
             return "null";

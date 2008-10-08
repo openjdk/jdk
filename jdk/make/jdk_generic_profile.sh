@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ if [ "${osname}" = SunOS ] ; then
   # System place where JDK installed images are stored?
   jdk_instances=/usr/jdk/instances
 
-  # Get the SS11 compilers (and latest patches for them too)
+  # Get the Sun Studio compilers (and latest patches for them too)
   if [ "${ALT_COMPILER_PATH}" = "" ] ; then
     ALT_COMPILER_PATH=/opt/SUNWspro/bin
     export ALT_COMPILER_PATH

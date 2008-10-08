@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,15 +47,15 @@ void FreeChunk::mangleAllocated(size_t size) {
   Copy::fill_to_words(addr + hdr, size - hdr, baadbabeHeapWord);
 }
 
-void FreeChunk::mangleFreed(size_t size) {
+void FreeChunk::mangleFreed(size_t sz) {
   assert(baadbabeHeapWord != deadbeefHeapWord, "Need distinct patterns");
   // mangle all but the header of a just-freed block of storage
   // just prior to passing it to the storage dictionary
-  assert(size >= MinChunkSize, "smallest size of object");
-  assert(size == _size, "just checking");
+  assert(sz >= MinChunkSize, "smallest size of object");
+  assert(sz == size(), "just checking");
   HeapWord* addr = (HeapWord*)this;
   size_t hdr = header_size();
-  Copy::fill_to_words(addr + hdr, size - hdr, deadbeefHeapWord);
+  Copy::fill_to_words(addr + hdr, sz - hdr, deadbeefHeapWord);
 }
 
 void FreeChunk::verifyList() const {

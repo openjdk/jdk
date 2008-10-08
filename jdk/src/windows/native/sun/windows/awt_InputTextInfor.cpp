@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-#include <windows.h>
-#include <jni.h>
-#include <imm.h>
+
 #include "awt.h"
+#include <imm.h>
 #include "awt_Component.h"
 #include "awt_InputTextInfor.h"
 
@@ -91,12 +90,12 @@ AwtInputTextInfor::GetContextData(HIMC hIMC, const LPARAM flags) {
     LONG   cbData[5] = {0};
     LPVOID lpData[5] = {NULL};
     for (int i = startIndex, j = 0; i <= endIndex; i++, j++) {
-        cbData[j] = ImmGetCompositionStringW(hIMC, GCS_INDEX[i], NULL, 0);
+        cbData[j] = ::ImmGetCompositionString(hIMC, GCS_INDEX[i], NULL, 0);
         if (cbData[j] == 0) {
             lpData[j] = NULL;
         } else {
             LPBYTE lpTemp = new BYTE[cbData[j]];
-            cbData[j] = ImmGetCompositionStringW(hIMC, GCS_INDEX[i], lpTemp, cbData[j]);
+            cbData[j] = ::ImmGetCompositionString(hIMC, GCS_INDEX[i], lpTemp, cbData[j]);
             if (IMM_ERROR_GENERAL != cbData[j]) {
                 lpData[j] = (LPVOID)lpTemp;
             } else {
@@ -126,7 +125,7 @@ AwtInputTextInfor::GetContextData(HIMC hIMC, const LPARAM flags) {
 
     // Get the cursor position
     if (flags & GCS_COMPSTR) {
-        m_cursorPosW = ImmGetCompositionStringW(hIMC, GCS_CURSORPOS,
+        m_cursorPosW = ::ImmGetCompositionString(hIMC, GCS_CURSORPOS,
                                                 NULL, 0);
     }
 
@@ -185,9 +184,11 @@ AwtInputTextInfor::~AwtInputTextInfor() {
 
 jstring AwtInputTextInfor::MakeJavaString(JNIEnv* env, LPWSTR lpStrW, int cStrW) {
 
-    if (env == NULL || lpStrW == NULL || cStrW == 0) return NULL;
-
-    return env->NewString(lpStrW, cStrW);
+    if (env == NULL || lpStrW == NULL || cStrW == 0) {
+        return NULL;
+    } else {
+        return env->NewString(reinterpret_cast<jchar*>(lpStrW), cStrW);
+    }
 }
 
 //
@@ -232,7 +233,7 @@ int AwtInputTextInfor::GetClauseInfor(int*& lpBndClauseW, jstring*& lpReadingCla
                 LCID lcJPN = MAKELCID(MAKELANGID(LANG_JAPANESE,SUBLANG_DEFAULT),SORT_DEFAULT);
                 // Reading string is given in half width katakana in Japanese Windows
                 //  Convert it to full width katakana.
-                int cFWStrW = LCMapStringW( lcJPN, LCMAP_FULLWIDTH, lpHWStrW, cHWStrW, NULL, 0 );
+                int cFWStrW = ::LCMapString(lcJPN, LCMAP_FULLWIDTH, lpHWStrW, cHWStrW, NULL, 0);
                 LPWSTR lpFWStrW;
                 try {
                     lpFWStrW = new WCHAR[cFWStrW];
@@ -244,7 +245,7 @@ int AwtInputTextInfor::GetClauseInfor(int*& lpBndClauseW, jstring*& lpReadingCla
                     throw;
                 }
 
-                LCMapStringW( lcJPN, LCMAP_FULLWIDTH, lpHWStrW, cHWStrW, lpFWStrW, cFWStrW );
+                ::LCMapString(lcJPN, LCMAP_FULLWIDTH, lpHWStrW, cHWStrW, lpFWStrW, cFWStrW);
                 readingClauseW[cls] = MakeJavaString(env, lpFWStrW, cFWStrW);
                 delete [] lpFWStrW;
             } else {
@@ -252,7 +253,7 @@ int AwtInputTextInfor::GetClauseInfor(int*& lpBndClauseW, jstring*& lpReadingCla
             }
         }
         else {
-            readingClauseW[cls] = MakeJavaString(env, (LPWSTR)NULL, 0);
+            readingClauseW[cls] = NULL;
         }
     }
 

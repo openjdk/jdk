@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -922,8 +922,9 @@ void os::serialize_thread_states() {
   // time and expensive page trap spinning, 'SerializePageLock' is used to block
   // the mutator thread if such case is encountered. See bug 6546278 for details.
   Thread::muxAcquire(&SerializePageLock, "serialize_thread_states");
-  os::protect_memory( (char *)os::get_memory_serialize_page(), os::vm_page_size() );
-  os::unguard_memory( (char *)os::get_memory_serialize_page(), os::vm_page_size() );
+  os::protect_memory((char *)os::get_memory_serialize_page(),
+                     os::vm_page_size(), MEM_PROT_READ, /*is_committed*/true );
+  os::unguard_memory((char *)os::get_memory_serialize_page(), os::vm_page_size());
   Thread::muxRelease(&SerializePageLock);
 }
 

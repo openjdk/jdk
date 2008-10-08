@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import sun.awt.AWTAutoShutdown;
 import sun.awt.SunToolkit;
 import sun.awt.Win32GraphicsDevice;
 import sun.awt.Win32GraphicsEnvironment;
+import sun.java2d.d3d.D3DRenderQueue;
 import sun.java2d.opengl.OGLRenderQueue;
 
 import sun.print.PrintJob2D;
@@ -78,6 +79,10 @@ public class WToolkit extends SunToolkit implements Runnable {
 
     // Dynamic Layout Resize client code setting
     protected boolean dynamicLayoutSetting = false;
+
+    //Is it allowed to generate events assigned to extra mouse buttons.
+    //Set to true by default.
+    private static boolean areExtraMouseButtonsEnabled = true;
 
     /**
      * Initialize JNI field and method IDs
@@ -248,6 +253,11 @@ public class WToolkit extends SunToolkit implements Runnable {
         // Enabled "live resizing" by default.  It remains controlled
         // by the native system though.
         setDynamicLayout(true);
+
+        areExtraMouseButtonsEnabled = Boolean.parseBoolean(System.getProperty("sun.awt.enableExtraMouseButtons", "true"));
+        //set system property if not yet assigned
+        System.setProperty("sun.awt.enableExtraMouseButtons", ""+areExtraMouseButtonsEnabled);
+        setExtraMouseButtonsEnabledNative(areExtraMouseButtonsEnabled);
     }
 
     public void run() {
@@ -591,6 +601,8 @@ public class WToolkit extends SunToolkit implements Runnable {
         nativeSync();
         // now flush the OGL pipeline (this is a no-op if OGL is not enabled)
         OGLRenderQueue.sync();
+        // now flush the D3D pipeline (this is a no-op if D3D is not enabled)
+        D3DRenderQueue.sync();
     }
 
     public PrintJob getPrintJob(Frame frame, String doctitle,
@@ -910,8 +922,31 @@ public class WToolkit extends SunToolkit implements Runnable {
         return toolkit;
     }
 
+    /**
+     * There are two reasons why we don't use buffer per window when
+     * Vista's DWM (aka Aero) is enabled:
+     * - since with DWM all windows are already double-buffered, the application
+     *   doesn't get expose events so we don't get to use our true back-buffer,
+     *   wasting memory and performance (this is valid for both d3d and gdi
+     *   pipelines)
+     * - in some cases with buffer per window enabled it is possible for the
+     *   paint manager to redirect rendering to the screen for some operations
+     *   (like copyArea), and since bpw uses its own BufferStrategy the
+     *   d3d onscreen rendering support is disabled and rendering goes through
+     *   GDI. This doesn't work well with Vista's DWM since one
+     *   can not perform GDI and D3D operations on the same surface
+     *   (see 6630702 for more info)
+     *
+     * Note: even though DWM composition state can change during the lifetime
+     * of the application it is a rare event, and it is more often that it
+     * is temporarily disabled (because of some app) than it is getting
+     * permanently enabled so we can live with this approach without the
+     * complexity of dwm state listeners and such. This can be revisited if
+     * proved otherwise.
+     */
+    @Override
     public boolean useBufferPerWindow() {
-        return true;
+        return !Win32GraphicsEnvironment.isDWMCompositionEnabled();
     }
 
     public void grab(Window w) {
@@ -935,4 +970,9 @@ public class WToolkit extends SunToolkit implements Runnable {
         return new WDesktopPeer();
     }
 
+    public static native void setExtraMouseButtonsEnabledNative(boolean enable);
+
+    public boolean areExtraMouseButtonsEnabled() throws HeadlessException {
+        return areExtraMouseButtonsEnabled;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1385,7 +1385,7 @@ void PhaseChaitin::fixup_spills() {
             cisc->ins_req(1,src);         // Requires a memory edge
           }
           b->_nodes.map(j,cisc);          // Insert into basic block
-          n->replace_by(cisc); // Correct graph
+          n->subsume_by(cisc); // Correct graph
           //
           ++_used_cisc_instructions;
 #ifndef PRODUCT

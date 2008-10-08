@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "awt_Brush.h"
 #include "awt_Pen.h"
 #include "awt_Win32GraphicsDevice.h"
-#include "Win32SurfaceData.h"
+#include "GDIWindowSurfaceData.h"
 
 #include "java_awt_Component.h"
 #include "sun_awt_windows_WComponentPeer.h"
@@ -53,6 +53,22 @@ const UINT MAX_ACP_STR_LEN = 7; // ANSI CP identifiers are no longer than this
 #define MIDDLE_BUTTON 2
 #define RIGHT_BUTTON 4
 #define DBL_CLICK 8
+#define X1_BUTTON 16
+#define X2_BUTTON 32
+
+#ifndef MK_XBUTTON1
+#define MK_XBUTTON1         0x0020
+#endif
+
+#ifndef MK_XBUTTON2
+#define MK_XBUTTON2         0x0040
+#endif
+
+// combination of standard mouse button flags
+const int ALL_MK_BUTTONS = MK_LBUTTON|MK_MBUTTON|MK_RBUTTON;
+const int X_BUTTONS = MK_XBUTTON1|MK_XBUTTON2;
+
+
 
 // Whether to check for embedded frame and adjust location
 #define CHECK_EMBEDDED 0
@@ -61,8 +77,6 @@ const UINT MAX_ACP_STR_LEN = 7; // ANSI CP identifiers are no longer than this
 class AwtPopupMenu;
 
 class AwtDropTarget;
-
-class DDrawDisplayMode;
 
 struct WmComponentSetFocusData;
 
@@ -83,11 +97,6 @@ enum MsgRouting {
 
 class AwtComponent : public AwtObject {
 public:
-    enum {
-        // combination of all mouse button flags
-        ALL_MK_BUTTONS = MK_LBUTTON|MK_MBUTTON|MK_RBUTTON
-    };
-
     /* java.awt.Component fields and method IDs */
     static jfieldID peerID;
     static jfieldID xID;
@@ -114,6 +123,7 @@ public:
     static jmethodID replaceSurfaceDataLaterMID;
 
     static const UINT WmAwtIsComponent;
+    static jint * masks; //InputEvent mask array
     AwtComponent();
     virtual ~AwtComponent();
 
@@ -203,7 +213,8 @@ public:
      */
     AwtComponent* GetParent();
 
-    /* Get the component's immediate container. */
+    /* Get the component's immediate container. Note: may return NULL while
+       the component is being reparented in full-screen mode by Direct3D */
     class AwtWindow* GetContainer();
 
     /* Is a component a container? Used by above method */
@@ -600,11 +611,6 @@ public:
 
     jintArray CreatePrintedPixels(SIZE &loc, SIZE &size);
 
-    virtual BOOL WmDDCreateSurface(Win32SDOps* wsdo);
-    virtual MsgRouting WmDDEnterFullScreen(HMONITOR monitor);
-    virtual MsgRouting WmDDExitFullScreen(HMONITOR monitor);
-    virtual MsgRouting WmDDSetDisplayMode(HMONITOR monitor, DDrawDisplayMode* pDisplayMode);
-
     static void * GetNativeFocusOwner();
     static void * GetNativeFocusedWindow();
     static void   ClearGlobalFocusOwner();
@@ -680,10 +686,6 @@ public:
 
     static HWND sm_focusOwner;
     static HWND sm_focusedWindow;
-
-    static BOOL m_isWin95;
-    static BOOL m_isWin2000;
-    static BOOL m_isWinNT;
 
     static BOOL sm_bMenuLoop;
     static INLINE BOOL isMenuLoopActive() {

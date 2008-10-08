@@ -553,6 +553,10 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     }
 
     static int getModifiers(int state, int button, int keyCode) {
+        return getModifiers(state, button, keyCode, 0,  false);
+    }
+
+    static int getModifiers(int state, int button, int keyCode, int type, boolean wheel_mouse) {
         int modifiers = 0;
 
         if (((state & XConstants.ShiftMask) != 0) ^ (keyCode == KeyEvent.VK_SHIFT)) {
@@ -570,14 +574,23 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         if (((state & XToolkit.modeSwitchMask) != 0) ^ (keyCode == KeyEvent.VK_ALT_GRAPH)) {
             modifiers |= InputEvent.ALT_GRAPH_DOWN_MASK;
         }
-        if (((state & XConstants.Button1Mask) != 0) ^ (button == MouseEvent.BUTTON1)) {
-            modifiers |= InputEvent.BUTTON1_DOWN_MASK;
-        }
-        if (((state & XConstants.Button2Mask) != 0) ^ (button == MouseEvent.BUTTON2)) {
-            modifiers |= InputEvent.BUTTON2_DOWN_MASK;
-        }
-        if (((state & XConstants.Button3Mask) != 0) ^ (button == MouseEvent.BUTTON3)) {
-            modifiers |= InputEvent.BUTTON3_DOWN_MASK;
+        //InputEvent.BUTTON_DOWN_MASK array is starting from BUTTON1_DOWN_MASK on index == 0.
+        // button currently reflects a real button number and starts from 1. (except NOBUTTON which is zero )
+
+        /* this is an attempt to refactor button IDs in : MouseEvent, InputEvent, XlibWrapper and XWindow.*/
+
+        //reflects a button number similar to MouseEvent.BUTTON1, 2, 3 etc.
+        for (int i = 0; i < XConstants.buttonsMask.length; i ++){
+            //modifier should be added if :
+            // 1) current button is now still in PRESSED state (means that user just pressed mouse but not released yet) or
+            // 2) if Xsystem reports that "state" represents that button was just released. This only happens on RELEASE with 1,2,3 buttons.
+            // ONLY one of these conditions should be TRUE to add that modifier.
+            if (((state & XConstants.buttonsMask[i]) != 0) != (button == XConstants.buttons[i])){
+                //exclude wheel buttons from adding their numbers as modifiers
+                if (!wheel_mouse) {
+                    modifiers |= InputEvent.getMaskForButton(i+1);
+                }
+            }
         }
         return modifiers;
     }
@@ -601,17 +614,6 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             res |= XToolkit.modeSwitchMask;
         }
         return res;
-    }
-
-    private static int getButtonMask(long mouseButton) {
-        if (mouseButton == XConstants.Button1) {
-            return XConstants.Button1Mask;
-        } else if (mouseButton == XConstants.Button2) {
-            return XConstants.Button2Mask;
-        } else if (mouseButton == XConstants.Button3) {
-            return XConstants.Button3Mask;
-        }
-        return 0;
     }
 
     /**
@@ -648,7 +650,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         boolean popupTrigger = false;
         int button=0;
         boolean wheel_mouse = false;
-        long lbutton = xbe.get_button();
+        int lbutton = xbe.get_button();
         int type = xev.get_type();
         when = xbe.get_time();
         long jWhen = XToolkit.nowMillisUTC_offset(when);
@@ -663,7 +665,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
 
         if (type == XConstants.ButtonPress) {
             //Allow this mouse button to generate CLICK event on next ButtonRelease
-            mouseButtonClickAllowed |= getButtonMask(lbutton);
+            mouseButtonClickAllowed |= XConstants.buttonsMask[lbutton];
             XWindow lastWindow = (lastWindowRef != null) ? ((XWindow)lastWindowRef.get()):(null);
             /*
                multiclick checking
@@ -693,21 +695,22 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             }
         }
 
-        if (lbutton == XConstants.Button1)
-            button = MouseEvent.BUTTON1;
-        else if (lbutton ==  XConstants.Button2 )
-            button = MouseEvent.BUTTON2;
-        else if (lbutton == XConstants.Button3)
-            button = MouseEvent.BUTTON3;
-        else if (lbutton == XConstants.Button4) {
-            button = 4;
-            wheel_mouse = true;
-        } else if (lbutton == XConstants.Button5) {
-            button = 5;
+        button = XConstants.buttons[lbutton - 1];
+        // 4 and 5 buttons are usually considered assigned to a first wheel
+        if (lbutton == XConstants.buttons[3] ||
+            lbutton == XConstants.buttons[4]) {
             wheel_mouse = true;
         }
 
-        modifiers = getModifiers(xbe.get_state(),button,0);
+        // mapping extra buttons to numbers starting from 4.
+        if ((button > XConstants.buttons[4]) && (!Toolkit.getDefaultToolkit().areExtraMouseButtonsEnabled())){
+            return;
+        }
+
+        if (button > XConstants.buttons[4]){
+            button -= 2;
+        }
+        modifiers = getModifiers(xbe.get_state(),button,0, type, wheel_mouse);
 
         if (!wheel_mouse) {
             MouseEvent me = new MouseEvent((Component)getEventSource(),
@@ -720,7 +723,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             postEventToEventQueue(me);
 
             if ((type == XConstants.ButtonRelease) &&
-                ((mouseButtonClickAllowed & getButtonMask(lbutton)) != 0) ) // No up-button in the drag-state
+                ((mouseButtonClickAllowed & XConstants.buttonsMask[lbutton]) != 0) ) // No up-button in the drag-state
             {
                 postEventToEventQueue(me = new MouseEvent((Component)getEventSource(),
                                                      MouseEvent.MOUSE_CLICKED,
@@ -750,7 +753,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         /* Update the state variable AFTER the CLICKED event post. */
         if (type == XConstants.ButtonRelease) {
             /* Exclude this mouse button from allowed list.*/
-            mouseButtonClickAllowed &= ~getButtonMask(lbutton);
+            mouseButtonClickAllowed &= ~XConstants.buttonsMask[lbutton];
         }
     }
 
@@ -761,7 +764,19 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             return;
         }
 
-        int mouseKeyState = (xme.get_state() & (XConstants.Button1Mask | XConstants.Button2Mask | XConstants.Button3Mask));
+        int mouseKeyState = 0; //(xme.get_state() & (XConstants.buttonsMask[0] | XConstants.buttonsMask[1] | XConstants.buttonsMask[2]));
+
+        //this doesn't work for extra buttons because Xsystem is sending state==0 for every extra button event.
+        // we can't correct it in MouseEvent class as we done it with modifiers, because exact type (DRAG|MOVE)
+        // should be passed from XWindow.
+        //TODO: eliminate it with some other value obtained w/o AWTLock.
+        for (int i = 0; i < XToolkit.getNumMouseButtons(); i++){
+            // TODO : here is the bug in WM: extra buttons doesn't have state!=0 as they should.
+            if ((i != 4) && (i != 5)) {
+                mouseKeyState = mouseKeyState | (xme.get_state() & XConstants.buttonsMask[i]);
+            }
+        }
+
         boolean isDragging = (mouseKeyState != 0);
         int mouseEventType = 0;
 

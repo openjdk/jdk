@@ -1,12 +1,12 @@
 #
 #
-# Based on BSi's ISO4217 data - "TABLE A1.doc" + amendments up until MA139.doc
-#   (As of 18 June  2007)
+# Based on BSi's ISO4217 data - "TABLE A1.doc" + amendments up until MA140.doc
+#   (As of 24 September  2007)
 #
 
 # Version
 FILEVERSION=1
-DATAVERSION=139
+DATAVERSION=140
 
 # ISO 4217 currency data
 AF	AFN	971	2
@@ -68,7 +68,7 @@ CR	CRC	188	2
 CI	XOF	952	0
 HR	HRK	191	2
 CU	CUP	192	2
-CY	CYP	196	2
+CY	EUR	978	2
 CZ	CZK	203	2
 DK	DKK	208	2
 DJ	DJF	262	0
@@ -149,7 +149,7 @@ MW	MWK	454	2
 MY	MYR	458	2
 MV	MVR	462	2
 ML	XOF	952	0
-MT	MTL	470	2
+MT	EUR	978	2
 MH	USD	840	2
 MQ	EUR	978	2
 MR	MRO	478	2

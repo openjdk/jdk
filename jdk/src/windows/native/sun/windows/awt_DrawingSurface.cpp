@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
  */
 
 #define _JNI_IMPLEMENTATION_
+
+#include "awt.h"
 #include "awt_DrawingSurface.h"
-#include "WindowsFlags.h"
 #include "awt_Component.h"
 
 jclass jawtVImgClass;
 jclass jawtComponentClass;
-jclass jawtW32ossdClass;
 jfieldID jawtPDataID;
 jfieldID jawtSDataID;
 jfieldID jawtSMgrID;
@@ -82,31 +82,7 @@ jint JAWTOffscreenDrawingSurfaceInfo::Init(JAWTOffscreenDrawingSurface* parent)
 {
     TRY;
 
-    JNIEnv* env = parent->env;
-    jobject target = parent->target;
-    if (JNU_IsNull(env, target)) {
-        DTRACE_PRINTLN("NULL target");
-        return JAWT_LOCK_ERROR;
-    }
-    Win32SDOps * ops =
-        (Win32SDOps *)((void*)env->GetLongField(target, jawtPDataID));
-    if (ops == NULL) {
-        DTRACE_PRINTLN("NULL ops");
-        return JAWT_LOCK_ERROR;
-    }
-    ddrawSurface = ops->lpSurface;
-    if (ddrawSurface == NULL) {
-        DTRACE_PRINTLN("NULL lpSurface");
-        return JAWT_LOCK_ERROR;
-    }
-    DXSurface *dxSurface = ddrawSurface->GetDXSurface();
-    if (dxSurface == NULL) {
-        DTRACE_PRINTLN("NULL dxSurface");
-        return JAWT_LOCK_ERROR;
-    }
-    platformInfo = this;
-    ds = parent;
-    return 0;
+    return JAWT_LOCK_ERROR;
 
     CATCH_BAD_ALLOC_RET(JAWT_LOCK_ERROR);
 }
@@ -248,58 +224,12 @@ void JNICALL JAWTOffscreenDrawingSurface::FreeDSI
 jint JNICALL JAWTOffscreenDrawingSurface::LockSurface
     (JAWT_DrawingSurface* ds)
 {
-    TRY;
-
-    if (ds == NULL) {
-        DTRACE_PRINTLN("Drawing Surface is NULL");
-        return JAWT_LOCK_ERROR;
-    }
-    JAWTOffscreenDrawingSurface* pds =
-        static_cast<JAWTOffscreenDrawingSurface*>(ds);
-    jint val = pds->info.Init(pds);
-    if ((val & JAWT_LOCK_ERROR) != 0) {
-            return val;
-    }
-    DDrawSurface *ddrawSurface = pds->info.ddrawSurface;
-    if (ddrawSurface == NULL) {
-        return JAWT_LOCK_ERROR;
-    }
-    ddrawSurface->GetExclusiveAccess();
-    DXSurface *dxSurface = ddrawSurface->GetDXSurface();
-    if (!dxSurface) {
-        return JAWT_LOCK_ERROR;
-    }
-    switch (dxSurface->GetVersionID()) {
-    case VERSION_DX7:
-        {
-            pds->info.dx7Surface = dxSurface->GetDDSurface();
-            break;
-        }
-    default:
-        // Leave info values at default and return error
-        DTRACE_PRINTLN1("unknown jawt offscreen version: %d\n",
-                        dxSurface->GetVersionID());
-        return JAWT_LOCK_ERROR;
-    }
-    return 0;
-
-    CATCH_BAD_ALLOC_RET(JAWT_LOCK_ERROR);
+    return JAWT_LOCK_ERROR;
 }
 
 void JNICALL JAWTOffscreenDrawingSurface::UnlockSurface
     (JAWT_DrawingSurface* ds)
 {
-    TRY_NO_VERIFY;
-
-    if (ds == NULL) {
-        DTRACE_PRINTLN("Drawing Surface is NULL");
-        return;
-    }
-    JAWTOffscreenDrawingSurface* pds =
-        static_cast<JAWTOffscreenDrawingSurface*>(ds);
-    pds->info.ddrawSurface->ReleaseExclusiveAccess();
-
-    CATCH_BAD_ALLOC;
 }
 
 /* C exports */
@@ -313,31 +243,9 @@ extern "C" JNIEXPORT JAWT_DrawingSurface* JNICALL DSGetDrawingSurface
     if (env->IsInstanceOf(target, jawtComponentClass)) {
         return new JAWTDrawingSurface(env, target);
     }
-    // Sharing native offscreen surfaces is disabled by default in
-    // this release.  Sharing is enabled via the -Dsun.java2d.offscreenSharing
-    // flag.
-    if (g_offscreenSharing && env->IsInstanceOf(target, jawtVImgClass)) {
-        jobject sMgr, sData;
-        sMgr = env->GetObjectField(target, jawtSMgrID);
-        if (!sMgr) {
-            return NULL;
-        }
-        sData = env->GetObjectField(sMgr, jawtSDataID);
-        if (!sData || !(env->IsInstanceOf(sData, jawtW32ossdClass))) {
-            return NULL;
-        }
-        return new JAWTOffscreenDrawingSurface(env, sData);
-    } else {
-        if (!g_offscreenSharing) {
-            DTRACE_PRINTLN(
-                "GetDrawingSurface target must be a Component");
-        } else {
-            DTRACE_PRINTLN(
-                "GetDrawingSurface target must be a Component or VolatileImage");
-        }
-        return NULL;
-    }
 
+    DTRACE_PRINTLN("GetDrawingSurface target must be a Component");
+    return NULL;
 
     CATCH_BAD_ALLOC_RET(NULL);
 }

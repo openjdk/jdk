@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -398,7 +398,6 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs)
     jobjectArray addrArr;
     jobjectArray bindArr;
     jobjectArray childArr;
-    netaddr *addrs;
     jint addr_index, addr_count, bind_index;
     jint child_count, child_index;
     netaddr *addrP;
@@ -815,8 +814,6 @@ static netif *enumIPv6Interfaces(JNIEnv *env, netif *ifs) {
                       addr6p[0], addr6p[1], addr6p[2], addr6p[3],
                       addr6p[4], addr6p[5], addr6p[6], addr6p[7],
                   &if_idx, &plen, &scope, &dad_status, devname) != EOF) {
-            struct netif *ifs_ptr = NULL;
-            struct netif *last_ptr = NULL;
             struct sockaddr_in6 addr;
 
             sprintf(addr6, "%s:%s:%s:%s:%s:%s:%s:%s",
@@ -852,7 +849,6 @@ static netif *enumIPv6Interfaces(JNIEnv *env, netif *ifs) {
  */
 void freeif(netif *ifs) {
     netif *currif = ifs;
-    netif *child = NULL;
 
     while (currif != NULL) {
         netaddr *addrP = currif->addr;
@@ -1117,9 +1113,33 @@ static short getFlags(JNIEnv *env, jstring name) {
   if (ioctl(sock, SIOCGIFFLAGS, (char *)&if2) >= 0) {
     ret = if2.ifr_flags;
   } else {
+#if defined(__solaris__) && defined(AF_INET6)
+    /* Try with an IPv6 socket in case the interface has only IPv6 addresses assigned to it */
+    struct lifreq lifr;
+
+    close(sock);
+    sock = JVM_Socket(AF_INET6, SOCK_DGRAM, 0);
+
+    if (sock < 0) {
+      (*env)->ReleaseStringUTFChars(env, name, name_utf);
+      NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+                                  "Socket creation failed");
+      return -1;
+    }
+
+    memset((caddr_t)&lifr, 0, sizeof(lifr));
+    strcpy((caddr_t)&(lifr.lifr_name), name_utf);
+
+    if (ioctl(sock, SIOCGLIFFLAGS, (char *)&lifr) >= 0) {
+      ret = lifr.lifr_flags;
+    } else {
+      NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+                               "IOCTL failed");
+    }
+#else
     NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                                  "IOCTL failed");
-    ret = -1;
+#endif
   }
   close(sock);
   /* release the UTF string and interface list */
@@ -1134,10 +1154,9 @@ static short getFlags(JNIEnv *env, jstring name) {
  */
 static struct sockaddr *getBroadcast(JNIEnv *env, const char *ifname) {
   int sock;
-  unsigned int mask;
   struct sockaddr *ret = NULL;
   struct ifreq if2;
-  short flag;
+  short flag = 0;
 
   sock = JVM_Socket(AF_INET, SOCK_DGRAM, 0);
   if (sock < 0) {
@@ -1484,8 +1503,23 @@ JNIEXPORT jint JNICALL Java_java_net_NetworkInterface_getMTU0(JNIEnv *env, jclas
     if (ioctl(sock, SIOCGLIFMTU, (caddr_t)&lifr) >= 0) {
       ret = lifr.lifr_mtu;
     } else {
-      NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                   "IOCTL failed");
+      /* Try wIth an IPv6 socket in case the interface has only IPv6 addresses assigned to it */
+      close(sock);
+      sock = JVM_Socket(AF_INET6, SOCK_DGRAM, 0);
+
+      if (sock < 0) {
+        (*env)->ReleaseStringUTFChars(env, name, name_utf);
+        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+                                     "Socket creation failed");
+        return -1;
+      }
+
+      if (ioctl(sock, SIOCGLIFMTU, (caddr_t)&lifr) >= 0) {
+        ret = lifr.lifr_mtu;
+      } else {
+        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+                                     "IOCTL failed");
+      }
     }
 #endif
     close(sock);

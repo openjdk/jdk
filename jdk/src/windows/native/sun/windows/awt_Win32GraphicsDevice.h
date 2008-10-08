@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,16 +32,14 @@ extern "C" {
 } // extern "C"
 #include "colordata.h"
 #include "awt_Palette.h"
-#include "awt_MMStub.h"
 #include "Devices.h"
-#include "dxCapabilities.h"
 
 class AwtPalette;
 class Devices;
 
 class AwtWin32GraphicsDevice {
 public:
-                            AwtWin32GraphicsDevice(int screen, MHND mhnd, Devices *arr);
+                            AwtWin32GraphicsDevice(int screen, HMONITOR mhnd, Devices *arr);
                             ~AwtWin32GraphicsDevice();
     void                    UpdateDeviceColorState();
     void                    SetGrayness(int grayValue);
@@ -61,9 +59,8 @@ public:
     HPALETTE                GetPalette();
     ColorData               *GetColorData() { return cData; }
     int                     GetBitDepth() { return colorData->bitsperpixel; }
-    MHND                    GetMonitor() { return monitor; }
-    MONITOR_INFO            *GetMonitorInfo() { return pMonitorInfo; }
-    DxCapabilities          *GetDxCaps() { return &dxCaps; }
+    HMONITOR                GetMonitor() { return monitor; }
+    LPMONITORINFO           GetMonitorInfo() { return pMonitorInfo; }
     jobject                 GetJavaDevice() { return javaDevice; }
     int                     GetDeviceIndex() { return screen; }
     void                    Release();
@@ -80,15 +77,14 @@ public:
     static void             UpdateDynamicColorModel(int deviceIndex);
     static BOOL             UpdateSystemPalette(int deviceIndex);
     static HPALETTE         GetPalette(int deviceIndex);
-    static MHND             GetMonitor(int deviceIndex);
-    static MONITOR_INFO     *GetMonitorInfo(int deviceIndex);
+    static HMONITOR         GetMonitor(int deviceIndex);
+    static LPMONITORINFO    GetMonitorInfo(int deviceIndex);
     static void             ResetAllMonitorInfo();
     static BOOL             IsPrimaryPalettized() { return primaryPalettized; }
     static int              GetDefaultDeviceIndex() { return primaryIndex; }
-    static void             DisableOffscreenAccelerationForDevice(MHND hMonitor);
-    static DxCapabilities   *GetDxCapsForDevice(MHND hMonitor);
+    static void             DisableOffscreenAccelerationForDevice(HMONITOR hMonitor);
     static HDC              GetDCFromScreen(int screen);
-    static int              GetScreenFromMHND(MHND mon);
+    static int              GetScreenFromHMONITOR(HMONITOR mon);
 
     static int              primaryIndex;
     static BOOL             primaryPalettized;
@@ -97,22 +93,22 @@ public:
     static jfieldID         dynamicColorModelID;
     static jfieldID         indexCMrgbID;
     static jfieldID         indexCMcacheID;
-    static jfieldID         accelerationEnabledID;
     static jmethodID        paletteChangedMID;
 
 private:
-    static BOOL             AreSameMonitors(MHND mon1, MHND mon2);
+    static BOOL             AreSameMonitors(HMONITOR mon1, HMONITOR mon2);
     ImgColorData            *colorData;
     AwtPalette              *palette;
     ColorData               *cData;     // Could be static, but may sometime
                                         // have per-device info in this structure
     BITMAPINFO              *gpBitmapInfo;
     int                     screen;
-    MHND                    monitor;
-    MONITOR_INFO            *pMonitorInfo;
+    HMONITOR                monitor;
+    LPMONITORINFO           pMonitorInfo;
     jobject                 javaDevice;
     Devices                 *devicesArray;
-    DxCapabilities          dxCaps;
+
+    static HDC              MakeDCFromMonitor(HMONITOR);
 };
 
 #endif AWT_WIN32GRAPHICSDEVICE_H

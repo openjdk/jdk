@@ -72,7 +72,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
         /**
          * The constructors being documented.
          */
-        private List constructors;
+        private List<ProgramElementDoc> constructors;
 
         /**
          * Construct a new ConstructorBuilder.
@@ -104,12 +104,10 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
                                 VisibleMemberMap.CONSTRUCTORS,
                                 configuration.nodeprecated);
                 builder.constructors =
-                        new ArrayList(builder.visibleMemberMap.getMembersFor(classDoc));
+                        new ArrayList<ProgramElementDoc>(builder.visibleMemberMap.getMembersFor(classDoc));
                 for (int i = 0; i < builder.constructors.size(); i++) {
-                        if (((ProgramElementDoc) (builder.constructors.get(i)))
-                                .isProtected()
-                                || ((ProgramElementDoc) (builder.constructors.get(i)))
-                                        .isPrivate()) {
+                        if (builder.constructors.get(i).isProtected()
+                                || builder.constructors.get(i).isPrivate()) {
                                 writer.setFoundNonPubConstructor(true);
                         }
                 }

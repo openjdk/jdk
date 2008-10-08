@@ -49,9 +49,6 @@ FILES_export = \
 
 ifneq ($(PLATFORM), windows)
 OTHER_CFLAGS += -DUSE_MMAP
-else
-  # Files built here do not compile with warning level 3 if warnings are fatal
-  COMPILER_WARNINGS_FATAL=false
 endif
 
 #

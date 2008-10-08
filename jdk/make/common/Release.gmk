@@ -1,5 +1,5 @@
 #
-# Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -369,6 +369,7 @@ TOOLS = \
 	com/sun/jarsigner	\
 	com/sun/mirror		\
 	com/sun/source          \
+	com/sun/tools/classfile \
 	com/sun/tools/doclets   \
 	com/sun/tools/example/debug/expr \
 	com/sun/tools/example/debug/tty  \
@@ -378,6 +379,7 @@ TOOLS = \
 	com/sun/tools/javadoc   \
 	com/sun/tools/apt       \
 	com/sun/tools/javah     \
+	com/sun/tools/javap     \
 	com/sun/tools/corba     \
 	com/sun/tools/internal/xjc       \
 	com/sun/tools/internal/ws       \
@@ -568,6 +570,8 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "sun/tools/java/" >> $@
 	$(ECHO) "sun/tools/javac/" >> $@
 	$(ECHO) "sun/tools/javap/" >> $@
+	$(ECHO) "com/sun/tools/classfile/" >> $@
+	$(ECHO) "com/sun/tools/javap/" >> $@
 	$(ECHO) "sun/tools/jconsole/" >> $@
 	$(ECHO) "sun/tools/jps/" >> $@
 	$(ECHO) "sun/tools/jstat/" >> $@
@@ -1236,7 +1240,6 @@ ifeq ($(PLATFORM), windows)
 	$(RM) $(TEMPDIR)/rebase.input
 endif
 	$(RM) -r $(JDK_IMAGE_DIR)
-	$(RM) -r $(JDK_DEBUG_IMAGE_DIR)
 	$(RM) -r $(JRE_IMAGE_DIR)
 
 images images-clobber::

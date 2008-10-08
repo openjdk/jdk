@@ -159,7 +159,6 @@ static int loadStaticConfig9x(char *sl, char *ns) {
     DWORD dwLen;
     ULONG ulType;
     char result[MAX_STR_LEN];
-    int index;
     int sts = STS_NO_CONFIG;
 
     ret = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
@@ -275,7 +274,7 @@ static int loadConfig95(char *sl, char *ns) {
      * the DHCP packet - see RFC 2132).
      */
     if (ret == ERROR_SUCCESS) {
-        int pos = 0;
+        unsigned int pos = 0;
 
         while (pos < dwLen) {
             int code, len;

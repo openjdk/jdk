@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@ import java.io.*;
  *
  * @author  Sucheta Dambalkar (Adopted code from old javap)
  */
-public class Main{
+public class Main {
 
-    private Vector classList = new Vector();
+    private Vector<String> classList = new Vector<String>();
     private PrintWriter out;
     JavapEnvironment env = new JavapEnvironment();
     private static boolean errorOccurred = false;
@@ -49,6 +49,12 @@ public class Main{
     }
 
     public static void main(String argv[]) {
+        // unless first arg is -Xold, use new javap
+        if (!(argv.length >= 1 && argv[0].equals("-Xold"))) {
+            com.sun.tools.javap.Main.main(argv);
+            return;
+        }
+
         entry(argv);
         if (errorOccurred) {
             System.exit(1);
@@ -178,6 +184,8 @@ public class Main{
                     }
                 } else if (arg.equals("-all")) {
                     env.showallAttr = true;
+                } else if (arg.equals("-Xold")) {
+                    // ignore: this is old javap
                 } else {
                     error("invalid flag: " + arg);
                     usage();
@@ -201,7 +209,7 @@ public class Main{
      */
     private void displayResults() {
         for (int i = 0; i < classList.size() ; i++ ) {
-            String Name = (String)classList.elementAt(i);
+            String Name = classList.elementAt(i);
             InputStream classin = env.getFileInputStream(Name);
 
             try {

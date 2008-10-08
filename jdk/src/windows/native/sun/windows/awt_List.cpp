@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "awt_KeyboardFocusManager.h"
 #include "awt_Canvas.h"
 #include "awt_Dimension.h"
-#include "awt_Unicode.h"
 #include "awt_Toolkit.h"
 #include "awt_Window.h"
 
@@ -112,9 +111,8 @@ AwtList* AwtList::Create(jobject peer, jobject parent)
             DWORD wrapExStyle = 0;
 
             DWORD style = WS_CHILD | WS_CLIPSIBLINGS | WS_VSCROLL | WS_HSCROLL |
-                LBS_NOINTEGRALHEIGHT | LBS_NOTIFY | LBS_OWNERDRAWFIXED |
-                (IS_WIN4X ? 0 : WS_BORDER);
-            DWORD exStyle = IS_WIN4X ? WS_EX_CLIENTEDGE : 0;
+                LBS_NOINTEGRALHEIGHT | LBS_NOTIFY | LBS_OWNERDRAWFIXED;
+            DWORD exStyle = WS_EX_CLIENTEDGE;
 
             /*
              * NOTE: WS_VISIBLE is always set for the listbox. Listbox
@@ -571,10 +569,10 @@ MsgRouting AwtList::HandleEvent(MSG *msg, BOOL synthetic)
 // operate WM_PRINT to be compatible with the "smooth scrolling" feature.
 MsgRouting AwtList::WmPrint(HDC hDC, LPARAM flags)
 {
-    if (!isWrapperPrint && IS_WIN4X
-            && (flags & PRF_CLIENT)
-            && (GetStyleEx() & WS_EX_CLIENTEDGE)) {
-
+    if (!isWrapperPrint &&
+        (flags & PRF_CLIENT) &&
+        (GetStyleEx() & WS_EX_CLIENTEDGE))
+    {
         int nOriginalDC = ::SaveDC(hDC);
         DASSERT(nOriginalDC != 0);
         // Save a copy of the DC for WmPrintClient

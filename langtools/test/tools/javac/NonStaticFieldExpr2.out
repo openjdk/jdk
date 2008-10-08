@@ -1,4 +1,2 @@
-NonStaticFieldExpr2.java:14: non-static variable x cannot be referenced from a static context
-     int z = NonStaticFieldExpr2.x;     // SHOULD BE ERROR
-                                ^
+NonStaticFieldExpr2.java:14:33: compiler.err.non-static.cant.be.ref: (- compiler.misc.kindname.variable), x
 1 error

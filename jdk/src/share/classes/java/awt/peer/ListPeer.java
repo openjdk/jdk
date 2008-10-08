@@ -45,28 +45,4 @@ public interface ListPeer extends ComponentPeer {
     Dimension getPreferredSize(int rows);
     Dimension getMinimumSize(int rows);
 
-    /**
-     * DEPRECATED:  Replaced by add(String, int).
-     */
-    void addItem(String item, int index);
-
-    /**
-     * DEPRECATED:  Replaced by removeAll().
-     */
-    void clear();
-
-    /**
-     * DEPRECATED:  Replaced by setMultipleMode(boolean).
-     */
-    void setMultipleSelections(boolean v);
-
-    /**
-     * DEPRECATED:  Replaced by getPreferredSize(int).
-     */
-    Dimension preferredSize(int v);
-
-    /**
-     * DEPRECATED:  Replaced by getMinimumSize(int).
-     */
-    Dimension minimumSize(int v);
 }

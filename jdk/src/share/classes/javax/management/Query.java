@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,13 +108,13 @@ package javax.management;
  * <dd>Selects MBeans that have a {@code Status} attribute whose value
  *     is one of those three strings.
  *
- * <dt>{@code Message like 'OK: %'}
+ * <dt>{@code Message like 'OK: *'}
  * <dd>Selects MBeans that have a {@code Message} attribute whose value
  *     is a string beginning with {@code "OK: "}.  <b>Notice that the
- *     wildcard characters are SQL's ones.</b>  In the query language,
+ *     wildcard characters are not the ones that SQL uses.</b>  In SQL,
  *     {@code %} means "any sequence of characters" and {@code _}
- *     means "any single character".  In the rest of the JMX API, these
- *     correspond to {@code *} and {@code %} respectively.
+ *     means "any single character".  Here, as in the rest of the JMX API,
+ *     those are represented by {@code *} and {@code ?} respectively.
  *
  * <dt>{@code instanceof 'javax.management.NotificationBroadcaster'}
  * <dd>Selects MBeans that are instances of
@@ -319,11 +319,11 @@ package javax.management;
  *
  * <tr><td><i>value</i> <b>LIKE</b> <i>stringLiteral</i>
  *     <td>{@link Query#match Query.match}(<i>q(value)</i>,
- *         <i><a href="#translateWildcards">translateWildcards</a>(q(stringLiteral))</i>)
+ *         <i>q(stringLiteral)</i>)
  *
  * <tr><td><i>value</i> <b>NOT LIKE</b> <i>stringLiteral</i>
  *     <td>{@link Query#not Query.not}({@link Query#match Query.match}(<i>q(value)</i>,
- *         <i><a href="#translateWildcards">translateWildcards</a>(q(stringLiteral))</i>))
+ *         <i>q(stringLiteral)</i>))
  *
  * <tr><td><i>value1</i> <b>+</b> <i>value2</i>
  *     <td>{@link Query#plus Query.plus}(<i>q(value1)</i>, <i>q(value2)</i>)
@@ -359,13 +359,6 @@ package javax.management;
  * -->{@link Double#valueOf(String) Double.valueOf}(<!--
  * --><i>floatingPointLiteral</i>))
  * </table>
- *
- * <p id="translateWildcards">Here, <i>translateWildcards</i> is a function
- * that translates from the SQL notation for wildcards, using {@code %} and
- * {@code _}, to the JMX API notation, using {@code *} and {@code ?}.  If the
- * <b>LIKE</b> string already contains {@code *} or {@code ?}, these characters
- * have their literal meanings, and will be quoted in the call to
- * {@link Query#match Query.match}.</p>
  *
  * @since 1.5
  */

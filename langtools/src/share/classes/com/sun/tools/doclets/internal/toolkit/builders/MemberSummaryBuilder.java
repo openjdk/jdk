@@ -306,13 +306,13 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
          */
         private void buildSummary(MemberSummaryWriter writer,
             VisibleMemberMap visibleMemberMap) {
-        List members = new ArrayList(visibleMemberMap.getLeafClassMembers(
+        List<ProgramElementDoc> members = new ArrayList<ProgramElementDoc>(visibleMemberMap.getLeafClassMembers(
             configuration));
         if (members.size() > 0) {
             Collections.sort(members);
             writer.writeMemberSummaryHeader(classDoc);
             for (int i = 0; i < members.size(); i++) {
-                ProgramElementDoc member = (ProgramElementDoc) members.get(i);
+                ProgramElementDoc member = members.get(i);
                 Tag[] firstSentenceTags = member.firstSentenceTags();
                 if (member instanceof MethodDoc && firstSentenceTags.length == 0) {
                     //Inherit comments from overriden or implemented method if
@@ -349,7 +349,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
             if (inhclass == classDoc) {
                 continue;
             }
-            List inhmembers = visibleMemberMap.getMembersFor(inhclass);
+            List<ProgramElementDoc> inhmembers = visibleMemberMap.getMembersFor(inhclass);
             if (inhmembers.size() > 0) {
                 Collections.sort(inhmembers);
                 writer.writeInheritedMemberSummaryHeader(inhclass);
@@ -358,7 +358,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
                         inhclass.isPackagePrivate() &&
                             ! Util.isLinkable(inhclass, configuration) ?
                             classDoc : inhclass,
-                        (ProgramElementDoc) inhmembers.get(j),
+                        inhmembers.get(j),
                         j == 0,
                         j == inhmembers.size() - 1);
                 }

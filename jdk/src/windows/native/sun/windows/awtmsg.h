@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,18 +182,6 @@ extern const UINT SYSCOMMAND_IMM;
 #endif //AW_BLEND
 
 
-
-
-// WM_MOUSEWHEEL should be WM_MOUSELAST, but
-// is not being defined.  See winuser.h
-#ifdef WM_MOUSELAST
-#if WM_MOUSELAST <= 0x020A
-#define WM_AWT_MOUSELAST                0x020A
-#else
-#error Unexpected value of WM_MOUSELAST
-#endif //WM_MOUSELAST <= 0x0209
-#endif //WM_MOUSELAST
-
 // AwtComponent messages
 enum {
     // 6427323: unfortunately WM_APP+nnn conflicts with edit control messages
@@ -251,17 +239,6 @@ enum {
     WM_AWT_SHOWCURSOR,
     WM_AWT_HIDECURSOR,
     WM_AWT_CREATE_PRINTED_PIXELS,
-
-    /* Synchronize ddraw fullscreen events on Windows event thread */
-    WM_AWT_DD_CREATE_SURFACE,
-    WM_AWT_DD_ENTER_FULLSCREEN,
-    WM_AWT_DD_EXIT_FULLSCREEN,
-    WM_AWT_DD_SET_DISPLAY_MODE,
-    WM_AWT_DD_RESTORE_DISPLAY_MODE,
-
-    /* Synchronize D3D device creation on Windows event thread */
-    WM_AWT_D3D_CREATE_DEVICE,
-    WM_AWT_D3D_RELEASE_DEVICE,
 
     // Tray messages
     WM_AWT_TRAY_NOTIFY,

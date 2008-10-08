@@ -46,25 +46,30 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
         new MBeanOperationInfo[0];
 
     /**
-     * Indicates that the operation is read-like,
-     * it basically returns information.
+     * Indicates that the operation is read-like:
+     * it returns information but does not change any state.
+     * @see Impact#INFO
      */
     public static final int INFO = 0;
 
     /**
-     * Indicates that the operation is a write-like,
-     * and would modify the MBean in some way, typically by writing some value
-     * or changing a configuration.
+     * Indicates that the operation is write-like: it has an effect but does
+     * not return any information from the MBean.
+     * @see Impact#ACTION
      */
     public static final int ACTION = 1;
 
     /**
-     * Indicates that the operation is both read-like and write-like.
+     * Indicates that the operation is both read-like and write-like:
+     * it has an effect, and it also returns information from the MBean.
+     * @see Impact#ACTION_INFO
      */
     public static final int ACTION_INFO = 2;
 
     /**
-     * Indicates that the operation has an "unknown" nature.
+     * Indicates that the impact of the operation is unknown or cannot be
+     * expressed using one of the other values.
+     * @see Impact#UNKNOWN
      */
     public static final int UNKNOWN = 3;
 
@@ -120,8 +125,9 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
      * describing the parameters(arguments) of the method.  This may be
      * null with the same effect as a zero-length array.
      * @param type The type of the method's return value.
-     * @param impact The impact of the method, one of <CODE>INFO,
-     * ACTION, ACTION_INFO, UNKNOWN</CODE>.
+     * @param impact The impact of the method, one of
+     * {@link #INFO}, {@link #ACTION}, {@link #ACTION_INFO},
+     * {@link #UNKNOWN}.
      */
     public MBeanOperationInfo(String name,
                               String description,
@@ -140,8 +146,9 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
      * describing the parameters(arguments) of the method.  This may be
      * null with the same effect as a zero-length array.
      * @param type The type of the method's return value.
-     * @param impact The impact of the method, one of <CODE>INFO,
-     * ACTION, ACTION_INFO, UNKNOWN</CODE>.
+     * @param impact The impact of the method, one of
+     * {@link #INFO}, {@link #ACTION}, {@link #ACTION_INFO},
+     * {@link #UNKNOWN}.
      * @param descriptor The descriptor for the operation.  This may be null
      * which is equivalent to an empty descriptor.
      *
@@ -319,9 +326,14 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
 
         for (int i = 0; i < classes.length; i++) {
             Descriptor d = Introspector.descriptorForAnnotations(annots[i]);
-            final String pn = "p" + (i + 1);
-            params[i] =
-                new MBeanParameterInfo(pn, classes[i].getName(), "", d);
+            String description = Introspector.descriptionForParameter(annots[i]);
+            if (description == null)
+                description = "";
+            String name = Introspector.nameForParameter(annots[i]);
+            if (name == null)
+                name = "p" + (i + 1);
+            params[i] = new MBeanParameterInfo(
+                    name, classes[i].getName(), description, d);
         }
 
         return params;

@@ -42,19 +42,19 @@ abstract class SelectorImpl
 {
 
     // The set of keys with data ready for an operation
-    protected Set selectedKeys;
+    protected Set<SelectionKey> selectedKeys;
 
     // The set of keys registered with this Selector
-    protected HashSet keys;
+    protected HashSet<SelectionKey> keys;
 
     // Public views of the key sets
-    private Set publicKeys;             // Immutable
-    private Set publicSelectedKeys;     // Removal allowed, but not addition
+    private Set<SelectionKey> publicKeys;             // Immutable
+    private Set<SelectionKey> publicSelectedKeys;     // Removal allowed, but not addition
 
     protected SelectorImpl(SelectorProvider sp) {
         super(sp);
-        keys = new HashSet();
-        selectedKeys = new HashSet();
+        keys = new HashSet<SelectionKey>();
+        selectedKeys = new HashSet<SelectionKey>();
         if (Util.atBugLevel("1.4")) {
             publicKeys = keys;
             publicSelectedKeys = selectedKeys;
@@ -64,13 +64,13 @@ abstract class SelectorImpl
         }
     }
 
-    public Set keys() {
+    public Set<SelectionKey> keys() {
         if (!isOpen() && !Util.atBugLevel("1.4"))
             throw new ClosedSelectorException();
         return publicKeys;
     }
 
-    public Set selectedKeys() {
+    public Set<SelectionKey> selectedKeys() {
         if (!isOpen() && !Util.atBugLevel("1.4"))
             throw new ClosedSelectorException();
         return publicSelectedKeys;
@@ -142,18 +142,20 @@ abstract class SelectorImpl
         // Precondition: Synchronized on this, keys, and selectedKeys
         Set cks = cancelledKeys();
         synchronized (cks) {
-            Iterator i = cks.iterator();
-            while (i.hasNext()) {
-                SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
-                try {
-                    implDereg(ski);
-                } catch (SocketException se) {
-                    IOException ioe = new IOException(
-                        "Error deregistering key");
-                    ioe.initCause(se);
-                    throw ioe;
-                } finally {
-                    i.remove();
+            if (!cks.isEmpty()) {
+                Iterator i = cks.iterator();
+                while (i.hasNext()) {
+                    SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
+                    try {
+                        implDereg(ski);
+                    } catch (SocketException se) {
+                        IOException ioe = new IOException(
+                            "Error deregistering key");
+                        ioe.initCause(se);
+                        throw ioe;
+                    } finally {
+                        i.remove();
+                    }
                 }
             }
         }

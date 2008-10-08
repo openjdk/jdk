@@ -55,7 +55,7 @@ Java_sun_nio_ch_SocketChannelImpl_checkConnect(JNIEnv *env, jobject this,
                                                jboolean ready)
 {
     int error = 0;
-    int n = sizeof(int);
+    socklen_t n = sizeof(int);
     jint fd = fdval(env, fdo);
     int result = 0;
     struct pollfd poller;

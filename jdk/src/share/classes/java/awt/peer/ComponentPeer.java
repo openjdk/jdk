@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@ public interface ComponentPeer {
     void                setVisible(boolean b);
     void                setEnabled(boolean b);
     void                paint(Graphics g);
-    void                repaint(long tm, int x, int y, int width, int height);
     void                print(Graphics g);
     void                setBounds(int x, int y, int width, int height, int op);
     void                handleEvent(AWTEvent e);
@@ -88,7 +87,7 @@ public interface ComponentPeer {
     boolean     handlesWheelScrolling();
     void createBuffers(int numBuffers, BufferCapabilities caps) throws AWTException;
     Image getBackBuffer();
-    void flip(BufferCapabilities.FlipContents flipAction);
+    void flip(int x1, int y1, int x2, int y2, BufferCapabilities.FlipContents flipAction);
     void destroyBuffers();
 
     /**
@@ -112,47 +111,10 @@ public interface ComponentPeer {
      */
     void        layout();
 
-
-        Rectangle getBounds();
-
     /**
      * Applies the shape to the native component window.
      * @since 1.7
      */
     void applyShape(Region shape);
 
-    /**
-     * DEPRECATED:  Replaced by getPreferredSize().
-     */
-    Dimension           preferredSize();
-
-    /**
-     * DEPRECATED:  Replaced by getMinimumSize().
-     */
-    Dimension           minimumSize();
-
-    /**
-     * DEPRECATED:  Replaced by setVisible(boolean).
-     */
-    void                show();
-
-    /**
-     * DEPRECATED:  Replaced by setVisible(boolean).
-     */
-    void                hide();
-
-    /**
-     * DEPRECATED:  Replaced by setEnabled(boolean).
-     */
-    void                enable();
-
-    /**
-     * DEPRECATED:  Replaced by setEnabled(boolean).
-     */
-    void                disable();
-
-    /**
-     * DEPRECATED:  Replaced by setBounds(int, int, int, int).
-     */
-    void                reshape(int x, int y, int width, int height);
 }

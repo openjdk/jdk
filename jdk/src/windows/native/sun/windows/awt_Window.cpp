@@ -23,7 +23,7 @@
  * have any questions.
  */
 
-#include <windowsx.h>
+#include "awt.h"
 
 #include "awt_Component.h"
 #include "awt_Container.h"
@@ -32,8 +32,6 @@
 #include "awt_Panel.h"
 #include "awt_Toolkit.h"
 #include "awt_Window.h"
-#include "awt_dlls.h"
-#include "ddrawUtils.h"
 #include "awt_Win32GraphicsDevice.h"
 #include "awt_BitmapUtil.h"
 #include "awt_IconCursor.h"
@@ -42,6 +40,8 @@
 #include <java_awt_Container.h>
 #include <java_awt_event_ComponentEvent.h>
 #include "sun_awt_windows_WCanvasPeer.h"
+
+#include <windowsx.h>
 
 #if !defined(__int3264)
 typedef __int32 LONG_PTR;
@@ -502,8 +502,7 @@ void AwtWindow::Show()
     // which might involve tagging java.awt.Window instances with a semantic
     // property so platforms can animate/decorate/etc accordingly.
     //
-    if ((IS_WIN98 || IS_WIN2000) &&
-        JNU_IsInstanceOfByName(env, target, "com/sun/java/swing/plaf/windows/WindowsPopupWindow") > 0)
+    if (JNU_IsInstanceOfByName(env, target, "com/sun/java/swing/plaf/windows/WindowsPopupWindow") > 0)
     {
         // need this global ref to make the class unloadable (see 6500204)
         static jclass windowsPopupWindowCls;
@@ -536,13 +535,8 @@ void AwtWindow::Show()
         windowType = env->GetIntField(target, windowTypeFID);
 
         if (windowType == windowTYPES[TOOLTIP]) {
-            if (IS_WIN2000) {
-                SystemParametersInfo(SPI_GETTOOLTIPANIMATION, 0, &animateflag, 0);
-                SystemParametersInfo(SPI_GETTOOLTIPFADE, 0, &fadeflag, 0);
-            } else {
-                // use same setting as menus
-                SystemParametersInfo(SPI_GETMENUANIMATION, 0, &animateflag, 0);
-            }
+            SystemParametersInfo(SPI_GETTOOLTIPANIMATION, 0, &animateflag, 0);
+            SystemParametersInfo(SPI_GETTOOLTIPFADE, 0, &fadeflag, 0);
             if (animateflag) {
               // AW_BLEND currently produces runtime parameter error
               // animateStyle = fadeflag? AW_BLEND : AW_SLIDE | AW_VER_POSITIVE;
@@ -552,13 +546,10 @@ void AwtWindow::Show()
                    windowType == windowTYPES[POPUPMENU]) {
             SystemParametersInfo(SPI_GETMENUANIMATION, 0, &animateflag, 0);
             if (animateflag) {
-
-                if (IS_WIN2000) {
-                    SystemParametersInfo(SPI_GETMENUFADE, 0, &fadeflag, 0);
-                    if (fadeflag) {
-                      // AW_BLEND currently produces runtime parameter error
-                      //animateStyle = AW_BLEND;
-                    }
+                SystemParametersInfo(SPI_GETMENUFADE, 0, &fadeflag, 0);
+                if (fadeflag) {
+                    // AW_BLEND currently produces runtime parameter error
+                    //animateStyle = AW_BLEND;
                 }
                 if (animateStyle == 0 && !fadeflag) {
                     animateStyle = AW_SLIDE;
@@ -579,38 +570,18 @@ void AwtWindow::Show()
         }
 
         if (animateStyle != 0) {
-            load_user_procs();
-
-            if (fn_animate_window != NULL) {
-                BOOL result = (*fn_animate_window)(hWnd, (DWORD)200, animateStyle);
-                if (result == 0) {
-                    LPTSTR      msgBuffer = NULL;
-                    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                      FORMAT_MESSAGE_FROM_SYSTEM |
-                      FORMAT_MESSAGE_IGNORE_INSERTS,
-                      NULL,
-                      GetLastError(),
-                      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                      (LPTSTR)&msgBuffer, // it's an output parameter when allocate buffer is used
-                      0,
-                      NULL);
-
-                    if (msgBuffer == NULL) {
-                        msgBuffer = TEXT("<Could not get GetLastError() message text>");
-                    }
-                    _ftprintf(stderr,TEXT("AwtWindow::Show: AnimateWindow: "));
-                    _ftprintf(stderr,msgBuffer);
-                    LocalFree(msgBuffer);
-                } else {
-                  // WM_PAINT is not automatically sent when invoking AnimateWindow,
-                  // so force an expose event
-                    RECT rect;
-                    ::GetWindowRect(hWnd,&rect);
-                    ::ScreenToClient(hWnd, (LPPOINT)&rect);
-                    ::InvalidateRect(hWnd,&rect,TRUE);
-                    ::UpdateWindow(hWnd);
-                    done = TRUE;
-                }
+            BOOL result = ::AnimateWindow(hWnd, (DWORD)200, animateStyle);
+            if (!result) {
+                // TODO: log message
+            } else {
+                // WM_PAINT is not automatically sent when invoking AnimateWindow,
+                // so force an expose event
+                RECT rect;
+                ::GetWindowRect(hWnd,&rect);
+                ::ScreenToClient(hWnd, (LPPOINT)&rect);
+                ::InvalidateRect(hWnd, &rect, TRUE);
+                ::UpdateWindow(hWnd);
+                done = TRUE;
             }
         }
     }
@@ -742,7 +713,7 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
     insetsChanged = !::EqualRect( &m_old_insets, &m_insets );
     ::CopyRect( &m_old_insets, &m_insets );
 
-    if (insetsChanged && DDCanReplaceSurfaces(GetHWnd())) {
+    if (insetsChanged) {
         // Since insets are changed we need to update the surfaceData object
         // to reflect that change
         env->CallVoidMethod(peer, AwtComponent::replaceSurfaceDataLaterMID);
@@ -929,50 +900,6 @@ void AwtWindow::BounceActivation(void *self) {
             sm_suppressFocusAndActivation = FALSE;
         }
     }
-}
-
-MsgRouting AwtWindow::WmDDEnterFullScreen(HMONITOR monitor) {
-    /**
-     * DirectDraw expects to receive a top-level window. This object may
-     * be an AwtWindow instance, which has an owning AwtFrame window, or
-     * an AwtFrame object which does not have an owner.
-     * What we want is the top-level Frame hWnd, whether we were handed a
-     * top-level AwtFrame, or some owned AwtWindow.  We get this by calling
-     * GetTopLevelHWnd(), which returns the hwnd of a top-level AwtFrame
-     * object (if this window has an owner) which we then pass
-     * into DirectDraw.
-     */
-    HWND hWnd = GetTopLevelHWnd();
-    if (!::IsWindowVisible(hWnd)) {
-        // Sometimes there are problems going into fullscreen on an owner frame
-        // that is not yet visible; make sure the FS window is visible first
-        ::ShowWindow(hWnd, SW_SHOWNA);
-    }
-    /*
-     * Fix for 6225472.
-     * Non-focusable window should be set alwaysOnTop to overlap the taskbar.
-     */
-    AwtWindow* window = (AwtWindow *)AwtComponent::GetComponent(GetHWnd());
-    if (window != NULL && !window->IsFocusableWindow()) {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        Java_sun_awt_windows_WWindowPeer_setAlwaysOnTopNative(env, GetPeer(env), (jboolean)TRUE);
-    }
-
-    DDEnterFullScreen(monitor, GetHWnd(), hWnd);
-    return mrDoDefault;
-}
-
-MsgRouting AwtWindow::WmDDExitFullScreen(HMONITOR monitor) {
-    HWND hWnd = GetTopLevelHWnd();
-    DDExitFullScreen(monitor, hWnd);
-
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    jboolean alwaysOnTop = JNU_CallMethodByName(env, NULL, GetTarget(env),
-                                                "isAlwaysOnTop", "()Z").z;
-
-    // We should restore alwaysOnTop state as it's anyway dropped here.
-    Java_sun_awt_windows_WWindowPeer_setAlwaysOnTopNative(env, GetPeer(env), alwaysOnTop);
-    return mrDoDefault;
 }
 
 MsgRouting AwtWindow::WmCreate()
@@ -1250,16 +1177,17 @@ MsgRouting AwtWindow::WmNcPaint(HRGN hrgn)
         }
 
         /* draw warning text */
-        LPWSTR text = TO_WSTRING(warningString);
+        LPCWSTR text = JNU_GetStringPlatformChars(env, warningString, NULL);
         VERIFY(::SetBkColor(hDC, ::GetSysColor(COLOR_BTNFACE)) != CLR_INVALID);
         VERIFY(::SetTextColor(hDC, ::GetSysColor(COLOR_BTNTEXT)) != CLR_INVALID);
         VERIFY(::SelectObject(hDC, ::GetStockObject(DEFAULT_GUI_FONT)) != NULL);
         VERIFY(::SetTextAlign(hDC, TA_LEFT | TA_BOTTOM) != GDI_ERROR);
-        VERIFY(::ExtTextOutW(hDC, r.left+2, r.bottom-1,
+        VERIFY(::ExtTextOut(hDC, r.left+2, r.bottom-1,
                              ETO_CLIPPED | ETO_OPAQUE,
                              &r, text, static_cast<UINT>(wcslen(text)), NULL));
         VERIFY(::RestoreDC(hDC, iSaveDC));
         ::ReleaseDC(GetHWnd(), hDC);
+        JNU_ReleaseStringPlatformChars(env, warningString, text);
     }
 
     env->DeleteLocalRef(target);
@@ -1333,10 +1261,8 @@ void AwtWindow::WindowResized()
     SendComponentEvent(java_awt_event_ComponentEvent_COMPONENT_RESIZED);
     // Need to replace surfaceData on resize to catch changes to
     // various component-related values, such as insets
-    if (DDCanReplaceSurfaces(GetHWnd())) {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        env->CallVoidMethod(m_peerObject, AwtComponent::replaceSurfaceDataLaterMID);
-    }
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    env->CallVoidMethod(m_peerObject, AwtComponent::replaceSurfaceDataLaterMID);
 }
 
 BOOL CALLBACK InvalidateChildRect(HWND hWnd, LPARAM)
@@ -1407,13 +1333,13 @@ void AwtWindow::RedrawNonClient()
 }
 
 int AwtWindow::GetScreenImOn() {
-    MHND hmon;
+    HMONITOR hmon;
     int scrnNum;
 
-    hmon = ::MonitorFromWindow(GetHWnd(), MONITOR_DEFAULT_TO_PRIMARY);
+    hmon = ::MonitorFromWindow(GetHWnd(), MONITOR_DEFAULTTOPRIMARY);
     DASSERT(hmon != NULL);
 
-    scrnNum = AwtWin32GraphicsDevice::GetScreenFromMHND(hmon);
+    scrnNum = AwtWin32GraphicsDevice::GetScreenFromHMONITOR(hmon);
     DASSERT(scrnNum > -1);
 
     return scrnNum;
@@ -1666,10 +1592,10 @@ void AwtWindow::_SetTitle(void *param)
     if (::IsWindow(w->GetHWnd()))
     {
         int length = env->GetStringLength(title);
-        WCHAR *buffer = new WCHAR[length + 1];
-        env->GetStringRegion(title, 0, length, buffer);
+        TCHAR *buffer = new TCHAR[length + 1];
+        env->GetStringRegion(title, 0, length, reinterpret_cast<jchar*>(buffer));
         buffer[length] = L'\0';
-        VERIFY(::SetWindowTextW(w->GetHWnd(), buffer));
+        VERIFY(::SetWindowText(w->GetHWnd(), buffer));
         delete[] buffer;
     }
 ret:
@@ -2014,13 +1940,11 @@ void AwtWindow::_SetFocusableWindow(void *param)
 
     window->m_isFocusableWindow = isFocusableWindow;
 
-    if (IS_WIN2000) {
-        if (!window->m_isFocusableWindow) {
-            LONG isPopup = window->GetStyle() & WS_POPUP;
-            window->SetStyleEx(window->GetStyleEx() | (isPopup ? 0 : WS_EX_APPWINDOW) | AWT_WS_EX_NOACTIVATE);
-        } else {
-            window->SetStyleEx(window->GetStyleEx() & ~WS_EX_APPWINDOW & ~AWT_WS_EX_NOACTIVATE);
-        }
+    if (!window->m_isFocusableWindow) {
+        LONG isPopup = window->GetStyle() & WS_POPUP;
+        window->SetStyleEx(window->GetStyleEx() | (isPopup ? 0 : WS_EX_APPWINDOW) | AWT_WS_EX_NOACTIVATE);
+    } else {
+        window->SetStyleEx(window->GetStyleEx() & ~WS_EX_APPWINDOW & ~AWT_WS_EX_NOACTIVATE);
     }
 
   ret:
