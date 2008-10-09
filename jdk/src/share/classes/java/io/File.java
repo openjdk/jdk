@@ -33,9 +33,9 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Hashtable;
-import java.util.Random;
 import java.security.AccessController;
 import java.security.AccessControlException;
+import java.security.SecureRandom;
 import sun.security.action.GetPropertyAction;
 
 
@@ -1678,28 +1678,28 @@ public class File
 
     /* -- Temporary files -- */
 
-    private static final Object tmpFileLock = new Object();
+    // lazy initialization of SecureRandom and temporary file directory
+    private static class LazyInitialization {
+        static final SecureRandom random = new SecureRandom();
 
-    private static int counter = -1; /* Protected by tmpFileLock */
+        static final String temporaryDirectory = temporaryDirectory();
+        static String temporaryDirectory() {
+            return fs.normalize(
+                AccessController.doPrivileged(
+                    new GetPropertyAction("java.io.tmpdir")));
+        }
+    }
 
     private static File generateFile(String prefix, String suffix, File dir)
         throws IOException
     {
-        if (counter == -1) {
-            counter = new Random().nextInt() & 0xffff;
+        long n = LazyInitialization.random.nextLong();
+        if (n == Long.MIN_VALUE) {
+            n = 0;      // corner case
+        } else {
+            n = Math.abs(n);
         }
-        counter++;
-        return new File(dir, prefix + Integer.toString(counter) + suffix);
-    }
-
-    private static String tmpdir; /* Protected by tmpFileLock */
-
-    private static String getTempDir() {
-        if (tmpdir == null)
-            tmpdir = fs.normalize(
-                AccessController.doPrivileged(
-                    new GetPropertyAction("java.io.tmpdir")));
-        return tmpdir;
+        return new File(dir, prefix + Long.toString(n) + suffix);
     }
 
     private static boolean checkAndCreate(String filename, SecurityManager sm)
@@ -1795,18 +1795,16 @@ public class File
         if (prefix.length() < 3)
             throw new IllegalArgumentException("Prefix string too short");
         String s = (suffix == null) ? ".tmp" : suffix;
-        synchronized (tmpFileLock) {
-            if (directory == null) {
-                String tmpDir = getTempDir();
-                directory = new File(tmpDir, fs.prefixLength(tmpDir));
-            }
-            SecurityManager sm = System.getSecurityManager();
-            File f;
-            do {
-                f = generateFile(prefix, s, directory);
-            } while (!checkAndCreate(f.getPath(), sm));
-            return f;
+        if (directory == null) {
+            String tmpDir = LazyInitialization.temporaryDirectory();
+            directory = new File(tmpDir, fs.prefixLength(tmpDir));
         }
+        SecurityManager sm = System.getSecurityManager();
+        File f;
+        do {
+            f = generateFile(prefix, s, directory);
+        } while (!checkAndCreate(f.getPath(), sm));
+        return f;
     }
 
     /**
