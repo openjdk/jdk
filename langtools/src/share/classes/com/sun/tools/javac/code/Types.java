@@ -3213,6 +3213,7 @@ public class Types {
             containsType(t, s) && containsType(s, t);
     }
 
+    // <editor-fold defaultstate="collapsed" desc="adapt">
     /**
      * Adapt a type by computing a substitution which maps a source
      * type to a target type.
@@ -3226,92 +3227,113 @@ public class Types {
                        Type target,
                        ListBuffer<Type> from,
                        ListBuffer<Type> to) throws AdaptFailure {
-        Map<Symbol,Type> mapping = new HashMap<Symbol,Type>();
-        adaptRecursive(source, target, from, to, mapping);
-        List<Type> fromList = from.toList();
-        List<Type> toList = to.toList();
-        while (!fromList.isEmpty()) {
-            Type val = mapping.get(fromList.head.tsym);
-            if (toList.head != val)
-                toList.head = val;
-            fromList = fromList.tail;
-            toList = toList.tail;
-        }
+        new Adapter(from, to).adapt(source, target);
     }
-    // where
-        private void adaptRecursive(Type source,
-                                    Type target,
-                                    ListBuffer<Type> from,
-                                    ListBuffer<Type> to,
-                                    Map<Symbol,Type> mapping) throws AdaptFailure {
-            if (source.tag == TYPEVAR) {
-                // Check to see if there is
-                // already a mapping for $source$, in which case
-                // the old mapping will be merged with the new
-                Type val = mapping.get(source.tsym);
-                if (val != null) {
-                    if (val.isSuperBound() && target.isSuperBound()) {
-                        val = isSubtype(lowerBound(val), lowerBound(target))
-                            ? target : val;
-                    } else if (val.isExtendsBound() && target.isExtendsBound()) {
-                        val = isSubtype(upperBound(val), upperBound(target))
-                            ? val : target;
-                    } else if (!isSameType(val, target)) {
-                        throw new AdaptFailure();
-                    }
-                } else {
-                    val = target;
-                    from.append(source);
-                    to.append(target);
-                }
-                mapping.put(source.tsym, val);
-            } else if (source.tag == target.tag) {
-                switch (source.tag) {
-                    case CLASS:
-                        adapt(source.allparams(), target.allparams(),
-                              from, to, mapping);
-                        break;
-                    case ARRAY:
-                        adaptRecursive(elemtype(source), elemtype(target),
-                                       from, to, mapping);
-                        break;
-                    case WILDCARD:
-                        if (source.isExtendsBound()) {
-                            adaptRecursive(upperBound(source), upperBound(target),
-                                           from, to, mapping);
-                        } else if (source.isSuperBound()) {
-                            adaptRecursive(lowerBound(source), lowerBound(target),
-                                           from, to, mapping);
-                        }
-                        break;
-                }
-            }
-        }
-        public static class AdaptFailure extends Exception {
-            static final long serialVersionUID = -7490231548272701566L;
+
+    class Adapter extends SimpleVisitor<Void, Type> {
+
+        ListBuffer<Type> from;
+        ListBuffer<Type> to;
+        Map<Symbol,Type> mapping;
+
+        Adapter(ListBuffer<Type> from, ListBuffer<Type> to) {
+            this.from = from;
+            this.to = to;
+            mapping = new HashMap<Symbol,Type>();
         }
 
-    /**
-     * Adapt a type by computing a substitution which maps a list of
-     * source types to a list of target types.
-     *
-     * @param source    the source type
-     * @param target    the target type
-     * @param from      the type variables of the computed substitution
-     * @param to        the types of the computed substitution.
-     */
-    private void adapt(List<Type> source,
-                       List<Type> target,
-                       ListBuffer<Type> from,
-                       ListBuffer<Type> to,
-                       Map<Symbol,Type> mapping) throws AdaptFailure {
-        if (source.length() == target.length()) {
-            while (source.nonEmpty()) {
-                adaptRecursive(source.head, target.head, from, to, mapping);
-                source = source.tail;
-                target = target.tail;
+        public void adapt(Type source, Type target) throws AdaptFailure {
+            visit(source, target);
+            List<Type> fromList = from.toList();
+            List<Type> toList = to.toList();
+            while (!fromList.isEmpty()) {
+                Type val = mapping.get(fromList.head.tsym);
+                if (toList.head != val)
+                    toList.head = val;
+                fromList = fromList.tail;
+                toList = toList.tail;
             }
         }
+
+        @Override
+        public Void visitClassType(ClassType source, Type target) throws AdaptFailure {
+            if (target.tag == CLASS)
+                adaptRecursive(source.allparams(), target.allparams());
+            return null;
+        }
+
+        @Override
+        public Void visitArrayType(ArrayType source, Type target) throws AdaptFailure {
+            if (target.tag == ARRAY)
+                adaptRecursive(elemtype(source), elemtype(target));
+            return null;
+        }
+
+        @Override
+        public Void visitWildcardType(WildcardType source, Type target) throws AdaptFailure {
+            if (source.isExtendsBound())
+                adaptRecursive(upperBound(source), upperBound(target));
+            else if (source.isSuperBound())
+                adaptRecursive(lowerBound(source), lowerBound(target));
+            return null;
+        }
+
+        @Override
+        public Void visitTypeVar(TypeVar source, Type target) throws AdaptFailure {
+            // Check to see if there is
+            // already a mapping for $source$, in which case
+            // the old mapping will be merged with the new
+            Type val = mapping.get(source.tsym);
+            if (val != null) {
+                if (val.isSuperBound() && target.isSuperBound()) {
+                    val = isSubtype(lowerBound(val), lowerBound(target))
+                        ? target : val;
+                } else if (val.isExtendsBound() && target.isExtendsBound()) {
+                    val = isSubtype(upperBound(val), upperBound(target))
+                        ? val : target;
+                } else if (!isSameType(val, target)) {
+                    throw new AdaptFailure();
+                }
+            } else {
+                val = target;
+                from.append(source);
+                to.append(target);
+            }
+            mapping.put(source.tsym, val);
+            return null;
+        }
+
+        @Override
+        public Void visitType(Type source, Type target) {
+            return null;
+        }
+
+        private Set<TypePair> cache = new HashSet<TypePair>();
+
+        private void adaptRecursive(Type source, Type target) {
+            TypePair pair = new TypePair(source, target);
+            if (cache.add(pair)) {
+                try {
+                    visit(source, target);
+                } finally {
+                    cache.remove(pair);
+                }
+            }
+        }
+
+        private void adaptRecursive(List<Type> source, List<Type> target) {
+            if (source.length() == target.length()) {
+                while (source.nonEmpty()) {
+                    adaptRecursive(source.head, target.head);
+                    source = source.tail;
+                    target = target.tail;
+                }
+            }
+        }
+    }
+
+    public static class AdaptFailure extends RuntimeException {
+        static final long serialVersionUID = -7490231548272701566L;
     }
 
     private void adaptSelf(Type t,
@@ -3326,6 +3348,7 @@ public class Types {
             throw new AssertionError(ex);
         }
     }
+    // </editor-fold>
 
     /**
      * Rewrite all type variables (universal quantifiers) in the given
