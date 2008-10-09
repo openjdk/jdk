@@ -330,6 +330,12 @@ class CommandLineFlags {
   product_pd(bool, UseLargePages,                                           \
           "Use large page memory")                                          \
                                                                             \
+  product_pd(bool, UseLargePagesIndividualAllocation,                       \
+          "Allocate large pages individually for better affinity")          \
+                                                                            \
+  develop(bool, LargePagesIndividualAllocationInjectError, false,           \
+          "Fail large pages individual allocation")                         \
+                                                                            \
   develop(bool, TracePageSizes, false,                                      \
           "Trace page size selection and usage.")                           \
                                                                             \
@@ -1818,6 +1824,9 @@ class CommandLineFlags {
                                                                             \
   diagnostic(bool, VerifyDuringGC, false,                                   \
           "Verify memory system during GC (between phases)")                \
+                                                                            \
+  diagnostic(bool, GCParallelVerificationEnabled, true,                     \
+          "Enable parallel memory system verification")                     \
                                                                             \
   diagnostic(bool, VerifyRememberedSets, false,                             \
           "Verify GC remembered sets")                                      \
