@@ -41,8 +41,8 @@ public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
      * Create a formatter based on the supplied options.
      * @param msgs
      */
-    public RawDiagnosticFormatter(JavacMessages msgs) {
-        super(null);
+    public RawDiagnosticFormatter(Options opts) {
+        super(null, opts, false);
     }
 
     //provide common default formats
@@ -61,6 +61,8 @@ public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
                 buf.append('-');
             buf.append(' ');
             buf.append(formatMessage(d, null));
+            if (displaySource(d))
+                buf.append("\n" + formatSourceLine(d));
             return buf.toString();
         }
         catch (Exception e) {
@@ -93,9 +95,5 @@ public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
             sep = ", ";
         }
         return buf.toString();
-    }
-
-    public boolean displaySource(JCDiagnostic d) {
-        return false;
     }
 }

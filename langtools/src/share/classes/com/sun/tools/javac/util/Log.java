@@ -120,7 +120,7 @@ public class Log extends AbstractLog {
 
         boolean rawDiagnostics = options.get("rawDiagnostics") != null;
         messages = JavacMessages.instance(context);
-        this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(messages) :
+        this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(options) :
                                               new BasicDiagnosticFormatter(options, messages);
         @SuppressWarnings("unchecked") // FIXME
         DiagnosticListener<? super JavaFileObject> diagListener =
@@ -340,14 +340,6 @@ public class Log extends AbstractLog {
         PrintWriter writer = getWriterForDiagnosticType(diag.getType());
 
         printLines(writer, diagFormatter.format(diag, messages.getCurrentLocale()));
-        if (diagFormatter.displaySource(diag)) {
-            int pos = diag.getIntPosition();
-            if (pos != Position.NOPOS) {
-                JavaFileObject prev = useSource(diag.getSource());
-                printErrLine(pos, writer);
-                useSource(prev);
-            }
-        }
 
         if (promptOnError) {
             switch (diag.getType()) {
