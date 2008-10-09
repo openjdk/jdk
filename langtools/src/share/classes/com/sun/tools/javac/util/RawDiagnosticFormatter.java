@@ -41,7 +41,7 @@ public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
      * Create a formatter based on the supplied options.
      * @param msgs
      */
-    public RawDiagnosticFormatter(Messages msgs) {
+    public RawDiagnosticFormatter(JavacMessages msgs) {
         super(null);
     }
 

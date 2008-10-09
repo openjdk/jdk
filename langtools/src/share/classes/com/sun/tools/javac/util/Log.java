@@ -29,7 +29,6 @@ import java.io.*;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.Locale;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
@@ -97,6 +96,11 @@ public class Log extends AbstractLog {
      */
     private DiagnosticFormatter<JCDiagnostic> diagFormatter;
 
+    /**
+     * JavacMessages object used for localization
+     */
+    private JavacMessages messages;
+
     /** Construct a log with given I/O redirections.
      */
     @Deprecated
@@ -115,9 +119,9 @@ public class Log extends AbstractLog {
         this.MaxWarnings = getIntOption(options, "-Xmaxwarns", 100);
 
         boolean rawDiagnostics = options.get("rawDiagnostics") != null;
-        Messages msgs = Messages.instance(context);
-        this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(msgs) :
-                                              new BasicDiagnosticFormatter(options, msgs);
+        messages = JavacMessages.instance(context);
+        this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(messages) :
+                                              new BasicDiagnosticFormatter(options, messages);
         @SuppressWarnings("unchecked") // FIXME
         DiagnosticListener<? super JavaFileObject> diagListener =
             context.get(DiagnosticListener.class);
@@ -335,7 +339,7 @@ public class Log extends AbstractLog {
 
         PrintWriter writer = getWriterForDiagnosticType(diag.getType());
 
-        printLines(writer, diagFormatter.format(diag, Locale.getDefault()));
+        printLines(writer, diagFormatter.format(diag, messages.getCurrentLocale()));
         if (diagFormatter.displaySource(diag)) {
             int pos = diag.getIntPosition();
             if (pos != Position.NOPOS) {
@@ -384,7 +388,7 @@ public class Log extends AbstractLog {
      *  @param args   Fields to substitute into the string.
      */
     public static String getLocalizedString(String key, Object ... args) {
-        return Messages.getDefaultLocalizedString("compiler.misc." + key, args);
+        return JavacMessages.getDefaultLocalizedString("compiler.misc." + key, args);
     }
 
 /***************************************************************************
