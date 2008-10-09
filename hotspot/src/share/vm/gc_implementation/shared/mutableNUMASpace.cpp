@@ -391,6 +391,8 @@ size_t MutableNUMASpace::default_chunk_size() {
 }
 
 // Produce a new chunk size. page_size() aligned.
+// This function is expected to be called on sequence of i's from 0 to
+// lgrp_spaces()->length().
 size_t MutableNUMASpace::adaptive_chunk_size(int i, size_t limit) {
   size_t pages_available = base_space_size();
   for (int j = 0; j < i; j++) {
@@ -405,7 +407,7 @@ size_t MutableNUMASpace::adaptive_chunk_size(int i, size_t limit) {
   size_t chunk_size = 0;
   if (alloc_rate > 0) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
-    chunk_size = (size_t)(ls->alloc_rate()->average() * pages_available / alloc_rate) * page_size();
+    chunk_size = (size_t)(ls->alloc_rate()->average() / alloc_rate * pages_available) * page_size();
   }
   chunk_size = MAX2(chunk_size, page_size());
 
