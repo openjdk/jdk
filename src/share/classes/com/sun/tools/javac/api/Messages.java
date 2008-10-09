@@ -26,27 +26,29 @@
 package com.sun.tools.javac.api;
 
 import java.util.Locale;
+import java.util.MissingResourceException;
 
 /**
- * This interface must be implemented by any javac class that has non-trivial
- * formatting needs (e.g. where toString() does not apply because of localization).
+ * This interface defines the minimum requirements in order to provide support
+ * for localized formatted strings.
  *
  * @author Maurizio Cimadamore
  */
-public interface Formattable {
+public interface Messages {
 
     /**
-     * Used to obtain a localized String representing the object accordingly
-     * to a given locale
-     *
-     * @param locale locale in which the object's representation is to be rendered
-     * @param messages messages object used for localization
-     * @return a locale-dependent string representing the object
+     * Add a new resource bundle to the list that is searched for localized messages.
+     * @param bundleName the name to identify the resource bundle of localized messages.
+     * @throws MissingResourceException if the given resource is not found
      */
-    public String toString(Locale locale, Messages messages);
+    void add(String bundleName) throws MissingResourceException;
+
     /**
-     * Retrieve a pretty name of this object's kind
-     * @return a string representing the object's kind
+     * Get a localized formatted string
+     * @param l locale in which the text is to be localized
+     * @param key locale-independent message key
+     * @param args misc message arguments
+     * @return a localized formatted string
      */
-    String getKind();
+    String getLocalizedString(Locale l, String key, Object... args);
 }

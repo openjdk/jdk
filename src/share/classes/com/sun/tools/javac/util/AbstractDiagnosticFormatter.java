@@ -27,6 +27,7 @@ package com.sun.tools.javac.util;
 import java.util.Collection;
 import java.util.Locale;
 import javax.tools.JavaFileObject;
+import java.util.ResourceBundle;
 
 import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.api.Formattable;
@@ -48,15 +49,15 @@ import com.sun.tools.javac.file.JavacFileManager;
 public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter<JCDiagnostic> {
 
     /**
-     * Messages object used by this formatter for i18n
+     * JavacMessages object used by this formatter for i18n
      */
-    protected Messages messages;
+    protected JavacMessages messages;
 
     /**
-     * Initialize an AbstractDiagnosticFormatter by setting its Messages object
+     * Initialize an AbstractDiagnosticFormatter by setting its JavacMessages object
      * @param messages
      */
-    protected AbstractDiagnosticFormatter(Messages messages) {
+    protected AbstractDiagnosticFormatter(JavacMessages messages) {
         this.messages = messages;
     }
 
@@ -131,7 +132,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         else if (arg instanceof JavaFileObject)
             return JavacFileManager.getJavacBaseFileName((JavaFileObject)arg);
         else if (arg instanceof Formattable)
-            return ((Formattable)arg).toString(Messages.getDefaultBundle());
+            return ((Formattable)arg).toString(l, messages);
         else
             return String.valueOf(arg);
     }
@@ -164,6 +165,6 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
      * @return a locale-dependent string
      */
     protected String localize(Locale l, String key, Object... args) {
-        return messages.getLocalizedString(key, args);
+        return messages.getLocalizedString(l, key, args);
     }
 }

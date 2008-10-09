@@ -59,9 +59,9 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
      * Create a basic formatter based on the supplied options.
      *
      * @param opts list of command-line options
-     * @param msgs Messages object used for i18n
+     * @param msgs JavacMessages object used for i18n
      */
-    BasicDiagnosticFormatter(Options opts, Messages msgs) {
+    BasicDiagnosticFormatter(Options opts, JavacMessages msgs) {
         this(msgs); //common init
         String fmt = opts.get("diags");
         if (fmt != null) {
@@ -80,9 +80,9 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
     /**
      * Create a standard basic formatter
      *
-     * @param msgs Messages object used for i18n
+     * @param msgs JavacMessages object used for i18n
      */
-    public BasicDiagnosticFormatter(Messages msgs) {
+    public BasicDiagnosticFormatter(JavacMessages msgs) {
         super(msgs);
         availableFormats = new HashMap<BasicFormatKind, String>();
         availableFormats.put(DEFAULT_POS_FORMAT, "%f:%l:%_%t%m");
@@ -91,6 +91,8 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
     }
 
     public String format(JCDiagnostic d, Locale l) {
+        if (l == null)
+            l = messages.getCurrentLocale();
         String format = selectFormat(d);
         StringBuilder buf = new StringBuilder();
         for (int i = 0; i < format.length(); i++) {

@@ -67,7 +67,7 @@ public class Types {
         new Context.Key<Types>();
 
     final Symtab syms;
-    final Messages messages;
+    final JavacMessages messages;
     final Names names;
     final boolean allowBoxing;
     final ClassReader reader;
@@ -93,7 +93,7 @@ public class Types {
         source = Source.instance(context);
         chk = Check.instance(context);
         capturedName = names.fromString("<captured wildcard>");
-        messages = Messages.instance(context);
+        messages = JavacMessages.instance(context);
     }
     // </editor-fold>
 

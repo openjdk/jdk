@@ -64,12 +64,12 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
 
         /** Create a new diagnostic factory. */
         protected Factory(Context context) {
-            this(Messages.instance(context), "compiler");
+            this(JavacMessages.instance(context), "compiler");
             context.put(diagnosticFactoryKey, this);
         }
 
         /** Create a new diagnostic factory. */
-        public Factory(Messages messages, String prefix) {
+        public Factory(JavacMessages messages, String prefix) {
             this.prefix = prefix;
             this.formatter = new BasicDiagnosticFormatter(messages);
         }
@@ -178,7 +178,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     @Deprecated
     public static DiagnosticFormatter<JCDiagnostic> getFragmentFormatter() {
         if (fragmentFormatter == null) {
-            fragmentFormatter = new BasicDiagnosticFormatter(Messages.getDefaultMessages());
+            fragmentFormatter = new BasicDiagnosticFormatter(JavacMessages.getDefaultMessages());
         }
         return fragmentFormatter;
     }
