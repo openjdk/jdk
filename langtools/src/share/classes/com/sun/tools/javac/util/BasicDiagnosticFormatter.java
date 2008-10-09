@@ -62,7 +62,8 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
      * @param msgs JavacMessages object used for i18n
      */
     BasicDiagnosticFormatter(Options opts, JavacMessages msgs) {
-        this(msgs); //common init
+        super(msgs, opts, true);
+        initAvailableFormats();
         String fmt = opts.get("diags");
         if (fmt != null) {
             String[] formats = fmt.split("\\|");
@@ -83,7 +84,11 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
      * @param msgs JavacMessages object used for i18n
      */
     public BasicDiagnosticFormatter(JavacMessages msgs) {
-        super(msgs);
+        super(msgs, true);
+        initAvailableFormats();
+    }
+
+    public void initAvailableFormats() {
         availableFormats = new HashMap<BasicFormatKind, String>();
         availableFormats.put(DEFAULT_POS_FORMAT, "%f:%l:%_%t%m");
         availableFormats.put(DEFAULT_NO_POS_FORMAT, "%p%m");
@@ -103,6 +108,9 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
                 c = format.charAt(++i);
             }
             buf.append(meta ? formatMeta(c, d, l) : String.valueOf(c));
+        }
+        if (displaySource(d)) {
+            buf.append("\n" + formatSourceLine(d));
         }
         return buf.toString();
     }
@@ -165,10 +173,6 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
             }
         }
         return format;
-    }
-
-    public boolean displaySource(JCDiagnostic d) {
-        return true;
     }
 
     /**
