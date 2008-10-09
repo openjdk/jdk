@@ -1430,6 +1430,10 @@ public class Types {
                 long flags = sym.flags();
                 if (((flags & STATIC) == 0) && owner.type.isParameterized()) {
                     Type base = asOuterSuper(t, owner);
+                    //if t is an intersection type T = CT & I1 & I2 ... & In
+                    //its supertypes CT, I1, ... In might contain wildcards
+                    //so we need to go through capture conversion
+                    base = t.isCompound() ? capture(base) : base;
                     if (base != null) {
                         List<Type> ownerParams = owner.type.allparams();
                         List<Type> baseParams = base.allparams();
