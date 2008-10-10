@@ -9309,6 +9309,17 @@ instruct xorI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
   ins_pipe(ialu_reg_reg);
 %}
 
+// Xor Register with Immediate -1
+instruct xorI_rReg_im1(rRegI dst, immI_M1 imm) %{
+  match(Set dst (XorI dst imm));  
+
+  format %{ "not    $dst" %}  
+  ins_encode %{
+     __ notl($dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 // Xor Register with Immediate
 instruct xorI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
 %{
@@ -9527,6 +9538,17 @@ instruct xorL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
   opcode(0x33);
   ins_encode(REX_reg_reg_wide(dst, src), OpcP, reg_reg(dst, src));
   ins_pipe(ialu_reg_reg);
+%}
+
+// Xor Register with Immediate -1
+instruct xorL_rReg_im1(rRegL dst, immL_M1 imm) %{
+  match(Set dst (XorL dst imm));  
+
+  format %{ "notq   $dst" %}  
+  ins_encode %{
+     __ notq($dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
 %}
 
 // Xor Register with Immediate
