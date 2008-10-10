@@ -99,6 +99,7 @@ public final class ConnectorBootstrap {
         public static final String PORT = "0";
         public static final String CONFIG_FILE_NAME = "management.properties";
         public static final String USE_SSL = "true";
+        public static final String USE_LOCAL_ONLY = "true";
         public static final String USE_REGISTRY_SSL = "false";
         public static final String USE_AUTHENTICATION = "true";
         public static final String PASSWORD_FILE_NAME = "jmxremote.password";
