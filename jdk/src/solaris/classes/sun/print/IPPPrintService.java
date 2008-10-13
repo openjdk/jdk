@@ -487,28 +487,26 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         /* Test if the flavor is compatible with the category */
         if ((category == Copies.class) ||
             (category == CopiesSupported.class)) {
-            CopiesSupported cs = new CopiesSupported(1, MAXCOPIES);
-            AttributeClass attribClass = (getAttMap != null) ?
-                (AttributeClass)getAttMap.get(cs.getName()) : null;
-            if (attribClass != null) {
-                int[] range = attribClass.getIntRangeValue();
-                cs = new CopiesSupported(range[0], range[1]);
+            if (flavor == null ||
+                !(flavor.equals(DocFlavor.INPUT_STREAM.POSTSCRIPT) ||
+                  flavor.equals(DocFlavor.URL.POSTSCRIPT) ||
+                  flavor.equals(DocFlavor.BYTE_ARRAY.POSTSCRIPT))) {
+                CopiesSupported cs = new CopiesSupported(1, MAXCOPIES);
+                AttributeClass attribClass = (getAttMap != null) ?
+                    (AttributeClass)getAttMap.get(cs.getName()) : null;
+                if (attribClass != null) {
+                    int[] range = attribClass.getIntRangeValue();
+                    cs = new CopiesSupported(range[0], range[1]);
+                }
+                return cs;
+            } else {
+                return null;
             }
-            return cs;
         } else  if (category == Chromaticity.class) {
             if (flavor == null ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE) ||
-                flavor.equals(DocFlavor.BYTE_ARRAY.GIF) ||
-                flavor.equals(DocFlavor.INPUT_STREAM.GIF) ||
-                flavor.equals(DocFlavor.URL.GIF) ||
-                flavor.equals(DocFlavor.BYTE_ARRAY.JPEG) ||
-                flavor.equals(DocFlavor.INPUT_STREAM.JPEG) ||
-                flavor.equals(DocFlavor.URL.JPEG) ||
-                flavor.equals(DocFlavor.BYTE_ARRAY.PNG) ||
-                flavor.equals(DocFlavor.INPUT_STREAM.PNG) ||
-                flavor.equals(DocFlavor.URL.PNG)) {
-
+                !isIPPSupportedImages(flavor.getMimeType())) {
                 Chromaticity[]arr = new Chromaticity[1];
                 arr[0] = Chromaticity.COLOR;
                 return (arr);
@@ -1220,7 +1218,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     }
 
 
-   public boolean isAttributeValueSupported(Attribute attr,
+    public boolean isAttributeValueSupported(Attribute attr,
                                              DocFlavor flavor,
                                              AttributeSet attributes) {
         if (attr == null) {
@@ -1249,21 +1247,18 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             if ((flavor == null) ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE) ||
-                flavor.equals(DocFlavor.BYTE_ARRAY.GIF) ||
-                flavor.equals(DocFlavor.INPUT_STREAM.GIF) ||
-                flavor.equals(DocFlavor.URL.GIF) ||
-                flavor.equals(DocFlavor.BYTE_ARRAY.JPEG) ||
-                flavor.equals(DocFlavor.INPUT_STREAM.JPEG) ||
-                flavor.equals(DocFlavor.URL.JPEG) ||
-                flavor.equals(DocFlavor.BYTE_ARRAY.PNG) ||
-                flavor.equals(DocFlavor.INPUT_STREAM.PNG) ||
-                flavor.equals(DocFlavor.URL.PNG)) {
+                !isIPPSupportedImages(flavor.getMimeType())) {
                 return attr == Chromaticity.COLOR;
             } else {
                 return false;
             }
         } else if (attr.getCategory() == Copies.class) {
-            return isSupportedCopies((Copies)attr);
+            return (flavor == null ||
+                   !(flavor.equals(DocFlavor.INPUT_STREAM.POSTSCRIPT) ||
+                   flavor.equals(DocFlavor.URL.POSTSCRIPT) ||
+                   flavor.equals(DocFlavor.BYTE_ARRAY.POSTSCRIPT))) &&
+                isSupportedCopies((Copies)attr);
+
         } else if (attr.getCategory() == Destination.class) {
             if (flavor == null ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
