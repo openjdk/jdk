@@ -79,10 +79,13 @@ public class CompoundBorder extends AbstractBorder {
     }
 
     /**
-     * Returns whether or not this compound border is opaque.
-     * Returns true if both the inside and outside borders are
-     * non-null and opaque; returns false otherwise.
+     * Returns whether or not the compound border is opaque.
+     *
+     * @return {@code true} if the inside and outside borders
+     *         are each either {@code null} or opaque;
+     *         or {@code false} otherwise
      */
+    @Override
     public boolean isBorderOpaque() {
         return (outsideBorder == null || outsideBorder.isBorderOpaque()) &&
                (insideBorder == null || insideBorder.isBorderOpaque());

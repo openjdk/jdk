@@ -73,8 +73,7 @@ class DragRecognitionSupport {
      * Returns whether or not the event is potentially part of a drag sequence.
      */
     public static boolean mousePressed(MouseEvent me) {
-        return ((DragRecognitionSupport)getDragRecognitionSupport()).
-            mousePressedImpl(me);
+        return getDragRecognitionSupport().mousePressedImpl(me);
     }
 
     /**
@@ -82,16 +81,14 @@ class DragRecognitionSupport {
      * that started the recognition. Otherwise, return null.
      */
     public static MouseEvent mouseReleased(MouseEvent me) {
-        return ((DragRecognitionSupport)getDragRecognitionSupport()).
-            mouseReleasedImpl(me);
+        return getDragRecognitionSupport().mouseReleasedImpl(me);
     }
 
     /**
      * Returns whether or not a drag gesture recognition is ongoing.
      */
     public static boolean mouseDragged(MouseEvent me, BeforeDrag bd) {
-        return ((DragRecognitionSupport)getDragRecognitionSupport()).
-            mouseDraggedImpl(me, bd);
+        return getDragRecognitionSupport().mouseDraggedImpl(me, bd);
     }
 
     private void clearState() {

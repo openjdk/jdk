@@ -33,7 +33,7 @@ include $(BUILDDIR)/common/Defs.gmk
 # Files
 #
 include FILES.gmk
-AUTO_FILES_JAVA_DIRS = javax/swing sun/swing
+AUTO_FILES_JAVA_DIRS = javax/swing sun/swing com/sun/java/swing
 AUTO_JAVA_PRUNE = plaf
 
 SUBDIRS = html32dtd plaf

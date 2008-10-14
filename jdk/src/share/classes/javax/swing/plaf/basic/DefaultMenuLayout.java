@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import javax.swing.plaf.UIResource;
 
 import java.awt.Container;
 import java.awt.Dimension;
-import static sun.swing.SwingUtilities2.BASICMENUITEMUI_MAX_TEXT_OFFSET;
 
 /**
  * The default layout manager for Popup menus and menubars.  This
@@ -49,18 +48,7 @@ public class DefaultMenuLayout extends BoxLayout implements UIResource {
     public Dimension preferredLayoutSize(Container target) {
         if (target instanceof JPopupMenu) {
             JPopupMenu popupMenu = (JPopupMenu) target;
-
-            // Before the calculation of menu preferred size
-            // clear the previously calculated maximal widths and offsets
-            // in menu's Client Properties
-            popupMenu.putClientProperty(BasicMenuItemUI.MAX_ACC_WIDTH, null);
-            popupMenu.putClientProperty(BasicMenuItemUI.MAX_ARROW_WIDTH, null);
-            popupMenu.putClientProperty(BasicMenuItemUI.MAX_CHECK_WIDTH, null);
-            popupMenu.putClientProperty(BasicMenuItemUI.MAX_ICON_WIDTH, null);
-            popupMenu.putClientProperty(BasicMenuItemUI.MAX_LABEL_WIDTH, null);
-            popupMenu.putClientProperty(BasicMenuItemUI.MAX_TEXT_WIDTH, null);
-            popupMenu.putClientProperty(BASICMENUITEMUI_MAX_TEXT_OFFSET, null);
-
+            sun.swing.MenuItemLayoutHelper.clearUsedClientProperties(popupMenu);
             if (popupMenu.getComponentCount() == 0) {
                 return new Dimension(0, 0);
             }

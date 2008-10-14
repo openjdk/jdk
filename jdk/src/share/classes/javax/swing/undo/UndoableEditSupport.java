@@ -89,8 +89,7 @@ public class UndoableEditSupport {
      * @since 1.4
      */
     public synchronized UndoableEditListener[] getUndoableEditListeners() {
-        return (UndoableEditListener[])(listeners.toArray(
-                new UndoableEditListener[0]));
+        return listeners.toArray(new UndoableEditListener[0]);
     }
 
     /**
