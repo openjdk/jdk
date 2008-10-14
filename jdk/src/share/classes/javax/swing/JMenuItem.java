@@ -275,7 +275,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      *         hidden: true
      */
     public void setArmed(boolean b) {
-        ButtonModel model = (ButtonModel) getModel();
+        ButtonModel model = getModel();
 
         boolean oldValue = model.isArmed();
         if(model.isArmed() != b) {
@@ -290,7 +290,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * @see #setArmed
      */
     public boolean isArmed() {
-        ButtonModel model = (ButtonModel) getModel();
+        ButtonModel model = getModel();
         return model.isArmed();
     }
 
@@ -721,8 +721,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * @since 1.4
      */
     public MenuDragMouseListener[] getMenuDragMouseListeners() {
-        return (MenuDragMouseListener[])listenerList.getListeners(
-                MenuDragMouseListener.class);
+        return listenerList.getListeners(MenuDragMouseListener.class);
     }
 
     /**
@@ -752,8 +751,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * @since 1.4
      */
     public MenuKeyListener[] getMenuKeyListeners() {
-        return (MenuKeyListener[])listenerList.getListeners(
-                MenuKeyListener.class);
+        return listenerList.getListeners(MenuKeyListener.class);
     }
 
     /**

@@ -56,8 +56,7 @@ class MultiUIDefaults extends UIDefaults
             return value;
         }
 
-        for(int i = 0; i < tables.length; i++) {
-            UIDefaults table = tables[i];
+        for (UIDefaults table : tables) {
             value = (table != null) ? table.get(key) : null;
             if (value != null) {
                 return value;
@@ -75,8 +74,7 @@ class MultiUIDefaults extends UIDefaults
             return value;
         }
 
-        for(int i = 0; i < tables.length; i++) {
-            UIDefaults table = tables[i];
+        for (UIDefaults table : tables) {
             value = (table != null) ? table.get(key,l) : null;
             if (value != null) {
                 return value;
@@ -89,8 +87,7 @@ class MultiUIDefaults extends UIDefaults
 
     public int size() {
         int n = super.size();
-        for(int i = 0; i < tables.length; i++) {
-            UIDefaults table = tables[i];
+        for (UIDefaults table : tables) {
             n += (table != null) ? table.size() : 0;
         }
         return n;
@@ -102,7 +99,7 @@ class MultiUIDefaults extends UIDefaults
     }
 
 
-    public Enumeration keys()
+    public Enumeration<Object> keys()
     {
         Enumeration[] enums = new Enumeration[1 + tables.length];
         enums[0] = super.keys();
@@ -116,7 +113,7 @@ class MultiUIDefaults extends UIDefaults
     }
 
 
-    public Enumeration elements()
+    public Enumeration<Object> elements()
     {
         Enumeration[] enums = new Enumeration[1 + tables.length];
         enums[0] = super.elements();
@@ -137,7 +134,7 @@ class MultiUIDefaults extends UIDefaults
         }
     }
 
-    private static class MultiUIDefaultsEnumerator implements Enumeration
+    private static class MultiUIDefaultsEnumerator implements Enumeration<Object>
     {
         Enumeration[] enums;
         int n = 0;
@@ -175,8 +172,7 @@ class MultiUIDefaults extends UIDefaults
             return value;
         }
 
-        for(int i = 0; i < tables.length; i++) {
-            UIDefaults table = tables[i];
+        for (UIDefaults table : tables) {
             value = (table != null) ? table.remove(key) : null;
             if (value != null) {
                 return value;
@@ -189,8 +185,7 @@ class MultiUIDefaults extends UIDefaults
 
     public void clear() {
         super.clear();
-        for(int i = 0; i < tables.length; i++) {
-            UIDefaults table = tables[i];
+        for (UIDefaults table : tables) {
             if (table != null) {
                 table.clear();
             }

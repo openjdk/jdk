@@ -374,6 +374,24 @@ public class SimpleDateFormat extends DateFormat {
     private String pattern;
 
     /**
+     * Saved numberFormat and pattern.
+     * @see SimpleDateFormat#checkNegativeNumberExpression
+     */
+    transient private NumberFormat originalNumberFormat;
+    transient private String originalNumberPattern;
+
+    /**
+     * The minus sign to be used with format and parse.
+     */
+    transient private char minusSign = '-';
+
+    /**
+     * True when a negative sign follows a number.
+     * (True as default in Arabic.)
+     */
+    transient private boolean hasFollowingMinusSign = false;
+
+    /**
      * The compiled pattern.
      */
     transient private char[] compiledPattern;
@@ -1226,6 +1244,8 @@ public class SimpleDateFormat extends DateFormat {
      */
     public Date parse(String text, ParsePosition pos)
     {
+        checkNegativeNumberExpression();
+
         int start = pos.index;
         int oldStart = start;
         int textLength = text.length();
@@ -1271,14 +1291,42 @@ public class SimpleDateFormat extends DateFormat {
                 // digit text (e.g., "20010704") with a pattern which
                 // has no delimiters between fields, like "yyyyMMdd".
                 boolean obeyCount = false;
+
+                // In Arabic, a minus sign for a negative number is put after
+                // the number. Even in another locale, a minus sign can be
+                // put after a number using DateFormat.setNumberFormat().
+                // If both the minus sign and the field-delimiter are '-',
+                // subParse() needs to determine whether a '-' after a number
+                // in the given text is a delimiter or is a minus sign for the
+                // preceding number. We give subParse() a clue based on the
+                // information in compiledPattern.
+                boolean useFollowingMinusSignAsDelimiter = false;
+
                 if (i < compiledPattern.length) {
                     int nextTag = compiledPattern[i] >>> 8;
-                    if (!(nextTag == TAG_QUOTE_ASCII_CHAR || nextTag == TAG_QUOTE_CHARS)) {
+                    if (!(nextTag == TAG_QUOTE_ASCII_CHAR ||
+                          nextTag == TAG_QUOTE_CHARS)) {
                         obeyCount = true;
+                    }
+
+                    if (hasFollowingMinusSign &&
+                        (nextTag == TAG_QUOTE_ASCII_CHAR ||
+                         nextTag == TAG_QUOTE_CHARS)) {
+                        int c;
+                        if (nextTag == TAG_QUOTE_ASCII_CHAR) {
+                            c = compiledPattern[i] & 0xff;
+                        } else {
+                            c = compiledPattern[i+1];
+                        }
+
+                        if (c == minusSign) {
+                            useFollowingMinusSignAsDelimiter = true;
+                        }
                     }
                 }
                 start = subParse(text, start, tag, count, obeyCount,
-                                 ambiguousYear, pos);
+                                 ambiguousYear, pos,
+                                 useFollowingMinusSignAsDelimiter);
                 if (start < 0) {
                     pos.index = oldStart;
                     return null;
@@ -1482,10 +1530,13 @@ public class SimpleDateFormat extends DateFormat {
             // If the time zone matched uses the same name
             // (abbreviation) for both standard and daylight time,
             // let the time zone in the Calendar decide which one.
-            if (!useSameName) {
+            //
+            // Also if tz.getDSTSaving() returns 0 for DST, use tz to
+            // determine the local time. (6645292)
+            int dstAmount = (nameIndex >= 3) ? tz.getDSTSavings() : 0;
+            if (!(useSameName || (nameIndex >= 3 && dstAmount == 0))) {
                 calendar.set(Calendar.ZONE_OFFSET, tz.getRawOffset());
-                calendar.set(Calendar.DST_OFFSET,
-                             nameIndex >= 3 ? tz.getDSTSavings() : 0);
+                calendar.set(Calendar.DST_OFFSET, dstAmount);
             }
             return (start + zoneNames[nameIndex].length());
         }
@@ -1511,8 +1562,8 @@ public class SimpleDateFormat extends DateFormat {
      */
     private int subParse(String text, int start, int patternCharIndex, int count,
                          boolean obeyCount, boolean[] ambiguousYear,
-                         ParsePosition origPos)
-    {
+                         ParsePosition origPos,
+                         boolean useFollowingMinusSignAsDelimiter) {
         Number number = null;
         int value = 0;
         ParsePosition pos = new ParsePosition(0);
@@ -1537,10 +1588,10 @@ public class SimpleDateFormat extends DateFormat {
             // a number value.  We handle further, more generic cases below.  We need
             // to handle some of them here because some fields require extra processing on
             // the parsed value.
-            if (patternCharIndex == 4 /*HOUR_OF_DAY1_FIELD*/ ||
-                patternCharIndex == 15 /*HOUR1_FIELD*/ ||
-                (patternCharIndex == 2 /*MONTH_FIELD*/ && count <= 2) ||
-                patternCharIndex == 1) {
+            if (patternCharIndex == 4 /* HOUR_OF_DAY1_FIELD */ ||
+                patternCharIndex == 15 /* HOUR1_FIELD */ ||
+                (patternCharIndex == 2 /* MONTH_FIELD */ && count <= 2) ||
+                patternCharIndex == 1 /* YEAR_FIELD */) {
                 // It would be good to unify this with the obeyCount logic below,
                 // but that's going to be difficult.
                 if (obeyCount) {
@@ -1557,6 +1608,15 @@ public class SimpleDateFormat extends DateFormat {
                     }
                 } else {
                     value = number.intValue();
+
+                    if (useFollowingMinusSignAsDelimiter && (value < 0) &&
+                        (((pos.index < text.length()) &&
+                         (text.charAt(pos.index) != minusSign)) ||
+                         ((pos.index == text.length()) &&
+                          (text.charAt(pos.index-1) == minusSign)))) {
+                        value = -value;
+                        pos.index--;
+                    }
                 }
             }
 
@@ -1888,7 +1948,18 @@ public class SimpleDateFormat extends DateFormat {
                     number = numberFormat.parse(text, pos);
                 }
                 if (number != null) {
-                    calendar.set(field, number.intValue());
+                    value = number.intValue();
+
+                    if (useFollowingMinusSignAsDelimiter && (value < 0) &&
+                        (((pos.index < text.length()) &&
+                         (text.charAt(pos.index) != minusSign)) ||
+                         ((pos.index == text.length()) &&
+                          (text.charAt(pos.index-1) == minusSign)))) {
+                        value = -value;
+                        pos.index--;
+                    }
+
+                    calendar.set(field, value);
                     return pos.index;
                 }
                 break parsing;
@@ -2099,4 +2170,33 @@ public class SimpleDateFormat extends DateFormat {
             }
         }
     }
+
+    /**
+     * Analyze the negative subpattern of DecimalFormat and set/update values
+     * as necessary.
+     */
+    private void checkNegativeNumberExpression() {
+        if ((numberFormat instanceof DecimalFormat) &&
+            !numberFormat.equals(originalNumberFormat)) {
+            String numberPattern = ((DecimalFormat)numberFormat).toPattern();
+            if (!numberPattern.equals(originalNumberPattern)) {
+                hasFollowingMinusSign = false;
+
+                int separatorIndex = numberPattern.indexOf(';');
+                // If the negative subpattern is not absent, we have to analayze
+                // it in order to check if it has a following minus sign.
+                if (separatorIndex > -1) {
+                    int minusIndex = numberPattern.indexOf('-', separatorIndex);
+                    if ((minusIndex > numberPattern.lastIndexOf('0')) &&
+                        (minusIndex > numberPattern.lastIndexOf('#'))) {
+                        hasFollowingMinusSign = true;
+                        minusSign = ((DecimalFormat)numberFormat).getDecimalFormatSymbols().getMinusSign();
+                    }
+                }
+                originalNumberPattern = numberPattern;
+            }
+            originalNumberFormat = numberFormat;
+        }
+    }
+
 }

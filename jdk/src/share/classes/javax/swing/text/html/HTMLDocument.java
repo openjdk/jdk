@@ -745,7 +745,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      */
     private Element findFrame(String frameName) {
         ElementIterator it = new ElementIterator(this);
-        Element next = null;
+        Element next;
 
         while ((next = it.next()) != null) {
             AttributeSet attr = next.getAttributes();
@@ -891,7 +891,7 @@ public class HTMLDocument extends DefaultStyledDocument {
 
     /**
      * Returns the Map associated with the given name.
-     * @param the name of the desired <code>Map</code>
+     * @param name the name of the desired <code>Map</code>
      * @return the <code>Map</code> or <code>null</code> if it can't
      *          be found, or if <code>name</code> is <code>null</code>
      */
@@ -1759,7 +1759,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * Used to store button groups for radio buttons in
      * a form.
      */
-    private HashMap radioButtonGroupsMap;
+    private HashMap<String, ButtonGroup> radioButtonGroupsMap;
 
     /**
      * Document property for the number of tokens to buffer
@@ -1824,7 +1824,7 @@ public class HTMLDocument extends DefaultStyledDocument {
     /**
      * I18N property key.
      *
-     * @see AbstractDocument.I18NProperty
+     * @see AbstractDocument#I18NProperty
      */
     private static final String I18NProperty = "i18n";
 
@@ -1915,7 +1915,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 AttributeSet a = (AttributeSet)
                     elem.getAttributes().getAttribute(tag);
                 if (a == null) {
-                    a = (AttributeSet)elem.getAttributes();
+                    a = elem.getAttributes();
                 }
                 return a;
             }
@@ -2193,7 +2193,7 @@ public class HTMLDocument extends DefaultStyledDocument {
             isStyleCSS = "text/css".equals(getDefaultStyleSheetType());
             this.offset = offset;
             threshold = HTMLDocument.this.getTokenThreshold();
-            tagMap = new Hashtable(57);
+            tagMap = new Hashtable<HTML.Tag, TagAction>(57);
             TagAction na = new TagAction();
             TagAction ba = new BlockAction();
             TagAction pa = new ParagraphAction();
@@ -2435,7 +2435,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                          (StyleConstants.NameAttribute) == HTML.Tag.BODY &&
                          pPath[1].getEndOffset() == length) {
                     String lastText = getText(length - 1, 1);
-                    DefaultDocumentEvent event = null;
+                    DefaultDocumentEvent event;
                     Element[] added;
                     Element[] removed;
                     int index;
@@ -2496,7 +2496,7 @@ public class HTMLDocument extends DefaultStyledDocument {
         }
 
         private Element[] getPathTo(int offset) {
-            Stack elements = new Stack();
+            Stack<Element> elements = new Stack<Element>();
             Element e = getDefaultRootElement();
             int index;
             while (!e.isLeaf()) {
@@ -2610,7 +2610,7 @@ public class HTMLDocument extends DefaultStyledDocument {
             else {
                 styleAttributes = null;
             }
-            TagAction action = (TagAction) tagMap.get(t);
+            TagAction action = tagMap.get(t);
 
             if (action != null) {
                 action.start(t, a);
@@ -2640,7 +2640,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 addSpecialElement(HTML.Tag.COMMENT, sas);
             }
 
-            TagAction action = (TagAction)tagMap.get(HTML.Tag.COMMENT);
+            TagAction action = tagMap.get(HTML.Tag.COMMENT);
             if (action != null) {
                 action.start(HTML.Tag.COMMENT, new SimpleAttributeSet());
                 action.end(HTML.Tag.COMMENT);
@@ -2681,7 +2681,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                     inBlock--;
                 }
             }
-            TagAction action = (TagAction) tagMap.get(t);
+            TagAction action = tagMap.get(t);
             if (action != null) {
                 action.end(t);
             }
@@ -2707,7 +2707,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 styleAttributes = null;
             }
 
-            TagAction action = (TagAction) tagMap.get(t);
+            TagAction action = tagMap.get(t);
             if (action != null) {
                 action.start(t, a);
                 action.end(t);
@@ -2802,7 +2802,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 // might be defined in the FORM.
                 // for new group new ButtonGroup will be created (fix for 4529702)
                 // group name is a key in radioButtonGroupsMap
-                radioButtonGroupsMap = new HashMap();
+                radioButtonGroupsMap = new HashMap<String, ButtonGroup>();
             }
 
             public void end(HTML.Tag t) {
@@ -3015,7 +3015,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                     if (rel.equals("stylesheet") ||
                         rel.equals("alternate stylesheet")) {
                         if (styles == null) {
-                            styles = new Vector(3);
+                            styles = new Vector<Object>(3);
                         }
                         styles.addElement(t);
                         styles.addElement(a.copyAttributes());
@@ -3055,7 +3055,7 @@ public class HTMLDocument extends DefaultStyledDocument {
             public void start(HTML.Tag t, MutableAttributeSet a) {
                 if (inHead) {
                     if (styles == null) {
-                        styles = new Vector(3);
+                        styles = new Vector<Object>(3);
                     }
                     styles.addElement(t);
                     styles.addElement(a.getAttribute(HTML.Attribute.TYPE));
@@ -3280,7 +3280,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 String name = (String) a.getAttribute(HTML.Attribute.NAME);
                 String value = (String) a.getAttribute(HTML.Attribute.VALUE);
                 if ((name != null) && (value != null)) {
-                    ElementSpec objSpec = (ElementSpec) parseBuffer.lastElement();
+                    ElementSpec objSpec = parseBuffer.lastElement();
                     MutableAttributeSet objAttr = (MutableAttributeSet) objSpec.getAttributes();
                     objAttr.addAttribute(name, value);
                 }
@@ -3360,7 +3360,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                     int size = HTML.getIntegerAttributeValue(attr,
                                                              HTML.Attribute.SIZE,
                                                              1);
-                    boolean multiple = ((String)attr.getAttribute(HTML.Attribute.MULTIPLE) != null);
+                    boolean multiple = attr.getAttribute(HTML.Attribute.MULTIPLE) != null;
                     if ((size > 1) || multiple) {
                         OptionListModel m = new OptionListModel();
                         if (multiple) {
@@ -3460,9 +3460,9 @@ public class HTMLDocument extends DefaultStyledDocument {
                     if (type.equals("radio")) {
                         String name = (String) attr.getAttribute(HTML.Attribute.NAME);
                         if ( radioButtonGroupsMap == null ) { //fix for 4772743
-                           radioButtonGroupsMap = new HashMap();
+                           radioButtonGroupsMap = new HashMap<String, ButtonGroup>();
                         }
-                        ButtonGroup radioButtonGroup = (ButtonGroup)radioButtonGroupsMap.get(name);
+                        ButtonGroup radioButtonGroup = radioButtonGroupsMap.get(name);
                         if (radioButtonGroup == null) {
                             radioButtonGroup = new ButtonGroup();
                             radioButtonGroupsMap.put(name,radioButtonGroup);
@@ -3604,7 +3604,7 @@ public class HTMLDocument extends DefaultStyledDocument {
             // an open/close with no content will be removed, so we
             // add a space of content to keep the element being formed.
             ElementSpec prev = (parseBuffer.size() > 0) ?
-                (ElementSpec) parseBuffer.lastElement() : null;
+                parseBuffer.lastElement() : null;
             if (prev != null && prev.getType() == ElementSpec.StartTagType) {
                 char[] one = new char[1];
                 one[0] = ' ';
@@ -3737,7 +3737,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 // This attemps to clean it up.
                 int removeCounter = insertTagDepthDelta;
                 while (removeCounter < 0 && size >= 0 &&
-                       ((ElementSpec)parseBuffer.elementAt(size - 1)).
+                        parseBuffer.elementAt(size - 1).
                        getType() == ElementSpec.EndTagType) {
                     parseBuffer.removeElementAt(--size);
                     removeCounter++;
@@ -3751,7 +3751,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 // an extra \n in the middle of content.
                 int index = 0;
                 if (pushDepth > 0) {
-                    if (((ElementSpec)parseBuffer.elementAt(0)).getType() ==
+                    if (parseBuffer.elementAt(0).getType() ==
                         ElementSpec.ContentType) {
                         index++;
                     }
@@ -3759,19 +3759,19 @@ public class HTMLDocument extends DefaultStyledDocument {
                 index += (popDepth + pushDepth);
                 int cCount = 0;
                 int cStart = index;
-                while (index < size && ((ElementSpec)parseBuffer.elementAt
-                            (index)).getType() == ElementSpec.ContentType) {
+                while (index < size && parseBuffer.elementAt
+                        (index).getType() == ElementSpec.ContentType) {
                     index++;
                     cCount++;
                 }
                 if (cCount > 1) {
-                    while (index < size && ((ElementSpec)parseBuffer.elementAt
-                               (index)).getType() == ElementSpec.EndTagType) {
+                    while (index < size && parseBuffer.elementAt
+                            (index).getType() == ElementSpec.EndTagType) {
                         index++;
                     }
                     if (index == size) {
-                        char[] lastText = ((ElementSpec)parseBuffer.elementAt
-                                           (cStart + cCount - 1)).getArray();
+                        char[] lastText = parseBuffer.elementAt
+                                (cStart + cCount - 1).getArray();
                         if (lastText.length == 1 && lastText[0] == NEWLINE[0]){
                             index = cStart + cCount - 1;
                             while (size > index) {
@@ -3785,8 +3785,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 // Make sure there is in fact a newline
                 for (int counter = parseBuffer.size() - 1; counter >= 0;
                                    counter--) {
-                    ElementSpec spec = (ElementSpec)parseBuffer.
-                                                    elementAt(counter);
+                    ElementSpec spec = parseBuffer.elementAt(counter);
                     if (spec.getType() == ElementSpec.ContentType) {
                         if (spec.getArray()[spec.getLength() - 1] != '\n') {
                             SimpleAttributeSet attrs =new SimpleAttributeSet();
@@ -3817,7 +3816,7 @@ public class HTMLDocument extends DefaultStyledDocument {
          * of stylesheets.
          */
         void linkCSSStyleSheet(String href) {
-            URL url = null;
+            URL url;
             try {
                 url = new URL(base, href);
             } catch (MalformedURLException mfe) {
@@ -4031,7 +4030,7 @@ public class HTMLDocument extends DefaultStyledDocument {
          * indicating the type (may be null), and the elements following
          * it until the next HTML.Tag are the rules as Strings.
          */
-        Vector styles;
+        Vector<Object> styles;
         /** True if inside the head tag. */
         boolean inHead = false;
         /** Set to true if the style language is text/css. Since this is
@@ -4048,10 +4047,10 @@ public class HTMLDocument extends DefaultStyledDocument {
          */
         Option option;
 
-        protected Vector<ElementSpec> parseBuffer = new Vector();    // Vector<ElementSpec>
+        protected Vector<ElementSpec> parseBuffer = new Vector<ElementSpec>();
         protected MutableAttributeSet charAttr = new TaggedAttributeSet();
-        Stack charAttrStack = new Stack();
-        Hashtable tagMap;
+        Stack<AttributeSet> charAttrStack = new Stack<AttributeSet>();
+        Hashtable<HTML.Tag, TagAction> tagMap;
         int inBlock = 0;
 
         /**

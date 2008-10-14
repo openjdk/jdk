@@ -79,7 +79,7 @@ public class ZoneView extends BoxView {
 
     int maxZoneSize = 8 * 1024;
     int maxZonesLoaded = 3;
-    Vector loadedZones;
+    Vector<View> loadedZones;
 
     /**
      * Constructs a ZoneView.
@@ -89,7 +89,7 @@ public class ZoneView extends BoxView {
      */
     public ZoneView(Element elem, int axis) {
         super(elem, axis);
-        loadedZones = new Vector();
+        loadedZones = new Vector<View>();
     }
 
     /**
@@ -157,7 +157,7 @@ public class ZoneView extends BoxView {
 
     void unloadOldZones() {
         while (loadedZones.size() > getMaxZonesLoaded()) {
-            View zone = (View) loadedZones.elementAt(0);
+            View zone = loadedZones.elementAt(0);
             loadedZones.removeElementAt(0);
             unloadZone(zone);
         }
@@ -206,7 +206,7 @@ public class ZoneView extends BoxView {
      */
     protected View createZone(int p0, int p1) {
         Document doc = getDocument();
-        View zone = null;
+        View zone;
         try {
             zone = new Zone(getElement(),
                             doc.createPosition(p0),
@@ -285,7 +285,7 @@ public class ZoneView extends BoxView {
         // divide the old zone into a new set of bins
         Element elem = getElement();
         Document doc = elem.getDocument();
-        Vector zones = new Vector();
+        Vector<View> zones = new Vector<View>();
         int offs = offs0;
         do {
             offs0 = offs;

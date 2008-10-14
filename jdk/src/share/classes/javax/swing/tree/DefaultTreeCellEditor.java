@@ -551,7 +551,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
 
     // Serialization support.
     private void writeObject(ObjectOutputStream s) throws IOException {
-        Vector      values = new Vector();
+        Vector<Object> values = new Vector<Object>();
 
         s.defaultWriteObject();
         // Save the realEditor, if its Serializable.

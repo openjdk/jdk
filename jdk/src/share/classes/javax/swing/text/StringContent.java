@@ -174,7 +174,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
         // some small documents won't have any sticky positions
         // at all, so the buffer is created lazily.
         if (marks == null) {
-            marks = new Vector();
+            marks = new Vector<PosRec>();
         }
         return new StickyPosition(offset);
     }
@@ -226,7 +226,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
         }
         int n = marks.size();
         for (int i = 0; i < n; i++) {
-            PosRec mark = (PosRec) marks.elementAt(i);
+            PosRec mark = marks.elementAt(i);
             if (mark.unused) {
                 // this record is no longer used, get rid of it
                 marks.removeElementAt(i);
@@ -241,7 +241,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
     synchronized void updateMarksForRemove(int offset, int length) {
         int n = marks.size();
         for (int i = 0; i < n; i++) {
-            PosRec mark = (PosRec) marks.elementAt(i);
+            PosRec mark = marks.elementAt(i);
             if (mark.unused) {
                 // this record is no longer used, get rid of it
                 marks.removeElementAt(i);
@@ -276,7 +276,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
         int end = offset + length;
         Vector placeIn = (v == null) ? new Vector() : v;
         for (int i = 0; i < n; i++) {
-            PosRec mark = (PosRec) marks.elementAt(i);
+            PosRec mark = marks.elementAt(i);
             if (mark.unused) {
                 // this record is no longer used, get rid of it
                 marks.removeElementAt(i);
@@ -312,7 +312,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
     private static final char[] empty = new char[0];
     private char[] data;
     private int count;
-    transient Vector marks;
+    transient Vector<PosRec> marks;
 
     /**
      * holds the data for a mark... separately from
