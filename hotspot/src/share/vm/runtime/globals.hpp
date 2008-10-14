@@ -991,6 +991,12 @@ class CommandLineFlags {
   product(bool, UseXmmI2F, false,                                           \
           "Use SSE2 CVTDQ2PS instruction to convert Integer to Float")      \
                                                                             \
+  product(bool, UseXMMForArrayCopy, false,                                  \
+          "Use SSE2 MOVQ instruction for Arraycopy")                        \
+                                                                            \
+  product(bool, UseUnalignedLoadStores, false,                              \
+          "Use SSE2 MOVDQU instruction for Arraycopy")                      \
+                                                                            \
   product(intx, FieldsAllocationStyle, 1,                                   \
           "0 - type based with oops first, 1 - with oops last")             \
                                                                             \
