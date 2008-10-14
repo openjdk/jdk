@@ -23,10 +23,10 @@
 
 /**
  * @test
- * @compile  -XDignore.symbol.file Arrrghs.java TestHelper.java
- * @bug 5030233 6214916 6356475 6571029 6684582 6742159 4459600
- * @run main Arrrghs
+ * @bug 5030233 6214916 6356475 6571029 6684582 6742159 4459600 6758881
  * @summary Argument parsing validation.
+ * @compile Arrrghs.java TestHelper.java
+ * @run main Arrrghs
  */
 
 import java.io.BufferedReader;
@@ -235,11 +235,13 @@ public class Arrrghs {
         TestHelper.createJar("MIA", new File("some.jar"), new File("Foo"),
                 (String[])null);
         tr = TestHelper.doExec(TestHelper.javaCmd, "-jar", "some.jar");
-        tr.contains("MIA");
+        tr.contains("Error: Could not find main class MIA");
+        tr.contains("java.lang.NoClassDefFoundError: MIA");
         System.out.println(tr);
         // use classpath to check
         tr = TestHelper.doExec(TestHelper.javaCmd, "-cp", "some.jar", "MIA");
         tr.contains("Error: Could not find main class MIA");
+        tr.contains("java.lang.NoClassDefFoundError: MIA");
         System.out.println(tr);
 
         // incorrect method access
@@ -316,14 +318,14 @@ public class Arrrghs {
      */
     public static void main(String[] args) throws FileNotFoundException {
         if (TestHelper.debug) System.out.println("Starting Arrrghs tests");
-        quoteParsingTests();
-        runBasicErrorMessageTests();
-        runMainMethodTests();
-        if (TestHelper.testExitValue > 0) {
-            System.out.println("Total of " + TestHelper.testExitValue + " failed");
-            System.exit(1);
-        } else {
-            System.out.println("All tests pass");
+            quoteParsingTests();
+            runBasicErrorMessageTests();
+            runMainMethodTests();
+            if (TestHelper.testExitValue > 0) {
+                System.out.println("Total of " + TestHelper.testExitValue + " failed");
+                System.exit(1);
+            } else {
+                System.out.println("All tests pass");
+            }
         }
     }
-}

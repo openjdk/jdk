@@ -176,10 +176,10 @@ public enum LauncherHelper {
      * @param isJar
      * @param name
      * @return
-     * @throws java.lang.Exception
+     * @throws java.io.IOException
      */
     public static Object checkAndLoadMain(boolean printToStderr,
-            boolean isJar, String name) throws Exception {
+            boolean isJar, String name) throws IOException {
         // get the class name
         String classname = (isJar) ? getMainClassFromJar(name) : name;
         classname = classname.replace('/', '.');
@@ -190,7 +190,9 @@ public enum LauncherHelper {
             clazz = loader.loadClass(classname);
         } catch (ClassNotFoundException cnfe) {
             ostream.println(getLocalizedMessage("java.launcher.cls.error1", classname));
-            throw new RuntimeException("Could not find the main class " + classname);
+            NoClassDefFoundError ncdfe = new NoClassDefFoundError(classname);
+            ncdfe.initCause(cnfe);
+            throw ncdfe;
         }
         signatureDiagnostic(ostream, clazz);
         return clazz;
