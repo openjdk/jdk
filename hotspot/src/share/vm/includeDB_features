@@ -99,6 +99,7 @@ heapDumper.cpp                          ostream.hpp
 heapDumper.cpp                          reflectionUtils.hpp
 heapDumper.cpp                          symbolTable.hpp
 heapDumper.cpp                          systemDictionary.hpp
+heapDumper.cpp                          threadService.hpp
 heapDumper.cpp                          universe.hpp
 heapDumper.cpp                          vframe.hpp
 heapDumper.cpp                          vmGCOperations.hpp
