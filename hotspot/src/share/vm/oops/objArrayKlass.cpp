@@ -475,8 +475,8 @@ jint objArrayKlass::compute_modifier_flags(TRAPS) const {
     assert(Universe::is_bootstrapping(), "partial objArray only at startup");
     return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
   }
-  // Recurse down the element list
-  jint element_flags = Klass::cast(element_klass())->compute_modifier_flags(CHECK_0);
+  // Return the flags of the bottom element type.
+  jint element_flags = Klass::cast(bottom_klass())->compute_modifier_flags(CHECK_0);
 
   return (element_flags & (JVM_ACC_PUBLIC | JVM_ACC_PRIVATE | JVM_ACC_PROTECTED))
                         | (JVM_ACC_ABSTRACT | JVM_ACC_FINAL);
