@@ -118,10 +118,7 @@ public class T6348193 extends AbstractProcessor
 
     // set up or remove a service configuration file
     static void installConfigFile(NoGoodBad type) throws IOException {
-        URL self = T6348193.class.getClassLoader().getResource(myName+".class");
-        if (!self.getProtocol().equals("file"))
-            throw new AssertionError();
-        File f = new File(self.getFile()).getParentFile();
+        File f = new File(System.getProperty("test.classes", "."));
         for (String s: new String[] { "META-INF", "services", Processor.class.getName() })
             f = new File(f, s);
         BufferedWriter out;
