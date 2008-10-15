@@ -31,7 +31,7 @@ public class SourceOnly extends com.sun.javadoc.Doclet
     public static void main(String[] args) {
         // run javadoc on package p
         int result = com.sun.tools.javadoc.Main.
-            execute("javadoc", "p.SourceOnly", new String[] {"p"});
+            execute("javadoc", "p.SourceOnly", SourceOnly.class.getClassLoader(), new String[] {"p"});
         if (result != 0)
             throw new Error();
     }

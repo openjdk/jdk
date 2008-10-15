@@ -36,7 +36,7 @@ public class DupOk extends Doclet
     public static void main(String[] args) {
         // run javadoc on package p
         if (com.sun.tools.javadoc.Main.
-            execute("javadoc", "DupOk",
+            execute("javadoc", "DupOk", DupOk.class.getClassLoader(),
                     new String[]
                 {"-sourcepath",
                  System.getProperty("test.src", ".") + java.io.File.separatorChar + "sp1" +

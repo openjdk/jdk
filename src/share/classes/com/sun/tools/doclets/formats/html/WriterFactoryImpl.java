@@ -37,24 +37,10 @@ import com.sun.javadoc.*;
  */
 public class WriterFactoryImpl implements WriterFactory {
 
-    private static WriterFactoryImpl instance;
-
     private ConfigurationImpl configuration;
 
-    private WriterFactoryImpl(ConfigurationImpl configuration) {
+    public WriterFactoryImpl(ConfigurationImpl configuration) {
         this.configuration = configuration;
-    }
-
-    /**
-     * Return an instance of this factory.
-     *
-     * @return an instance of this factory.
-     */
-    public static WriterFactoryImpl getInstance() {
-        if (instance == null) {
-            instance = new WriterFactoryImpl(ConfigurationImpl.getInstance());
-        }
-        return instance;
     }
 
     /**
