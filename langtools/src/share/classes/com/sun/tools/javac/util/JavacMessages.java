@@ -99,10 +99,11 @@ public class JavacMessages implements Messages {
         bundleNames = bundleNames.prepend(bundleName);
         if (!bundleCache.isEmpty())
             bundleCache.clear();
+        currentBundles = null;
     }
 
     public List<ResourceBundle> getBundles(Locale locale) {
-        if (locale == currentLocale)
+        if (locale == currentLocale && currentBundles != null)
             return currentBundles;
         SoftReference<List<ResourceBundle>> bundles = bundleCache.get(locale);
         List<ResourceBundle> bundleList = bundles == null ? null : bundles.get();
