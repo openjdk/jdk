@@ -40,6 +40,7 @@ public class FlagsTooEarly extends Doclet {
         if (com.sun.tools.javadoc.Main.execute(
                 "javadoc",
                 "FlagsTooEarly",
+                FlagsTooEarly.class.getClassLoader(),
                 new String[] {"-Xwerror", thisFile}) != 0)
             throw new Error("Javadoc encountered warnings or errors.");
     }

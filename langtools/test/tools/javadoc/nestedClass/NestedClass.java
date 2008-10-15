@@ -39,7 +39,7 @@ public class NestedClass extends Doclet
 
     public static void main(String[] args) {
         if (com.sun.tools.javadoc.Main.
-            execute("javadoc", "NestedClass",
+            execute("javadoc", "NestedClass", NestedClass.class.getClassLoader(),
                     new String[] {System.getProperty("test.src", ".") +
                                   java.io.File.separatorChar +
                                   "NestedClass.java"})

@@ -44,7 +44,7 @@ public class NoStar extends Doclet
 {
     public static void main(String[] args) {
         if (com.sun.tools.javadoc.Main.
-            execute("javadoc", "NoStar",
+            execute("javadoc", "NoStar", NoStar.class.getClassLoader(),
                     new String[] {System.getProperty("test.src", ".") + java.io.File.separatorChar + "NoStar.java"}) != 0)
             throw new Error();
     }

@@ -43,6 +43,7 @@ public class LangVers extends Doclet {
         if (com.sun.tools.javadoc.Main.execute(
                 "javadoc",
                 "LangVers",
+                LangVers.class.getClassLoader(),
                 new String[] {"-source", "1.5", thisFile}) != 0)
             throw new Error("Javadoc encountered warnings or errors.");
     }

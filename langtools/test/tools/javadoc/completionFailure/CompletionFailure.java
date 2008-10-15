@@ -37,6 +37,7 @@ public class CompletionFailure extends Doclet
         // run javadoc on package pkg
         if (com.sun.tools.javadoc.Main.execute("javadoc",
                                                "CompletionFailure",
+                                               CompletionFailure.class.getClassLoader(),
                                                new String[]{"pkg"}) != 0)
             throw new Error();
     }
