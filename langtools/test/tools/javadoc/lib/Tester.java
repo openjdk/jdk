@@ -89,7 +89,9 @@ public class Tester {
     public void run() throws IOException {
         try {
             if (com.sun.tools.javadoc.Main.execute("javadoc",
-                                                   docletName, args) != 0) {
+                                                   docletName,
+                                                   getClass().getClassLoader(),
+                                                   args) != 0) {
                 throw new Error("Javadoc errors encountered.");
             }
             System.out.println("--> Output written to " + outputFile);
