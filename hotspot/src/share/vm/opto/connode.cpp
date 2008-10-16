@@ -433,8 +433,8 @@ Node *ConstraintCastNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
 // If not converting int->oop, throw away cast after constant propagation
 Node *CastPPNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
   const Type *t = ccp->type(in(1));
-  if (!t->isa_oop_ptr()) {
-    return NULL;                // do not transform raw pointers
+  if (!t->isa_oop_ptr() || in(1)->is_DecodeN()) {
+    return NULL; // do not transform raw pointers or narrow oops
   }
   return ConstraintCastNode::Ideal_DU_postCCP(ccp);
 }

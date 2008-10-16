@@ -23,13 +23,6 @@
  */
 
 inline void MarkSweep::mark_object(oop obj) {
-#ifndef SERIALGC
-  if (UseParallelOldGC && VerifyParallelOldWithMarkSweep) {
-    assert(PSParallelCompact::mark_bitmap()->is_marked(obj),
-           "Should be marked in the marking bitmap");
-  }
-#endif // SERIALGC
-
   // some marks may contain information we need to preserve so we store them away
   // and overwrite the mark.  We'll restore it at the end of markSweep.
   markOop mark = obj->mark();
