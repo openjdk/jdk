@@ -199,6 +199,22 @@ Rule	Arg	2000	only	-	Mar	3	0:00	0	-
 # http://www.impulsobaires.com.ar/nota.php?id=57832 (in spanish)
 # </a>
 
+# From Rodrigo Severo (2008-10-06):
+# Here is some info available at a Gentoo bug related to TZ on Argentina's DST:
+# ...
+# ------- Comment #1 from [jmdocile]  2008-10-06 16:28 0000 -------
+# Hi, there is a problem with timezone-data-2008e and maybe with
+# timezone-data-2008f
+# Argentinian law [Number] 25.155 is no longer valid.
+# <a href="http://www.infoleg.gov.ar/infolegInternet/anexos/60000-64999/60036/norma.htm">
+# http://www.infoleg.gov.ar/infolegInternet/anexos/60000-64999/60036/norma.htm
+# </a>
+# The new one is law [Number] 26.350
+# <a href="http://www.infoleg.gov.ar/infolegInternet/anexos/135000-139999/136191/norma.htm">
+# http://www.infoleg.gov.ar/infolegInternet/anexos/135000-139999/136191/norma.htm
+# </a>
+# So there is no summer time in Argentina for now.
+
 Rule	Arg	2007	only	-	Dec	30	0:00	1:00	S
 Rule	Arg	2008	max	-	Mar	Sun>=15	0:00	0	-
 Rule	Arg	2008	max	-	Oct	Sun>=15	0:00	1:00	S

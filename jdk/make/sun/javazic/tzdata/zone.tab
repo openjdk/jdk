@@ -315,7 +315,7 @@ NL	+5222+00454	Europe/Amsterdam
 NO	+5955+01045	Europe/Oslo
 NP	+2743+08519	Asia/Katmandu
 NR	-0031+16655	Pacific/Nauru
-NU	-1901+16955	Pacific/Niue
+NU	-1901-16955	Pacific/Niue
 NZ	-3652+17446	Pacific/Auckland	most locations
 NZ	-4357-17633	Pacific/Chatham	Chatham Islands
 OM	+2336+05835	Asia/Muscat
