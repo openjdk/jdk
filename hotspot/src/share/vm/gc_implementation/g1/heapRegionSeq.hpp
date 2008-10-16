@@ -49,7 +49,7 @@ class HeapRegionSeq: public CHeapObj {
 
  public:
   // Initializes "this" to the empty sequence of regions.
-  HeapRegionSeq();
+  HeapRegionSeq(const size_t max_size);
 
   // Adds "hr" to "this" sequence.  Requires "hr" not to overlap with
   // any region already in "this".  (Will perform better if regions are
