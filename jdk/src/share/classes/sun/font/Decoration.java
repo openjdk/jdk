@@ -379,6 +379,7 @@ public class Decoration {
             // NOTE:  The performace of the following code may
             // be very poor.
             float ulThickness = cm.underlineThickness;
+            float ulOffset = cm.underlineOffset;
 
             Rectangle2D lb = label.getLogicalBounds();
             float x1 = x;
@@ -387,7 +388,8 @@ public class Decoration {
             Area area = null;
 
             if (stdUnderline != null) {
-                Shape ul = stdUnderline.getUnderlineShape(ulThickness, x1, x2, y);
+                Shape ul = stdUnderline.getUnderlineShape(ulThickness,
+                                                          x1, x2, y+ulOffset);
                 area = new Area(ul);
             }
 
@@ -406,7 +408,8 @@ public class Decoration {
             }
 
             if (imUnderline != null) {
-                Shape ul = imUnderline.getUnderlineShape(ulThickness, x1, x2, y);
+                Shape ul = imUnderline.getUnderlineShape(ulThickness,
+                                                         x1, x2, y+ulOffset);
                 Area ulArea = new Area(ul);
                 if (area == null) {
                     area = ulArea;
