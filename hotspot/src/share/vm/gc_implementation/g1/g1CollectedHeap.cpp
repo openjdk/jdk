@@ -1398,7 +1398,7 @@ jint G1CollectedHeap::initialize() {
   _g1_storage.initialize(g1_rs, 0);
   _g1_committed = MemRegion((HeapWord*)_g1_storage.low(), (size_t) 0);
   _g1_max_committed = _g1_committed;
-  _hrs = new HeapRegionSeq();
+  _hrs = new HeapRegionSeq(_expansion_regions);
   guarantee(_hrs != NULL, "Couldn't allocate HeapRegionSeq");
   guarantee(_cur_alloc_region == NULL, "from constructor");
 
@@ -1789,6 +1789,20 @@ G1CollectedHeap::heap_region_par_iterate_chunked(HeapRegionClosure* cl,
   }
 }
 
+class ResetClaimValuesClosure: public HeapRegionClosure {
+public:
+  bool doHeapRegion(HeapRegion* r) {
+    r->set_claim_value(HeapRegion::InitialClaimValue);
+    return false;
+  }
+};
+
+void
+G1CollectedHeap::reset_heap_region_claim_values() {
+  ResetClaimValuesClosure blk;
+  heap_region_iterate(&blk);
+}
+
 #ifdef ASSERT
 // This checks whether all regions in the heap have the correct claim
 // value. I also piggy-backed on this a check to ensure that the
@@ -2031,10 +2045,12 @@ public:
 class VerifyRegionClosure: public HeapRegionClosure {
 public:
   bool _allow_dirty;
-  VerifyRegionClosure(bool allow_dirty)
-    : _allow_dirty(allow_dirty) {}
+  bool _par;
+  VerifyRegionClosure(bool allow_dirty, bool par = false)
+    : _allow_dirty(allow_dirty), _par(par) {}
   bool doHeapRegion(HeapRegion* r) {
-    guarantee(r->claim_value() == 0, "Should be unclaimed at verify points.");
+    guarantee(_par || r->claim_value() == HeapRegion::InitialClaimValue,
+              "Should be unclaimed at verify points.");
     if (r->isHumongous()) {
       if (r->startsHumongous()) {
         // Verify the single H object.
@@ -2082,6 +2098,25 @@ public:
   }
 };
 
+// This is the task used for parallel heap verification.
+
+class G1ParVerifyTask: public AbstractGangTask {
+private:
+  G1CollectedHeap* _g1h;
+  bool _allow_dirty;
+
+public:
+  G1ParVerifyTask(G1CollectedHeap* g1h, bool allow_dirty) :
+    AbstractGangTask("Parallel verify task"),
+    _g1h(g1h), _allow_dirty(allow_dirty) { }
+
+  void work(int worker_i) {
+    VerifyRegionClosure blk(_allow_dirty, true);
+    _g1h->heap_region_par_iterate_chunked(&blk, worker_i,
+                                          HeapRegion::ParVerifyClaimValue);
+  }
+};
+
 void G1CollectedHeap::verify(bool allow_dirty, bool silent) {
   if (SafepointSynchronize::is_at_safepoint() || ! UseTLAB) {
     if (!silent) { gclog_or_tty->print("roots "); }
@@ -2092,8 +2127,27 @@ void G1CollectedHeap::verify(bool allow_dirty, bool silent) {
                          &rootsCl);
     rem_set()->invalidate(perm_gen()->used_region(), false);
     if (!silent) { gclog_or_tty->print("heapRegions "); }
-    VerifyRegionClosure blk(allow_dirty);
-    _hrs->iterate(&blk);
+    if (GCParallelVerificationEnabled && ParallelGCThreads > 1) {
+      assert(check_heap_region_claim_values(HeapRegion::InitialClaimValue),
+             "sanity check");
+
+      G1ParVerifyTask task(this, allow_dirty);
+      int n_workers = workers()->total_workers();
+      set_par_threads(n_workers);
+      workers()->run_task(&task);
+      set_par_threads(0);
+
+      assert(check_heap_region_claim_values(HeapRegion::ParVerifyClaimValue),
+             "sanity check");
+
+      reset_heap_region_claim_values();
+
+      assert(check_heap_region_claim_values(HeapRegion::InitialClaimValue),
+             "sanity check");
+    } else {
+      VerifyRegionClosure blk(allow_dirty);
+      _hrs->iterate(&blk);
+    }
     if (!silent) gclog_or_tty->print("remset ");
     rem_set()->verify();
     guarantee(!rootsCl.failures(), "should not have had failures");

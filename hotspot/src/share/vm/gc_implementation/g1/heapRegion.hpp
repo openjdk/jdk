@@ -317,7 +317,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
     InitialClaimValue     = 0,
     FinalCountClaimValue  = 1,
     NoteEndClaimValue     = 2,
-    ScrubRemSetClaimValue = 3
+    ScrubRemSetClaimValue = 3,
+    ParVerifyClaimValue   = 4
   };
 
   // Concurrent refinement requires contiguous heap regions (in which TLABs

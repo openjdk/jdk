@@ -462,16 +462,14 @@ int os::active_processor_count() {
   int online_cpus = sysconf(_SC_NPROCESSORS_ONLN);
   pid_t pid = getpid();
   psetid_t pset = PS_NONE;
-  // Are we running in a processor set?
+  // Are we running in a processor set or is there any processor set around?
   if (pset_bind(PS_QUERY, P_PID, pid, &pset) == 0) {
-    if (pset != PS_NONE) {
-      uint_t pset_cpus;
-      // Query number of cpus in processor set
-      if (pset_info(pset, NULL, &pset_cpus, NULL) == 0) {
-        assert(pset_cpus > 0 && pset_cpus <= online_cpus, "sanity check");
-        _processors_online = pset_cpus;
-        return pset_cpus;
-      }
+    uint_t pset_cpus;
+    // Query the number of cpus available to us.
+    if (pset_info(pset, NULL, &pset_cpus, NULL) == 0) {
+      assert(pset_cpus > 0 && pset_cpus <= online_cpus, "sanity check");
+      _processors_online = pset_cpus;
+      return pset_cpus;
     }
   }
   // Otherwise return number of online cpus

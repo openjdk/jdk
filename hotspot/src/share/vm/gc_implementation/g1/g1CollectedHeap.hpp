@@ -890,6 +890,9 @@ public:
                                        int worker,
                                        jint claim_value);
 
+  // It resets all the region claim values to the default.
+  void reset_heap_region_claim_values();
+
 #ifdef ASSERT
   bool check_heap_region_claim_values(jint claim_value);
 #endif // ASSERT
