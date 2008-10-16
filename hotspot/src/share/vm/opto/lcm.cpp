@@ -595,7 +595,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
 
       // A few node types require changing a required edge to a precedence edge
       // before allocation.
-      if( UseConcMarkSweepGC ) {
+      if( UseConcMarkSweepGC || UseG1GC ) {
         if( n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_StoreCM ) {
           // Note: Required edges with an index greater than oper_input_base
           // are not supported by the allocator.
