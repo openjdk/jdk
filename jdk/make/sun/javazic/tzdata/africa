@@ -475,11 +475,19 @@ Zone Africa/Nouakchott	-1:03:48 -	LMT	1912
 # year 2008 - 2009 will, therefore, be effective as from 26 October 2008
 # and end on 29 March 2009.
 
+# From Ed Maste (2008-10-07):
+# THE TIME BILL (No. XXVII of 2008) Explanatory Memorandum states the
+# beginning / ending of summer time is 2 o'clock standard time in the
+# morning of the last Sunday of October / last Sunday of March.
+# <a href="http://www.gov.mu/portal/goc/assemblysite/file/bill2708.pdf">
+# http://www.gov.mu/portal/goc/assemblysite/file/bill2708.pdf
+# </a>
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule Mauritius	1982	only	-	Oct	10	0:00	1:00	S
 Rule Mauritius	1983	only	-	Mar	21	0:00	0	-
-Rule Mauritius	2008	max	-	Oct	lastSun	2:00	1:00	S
-Rule Mauritius	2009	max	-	Mar	lastSun	2:00	0	-
+Rule Mauritius	2008	max	-	Oct	lastSun	2:00s	1:00	S
+Rule Mauritius	2009	max	-	Mar	lastSun	2:00s	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Indian/Mauritius	3:50:00 -	LMT	1907		# Port Louis
 			4:00 Mauritius	MU%sT	# Mauritius Time

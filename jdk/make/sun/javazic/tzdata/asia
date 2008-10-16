@@ -1979,8 +1979,20 @@ Rule	Syria	2007	only	-	Nov	 Fri>=1	0:00	0	-
 # compilers can't handle  or having multiple Rules (a la Israel).
 # For now, use "Apr Fri>=1", and go with IATA on a uniform Sep 30 end.
 
+# From Steffen Thorsen (2008-10-07):
+# Syria has now officially decided to end DST on 2008-11-01 this year,
+# according to the following article in the Syrian Arab News Agency (SANA).
+#
+# The article is in Arabic, and seems to tell that they will go back to
+# winter time on 2008-11-01 at 00:00 local daylight time (delaying/setting
+# clocks back 60 minutes).
+#
+# <a href="http://sana.sy/ara/2/2008/10/07/195459.htm">
+# http://sana.sy/ara/2/2008/10/07/195459.htm
+# </a>
+
 Rule	Syria	2008	max	-	Apr	Fri>=1	0:00	1:00	S
-Rule	Syria	2008	max	-	Oct	1	0:00	0	-
+Rule	Syria	2008	max	-	Nov	1	0:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Damascus	2:25:12 -	LMT	1920	# Dimashq
