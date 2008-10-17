@@ -27,11 +27,13 @@ package com.sun.tools.javac.util;
 import java.util.Collection;
 import java.util.Locale;
 import javax.tools.JavaFileObject;
+import java.util.ResourceBundle;
 
 import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.api.Formattable;
 import com.sun.tools.javac.api.DiagnosticFormatter.PositionKind;
 import com.sun.tools.javac.file.JavacFileManager;
+import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticType.*;
 
 /**
  * This abstract class provides a basic implementation of the functionalities that should be provided
@@ -48,16 +50,24 @@ import com.sun.tools.javac.file.JavacFileManager;
 public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter<JCDiagnostic> {
 
     /**
-     * Messages object used by this formatter for i18n
+     * JavacMessages object used by this formatter for i18n
      */
-    protected Messages messages;
+    protected JavacMessages messages;
+    protected boolean showSource;
 
     /**
-     * Initialize an AbstractDiagnosticFormatter by setting its Messages object
+     * Initialize an AbstractDiagnosticFormatter by setting its JavacMessages object
      * @param messages
      */
-    protected AbstractDiagnosticFormatter(Messages messages) {
+    protected AbstractDiagnosticFormatter(JavacMessages messages, Options options, boolean showSource) {
         this.messages = messages;
+        this.showSource = options.get("showSource") == null ? showSource :
+                          options.get("showSource").equals("true");
+    }
+
+    protected AbstractDiagnosticFormatter(JavacMessages messages, boolean showSource) {
+        this.messages = messages;
+        this.showSource = showSource;
     }
 
     public String formatMessage(JCDiagnostic d, Locale l) {
@@ -131,7 +141,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         else if (arg instanceof JavaFileObject)
             return JavacFileManager.getJavacBaseFileName((JavaFileObject)arg);
         else if (arg instanceof Formattable)
-            return ((Formattable)arg).toString(Messages.getDefaultBundle());
+            return ((Formattable)arg).toString(l, messages);
         else
             return String.valueOf(arg);
     }
@@ -155,6 +165,27 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         return sbuf.toString();
     }
 
+    /** Format the faulty source code line and point to the error.
+     *  @param d The diagnostic for which the error line should be printed
+     */
+    protected String formatSourceLine(JCDiagnostic d) {
+        StringBuilder buf = new StringBuilder();
+        DiagnosticSource source = d.getDiagnosticSource();
+        int pos = d.getIntPosition();
+        if (d.getIntPosition() != Position.NOPOS) {
+            String line = (source == null ? null : source.getLine(pos));
+            if (line == null)
+                return "";
+            buf.append(line+"\n");
+            int col = source.getColumnNumber(pos, false);
+            for (int i = 0; i < col - 1; i++)  {
+                buf.append((line.charAt(i) == '\t') ? "\t" : " ");
+            }
+            buf.append("^");
+         }
+         return buf.toString();
+    }
+
     /**
      * Converts a String into a locale-dependent representation accordingly to a given locale
      *
@@ -164,6 +195,10 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
      * @return a locale-dependent string
      */
     protected String localize(Locale l, String key, Object... args) {
-        return messages.getLocalizedString(key, args);
+        return messages.getLocalizedString(l, key, args);
+    }
+
+    public boolean displaySource(JCDiagnostic d) {
+        return showSource && d.getType() != FRAGMENT;
     }
 }

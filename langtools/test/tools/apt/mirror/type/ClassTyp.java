@@ -27,6 +27,7 @@
  * @bug 4853450 5009360 5055963
  * @summary ClassType tests
  * @library ../../lib
+ * @run main/othervm ClassTyp
  */
 
 

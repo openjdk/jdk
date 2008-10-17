@@ -27,6 +27,7 @@
  * @bug 4853450 5055963
  * @summary InterfaceType tests
  * @library ../../lib
+ * @run main/othervm InterfaceTyp
  */
 
 

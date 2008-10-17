@@ -28,7 +28,7 @@
  * @summary EnumDeclaration tests
  * @library ../../lib
  * @compile -source 1.5 EnumDecl.java
- * @run main EnumDecl
+ * @run main/othervm EnumDecl
  */
 
 

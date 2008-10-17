@@ -37,7 +37,7 @@ public class BooleanConst extends Doclet
     public static void main(String[] args) {
         // run javadoc on package p
         if (com.sun.tools.javadoc.Main.
-            execute("javadoc", "BooleanConst",
+            execute("javadoc", "BooleanConst", BooleanConst.class.getClassLoader(),
                     new String[] {System.getProperty("test.src", ".") + java.io.File.separatorChar + "BooleanConst.java"}) != 0)
             throw new Error();
     }

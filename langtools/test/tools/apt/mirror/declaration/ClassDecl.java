@@ -28,7 +28,7 @@
  * @summary ClassDeclaration tests
  * @library ../../lib
  * @compile -source 1.5 ClassDecl.java
- * @run main ClassDecl
+ * @run main/othervm ClassDecl
  */
 
 

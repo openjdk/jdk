@@ -45,7 +45,7 @@ public abstract class AbstractDoclet {
     /**
      * The global configuration information for this run.
      */
-    public Configuration configuration = configuration();
+    public Configuration configuration;
 
     /**
      * The only doclet that may use this toolkit is {@value}
@@ -74,6 +74,7 @@ public abstract class AbstractDoclet {
      * @return true if the doclet executed without error.  False otherwise.
      */
     public boolean start(AbstractDoclet doclet, RootDoc root) {
+        configuration = configuration();
         configuration.root = root;
         if (! isValidDoclet(doclet)) {
             return false;

@@ -55,7 +55,8 @@ public class T4994049 extends Doclet {
     public static void main(String... args) {
         for (String file : args) {
             File source = new File(System.getProperty("test.src", "."), file);
-            if (execute("javadoc", "T4994049", new String[]{source.getPath()} ) != 0)
+            if (execute("javadoc", "T4994049", T4994049.class.getClassLoader(),
+                        new String[]{source.getPath()} ) != 0)
                 throw new Error();
         }
     }
