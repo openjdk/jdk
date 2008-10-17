@@ -468,7 +468,7 @@ public class CSS implements Serializable {
     public CSS() {
         baseFontSize = baseFontSizeIndex + 1;
         // setup the css conversion table
-        valueConvertor = new Hashtable();
+        valueConvertor = new Hashtable<Object, Object>();
         valueConvertor.put(CSS.Attribute.FONT_SIZE, new FontSize());
         valueConvertor.put(CSS.Attribute.FONT_FAMILY, new FontFamily());
         valueConvertor.put(CSS.Attribute.FONT_WEIGHT, new FontWeight());
@@ -637,7 +637,7 @@ public class CSS implements Serializable {
      * Maps from a StyleConstants to a CSS Attribute.
      */
     Attribute styleConstantsKeyToCSSKey(StyleConstants sc) {
-        return (Attribute)styleConstantToCssMap.get(sc);
+        return styleConstantToCssMap.get(sc);
     }
 
     /**
@@ -645,7 +645,7 @@ public class CSS implements Serializable {
      */
     Object styleConstantsValueToCSSValue(StyleConstants sc,
                                          Object styleValue) {
-        Object cssKey = styleConstantsKeyToCSSKey(sc);
+        Attribute cssKey = styleConstantsKeyToCSSKey(sc);
         if (cssKey != null) {
             CssValue conv = (CssValue)valueConvertor.get(cssKey);
             return conv.fromStyleConstants(sc, styleValue);
@@ -659,8 +659,7 @@ public class CSS implements Serializable {
      */
     Object cssValueToStyleConstantsValue(StyleConstants key, Object value) {
         if (value instanceof CssValue) {
-            return ((CssValue)value).toStyleConstants((StyleConstants)key,
-                                                      null);
+            return ((CssValue)value).toStyleConstants(key, null);
         }
         return null;
     }
@@ -784,7 +783,7 @@ public class CSS implements Serializable {
      * Convert a set of HTML attributes to an equivalent
      * set of CSS attributes.
      *
-     * @param AttributeSet containing the HTML attributes.
+     * @param htmlAttrSet AttributeSet containing the HTML attributes.
      * @return AttributeSet containing the corresponding CSS attributes.
      *        The AttributeSet will be empty if there are no mapping
      *        CSS attributes.
@@ -841,8 +840,8 @@ public class CSS implements Serializable {
         return cssAttrSet;
     }
 
-    private static final Hashtable attributeMap = new Hashtable();
-    private static final Hashtable valueMap = new Hashtable();
+    private static final Hashtable<String, Attribute> attributeMap = new Hashtable<String, Attribute>();
+    private static final Hashtable<String, Value> valueMap = new Hashtable<String, Value>();
 
     /**
      * The hashtable and the static initalization block below,
@@ -854,18 +853,18 @@ public class CSS implements Serializable {
      * Therefore, the value associated with each HTML.Attribute.
      * key ends up being an array of CSS.Attribute.* objects.
      */
-    private static final Hashtable htmlAttrToCssAttrMap = new Hashtable(20);
+    private static final Hashtable<HTML.Attribute, CSS.Attribute[]> htmlAttrToCssAttrMap = new Hashtable<HTML.Attribute, CSS.Attribute[]>(20);
 
     /**
      * The hashtable and static initialization that follows sets
      * up a translation from StyleConstants (i.e. the <em>well known</em>
      * attributes) to the associated CSS attributes.
      */
-    private static final Hashtable styleConstantToCssMap = new Hashtable(17);
+    private static final Hashtable<Object, Attribute> styleConstantToCssMap = new Hashtable<Object, Attribute>(17);
     /** Maps from HTML value to a CSS value. Used in internal mapping. */
-    private static final Hashtable htmlValueToCssValueMap = new Hashtable(8);
+    private static final Hashtable<String, CSS.Value> htmlValueToCssValueMap = new Hashtable<String, CSS.Value>(8);
     /** Maps from CSS value (string) to internal value. */
-    private static final Hashtable cssValueToInternalValueMap = new Hashtable(13);
+    private static final Hashtable<String, CSS.Value> cssValueToInternalValueMap = new Hashtable<String, CSS.Value>(13);
 
     static {
         // load the attribute map
@@ -995,8 +994,8 @@ public class CSS implements Serializable {
         // Register all the CSS attribute keys for archival/unarchival
         Object[] keys = CSS.Attribute.allAttributes;
         try {
-            for (int i = 0; i < keys.length; i++) {
-                StyleContext.registerStaticAttributeKey(keys[i]);
+            for (Object key : keys) {
+                StyleContext.registerStaticAttributeKey(key);
             }
         } catch (Throwable e) {
             e.printStackTrace();
@@ -1005,8 +1004,8 @@ public class CSS implements Serializable {
         // Register all the CSS Values for archival/unarchival
         keys = CSS.Value.allValues;
         try {
-            for (int i = 0; i < keys.length; i++) {
-                StyleContext.registerStaticAttributeKey(keys[i]);
+            for (Object key : keys) {
+                StyleContext.registerStaticAttributeKey(key);
             }
         } catch (Throwable e) {
             e.printStackTrace();
@@ -1034,7 +1033,7 @@ public class CSS implements Serializable {
      *  doesn't represent a valid attribute key
      */
     public static final Attribute getAttribute(String name) {
-        return (Attribute) attributeMap.get(name);
+        return attributeMap.get(name);
     }
 
     /**
@@ -1050,7 +1049,7 @@ public class CSS implements Serializable {
      *  not mean that it doesn't represent a valid CSS value
      */
     static final Value getValue(String name) {
-        return (Value) valueMap.get(name);
+        return valueMap.get(name);
     }
 
 
@@ -1159,7 +1158,7 @@ public class CSS implements Serializable {
      * to a Color.
      */
     static Color stringToColor(String str) {
-      Color color = null;
+      Color color;
 
       if (str == null) {
           return null;
@@ -1299,7 +1298,7 @@ public class CSS implements Serializable {
     static String[] parseStrings(String value) {
         int         current, last;
         int         length = (value == null) ? 0 : value.length();
-        Vector      temp = new Vector(4);
+        Vector<String> temp = new Vector<String>(4);
 
         current = 0;
         while (current < length) {
@@ -1423,10 +1422,10 @@ public class CSS implements Serializable {
         if (cssAttrList == null || htmlAttrValue == null) {
             return;
         }
-        for (int i = 0; i < cssAttrList.length; i++) {
-            Object o = getCssValue(cssAttrList[i], htmlAttrValue);
+        for (Attribute cssAttr : cssAttrList) {
+            Object o = getCssValue(cssAttr, htmlAttrValue);
             if (o != null) {
-                cssAttrSet.addAttribute(cssAttrList[i], o);
+                cssAttrSet.addAttribute(cssAttr , o);
             }
         }
     }
@@ -1452,7 +1451,7 @@ public class CSS implements Serializable {
      * @return CSS.Attribute[]
      */
     private CSS.Attribute[] getCssAttribute(HTML.Attribute hAttr) {
-        return (CSS.Attribute[])htmlAttrToCssAttrMap.get(hAttr);
+        return htmlAttrToCssAttrMap.get(hAttr);
     }
 
     /**
@@ -2599,8 +2598,8 @@ public class CSS implements Serializable {
      * to an AttributeSet or returned to the developer.
      */
     static class LengthUnit implements Serializable {
-        static Hashtable lengthMapping = new Hashtable(6);
-        static Hashtable w3cLengthMapping = new Hashtable(6);
+        static Hashtable<String, Float> lengthMapping = new Hashtable<String, Float>(6);
+        static Hashtable<String, Float> w3cLengthMapping = new Hashtable<String, Float>(6);
         static {
             lengthMapping.put("pt", new Float(1f));
             // Not sure about 1.3, determined by experiementation.
@@ -2642,7 +2641,7 @@ public class CSS implements Serializable {
             }
             if (length >= 2) {
                 units = value.substring(length - 2, length);
-                Float scale = (Float)lengthMapping.get(units);
+                Float scale = lengthMapping.get(units);
                 if (scale != null) {
                     try {
                         this.value = Float.valueOf(value.substring(0,
@@ -2686,10 +2685,10 @@ public class CSS implements Serializable {
         }
 
         float getValue(boolean w3cLengthUnits) {
-            Hashtable mapping = (w3cLengthUnits) ? w3cLengthMapping : lengthMapping;
+            Hashtable<String, Float> mapping = (w3cLengthUnits) ? w3cLengthMapping : lengthMapping;
             float scale = 1;
             if (units != null) {
-                Float scaleFloat = (Float)mapping.get(units);
+                Float scaleFloat = mapping.get(units);
                 if (scaleFloat != null) {
                     scale = scaleFloat.floatValue();
                 }
@@ -2699,10 +2698,10 @@ public class CSS implements Serializable {
         }
 
         static float getValue(float value, String units, Boolean w3cLengthUnits) {
-            Hashtable mapping = (w3cLengthUnits) ? w3cLengthMapping : lengthMapping;
+            Hashtable<String, Float> mapping = (w3cLengthUnits) ? w3cLengthMapping : lengthMapping;
             float scale = 1;
             if (units != null) {
-                Float scaleFloat = (Float)mapping.get(units);
+                Float scaleFloat = mapping.get(units);
                 if (scaleFloat != null) {
                     scale = scaleFloat.floatValue();
                 }
@@ -3089,7 +3088,7 @@ public class CSS implements Serializable {
             iter.setIndex(i);
             int margin0 = lastMargin;
             int margin1 = (int) iter.getLeadingCollapseSpan();
-            totalSpacing += Math.max(margin0, margin1);;
+            totalSpacing += Math.max(margin0, margin1);
             preferred += (int) iter.getPreferredSpan(0);
             minimum += iter.getMinimumSpan(0);
             maximum += iter.getMaximumSpan(0);
@@ -3127,7 +3126,7 @@ public class CSS implements Serializable {
          * of margin collapsing, and the flexibility to adjust the sizes.
          */
         long preferred = 0;
-        long currentPreferred = 0;
+        long currentPreferred;
         int lastMargin = 0;
         int totalSpacing = 0;
         int n = iter.getCount();
@@ -3199,7 +3198,7 @@ public class CSS implements Serializable {
             }
         }
         // make the adjustments
-        int totalOffset = (int)iter.getBorderWidth();;
+        int totalOffset = (int)iter.getBorderWidth();
         for (int i = 0; i < n; i++) {
             iter.setIndex(i);
             iter.setOffset( iter.getOffset() + totalOffset);
@@ -3331,7 +3330,7 @@ public class CSS implements Serializable {
         s.defaultReadObject();
         // Reconstruct the hashtable.
         int numValues = s.readInt();
-        valueConvertor = new Hashtable(Math.max(1, numValues));
+        valueConvertor = new Hashtable<Object, Object>(Math.max(1, numValues));
         while (numValues-- > 0) {
             Object key = s.readObject();
             Object value = s.readObject();
@@ -3372,7 +3371,7 @@ public class CSS implements Serializable {
     //
 
     /** Maps from CSS key to CssValue. */
-    private transient Hashtable valueConvertor;
+    private transient Hashtable<Object, Object> valueConvertor;
 
     /** Size used for relative units. */
     private int baseFontSize;

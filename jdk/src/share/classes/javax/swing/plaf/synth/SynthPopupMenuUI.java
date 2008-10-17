@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,34 +58,6 @@ import sun.swing.plaf.synth.SynthUI;
  */
 class SynthPopupMenuUI extends BasicPopupMenuUI implements
                 PropertyChangeListener, SynthUI {
-    /**
-     * Maximum size of the text portion of the children menu items.
-     */
-    private int maxTextWidth;
-
-    /**
-     * Maximum size of the icon portion of the children menu items.
-     */
-    private int maxIconWidth;
-
-    /**
-     * Maximum size of the spacing between the text and accelerator
-     * portions of the children menu items.
-     */
-    private int maxAccelSpacingWidth;
-
-    /**
-     * Maximum size of the text for the accelerator portion of the children
-     * menu items.
-     */
-    private int maxAcceleratorWidth;
-
-    /*
-     * Maximum icon and text offsets of the children menu items.
-     */
-    private int maxTextOffset;
-    private int maxIconOffset;
-
     private SynthStyle style;
 
     public static ComponentUI createUI(JComponent x) {
@@ -151,90 +123,6 @@ class SynthPopupMenuUI extends BasicPopupMenuUI implements
 
     private int getComponentState(JComponent c) {
         return SynthLookAndFeel.getComponentState(c);
-    }
-
-    /**
-     * Resets the max text and accerator widths,
-     * text and icon offsets.
-     */
-    void resetAlignmentHints() {
-        maxTextWidth = maxIconWidth
-                     = maxAccelSpacingWidth = maxAcceleratorWidth
-                     = maxTextOffset = maxIconOffset = 0;
-    }
-
-    /**
-     * Adjusts the width needed to display the maximum menu item string.
-     *
-     * @param width Text width.
-     * @return max width
-     */
-    int adjustTextWidth(int width) {
-        maxTextWidth = Math.max(maxTextWidth, width);
-        return maxTextWidth;
-    }
-
-    /**
-     * Adjusts the width needed to display the maximum menu item icon.
-     *
-     * @param width Icon width.
-     * @return max width
-     */
-    int adjustIconWidth(int width) {
-        maxIconWidth = Math.max(maxIconWidth, width);
-        return maxIconWidth;
-    }
-
-    /**
-     * Adjusts the width needed to pad between the maximum menu item
-     * text and accelerator.
-     *
-     * @param width Spacing width.
-     * @return max width
-     */
-    int adjustAccelSpacingWidth(int width) {
-        maxAccelSpacingWidth = Math.max(maxAccelSpacingWidth, width);
-        return maxAccelSpacingWidth;
-    }
-
-    /**
-     * Adjusts the width needed to display the maximum accelerator.
-     *
-     * @param width Text width.
-     * @return max width
-     */
-    int adjustAcceleratorWidth(int width) {
-        maxAcceleratorWidth = Math.max(maxAcceleratorWidth, width);
-        return maxAcceleratorWidth;
-    }
-
-    /**
-     * Maximum size needed to display accelerators of children menu items.
-     */
-    int getMaxAcceleratorWidth() {
-        return maxAcceleratorWidth;
-    }
-
-    /**
-     * Adjusts the text offset needed to align text horizontally.
-     *
-     * @param offset Text offset
-     * @return max offset
-     */
-    int adjustTextOffset(int offset) {
-        maxTextOffset = Math.max(maxTextOffset, offset);
-        return maxTextOffset;
-    }
-
-   /**
-    * Adjusts the icon offset needed to align icons horizontally
-    *
-    * @param offset Icon offset
-    * @return max offset
-    */
-    int adjustIconOffset(int offset) {
-        maxIconOffset = Math.max(maxIconOffset, offset);
-        return maxIconOffset;
     }
 
     public void update(Graphics g, JComponent c) {

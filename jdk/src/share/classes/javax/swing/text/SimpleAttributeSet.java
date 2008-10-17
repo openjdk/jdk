@@ -56,7 +56,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
      */
     public static final AttributeSet EMPTY = new EmptyAttributeSet();
 
-    private transient Hashtable table = new Hashtable(3);
+    private transient Hashtable<Object, Object> table = new Hashtable<Object, Object>(3);
 
     /**
      * Creates a new attribute set.
@@ -73,7 +73,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
         addAttributes(source);
     }
 
-    private SimpleAttributeSet(Hashtable table) {
+    private SimpleAttributeSet(Hashtable<Object, Object> table) {
         this.table = table;
     }
 
@@ -341,7 +341,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException {
         s.defaultReadObject();
-        table = new Hashtable(3);
+        table = new Hashtable<Object, Object>(3);
         StyleContext.readAttributeSet(s, this);
     }
 
