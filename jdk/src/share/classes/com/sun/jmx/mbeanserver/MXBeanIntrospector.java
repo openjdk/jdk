@@ -32,6 +32,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -390,7 +391,31 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
         if (type instanceof Class)
             return ((Class) type).getName();
         else
-            return type.toString();
+            return genericTypeString(type);
+    }
+
+    private static String genericTypeString(Type type) {
+        if (type instanceof Class<?>) {
+            Class<?> c = (Class<?>) type;
+            if (c.isArray())
+                return genericTypeString(c.getComponentType()) + "[]";
+            else
+                return c.getName();
+        } else if (type instanceof GenericArrayType) {
+            GenericArrayType gat = (GenericArrayType) type;
+            return genericTypeString(gat.getGenericComponentType()) + "[]";
+        } else if (type instanceof ParameterizedType) {
+            ParameterizedType pt = (ParameterizedType) type;
+            StringBuilder sb = new StringBuilder();
+            sb.append(genericTypeString(pt.getRawType())).append("<");
+            String sep = "";
+            for (Type t : pt.getActualTypeArguments()) {
+                sb.append(sep).append(genericTypeString(t));
+                sep = ", ";
+            }
+            return sb.append(">").toString();
+        } else
+            return "???";
     }
 
     private final PerInterfaceMap<ConvertingMethod>

@@ -175,6 +175,16 @@ public abstract class AbstractSelectableChannel
      * the selector is invoked while holding the appropriate locks.  The
      * resulting key is added to this channel's key set before being returned.
      * </p>
+     *
+     * @throws  ClosedSelectorException {@inheritDoc}
+     *
+     * @throws  IllegalBlockingModeException {@inheritDoc}
+     *
+     * @throws  IllegalSelectorException {@inheritDoc}
+     *
+     * @throws  CancelledKeyException {@inheritDoc}
+     *
+     * @throws  IllegalArgumentException {@inheritDoc}
      */
     public final SelectionKey register(Selector sel, int ops,
                                        Object att)
