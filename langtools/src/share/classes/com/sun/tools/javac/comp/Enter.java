@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.tools.javac.comp;
 
 import java.util.*;
-import java.util.Set;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileManager;
 
@@ -43,7 +42,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
-import static com.sun.tools.javac.code.TypeTags.*;
 
 /** This class enters symbols for all encountered definitions into
  *  the symbol table. The pass consists of two phases, organized as
@@ -100,6 +98,7 @@ public class Enter extends JCTree.Visitor {
     ClassReader reader;
     Annotate annotate;
     MemberEnter memberEnter;
+    Types types;
     Lint lint;
     JavaFileManager fileManager;
 
@@ -121,6 +120,7 @@ public class Enter extends JCTree.Visitor {
         syms = Symtab.instance(context);
         chk = Check.instance(context);
         memberEnter = MemberEnter.instance(context);
+        types = Types.instance(context);
         annotate = Annotate.instance(context);
         lint = Lint.instance(context);
 
@@ -333,7 +333,7 @@ public class Enter extends JCTree.Visitor {
                           "class.public.should.be.in.file", tree.name);
             }
         } else {
-            if (tree.name.len != 0 &&
+            if (!tree.name.isEmpty() &&
                 !chk.checkUniqueClassName(tree.pos(), tree.name, enclScope)) {
                 result = null;
                 return;
@@ -348,7 +348,7 @@ public class Enter extends JCTree.Visitor {
                 // We are seeing a local class.
                 c = reader.defineClass(tree.name, owner);
                 c.flatname = chk.localClassName(c);
-                if (c.name.len != 0)
+                if (!c.name.isEmpty())
                     chk.checkTransparentClass(tree.pos(), c, env.info.scope);
             }
         }
@@ -357,7 +357,7 @@ public class Enter extends JCTree.Visitor {
         // Enter class into `compiled' table and enclosing scope.
         if (chk.compiled.get(c.flatname) != null) {
             duplicateClass(tree.pos(), c);
-            result = new ErrorType(tree.name, (TypeSymbol)owner);
+            result = types.createErrorType(tree.name, (TypeSymbol)owner, Type.noType);
             tree.sym = (ClassSymbol)result.tsym;
             return;
         }

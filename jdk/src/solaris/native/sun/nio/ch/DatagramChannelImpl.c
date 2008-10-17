@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,7 +198,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_DatagramChannelImpl_send0(JNIEnv *env, jobject this,
-                                            jobject fdo, jlong address,
+                                          jboolean preferIPv6, jobject fdo, jlong address,
                                             jint len, jobject dest)
 {
     jint fd = fdval(env, fdo);
@@ -215,7 +215,7 @@ Java_sun_nio_ch_DatagramChannelImpl_send0(JNIEnv *env, jobject this,
 
     if (NET_InetAddressToSockaddr(env, destAddress, destPort,
                                   (struct sockaddr *)&sa,
-                                  &sa_len, JNI_TRUE) != 0) {
+                                  &sa_len, preferIPv6) != 0) {
       return IOS_THROWN;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,8 @@ public class ThreadMXBeanTest {
         long[] ids1 = proxy.getAllThreadIds();
 
         // Add some random ids to the list so we'll get back null ThreadInfo
-        long[] ids2 = Arrays.copyOf(ids1, ids1.length + 10);
+        long[] ids2 = new long[ids1.length + 10];
+        System.arraycopy(ids1, 0, ids2, 0, ids1.length);
         Random r = new Random();
         for (int i = ids1.length; i < ids2.length; i++)
             ids2[i] = Math.abs(r.nextLong());

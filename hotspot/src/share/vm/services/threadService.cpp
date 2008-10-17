@@ -744,7 +744,7 @@ ThreadSnapshot::ThreadSnapshot(JavaThread* thread) {
   }
 
   // Support for JSR-166 locks
-  if (JDK_Version::supports_thread_park_blocker() &&
+  if (JDK_Version::current().supports_thread_park_blocker() &&
         (_thread_status == java_lang_Thread::PARKED ||
          _thread_status == java_lang_Thread::PARKED_TIMED)) {
 

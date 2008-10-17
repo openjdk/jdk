@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,13 @@ void ThreadLocalStorage::set_thread(Thread* thread) {
 }
 
 void ThreadLocalStorage::init() {
-  assert(ThreadLocalStorage::thread_index() == -1, "More than one attempt to initialize threadLocalStorage");
+  assert(!is_initialized(),
+         "More than one attempt to initialize threadLocalStorage");
   pd_init();
   set_thread_index(os::allocate_thread_local_storage());
   generate_code_for_get_thread();
+}
+
+bool ThreadLocalStorage::is_initialized() {
+    return (thread_index() != -1);
 }

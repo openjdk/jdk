@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "incls/_location.cpp.incl"
 
 void Location::print_on(outputStream* st) const {
-  if(type() == invalid && !legal_offset_in_bytes(offset() * BytesPerInt)) {
+  if(type() == invalid) {
     // product of Location::invalid_loc() or Location::Location().
     switch (where()) {
     case on_stack:     st->print("empty");    break;
@@ -42,6 +42,7 @@ void Location::print_on(outputStream* st) const {
   switch (type()) {
   case normal:                                 break;
   case oop:          st->print(",oop");        break;
+  case narrowoop:    st->print(",narrowoop");  break;
   case int_in_long:  st->print(",int");        break;
   case lng:          st->print(",long");       break;
   case float_in_dbl: st->print(",float");      break;
@@ -53,17 +54,17 @@ void Location::print_on(outputStream* st) const {
 
 
 Location::Location(DebugInfoReadStream* stream) {
-  _value = (uint16_t) stream->read_int();
+  _value = (juint) stream->read_int();
 }
 
 
 void Location::write_on(DebugInfoWriteStream* stream) {
-  stream->write_int(_value & 0x0000FFFF);
+  stream->write_int(_value);
 }
 
 
 // Valid argument to Location::new_stk_loc()?
 bool Location::legal_offset_in_bytes(int offset_in_bytes) {
   if ((offset_in_bytes % BytesPerInt) != 0)  return false;
-  return (offset_in_bytes / BytesPerInt) < (OFFSET_MASK >> OFFSET_SHIFT);
+  return (juint)(offset_in_bytes / BytesPerInt) < (OFFSET_MASK >> OFFSET_SHIFT);
 }

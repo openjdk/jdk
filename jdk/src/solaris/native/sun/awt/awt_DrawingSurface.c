@@ -29,7 +29,7 @@
 
 #include "awt_p.h"
 #include "java_awt_Component.h"
-#include "sun_awt_motif_MComponentPeer.h"
+//#include "sun_awt_motif_MComponentPeer.h"
 
 #include "awt_Component.h"
 

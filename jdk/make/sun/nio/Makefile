@@ -91,7 +91,7 @@ $(CHARSETS_JAR): $(FILES_class) $(CLASSDESTDIR)/$(SERVICE_DESCRIPTION_PATH) $(FI
 	$(BOOT_JAR_CMD) cf $(CHARSETS_JAR) \
 	      -C $(CLASSDESTDIR) sun \
 	      -C $(CLASSDESTDIR) $(SERVICE_DESCRIPTION_PATH)  \
-	      $(JAR_JFLAGS)
+	      $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 clean::

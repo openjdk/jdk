@@ -1,5 +1,5 @@
 #
-# Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ SUNWprivate_1.1 {
 		Java_java_net_Inet6AddressImpl_isReachable0;
 		Java_java_net_NetworkInterface_init;
 		Java_java_net_NetworkInterface_getByName0;
-		Java_java_net_NetworkInterface_getByIndex;
+		Java_java_net_NetworkInterface_getByIndex0;
 		Java_java_net_NetworkInterface_getByInetAddress0;
 		Java_java_net_NetworkInterface_getAll;
 		Java_java_net_NetworkInterface_isUp0;

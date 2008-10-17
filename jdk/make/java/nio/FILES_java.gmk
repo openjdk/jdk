@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 FILES_src = \
 	java/nio/Bits.java \
 	java/nio/Buffer.java \
+	java/nio/BufferPoolMXBean.java \
 	java/nio/ByteOrder.java \
 	java/nio/MappedByteBuffer.java \
 	java/nio/StringCharBuffer.java \
@@ -38,6 +39,9 @@ FILES_src = \
 	java/nio/channels/FileLock.java \
 	java/nio/channels/GatheringByteChannel.java \
 	java/nio/channels/InterruptibleChannel.java \
+	java/nio/channels/MembershipKey.java \
+	java/nio/channels/MulticastChannel.java \
+	java/nio/channels/NetworkChannel.java \
 	java/nio/channels/ReadableByteChannel.java \
 	java/nio/channels/ScatteringByteChannel.java \
 	java/nio/channels/SelectableChannel.java \
@@ -72,6 +76,7 @@ FILES_src = \
 	sun/nio/ch/DatagramSocketAdaptor.java \
         sun/nio/ch/DefaultSelectorProvider.java \
 	sun/nio/ch/DirectBuffer.java \
+	sun/nio/ch/ExtendedSocketOption.java \
 	sun/nio/ch/FileChannelImpl.java \
 	sun/nio/ch/FileDispatcher.java \
 	sun/nio/ch/FileKey.java \
@@ -79,12 +84,14 @@ FILES_src = \
 	sun/nio/ch/IOUtil.java \
 	sun/nio/ch/IOStatus.java \
 	sun/nio/ch/IOVecWrapper.java \
+	sun/nio/ch/MembershipKeyImpl.java \
+	sun/nio/ch/MembershipRegistry.java \
 	sun/nio/ch/NativeDispatcher.java \
 	sun/nio/ch/NativeObject.java \
 	sun/nio/ch/NativeThread.java \
 	sun/nio/ch/NativeThreadSet.java \
 	sun/nio/ch/Net.java \
-	sun/nio/ch/OptionAdaptor.java \
+	sun/nio/ch/OptionKey.java \
 	sun/nio/ch/PipeImpl.java \
 	sun/nio/ch/PollArrayWrapper.java \
 	sun/nio/ch/Reflect.java \
@@ -98,8 +105,7 @@ FILES_src = \
 	sun/nio/ch/SocketAdaptor.java \
 	sun/nio/ch/SocketChannelImpl.java \
 	sun/nio/ch/SocketDispatcher.java \
-	sun/nio/ch/SocketOpts.java \
-	sun/nio/ch/SocketOptsImpl.java \
+	sun/nio/ch/SocketOptionRegistry.java \
         sun/nio/ch/SourceChannelImpl.java \
 	sun/nio/ch/Util.java \
 	\
@@ -239,6 +245,7 @@ FILES_gen_ex = \
 	java/nio/InvalidMarkException.java \
 	java/nio/ReadOnlyBufferException.java \
 	\
+	java/nio/channels/AlreadyBoundException.java \
 	java/nio/channels/AlreadyConnectedException.java \
 	java/nio/channels/AsynchronousCloseException.java \
 	java/nio/channels/ClosedByInterruptException.java \
@@ -257,14 +264,15 @@ FILES_gen_ex = \
 	java/nio/channels/UnresolvedAddressException.java \
 	java/nio/channels/UnsupportedAddressTypeException.java \
 	\
-	sun/nio/ch/AlreadyBoundException.java \
-	\
 	java/nio/charset/CharacterCodingException.java \
 	java/nio/charset/IllegalCharsetNameException.java \
 	java/nio/charset/UnsupportedCharsetException.java
 
 FILES_gen_csp = sun/nio/cs/StandardCharsets.java
 
-FILES_gen = $(FILES_gen_coder) $(FILES_gen_buffer) $(FILES_gen_ex) $(FILES_gen_csp)
+FILES_gen_sor = sun/nio/ch/SocketOptionRegistry.java
+
+FILES_gen = $(FILES_gen_coder) $(FILES_gen_buffer) $(FILES_gen_ex) \
+    $(FILES_gen_csp) $(FILES_gen_sor)
 
 FILES_java = $(FILES_src) $(FILES_gen)

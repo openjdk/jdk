@@ -438,5 +438,7 @@ void PSMarkSweepDecorator::compact(bool mangle_free_space ) {
          "should point inside space");
   space()->set_top(compaction_top());
 
-  if (mangle_free_space) space()->mangle_unused_area();
+  if (mangle_free_space) {
+    space()->mangle_unused_area();
+  }
 }

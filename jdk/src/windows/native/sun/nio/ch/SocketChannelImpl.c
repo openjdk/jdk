@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,13 +138,4 @@ Java_sun_nio_ch_SocketChannelImpl_checkConnect(JNIEnv *env, jobject this,
     }
 
     return 0;
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_SocketChannelImpl_shutdown(JNIEnv *env, jclass cl,
-                                           jobject fdo, jint how)
-{
-    if (shutdown(fdval(env, fdo), how) == SOCKET_ERROR) {
-        NET_ThrowNew(env, WSAGetLastError(), "shutdown");
-    }
 }

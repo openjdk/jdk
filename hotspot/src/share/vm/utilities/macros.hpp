@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,14 @@
 #else
 #define WINDOWS_ONLY(code)
 #define NOT_WINDOWS(code) code
+#endif
+
+#if defined(IA32) || defined(AMD64)
+#define X86
+#define X86_ONLY(code) code
+#else
+#undef X86
+#define X86_ONLY(code)
 #endif
 
 #ifdef IA32

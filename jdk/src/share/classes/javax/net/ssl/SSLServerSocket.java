@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,9 +108,12 @@ public abstract class SSLServerSocket extends ServerSocket
      * <P>
      * A port number of <code>0</code> creates a socket on any free port.
      * <P>
-     * The <code>backlog</code> argument must be a positive
-     * value greater than 0. If the value passed if equal or less
-     * than 0, then the default value will be assumed.
+     * The <code>backlog</code> argument is the requested maximum number of
+     * pending connections on the socket. Its exact semantics are implementation
+     * specific. In particular, an implementation may impose a maximum length
+     * or may choose to ignore the parameter altogther. The value provided
+     * should be greater than <code>0</code>. If it is less than or equal to
+     * <code>0</code>, then an implementation specific default will be used.
      * <P>
      * If there is a security manager, its <code>checkListen</code>
      * method is called with the <code>port</code> argument as its
@@ -118,8 +121,8 @@ public abstract class SSLServerSocket extends ServerSocket
      * in a SecurityException.
      *
      * @param port the port on which to listen
-     * @param backlog how many connections may be pending before
-     *          the system should start rejecting new requests
+     * @param backlog  requested maximum length of the queue of incoming
+     *                  connections.
      * @throws IOException if an I/O error occurs when creating the socket
      * @throws SecurityException if a security manager exists and its
      *         <code>checkListen</code> method doesn't allow the operation.
@@ -150,16 +153,19 @@ public abstract class SSLServerSocket extends ServerSocket
      * <P>
      * A port number of <code>0</code> creates a socket on any free port.
      * <P>
-     * <P>The <code>backlog</code> argument must be a positive
-     * value greater than 0. If the value passed if equal or less
-     * than 0, then the default value will be assumed.
+     * The <code>backlog</code> argument is the requested maximum number of
+     * pending connections on the socket. Its exact semantics are implementation
+     * specific. In particular, an implementation may impose a maximum length
+     * or may choose to ignore the parameter altogther. The value provided
+     * should be greater than <code>0</code>. If it is less than or equal to
+     * <code>0</code>, then an implementation specific default will be used.
      * <P>
      * If <i>address</i> is null, it will default accepting connections
      * on any/all local addresses.
      *
      * @param port the port on which to listen
-     * @param backlog how many connections may be pending before
-     *          the system should start rejecting new requests
+     * @param backlog  requested maximum length of the queue of incoming
+     *                  connections.
      * @param address the address of the network interface through
      *          which connections will be accepted
      * @throws IOException if an I/O error occurs when creating the socket

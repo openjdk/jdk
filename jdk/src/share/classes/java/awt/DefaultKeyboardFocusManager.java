@@ -154,7 +154,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     private boolean doRestoreFocus(Component toFocus, Component vetoedComponent,
                                    boolean clearOnFailure)
     {
-        if (toFocus != vetoedComponent && toFocus.isShowing() && toFocus.isFocusable() &&
+        if (toFocus != vetoedComponent && toFocus.isShowing() && toFocus.canBeFocusOwner() &&
             toFocus.requestFocus(false, CausedFocusEvent.Cause.ROLLBACK))
         {
             return true;
@@ -500,8 +500,11 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                     }
                 }
 
-                if (!(newFocusOwner.isFocusable() && newFocusOwner.isEnabled()
-                      && newFocusOwner.isShowing()))
+                if (!(newFocusOwner.isFocusable() && newFocusOwner.isShowing() &&
+                    // Refuse focus on a disabled component if the focus event
+                    // isn't of UNKNOWN reason (i.e. not a result of a direct request
+                    // but traversal, activation or system generated).
+                    (newFocusOwner.isEnabled() || cause.equals(CausedFocusEvent.Cause.UNKNOWN))))
                 {
                     // we should not accept focus on such component, so reject it.
                     dequeueKeyEvents(-1, newFocusOwner);
@@ -742,8 +745,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     public boolean dispatchKeyEvent(KeyEvent e) {
         Component focusOwner = (((AWTEvent)e).isPosted) ? getFocusOwner() : e.getComponent();
 
-        if (focusOwner != null && focusOwner.isShowing() &&
-            focusOwner.isFocusable() && focusOwner.isEnabled()) {
+        if (focusOwner != null && focusOwner.isShowing() && focusOwner.canBeFocusOwner()) {
             if (!e.isConsumed()) {
                 Component comp = e.getComponent();
                 if (comp != null && comp.isEnabled()) {

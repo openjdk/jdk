@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -850,6 +850,15 @@ public abstract class SunToolkit extends Toolkit
      */
     public static boolean getSunAwtErasebackgroundonresize() {
         return AccessController.doPrivileged(new GetBooleanAction("sun.awt.erasebackgroundonresize"));
+    }
+
+
+    /**
+     * Makes the window OverrideRedirect, on X11 platforms. See
+     * ICCCM specification for more details about OverrideRedirect
+     * windows. Implemented in XToolkit, no-op in WToolkit.
+     */
+    public void setOverrideRedirect(Window target) {
     }
 
     static SoftCache imgCache = new SoftCache();
@@ -2039,12 +2048,3 @@ class PostEventQueue {
         SunToolkit.wakeupEventQueue(eventQueue, event.getSource() == AWTAutoShutdown.getInstance());
     }
 } // class PostEventQueue
-
-class EventQueueItem {
-    AWTEvent event;
-    EventQueueItem next;
-
-    EventQueueItem(AWTEvent evt) {
-        event = evt;
-    }
-} // class EventQueueItem

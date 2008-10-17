@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@ package com.sun.tools.javac.jvm;
 
 import java.util.*;
 
-import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.code.Type;
 
 /** An internal structure that corresponds to the constant pool of a classfile.
  *

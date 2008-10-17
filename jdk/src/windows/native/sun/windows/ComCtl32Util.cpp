@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,9 @@ void ComCtl32Util::InitLibraries() {
             m_bNewSubclassing = (m_lpfnSetWindowSubclass != NULL) &&
                                 (m_lpfnRemoveWindowSubclass != NULL) &&
                                 (m_lpfnDefSubclassProc != NULL);
+
+            fn_InitCommonControlsEx = (ComCtl32Util::InitCommonControlsExType)::GetProcAddress(hModComCtl32, "InitCommonControlsEx");
+            InitCommonControls();
         }
     }
 }
@@ -107,4 +110,16 @@ LRESULT ComCtl32Util::SharedWindowProc(HWND hwnd, UINT msg,
     return ::CallWindowProc(_WindowProc, hwnd, msg, wParam, lParam);
 
     CATCH_BAD_ALLOC_RET(0);
+}
+
+void ComCtl32Util::InitCommonControls()
+{
+    if (fn_InitCommonControlsEx == NULL) {
+        return;
+    }
+
+    INITCOMMONCONTROLSEX iccex;
+    memset(&iccex, 0, sizeof(INITCOMMONCONTROLSEX));
+    iccex.dwSize = sizeof(INITCOMMONCONTROLSEX);
+    fn_InitCommonControlsEx(&iccex);
 }

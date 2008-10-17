@@ -1,5 +1,5 @@
 #
-# Copyright 1995-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,11 @@ BUILDDIR = ../..
 PACKAGE = sun.awt
 LIBRARY = jpeg
 PRODUCT = sun
-include $(BUILDDIR)/common/Defs.gmk
 
-#
 # Use highest optimization level
-#
-_OPT = $(CC_HIGHEST_OPT)
+OPTIMIZATION_LEVEL = HIGHEST
+
+include $(BUILDDIR)/common/Defs.gmk
 
 #
 # Files

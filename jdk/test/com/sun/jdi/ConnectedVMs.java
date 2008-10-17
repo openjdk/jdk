@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,10 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g InstTarg.java
- *  @run main ConnectedVMs InstTarg
+ *  @run main ConnectedVMs "Kill"
+ *  @run main ConnectedVMs "Resume to exit"
+ *  @run main ConnectedVMs "dispose()"
+ *  @run main ConnectedVMs "exit()"
  *
  * @summary ConnectedVMs checks the method
  * VirtualMachineManager.connectedVirtualMachines()
@@ -40,14 +43,10 @@ import java.util.List;
 
 public class ConnectedVMs extends TestScaffold {
     static int failCount = 0;;
-    static int pass;
-    static String[] passNames = {"Kill", "Resume to exit",
-                                 "dispose()", "exit()"};
+    static String passName;
 
     public static void main(String args[]) throws Exception {
-        for (pass=0; pass < passNames.length; pass++) {
-            new ConnectedVMs(args).startTests();
-        }
+        new ConnectedVMs(args[0]).startTests();
         if (failCount > 0) {
             throw new RuntimeException(
              "VirtualMachineManager.connectedVirtualMachines() " +
@@ -58,16 +57,17 @@ public class ConnectedVMs extends TestScaffold {
         }
     }
 
-    ConnectedVMs(String args[]) throws Exception {
-        super(args);
-        System.out.println("create");
+    ConnectedVMs(String name) throws Exception {
+        super(new String[0]);
+        passName = name;
+        System.out.println("create " + passName);
     }
 
     void vms(int expected) {
         List vms = Bootstrap.virtualMachineManager().
             connectedVirtualMachines();
         if (vms.size() != expected) {
-            System.out.println("FAILURE! " + passNames[pass] +
+            System.out.println("FAILURE! " + passName +
                                " - expected: " + expected +
                                ", got: " + vms.size());
             ++failCount;
@@ -75,27 +75,22 @@ public class ConnectedVMs extends TestScaffold {
     }
 
     protected void runTests() throws Exception {
-        System.out.println("Testing " + passNames[pass]);
+        System.out.println("Testing " + passName);
         vms(0);
         startToMain("InstTarg");
         ThreadReference thread = waitForVMStart();
         StepEvent stepEvent = stepIntoLine(thread);
         vms(1);
 
-        // pick a way to die
-        switch (pass) {
-            case 0:
-                vm().process().destroy();
-                break;
-            case 1:
-                vm().resume();
-                break;
-            case 2:
-                vm().dispose();
-                break;
-            case 3:
-                vm().exit(1);
-                break;
+        // pick a way to die based on the input arg.
+        if (passName.equals("Kill")) {
+            vm().process().destroy();
+        } else if (passName.equals("Resume to exit")) {
+            vm().resume();
+        } else if (passName.equals("dispose()")) {
+            vm().dispose();
+        } else if (passName.equals("exit()")) {
+            vm().exit(1);
         }
 
         resumeToVMDisconnect();
