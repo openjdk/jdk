@@ -109,7 +109,8 @@ cp ${TESTSRC}/servicesPhantomTouch ./META-INF/services/com.sun.mirror.apt.Annota
 
 ${JAR} cf0 phantom/phantom.jar PhantomTouch*.class META-INF
 
-
+# cleanup file to prevent accidental discovery in current directory
+rm -f META-INF/services/com.sun.mirror.apt.AnnotationProcessorFactory
 
 # Jar files created; verify right output file is touched
 
