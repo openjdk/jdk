@@ -133,8 +133,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * @since 1.4
      */
     public ListSelectionListener[] getListSelectionListeners() {
-        return (ListSelectionListener[])listenerList.getListeners(
-                ListSelectionListener.class);
+        return listenerList.getListeners(ListSelectionListener.class);
     }
 
     /**

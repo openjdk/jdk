@@ -160,7 +160,9 @@ public abstract class AbstractColorChooserPanel extends JPanel {
       *         is editing
       */
     public ColorSelectionModel getColorSelectionModel() {
-        return chooser.getSelectionModel();
+        return (this.chooser != null)
+                ? this.chooser.getSelectionModel()
+                : null;
     }
 
     /**
@@ -168,7 +170,17 @@ public abstract class AbstractColorChooserPanel extends JPanel {
      * @return the <code>Color</code> that is selected
      */
     protected Color getColorFromModel() {
-        return getColorSelectionModel().getSelectedColor();
+        ColorSelectionModel model = getColorSelectionModel();
+        return (model != null)
+                ? model.getSelectedColor()
+                : null;
+    }
+
+    void setSelectedColor(Color color) {
+        ColorSelectionModel model = getColorSelectionModel();
+        if (model != null) {
+            model.setSelectedColor(color);
+        }
     }
 
     /**

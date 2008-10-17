@@ -200,7 +200,7 @@ public class InputMap implements Serializable {
             return pKeys;
         }
 
-        HashMap        keyMap = new HashMap();
+        HashMap<KeyStroke, KeyStroke> keyMap = new HashMap<KeyStroke, KeyStroke>();
         int            counter;
 
         for (counter = keys.length - 1; counter >= 0; counter--) {
@@ -212,7 +212,7 @@ public class InputMap implements Serializable {
 
         KeyStroke[]    allKeys = new KeyStroke[keyMap.size()];
 
-        return (KeyStroke[])keyMap.keySet().toArray(allKeys);
+        return keyMap.keySet().toArray(allKeys);
     }
 
     private void writeObject(ObjectOutputStream s) throws IOException {

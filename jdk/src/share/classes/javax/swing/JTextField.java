@@ -475,8 +475,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * @since 1.4
      */
     public synchronized ActionListener[] getActionListeners() {
-        return (ActionListener[])listenerList.getListeners(
-                ActionListener.class);
+        return listenerList.getListeners(ActionListener.class);
     }
 
     /**
