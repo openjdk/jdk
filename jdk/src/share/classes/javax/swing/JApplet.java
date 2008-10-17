@@ -131,10 +131,7 @@ public class JApplet extends Applet implements Accessible,
         // Check the timerQ and restart if necessary.
         TimerQueue q = TimerQueue.sharedInstance();
         if(q != null) {
-            synchronized(q) {
-                if(!q.running)
-                    q.start();
-            }
+            q.startIfNeeded();
         }
 
         /* Workaround for bug 4155072.  The shared double buffer image

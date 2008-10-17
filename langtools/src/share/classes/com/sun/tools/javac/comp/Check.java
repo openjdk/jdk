@@ -56,7 +56,7 @@ public class Check {
     protected static final Context.Key<Check> checkKey =
         new Context.Key<Check>();
 
-    private final Name.Table names;
+    private final Names names;
     private final Log log;
     private final Symtab syms;
     private final Infer infer;
@@ -82,7 +82,7 @@ public class Check {
     protected Check(Context context) {
         context.put(checkKey, this);
 
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         log = Log.instance(context);
         syms = Symtab.instance(context);
         infer = Infer.instance(context);
@@ -192,12 +192,12 @@ public class Check {
     Type typeError(DiagnosticPosition pos, Object problem, Type found, Type req) {
         log.error(pos, "prob.found.req",
                   problem, found, req);
-        return syms.errType;
+        return types.createErrorType(found);
     }
 
     Type typeError(DiagnosticPosition pos, String problem, Type found, Type req, Object explanation) {
         log.error(pos, "prob.found.req.1", problem, found, req, explanation);
-        return syms.errType;
+        return types.createErrorType(found);
     }
 
     /** Report an error that wrong type tag was found.
@@ -208,7 +208,7 @@ public class Check {
      */
     Type typeTagError(DiagnosticPosition pos, Object required, Object found) {
         log.error(pos, "type.found.req", found, required);
-        return syms.errType;
+        return types.createErrorType(found instanceof Type ? (Type)found : syms.errType);
     }
 
     /** Report an error that symbol cannot be referenced before super
@@ -348,11 +348,11 @@ public class Check {
             return typeError(pos, diags.fragment("possible.loss.of.precision"), found, req);
         if (found.isSuperBound()) {
             log.error(pos, "assignment.from.super-bound", found);
-            return syms.errType;
+            return types.createErrorType(found);
         }
         if (req.isExtendsBound()) {
             log.error(pos, "assignment.to.extends-bound", req);
-            return syms.errType;
+            return types.createErrorType(found);
         }
         return typeError(pos, diags.fragment("incompatible.types"), found, req);
     }
@@ -378,7 +378,7 @@ public class Check {
                     log.error(pos,
                               "undetermined.type" + (d!=null ? ".1" : ""),
                               t, d);
-                    return syms.errType;
+                    return types.createErrorType(pt);
                 } else {
                     JCDiagnostic d = ex.getDiagnostic();
                     return typeError(pos,
@@ -469,7 +469,7 @@ public class Check {
     Type checkNonVoid(DiagnosticPosition pos, Type t) {
         if (t.tag == VOID) {
             log.error(pos, "void.not.allowed.here");
-            return syms.errType;
+            return types.createErrorType(t);
         } else {
             return t;
         }
@@ -521,7 +521,7 @@ public class Check {
                                 t);
         } else if (!types.isReifiable(t)) {
             log.error(pos, "illegal.generic.type.for.instof");
-            return syms.errType;
+            return types.createErrorType(t);
         } else {
             return t;
         }
@@ -628,7 +628,7 @@ public class Check {
         case TYP:
             if (sym.isLocal()) {
                 mask = LocalClassFlags;
-                if (sym.name.len == 0) { // Anonymous class
+                if (sym.name.isEmpty()) { // Anonymous class
                     // Anonymous classes in static methods are themselves static;
                     // that's why we admit STATIC here.
                     mask |= STATIC;
@@ -764,26 +764,32 @@ public class Check {
     /** Visitor method: Validate a type expression, if it is not null, catching
      *  and reporting any completion failures.
      */
-    void validate(JCTree tree) {
+    void validate(JCTree tree, Env<AttrContext> env) {
         try {
-            if (tree != null) tree.accept(validator);
+            if (tree != null) {
+                validator.env = env;
+                tree.accept(validator);
+                checkRaw(tree, env);
+            }
         } catch (CompletionFailure ex) {
             completionError(tree.pos(), ex);
+        }
+    }
+    //where
+    void checkRaw(JCTree tree, Env<AttrContext> env) {
+        if (lint.isEnabled(Lint.LintCategory.RAW) &&
+            tree.type.tag == CLASS &&
+            !env.enclClass.name.isEmpty() &&  //anonymous or intersection
+            tree.type.isRaw()) {
+            log.warning(tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
         }
     }
 
     /** Visitor method: Validate a list of type expressions.
      */
-    void validate(List<? extends JCTree> trees) {
+    void validate(List<? extends JCTree> trees, Env<AttrContext> env) {
         for (List<? extends JCTree> l = trees; l.nonEmpty(); l = l.tail)
-            validate(l.head);
-    }
-
-    /** Visitor method: Validate a list of type parameters.
-     */
-    void validateTypeParams(List<JCTypeParameter> trees) {
-        for (List<JCTypeParameter> l = trees; l.nonEmpty(); l = l.tail)
-            validate(l.head);
+            validate(l.head, env);
     }
 
     /** A visitor class for type validation.
@@ -791,7 +797,7 @@ public class Check {
     class Validator extends JCTree.Visitor {
 
         public void visitTypeArray(JCArrayTypeTree tree) {
-            validate(tree.elemtype);
+            validate(tree.elemtype, env);
         }
 
         public void visitTypeApply(JCTypeApply tree) {
@@ -805,7 +811,7 @@ public class Check {
                 // For matching pairs of actual argument types `a' and
                 // formal type parameters with declared bound `b' ...
                 while (args.nonEmpty() && forms.nonEmpty()) {
-                    validate(args.head);
+                    validate(args.head, env);
 
                     // exact type arguments needs to know their
                     // bounds (for upper and lower bound
@@ -849,14 +855,14 @@ public class Check {
         }
 
         public void visitTypeParameter(JCTypeParameter tree) {
-            validate(tree.bounds);
+            validate(tree.bounds, env);
             checkClassBounds(tree.pos(), tree.type);
         }
 
         @Override
         public void visitWildcard(JCWildcard tree) {
             if (tree.inner != null)
-                validate(tree.inner);
+                validate(tree.inner, env);
         }
 
         public void visitSelect(JCFieldAccess tree) {
@@ -870,7 +876,7 @@ public class Check {
             }
         }
         public void visitSelectInternal(JCFieldAccess tree) {
-            if (tree.type.getEnclosingType().tag != CLASS &&
+            if (tree.type.tsym.isStatic() &&
                 tree.selected.type.isParameterized()) {
                 // The enclosing type is not a class, so we are
                 // looking at a static member type.  However, the
@@ -878,7 +884,7 @@ public class Check {
                 log.error(tree.pos(), "cant.select.static.class.from.param.type");
             } else {
                 // otherwise validate the rest of the expression
-                validate(tree.selected);
+                tree.selected.accept(this);
             }
         }
 
@@ -886,6 +892,8 @@ public class Check {
          */
         public void visitTree(JCTree tree) {
         }
+
+        Env<AttrContext> env;
     }
 
 /* *************************************************************************
@@ -1542,7 +1550,7 @@ public class Check {
             return;
         if (seen.contains(t)) {
             tv = (TypeVar)t;
-            tv.bound = new ErrorType();
+            tv.bound = types.createErrorType(t);
             log.error(pos, "cyclic.inheritance", t);
         } else if (t.tag == TYPEVAR) {
             tv = (TypeVar)t;
@@ -1597,11 +1605,11 @@ public class Check {
     private void noteCyclic(DiagnosticPosition pos, ClassSymbol c) {
         log.error(pos, "cyclic.inheritance", c);
         for (List<Type> l=types.interfaces(c.type); l.nonEmpty(); l=l.tail)
-            l.head = new ErrorType((ClassSymbol)l.head.tsym);
+            l.head = types.createErrorType((ClassSymbol)l.head.tsym, Type.noType);
         Type st = types.supertype(c.type);
         if (st.tag == CLASS)
-            ((ClassType)c.type).supertype_field = new ErrorType((ClassSymbol)st.tsym);
-        c.type = new ErrorType(c);
+            ((ClassType)c.type).supertype_field = types.createErrorType((ClassSymbol)st.tsym, Type.noType);
+        c.type = types.createErrorType(c, c.type);
         c.flags_field |= ACYCLIC;
     }
 

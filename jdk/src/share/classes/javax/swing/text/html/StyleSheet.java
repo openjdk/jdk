@@ -164,7 +164,7 @@ public class StyleSheet extends StyleContext {
     public StyleSheet() {
         super();
         selectorMapping = new SelectorMapping(0);
-        resolvedStyles = new Hashtable();
+        resolvedStyles = new Hashtable<String, ResolvedStyle>();
         if (css == null) {
             css = new CSS();
         }
@@ -190,7 +190,7 @@ public class StyleSheet extends StyleContext {
 
         try {
             // Build an array of all the parent elements.
-            Vector searchContext = sb.getVector();
+            Vector<Element> searchContext = sb.getVector();
 
             for (Element p = e; p != null; p = p.getParentElement()) {
                 searchContext.addElement(p);
@@ -205,7 +205,7 @@ public class StyleSheet extends StyleContext {
 
             // >= 1 as the HTML.Tag for the 0th element is passed in.
             for (int counter = n - 1; counter >= 1; counter--) {
-                e = (Element)searchContext.elementAt(counter);
+                e = searchContext.elementAt(counter);
                 attr = e.getAttributes();
                 name = attr.getAttribute(StyleConstants.NameAttribute);
                 eName = name.toString();
@@ -225,7 +225,7 @@ public class StyleSheet extends StyleContext {
                 cacheLookup.append(' ');
             }
             cacheLookup.append(t.toString());
-            e = (Element)searchContext.elementAt(0);
+            e = searchContext.elementAt(0);
             attr = e.getAttributes();
             if (e.isLeaf()) {
                 // For leafs, we use the second tier attributes.
@@ -368,10 +368,9 @@ public class StyleSheet extends StyleContext {
                 if (rule != null) {
                     mapping.setStyle(null);
                     if (resolvedStyles.size() > 0) {
-                        Enumeration values = resolvedStyles.elements();
+                        Enumeration<ResolvedStyle> values = resolvedStyles.elements();
                         while (values.hasMoreElements()) {
-                            ResolvedStyle style = (ResolvedStyle)values.
-                                                    nextElement();
+                            ResolvedStyle style = values.nextElement();
                             style.removeStyle(rule);
                         }
                     }
@@ -392,7 +391,7 @@ public class StyleSheet extends StyleContext {
     public void addStyleSheet(StyleSheet ss) {
         synchronized(this) {
             if (linkedStyleSheets == null) {
-                linkedStyleSheets = new Vector();
+                linkedStyleSheets = new Vector<StyleSheet>();
             }
             if (!linkedStyleSheets.contains(ss)) {
                 int index = 0;
@@ -828,7 +827,7 @@ public class StyleSheet extends StyleContext {
         /**
          * Creates a new attribute set based on a supplied set of attributes.
          *
-         * @param source the set of attributes
+         * @param attrs the set of attributes
          */
         public SmallConversionSet(AttributeSet attrs) {
             super(attrs);
@@ -1045,9 +1044,9 @@ public class StyleSheet extends StyleContext {
      */
     private synchronized void linkStyleSheetAt(StyleSheet ss, int index) {
         if (resolvedStyles.size() > 0) {
-            Enumeration values = resolvedStyles.elements();
+            Enumeration<ResolvedStyle> values = resolvedStyles.elements();
             while (values.hasMoreElements()) {
-                ResolvedStyle rule = (ResolvedStyle)values.nextElement();
+                ResolvedStyle rule = values.nextElement();
                 rule.insertExtendedStyleAt(ss.getRule(rule.getName()),
                                            index);
             }
@@ -1061,9 +1060,9 @@ public class StyleSheet extends StyleContext {
      */
     private synchronized void unlinkStyleSheet(StyleSheet ss, int index) {
         if (resolvedStyles.size() > 0) {
-            Enumeration values = resolvedStyles.elements();
+            Enumeration<ResolvedStyle> values = resolvedStyles.elements();
             while (values.hasMoreElements()) {
-                ResolvedStyle rule = (ResolvedStyle)values.nextElement();
+                ResolvedStyle rule = values.nextElement();
                 rule.removeExtendedStyleAt(index);
             }
         }
@@ -1076,7 +1075,7 @@ public class StyleSheet extends StyleContext {
     String[] getSimpleSelectors(String selector) {
         selector = cleanSelectorString(selector);
         SearchBuffer sb = SearchBuffer.obtainSearchBuffer();
-        Vector selectors = sb.getVector();
+        Vector<String> selectors = sb.getVector();
         int lastIndex = 0;
         int length = selector.length();
         while (lastIndex != -1) {
@@ -1256,7 +1255,7 @@ public class StyleSheet extends StyleContext {
     private synchronized Style getResolvedStyle(String selector,
                                                 Vector elements,
                                                 HTML.Tag t) {
-        Style retStyle = (Style)resolvedStyles.get(selector);
+        Style retStyle = resolvedStyles.get(selector);
         if (retStyle == null) {
             retStyle = createResolvedStyle(selector, elements, t);
         }
@@ -1268,7 +1267,7 @@ public class StyleSheet extends StyleContext {
      * create the resolved style, if necessary.
      */
     private synchronized Style getResolvedStyle(String selector) {
-        Style retStyle = (Style)resolvedStyles.get(selector);
+        Style retStyle = resolvedStyles.get(selector);
         if (retStyle == null) {
             retStyle = createResolvedStyle(selector);
         }
@@ -1280,15 +1279,14 @@ public class StyleSheet extends StyleContext {
      * such that <code>elements</code> will remain ordered by
      * specificity.
      */
-    private void addSortedStyle(SelectorMapping mapping, Vector elements) {
+    private void addSortedStyle(SelectorMapping mapping, Vector<SelectorMapping> elements) {
         int       size = elements.size();
 
         if (size > 0) {
             int     specificity = mapping.getSpecificity();
 
             for (int counter = 0; counter < size; counter++) {
-                if (specificity >= ((SelectorMapping)elements.elementAt
-                                    (counter)).getSpecificity()) {
+                if (specificity >= elements.elementAt(counter).getSpecificity()) {
                     elements.insertElementAt(mapping, counter);
                     return;
                 }
@@ -1303,10 +1301,10 @@ public class StyleSheet extends StyleContext {
      * any child mappings for any of the Elements in <code>elements</code>.
      */
     private synchronized void getStyles(SelectorMapping parentMapping,
-                           Vector styles,
+                           Vector<SelectorMapping> styles,
                            String[] tags, String[] ids, String[] classes,
                            int index, int numElements,
-                           Hashtable alreadyChecked) {
+                           Hashtable<SelectorMapping, SelectorMapping> alreadyChecked) {
         // Avoid desending the same mapping twice.
         if (alreadyChecked.contains(parentMapping)) {
             return;
@@ -1367,8 +1365,8 @@ public class StyleSheet extends StyleContext {
                                       String[] tags,
                                       String[] ids, String[] classes) {
         SearchBuffer sb = SearchBuffer.obtainSearchBuffer();
-        Vector tempVector = sb.getVector();
-        Hashtable tempHashtable = sb.getHashtable();
+        Vector<SelectorMapping> tempVector = sb.getVector();
+        Hashtable<SelectorMapping, SelectorMapping> tempHashtable = sb.getHashtable();
         // Determine all the Styles that are appropriate, placing them
         // in tempVector
         try {
@@ -1418,13 +1416,11 @@ public class StyleSheet extends StyleContext {
             int numStyles = tempVector.size();
             AttributeSet[] attrs = new AttributeSet[numStyles + numLinkedSS];
             for (int counter = 0; counter < numStyles; counter++) {
-                attrs[counter] = ((SelectorMapping)tempVector.
-                                  elementAt(counter)).getStyle();
+                attrs[counter] = tempVector.elementAt(counter).getStyle();
             }
             // Get the AttributeSet from linked style sheets.
             for (int counter = 0; counter < numLinkedSS; counter++) {
-                AttributeSet attr = ((StyleSheet)linkedStyleSheets.
-                                 elementAt(counter)).getRule(selector);
+                AttributeSet attr = linkedStyleSheets.elementAt(counter).getRule(selector);
                 if (attr == null) {
                     attrs[counter + numStyles] = SimpleAttributeSet.EMPTY;
                 }
@@ -1514,11 +1510,11 @@ public class StyleSheet extends StyleContext {
     private Style createResolvedStyle(String selector) {
         SearchBuffer sb = SearchBuffer.obtainSearchBuffer();
         // Will contain the tags, ids, and classes, in that order.
-        Vector elements = sb.getVector();
+        Vector<String> elements = sb.getVector();
         try {
             boolean done;
             int dotIndex = 0;
-            int spaceIndex = 0;
+            int spaceIndex;
             int poundIndex = 0;
             int lastIndex = 0;
             int length = selector.length();
@@ -1640,9 +1636,9 @@ public class StyleSheet extends StyleContext {
             String[] classes = new String[numTags];
             for (int index = 0, eIndex = total - 3; index < numTags;
                  index++, eIndex -= 3) {
-                tags[index] = (String)elements.elementAt(eIndex);
-                classes[index] = (String)elements.elementAt(eIndex + 1);
-                ids[index] = (String)elements.elementAt(eIndex + 2);
+                tags[index] = elements.elementAt(eIndex);
+                classes[index] = elements.elementAt(eIndex + 1);
+                ids[index] = elements.elementAt(eIndex + 2);
             }
             return createResolvedStyle(selector, tags, ids, classes);
         }
@@ -1661,9 +1657,9 @@ public class StyleSheet extends StyleContext {
                                                    Style newStyle,
                                                    int specificity) {
         if (resolvedStyles.size() > 0) {
-            Enumeration values = resolvedStyles.elements();
+            Enumeration<ResolvedStyle> values = resolvedStyles.elements();
             while (values.hasMoreElements()) {
-                ResolvedStyle style = (ResolvedStyle)values.nextElement();
+                ResolvedStyle style = values.nextElement();
                 if (style.matches(selectorName)) {
                     style.insertStyle(newStyle, specificity);
                 }
@@ -1682,7 +1678,7 @@ public class StyleSheet extends StyleContext {
     private static class SearchBuffer {
         /** A stack containing instances of SearchBuffer. Used in getting
          * rules. */
-        static Stack searchBuffers = new Stack();
+        static Stack<SearchBuffer> searchBuffers = new Stack<SearchBuffer>();
         // A set of temporary variables that can be used in whatever way.
         Vector vector = null;
         StringBuffer stringBuffer = null;
@@ -1696,7 +1692,7 @@ public class StyleSheet extends StyleContext {
             SearchBuffer sb;
             try {
                 if(!searchBuffers.empty()) {
-                   sb = (SearchBuffer)searchBuffers.pop();
+                   sb = searchBuffers.pop();
                 } else {
                    sb = new SearchBuffer();
                 }
@@ -1922,7 +1918,7 @@ public class StyleSheet extends StyleContext {
         static boolean isLeftToRight(View v) {
             boolean ret = true;
             if (isOrientationAware(v)) {
-                Container container = null;
+                Container container;
                 if (v != null && (container = v.getContainer()) != null) {
                     ret = container.getComponentOrientation().isLeftToRight();
                 }
@@ -1938,8 +1934,8 @@ public class StyleSheet extends StyleContext {
          */
         static boolean isOrientationAware(View v) {
             boolean ret = false;
-            AttributeSet attr = null;
-            Object obj = null;
+            AttributeSet attr;
+            Object obj;
             if (v != null
                 && (attr = v.getElement().getAttributes()) != null
                 && (obj = attr.getAttribute(StyleConstants.NameAttribute)) instanceof HTML.Tag
@@ -1953,7 +1949,7 @@ public class StyleSheet extends StyleContext {
             return ret;
         }
 
-        static enum HorizontalMargin { LEFT, RIGHT };
+        static enum HorizontalMargin { LEFT, RIGHT }
 
         /**
          * for <dir>, <menu>, <ul> etc.
@@ -2362,7 +2358,7 @@ public class StyleSheet extends StyleContext {
          * @param itemNum number to format
          */
         String formatAlphaNumerals(int itemNum) {
-            String result = "";
+            String result;
 
             if (itemNum > 26) {
                 result = formatAlphaNumerals(itemNum / 26) +
@@ -2411,7 +2407,7 @@ public class StyleSheet extends StyleContext {
          * Converts the item number into a roman numeral
          *
          * @param level position
-         * @param num   digit to format
+         * @param digit digit to format
          */
         String formatRomanDigit(int level, int digit) {
             String result = "";
@@ -2625,7 +2621,7 @@ public class StyleSheet extends StyleContext {
             // implementation.
             Document doc = v.getDocument();
             SearchBuffer sb = SearchBuffer.obtainSearchBuffer();
-            Vector muxList = sb.getVector();
+            Vector<AttributeSet> muxList = sb.getVector();
             try {
                 if (doc instanceof HTMLDocument) {
                     StyleSheet styles = StyleSheet.this;
@@ -2641,8 +2637,8 @@ public class StyleSheet extends StyleContext {
                         while (keys.hasMoreElements()) {
                             Object key = keys.nextElement();
                             if (key instanceof HTML.Tag) {
-                                if ((HTML.Tag)key  == HTML.Tag.A) {
-                                    Object o = a.getAttribute((HTML.Tag)key);
+                                if (key == HTML.Tag.A) {
+                                    Object o = a.getAttribute(key);
                                 /**
                                    In the case of an A tag, the css rules
                                    apply only for tags that have their
@@ -3059,10 +3055,10 @@ public class StyleSheet extends StyleContext {
             SelectorMapping retValue = null;
 
             if (children != null) {
-                retValue = (SelectorMapping)children.get(selector);
+                retValue = children.get(selector);
             }
             else if (create) {
-                children = new HashMap(7);
+                children = new HashMap<String, SelectorMapping>(7);
             }
             if (retValue == null && create) {
                 int specificity = getChildSpecificity(selector);
@@ -3121,7 +3117,7 @@ public class StyleSheet extends StyleContext {
          * Any sub selectors. Key will be String, and value will be
          * another SelectorMapping.
          */
-        private HashMap children;
+        private HashMap<String, SelectorMapping> children;
     }
 
 
@@ -3138,11 +3134,11 @@ public class StyleSheet extends StyleContext {
 
     /** Maps from selector (as a string) to Style that includes all
      * relevant styles. */
-    private Hashtable resolvedStyles;
+    private Hashtable<String, ResolvedStyle> resolvedStyles;
 
     /** Vector of StyleSheets that the rules are to reference.
      */
-    private Vector linkedStyleSheets;
+    private Vector<StyleSheet> linkedStyleSheets;
 
     /** Where the style sheet was found. Used for relative imports. */
     private URL base;
@@ -3279,7 +3275,7 @@ public class StyleSheet extends StyleContext {
         public void endRule() {
             int n = selectors.size();
             for (int i = 0; i < n; i++) {
-                String[] selector = (String[]) selectors.elementAt(i);
+                String[] selector = selectors.elementAt(i);
                 if (selector.length > 0) {
                     StyleSheet.this.addRule(selector, declaration, isLink);
                 }
@@ -3296,8 +3292,8 @@ public class StyleSheet extends StyleContext {
         }
 
 
-        Vector selectors = new Vector();
-        Vector selectorTokens = new Vector();
+        Vector<String[]> selectors = new Vector<String[]>();
+        Vector<String> selectorTokens = new Vector<String>();
         /** Name of the current property. */
         String propertyName;
         MutableAttributeSet declaration = new SimpleAttributeSet();

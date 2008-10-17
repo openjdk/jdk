@@ -48,13 +48,13 @@ class SynthSplitPaneUI extends BasicSplitPaneUI implements
      * Keys to use for forward focus traversal when the JComponent is
      * managing focus.
      */
-    private static Set managingFocusForwardTraversalKeys;
+    private static Set<KeyStroke> managingFocusForwardTraversalKeys;
 
     /**
      * Keys to use for backward focus traversal when the JComponent is
      * managing focus.
      */
-    private static Set managingFocusBackwardTraversalKeys;
+    private static Set<KeyStroke> managingFocusBackwardTraversalKeys;
 
     /**
      * Style for the JSplitPane.
@@ -96,7 +96,7 @@ class SynthSplitPaneUI extends BasicSplitPaneUI implements
 
         // focus forward traversal key
         if (managingFocusForwardTraversalKeys==null) {
-            managingFocusForwardTraversalKeys = new HashSet();
+            managingFocusForwardTraversalKeys = new HashSet<KeyStroke>();
             managingFocusForwardTraversalKeys.add(
                 KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0));
         }
@@ -104,7 +104,7 @@ class SynthSplitPaneUI extends BasicSplitPaneUI implements
                                         managingFocusForwardTraversalKeys);
         // focus backward traversal key
         if (managingFocusBackwardTraversalKeys==null) {
-            managingFocusBackwardTraversalKeys = new HashSet();
+            managingFocusBackwardTraversalKeys = new HashSet<KeyStroke>();
             managingFocusBackwardTraversalKeys.add(
                 KeyStroke.getKeyStroke(KeyEvent.VK_TAB, InputEvent.SHIFT_MASK));
         }

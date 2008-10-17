@@ -20,10 +20,9 @@
  */
 package com.sun.org.apache.xml.internal.security.transforms.implementations;
 
-
-
 import com.sun.org.apache.xml.internal.security.signature.NodeFilter;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
+import com.sun.org.apache.xml.internal.security.transforms.Transform;
 import com.sun.org.apache.xml.internal.security.transforms.TransformSpi;
 import com.sun.org.apache.xml.internal.security.transforms.TransformationException;
 import com.sun.org.apache.xml.internal.security.transforms.Transforms;
@@ -31,7 +30,6 @@ import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-
 
 /**
  * Implements the <CODE>http://www.w3.org/2000/09/xmldsig#enveloped-signature</CODE>
@@ -57,7 +55,7 @@ public class TransformEnvelopedSignature extends TransformSpi {
    /**
     * @inheritDoc
     */
-   protected XMLSignatureInput enginePerformTransform(XMLSignatureInput input)
+   protected XMLSignatureInput enginePerformTransform(XMLSignatureInput input, Transform _transformObject)
            throws TransformationException {
 
 
@@ -74,14 +72,7 @@ public class TransformEnvelopedSignature extends TransformSpi {
           * (including comments) in the node-set representing the octet stream.
           */
 
-         /*
-         if (input.isOctetStream()) {
-            input.setNodesetXPath(Canonicalizer.XPATH_C14N_WITH_COMMENTS);
-         }
-         */
-
-         Element transformElement = this._transformObject.getElement();
-         Node signatureElement = transformElement;
+         Node signatureElement = _transformObject.getElement();
 
 
          signatureElement = searchSignatureElement(signatureElement);
@@ -124,18 +115,24 @@ public class TransformEnvelopedSignature extends TransformSpi {
             }
             return signatureElement;
     }
-    class EnvelopedNodeFilter implements NodeFilter {
+    static class EnvelopedNodeFilter implements NodeFilter {
         Node exclude;
         EnvelopedNodeFilter(Node n) {
-                exclude=n;
+            exclude=n;
         }
-                /**
-                 * @see com.sun.org.apache.xml.internal.security.signature.NodeFilter#isNodeInclude(org.w3c.dom.Node)
-                 */
-                public boolean isNodeInclude(Node n) {
-                        // TODO Optimize me.
-                        return !XMLUtils.isDescendantOrSelf(exclude,n);
-                }
-
+    public int isNodeIncludeDO(Node n, int level) {
+        if ((n==exclude))
+                        return -1;
+        return 1;
+    }
+        /**
+         * @see com.sun.org.apache.xml.internal.security.signature.NodeFilter#isNodeInclude(org.w3c.dom.Node)
+         */
+        public int isNodeInclude(Node n) {
+                if ((n==exclude) || XMLUtils.isDescendantOrSelf(exclude,n))
+                        return -1;
+                return 1;
+            //return !XMLUtils.isDescendantOrSelf(exclude,n);
+        }
     }
 }

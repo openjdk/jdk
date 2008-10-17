@@ -2,7 +2,6 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-
 /*
  * Copyright  1999-2004 The Apache Software Foundation.
  *
@@ -28,7 +27,7 @@ package com.sun.org.apache.xml.internal.security.keys.content;
 /**
  * Empty interface just to identify Elements that can be cildren of ds:KeyInfo.
  *
- * @author $Author: blautenb $
+ * @author $Author: mullan $
  */
 public interface KeyInfoContent {
 }

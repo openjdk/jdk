@@ -62,7 +62,7 @@ public class Scanner implements Lexer {
         }
 
         final Log log;
-        final Name.Table names;
+        final Names names;
         final Source source;
         final Keywords keywords;
 
@@ -70,7 +70,7 @@ public class Scanner implements Lexer {
         protected Factory(Context context) {
             context.put(scannerFactoryKey, this);
             this.log = Log.instance(context);
-            this.names = Name.Table.instance(context);
+            this.names = Names.instance(context);
             this.source = Source.instance(context);
             this.keywords = Keywords.instance(context);
         }
@@ -155,7 +155,7 @@ public class Scanner implements Lexer {
     private final Log log;
 
     /** The name table. */
-    private final Name.Table names;
+    private final Names names;
 
     /** The keyword table. */
     private final Keywords keywords;

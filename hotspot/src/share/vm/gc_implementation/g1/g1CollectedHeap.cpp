@@ -1398,7 +1398,7 @@ jint G1CollectedHeap::initialize() {
   _g1_storage.initialize(g1_rs, 0);
   _g1_committed = MemRegion((HeapWord*)_g1_storage.low(), (size_t) 0);
   _g1_max_committed = _g1_committed;
-  _hrs = new HeapRegionSeq();
+  _hrs = new HeapRegionSeq(_expansion_regions);
   guarantee(_hrs != NULL, "Couldn't allocate HeapRegionSeq");
   guarantee(_cur_alloc_region == NULL, "from constructor");
 

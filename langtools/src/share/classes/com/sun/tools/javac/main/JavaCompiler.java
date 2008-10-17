@@ -122,35 +122,47 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         }
     }
 
-    private static enum CompilePolicy {
-        /*
-         * Just attribute the parse trees
+    /**
+     * Control how the compiler's latter phases (attr, flow, desugar, generate)
+     * are connected. Each individual file is processed by each phase in turn,
+     * but with different compile policies, you can control the order in which
+     * each class is processed through its next phase.
+     *
+     * <p>Generally speaking, the compiler will "fail fast" in the face of
+     * errors, although not aggressively so. flow, desugar, etc become no-ops
+     * once any errors have occurred. No attempt is currently made to determine
+     * if it might be safe to process a class through its next phase because
+     * it does not depend on any unrelated errors that might have occurred.
+     */
+    protected static enum CompilePolicy {
+        /**
+         * Just attribute the parse trees.
          */
         ATTR_ONLY,
 
-        /*
+        /**
          * Just attribute and do flow analysis on the parse trees.
          * This should catch most user errors.
          */
         CHECK_ONLY,
 
-        /*
+        /**
          * Attribute everything, then do flow analysis for everything,
          * then desugar everything, and only then generate output.
-         * Means nothing is generated if there are any errors in any classes.
+         * This means no output will be generated if there are any
+         * errors in any classes.
          */
         SIMPLE,
 
-        /*
-         * After attributing everything and doing flow analysis,
-         * group the work by compilation unit.
-         * Then, process the work for each compilation unit together.
-         * Means nothing is generated for a compilation unit if the are any errors
-         * in the compilation unit  (or in any preceding compilation unit.)
+        /**
+         * Groups the classes for each source file together, then process
+         * each group in a manner equivalent to the {@code SIMPLE} policy.
+         * This means no output will be generated if there are any
+         * errors in any of the classes in a source file.
          */
         BY_FILE,
 
-        /*
+        /**
          * Completely process each entry on the todo list in turn.
          * -- this is the same for 1.5.
          * Means output might be generated for some classes in a compilation unit
@@ -178,7 +190,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     private static CompilePolicy DEFAULT_COMPILE_POLICY = CompilePolicy.BY_TODO;
 
-    private static enum ImplicitSourcePolicy {
+    protected static enum ImplicitSourcePolicy {
         /** Don't generate or process implicitly read source files. */
         NONE,
         /** Generate classes for implicitly read source files. */
@@ -236,7 +248,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     /** The name table.
      */
-    protected Name.Table names;
+    protected Names names;
 
     /** The attributor.
      */
@@ -252,11 +264,11 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     /** The type eraser.
      */
-    TransTypes transTypes;
+    protected TransTypes transTypes;
 
     /** The syntactic sugar desweetener.
      */
-    Lower lower;
+    protected Lower lower;
 
     /** The annotation annotator.
      */
@@ -276,7 +288,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     /** Factory for parsers.
      */
-    protected Parser.Factory parserFactory;
+    protected ParserFactory parserFactory;
 
     /** Optional listener for progress events
      */
@@ -310,7 +322,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         if (context.get(JavaFileManager.class) == null)
             JavacFileManager.preRegister(context);
 
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         log = Log.instance(context);
         diagFactory = JCDiagnostic.Factory.instance(context);
         reader = ClassReader.instance(context);
@@ -320,7 +332,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         todo = Todo.instance(context);
 
         fileManager = context.get(JavaFileManager.class);
-        parserFactory = Parser.Factory.instance(context);
+        parserFactory = ParserFactory.instance(context);
 
         try {
             // catch completion problems with predefineds
@@ -510,10 +522,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         return parseErrors;
     }
 
-    protected Scanner.Factory getScannerFactory() {
-        return Scanner.Factory.instance(context);
-    }
-
     /** Try to open input stream with given name.
      *  Report an error if this fails.
      *  @param filename   The file name of the input stream to be opened.
@@ -545,13 +553,9 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 taskListener.started(e);
             }
             int initialErrorCount = log.nerrors;
-            Scanner scanner = getScannerFactory().newScanner(content);
-            Parser parser = parserFactory.newParser(scanner, keepComments(), genEndPos);
-            tree = parser.compilationUnit();
+            Parser parser = parserFactory.newParser(content, keepComments(), genEndPos, lineDebugInfo);
+            tree = parser.parseCompilationUnit();
             parseErrors |= (log.nerrors > initialErrorCount);
-            if (lineDebugInfo) {
-                tree.lineMap = scanner.getLineMap();
-            }
             if (verbose) {
                 printVerbose("parsing.done", Long.toString(elapsed(msec)));
             }
@@ -796,14 +800,17 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 generate(desugar(flow(attribute(todo))));
                 break;
 
-            case BY_FILE:
-                for (Queue<Env<AttrContext>> queue : groupByFile(flow(attribute(todo))).values())
-                    generate(desugar(queue));
+            case BY_FILE: {
+                    Queue<Queue<Env<AttrContext>>> q = todo.groupByFile();
+                    while (!q.isEmpty() && errorCount() == 0) {
+                        generate(desugar(flow(attribute(q.remove()))));
+                    }
+                }
                 break;
 
             case BY_TODO:
-                while (todo.nonEmpty())
-                    generate(desugar(flow(attribute(todo.next()))));
+                while (!todo.isEmpty())
+                    generate(desugar(flow(attribute(todo.remove()))));
                 break;
 
             default:
@@ -1113,13 +1120,13 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     /**
      * Perform dataflow checks on an attributed parse tree.
      */
-    protected void flow(Env<AttrContext> env, ListBuffer<Env<AttrContext>> results) {
+    protected void flow(Env<AttrContext> env, Queue<Env<AttrContext>> results) {
         try {
             if (errorCount() > 0)
                 return;
 
             if (relax || compileStates.isDone(env, CompileState.FLOW)) {
-                results.append(env);
+                results.add(env);
                 return;
             }
 
@@ -1138,7 +1145,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 if (errorCount() > 0)
                     return;
 
-                results.append(env);
+                results.add(env);
             }
             finally {
                 log.useSource(prev);
@@ -1292,7 +1299,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         generate(queue, null);
     }
 
-    public void generate(Queue<Pair<Env<AttrContext>, JCClassDecl>> queue, ListBuffer<JavaFileObject> results) {
+    public void generate(Queue<Pair<Env<AttrContext>, JCClassDecl>> queue, Queue<JavaFileObject> results) {
         boolean usePrintSource = (stubOutput || sourceOutput || printFlat);
 
         for (Pair<Env<AttrContext>, JCClassDecl> x: queue) {
@@ -1302,7 +1309,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             if (verboseCompilePolicy) {
                 log.printLines(log.noticeWriter, "[generate "
                                + (usePrintSource ? " source" : "code")
-                               + " " + env.enclClass.sym + "]");
+                               + " " + cdef.sym + "]");
             }
 
             if (taskListener != null) {
@@ -1320,7 +1327,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 else
                     file = genCode(env, cdef);
                 if (results != null && file != null)
-                    results.append(file);
+                    results.add(file);
             } catch (IOException ex) {
                 log.error(cdef.pos(), "class.cant.write",
                           cdef.sym, ex.getMessage());
@@ -1419,7 +1426,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         close(true);
     }
 
-    private void close(boolean disposeNames) {
+    public void close(boolean disposeNames) {
         rootClasses = null;
         reader = null;
         make = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-1997 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ package java.net;
  * @since   JDK1.1
  */
 public class NoRouteToHostException extends SocketException {
+    private static final long serialVersionUID = -1897550894873493790L;
+
     /**
      * Constructs a new NoRouteToHostException with the specified detail
      * message as to why the remote host cannot be reached.

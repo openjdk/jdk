@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ public class ByteBuffer {
     /** Append a name.
      */
     public void appendName(Name name) {
-        appendBytes(name.table.names, name.index, name.len);
+        appendBytes(name.getByteArray(), name.getByteOffset(), name.getByteLength());
     }
 
     /** Reset to zero length.
@@ -161,7 +161,7 @@ public class ByteBuffer {
 
     /** Convert contents to name.
      */
-    public Name toName(Name.Table names) {
+    public Name toName(Names names) {
         return names.fromUtf(elems, 0, length);
     }
 }

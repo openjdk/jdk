@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-1997 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ package java.lang;
  */
 public
 class ClassCastException extends RuntimeException {
+    private static final long serialVersionUID = -9223365651070458532L;
+
     /**
      * Constructs a <code>ClassCastException</code> with no detail message.
      */

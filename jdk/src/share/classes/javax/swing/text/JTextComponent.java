@@ -386,7 +386,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @since 1.4
      */
     public CaretListener[] getCaretListeners() {
-        return (CaretListener[])listenerList.getListeners(CaretListener.class);
+        return listenerList.getListeners(CaretListener.class);
     }
 
     /**
@@ -1171,16 +1171,15 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @param actions the set of actions
      */
     public static void loadKeymap(Keymap map, KeyBinding[] bindings, Action[] actions) {
-        Hashtable h = new Hashtable();
-        for (int i = 0; i < actions.length; i++) {
-            Action a = actions[i];
+        Hashtable<String, Action> h = new Hashtable<String, Action>();
+        for (Action a : actions) {
             String value = (String)a.getValue(Action.NAME);
             h.put((value!=null ? value:""), a);
         }
-        for (int i = 0; i < bindings.length; i++) {
-            Action a = (Action) h.get(bindings[i].actionName);
+        for (KeyBinding binding : bindings) {
+            Action a = h.get(binding.actionName);
             if (a != null) {
-                map.addActionForKeyStroke(bindings[i].key, a);
+                map.addActionForKeyStroke(binding.key, a);
             }
         }
     }
@@ -1192,11 +1191,11 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * invoked from within a <code>doPrivileged</code>, and it is also
      * assumed <code>klass</code> extends <code>JTextComponent</code>.
      */
-    private static Boolean isProcessInputMethodEventOverridden(Class klass) {
+    private static Boolean isProcessInputMethodEventOverridden(Class<?> klass) {
         if (klass == JTextComponent.class) {
             return Boolean.FALSE;
         }
-        Boolean retValue = (Boolean)overrideMap.get(klass.getName());
+        Boolean retValue = overrideMap.get(klass.getName());
 
         if (retValue != null) {
             return retValue;
@@ -2053,7 +2052,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      */
     public boolean getScrollableTracksViewportWidth() {
         if (getParent() instanceof JViewport) {
-            return (((JViewport)getParent()).getWidth() > getPreferredSize().width);
+            return (getParent().getWidth() > getPreferredSize().width);
         }
         return false;
     }
@@ -2073,7 +2072,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      */
     public boolean getScrollableTracksViewportHeight() {
         if (getParent() instanceof JViewport) {
-            return (((JViewport)getParent()).getHeight() > getPreferredSize().height);
+            return (getParent().getHeight() > getPreferredSize().height);
         }
         return false;
     }
@@ -3033,7 +3032,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
                 StyledDocument sdoc = (StyledDocument)model;
                 return sdoc.getParagraphElement(index);
             } else {
-                Element para = null;
+                Element para;
                 for (para = model.getDefaultRootElement(); ! para.isLeaf(); ) {
                     int pos = para.getElementIndex(index);
                     para = para.getElement(pos);
@@ -3535,7 +3534,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
                 throw new BadLocationException("Location out of bounds", index);
             }
             // locate the Element at index
-            Element indexElement = null;
+            Element indexElement;
             // locate the Element at our index/offset
             int elementIndex = -1;        // test for initialization
             for (indexElement = model.getDefaultRootElement();
@@ -3553,7 +3552,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
             // find the first Element before/after ours w/the same AttributeSet
             // if we are already at edge of the first element in our parent
             // then return that edge
-            Element edgeElement = indexElement;
+            Element edgeElement;
             switch (direction) {
             case -1:
             case 1:
@@ -3903,7 +3902,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * Maps from class name to Boolean indicating if
      * <code>processInputMethodEvent</code> has been overriden.
      */
-    private static Map overrideMap;
+    private static Map<String, Boolean> overrideMap;
 
     /**
      * Returns a string representation of this <code>JTextComponent</code>.
@@ -4007,9 +4006,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         }
         private DataFlavor getFlavor(DataFlavor[] flavors) {
             if (flavors != null) {
-                for (int counter = 0; counter < flavors.length; counter++) {
-                    if (flavors[counter].equals(DataFlavor.stringFlavor)) {
-                        return flavors[counter];
+                for (DataFlavor flavor : flavors) {
+                    if (flavor.equals(DataFlavor.stringFlavor)) {
+                        return flavor;
                     }
                 }
             }
@@ -4065,7 +4064,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         DefaultKeymap(String nm, Keymap parent) {
             this.nm = nm;
             this.parent = parent;
-            bindings = new Hashtable();
+            bindings = new Hashtable<KeyStroke, Action>();
         }
 
         /**
@@ -4095,7 +4094,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         }
 
         public Action getAction(KeyStroke key) {
-            Action a = (Action) bindings.get(key);
+            Action a = bindings.get(key);
             if ((a == null) && (parent != null)) {
                 a = parent.getAction(key);
             }
@@ -4105,8 +4104,8 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         public KeyStroke[] getBoundKeyStrokes() {
             KeyStroke[] keys = new KeyStroke[bindings.size()];
             int i = 0;
-            for (Enumeration e = bindings.keys() ; e.hasMoreElements() ;) {
-                keys[i++] = (KeyStroke) e.nextElement();
+            for (Enumeration<KeyStroke> e = bindings.keys() ; e.hasMoreElements() ;) {
+                keys[i++] = e.nextElement();
             }
             return keys;
         }
@@ -4114,8 +4113,8 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         public Action[] getBoundActions() {
             Action[] actions = new Action[bindings.size()];
             int i = 0;
-            for (Enumeration e = bindings.elements() ; e.hasMoreElements() ;) {
-                actions[i++] = (Action) e.nextElement();
+            for (Enumeration<Action> e = bindings.elements() ; e.hasMoreElements() ;) {
+                actions[i++] = e.nextElement();
             }
             return actions;
         }
@@ -4126,13 +4125,12 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
             }
             KeyStroke[] retValue = null;
             // Determine local bindings first.
-            Vector keyStrokes = null;
-            for (Enumeration enum_ = bindings.keys();
-                 enum_.hasMoreElements();) {
-                Object key = enum_.nextElement();
+            Vector<KeyStroke> keyStrokes = null;
+            for (Enumeration<KeyStroke> keys = bindings.keys(); keys.hasMoreElements();) {
+                KeyStroke key = keys.nextElement();
                 if (bindings.get(key) == a) {
                     if (keyStrokes == null) {
-                        keyStrokes = new Vector();
+                        keyStrokes = new Vector<KeyStroke>();
                     }
                     keyStrokes.addElement(key);
                 }
@@ -4153,7 +4151,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
                     }
                     if (rCount > 0 && rCount < pStrokes.length) {
                         if (keyStrokes == null) {
-                            keyStrokes = new Vector();
+                            keyStrokes = new Vector<KeyStroke>();
                         }
                         for (int counter = pStrokes.length - 1; counter >= 0;
                              counter--) {
@@ -4218,7 +4216,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
 
         String nm;
         Keymap parent;
-        Hashtable bindings;
+        Hashtable<KeyStroke, Action> bindings;
         Action defaultAction;
     }
 
@@ -4507,8 +4505,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
     //
     public InputMethodRequests getInputMethodRequests() {
         if (inputMethodRequestsHandler == null) {
-            inputMethodRequestsHandler =
-                (InputMethodRequests)new InputMethodRequestsHandler();
+            inputMethodRequestsHandler = new InputMethodRequestsHandler();
             Document doc = getDocument();
             if (doc != null) {
                 doc.addDocumentListener((DocumentListener)inputMethodRequestsHandler);
@@ -4923,16 +4920,16 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
     //
     private boolean isProcessInputMethodEventOverridden() {
         if (overrideMap == null) {
-            overrideMap = Collections.synchronizedMap(new HashMap());
+            overrideMap = Collections.synchronizedMap(new HashMap<String, Boolean>());
         }
-        Boolean retValue = (Boolean)overrideMap.get(getClass().getName());
+        Boolean retValue = overrideMap.get(getClass().getName());
 
         if (retValue != null) {
             return retValue.booleanValue();
         }
-        Boolean ret = (Boolean)AccessController.doPrivileged(new
-                       PrivilegedAction() {
-            public Object run() {
+        Boolean ret = AccessController.doPrivileged(new
+                       PrivilegedAction<Boolean>() {
+            public Boolean run() {
                 return isProcessInputMethodEventOverridden(
                                 JTextComponent.this.getClass());
             }
