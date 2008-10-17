@@ -49,8 +49,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
     /**
      * ReferenceQueue of unreferenced WeakPCLs.
      */
-    private static ReferenceQueue queue;
-
+    private static ReferenceQueue<DesktopProperty> queue;
 
     /**
      * PropertyChangeListener attached to the Toolkit.
@@ -76,7 +75,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
 
 
     static {
-        queue = new ReferenceQueue();
+        queue = new ReferenceQueue<DesktopProperty>();
     }
 
     /**
@@ -117,8 +116,8 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
             XPStyle.invalidateStyle();
         }
         Frame appFrames[] = Frame.getFrames();
-        for (int j=0; j < appFrames.length; j++) {
-            updateWindowUI(appFrames[j]);
+        for (Frame appFrame : appFrames) {
+            updateWindowUI(appFrame);
         }
     }
 
@@ -128,8 +127,8 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
     private static void updateWindowUI(Window window) {
         SwingUtilities.updateComponentTreeUI(window);
         Window ownedWins[] = window.getOwnedWindows();
-        for (int i=0; i < ownedWins.length; i++) {
-            updateWindowUI(ownedWins[i]);
+        for (Window ownedWin : ownedWins) {
+            updateWindowUI(ownedWin);
         }
     }
 
@@ -270,13 +269,13 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
      * is handled via a WeakReference so as not to pin down the
      * DesktopProperty.
      */
-    private static class WeakPCL extends WeakReference
+    private static class WeakPCL extends WeakReference<DesktopProperty>
                                implements PropertyChangeListener {
         private Toolkit kit;
         private String key;
         private LookAndFeel laf;
 
-        WeakPCL(Object target, Toolkit kit, String key, LookAndFeel laf) {
+        WeakPCL(DesktopProperty target, Toolkit kit, String key, LookAndFeel laf) {
             super(target, queue);
             this.kit = kit;
             this.key = key;
@@ -284,7 +283,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
         }
 
         public void propertyChange(PropertyChangeEvent pce) {
-            DesktopProperty property = (DesktopProperty)get();
+            DesktopProperty property = get();
 
             if (property == null || laf != UIManager.getLookAndFeel()) {
                 // The property was GC'ed, we're no longer interested in

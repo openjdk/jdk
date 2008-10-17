@@ -61,7 +61,7 @@ public class MetalToolBarUI extends BasicToolBarUI
      * instances of JToolBars and JMenuBars and is used to find
      * JToolBars/JMenuBars that border each other.
      */
-    private static java.util.List components = new ArrayList();
+    private static List<WeakReference<JComponent>> components = new ArrayList<WeakReference<JComponent>>();
 
     /**
      * This protected field is implemenation specific. Do not access directly
@@ -95,7 +95,7 @@ public class MetalToolBarUI extends BasicToolBarUI
             // typed to throw an NPE.
             throw new NullPointerException("JComponent must be non-null");
         }
-        components.add(new WeakReference(c));
+        components.add(new WeakReference<JComponent>(c));
     }
 
     /**
@@ -105,8 +105,7 @@ public class MetalToolBarUI extends BasicToolBarUI
         for (int counter = components.size() - 1; counter >= 0; counter--) {
             // Search for the component, removing any flushed references
             // along the way.
-            WeakReference ref = (WeakReference)components.get(counter);
-            Object target = ((WeakReference)components.get(counter)).get();
+            JComponent target = components.get(counter).get();
 
             if (target == c || target == null) {
                 components.remove(counter);

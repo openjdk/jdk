@@ -1,7 +1,0 @@
-# When you run the tests using a recent build of JDK and -Xbootclasspath/p:JAR
-# some tests may fail. Specifically, javac has a test which verifies the content
-# of the version string by comparing it against a value that is derived from
-# the JRE version string. This file can be given to jtreg to exclude such tests.
-# It should *NOT* be used in full SQE runs.
-
-tools/javac/versionOpt.sh

@@ -270,8 +270,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
     {
         checkOrientation(orientation);
         this.orientation = orientation;
-        sliderModel = new DefaultBoundedRangeModel(value, 0, min, max);
-        sliderModel.addChangeListener(changeListener);
+        setModel(new DefaultBoundedRangeModel(value, 0, min, max));
         updateUI();
     }
 
@@ -284,7 +283,6 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
     {
         this.orientation = JSlider.HORIZONTAL;
         setModel(brm);
-        sliderModel.addChangeListener(changeListener);
         updateUI();
     }
 
@@ -476,15 +474,15 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
 
         if (newModel != null) {
             newModel.addChangeListener(changeListener);
+        }
 
-            if (accessibleContext != null) {
-                accessibleContext.firePropertyChange(
-                                                    AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
-                                                    (oldModel == null
-                                                     ? null : Integer.valueOf(oldModel.getValue())),
-                                                    (newModel == null
-                                                     ? null : Integer.valueOf(newModel.getValue())));
-            }
+        if (accessibleContext != null) {
+            accessibleContext.firePropertyChange(
+                                                AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
+                                                (oldModel == null
+                                                 ? null : Integer.valueOf(oldModel.getValue())),
+                                                (newModel == null
+                                                 ? null : Integer.valueOf(newModel.getValue())));
         }
 
         firePropertyChange("model", oldModel, sliderModel);
@@ -930,7 +928,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
             throw new IllegalArgumentException( "Label incremement must be > 0" );
         }
 
-        class SmartHashtable extends Hashtable implements PropertyChangeListener {
+        class SmartHashtable extends Hashtable<Object, Object> implements PropertyChangeListener {
             int increment = 0;
             int start = 0;
             boolean startAtMin = false;
@@ -977,9 +975,8 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
                 if ( e.getPropertyName().equals( "minimum" ) ||
                      e.getPropertyName().equals( "maximum" ) ) {
 
-                    Dictionary labelTable = getLabelTable();
-                    Enumeration keys = labelTable.keys();
-                    Hashtable hashtable = new Hashtable();
+                    Enumeration keys = getLabelTable().keys();
+                    Hashtable<Object, Object> hashtable = new Hashtable<Object, Object>();
 
                     // Save the labels that were added by the developer
                     while ( keys.hasMoreElements() ) {

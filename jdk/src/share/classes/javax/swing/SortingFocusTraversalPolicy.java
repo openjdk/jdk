@@ -79,7 +79,7 @@ public class SortingFocusTraversalPolicy
      * sorted list should be reused if possible.
      */
     transient private Container cachedRoot;
-    transient private List cachedCycle;
+    transient private List<Component> cachedCycle;
 
     // Delegate our fitness test to ContainerOrder so that we only have to
     // code the algorithm once.
@@ -111,7 +111,7 @@ public class SortingFocusTraversalPolicy
         return cycle;
     }
     private int getComponentIndex(List<Component> cycle, Component aComponent) {
-        int index = 0;
+        int index;
         try {
             index = Collections.binarySearch(cycle, aComponent, comparator);
         } catch (ClassCastException e) {
@@ -130,14 +130,14 @@ public class SortingFocusTraversalPolicy
         return index;
     }
 
-    private void enumerateAndSortCycle(Container focusCycleRoot, List cycle) {
+    private void enumerateAndSortCycle(Container focusCycleRoot, List<Component> cycle) {
         if (focusCycleRoot.isShowing()) {
             enumerateCycle(focusCycleRoot, cycle);
             Collections.sort(cycle, comparator);
         }
     }
 
-    private void enumerateCycle(Container container, List cycle) {
+    private void enumerateCycle(Container container, List<Component> cycle) {
         if (!(container.isVisible() && container.isDisplayable())) {
             return;
         }
@@ -145,8 +145,7 @@ public class SortingFocusTraversalPolicy
         cycle.add(container);
 
         Component[] components = container.getComponents();
-        for (int i = 0; i < components.length; i++) {
-            Component comp = components[i];
+        for (Component comp : components) {
             if (comp instanceof Container) {
                 Container cont = (Container)comp;
 
@@ -385,8 +384,8 @@ public class SortingFocusTraversalPolicy
             return getLastComponent(aContainer);
         }
 
-        Component comp = null;
-        Component tryComp = null;
+        Component comp;
+        Component tryComp;
 
         for (index--; index>=0; index--) {
             comp = cycle.get(index);
@@ -442,8 +441,7 @@ public class SortingFocusTraversalPolicy
         }
         if (log.isLoggable(Level.FINE)) log.fine("### Cycle is " + cycle);
 
-        for (int i = 0; i < cycle.size(); i++) {
-            Component comp = cycle.get(i);
+        for (Component comp : cycle) {
             if (accept(comp)) {
                 return comp;
             } else if (comp instanceof Container && comp != aContainer) {

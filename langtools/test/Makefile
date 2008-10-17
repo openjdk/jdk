@@ -105,7 +105,6 @@ jtreg-tests: FRC
           -w:$(TEST_OUTPUT_DIR)/JTwork \
           -jdk:$(TESTJAVA) \
 	  -Xbootclasspath/p:$(TESTBOOTCLASSPATH) \
-	  -exclude:bootclasspath-exclude.jtx \
           $(JAVA_TOOL_OPTIONS:%=-vmoption:%) \
           $(JAVA_ARGS:%=-vmoption:%) \
           $(TESTDIRS)

@@ -165,7 +165,7 @@ public class BasicButtonListener implements MouseListener, MouseMotionListener,
             JRootPane root = b.getRootPane();
             if (root != null) {
                BasicButtonUI ui = (BasicButtonUI)BasicLookAndFeel.getUIOfType(
-                         ((AbstractButton)b).getUI(), BasicButtonUI.class);
+                         b.getUI(), BasicButtonUI.class);
                if (ui != null && DefaultLookup.getBoolean(b, ui,
                                    ui.getPropertyPrefix() +
                                    "defaultButtonFollowsFocus", true)) {
@@ -185,7 +185,7 @@ public class BasicButtonListener implements MouseListener, MouseMotionListener,
            JButton initialDefault = (JButton)root.getClientProperty("initialDefaultButton");
            if (b != initialDefault) {
                BasicButtonUI ui = (BasicButtonUI)BasicLookAndFeel.getUIOfType(
-                         ((AbstractButton)b).getUI(), BasicButtonUI.class);
+                         b.getUI(), BasicButtonUI.class);
                if (ui != null && DefaultLookup.getBoolean(b, ui,
                                    ui.getPropertyPrefix() +
                                    "defaultButtonFollowsFocus", true)) {
@@ -239,7 +239,7 @@ public class BasicButtonListener implements MouseListener, MouseMotionListener,
              }
           }
        }
-    };
+    }
 
     public void mouseReleased(MouseEvent e) {
         if (SwingUtilities.isLeftMouseButton(e)) {
@@ -253,7 +253,7 @@ public class BasicButtonListener implements MouseListener, MouseMotionListener,
             model.setPressed(false);
             model.setArmed(false);
         }
-    };
+    }
 
     public void mouseEntered(MouseEvent e) {
         AbstractButton b = (AbstractButton) e.getSource();
@@ -263,7 +263,7 @@ public class BasicButtonListener implements MouseListener, MouseMotionListener,
         }
         if (model.isPressed())
                 model.setArmed(true);
-    };
+    }
 
     public void mouseExited(MouseEvent e) {
         AbstractButton b = (AbstractButton) e.getSource();
@@ -272,7 +272,7 @@ public class BasicButtonListener implements MouseListener, MouseMotionListener,
             model.setRollover(false);
         }
         model.setArmed(false);
-    };
+    }
 
 
     /**
