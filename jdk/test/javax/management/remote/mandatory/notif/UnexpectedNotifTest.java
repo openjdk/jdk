@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,68 +32,88 @@
  * @run main UnexpectedNotifTest
  */
 
-// java imports
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import javax.management.MBeanNotificationInfo;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerFactory;
+import javax.management.Notification;
+import javax.management.NotificationBroadcasterSupport;
+import javax.management.NotificationListener;
+import javax.management.ObjectName;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXConnectorServer;
+import javax.management.remote.JMXConnectorServerFactory;
+import javax.management.remote.JMXServiceURL;
 //
-import java.io.IOException;
-
-// JMX imports
-//
-import javax.management.*;
-import javax.management.remote.*;
+import javax.management.remote.rmi.RMIConnectorServer;
 
 public class UnexpectedNotifTest {
 
     public static void main(String[] args) throws Exception {
-        String[] protos = null;
+        List<String> protos = new ArrayList<String>();
+        protos.add("rmi");
         try {
             Class.forName("javax.management.remote.jmxmp.JMXMPConnectorServer");
-            protos = new String[2];
-            protos[0] = "rmi";
-            protos[1] = "jmxmp";
+            protos.add("jmxmp");
         } catch (ClassNotFoundException e) {
-            protos = new String[1];
-            protos[0] = "rmi";
+            // OK: JMXMP not present so don't test it.
         }
-        for (int i = 0; i < protos.length; i++) {
-            System.out.println("Unexpected notifications test for protocol " +
-                               protos[i]);
-            MBeanServer mbs = null;
-            try {
-                // Create a MBeanServer
-                //
-                mbs = MBeanServerFactory.createMBeanServer();
+        for (String proto : protos) {
+            test(proto, false);
+            test(proto, true);
+        }
+    }
 
-                // Create a NotificationEmitter MBean
-                //
-                mbean = new ObjectName ("Default:name=NotificationEmitter");
-                mbs.registerMBean(new NotificationEmitter(), mbean);
+    private static void test(String proto, boolean eventService)
+            throws Exception {
+        System.out.println("Unexpected notifications test for protocol " +
+                           proto + " with" +
+                           (eventService ? "" : "out") + " event service");
+        MBeanServer mbs = null;
+        try {
+            // Create a MBeanServer
+            //
+            mbs = MBeanServerFactory.createMBeanServer();
 
-                // Create a connector server
-                //
-                url = new JMXServiceURL("service:jmx:" + protos[i] + "://");
-                server = JMXConnectorServerFactory.newJMXConnectorServer(url,
-                                                                         null,
-                                                                         mbs);
+            // Create a NotificationEmitter MBean
+            //
+            mbean = new ObjectName ("Default:name=NotificationEmitter");
+            mbs.registerMBean(new NotificationEmitter(), mbean);
 
-                mbs.registerMBean(
-                            server,
-                            new ObjectName("Default:name=ConnectorServer"));
+            // Create a connector server
+            //
+            url = new JMXServiceURL("service:jmx:" + proto + "://");
+            Map<String, String> env = Collections.singletonMap(
+                    RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE,
+                    Boolean.toString(eventService));
 
-                server.start();
+            server = JMXConnectorServerFactory.newJMXConnectorServer(url,
+                                                                     env,
+                                                                     mbs);
 
-                url = server.getAddress();
+            mbs.registerMBean(
+                        server,
+                        new ObjectName("Default:name=ConnectorServer"));
 
-                for (int j = 0; j < 2; j++) {
-                    test();
-                }
-            } finally {
-                // Stop server
-                //
-                server.stop();
-                // Release the MBeanServer
-                //
-                MBeanServerFactory.releaseMBeanServer(mbs);
+            server.start();
+
+            url = server.getAddress();
+
+            for (int j = 0; j < 2; j++) {
+                test();
             }
+        } finally {
+            // Stop server
+            //
+            server.stop();
+            // Release the MBeanServer
+            //
+            MBeanServerFactory.releaseMBeanServer(mbs);
         }
     }
 

@@ -25,7 +25,6 @@
 
 package java.net;
 
-import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import sun.security.action.*;
@@ -203,11 +202,17 @@ public final class NetworkInterface {
     }
 
     /**
-     * Get the index of this network interface.
+     * Returns the index of this network interface. The index is an integer greater
+     * or equal to zero, or {@code -1} for unknown. This is a system specific value
+     * and interfaces with the same name can have different indexes on different
+     * machines.
      *
-     * @return the index of this network interface
+     * @return the index of this network interface or {@code -1} if the index is
+     *         unknown
+     * @see #getByIndex(int)
+     * @since 1.7
      */
-    int getIndex() {
+    public int getIndex() {
         return index;
     }
 
@@ -249,11 +254,18 @@ public final class NetworkInterface {
      * Get a network interface given its index.
      *
      * @param index an integer, the index of the interface
-     * @return the NetworkInterface obtained from its index
-     * @exception  SocketException  if an I/O error occurs.
+     * @return the NetworkInterface obtained from its index, or {@code null} if
+     *         there is no interface with such an index on the system
+     * @throws  SocketException  if an I/O error occurs.
+     * @throws  IllegalArgumentException if index has a negative value
+     * @see #getIndex()
+     * @since 1.7
      */
-    native static NetworkInterface getByIndex(int index)
-        throws SocketException;
+    public static NetworkInterface getByIndex(int index) throws SocketException {
+        if (index < 0)
+            throw new IllegalArgumentException("Interface index can't be negative");
+        return getByIndex0(index);
+    }
 
     /**
      * Convenience method to search for a network interface that
@@ -323,6 +335,9 @@ public final class NetworkInterface {
         throws SocketException;
 
     private native static NetworkInterface getByName0(String name)
+        throws SocketException;
+
+    private native static NetworkInterface getByIndex0(int index)
         throws SocketException;
 
     private native static NetworkInterface getByInetAddress0(InetAddress addr)

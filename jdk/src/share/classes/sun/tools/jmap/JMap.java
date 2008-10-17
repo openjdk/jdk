@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class JMap {
     private static String FORCE_SA_OPTION = "-F";
 
     // Default option (if nothing provided)
-    private static String DEFAULT_OPTION = "-heap";
+    private static String DEFAULT_OPTION = "-pmap";
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
@@ -147,6 +147,7 @@ public class JMap {
     // Invoke SA tool  with the given arguments
     private static void runTool(String option, String args[]) throws Exception {
         String[][] tools = {
+            { "-pmap",           "sun.jvm.hotspot.tools.PMap"     },
             { "-heap",           "sun.jvm.hotspot.tools.HeapSummary"     },
             { "-heap:format=b",  "sun.jvm.hotspot.tools.HeapDumper"      },
             { "-histo",          "sun.jvm.hotspot.tools.ObjectHistogram" },

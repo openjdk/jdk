@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ if [ "x$SA_DISABLE_VERS_CHK" != "x" ]; then
    OPTIONS="-Dsun.jvm.hotspot.runtime.VM.disableVersionCheck ${OPTIONS}"
 fi
 
-SA_CLASSPATH=$STARTDIR/../build/classes:$STARTDIR/../src/share/lib/maf-1_0.jar:$STARTDIR/../src/share/lib/jlfgr-1_0.jar:$STARTDIR/../src/share/lib/js.jar:$STARTDIR/sa.jar:$STARTDIR/lib/maf-1_0.jar:$STARTDIR/lib/jlfgr-1_0.jar:$STARTDIR/lib/js.jar
+SA_CLASSPATH=$STARTDIR/../build/classes:$STARTDIR/../src/share/lib/js.jar:$STARTDIR/sa.jar::$STARTDIR/lib/js.jar
 
 OPTIONS="-Djava.system.class.loader=sun.jvm.hotspot.SALauncherLoader ${OPTIONS}"
 

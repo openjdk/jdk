@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6346734
+ * @bug 6346734 6705893
  * @summary We do *not* support E4X (ECMAScript for XML) in our
  * implementation. We want to throw error on XML literals
  * as early as possible rather than at "runtime" - i.e., when
@@ -37,9 +37,10 @@ public class E4XErrorTest {
 
         public static void main(String[] args) throws Exception {
             ScriptEngineManager manager = new ScriptEngineManager();
-            ScriptEngine jsengine = manager.getEngineByName("js");
+            ScriptEngine jsengine = Helper.getJsEngine(manager);
             if (jsengine == null) {
-                throw new RuntimeException("no js engine found");
+                System.out.println("Warning: No js engine found; test vacuously passes.");
+                return;
             }
 
             // The test below depends on the error message content

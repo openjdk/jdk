@@ -85,6 +85,9 @@ import sun.security.action.GetPropertyAction;
  *   <li> The dash character <tt>'-'</tt>
  *        (<tt>'&#92;u002d'</tt>,&nbsp;<small>HYPHEN-MINUS</small>),
  *
+ *   <li> The plus character <tt>'+'</tt>
+ *        (<tt>'&#92;u002b'</tt>,&nbsp;<small>PLUS SIGN</small>),
+ *
  *   <li> The period character <tt>'.'</tt>
  *        (<tt>'&#92;u002e'</tt>,&nbsp;<small>FULL STOP</small>),
  *
@@ -307,6 +310,7 @@ public abstract class Charset
             if (c >= 'a' && c <= 'z') continue;
             if (c >= '0' && c <= '9') continue;
             if (c == '-' && i != 0) continue;
+            if (c == '+' && i != 0) continue;
             if (c == ':' && i != 0) continue;
             if (c == '_' && i != 0) continue;
             if (c == '.' && i != 0) continue;

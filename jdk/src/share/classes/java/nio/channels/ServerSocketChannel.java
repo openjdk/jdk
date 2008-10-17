@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,32 +27,43 @@ package java.nio.channels;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.SocketOption;
 import java.net.SocketAddress;
 import java.nio.channels.spi.*;
-
 
 /**
  * A selectable channel for stream-oriented listening sockets.
  *
- * <p> Server-socket channels are not a complete abstraction of listening
- * network sockets.  Binding and the manipulation of socket options must be
- * done through an associated {@link java.net.ServerSocket} object obtained by
- * invoking the {@link #socket() socket} method.  It is not possible to create
- * a channel for an arbitrary, pre-existing server socket, nor is it possible
- * to specify the {@link java.net.SocketImpl} object to be used by a server
- * socket associated with a server-socket channel.
- *
  * <p> A server-socket channel is created by invoking the {@link #open() open}
- * method of this class.  A newly-created server-socket channel is open but not
- * yet bound.  An attempt to invoke the {@link #accept() accept} method of an
- * unbound server-socket channel will cause a {@link NotYetBoundException} to
- * be thrown.  A server-socket channel can be bound by invoking one of the
- * {@link java.net.ServerSocket#bind(java.net.SocketAddress,int) bind} methods
- * of an associated server socket.
+ * method of this class.  It is not possible to create a channel for an arbitrary,
+ * pre-existing {@link ServerSocket}. A newly-created server-socket channel is
+ * open but not yet bound.  An attempt to invoke the {@link #accept() accept}
+ * method of an unbound server-socket channel will cause a {@link NotYetBoundException}
+ * to be thrown. A server-socket channel can be bound by invoking one of the
+ * {@link #bind(java.net.SocketAddress,int) bind} methods defined by this class.
+ *
+ * <p> Socket options are configured using the {@link #setOption(SocketOption,Object)
+ * setOption} method. Server-socket channels support the following options:
+ * <blockquote>
+ * <table border>
+ *   <tr>
+ *     <th>Option Name</th>
+ *     <th>Description</th>
+ *   </tr>
+ *   <tr>
+ *     <td> {@link java.net.StandardSocketOption#SO_RCVBUF SO_RCVBUF} </td>
+ *     <td> The size of the socket receive buffer </td>
+ *   </tr>
+ *   <tr>
+ *     <td> {@link java.net.StandardSocketOption#SO_REUSEADDR SO_REUSEADDR} </td>
+ *     <td> Re-use address </td>
+ *   </tr>
+ * </table>
+ * </blockquote>
+ * Additional (implementation specific) options may also be supported.
  *
  * <p> Server-socket channels are safe for use by multiple concurrent threads.
  * </p>
- *
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
@@ -61,6 +72,7 @@ import java.nio.channels.spi.*;
 
 public abstract class ServerSocketChannel
     extends AbstractSelectableChannel
+    implements NetworkChannel
 {
 
     /**
@@ -108,6 +120,89 @@ public abstract class ServerSocketChannel
 
 
     // -- ServerSocket-specific operations --
+
+    /**
+     * Binds the channel's socket to a local address and configures the socket
+     * to listen for connections.
+     *
+     * <p> An invocation of this method is equivalent to the following:
+     * <blockquote><pre>
+     * bind(local, 0);
+     * </pre></blockquote>
+     *
+     * @param   local
+     *          The local address to bind the socket, or {@code null} to bind
+     *          to an automatically assigned socket address
+     *
+     * @return  This channel
+     *
+     * @throws  AlreadyBoundException               {@inheritDoc}
+     * @throws  UnsupportedAddressTypeException     {@inheritDoc}
+     * @throws  ClosedChannelException              {@inheritDoc}
+     * @throws  IOException                         {@inheritDoc}
+     * @throws  SecurityException
+     *          If a security manager has been installed and its {@link
+     *          SecurityManager#checkListen checkListen} method denies the
+     *          operation
+     *
+     * @since 1.7
+     */
+    public final ServerSocketChannel bind(SocketAddress local)
+        throws IOException
+    {
+        return bind(local, 0);
+    }
+
+    /**
+     * Binds the channel's socket to a local address and configures the socket to
+     * listen for connections.
+     *
+     * <p> This method is used to establish an association between the socket and
+     * a local address. Once an association is established then the socket remains
+     * bound until the channel is closed.
+     *
+     * <p> The {@code backlog} parameter is the maximum number of pending
+     * connections on the socket. Its exact semantics are implementation specific.
+     * In particular, an implementation may impose a maximum length or may choose
+     * to ignore the parameter altogther. If the {@code backlog} parameter has
+     * the value {@code 0}, or a negative value, then an implementation specific
+     * default is used.
+     *
+     * @param   local
+     *          The address to bind the socket, or {@code null} to bind to an
+     *          automatically assigned socket address
+     * @param   backlog
+     *          The maximum number of pending connections
+     *
+     * @return  This channel
+     *
+     * @throws  AlreadyBoundException
+     *          If the socket is already bound
+     * @throws  UnsupportedAddressTypeException
+     *          If the type of the given address is not supported
+     * @throws  ClosedChannelException
+     *          If this channel is closed
+     * @throws  IOException
+     *          If some other I/O error occurs
+     * @throws  SecurityException
+     *          If a security manager has been installed and its {@link
+     *          SecurityManager#checkListen checkListen} method denies the
+     *          operation
+     *
+     * @since 1.7
+     */
+    public abstract ServerSocketChannel bind(SocketAddress local, int backlog)
+        throws IOException;
+
+    /**
+     * @throws  IllegalArgumentException                {@inheritDoc}
+     * @throws  ClosedChannelException                  {@inheritDoc}
+     * @throws  IOException                             {@inheritDoc}
+     *
+     * @since 1.7
+     */
+    public abstract <T> ServerSocketChannel setOption(SocketOption<T> name, T value)
+        throws IOException;
 
     /**
      * Retrieves a server socket associated with this channel.

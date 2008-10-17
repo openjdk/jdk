@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,6 @@ public class ServerSocketAdaptor                        // package-private
 
     // The channel being adapted
     private final ServerSocketChannelImpl ssc;
-
-    // Option adaptor object, created on demand
-    private volatile OptionAdaptor opts = null;
 
     // Timeout "option" value for accepts
     private volatile int timeout = 0;
@@ -174,18 +171,21 @@ public class ServerSocketAdaptor                        // package-private
         return timeout;
     }
 
-    private OptionAdaptor opts() {
-        if (opts == null)
-            opts = new OptionAdaptor(ssc);
-        return opts;
-    }
-
     public void setReuseAddress(boolean on) throws SocketException {
-        opts().setReuseAddress(on);
+        try {
+            ssc.setOption(StandardSocketOption.SO_REUSEADDR, on);
+        } catch (IOException x) {
+            Net.translateToSocketException(x);
+        }
     }
 
     public boolean getReuseAddress() throws SocketException {
-        return opts().getReuseAddress();
+        try {
+            return ssc.getOption(StandardSocketOption.SO_REUSEADDR).booleanValue();
+        } catch (IOException x) {
+            Net.translateToSocketException(x);
+            return false;       // Never happens
+        }
     }
 
     public String toString() {
@@ -197,11 +197,23 @@ public class ServerSocketAdaptor                        // package-private
     }
 
     public void setReceiveBufferSize(int size) throws SocketException {
-        opts().setReceiveBufferSize(size);
+        // size 0 valid for ServerSocketChannel, invalid for ServerSocket
+        if (size <= 0)
+            throw new IllegalArgumentException("size cannot be 0 or negative");
+        try {
+            ssc.setOption(StandardSocketOption.SO_RCVBUF, size);
+        } catch (IOException x) {
+            Net.translateToSocketException(x);
+        }
     }
 
     public int getReceiveBufferSize() throws SocketException {
-        return opts().getReceiveBufferSize();
+        try {
+            return ssc.getOption(StandardSocketOption.SO_RCVBUF).intValue();
+        } catch (IOException x) {
+            Net.translateToSocketException(x);
+            return -1;          // Never happens
+        }
     }
 
 }

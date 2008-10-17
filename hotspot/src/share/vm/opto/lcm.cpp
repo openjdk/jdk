@@ -58,6 +58,9 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     not_null_block = _succs[0];
     null_block     = _succs[1];
   }
+  while (null_block->is_Empty() == Block::empty_with_goto) {
+    null_block     = null_block->_succs[0];
+  }
 
   // Search the exception block for an uncommon trap.
   // (See Parse::do_if and Parse::do_ifnull for the reason
@@ -149,6 +152,10 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
       const TypePtr *adr_type = NULL;  // Do not need this return value here
       const Node* base = mach->get_base_and_disp(offset, adr_type);
       if (base == NULL || base == NodeSentinel) {
+        // Narrow oop address doesn't have base, only index
+        if( val->bottom_type()->isa_narrowoop() &&
+            MacroAssembler::needs_explicit_null_check(offset) )
+          continue;             // Give up if offset is beyond page size
         // cannot reason about it; is probably not implicit null exception
       } else {
         const TypePtr* tptr = base->bottom_type()->is_ptr();
@@ -322,7 +329,7 @@ Node *Block::select(PhaseCFG *cfg, Node_List &worklist, int *ready_cnt, VectorSe
   uint choice  = 0; // Bigger is most important
   uint latency = 0; // Bigger is scheduled first
   uint score   = 0; // Bigger is better
-  uint idx;         // Index in worklist
+  int idx = -1;     // Index in worklist
 
   for( uint i=0; i<cnt; i++ ) { // Inspect entire worklist
     // Order in worklist is used to break ties.
@@ -412,9 +419,10 @@ Node *Block::select(PhaseCFG *cfg, Node_List &worklist, int *ready_cnt, VectorSe
     }
   } // End of for all ready nodes in worklist
 
-  Node *n = worklist[idx];      // Get the winner
+  assert(idx >= 0, "index should be set");
+  Node *n = worklist[(uint)idx];      // Get the winner
 
-  worklist.map(idx,worklist.pop());     // Compress worklist
+  worklist.map((uint)idx, worklist.pop());     // Compress worklist
   return n;
 }
 
@@ -599,7 +607,14 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
           assert(cfg->_bbs[oop_store->_idx]->_dom_depth <= this->_dom_depth, "oop_store must dominate card-mark");
         }
       }
-      if( n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_MemBarAcquire ) {
+      if( n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_MemBarAcquire &&
+          n->req() > TypeFunc::Parms ) {
+        // MemBarAcquire could be created without Precedent edge.
+        // del_req() replaces the specified edge with the last input edge
+        // and then removes the last edge. If the specified edge > number of
+        // edges the last edge will be moved outside of the input edges array
+        // and the edge will be lost. This is why this code should be
+        // executed only when Precedent (== TypeFunc::Parms) edge is present.
         Node *x = n->in(TypeFunc::Parms);
         n->del_req(TypeFunc::Parms);
         n->add_prec(x);

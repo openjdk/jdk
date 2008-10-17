@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ NET_AllocSockaddr(struct sockaddr **him, int *len);
 JNIEXPORT int JNICALL
 NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr *him, int *len, jboolean v4MappedAddress);
 
-jobject
+JNIEXPORT jobject JNICALL
 NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port);
 
 void initLocalAddrTable ();
@@ -124,10 +124,10 @@ void initLocalAddrTable ();
 void
 NET_SetTrafficClass(struct sockaddr *him, int trafficClass);
 
-jint
+JNIEXPORT jint JNICALL
 NET_GetPortFromSockaddr(struct sockaddr *him);
 
-jint
+JNIEXPORT jint JNICALL
 NET_SockaddrEqualsInetAddress(JNIEnv *env,struct sockaddr *him, jobject iaObj);
 
 int

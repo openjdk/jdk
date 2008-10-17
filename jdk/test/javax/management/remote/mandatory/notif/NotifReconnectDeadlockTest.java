@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /*
- * @test NotifReconnectDeadlockTest
+ * @test
  * @bug 6199899
  * @summary Tests reconnection done by a fetching notif thread.
  * @author Shanliang JIANG
@@ -31,11 +31,21 @@
  * @run main NotifReconnectDeadlockTest
  */
 
-import java.io.IOException;
-import java.util.*;
-
-import javax.management.*;
-import javax.management.remote.*;
+import java.util.HashMap;
+import java.util.Map;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerFactory;
+import javax.management.Notification;
+import javax.management.NotificationBroadcasterSupport;
+import javax.management.NotificationListener;
+import javax.management.ObjectName;
+import javax.management.remote.JMXConnectionNotification;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXConnectorServer;
+import javax.management.remote.JMXConnectorServerFactory;
+import javax.management.remote.JMXServiceURL;
+import javax.management.remote.rmi.RMIConnectorServer;
 
 /**
  * "This test checks for a bug whereby reconnection did not work if (a) it was
@@ -64,6 +74,7 @@ public class NotifReconnectDeadlockTest {
         Map env = new HashMap(2);
         env.put("jmx.remote.x.server.connection.timeout", new Long(serverTimeout));
         env.put("jmx.remote.x.client.connection.check.period", new Long(Long.MAX_VALUE));
+        env.put(RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE, "false");
 
         final MBeanServer mbs = MBeanServerFactory.newMBeanServer();
 

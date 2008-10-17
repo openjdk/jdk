@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ $(JARFILE): $(CLASSDESTDIR)/META-INF/services/$(SERVICE_DESCRIPTION) \
 	$(BOOT_JAR_CMD) -cf $(JARFILE) \
 	     -C $(CLASSDESTDIR) sun \
 	     -C $(CLASSDESTDIR) META-INF \
-	     $(JAR_JFLAGS)
+	     $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 include $(BUILDDIR)/common/Classes.gmk

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,8 +193,12 @@ public class HeapSummary extends Tool {
 
    private static final double FACTOR = 1024*1024;
    private void printValMB(String title, long value) {
-      double mb = value / FACTOR;
-      System.out.println(alignment + title + value + " (" + mb + "MB)");
+      if (value < 0) {
+        System.out.println(alignment + title +   (value >>> 20)  + " MB");
+      } else {
+        double mb = value/FACTOR;
+        System.out.println(alignment + title + value + " (" + mb + "MB)");
+      }
    }
 
    private void printValue(String title, long value) {

@@ -29,11 +29,8 @@ import java.io.IOException;
 import java.util.Set;
 import javax.tools.JavaFileObject;
 
-import com.sun.tools.javac.file.JavacFileManager.Archive;
-import com.sun.tools.javac.util.List;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
@@ -41,6 +38,11 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
+
+import com.sun.tools.javac.file.JavacFileManager.Archive;
+import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
+import com.sun.tools.javac.file.RelativePath.RelativeFile;
+import com.sun.tools.javac.util.List;
 
 public class ZipFileIndexArchive implements Archive {
 
@@ -53,27 +55,31 @@ public class ZipFileIndexArchive implements Archive {
         this.zfIndex = zdir;
     }
 
-    public boolean contains(String name) {
+    public boolean contains(RelativePath name) {
         return zfIndex.contains(name);
     }
 
-    public List<String> getFiles(String subdirectory) {
-        return zfIndex.getFiles((subdirectory.endsWith("/") || subdirectory.endsWith("\\")) ? subdirectory.substring(0, subdirectory.length() - 1) : subdirectory);
+    public List<String> getFiles(RelativeDirectory subdirectory) {
+        return zfIndex.getFiles(subdirectory);
     }
 
-    public JavaFileObject getFileObject(String subdirectory, String file) {
-        String fullZipFileName = subdirectory + file;
+    public JavaFileObject getFileObject(RelativeDirectory subdirectory, String file) {
+        RelativeFile fullZipFileName = new RelativeFile(subdirectory, file);
         ZipFileIndex.Entry entry = zfIndex.getZipIndexEntry(fullZipFileName);
         JavaFileObject ret = new ZipFileIndexFileObject(fileManager, zfIndex, entry, zfIndex.getZipFile().getPath());
         return ret;
     }
 
-    public Set<String> getSubdirectories() {
+    public Set<RelativeDirectory> getSubdirectories() {
         return zfIndex.getAllDirectories();
     }
 
     public void close() throws IOException {
         zfIndex.close();
+    }
+
+    public String toString() {
+        return "ZipFileIndexArchive[" + zfIndex + "]";
     }
 
     /**
@@ -181,18 +187,11 @@ public class ZipFileIndexArchive implements Archive {
         public URI toUri() {
             String zipName = new File(getZipName()).toURI().normalize().getPath();
             String entryName = getZipEntryName();
-            if (File.separatorChar != '/') {
-                entryName = entryName.replace(File.separatorChar, '/');
-            }
             return URI.create("jar:" + zipName + "!" + entryName);
         }
 
         private byte[] read() throws IOException {
-            if (entry == null) {
-                entry = zfIndex.getZipIndexEntry(name);
-                if (entry == null)
-                  throw new FileNotFoundException();
-            }
+            assert entry != null; // see constructor
             return zfIndex.read(entry);
         }
 
@@ -222,11 +221,11 @@ public class ZipFileIndexArchive implements Archive {
         protected String inferBinaryName(Iterable<? extends File> path) {
             String entryName = getZipEntryName();
             if (zfIndex.symbolFilePrefix != null) {
-                String prefix = zfIndex.symbolFilePrefix;
+                String prefix = zfIndex.symbolFilePrefix.path;
                 if (entryName.startsWith(prefix))
                     entryName = entryName.substring(prefix.length());
             }
-            return removeExtension(entryName).replace(File.separatorChar, '.');
+            return removeExtension(entryName).replace('/', '.');
         }
     }
 

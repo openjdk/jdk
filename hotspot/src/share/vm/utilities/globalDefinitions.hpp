@@ -97,8 +97,12 @@ const int SerializePageShiftCount = 3;
 // object size.
 class HeapWord {
   friend class VMStructs;
-private:
+ private:
   char* i;
+#ifdef ASSERT
+ public:
+  char* value() { return i; }
+#endif
 };
 
 // HeapWordSize must be 2^LogHeapWordSize.

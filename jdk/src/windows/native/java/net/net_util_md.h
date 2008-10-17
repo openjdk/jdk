@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,7 +329,7 @@ extern jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
 JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0_XP
     (JNIEnv *env, jclass cls, jstring name);
 
-JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex_XP
+JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0_XP
   (JNIEnv *env, jclass cls, jint index);
 
 JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0_XP

@@ -1,5 +1,5 @@
 #
-# Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,17 +31,13 @@ PACKAGE = sun.awt.medialib
 LIBRARY = mlib_image_v
 PRODUCT = sun
 
-#
 # Tell Defs.gmk we need VIS instructions
-#
 VIS_NEEDED=true
 
-include $(BUILDDIR)/common/Defs.gmk
-
-#
 # Select highest level of optimization for this library
-#
-_OPT = $(CC_HIGHEST_OPT)
+OPTIMIZATION_LEVEL = HIGHEST
+
+include $(BUILDDIR)/common/Defs.gmk
 
 #
 # Use generic mapfile

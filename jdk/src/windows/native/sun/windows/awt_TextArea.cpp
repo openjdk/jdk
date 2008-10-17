@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,15 +209,13 @@ done:
 
 void AwtTextArea::EditSetSel(CHARRANGE &cr) {
     // Fix for 5003402: added restoring/hiding selection to enable automatic scrolling
-    LockWindowUpdate(GetHWnd());
     SendMessage(EM_HIDESELECTION, FALSE, TRUE);
     SendMessage(EM_EXSETSEL, 0, reinterpret_cast<LPARAM>(&cr));
     SendMessage(EM_HIDESELECTION, TRUE, TRUE);
-    // 6417581: LockWindowUpdate doesn't force expected drawing
+    // 6417581: force expected drawing
     if (IS_WINVISTA && cr.cpMin == cr.cpMax) {
         ::InvalidateRect(GetHWnd(), NULL, TRUE);
     }
-    LockWindowUpdate(NULL);
 }
 
 void AwtTextArea::EditGetSel(CHARRANGE &cr) {
@@ -993,12 +991,10 @@ void AwtTextArea::_ReplaceText(void *param)
       c->CheckLineSeparator(buffer);
       c->RemoveCR(buffer);
       // Fix for 5003402: added restoring/hiding selection to enable automatic scrolling
-      LockWindowUpdate(c->GetHWnd());
       c->SendMessage(EM_HIDESELECTION, FALSE, TRUE);
       c->SendMessageW(EM_SETSEL, start, end);
       c->SendMessageW(EM_REPLACESEL, FALSE, (LPARAM)buffer);
       c->SendMessage(EM_HIDESELECTION, TRUE, TRUE);
-      LockWindowUpdate(NULL);
 
       delete[] buffer;
     }

@@ -108,6 +108,9 @@ import java.lang.reflect.Type;
  * <p>If we are unable to modify the {@code MyLinkedList} class,
  * we can define an {@link MXBeanMappingFactory}.  See the documentation
  * of that class for further details.</p>
+ *
+ * @see <a href="../MXBean.html#custom">MXBean specification, section
+ * "Custom MXBean type mappings"</a>
  */
 public abstract class MXBeanMapping {
     private final Type javaType;

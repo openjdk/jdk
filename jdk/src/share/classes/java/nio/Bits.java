@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.misc.Unsafe;
 import sun.misc.VM;
+import javax.management.ObjectName;
+import javax.management.MalformedObjectNameException;
 
 /**
  * Access to bits, native and otherwise.
@@ -625,13 +627,15 @@ class Bits {                            // package-private
     // direct buffer memory.  This value may be changed during VM
     // initialization if it is launched with "-XX:MaxDirectMemorySize=<size>".
     private static volatile long maxMemory = VM.maxDirectMemory();
-    private static volatile long reservedMemory = 0;
+    private static volatile long reservedMemory;
+    private static volatile long usedMemory;
+    private static volatile long count;
     private static boolean memoryLimitSet = false;
 
     // These methods should be called whenever direct memory is allocated or
     // freed.  They allow the user to control the amount of direct memory
     // which a process may access.  All sizes are specified in bytes.
-    static void reserveMemory(long size) {
+    static void reserveMemory(long size, int cap) {
 
         synchronized (Bits.class) {
             if (!memoryLimitSet && VM.isBooted()) {
@@ -640,6 +644,8 @@ class Bits {                            // package-private
             }
             if (size <= maxMemory - reservedMemory) {
                 reservedMemory += size;
+                usedMemory += cap;
+                count++;
                 return;
             }
         }
@@ -655,17 +661,71 @@ class Bits {                            // package-private
             if (reservedMemory + size > maxMemory)
                 throw new OutOfMemoryError("Direct buffer memory");
             reservedMemory += size;
+            usedMemory += cap;
+            count++;
         }
 
     }
 
-    static synchronized void unreserveMemory(long size) {
+    static synchronized void unreserveMemory(long size, int cap) {
         if (reservedMemory > 0) {
             reservedMemory -= size;
+            usedMemory -= cap;
+            count--;
             assert (reservedMemory > -1);
         }
     }
 
+    // -- Management interface for monitoring of direct buffer usage --
+
+    static {
+        // setup access to this package in SharedSecrets
+        sun.misc.SharedSecrets.setJavaNioAccess(
+            new sun.misc.JavaNioAccess() {
+                @Override
+                public BufferPoolMXBean getDirectBufferPoolMXBean() {
+                    return LazyInitialization.directBufferPoolMXBean;
+                }
+            }
+        );
+    }
+
+    // Lazy initialization of management interface
+    private static class LazyInitialization {
+        static final BufferPoolMXBean directBufferPoolMXBean = directBufferPoolMXBean();
+
+        private static BufferPoolMXBean directBufferPoolMXBean() {
+            final String pool = "direct";
+            final ObjectName obj;
+            try {
+                obj = new ObjectName("java.nio:type=BufferPool,name=" + pool);
+            } catch (MalformedObjectNameException x) {
+                throw new AssertionError(x);
+            }
+            return new BufferPoolMXBean() {
+                @Override
+                public ObjectName getObjectName() {
+                    return obj;
+                }
+                @Override
+                public String getName() {
+                    return pool;
+                }
+                @Override
+                public long getCount() {
+                    return Bits.count;
+                }
+                @Override
+                public long getTotalCapacity() {
+                    return Bits.usedMemory;
+                }
+                @Override
+                public long getMemoryUsed() {
+                    return Bits.reservedMemory;
+                }
+            };
+        }
+    }
 
     // -- Bulk get/put acceleration --
 
@@ -675,14 +735,68 @@ class Bits {                            // package-private
     static final int JNI_COPY_TO_ARRAY_THRESHOLD   = 6;
     static final int JNI_COPY_FROM_ARRAY_THRESHOLD = 6;
 
+    // This number limits the number of bytes to copy per call to Unsafe's
+    // copyMemory method. A limit is imposed to allow for safepoint polling
+    // during a large copy
+    static final long UNSAFE_COPY_THRESHOLD = 1024L * 1024L;
+
     // These methods do no bounds checking.  Verification that the copy will not
     // result in memory corruption should be done prior to invocation.
     // All positions and lengths are specified in bytes.
 
-    static native void copyFromByteArray(Object src, long srcPos, long dstAddr,
-                                         long length);
-    static native void copyToByteArray(long srcAddr, Object dst, long dstPos,
-                                       long length);
+    /**
+     * Copy from given source array to destination address.
+     *
+     * @param   src
+     *          source array
+     * @param   srcBaseOffset
+     *          offset of first element of storage in source array
+     * @param   srcPos
+     *          offset within source array of the first element to read
+     * @param   dstAddr
+     *          destination address
+     * @param   length
+     *          number of bytes to copy
+     */
+    static void copyFromArray(Object src, long srcBaseOffset, long srcPos,
+                              long dstAddr, long length)
+    {
+        long offset = srcBaseOffset + srcPos;
+        while (length > 0) {
+            long size = (length > UNSAFE_COPY_THRESHOLD) ? UNSAFE_COPY_THRESHOLD : length;
+            unsafe.copyMemory(src, offset, null, dstAddr, size);
+            length -= size;
+            offset += size;
+            dstAddr += size;
+        }
+    }
+
+    /**
+     * Copy from source address into given destination array.
+     *
+     * @param   srcAddr
+     *          source address
+     * @param   dst
+     *          destination array
+     * @param   dstBaseOffset
+     *          offset of first element of storage in destination array
+     * @param   dstPos
+     *          offset within destination array of the first element to write
+     * @param   length
+     *          number of bytes to copy
+     */
+    static void copyToArray(long srcAddr, Object dst, long dstBaseOffset, long dstPos,
+                            long length)
+    {
+        long offset = dstBaseOffset + dstPos;
+        while (length > 0) {
+            long size = (length > UNSAFE_COPY_THRESHOLD) ? UNSAFE_COPY_THRESHOLD : length;
+            unsafe.copyMemory(null, srcAddr, dst, offset, size);
+            length -= size;
+            srcAddr += size;
+            offset += size;
+        }
+    }
 
     static void copyFromCharArray(Object src, long srcPos, long dstAddr,
                                   long length)

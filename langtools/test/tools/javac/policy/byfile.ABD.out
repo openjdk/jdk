@@ -3,7 +3,7 @@
 [attribute A2]
 [attribute B]
 [attribute B1]
-B.java:12:9: compiler.err.cant.resolve.location: (- compiler.misc.kindname.variable), x, , , (- compiler.misc.kindname.class), B1
+B.java:12:9: compiler.err.cant.resolve.location: kindname.variable, x, , , kindname.class, B1
 [attribute B2]
 [attribute D]
 [attribute D1]

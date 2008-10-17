@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,15 +45,9 @@ public class ThreadService implements TaskServer {
         minThreads = threadNumber;
         threadList = new ExecutorThread[threadNumber];
 
-//      for (int i=0; i<threadNumber; i++) {
-//          threadList[i] = new ExecutorThread();
-//          threadList[i].start();
-//      }
-
         priority = Thread.currentThread().getPriority();
         cloader = Thread.currentThread().getContextClassLoader();
 
-//System.out.println("---jsl: ThreadService: running threads = "+threadNumber);
     }
 
 // public methods
@@ -89,7 +83,6 @@ public class ThreadService implements TaskServer {
 
         synchronized(jobList) {
             jobList.add(jobList.size(), task);
-//System.out.println("jsl-ThreadService: added job "+addedJobs++);
 
             jobList.notify();
         }
@@ -196,8 +189,6 @@ public class ThreadService implements TaskServer {
                     try {
                         idle--;
                         job.run();
-//System.out.println("jsl-ThreadService: done job "+doneJobs++);
-
                     } catch (Exception e) {
                         // TODO
                         e.printStackTrace();
@@ -228,7 +219,6 @@ public class ThreadService implements TaskServer {
                     ExecutorThread et = new ExecutorThread();
                     et.start();
                     threadList[currThreds++] = et;
-//System.out.println("jsl-ThreadService: create new thread: "+currThreds);
                 }
             }
         }

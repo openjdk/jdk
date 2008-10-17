@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,11 @@ public class Test2 {
         public static void main(String[] args) throws Exception {
             System.out.println("\nTest2\n");
             ScriptEngineManager m = new ScriptEngineManager();
-            ScriptEngine eng = m.getEngineByName("js");
+            ScriptEngine eng = Helper.getJsEngine(m);
+            if (eng == null) {
+                     System.out.println("Warning: No js engine found; test vacuously passes.");
+                     return;
+            }
             eng.put("Testobj", new Testobj("Hello World"));
             eng.eval(new FileReader(
                     new File(System.getProperty("test.src", "."), "Test2.js")));

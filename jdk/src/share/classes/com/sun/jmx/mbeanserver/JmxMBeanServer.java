@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,43 +25,41 @@
 
 package com.sun.jmx.mbeanserver;
 
-import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.Set;
+import static com.sun.jmx.defaults.JmxProperties.MBEANSERVER_LOGGER;
+import com.sun.jmx.interceptor.NamespaceDispatchInterceptor;
+
 import java.io.ObjectInputStream;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedExceptionAction;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.logging.Level;
 
-// RI import
-import javax.management.MBeanPermission;
-import javax.management.AttributeNotFoundException;
-import javax.management.MBeanException;
-import javax.management.ReflectionException;
-import javax.management.MBeanInfo;
-import javax.management.QueryExp;
-import javax.management.NotificationListener;
-import javax.management.NotificationFilter;
-import javax.management.ListenerNotFoundException;
-import javax.management.IntrospectionException;
-import javax.management.OperationsException;
-import javax.management.InstanceNotFoundException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.MBeanRegistrationException;
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.InvalidAttributeValueException;
-import javax.management.ObjectName;
-import javax.management.ObjectInstance;
 import javax.management.Attribute;
 import javax.management.AttributeList;
-import javax.management.RuntimeOperationsException;
+import javax.management.AttributeNotFoundException;
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.InstanceNotFoundException;
+import javax.management.IntrospectionException;
+import javax.management.InvalidAttributeValueException;
+import javax.management.ListenerNotFoundException;
+import javax.management.MBeanException;
+import javax.management.MBeanInfo;
+import javax.management.MBeanPermission;
+import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerDelegate;
+import javax.management.NotCompliantMBeanException;
+import javax.management.NotificationFilter;
+import javax.management.NotificationListener;
+import javax.management.ObjectInstance;
+import javax.management.ObjectName;
+import javax.management.OperationsException;
+import javax.management.QueryExp;
+import javax.management.ReflectionException;
+import javax.management.RuntimeOperationsException;
 import javax.management.loading.ClassLoaderRepository;
-
-import static com.sun.jmx.defaults.JmxProperties.MBEANSERVER_LOGGER;
-import com.sun.jmx.interceptor.DefaultMBeanServerInterceptor;
-import com.sun.jmx.interceptor.MBeanServerInterceptor;
 
 /**
  * This is the base class for MBean manipulation on the agent side. It
@@ -102,15 +100,14 @@ public final class JmxMBeanServer
     /** true if interceptors are enabled **/
     private final boolean interceptorsEnabled;
 
-    /** Revisit: transient ??? **/
-    private final transient MBeanServer outerShell;
+    private final MBeanServer outerShell;
 
-    /** Revisit: transient ??? **/
-    private transient MBeanServerInterceptor mbsInterceptor = null;
+    private volatile MBeanServer mbsInterceptor = null;
 
-    /** Revisit: transient ??? **/
     /** The MBeanServerDelegate object representing the MBean Server */
-    private final transient MBeanServerDelegate mBeanServerDelegateObject;
+    private final MBeanServerDelegate mBeanServerDelegateObject;
+
+    private final String mbeanServerName;
 
     /**
      * <b>Package:</b> Creates an MBeanServer with the
@@ -243,9 +240,10 @@ public final class JmxMBeanServer
 
         final Repository repository = new Repository(domain,fairLock);
         this.mbsInterceptor =
-            new DefaultMBeanServerInterceptor(outer, delegate, instantiator,
+            new NamespaceDispatchInterceptor(outer, delegate, instantiator,
                                               repository);
         this.interceptorsEnabled = interceptors;
+        this.mbeanServerName = Util.getMBeanServerSecurityName(delegate);
         initialize();
     }
 
@@ -941,7 +939,8 @@ public final class JmxMBeanServer
         throws ReflectionException, MBeanException {
 
         /* Permission check */
-        checkMBeanPermission(className, null, null, "instantiate");
+        checkMBeanPermission(mbeanServerName, className, null, null,
+                "instantiate");
 
         return instantiator.instantiate(className);
     }
@@ -978,7 +977,8 @@ public final class JmxMBeanServer
                InstanceNotFoundException {
 
         /* Permission check */
-        checkMBeanPermission(className, null, null, "instantiate");
+        checkMBeanPermission(mbeanServerName, className, null,
+                null, "instantiate");
 
         ClassLoader myLoader = outerShell.getClass().getClassLoader();
         return instantiator.instantiate(className, loaderName, myLoader);
@@ -1016,7 +1016,8 @@ public final class JmxMBeanServer
         throws ReflectionException, MBeanException {
 
         /* Permission check */
-        checkMBeanPermission(className, null, null, "instantiate");
+        checkMBeanPermission(mbeanServerName, className, null, null,
+                "instantiate");
 
         ClassLoader myLoader = outerShell.getClass().getClassLoader();
         return instantiator.instantiate(className, params, signature,
@@ -1059,7 +1060,8 @@ public final class JmxMBeanServer
                InstanceNotFoundException {
 
         /* Permission check */
-        checkMBeanPermission(className, null, null, "instantiate");
+        checkMBeanPermission(mbeanServerName, className, null,
+                null, "instantiate");
 
         ClassLoader myLoader = outerShell.getClass().getClassLoader();
         return instantiator.instantiate(className,loaderName,params,signature,
@@ -1236,7 +1238,7 @@ public final class JmxMBeanServer
                         "Unexpected exception occurred", e);
             }
             throw new
-                IllegalStateException("Can't register delegate.");
+                IllegalStateException("Can't register delegate.",e);
         }
 
 
@@ -1278,7 +1280,7 @@ public final class JmxMBeanServer
      *            are not enabled on this object.
      * @see #interceptorsEnabled
      **/
-    public synchronized MBeanServerInterceptor getMBeanServerInterceptor() {
+    public synchronized MBeanServer getMBeanServerInterceptor() {
         if (interceptorsEnabled) return mbsInterceptor;
         else throw new UnsupportedOperationException(
                        "MBeanServerInterceptors are disabled.");
@@ -1292,7 +1294,7 @@ public final class JmxMBeanServer
      * @see #interceptorsEnabled
      **/
     public synchronized void
-        setMBeanServerInterceptor(MBeanServerInterceptor interceptor) {
+        setMBeanServerInterceptor(MBeanServer interceptor) {
         if (!interceptorsEnabled) throw new UnsupportedOperationException(
                        "MBeanServerInterceptors are disabled.");
         if (interceptor == null) throw new
@@ -1330,7 +1332,8 @@ public final class JmxMBeanServer
      **/
     public ClassLoaderRepository getClassLoaderRepository() {
         /* Permission check */
-        checkMBeanPermission(null, null, null, "getClassLoaderRepository");
+        checkMBeanPermission(mbeanServerName, null, null,
+                null, "getClassLoaderRepository");
         return secureClr;
     }
 
@@ -1484,14 +1487,16 @@ public final class JmxMBeanServer
     // SECURITY CHECKS
     //----------------
 
-    private static void checkMBeanPermission(String classname,
+    private static void checkMBeanPermission(String serverName,
+                                             String classname,
                                              String member,
                                              ObjectName objectName,
                                              String actions)
         throws SecurityException {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            Permission perm = new MBeanPermission(classname,
+            Permission perm = new MBeanPermission(serverName,
+                                                  classname,
                                                   member,
                                                   objectName,
                                                   actions);
