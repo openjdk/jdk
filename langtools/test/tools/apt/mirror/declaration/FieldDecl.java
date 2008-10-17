@@ -28,7 +28,7 @@
  * @summary FieldDeclaration tests
  * @library ../../lib
  * @compile -source 1.5 FieldDecl.java
- * @run main FieldDecl
+ * @run main/othervm FieldDecl
  */
 
 

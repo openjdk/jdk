@@ -72,7 +72,8 @@ public class AuthorDD
 
     /** Run javadoc */
     public static void runJavadoc(String[] javadocArgs) {
-        if (com.sun.tools.javadoc.Main.execute(javadocArgs) != 0) {
+        if (com.sun.tools.javadoc.Main.execute(AuthorDD.class.getClassLoader(),
+                                               javadocArgs) != 0) {
             throw new Error("Javadoc failed to execute");
         }
     }

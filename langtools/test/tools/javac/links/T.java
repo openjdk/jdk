@@ -21,12 +21,4 @@
  * have any questions.
  */
 
-/*
- * @test
- * @bug 4266026
- * @summary javac no longer follows symlinks
- *
- * @run shell links.sh
- */
-
 class T extends a.B {}

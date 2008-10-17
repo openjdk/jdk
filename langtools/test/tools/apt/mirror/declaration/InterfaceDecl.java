@@ -28,7 +28,7 @@
  * @summary InterfaceDeclaration tests
  * @library ../../lib
  * @compile -source 1.5 InterfaceDecl.java
- * @run main InterfaceDecl
+ * @run main/othervm InterfaceDecl
  */
 
 

@@ -68,6 +68,7 @@ public class JavacTaskImpl extends JavacTask {
     private JavacTool tool;
     private Main compilerMain;
     private JavaCompiler compiler;
+    private Locale locale;
     private String[] args;
     private Context context;
     private List<JavaFileObject> fileObjects;
@@ -89,6 +90,7 @@ public class JavacTaskImpl extends JavacTask {
         this.args = args;
         this.context = context;
         this.fileObjects = fileObjects;
+        setLocale(Locale.getDefault());
         // null checks
         compilerMain.getClass();
         args.getClass();
@@ -156,9 +158,9 @@ public class JavacTaskImpl extends JavacTask {
     }
 
     public void setLocale(Locale locale) {
-        // locale argument is ignored, see RFE 6443132
         if (used.get())
             throw new IllegalStateException();
+        this.locale = locale;
     }
 
     private void prepareCompiler() throws IOException {
@@ -191,6 +193,8 @@ public class JavacTaskImpl extends JavacTask {
         if (taskListener != null)
             context.put(TaskListener.class, wrap(taskListener));
         tool.beginContext(context);
+        //initialize compiler's default locale
+        JavacMessages.instance(context).setCurrentLocale(locale);
     }
     // where
     private TaskListener wrap(final TaskListener tl) {

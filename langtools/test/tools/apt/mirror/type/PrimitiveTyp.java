@@ -28,7 +28,7 @@
  * @summary PrimitiveType tests
  * @library ../../lib
  * @compile -source 1.5 PrimitiveTyp.java
- * @run main PrimitiveTyp
+ * @run main/othervm PrimitiveTyp
  */
 
 

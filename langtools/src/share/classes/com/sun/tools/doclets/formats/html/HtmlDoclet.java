@@ -41,12 +41,14 @@ import java.io.*;
  *
  */
 public class HtmlDoclet extends AbstractDoclet {
+    public HtmlDoclet() {
+        configuration = (ConfigurationImpl) configuration();
+    }
 
     /**
      * The global configuration information for this run.
      */
-    public ConfigurationImpl configuration =
-        (ConfigurationImpl) configuration();
+    public ConfigurationImpl configuration;
 
     /**
      * The "start" method as required by Javadoc.
@@ -56,8 +58,12 @@ public class HtmlDoclet extends AbstractDoclet {
      * @return true if the doclet ran without encountering any errors.
      */
     public static boolean start(RootDoc root) {
-        HtmlDoclet doclet = new HtmlDoclet();
-        return doclet.start(doclet, root);
+        try {
+            HtmlDoclet doclet = new HtmlDoclet();
+            return doclet.start(doclet, root);
+        } finally {
+            ConfigurationImpl.reset();
+        }
     }
 
     /**

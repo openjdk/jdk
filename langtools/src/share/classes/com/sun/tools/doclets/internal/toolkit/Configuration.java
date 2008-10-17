@@ -113,9 +113,9 @@ public abstract class Configuration {
     public boolean keywords = false;
 
     /**
-     * The meta tag keywords sole-instance.
+     * The meta tag keywords instance.
      */
-    public final MetaKeywords metakeywords = MetaKeywords.getInstance(this);
+    public final MetaKeywords metakeywords = new MetaKeywords(this);
 
     /**
      * The list of doc-file subdirectories to exclude
@@ -211,12 +211,12 @@ public abstract class Configuration {
     public boolean notimestamp= false;
 
     /**
-     * The package grouping sole-instance.
+     * The package grouping instance.
      */
-    public final Group group = Group.getInstance(this);
+    public final Group group = new Group(this);
 
     /**
-     * The tracker of external package links (sole-instance).
+     * The tracker of external package links.
      */
     public final Extern extern = new Extern(this);
 

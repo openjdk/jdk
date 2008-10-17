@@ -25,9 +25,10 @@
 
 package com.sun.tools.javac.parser;
 
-import java.util.ResourceBundle;
+import java.util.Locale;
 
 import com.sun.tools.javac.api.Formattable;
+import com.sun.tools.javac.api.Messages;
 
 /** An interface that defines codes for Java source tokens
  *  returned from lexical analysis.
@@ -191,8 +192,7 @@ public enum Token implements Formattable {
         return "Token";
     }
 
-    public String toString(ResourceBundle bundle) {
-        String s = toString();
-        return s.startsWith("token.") ? bundle.getString("compiler.misc." + s) : s;
+    public String toString(Locale locale, Messages messages) {
+        return name != null ? toString() : messages.getLocalizedString(locale, "compiler.misc." + toString());
     }
 }

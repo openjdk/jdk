@@ -197,6 +197,7 @@ public abstract class JavadocTester {
                 new PrintWriter(warnings, true),
                 new PrintWriter(notices, true),
                 docletClass,
+                getClass().getClassLoader(),
                 args);
         System.setOut(prev);
         standardOut = new StringBuffer(stdout.toString());

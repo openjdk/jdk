@@ -28,7 +28,7 @@
  * @summary AnnotationTypeElementDeclaration tests
  * @library ../../lib
  * @compile -source 1.5 AnnoTypeElemDecl.java
- * @run main AnnoTypeElemDecl
+ * @run main/othervm AnnoTypeElemDecl
  */
 
 

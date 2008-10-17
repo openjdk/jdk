@@ -28,7 +28,7 @@
  * @summary AnnotationType tests
  * @library ../../lib
  * @compile -source 1.5 AnnoTyp.java
- * @run main AnnoTyp
+ * @run main/othervm AnnoTyp
  */
 
 

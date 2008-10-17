@@ -28,7 +28,7 @@
  * @summary EnumType tests
  * @library ../../lib
  * @compile -source 1.5 EnumTyp.java
- * @run main EnumTyp
+ * @run main/othervm EnumTyp
  */
 
 
