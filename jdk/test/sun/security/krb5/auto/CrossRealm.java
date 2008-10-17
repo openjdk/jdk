@@ -1,0 +1,101 @@
+/*
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/*
+ * @test
+ * @bug 6706974
+ * @summary Add krb5 test infrastructure
+ */
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.security.Security;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
+import sun.security.jgss.GSSUtil;
+
+public class CrossRealm implements CallbackHandler {
+    public static void main(String[] args) throws Exception {
+        startKDCs();
+        xRealmAuth();
+    }
+
+    static void startKDCs() throws Exception {
+        // Create and start the KDC
+        KDC kdc1 = KDC.create("RABBIT.HOLE");
+        kdc1.addPrincipal("dummy", "bogus".toCharArray());
+        kdc1.addPrincipalRandKey("krbtgt/RABBIT.HOLE");
+        kdc1.addPrincipal("krbtgt/SNAKE.HOLE", "sharedsec".toCharArray());
+
+        KDC kdc2 = KDC.create("SNAKE.HOLE");
+        kdc2.addPrincipalRandKey("krbtgt/SNAKE.HOLE");
+        kdc2.addPrincipal("krbtgt/RABBIT.HOLE", "sharedsec".toCharArray());
+        kdc2.addPrincipalRandKey("host/www.snake.hole");
+
+        KDC.saveConfig("krb5-localkdc.conf", kdc1, kdc2,
+                "forwardable=true",
+                "[domain_realm]",
+                ".snake.hole=SNAKE.HOLE");
+        System.setProperty("java.security.krb5.conf", "krb5-localkdc.conf");
+    }
+
+    static void xRealmAuth() throws Exception {
+        Security.setProperty("auth.login.defaultCallbackHandler", "CrossRealm");
+        System.setProperty("java.security.auth.login.config", "jaas-localkdc.conf");
+        System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
+        FileOutputStream fos = new FileOutputStream("jaas-localkdc.conf");
+        fos.write(("com.sun.security.jgss.krb5.initiate {\n" +
+                "    com.sun.security.auth.module.Krb5LoginModule\n" +
+                "    required\n" +
+                "    principal=dummy\n" +
+                "    doNotPrompt=false\n" +
+                "    useTicketCache=false\n" +
+                "    ;\n" +
+                "};").getBytes());
+        fos.close();
+
+        GSSManager m = GSSManager.getInstance();
+        m.createContext(
+                m.createName("host@www.snake.hole", GSSName.NT_HOSTBASED_SERVICE),
+                GSSUtil.GSS_KRB5_MECH_OID,
+                null,
+                GSSContext.DEFAULT_LIFETIME).initSecContext(new byte[0], 0, 0);
+    }
+
+    @Override
+    public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+        for (Callback callback : callbacks) {
+            if (callback instanceof NameCallback) {
+                ((NameCallback) callback).setName("dummy");
+            }
+            if (callback instanceof PasswordCallback) {
+                ((PasswordCallback) callback).setPassword("bogus".toCharArray());
+            }
+        }
+    }
+}
