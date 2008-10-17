@@ -741,7 +741,7 @@ public class Resolve {
             while (ct.tag == TYPEVAR)
                 ct = ct.getUpperBound();
             ClassSymbol c = (ClassSymbol)ct.tsym;
-            if ((c.flags() & (ABSTRACT | INTERFACE)) == 0)
+            if ((c.flags() & (ABSTRACT | INTERFACE | ENUM)) == 0)
                 abstractok = false;
             for (Scope.Entry e = c.members().lookup(name);
                  e.scope != null;

@@ -36,7 +36,7 @@ public class MethodLinks extends Doclet
 {
     public static void main(String[] args) {
         if (com.sun.tools.javadoc.Main.
-            execute("javadoc", "MethodLinks",
+            execute("javadoc", "MethodLinks", MethodLinks.class.getClassLoader(),
                     new String[] {System.getProperty("test.src", ".") +
                                   java.io.File.separatorChar + "MethodLinks.java"}
                     ) != 0)

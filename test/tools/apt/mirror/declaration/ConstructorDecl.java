@@ -28,7 +28,7 @@
  * @summary ConstructorDeclaration tests
  * @library ../../lib
  * @compile -source 1.5 ConstructorDecl.java
- * @run main ConstructorDecl
+ * @run main/othervm ConstructorDecl
  */
 
 

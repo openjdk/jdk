@@ -25,75 +25,114 @@
 
 package com.sun.tools.javac.util;
 
+import com.sun.tools.javac.api.Messages;
+import java.lang.ref.SoftReference;
 import java.util.ResourceBundle;
 import java.util.MissingResourceException;
 import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 /**
- *  Support for localized messages.
+ *  Support for formatted localized messages.
  *
  *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
  *  you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class Messages {
-    /** The context key for the Messages object. */
-    protected static final Context.Key<Messages> messagesKey =
-        new Context.Key<Messages>();
+public class JavacMessages implements Messages {
+    /** The context key for the JavacMessages object. */
+    protected static final Context.Key<JavacMessages> messagesKey =
+        new Context.Key<JavacMessages>();
 
-    /** Get the Messages instance for this context. */
-    public static Messages instance(Context context) {
-        Messages instance = context.get(messagesKey);
+    /** Get the JavacMessages instance for this context. */
+    public static JavacMessages instance(Context context) {
+        JavacMessages instance = context.get(messagesKey);
         if (instance == null)
-            instance = new Messages(context);
+            instance = new JavacMessages(context);
         return instance;
     }
 
-    private List<ResourceBundle> bundles = List.nil();
+    private Map<Locale, SoftReference<List<ResourceBundle>>> bundleCache;
 
-    /** Creates a Messages object.
+    private List<String> bundleNames;
+
+    private Locale currentLocale;
+    private List<ResourceBundle> currentBundles;
+
+    public Locale getCurrentLocale() {
+        return currentLocale;
+    }
+
+    public void setCurrentLocale(Locale locale) {
+        if (locale == null) {
+            locale = Locale.getDefault();
+        }
+        this.currentBundles = getBundles(locale);
+        this.currentLocale = locale;
+    }
+
+    /** Creates a JavacMessages object.
      */
-    public Messages(Context context) {
+    public JavacMessages(Context context) {
+        this(defaultBundleName);
         context.put(messagesKey, this);
-        add(getDefaultBundle());
     }
 
-    /** Creates a Messages object.
-     * @param bundle the name to identify the resource buundle of localized messages.
+    /** Creates a JavacMessages object.
+     * @param bundleName the name to identify the resource buundle of localized messages.
      */
-    public Messages(String bundleName) throws MissingResourceException {
+    public JavacMessages(String bundleName) throws MissingResourceException {
+        bundleNames = List.nil();
+        bundleCache = new HashMap<Locale, SoftReference<List<ResourceBundle>>>();
         add(bundleName);
+        setCurrentLocale(Locale.getDefault());
     }
 
-    /** Creates a Messages object.
-     * @param bundle the name to identif the resource buundle of localized messages.
-     */
-    public Messages(ResourceBundle bundle) throws MissingResourceException {
-        add(bundle);
+    public JavacMessages() throws MissingResourceException {
+        this(defaultBundleName);
     }
 
-    /** Add a new resource bundle to the list that is searched for localized messages.
-     * @param bundle the name to identify the resource bundle of localized messages.
-     */
     public void add(String bundleName) throws MissingResourceException {
-        add(ResourceBundle.getBundle(bundleName));
+        bundleNames = bundleNames.prepend(bundleName);
+        if (!bundleCache.isEmpty())
+            bundleCache.clear();
+        currentBundles = null;
     }
 
-    /** Add a new resource bundle to the list that is searched for localized messages.
-     * Resource bundles will be searched in reverse order in which they are added.
-     * @param bundle the bundle of localized messages.
-     */
-    public void add(ResourceBundle bundle) {
-        bundles = bundles.prepend(bundle);
+    public List<ResourceBundle> getBundles(Locale locale) {
+        if (locale == currentLocale && currentBundles != null)
+            return currentBundles;
+        SoftReference<List<ResourceBundle>> bundles = bundleCache.get(locale);
+        List<ResourceBundle> bundleList = bundles == null ? null : bundles.get();
+        if (bundleList == null) {
+            bundleList = List.nil();
+            for (String bundleName : bundleNames) {
+                try {
+                    ResourceBundle rb = ResourceBundle.getBundle(bundleName, locale);
+                    bundleList = bundleList.prepend(rb);
+                } catch (MissingResourceException e) {
+                    throw new InternalError("Cannot find javac resource bundle for locale " + locale);
+                }
+            }
+            bundleCache.put(locale, new SoftReference<List<ResourceBundle>>(bundleList));
+        }
+        return bundleList;
     }
 
     /** Gets the localized string corresponding to a key, formatted with a set of args.
      */
     public String getLocalizedString(String key, Object... args) {
-        return getLocalizedString(bundles, key, args);
+        return getLocalizedString(currentLocale, key, args);
     }
 
+    public String getLocalizedString(Locale l, String key, Object... args) {
+        if (l == null)
+            l = getCurrentLocale();
+        return getLocalizedString(getBundles(l), key, args);
+    }
 
     /* Static access:
      * javac has a firmly entrenched notion of a default message bundle
@@ -104,7 +143,7 @@ public class Messages {
     private static final String defaultBundleName =
         "com.sun.tools.javac.resources.compiler";
     private static ResourceBundle defaultBundle;
-    private static Messages defaultMessages;
+    private static JavacMessages defaultMessages;
 
 
     /**
@@ -116,9 +155,10 @@ public class Messages {
     }
 
     // used to support legacy static Diagnostic.fragment
-    static Messages getDefaultMessages() {
+    @Deprecated
+    static JavacMessages getDefaultMessages() {
         if (defaultMessages == null)
-            defaultMessages = new Messages(getDefaultBundle());
+            defaultMessages = new JavacMessages(defaultBundleName);
         return defaultMessages;
     }
 
@@ -152,6 +192,4 @@ public class Messages {
         }
         return MessageFormat.format(msg, args);
     }
-
-
 }

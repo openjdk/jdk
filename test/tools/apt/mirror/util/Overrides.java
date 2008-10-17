@@ -27,6 +27,7 @@
  * @bug 5037165
  * @summary Test the Declarations.overrides method
  * @library ../../lib
+ * @run main/othervm Overrides
  */
 
 
