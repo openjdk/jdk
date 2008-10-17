@@ -265,12 +265,20 @@ public class EventClient implements EventConsumer, NotificationManager {
             public ScheduledThreadPoolExecutor createThreadPool(ThreadGroup group) {
                 ThreadFactory daemonThreadFactory = new DaemonThreadFactory(
                         "JMX EventClient lease renewer %d");
-                ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(
-                        20, daemonThreadFactory);
-                exec.setKeepAliveTime(1, TimeUnit.SECONDS);
-                exec.allowCoreThreadTimeOut(true);
-                exec.setRemoveOnCancelPolicy(true);
-                return exec;
+                ScheduledThreadPoolExecutor executor =
+                        new ScheduledThreadPoolExecutor(20, daemonThreadFactory);
+                executor.setKeepAliveTime(1, TimeUnit.SECONDS);
+                executor.allowCoreThreadTimeOut(true);
+                executor.setRemoveOnCancelPolicy(true);
+                // By default, a ScheduledThreadPoolExecutor will keep jobs
+                // in its queue even after they have been cancelled.  They
+                // will only be removed when their scheduled time arrives.
+                // Since the job references the LeaseRenewer which references
+                // this EventClient, this can lead to a moderately large number
+                // of objects remaining referenced until the renewal time
+                // arrives.  Hence the above call, which removes the job from
+                // the queue as soon as it is cancelled.
+                return executor;
             }
         };
         return leaseRenewerThreadPool.getThreadPoolExecutor(create);
@@ -381,7 +389,7 @@ public class EventClient implements EventConsumer, NotificationManager {
             listenerId =
                     eventClientDelegate.addListener(clientId, name, filter);
         } catch (EventClientNotFoundException ecnfe) {
-            final IOException ioe = new IOException();
+            final IOException ioe = new IOException(ecnfe.getMessage());
             ioe.initCause(ecnfe);
             throw ioe;
         }
@@ -488,7 +496,7 @@ public class EventClient implements EventConsumer, NotificationManager {
             listenerId =
                     eventClientDelegate.addSubscriber(clientId, name, filter);
         } catch (EventClientNotFoundException ecnfe) {
-            final IOException ioe = new IOException();
+            final IOException ioe = new IOException(ecnfe.getMessage());
             ioe.initCause(ecnfe);
             throw ioe;
         }
