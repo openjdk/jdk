@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,14 +46,13 @@
 
 #include "unpack.h"
 
-void* must_malloc(int size) {
-  int msize = size;
-  assert(size >= 0);
+void* must_malloc(size_t size) {
+  size_t msize = size;
   #ifdef USE_MTRACE
-  if (msize < sizeof(int))
+  if (msize >= 0 && msize < sizeof(int))
     msize = sizeof(int);  // see 0xbaadf00d below
   #endif
-  void* ptr = malloc(msize);
+  void* ptr = (msize > PSIZE_MAX) ? null : malloc(msize);
   if (ptr != null) {
     memset(ptr, 0, size);
   } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -618,16 +618,15 @@ void unpacker::read_file_header() {
   if ((archive_options & AO_HAVE_FILE_HEADERS) != 0) {
     uint hi = hdr.getInt();
     uint lo = hdr.getInt();
-    archive_size = band::makeLong(hi, lo);
+    julong x = band::makeLong(hi, lo);
+    archive_size = (size_t) x;
+    if (archive_size != x) {
+      // Silly size specified; force overflow.
+      archive_size = PSIZE_MAX+1;
+    }
     hdrVals += 2;
   } else {
     hdrValsSkipped += 2;
-  }
-
-  if (archive_size != (size_t)archive_size) {
-    // Silly size specified.
-    abort("archive too large");
-    return;
   }
 
   // Now we can size the whole archive.
@@ -643,8 +642,8 @@ void unpacker::read_file_header() {
       abort("EOF reading fixed input buffer");
       return;
     }
-  } else if (archive_size > 0) {
-    input.set(U_NEW(byte, (size_t) header_size_0 + archive_size + C_SLOP),
+  } else if (archive_size != 0) {
+    input.set(U_NEW(byte, add_size(header_size_0, archive_size, C_SLOP)),
               (size_t) header_size_0 + archive_size);
     assert(input.limit()[0] == 0);
     // Move all the bytes we read initially into the real buffer.
@@ -654,7 +653,6 @@ void unpacker::read_file_header() {
   } else {
     // It's more complicated and painful.
     // A zero archive_size means that we must read until EOF.
-    assert(archive_size == 0);
     input.init(CHUNK*2);
     CHECK;
     input.b.len = input.allocated;
@@ -664,7 +662,7 @@ void unpacker::read_file_header() {
     rplimit += header_size;
     while (ensure_input(input.limit() - rp)) {
       size_t dataSoFar = input_remaining();
-      size_t nextSize = dataSoFar + CHUNK;
+      size_t nextSize = add_size(dataSoFar, CHUNK);
       input.ensureSize(nextSize);
       CHECK;
       input.b.len = input.allocated;
@@ -949,10 +947,12 @@ void unpacker::read_Utf8_values(entry* cpMap, int len) {
   // First band:  Read lengths of shared prefixes.
   if (len > PREFIX_SKIP_2)
     cp_Utf8_prefix.readData(len - PREFIX_SKIP_2);
+    NOT_PRODUCT(else cp_Utf8_prefix.readData(0));  // for asserts
 
   // Second band:  Read lengths of unshared suffixes:
   if (len > SUFFIX_SKIP_1)
     cp_Utf8_suffix.readData(len - SUFFIX_SKIP_1);
+    NOT_PRODUCT(else cp_Utf8_suffix.readData(0));  // for asserts
 
   bytes* allsuffixes = T_NEW(bytes, len);
   CHECK;
