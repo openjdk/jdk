@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,7 @@ struct unpacker {
 
   // archive header fields
   int      magic, minver, majver;
-  julong   archive_size;
+  size_t   archive_size;
   int      archive_next_count, archive_options, archive_modtime;
   int      band_headers_size;
   int      file_count, attr_definition_count, ic_count, class_count;

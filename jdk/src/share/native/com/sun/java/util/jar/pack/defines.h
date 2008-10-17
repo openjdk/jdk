@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,13 @@
 #define NOT_PRODUCT(xxx)
 #define assert(p) (0)
 #define printcr false &&
+#define VERSION_STRING "%s version %s\n"
 #else
 #define IF_PRODUCT(xxx)
 #define NOT_PRODUCT(xxx) xxx
 #define assert(p) ((p) || (assert_failed(#p), 1))
 #define printcr u->verbose && u->printcr_if_verbose
+#define VERSION_STRING "%s version non-product %s\n"
 extern "C" void breakpoint();
 extern void assert_failed(const char*);
 #define BREAK (breakpoint())
@@ -79,9 +81,9 @@ extern void assert_failed(const char*);
 
 #define lengthof(array) (sizeof(array)/sizeof(array[0]))
 
-#define NEW(T, n)    (T*) must_malloc(sizeof(T)*(n))
-#define U_NEW(T, n)  (T*) u->alloc(sizeof(T)*(n))
-#define T_NEW(T, n)  (T*) u->temp_alloc(sizeof(T)*(n))
+#define NEW(T, n)    (T*) must_malloc(scale_size(n, sizeof(T)))
+#define U_NEW(T, n)  (T*) u->alloc(scale_size(n, sizeof(T)))
+#define T_NEW(T, n)  (T*) u->temp_alloc(scale_size(n, sizeof(T)))
 
 
 // bytes and byte arrays

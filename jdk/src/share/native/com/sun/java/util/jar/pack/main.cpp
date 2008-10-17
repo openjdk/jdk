@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,7 +300,7 @@ int unpacker::run(int argc, char **argv) {
     case 'J':  argp += 1; break;  // skip ignored -Jxxx parameter
 
     case 'V':
-      fprintf(u.errstrm, "%s version %s\n", nbasename(argv[0]), sccsver);
+      fprintf(u.errstrm, VERSION_STRING, nbasename(argv[0]), sccsver);
       exit(0);
 
     case 'h':

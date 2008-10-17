@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ void bytes::realloc(size_t len_) {
     return;
   }
   byte* oldptr = ptr;
-  ptr = (byte*)::realloc(ptr, len_+1);
+  ptr = (len_ >= PSIZE_MAX) ? null : (byte*)::realloc(ptr, len_+1);
   if (ptr != null)  {
     mtrace('r', oldptr, 0);
     mtrace('m', ptr, len_+1);
@@ -126,7 +126,7 @@ const char* bytes::string() {
 // Make sure there are 'o' bytes beyond the fill pointer,
 // advance the fill pointer, and return the old fill pointer.
 byte* fillbytes::grow(size_t s) {
-  size_t nlen = b.len+s;
+  size_t nlen = add_size(b.len, s);
   if (nlen <= allocated) {
     b.len = nlen;
     return limit()-s;
