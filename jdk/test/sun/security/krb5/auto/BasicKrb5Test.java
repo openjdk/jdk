@@ -49,14 +49,17 @@ public class BasicKrb5Test {
         if (args.length > 0) {
             etype = args[0];
         }
+
+        // Creates and starts the KDC. This line must be put ahead of etype check
+        // since the check needs a krb5.conf.
+        new OneKDC(etype).writeJAASConf();
+
         System.out.println("Testing etype " + etype);
         if (etype != null && !EType.isSupported(Config.getInstance().getType(etype))) {
             System.out.println("Not supported.");
             System.exit(0);
         }
 
-        // Creates and starts the KDC
-        new OneKDC(etype).writeJAASConf();
         new BasicKrb5Test().go(OneKDC.SERVER, OneKDC.BACKEND);
     }
 

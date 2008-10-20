@@ -152,12 +152,19 @@ public class KDC {
                 return;
             }
         }
+        String localhost = "localhost";
+        try {
+            localhost = InetAddress.getByName(localhost)
+                    .getCanonicalHostName();
+        } catch (UnknownHostException uhe) {
+            ;   // Ignore, localhost is still "localhost"
+        }
         KDC kdc = create("RABBIT.HOLE", 8888, false);
         kdc.addPrincipal("dummy", "bogus".toCharArray());
         kdc.addPrincipal("foo", "bar".toCharArray());
         kdc.addPrincipalRandKey("krbtgt/" + kdc.realm);
-        kdc.addPrincipalRandKey("server/localhost");
-        kdc.addPrincipalRandKey("backend/localhost");
+        kdc.addPrincipalRandKey("server/" + localhost);
+        kdc.addPrincipalRandKey("backend/" + localhost);
     }
 
     /**
