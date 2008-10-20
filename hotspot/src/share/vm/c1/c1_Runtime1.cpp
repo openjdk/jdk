@@ -336,21 +336,6 @@ JRT_ENTRY(void, Runtime1::new_multi_array(JavaThread* thread, klassOopDesc* klas
 
   assert(oop(klass)->is_klass(), "not a class");
   assert(rank >= 1, "rank must be nonzero");
-#ifdef _LP64
-// In 64 bit mode, the sizes are stored in the top 32 bits
-// of each 64 bit stack entry.
-// dims is actually an intptr_t * because the arguments
-// are pushed onto a 64 bit stack.
-// We must create an array of jints to pass to multi_allocate.
-// We reuse the current stack because it will be popped
-// after this bytecode is completed.
-  if ( rank > 1 ) {
-    int index;
-    for ( index = 1; index < rank; index++ ) {  // First size is ok
-        dims[index] = dims[index*2];
-    }
-  }
-#endif
   oop obj = arrayKlass::cast(klass)->multi_allocate(rank, dims, CHECK);
   thread->set_vm_result(obj);
 JRT_END

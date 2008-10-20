@@ -22,7 +22,7 @@
  */
 
 /* @test %M% %I%
- * @bug 6562936
+ * @bug 6562936 6750935
  * @run compile customtypes/package-info.java
  * @run main CustomTypeTest
  */
@@ -342,6 +342,38 @@ public class CustomTypeTest {
         }
     }
 
+    public static class BadConstructorMXBeanMappingFactory1 extends
+            MXBeanMappingFactory {
+        private BadConstructorMXBeanMappingFactory1() {}
+
+        @Override
+        public MXBeanMapping mappingForType(Type arg0, MXBeanMappingFactory arg1)
+                throws OpenDataException {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+    }
+
+    public static class BadConstructorMXBeanMappingFactory2 extends
+            MXBeanMappingFactory {
+        public BadConstructorMXBeanMappingFactory2(boolean oops) {}
+
+        @Override
+        public MXBeanMapping mappingForType(Type arg0, MXBeanMappingFactory arg1)
+                throws OpenDataException {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+    }
+
+    @MXBeanMappingFactoryClass(BadConstructorMXBeanMappingFactory1.class)
+    public static interface BadConstructor1MXBean {}
+
+    public static class BadConstructor1 implements BadConstructor1MXBean {}
+
+    @MXBeanMappingFactoryClass(BadConstructorMXBeanMappingFactory2.class)
+    public static interface BadConstructor2MXBean {}
+
+    public static class BadConstructor2 implements BadConstructor2MXBean {}
+
     public static void main(String[] args) throws Exception {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 
@@ -407,8 +439,10 @@ public class CustomTypeTest {
         try {
             mbs.registerMBean(new ReallyBrokenImpl(), new ObjectName("d:type=Broken"));
             fail("Register did not throw exception");
-        } catch (IllegalArgumentException e) {
+        } catch (NotCompliantMBeanException e) {
             System.out.println("...OK: threw: " + e);
+        } catch (Exception e) {
+            fail("Register threw wrong exception: " + e);
         }
 
         System.out.println("Test MXBeanMappingFactory exception with StandardMBean");
@@ -431,6 +465,24 @@ public class CustomTypeTest {
             fail("Broken MXBeanMappingClass did not throw exception");
         } catch (NotCompliantMBeanException e) {
             System.out.println("...OK: threw: " + e);
+        }
+
+        System.out.println("Test MXBeanMappingFactoryClass constructor exception");
+        for (Object mbean : new Object[] {
+            new BadConstructor1(), new BadConstructor2(),
+        }) {
+            String testName = mbean.getClass().getSimpleName();
+            try {
+                ObjectName name = new ObjectName("d:type=" + testName);
+                mbs.registerMBean(mbean, name);
+                fail("Broken MXBeanMappingFactoryClass did not throw exception" +
+                        " (" + testName + ")");
+            } catch (NotCompliantMBeanException e) {
+                System.out.println("...OK: " + testName + " threw: " + e);
+            } catch (Exception e) {
+                fail("Broken MXBeanMappingFactoryClass " + testName + " threw " +
+                        "wrong exception: " + e);
+            }
         }
 
         if (failure == null)

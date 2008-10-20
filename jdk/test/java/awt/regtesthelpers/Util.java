@@ -124,6 +124,14 @@ public final class Util {
     }
 
     /**
+     * Makes the window visible and waits until it's shown.
+     */
+    public static void showWindowWait(Window win) {
+        win.setVisible(true);
+        waitTillShown(win);
+    }
+
+    /**
      * Moves mouse pointer in the center of given {@code comp} component
      * using {@code robot} parameter.
      */
@@ -573,5 +581,23 @@ public final class Util {
      */
     public static boolean trackActionPerformed(Button button, Runnable action, int time, boolean printEvent) {
         return trackEvent(ActionEvent.ACTION_PERFORMED, button, action, time, printEvent);
+    }
+
+    /*
+     * Requests focus on the component provided and waits for the result.
+     * @return true if the component has been focused, false otherwise.
+     */
+    public static boolean focusComponent(Component comp, int time) {
+        return focusComponent(comp, time, false);
+    }
+    public static boolean focusComponent(final Component comp, int time, boolean printEvent) {
+        return trackFocusGained(comp,
+                                new Runnable() {
+                                    public void run() {
+                                        comp.requestFocus();
+                                    }
+                                },
+                                time, printEvent);
+
     }
 }

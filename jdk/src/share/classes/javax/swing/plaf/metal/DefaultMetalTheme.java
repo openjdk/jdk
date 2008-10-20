@@ -387,9 +387,9 @@ public class DefaultMetalTheme extends MetalTheme {
          * that it is wrapped inside a <code>doPrivileged</code> call.
          */
         protected Font getPrivilegedFont(final int key) {
-            return (Font)java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
-                    public Object run() {
+            return java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<Font>() {
+                    public Font run() {
                         return Font.getFont(getDefaultPropertyName(key));
                     }
                 }

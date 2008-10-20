@@ -56,7 +56,6 @@ public class EncryptedKeyResolver extends KeyResolverSpi {
                         RSAKeyValueResolver.class.getName());
 
 
-        Key _key;
         Key _kek;
         String _algorithm;
 
@@ -66,7 +65,6 @@ public class EncryptedKeyResolver extends KeyResolverSpi {
          * @param algorithm
          */
         public EncryptedKeyResolver(String algorithm) {
-                _key = null;
                 _kek = null;
         _algorithm=algorithm;
         }
@@ -78,64 +76,49 @@ public class EncryptedKeyResolver extends KeyResolverSpi {
          */
 
         public EncryptedKeyResolver(String algorithm, Key kek) {
-                _key = null;
                 _algorithm = algorithm;
                 _kek = kek;
 
         }
 
-        /**
-         * Method engineCanResolve
-         *
-         * @param element
-         * @param BaseURI
-         * @param storage
-         * @return true if can resolve the key in the element
-         *
-         */
-
-        public boolean engineCanResolve(Element element, String BaseURI,
-                                   StorageResolver storage) {
-          if (true)
-                if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "EncryptedKeyResolver - Can I resolve " + element.getTagName());
-
-      if (element == null) {
-         return false;
-      }
-
-      boolean isEncryptedKey = XMLUtils.elementIsInEncryptionSpace(element,
-                              EncryptionConstants._TAG_ENCRYPTEDKEY);
-
-      if (isEncryptedKey) {
-                  if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Passed an Encrypted Key");
-                  try {
-                          XMLCipher cipher = XMLCipher.getInstance();
-                          cipher.init(XMLCipher.UNWRAP_MODE, _kek);
-                          EncryptedKey ek = cipher.loadEncryptedKey(element);
-                          _key = cipher.decryptKey(ek, _algorithm);
-                  }
-                  catch (Exception e) {}
-      }
-
-      return (_key != null);
-   }
-
     /** @inheritDoc */
-   public PublicKey engineResolvePublicKey(
+   public PublicKey engineLookupAndResolvePublicKey(
            Element element, String BaseURI, StorageResolver storage) {
 
            return null;
    }
 
    /** @inheritDoc */
-   public X509Certificate engineResolveX509Certificate(
+   public X509Certificate engineLookupResolveX509Certificate(
            Element element, String BaseURI, StorageResolver storage) {
       return null;
    }
 
    /** @inheritDoc */
-   public javax.crypto.SecretKey engineResolveSecretKey(
+   public javax.crypto.SecretKey engineLookupAndResolveSecretKey(
            Element element, String BaseURI, StorageResolver storage) {
-      return (SecretKey) _key;
+           SecretKey key=null;
+           if (log.isLoggable(java.util.logging.Level.FINE))
+                        log.log(java.util.logging.Level.FINE, "EncryptedKeyResolver - Can I resolve " + element.getTagName());
+
+              if (element == null) {
+                 return null;
+              }
+
+              boolean isEncryptedKey = XMLUtils.elementIsInEncryptionSpace(element,
+                                      EncryptionConstants._TAG_ENCRYPTEDKEY);
+
+              if (isEncryptedKey) {
+                          log.log(java.util.logging.Level.FINE, "Passed an Encrypted Key");
+                          try {
+                                  XMLCipher cipher = XMLCipher.getInstance();
+                                  cipher.init(XMLCipher.UNWRAP_MODE, _kek);
+                                  EncryptedKey ek = cipher.loadEncryptedKey(element);
+                                  key = (SecretKey) cipher.decryptKey(ek, _algorithm);
+                          }
+                          catch (Exception e) {}
+              }
+
+      return key;
    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import sun.awt.AppContext;
 import sun.awt.AWTAutoShutdown;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
+import sun.awt.EventQueueItem;
 
 /**
  * <code>EventQueue</code> is a platform-independent class
@@ -359,7 +360,7 @@ public class EventQueue {
             entry != null; entry = entry.next)
         {
             // Give Component.coalesceEvents a chance
-            if (entry.event.getSource() == source && entry.id == id) {
+            if (entry.event.getSource() == source && entry.event.getID() == id) {
                 AWTEvent coalescedEvent = source.coalesceEvents(
                     entry.event, e);
                 if (coalescedEvent != null) {
@@ -499,7 +500,7 @@ public class EventQueue {
                     for (EventQueueItem entry = queues[i].head, prev = null;
                          entry != null; prev = entry, entry = entry.next)
                     {
-                        if (entry.id == id) {
+                        if (entry.event.getID() == id) {
                             if (prev == null) {
                                 queues[i].head = entry.next;
                             } else {
@@ -545,7 +546,7 @@ public class EventQueue {
         for (int i = NUM_PRIORITIES - 1; i >= 0; i--) {
             EventQueueItem q = queues[i].head;
             for (; q != null; q = q.next) {
-                if (q.id == id) {
+                if (q.event.getID() == id) {
                     return q.event;
                 }
             }
@@ -1050,15 +1051,4 @@ public class EventQueue {
 class Queue {
     EventQueueItem head;
     EventQueueItem tail;
-}
-
-class EventQueueItem {
-    AWTEvent event;
-    int      id;
-    EventQueueItem next;
-
-    EventQueueItem(AWTEvent evt) {
-        event = evt;
-        id = evt.getID();
-    }
 }

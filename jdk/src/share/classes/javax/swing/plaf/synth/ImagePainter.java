@@ -66,7 +66,7 @@ class ImagePainter extends SynthPainter {
             Paint9Painter painter;
             if (cacheRef == null || (painter = cacheRef.get()) == null) {
                 painter = new Paint9Painter(30);
-                cacheRef = new WeakReference(painter);
+                cacheRef = new WeakReference<Paint9Painter>(painter);
                 AppContext.getAppContext().put(CACHE_KEY, cacheRef);
             }
             return painter;

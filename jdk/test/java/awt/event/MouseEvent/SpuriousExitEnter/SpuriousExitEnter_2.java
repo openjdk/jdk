@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public class SpuriousExitEnter_2 {
         Sysout.printInstructions( instructions );
         Sysout.enableNumbering(true);
 
-        MouseAdapter enterExitAdapter = new MouseAdapter {
+        MouseAdapter enterExitAdapter = new MouseAdapter() {
                 public void mouseEntered(MouseEvent e){
                     Sysout.println("Entered on " + e.getSource().getClass().getName());
                 }

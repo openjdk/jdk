@@ -461,7 +461,7 @@ public class SwingUtilities2 {
             return clipString;
         }
 
-        boolean needsTextLayout = false;
+        boolean needsTextLayout;
 
         synchronized (charsBufferLock) {
             if (charsBuffer == null || charsBuffer.length < stringLength) {
@@ -716,11 +716,8 @@ public class SwingUtilities2 {
         // See if coords are inside
         // ASSUME: mouse x,y will never be < cell's x,y
         assert (p.x >= cellBounds.x && p.y >= cellBounds.y);
-        if (p.x > cellBounds.x + cellBounds.width ||
-                p.y > cellBounds.y + cellBounds.height) {
-            return true;
-        }
-        return false;
+        return p.x > cellBounds.x + cellBounds.width ||
+                p.y > cellBounds.y + cellBounds.height;
     }
 
     /**
@@ -1240,12 +1237,11 @@ public class SwingUtilities2 {
     private static synchronized boolean inputEvent_canAccessSystemClipboard(InputEvent ie) {
         if (inputEvent_CanAccessSystemClipboard_Field == null) {
             inputEvent_CanAccessSystemClipboard_Field =
-                (Field)AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                        public Object run() {
-                            Field field = null;
+                AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<Field>() {
+                        public Field run() {
                             try {
-                                field = InputEvent.class.
+                                Field field = InputEvent.class.
                                     getDeclaredField("canAccessSystemClipboard");
                                 field.setAccessible(true);
                                 return field;
@@ -1420,10 +1416,10 @@ public class SwingUtilities2 {
                  * Class.getResourceAsStream just returns raw
                  * bytes, which we can convert to an image.
                  */
-                byte[] buffer = (byte[])
+                byte[] buffer =
                     java.security.AccessController.doPrivileged(
-                        new java.security.PrivilegedAction() {
-                    public Object run() {
+                        new java.security.PrivilegedAction<byte[]>() {
+                    public byte[] run() {
                         try {
                             InputStream resource = null;
                             Class<?> srchClass = baseClass;

@@ -1,3 +1,27 @@
+#
+# Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
 
 SUNWprivate_1.1 {
 	global:
@@ -18,6 +42,8 @@ SUNWprivate_1.1 {
 		Java_sun_nio_ch_EPollArrayWrapper_fdLimit;
 		Java_sun_nio_ch_EPollArrayWrapper_init;
 		Java_sun_nio_ch_EPollArrayWrapper_interrupt;
+		Java_sun_nio_ch_EPollArrayWrapper_offsetofData;
+		Java_sun_nio_ch_EPollArrayWrapper_sizeofEPollEvent;
                 Java_sun_nio_ch_FileChannelImpl_close0;
                 Java_sun_nio_ch_FileChannelImpl_force0;
                 Java_sun_nio_ch_FileChannelImpl_initIDs;
@@ -59,20 +85,29 @@ SUNWprivate_1.1 {
 		Java_sun_nio_ch_NativeThread_init;
 		Java_sun_nio_ch_NativeThread_signal;
 		Java_sun_nio_ch_Net_socket0;
-		Java_sun_nio_ch_Net_bind;
-		Java_sun_nio_ch_Net_connect;
+		Java_sun_nio_ch_Net_bind0;
+		Java_sun_nio_ch_Net_connect0;
+		Java_sun_nio_ch_Net_listen;
 		Java_sun_nio_ch_Net_localPort;
 		Java_sun_nio_ch_Net_localInetAddress;
 		Java_sun_nio_ch_Net_getIntOption0;
 		Java_sun_nio_ch_Net_setIntOption0;
                 Java_sun_nio_ch_Net_initIDs;
+		Java_sun_nio_ch_Net_isIPv6Available0;
+		Java_sun_nio_ch_Net_joinOrDrop4;
+		Java_sun_nio_ch_Net_blockOrUnblock4;
+		Java_sun_nio_ch_Net_joinOrDrop6;
+		Java_sun_nio_ch_Net_blockOrUnblock6;
+		Java_sun_nio_ch_Net_setInterface4;
+		Java_sun_nio_ch_Net_getInterface4;
+		Java_sun_nio_ch_Net_setInterface6;
+		Java_sun_nio_ch_Net_getInterface6;
+		Java_sun_nio_ch_Net_shutdown;
                 Java_sun_nio_ch_PollArrayWrapper_interrupt;
                 Java_sun_nio_ch_PollArrayWrapper_poll0;
                 Java_sun_nio_ch_ServerSocketChannelImpl_accept0;
                 Java_sun_nio_ch_ServerSocketChannelImpl_initIDs;
-		Java_sun_nio_ch_ServerSocketChannelImpl_listen;
                 Java_sun_nio_ch_SocketChannelImpl_checkConnect;
-		Java_sun_nio_ch_SocketChannelImpl_shutdown;
 
 	local:
 		*;

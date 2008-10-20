@@ -25,6 +25,9 @@
 
 package javax.management.remote.rmi;
 
+import com.sun.jmx.event.DaemonThreadFactory;
+import com.sun.jmx.event.EventConnection;
+import com.sun.jmx.mbeanserver.PerThreadGroupPool;
 import com.sun.jmx.remote.internal.ClientCommunicatorAdmin;
 import com.sun.jmx.remote.internal.ClientListenerInfo;
 import com.sun.jmx.remote.internal.ClientNotifForwarder;
@@ -68,6 +71,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.AttributeNotFoundException;
@@ -75,6 +84,7 @@ import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.IntrospectionException;
 import javax.management.InvalidAttributeValueException;
+import javax.management.JMX;
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanException;
 import javax.management.MBeanInfo;
@@ -92,6 +102,8 @@ import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import javax.management.QueryExp;
 import javax.management.ReflectionException;
+import javax.management.event.EventClient;
+import javax.management.event.EventClientDelegateMBean;
 import javax.management.remote.JMXConnectionNotification;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
@@ -280,8 +292,8 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             // client-side environment property is set to "true".
             //
             boolean checkStub = EnvHelp.computeBooleanFromString(
-                usemap,
-                "jmx.remote.x.check.stub");
+                    usemap,
+                    "jmx.remote.x.check.stub",false);
             if (checkStub) checkStub(stub, rmiServerImplStubClass);
 
             // Connect IIOP Stub if needed.
@@ -318,6 +330,8 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             //
             connectionId = getConnectionId();
 
+            eventServiceEnabled = EnvHelp.eventServiceEnabled(env);
+
             Notification connectedNotif =
                 new JMXConnectionNotification(JMXConnectionNotification.OPENED,
                                               this,
@@ -326,6 +340,8 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                                               "Successful connection",
                                               null);
             sendNotification(connectedNotif);
+
+            // whether or not event service
 
             if (tracing) logger.trace("connect",idstr + " done...");
         } catch (IOException e) {
@@ -378,13 +394,42 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             throw new IOException("Not connected");
         }
 
-        MBeanServerConnection mbsc = rmbscMap.get(delegationSubject);
-        if (mbsc != null)
-            return mbsc;
+        MBeanServerConnection rmbsc = rmbscMap.get(delegationSubject);
+        if (rmbsc != null) {
+            return rmbsc;
+        }
 
-        mbsc = new RemoteMBeanServerConnection(delegationSubject);
-        rmbscMap.put(delegationSubject, mbsc);
-        return mbsc;
+        rmbsc = new RemoteMBeanServerConnection(delegationSubject);
+        if (eventServiceEnabled) {
+            EventClientDelegateMBean ecd = JMX.newMBeanProxy(
+                    rmbsc, EventClientDelegateMBean.OBJECT_NAME,
+                    EventClientDelegateMBean.class);
+            EventClient ec = new EventClient(ecd, null, defaultExecutor(), null,
+                    EventClient.DEFAULT_LEASE_TIMEOUT);
+
+            rmbsc = EventConnection.Factory.make(rmbsc, ec);
+            ec.addEventClientListener(
+                    lostNotifListener, null, null);
+        }
+        rmbscMap.put(delegationSubject, rmbsc);
+        return rmbsc;
+    }
+
+    private static Executor defaultExecutor() {
+        PerThreadGroupPool.Create<ThreadPoolExecutor> create =
+                new PerThreadGroupPool.Create<ThreadPoolExecutor>() {
+            public ThreadPoolExecutor createThreadPool(ThreadGroup group) {
+                ThreadFactory daemonThreadFactory = new DaemonThreadFactory(
+                        "JMX RMIConnector listener dispatch %d");
+                ThreadPoolExecutor exec = new ThreadPoolExecutor(
+                        1, 10, 1, TimeUnit.SECONDS,
+                        new LinkedBlockingDeque<Runnable>(),
+                        daemonThreadFactory);
+                exec.allowCoreThreadTimeOut(true);
+                return exec;
+            }
+        };
+        return listenerDispatchThreadPool.getThreadPoolExecutor(create);
     }
 
     public void
@@ -464,6 +509,17 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
         if (communicatorAdmin != null) {
             communicatorAdmin.terminate();
+        }
+
+        // close all EventClient
+        for (MBeanServerConnection rmbsc : rmbscMap.values()) {
+            if (rmbsc instanceof EventConnection) {
+                try {
+                    ((EventConnection)rmbsc).getEventClient().close();
+                } catch (Exception e) {
+                    // OK
+                }
+            }
         }
 
         if (rmiNotifClient != null) {
@@ -592,17 +648,18 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         }
 
         if (debug) logger.debug("addListenersWithSubjects","registered "
-                                + listenerIDs.length + " listener(s)");
+                + ((listenerIDs==null)?0:listenerIDs.length)
+                + " listener(s)");
         return listenerIDs;
     }
 
     //--------------------------------------------------------------------
     // Implementation of MBeanServerConnection
     //--------------------------------------------------------------------
-    private class RemoteMBeanServerConnection
-        implements MBeanServerConnection {
-
+    private class RemoteMBeanServerConnection implements MBeanServerConnection {
         private Subject delegationSubject;
+
+        public EventClient eventClient = null;
 
         public RemoteMBeanServerConnection() {
             this(null);
@@ -1205,6 +1262,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                        IOException {
 
             final boolean debug = logger.debugOn();
+
             if (debug)
                 logger.debug("addNotificationListener" +
                              "(ObjectName,NotificationListener,"+
@@ -1226,8 +1284,9 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         public void removeNotificationListener(ObjectName name,
                                                NotificationListener listener)
                 throws InstanceNotFoundException,
-                       ListenerNotFoundException,
-                       IOException {
+                ListenerNotFoundException,
+                IOException {
+
             final boolean debug = logger.debugOn();
 
             if (debug) logger.debug("removeNotificationListener"+
@@ -1804,6 +1863,26 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         terminated = false;
 
         connectionBroadcaster = new NotificationBroadcasterSupport();
+
+        lostNotifListener =
+                new NotificationListener() {
+            public void handleNotification(Notification n, Object hb) {
+                if (n != null && EventClient.NOTIFS_LOST.equals(n.getType())) {
+                    Long lost = (Long)n.getUserData();
+                    final String msg =
+                            "May have lost up to " + lost +
+                            " notification" + (lost.longValue() == 1 ? "" : "s");
+                    sendNotification(new JMXConnectionNotification(
+                            JMXConnectionNotification.NOTIFS_LOST,
+                            RMIConnector.this,
+                            connectionId,
+                            clientNotifCounter++,
+                            msg,
+                            lost));
+
+                }
+            }
+        };
     }
 
     //--------------------------------------------------------------------
@@ -2528,6 +2607,11 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
     private transient ClientCommunicatorAdmin communicatorAdmin;
 
+    private boolean eventServiceEnabled;
+//    private transient EventRelay eventRelay;
+
+    private transient NotificationListener lostNotifListener;
+
     /**
      * A static WeakReference to an {@link org.omg.CORBA.ORB ORB} to
      * connect unconnected stubs.
@@ -2546,4 +2630,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     private static String strings(final String[] strs) {
         return objects(strs);
     }
+
+    private static final PerThreadGroupPool<ThreadPoolExecutor> listenerDispatchThreadPool =
+            PerThreadGroupPool.make();
 }

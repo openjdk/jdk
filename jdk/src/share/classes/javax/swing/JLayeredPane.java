@@ -191,7 +191,7 @@ public class JLayeredPane extends JComponent implements Accessible {
     private void validateOptimizedDrawing() {
         boolean layeredComponentFound = false;
         synchronized(getTreeLock()) {
-            Integer layer = null;
+            Integer layer;
 
             for (Component c : getComponents()) {
                 layer = null;
@@ -213,7 +213,7 @@ public class JLayeredPane extends JComponent implements Accessible {
     }
 
     protected void addImpl(Component comp, Object constraints, int index) {
-        int layer = DEFAULT_LAYER.intValue();
+        int layer;
         int pos;
 
         if(constraints instanceof Integer) {
@@ -364,7 +364,7 @@ public class JLayeredPane extends JComponent implements Accessible {
         if(c instanceof JComponent)
             ((JComponent)c).putClientProperty(LAYER_PROPERTY, layerObj);
         else
-            getComponentToLayer().put((Component)c, layerObj);
+            getComponentToLayer().put(c, layerObj);
 
         if(c.getParent() == null || c.getParent() != this) {
             repaint(c.getBounds());
@@ -388,7 +388,7 @@ public class JLayeredPane extends JComponent implements Accessible {
         if(c instanceof JComponent)
             i = (Integer)((JComponent)c).getClientProperty(LAYER_PROPERTY);
         else
-            i = (Integer)getComponentToLayer().get((Component)c);
+            i = getComponentToLayer().get(c);
 
         if(i == null)
             return DEFAULT_LAYER.intValue();
@@ -465,9 +465,9 @@ public class JLayeredPane extends JComponent implements Accessible {
      * @see #getComponentCountInLayer
      */
     public int getPosition(Component c) {
-        int i, count, startLayer, curLayer, startLocation, pos = 0;
+        int i, startLayer, curLayer, startLocation, pos = 0;
 
-        count = getComponentCount();
+        getComponentCount();
         startLocation = getIndexOf(c);
 
         if(startLocation == -1)

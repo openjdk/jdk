@@ -319,8 +319,7 @@ public class JEditorPane extends JTextComponent {
      * @since 1.4
      */
     public synchronized HyperlinkListener[] getHyperlinkListeners() {
-        return (HyperlinkListener[])listenerList.getListeners(
-                HyperlinkListener.class);
+        return listenerList.getListeners(javax.swing.event.HyperlinkListener.class);
     }
 
     /**
@@ -492,8 +491,8 @@ public class JEditorPane extends JTextComponent {
         if (pageProperties != null) {
             // transfer properties discovered in stream to the
             // document property collection.
-            for (Enumeration e = pageProperties.keys(); e.hasMoreElements() ;) {
-                Object key = e.nextElement();
+            for (Enumeration<String> e = pageProperties.keys(); e.hasMoreElements() ;) {
+                String key = e.nextElement();
                 doc.putProperty(key, pageProperties.get(key));
             }
             pageProperties.clear();
@@ -775,7 +774,7 @@ public class JEditorPane extends JTextComponent {
      */
     private void handleConnectionProperties(URLConnection conn) {
         if (pageProperties == null) {
-            pageProperties = new Hashtable();
+            pageProperties = new Hashtable<String, Object>();
         }
         String type = conn.getContentType();
         if (type != null) {
@@ -989,7 +988,7 @@ public class JEditorPane extends JTextComponent {
      * of the content type in the http header information.
      */
     private void setCharsetFromContentTypeParameters(String paramlist) {
-        String charset = null;
+        String charset;
         try {
             // paramlist is handed to us with a leading ';', strip it.
             int semi = paramlist.indexOf(';');
@@ -1080,9 +1079,9 @@ public class JEditorPane extends JTextComponent {
      */
     public EditorKit getEditorKitForContentType(String type) {
         if (typeHandlers == null) {
-            typeHandlers = new Hashtable(3);
+            typeHandlers = new Hashtable<String, EditorKit>(3);
         }
-        EditorKit k = (EditorKit) typeHandlers.get(type);
+        EditorKit k = typeHandlers.get(type);
         if (k == null) {
             k = createEditorKitForContentType(type);
             if (k != null) {
@@ -1106,7 +1105,7 @@ public class JEditorPane extends JTextComponent {
      */
     public void setEditorKitForContentType(String type, EditorKit k) {
         if (typeHandlers == null) {
-            typeHandlers = new Hashtable(3);
+            typeHandlers = new Hashtable<String, EditorKit>(3);
         }
         typeHandlers.put(type, k);
     }
@@ -1176,13 +1175,12 @@ public class JEditorPane extends JTextComponent {
      *   registered for the given type
      */
     public static EditorKit createEditorKitForContentType(String type) {
-        EditorKit k = null;
-        Hashtable kitRegistry = getKitRegisty();
-        k = (EditorKit) kitRegistry.get(type);
+        Hashtable<String, EditorKit> kitRegistry = getKitRegisty();
+        EditorKit k = kitRegistry.get(type);
         if (k == null) {
             // try to dynamically load the support
-            String classname = (String) getKitTypeRegistry().get(type);
-            ClassLoader loader = (ClassLoader) getKitLoaderRegistry().get(type);
+            String classname = getKitTypeRegistry().get(type);
+            ClassLoader loader = getKitLoaderRegistry().get(type);
             try {
                 Class c;
                 if (loader != null) {
@@ -1252,20 +1250,20 @@ public class JEditorPane extends JTextComponent {
      * @since 1.3
      */
     public static String getEditorKitClassNameForContentType(String type) {
-        return (String)getKitTypeRegistry().get(type);
+        return getKitTypeRegistry().get(type);
     }
 
-    private static Hashtable getKitTypeRegistry() {
+    private static Hashtable<String, String> getKitTypeRegistry() {
         loadDefaultKitsIfNecessary();
         return (Hashtable)SwingUtilities.appContextGet(kitTypeRegistryKey);
     }
 
-    private static Hashtable getKitLoaderRegistry() {
+    private static Hashtable<String, ClassLoader> getKitLoaderRegistry() {
         loadDefaultKitsIfNecessary();
         return (Hashtable)SwingUtilities.appContextGet(kitLoaderRegistryKey);
     }
 
-    private static Hashtable getKitRegisty() {
+    private static Hashtable<String, EditorKit> getKitRegisty() {
         Hashtable ht = (Hashtable)SwingUtilities.appContextGet(kitRegistryKey);
         if (ht == null) {
             ht = new Hashtable(3);
@@ -1512,7 +1510,7 @@ public class JEditorPane extends JTextComponent {
     private EditorKit kit;
     private boolean isUserSetEditorKit;
 
-    private Hashtable pageProperties;
+    private Hashtable<String, Object> pageProperties;
 
     /** Should be kept in sync with javax.swing.text.html.FormView counterpart. */
     final static String PostDataProperty = "javax.swing.JEditorPane.postdata";
@@ -1520,7 +1518,7 @@ public class JEditorPane extends JTextComponent {
     /**
      * Table of registered type handlers for this editor.
      */
-    private Hashtable typeHandlers;
+    private Hashtable<String, EditorKit> typeHandlers;
 
     /*
      * Private AppContext keys for this class's static variables.
@@ -1913,11 +1911,11 @@ public class JEditorPane extends JTextComponent {
             }
         }
 
-        private class LinkVector extends Vector {
+        private class LinkVector extends Vector<HTMLLink> {
             public int baseElementIndex(Element e) {
                 HTMLLink l;
                 for (int i = 0; i < elementCount; i++) {
-                    l = (HTMLLink) elementAt(i);
+                    l = elementAt(i);
                     if (l.element == e) {
                         return i;
                     }
@@ -2029,7 +2027,7 @@ public class JEditorPane extends JTextComponent {
                 buildLinkTable();
             }
             if (linkIndex >= 0 && linkIndex < hyperlinks.size()) {
-                return (AccessibleHyperlink) hyperlinks.elementAt(linkIndex);
+                return hyperlinks.elementAt(linkIndex);
             } else {
                 return null;
             }

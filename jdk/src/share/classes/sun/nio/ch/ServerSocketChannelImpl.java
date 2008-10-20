@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,7 @@ import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.*;
 
 
 /**
@@ -75,10 +74,7 @@ class ServerSocketChannelImpl
     private int state = ST_UNINITIALIZED;
 
     // Binding
-    private SocketAddress localAddress = null; // null => unbound
-
-    // Options, created on demand
-    private SocketOpts.IP.TCP options = null;
+    private SocketAddress localAddress; // null => unbound
 
     // Our socket adaptor, if any
     ServerSocket socket;
@@ -103,13 +99,75 @@ class ServerSocketChannelImpl
         localAddress = Net.localAddress(fd);
     }
 
-
     public ServerSocket socket() {
         synchronized (stateLock) {
             if (socket == null)
                 socket = ServerSocketAdaptor.create(this);
             return socket;
         }
+    }
+
+    @Override
+    public SocketAddress getLocalAddress() throws IOException {
+        synchronized (stateLock) {
+            if (!isOpen())
+                return null;
+            return localAddress;
+        }
+    }
+
+    @Override
+    public ServerSocketChannel setOption(SocketOption name, Object value)
+        throws IOException
+    {
+        if (name == null)
+            throw new NullPointerException();
+        if (!options().contains(name))
+            throw new IllegalArgumentException("invalid option name");
+
+        synchronized (stateLock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+
+            // no options that require special handling
+            Net.setSocketOption(fd, Net.UNSPEC, name, value);
+            return this;
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T getOption(SocketOption<T> name)
+        throws IOException
+    {
+        if (name == null)
+            throw new NullPointerException();
+        if (!options().contains(name))
+            throw new IllegalArgumentException("invalid option name");
+
+        synchronized (stateLock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+
+            // no options that require special handling
+            return (T) Net.getSocketOption(fd, Net.UNSPEC, name);
+        }
+    }
+
+    private static class LazyInitialization {
+        static final Set<SocketOption<?>> defaultOptions = defaultOptions();
+
+        private static Set<SocketOption<?>> defaultOptions() {
+            HashSet<SocketOption<?>> set = new HashSet<SocketOption<?>>(2);
+            set.add(StandardSocketOption.SO_RCVBUF);
+            set.add(StandardSocketOption.SO_REUSEADDR);
+            return Collections.unmodifiableSet(set);
+        }
+    }
+
+    @Override
+    public final Set<SocketOption<?>> options() {
+        return LazyInitialization.defaultOptions;
     }
 
     public boolean isBound() {
@@ -124,22 +182,25 @@ class ServerSocketChannelImpl
         }
     }
 
-    public void bind(SocketAddress local, int backlog) throws IOException {
+    @Override
+    public ServerSocketChannel bind(SocketAddress local, int backlog) throws IOException {
         synchronized (lock) {
             if (!isOpen())
                 throw new ClosedChannelException();
             if (isBound())
                 throw new AlreadyBoundException();
-            InetSocketAddress isa = Net.checkAddress(local);
+            InetSocketAddress isa = (local == null) ? new InetSocketAddress(0) :
+                Net.checkAddress(local);
             SecurityManager sm = System.getSecurityManager();
             if (sm != null)
                 sm.checkListen(isa.getPort());
             Net.bind(fd, isa.getAddress(), isa.getPort());
-            listen(fd, backlog < 1 ? 50 : backlog);
+            Net.listen(fd, backlog < 1 ? 50 : backlog);
             synchronized (stateLock) {
                 localAddress = Net.localAddress(fd);
             }
         }
+        return this;
     }
 
     public SocketChannel accept() throws IOException {
@@ -194,24 +255,6 @@ class ServerSocketChannelImpl
 
     protected void implConfigureBlocking(boolean block) throws IOException {
         IOUtil.configureBlocking(fd, block);
-    }
-
-    public SocketOpts options() {
-        synchronized (stateLock) {
-            if (options == null) {
-                SocketOptsImpl.Dispatcher d
-                    = new SocketOptsImpl.Dispatcher() {
-                            int getInt(int opt) throws IOException {
-                                return Net.getIntOption(fd, opt);
-                            }
-                            void setInt(int opt, int arg) throws IOException {
-                                Net.setIntOption(fd, opt, arg);
-                            }
-                        };
-                options = new SocketOptsImpl.IP.TCP(d);
-            }
-            return options;
-        }
     }
 
     protected void implCloseSelectableChannel() throws IOException {
@@ -319,9 +362,6 @@ class ServerSocketChannelImpl
     }
 
     // -- Native methods --
-
-    private static native void listen(FileDescriptor fd, int backlog)
-        throws IOException;
 
     // Accepts a new connection, setting the given file descriptor to refer to
     // the new socket and setting isaa[0] to the socket's remote address.

@@ -204,14 +204,8 @@ static XImage *getWindowImage(Display * display, Window window,
 
 /*********************************************************************************************/
 
-#ifdef XAWT
-#define FUNC_NAME(name) Java_sun_awt_X11_XRobotPeer_ ## name
-#else
-#define FUNC_NAME(name) Java_sun_awt_motif_MRobotPeer_ ## name
-#endif
-
 JNIEXPORT void JNICALL
-FUNC_NAME(setup) (JNIEnv * env, jclass cls) {
+Java_sun_awt_X11_XRobotPeer_setup (JNIEnv * env, jclass cls) {
     int32_t xtestAvailable;
 
     DTRACE_PRINTLN("RobotPeer: setup()");
@@ -232,7 +226,7 @@ FUNC_NAME(setup) (JNIEnv * env, jclass cls) {
 }
 
 JNIEXPORT void JNICALL
-FUNC_NAME(getRGBPixelsImpl)( JNIEnv *env,
+Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
                              jclass cls,
                              jobject xgc,
                              jint x,
@@ -295,7 +289,7 @@ FUNC_NAME(getRGBPixelsImpl)( JNIEnv *env,
 }
 
 JNIEXPORT void JNICALL
-FUNC_NAME(keyPressImpl) (JNIEnv *env,
+Java_sun_awt_X11_XRobotPeer_keyPressImpl (JNIEnv *env,
                          jclass cls,
                          jint keycode) {
 
@@ -315,7 +309,7 @@ FUNC_NAME(keyPressImpl) (JNIEnv *env,
 }
 
 JNIEXPORT void JNICALL
-FUNC_NAME(keyReleaseImpl) (JNIEnv *env,
+Java_sun_awt_X11_XRobotPeer_keyReleaseImpl (JNIEnv *env,
                            jclass cls,
                            jint keycode) {
     AWT_LOCK();
@@ -333,7 +327,7 @@ FUNC_NAME(keyReleaseImpl) (JNIEnv *env,
 }
 
 JNIEXPORT void JNICALL
-FUNC_NAME(mouseMoveImpl) (JNIEnv *env,
+Java_sun_awt_X11_XRobotPeer_mouseMoveImpl (JNIEnv *env,
                           jclass cls,
                           jobject xgc,
                           jint root_x,
@@ -355,7 +349,7 @@ FUNC_NAME(mouseMoveImpl) (JNIEnv *env,
 }
 
 JNIEXPORT void JNICALL
-FUNC_NAME(mousePressImpl) (JNIEnv *env,
+Java_sun_awt_X11_XRobotPeer_mousePressImpl (JNIEnv *env,
                            jclass cls,
                            jint buttonMask) {
     AWT_LOCK();
@@ -379,7 +373,7 @@ FUNC_NAME(mousePressImpl) (JNIEnv *env,
 }
 
 JNIEXPORT void JNICALL
-FUNC_NAME(mouseReleaseImpl) (JNIEnv *env,
+Java_sun_awt_X11_XRobotPeer_mouseReleaseImpl (JNIEnv *env,
                              jclass cls,
                              jint buttonMask) {
     AWT_LOCK();
@@ -403,7 +397,7 @@ FUNC_NAME(mouseReleaseImpl) (JNIEnv *env,
 }
 
 JNIEXPORT void JNICALL
-FUNC_NAME(mouseWheelImpl) (JNIEnv *env,
+Java_sun_awt_X11_XRobotPeer_mouseWheelImpl (JNIEnv *env,
                            jclass cls,
                            jint wheelAmt) {
 /* Mouse wheel is implemented as a button press of button 4 and 5, so it */

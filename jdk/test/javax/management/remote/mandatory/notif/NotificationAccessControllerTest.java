@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,8 @@ public class NotificationAccessControllerTest {
                            List<Notification> received,
                            List<ObjectName> expected) {
         if (received.size() != size) {
-            echo("Error: expecting " + size + " notifications");
+            echo("Error: expecting " + size + " notifications, got " +
+                    received.size());
             return 1;
         } else {
             for (Notification n : received) {

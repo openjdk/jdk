@@ -26,7 +26,7 @@ ad_<arch_model>.cpp                     adGlobals_<arch_model>.hpp
 ad_<arch_model>.cpp                     ad_<arch_model>.hpp
 ad_<arch_model>.cpp                     allocation.inline.hpp
 ad_<arch_model>.cpp                     assembler.hpp
-ad_<arch_model>.cpp                     assembler_<arch_model>.inline.hpp
+ad_<arch_model>.cpp                     assembler_<arch>.inline.hpp
 ad_<arch_model>.cpp                     biasedLocking.hpp
 ad_<arch_model>.cpp                     cfgnode.hpp
 ad_<arch_model>.cpp                     collectedHeap.inline.hpp
@@ -957,7 +957,7 @@ runtime.hpp                             vframe.hpp
 runtime_<arch_model>.cpp                adGlobals_<arch_model>.hpp
 runtime_<arch_model>.cpp                ad_<arch_model>.hpp
 runtime_<arch_model>.cpp                assembler.hpp
-runtime_<arch_model>.cpp                assembler_<arch_model>.inline.hpp
+runtime_<arch_model>.cpp                assembler_<arch>.inline.hpp
 runtime_<arch_model>.cpp                globalDefinitions.hpp
 runtime_<arch_model>.cpp                interfaceSupport.hpp
 runtime_<arch_model>.cpp                interpreter.hpp

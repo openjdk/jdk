@@ -45,7 +45,6 @@ import javax.management.QueryExp;
 import javax.management.RuntimeOperationsException;
 
 /**
- * The RepositorySupport implements the Repository interface.
  * This repository does not support persistency.
  *
  * @since 1.5
@@ -197,9 +196,9 @@ public class Repository {
                     if (isPropertyValuePattern &&
                         pattern.isPropertyValuePattern(keys[i])) {
                         // wildmatch key property values
-                        final char[] val_pattern = values[i].toCharArray();
-                        final char[] val_string  = v.toCharArray();
-                        if (wildmatch(val_string,val_pattern))
+                        // values[i] is the pattern;
+                        // v is the string
+                        if (Util.wildmatch(v,values[i]))
                             continue;
                         else
                             return false;
@@ -233,86 +232,6 @@ public class Repository {
                 // if all couples (property, value) are contained
                 if (pattern.matchKeys(on)) result.add(no);
             }
-        }
-    }
-
-    /** Match a string against a shell-style pattern.  The only pattern
-        characters recognised are <code>?</code>, standing for any one
-        character, and <code>*</code>, standing for any string of
-        characters, including the empty string.
-
-        @param str the string to match, as a character array.
-        @param pat the pattern to match the string against, as a
-        character array.
-
-        @return true if and only if the string matches the pattern.
-    */
-    /* The algorithm is a classical one.  We advance pointers in
-       parallel through str and pat.  If we encounter a star in pat,
-       we remember its position and continue advancing.  If at any
-       stage we get a mismatch between str and pat, we look to see if
-       there is a remembered star.  If not, we fail.  If so, we
-       retreat pat to just past that star and str to the position
-       after the last one we tried, and we let the match advance
-       again.
-
-       Even though there is only one remembered star position, the
-       algorithm works when there are several stars in the pattern.
-       When we encounter the second star, we forget the first one.
-       This is OK, because if we get to the second star in A*B*C
-       (where A etc are arbitrary strings), we have already seen AXB.
-       We're therefore setting up a match of *C against the remainder
-       of the string, which will match if that remainder looks like
-       YC, so the whole string looks like AXBYC.
-    */
-    public static boolean wildmatch(char[] str, char[] pat) {
-        int stri;     // index in str
-        int pati;     // index in pat
-        int starstri; // index for backtrack if "*" attempt fails
-        int starpati; // index for backtrack if "*" attempt fails, +1
-        final int strlen = str.length;
-        final int patlen = pat.length;
-
-        stri = pati = 0;
-        starstri = starpati = -1;
-
-        /* On each pass through this loop, we either advance pati,
-           or we backtrack pati and advance starstri.  Since starstri
-           is only ever assigned from pati, the loop must terminate.  */
-        while (true) {
-            if (pati < patlen) {
-                final char patc = pat[pati];
-                switch (patc) {
-                case '?':
-                    if (stri == strlen)
-                        break;
-                    stri++;
-                    pati++;
-                    continue;
-                case '*':
-                    pati++;
-                    starpati = pati;
-                    starstri = stri;
-                    continue;
-                default:
-                    if (stri < strlen && str[stri] == patc) {
-                        stri++;
-                        pati++;
-                        continue;
-                    }
-                    break;
-                }
-            } else if (stri == strlen)
-                return true;
-
-            // Mismatched, can we backtrack to a "*"?
-            if (starpati < 0 || starstri == strlen)
-                return false;
-
-            // Retry the match one position later in str
-            pati = starpati;
-            starstri++;
-            stri = starstri;
         }
     }
 
@@ -370,7 +289,7 @@ public class Repository {
         if (name.isPattern()) return null;
 
         // Extract the domain name.
-        String dom= name.getDomain().intern();
+        String dom = name.getDomain().intern();
 
         // Default domain case
         if (dom.length() == 0) {
@@ -477,10 +396,10 @@ public class Repository {
 
         // Set domain to default if domain is empty and not already set
         if (dom.length() == 0)
-            name = Util.newObjectName(domain + name.toString());
+            name = ObjectName.valueOf(domain + name.toString());
 
         // Do we have default domain ?
-        if (dom == domain) {
+        if (dom == domain) {  // ES: OK (dom & domain are interned)
             to_default_domain = true;
             dom = domain;
         } else {
@@ -652,10 +571,9 @@ public class Repository {
             }
 
             // Pattern matching in the domain name (*, ?)
-            char[] dom2Match = name.getDomain().toCharArray();
+            final String dom2Match = name.getDomain();
             for (String dom : domainTb.keySet()) {
-                char[] theDom = dom.toCharArray();
-                if (wildmatch(theDom, dom2Match)) {
+                if (Util.wildpathmatch(dom, dom2Match)) {
                     final Map<String,NamedObject> moiTb = domainTb.get(dom);
                     if (allNames)
                         result.addAll(moiTb.values());
@@ -726,7 +644,7 @@ public class Repository {
                 // need to reinstantiate a hashtable because of possible
                 // big buckets array size inside table, never cleared,
                 // thus the new !
-                if (dom == domain)
+                if (dom == domain) // ES: OK dom and domain are interned.
                     domainTb.put(domain, new HashMap<String,NamedObject>());
             }
 

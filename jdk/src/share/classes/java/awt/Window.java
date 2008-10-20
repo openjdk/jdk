@@ -3145,9 +3145,7 @@ public class Window extends Container implements Accessible {
         Component previousComp = temporaryLostComponent;
         // Check that "component" is an acceptable focus owner and don't store it otherwise
         // - or later we will have problems with opposite while handling  WINDOW_GAINED_FOCUS
-        if (component == null
-            || (component.isDisplayable() && component.isVisible() && component.isEnabled() && component.isFocusable()))
-        {
+        if (component == null || component.canBeFocusOwner()) {
             temporaryLostComponent = component;
         } else {
             temporaryLostComponent = null;

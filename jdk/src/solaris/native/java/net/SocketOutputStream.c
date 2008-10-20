@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,6 @@ Java_java_net_SocketOutputStream_socketWrite0(JNIEnv *env, jobject this,
     char BUF[MAX_BUFFER_LEN];
     int buflen;
     int fd;
-    jint n = 0;
 
     if (IS_NULL(fdObj)) {
         JNU_ThrowByName(env, "java/net/SocketException", "Socket closed");

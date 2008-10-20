@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ enum platform_dependent_constants {
   code_size2 = 22000            // simply increase if too small (assembler will crash if too small)
 };
 
-class i486 {
+class x86 {
  friend class StubGenerator;
  friend class VMStructs;
 
@@ -54,4 +54,4 @@ class i486 {
 };
 
   static bool    returns_to_call_stub(address return_pc)     { return (return_pc == _call_stub_return_address) ||
-                                                                       return_pc == i486::get_call_stub_compiled_return(); }
+                                                                       return_pc == x86::get_call_stub_compiled_return(); }

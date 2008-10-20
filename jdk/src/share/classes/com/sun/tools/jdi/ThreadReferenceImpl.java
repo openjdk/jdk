@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,8 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
     private ThreadGroupReference threadGroup;
 
     // This is cached only while this one thread is suspended.  Each time
-    // the thread is resumed, we clear this and start with a fresh one.
+    // the thread is resumed, we abandon the current cache object and
+    // create a new intialized one.
     private static class LocalCache {
         JDWP.ThreadReference.Status status = null;
         List<StackFrame> frames = null;
@@ -74,6 +75,28 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
         boolean triedCurrentContended = false;
     }
 
+    /*
+     * The localCache instance var is set by resetLocalCache to an initialized
+     * object as shown above.  This occurs when the ThreadReference
+     * object is created, and when the mirrored thread is resumed.
+     * The fields are then filled in by the relevant methods as they
+     * are called.  A problem can occur if resetLocalCache is called
+     * (ie, a resume() is executed) at certain points in the execution
+     * of some of these methods - see 6751643.  To avoid this, each
+     * method that wants to use this cache must make a local copy of
+     * this variable and use that.  This means that each invocation of
+     * these methods will use a copy of the cache object that was in
+     * effect at the point that the copy was made; if a racy resume
+     * occurs, it won't affect the method's local copy.  This means that
+     * the values returned by these calls may not match the state of
+     * the debuggee at the time the caller gets the values.  EG,
+     * frameCount() is called and comes up with 5 frames.  But before
+     * it returns this, a resume of the debuggee thread is executed in a
+     * different debugger thread.  The thread is resumed and running at
+     * the time that the value 5 is returned.  Or even worse, the thread
+     * could be suspended again and have a different number of frames, eg, 24,
+     * but this call will still return 5.
+     */
     private LocalCache localCache;
 
     private void resetLocalCache() {
@@ -129,8 +152,9 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
     }
 
     /**
-     * Note that we only cache the name string while suspended because
-     * it can change via Thread.setName arbitrarily
+     * Note that we only cache the name string while the entire VM is suspended
+     * because the name can change via Thread.setName arbitrarily while this
+     * thread is running.
      */
     public String name() {
         String name = null;
@@ -240,19 +264,20 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
     }
 
     private JDWP.ThreadReference.Status jdwpStatus() {
-        JDWP.ThreadReference.Status myStatus = localCache.status;
+        LocalCache snapshot = localCache;
+        JDWP.ThreadReference.Status myStatus = snapshot.status;
         try {
              if (myStatus == null) {
                  myStatus = JDWP.ThreadReference.Status.process(vm, this);
                 if ((myStatus.suspendStatus & SUSPEND_STATUS_SUSPENDED) != 0) {
                     // thread is suspended, we can cache the status.
-                    localCache.status = myStatus;
+                    snapshot.status = myStatus;
                 }
             }
          } catch (JDWPException exc) {
             throw exc.toJDIException();
         }
-         return myStatus;
+        return myStatus;
     }
 
     public int status() {
@@ -304,9 +329,10 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
     }
 
     public int frameCount() throws IncompatibleThreadStateException  {
+        LocalCache snapshot = localCache;
         try {
-            if (localCache.frameCount == -1) {
-                localCache.frameCount = JDWP.ThreadReference.FrameCount
+            if (snapshot.frameCount == -1) {
+                snapshot.frameCount = JDWP.ThreadReference.FrameCount
                                           .process(vm, this).frameCount;
             }
         } catch (JDWPException exc) {
@@ -318,7 +344,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
                 throw exc.toJDIException();
             }
         }
-        return localCache.frameCount;
+        return snapshot.frameCount;
     }
 
     public List<StackFrame> frames() throws IncompatibleThreadStateException  {
@@ -335,22 +361,22 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
      * local is known to be non-null.  Should only be called from
      * a sync method.
      */
-    private boolean isSubrange(LocalCache localCache,
+    private boolean isSubrange(LocalCache snapshot,
                                int start, int length) {
-        if (start < localCache.framesStart) {
+        if (start < snapshot.framesStart) {
             return false;
         }
         if (length == -1) {
-            return (localCache.framesLength == -1);
+            return (snapshot.framesLength == -1);
         }
-        if (localCache.framesLength == -1) {
-            if ((start + length) > (localCache.framesStart +
-                                    localCache.frames.size())) {
+        if (snapshot.framesLength == -1) {
+            if ((start + length) > (snapshot.framesStart +
+                                    snapshot.frames.size())) {
                 throw new IndexOutOfBoundsException();
             }
             return true;
         }
-        return ((start + length) <= (localCache.framesStart + localCache.framesLength));
+        return ((start + length) <= (snapshot.framesStart + snapshot.framesLength));
     }
 
     public List<StackFrame> frames(int start, int length)
@@ -371,14 +397,14 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
 
         // Lock must be held while creating stack frames so if that two threads
         // do this at the same time, one won't clobber the subset created by the other.
-
+        LocalCache snapshot = localCache;
         try {
-            if (localCache.frames == null || !isSubrange(localCache, start, length)) {
+            if (snapshot.frames == null || !isSubrange(snapshot, start, length)) {
                 JDWP.ThreadReference.Frames.Frame[] jdwpFrames
                     = JDWP.ThreadReference.Frames.
                     process(vm, this, start, length).frames;
                 int count = jdwpFrames.length;
-                localCache.frames = new ArrayList<StackFrame>(count);
+                snapshot.frames = new ArrayList<StackFrame>(count);
 
                 for (int i = 0; i<count; i++) {
                     if (jdwpFrames[i].location == null) {
@@ -388,20 +414,20 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
                                                           jdwpFrames[i].frameID,
                                                           jdwpFrames[i].location);
                     // Add to the frame list
-                    localCache.frames.add(frame);
+                    snapshot.frames.add(frame);
                 }
-                localCache.framesStart = start;
-                localCache.framesLength = length;
-                return Collections.unmodifiableList(localCache.frames);
+                snapshot.framesStart = start;
+                snapshot.framesLength = length;
+                return Collections.unmodifiableList(snapshot.frames);
             } else {
-                int fromIndex = start - localCache.framesStart;
+                int fromIndex = start - snapshot.framesStart;
                 int toIndex;
                 if (length == -1) {
-                    toIndex = localCache.frames.size() - fromIndex;
+                    toIndex = snapshot.frames.size() - fromIndex;
                 } else {
                     toIndex = fromIndex + length;
                 }
-                return Collections.unmodifiableList(localCache.frames.subList(fromIndex, toIndex));
+                return Collections.unmodifiableList(snapshot.frames.subList(fromIndex, toIndex));
             }
         } catch (JDWPException exc) {
             switch (exc.errorCode()) {
@@ -415,15 +441,16 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
     }
 
     public List<ObjectReference> ownedMonitors()  throws IncompatibleThreadStateException  {
+        LocalCache snapshot = localCache;
         try {
-            if (localCache.ownedMonitors == null) {
-                localCache.ownedMonitors = Arrays.asList(
+            if (snapshot.ownedMonitors == null) {
+                snapshot.ownedMonitors = Arrays.asList(
                                  (ObjectReference[])JDWP.ThreadReference.OwnedMonitors.
                                          process(vm, this).owned);
                 if ((vm.traceFlags & vm.TRACE_OBJREFS) != 0) {
                     vm.printTrace(description() +
                                   " temporarily caching owned monitors"+
-                                  " (count = " + localCache.ownedMonitors.size() + ")");
+                                  " (count = " + snapshot.ownedMonitors.size() + ")");
                 }
             }
         } catch (JDWPException exc) {
@@ -435,54 +462,57 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
                 throw exc.toJDIException();
             }
         }
-        return localCache.ownedMonitors;
+        return snapshot.ownedMonitors;
     }
 
     public ObjectReference currentContendedMonitor()
                               throws IncompatibleThreadStateException  {
+        LocalCache snapshot = localCache;
         try {
-            if (localCache.contendedMonitor == null &&
-                !localCache.triedCurrentContended) {
-                localCache.contendedMonitor = JDWP.ThreadReference.CurrentContendedMonitor.
+            if (snapshot.contendedMonitor == null &&
+                !snapshot.triedCurrentContended) {
+                snapshot.contendedMonitor = JDWP.ThreadReference.CurrentContendedMonitor.
                     process(vm, this).monitor;
-                localCache.triedCurrentContended = true;
-                if ((localCache.contendedMonitor != null) &&
+                snapshot.triedCurrentContended = true;
+                if ((snapshot.contendedMonitor != null) &&
                     ((vm.traceFlags & vm.TRACE_OBJREFS) != 0)) {
                     vm.printTrace(description() +
                                   " temporarily caching contended monitor"+
-                                  " (id = " + localCache.contendedMonitor.uniqueID() + ")");
+                                  " (id = " + snapshot.contendedMonitor.uniqueID() + ")");
                 }
             }
         } catch (JDWPException exc) {
             switch (exc.errorCode()) {
+            case JDWP.Error.THREAD_NOT_SUSPENDED:
             case JDWP.Error.INVALID_THREAD:   /* zombie */
                 throw new IncompatibleThreadStateException();
             default:
                 throw exc.toJDIException();
             }
         }
-        return localCache.contendedMonitor;
+        return snapshot.contendedMonitor;
     }
 
     public List<MonitorInfo> ownedMonitorsAndFrames()  throws IncompatibleThreadStateException  {
+        LocalCache snapshot = localCache;
         try {
-            if (localCache.ownedMonitorsInfo == null) {
+            if (snapshot.ownedMonitorsInfo == null) {
                 JDWP.ThreadReference.OwnedMonitorsStackDepthInfo.monitor[] minfo;
                 minfo = JDWP.ThreadReference.OwnedMonitorsStackDepthInfo.process(vm, this).owned;
 
-                localCache.ownedMonitorsInfo = new ArrayList<MonitorInfo>(minfo.length);
+                snapshot.ownedMonitorsInfo = new ArrayList<MonitorInfo>(minfo.length);
 
                 for (int i=0; i < minfo.length; i++) {
                     JDWP.ThreadReference.OwnedMonitorsStackDepthInfo.monitor mi =
                                                                          minfo[i];
                     MonitorInfo mon = new MonitorInfoImpl(vm, minfo[i].monitor, this, minfo[i].stack_depth);
-                    localCache.ownedMonitorsInfo.add(mon);
+                    snapshot.ownedMonitorsInfo.add(mon);
                 }
 
                 if ((vm.traceFlags & vm.TRACE_OBJREFS) != 0) {
                     vm.printTrace(description() +
                                   " temporarily caching owned monitors"+
-                                  " (count = " + localCache.ownedMonitorsInfo.size() + ")");
+                                  " (count = " + snapshot.ownedMonitorsInfo.size() + ")");
                     }
                 }
 
@@ -495,7 +525,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
                 throw exc.toJDIException();
             }
         }
-        return localCache.ownedMonitorsInfo;
+        return snapshot.ownedMonitorsInfo;
     }
 
     public void popFrames(StackFrame frame) throws IncompatibleThreadStateException {

@@ -1,9 +1,10 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
+
  * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
@@ -23,7 +24,7 @@
 
 /*
  * @test
- * @bug 6249843
+ * @bug 6249843 6705893
  * @summary Test engine and global scopes
  */
 
@@ -37,7 +38,11 @@ public class Test3 {
             final Reader reader = new FileReader(
                 new File(System.getProperty("test.src", "."), "Test3.js"));
             ScriptEngineManager m = new ScriptEngineManager();
-            final ScriptEngine engine = m.getEngineByName("js");
+            final ScriptEngine engine = Helper.getJsEngine(m);
+            if (engine == null) {
+                System.out.println("Warning: No js engine found; test vacuously passes.");
+                return;
+            }
             Bindings en = new SimpleBindings();
             engine.setBindings(en, ScriptContext.ENGINE_SCOPE);
             en.put("key", "engine value");

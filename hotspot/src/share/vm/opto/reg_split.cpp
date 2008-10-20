@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,7 +284,7 @@ Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint 
       // Check for single-def (LRG cannot redefined)
       uint lidx = n2lidx(in);
       if( lidx >= _maxlrg ) continue; // Value is a recent spill-copy
-      if( lrgs(lidx)._def != NodeSentinel ) continue;
+      if (lrgs(lidx).is_singledef()) continue;
 
       Block *b_def = _cfg._bbs[def->_idx];
       int idx_def = b_def->find_node(def);
@@ -311,11 +311,19 @@ Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint 
       uint lidx = Find_id(in);
 
       // Walk backwards thru spill copy node intermediates
-      if( walkThru )
+      if (walkThru) {
         while ( in->is_SpillCopy() && lidx >= _maxlrg ) {
           in = in->in(1);
           lidx = Find_id(in);
         }
+
+        if (lidx < _maxlrg && lrgs(lidx).is_multidef()) {
+          // walkThru found a multidef LRG, which is unsafe to use, so
+          // just keep the original def used in the clone.
+          in = spill->in(i);
+          lidx = Find_id(in);
+        }
+      }
 
       if( lidx < _maxlrg && lrgs(lidx).reg() >= LRG::SPILL_REG ) {
         Node *rdef = Reachblock[lrg2reach[lidx]];
@@ -505,7 +513,7 @@ uint PhaseChaitin::Split( uint maxlrg ) {
       // Do not bother splitting or putting in Phis for single-def
       // rematerialized live ranges.  This happens alot to constants
       // with long live ranges.
-      if( lrgs(lidx)._def != NodeSentinel &&
+      if( lrgs(lidx).is_singledef() &&
           lrgs(lidx)._def->rematerialize() ) {
         // reset the Reaches & UP entries
         Reachblock[slidx] = lrgs(lidx)._def;
@@ -519,6 +527,7 @@ uint PhaseChaitin::Split( uint maxlrg ) {
       // Initialize needs_phi and needs_split
       bool needs_phi = false;
       bool needs_split = false;
+      bool has_phi = false;
       // Walk the predecessor blocks to check inputs for that live range
       // Grab predecessor block header
       n1 = b->pred(1);
@@ -562,28 +571,30 @@ uint PhaseChaitin::Split( uint maxlrg ) {
         }
       }  // End for all potential Phi inputs
 
-      // If a phi is needed, check for it
-      if( needs_phi ) {
-        // check block for appropriate phinode & update edges
-        for( insidx = 1; insidx <= b->end_idx(); insidx++ ) {
-          n1 = b->_nodes[insidx];
-          // bail if this is not a phi
-          phi = n1->is_Phi() ? n1->as_Phi() : NULL;
-          if( phi == NULL ) {
-            // Keep track of index of first non-PhiNode instruction in block
-            non_phi = insidx;
-            // break out of the for loop as we have handled all phi nodes
-            break;
-          }
-          // must be looking at a phi
-          if( Find_id(n1) == lidxs.at(slidx) ) {
-            // found the necessary phi
-            needs_phi = false;
-            // initialize the Reaches entry for this LRG
-            Reachblock[slidx] = phi;
-            break;
-          }  // end if found correct phi
-        }  // end for all phi's
+      // check block for appropriate phinode & update edges
+      for( insidx = 1; insidx <= b->end_idx(); insidx++ ) {
+        n1 = b->_nodes[insidx];
+        // bail if this is not a phi
+        phi = n1->is_Phi() ? n1->as_Phi() : NULL;
+        if( phi == NULL ) {
+          // Keep track of index of first non-PhiNode instruction in block
+          non_phi = insidx;
+          // break out of the for loop as we have handled all phi nodes
+          break;
+        }
+        // must be looking at a phi
+        if( Find_id(n1) == lidxs.at(slidx) ) {
+          // found the necessary phi
+          needs_phi = false;
+          has_phi = true;
+          // initialize the Reaches entry for this LRG
+          Reachblock[slidx] = phi;
+          break;
+        }  // end if found correct phi
+      }  // end for all phi's
+
+      // If a phi is needed or exist, check for it
+      if( needs_phi || has_phi ) {
         // add new phinode if one not already found
         if( needs_phi ) {
           // create a new phi node and insert it into the block
@@ -687,7 +698,8 @@ uint PhaseChaitin::Split( uint maxlrg ) {
               }
             }
             assert( u, "at least 1 valid input expected" );
-            if( i >= cnt ) {    // Didn't find 2+ unique inputs?
+            if( i >= cnt ) {    // Found one unique input
+              assert(Find_id(n) == Find_id(u), "should be the same lrg");
               n->replace_by(u); // Then replace with unique input
               n->disconnect_inputs(NULL);
               b->_nodes.remove(insidx);

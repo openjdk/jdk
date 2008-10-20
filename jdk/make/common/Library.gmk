@@ -1,5 +1,5 @@
 #
-# Copyright 1995-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -238,7 +238,7 @@ else # PLATFORM
 #
 $(ACTUAL_LIBRARY):: $(COMPILE_FILES_o) $(FILES_m) $(FILES_reorder)
 	@$(prep-target)
-	@$(ECHO) "STATS: LIBRARY=$(LIBRARY), PRODUCT=$(PRODUCT), _OPT=$(_OPT)"
+	@$(ECHO) "STATS: LIBRARY=$(LIBRARY), PRODUCT=$(PRODUCT), OPTIMIZATION_LEVEL=$(OPTIMIZATION_LEVEL)"
 	@$(ECHO) "Rebuilding $@ because of $?"
 ifeq ($(LIBRARY), fdlibm)
 	$(AR) -r $@ $(FILES_o)

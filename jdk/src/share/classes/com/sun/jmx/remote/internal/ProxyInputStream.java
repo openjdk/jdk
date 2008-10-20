@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,8 @@ import org.omg.CORBA.Any;
 import org.omg.CORBA.Context;
 import org.omg.CORBA.NO_IMPLEMENT;
 import org.omg.CORBA.ORB;
-import org.omg.CORBA.Principal;
 import org.omg.CORBA.TypeCode;
 import org.omg.CORBA.portable.BoxedValueHelper;
-import org.omg.CORBA_2_3.portable.InputStream;
 
 @SuppressWarnings("deprecation")
 public class ProxyInputStream extends org.omg.CORBA_2_3.portable.InputStream {
@@ -160,54 +158,71 @@ public class ProxyInputStream extends org.omg.CORBA_2_3.portable.InputStream {
         return in.read_any();
     }
 
-    public Principal read_Principal() {
+    /**
+     * @deprecated
+     */
+    @Override
+    @Deprecated
+    public org.omg.CORBA.Principal read_Principal() {
         return in.read_Principal();
     }
 
+    @Override
     public int read() throws IOException {
         return in.read();
     }
 
+    @Override
     public BigDecimal read_fixed() {
         return in.read_fixed();
     }
 
+    @Override
     public Context read_Context() {
         return in.read_Context();
     }
 
+    @Override
     public org.omg.CORBA.Object read_Object(java.lang.Class clz) {
         return in.read_Object(clz);
     }
 
+    @Override
     public ORB orb() {
         return in.orb();
     }
 
+    @Override
     public Serializable read_value() {
         return narrow().read_value();
     }
 
+    @Override
     public Serializable read_value(Class clz) {
         return narrow().read_value(clz);
     }
 
+    @Override
     public Serializable read_value(BoxedValueHelper factory) {
         return narrow().read_value(factory);
     }
 
+    @Override
     public Serializable read_value(String rep_id) {
         return narrow().read_value(rep_id);
     }
 
+    @Override
     public Serializable read_value(Serializable value) {
         return narrow().read_value(value);
     }
 
+    @Override
     public Object read_abstract_interface() {
         return narrow().read_abstract_interface();
     }
 
+    @Override
     public Object read_abstract_interface(Class clz) {
         return narrow().read_abstract_interface(clz);
     }

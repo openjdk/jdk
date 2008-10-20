@@ -31,6 +31,7 @@ import java.util.Map;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.tree.JCTree;
 
@@ -58,20 +59,19 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             return instance;
         }
 
-        final Messages messages;
+        DiagnosticFormatter<JCDiagnostic> formatter;
         final String prefix;
 
         /** Create a new diagnostic factory. */
         protected Factory(Context context) {
+            this(Messages.instance(context), "compiler");
             context.put(diagnosticFactoryKey, this);
-            messages = Messages.instance(context);
-            prefix = "compiler";
         }
 
         /** Create a new diagnostic factory. */
         public Factory(Messages messages, String prefix) {
-            this.messages = messages;
             this.prefix = prefix;
+            this.formatter = new BasicDiagnosticFormatter(messages);
         }
 
         /**
@@ -83,7 +83,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic error(
                 DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return new JCDiagnostic(messages, ERROR, true, source, pos, qualify(ERROR, key), args);
+            return new JCDiagnostic(formatter, ERROR, true, source, pos, qualify(ERROR, key), args);
         }
 
         /**
@@ -96,7 +96,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic mandatoryWarning(
                  DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return new JCDiagnostic(messages, WARNING, true, source, pos, qualify(WARNING, key), args);
+            return new JCDiagnostic(formatter, WARNING, true, source, pos, qualify(WARNING, key), args);
         }
 
         /**
@@ -108,7 +108,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic warning(
                 DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return new JCDiagnostic(messages, WARNING, false, source, pos, qualify(WARNING, key), args);
+            return new JCDiagnostic(formatter, WARNING, false, source, pos, qualify(WARNING, key), args);
         }
 
         /**
@@ -118,7 +118,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          *  @see MandatoryWarningHandler
          */
         public JCDiagnostic mandatoryNote(DiagnosticSource source, String key, Object... args) {
-            return new JCDiagnostic(messages, NOTE, true, source, null, qualify(NOTE, key), args);
+            return new JCDiagnostic(formatter, NOTE, true, source, null, qualify(NOTE, key), args);
         }
 
         /**
@@ -139,7 +139,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic note(
                 DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return new JCDiagnostic(messages, NOTE, false, source, pos, qualify(NOTE, key), args);
+            return new JCDiagnostic(formatter, NOTE, false, source, pos, qualify(NOTE, key), args);
         }
 
         /**
@@ -148,7 +148,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          *  @param args   Fields of the error message.
          */
         public JCDiagnostic fragment(String key, Object... args) {
-            return new JCDiagnostic(messages, FRAGMENT, false, null, null, qualify(FRAGMENT, key), args);
+            return new JCDiagnostic(formatter, FRAGMENT, false, null, null, qualify(FRAGMENT, key), args);
         }
 
         protected String qualify(DiagnosticType t, String key) {
@@ -162,16 +162,25 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
      * Create a fragment diagnostic, for use as an argument in other diagnostics
      *  @param key    The key for the localized error message.
      *  @param args   Fields of the error message.
+     *
      */
-    // should be deprecated
+    @Deprecated
     public static JCDiagnostic fragment(String key, Object... args) {
-        return new JCDiagnostic(Messages.getDefaultMessages(),
+        return new JCDiagnostic(getFragmentFormatter(),
                               FRAGMENT,
                               false,
                               null,
                               null,
                               "compiler." + FRAGMENT.key + "." + key,
                               args);
+    }
+    //where
+    @Deprecated
+    public static DiagnosticFormatter<JCDiagnostic> getFragmentFormatter() {
+        if (fragmentFormatter == null) {
+            fragmentFormatter = new BasicDiagnosticFormatter(Messages.getDefaultMessages());
+        }
+        return fragmentFormatter;
     }
 
     /**
@@ -246,14 +255,13 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         private final int pos;
     }
 
-    private final Messages messages;
     private final DiagnosticType type;
     private final DiagnosticSource source;
     private final DiagnosticPosition position;
     private final int line;
     private final int column;
     private final String key;
-    private final Object[] args;
+    protected Object[] args;
     private boolean mandatory;
 
     /**
@@ -265,7 +273,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
      * @param key a resource key to identify the text of the diagnostic
      * @param args arguments to be included in the text of the diagnostic
      */
-    protected JCDiagnostic(Messages messages,
+    protected JCDiagnostic(DiagnosticFormatter<JCDiagnostic> formatter,
                        DiagnosticType dt,
                        boolean mandatory,
                        DiagnosticSource source,
@@ -275,7 +283,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         if (source == null && pos != null && pos.getPreferredPosition() != Position.NOPOS)
             throw new IllegalArgumentException();
 
-        this.messages = messages;
+        this.defaultFormatter = formatter;
         this.type = dt;
         this.mandatory = mandatory;
         this.source = source;
@@ -288,7 +296,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             line = column = -1;
         else {
             line = source.getLineNumber(n);
-            column = source.getColumnNumber(n);
+            column = source.getColumnNumber(n, true);
         }
     }
 
@@ -397,46 +405,19 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
      * @return the prefix string associated with a particular type of diagnostic
      */
     public String getPrefix(DiagnosticType dt) {
-        switch (dt) {
-        case FRAGMENT: return "";
-        case NOTE:     return getLocalizedString("compiler.note.note");
-        case WARNING:  return getLocalizedString("compiler.warn.warning");
-        case ERROR:    return getLocalizedString("compiler.err.error");
-        default:
-            throw new AssertionError("Unknown diagnostic type: " + dt);
-        }
+        return defaultFormatter.formatKind(this, Locale.getDefault());
     }
 
     /**
      * Return the standard presentation of this diagnostic.
      */
     public String toString() {
-        if (defaultFormatter == null) {
-            defaultFormatter =
-                new DiagnosticFormatter();
-        }
-        return defaultFormatter.format(this);
+        return defaultFormatter.format(this,Locale.getDefault());
     }
 
-    private static DiagnosticFormatter defaultFormatter;
-
-    private static final String messageBundleName =
-        "com.sun.tools.javac.resources.compiler";
-
-    private String getLocalizedString(String key, Object... args) {
-        String[] strings = new String[args.length];
-        for (int i = 0; i < strings.length; i++) {
-            Object arg = args[i];
-            if (arg == null)
-                strings[i] = null;
-            else if (arg instanceof JCDiagnostic)
-                strings[i] = ((JCDiagnostic) arg).getMessage(null);
-            else
-                strings[i] = arg.toString();
-        }
-
-        return messages.getLocalizedString(key, (Object[]) strings);
-    }
+    private DiagnosticFormatter<JCDiagnostic> defaultFormatter;
+    @Deprecated
+    private static DiagnosticFormatter<JCDiagnostic> fragmentFormatter;
 
     // Methods for javax.tools.Diagnostic
 
@@ -460,7 +441,6 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
 
     public String getMessage(Locale locale) {
         // RFE 6406133: JCDiagnostic.getMessage ignores locale argument
-        return getLocalizedString(key, args);
+        return defaultFormatter.formatMessage(this, locale);
     }
-
 }

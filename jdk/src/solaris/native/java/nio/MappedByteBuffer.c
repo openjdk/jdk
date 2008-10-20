@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,11 @@ Java_java_nio_MappedByteBuffer_isLoaded0(JNIEnv *env, jobject obj,
     int result = 0;
     int i = 0;
     void *a = (void *) jlong_to_ptr(address);
-    char * vec = (char *)malloc(numPages * sizeof(char));
+#ifdef __linux__
+    unsigned char *vec = (unsigned char *)malloc(numPages * sizeof(char));
+#else
+    char *vec = (char *)malloc(numPages * sizeof(char));
+#endif
 
     if (vec == NULL) {
         JNU_ThrowOutOfMemoryError(env, NULL);

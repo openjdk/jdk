@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,20 +83,20 @@ public interface TigerMXBean {
     Tuiseal opEnum(Tuiseal x, Tuiseal y);
 
     List<String> StringList = Arrays.asList(new String[] {"a", "b", "x"});
-    ArrayType StringListType =
+    ArrayType<?> StringListType =
         MerlinMXBean.ArrayTypeMaker.make(1, SimpleType.STRING);
     List<String> getStringList();
     void setStringList(List<String> x);
     List<String> opStringList(List<String> x, List<String> y);
 
-    Set<String> StringSet = new HashSet(StringList);
-    ArrayType StringSetType = StringListType;
+    Set<String> StringSet = new HashSet<String>(StringList);
+    ArrayType<?> StringSetType = StringListType;
     Set<String> getStringSet();
     void setStringSet(Set<String> x);
     Set<String> opStringSet(Set<String> x, Set<String> y);
 
-    SortedSet<String> SortedStringSet = new TreeSet(StringList);
-    ArrayType SortedStringSetType = StringListType;
+    SortedSet<String> SortedStringSet = new TreeSet<String>(StringList);
+    ArrayType<?> SortedStringSetType = StringListType;
     SortedSet<String> getSortedStringSet();
     void setSortedStringSet(SortedSet<String> x);
     SortedSet<String> opSortedStringSet(SortedSet<String> x,
@@ -119,7 +119,7 @@ public interface TigerMXBean {
                                     Map<String,List<String>> y);
 
     SortedMap<String,String> XSortedMap =
-        new TreeMap(Collections.singletonMap("foo", "bar"));
+        new TreeMap<String,String>(Collections.singletonMap("foo", "bar"));
     String XSortedMapTypeName =
         "java.util.SortedMap<java.lang.String, java.lang.String>";
     CompositeType XSortedMapRowType = MerlinMXBean.CompositeTypeMaker.make(
@@ -137,8 +137,8 @@ public interface TigerMXBean {
 
     // For bug 6319960, try constructing Set and Map with non-Comparable
 
-    Set<Point> PointSet = new HashSet(Collections.singleton(Point));
-    ArrayType PointSetType =
+    Set<Point> PointSet = new HashSet<Point>(Collections.singleton(Point));
+    ArrayType<?> PointSetType =
         MerlinMXBean.ArrayTypeMaker.make(1, PointType);
     Set<Point> getPointSet();
     void setPointSet(Set<Point> x);

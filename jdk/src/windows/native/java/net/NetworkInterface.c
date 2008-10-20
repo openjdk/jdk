@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,6 @@ extern int enumInterfaces_win9x(JNIEnv *, netif **);
 extern int enumAddresses_win9x(JNIEnv *, netif *, netaddr **);
 extern int init_win9x(void);
 #endif
-extern int enumInterfaces_win(JNIEnv *env, netif **netifPP);
 
 
 /* Windows 95/98/ME running */
@@ -209,7 +208,6 @@ int enumInterfaces_win(JNIEnv *env, netif **netifPP)
     int count;
     netif *netifP;
     DWORD i;
-    wchar_t wName[128];
     int lo=0, eth=0, tr=0, fddi=0, ppp=0, sl=0, net=0;
 
     /*
@@ -556,11 +554,11 @@ Java_java_net_NetworkInterface_init(JNIEnv *env, jclass cls)
     ni_childsID = (*env)->GetFieldID(env, ni_class, "childs", "[Ljava/net/NetworkInterface;");
     ni_ctor = (*env)->GetMethodID(env, ni_class, "<init>", "()V");
 
-    ni_iacls = (*env)->FindClass(env, "Ljava/net/InetAddress;");
+    ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
     ni_iacls = (*env)->NewGlobalRef(env, ni_iacls);
     ni_iaAddr = (*env)->GetFieldID(env, ni_iacls, "address", "I");
 
-    ni_ia4cls = (*env)->FindClass(env, "Ljava/net/Inet4Address;");
+    ni_ia4cls = (*env)->FindClass(env, "java/net/Inet4Address");
     ni_ia4cls = (*env)->NewGlobalRef(env, ni_ia4cls);
     ni_ia4Ctor = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
 
@@ -764,17 +762,17 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0
 
 /*
  * Class:     NetworkInterface
- * Method:    getByIndex
+ * Method:    getByIndex0
  * Signature: (I)LNetworkInterface;
  */
-JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex
+JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0
   (JNIEnv *env, jclass cls, jint index)
 {
     netif *ifList, *curr;
     jobject netifObj = NULL;
 
     if (os_supports_ipv6 && ipv6_available()) {
-        return Java_java_net_NetworkInterface_getByIndex_XP (env, cls, index);
+        return Java_java_net_NetworkInterface_getByIndex0_XP (env, cls, index);
     }
 
     /* get the list of interfaces */

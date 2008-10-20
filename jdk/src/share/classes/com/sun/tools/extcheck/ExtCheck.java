@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,13 +256,13 @@ public class ExtCheck {
     private boolean isNotOlderThan(String already,String target)
         throws NumberFormatException
     {
-        if (already == null || already.length() < 1) {
+            if (already == null || already.length() < 1) {
             throw new NumberFormatException("Empty version string");
         }
 
-        // Until it matches scan and compare numbers
-        StringTokenizer dtok = new StringTokenizer(target, ".", true);
-        StringTokenizer stok = new StringTokenizer(already, ".", true);
+            // Until it matches scan and compare numbers
+            StringTokenizer dtok = new StringTokenizer(target, ".", true);
+            StringTokenizer stok = new StringTokenizer(already, ".", true);
         while (dtok.hasMoreTokens() || stok.hasMoreTokens()) {
             int dver;
             int sver;
@@ -276,19 +276,19 @@ public class ExtCheck {
             } else
                 sver = 0;
 
-            if (sver < dver)
-                return false;           // Known to be incompatible
-            if (sver > dver)
-                return true;            // Known to be compatible
+                if (sver < dver)
+                        return false;                // Known to be incompatible
+                if (sver > dver)
+                        return true;                // Known to be compatible
 
-            // Check for and absorb separators
-            if (dtok.hasMoreTokens())
-                dtok.nextToken();
-            if (stok.hasMoreTokens())
-                stok.nextToken();
-            // Compare next component
-        }
-        // All components numerically equal
+                // Check for and absorb separators
+                if (dtok.hasMoreTokens())
+                        dtok.nextToken();
+                if (stok.hasMoreTokens())
+                        stok.nextToken();
+                // Compare next component
+            }
+            // All components numerically equal
         return true;
     }
 
@@ -307,11 +307,10 @@ public class ExtCheck {
     }
 
     /**
-     * Print out the error message and exit from the program
+     * Throws a RuntimeException with a message describing the error.
      */
-    static void error(String message){
-        System.err.println(message);
-        System.exit(-1);
+    static void error(String message) throws RuntimeException {
+        throw new RuntimeException(message);
     }
 
 
@@ -356,19 +355,19 @@ public class ExtCheck {
         }
 
         private JarFile findJarFile(URL url) throws IOException {
-            // Optimize case where url refers to a local jar file
-            if ("file".equals(url.getProtocol())) {
-                String path = url.getFile().replace('/', File.separatorChar);
-                File file = new File(path);
-                if (!file.exists()) {
-                    throw new FileNotFoundException(path);
-                }
-                return new JarFile(path);
-            }
-            URLConnection uc = getBaseURL().openConnection();
-            //uc.setRequestProperty(USER_AGENT_JAVA_VERSION, JAVA_VERSION);
-            return ((JarURLConnection)uc).getJarFile();
-        }
+             // Optimize case where url refers to a local jar file
+             if ("file".equals(url.getProtocol())) {
+                 String path = url.getFile().replace('/', File.separatorChar);
+                 File file = new File(path);
+                 if (!file.exists()) {
+                     throw new FileNotFoundException(path);
+                 }
+                 return new JarFile(path);
+             }
+             URLConnection uc = getBaseURL().openConnection();
+             //uc.setRequestProperty(USER_AGENT_JAVA_VERSION, JAVA_VERSION);
+             return ((JarURLConnection)uc).getJarFile();
+         }
 
 
         /*

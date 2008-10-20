@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,13 @@
  *          with wildcards in the key properties value part.
  * @author Luis-Miguel Alventosa
  * @run clean ApplyWildcardTest
+ * @compile -XDignore.symbol.file=true ApplyWildcardTest.java
  * @run build ApplyWildcardTest
  * @run main ApplyWildcardTest
  */
 
+import com.sun.jmx.mbeanserver.Repository;
+import com.sun.jmx.mbeanserver.Util;
 import javax.management.ObjectName;
 
 public class ApplyWildcardTest {
@@ -74,6 +77,75 @@ public class ApplyWildcardTest {
         { "d:k1=\"a?b\",k2=\"c*d\"", "d:k1=\"axb\",k2=\"cyzd\"" },
         { "d:k1=\"a?b\",k2=\"c*d\",*", "d:k1=\"axb\",k2=\"cyzd\",k3=\"v3\"" },
         { "d:*,k1=\"a?b\",k2=\"c*d\"", "d:k1=\"axb\",k2=\"cyzd\",k3=\"v3\"" },
+
+        // with namespaces
+
+        { "*//:*", "d//:k=v" },
+        { "//?:*", "///:k=v" },
+        { "z*x//:*", "zaxcx//:k=v" },
+        { "*//:*", "d/xx/q//:k=v" },
+        { "z*x//:*", "z/a/x/c/x//:k=v" },
+        { "*x?//:*", "dbdbdxk//:k=v" },
+        { "z*x?x//:*", "zaxcx//:k=v" },
+        { "*x?f//:*", "d/xxf/qxbf//:k=v" },
+        { "z*x?c*x//:*", "z/a/x/c/x//:k=v" },
+
+        { "*//*:*", "d/c/v//x/vgh/:k=v" },
+        { "z*x//z*x:*", "zaxcx//zaxcxcx:k=v" },
+        { "//*//:*", "//d/xx/q//:k=v" },
+        { "z*//*//:*", "z/x/x/z//z/a/x/c/x//:k=v" },
+        { "*x?//blur?g*:*", "dbdbdxk//blurhgblurgh/x/:k=v" },
+        { "z*x??x//??:*", "zaxcxccx///.:k=v" },
+        { "*x?f//?:*", "d/xxf/qxbf///:k=v" },
+        { "z*x?c*x//*//z????//g:*", "z/a/x/c/x//gloubs/././/zargh//g:k=v" },
+        { "z*x?c*x//*//:*", "z/a/x/c/x//gloubs/././/:k=v"},
+        { "*//*//:*", "aza//bzb//:k=v" },
+        { "*//:*", "aza//:k=v" },
+
+        // with or without namespaces, * can also match nothing
+        { "x*z:*", "xz:k=v"},
+
+        { "*//:*", "//:k=v" },
+        { "z*x//:*", "zx//:k=v" },
+        { "*x?//:*", "xk//:k=v" },
+        { "z*x?x//:*", "zxcx//:k=v" },
+        { "*x?f//:*", "xbf//:k=v" },
+        { "z*x?c*x//:*", "zx/cx//:k=v" },
+
+        { "*//*:*", "//:k=v" },
+        { "z*x//z*x:*", "zx//zx:k=v" },
+        { "//*//:*", "////:k=v" },
+        { "z*//*//:*", "z////:k=v" },
+        { "*x?//blur?g*:*", "xk//blurhg:k=v" },
+        { "z*x??x//??:*", "zxccx///.:k=v" },
+        { "*x?f//?:*", "xbf///:k=v" },
+        { "z*x?c*x//*//z????//g:*", "zx/cx////zargh//g:k=v" },
+        { "z*x?c*x//*//:*", "zx/cx////:k=v"},
+        { "*//*//:*", "////:k=v" },
+        { "*//:*", "//:k=v" },
+
+        // recursive namespace meta-wildcard
+        {"**//D:k=v", "a//D:k=v"},
+        {"**//D:k=v", "a//b//c//D:k=v"},
+        {"a//**//D:k=v", "a//b//c//D:k=v"},
+        {"a//**//d//D:k=v", "a//b//c//d//D:k=v"},
+        {"a//**//d//D:k=v", "a//b//c//d//d//D:k=v"},
+        {"a//**//d//D:k=v", "a//a//b//c//d//d//D:k=v"},
+        {"a//**//d//**//e//D:k=v", "a//a//b//d//c//d//e//D:k=v"},
+
+        // special cases for names ending with //
+        { "*:*", "d//:k=v" },
+        { "z*x*:*", "zaxcx//:k=v" },
+        { "*:*", "d/xx/q//:k=v" },
+        { "z*x??:*", "z/a/x/c/x//:k=v" },
+        { "*x???:*", "dbdbdxk//:k=v" },
+        { "z*x?c*x*:*", "z/a/x/c/x//:k=v" },
+        { "?/*/?:*", "d/xx/q//:k=v" },
+        { "**//*:*", "a//b//jmx.rmi:k=v"},
+        { "**//*:*", "a//b//jmx.rmi//:k=v"},
+        { "*//*:*", "wombat//:type=Wombat" },
+        { "**//*:*", "jmx.rmi//:k=v"},
+
     };
 
     private static final String negativeTests[][] = {
@@ -114,6 +186,33 @@ public class ApplyWildcardTest {
         { "d:k1=\"a?b\",k2=\"c*d\"", "d:k1=\"ab\",k2=\"cd\"" },
         { "d:k1=\"a?b\",k2=\"c*d\",*", "d:k1=\"ab\",k2=\"cd\",k3=\"v3\"" },
         { "d:*,k1=\"a?b\",k2=\"c*d\"", "d:k1=\"ab\",k2=\"cd\",k3=\"v3\"" },
+
+        // with namespaces
+
+        { "z*x?x*:*", "zaxcx//blougs:k=v" },
+        { "*x?f??rata:*", "d/xxf/qxbf//rata:k=v" },
+        { "z*x?c*x*b*:*", "z/a/x/c/x//b//:k=v" },
+
+        { "*:*", "d/c/v//x/vgh/:k=v" },
+        { "z*x??z*x:*", "zaxcx//zaxcxcx:k=v" },
+        { "?/*/?:*", "//d/xx/q//:k=v" },
+        { "z*/?*/?:*", "z/x/x/z//z/a/x/c/x//:k=v" },
+        { "*x?/?blur?g*:*", "dbdbdxk//blurhgblurgh/x/:k=v" },
+        { "z*x??x/???:*", "zaxcxccx///.:k=v" },
+        { "*x?f?/?:*", "d/xxf/qxbf///:k=v" },
+        { "z*x?c*x/?*z????*g:*", "z/a/x/c/x//gloubs/././/zargh//g:k=v" },
+
+        // recursive namespace meta-wildcard
+        {"**//D:k=v", "D:k=v"},
+        {"b//**//D:k=v", "a//b//c//D:k=v"},
+        {"a//**//D:k=v", "a//D:k=v"},
+        {"a//**//d//D:k=v", "a//b//c//d//e//D:k=v"},
+        {"a//**//d//D:k=v", "a//b//c//D:k=v"},
+        {"a//**//d//D:k=v", "a//b//c//d//d//e//D:k=v"},
+        {"a//**//d//**//e//D:k=v", "a//a//b//c//d//e//D:k=v"},
+        {"a//**//d//**//e//D:k=v", "a//a//b//c//e//D:k=v"},
+        { "**//*:*", "jmx.rmi:k=v"},
+
     };
 
     private static int runPositiveTests() {
@@ -129,6 +228,8 @@ public class ApplyWildcardTest {
                 if (result == false) {
                     error++;
                     System.out.println("Test failed!");
+                    throw new Error("test failed for "+
+                            "\"" + on1 + "\".apply(\"" + on2 + "\")");
                 } else {
                     System.out.println("Test passed!");
                 }
@@ -168,9 +269,84 @@ public class ApplyWildcardTest {
         return error;
     }
 
+    private static int runRepositoryPositiveTests() {
+        int error = 0;
+        for (int i = 0; i < positiveTests.length; i++) {
+            try {
+                ObjectName on1 = ObjectName.getInstance(positiveTests[i][0]);
+                ObjectName on2 = ObjectName.getInstance(positiveTests[i][1]);
+                if (on1.isPropertyPattern()) {
+                    if (!on1.getKeyPropertyListString().equals("")) continue;
+                } else if (!on1.getCanonicalKeyPropertyListString()
+                            .equals(on2.getCanonicalKeyPropertyListString())) {
+                    continue;
+                }
+                System.out.println("Repository Positive Match Test ---------------");
+                final String dom1 = on1.getDomain();
+                final String dom2 = on2.getDomain();
+                System.out.println("Util.wildpathmatch(\"" + dom2 + "\",\"" + dom1 + "\")");
+                boolean result =
+                        Util.wildpathmatch(dom2,dom1);
+                System.out.println("Result = " + result);
+                if (result == false) {
+                    error++;
+                    System.out.println("Test failed!");
+                } else {
+                    System.out.println("Test passed!");
+                }
+            } catch (Exception e) {
+                error++;
+                System.out.println("Got Unexpected Exception = " + e.toString());
+                System.out.println("Test failed!");
+            }
+            System.out.println("----------------------------------------------");
+        }
+        return error;
+    }
+
+    private static int runRepositoryNegativeTests() {
+        int error = 0;
+        for (int i = 0; i < negativeTests.length; i++) {
+            try {
+                ObjectName on1 = ObjectName.getInstance(negativeTests[i][0]);
+                ObjectName on2 = ObjectName.getInstance(negativeTests[i][1]);
+                if (on1.isPropertyPattern()) {
+                    if (!on1.getKeyPropertyListString().equals("")) continue;
+                } else if (!on1.getCanonicalKeyPropertyListString()
+                            .equals(on2.getCanonicalKeyPropertyListString())) {
+                    continue;
+                }
+                System.out.println("Repository Negative Match Test ---------------");
+                final String dom1 = on1.getDomain();
+                final String dom2 = on2.getDomain();
+                System.out.println("Util.wildpathmatch(\"" + dom2 + "\",\"" + dom1 + "\")");
+                boolean result =
+                        Util.wildpathmatch(dom2,dom1);
+                System.out.println("Result = " + result);
+                if (result == true) {
+                    error++;
+                    System.out.println("Test failed!");
+                } else {
+                    System.out.println("Test passed!");
+                }
+            } catch (Exception e) {
+                error++;
+                System.out.println("Got Unexpected Exception = " + e.toString());
+                System.out.println("Test failed!");
+            }
+            System.out.println("----------------------------------------------");
+        }
+        return error;
+    }
+
     public static void main(String[] args) throws Exception {
 
+
         int error = 0;
+
+        if (!(new ObjectName("z*x*:*").apply(new ObjectName("zaxcx//:k=v"))))
+                throw new Exception();
+
 
         // Check null values
         //
@@ -253,6 +429,10 @@ public class ApplyWildcardTest {
 
         error += runPositiveTests();
         error += runNegativeTests();
+        System.out.println("----------------------------------------------");
+        error += runRepositoryPositiveTests();
+        System.out.println("----------------------------------------------");
+        error += runRepositoryNegativeTests();
 
         if (error > 0) {
             final String msg = "Test FAILED! Got " + error + " error(s)";

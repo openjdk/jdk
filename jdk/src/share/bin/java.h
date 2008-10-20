@@ -121,24 +121,20 @@ void CreateExecutionEnvironment(int *_argc,
                                        char jvmpath[],
                                        jint so_jvmpath,
                                        char **original_argv);
+/* Reports an error message to stderr or a window as appropriate. */
+void JLI_ReportErrorMessage(const char * message, ...);
+
+/* Reports a system error message to stderr or a window */
+void JLI_ReportErrorMessageSys(const char * message, ...);
+
+/* Reports an error message only to stderr. */
+void JLI_ReportMessage(const char * message, ...);
 
 /*
- * Report an error message to stderr or a window as appropriate.
- */
-void ReportErrorMessage(const char * message, ...);
-void ReportErrorMessageSys(const char * format, ...);
-
-/*
- * Report an error message only to stderr.
- */
-void ReportMessage(const char * message, ...);
-
-/*
- * Report an exception which terminates the vm to stderr or a window
+ * Reports an exception which terminates the vm to stderr or a window
  * as appropriate.
  */
-void ReportExceptionDescription(JNIEnv * env);
-
+void JLI_ReportExceptionDescription(JNIEnv * env);
 void PrintMachineDependentOptions();
 
 const char *jlong_format_specifier();
@@ -184,4 +180,16 @@ static int ContinueInNewThread(InvocationFunctions* ifn, int argc, char** argv,
  */
 void InitLauncher(jboolean javaw);
 
+/*
+ * This allows for finding classes from the VM's bootstrap class loader directly,
+ * FindClass uses the application class loader internally, this will cause
+ * unnecessary searching of the classpath for the required classes.
+ *
+ */
+typedef jclass (JNICALL FindClassFromBootLoader_t(JNIEnv *env,
+                                                const char *name,
+                                                jboolean init,
+                                                jobject loader,
+                                                jboolean throwError));
+jclass FindBootStrapClass(JNIEnv *env, const char *classname);
 #endif /* _JAVA_H_ */

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,56 +38,64 @@ package javax.management;
  *
  * @since 1.5
  */
- public class MBeanServerNotification extends Notification   {
+public class MBeanServerNotification extends Notification {
 
 
-     /* Serial version */
-     private static final long serialVersionUID = 2876477500475969677L;
+    /* Serial version */
+    private static final long serialVersionUID = 2876477500475969677L;
+    /**
+     * Notification type denoting that an MBean has been registered.
+     * Value is "JMX.mbean.registered".
+     */
+    public static final String REGISTRATION_NOTIFICATION =
+            "JMX.mbean.registered";
+    /**
+     * Notification type denoting that an MBean has been unregistered.
+     * Value is "JMX.mbean.unregistered".
+     */
+    public static final String UNREGISTRATION_NOTIFICATION =
+            "JMX.mbean.unregistered";
+    /**
+     * @serial The object names of the MBeans concerned by this notification
+     */
+    private final ObjectName objectName;
 
-     /**
-      * Notification type denoting that an MBean has been registered. Value is "JMX.mbean.registered".
-      */
-     public static final String REGISTRATION_NOTIFICATION = "JMX.mbean.registered" ;
+    /**
+     * Creates an MBeanServerNotification object specifying object names of
+     * the MBeans that caused the notification and the specified notification
+     * type.
+     *
+     * @param type A string denoting the type of the
+     * notification. Set it to one these values: {@link
+     * #REGISTRATION_NOTIFICATION}, {@link
+     * #UNREGISTRATION_NOTIFICATION}.
+     * @param source The MBeanServerNotification object responsible
+     * for forwarding MBean server notification.
+     * @param sequenceNumber A sequence number that can be used to order
+     * received notifications.
+     * @param objectName The object name of the MBean that caused the
+     * notification.
+     *
+     */
+    public MBeanServerNotification(String type, Object source,
+            long sequenceNumber, ObjectName objectName) {
+        super(type, source, sequenceNumber);
+        this.objectName = objectName;
+    }
 
-     /**
-      * Notification type denoting that an MBean has been unregistered. Value is "JMX.mbean.unregistered".
-      */
-     public static final String UNREGISTRATION_NOTIFICATION = "JMX.mbean.unregistered" ;
+    /**
+     * Returns the  object name of the MBean that caused the notification.
+     *
+     * @return the object name of the MBean that caused the notification.
+     */
+    public ObjectName getMBeanName() {
+        return objectName;
+    }
 
+    @Override
+    public String toString() {
+        return super.toString() + "[mbeanName=" + objectName + "]";
 
-     /**
-      * @serial The object names of the MBeans concerned by this notification
-      */
-     private final ObjectName objectName;
-
-
-     /**
-      * Creates an MBeanServerNotification object specifying object names of
-      * the MBeans that caused the notification and the specified notification type.
-      *
-      * @param type A string denoting the type of the
-      * notification. Set it to one these values: {@link
-      * #REGISTRATION_NOTIFICATION}, {@link
-      * #UNREGISTRATION_NOTIFICATION}.
-      * @param source The MBeanServerNotification object responsible
-      * for forwarding MBean server notification.
-      * @param sequenceNumber A sequence number that can be used to order
-      * received notifications.
-      * @param objectName The object name of the MBean that caused the notification.
-      *
-      */
-     public MBeanServerNotification(String type, Object source, long sequenceNumber, ObjectName objectName ) {
-         super (type,source,sequenceNumber) ;
-         this.objectName =  objectName ;
-     }
-
-     /**
-      * Returns the  object name of the MBean that caused the notification.
-      *
-      * @return the object name of the MBean that caused the notification.
-      */
-     public ObjectName getMBeanName()  {
-         return objectName ;
-     }
+    }
 
  }

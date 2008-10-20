@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2000 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,3 +25,6 @@
 /* Use its data structures and constants; don't make direct calls */
 
 #include <winsock2.h>
+
+#define uint32_t UINT32
+

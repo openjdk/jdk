@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ class ChunkedOutputStream extends FilterOutputStream
         if (count == CHUNK_SIZE) {
             writeChunk();
         }
+        assert count < CHUNK_SIZE;
     }
 
     public void write (byte[]b, int off, int len) throws IOException {
@@ -86,19 +87,21 @@ class ChunkedOutputStream extends FilterOutputStream
             writeChunk();
             len -= remain;
             off += remain;
-            while (len > CHUNK_SIZE) {
+            while (len >= CHUNK_SIZE) {
                 System.arraycopy (b,off,buf,OFFSET,CHUNK_SIZE);
                 len -= CHUNK_SIZE;
                 off += CHUNK_SIZE;
                 count = CHUNK_SIZE;
                 writeChunk();
             }
-            pos = OFFSET;
         }
         if (len > 0) {
             System.arraycopy (b,off,buf,pos,len);
             count += len;
             pos += len;
+        }
+        if (count == CHUNK_SIZE) {
+            writeChunk();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6249843
+ * @bug 6249843 6705893
  * @summary Create JavaScript engine and execute a simple script.
  * Tests script engine discovery mechanism.
  */
@@ -35,9 +35,10 @@ public class Test1  {
         public static void main(String[] args) throws Exception {
             System.out.println("\nTest1\n");
             ScriptEngineManager manager = new ScriptEngineManager();
-            ScriptEngine jsengine = manager.getEngineByName("js");
+            ScriptEngine jsengine = Helper.getJsEngine(manager);
             if (jsengine == null) {
-                throw new RuntimeException("no js engine found");
+                     System.out.println("Warning: No js engine found; test vacuously passes.");
+                     return;
             }
             jsengine.eval(new FileReader(
                      new File(System.getProperty("test.src", "."), "Test1.js")));

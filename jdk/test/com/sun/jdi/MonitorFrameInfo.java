@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ class MonitorTestTarg {
     static void foo2() {
         Object l1 = new Object();
         synchronized(l1) {
+            System.out.println("executing foo2 " + l1);
             foo3();
         }
     }
@@ -59,6 +60,7 @@ class MonitorTestTarg {
         System.out.println("Howdy!");
         Object l1 = new Object();
         synchronized(l1) {
+            System.out.println("executing main" + l1);
             foo1();
         }
     }

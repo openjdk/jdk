@@ -621,6 +621,11 @@ public class VM {
     return bytes;
   }
 
+  /** Returns true if this is a isBigEndian, false otherwise */
+  public boolean isBigEndian() {
+    return isBigEndian;
+  }
+
   /** Returns true if this is a "core" build, false if either C1 or C2
       is present */
   public boolean isCore() {

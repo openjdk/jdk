@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.management;
 
+import com.sun.jmx.mbeanserver.Util;
 import java.io.InvalidObjectException;
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -127,13 +128,13 @@ public class ImmutableDescriptor implements Descriptor {
      * @throws InvalidObjectException if the read object has invalid fields.
      */
     private Object readResolve() throws InvalidObjectException {
-        if (names.length == 0 && getClass() == ImmutableDescriptor.class)
-            return EMPTY_DESCRIPTOR;
 
         boolean bad = false;
         if (names == null || values == null || names.length != values.length)
             bad = true;
         if (!bad) {
+            if (names.length == 0 && getClass() == ImmutableDescriptor.class)
+                return EMPTY_DESCRIPTOR;
             final Comparator<String> compare = String.CASE_INSENSITIVE_ORDER;
             String lastName = ""; // also catches illegal null name
             for (int i = 0; i < names.length; i++) {
@@ -362,6 +363,7 @@ public class ImmutableDescriptor implements Descriptor {
      */
     // Note: this Javadoc is copied from javax.management.Descriptor
     //       due to 6369229.
+    @Override
     public boolean equals(Object o) {
         if (o == this)
             return true;
@@ -410,29 +412,15 @@ public class ImmutableDescriptor implements Descriptor {
      */
     // Note: this Javadoc is copied from javax.management.Descriptor
     //       due to 6369229.
+    @Override
     public int hashCode() {
         if (hashCode == -1) {
-            int hash = 0;
-            for (int i = 0; i < names.length; i++) {
-                Object v = values[i];
-                int h;
-                if (v == null)
-                    h = 0;
-                else if (v instanceof Object[])
-                    h = Arrays.deepHashCode((Object[]) v);
-                else if (v.getClass().isArray()) {
-                    h = Arrays.deepHashCode(new Object[] {v}) - 31;
-                    // hashcode of a list containing just v is
-                    // v.hashCode() + 31, see List.hashCode()
-                } else
-                    h = v.hashCode();
-                hash += names[i].toLowerCase().hashCode() ^ h;
-            }
-            hashCode = hash;
+            hashCode = Util.hashCode(names, values);
         }
         return hashCode;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("{");
         for (int i = 0; i < names.length; i++) {
@@ -479,6 +467,7 @@ public class ImmutableDescriptor implements Descriptor {
      * If the descriptor construction fails for any reason, this exception will
      * be thrown.
      */
+    @Override
     public Descriptor clone() {
         return this;
     }

@@ -41,10 +41,10 @@ class Map implements Serializable {
     /** Name of the Map. */
     private String           name;
     /** An array of AttributeSets. */
-    private Vector           areaAttributes;
+    private Vector<AttributeSet>           areaAttributes;
     /** An array of RegionContainments, will slowly grow to match the
      * length of areaAttributes as needed. */
-    private Vector           areas;
+    private Vector<RegionContainment>           areas;
 
     public Map() {
     }
@@ -68,7 +68,7 @@ class Map implements Serializable {
             return;
         }
         if (areaAttributes == null) {
-            areaAttributes = new Vector(2);
+            areaAttributes = new Vector<AttributeSet>(2);
         }
         areaAttributes.addElement(as.copyAttributes());
     }
@@ -81,8 +81,7 @@ class Map implements Serializable {
             int numAreas = (areas != null) ? areas.size() : 0;
             for (int counter = areaAttributes.size() - 1; counter >= 0;
                  counter--) {
-                if (((AttributeSet)areaAttributes.elementAt(counter)).
-                    isEqual(as)){
+                if (areaAttributes.elementAt(counter).isEqual(as)){
                     areaAttributes.removeElementAt(counter);
                     if (counter < numAreas) {
                         areas.removeElementAt(counter);
@@ -121,17 +120,16 @@ class Map implements Serializable {
             int      numAreas = (areas != null) ? areas.size() : 0;
 
             if (areas == null) {
-                areas = new Vector(numAttributes);
+                areas = new Vector<RegionContainment>(numAttributes);
             }
             for (int counter = 0; counter < numAttributes; counter++) {
                 if (counter >= numAreas) {
                     areas.addElement(createRegionContainment
-                            ((AttributeSet)areaAttributes.elementAt(counter)));
+                            (areaAttributes.elementAt(counter)));
                 }
-                RegionContainment       rc = (RegionContainment)areas.
-                                             elementAt(counter);
+                RegionContainment rc = areas.elementAt(counter);
                 if (rc != null && rc.contains(x, y, width, height)) {
-                    return (AttributeSet)areaAttributes.elementAt(counter);
+                    return areaAttributes.elementAt(counter);
                 }
             }
         }
