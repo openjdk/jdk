@@ -145,7 +145,6 @@ Notes on using CND (C/C++ pack) with this project and NetBeans.
   (a somewhat complete list of awt and 2d native directories on windows):
 
   ../../src/share/javavm/export;
-  ../../src/share/javavm/include;
   ../../src/share/native/common;
   ../../src/share/native/sun/awt/debug;
   ../../src/share/native/sun/awt/image/cvutils;

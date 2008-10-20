@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,46 +68,6 @@
                               ((jlong)SWAPINT((jint)((x) >> 32)) & 0xffffffff)))
 
 JNIEXPORT void JNICALL
-Java_java_nio_Bits_copyFromByteArray(JNIEnv *env, jobject this, jobject src,
-                                     jlong srcPos, jlong dstAddr, jlong length)
-{
-    jbyte *bytes;
-    size_t size;
-
-    while (length > 0) {
-        size = (length > MBYTE ? MBYTE : length);
-
-        GETCRITICAL(bytes, env, src);
-        memcpy((void *)dstAddr, bytes + srcPos, size);
-        RELEASECRITICAL(bytes, env, src, JNI_ABORT);
-
-        length -= size;
-        dstAddr += size;
-        srcPos += size;
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_java_nio_Bits_copyToByteArray(JNIEnv *env, jobject this, jlong srcAddr,
-                                   jobject dst, jlong dstPos, jlong length)
-{
-    jbyte *bytes;
-    size_t size;
-
-    while (length > 0) {
-        size = (length > MBYTE ? MBYTE : length);
-
-        GETCRITICAL(bytes, env, dst);
-        memcpy(bytes + dstPos, (void *)srcAddr, size);
-        RELEASECRITICAL(bytes, env, dst, 0);
-
-        length -= size;
-        srcAddr += size;
-        dstPos += size;
-    }
-}
-
-JNIEXPORT void JNICALL
 Java_java_nio_Bits_copyFromShortArray(JNIEnv *env, jobject this, jobject src,
                                       jlong srcPos, jlong dstAddr, jlong length)
 {
@@ -116,7 +76,7 @@ Java_java_nio_Bits_copyFromShortArray(JNIEnv *env, jobject this, jobject src,
     jshort *srcShort, *dstShort, *endShort;
     jshort tmpShort;
 
-    dstShort = (jshort *)dstAddr;
+    dstShort = (jshort *)jlong_to_ptr(dstAddr);
 
     while (length > 0) {
         /* do not change this if-else statement, see WARNING above */
@@ -151,7 +111,7 @@ Java_java_nio_Bits_copyToShortArray(JNIEnv *env, jobject this, jlong srcAddr,
     jshort *srcShort, *dstShort, *endShort;
     jshort tmpShort;
 
-    srcShort = (jshort *)srcAddr;
+    srcShort = (jshort *)jlong_to_ptr(srcAddr);
 
     while (length > 0) {
         /* do not change this if-else statement, see WARNING above */
@@ -186,7 +146,7 @@ Java_java_nio_Bits_copyFromIntArray(JNIEnv *env, jobject this, jobject src,
     jint *srcInt, *dstInt, *endInt;
     jint tmpInt;
 
-    dstInt = (jint *)dstAddr;
+    dstInt = (jint *)jlong_to_ptr(dstAddr);
 
     while (length > 0) {
         /* do not change this code, see WARNING above */
@@ -221,7 +181,7 @@ Java_java_nio_Bits_copyToIntArray(JNIEnv *env, jobject this, jlong srcAddr,
     jint *srcInt, *dstInt, *endInt;
     jint tmpInt;
 
-    srcInt = (jint *)srcAddr;
+    srcInt = (jint *)jlong_to_ptr(srcAddr);
 
     while (length > 0) {
         /* do not change this code, see WARNING above */
@@ -256,7 +216,7 @@ Java_java_nio_Bits_copyFromLongArray(JNIEnv *env, jobject this, jobject src,
     jlong *srcLong, *dstLong, *endLong;
     jlong tmpLong;
 
-    dstLong = (jlong *)dstAddr;
+    dstLong = (jlong *)jlong_to_ptr(dstAddr);
 
     while (length > 0) {
         /* do not change this code, see WARNING above */
@@ -291,7 +251,7 @@ Java_java_nio_Bits_copyToLongArray(JNIEnv *env, jobject this, jlong srcAddr,
     jlong *srcLong, *dstLong, *endLong;
     jlong tmpLong;
 
-    srcLong = (jlong *)srcAddr;
+    srcLong = (jlong *)jlong_to_ptr(srcAddr);
 
     while (length > 0) {
         /* do not change this code, see WARNING above */

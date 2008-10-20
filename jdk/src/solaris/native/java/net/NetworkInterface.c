@@ -206,10 +206,10 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0
 
 /*
  * Class:     java_net_NetworkInterface
- * Method:    getByIndex
+ * Method:    getByIndex0
  * Signature: (Ljava/lang/String;)Ljava/net/NetworkInterface;
  */
-JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex
+JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0
     (JNIEnv *env, jclass cls, jint index) {
 
     netif *ifs, *curr;
@@ -398,7 +398,6 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs)
     jobjectArray addrArr;
     jobjectArray bindArr;
     jobjectArray childArr;
-    netaddr *addrs;
     jint addr_index, addr_count, bind_index;
     jint child_count, child_index;
     netaddr *addrP;
@@ -815,8 +814,6 @@ static netif *enumIPv6Interfaces(JNIEnv *env, netif *ifs) {
                       addr6p[0], addr6p[1], addr6p[2], addr6p[3],
                       addr6p[4], addr6p[5], addr6p[6], addr6p[7],
                   &if_idx, &plen, &scope, &dad_status, devname) != EOF) {
-            struct netif *ifs_ptr = NULL;
-            struct netif *last_ptr = NULL;
             struct sockaddr_in6 addr;
 
             sprintf(addr6, "%s:%s:%s:%s:%s:%s:%s:%s",
@@ -852,7 +849,6 @@ static netif *enumIPv6Interfaces(JNIEnv *env, netif *ifs) {
  */
 void freeif(netif *ifs) {
     netif *currif = ifs;
-    netif *child = NULL;
 
     while (currif != NULL) {
         netaddr *addrP = currif->addr;
@@ -1158,10 +1154,9 @@ static short getFlags(JNIEnv *env, jstring name) {
  */
 static struct sockaddr *getBroadcast(JNIEnv *env, const char *ifname) {
   int sock;
-  unsigned int mask;
   struct sockaddr *ret = NULL;
   struct ifreq if2;
-  short flag;
+  short flag = 0;
 
   sock = JVM_Socket(AF_INET, SOCK_DGRAM, 0);
   if (sock < 0) {

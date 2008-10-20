@@ -30,17 +30,12 @@ import org.w3c.dom.Node;
 
 /**
  * Handles <code>&lt;ds:SignatureProperty&gt;</code> elements
- * Addittional information item concerning the generation of the signature(s) can
+ * Additional information item concerning the generation of the signature(s) can
  * be placed in this Element
  *
  * @author Christian Geuer-Pollmann
  */
 public class SignatureProperty extends SignatureElementProxy {
-
-   /** {@link java.util.logging} logging facility */
-    static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(
-                            SignatureProperty.class.getName());
 
    /**
     * Constructs{@link SignatureProperty} using specified <code>Target</code> attribute
@@ -85,7 +80,7 @@ public class SignatureProperty extends SignatureElementProxy {
     */
    public void setId(String Id) {
 
-      if ((this._state == MODE_SIGN) && (Id != null)) {
+      if ((Id != null)) {
          this._constructionElement.setAttributeNS(null, Constants._ATT_ID, Id);
          IdResolver.registerElementById(this._constructionElement, Id);
       }
@@ -107,7 +102,7 @@ public class SignatureProperty extends SignatureElementProxy {
     */
    public void setTarget(String Target) {
 
-      if ((this._state == MODE_SIGN) && (Target != null)) {
+      if ((Target != null)) {
          this._constructionElement.setAttributeNS(null, Constants._ATT_TARGET, Target);
       }
    }

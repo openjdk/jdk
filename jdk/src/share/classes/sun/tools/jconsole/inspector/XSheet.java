@@ -25,18 +25,39 @@
 
 package sun.tools.jconsole.inspector;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import javax.management.*;
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.tree.*;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+
+import javax.management.IntrospectionException;
+import javax.management.NotificationListener;
+import javax.management.MBeanInfo;
+import javax.management.InstanceNotFoundException;
+import javax.management.ReflectionException;
+import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanOperationInfo;
+import javax.management.MBeanNotificationInfo;
+import javax.management.Notification;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.SwingWorker;
+import javax.swing.border.LineBorder;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+
 import sun.tools.jconsole.*;
 import sun.tools.jconsole.inspector.XNodeInfo.Type;
 
 import static sun.tools.jconsole.Resources.*;
-import static sun.tools.jconsole.Utilities.*;
 
 @SuppressWarnings("serial")
 public class XSheet extends JPanel
@@ -344,34 +365,41 @@ public class XSheet extends JPanel
             return;
         }
         mbean = (XMBean) uo.getData();
-        SwingWorker<Void, Void> sw = new SwingWorker<Void, Void>() {
+        final XMBean xmb = mbean;
+        SwingWorker<MBeanInfo,Void> sw = new SwingWorker<MBeanInfo,Void>() {
             @Override
-            public Void doInBackground() throws InstanceNotFoundException,
+            public MBeanInfo doInBackground() throws InstanceNotFoundException,
                     IntrospectionException, ReflectionException, IOException {
-                mbeanAttributes.loadAttributes(mbean, mbean.getMBeanInfo());
-                return null;
+                MBeanInfo mbi = xmb.getMBeanInfo();
+                return mbi;
             }
             @Override
             protected void done() {
                 try {
-                    get();
-                    if (!isSelectedNode(node, currentNode)) {
-                        return;
+                    MBeanInfo mbi = get();
+                    if (mbi != null && mbi.getAttributes() != null &&
+                            mbi.getAttributes().length > 0) {
+
+                        mbeanAttributes.loadAttributes(xmb, mbi);
+
+                        if (!isSelectedNode(node, currentNode)) {
+                            return;
+                        }
+                        invalidate();
+                        mainPanel.removeAll();
+                        JPanel borderPanel = new JPanel(new BorderLayout());
+                        borderPanel.setBorder(BorderFactory.createTitledBorder(
+                                Resources.getText("Attribute values")));
+                        borderPanel.add(new JScrollPane(mbeanAttributes));
+                        mainPanel.add(borderPanel, BorderLayout.CENTER);
+                        // add the refresh button to the south panel
+                        southPanel.removeAll();
+                        southPanel.add(refreshButton, BorderLayout.SOUTH);
+                        southPanel.setVisible(true);
+                        refreshButton.setEnabled(true);
+                        validate();
+                        repaint();
                     }
-                    invalidate();
-                    mainPanel.removeAll();
-                    JPanel borderPanel = new JPanel(new BorderLayout());
-                    borderPanel.setBorder(BorderFactory.createTitledBorder(
-                            Resources.getText("Attribute values")));
-                    borderPanel.add(new JScrollPane(mbeanAttributes));
-                    mainPanel.add(borderPanel, BorderLayout.CENTER);
-                    // add the refresh button to the south panel
-                    southPanel.removeAll();
-                    southPanel.add(refreshButton, BorderLayout.SOUTH);
-                    southPanel.setVisible(true);
-                    refreshButton.setEnabled(true);
-                    validate();
-                    repaint();
                 } catch (Exception e) {
                     Throwable t = Utils.getActualException(e);
                     if (JConsole.isDebug()) {
@@ -704,13 +732,7 @@ public class XSheet extends JPanel
             JButton button = (JButton) e.getSource();
             // Refresh button
             if (button == refreshButton) {
-                new SwingWorker<Void, Void>() {
-                    @Override
-                    public Void doInBackground() {
-                        refreshAttributes();
-                        return null;
-                    }
-                }.execute();
+                refreshAttributes();
                 return;
             }
             // Clear button

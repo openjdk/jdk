@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -1900,7 +1900,6 @@ static void
 dump_heap_segment_and_reset(jlong segment_size)
 {
     int   fd;
-    char *last_chunk;
     jlong last_chunk_len;
 
     HPROF_ASSERT(gdata->heap_fd >= 0);

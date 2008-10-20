@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,6 @@ static jfieldID pdsi_ttlID;
 static jobject createInteger(JNIEnv *env, int i) {
     static jclass i_class;
     static jmethodID i_ctrID;
-    static jfieldID i_valueID;
 
     if (i_class == NULL) {
         jclass c = (*env)->FindClass(env, "java/lang/Integer");
@@ -109,7 +108,6 @@ static jobject createInteger(JNIEnv *env, int i) {
 static jobject createBoolean(JNIEnv *env, int b) {
     static jclass b_class;
     static jmethodID b_ctrID;
-    static jfieldID b_valueID;
 
     if (b_class == NULL) {
         jclass c = (*env)->FindClass(env, "java/lang/Boolean");
@@ -148,8 +146,6 @@ Java_java_net_PlainDatagramSocketImpl_init(JNIEnv *env, jclass cls) {
 #ifdef __linux__
     struct utsname sysinfo;
 #endif
-    char *s;
-
     pdsi_fdID = (*env)->GetFieldID(env, cls, "fd",
                                    "Ljava/io/FileDescriptor;");
     CHECK_NULL(pdsi_fdID);
@@ -373,7 +369,7 @@ Java_java_net_PlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject this, jin
         if (JVM_GetSockName(fd, (struct sockaddr *)&addr, &len) == -1) {
             return;
         }
-        localPort = NET_GetPortFromSockaddr(&addr);
+        localPort = NET_GetPortFromSockaddr((struct sockaddr *)&addr);
         if (localPort == 0) {
             localPort = (*env)->GetIntField(env, this, pdsi_localPortID);
 #ifdef AF_INET6
@@ -416,7 +412,6 @@ Java_java_net_PlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
     /* The fdObj'fd */
     jint fd;
 
-    ssize_t n = -1;
     SOCKADDR rmtaddr, *rmtaddrP=&rmtaddr;
     int len;
 
@@ -633,9 +628,7 @@ Java_java_net_PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
     jint packetBufferOffset, packetBufferLen;
 
     int fd;
-    jbyteArray data;
 
-    int datalen;
     int n;
     SOCKADDR remote_addr;
     int len;
@@ -812,9 +805,7 @@ Java_java_net_PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
     jint packetBufferOffset, packetBufferLen;
 
     int fd;
-    jbyteArray data;
 
-    int datalen;
     int n;
     SOCKADDR remote_addr;
     int len;
@@ -1059,7 +1050,6 @@ Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
     jobject fdObj = (*env)->GetObjectField(env, this, pdsi_fdID);
     int fd;
 
-    int arg = -1;
     int t = 1;
 
     if (IS_NULL(fdObj)) {
@@ -1751,7 +1741,7 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, jint opt) {
          * (for IF).
          */
         if (index > 0) {
-            ni = Java_java_net_NetworkInterface_getByIndex(env, ni_class,
+            ni = Java_java_net_NetworkInterface_getByIndex0(env, ni_class,
                                                                    index);
             if (ni == NULL) {
                 char errmsg[255];

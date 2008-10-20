@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,7 +369,7 @@ frame os::current_frame() {
   // apparently _asm not supported on windows amd64
   typedef intptr_t*      get_fp_func           ();
   get_fp_func* func = CAST_TO_FN_PTR(get_fp_func*,
-                                     StubRoutines::amd64::get_previous_fp_entry());
+                                     StubRoutines::x86::get_previous_fp_entry());
   if (func == NULL) return frame(NULL, NULL, NULL);
   intptr_t* fp = (*func)();
 #else

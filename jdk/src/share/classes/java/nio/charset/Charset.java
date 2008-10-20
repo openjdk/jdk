@@ -85,6 +85,9 @@ import sun.security.action.GetPropertyAction;
  *   <li> The dash character <tt>'-'</tt>
  *        (<tt>'&#92;u002d'</tt>,&nbsp;<small>HYPHEN-MINUS</small>),
  *
+ *   <li> The plus character <tt>'+'</tt>
+ *        (<tt>'&#92;u002b'</tt>,&nbsp;<small>PLUS SIGN</small>),
+ *
  *   <li> The period character <tt>'.'</tt>
  *        (<tt>'&#92;u002e'</tt>,&nbsp;<small>FULL STOP</small>),
  *
@@ -307,6 +310,7 @@ public abstract class Charset
             if (c >= 'a' && c <= 'z') continue;
             if (c >= '0' && c <= '9') continue;
             if (c == '-' && i != 0) continue;
+            if (c == '+' && i != 0) continue;
             if (c == ':' && i != 0) continue;
             if (c == '_' && i != 0) continue;
             if (c == '.' && i != 0) continue;
@@ -379,7 +383,7 @@ public abstract class Charset
     }
 
     // Thread-local gate to prevent recursive provider lookups
-    private static ThreadLocal gate = new ThreadLocal();
+    private static ThreadLocal<ThreadLocal> gate = new ThreadLocal<ThreadLocal>();
 
     private static Charset lookupViaProviders(final String charsetName) {
 
@@ -539,9 +543,9 @@ public abstract class Charset
     // Fold charsets from the given iterator into the given map, ignoring
     // charsets whose names already have entries in the map.
     //
-    private static void put(Iterator i, Map m) {
+    private static void put(Iterator<Charset> i, Map<String,Charset> m) {
         while (i.hasNext()) {
-            Charset cs = (Charset)i.next();
+            Charset cs = i.next();
             if (!m.containsKey(cs.name()))
                 m.put(cs.name(), cs);
         }
@@ -623,7 +627,7 @@ public abstract class Charset
 
     private final String name;          // tickles a bug in oldjavac
     private final String[] aliases;     // tickles a bug in oldjavac
-    private Set aliasSet = null;
+    private Set<String> aliasSet = null;
 
     /**
      * Initializes a new charset with the given canonical name and alias
@@ -665,7 +669,7 @@ public abstract class Charset
         if (aliasSet != null)
             return aliasSet;
         int n = aliases.length;
-        HashSet hs = new HashSet(n);
+        HashSet<String> hs = new HashSet<String>(n);
         for (int i = 0; i < n; i++)
             hs.add(aliases[i]);
         aliasSet = Collections.unmodifiableSet(hs);

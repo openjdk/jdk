@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,15 @@ import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 
 public abstract class ClientCommunicatorAdmin {
+    private static volatile long threadNo = 1;
+
     public ClientCommunicatorAdmin(long period) {
         this.period = period;
 
         if (period > 0) {
             checker = new Checker();
 
-            Thread t = new Thread(checker);
+            Thread t = new Thread(checker, "JMX client heartbeat " + ++threadNo);
             t.setDaemon(true);
             t.start();
         } else

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -540,7 +540,6 @@ ownedMonitorsWithStackDepth(PacketInputStream *in, PacketOutputStream *out)
 
         jvmtiError error = JVMTI_ERROR_NONE;
         jint count = 0;
-        jint depth;
         jvmtiMonitorStackDepthInfo *monitors=NULL;
 
         error = JVMTI_FUNC_PTR(gdata->jvmti,GetOwnedMonitorStackDepthInfo)

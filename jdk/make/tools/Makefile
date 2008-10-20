@@ -32,7 +32,6 @@ include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS =                   \
   addjsum                   \
-  auto_multi                \
   buildmetaindex            \
   commentchecker            \
   compile_font_config       \
@@ -51,6 +50,7 @@ SUBDIRS =                   \
   jdwpgen                   \
   makeclasslist             \
   strip_properties          \
+  spp                       \
   CharsetMapping
 
 all build clean clobber::

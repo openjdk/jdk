@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.util;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A facility for threads to schedule tasks for future execution in a
@@ -92,12 +93,12 @@ public class Timer {
      * and the timer thread consumes, executing timer tasks as appropriate,
      * and removing them from the queue when they're obsolete.
      */
-    private TaskQueue queue = new TaskQueue();
+    private final TaskQueue queue = new TaskQueue();
 
     /**
      * The timer thread.
      */
-    private TimerThread thread = new TimerThread(queue);
+    private final TimerThread thread = new TimerThread(queue);
 
     /**
      * This object causes the timer's task execution thread to exit
@@ -106,7 +107,7 @@ public class Timer {
      * Timer as such a finalizer would be susceptible to a subclass's
      * finalizer forgetting to call it.
      */
-    private Object threadReaper = new Object() {
+    private final Object threadReaper = new Object() {
         protected void finalize() throws Throwable {
             synchronized(queue) {
                 thread.newTasksMayBeScheduled = false;
@@ -116,12 +117,11 @@ public class Timer {
     };
 
     /**
-     * This ID is used to generate thread names.  (It could be replaced
-     * by an AtomicInteger as soon as they become available.)
+     * This ID is used to generate thread names.
      */
-    private static int nextSerialNumber = 0;
-    private static synchronized int serialNumber() {
-        return nextSerialNumber++;
+    private final static AtomicInteger nextSerialNumber = new AtomicInteger(0);
+    private static int serialNumber() {
+        return nextSerialNumber.getAndIncrement();
     }
 
     /**
@@ -386,6 +386,11 @@ public class Timer {
     private void sched(TimerTask task, long time, long period) {
         if (time < 0)
             throw new IllegalArgumentException("Illegal execution time.");
+
+        // Constrain value of period sufficiently to prevent numeric
+        // overflow while still being effectively infinitely large.
+        if (Math.abs(period) > (Long.MAX_VALUE >> 1))
+            period >>= 1;
 
         synchronized(queue) {
             if (!thread.newTasksMayBeScheduled)

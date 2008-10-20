@@ -526,16 +526,16 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         EditorKit editorKit = getEditorKit(editor);
         if ( editorKit != null
              && editorKit instanceof DefaultEditorKit) {
-            Set storedForwardTraversalKeys = editor.
+            Set<AWTKeyStroke> storedForwardTraversalKeys = editor.
                 getFocusTraversalKeys(KeyboardFocusManager.
                                       FORWARD_TRAVERSAL_KEYS);
-            Set storedBackwardTraversalKeys = editor.
+            Set<AWTKeyStroke> storedBackwardTraversalKeys = editor.
                 getFocusTraversalKeys(KeyboardFocusManager.
                                       BACKWARD_TRAVERSAL_KEYS);
-            Set forwardTraversalKeys =
-                new HashSet(storedForwardTraversalKeys);
-            Set backwardTraversalKeys =
-                new HashSet(storedBackwardTraversalKeys);
+            Set<AWTKeyStroke> forwardTraversalKeys =
+                new HashSet<AWTKeyStroke>(storedForwardTraversalKeys);
+            Set<AWTKeyStroke> backwardTraversalKeys =
+                new HashSet<AWTKeyStroke>(storedBackwardTraversalKeys);
             if (editor.isEditable()) {
                 forwardTraversalKeys.
                     remove(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0));
@@ -1888,7 +1888,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          *
          * @param e  The change notification from the currently associated
          *  document.
-         * @see DocumentListener#changeUpdate
+         * @see DocumentListener#changedUpdate(DocumentEvent)
          */
         public final void changedUpdate(DocumentEvent e) {
             Rectangle alloc = (painted) ? getVisibleEditorRect() : null;
@@ -1964,9 +1964,9 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                     }
                     try {
                         rootView.setSize(alloc.width, alloc.height);
-                        Enumeration components = constraints.keys();
+                        Enumeration<Component> components = constraints.keys();
                         while (components.hasMoreElements()) {
-                            Component comp = (Component) components.nextElement();
+                            Component comp = components.nextElement();
                             View v = (View) constraints.get(comp);
                             Shape ca = calculateViewPosition(alloc, v);
                             if (ca != null) {
@@ -2009,7 +2009,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         public void addLayoutComponent(Component comp, Object constraint) {
             if (constraint instanceof View) {
                 if (constraints == null) {
-                    constraints = new Hashtable(7);
+                    constraints = new Hashtable<Component, Object>(7);
                 }
                 constraints.put(comp, constraint);
             }
@@ -2060,7 +2060,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          * These are View objects for those components that are represented
          * by a View in the View tree.
          */
-        private Hashtable constraints;
+        private Hashtable<Component, Object> constraints;
 
         private boolean i18nView = false;
     }
@@ -2457,8 +2457,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             JTextComponent c = (JTextComponent)comp;
 
             int pos = modeBetween
-                      ? ((JTextComponent.DropLocation)c.getDropLocation()).getIndex()
-                      : c.getCaretPosition();
+                      ? c.getDropLocation().getIndex() : c.getCaretPosition();
 
             // if we are importing to the same component that we exported from
             // then don't actually do anything if the drop location is inside

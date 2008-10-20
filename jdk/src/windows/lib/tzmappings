@@ -65,8 +65,8 @@ Newfoundland:-1,81::America/St_Johns:
 Newfoundland Standard Time:-1,81::America/St_Johns:
 Pacific SA:-1,82::America/Santiago:
 Pacific SA Standard Time:-1,82::America/Santiago:
-SA Western:-1,82::America/Caracas:
-SA Western Standard Time:-1,82::America/Caracas:
+SA Western:-1,82:BO:America/La_Paz:
+SA Western Standard Time:-1,82:BO:America/La_Paz:
 SA Pacific:-1,83::America/Bogota:
 SA Pacific Standard Time:-1,83::America/Bogota:
 US Eastern:-1,84::America/Indianapolis:
@@ -177,3 +177,4 @@ Jordan Standard Time:908,908:JO:Asia/Amman:
 Middle East Standard Time:909,909:LB:Asia/Beirut:
 Armenian Standard Time:910,910:AM:Asia/Yerevan:
 Montevideo Standard Time:911,911:UY:America/Montevideo:
+Venezuela Standard Time:912,912::America/Caracas:

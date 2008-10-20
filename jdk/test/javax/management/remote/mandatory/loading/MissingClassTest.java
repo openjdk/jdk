@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,33 @@
   We also test objects that are of known class but not serializable.
   The test cases are similar.
  */
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import javax.management.*;
-import javax.management.loading.*;
-import javax.management.remote.*;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectOutputStream;
+import java.net.MalformedURLException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import javax.management.Attribute;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerFactory;
+import javax.management.Notification;
+import javax.management.NotificationBroadcasterSupport;
+import javax.management.NotificationFilter;
+import javax.management.NotificationListener;
+import javax.management.ObjectName;
+import javax.management.remote.JMXConnectionNotification;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXConnectorServer;
+import javax.management.remote.JMXConnectorServerFactory;
+import javax.management.remote.JMXServiceURL;
 import javax.management.remote.rmi.RMIConnectorServer;
+import org.omg.CORBA.MARSHAL;
 
 public class MissingClassTest {
     private static final int NNOTIFS = 50;
@@ -84,7 +104,6 @@ public class MissingClassTest {
             serverLoader.loadClass("$ClientUnknown$").newInstance();
 
         final String[] protos = {"rmi", /*"iiop",*/ "jmxmp"};
-        // iiop commented out until bug 4935098 is fixed
         boolean ok = true;
         for (int i = 0; i < protos.length; i++) {
             try {
@@ -105,7 +124,16 @@ public class MissingClassTest {
     }
 
     private static boolean test(String proto) throws Exception {
-        System.out.println("Testing for proto " + proto);
+        boolean ok = true;
+        for (boolean eventService : new boolean[] {false, true})
+            ok &= test(proto, eventService);
+        return ok;
+    }
+
+    private static boolean test(String proto, boolean eventService)
+            throws Exception {
+        System.out.println("Testing for proto " + proto + " with" +
+                (eventService ? "" : "out") + " Event Service");
 
         boolean ok = true;
 
@@ -117,6 +145,8 @@ public class MissingClassTest {
         Map serverMap = new HashMap();
         serverMap.put(JMXConnectorServerFactory.DEFAULT_CLASS_LOADER,
                       serverLoader);
+        serverMap.put(RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE,
+                Boolean.toString(eventService));
 
         // make sure no auto-close at server side
         serverMap.put("jmx.remote.x.server.connection.timeout", "888888888");
@@ -155,6 +185,8 @@ public class MissingClassTest {
             ok = false;
         } catch (IOException e) {
             Throwable cause = e.getCause();
+            if (cause instanceof MARSHAL)  // see CR 4935098
+                cause = cause.getCause();
             if (cause instanceof ClassNotFoundException) {
                 System.out.println("Success: got an IOException wrapping " +
                                    "a ClassNotFoundException");
@@ -177,6 +209,8 @@ public class MissingClassTest {
             ok = false;
         } catch (IOException e) {
             Throwable wrapped = e.getCause();
+            if (wrapped instanceof MARSHAL)  // see CR 4935098
+                wrapped = wrapped.getCause();
             if (wrapped instanceof ClassNotFoundException) {
                 System.out.println("Success: got an IOException wrapping " +
                                    "a ClassNotFoundException: " +
@@ -228,6 +262,8 @@ public class MissingClassTest {
                 ok = false;
             } catch (IOException e) {
                 Throwable cause = e.getCause();
+                if (cause instanceof MARSHAL)  // see CR 4935098
+                    cause = cause.getCause();
                 if (cause instanceof ClassNotFoundException) {
                     System.out.println("Success: got an IOException " +
                                        "wrapping a ClassNotFoundException");
@@ -461,12 +497,13 @@ public class MissingClassTest {
         while ((remain = deadline - System.currentTimeMillis()) >= 0) {
             synchronized (result) {
                 if (result.failed
-                    || (result.knownCount == NNOTIFS
-                        && result.lostCount == NNOTIFS*2))
+                    || (result.knownCount >= NNOTIFS
+                        && result.lostCount >= NNOTIFS*2))
                     break;
                 result.wait(remain);
             }
         }
+        Thread.sleep(2);  // allow any spurious extra notifs to arrive
         if (result.failed) {
             System.out.println("TEST FAILS: Notification strangeness");
             return false;
@@ -476,6 +513,11 @@ public class MissingClassTest {
                                "got NOTIFS_LOST for unknown and " +
                                "unserializable ones");
             return true;
+        } else if (result.knownCount >= NNOTIFS
+                || result.lostCount >= NNOTIFS*2) {
+            System.out.println("TEST FAILS: Received too many notifs: " +
+                    "known=" + result.knownCount + "; lost=" + result.lostCount);
+            return false;
         } else {
             System.out.println("TEST FAILS: Timed out without receiving " +
                                "all notifs: known=" + result.knownCount +

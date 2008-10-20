@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,14 +65,6 @@ Java_sun_nio_ch_ServerSocketChannelImpl_initIDs(JNIEnv *env, jclass c)
                                      "(Ljava/net/InetAddress;I)V");
 }
 
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_ServerSocketChannelImpl_listen(JNIEnv *env, jclass cl,
-                                               jobject fdo, jint backlog)
-{
-    if (listen(fdval(env, fdo), backlog) < 0)
-        handleSocketError(env, errno);
-}
-
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
                                                 jobject ssfdo, jobject newfdo,
@@ -81,12 +73,12 @@ Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
     jint ssfd = (*env)->GetIntField(env, ssfdo, fd_fdID);
     jint newfd;
     struct sockaddr *sa;
-    int sa_len;
+    int alloc_len;
     jobject remote_ia = 0;
     jobject isa;
     jint remote_port;
 
-    NET_AllocSockaddr(&sa, &sa_len);
+    NET_AllocSockaddr(&sa, &alloc_len);
 
     /*
      * accept connection but ignore ECONNABORTED indicating that
@@ -94,6 +86,7 @@ Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
      * accept() was called.
      */
     for (;;) {
+        socklen_t sa_len = alloc_len;
         newfd = accept(ssfd, sa, &sa_len);
         if (newfd >= 0) {
             break;

@@ -1609,7 +1609,30 @@ void CFGLoop::compute_freq() {
 float Block::succ_prob(uint i) {
   int eidx = end_idx();
   Node *n = _nodes[eidx];  // Get ending Node
-  int op = n->is_Mach() ? n->as_Mach()->ideal_Opcode() : n->Opcode();
+
+  int op = n->Opcode();
+  if (n->is_Mach()) {
+    if (n->is_MachNullCheck()) {
+      // Can only reach here if called after lcm. The original Op_If is gone,
+      // so we attempt to infer the probability from one or both of the
+      // successor blocks.
+      assert(_num_succs == 2, "expecting 2 successors of a null check");
+      // If either successor has only one predecessor, then the
+      // probabiltity estimate can be derived using the
+      // relative frequency of the successor and this block.
+      if (_succs[i]->num_preds() == 2) {
+        return _succs[i]->_freq / _freq;
+      } else if (_succs[1-i]->num_preds() == 2) {
+        return 1 - (_succs[1-i]->_freq / _freq);
+      } else {
+        // Estimate using both successor frequencies
+        float freq = _succs[i]->_freq;
+        return freq / (freq + _succs[1-i]->_freq);
+      }
+    }
+    op = n->as_Mach()->ideal_Opcode();
+  }
+
 
   // Switch on branch type
   switch( op ) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1717,7 +1717,7 @@ void LIRGenerator::do_UnsafeGetRaw(UnsafeGetRaw* x) {
     assert(log2_scale == 0, "must not have a scale");
     addr = new LIR_Address(base_op, index_op->as_jint(), dst_type);
   } else {
-#ifdef IA32
+#ifdef X86
     addr = new LIR_Address(base_op, index_op, LIR_Address::Scale(log2_scale), 0, dst_type);
 #else
     if (index_op->is_illegal() || log2_scale == 0) {

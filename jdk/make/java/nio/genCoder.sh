@@ -1,7 +1,7 @@
 #! /bin/sh
 
 #
-# Copyright 2000-2001 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,8 @@ if [ x$what = xdecoder ]; then
     -Dcoding='decoding' \
     -DOtherCoder='Encoder' \
     -DreplTypeName='string' \
-    -DdefaultRepl='"\\\\uFFFD"' \
-    -DdefaultReplName='<tt>"\\\&#92;uFFFD"<\/tt>' \
+    -DdefaultRepl='"\\uFFFD"' \
+    -DdefaultReplName='<tt>"\&#92;uFFFD"<\/tt>' \
     -DreplType='String' \
     -DreplFQType='java.lang.String' \
     -DreplLength='length()' \
@@ -84,7 +84,7 @@ elif [ x$what = xencoder ]; then
     -DOtherCoder='Decoder' \
     -DreplTypeName='byte array' \
     -DdefaultRepl='new byte[] { (byte)'"'"\\?"'"' }' \
-    -DdefaultReplName='<tt>{<\/tt>\\\&nbsp;<tt>(byte)'"'"\\?"'"'<\/tt>\\\&nbsp;<tt>}<\/tt>' \
+    -DdefaultReplName='<tt>{<\/tt>\&nbsp;<tt>(byte)'"'"\\?"'"'<\/tt>\&nbsp;<tt>}<\/tt>' \
     -DreplType='byte[]' \
     -DreplFQType='byte[]' \
     -DreplLength='length' \

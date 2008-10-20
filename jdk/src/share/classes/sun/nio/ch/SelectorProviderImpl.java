@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.ProtocolFamily;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
 
@@ -39,6 +40,10 @@ public abstract class SelectorProviderImpl
 
     public DatagramChannel openDatagramChannel() throws IOException {
         return new DatagramChannelImpl(this);
+    }
+
+    public DatagramChannel openDatagramChannel(ProtocolFamily family) throws IOException {
+        return new DatagramChannelImpl(this, family);
     }
 
     public Pipe openPipe() throws IOException {
@@ -54,5 +59,4 @@ public abstract class SelectorProviderImpl
     public SocketChannel openSocketChannel() throws IOException {
         return new SocketChannelImpl(this);
     }
-
 }

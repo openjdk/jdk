@@ -102,8 +102,7 @@ static jboolean InitializeJVM(JavaVM **pvm, JNIEnv **penv,
                               InvocationFunctions *ifn);
 static jstring NewPlatformString(JNIEnv *env, char *s);
 static jobjectArray NewPlatformStringArray(JNIEnv *env, char **strv, int strc);
-static jclass LoadClass(JNIEnv *env, char *name);
-static jstring GetMainClassName(JNIEnv *env, char *jarname);
+static jclass LoadMainClass(JNIEnv *env, jboolean isJar, char *name);
 
 static void TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***pargv);
 static jboolean AddApplicationOptions(int cpathc, const char **cpathv);
@@ -148,7 +147,7 @@ static void ShowSplashScreen();
 static jboolean IsWildCardEnabled();
 
 #define ARG_CHECK(n, f, a) if (n < 1) { \
-    ReportErrorMessage(f, a); \
+    JLI_ReportErrorMessage(f, a); \
     printUsage = JNI_TRUE; \
     *pret = 1; \
     return JNI_TRUE; \
@@ -301,6 +300,22 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
 
 }
 
+#define CHECK_EXCEPTION_NULL_LEAVE(e) \
+    if ((*env)->ExceptionOccurred(env)) { \
+        JLI_ReportExceptionDescription(env); \
+        goto leave; \
+    } \
+    if ((e) == NULL) { \
+        JLI_ReportErrorMessage(JNI_ERROR); \
+        goto leave; \
+    }
+
+#define CHECK_EXCEPTION_LEAVE(rv) \
+    if ((*env)->ExceptionOccurred(env)) { \
+        JLI_ReportExceptionDescription(env); \
+        ret = (rv); \
+        goto leave; \
+    }
 
 int JNICALL
 JavaMain(void * _args)
@@ -321,22 +336,16 @@ JavaMain(void * _args)
     int ret = 0;
     jlong start, end;
 
-
     /* Initialize the virtual machine */
-
     start = CounterGet();
     if (!InitializeJVM(&vm, &env, &ifn)) {
-        ReportErrorMessage(JVM_ERROR1);
+        JLI_ReportErrorMessage(JVM_ERROR1);
         exit(1);
     }
 
     if (printVersion || showVersion) {
         PrintJavaVersion(env, showVersion);
-        if ((*env)->ExceptionOccurred(env)) {
-            ReportExceptionDescription(env);
-            ReportErrorMessage(JNI_ERROR);
-            goto leave;
-        }
+        CHECK_EXCEPTION_LEAVE(0);
         if (printVersion) {
             ret = 0;
             goto leave;
@@ -346,11 +355,7 @@ JavaMain(void * _args)
     /* If the user specified neither a class name nor a JAR file */
     if (printXUsage || printUsage || (jarfile == 0 && classname == 0)) {
         PrintUsage(env, printXUsage);
-        if ((*env)->ExceptionOccurred(env)) {
-            ReportExceptionDescription(env);
-            ReportErrorMessage(JNI_ERROR);
-            ret=1;
-        }
+        CHECK_EXCEPTION_LEAVE(1);
         goto leave;
     }
 
@@ -395,99 +400,25 @@ JavaMain(void * _args)
      *          the environment (and remove these comments).
      */
     if (jarfile != 0) {
-        mainClassName = GetMainClassName(env, jarfile);
-        if ((*env)->ExceptionOccurred(env)) {
-            ReportExceptionDescription(env);
-            ReportErrorMessage(JNI_ERROR);
-            goto leave;
-        }
-        if (mainClassName == NULL) {
-          ReportErrorMessage(JAR_ERROR1,jarfile, GEN_ERROR);
-          goto leave;
-        }
-        classname = (char *)(*env)->GetStringUTFChars(env, mainClassName, 0);
-        if (classname == NULL) {
-            ReportExceptionDescription(env);
-            ReportErrorMessage(JNI_ERROR);
-            goto leave;
-        }
-        mainClass = LoadClass(env, classname);
-        if(mainClass == NULL) { /* exception occured */
-            ReportExceptionDescription(env);
-            ReportErrorMessage(CLS_ERROR1, classname);
-            goto leave;
-        }
-        (*env)->ReleaseStringUTFChars(env, mainClassName, classname);
+        mainClass = LoadMainClass(env, JNI_TRUE, jarfile);
     } else {
-      mainClassName = NewPlatformString(env, classname);
-      if (mainClassName == NULL) {
-        ReportErrorMessage(CLS_ERROR2, classname, GEN_ERROR);
-        goto leave;
-      }
-      classname = (char *)(*env)->GetStringUTFChars(env, mainClassName, 0);
-      if (classname == NULL) {
-        ReportExceptionDescription(env);
-        ReportErrorMessage(JNI_ERROR);
-        goto leave;
-      }
-      mainClass = LoadClass(env, classname);
-      if(mainClass == NULL) { /* exception occured */
-        ReportExceptionDescription(env);
-        ReportErrorMessage(CLS_ERROR1, classname);
-        goto leave;
-      }
-      (*env)->ReleaseStringUTFChars(env, mainClassName, classname);
+        mainClass = LoadMainClass(env, JNI_FALSE, classname);
     }
+    CHECK_EXCEPTION_NULL_LEAVE(mainClass);
 
-    /* Get the application's main method */
+    /*
+     * The LoadMainClass not only loads the main class, it will also ensure
+     * that the main method's signature is correct, therefore further checking
+     * is not required. The main method is invoked here so that extraneous java
+     * stacks are not in the application stack trace.
+     */
     mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
                                        "([Ljava/lang/String;)V");
-    if (mainID == NULL) {
-        if ((*env)->ExceptionOccurred(env)) {
-            ReportExceptionDescription(env);
-            ReportErrorMessage(JNI_ERROR);
-        } else {
-          ReportErrorMessage(CLS_ERROR3);
-        }
-        goto leave;
-    }
-
-    {    /* Make sure the main method is public */
-        jint mods;
-        jmethodID mid;
-        jobject obj = (*env)->ToReflectedMethod(env, mainClass,
-                                                mainID, JNI_TRUE);
-
-        if( obj == NULL) { /* exception occurred */
-            ReportExceptionDescription(env);
-            ReportErrorMessage(JNI_ERROR);
-            goto leave;
-        }
-
-        mid =
-          (*env)->GetMethodID(env,
-                              (*env)->GetObjectClass(env, obj),
-                              "getModifiers", "()I");
-        if ((*env)->ExceptionOccurred(env)) {
-            ReportExceptionDescription(env);
-            ReportErrorMessage(JNI_ERROR);
-            goto leave;
-        }
-
-        mods = (*env)->CallIntMethod(env, obj, mid);
-        if ((mods & 1) == 0) { /* if (!Modifier.isPublic(mods)) ... */
-            ReportErrorMessage(CLS_ERROR4);
-            goto leave;
-        }
-    }
+    CHECK_EXCEPTION_NULL_LEAVE(mainID);
 
     /* Build argument array */
     mainArgs = NewPlatformStringArray(env, argv, argc);
-    if (mainArgs == NULL) {
-        ReportExceptionDescription(env);
-        ReportErrorMessage(JNI_ERROR);
-        goto leave;
-    }
+    CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
 
     /* Invoke main method. */
     (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
@@ -498,20 +429,18 @@ JavaMain(void * _args)
      */
     ret = (*env)->ExceptionOccurred(env) == NULL ? 0 : 1;
 
+leave:
     /*
-     * Detach the main thread so that it appears to have ended when
+     * Always detach the main thread so that it appears to have ended when
      * the application's main method exits.  This will invoke the
      * uncaught exception handler machinery if main threw an
      * exception.  An uncaught exception handler cannot change the
      * launcher's return code except by calling System.exit.
      */
     if ((*vm)->DetachCurrentThread(vm) != 0) {
-        ReportErrorMessage(JVM_ERROR2);
+        JLI_ReportErrorMessage(JVM_ERROR2);
         ret = 1;
-        goto leave;
     }
-
- leave:
     /*
      * Wait for all non-daemon threads to end, then destroy the VM.
      * This will actually create a trivial new Java waiter thread
@@ -524,7 +453,6 @@ JavaMain(void * _args)
 
     return ret;
 }
-
 
 /*
  * Checks the command line options to find which JVM type was
@@ -635,7 +563,7 @@ CheckJvmType(int *pargc, char ***argv, jboolean speculative) {
 
         if (loopCount > knownVMsCount) {
           if (!speculative) {
-            ReportErrorMessage(CFG_ERROR1);
+            JLI_ReportErrorMessage(CFG_ERROR1);
             exit(1);
           } else {
             return "ERROR";
@@ -645,7 +573,7 @@ CheckJvmType(int *pargc, char ***argv, jboolean speculative) {
 
         if (nextIdx < 0) {
           if (!speculative) {
-            ReportErrorMessage(CFG_ERROR2, knownVMs[jvmidx].alias);
+            JLI_ReportErrorMessage(CFG_ERROR2, knownVMs[jvmidx].alias);
             exit(1);
           } else {
             return "ERROR";
@@ -660,7 +588,7 @@ CheckJvmType(int *pargc, char ***argv, jboolean speculative) {
     switch (knownVMs[jvmidx].flag) {
     case VM_WARN:
         if (!speculative) {
-            ReportErrorMessage(CFG_WARN1, jvmtype, knownVMs[0].name + 1);
+            JLI_ReportErrorMessage(CFG_WARN1, jvmtype, knownVMs[0].name + 1);
         }
         /* fall through */
     case VM_IGNORE:
@@ -670,7 +598,7 @@ CheckJvmType(int *pargc, char ***argv, jboolean speculative) {
         break;
     case VM_ERROR:
         if (!speculative) {
-            ReportErrorMessage(CFG_ERROR3, jvmtype);
+            JLI_ReportErrorMessage(CFG_ERROR3, jvmtype);
             exit(1);
         } else {
             return "ERROR";
@@ -879,9 +807,9 @@ SelectVersion(int argc, char **argv, char **main_class)
     if (jarflag && operand) {
         if ((res = JLI_ParseManifest(operand, &info)) != 0) {
             if (res == -1)
-                ReportErrorMessage(JAR_ERROR2, operand);
+                JLI_ReportErrorMessage(JAR_ERROR2, operand);
             else
-                ReportErrorMessage(JAR_ERROR3, operand);
+                JLI_ReportErrorMessage(JAR_ERROR3, operand);
             exit(1);
         }
 
@@ -948,7 +876,7 @@ SelectVersion(int argc, char **argv, char **main_class)
      * Check for correct syntax of the version specification (JSR 56).
      */
     if (!JLI_ValidVersionString(info.jre_version)) {
-        ReportErrorMessage(SPC_ERROR1, info.jre_version);
+        JLI_ReportErrorMessage(SPC_ERROR1, info.jre_version);
         exit(1);
     }
 
@@ -970,7 +898,7 @@ SelectVersion(int argc, char **argv, char **main_class)
             JLI_MemFree(new_argv);
             return;
         } else {
-            ReportErrorMessage(CFG_ERROR4, info.jre_version);
+            JLI_ReportErrorMessage(CFG_ERROR4, info.jre_version);
             exit(1);
         }
     }
@@ -1040,7 +968,7 @@ ParseArguments(int *pargc, char ***pargv, char **pjarfile,
  * command line options.
  */
         } else if (JLI_StrCmp(arg, "-fullversion") == 0) {
-            ReportMessage("%s full version \"%s\"", _launcher_name, GetFullVersion());
+            JLI_ReportMessage("%s full version \"%s\"", _launcher_name, GetFullVersion());
             return JNI_FALSE;
         } else if (JLI_StrCmp(arg, "-verbosegc") == 0) {
             AddOption("-verbose:gc", NULL);
@@ -1080,7 +1008,7 @@ ParseArguments(int *pargc, char ***pargv, char **pjarfile,
                    JLI_StrCmp(arg, "-cs") == 0 ||
                    JLI_StrCmp(arg, "-noasyncgc") == 0) {
             /* No longer supported */
-            ReportErrorMessage(ARG_WARN, arg);
+            JLI_ReportErrorMessage(ARG_WARN, arg);
         } else if (JLI_StrCCmp(arg, "-version:") == 0 ||
                    JLI_StrCmp(arg, "-no-jre-restrict-search") == 0 ||
                    JLI_StrCmp(arg, "-jre-restrict-search") == 0 ||
@@ -1143,12 +1071,12 @@ InitializeJVM(JavaVM **pvm, JNIEnv **penv, InvocationFunctions *ifn)
 
 
 #define NULL_CHECK0(e) if ((e) == 0) { \
-    ReportErrorMessage(JNI_ERROR); \
+    JLI_ReportErrorMessage(JNI_ERROR); \
     return 0; \
   }
 
 #define NULL_CHECK(e) if ((e) == 0) { \
-    ReportErrorMessage(JNI_ERROR); \
+    JLI_ReportErrorMessage(JNI_ERROR); \
     return; \
   }
 
@@ -1159,7 +1087,7 @@ static jstring getPlatformEncoding(JNIEnv *env) {
         if (propname) {
             jclass cls;
             jmethodID mid;
-            NULL_CHECK0 (cls = (*env)->FindClass(env, "java/lang/System"));
+            NULL_CHECK0 (cls = FindBootStrapClass(env, "java/lang/System"));
             NULL_CHECK0 (mid = (*env)->GetStaticMethodID(
                                    env, cls,
                                    "getProperty",
@@ -1174,7 +1102,7 @@ static jstring getPlatformEncoding(JNIEnv *env) {
 static jboolean isEncodingSupported(JNIEnv *env, jstring enc) {
     jclass cls;
     jmethodID mid;
-    NULL_CHECK0 (cls = (*env)->FindClass(env, "java/nio/charset/Charset"));
+    NULL_CHECK0 (cls = FindBootStrapClass(env, "java/nio/charset/Charset"));
     NULL_CHECK0 (mid = (*env)->GetStaticMethodID(
                            env, cls,
                            "isSupported",
@@ -1203,8 +1131,8 @@ NewPlatformString(JNIEnv *env, char *s)
         jstring str = 0;
         (*env)->SetByteArrayRegion(env, ary, 0, len, (jbyte *)s);
         if (!(*env)->ExceptionOccurred(env)) {
+            NULL_CHECK0(cls = FindBootStrapClass(env, "java/lang/String"));
             if (isEncodingSupported(env, enc) == JNI_TRUE) {
-                NULL_CHECK0(cls = (*env)->FindClass(env, "java/lang/String"));
                 NULL_CHECK0(mid = (*env)->GetMethodID(env, cls, "<init>",
                                           "([BLjava/lang/String;)V"));
                 str = (*env)->NewObject(env, cls, mid, ary, enc);
@@ -1215,7 +1143,6 @@ NewPlatformString(JNIEnv *env, char *s)
                   the encoding name, in which the StringCoding class will
                   pickup the iso-8859-1 as the fallback converter for us.
                 */
-                NULL_CHECK0(cls = (*env)->FindClass(env, "java/lang/String"));
                 NULL_CHECK0(mid = (*env)->GetMethodID(env, cls, "<init>",
                                           "([B)V"));
                 str = (*env)->NewObject(env, cls, mid, ary);
@@ -1238,7 +1165,7 @@ NewPlatformStringArray(JNIEnv *env, char **strv, int strc)
     jarray ary;
     int i;
 
-    NULL_CHECK0(cls = (*env)->FindClass(env, "java/lang/String"));
+    NULL_CHECK0(cls = FindBootStrapClass(env, "java/lang/String"));
     NULL_CHECK0(ary = (*env)->NewObjectArray(env, strc, cls, 0));
     for (i = 0; i < strc; i++) {
         jstring str = NewPlatformString(env, *strv++);
@@ -1250,25 +1177,26 @@ NewPlatformStringArray(JNIEnv *env, char **strv, int strc)
 }
 
 /*
- * Loads a class, convert the '.' to '/'.
+ * Loads a class and verifies that the main class is present and it is ok to
+ * call it for more details refer to the java implementation.
  */
 static jclass
-LoadClass(JNIEnv *env, char *name)
+LoadMainClass(JNIEnv *env, jboolean isJar, char *name)
 {
-    char *buf = JLI_MemAlloc(JLI_StrLen(name) + 1);
-    char *s = buf, *t = name, c;
     jclass cls;
+    jmethodID mid;
+    jstring str;
+    jobject result;
     jlong start, end;
 
-    if (JLI_IsTraceLauncher())
+    if (JLI_IsTraceLauncher()) {
         start = CounterGet();
-
-    do {
-        c = *t++;
-        *s++ = (c == '.') ? '/' : c;
-    } while (c != '\0');
-    cls = (*env)->FindClass(env, buf);
-    JLI_MemFree(buf);
+    }
+    NULL_CHECK0(cls = FindBootStrapClass(env, "sun/launcher/LauncherHelper"));
+    NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, cls, "checkAndLoadMain",
+                                          "(ZZLjava/lang/String;)Ljava/lang/Object;"));
+    str = (*env)->NewStringUTF(env, name);
+    result = (*env)->CallStaticObjectMethod(env, cls, mid, JNI_TRUE, isJar, str);
 
     if (JLI_IsTraceLauncher()) {
         end   = CounterGet();
@@ -1277,48 +1205,8 @@ LoadClass(JNIEnv *env, char *name)
         printf("----_JAVA_LAUNCHER_DEBUG----\n");
     }
 
-    return cls;
+    return (jclass)result;
 }
-
-
-/*
- * Returns the main class name for the specified jar file.
- */
-static jstring
-GetMainClassName(JNIEnv *env, char *jarname)
-{
-#define MAIN_CLASS "Main-Class"
-    jclass cls;
-    jmethodID mid;
-    jobject jar, man, attr;
-    jstring str, result = 0;
-
-    NULL_CHECK0(cls = (*env)->FindClass(env, "java/util/jar/JarFile"));
-    NULL_CHECK0(mid = (*env)->GetMethodID(env, cls, "<init>",
-                                          "(Ljava/lang/String;)V"));
-    NULL_CHECK0(str = NewPlatformString(env, jarname));
-    NULL_CHECK0(jar = (*env)->NewObject(env, cls, mid, str));
-    NULL_CHECK0(mid = (*env)->GetMethodID(env, cls, "getManifest",
-                                          "()Ljava/util/jar/Manifest;"));
-    man = (*env)->CallObjectMethod(env, jar, mid);
-    if (man != 0) {
-        NULL_CHECK0(mid = (*env)->GetMethodID(env,
-                                    (*env)->GetObjectClass(env, man),
-                                    "getMainAttributes",
-                                    "()Ljava/util/jar/Attributes;"));
-        attr = (*env)->CallObjectMethod(env, man, mid);
-        if (attr != 0) {
-            NULL_CHECK0(mid = (*env)->GetMethodID(env,
-                                    (*env)->GetObjectClass(env, attr),
-                                    "getValue",
-                                    "(Ljava/lang/String;)Ljava/lang/String;"));
-            NULL_CHECK0(str = NewPlatformString(env, MAIN_CLASS));
-            result = (*env)->CallObjectMethod(env, attr, mid, str);
-        }
-    }
-    return result;
-}
-
 
 /*
  * For tools, convert command line args thus:
@@ -1351,7 +1239,7 @@ TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***parg
         char *arg = argv[i];
         if (arg[0] == '-' && arg[1] == 'J') {
             if (arg[2] == '\0') {
-                ReportErrorMessage(ARG_ERROR3);
+                JLI_ReportErrorMessage(ARG_ERROR3);
                 exit(1);
             }
             *nargv++ = arg + 2;
@@ -1418,7 +1306,7 @@ AddApplicationOptions(int cpathc, const char **cpathv)
     }
 
     if (!GetApplicationHome(home, sizeof(home))) {
-        ReportErrorMessage(CFG_ERROR5);
+        JLI_ReportErrorMessage(CFG_ERROR5);
         return JNI_FALSE;
     }
 
@@ -1522,7 +1410,7 @@ PrintJavaVersion(JNIEnv *env, jboolean extraLF)
     jclass ver;
     jmethodID print;
 
-    NULL_CHECK(ver = (*env)->FindClass(env, "sun/misc/Version"));
+    NULL_CHECK(ver = FindBootStrapClass(env, "sun/misc/Version"));
     NULL_CHECK(print = (*env)->GetStaticMethodID(env,
                                                  ver,
                                                  (extraLF == JNI_TRUE) ? "println" : "print",
@@ -1534,7 +1422,7 @@ PrintJavaVersion(JNIEnv *env, jboolean extraLF)
 }
 
 /*
- * Prints default usage or the Xusage message, see sun.launcher.LauncherHelp.java
+ * Prints default usage or the Xusage message, see sun.launcher.LauncherHelper.java
  */
 static void
 PrintUsage(JNIEnv* env, jboolean doXUsage)
@@ -1544,7 +1432,7 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
   jstring jprogname, vm1, vm2;
   int i;
 
-  NULL_CHECK(cls = (*env)->FindClass(env, "sun/launcher/LauncherHelp"));
+  NULL_CHECK(cls = FindBootStrapClass(env, "sun/launcher/LauncherHelper"));
 
 
   if (doXUsage) {
@@ -1691,7 +1579,7 @@ ReadKnownVMs(const char *jrepath, const char * arch, jboolean speculative)
     jvmCfg = fopen(jvmCfgName, "r");
     if (jvmCfg == NULL) {
       if (!speculative) {
-        ReportErrorMessage(CFG_ERROR6, jvmCfgName);
+        JLI_ReportErrorMessage(CFG_ERROR6, jvmCfgName);
         exit(1);
       } else {
         return -1;
@@ -1703,7 +1591,7 @@ ReadKnownVMs(const char *jrepath, const char * arch, jboolean speculative)
         if (line[0] == '#')
             continue;
         if (line[0] != '-') {
-            ReportErrorMessage(CFG_WARN2, lineno, jvmCfgName);
+            JLI_ReportErrorMessage(CFG_WARN2, lineno, jvmCfgName);
         }
         if (cnt >= knownVMsLimit) {
             GrowKnownVMs(cnt);
@@ -1711,13 +1599,13 @@ ReadKnownVMs(const char *jrepath, const char * arch, jboolean speculative)
         line[JLI_StrLen(line)-1] = '\0'; /* remove trailing newline */
         tmpPtr = line + JLI_StrCSpn(line, whiteSpace);
         if (*tmpPtr == 0) {
-            ReportErrorMessage(CFG_WARN3, lineno, jvmCfgName);
+            JLI_ReportErrorMessage(CFG_WARN3, lineno, jvmCfgName);
         } else {
             /* Null-terminate this string for JLI_StringDup below */
             *tmpPtr++ = 0;
             tmpPtr += JLI_StrSpn(tmpPtr, whiteSpace);
             if (*tmpPtr == 0) {
-                ReportErrorMessage(CFG_WARN3, lineno, jvmCfgName);
+                JLI_ReportErrorMessage(CFG_WARN3, lineno, jvmCfgName);
             } else {
                 if (!JLI_StrCCmp(tmpPtr, "KNOWN")) {
                     vmType = VM_KNOWN;
@@ -1727,7 +1615,7 @@ ReadKnownVMs(const char *jrepath, const char * arch, jboolean speculative)
                         tmpPtr += JLI_StrSpn(tmpPtr, whiteSpace);
                     }
                     if (*tmpPtr == 0) {
-                        ReportErrorMessage(CFG_WARN3, lineno, jvmCfgName);
+                        JLI_ReportErrorMessage(CFG_WARN3, lineno, jvmCfgName);
                     } else {
                         /* Null terminate altVMName */
                         altVMName = tmpPtr;
@@ -1747,7 +1635,7 @@ ReadKnownVMs(const char *jrepath, const char * arch, jboolean speculative)
                         tmpPtr += JLI_StrSpn(tmpPtr, whiteSpace);
                     }
                     if (*tmpPtr == 0) {
-                        ReportErrorMessage(CFG_WARN4, lineno, jvmCfgName);
+                        JLI_ReportErrorMessage(CFG_WARN4, lineno, jvmCfgName);
                     } else {
                         /* Null terminate server class VM name */
                         serverClassVMName = tmpPtr;
@@ -1756,7 +1644,7 @@ ReadKnownVMs(const char *jrepath, const char * arch, jboolean speculative)
                         vmType = VM_IF_SERVER_CLASS;
                     }
                 } else {
-                    ReportErrorMessage(CFG_WARN5, lineno, &jvmCfgName[0]);
+                    JLI_ReportErrorMessage(CFG_WARN5, lineno, &jvmCfgName[0]);
                     vmType = VM_KNOWN;
                 }
             }
@@ -2019,7 +1907,7 @@ RemovableOption(char * option)
  * A utility procedure to always print to stderr
  */
 void
-ReportMessage(const char* fmt, ...)
+JLI_ReportMessage(const char* fmt, ...)
 {
     va_list vl;
     va_start(vl, fmt);

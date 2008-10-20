@@ -451,7 +451,7 @@ vpath %.$(OBJECT_SUFFIX) $(OBJDIR)
 # namely jni.h, jvm.h, and jni_utils.h, plus their platform-specific
 # relatives.
 #
-VPATH.h =   $(PLATFORM_SRC)/javavm/export$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/javavm/export$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/javavm/include$(CLASSPATH_SEPARATOR)$(PLATFORM_SRC)/javavm/include
+VPATH.h =   $(PLATFORM_SRC)/javavm/export$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/javavm/export
 vpath %.h   $(VPATH.h)
 
 #
@@ -481,11 +481,6 @@ PKGDIR		= $(subst .,/,$(PACKAGE))
 # The java/javac/jdk variables (JAVAC_CMD, JAVA_CMD, etc.)
 #
 include $(JDK_MAKE_SHARED_DIR)/Defs-java.gmk
-
-#
-# Set opt level to ALT_OPT if set otherwise _OPT
-#
-POPT = $(_OPT$(ALT_OPT))$(ALT_OPT)
 
 #
 # Convenient macros
@@ -709,7 +704,20 @@ endif
 # Install of imported file (JDK_IMPORT_PATH, or some other external location)
 define install-import-file
 @$(ECHO) "ASSEMBLY_IMPORT: $@"
-$(install-file)
+$(prep-target)
+$(CP) $< $@
+@if [ "$(PLATFORM)" = "linux" -a "$(@F)" = "libjvm.so" ] ; then     \
+  if [ -x /usr/sbin/selinuxenabled ] ; then                         \
+    /usr/sbin/selinuxenabled;                                       \
+    if [ $$? = 0 ] ; then                                           \
+      $(ECHO) "/usr/bin/chcon -t textrel_shlib_t $@";               \
+      /usr/bin/chcon -t textrel_shlib_t $@;                         \
+      if [ $$? != 0 ]; then                                         \
+        echo "ERROR: Cannot chcon $@";                              \
+      fi;                                                           \
+    fi;                                                             \
+  fi;                                                               \
+fi
 endef
 
 .PHONY: all build clean clobber

@@ -38,12 +38,10 @@ import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.StringTokenizer;
 import javax.lang.model.SourceVersion;
 
 import static com.sun.tools.javac.main.OptionName.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6346732
+ * @bug 6346732 6705893
  * @summary should be able to assign null and undefined
  * value to JavaScript global variables.
  */
@@ -34,9 +34,10 @@ public class NullUndefinedVarTest {
 
         public static void main(String[] args) throws Exception {
             ScriptEngineManager manager = new ScriptEngineManager();
-            ScriptEngine jsengine = manager.getEngineByName("js");
+            ScriptEngine jsengine = Helper.getJsEngine(manager);
             if (jsengine == null) {
-                throw new RuntimeException("no js engine found");
+                System.out.println("Warning: No js engine found; test vacuously passes.");
+                return;
             }
             jsengine.eval("var n = null; " +
                           "if (n !== null) throw 'expecting null';" +

@@ -136,8 +136,6 @@ static int getFD(JNIEnv *env, jobject this) {
  */
 JNIEXPORT void JNICALL
 Java_java_net_PlainSocketImpl_initProto(JNIEnv *env, jclass cls) {
-    char *s;
-
     psi_fdID = (*env)->GetFieldID(env, cls , "fd",
                                   "Ljava/io/FileDescriptor;");
     CHECK_NULL(psi_fdID);
@@ -183,7 +181,6 @@ Java_java_net_PlainSocketImpl_socketCreate(JNIEnv *env, jobject this,
                                            jboolean stream) {
     jobject fdObj, ssObj;
     int fd;
-    int arg = -1;
 
     if (socketExceptionCls == NULL) {
         jclass c = (*env)->FindClass(env, "java/net/SocketException");
@@ -290,7 +287,6 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
             while (1) {
 #ifndef USE_SELECT
                 {
-fprintf(stdout,"\nNATIVE: fd = %d] ", fd);
                     struct pollfd pfd;
                     pfd.fd = fd;
                     pfd.events = POLLOUT;
@@ -495,27 +491,6 @@ fprintf(stdout,"\nNATIVE: fd = %d] ", fd);
         return;
     }
 
-    /*
-     * The socket may have been closed (dup'ed) while we were
-     * poll/select. In that case SO_ERROR will return 0 making
-     * it appear that the connection has been established.
-     * To avoid any race conditions we therefore grab the
-     * fd lock, check if the socket has been closed, and
-     * set the various fields whilst holding the lock
-     */
-    fdLock = (*env)->GetObjectField(env, this, psi_fdLockID);
-    (*env)->MonitorEnter(env, fdLock);
-
-    if ((*env)->GetBooleanField(env, this, psi_closePendingID)) {
-
-        /* release fdLock */
-        (*env)->MonitorExit(env, fdLock);
-
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-                            "Socket closed");
-        return;
-    }
-
     (*env)->SetIntField(env, fdObj, IO_fd_fdID, fd);
 
     /* set the remote peer address and port */
@@ -540,11 +515,6 @@ fprintf(stdout,"\nNATIVE: fd = %d] ", fd);
             (*env)->SetIntField(env, this, psi_localportID, localport);
         }
     }
-
-    /*
-     * Finally release fdLock
-     */
-    (*env)->MonitorExit(env, fdLock);
 }
 
 /*
@@ -672,8 +642,6 @@ Java_java_net_PlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
 
     /* accepted fd */
     jint newfd;
-
-    jthrowable error;
 
     SOCKADDR him;
     int len;
@@ -1087,7 +1055,6 @@ Java_java_net_PlainSocketImpl_socketGetOption(JNIEnv *env, jobject this,
 JNIEXPORT void JNICALL
 Java_java_net_PlainSocketImpl_socketSendUrgentData(JNIEnv *env, jobject this,
                                              jint data) {
-    char *buf;
     /* The fd field */
     jobject fdObj = (*env)->GetObjectField(env, this, psi_fdID);
     int n, fd;

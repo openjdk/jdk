@@ -132,6 +132,10 @@ public abstract class Symbol implements Element {
         throw new AssertionError();
     }
 
+    public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+        return v.visitSymbol(this, p);
+    }
+
     /** The Java source which this symbol represents.
      *  A description of this symbol; overrides Object.
      */
@@ -140,25 +144,27 @@ public abstract class Symbol implements Element {
     }
 
     /** A Java source description of the location of this symbol; used for
-     *  error reporting.  Use of this method may result in the loss of the
-     *  symbol's description.
+     *  error reporting.
+     *
+     * @return null if the symbol is a package or a toplevel class defined in
+     * the default package; otherwise, the owner symbol is returned
      */
-    public String location() {
-        if (owner.name == null || (owner.name.len == 0 && owner.kind != PCK)) {
-            return "";
+    public Symbol location() {
+        if (owner.name == null || (owner.name.isEmpty() && owner.kind != PCK)) {
+            return null;
         }
-        return owner.toString();
+        return owner;
     }
 
-    public String location(Type site, Types types) {
-        if (owner.name == null || owner.name.len == 0) {
+    public Symbol location(Type site, Types types) {
+        if (owner.name == null || owner.name.isEmpty()) {
             return location();
         }
         if (owner.type.tag == CLASS) {
             Type ownertype = types.asOuterSuper(site, owner);
-            if (ownertype != null) return ownertype.toString();
+            if (ownertype != null) return ownertype.tsym;
         }
-        return owner.toString();
+        return owner;
     }
 
     /** The symbol's erased type.
@@ -175,7 +181,7 @@ public abstract class Symbol implements Element {
      */
     public Type externalType(Types types) {
         Type t = erasure(types);
-        if (name == name.table.init && owner.hasOuterInstance()) {
+        if (name == name.table.names.init && owner.hasOuterInstance()) {
             Type outerThisType = types.erasure(owner.type.getEnclosingType());
             return new MethodType(t.getParameterTypes().prepend(outerThisType),
                                   t.getReturnType(),
@@ -210,7 +216,7 @@ public abstract class Symbol implements Element {
     /** Is this symbol a constructor?
      */
     public boolean isConstructor() {
-        return name == name.table.init;
+        return name == name.table.names.init;
     }
 
     /** The fully qualified name of this symbol.
@@ -451,8 +457,8 @@ public abstract class Symbol implements Element {
             this.other = other;
         }
         public String toString() { return other.toString(); }
-        public String location() { return other.location(); }
-        public String location(Type site, Types types) { return other.location(site, types); }
+        public Symbol location() { return other.location(); }
+        public Symbol location(Type site, Types types) { return other.location(site, types); }
         public Type erasure(Types types) { return other.erasure(types); }
         public Type externalType(Types types) { return other.externalType(types); }
         public boolean isLocal() { return other.isLocal(); }
@@ -474,6 +480,10 @@ public abstract class Symbol implements Element {
 
         public <R, P> R accept(ElementVisitor<R, P> v, P p) {
             return other.accept(v, p);
+        }
+
+        public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+            return v.visitSymbol(other, p);
         }
     }
 
@@ -499,7 +509,7 @@ public abstract class Symbol implements Element {
                  || (owner.kind == TYP && owner.type.tag == TYPEVAR)
                  )) return name;
             Name prefix = owner.getQualifiedName();
-            if (prefix == null || prefix == prefix.table.empty)
+            if (prefix == null || prefix == prefix.table.names.empty)
                 return name;
             else return prefix.append('.', name);
         }
@@ -514,7 +524,7 @@ public abstract class Symbol implements Element {
                 ) return name;
             char sep = owner.kind == TYP ? '$' : '.';
             Name prefix = owner.flatName();
-            if (prefix == null || prefix == prefix.table.empty)
+            if (prefix == null || prefix == prefix.table.names.empty)
                 return name;
             else return prefix.append(sep, name);
         }
@@ -566,6 +576,10 @@ public abstract class Symbol implements Element {
         public <R, P> R accept(ElementVisitor<R, P> v, P p) {
             assert type.tag == TYPEVAR; // else override will be invoked
             return v.visitTypeParameter(this, p);
+        }
+
+        public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+            return v.visitTypeSymbol(this, p);
         }
 
         public List<Type> getBounds() {
@@ -651,6 +665,10 @@ public abstract class Symbol implements Element {
         public <R, P> R accept(ElementVisitor<R, P> v, P p) {
             return v.visitPackage(this, p);
         }
+
+        public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+            return v.visitPackageSymbol(this, p);
+        }
     }
 
     /** A class for class symbols
@@ -735,7 +753,7 @@ public abstract class Symbol implements Element {
         }
 
         public String className() {
-            if (name.len == 0)
+            if (name.isEmpty())
                 return
                     Log.getLocalizedString("anonymous.class", flatname);
             else
@@ -774,7 +792,7 @@ public abstract class Symbol implements Element {
             } catch (CompletionFailure ex) {
                 // quiet error recovery
                 flags_field |= (PUBLIC|STATIC);
-                this.type = new ErrorType(this);
+                this.type = new ErrorType(this, Type.noType);
                 throw ex;
             }
         }
@@ -840,6 +858,10 @@ public abstract class Symbol implements Element {
 
         public <R, P> R accept(ElementVisitor<R, P> v, P p) {
             return v.visitType(this, p);
+        }
+
+        public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+            return v.visitClassSymbol(this, p);
         }
     }
 
@@ -921,14 +943,7 @@ public abstract class Symbol implements Element {
                 public Object call() {
                     JavaFileObject source = log.useSource(env.toplevel.sourcefile);
                     try {
-                        // In order to catch self-references, we set
-                        // the variable's declaration position to
-                        // maximal possible value, effectively marking
-                        // the variable as undefined.
-                        int pos = VarSymbol.this.pos;
-                        VarSymbol.this.pos = Position.MAXPOS;
                         Type itype = attr.attribExpr(initializer, env, type);
-                        VarSymbol.this.pos = pos;
                         if (itype.constValue() != null)
                             return attr.coerce(itype, type).constValue();
                         else
@@ -974,6 +989,10 @@ public abstract class Symbol implements Element {
             assert !(data instanceof Env<?>) : this;
             this.data = data;
         }
+
+        public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+            return v.visitVarSymbol(this, p);
+        }
     }
 
     /** A class for method symbols.
@@ -1016,7 +1035,7 @@ public abstract class Symbol implements Element {
             if ((flags() & BLOCK) != 0) {
                 return owner.name.toString();
             } else {
-                String s = (name == name.table.init)
+                String s = (name == name.table.names.init)
                     ? owner.name.toString()
                     : name.toString();
                 if (type != null) {
@@ -1213,9 +1232,9 @@ public abstract class Symbol implements Element {
         }
 
         public ElementKind getKind() {
-            if (name == name.table.init)
+            if (name == name.table.names.init)
                 return ElementKind.CONSTRUCTOR;
-            else if (name == name.table.clinit)
+            else if (name == name.table.names.clinit)
                 return ElementKind.STATIC_INIT;
             else
                 return ElementKind.METHOD;
@@ -1237,6 +1256,10 @@ public abstract class Symbol implements Element {
             return v.visitExecutable(this, p);
         }
 
+        public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+            return v.visitMethodSymbol(this, p);
+        }
+
         public Type getReturnType() {
             return asType().getReturnType();
         }
@@ -1255,6 +1278,10 @@ public abstract class Symbol implements Element {
         public OperatorSymbol(Name name, Type type, int opcode, Symbol owner) {
             super(PUBLIC | STATIC, name, type, owner);
             this.opcode = opcode;
+        }
+
+        public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
+            return v.visitOperatorSymbol(this, p);
         }
     }
 
@@ -1312,5 +1339,29 @@ public abstract class Symbol implements Element {
             return this;
         }
 
+    }
+
+    /**
+     * A visitor for symbols.  A visitor is used to implement operations
+     * (or relations) on symbols.  Most common operations on types are
+     * binary relations and this interface is designed for binary
+     * relations, that is, operations on the form
+     * Symbol&nbsp;&times;&nbsp;P&nbsp;&rarr;&nbsp;R.
+     * <!-- In plain text: Type x P -> R -->
+     *
+     * @param <R> the return type of the operation implemented by this
+     * visitor; use Void if no return type is needed.
+     * @param <P> the type of the second argument (the first being the
+     * symbol itself) of the operation implemented by this visitor; use
+     * Void if a second argument is not needed.
+     */
+    public interface Visitor<R,P> {
+        R visitClassSymbol(ClassSymbol s, P arg);
+        R visitMethodSymbol(MethodSymbol s, P arg);
+        R visitPackageSymbol(PackageSymbol s, P arg);
+        R visitOperatorSymbol(OperatorSymbol s, P arg);
+        R visitVarSymbol(VarSymbol s, P arg);
+        R visitTypeSymbol(TypeSymbol s, P arg);
+        R visitSymbol(Symbol s, P arg);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 #include "awt_Component.h"
+
+#include <commctrl.h>
 
 #ifndef _COMCTL32UTIL_H
 #define _COMCTL32UTIL_H
@@ -80,6 +82,11 @@ class ComCtl32Util
         PFNSETWINDOWSUBCLASS m_lpfnSetWindowSubclass;
         PFNREMOVEWINDOWSUBCLASS m_lpfnRemoveWindowSubclass;
         PFNDEFSUBCLASSPROC m_lpfnDefSubclassProc;
+
+        typedef BOOL (WINAPI * InitCommonControlsExType)(const LPINITCOMMONCONTROLSEX lpInitCtrls);
+        InitCommonControlsExType fn_InitCommonControlsEx;
+
+        void InitCommonControls();
 
         BOOL m_bNewSubclassing;
 

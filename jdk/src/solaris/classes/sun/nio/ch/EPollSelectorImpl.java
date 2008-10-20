@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ class EPollSelectorImpl
     EPollArrayWrapper pollWrapper;
 
     // Maps from file descriptors to keys
-    private HashMap fdToKey;
+    private Map<Integer,SelectionKeyImpl> fdToKey;
 
     // True if this Selector has been closed
     private boolean closed = false;
@@ -69,7 +69,7 @@ class EPollSelectorImpl
         fd1 = fdes[1];
         pollWrapper = new EPollArrayWrapper();
         pollWrapper.initInterrupt(fd0, fd1);
-        fdToKey = new HashMap();
+        fdToKey = new HashMap<Integer,SelectionKeyImpl>();
     }
 
     protected int doSelect(long timeout)
@@ -107,8 +107,7 @@ class EPollSelectorImpl
         int numKeysUpdated = 0;
         for (int i=0; i<entries; i++) {
             int nextFD = pollWrapper.getDescriptor(i);
-            SelectionKeyImpl ski = (SelectionKeyImpl) fdToKey.get(
-                new Integer(nextFD));
+            SelectionKeyImpl ski = fdToKey.get(Integer.valueOf(nextFD));
             // ski is null in the case of an interrupt
             if (ski != null) {
                 int rOps = pollWrapper.getEventOps(i);
@@ -164,7 +163,7 @@ class EPollSelectorImpl
 
     protected void implRegister(SelectionKeyImpl ski) {
         int fd = IOUtil.fdVal(ski.channel.getFD());
-        fdToKey.put(new Integer(fd), ski);
+        fdToKey.put(Integer.valueOf(fd), ski);
         pollWrapper.add(fd);
         keys.add(ski);
     }
@@ -172,7 +171,7 @@ class EPollSelectorImpl
     protected void implDereg(SelectionKeyImpl ski) throws IOException {
         assert (ski.getIndex() >= 0);
         int fd = ski.channel.getFDVal();
-        fdToKey.remove(new Integer(fd));
+        fdToKey.remove(Integer.valueOf(fd));
         pollWrapper.release(fd);
         ski.setIndex(-1);
         keys.remove(ski);

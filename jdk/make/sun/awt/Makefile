@@ -28,17 +28,13 @@ PACKAGE = sun.awt
 LIBRARY = awt
 PRODUCT = sun
 
-#
 # Tell Defs.gmk that VIS is needed
-#
 VIS_NEEDED=true
 
-include $(BUILDDIR)/common/Defs.gmk
-
-#
 # Use highest optimization level
-#
-_OPT = $(CC_HIGHEST_OPT)
+OPTMIZATION_LEVEL = HIGHEST
+
+include $(BUILDDIR)/common/Defs.gmk
 
 OTHER_CFLAGS += -D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES
 

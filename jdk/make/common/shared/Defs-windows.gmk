@@ -1,5 +1,5 @@
 #
-# Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -539,6 +539,8 @@ else
   WSCRIPT  :=$(call FileExists,$(_WSCRIPT1),$(_WSCRIPT2))
 endif
 WSCRIPT:=$(call AltCheckSpaces,WSCRIPT)
+# batch mode no modal dialogs on errors, please.
+WSCRIPT += -B
 
 # CSCRIPT: path to cscript.exe (used in creating install bundles)
 ifdef ALT_CSCRIPT
@@ -561,6 +563,10 @@ else
   MSIVAL2    :=$(call FileExists,$(_MSIVAL2_1),$(_MSIVAL2_2))
 endif
 MSIVAL2:=$(call AltCheckSpaces,MSIVAL2)
+# suppress msival2 checks, as it hangs jprt builds
+ifdef SKIP_MSIVAL2
+  MSIVAL2    := $(ECHO)
+endif
 
 # LOGOCUB: path to cub file for (used in validating install msi files)
 ifdef ALT_LOGOCUB

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -966,7 +966,8 @@ Java_java_net_TwoStacksPlainSocketImpl_socketSetOption(JNIEnv *env, jobject this
 
                 if (on) {
                     optval.ling.l_onoff = 1;
-                    optval.ling.l_linger = (*env)->GetIntField(env, value, fid);
+                    optval.ling.l_linger =
+                        (unsigned short)(*env)->GetIntField(env, value, fid);
                 } else {
                     optval.ling.l_onoff = 0;
                     optval.ling.l_linger = 0;

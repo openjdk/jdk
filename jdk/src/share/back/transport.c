@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -473,7 +473,7 @@ transport_startTransport(jboolean isServer, char *name, char *address,
         /*
          * Record listener address in a system property
          */
-        len = strlen(name) + strlen(retAddress) + 2;    /* ':' and '\0' */
+        len = (int)strlen(name) + (int)strlen(retAddress) + 2; /* ':' and '\0' */
         prop_value = (char*)jvmtiAllocate(len);
         strcpy(prop_value, name);
         strcat(prop_value, ":");

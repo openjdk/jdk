@@ -1,5 +1,5 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,6 @@ static int loadStaticConfig9x(char *sl, char *ns) {
     DWORD dwLen;
     ULONG ulType;
     char result[MAX_STR_LEN];
-    int index;
     int sts = STS_NO_CONFIG;
 
     ret = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
@@ -275,7 +274,7 @@ static int loadConfig95(char *sl, char *ns) {
      * the DHCP packet - see RFC 2132).
      */
     if (ret == ERROR_SUCCESS) {
-        int pos = 0;
+        unsigned int pos = 0;
 
         while (pos < dwLen) {
             int code, len;

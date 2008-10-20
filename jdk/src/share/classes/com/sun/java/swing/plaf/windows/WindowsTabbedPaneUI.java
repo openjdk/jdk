@@ -53,13 +53,13 @@ public class WindowsTabbedPaneUI extends BasicTabbedPaneUI {
      * Keys to use for forward focus traversal when the JComponent is
      * managing focus.
      */
-    private static Set managingFocusForwardTraversalKeys;
+    private static Set<KeyStroke> managingFocusForwardTraversalKeys;
 
     /**
      * Keys to use for backward focus traversal when the JComponent is
      * managing focus.
      */
-    private static Set managingFocusBackwardTraversalKeys;
+    private static Set<KeyStroke> managingFocusBackwardTraversalKeys;
 
     private boolean contentOpaque = true;
 
@@ -69,13 +69,13 @@ public class WindowsTabbedPaneUI extends BasicTabbedPaneUI {
 
         // focus forward traversal key
         if (managingFocusForwardTraversalKeys==null) {
-            managingFocusForwardTraversalKeys = new HashSet();
+            managingFocusForwardTraversalKeys = new HashSet<KeyStroke>();
             managingFocusForwardTraversalKeys.add(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0));
         }
         tabPane.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, managingFocusForwardTraversalKeys);
         // focus backward traversal key
         if (managingFocusBackwardTraversalKeys==null) {
-            managingFocusBackwardTraversalKeys = new HashSet();
+            managingFocusBackwardTraversalKeys = new HashSet<KeyStroke>();
             managingFocusBackwardTraversalKeys.add( KeyStroke.getKeyStroke(KeyEvent.VK_TAB, InputEvent.SHIFT_MASK));
         }
         tabPane.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, managingFocusBackwardTraversalKeys);

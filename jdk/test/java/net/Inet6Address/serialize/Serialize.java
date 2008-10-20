@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,9 @@
 /**
  * @test
  * @bug 4921029
+ * @bug 6656849
  * @summary  java.net.Inet6Address fails to be serialized with IPv6 support
+ * @summary  NullPointerException thrown while de-serializing IPV6 Address.
  */
 
 import java.net.*;
@@ -76,11 +78,20 @@ public class Serialize {
 
          System.out.println(nobj);
 
-        // create an address with an unlikely numeric scope_id
-        if (!test ((Inet6Address)InetAddress.getByName ("fe80::1%99"))) {
-            throw new RuntimeException ("test failed on fe80::1%99");
-        }
+         // create an address with an unlikely numeric scope_id
+         if (!test ((Inet6Address)InetAddress.getByName ("fe80::1%99"))) {
+             throw new RuntimeException ("test failed on fe80::1%99");
+         }
 
+         // Deserialize an Inet6 address with a named interface
+         file = new File (System.getProperty("test.src"), "serial-bge0.ser");
+         ois = new ObjectInputStream(new FileInputStream(file));
+         try {
+             nobj = (Inet6Address) ois.readObject();
+         } catch (NullPointerException e) {
+             throw new RuntimeException("6656849 Not fixed: NullPointer when deserializing");
+         }
+         System.out.println(nobj);
          System.out.println("All tests passed");
      }
 
@@ -97,8 +108,5 @@ public class Serialize {
          } else {
              return false;
          }
-
-
      }
-
  }

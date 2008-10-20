@@ -139,10 +139,15 @@ tojava         // Xsun without XKB uses keysymarray[2] keysym to determine if it
 tojava         // Otherwise, it is [1].
 tojava         int ndx = XToolkit.isXsunServer() &&
 tojava                   ! XToolkit.isXKBenabled() ? 2 : 1;
+tojava         // Even if XKB is enabled, we have another problem: some symbol tables (e.g. cz) force
+tojava         // a regular comma instead of KP_comma for a decimal separator. Result is,
+tojava         // bugs like 6454041. So, we will try for keypadness  a keysym with ndx==0 as well.
 tojava         XToolkit.awtLock();
 tojava         try {
-tojava             return XlibWrapper.IsKeypadKey(
-tojava                 XlibWrapper.XKeycodeToKeysym(ev.get_display(), ev.get_keycode(), ndx ) );
+tojava             return (XlibWrapper.IsKeypadKey(
+tojava                 XlibWrapper.XKeycodeToKeysym(ev.get_display(), ev.get_keycode(), ndx ) ) ||
+tojava                    XlibWrapper.IsKeypadKey(
+tojava                 XlibWrapper.XKeycodeToKeysym(ev.get_display(), ev.get_keycode(), 0 ) ));
 tojava         } finally {
 tojava             XToolkit.awtUnlock();
 tojava         }
