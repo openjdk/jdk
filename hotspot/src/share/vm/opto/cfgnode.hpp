@@ -162,6 +162,8 @@ public:
     return NULL;  // not a copy!
   }
 
+  bool is_tripcount() const;
+
   // Determine a unique non-trivial input, if any.
   // Ignore casts if it helps.  Return NULL on failure.
   Node* unique_input(PhaseTransform *phase);

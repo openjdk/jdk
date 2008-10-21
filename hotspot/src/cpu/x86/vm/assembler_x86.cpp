@@ -1575,6 +1575,35 @@ void Assembler::movdqa(Address dst, XMMRegister src) {
   emit_operand(src, dst);
 }
 
+void Assembler::movdqu(XMMRegister dst, Address src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  InstructionMark im(this);
+  emit_byte(0xF3);
+  prefix(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0x6F);
+  emit_operand(dst, src);
+}
+
+void Assembler::movdqu(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_byte(0xF3);
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0x6F);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::movdqu(Address dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  InstructionMark im(this);
+  emit_byte(0xF3);
+  prefix(dst, src);
+  emit_byte(0x0F);
+  emit_byte(0x7F);
+  emit_operand(src, dst);
+}
+
 // Uses zero extension on 64bit
 
 void Assembler::movl(Register dst, int32_t imm32) {
