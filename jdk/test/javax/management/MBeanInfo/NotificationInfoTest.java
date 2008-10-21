@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,16 @@
  */
 
 import java.io.*;
+import java.lang.management.*;
 import java.lang.reflect.*;
 import java.net.*;
 import java.security.CodeSource;
 import java.util.*;
 import java.util.jar.*;
 import javax.management.*;
-import javax.management.modelmbean.*;
 import javax.management.relation.*;
+import javax.management.remote.*;
+import javax.management.remote.rmi.*;
 
 /*
  * This test finds all classes in the same code-base as the JMX
@@ -68,10 +70,10 @@ import javax.management.relation.*;
  */
 public class NotificationInfoTest {
     // class or object names where the test failed
-    private static final Set/*<String>*/ failed = new TreeSet();
+    private static final Set<String> failed = new TreeSet<String>();
 
     // class or object names where there were no MBeanNotificationInfo entries
-    private static final Set/*<String>*/ suspicious = new TreeSet();
+    private static final Set<String> suspicious = new TreeSet<String>();
 
     public static void main(String[] args) throws Exception {
         System.out.println("Checking that all known MBeans that are " +
@@ -86,8 +88,20 @@ public class NotificationInfoTest {
             .getCodeSource();
         URL codeBase;
         if (cs == null) {
-            codeBase = new URL("file:" + System.getProperty("java.home") +
-                               "/lib/rt.jar");
+            String javaHome = System.getProperty("java.home");
+            String[] candidates = {"/lib/rt.jar", "/classes/"};
+            codeBase = null;
+            for (String candidate : candidates) {
+                File file = new File(javaHome + candidate);
+                if (file.exists()) {
+                    codeBase = file.toURI().toURL();
+                    break;
+                }
+            }
+            if (codeBase == null) {
+                throw new Exception(
+                        "Could not determine codeBase for java.home=" + javaHome);
+            }
         } else
             codeBase = cs.getLocation();
 
@@ -98,7 +112,7 @@ public class NotificationInfoTest {
         System.out.println("Testing standard MBeans...");
         for (int i = 0; i < classes.length; i++) {
             String name = classes[i];
-            Class c;
+            Class<?> c;
             try {
                 c = Class.forName(name);
             } catch (Throwable e) {
@@ -109,18 +123,22 @@ public class NotificationInfoTest {
                 System.out.println(name + ": not a NotificationBroadcaster");
                 continue;
             }
+            if (Modifier.isAbstract(c.getModifiers())) {
+                System.out.println(name + ": abstract class");
+                continue;
+            }
 
             NotificationBroadcaster mbean;
-            Constructor constr;
+            Constructor<?> constr;
             try {
-                constr = c.getConstructor(null);
+                constr = c.getConstructor();
             } catch (Exception e) {
                 System.out.println(name + ": no public no-arg constructor: "
                                    + e);
                 continue;
             }
             try {
-                mbean = (NotificationBroadcaster) constr.newInstance(null);
+                mbean = (NotificationBroadcaster) constr.newInstance();
             } catch (Exception e) {
                 System.out.println(name + ": no-arg constructor failed: " + e);
                 continue;
@@ -161,22 +179,9 @@ public class NotificationInfoTest {
     }
 
     private static void checkPlatformMBeans() throws Exception {
-        Class managementFactory;
-        try {
-            managementFactory =
-                Class.forName("java.lang.management.ManagementFactory");
-        } catch (Exception e) {
-            System.out.println("...no ManagementFactory, assuming pre-Tiger: "
-                               + e);
-            return;
-        }
-        Method getPlatformMBeanServer =
-            managementFactory.getMethod("getPlatformMBeanServer", null);
-        MBeanServer mbs = (MBeanServer)
-            getPlatformMBeanServer.invoke(null, null);
-        Set mbeanNames = mbs.queryNames(null, null);
-        for (Iterator it = mbeanNames.iterator(); it.hasNext(); ) {
-            ObjectName name = (ObjectName) it.next();
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        Set<ObjectName> mbeanNames = mbs.queryNames(null, null);
+        for (ObjectName name : mbeanNames) {
             if (!mbs.isInstanceOf(name,
                                   NotificationBroadcaster.class.getName())) {
                 System.out.println(name + ": not a NotificationBroadcaster");
@@ -188,31 +193,9 @@ public class NotificationInfoTest {
     }
 
     private static void checkRMIConnectorServer() throws Exception {
-        Class rmiConnectorServer;
-        try {
-            rmiConnectorServer =
-                Class.forName("javax.management.remote.rmi.RMIConnectorServer");
-        } catch (Exception e) {
-            System.out.println("No RMIConnectorServer class, skipping: " + e);
-            return;
-        }
-        Class jmxServiceURL =
-            Class.forName("javax.management.remote.JMXServiceURL");
-        Constructor jmxServiceURLConstructor =
-            jmxServiceURL.getConstructor(new Class[] {String.class});
-        Object url =
-            jmxServiceURLConstructor.newInstance(new Object[] {
-                "service:jmx:rmi://"
-            });
-        Constructor rmiConnectorServerConstructor =
-            rmiConnectorServer.getConstructor(new Class[] {
-                jmxServiceURL, Map.class
-            });
-        Object connector =
-            rmiConnectorServerConstructor.newInstance(new Object[] {
-                url, null
-            });
-        check((NotificationBroadcaster) connector);
+        JMXServiceURL url = new JMXServiceURL("service:jmx:rmi://");
+        RMIConnectorServer connector = new RMIConnectorServer(url, null);
+        check(connector);
     }
 
     private static void check(String what, MBeanNotificationInfo[] mbnis) {
@@ -250,30 +233,29 @@ public class NotificationInfoTest {
 
     private static String[] findStandardMBeans(URL codeBase)
             throws Exception {
-        Set names;
+        Set<String> names;
         if (codeBase.getProtocol().equalsIgnoreCase("file")
             && codeBase.toString().endsWith("/"))
             names = findStandardMBeansFromDir(codeBase);
         else
             names = findStandardMBeansFromJar(codeBase);
 
-        Set standardMBeanNames = new TreeSet();
-        for (Iterator it = names.iterator(); it.hasNext(); ) {
-            String name = (String) it.next();
+        Set<String> standardMBeanNames = new TreeSet<String>();
+        for (String name : names) {
             if (name.endsWith("MBean")) {
                 String prefix = name.substring(0, name.length() - 5);
                 if (names.contains(prefix))
                     standardMBeanNames.add(prefix);
             }
         }
-        return (String[]) standardMBeanNames.toArray(new String[0]);
+        return standardMBeanNames.toArray(new String[0]);
     }
 
-    private static Set findStandardMBeansFromJar(URL codeBase)
+    private static Set<String> findStandardMBeansFromJar(URL codeBase)
             throws Exception {
         InputStream is = codeBase.openStream();
         JarInputStream jis = new JarInputStream(is);
-        Set names = new TreeSet();
+        Set<String> names = new TreeSet<String>();
         JarEntry entry;
         while ((entry = jis.getNextJarEntry()) != null) {
             String name = entry.getName();
@@ -286,15 +268,15 @@ public class NotificationInfoTest {
         return names;
     }
 
-    private static Set findStandardMBeansFromDir(URL codeBase)
+    private static Set<String> findStandardMBeansFromDir(URL codeBase)
             throws Exception {
         File dir = new File(new URI(codeBase.toString()));
-        Set names = new TreeSet();
+        Set<String> names = new TreeSet<String>();
         scanDir(dir, "", names);
         return names;
     }
 
-    private static void scanDir(File dir, String prefix, Set names)
+    private static void scanDir(File dir, String prefix, Set<String> names)
             throws Exception {
         File[] files = dir.listFiles();
         if (files == null)

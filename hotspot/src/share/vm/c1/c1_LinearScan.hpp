@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ class LinearScan : public CompilationResourceObj {
   bool          is_interval_in_loop(int interval, int loop) const { return _interval_in_loop.at(interval, loop); }
 
   // handling of fpu stack allocation (platform dependent, needed for debug information generation)
-#ifdef IA32
+#ifdef X86
   FpuStackAllocator* _fpu_stack_allocator;
   bool use_fpu_stack_allocation() const          { return UseSSE < 2 && has_fpu_registers(); }
 #else

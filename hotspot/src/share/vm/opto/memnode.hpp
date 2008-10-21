@@ -607,6 +607,7 @@ public:
 };
 
 //------------------------------LoadStoreNode---------------------------
+// Note: is_Mem() method returns 'true' for this class.
 class LoadStoreNode : public Node {
 public:
   enum {

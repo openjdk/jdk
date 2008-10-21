@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,7 @@ public class MBeanInjector {
          * reference.
          *
          * So we accept a Field if it has a @Resource annotation and either
-         * (a) its type is ObjectName or a subclass and its @Resource type is
+         * (a) its type is exactly ObjectName and its @Resource type is
          * compatible with ObjectName (e.g. it is Object); or
          * (b) its type is compatible with ObjectName and its @Resource type
          * is exactly ObjectName.  Fields that meet these criteria will not

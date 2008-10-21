@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,8 +197,12 @@ public class Locks {
             synchronized (ready) {
                 // wait until WaitingThread about to wait for objC
                 thrsync.waitForSignal();
-                // give chance to enter wait.
-                goSleep(100);
+
+                int retryCount = 0;
+                while (waiter.getState() != Thread.State.WAITING
+                       && retryCount++ < 500) {
+                   goSleep(100);
+                }
                 checkBlockedObject(waiter, objC, null, Thread.State.WAITING);
 
                 synchronized (objC) {

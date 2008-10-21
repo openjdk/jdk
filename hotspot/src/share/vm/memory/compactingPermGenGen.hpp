@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,8 +183,6 @@ public:
   void compact();
   void post_compact();
   size_t contiguous_available() const;
-  bool grow_by(size_t bytes);
-  void grow_to_reserved();
 
   void clear_remembered_set();
   void invalidate_remembered_set();

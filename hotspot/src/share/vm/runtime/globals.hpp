@@ -294,6 +294,9 @@ class CommandLineFlags {
   lp64_product(bool, CheckCompressedOops, trueInDebug,                      \
             "generate checks in encoding/decoding code")                    \
                                                                             \
+  product(bool, UseImplicitNullCheckForNarrowOop, true,                     \
+            "generate implicit null check in indexed addressing mode.")     \
+                                                                            \
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
    * been re-added (see 6401008) */                                         \
@@ -589,8 +592,14 @@ class CommandLineFlags {
   develop(bool, ZapJNIHandleArea, trueInDebug,                              \
           "Zap freed JNI handle space with 0xFEFEFEFE")                     \
                                                                             \
-  develop(bool, ZapUnusedHeapArea, false,                                   \
+  develop(bool, ZapUnusedHeapArea, trueInDebug,                             \
           "Zap unused heap space with 0xBAADBABE")                          \
+                                                                            \
+  develop(bool, TraceZapUnusedHeapArea, false,                              \
+          "Trace zapping of unused heap space")                             \
+                                                                            \
+  develop(bool, CheckZapUnusedHeapArea, false,                              \
+          "Check zapping of unused heap space")                             \
                                                                             \
   develop(bool, PrintVMMessages, true,                                      \
           "Print vm messages on console")                                   \
@@ -1437,7 +1446,7 @@ class CommandLineFlags {
           "CMSPrecleanNumerator:CMSPrecleanDenominator yields convergence"  \
           " ratio")                                                         \
                                                                             \
-  product(bool, CMSPrecleanRefLists1, true,                                 \
+  product(bool, CMSPrecleanRefLists1, false,                                \
           "Preclean ref lists during (initial) preclean phase")             \
                                                                             \
   product(bool, CMSPrecleanRefLists2, false,                                \

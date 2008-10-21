@@ -28,10 +28,12 @@ package sun.util.calendar;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.lang.ref.SoftReference;
+import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
@@ -76,6 +78,14 @@ public class ZoneInfo extends TimeZone {
     // this bit field is reserved for abbreviation support
     private static final long ABBR_MASK = 0xf00L;
     private static final int TRANSITION_NSHIFT = 12;
+
+    // Flag for supporting JDK backward compatible IDs, such as "EST".
+    private static final boolean USE_OLDMAPPING;
+    static {
+      String oldmapping = AccessController.doPrivileged(
+          new sun.security.action.GetPropertyAction("sun.timezone.ids.oldmapping", "false")).toLowerCase(Locale.ROOT);
+      USE_OLDMAPPING = (oldmapping.equals("yes") || oldmapping.equals("true"));
+    }
 
     private static final CalendarSystem gcal = CalendarSystem.getGregorianCalendar();
 
@@ -595,9 +605,21 @@ public class ZoneInfo extends TimeZone {
      * time zone of the ID.
      */
     public static TimeZone getTimeZone(String ID) {
-        ZoneInfo zi = null;
+        String givenID = null;
 
-        zi = ZoneInfoFile.getZoneInfo(ID);
+        /*
+         * If old JDK compatibility is specified, get the old alias
+         * name.
+         */
+        if (USE_OLDMAPPING) {
+            String compatibleID = TzIDOldMapping.MAP.get(ID);
+            if (compatibleID != null) {
+                givenID = ID;
+                ID = compatibleID;
+            }
+        }
+
+        ZoneInfo zi = ZoneInfoFile.getZoneInfo(ID);
         if (zi == null) {
             // if we can't create an object for the ID, try aliases.
             try {
@@ -615,6 +637,10 @@ public class ZoneInfo extends TimeZone {
             } catch (Exception e) {
                 // ignore exceptions
             }
+        }
+
+        if (givenID != null && zi != null) {
+            zi.setID(givenID);
         }
         return zi;
     }

@@ -1,5 +1,5 @@
 #
-# Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ $(JARFILE): $(LIBDIR) $(FILES_class) $(FILES_png) $(FILES_gif) $(TEMPDIR)/manife
 	$(BOOT_JAR_CMD) -cfm $(JARFILE) $(TEMPDIR)/manifest \
                -C $(CLASSBINDIR) sun/tools/jconsole \
                -C $(CLASSBINDIR) com/sun/tools/jconsole \
-		    $(JAR_JFLAGS)
+		    $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 clean clobber::

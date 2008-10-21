@@ -25,8 +25,8 @@
 
 /*
  * This file primarily consists of all the error and warning messages, that
- * are used in ReportErrorMessage. All message must be defined here, in order
- * to help in I18N/L10N the messages.
+ * are used in JLI_ReportErrorMessage. All message must be defined here, in
+ * order to help with localizing the messages.
  */
 
 #ifndef _EMESSAGES_H
@@ -49,11 +49,6 @@
 #define JAR_ERROR1      "Error: Failed to load Main-Class manifest attribute from\n%s\n%s"
 #define JAR_ERROR2      "Error: Unable to access jarfile %s"
 #define JAR_ERROR3      "Error: Invalid or corrupt jarfile %s"
-
-#define CLS_ERROR1      "Error: Could not find the main class %s.\n" JNI_ERROR
-#define CLS_ERROR2      "Error: Failed to load Main Class: %s\n%s"
-#define CLS_ERROR3      "Error: No main method found in specified class.\n" GEN_ERROR
-#define CLS_ERROR4      "Error: Main method not public\n" GEN_ERROR
 
 #define CFG_WARN1       "Warning: %s VM not supported; %s VM will be used"
 #define CFG_WARN2       "Warning: No leading - on line %d of `%s'"

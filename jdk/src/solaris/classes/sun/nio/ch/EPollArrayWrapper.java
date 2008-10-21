@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,11 +69,11 @@ class EPollArrayWrapper {
     static final int EPOLL_CTL_MOD      = 3;
 
     // Miscellaneous constants
-    static final short SIZE_EPOLLEVENT  = 12;
-    static final short EVENT_OFFSET     = 0;
-    static final short DATA_OFFSET      = 4;
-    static final short FD_OFFSET        = 4;
-    static final int   NUM_EPOLLEVENTS  = Math.min(fdLimit(), 8192);
+    static final int SIZE_EPOLLEVENT  = sizeofEPollEvent();
+    static final int EVENT_OFFSET     = 0;
+    static final int DATA_OFFSET      = offsetofData();
+    static final int FD_OFFSET        = DATA_OFFSET;
+    static final int NUM_EPOLLEVENTS  = Math.min(fdLimit(), 8192);
 
     // Base address of the native pollArray
     private final long pollArrayAddress;
@@ -280,6 +280,8 @@ class EPollArrayWrapper {
     private native void epollCtl(int epfd, int opcode, int fd, int events);
     private native int epollWait(long pollAddress, int numfds, long timeout,
                                  int epfd) throws IOException;
+    private static native int sizeofEPollEvent();
+    private static native int offsetofData();
     private static native int fdLimit();
     private static native void interrupt(int fd);
     private static native void init();

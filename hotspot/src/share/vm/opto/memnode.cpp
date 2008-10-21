@@ -94,14 +94,19 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, 
   if (tinst == NULL || !tinst->is_known_instance_field())
     return mchain;  // don't try to optimize non-instance types
   uint instance_id = tinst->instance_id();
+  Node *start_mem = phase->C->start()->proj_out(TypeFunc::Memory);
   Node *prev = NULL;
   Node *result = mchain;
   while (prev != result) {
     prev = result;
+    if (result == start_mem)
+      break;  // hit one of our sentinals
     // skip over a call which does not affect this memory slice
     if (result->is_Proj() && result->as_Proj()->_con == TypeFunc::Memory) {
       Node *proj_in = result->in(0);
-      if (proj_in->is_Call()) {
+      if (proj_in->is_Allocate() && proj_in->_idx == instance_id) {
+        break;  // hit one of our sentinals
+      } else if (proj_in->is_Call()) {
         CallNode *call = proj_in->as_Call();
         if (!call->may_modify(t_adr, phase)) {
           result = call->in(TypeFunc::Memory);
@@ -115,6 +120,8 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, 
         }
       } else if (proj_in->is_MemBar()) {
         result = proj_in->in(TypeFunc::Memory);
+      } else {
+        assert(false, "unexpected projection");
       }
     } else if (result->is_MergeMem()) {
       result = step_through_mergemem(phase, result->as_MergeMem(), t_adr, NULL, tty);
@@ -135,7 +142,9 @@ Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGV
     const TypePtr *t = mphi->adr_type();
     if (t == TypePtr::BOTTOM || t == TypeRawPtr::BOTTOM ||
         t->isa_oopptr() && !t->is_oopptr()->is_known_instance() &&
-        t->is_oopptr()->cast_to_instance_id(t_oop->instance_id()) == t_oop) {
+        t->is_oopptr()->cast_to_exactness(true)
+         ->is_oopptr()->cast_to_ptr_type(t_oop->ptr())
+         ->is_oopptr()->cast_to_instance_id(t_oop->instance_id()) == t_oop) {
       // clone the Phi with our address type
       result = mphi->split_out_instance(t_adr, igvn);
     } else {
@@ -205,6 +214,9 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   Node *ctl = in(MemNode::Control);
   if (ctl && remove_dead_region(phase, can_reshape))
     return this;
+  ctl = in(MemNode::Control);
+  // Don't bother trying to transform a dead node
+  if( ctl && ctl->is_top() )  return NodeSentinel;
 
   // Ignore if memory is dead, or self-loop
   Node *mem = in(MemNode::Memory);
@@ -235,6 +247,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
 
   if (mem != old_mem) {
     set_req(MemNode::Memory, mem);
+    if (phase->type( mem ) == Type::TOP) return NodeSentinel;
     return this;
   }
 
@@ -1222,6 +1235,10 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
       // our new node, even though we may throw the node away.
       // (This tweaking with igvn only works because x is a new node.)
       igvn->set_type(x, t);
+      // If x is a TypeNode, capture any more-precise type permanently into Node
+      // othewise it will be not updated during igvn->transform since
+      // igvn->type(x) is set to x->Value() already.
+      x->raise_bottom_type(t);
       Node *y = x->Identity(igvn);
       if( y != x ) {
         wins++;
@@ -1303,6 +1320,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node* opt_mem = MemNode::optimize_memory_chain(mem, addr_t, phase);
     if (opt_mem != mem) {
       set_req(MemNode::Memory, opt_mem);
+      if (phase->type( opt_mem ) == Type::TOP) return NULL;
       return this;
     }
     const TypeOopPtr *t_oop = addr_t->isa_oopptr();
@@ -1400,7 +1418,7 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
     // had an original form like p1:(AddP x x (LShiftL quux 3)), where the
     // expression (LShiftL quux 3) independently optimized to the constant 8.
     if ((t->isa_int() == NULL) && (t->isa_long() == NULL)
-        && Opcode() != Op_LoadKlass) {
+        && Opcode() != Op_LoadKlass && Opcode() != Op_LoadNKlass) {
       // t might actually be lower than _type, if _type is a unique
       // concrete subclass of abstract class t.
       // Make sure the reference is not into the header, by comparing
@@ -2434,8 +2452,7 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (remove_dead_region(phase, can_reshape))  return this;
-  return NULL;
+  return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
 //------------------------------Value------------------------------------------

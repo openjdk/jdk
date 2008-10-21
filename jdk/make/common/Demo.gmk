@@ -1,5 +1,5 @@
 #
-# Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -251,7 +251,7 @@ $(DEMO_JAR): \
 	    @$(DEMO_JAVAC_INPUT)
 	$(BOOT_JAR_CMD) -cfm $@ $(DEMO_MANIFEST) \
 	     -C $(DEMO_JAR_IMAGE) . \
-	     $(JAR_JFLAGS)
+	     $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 endif
@@ -317,7 +317,11 @@ bundles: $(DEMO_BUILD_SRCZIP)
 # Applets are special, no jar file, no src.zip, everything expanded.
 ifdef DEMO_IS_APPLET
 	@$(ECHO) "Expanding jar file into demos area at $(DEMO_DESTDIR)"
-	( $(CD) $(DEMO_DESTDIR) && $(BOOT_JAR_CMD) -xfv $(DEMONAME).jar && $(RM) -r META-INF $(DEMONAME).jar )
+	( $(CD) $(DEMO_DESTDIR) && \
+	  $(BOOT_JAR_CMD) -xfv $(DEMONAME).jar \
+	     $(BOOT_JAR_JFLAGS) && \
+	  $(RM) -r META-INF $(DEMONAME).jar  && \
+	  $(java-vm-cleanup) )
 	@( $(CD) $(DEMO_DESTDIR) && $(java-vm-cleanup) )
 	@$(ECHO) "Expanding source into demos area at $(DEMO_DESTDIR)"
 	( $(CD) $(DEMO_DESTDIR) && $(UNZIP) -o src.zip && $(RM) src.zip )

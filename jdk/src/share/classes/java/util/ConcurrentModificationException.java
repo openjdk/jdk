@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,8 @@ package java.util;
  * @since   1.2
  */
 public class ConcurrentModificationException extends RuntimeException {
+    private static final long serialVersionUID = -3666751008965953603L;
+
     /**
      * Constructs a ConcurrentModificationException with no
      * detail message.

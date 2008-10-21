@@ -25,16 +25,16 @@
 
 package com.sun.jmx.remote.internal;
 
+import com.sun.jmx.mbeanserver.Util;
 import com.sun.jmx.remote.security.NotificationAccessController;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 import java.io.IOException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,6 +57,7 @@ import javax.security.auth.Subject;
 
 public class ServerNotifForwarder {
 
+
     public ServerNotifForwarder(MBeanServer mbeanServer,
                                 Map env,
                                 NotificationBuffer notifBuffer,
@@ -67,9 +68,9 @@ public class ServerNotifForwarder {
         connectionTimeout = EnvHelp.getServerConnectionTimeout(env);
         checkNotificationEmission = EnvHelp.computeBooleanFromString(
             env,
-            "jmx.remote.x.check.notification.emission");
-        notificationAccessController = (NotificationAccessController)
-            env.get("com.sun.jmx.remote.notification.access.controller");
+            "jmx.remote.x.check.notification.emission",false);
+        notificationAccessController =
+                EnvHelp.getNotificationAccessController(env);
     }
 
     public Integer addNotificationListener(final ObjectName name,
@@ -85,12 +86,11 @@ public class ServerNotifForwarder {
 
         // Explicitly check MBeanPermission for addNotificationListener
         //
-        checkMBeanPermission(name, "addNotificationListener");
+        checkMBeanPermission(getMBeanServerName(),
+                mbeanServer, name, "addNotificationListener");
         if (notificationAccessController != null) {
             notificationAccessController.addNotificationListener(
-                connectionId,
-                name,
-                Subject.getSubject(AccessController.getContext()));
+                connectionId, name, getSubject());
         }
         try {
             boolean instanceOf =
@@ -157,12 +157,11 @@ public class ServerNotifForwarder {
 
         // Explicitly check MBeanPermission for removeNotificationListener
         //
-        checkMBeanPermission(name, "removeNotificationListener");
+        checkMBeanPermission(getMBeanServerName(),
+                mbeanServer, name, "removeNotificationListener");
         if (notificationAccessController != null) {
             notificationAccessController.removeNotificationListener(
-                connectionId,
-                name,
-                Subject.getSubject(AccessController.getContext()));
+                connectionId, name, getSubject());
         }
 
         Exception re = null;
@@ -312,6 +311,10 @@ public class ServerNotifForwarder {
     // PRIVATE METHODS
     //----------------
 
+    private Subject getSubject() {
+        return Subject.getSubject(AccessController.getContext());
+    }
+
     private void checkState() throws IOException {
         synchronized(terminationLock) {
             if (terminated) {
@@ -330,9 +333,9 @@ public class ServerNotifForwarder {
      * Explicitly check the MBeanPermission for
      * the current access control context.
      */
-    private void checkMBeanPermission(final ObjectName name,
-        final String actions)
-        throws InstanceNotFoundException, SecurityException {
+    public static void checkMBeanPermission(String serverName,
+            final MBeanServer mbs, final ObjectName name, final String actions)
+            throws InstanceNotFoundException, SecurityException {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             AccessControlContext acc = AccessController.getContext();
@@ -342,14 +345,16 @@ public class ServerNotifForwarder {
                     new PrivilegedExceptionAction<ObjectInstance>() {
                         public ObjectInstance run()
                         throws InstanceNotFoundException {
-                            return mbeanServer.getObjectInstance(name);
+                            return mbs.getObjectInstance(name);
                         }
                 });
             } catch (PrivilegedActionException e) {
                 throw (InstanceNotFoundException) extractException(e);
             }
             String classname = oi.getClassName();
-            MBeanPermission perm = new MBeanPermission(classname,
+            MBeanPermission perm = new MBeanPermission(
+                serverName,
+                classname,
                 null,
                 name,
                 actions);
@@ -364,14 +369,12 @@ public class ServerNotifForwarder {
                                               TargetedNotification tn) {
         try {
             if (checkNotificationEmission) {
-                checkMBeanPermission(name, "addNotificationListener");
+                checkMBeanPermission(getMBeanServerName(),
+                        mbeanServer, name, "addNotificationListener");
             }
             if (notificationAccessController != null) {
                 notificationAccessController.fetchNotification(
-                        connectionId,
-                        name,
-                        tn.getNotification(),
-                        Subject.getSubject(AccessController.getContext()));
+                        connectionId, name, tn.getNotification(), getSubject());
             }
             return true;
         } catch (SecurityException e) {
@@ -429,11 +432,27 @@ public class ServerNotifForwarder {
         }
     }
 
+    private String getMBeanServerName() {
+        if (mbeanServerName != null) return mbeanServerName;
+        else return (mbeanServerName = getMBeanServerName(mbeanServer));
+    }
+
+    private static String getMBeanServerName(final MBeanServer server) {
+        final PrivilegedAction<String> action = new PrivilegedAction<String>() {
+            public String run() {
+                return Util.getMBeanServerSecurityName(server);
+            }
+        };
+        return AccessController.doPrivileged(action);
+    }
+
+
     //------------------
     // PRIVATE VARIABLES
     //------------------
 
     private MBeanServer mbeanServer;
+    private volatile String mbeanServerName;
 
     private final String connectionId;
 

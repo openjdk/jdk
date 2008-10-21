@@ -38,10 +38,9 @@
 #include    "JavaExceptions.h"
 
 #include    "EncodingSupport.h"
-#include    "FileSystemSupport.h"               /* MAXPATHLEN */
+#include    "FileSystemSupport.h"    /* For MAXPATHLEN & uintptr_t */
 
 #include    "sun_instrument_InstrumentationImpl.h"
-#include    "typedefs.h"
 
 /*
  *  The JPLISAgent manages the initialization all of the Java programming language Agents.

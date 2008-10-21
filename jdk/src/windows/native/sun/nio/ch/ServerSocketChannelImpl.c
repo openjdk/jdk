@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,10 +46,6 @@
 static jfieldID fd_fdID;        /* java.io.FileDescriptor.fd */
 static jclass isa_class;        /* java.net.InetSocketAddress */
 static jmethodID isa_ctorID;    /* InetSocketAddress(InetAddress, int) */
-static jclass ia_class;         /* java.net.InetAddress */
-static jmethodID ia_ctorID;     /* InetAddress() */
-static jfieldID ia_addrID;      /* java.net.InetAddress.address */
-static jfieldID ia_famID;       /* java.net.InetAddress.family */
 
 
 /**************************************************************
@@ -66,12 +62,6 @@ Java_sun_nio_ch_ServerSocketChannelImpl_initIDs(JNIEnv *env, jclass cls)
     isa_class = (*env)->NewGlobalRef(env, cls);
     isa_ctorID = (*env)->GetMethodID(env, cls, "<init>",
                                      "(Ljava/net/InetAddress;I)V");
-
-    cls = (*env)->FindClass(env, "java/net/Inet4Address");
-    ia_class = (*env)->NewGlobalRef(env, cls);
-    ia_ctorID = (*env)->GetMethodID(env, cls, "<init>","()V");
-    ia_addrID = (*env)->GetFieldID(env, cls, "address", "I");
-    ia_famID = (*env)->GetFieldID(env, cls, "family", "I");
 }
 
 JNIEXPORT void JNICALL
@@ -90,8 +80,9 @@ Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
 {
     jint ssfd = (*env)->GetIntField(env, ssfdo, fd_fdID);
     jint newfd;
-    struct sockaddr_in sa;
-    jobject remote_ia = 0;
+    SOCKETADDRESS sa;
+    jobject remote_ia;
+    int remote_port;
     jobject isa;
     jobject ia;
     int addrlen = sizeof(sa);
@@ -106,14 +97,13 @@ Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
         JNU_ThrowIOExceptionWithLastError(env, "Accept failed");
         return IOS_THROWN;
     }
+
     (*env)->SetIntField(env, newfdo, fd_fdID, newfd);
+    remote_ia = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, (int *)&remote_port);
 
-    ia = (*env)->NewObject(env, ia_class, ia_ctorID);
-    (*env)->SetIntField(env, ia, ia_addrID, ntohl(sa.sin_addr.s_addr));
-    (*env)->SetIntField(env, ia, ia_famID, sa.sin_family);
-
-    isa = (*env)->NewObject(env, isa_class, isa_ctorID, ia,
-                            ntohs(sa.sin_port));
+    isa = (*env)->NewObject(env, isa_class, isa_ctorID,
+                            remote_ia, remote_port);
     (*env)->SetObjectArrayElement(env, isaa, 0, isa);
+
     return 1;
 }

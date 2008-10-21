@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -146,3 +146,14 @@ gen OverlappingFileLockException "
  * virtual machine, or when another thread is already waiting to lock an
  * overlapping region of the same file." \
  2047812138163068433L
+
+
+SINCE=1.7
+
+SUPER=IllegalStateException
+
+gen AlreadyBoundException "
+ * Unchecked exception thrown when an attempt is made to bind the socket a
+ * network oriented channel that is already bound." \
+ 6796072983322737592L
+

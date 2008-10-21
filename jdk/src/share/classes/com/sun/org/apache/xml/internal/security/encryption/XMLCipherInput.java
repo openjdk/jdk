@@ -108,84 +108,78 @@ public class XMLCipherInput {
                 return null;
         }
 
-        /**
-         * Internal method to get bytes in decryption mode
+    /**
+     * Internal method to get bytes in decryption mode
      * @return the decripted bytes
      * @throws XMLEncryptionException
-         */
+     */
+    private byte[] getDecryptBytes() throws XMLEncryptionException {
 
-        private byte[] getDecryptBytes() throws XMLEncryptionException {
-
-                String base64EncodedEncryptedOctets = null;
+        String base64EncodedEncryptedOctets = null;
 
         if (_cipherData.getDataType() == CipherData.REFERENCE_TYPE) {
-                        // Fun time!
-                        if (logger.isLoggable(java.util.logging.Level.FINE))                                     logger.log(java.util.logging.Level.FINE, "Found a reference type CipherData");
-                        CipherReference cr = _cipherData.getCipherReference();
+            // Fun time!
+            logger.log(java.util.logging.Level.FINE, "Found a reference type CipherData");
+            CipherReference cr = _cipherData.getCipherReference();
 
-                        // Need to wrap the uri in an Attribute node so that we can
-                        // Pass to the resource resolvers
+            // Need to wrap the uri in an Attribute node so that we can
+            // Pass to the resource resolvers
 
-                        Attr uriAttr = cr.getURIAsAttr();
-                        XMLSignatureInput input = null;
+            Attr uriAttr = cr.getURIAsAttr();
+            XMLSignatureInput input = null;
 
-                        try {
-                                ResourceResolver resolver =
-                                        ResourceResolver.getInstance(uriAttr, null);
-                                input = resolver.resolve(uriAttr, null);
-                        } catch (ResourceResolverException ex) {
-                                throw new XMLEncryptionException("empty", ex);
-                        }
+            try {
+                ResourceResolver resolver =
+                    ResourceResolver.getInstance(uriAttr, null);
+                input = resolver.resolve(uriAttr, null);
+            } catch (ResourceResolverException ex) {
+                throw new XMLEncryptionException("empty", ex);
+            }
 
-                        if (input != null) {
-                                if (logger.isLoggable(java.util.logging.Level.FINE))                                     logger.log(java.util.logging.Level.FINE, "Managed to resolve URI \"" + cr.getURI() + "\"");
-                        }
-                        else {
-                                if (logger.isLoggable(java.util.logging.Level.FINE))                                     logger.log(java.util.logging.Level.FINE, "Failed to resolve URI \"" + cr.getURI() + "\"");
-                        }
+            if (input != null) {
+                logger.log(java.util.logging.Level.FINE, "Managed to resolve URI \"" + cr.getURI() + "\"");
+            } else {
+                logger.log(java.util.logging.Level.FINE, "Failed to resolve URI \"" + cr.getURI() + "\"");
+            }
 
-                        // Lets see if there are any transforms
-                        Transforms transforms = cr.getTransforms();
-                        if (transforms != null) {
-                                if (logger.isLoggable(java.util.logging.Level.FINE))                                  logger.log(java.util.logging.Level.FINE, "Have transforms in cipher reference");
-                                try {
-                                    com.sun.org.apache.xml.internal.security.transforms.Transforms dsTransforms =
-                                                transforms.getDSTransforms();
-                                    input =     dsTransforms.performTransforms(input);
-                                } catch (TransformationException ex) {
-                                        throw new XMLEncryptionException("empty", ex);
-                                }
-                        }
-
-                        try {
-                                return input.getBytes();
-                        }
-                        catch (IOException ex) {
-                                throw new XMLEncryptionException("empty", ex);
-                        } catch (CanonicalizationException ex) {
-                                throw new XMLEncryptionException("empty", ex);
-                        }
-
-            // retrieve the cipher text
-        } else if (_cipherData.getDataType() == CipherData.VALUE_TYPE) {
-            CipherValue cv = _cipherData.getCipherValue();
-            base64EncodedEncryptedOctets = new String(cv.getValue());
-        } else {
-                        throw new XMLEncryptionException("CipherData.getDataType() returned unexpected value");
+            // Lets see if there are any transforms
+            Transforms transforms = cr.getTransforms();
+            if (transforms != null) {
+                logger.log(java.util.logging.Level.FINE, "Have transforms in cipher reference");
+                try {
+                    com.sun.org.apache.xml.internal.security.transforms.Transforms dsTransforms =
+                        transforms.getDSTransforms();
+                    input = dsTransforms.performTransforms(input);
+                } catch (TransformationException ex) {
+                    throw new XMLEncryptionException("empty", ex);
                 }
+            }
 
-        if (logger.isLoggable(java.util.logging.Level.FINE))                                     logger.log(java.util.logging.Level.FINE, "Encrypted octets:\n" + base64EncodedEncryptedOctets);
+            try {
+                return input.getBytes();
+            } catch (IOException ex) {
+                throw new XMLEncryptionException("empty", ex);
+            } catch (CanonicalizationException ex) {
+                throw new XMLEncryptionException("empty", ex);
+            }
+
+        // retrieve the cipher text
+        } else if (_cipherData.getDataType() == CipherData.VALUE_TYPE) {
+            base64EncodedEncryptedOctets =
+                _cipherData.getCipherValue().getValue();
+        } else {
+            throw new XMLEncryptionException("CipherData.getDataType() returned unexpected value");
+        }
+
+        logger.log(java.util.logging.Level.FINE, "Encrypted octets:\n" + base64EncodedEncryptedOctets);
 
         byte[] encryptedBytes = null;
-
         try {
-                        encryptedBytes = Base64.decode(base64EncodedEncryptedOctets);
+            encryptedBytes = Base64.decode(base64EncodedEncryptedOctets);
         } catch (Base64DecodingException bde) {
             throw new XMLEncryptionException("empty", bde);
         }
 
-                return (encryptedBytes);
-
-        }
-
+        return (encryptedBytes);
+    }
 }

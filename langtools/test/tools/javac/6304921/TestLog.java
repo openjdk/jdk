@@ -34,6 +34,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.Parser;
+import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.parser.Scanner;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeScanner;
@@ -60,7 +61,7 @@ public class TestLog
 
         JavacFileManager.preRegister(context);
         Scanner.Factory sfac = Scanner.Factory.instance(context);
-        Parser.Factory pfac = Parser.Factory.instance(context);
+        ParserFactory pfac = ParserFactory.instance(context);
 
         final String text =
               "public class Foo {\n"
@@ -74,9 +75,9 @@ public class TestLog
         JavaFileObject fo = new StringJavaFileObject("Foo", text);
         log.useSource(fo);
 
-        Scanner s = sfac.newScanner(fo.getCharContent(true));
-        Parser parser = pfac.newParser(s, false, genEndPos);
-        JCTree.JCCompilationUnit tree = parser.compilationUnit();
+        CharSequence cs = fo.getCharContent(true);
+        Parser parser = pfac.newParser(cs, false, genEndPos, false);
+        JCTree.JCCompilationUnit tree = parser.parseCompilationUnit();
         log.setEndPosTable(fo, tree.endPositions);
 
         TreeScanner ts = new LogTester(log, tree.endPositions);

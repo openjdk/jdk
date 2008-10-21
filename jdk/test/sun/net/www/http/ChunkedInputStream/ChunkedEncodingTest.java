@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 /**
  * @test
  * @bug 4333920
- * @library ../../../../../sun/net/www/httptest/
- * @build HttpCallback HttpServer ClosedChannelList HttpTransaction
  * @run main ChunkedEncodingTest
  * @summary ChunkedEncodingTest unit test
  */
@@ -33,84 +31,93 @@
 import java.io.*;
 import java.net.*;
 import java.security.*;
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpExchange;
+import static java.lang.System.out;
 
-public class ChunkedEncodingTest implements HttpCallback {
-    private static String FNPrefix;
-    private String[] respBody = new String[52];
-    private byte[][] bufs = new byte[52][8*1024];
-    private static MessageDigest md5;
-    private static byte[] file1Mac, file2Mac;
-    public void request (HttpTransaction req) {
-        try {
-            FileInputStream fis = new FileInputStream(FNPrefix+"test.txt");
-            DigestInputStream dis = null;
-            md5.reset();
-            dis = new DigestInputStream(fis, md5);
-            for (int i = 0; i < 52; i++) {
-                int n = dis.read(bufs[i]);
-                respBody[i] = new String(bufs[i], 0, n);
-            }
-            file1Mac = dis.getMessageDigest().digest();
-            dis.close();
-            req.setResponseEntityBody(respBody);
-            req.sendResponse(200, "OK");
-            req.orderlyClose();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+public class ChunkedEncodingTest{
+    private static MessageDigest serverDigest, clientDigest;
+    private static byte[] serverMac, clientMac;
 
-    static void read (InputStream is) throws IOException {
-        int c;
-        System.out.println ("reading");
-
-        DigestInputStream dis = null;
-        md5.reset();
-        dis = new DigestInputStream(is, md5);
-        while ((c=dis.read()) != -1);
-        file2Mac = dis.getMessageDigest().digest();
+    static void client(String u) throws Exception {
+        URL url = new URL(u);
+        out.println("client opening connection to: " + u);
+        URLConnection urlc = url.openConnection();
+        DigestInputStream dis =
+                new DigestInputStream(urlc.getInputStream(), clientDigest);
+        while (dis.read() != -1);
+        clientMac = dis.getMessageDigest().digest();
         dis.close();
-        System.out.println ("finished reading");
     }
 
-    static void client (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
-        URLConnection urlc = url.openConnection ();
-        InputStream is = urlc.getInputStream ();
-        read (is);
-        is.close();
-    }
-
-    static HttpServer server;
-
-    public static void test () throws Exception {
+    public static void test() {
+        HttpServer server = null;
         try {
+            serverDigest = MessageDigest.getInstance("MD5");
+            clientDigest = MessageDigest.getInstance("MD5");
+            server = startHttpServer();
 
-            FNPrefix = System.getProperty("test.src", ".")+"/";
-            md5 = MessageDigest.getInstance("MD5");
-            server = new HttpServer (new ChunkedEncodingTest(), 1, 10, 0);
-            System.out.println ("Server: listening on port: " + server.getLocalPort());
-            client ("http://localhost:"+server.getLocalPort()+"/d1/foo.html");
-        } catch (Exception e) {
-            if (server != null) {
-                server.terminate();
+            int port = server.getAddress().getPort();
+            out.println ("Server listening on port: " + port);
+            client("http://localhost:" + port + "/chunked/");
+
+            if (!MessageDigest.isEqual(clientMac, serverMac)) {
+                throw new RuntimeException(
+                 "Data received is NOT equal to the data sent");
             }
-            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (server != null)
+                server.stop(0);
         }
-        if (!MessageDigest.isEqual(file1Mac, file2Mac)) {
-            except ("The file sent by server is different from the original file");
-        }
-
-        server.terminate();
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         test();
     }
 
-    public static void except (String s) {
-        server.terminate();
-        throw new RuntimeException (s);
+    /**
+     * Http Server
+     */
+    static HttpServer startHttpServer() throws IOException {
+        HttpServer httpServer = HttpServer.create(new InetSocketAddress(0), 0);
+        HttpHandler httpHandler = new SimpleHandler();
+        httpServer.createContext("/chunked/", httpHandler);
+        httpServer.start();
+        return httpServer;
+    }
+
+    static class SimpleHandler implements HttpHandler {
+        static byte[] baMessage;
+        final static int CHUNK_SIZE = 8 * 1024;
+        final static int MESSAGE_LENGTH = 52 * CHUNK_SIZE;
+
+        static {
+            baMessage = new byte[MESSAGE_LENGTH];
+            for (int i=0; i<MESSAGE_LENGTH; i++)
+                baMessage[i] = (byte)i;
+        }
+
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            InputStream is = t.getRequestBody();
+            while (is.read() != -1);
+            is.close();
+
+            t.sendResponseHeaders (200, MESSAGE_LENGTH);
+            OutputStream os = t.getResponseBody();
+            DigestOutputStream dos = new DigestOutputStream(os, serverDigest);
+
+            int offset = 0;
+            for (int i=0; i<52; i++) {
+                dos.write(baMessage, offset, CHUNK_SIZE);
+                offset += CHUNK_SIZE;
+            }
+            serverMac = serverDigest.digest();
+            os.close();
+            t.close();
+        }
     }
 }

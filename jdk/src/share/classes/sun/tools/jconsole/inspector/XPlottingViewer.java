@@ -27,14 +27,10 @@ package sun.tools.jconsole.inspector;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.io.*;
 import java.util.*;
 import java.util.Timer;
 
-import javax.management.*;
 import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.event.*;
 
 import sun.tools.jconsole.*;
 
@@ -127,6 +123,7 @@ public class XPlottingViewer extends PlotterPanel implements ActionListener {
         setBackground(g.getColor());
         plotter.paintComponent(g);
         }*/
+    @Override
     public void actionPerformed(ActionEvent evt) {
         plotterCache.remove(key);
         Timer t = timerCache.remove(key);
@@ -141,9 +138,11 @@ public class XPlottingViewer extends PlotterPanel implements ActionListener {
                                  JTable table) {
         final Plotter plotter = new XPlotter(table, Plotter.Unit.NONE) {
                 Dimension prefSize = new Dimension(400, 170);
+            @Override
                 public Dimension getPreferredSize() {
                     return prefSize;
                 }
+            @Override
                 public Dimension getMinimumSize() {
                     return prefSize;
                 }
@@ -183,42 +182,40 @@ public class XPlottingViewer extends PlotterPanel implements ActionListener {
         return plotter;
     }
 
-    //Create Plotter display
     private void setupDisplay(Plotter plotter) {
-        //setLayout(new GridLayout(2,0));
-        GridBagLayout gbl = new GridBagLayout();
-        setLayout(gbl);
+        final JPanel buttonPanel = new JPanel();
+        final GridBagLayout gbl = new GridBagLayout();
+        buttonPanel.setLayout(gbl);
+        setLayout(new BorderLayout());
         plotButton = new JButton(Resources.getText("Discard chart"));
         plotButton.addActionListener(this);
         plotButton.setEnabled(true);
 
-        // Add the display to the top four cells
         GridBagConstraints buttonConstraints = new GridBagConstraints();
         buttonConstraints.gridx = 0;
         buttonConstraints.gridy = 0;
         buttonConstraints.fill = GridBagConstraints.VERTICAL;
         buttonConstraints.anchor = GridBagConstraints.CENTER;
         gbl.setConstraints(plotButton, buttonConstraints);
-        add(plotButton);
+        buttonPanel.add(plotButton);
 
-        GridBagConstraints plotterConstraints = new GridBagConstraints();
-        plotterConstraints.gridx = 0;
-        plotterConstraints.gridy = 1;
-        plotterConstraints.weightx = 1;
-        //plotterConstraints.gridwidth = (int) plotter.getPreferredSize().getWidth();
-        //plotterConstraints.gridheight =  (int) plotter.getPreferredSize().getHeight();
-        plotterConstraints.fill = GridBagConstraints.VERTICAL;
-        gbl.setConstraints(plotter, plotterConstraints);
-
-
-        //bordered = new JPanel();
-        //bordered.setPreferredSize(new Dimension(400, 250));
-        //bordered.add(plotButton);
-        //bordered.add(plotter);
-
-        //add(bordered);
-
+        if (attributeName != null && attributeName.length()!=0) {
+            final JPanel plotterLabelPanel = new JPanel();
+            final JLabel label = new JLabel(attributeName);
+            final GridBagLayout gbl2 = new GridBagLayout();
+            plotterLabelPanel.setLayout(gbl2);
+            final GridBagConstraints labelConstraints = new GridBagConstraints();
+            labelConstraints.gridx = 0;
+            labelConstraints.gridy = 0;
+            labelConstraints.fill = GridBagConstraints.VERTICAL;
+            labelConstraints.anchor = GridBagConstraints.CENTER;
+            labelConstraints.ipady = 10;
+            gbl2.setConstraints(label, labelConstraints);
+            plotterLabelPanel.add(label);
+            add(plotterLabelPanel, BorderLayout.NORTH);
+        }
         setPlotter(plotter);
+        add(buttonPanel, BorderLayout.SOUTH);
         repaint();
     }
 

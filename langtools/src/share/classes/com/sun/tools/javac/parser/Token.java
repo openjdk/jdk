@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package com.sun.tools.javac.parser;
 
+import java.util.ResourceBundle;
+
+import com.sun.tools.javac.api.Formattable;
 
 /** An interface that defines codes for Java source tokens
  *  returned from lexical analysis.
@@ -34,7 +37,7 @@ package com.sun.tools.javac.parser;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public enum Token {
+public enum Token implements Formattable {
     EOF,
     ERROR,
     IDENTIFIER,
@@ -155,4 +158,41 @@ public enum Token {
     }
 
     public final String name;
+
+    public String toString() {
+        switch (this) {
+        case IDENTIFIER:
+            return "token.identifier";
+        case CHARLITERAL:
+            return "token.character";
+        case STRINGLITERAL:
+            return "token.string";
+        case INTLITERAL:
+            return "token.integer";
+        case LONGLITERAL:
+            return "token.long-integer";
+        case FLOATLITERAL:
+            return "token.float";
+        case DOUBLELITERAL:
+            return "token.double";
+        case ERROR:
+            return "token.bad-symbol";
+        case EOF:
+            return "token.end-of-input";
+        case DOT: case COMMA: case SEMI: case LPAREN: case RPAREN:
+        case LBRACKET: case RBRACKET: case LBRACE: case RBRACE:
+            return "'" + name + "'";
+        default:
+            return name;
+        }
+    }
+
+    public String getKind() {
+        return "Token";
+    }
+
+    public String toString(ResourceBundle bundle) {
+        String s = toString();
+        return s.startsWith("token.") ? bundle.getString("compiler.misc." + s) : s;
+    }
 }

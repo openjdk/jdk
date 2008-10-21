@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-1999 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@
 #include <dirent.h>             /* For DIR */
 #include <sys/param.h>          /* For MAXPATHLEN */
 #include <unistd.h>             /* For F_OK, R_OK, W_OK */
+#include <stddef.h>             /* For ptrdiff_t */
+#include <stdint.h>             /* For uintptr_t */
 
 #define JNI_ONLOAD_SYMBOLS   {"JNI_OnLoad"}
 #define JNI_ONUNLOAD_SYMBOLS {"JNI_OnUnload"}

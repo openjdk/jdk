@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,49 @@ import java.util.Map.Entry;
 
 /**
  * This is a utility class that can be used by beans that support constrained
- * properties.  You can use an instance of this class as a member field
- * of your bean and delegate various work to it.
+ * properties.  It manages a list of listeners and dispatches
+ * {@link PropertyChangeEvent}s to them.  You can use an instance of this class
+ * as a member field of your bean and delegate these types of work to it.
+ * The {@link VetoableChangeListener} can be registered for all properties
+ * or for a property specified by name.
+ * <p>
+ * Here is an example of {@code VetoableChangeSupport} usage that follows
+ * the rules and recommendations laid out in the JavaBeans&trade; specification:
+ * <pre>
+ * public class MyBean {
+ *     private final VetoableChangeSupport vcs = new VetoableChangeSupport(this);
  *
+ *     public void addVetoableChangeListener(VetoableChangeListener listener) {
+ *         this.vcs.addVetoableChangeListener(listener);
+ *     }
+ *
+ *     public void removeVetoableChangeListener(VetoableChangeListener listener) {
+ *         this.vcs.removeVetoableChangeListener(listener);
+ *     }
+ *
+ *     private String value;
+ *
+ *     public String getValue() {
+ *         return this.value;
+ *     }
+ *
+ *     public void setValue(String newValue) throws PropertyVetoException {
+ *         String oldValue = this.value;
+ *         this.vcs.fireVetoableChange("value", oldValue, newValue);
+ *         this.value = newValue;
+ *     }
+ *
+ *     [...]
+ * }
+ * </pre>
+ * <p>
+ * A {@code VetoableChangeSupport} instance is thread-safe.
+ * <p>
  * This class is serializable.  When it is serialized it will save
  * (and restore) any listeners that are themselves serializable.  Any
  * non-serializable listeners will be skipped during serialization.
+ *
+ * @see PropertyChangeSupport
  */
 public class VetoableChangeSupport implements Serializable {
     private VetoableChangeListenerMap map = new VetoableChangeListenerMap();
@@ -208,126 +245,149 @@ public class VetoableChangeSupport implements Serializable {
     }
 
     /**
-     * Report a vetoable property update to any registered listeners.  If
-     * anyone vetos the change, then fire a new event reverting everyone to
-     * the old value and then rethrow the PropertyVetoException.
+     * Reports a constrained property update to listeners
+     * that have been registered to track updates of
+     * all properties or a property with the specified name.
      * <p>
-     * No event is fired if old and new are equal and non-null.
-     *
-     * @param propertyName  The programmatic name of the property
-     *          that is about to change..
-     * @param oldValue  The old value of the property.
-     * @param newValue  The new value of the property.
-     * @exception PropertyVetoException if the recipient wishes the property
-     *              change to be rolled back.
-     */
-    public void fireVetoableChange(String propertyName,
-                                        Object oldValue, Object newValue)
-                                        throws PropertyVetoException {
-        if (oldValue != null && newValue != null && oldValue.equals(newValue)) {
-            return;
-        }
-        PropertyChangeEvent evt = new PropertyChangeEvent(source, propertyName,
-                                                            oldValue, newValue);
-        fireVetoableChange(evt);
-    }
-
-    /**
-     * Report a int vetoable property update to any registered listeners.
-     * No event is fired if old and new are equal.
+     * Any listener can throw a {@code PropertyVetoException} to veto the update.
+     * If one of the listeners vetoes the update, this method passes
+     * a new "undo" {@code PropertyChangeEvent} that reverts to the old value
+     * to all listeners that already confirmed this update
+     * and throws the {@code PropertyVetoException} again.
+     * <p>
+     * No event is fired if old and new values are equal and non-null.
      * <p>
      * This is merely a convenience wrapper around the more general
-     * fireVetoableChange method that takes Object values.
+     * {@link #fireVetoableChange(PropertyChangeEvent)} method.
      *
-     * @param propertyName  The programmatic name of the property
-     *          that is about to change.
-     * @param oldValue  The old value of the property.
-     * @param newValue  The new value of the property.
+     * @param propertyName  the programmatic name of the property that is about to change
+     * @param oldValue      the old value of the property
+     * @param newValue      the new value of the property
+     * @throws PropertyVetoException if one of listeners vetoes the property update
      */
-    public void fireVetoableChange(String propertyName,
-                                        int oldValue, int newValue)
-                                        throws PropertyVetoException {
-        if (oldValue == newValue) {
-            return;
+    public void fireVetoableChange(String propertyName, Object oldValue, Object newValue)
+            throws PropertyVetoException {
+        if (oldValue == null || newValue == null || !oldValue.equals(newValue)) {
+            fireVetoableChange(new PropertyChangeEvent(this.source, propertyName, oldValue, newValue));
         }
-        fireVetoableChange(propertyName, Integer.valueOf(oldValue), Integer.valueOf(newValue));
     }
 
     /**
-     * Report a boolean vetoable property update to any registered listeners.
-     * No event is fired if old and new are equal.
+     * Reports an integer constrained property update to listeners
+     * that have been registered to track updates of
+     * all properties or a property with the specified name.
+     * <p>
+     * Any listener can throw a {@code PropertyVetoException} to veto the update.
+     * If one of the listeners vetoes the update, this method passes
+     * a new "undo" {@code PropertyChangeEvent} that reverts to the old value
+     * to all listeners that already confirmed this update
+     * and throws the {@code PropertyVetoException} again.
+     * <p>
+     * No event is fired if old and new values are equal.
      * <p>
      * This is merely a convenience wrapper around the more general
-     * fireVetoableChange method that takes Object values.
+     * {@link #fireVetoableChange(String, Object, Object)} method.
      *
-     * @param propertyName  The programmatic name of the property
-     *          that is about to change.
-     * @param oldValue  The old value of the property.
-     * @param newValue  The new value of the property.
+     * @param propertyName  the programmatic name of the property that is about to change
+     * @param oldValue      the old value of the property
+     * @param newValue      the new value of the property
+     * @throws PropertyVetoException if one of listeners vetoes the property update
      */
-    public void fireVetoableChange(String propertyName,
-                                        boolean oldValue, boolean newValue)
-                                        throws PropertyVetoException {
-        if (oldValue == newValue) {
-            return;
+    public void fireVetoableChange(String propertyName, int oldValue, int newValue)
+            throws PropertyVetoException {
+        if (oldValue != newValue) {
+            fireVetoableChange(propertyName, Integer.valueOf(oldValue), Integer.valueOf(newValue));
         }
-        fireVetoableChange(propertyName, Boolean.valueOf(oldValue), Boolean.valueOf(newValue));
     }
 
     /**
-     * Fire a vetoable property update to any registered listeners.  If
-     * anyone vetos the change, then fire a new event reverting everyone to
-     * the old value and then rethrow the PropertyVetoException.
+     * Reports a boolean constrained property update to listeners
+     * that have been registered to track updates of
+     * all properties or a property with the specified name.
      * <p>
-     * No event is fired if old and new are equal and non-null.
+     * Any listener can throw a {@code PropertyVetoException} to veto the update.
+     * If one of the listeners vetoes the update, this method passes
+     * a new "undo" {@code PropertyChangeEvent} that reverts to the old value
+     * to all listeners that already confirmed this update
+     * and throws the {@code PropertyVetoException} again.
+     * <p>
+     * No event is fired if old and new values are equal.
+     * <p>
+     * This is merely a convenience wrapper around the more general
+     * {@link #fireVetoableChange(String, Object, Object)} method.
      *
-     * @param evt  The PropertyChangeEvent to be fired.
-     * @exception PropertyVetoException if the recipient wishes the property
-     *              change to be rolled back.
+     * @param propertyName  the programmatic name of the property that is about to change
+     * @param oldValue      the old value of the property
+     * @param newValue      the new value of the property
+     * @throws PropertyVetoException if one of listeners vetoes the property update
      */
-    public void fireVetoableChange(PropertyChangeEvent evt)
-                                        throws PropertyVetoException {
-
-        Object oldValue = evt.getOldValue();
-        Object newValue = evt.getNewValue();
-        String propertyName = evt.getPropertyName();
-        if (oldValue != null && newValue != null && oldValue.equals(newValue)) {
-            return;
+    public void fireVetoableChange(String propertyName, boolean oldValue, boolean newValue)
+            throws PropertyVetoException {
+        if (oldValue != newValue) {
+            fireVetoableChange(propertyName, Boolean.valueOf(oldValue), Boolean.valueOf(newValue));
         }
-        VetoableChangeListener[] common = this.map.get(null);
-        VetoableChangeListener[] named = (propertyName != null)
-                    ? this.map.get(propertyName)
-                    : null;
-        fire(common, evt);
-        fire(named, evt);
     }
 
-    private void fire(VetoableChangeListener[] listeners, PropertyChangeEvent event) throws PropertyVetoException {
-        if (listeners != null) {
-            VetoableChangeListener current = null;
-            try {
-                for (VetoableChangeListener listener : listeners) {
-                    current = listener;
-                    listener.vetoableChange(event);
-                }
-            } catch (PropertyVetoException veto) {
-                // Create an event to revert everyone to the old value.
-                event = new PropertyChangeEvent( this.source,
-                                                 event.getPropertyName(),
-                                                 event.getNewValue(),
-                                                 event.getOldValue() );
-                for (VetoableChangeListener listener : listeners) {
-                    if (current == listener) {
-                        break;
+    /**
+     * Fires a property change event to listeners
+     * that have been registered to track updates of
+     * all properties or a property with the specified name.
+     * <p>
+     * Any listener can throw a {@code PropertyVetoException} to veto the update.
+     * If one of the listeners vetoes the update, this method passes
+     * a new "undo" {@code PropertyChangeEvent} that reverts to the old value
+     * to all listeners that already confirmed this update
+     * and throws the {@code PropertyVetoException} again.
+     * <p>
+     * No event is fired if the given event's old and new values are equal and non-null.
+     *
+     * @param event  the {@code PropertyChangeEvent} to be fired
+     * @throws PropertyVetoException if one of listeners vetoes the property update
+     */
+    public void fireVetoableChange(PropertyChangeEvent event)
+            throws PropertyVetoException {
+        Object oldValue = event.getOldValue();
+        Object newValue = event.getNewValue();
+        if (oldValue == null || newValue == null || !oldValue.equals(newValue)) {
+            String name = event.getPropertyName();
+
+            VetoableChangeListener[] common = this.map.get(null);
+            VetoableChangeListener[] named = (name != null)
+                        ? this.map.get(name)
+                        : null;
+
+            VetoableChangeListener[] listeners;
+            if (common == null) {
+                listeners = named;
+            }
+            else if (named == null) {
+                listeners = common;
+            }
+            else {
+                listeners = new VetoableChangeListener[common.length + named.length];
+                System.arraycopy(common, 0, listeners, 0, common.length);
+                System.arraycopy(named, 0, listeners, common.length, named.length);
+            }
+            if (listeners != null) {
+                int current = 0;
+                try {
+                    while (current < listeners.length) {
+                        listeners[current].vetoableChange(event);
+                        current++;
                     }
-                    try {
-                        listener.vetoableChange(event);
-                    } catch (PropertyVetoException ex) {
-                         // We just ignore exceptions that occur during reversions.
-                    }
                 }
-                // And now rethrow the PropertyVetoException.
-                throw veto;
+                catch (PropertyVetoException veto) {
+                    event = new PropertyChangeEvent(this.source, name, newValue, oldValue);
+                    for (int i = 0; i < current; i++) {
+                        try {
+                            listeners[i].vetoableChange(event);
+                        }
+                        catch (PropertyVetoException exception) {
+                            // ignore exceptions that occur during rolling back
+                        }
+                    }
+                    throw veto; // rethrow the veto exception
+                }
             }
         }
     }

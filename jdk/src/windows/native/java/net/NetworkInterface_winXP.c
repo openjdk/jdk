@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -576,10 +576,10 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0_XP
 
 /*
  * Class:     NetworkInterface
- * Method:    getByIndex
+ * Method:    getByIndex0_XP
  * Signature: (I)LNetworkInterface;
  */
-JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex_XP
+JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0_XP
   (JNIEnv *env, jclass cls, jint index)
 {
     netif *ifList, *curr;

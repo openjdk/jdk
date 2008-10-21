@@ -277,7 +277,7 @@ public class JDialog extends Dialog implements WindowConstants,
               title, modal);
         if (owner == null) {
             WindowListener ownerShutdownListener =
-                (WindowListener)SwingUtilities.getSharedOwnerFrameShutdownListener();
+                    SwingUtilities.getSharedOwnerFrameShutdownListener();
             addWindowListener(ownerShutdownListener);
         }
         dialogInit();
@@ -329,7 +329,7 @@ public class JDialog extends Dialog implements WindowConstants,
               title, modal, gc);
         if (owner == null) {
             WindowListener ownerShutdownListener =
-                (WindowListener)SwingUtilities.getSharedOwnerFrameShutdownListener();
+                    SwingUtilities.getSharedOwnerFrameShutdownListener();
             addWindowListener(ownerShutdownListener);
         }
         dialogInit();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.util.Locale;
 
 public class EnclosingCandidates {
 
-    Name.Table names = Name.Table.instance(new Context());
+    Names names = Names.instance(new Context());
 
     void test(String name, String... expected) {
         List<Name> result = enclosingCandidates(names.fromString(name));

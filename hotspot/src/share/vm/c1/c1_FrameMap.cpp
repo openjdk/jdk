@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,7 @@ ByteSize FrameMap::sp_offset_for_spill(const int index) const {
 ByteSize FrameMap::sp_offset_for_monitor_base(const int index) const {
   int end_of_spills = round_to(first_available_sp_in_frame + _reserved_argument_area_size, sizeof(double)) +
     _num_spills * spill_slot_size_in_bytes;
-  int offset = round_to(end_of_spills, HeapWordSize) + index * sizeof(BasicObjectLock);
+  int offset = (int) round_to(end_of_spills, HeapWordSize) + index * sizeof(BasicObjectLock);
   return in_ByteSize(offset);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
 
 /**
  * @test
- * @bug 5045412
+ * @bug 5045412 6627366
  * @compile -Xlint:serial -XDfailcomplete=java.io.Serializable Foo.java
  */
 
 /**
  * @test
- * @bug 5045412
- * @compile/fail/ref=out -XDstdout -XDrawDiagnostics -Xlint:serial -XDfailcomplete=java.io.Serializable Foo.java Bar.java
+ * @bug 5045412 6627366
+ * @compile -Xlint:serial -XDfailcomplete=java.io.Serializable Foo.java Bar.java
  */
 
 class Foo { }

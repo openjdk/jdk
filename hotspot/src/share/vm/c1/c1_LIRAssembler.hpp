@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,9 +75,9 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_stubs(CodeStubList* stub_list);
 
   // addresses
-  static Address as_Address(LIR_Address* addr);
-  static Address as_Address_lo(LIR_Address* addr);
-  static Address as_Address_hi(LIR_Address* addr);
+  Address as_Address(LIR_Address* addr);
+  Address as_Address_lo(LIR_Address* addr);
+  Address as_Address_hi(LIR_Address* addr);
 
   // debug information
   void add_call_info(int pc_offset, CodeEmitInfo* cinfo);

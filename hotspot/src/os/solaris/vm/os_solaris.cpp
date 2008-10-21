@@ -1783,6 +1783,24 @@ const char* os::dll_file_extension() { return ".so"; }
 
 const char* os::get_temp_directory() { return "/tmp/"; }
 
+void os::dll_build_name(
+    char* buffer, size_t buflen, const char* pname, const char* fname) {
+  // copied from libhpi
+  const size_t pnamelen = pname ? strlen(pname) : 0;
+
+  /* Quietly truncate on buffer overflow.  Should be an error. */
+  if (pnamelen + strlen(fname) + 10 > (size_t) buflen) {
+      *buffer = '\0';
+      return;
+  }
+
+  if (pnamelen == 0) {
+      sprintf(buffer, "lib%s.so", fname);
+  } else {
+      sprintf(buffer, "%s/lib%s.so", pname, fname);
+  }
+}
+
 const char* os::get_current_directory(char *buf, int buflen) {
   return getcwd(buf, buflen);
 }
@@ -2034,6 +2052,9 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
   return NULL;
 }
 
+void* os::dll_lookup(void* handle, const char* name) {
+  return dlsym(handle, name);
+}
 
 
 bool _print_ascii_file(const char* filename, outputStream* st) {
@@ -2657,6 +2678,12 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
      }
      top += r;
      cur++;
+   }
+   if (bottom == 0) {
+     // Handle a situation, when the OS reports no memory available.
+     // Assume UMA architecture.
+     ids[0] = 0;
+     return 1;
    }
    return bottom;
 }
@@ -4581,7 +4608,7 @@ void os::Solaris::synchronization_init() {
 }
 
 void os::Solaris::liblgrp_init() {
-  void *handle = dlopen("liblgrp.so", RTLD_LAZY);
+  void *handle = dlopen("liblgrp.so.1", RTLD_LAZY);
   if (handle != NULL) {
     os::Solaris::set_lgrp_home(CAST_TO_FN_PTR(lgrp_home_func_t, dlsym(handle, "lgrp_home")));
     os::Solaris::set_lgrp_init(CAST_TO_FN_PTR(lgrp_init_func_t, dlsym(handle, "lgrp_init")));

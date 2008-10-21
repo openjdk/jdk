@@ -103,14 +103,12 @@ public abstract class TextAction extends AbstractAction {
      * @return the augmented list
      */
     public static final Action[] augmentList(Action[] list1, Action[] list2) {
-        Hashtable h = new Hashtable();
-        for (int i = 0; i < list1.length; i++) {
-            Action a = list1[i];
+        Hashtable<String, Action> h = new Hashtable<String, Action>();
+        for (Action a : list1) {
             String value = (String)a.getValue(Action.NAME);
             h.put((value!=null ? value:""), a);
         }
-        for (int i = 0; i < list2.length; i++) {
-            Action a = list2[i];
+        for (Action a : list2) {
             String value = (String)a.getValue(Action.NAME);
             h.put((value!=null ? value:""), a);
         }

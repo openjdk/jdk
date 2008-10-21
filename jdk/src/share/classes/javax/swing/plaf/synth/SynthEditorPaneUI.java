@@ -45,8 +45,8 @@ class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
      * I would prefer to use UIResource instad of this.
      * Unfortunately Boolean is a final class
      */
-    private Boolean localTrue = new Boolean(true);
-    private Boolean localFalse = new Boolean(false);
+    private Boolean localTrue = Boolean.TRUE;
+    private Boolean localFalse = Boolean.FALSE;
 
     /**
      * Creates a UI for the JTextPane.
@@ -69,7 +69,7 @@ class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
             c.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES,
                                 localTrue);
         }
-        updateStyle((JTextComponent)getComponent());
+        updateStyle(getComponent());
     }
 
     protected void uninstallDefaults() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,9 @@ class Direct$Type$Buffer$RW$$BO$
     // Cached unsafe-access object
     protected static final Unsafe unsafe = Bits.unsafe();
 
+    // Cached array base offset
+    private static final long arrayBaseOffset = (long)unsafe.arrayBaseOffset($type$[].class);
+
     // Cached unaligned-access capability
     protected static final boolean unaligned = Bits.unaligned();
 
@@ -71,11 +74,13 @@ class Direct$Type$Buffer$RW$$BO$
         private static Unsafe unsafe = Unsafe.getUnsafe();
 
         private long address;
+        private long size;
         private int capacity;
 
-        private Deallocator(long address, int capacity) {
+        private Deallocator(long address, long size, int capacity) {
             assert (address != 0);
             this.address = address;
+            this.size = size;
             this.capacity = capacity;
         }
 
@@ -86,7 +91,7 @@ class Direct$Type$Buffer$RW$$BO$
             }
             unsafe.freeMemory(address);
             address = 0;
-            Bits.unreserveMemory(capacity);
+            Bits.unreserveMemory(size, capacity);
         }
 
     }
@@ -110,23 +115,25 @@ class Direct$Type$Buffer$RW$$BO$
     Direct$Type$Buffer$RW$(int cap) {                   // package-private
 #if[rw]
         super(-1, 0, cap, cap, false);
-        Bits.reserveMemory(cap);
         int ps = Bits.pageSize();
+        int size = cap + ps;
+        Bits.reserveMemory(size, cap);
+
         long base = 0;
         try {
-            base = unsafe.allocateMemory(cap + ps);
+            base = unsafe.allocateMemory(size);
         } catch (OutOfMemoryError x) {
-            Bits.unreserveMemory(cap);
+            Bits.unreserveMemory(size, cap);
             throw x;
         }
-        unsafe.setMemory(base, cap + ps, (byte) 0);
+        unsafe.setMemory(base, size, (byte) 0);
         if (base % ps != 0) {
             // Round up to page boundary
             address = base + ps - (base & (ps - 1));
         } else {
             address = base;
         }
-        cleaner = Cleaner.create(this, new Deallocator(base, cap));
+        cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
 #else[rw]
         super(cap);
 #end[rw]
@@ -238,14 +245,16 @@ class Direct$Type$Buffer$RW$$BO$
             if (length > rem)
                 throw new BufferUnderflowException();
 
+#if[!byte]
             if (order() != ByteOrder.nativeOrder())
                 Bits.copyTo$Memtype$Array(ix(pos), dst,
                                           offset << $LG_BYTES_PER_VALUE$,
                                           length << $LG_BYTES_PER_VALUE$);
             else
-                Bits.copyToByteArray(ix(pos), dst,
-                                     offset << $LG_BYTES_PER_VALUE$,
-                                     length << $LG_BYTES_PER_VALUE$);
+#end[!byte]
+                Bits.copyToArray(ix(pos), dst, arrayBaseOffset,
+                                 offset << $LG_BYTES_PER_VALUE$,
+                                 length << $LG_BYTES_PER_VALUE$);
             position(pos + length);
         } else {
             super.get(dst, offset, length);
@@ -328,12 +337,14 @@ class Direct$Type$Buffer$RW$$BO$
             if (length > rem)
                 throw new BufferOverflowException();
 
+#if[!byte]
             if (order() != ByteOrder.nativeOrder())
                 Bits.copyFrom$Memtype$Array(src, offset << $LG_BYTES_PER_VALUE$,
                                             ix(pos), length << $LG_BYTES_PER_VALUE$);
             else
-                Bits.copyFromByteArray(src, offset << $LG_BYTES_PER_VALUE$,
-                                       ix(pos), length << $LG_BYTES_PER_VALUE$);
+#end[!byte]
+                Bits.copyFromArray(src, arrayBaseOffset, offset << $LG_BYTES_PER_VALUE$,
+                                   ix(pos), length << $LG_BYTES_PER_VALUE$);
             position(pos + length);
         } else {
             super.put(src, offset, length);
@@ -391,7 +402,7 @@ class Direct$Type$Buffer$RW$$BO$
 
     // --- Methods to support CharSequence ---
 
-    public CharSequence subSequence(int start, int end) {
+    public CharBuffer subSequence(int start, int end) {
         int pos = position();
         int lim = limit();
         assert (pos <= lim);

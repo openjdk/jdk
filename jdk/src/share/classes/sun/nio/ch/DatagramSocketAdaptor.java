@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,15 +45,8 @@ public class DatagramSocketAdaptor
     // The channel being adapted
     private final DatagramChannelImpl dc;
 
-    // Option adaptor object, created on demand
-    private volatile OptionAdaptor opts = null;
-
     // Timeout "option" value for receives
     private volatile int timeout = 0;
-
-    // Traffic-class/Type-of-service
-    private volatile int trafficClass = 0;
-
 
     // ## super will create a useless impl
     private DatagramSocketAdaptor(DatagramChannelImpl dc) throws IOException {
@@ -82,7 +75,7 @@ public class DatagramSocketAdaptor
             throw new IllegalArgumentException("connect: " + port);
         if (remote == null)
             throw new IllegalArgumentException("connect: null address");
-        if (!isClosed())
+        if (isClosed())
             return;
         try {
             dc.connect(remote);
@@ -124,11 +117,11 @@ public class DatagramSocketAdaptor
     }
 
     public boolean isBound() {
-        return dc.isBound();
+        return dc.localAddress() != null;
     }
 
     public boolean isConnected() {
-        return dc.isConnected();
+        return dc.remoteAddress() != null;
     }
 
     public InetAddress getInetAddress() {
@@ -157,7 +150,7 @@ public class DatagramSocketAdaptor
                             // Legacy DatagramSocket will send in this case
                             // and set address and port of the packet
                             InetSocketAddress isa = (InetSocketAddress)
-                                                    dc.remoteAddress;
+                                                    dc.remoteAddress();
                             p.setPort(isa.getPort());
                             p.setAddress(isa.getAddress());
                             dc.write(bb);
@@ -241,21 +234,32 @@ public class DatagramSocketAdaptor
     public InetAddress getLocalAddress() {
         if (isClosed())
             return null;
-        try {
-            return Net.asInetSocketAddress(dc.localAddress()).getAddress();
-        } catch (Exception x) {
-            return new InetSocketAddress(0).getAddress();
+        SocketAddress local = dc.localAddress();
+        if (local == null)
+            local = new InetSocketAddress(0);
+        InetAddress result = ((InetSocketAddress)local).getAddress();
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            try {
+                sm.checkConnect(result.getHostAddress(), -1);
+            } catch (SecurityException x) {
+                return new InetSocketAddress(0).getAddress();
+            }
         }
+        return result;
     }
 
     public int getLocalPort() {
         if (isClosed())
             return -1;
         try {
-            return Net.asInetSocketAddress(dc.localAddress()).getPort();
+            SocketAddress local = dc.getLocalAddress();
+            if (local != null) {
+                return ((InetSocketAddress)local).getPort();
+            }
         } catch (Exception x) {
-            return 0;
         }
+        return 0;
     }
 
     public void setSoTimeout(int timeout) throws SocketException {
@@ -266,55 +270,87 @@ public class DatagramSocketAdaptor
         return timeout;
     }
 
-    private OptionAdaptor opts() {
-        if (opts == null)
-            opts = new OptionAdaptor(dc);
-        return opts;
+    private void setBooleanOption(SocketOption<Boolean> name, boolean value)
+        throws SocketException
+    {
+        try {
+            dc.setOption(name, value);
+        } catch (IOException x) {
+            Net.translateToSocketException(x);
+        }
+    }
+
+    private void setIntOption(SocketOption<Integer> name, int value)
+        throws SocketException
+    {
+        try {
+            dc.setOption(name, value);
+        } catch (IOException x) {
+            Net.translateToSocketException(x);
+        }
+    }
+
+    private boolean getBooleanOption(SocketOption<Boolean> name) throws SocketException {
+        try {
+            return dc.getOption(name).booleanValue();
+        } catch (IOException x) {
+            Net.translateToSocketException(x);
+            return false;       // keep compiler happy
+        }
+    }
+
+    private int getIntOption(SocketOption<Integer> name) throws SocketException {
+        try {
+            return dc.getOption(name).intValue();
+        } catch (IOException x) {
+            Net.translateToSocketException(x);
+            return -1;          // keep compiler happy
+        }
     }
 
     public void setSendBufferSize(int size) throws SocketException {
-        opts().setSendBufferSize(size);
+        if (size <= 0)
+            throw new IllegalArgumentException("Invalid send size");
+        setIntOption(StandardSocketOption.SO_SNDBUF, size);
     }
 
     public int getSendBufferSize() throws SocketException {
-        return opts().getSendBufferSize();
+        return getIntOption(StandardSocketOption.SO_SNDBUF);
     }
 
     public void setReceiveBufferSize(int size) throws SocketException {
-        opts().setReceiveBufferSize(size);
+        if (size <= 0)
+            throw new IllegalArgumentException("Invalid receive size");
+        setIntOption(StandardSocketOption.SO_RCVBUF, size);
     }
 
     public int getReceiveBufferSize() throws SocketException {
-        return opts().getReceiveBufferSize();
+        return getIntOption(StandardSocketOption.SO_RCVBUF);
     }
 
     public void setReuseAddress(boolean on) throws SocketException {
-        opts().setReuseAddress(on);
+        setBooleanOption(StandardSocketOption.SO_REUSEADDR, on);
     }
 
     public boolean getReuseAddress() throws SocketException {
-        return opts().getReuseAddress();
+        return getBooleanOption(StandardSocketOption.SO_REUSEADDR);
+
     }
 
     public void setBroadcast(boolean on) throws SocketException {
-        opts().setBroadcast(on);
+        setBooleanOption(StandardSocketOption.SO_BROADCAST, on);
     }
 
     public boolean getBroadcast() throws SocketException {
-        return opts().getBroadcast();
+        return getBooleanOption(StandardSocketOption.SO_BROADCAST);
     }
 
     public void setTrafficClass(int tc) throws SocketException {
-        opts().setTrafficClass(tc);
-        trafficClass = tc;
+        setIntOption(StandardSocketOption.IP_TOS, tc);
     }
 
     public int getTrafficClass() throws SocketException {
-        int tc = opts().getTrafficClass();
-        if (tc < 0) {
-            tc = trafficClass;
-        }
-        return tc;
+        return getIntOption(StandardSocketOption.IP_TOS);
     }
 
     public void close() {
