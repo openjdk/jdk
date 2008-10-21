@@ -1817,6 +1817,12 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return progress;              // Return any progress
 }
 
+//------------------------------is_tripcount-----------------------------------
+bool PhiNode::is_tripcount() const {
+  return (in(0) != NULL && in(0)->is_CountedLoop() &&
+          in(0)->as_CountedLoop()->phi() == this);
+}
+
 //------------------------------out_RegMask------------------------------------
 const RegMask &PhiNode::in_RegMask(uint i) const {
   return i ? out_RegMask() : RegMask::Empty;
@@ -1832,9 +1838,7 @@ const RegMask &PhiNode::out_RegMask() const {
 #ifndef PRODUCT
 void PhiNode::dump_spec(outputStream *st) const {
   TypeNode::dump_spec(st);
-  if (in(0) != NULL &&
-      in(0)->is_CountedLoop() &&
-      in(0)->as_CountedLoop()->phi() == this) {
+  if (is_tripcount()) {
     st->print(" #tripcount");
   }
 }

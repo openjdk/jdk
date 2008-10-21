@@ -997,6 +997,12 @@ class CommandLineFlags {
   product(bool, UseXmmI2F, false,                                           \
           "Use SSE2 CVTDQ2PS instruction to convert Integer to Float")      \
                                                                             \
+  product(bool, UseXMMForArrayCopy, false,                                  \
+          "Use SSE2 MOVQ instruction for Arraycopy")                        \
+                                                                            \
+  product(bool, UseUnalignedLoadStores, false,                              \
+          "Use SSE2 MOVDQU instruction for Arraycopy")                      \
+                                                                            \
   product(intx, FieldsAllocationStyle, 1,                                   \
           "0 - type based with oops first, 1 - with oops last")             \
                                                                             \
@@ -2555,7 +2561,7 @@ class CommandLineFlags {
   develop(intx, MaxRecursiveInlineLevel, 1,                                 \
           "maximum number of nested recursive calls that are inlined")      \
                                                                             \
-  develop(intx, InlineSmallCode, 1000,                                      \
+  product(intx, InlineSmallCode, 1000,                                      \
           "Only inline already compiled methods if their code size is "     \
           "less than this")                                                 \
                                                                             \
