@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,18 @@ package javax.management.openmbean;
 
 // java import
 //
+import com.sun.jmx.mbeanserver.GetPropertyAction;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,12 +82,13 @@ public class TabularDataSupport
     /**
      * @serial This tabular data instance's contents: a {@link HashMap}
      */
+    // field cannot be final because of clone method
     private Map<Object,CompositeData> dataMap;
 
     /**
      * @serial This tabular data instance's tabular type
      */
-    private TabularType tabularType;
+    private final TabularType tabularType;
 
     /**
      * The array of item names that define the index used for rows (convenience field)
@@ -109,7 +113,7 @@ public class TabularDataSupport
      */
     public TabularDataSupport(TabularType tabularType) {
 
-        this(tabularType, 101, 0.75f);
+        this(tabularType, 16, 0.75f);
     }
 
     /**
@@ -141,10 +145,18 @@ public class TabularDataSupport
         List<String> tmpNames = tabularType.getIndexNames();
         this.indexNamesArray = tmpNames.toArray(new String[tmpNames.size()]);
 
+        // Since LinkedHashMap was introduced in SE 1.4, it's conceivable even
+        // if very unlikely that we might be the server of a 1.3 client.  In
+        // that case you'll need to set this property.  See CR 6334663.
+        String useHashMapProp = AccessController.doPrivileged(
+                new GetPropertyAction("jmx.tabular.data.hash.map"));
+        boolean useHashMap = "true".equalsIgnoreCase(useHashMapProp);
+
         // Construct the empty contents HashMap
         //
-        this.dataMap =
-            new HashMap<Object,CompositeData>(initialCapacity, loadFactor);
+        this.dataMap = useHashMap ?
+            new HashMap<Object,CompositeData>(initialCapacity, loadFactor) :
+            new LinkedHashMap<Object, CompositeData>(initialCapacity, loadFactor);
     }
 
 

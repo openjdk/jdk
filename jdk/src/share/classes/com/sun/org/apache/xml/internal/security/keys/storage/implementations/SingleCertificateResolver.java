@@ -2,7 +2,6 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-
 /*
  * Copyright  1999-2004 The Apache Software Foundation.
  *
@@ -21,8 +20,6 @@
  */
 package com.sun.org.apache.xml.internal.security.keys.storage.implementations;
 
-
-
 import java.security.cert.X509Certificate;
 import java.util.Iterator;
 
@@ -33,7 +30,7 @@ import com.sun.org.apache.xml.internal.security.keys.storage.StorageResolverSpi;
  * This {@link StorageResolverSpi} makes a single {@link X509Certificate}
  * available to the {@link com.sun.org.apache.xml.internal.security.keys.storage.StorageResolver}.
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class SingleCertificateResolver extends StorageResolverSpi {
 
@@ -61,9 +58,10 @@ public class SingleCertificateResolver extends StorageResolverSpi {
    /**
     * Class InternalIterator
     *
-    * @author $Author: raul $
+    * @author $Author: mullan $
+    * @version $Revision: 1.5 $
     */
-   class InternalIterator implements Iterator {
+   static class InternalIterator implements Iterator {
 
       /** Field _alreadyReturned */
       boolean _alreadyReturned = false;

@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -314,6 +314,7 @@ charset IBM00858 IBM858
     alias ccsid00858
     alias cp00858
     alias 858
+    alias PC-Multilingual-850+euro
 
 charset IBM862 IBM862
     alias cp862                         #JDK historical

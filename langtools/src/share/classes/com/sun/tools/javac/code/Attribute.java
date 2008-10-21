@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.Map;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.AnnotationValueVisitor;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.DeclaredType;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.util.*;
@@ -167,7 +166,7 @@ public abstract class Attribute implements AnnotationValue {
                     first = false;
 
                     Name name = value.fst.name;
-                    if (len > 1 || name != name.table.value) {
+                    if (len > 1 || name != name.table.names.value) {
                         buf.append(name);
                         buf.append('=');
                     }

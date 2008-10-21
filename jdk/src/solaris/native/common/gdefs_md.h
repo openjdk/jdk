@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,12 @@
  */
 
 /*
- * Solaris dependent type definitions  includes intptr_t, etc
+ * Solaris/Linux dependent type definitions  includes intptr_t, etc
  */
 
+#include <stddef.h>
+#include <stdint.h>  /* For uintptr_t */
+#include <stdlib.h>
 
 #include <sys/types.h>
-/*
- * Linux version of <sys/types.h> does not define intptr_t
- */
-#ifdef __linux__
-#include <stdint.h>
-#include <malloc.h>
-#endif /* __linux__ */
+

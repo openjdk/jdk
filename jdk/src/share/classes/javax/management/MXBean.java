@@ -33,7 +33,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 // remaining imports are for Javadoc
-import java.beans.ConstructorProperties;
 import java.io.InvalidObjectException;
 import java.lang.management.MemoryUsage;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -470,8 +469,8 @@ public class MemoryPool
       <em>J</em>, then <em>J</em> cannot be the type of a method
       parameter or return value in an MXBean interface.</p>
 
-    <p>If there is a way to convert <em>opendata(J)</em> back to
-      <em>J</em> then we say that <em>J</em> is
+    <p id="reconstructible-def">If there is a way to convert
+      <em>opendata(J)</em> back to <em>J</em> then we say that <em>J</em> is
       <em>reconstructible</em>.  All method parameters in an MXBean
       interface must be reconstructible, because when the MXBean
       framework is invoking a method it will need to convert those
@@ -865,7 +864,8 @@ public interface ModuleMXBean {
         <em>J</em>.</p></li>
 
       <li><p>Otherwise, if <em>J</em> has at least one public
-        constructor with a {@link ConstructorProperties} annotation, then one
+        constructor with a {@link java.beans.ConstructorProperties
+        ConstructorProperties} annotation, then one
         of those constructors (not necessarily always the same one)
         will be called to reconstruct an instance of <em>J</em>.
         Every such annotation must list as many strings as the
@@ -1081,9 +1081,10 @@ public interface Node {
       MXBean is determined as follows.</p>
 
     <ul>
-      <li><p>If an {@link JMX.MBeanOptions} argument is supplied to
+      <li><p>If a {@link JMX.MBeanOptions} argument is supplied to
           the {@link StandardMBean} constructor that makes an MXBean,
-          or to the {@link JMX#newMXBeanProxy JMX.newMXBeanProxy}
+          or to the {@link JMX#newMBeanProxy(MBeanServerConnection,
+          ObjectName, Class, JMX.MBeanOptions) JMX.newMBeanProxy}
           method, and the {@code MBeanOptions} object defines a non-null
           {@code MXBeanMappingFactory}, then that is the value of
           <code><em>f</em></code>.</p></li>

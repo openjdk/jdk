@@ -583,18 +583,32 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   NOT_PRODUCT( verify_graph_edges(); )
 
   // Perform escape analysis
-  if (_do_escape_analysis)
-    _congraph = new ConnectionGraph(this);
-  if (_congraph != NULL) {
-    NOT_PRODUCT( TracePhase t2("escapeAnalysis", &_t_escapeAnalysis, TimeCompiler); )
-    _congraph->compute_escape();
-    if (failing())  return;
+  if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {
+    TracePhase t2("escapeAnalysis", &_t_escapeAnalysis, true);
+    // Add ConP#NULL and ConN#NULL nodes before ConnectionGraph construction.
+    PhaseGVN* igvn = initial_gvn();
+    Node* oop_null = igvn->zerocon(T_OBJECT);
+    Node* noop_null = igvn->zerocon(T_NARROWOOP);
+
+    _congraph = new(comp_arena()) ConnectionGraph(this);
+    bool has_non_escaping_obj = _congraph->compute_escape();
 
 #ifndef PRODUCT
     if (PrintEscapeAnalysis) {
       _congraph->dump();
     }
 #endif
+    // Cleanup.
+    if (oop_null->outcnt() == 0)
+      igvn->hash_delete(oop_null);
+    if (noop_null->outcnt() == 0)
+      igvn->hash_delete(noop_null);
+
+    if (!has_non_escaping_obj) {
+      _congraph = NULL;
+    }
+
+    if (failing())  return;
   }
   // Now optimize
   Optimize();
@@ -995,9 +1009,14 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
   int offset = tj->offset();
   TypePtr::PTR ptr = tj->ptr();
 
+  // Known instance (scalarizable allocation) alias only with itself.
+  bool is_known_inst = tj->isa_oopptr() != NULL &&
+                       tj->is_oopptr()->is_known_instance();
+
   // Process weird unsafe references.
   if (offset == Type::OffsetBot && (tj->isa_instptr() /*|| tj->isa_klassptr()*/)) {
     assert(InlineUnsafeOps, "indeterminate pointers come only from unsafe ops");
+    assert(!is_known_inst, "scalarizable allocation should not have unsafe references");
     tj = TypeOopPtr::BOTTOM;
     ptr = tj->ptr();
     offset = tj->offset();
@@ -1005,14 +1024,20 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
   // Array pointers need some flattening
   const TypeAryPtr *ta = tj->isa_aryptr();
-  if( ta && _AliasLevel >= 2 ) {
+  if( ta && is_known_inst ) {
+    if ( offset != Type::OffsetBot &&
+         offset > arrayOopDesc::length_offset_in_bytes() ) {
+      offset = Type::OffsetBot; // Flatten constant access into array body only
+      tj = ta = TypeAryPtr::make(ptr, ta->ary(), ta->klass(), true, offset, ta->instance_id());
+    }
+  } else if( ta && _AliasLevel >= 2 ) {
     // For arrays indexed by constant indices, we flatten the alias
     // space to include all of the array body.  Only the header, klass
     // and array length can be accessed un-aliased.
     if( offset != Type::OffsetBot ) {
       if( ta->const_oop() ) { // methodDataOop or methodOop
         offset = Type::OffsetBot;   // Flatten constant access into array body
-        tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),ta->ary(),ta->klass(),false,Type::OffsetBot, ta->instance_id());
+        tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),ta->ary(),ta->klass(),false,offset);
       } else if( offset == arrayOopDesc::length_offset_in_bytes() ) {
         // range is OK as-is.
         tj = ta = TypeAryPtr::RANGE;
@@ -1026,29 +1051,29 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
         ptr = TypePtr::BotPTR;
       } else {                  // Random constant offset into array body
         offset = Type::OffsetBot;   // Flatten constant access into array body
-        tj = ta = TypeAryPtr::make(ptr,ta->ary(),ta->klass(),false,Type::OffsetBot, ta->instance_id());
+        tj = ta = TypeAryPtr::make(ptr,ta->ary(),ta->klass(),false,offset);
       }
     }
     // Arrays of fixed size alias with arrays of unknown size.
     if (ta->size() != TypeInt::POS) {
       const TypeAry *tary = TypeAry::make(ta->elem(), TypeInt::POS);
-      tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,ta->klass(),false,offset, ta->instance_id());
+      tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,ta->klass(),false,offset);
     }
     // Arrays of known objects become arrays of unknown objects.
     if (ta->elem()->isa_narrowoop() && ta->elem() != TypeNarrowOop::BOTTOM) {
       const TypeAry *tary = TypeAry::make(TypeNarrowOop::BOTTOM, ta->size());
-      tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,NULL,false,offset, ta->instance_id());
+      tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,NULL,false,offset);
     }
     if (ta->elem()->isa_oopptr() && ta->elem() != TypeInstPtr::BOTTOM) {
       const TypeAry *tary = TypeAry::make(TypeInstPtr::BOTTOM, ta->size());
-      tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,NULL,false,offset, ta->instance_id());
+      tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,NULL,false,offset);
     }
     // Arrays of bytes and of booleans both use 'bastore' and 'baload' so
     // cannot be distinguished by bytecode alone.
     if (ta->elem() == TypeInt::BOOL) {
       const TypeAry *tary = TypeAry::make(TypeInt::BYTE, ta->size());
       ciKlass* aklass = ciTypeArrayKlass::make(T_BYTE);
-      tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,aklass,false,offset, ta->instance_id());
+      tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,aklass,false,offset);
     }
     // During the 2nd round of IterGVN, NotNull castings are removed.
     // Make sure the Bottom and NotNull variants alias the same.
@@ -1068,21 +1093,24 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     if( ptr == TypePtr::Constant ) {
       // No constant oop pointers (such as Strings); they alias with
       // unknown strings.
+      assert(!is_known_inst, "not scalarizable allocation");
       tj = to = TypeInstPtr::make(TypePtr::BotPTR,to->klass(),false,0,offset);
-    } else if( to->is_known_instance_field() ) {
+    } else if( is_known_inst ) {
       tj = to; // Keep NotNull and klass_is_exact for instance type
     } else if( ptr == TypePtr::NotNull || to->klass_is_exact() ) {
       // During the 2nd round of IterGVN, NotNull castings are removed.
       // Make sure the Bottom and NotNull variants alias the same.
       // Also, make sure exact and non-exact variants alias the same.
-      tj = to = TypeInstPtr::make(TypePtr::BotPTR,to->klass(),false,0,offset, to->instance_id());
+      tj = to = TypeInstPtr::make(TypePtr::BotPTR,to->klass(),false,0,offset);
     }
     // Canonicalize the holder of this field
     ciInstanceKlass *k = to->klass()->as_instance_klass();
     if (offset >= 0 && offset < instanceOopDesc::base_offset_in_bytes()) {
       // First handle header references such as a LoadKlassNode, even if the
       // object's klass is unloaded at compile time (4965979).
-      tj = to = TypeInstPtr::make(TypePtr::BotPTR, env()->Object_klass(), false, NULL, offset, to->instance_id());
+      if (!is_known_inst) { // Do it only for non-instance types
+        tj = to = TypeInstPtr::make(TypePtr::BotPTR, env()->Object_klass(), false, NULL, offset);
+      }
     } else if (offset < 0 || offset >= k->size_helper() * wordSize) {
       to = NULL;
       tj = TypeOopPtr::BOTTOM;
@@ -1090,7 +1118,11 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     } else {
       ciInstanceKlass *canonical_holder = k->get_canonical_holder(offset);
       if (!k->equals(canonical_holder) || tj->offset() != offset) {
-        tj = to = TypeInstPtr::make(to->ptr(), canonical_holder, false, NULL, offset, to->instance_id());
+        if( is_known_inst ) {
+          tj = to = TypeInstPtr::make(to->ptr(), canonical_holder, true, NULL, offset, to->instance_id());
+        } else {
+          tj = to = TypeInstPtr::make(to->ptr(), canonical_holder, false, NULL, offset);
+        }
       }
     }
   }
@@ -1276,7 +1308,9 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
   assert(flat != TypePtr::BOTTOM,     "cannot alias-analyze an untyped ptr");
   if (flat->isa_oopptr() && !flat->isa_klassptr()) {
     const TypeOopPtr* foop = flat->is_oopptr();
-    const TypePtr* xoop = foop->cast_to_exactness(!foop->klass_is_exact())->is_ptr();
+    // Scalarizable allocations have exact klass always.
+    bool exact = !foop->klass_is_exact() || foop->is_known_instance();
+    const TypePtr* xoop = foop->cast_to_exactness(exact)->is_ptr();
     assert(foop == flatten_alias_type(xoop), "exactness must not affect alias type");
   }
   assert(flat == flatten_alias_type(flat), "exact bit doesn't matter");
@@ -1933,6 +1967,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
           !n->is_Proj() &&
           nop != Op_CreateEx &&
           nop != Op_CheckCastPP &&
+          nop != Op_DecodeN &&
           !n->is_Mem() ) {
         Node *x = n->clone();
         call->set_req( TypeFunc::Parms, x );
@@ -2041,20 +2076,27 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_CmpP:
     // Do this transformation here to preserve CmpPNode::sub() and
     // other TypePtr related Ideal optimizations (for example, ptr nullness).
-    if( n->in(1)->is_DecodeN() ) {
+    if (n->in(1)->is_DecodeN() || n->in(2)->is_DecodeN()) {
+      Node* in1 = n->in(1);
+      Node* in2 = n->in(2);
+      if (!in1->is_DecodeN()) {
+        in2 = in1;
+        in1 = n->in(2);
+      }
+      assert(in1->is_DecodeN(), "sanity");
+
       Compile* C = Compile::current();
-      Node* in2 = NULL;
-      if( n->in(2)->is_DecodeN() ) {
-        in2 = n->in(2)->in(1);
-      } else if ( n->in(2)->Opcode() == Op_ConP ) {
-        const Type* t = n->in(2)->bottom_type();
-        if (t == TypePtr::NULL_PTR) {
-          Node *in1 = n->in(1);
+      Node* new_in2 = NULL;
+      if (in2->is_DecodeN()) {
+        new_in2 = in2->in(1);
+      } else if (in2->Opcode() == Op_ConP) {
+        const Type* t = in2->bottom_type();
+        if (t == TypePtr::NULL_PTR && UseImplicitNullCheckForNarrowOop) {
           if (Matcher::clone_shift_expressions) {
             // x86, ARM and friends can handle 2 adds in addressing mode.
             // Decode a narrow oop and do implicit NULL check in address
             // [R12 + narrow_oop_reg<<3 + offset]
-            in2 = ConNode::make(C, TypeNarrowOop::NULL_PTR);
+            new_in2 = ConNode::make(C, TypeNarrowOop::NULL_PTR);
           } else {
             // Don't replace CmpP(o ,null) if 'o' is used in AddP
             // to generate implicit NULL check on Sparc where
@@ -2065,18 +2107,25 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
                 break;
             }
             if (i >= in1->outcnt()) {
-              in2 = ConNode::make(C, TypeNarrowOop::NULL_PTR);
+              new_in2 = ConNode::make(C, TypeNarrowOop::NULL_PTR);
             }
           }
         } else if (t->isa_oopptr()) {
-          in2 = ConNode::make(C, t->make_narrowoop());
+          new_in2 = ConNode::make(C, t->make_narrowoop());
         }
       }
-      if( in2 != NULL ) {
-        Node* cmpN = new (C, 3) CmpNNode(n->in(1)->in(1), in2);
+      if (new_in2 != NULL) {
+        Node* cmpN = new (C, 3) CmpNNode(in1->in(1), new_in2);
         n->subsume_by( cmpN );
+        if (in1->outcnt() == 0) {
+          in1->disconnect_inputs(NULL);
+        }
+        if (in2->outcnt() == 0) {
+          in2->disconnect_inputs(NULL);
+        }
       }
     }
+    break;
 #endif
 
   case Op_ModI:
@@ -2179,6 +2228,9 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
 // Replacing Opaque nodes with their input in final_graph_reshaping_impl(),
 // requires that the walk visits a node's inputs before visiting the node.
 static void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Reshape_Counts &fpu ) {
+  ResourceArea *area = Thread::current()->resource_area();
+  Unique_Node_List sfpt(area);
+
   fpu._visited.set(root->_idx); // first, mark node as visited
   uint cnt = root->req();
   Node *n = root;
@@ -2189,6 +2241,8 @@ static void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Re
       Node* m = n->in(i);
       ++i;
       if (m != NULL && !fpu._visited.test_set(m->_idx)) {
+        if (m->is_SafePoint() && m->as_SafePoint()->jvms() != NULL)
+          sfpt.push(m);
         cnt = m->req();
         nstack.push(n, i); // put on stack parent and next input's index
         n = m;
@@ -2203,6 +2257,41 @@ static void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Re
       cnt = n->req();
       i = nstack.index();
       nstack.pop();        // Shift to the next node on stack
+    }
+  }
+
+  // Go over safepoints nodes to skip DecodeN nodes for debug edges.
+  // It could be done for an uncommon traps or any safepoints/calls
+  // if the DecodeN node is referenced only in a debug info.
+  while (sfpt.size() > 0) {
+    n = sfpt.pop();
+    JVMState *jvms = n->as_SafePoint()->jvms();
+    assert(jvms != NULL, "sanity");
+    int start = jvms->debug_start();
+    int end   = n->req();
+    bool is_uncommon = (n->is_CallStaticJava() &&
+                        n->as_CallStaticJava()->uncommon_trap_request() != 0);
+    for (int j = start; j < end; j++) {
+      Node* in = n->in(j);
+      if (in->is_DecodeN()) {
+        bool safe_to_skip = true;
+        if (!is_uncommon ) {
+          // Is it safe to skip?
+          for (uint i = 0; i < in->outcnt(); i++) {
+            Node* u = in->raw_out(i);
+            if (!u->is_SafePoint() ||
+                 u->is_Call() && u->as_Call()->has_non_debug_use(n)) {
+              safe_to_skip = false;
+            }
+          }
+        }
+        if (safe_to_skip) {
+          n->set_req(j, in->in(1));
+        }
+        if (in->outcnt() == 0) {
+          in->disconnect_inputs(NULL);
+        }
+      }
     }
   }
 }

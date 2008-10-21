@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,7 @@ import java.util.*;
     /********** target program **********/
 
 class ClassesByName2Targ {
-    public static void ready() {
-        System.out.println("Ready!");
+    static void bkpt() {
     }
 
     public static void main(String[] args){
@@ -74,22 +73,24 @@ class ClassesByName2Targ {
                     }
                 };
 
-            ready();
-
             two.start();
             one.start();
             zero.start();
 
             try {
                 zero.join();
+                System.out.println("zero joined");
                 one.join();
+                System.out.println("one joined");
                 two.join();
+                System.out.println("two joined");
             } catch (InterruptedException iex) {
                 iex.printStackTrace();
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+        bkpt();
         System.out.println("Goodbye from ClassesByName2Targ!");
     }
 }
@@ -97,29 +98,64 @@ class ClassesByName2Targ {
     /********** test program **********/
 
 public class ClassesByName2Test extends TestScaffold {
+    volatile boolean stop = false;
 
     ClassesByName2Test (String args[]) {
         super(args);
+    }
+
+    public void breakpointReached(BreakpointEvent event) {
+        System.out.println("Got BreakpointEvent: " + event);
+        stop = true;
+    }
+
+    public void eventSetComplete(EventSet set) {
+        // Don't resume.
     }
 
     public static void main(String[] args)      throws Exception {
         new ClassesByName2Test(args).startTests();
     }
 
-    protected void runTests() throws Exception {
-        /*
-         * Get to the top of ready()
-         */
-        startTo("ClassesByName2Targ", "ready", "()V");
+    void breakpointAtMethod(ReferenceType ref, String methodName)
+                                           throws Exception {
+        List meths = ref.methodsByName(methodName);
+        if (meths.size() != 1) {
+            throw new Exception("test error: should be one " +
+                                methodName);
+        }
+        Method meth = (Method)meths.get(0);
+        BreakpointRequest bkptReq = vm().eventRequestManager().
+            createBreakpointRequest(meth.location());
+        bkptReq.enable();
+        try {
+            addListener (this);
+        } catch (Exception ex){
+            ex.printStackTrace();
+            failure("failure: Could not add listener");
+            throw new Exception("ClassesByname2Test: failed");
+        }
+    }
 
+    protected void runTests() throws Exception {
+        BreakpointEvent bpe = startToMain("ClassesByName2Targ");
+
+        /*
+          Bug 6263966 - Don't just resume because the debuggee can
+          complete and disconnect while the following loop is
+          accessing it.
+        */
+        breakpointAtMethod(bpe.location().declaringType(), "bkpt");
         vm().resume();
 
-        int i = 0;
-        while (i < 8 && !vmDisconnected) {
-            i++;
+        /* The test of 'stop' is so that we stop when the debuggee hits
+           the bkpt.  The 150 is so we stop if the debuggee
+           is slow (eg, -Xcomp -server) - we don't want to
+           spend all day waiting for it to get to the bkpt.
+        */
+        for (int i = 0; i < 150 && !stop; i++) {
             List all = vm().allClasses();
-            System.out.println("");
-            System.out.println("++++ Lookup number: " + i + ".  allClasses() returned " +
+            System.out.println("\n++++ Lookup number: " + i + ".  allClasses() returned " +
                                all.size() + " classes.");
             for (Iterator it = all.iterator(); it.hasNext(); ) {
                 ReferenceType cls = (ReferenceType)it.next();
@@ -134,10 +170,10 @@ public class ClassesByName2Test extends TestScaffold {
                 }
             }
         }
-        /*
-         * resume the target listening for events
-         */
-        listenUntilVMDisconnect();
+
+        // In case of a slow debuggee, we don't want to resume the debuggee and wait
+        // for it to complete.
+        vm().exit(0);
 
         /*
          * deal with results of test

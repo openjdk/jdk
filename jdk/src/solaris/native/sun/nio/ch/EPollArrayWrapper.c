@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,18 @@ typedef union epoll_data {
     __uint64_t u64;
 } epoll_data_t;
 
+
+/* x86-64 has same alignment as 32-bit */
+#ifdef __x86_64__
+#define EPOLL_PACKED __attribute__((packed))
+#else
+#define EPOLL_PACKED
+#endif
+
 struct epoll_event {
     __uint32_t events;  /* Epoll events */
     epoll_data_t data;  /* User data variable */
-} __attribute__ ((__packed__));
+} EPOLL_PACKED;
 
 #ifdef  __cplusplus
 }
@@ -141,6 +149,18 @@ Java_sun_nio_ch_EPollArrayWrapper_fdLimit(JNIEnv *env, jclass this)
         JNU_ThrowIOExceptionWithLastError(env, "getrlimit failed");
     }
     return (jint)rlp.rlim_max;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_EPollArrayWrapper_sizeofEPollEvent(JNIEnv* env, jclass this)
+{
+    return sizeof(struct epoll_event);
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_EPollArrayWrapper_offsetofData(JNIEnv* env, jclass this)
+{
+    return offsetof(struct epoll_event, data);
 }
 
 JNIEXPORT void JNICALL

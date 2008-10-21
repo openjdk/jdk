@@ -82,7 +82,7 @@ void init(JNIEnv *env) {
     }
 }
 
-jobject
+JNIEXPORT jobject JNICALL
 NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
     jobject iaObj;
     init(env);
@@ -159,7 +159,7 @@ NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
     return iaObj;
 }
 
-jint
+JNIEXPORT jint JNICALL
 NET_SockaddrEqualsInetAddress(JNIEnv *env, struct sockaddr *him, jobject iaObj)
 {
     jint family = (*env)->GetIntField(env, iaObj, ia_familyID) == IPv4?

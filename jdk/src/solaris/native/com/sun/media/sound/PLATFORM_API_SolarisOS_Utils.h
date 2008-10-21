@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,9 @@
 #include <sys/audio.h>
 #include <sys/mixer.h>
 #include <sys/types.h>
+#ifndef __linux__
 #include <stropts.h>
+#endif
 #include <sys/conf.h>
 #include <sys/stat.h>
 #include <unistd.h>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.element.NestingKind.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
-import static javax.lang.model.util.ElementFilter.*;
 
 import java.io.PrintWriter;
 import java.io.Writer;

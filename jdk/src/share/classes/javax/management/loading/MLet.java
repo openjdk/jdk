@@ -1154,21 +1154,29 @@ public class MLet extends java.net.URLClassLoader
       */
      private synchronized String loadLibraryAsResource(String libname) {
          try {
-             InputStream is = getResourceAsStream(libname.replace(File.separatorChar,'/'));
+             InputStream is = getResourceAsStream(
+                     libname.replace(File.separatorChar,'/'));
              if (is != null) {
-                 File directory = new File(libraryDirectory);
-                 directory.mkdirs();
-                 File file = File.createTempFile(libname + ".", null, directory);
-                 file.deleteOnExit();
-                 FileOutputStream fileOutput = new FileOutputStream(file);
-                 int c;
-                 while ((c = is.read()) != -1) {
-                     fileOutput.write(c);
-                 }
-                 is.close();
-                 fileOutput.close();
-                 if (file.exists()) {
-                     return file.getAbsolutePath();
+                 try {
+                     File directory = new File(libraryDirectory);
+                     directory.mkdirs();
+                     File file = File.createTempFile(libname + ".", null,
+                             directory);
+                     file.deleteOnExit();
+                     FileOutputStream fileOutput = new FileOutputStream(file);
+                     try {
+                         int c;
+                         while ((c = is.read()) != -1) {
+                             fileOutput.write(c);
+                         }
+                     } finally {
+                         fileOutput.close();
+                     }
+                     if (file.exists()) {
+                         return file.getAbsolutePath();
+                     }
+                 } finally {
+                     is.close();
                  }
              }
          } catch (Exception e) {

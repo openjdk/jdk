@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,11 +108,8 @@ public class SwingUtilities implements SwingConstants
      * Return true if <code>a</code> contains <code>b</code>
      */
     public static final boolean isRectangleContainingRectangle(Rectangle a,Rectangle b) {
-        if (b.x >= a.x && (b.x + b.width) <= (a.x + a.width) &&
-            b.y >= a.y && (b.y + b.height) <= (a.y + a.height)) {
-            return true;
-        }
-        return false;
+        return b.x >= a.x && (b.x + b.width) <= (a.x + a.width) &&
+                b.y >= a.y && (b.y + b.height) <= (a.y + a.height);
     }
 
     /**
@@ -272,8 +269,7 @@ public class SwingUtilities implements SwingConstants
         }
         if (parent instanceof Container) {
             Component components[] = ((Container)parent).getComponents();
-            for (int i = 0 ; i < components.length ; i++) {
-                Component comp = components[i];
+            for (Component comp : components) {
                 if (comp != null && comp.isVisible()) {
                     Point loc = comp.getLocation();
                     if (comp instanceof Container) {
@@ -376,8 +372,8 @@ public class SwingUtilities implements SwingConstants
 
             do {
                 if(c instanceof JComponent) {
-                    x = ((JComponent)c).getX();
-                    y = ((JComponent)c).getY();
+                    x = c.getX();
+                    y = c.getY();
                 } else if(c instanceof java.applet.Applet ||
                           c instanceof java.awt.Window) {
                     try {
@@ -415,8 +411,8 @@ public class SwingUtilities implements SwingConstants
 
         do {
             if(c instanceof JComponent) {
-                x = ((JComponent)c).getX();
-                y = ((JComponent)c).getY();
+                x = c.getX();
+                y = c.getY();
             }  else if(c instanceof java.applet.Applet ||
                        c instanceof java.awt.Window) {
                 try {
@@ -974,12 +970,13 @@ public class SwingUtilities implements SwingConstants
 
         boolean textIsEmpty = (text == null) || text.equals("");
         int lsb = 0;
+        int rsb = 0;
         /* Unless both text and icon are non-null, we effectively ignore
          * the value of textIconGap.
          */
         int gap;
 
-        View v = null;
+        View v;
         if (textIsEmpty) {
             textR.width = textR.height = 0;
             text = "";
@@ -1015,7 +1012,7 @@ public class SwingUtilities implements SwingConstants
                 if (lsb < 0) {
                     textR.width -= lsb;
                 }
-                int rsb = SwingUtilities2.getRightSideBearing(c, fm, text);
+                rsb = SwingUtilities2.getRightSideBearing(c, fm, text);
                 if (rsb > 0) {
                     textR.width += rsb;
                 }
@@ -1118,6 +1115,11 @@ public class SwingUtilities implements SwingConstants
             // lsb is negative. Shift the x location so that the text is
             // visually drawn at the right location.
             textR.x -= lsb;
+
+            textR.width += lsb;
+        }
+        if (rsb > 0) {
+            textR.width -= rsb;
         }
 
         return text;
@@ -1242,8 +1244,8 @@ public class SwingUtilities implements SwingConstants
             children = ((Container)c).getComponents();
         }
         if (children != null) {
-            for(int i = 0; i < children.length; i++) {
-                updateComponentTreeUI0(children[i]);
+            for (Component child : children) {
+                updateComponentTreeUI0(child);
             }
         }
     }
@@ -1696,7 +1698,7 @@ public class SwingUtilities implements SwingConstants
      */
     public static void replaceUIActionMap(JComponent component,
                                           ActionMap uiActionMap) {
-        ActionMap map = component.getActionMap((uiActionMap != null));;
+        ActionMap map = component.getActionMap((uiActionMap != null));
 
         while (map != null) {
             ActionMap parent = map.getParent();
@@ -1764,8 +1766,7 @@ public class SwingUtilities implements SwingConstants
          */
         void installListeners() {
             Window[] windows = getOwnedWindows();
-            for (int ind = 0; ind < windows.length; ind++){
-                Window window = windows[ind];
+            for (Window window : windows) {
                 if (window != null) {
                     window.removeWindowListener(this);
                     window.addWindowListener(this);
@@ -1780,8 +1781,7 @@ public class SwingUtilities implements SwingConstants
         public void windowClosed(WindowEvent e) {
             synchronized(getTreeLock()) {
                 Window[] windows = getOwnedWindows();
-                for (int ind = 0; ind < windows.length; ind++) {
-                    Window window = windows[ind];
+                for (Window window : windows) {
                     if (window != null) {
                         if (window.isDisplayable()) {
                             return;
@@ -1869,7 +1869,7 @@ public class SwingUtilities implements SwingConstants
     }
 
 
-    static Class loadSystemClass(String className) throws ClassNotFoundException {
+    static Class<?> loadSystemClass(String className) throws ClassNotFoundException {
         return Class.forName(className, true, Thread.currentThread().
                              getContextClassLoader());
     }

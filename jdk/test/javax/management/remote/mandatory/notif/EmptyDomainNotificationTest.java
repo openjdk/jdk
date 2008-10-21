@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,12 @@
  * @author Shanliang JIANG
  * @run clean EmptyDomainNotificationTest
  * @run build EmptyDomainNotificationTest
- * @run main EmptyDomainNotificationTest
+ * @run main EmptyDomainNotificationTest classic
+ * @run main EmptyDomainNotificationTest event
  */
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
+import java.util.Map;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerFactory;
@@ -46,6 +47,7 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
+import javax.management.remote.rmi.RMIConnectorServer;
 
 public class EmptyDomainNotificationTest {
 
@@ -80,11 +82,25 @@ public class EmptyDomainNotificationTest {
 
     public static void main(String[] args) throws Exception {
 
+        String type = args[0];
+        boolean eventService;
+        if (type.equals("classic"))
+            eventService = false;
+        else if (type.equals("event"))
+            eventService = true;
+        else
+            throw new IllegalArgumentException(type);
+
         final MBeanServer mbs = MBeanServerFactory.createMBeanServer();
 
         final JMXServiceURL url = new JMXServiceURL("service:jmx:rmi://");
 
-        JMXConnectorServer server = JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs);
+        Map<String, String> env = Collections.singletonMap(
+                RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE,
+                Boolean.toString(eventService));
+
+        JMXConnectorServer server =
+                JMXConnectorServerFactory.newJMXConnectorServer(url, env, mbs);
         server.start();
 
         JMXConnector client = JMXConnectorFactory.connect(server.getAddress(), null);

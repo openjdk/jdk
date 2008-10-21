@@ -94,6 +94,9 @@ static pid_t _initial_pid = 0;
 static int SR_signum = SIGUSR2;
 sigset_t SR_sigset;
 
+/* Used to protect dlsym() calls */
+static pthread_mutex_t dl_mutex;
+
 ////////////////////////////////////////////////////////////////////////////////
 // utility functions
 
@@ -1493,6 +1496,24 @@ const char* os::dll_file_extension() { return ".so"; }
 
 const char* os::get_temp_directory() { return "/tmp/"; }
 
+void os::dll_build_name(
+    char* buffer, size_t buflen, const char* pname, const char* fname) {
+  // copied from libhpi
+  const size_t pnamelen = pname ? strlen(pname) : 0;
+
+  /* Quietly truncate on buffer overflow.  Should be an error. */
+  if (pnamelen + strlen(fname) + 10 > (size_t) buflen) {
+      *buffer = '\0';
+      return;
+  }
+
+  if (pnamelen == 0) {
+      sprintf(buffer, "lib%s.so", fname);
+  } else {
+      sprintf(buffer, "%s/lib%s.so", pname, fname);
+  }
+}
+
 const char* os::get_current_directory(char *buf, int buflen) {
   return getcwd(buf, buflen);
 }
@@ -1742,7 +1763,17 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
   return NULL;
 }
 
-
+/*
+ * glibc-2.0 libdl is not MT safe.  If you are building with any glibc,
+ * chances are you might want to run the generated bits against glibc-2.0
+ * libdl.so, so always use locking for any version of glibc.
+ */
+void* os::dll_lookup(void* handle, const char* name) {
+  pthread_mutex_lock(&dl_mutex);
+  void* res = dlsym(handle, name);
+  pthread_mutex_unlock(&dl_mutex);
+  return res;
+}
 
 
 bool _print_ascii_file(const char* filename, outputStream* st) {
@@ -2278,7 +2309,7 @@ void os::Linux::libnuma_init() {
                                   dlsym(RTLD_DEFAULT, "sched_getcpu")));
 
   if (sched_getcpu() != -1) { // Does it work?
-    void *handle = dlopen("libnuma.so", RTLD_LAZY);
+    void *handle = dlopen("libnuma.so.1", RTLD_LAZY);
     if (handle != NULL) {
       set_numa_node_to_cpus(CAST_TO_FN_PTR(numa_node_to_cpus_func_t,
                                            dlsym(handle, "numa_node_to_cpus")));
@@ -3581,6 +3612,7 @@ void os::init(void) {
 
   Linux::clock_init();
   initial_time_count = os::elapsed_counter();
+  pthread_mutex_init(&dl_mutex, NULL);
 }
 
 // To install functions for atexit system call

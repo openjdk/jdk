@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ package java.lang;
  */
 public
 class InterruptedException extends Exception {
+    private static final long serialVersionUID = 6700697376100628473L;
+
     /**
      * Constructs an <code>InterruptedException</code> with no detail  message.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.tools.javac.parser;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Names;
 
 import static com.sun.tools.javac.parser.Token.*;
 
@@ -51,12 +52,12 @@ public class Keywords {
     }
 
     private final Log log;
-    private final Name.Table names;
+    private final Names names;
 
     protected Keywords(Context context) {
         context.put(keywordsKey, this);
         log = Log.instance(context);
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
 
         for (Token t : Token.values()) {
             if (t.name != null)
@@ -69,13 +70,13 @@ public class Keywords {
         for (int i = 0; i <= maxKey; i++) key[i] = IDENTIFIER;
         for (Token t : Token.values()) {
             if (t.name != null)
-                key[tokenName[t.ordinal()].index] = t;
+                key[tokenName[t.ordinal()].getIndex()] = t;
         }
     }
 
 
     public Token key(Name name) {
-        return (name.index > maxKey) ? IDENTIFIER : key[name.index];
+        return (name.getIndex() > maxKey) ? IDENTIFIER : key[name.getIndex()];
     }
 
     /**
@@ -91,37 +92,9 @@ public class Keywords {
      */
     private Name[] tokenName = new Name[Token.values().length];
 
-    public String token2string(Token token) {
-        switch (token) {
-        case IDENTIFIER:
-            return log.getLocalizedString("token.identifier");
-        case CHARLITERAL:
-            return log.getLocalizedString("token.character");
-        case STRINGLITERAL:
-            return log.getLocalizedString("token.string");
-        case INTLITERAL:
-            return log.getLocalizedString("token.integer");
-        case LONGLITERAL:
-            return log.getLocalizedString("token.long-integer");
-        case FLOATLITERAL:
-            return log.getLocalizedString("token.float");
-        case DOUBLELITERAL:
-            return log.getLocalizedString("token.double");
-        case ERROR:
-            return log.getLocalizedString("token.bad-symbol");
-        case EOF:
-            return log.getLocalizedString("token.end-of-input");
-        case DOT: case COMMA: case SEMI: case LPAREN: case RPAREN:
-        case LBRACKET: case RBRACKET: case LBRACE: case RBRACE:
-            return "'" + token.name + "'";
-        default:
-            return token.name;
-        }
-    }
-
     private void enterKeyword(String s, Token token) {
         Name n = names.fromString(s);
         tokenName[token.ordinal()] = n;
-        if (n.index > maxKey) maxKey = n.index;
+        if (n.getIndex() > maxKey) maxKey = n.getIndex();
     }
 }

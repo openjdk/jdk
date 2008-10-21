@@ -1,5 +1,5 @@
 #
-# Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,11 @@ BUILDDIR = ../../..
 PACKAGE = sun.awt.medialib
 LIBRARY = mlib_image
 PRODUCT = sun
-include $(BUILDDIR)/common/Defs.gmk
 
-#
 # Use highest level of optimization on this library
-#
-_OPT = $(CC_HIGHEST_OPT)
+OPTIMIZATION_LEVEL = HIGHEST
+
+include $(BUILDDIR)/common/Defs.gmk
 
 #
 # Use mapfile

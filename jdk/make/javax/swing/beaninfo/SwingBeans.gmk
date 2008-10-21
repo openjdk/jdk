@@ -1,5 +1,5 @@
 #
-# Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -170,7 +170,7 @@ mkpackaging:
 	$(BOOT_JAR_CMD) cf $(TEMPDIR)/tmp.jar \
 	     -C $(BEANCLASSDIR) javax \
 	     -C $(BEANCLASSDIR) sun \
-	     $(JAR_JFLAGS)
+	     $(BOOT_JAR_JFLAGS)
 	$(MV) $(TEMPDIR)/tmp.jar $(JDK_IMAGE_DIR)/lib/dt.jar
 	@$(java-vm-cleanup)
 

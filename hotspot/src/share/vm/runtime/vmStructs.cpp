@@ -583,7 +583,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   /***********************************/                                                                                              \
                                                                                                                                      \
      static_field(StubRoutines,                _call_stub_return_address,                     address)                               \
-     IA32_ONLY(static_field(StubRoutines::i486,_call_stub_compiled_return,                    address))                              \
+     IA32_ONLY(static_field(StubRoutines::x86,_call_stub_compiled_return,                     address))                              \
                                                                                                                                      \
   /***************************************/                                                                                          \
   /* PcDesc and other compiled code info */                                                                                          \
@@ -761,8 +761,9 @@ static inline uint64_t cast_uint64_t(size_t x)
   static_field(Abstract_VM_Version,            _vm_minor_version,                             int)                                   \
   static_field(Abstract_VM_Version,            _vm_build_number,                              int)                                   \
                                                                                                                                      \
-  static_field(JDK_Version,                    _pre_jdk16_version,                            bool)                                  \
-  static_field(JDK_Version,                    _jdk_version,                                  int)                                   \
+  static_field(JDK_Version,                    _current,                                      JDK_Version)                           \
+  nonstatic_field(JDK_Version,                 _partially_initialized,                        bool)                                  \
+  nonstatic_field(JDK_Version,                 _major,                                        unsigned char)                         \
                                                                                                                                      \
                                                                                                                                      \
                                                                                                                                      \
@@ -1106,7 +1107,7 @@ static inline uint64_t cast_uint64_t(size_t x)
                                                                           \
   declare_toplevel_type(StubQueue)                                        \
   declare_toplevel_type(StubRoutines)                                     \
-  IA32_ONLY(declare_toplevel_type(StubRoutines::i486))                    \
+  IA32_ONLY(declare_toplevel_type(StubRoutines::x86))                     \
   declare_toplevel_type(Stub)                                             \
            declare_type(InterpreterCodelet, Stub)                         \
                                                                           \
@@ -1576,6 +1577,7 @@ static inline uint64_t cast_uint64_t(size_t x)
                                                                           \
   declare_constant(Location::normal)                                      \
   declare_constant(Location::oop)                                         \
+  declare_constant(Location::narrowoop)                                   \
   declare_constant(Location::int_in_long)                                 \
   declare_constant(Location::lng)                                         \
   declare_constant(Location::float_in_dbl)                                \

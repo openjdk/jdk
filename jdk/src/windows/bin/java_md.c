@@ -105,26 +105,26 @@ CreateExecutionEnvironment(int *_argc,
         }
     }
     if (running != wanted) {
-        ReportErrorMessage(JRE_ERROR2, wanted);
+        JLI_ReportErrorMessage(JRE_ERROR2, wanted);
         exit(1);
     }
 
     /* Find out where the JRE is that we will be using. */
     if (!GetJREPath(jrepath, so_jrepath)) {
-        ReportErrorMessage(JRE_ERROR1);
+        JLI_ReportErrorMessage(JRE_ERROR1);
         exit(2);
     }
 
     /* Find the specified JVM type */
     if (ReadKnownVMs(jrepath, (char*)GetArch(), JNI_FALSE) < 1) {
-        ReportErrorMessage(CFG_ERROR7);
+        JLI_ReportErrorMessage(CFG_ERROR7);
         exit(1);
     }
     jvmtype = CheckJvmType(_argc, _argv, JNI_FALSE);
 
     jvmpath[0] = '\0';
     if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath)) {
-        ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
+        JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
         exit(4);
     }
     /* If we got here, jvmpath has been correctly initialized. */
@@ -160,7 +160,7 @@ GetJREPath(char *path, jint pathsize)
         goto found;
     }
 
-    ReportErrorMessage(JRE_ERROR8 JAVA_DLL);
+    JLI_ReportErrorMessage(JRE_ERROR8 JAVA_DLL);
     return JNI_FALSE;
 
  found:
@@ -212,7 +212,7 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
         JLI_TraceLauncher("CRT path is %s\n", crtpath);
         if (_access(crtpath, 0) == 0) {
             if (LoadLibrary(crtpath) == 0) {
-                ReportErrorMessage(DLL_ERROR4, crtpath);
+                JLI_ReportErrorMessage(DLL_ERROR4, crtpath);
                 return JNI_FALSE;
             }
         }
@@ -220,7 +220,7 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 
     /* Load the Java VM DLL */
     if ((handle = LoadLibrary(jvmpath)) == 0) {
-        ReportErrorMessage(DLL_ERROR4, (char *)jvmpath);
+        JLI_ReportErrorMessage(DLL_ERROR4, (char *)jvmpath);
         return JNI_FALSE;
     }
 
@@ -230,7 +230,7 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
     ifn->GetDefaultJavaVMInitArgs =
         (void *)GetProcAddress(handle, "JNI_GetDefaultJavaVMInitArgs");
     if (ifn->CreateJavaVM == 0 || ifn->GetDefaultJavaVMInitArgs == 0) {
-        ReportErrorMessage(JNI_ERROR1, (char *)jvmpath);
+        JLI_ReportErrorMessage(JNI_ERROR1, (char *)jvmpath);
         return JNI_FALSE;
     }
 
@@ -292,19 +292,19 @@ GetPublicJREHome(char *buf, jint bufsize)
 
     /* Find the current version of the JRE */
     if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, JRE_KEY, 0, KEY_READ, &key) != 0) {
-        ReportErrorMessage(REG_ERROR1, JRE_KEY);
+        JLI_ReportErrorMessage(REG_ERROR1, JRE_KEY);
         return JNI_FALSE;
     }
 
     if (!GetStringFromRegistry(key, "CurrentVersion",
                                version, sizeof(version))) {
-        ReportErrorMessage(REG_ERROR2, JRE_KEY);
+        JLI_ReportErrorMessage(REG_ERROR2, JRE_KEY);
         RegCloseKey(key);
         return JNI_FALSE;
     }
 
     if (JLI_StrCmp(version, GetDotVersion()) != 0) {
-        ReportErrorMessage(REG_ERROR3, JRE_KEY, version, GetDotVersion()
+        JLI_ReportErrorMessage(REG_ERROR3, JRE_KEY, version, GetDotVersion()
         );
         RegCloseKey(key);
         return JNI_FALSE;
@@ -312,13 +312,13 @@ GetPublicJREHome(char *buf, jint bufsize)
 
     /* Find directory where the current version is installed. */
     if (RegOpenKeyEx(key, version, 0, KEY_READ, &subkey) != 0) {
-        ReportErrorMessage(REG_ERROR1, JRE_KEY, version);
+        JLI_ReportErrorMessage(REG_ERROR1, JRE_KEY, version);
         RegCloseKey(key);
         return JNI_FALSE;
     }
 
     if (!GetStringFromRegistry(subkey, "JavaHome", buf, bufsize)) {
-        ReportErrorMessage(REG_ERROR4, JRE_KEY, version);
+        JLI_ReportErrorMessage(REG_ERROR4, JRE_KEY, version);
         RegCloseKey(key);
         RegCloseKey(subkey);
         return JNI_FALSE;
@@ -370,7 +370,7 @@ jlong Counter2Micros(jlong counts)
 }
 
 void
-ReportErrorMessage(const char* fmt, ...) {
+JLI_ReportErrorMessage(const char* fmt, ...) {
     va_list vl;
     va_start(vl,fmt);
 
@@ -394,12 +394,12 @@ ReportErrorMessage(const char* fmt, ...) {
 }
 
 /*
- * Just like ReportErrorMessage, except that it concatenates the system
+ * Just like JLI_ReportErrorMessage, except that it concatenates the system
  * error message if any, its upto the calling routine to correctly
  * format the separation of the messages.
  */
 void
-ReportErrorMessageSys(const char *fmt, ...)
+JLI_ReportErrorMessageSys(const char *fmt, ...)
 {
     va_list vl;
 
@@ -462,7 +462,7 @@ ReportErrorMessageSys(const char *fmt, ...)
     va_end(vl);
 }
 
-void  ReportExceptionDescription(JNIEnv * env) {
+void  JLI_ReportExceptionDescription(JNIEnv * env) {
     if (IsJavaw()) {
        /*
         * This code should be replaced by code which opens a window with
@@ -733,7 +733,7 @@ ExecJRE(char *jre, char **argv) {
      */
     len = GetModuleFileName(NULL, path, MAXPATHLEN + 1);
     if (len == 0 || len > MAXPATHLEN) {
-        ReportErrorMessageSys(JRE_ERROR9, progname);
+        JLI_ReportErrorMessageSys(JRE_ERROR9, progname);
         exit(1);
     }
 
@@ -766,7 +766,7 @@ ExecJRE(char *jre, char **argv) {
      * If it weren't for this semantic flaw, the code below would be ...
      *
      *     execv(path, argv);
-     *     ReportErrorMessage("Error: Exec of %s failed\n", path);
+     *     JLI_ReportErrorMessage("Error: Exec of %s failed\n", path);
      *     exit(1);
      *
      * The incorrect exec semantics could be addressed by:
@@ -876,7 +876,7 @@ ExecJRE(char *jre, char **argv) {
           (LPCTSTR)NULL,                        /* current directory */
           (LPSTARTUPINFO)&si,                   /* (in) startup information */
           (LPPROCESS_INFORMATION)&pi)) {        /* (out) process information */
-            ReportErrorMessageSys(SYS_ERROR1, path);
+            JLI_ReportErrorMessageSys(SYS_ERROR1, path);
             exit(1);
         }
 
@@ -884,7 +884,7 @@ ExecJRE(char *jre, char **argv) {
             if (GetExitCodeProcess(pi.hProcess, &exitCode) == FALSE)
                 exitCode = 1;
         } else {
-            ReportErrorMessage(SYS_ERROR2);
+            JLI_ReportErrorMessage(SYS_ERROR2);
             exitCode = 1;
         }
 
@@ -993,8 +993,38 @@ ContinueInNewThread0(int (JNICALL *continuation)(void *), jlong stack_size, void
     return rslt;
 }
 
-/* Linux only, empty on windows. */
+/* Unix only, empty on windows. */
 void SetJavaLauncherPlatformProps() {}
+
+/*
+ * The implementation for finding classes from the bootstrap
+ * class loader, refer to java.h
+ */
+static FindClassFromBootLoader_t *findBootClass = NULL;
+
+#ifdef _M_AMD64
+#define JVM_BCLOADER "JVM_FindClassFromClassLoader"
+#else
+#define JVM_BCLOADER "_JVM_FindClassFromClassLoader@20"
+#endif /* _M_AMD64 */
+
+jclass FindBootStrapClass(JNIEnv *env, const char *classname)
+{
+   HMODULE hJvm;
+
+   if (findBootClass == NULL) {
+       hJvm = GetModuleHandle(JVM_DLL);
+       if (hJvm == NULL) return NULL;
+       /* need to use the demangled entry point */
+       findBootClass = (FindClassFromBootLoader_t *)GetProcAddress(hJvm,
+            JVM_BCLOADER);
+       if (findBootClass == NULL) {
+          JLI_ReportErrorMessage(DLL_ERROR4, JVM_BCLOADER);
+          return NULL;
+       }
+   }
+   return findBootClass(env, classname, JNI_FALSE, (jobject)NULL, JNI_FALSE);
+}
 
 void
 InitLauncher(boolean javaw)

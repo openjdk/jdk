@@ -2578,7 +2578,8 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
 oop JavaThread::current_park_blocker() {
   // Support for JSR-166 locks
   oop thread_oop = threadObj();
-  if (thread_oop != NULL && JDK_Version::supports_thread_park_blocker()) {
+  if (thread_oop != NULL &&
+      JDK_Version::current().supports_thread_park_blocker()) {
     return java_lang_Thread::park_blocker(thread_oop);
   }
   return NULL;
@@ -2755,11 +2756,23 @@ void Threads::threads_do(ThreadClosure* tc) {
   // For now, just manually iterate through them.
   tc->do_thread(VMThread::vm_thread());
   Universe::heap()->gc_threads_do(tc);
-  tc->do_thread(WatcherThread::watcher_thread());
+  WatcherThread *wt = WatcherThread::watcher_thread();
+  // Strictly speaking, the following NULL check isn't sufficient to make sure
+  // the data for WatcherThread is still valid upon being examined. However,
+  // considering that WatchThread terminates when the VM is on the way to
+  // exit at safepoint, the chance of the above is extremely small. The right
+  // way to prevent termination of WatcherThread would be to acquire
+  // Terminator_lock, but we can't do that without violating the lock rank
+  // checking in some cases.
+  if (wt != NULL)
+    tc->do_thread(wt);
+
   // If CompilerThreads ever become non-JavaThreads, add them here
 }
 
 jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
+
+  extern void JDK_Version_init();
 
   // Check version
   if (!is_supported_jni_version(args->version)) return JNI_EVERSION;
@@ -2775,6 +2788,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Initialize system properties.
   Arguments::init_system_properties();
+
+  // So that JDK version can be used as a discrimintor when parsing arguments
+  JDK_Version_init();
 
   // Parse arguments
   jint parse_result = Arguments::parse(args);

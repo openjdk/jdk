@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 
 #include "net_util.h"
 #include "jni.h"
-#include "typedefs.h"
 
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
@@ -890,7 +889,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
     return 0;
 }
 
-jint
+JNIEXPORT jint JNICALL
 NET_GetPortFromSockaddr(struct sockaddr *him) {
     if (him->sa_family == AF_INET6) {
         return ntohs(((struct sockaddr_in6*)him)->sin6_port);

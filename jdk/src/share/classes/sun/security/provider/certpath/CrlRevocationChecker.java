@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.cert.*;
+import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.interfaces.DSAPublicKey;
 import javax.security.auth.x500.X500Principal;
 import sun.security.util.Debug;
@@ -268,7 +269,8 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
                     " circular dependency");
             }
             throw new CertPathValidatorException
-                ("Could not determine revocation status");
+                ("Could not determine revocation status", null, null, -1,
+                 BasicReason.UNDETERMINED_REVOCATION_STATUS);
         }
 
         // init the state for this run
@@ -324,7 +326,8 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
                 return;
             } else {
                 throw new CertPathValidatorException
-                    ("Could not determine revocation status");
+                ("Could not determine revocation status", null, null, -1,
+                 BasicReason.UNDETERMINED_REVOCATION_STATUS);
             }
         }
 
@@ -370,7 +373,8 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
                             + unresCritExts);
                         }
                         throw new CertPathValidatorException
-                            ("Could not determine revocation status");
+                        ("Could not determine revocation status", null, null,
+                         -1, BasicReason.UNDETERMINED_REVOCATION_STATUS);
                     }
                 }
 
@@ -378,10 +382,11 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
                 if (reasonCode == null) {
                     reasonCode = CRLReason.UNSPECIFIED;
                 }
-                throw new CertPathValidatorException(
-                    new CertificateRevokedException
-                        (entry.getRevocationDate(), reasonCode,
-                         crl.getIssuerX500Principal(), entry.getExtensions()));
+                Throwable t = new CertificateRevokedException
+                    (entry.getRevocationDate(), reasonCode,
+                     crl.getIssuerX500Principal(), entry.getExtensions());
+                throw new CertPathValidatorException(t.getMessage(), t,
+                    null, -1, BasicReason.REVOKED);
             }
         }
     }
@@ -428,7 +433,8 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
                     " circular dependency");
             }
             throw new CertPathValidatorException
-                ("Could not determine revocation status");
+                ("Could not determine revocation status", null, null,
+                 -1, BasicReason.UNDETERMINED_REVOCATION_STATUS);
         }
 
         // If prevKey wasn't trusted, maybe we just didn't have the right
@@ -617,7 +623,7 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
                     return;
                 } catch (CertPathValidatorException cpve) {
                     // If it is revoked, rethrow exception
-                    if (cpve.getCause() instanceof CertificateRevokedException) {
+                    if (cpve.getReason() == BasicReason.REVOKED) {
                         throw cpve;
                     }
                     // Otherwise, ignore the exception and
@@ -628,7 +634,8 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
                 throw new CertPathValidatorException(iape);
             } catch (CertPathBuilderException cpbe) {
                 throw new CertPathValidatorException
-                    ("Could not determine revocation status", cpbe);
+                    ("Could not determine revocation status", null, null,
+                     -1, BasicReason.UNDETERMINED_REVOCATION_STATUS);
             }
         }
     }

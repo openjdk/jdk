@@ -137,25 +137,46 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
             int baseline = (getHeight() + fm.getAscent() - fm.getLeading() -
                     fm.getDescent()) / 2;
 
-            int titleX;
-            Rectangle r = new Rectangle(0, 0, 0, 0);
-            if (frame.isIconifiable())  r = iconButton.getBounds();
-            else if (frame.isMaximizable())  r = maxButton.getBounds();
-            else if (frame.isClosable())  r = closeButton.getBounds();
-            int titleW;
-
-            if(WindowsGraphicsUtils.isLeftToRight(frame) ) {
-                if (r.x == 0)  r.x = frame.getWidth()-frame.getInsets().right;
-                    titleX = systemLabel.getX() + systemLabel.getWidth() + 2;
-                    if (xp != null) {
-                        titleX += 2;
-                    }
-                    titleW = r.x - titleX - 3;
-                    title = getTitle(frame.getTitle(), fm, titleW);
-            } else {
-                titleX = systemLabel.getX() - 2
-                         - SwingUtilities2.stringWidth(frame,fm,title);
+            Rectangle lastIconBounds = new Rectangle(0, 0, 0, 0);
+            if (frame.isIconifiable()) {
+                lastIconBounds = iconButton.getBounds();
+            } else if (frame.isMaximizable()) {
+                lastIconBounds = maxButton.getBounds();
+            } else if (frame.isClosable()) {
+                lastIconBounds = closeButton.getBounds();
             }
+
+            int titleX;
+            int titleW;
+            int gap = 2;
+            if (WindowsGraphicsUtils.isLeftToRight(frame)) {
+                if (lastIconBounds.x == 0) { // There are no icons
+                    lastIconBounds.x = frame.getWidth() - frame.getInsets().right;
+                }
+                titleX = systemLabel.getX() + systemLabel.getWidth() + gap;
+                if (xp != null) {
+                    titleX += 2;
+                }
+                titleW = lastIconBounds.x - titleX - gap;
+            } else {
+                if (lastIconBounds.x == 0) { // There are no icons
+                    lastIconBounds.x = frame.getInsets().left;
+                }
+                titleW = SwingUtilities2.stringWidth(frame, fm, title);
+                int minTitleX = lastIconBounds.x + lastIconBounds.width + gap;
+                if (xp != null) {
+                    minTitleX += 2;
+                }
+                int availableWidth = systemLabel.getX() - gap - minTitleX;
+                if (availableWidth > titleW) {
+                    titleX = systemLabel.getX() - gap - titleW;
+                } else {
+                    titleX = minTitleX;
+                    titleW = availableWidth;
+                }
+            }
+            title = getTitle(frame.getTitle(), fm, titleW);
+
             if (xp != null) {
                 String shadowType = null;
                 if (isSelected) {
@@ -258,8 +279,8 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
                     g.fillRect(0, 0, w, h);
                 }
                 Icon icon = getIcon();
-                int iconWidth = 0;
-                int iconHeight = 0;
+                int iconWidth;
+                int iconHeight;
                 if (icon != null &&
                     (iconWidth = icon.getIconWidth()) > 0 &&
                     (iconHeight = icon.getIconHeight()) > 0) {
@@ -304,18 +325,18 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
     }
 
     protected void addSystemMenuItems(JPopupMenu menu) {
-        JMenuItem mi = (JMenuItem)menu.add(restoreAction);
+        JMenuItem mi = menu.add(restoreAction);
         mi.setMnemonic('R');
-        mi = (JMenuItem)menu.add(moveAction);
+        mi = menu.add(moveAction);
         mi.setMnemonic('M');
-        mi = (JMenuItem)menu.add(sizeAction);
+        mi = menu.add(sizeAction);
         mi.setMnemonic('S');
-        mi = (JMenuItem)menu.add(iconifyAction);
+        mi = menu.add(iconifyAction);
         mi.setMnemonic('n');
-        mi = (JMenuItem)menu.add(maximizeAction);
+        mi = menu.add(maximizeAction);
         mi.setMnemonic('x');
         systemPopupMenu.add(new JSeparator());
-        mi = (JMenuItem)menu.add(closeAction);
+        mi = menu.add(closeAction);
         mi.setMnemonic('C');
     }
 
@@ -441,7 +462,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
 
     public class WindowsPropertyChangeHandler extends PropertyChangeHandler {
         public void propertyChange(PropertyChangeEvent evt) {
-            String prop = (String)evt.getPropertyName();
+            String prop = evt.getPropertyName();
 
             // Update the internal frame icon for the system menu.
             if (JInternalFrame.FRAME_ICON_PROPERTY.equals(prop) &&

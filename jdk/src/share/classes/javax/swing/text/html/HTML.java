@@ -133,7 +133,7 @@ public class HTML {
          *
          * @return <code>true</code> if this tag is considered to be a paragraph
          *         in the internal HTML model. <code>false</code> - otherwise.
-         * @see javax.swing.text.html.HTMLDocument#HTMLReader#ParagraphAction
+         * @see HTMLDocument.HTMLReader.ParagraphAction
          */
         boolean isParagraph() {
             return (
@@ -536,10 +536,10 @@ public class HTML {
     // that the hashtable grew to was determined, and then that very size
     // is used.
     //
-    private static final Hashtable tagHashtable = new Hashtable(73);
+    private static final Hashtable<String, Tag> tagHashtable = new Hashtable<String, Tag>(73);
 
     /** Maps from StyleConstant key to HTML.Tag. */
-    private static final Hashtable scMapping = new Hashtable(8);
+    private static final Hashtable<Object, Tag> scMapping = new Hashtable<Object, Tag>(8);
 
     static {
 
@@ -598,8 +598,8 @@ public class HTML {
      */
     public static Tag getTag(String tagName) {
 
-        Object t =  tagHashtable.get(tagName);
-        return (t == null ? null : (Tag)t);
+        Tag t =  tagHashtable.get(tagName);
+        return (t == null ? null : t);
     }
 
     /**
@@ -613,7 +613,7 @@ public class HTML {
      *   <code>null</code> if not found
      */
     static Tag getTagForStyleConstantsKey(StyleConstants sc) {
-        return (Tag)scMapping.get(sc);
+        return scMapping.get(sc);
     }
 
     /**
@@ -646,7 +646,7 @@ public class HTML {
     public static final String NULL_ATTRIBUTE_VALUE = "#DEFAULT";
 
     // size determined similar to size of tagHashtable
-    private static final Hashtable attHashtable = new Hashtable(77);
+    private static final Hashtable<String, Attribute> attHashtable = new Hashtable<String, Attribute>(77);
 
     static {
 
@@ -687,11 +687,11 @@ public class HTML {
      * @return the <code>Attribute</code> corresponding to <code>attName</code>
      */
     public static Attribute getAttributeKey(String attName) {
-        Object a = attHashtable.get(attName);
+        Attribute a = attHashtable.get(attName);
         if (a == null) {
           return null;
         }
-        return (Attribute)a;
+        return a;
     }
 
 }

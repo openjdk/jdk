@@ -1,5 +1,5 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,11 @@ import java.net.SocketException;
 /**
  * Thrown to indicate a connection reset.
  *
- * @since   1.4
+ * @since   1.4.1
  */
 public
 class ConnectionResetException extends SocketException {
+    private static final long serialVersionUID = -7633185991801851556L;
 
     public ConnectionResetException(String msg) {
         super(msg);

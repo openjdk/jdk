@@ -68,7 +68,7 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
     private boolean commitOnEdit;
 
     /** Class used to create new instances. */
-    private Class valueClass;
+    private Class<?> valueClass;
 
     /** NavigationFilter that forwards calls back to DefaultFormatter. */
     private NavigationFilter navigationFilter;
@@ -231,7 +231,7 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
      * @return Object representation of text
      */
     public Object stringToValue(String string) throws ParseException {
-        Class vc = getValueClass();
+        Class<?> vc = getValueClass();
         JFormattedTextField ftf = getFormattedTextField();
 
         if (vc == null && ftf != null) {

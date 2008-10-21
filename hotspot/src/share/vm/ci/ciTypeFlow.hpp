@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ public:
 
   // Used as a combined index for locals and temps
   enum Cell {
-    Cell_0
+    Cell_0, Cell_max = INT_MAX
   };
 
   // A StateVector summarizes the type information at some

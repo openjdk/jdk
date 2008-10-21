@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,19 @@
 
 
 # @test
-# @bug 6265810
+# @bug 6265810 6705893
+# @build CheckEngine
 # @run shell jrunscript-cpTest.sh
 # @summary Test -cp option to set classpath
 
 . ${TESTSRC-.}/common.sh
 
 setup
+${JAVA} -cp ${TESTCLASSES} CheckEngine
+if [ $? -eq 2 ]; then
+    echo "No js engine found and engine not required; test vacuously passes."
+    exit 0
+fi
 
 rm -f Hello.class
 ${JAVAC} ${TESTSRC}/Hello.java -d .

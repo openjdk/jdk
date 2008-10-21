@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
  */
 import java.net.MalformedURLException;
 
+import java.util.Collections;
+import java.util.Map;
 import javax.management.MBeanServerFactory;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
@@ -44,6 +46,7 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
+import javax.management.remote.rmi.RMIConnectorServer;
 
 public class NotificationBufferCreationTest {
     private static final MBeanServer mbs =
@@ -86,6 +89,8 @@ public class NotificationBufferCreationTest {
         JMXServiceURL u = null;
         try {
             u = new JMXServiceURL(protocol, null, 0);
+            Map<String, String> env = Collections.singletonMap(
+                    RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE, "false");
             server =
                 JMXConnectorServerFactory.newJMXConnectorServer(u,
                                                                 null,

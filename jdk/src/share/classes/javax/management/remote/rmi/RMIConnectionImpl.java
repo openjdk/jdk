@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@
 
 package javax.management.remote.rmi;
 
+import com.sun.jmx.mbeanserver.Util;
 import static com.sun.jmx.mbeanserver.Util.cast;
 import com.sun.jmx.remote.internal.ServerCommunicatorAdmin;
 import com.sun.jmx.remote.internal.ServerNotifForwarder;
 import com.sun.jmx.remote.security.JMXSubjectDomainCombiner;
+import com.sun.jmx.remote.security.NotificationAccessController;
 import com.sun.jmx.remote.security.SubjectDelegator;
 import com.sun.jmx.remote.util.ClassLoaderWithRepository;
 import com.sun.jmx.remote.util.ClassLogger;
@@ -36,6 +38,7 @@ import com.sun.jmx.remote.util.EnvHelp;
 import com.sun.jmx.remote.util.OrderClassLoaders;
 
 import java.io.IOException;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.rmi.MarshalledObject;
 import java.rmi.UnmarshalException;
 import java.rmi.server.Unreferenced;
@@ -56,19 +59,25 @@ import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.IntrospectionException;
 import javax.management.InvalidAttributeValueException;
+import javax.management.JMX;
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
+import javax.management.Notification;
 import javax.management.NotificationFilter;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import javax.management.QueryExp;
 import javax.management.ReflectionException;
 import javax.management.RuntimeOperationsException;
-import javax.management.loading.ClassLoaderRepository;
+import javax.management.event.EventClientDelegate;
+import javax.management.event.EventClientDelegateMBean;
+import javax.management.event.EventClientNotFoundException;
+import javax.management.event.FetchingEventForwarder;
+import javax.management.namespace.JMXNamespaces;
 import javax.management.remote.JMXServerErrorException;
 import javax.management.remote.NotificationResult;
 import javax.management.remote.TargetedNotification;
@@ -149,28 +158,16 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 new PrivilegedAction<ClassLoaderWithRepository>() {
                     public ClassLoaderWithRepository run() {
                         return new ClassLoaderWithRepository(
-                                              getClassLoaderRepository(),
-                                              dcl);
+                                      mbeanServer.getClassLoaderRepository(),
+                                      dcl);
                     }
                 });
-
         serverCommunicatorAdmin = new
           RMIServerCommunicatorAdmin(EnvHelp.getServerConnectionTimeout(env));
 
         this.env = env;
     }
 
-    private synchronized ServerNotifForwarder getServerNotifFwd() {
-        // Lazily created when first use. Mainly when
-        // addNotificationListener is first called.
-        if (serverNotifForwarder == null)
-            serverNotifForwarder =
-                new ServerNotifForwarder(mbeanServer,
-                                         env,
-                                         rmiServer.getNotifBuffer(),
-                                         connectionId);
-        return serverNotifForwarder;
-    }
 
     public String getConnectionId() throws IOException {
         // We should call reqIncomming() here... shouldn't we?
@@ -181,6 +178,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         final boolean debug = logger.debugOn();
         final String  idstr = (debug?"["+this.toString()+"]":null);
 
+        final SubscriptionManager mgr;
         synchronized (this) {
             if (terminated) {
                 if (debug) logger.debug("close",idstr + " already terminated.");
@@ -195,10 +193,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 serverCommunicatorAdmin.terminate();
             }
 
-            if (serverNotifForwarder != null) {
-                serverNotifForwarder.terminate();
-            }
+            mgr = subscriptionManager;
+            subscriptionManager = null;
         }
+
+        if (mgr != null) mgr.terminate();
 
         rmiServer.clientClosed(this);
 
@@ -955,8 +954,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         int i=0;
         ClassLoader targetCl;
         NotificationFilter[] filterValues =
-        new NotificationFilter[names.length];
-        Object params[];
+            new NotificationFilter[names.length];
         Integer[] ids = new Integer[names.length];
         final boolean debug=logger.debugOn();
 
@@ -991,8 +989,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             // remove all registered listeners
             for (int j=0; j<i; j++) {
                 try {
-                    getServerNotifFwd().removeNotificationListener(names[j],
-                                                                   ids[j]);
+                    doRemoveListener(names[j],ids[j]);
                 } catch (Exception eee) {
                     // strange
                 }
@@ -1240,20 +1237,328 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             final long csn = clientSequenceNumber;
             final int mn = maxNotifications;
             final long t = timeout;
-            PrivilegedAction<NotificationResult> action =
-                new PrivilegedAction<NotificationResult>() {
-                    public NotificationResult run() {
-                        return getServerNotifFwd().fetchNotifs(csn, t, mn);
+
+            final PrivilegedExceptionAction<NotificationResult> action =
+                new PrivilegedExceptionAction<NotificationResult>() {
+                    public NotificationResult run() throws IOException {
+                            return doFetchNotifs(csn, t, mn);
                     }
             };
-            if (acc == null)
-                return action.run();
-            else
-                return AccessController.doPrivileged(action, acc);
+            try {
+                if (acc == null)
+                    return action.run();
+                else
+                    return AccessController.doPrivileged(action, acc);
+            } catch (IOException x) {
+                throw x;
+            } catch (RuntimeException x) {
+                throw x;
+            } catch (Exception x) {
+                // should not happen
+                throw new UndeclaredThrowableException(x);
+            }
+
         } finally {
             serverCommunicatorAdmin.rspOutgoing();
         }
     }
+
+    /**
+     * This is an abstraction class that let us use the legacy
+     * ServerNotifForwarder and the new EventClientDelegateMBean
+     * indifferently.
+     **/
+    private static interface SubscriptionManager {
+        public void removeNotificationListener(ObjectName name, Integer id)
+            throws InstanceNotFoundException, ListenerNotFoundException, IOException;
+        public void removeNotificationListener(ObjectName name, Integer[] ids)
+            throws Exception;
+        public NotificationResult fetchNotifications(long csn, long timeout, int maxcount)
+            throws IOException;
+        public Integer addNotificationListener(ObjectName name, NotificationFilter filter)
+            throws InstanceNotFoundException, IOException;
+        public void terminate()
+            throws IOException;
+    }
+
+    /**
+     * A SubscriptionManager that uses a ServerNotifForwarder.
+     **/
+    private static class LegacySubscriptionManager implements SubscriptionManager {
+        private final ServerNotifForwarder forwarder;
+        LegacySubscriptionManager(ServerNotifForwarder forwarder) {
+            this.forwarder = forwarder;
+        }
+
+        public void removeNotificationListener(ObjectName name, Integer id)
+            throws InstanceNotFoundException, ListenerNotFoundException,
+                IOException {
+            if (!JMXNamespaces.getContainingNamespace(name).equals("")) {
+                logger.debug("removeNotificationListener",
+                        "This connector server is not configured to support " +
+                        "forwarding of notification subscriptions to name spaces");
+                throw new RuntimeOperationsException(
+                    new UnsupportedOperationException(
+                    "removeNotificationListener on name space MBeans. "));
+                }
+            forwarder.removeNotificationListener(name,id);
+        }
+
+        public void removeNotificationListener(ObjectName name, Integer[] ids)
+            throws Exception {
+            if (!JMXNamespaces.getContainingNamespace(name).equals("")) {
+                logger.debug("removeNotificationListener",
+                        "This connector server is not configured to support " +
+                        "forwarding of notification subscriptions to name spaces");
+                throw new RuntimeOperationsException(
+                    new UnsupportedOperationException(
+                    "removeNotificationListener on name space MBeans. "));
+            }
+            forwarder.removeNotificationListener(name,ids);
+        }
+
+        public NotificationResult fetchNotifications(long csn, long timeout, int maxcount) {
+            return forwarder.fetchNotifs(csn,timeout,maxcount);
+        }
+
+        public Integer addNotificationListener(ObjectName name,
+                NotificationFilter filter)
+            throws InstanceNotFoundException, IOException {
+            if (!JMXNamespaces.getContainingNamespace(name).equals("")) {
+                logger.debug("addNotificationListener",
+                        "This connector server is not configured to support " +
+                        "forwarding of notification subscriptions to name spaces");
+                throw new RuntimeOperationsException(
+                    new UnsupportedOperationException(
+                    "addNotificationListener on name space MBeans. "));
+            }
+            return forwarder.addNotificationListener(name,filter);
+        }
+
+        public void terminate() {
+            forwarder.terminate();
+        }
+    }
+
+    /**
+     * A SubscriptionManager that uses an EventClientDelegateMBean.
+     **/
+    private static class EventSubscriptionManager
+            implements SubscriptionManager {
+        private final MBeanServer mbeanServer;
+        private final EventClientDelegateMBean delegate;
+        private final NotificationAccessController notifAC;
+        private final boolean checkNotificationEmission;
+        private final String clientId;
+        private final String connectionId;
+        private volatile String mbeanServerName;
+
+        EventSubscriptionManager(
+                MBeanServer mbeanServer,
+                EventClientDelegateMBean delegate,
+                Map<String, ?> env,
+                String clientId,
+                String connectionId) {
+            this.mbeanServer = mbeanServer;
+            this.delegate = delegate;
+            this.notifAC = EnvHelp.getNotificationAccessController(env);
+            this.checkNotificationEmission =
+                EnvHelp.computeBooleanFromString(
+                    env, "jmx.remote.x.check.notification.emission", false);
+            this.clientId = clientId;
+            this.connectionId = connectionId;
+        }
+
+        private String mbeanServerName() {
+            if (mbeanServerName != null) return mbeanServerName;
+            else return (mbeanServerName = getMBeanServerName(mbeanServer));
+        }
+
+        @SuppressWarnings("serial")  // no serialVersionUID
+        private class AccessControlFilter implements NotificationFilter {
+            private final NotificationFilter wrapped;
+            private final ObjectName name;
+
+            AccessControlFilter(ObjectName name, NotificationFilter wrapped) {
+                this.name = name;
+                this.wrapped = wrapped;
+            }
+
+            public boolean isNotificationEnabled(Notification notification) {
+                try {
+                    if (checkNotificationEmission) {
+                        ServerNotifForwarder.checkMBeanPermission(
+                                mbeanServerName(), mbeanServer, name,
+                                "addNotificationListener");
+                    }
+                    notifAC.fetchNotification(
+                            connectionId, name, notification, getSubject());
+                    return (wrapped == null) ? true :
+                        wrapped.isNotificationEnabled(notification);
+                } catch (InstanceNotFoundException e) {
+                    return false;
+                } catch (SecurityException e) {
+                    return false;
+                }
+            }
+
+        }
+
+        public Integer addNotificationListener(
+                ObjectName name, NotificationFilter filter)
+                throws InstanceNotFoundException, IOException {
+            if (notifAC != null) {
+                notifAC.addNotificationListener(connectionId, name, getSubject());
+                filter = new AccessControlFilter(name, filter);
+            }
+            try {
+                return delegate.addListener(clientId,name,filter);
+            } catch (EventClientNotFoundException x) {
+                throw new IOException("Unknown clientId: "+clientId,x);
+            }
+        }
+
+        public void removeNotificationListener(ObjectName name, Integer id)
+                throws InstanceNotFoundException, ListenerNotFoundException,
+                       IOException {
+            if (notifAC != null)
+                notifAC.removeNotificationListener(connectionId, name, getSubject());
+            try {
+                delegate.removeListenerOrSubscriber(clientId, id);
+            } catch (EventClientNotFoundException x) {
+                throw new IOException("Unknown clientId: "+clientId,x);
+            }
+        }
+
+        public void removeNotificationListener(ObjectName name, Integer[] ids)
+                throws InstanceNotFoundException, ListenerNotFoundException,
+                       IOException {
+            if (notifAC != null)
+                notifAC.removeNotificationListener(connectionId, name, getSubject());
+            try {
+                for (Integer id : ids)
+                    delegate.removeListenerOrSubscriber(clientId, id);
+            } catch (EventClientNotFoundException x) {
+                throw new IOException("Unknown clientId: "+clientId,x);
+            }
+        }
+
+        public NotificationResult fetchNotifications(long csn, long timeout,
+                int maxcount)
+            throws IOException {
+            try {
+                // For some reason the delegate doesn't accept a negative
+                // sequence number. However legacy clients will always call
+                // fetchNotifications with a negative sequence number, when
+                // they call it for the first time.
+                // In that case, we will use 0 instead.
+                //
+                return delegate.fetchNotifications(
+                        clientId, Math.max(csn, 0), maxcount, timeout);
+            } catch (EventClientNotFoundException x) {
+                throw new IOException("Unknown clientId: "+clientId,x);
+            }
+        }
+
+        public void terminate()
+            throws IOException {
+            try {
+                delegate.removeClient(clientId);
+            } catch (EventClientNotFoundException x) {
+                throw new IOException("Unknown clientId: "+clientId,x);
+            }
+        }
+
+        private static Subject getSubject() {
+            return Subject.getSubject(AccessController.getContext());
+        }
+    }
+
+    /**
+     * Creates a SubscriptionManager that uses either the legacy notifications
+     * mechanism (ServerNotifForwarder) or the new event service
+     * (EventClientDelegateMBean) depending on which option was passed in
+     * the connector's map.
+     **/
+    private SubscriptionManager createSubscriptionManager()
+        throws IOException {
+        if (EnvHelp.delegateToEventService(env) &&
+                mbeanServer.isRegistered(EventClientDelegate.OBJECT_NAME)) {
+            final EventClientDelegateMBean mbean =
+                    JMX.newMBeanProxy(mbeanServer,
+                        EventClientDelegate.OBJECT_NAME,
+                        EventClientDelegateMBean.class);
+            String clientId;
+            try {
+                 clientId =
+                    mbean.addClient(
+                FetchingEventForwarder.class.getName(),
+                new Object[] {EnvHelp.getNotifBufferSize(env)},
+                new String[] {int.class.getName()});
+            } catch (Exception e) {
+                if (e instanceof IOException)
+                    throw (IOException) e;
+                else
+                    throw new IOException(e);
+            }
+
+            // we're going to call remove client...
+            try {
+                mbean.lease(clientId, Long.MAX_VALUE);
+            } catch (EventClientNotFoundException x) {
+                throw new IOException("Unknown clientId: "+clientId,x);
+            }
+            return new EventSubscriptionManager(mbeanServer, mbean, env,
+                    clientId, connectionId);
+        } else {
+            final ServerNotifForwarder serverNotifForwarder =
+                new ServerNotifForwarder(mbeanServer,
+                                         env,
+                                         rmiServer.getNotifBuffer(),
+                                         connectionId);
+             return new LegacySubscriptionManager(serverNotifForwarder);
+        }
+    }
+
+    /**
+     * Lazy creation of a  SubscriptionManager.
+     **/
+    private synchronized SubscriptionManager getSubscriptionManager()
+        throws IOException {
+        // Lazily created when first use. Mainly when
+        // addNotificationListener is first called.
+
+        if (subscriptionManager == null) {
+             subscriptionManager = createSubscriptionManager();
+        }
+        return subscriptionManager;
+    }
+
+    // calls SubscriptionManager.
+    private void doRemoveListener(ObjectName name, Integer id)
+        throws InstanceNotFoundException, ListenerNotFoundException,
+            IOException {
+           getSubscriptionManager().removeNotificationListener(name,id);
+    }
+
+    // calls SubscriptionManager.
+    private void doRemoveListener(ObjectName name, Integer[] ids)
+        throws Exception {
+           getSubscriptionManager().removeNotificationListener(name,ids);
+    }
+
+    // calls SubscriptionManager.
+    private NotificationResult doFetchNotifs(long csn, long timeout, int maxcount)
+         throws IOException {
+         return getSubscriptionManager().fetchNotifications(csn, timeout, maxcount);
+    }
+
+    // calls SubscriptionManager.
+    private Integer doAddListener(ObjectName name, NotificationFilter filter)
+         throws InstanceNotFoundException, IOException {
+         return getSubscriptionManager().addNotificationListener(name,filter);
+    }
+
 
     /**
      * <p>Returns a string representation of this object.  In general,
@@ -1312,16 +1617,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
     //------------------------------------------------------------------------
     // private methods
     //------------------------------------------------------------------------
-
-    private ClassLoaderRepository getClassLoaderRepository() {
-        return
-            AccessController.doPrivileged(
-                new PrivilegedAction<ClassLoaderRepository>() {
-                    public ClassLoaderRepository run() {
-                        return mbeanServer.getClassLoaderRepository();
-                    }
-                });
-    }
 
     private ClassLoader getClassLoader(final ObjectName name)
         throws InstanceNotFoundException {
@@ -1482,9 +1777,8 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             return null;
 
         case ADD_NOTIFICATION_LISTENERS:
-            return getServerNotifFwd().addNotificationListener(
-                                                (ObjectName)params[0],
-                                                (NotificationFilter)params[1]);
+            return doAddListener((ObjectName)params[0],
+                                 (NotificationFilter)params[1]);
 
         case ADD_NOTIFICATION_LISTENER_OBJECTNAME:
             mbeanServer.addNotificationListener((ObjectName)params[0],
@@ -1494,9 +1788,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             return null;
 
         case REMOVE_NOTIFICATION_LISTENER:
-            getServerNotifFwd().removeNotificationListener(
-                                                   (ObjectName)params[0],
-                                                   (Integer[])params[1]);
+            doRemoveListener((ObjectName)params[0],(Integer[])params[1]);
             return null;
 
         case REMOVE_NOTIFICATION_LISTENER_OBJECTNAME:
@@ -1607,6 +1899,15 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         return e;
     }
 
+    private static String getMBeanServerName(final MBeanServer server) {
+        final PrivilegedAction<String> action = new PrivilegedAction<String>() {
+            public String run() {
+                return Util.getMBeanServerSecurityName(server);
+            }
+        };
+        return AccessController.doPrivileged(action);
+    }
+
     private static final Object[] NO_OBJECTS = new Object[0];
     private static final String[] NO_STRINGS = new String[0];
 
@@ -1709,23 +2010,21 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
     private final static int
         REMOVE_NOTIFICATION_LISTENER                            = 19;
     private final static int
-        REMOVE_NOTIFICATION_LISTENER_FILTER_HANDBACK            = 20;
+        REMOVE_NOTIFICATION_LISTENER_OBJECTNAME                 = 20;
     private final static int
-        REMOVE_NOTIFICATION_LISTENER_OBJECTNAME                 = 21;
+        REMOVE_NOTIFICATION_LISTENER_OBJECTNAME_FILTER_HANDBACK = 21;
     private final static int
-        REMOVE_NOTIFICATION_LISTENER_OBJECTNAME_FILTER_HANDBACK = 22;
+        SET_ATTRIBUTE                                           = 22;
     private final static int
-        SET_ATTRIBUTE                                           = 23;
+        SET_ATTRIBUTES                                          = 23;
     private final static int
-        SET_ATTRIBUTES                                          = 24;
-    private final static int
-        UNREGISTER_MBEAN                                        = 25;
+        UNREGISTER_MBEAN                                        = 24;
 
     // SERVER NOTIFICATION
     //--------------------
 
-    private ServerNotifForwarder serverNotifForwarder;
-    private Map env;
+    private SubscriptionManager subscriptionManager;
+    private Map<String, ?> env;
 
     // TRACES & DEBUG
     //---------------

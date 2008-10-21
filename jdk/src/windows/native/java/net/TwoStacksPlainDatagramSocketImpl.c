@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2090,7 +2090,7 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1, jint o
          * (for IF).
          */
         if (index > 0) {
-            ni = Java_java_net_NetworkInterface_getByIndex(env, ni_class,
+            ni = Java_java_net_NetworkInterface_getByIndex0(env, ni_class,
                                                                    index);
             if (ni == NULL) {
                 char errmsg[255];

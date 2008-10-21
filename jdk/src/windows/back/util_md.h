@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #ifndef JDWP_UTIL_MD_H
 #define JDWP_UTIL_MD_H
 
+#include <stddef.h>      /* for uintptr_t */
 #include <stdlib.h>      /* for _MAx_PATH */
 
 typedef unsigned __int64 UNSIGNED_JLONG;

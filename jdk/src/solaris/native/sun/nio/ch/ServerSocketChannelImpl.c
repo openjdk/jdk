@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,14 +63,6 @@ Java_sun_nio_ch_ServerSocketChannelImpl_initIDs(JNIEnv *env, jclass c)
     isa_class = (*env)->NewGlobalRef(env, cls);
     isa_ctorID = (*env)->GetMethodID(env, cls, "<init>",
                                      "(Ljava/net/InetAddress;I)V");
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_ServerSocketChannelImpl_listen(JNIEnv *env, jclass cl,
-                                               jobject fdo, jint backlog)
-{
-    if (listen(fdval(env, fdo), backlog) < 0)
-        handleSocketError(env, errno);
 }
 
 JNIEXPORT jint JNICALL

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,11 @@ public class AttrContext {
      */
     Lint lint;
 
+    /** The variable whose initializer is being attributed
+     * useful for detecting self-references in variable initializers
+     */
+    Symbol enclVar = null;
+
     /** Duplicate this context, replacing scope field and copying all others.
      */
     AttrContext dup(Scope scope) {
@@ -77,6 +82,7 @@ public class AttrContext {
         info.varArgs = varArgs;
         info.tvars = tvars;
         info.lint = lint;
+        info.enclVar = enclVar;
         return info;
     }
 

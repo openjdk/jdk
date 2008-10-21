@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,9 @@ public class Symtab {
     public final Type botType = new BottomType();
     public final JCNoType voidType = new JCNoType(TypeTags.VOID);
 
-    private final Name.Table names;
+    private final Names names;
     private final ClassReader reader;
+    private final Target target;
 
     /** A symbol for the root package.
      */
@@ -92,8 +93,7 @@ public class Symtab {
      */
     public final ClassSymbol errSymbol;
 
-    /** An instance of the error type.
-     */
+    /** A value for the errType, with a originalType of noType */
     public final Type errType;
 
     /** A value for the unknown type. */
@@ -144,6 +144,7 @@ public class Symtab {
     public final Type suppressWarningsType;
     public final Type inheritedType;
     public final Type proprietaryType;
+    public final Type systemType;
 
     /** The symbol representing the length field of an array.
      */
@@ -272,13 +273,63 @@ public class Symtab {
         return reader.enterClass(names.fromString(s)).type;
     }
 
+    public void synthesizeEmptyInterfaceIfMissing(final Type type) {
+        final Completer completer = type.tsym.completer;
+        if (completer != null) {
+            type.tsym.completer = new Completer() {
+                public void complete(Symbol sym) throws CompletionFailure {
+                    try {
+                        completer.complete(sym);
+                    } catch (CompletionFailure e) {
+                        sym.flags_field |= (PUBLIC | INTERFACE);
+                        ((ClassType) sym.type).supertype_field = objectType;
+                    }
+                }
+            };
+        }
+    }
+
+    public void synthesizeBoxTypeIfMissing(final Type type) {
+        ClassSymbol sym = reader.enterClass(boxedName[type.tag]);
+        final Completer completer = sym.completer;
+        if (completer != null) {
+            sym.completer = new Completer() {
+                public void complete(Symbol sym) throws CompletionFailure {
+                    try {
+                        completer.complete(sym);
+                    } catch (CompletionFailure e) {
+                        sym.flags_field |= PUBLIC;
+                        ((ClassType) sym.type).supertype_field = objectType;
+                        Name n = target.boxWithConstructors() ? names.init : names.valueOf;
+                        MethodSymbol boxMethod =
+                            new MethodSymbol(PUBLIC | STATIC,
+                                n,
+                                new MethodType(List.of(type), sym.type,
+                                    List.<Type>nil(), methodClass),
+                                sym);
+                        sym.members().enter(boxMethod);
+                        MethodSymbol unboxMethod =
+                            new MethodSymbol(PUBLIC,
+                                type.tsym.name.append(names.Value), // x.intValue()
+                                new MethodType(List.<Type>nil(), type,
+                                    List.<Type>nil(), methodClass),
+                                sym);
+                        sym.members().enter(unboxMethod);
+                    }
+                }
+            };
+        }
+
+    }
+
     /** Constructor; enters all predefined identifiers and operators
      *  into symbol table.
      */
     protected Symtab(Context context) throws CompletionFailure {
         context.put(symtabKey, this);
 
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
+        target = Target.instance(context);
 
         // Create the unknown type
         unknownType = new Type(TypeTags.UNKNOWN, null);
@@ -296,7 +347,7 @@ public class Symtab {
 
         // create the error symbols
         errSymbol = new ClassSymbol(PUBLIC|STATIC|ACYCLIC, names.any, null, rootPackage);
-        errType = new ErrorType(errSymbol);
+        errType = new ErrorType(errSymbol, Type.noType);
 
         // initialize builtin types
         initType(byteType, "byte", "Byte");
@@ -337,6 +388,9 @@ public class Symtab {
         scope.enter(booleanType.tsym);
         scope.enter(errType.tsym);
 
+        // Enter symbol for the errSymbol
+        scope.enter(errSymbol);
+
         classes.put(predefClass.fullname, predefClass);
 
         reader = ClassReader.instance(context);
@@ -373,7 +427,7 @@ public class Symtab {
         collectionsType = enterClass("java.util.Collections");
         comparableType = enterClass("java.lang.Comparable");
         arraysType = enterClass("java.util.Arrays");
-        iterableType = Target.instance(context).hasIterable()
+        iterableType = target.hasIterable()
             ? enterClass("java.lang.Iterable")
             : enterClass("java.util.Collection");
         iteratorType = enterClass("java.util.Iterator");
@@ -383,6 +437,12 @@ public class Symtab {
         deprecatedType = enterClass("java.lang.Deprecated");
         suppressWarningsType = enterClass("java.lang.SuppressWarnings");
         inheritedType = enterClass("java.lang.annotation.Inherited");
+        systemType = enterClass("java.lang.System");
+
+        synthesizeEmptyInterfaceIfMissing(cloneableType);
+        synthesizeEmptyInterfaceIfMissing(serializableType);
+        synthesizeBoxTypeIfMissing(doubleType);
+        synthesizeBoxTypeIfMissing(floatType);
 
         // Enter a synthetic class that is used to mark Sun
         // proprietary classes in ct.sym.  This class does not have a

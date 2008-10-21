@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import static com.sun.javadoc.LanguageVersion.*;
 import com.sun.tools.javac.util.List;
 
 import java.net.*;
-import java.lang.OutOfMemoryError;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.InvocationTargetException;
@@ -70,7 +69,8 @@ public class DocletInvoker {
     }
 
     public DocletInvoker(Messager messager,
-                         String docletClassName, String docletPath) {
+                         String docletClassName, String docletPath,
+                         ClassLoader docletParentClassLoader) {
         this.messager = messager;
         this.docletClassName = docletClassName;
 
@@ -82,7 +82,10 @@ public class DocletInvoker {
         cpString = appendPath(System.getProperty("java.class.path"), cpString);
         cpString = appendPath(docletPath, cpString);
         URL[] urls = pathToURLs(cpString);
-        appClassLoader = new URLClassLoader(urls);
+        if (docletParentClassLoader == null)
+            appClassLoader = new URLClassLoader(urls);
+        else
+            appClassLoader = new URLClassLoader(urls, docletParentClassLoader);
 
         // attempt to find doclet
         Class dc = null;

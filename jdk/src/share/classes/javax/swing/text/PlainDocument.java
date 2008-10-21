@@ -318,7 +318,7 @@ public class PlainDocument extends AbstractDocument {
     }
 
     private AbstractElement defaultRoot;
-    private Vector added = new Vector();     // Vector<Element>
-    private Vector removed = new Vector();   // Vector<Element>
+    private Vector<Element> added = new Vector<Element>();
+    private Vector<Element> removed = new Vector<Element>();
     private transient Segment s;
 }

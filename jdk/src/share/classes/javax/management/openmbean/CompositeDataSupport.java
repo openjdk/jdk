@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,6 +355,7 @@ public class CompositeDataSupport
      * @return  <code>true</code> if the specified object is equal to this
      * <code>CompositeDataSupport</code> instance.
      */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -419,6 +420,7 @@ public class CompositeDataSupport
      *
      * @return the hash code value for this <code>CompositeDataSupport</code> instance
      */
+    @Override
     public int hashCode() {
         int hashcode = compositeType.hashCode();
 
@@ -457,16 +459,28 @@ public class CompositeDataSupport
      *
      * @return  a string representation of this <code>CompositeDataSupport</code> instance
      */
+    @Override
     public String toString() {
-
         return new StringBuilder()
             .append(this.getClass().getName())
             .append("(compositeType=")
             .append(compositeType.toString())
             .append(",contents=")
-            .append(contents.toString())
+            .append(contentString())
             .append(")")
             .toString();
     }
 
+    private String contentString() {
+        StringBuilder sb = new StringBuilder("{");
+        String sep = "";
+        for (Map.Entry<String, Object> entry : contents.entrySet()) {
+            sb.append(sep).append(entry.getKey()).append("=");
+            String s = Arrays.deepToString(new Object[] {entry.getValue()});
+            sb.append(s.substring(1, s.length() - 1));
+            sep = ", ";
+        }
+        sb.append("}");
+        return sb.toString();
+    }
 }
