@@ -116,7 +116,7 @@ public class StateEdit
 
     protected void init (StateEditable anObject, String name) {
         this.object = anObject;
-        this.preState = new Hashtable(11);
+        this.preState = new Hashtable<Object, Object>(11);
         this.object.storeState(this.preState);
         this.postState = null;
         this.undoRedoName = name;
@@ -133,7 +133,7 @@ public class StateEdit
      * ends the edit.
      */
     public void end() {
-        this.postState = new Hashtable(11);
+        this.postState = new Hashtable<Object, Object>(11);
         this.object.storeState(this.postState);
         this.removeRedundantState();
     }
@@ -170,7 +170,7 @@ public class StateEdit
      * Remove redundant key/values in state hashtables.
      */
     protected void removeRedundantState() {
-        Vector uselessKeys = new Vector();
+        Vector<Object> uselessKeys = new Vector<Object>();
         Enumeration myKeys = preState.keys();
 
         // Locate redundant state

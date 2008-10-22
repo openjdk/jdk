@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-1999 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ package java.lang;
  */
 public
 class UnsupportedClassVersionError extends ClassFormatError {
+    private static final long serialVersionUID = -7123279212883497373L;
+
     /**
      * Constructs a <code>UnsupportedClassVersionError</code>
      * with no detail message.

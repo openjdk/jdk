@@ -122,7 +122,7 @@ public class ClassReader extends ClassFile implements Completer {
     Types types;
 
     /** The name table. */
-    final Name.Table names;
+    final Names names;
 
     /** Force a completion failure on this name
      */
@@ -220,7 +220,7 @@ public class ClassReader extends ClassFile implements Completer {
     protected ClassReader(Context context, boolean definitive) {
         if (definitive) context.put(classReaderKey, this);
 
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         syms = Symtab.instance(context);
         types = Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
@@ -516,14 +516,6 @@ public class ClassReader extends ClassFile implements Completer {
     int siglimit;
     boolean sigEnterPhase = false;
 
-    /** Convert signature to type, where signature is a name.
-     */
-    Type sigToType(Name sig) {
-        return sig == null
-            ? null
-            : sigToType(sig.table.names, sig.index, sig.len);
-    }
-
     /** Convert signature to type, where signature is a byte array segment.
      */
     Type sigToType(byte[] sig, int offset, int len) {
@@ -741,12 +733,6 @@ public class ClassReader extends ClassFile implements Completer {
         return head.tail;
     }
 
-    /** Convert signature to type parameters, where signature is a name.
-     */
-    List<Type> sigToTypeParams(Name name) {
-        return sigToTypeParams(name.table.names, name.index, name.len);
-    }
-
     /** Convert signature to type parameters, where signature is a byte
      *  array segment.
      */
@@ -952,7 +938,7 @@ public class ClassReader extends ClassFile implements Completer {
 
         self.name = simpleBinaryName(self.flatname, c.flatname) ;
         self.owner = m != null ? m : c;
-        if (self.name.len == 0)
+        if (self.name.isEmpty())
             self.fullname = null;
         else
             self.fullname = ClassSymbol.formFullName(self.name, self.owner);
@@ -1500,7 +1486,7 @@ public class ClassReader extends ClassFile implements Completer {
             // Sometimes anonymous classes don't have an outer
             // instance, however, there is no reliable way to tell so
             // we never strip this$n
-            if (currentOwner.name.len != 0)
+            if (!currentOwner.name.isEmpty())
                 type = new MethodType(type.getParameterTypes().tail,
                                       type.getReturnType(),
                                       type.getThrownTypes(),

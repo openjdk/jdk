@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-1997 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ package java.lang;
  */
 public
 class NoSuchFieldError extends IncompatibleClassChangeError {
+    private static final long serialVersionUID = -3456430195886129035L;
+
     /**
      * Constructs a <code>NoSuchFieldException</code> with no detail  message.
      */

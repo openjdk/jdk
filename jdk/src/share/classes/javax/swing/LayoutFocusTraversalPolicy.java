@@ -65,7 +65,7 @@ public class LayoutFocusTraversalPolicy extends SortingFocusTraversalPolicy
      * Constructs a LayoutFocusTraversalPolicy with the passed in
      * <code>Comparator</code>.
      */
-    LayoutFocusTraversalPolicy(Comparator c) {
+    LayoutFocusTraversalPolicy(Comparator<? super Component> c) {
         super(c);
     }
 

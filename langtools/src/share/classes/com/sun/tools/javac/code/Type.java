@@ -599,14 +599,14 @@ public class Type implements PrimitiveType {
         }
 //where
             private String className(Symbol sym, boolean longform) {
-                if (sym.name.len == 0 && (sym.flags() & COMPOUND) != 0) {
+                if (sym.name.isEmpty() && (sym.flags() & COMPOUND) != 0) {
                     StringBuffer s = new StringBuffer(supertype_field.toString());
                     for (List<Type> is=interfaces_field; is.nonEmpty(); is = is.tail) {
                         s.append("&");
                         s.append(is.head.toString());
                     }
                     return s.toString();
-                } else if (sym.name.len == 0) {
+                } else if (sym.name.isEmpty()) {
                     String s;
                     ClassType norm = (ClassType) tsym.type;
                     if (norm == null) {
@@ -1194,21 +1194,24 @@ public class Type implements PrimitiveType {
     public static class ErrorType extends ClassType
             implements javax.lang.model.type.ErrorType {
 
-        public ErrorType() {
+        private Type originalType = null;
+
+        public ErrorType(Type originalType, TypeSymbol tsym) {
             super(noType, List.<Type>nil(), null);
             tag = ERROR;
+            this.tsym = tsym;
+            this.originalType = (originalType == null ? noType : originalType);
         }
 
-        public ErrorType(ClassSymbol c) {
-            this();
-            tsym = c;
+        public ErrorType(ClassSymbol c, Type originalType) {
+            this(originalType, c);
             c.type = this;
             c.kind = ERR;
             c.members_field = new Scope.ErrorScope(c);
         }
 
-        public ErrorType(Name name, TypeSymbol container) {
-            this(new ClassSymbol(PUBLIC|STATIC|ACYCLIC, name, null, container));
+        public ErrorType(Name name, TypeSymbol container, Type originalType) {
+            this(new ClassSymbol(PUBLIC|STATIC|ACYCLIC, name, null, container), originalType);
         }
 
         @Override
@@ -1232,6 +1235,10 @@ public class Type implements PrimitiveType {
 
         public TypeKind getKind() {
             return TypeKind.ERROR;
+        }
+
+        public Type getOriginalType() {
+            return originalType;
         }
 
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {

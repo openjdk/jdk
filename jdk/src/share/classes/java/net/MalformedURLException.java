@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-1997 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.io.IOException;
  * @since   JDK1.0
  */
 public class MalformedURLException extends IOException {
+    private static final long serialVersionUID = -182787522200415866L;
+
     /**
      * Constructs a <code>MalformedURLException</code> with no detail message.
      */

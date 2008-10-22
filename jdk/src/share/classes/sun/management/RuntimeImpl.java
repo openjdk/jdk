@@ -149,7 +149,7 @@ class RuntimeImpl implements RuntimeMXBean {
     }
 
     public ObjectName getObjectName() {
-        return Util.newObjectName(ManagementFactory.RUNTIME_MXBEAN_NAME);
+        return ObjectName.valueOf(ManagementFactory.RUNTIME_MXBEAN_NAME);
     }
 
 }

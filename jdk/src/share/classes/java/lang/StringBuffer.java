@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,7 +212,7 @@ package java.lang;
      * @throws NullPointerException {@inheritDoc}
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
-    public synchronized void getChars(int srcBegin, int srcEnd, char dst[],
+    public synchronized void getChars(int srcBegin, int srcEnd, char[] dst,
                                       int dstBegin)
     {
         super.getChars(srcBegin, srcEnd, dst, dstBegin);
@@ -228,10 +228,6 @@ package java.lang;
         value[index] = ch;
     }
 
-    /**
-     * @see     java.lang.String#valueOf(java.lang.Object)
-     * @see     #append(java.lang.String)
-     */
     public synchronized StringBuffer append(Object obj) {
         super.append(String.valueOf(obj));
         return this;
@@ -314,20 +310,19 @@ package java.lang;
         return this;
     }
 
-    public synchronized StringBuffer append(char str[]) {
+    public synchronized StringBuffer append(char[] str) {
         super.append(str);
         return this;
     }
 
-    public synchronized StringBuffer append(char str[], int offset, int len) {
+    /**
+     * @throws IndexOutOfBoundsException {@inheritDoc}
+     */
+    public synchronized StringBuffer append(char[] str, int offset, int len) {
         super.append(str, offset, len);
         return this;
     }
 
-    /**
-     * @see     java.lang.String#valueOf(boolean)
-     * @see     #append(java.lang.String)
-     */
     public synchronized StringBuffer append(boolean b) {
         super.append(b);
         return this;
@@ -338,10 +333,6 @@ package java.lang;
         return this;
     }
 
-    /**
-     * @see     java.lang.String#valueOf(int)
-     * @see     #append(java.lang.String)
-     */
     public synchronized StringBuffer append(int i) {
         super.append(i);
         return this;
@@ -355,28 +346,16 @@ package java.lang;
         return this;
     }
 
-    /**
-     * @see     java.lang.String#valueOf(long)
-     * @see     #append(java.lang.String)
-     */
     public synchronized StringBuffer append(long lng) {
         super.append(lng);
         return this;
     }
 
-    /**
-     * @see     java.lang.String#valueOf(float)
-     * @see     #append(java.lang.String)
-     */
     public synchronized StringBuffer append(float f) {
         super.append(f);
         return this;
     }
 
-    /**
-     * @see     java.lang.String#valueOf(double)
-     * @see     #append(java.lang.String)
-     */
     public synchronized StringBuffer append(double d) {
         super.append(d);
         return this;
@@ -437,7 +416,7 @@ package java.lang;
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
      * @since      1.2
      */
-    public synchronized StringBuffer insert(int index, char str[], int offset,
+    public synchronized StringBuffer insert(int index, char[] str, int offset,
                                             int len)
     {
         super.insert(index, str, offset, len);
@@ -446,9 +425,6 @@ package java.lang;
 
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
-     * @see        java.lang.String#valueOf(java.lang.Object)
-     * @see        #insert(int, java.lang.String)
-     * @see        #length()
      */
     public synchronized StringBuffer insert(int offset, Object obj) {
         super.insert(offset, String.valueOf(obj));
@@ -457,7 +433,6 @@ package java.lang;
 
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
-     * @see        #length()
      */
     public synchronized StringBuffer insert(int offset, String str) {
         super.insert(offset, str);
@@ -467,7 +442,7 @@ package java.lang;
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
      */
-    public synchronized StringBuffer insert(int offset, char str[]) {
+    public synchronized StringBuffer insert(int offset, char[] str) {
         super.insert(offset, str);
         return this;
     }
@@ -498,9 +473,6 @@ package java.lang;
 
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
-     * @see        java.lang.String#valueOf(boolean)
-     * @see        #insert(int, java.lang.String)
-     * @see        #length()
      */
     public StringBuffer insert(int offset, boolean b) {
         return insert(offset, String.valueOf(b));
@@ -508,7 +480,6 @@ package java.lang;
 
     /**
      * @throws IndexOutOfBoundsException {@inheritDoc}
-     * @see        #length()
      */
     public synchronized StringBuffer insert(int offset, char c) {
         super.insert(offset, c);
@@ -517,9 +488,6 @@ package java.lang;
 
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
-     * @see        java.lang.String#valueOf(int)
-     * @see        #insert(int, java.lang.String)
-     * @see        #length()
      */
     public StringBuffer insert(int offset, int i) {
         return insert(offset, String.valueOf(i));
@@ -527,9 +495,6 @@ package java.lang;
 
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
-     * @see        java.lang.String#valueOf(long)
-     * @see        #insert(int, java.lang.String)
-     * @see        #length()
      */
     public StringBuffer insert(int offset, long l) {
         return insert(offset, String.valueOf(l));
@@ -537,9 +502,6 @@ package java.lang;
 
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
-     * @see        java.lang.String#valueOf(float)
-     * @see        #insert(int, java.lang.String)
-     * @see        #length()
      */
     public StringBuffer insert(int offset, float f) {
         return insert(offset, String.valueOf(f));
@@ -547,9 +509,6 @@ package java.lang;
 
     /**
      * @throws StringIndexOutOfBoundsException {@inheritDoc}
-     * @see        java.lang.String#valueOf(double)
-     * @see        #insert(int, java.lang.String)
-     * @see        #length()
      */
     public StringBuffer insert(int offset, double d) {
         return insert(offset, String.valueOf(d));

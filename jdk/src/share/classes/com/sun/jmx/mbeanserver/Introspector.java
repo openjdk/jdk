@@ -228,7 +228,15 @@ public class Introspector {
             // to generate the appropriate exception.
         }
         if (c != null) {
-            MXBeanMappingFactory factory = MXBeanMappingFactory.forInterface(c);
+            MXBeanMappingFactory factory;
+            try {
+                factory = MXBeanMappingFactory.forInterface(c);
+            } catch (IllegalArgumentException e) {
+                NotCompliantMBeanException ncmbe =
+                        new NotCompliantMBeanException(e.getMessage());
+                ncmbe.initCause(e);
+                throw ncmbe;
+            }
             return new MXBeanSupport(mbean, c, factory);
         }
         checkCompliance(mbeanClass);

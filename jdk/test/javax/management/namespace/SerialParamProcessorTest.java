@@ -26,6 +26,7 @@
  * @test SerialParamProcessorTest.java 1.8
  * @summary General SerialParamProcessorTest test.
  * @author Daniel Fuchs
+ * @bug 5072476
  * @run clean SerialParamProcessorTest Wombat WombatMBean
  * @compile -XDignore.symbol.file=true  SerialParamProcessorTest.java
  * @run build SerialParamProcessorTest Wombat WombatMBean

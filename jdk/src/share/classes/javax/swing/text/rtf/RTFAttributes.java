@@ -36,7 +36,7 @@ class RTFAttributes
     static RTFAttribute attributes[];
 
     static {
-        Vector a = new Vector();
+        Vector<RTFAttribute> a = new Vector<RTFAttribute>();
         int CHR = RTFAttribute.D_CHARACTER;
         int PGF = RTFAttribute.D_PARAGRAPH;
         int SEC = RTFAttribute.D_SECTION;
@@ -131,14 +131,13 @@ class RTFAttributes
         attributes = attrs;
     }
 
-    static Dictionary attributesByKeyword()
+    static Dictionary<String, RTFAttribute> attributesByKeyword()
     {
-        Dictionary d = new Hashtable(attributes.length);
-        int i, m;
+        Dictionary<String, RTFAttribute> d = new Hashtable<String, RTFAttribute>(attributes.length);
 
-        m = attributes.length;
-        for(i = 0; i < m; i++)
-            d.put(attributes[i].rtfName(), attributes[i]);
+        for (RTFAttribute attribute : attributes) {
+            d.put(attribute.rtfName(), attribute);
+        }
 
         return d;
     }
