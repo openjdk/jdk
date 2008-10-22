@@ -37,7 +37,7 @@ static int orderRegions(HeapRegion** hr1p, HeapRegion** hr2p) {
   return 0;
 }
 
-HeapRegionSeq::HeapRegionSeq() :
+HeapRegionSeq::HeapRegionSeq(const size_t max_size) :
   _alloc_search_start(0),
   // The line below is the worst bit of C++ hackery I've ever written
   // (Detlefs, 11/23).  You should think of it as equivalent to
@@ -50,7 +50,7 @@ HeapRegionSeq::HeapRegionSeq() :
   _regions((ResourceObj::operator new (sizeof(GrowableArray<HeapRegion*>),
                                        (void*)&_regions,
                                        ResourceObj::C_HEAP),
-            100),
+            (int)max_size),
            true),
   _next_rr_candidate(0),
   _seq_bottom(NULL)
@@ -167,6 +167,7 @@ int HeapRegionSeq::find(HeapRegion* hr) {
 // Public methods.
 
 void HeapRegionSeq::insert(HeapRegion* hr) {
+  assert(!_regions.is_full(), "Too many elements in HeapRegionSeq");
   if (_regions.length() == 0
       || _regions.top()->end() <= hr->bottom()) {
     hr->set_hrs_index(_regions.length());

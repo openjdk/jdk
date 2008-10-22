@@ -28,7 +28,7 @@
 #
 # This file contains a table with the following columns:
 # 1.  ISO 3166-1 alpha-2 country code, current as of
-#     ISO 3166-1 Newsletter No. V-12 (2006-09-26).  See:
+#     ISO 3166-1 Newsletter VI-1 (2007-09-21).  See:
 #     <a href="http://www.iso.org/iso/en/prods-services/iso3166ma/index.html">
 #     ISO 3166 Maintenance agency (ISO 3166/MA)
 #     </a>.
@@ -69,6 +69,7 @@ BG	Bulgaria
 BH	Bahrain
 BI	Burundi
 BJ	Benin
+BL	St Barthelemy
 BM	Bermuda
 BN	Brunei
 BO	Bolivia
@@ -181,6 +182,7 @@ MA	Morocco
 MC	Monaco
 MD	Moldova
 ME	Montenegro
+MF	St Martin (French part)
 MG	Madagascar
 MH	Marshall Islands
 MK	Macedonia

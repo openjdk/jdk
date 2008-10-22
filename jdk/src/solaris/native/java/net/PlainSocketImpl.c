@@ -491,27 +491,6 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
         return;
     }
 
-    /*
-     * The socket may have been closed (dup'ed) while we were
-     * poll/select. In that case SO_ERROR will return 0 making
-     * it appear that the connection has been established.
-     * To avoid any race conditions we therefore grab the
-     * fd lock, check if the socket has been closed, and
-     * set the various fields whilst holding the lock
-     */
-    fdLock = (*env)->GetObjectField(env, this, psi_fdLockID);
-    (*env)->MonitorEnter(env, fdLock);
-
-    if ((*env)->GetBooleanField(env, this, psi_closePendingID)) {
-
-        /* release fdLock */
-        (*env)->MonitorExit(env, fdLock);
-
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-                            "Socket closed");
-        return;
-    }
-
     (*env)->SetIntField(env, fdObj, IO_fd_fdID, fd);
 
     /* set the remote peer address and port */
@@ -536,11 +515,6 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
             (*env)->SetIntField(env, this, psi_localportID, localport);
         }
     }
-
-    /*
-     * Finally release fdLock
-     */
-    (*env)->MonitorExit(env, fdLock);
 }
 
 /*

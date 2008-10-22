@@ -36,7 +36,6 @@ import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.openmbean.MXBeanMappingFactory;
-import javax.management.openmbean.MXBeanMappingFactoryClass;
 
 /**
  * Base class for MXBeans.

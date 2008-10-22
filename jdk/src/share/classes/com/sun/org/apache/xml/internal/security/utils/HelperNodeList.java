@@ -2,7 +2,6 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-
 /*
  * Copyright  1999-2004 The Apache Software Foundation.
  *
@@ -21,30 +20,21 @@
  */
 package com.sun.org.apache.xml.internal.security.utils;
 
-
-
 import java.util.ArrayList;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-
 /**
- *
  *
  * @author Christian Geuer-Pollmann
  *
  */
 public class HelperNodeList implements NodeList {
 
-   /** {@link java.util.logging} logging facility */
-    static java.util.logging.Logger log =
-    java.util.logging.Logger.getLogger(HelperNodeList.class.getName());
-
    /** Field nodes */
    ArrayList nodes = new ArrayList(20);
-
    boolean _allNodesMustHaveSameParent = false;
 
    /**
@@ -70,7 +60,7 @@ public class HelperNodeList implements NodeList {
     */
    public Node item(int index) {
 
-      // if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "item(" + index + ") of " + this.getLength() + " nodes");
+      // log.log(java.util.logging.Level.FINE, "item(" + index + ") of " + this.getLength() + " nodes");
 
       return (Node) nodes.get(index);
    }

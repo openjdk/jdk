@@ -64,7 +64,7 @@ public class Lower extends TreeTranslator {
         return instance;
     }
 
-    private Name.Table names;
+    private Names names;
     private Log log;
     private Symtab syms;
     private Resolve rs;
@@ -85,7 +85,7 @@ public class Lower extends TreeTranslator {
 
     protected Lower(Context context) {
         context.put(lowerKey, this);
-        names = Name.Table.instance(context);
+        names = Names.instance(context);
         log = Log.instance(context);
         syms = Symtab.instance(context);
         rs = Resolve.instance(context);
@@ -1830,7 +1830,7 @@ public class Lower extends TreeTranslator {
         }
         VarSymbol var =
             new VarSymbol(FINAL|SYNTHETIC,
-                          Name.fromString(names,
+                          names.fromString(
                                           target.syntheticNameChar()
                                           + "" + rval.hashCode()),
                                       type,
@@ -3338,7 +3338,7 @@ public class Lower extends TreeTranslator {
         ListBuffer<JCStatement> blockStatements = new ListBuffer<JCStatement>();
 
         JCModifiers mod1 = make.Modifiers(0L);
-        Name oName = Name.fromString(names, "o");
+        Name oName = names.fromString("o");
         JCVariableDecl par1 = make.Param(oName, cdef.type, compareToSym);
 
         JCIdent paramId1 = make.Ident(names.java_lang_Object);
@@ -3352,7 +3352,7 @@ public class Lower extends TreeTranslator {
         JCTypeCast cast = make.TypeCast(castTargetIdent, par1UsageId);
         cast.setType(castTargetIdent.type);
 
-        Name otherName = Name.fromString(names, "other");
+        Name otherName = names.fromString("other");
 
         VarSymbol otherVarSym = new VarSymbol(mod1.flags,
                                               otherName,

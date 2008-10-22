@@ -67,8 +67,8 @@ import java.util.*;
  * @author Scott Violet
  */
 public class Region {
-    private static final Map uiToRegionMap = new HashMap();
-    private static final Map lowerCaseNameMap = new HashMap();
+    private static final Map<String, Region> uiToRegionMap = new HashMap<String, Region>();
+    private static final Map<Region, String> lowerCaseNameMap = new HashMap<Region, String>();
 
     /**
      * ArrowButton's are special types of buttons that also render a
@@ -451,15 +451,11 @@ public class Region {
 
 
     static Region getRegion(JComponent c) {
-        return (Region)uiToRegionMap.get(c.getUIClassID());
+        return uiToRegionMap.get(c.getUIClassID());
     }
 
     static void registerUIs(UIDefaults table) {
-        Iterator uis = uiToRegionMap.keySet().iterator();
-
-        while (uis.hasNext()) {
-            Object key = uis.next();
-
+        for (String key : uiToRegionMap.keySet()) {
             table.put(key, "javax.swing.plaf.synth.SynthLookAndFeel");
         }
     }
@@ -521,7 +517,7 @@ public class Region {
      */
     String getLowerCaseName() {
         synchronized(lowerCaseNameMap) {
-            String lowerCaseName = (String)lowerCaseNameMap.get(this);
+            String lowerCaseName = lowerCaseNameMap.get(this);
             if (lowerCaseName == null) {
                 lowerCaseName = getName().toLowerCase();
                 lowerCaseNameMap.put(this, lowerCaseName);

@@ -2,7 +2,6 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-
 /*
  * Copyright  1999-2004 The Apache Software Foundation.
  *
@@ -21,8 +20,6 @@
  */
 package com.sun.org.apache.xml.internal.security.keys.storage;
 
-
-
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -36,7 +33,7 @@ import com.sun.org.apache.xml.internal.security.keys.storage.implementations.Sin
 /**
  * This class collects customized resolvers for Certificates.
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class StorageResolver {
 
@@ -45,7 +42,7 @@ public class StorageResolver {
         java.util.logging.Logger.getLogger(StorageResolver.class.getName());
 
    /** Field _storageResolvers */
-   List _storageResolvers = new ArrayList();
+   List _storageResolvers = null;
 
    /** Field _iterator */
    Iterator _iterator = null;
@@ -71,7 +68,8 @@ public class StorageResolver {
     * @param resolver
     */
    public void add(StorageResolverSpi resolver) {
-
+           if (_storageResolvers==null)
+                   _storageResolvers=new ArrayList();
       this._storageResolvers.add(resolver);
 
       this._iterator = null;
@@ -126,6 +124,8 @@ public class StorageResolver {
    public Iterator getIterator() {
 
       if (this._iterator == null) {
+         if (_storageResolvers==null)
+                   _storageResolvers=new ArrayList();
          this._iterator = new StorageResolverIterator(this._storageResolvers.iterator());
       }
 
@@ -140,6 +140,8 @@ public class StorageResolver {
    public boolean hasNext() {
 
       if (this._iterator == null) {
+          if (_storageResolvers==null)
+                   _storageResolvers=new ArrayList();
          this._iterator = new StorageResolverIterator(this._storageResolvers.iterator());
       }
 
@@ -158,15 +160,13 @@ public class StorageResolver {
    /**
     * Class StorageResolverIterator
     *
-    * @author $Author: raul $
+    * @author $Author: mullan $
+    * @version $Revision: 1.5 $
     */
-   class StorageResolverIterator implements Iterator {
+   static class StorageResolverIterator implements Iterator {
 
       /** Field _resolvers */
-           Iterator _resolvers = null;
-
-      /** Field _currentResolver */
-      int _currentResolver = 0;
+      Iterator _resolvers = null;
 
       /**
        * Constructor FilesystemIterator
@@ -179,17 +179,16 @@ public class StorageResolver {
 
       /** @inheritDoc */
       public boolean hasNext() {
-                  return _resolvers.hasNext();
+          return _resolvers.hasNext();
       }
 
       /** @inheritDoc */
       public Object next() {
-                  return _resolvers.next();
+          return _resolvers.next();
       }
 
       /**
        * Method remove
-       *
        */
       public void remove() {
          throw new UnsupportedOperationException(
