@@ -802,10 +802,10 @@ public class Check {
 
         public void visitTypeApply(JCTypeApply tree) {
             if (tree.type.tag == CLASS) {
-                List<Type> formals = tree.type.tsym.type.getTypeArguments();
-                List<Type> actuals = tree.type.getTypeArguments();
+                List<Type> formals = tree.type.tsym.type.allparams();
+                List<Type> actuals = tree.type.allparams();
                 List<JCExpression> args = tree.arguments;
-                List<Type> forms = formals;
+                List<Type> forms = tree.type.tsym.type.getTypeArguments();
                 ListBuffer<TypeVar> tvars_buf = new ListBuffer<TypeVar>();
 
                 // For matching pairs of actual argument types `a' and
@@ -828,7 +828,7 @@ public class Check {
                 args = tree.arguments;
                 List<Type> tvars_cap = types.substBounds(formals,
                                           formals,
-                                          types.capture(tree.type).getTypeArguments());
+                                          types.capture(tree.type).allparams());
                 while (args.nonEmpty() && tvars_cap.nonEmpty()) {
                     // Let the actual arguments know their bound
                     args.head.type.withTypeVar((TypeVar)tvars_cap.head);
