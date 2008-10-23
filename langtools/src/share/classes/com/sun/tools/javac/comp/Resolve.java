@@ -650,8 +650,9 @@ public class Resolve {
                 // both abstract or both concrete
                 if (!m1Abstract && !m2Abstract)
                     return new AmbiguityError(m1, m2);
-                // check for same erasure
-                if (!types.isSameType(m1.erasure(types), m2.erasure(types)))
+                // check that both signatures have the same erasure
+                if (!types.isSameTypes(m1.erasure(types).getParameterTypes(),
+                                       m2.erasure(types).getParameterTypes()))
                     return new AmbiguityError(m1, m2);
                 // both abstract, neither overridden; merge throws clause and result type
                 Symbol result;
