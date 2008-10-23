@@ -2007,6 +2007,10 @@ public class Attr extends JCTree.Visitor {
                     log.error(pos, "type.var.cant.be.deref");
                     return syms.errSymbol;
                 } else {
+                    Symbol sym2 = (sym.flags() & Flags.PRIVATE) != 0 ?
+                        rs.new AccessError(env, site, sym) :
+                                sym;
+                    rs.access(sym2, pos, site, name, true);
                     return sym;
                 }
             case ERROR:
