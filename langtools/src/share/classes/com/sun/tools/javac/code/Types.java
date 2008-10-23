@@ -3367,33 +3367,67 @@ public class Types {
      * quantifiers) only
      */
     private Type rewriteQuantifiers(Type t, boolean high, boolean rewriteTypeVars) {
-        ListBuffer<Type> from = new ListBuffer<Type>();
-        ListBuffer<Type> to = new ListBuffer<Type>();
-        adaptSelf(t, from, to);
-        ListBuffer<Type> rewritten = new ListBuffer<Type>();
-        List<Type> formals = from.toList();
-        boolean changed = false;
-        for (Type arg : to.toList()) {
-            Type bound;
-            if (rewriteTypeVars && arg.tag == TYPEVAR) {
-                TypeVar tv = (TypeVar)arg;
-                bound = high ? tv.bound : syms.botType;
-            } else {
-                bound = high ? upperBound(arg) : lowerBound(arg);
-            }
-            Type newarg = bound;
-            if (arg != bound) {
-                changed = true;
-                newarg = high ? makeExtendsWildcard(bound, (TypeVar)formals.head)
-                              : makeSuperWildcard(bound, (TypeVar)formals.head);
-            }
-            rewritten.append(newarg);
-            formals = formals.tail;
+        return new Rewriter(high, rewriteTypeVars).rewrite(t);
+    }
+
+    class Rewriter extends UnaryVisitor<Type> {
+
+        boolean high;
+        boolean rewriteTypeVars;
+
+        Rewriter(boolean high, boolean rewriteTypeVars) {
+            this.high = high;
+            this.rewriteTypeVars = rewriteTypeVars;
         }
-        if (changed)
-            return subst(t.tsym.type, from.toList(), rewritten.toList());
-        else
-            return t;
+
+        Type rewrite(Type t) {
+            ListBuffer<Type> from = new ListBuffer<Type>();
+            ListBuffer<Type> to = new ListBuffer<Type>();
+            adaptSelf(t, from, to);
+            ListBuffer<Type> rewritten = new ListBuffer<Type>();
+            List<Type> formals = from.toList();
+            boolean changed = false;
+            for (Type arg : to.toList()) {
+                Type bound = visit(arg);
+                if (arg != bound) {
+                    changed = true;
+                    bound = high ? makeExtendsWildcard(bound, (TypeVar)formals.head)
+                              : makeSuperWildcard(bound, (TypeVar)formals.head);
+                }
+                rewritten.append(bound);
+                formals = formals.tail;
+            }
+            if (changed)
+                return subst(t.tsym.type, from.toList(), rewritten.toList());
+            else
+                return t;
+        }
+
+        public Type visitType(Type t, Void s) {
+            return high ? upperBound(t) : lowerBound(t);
+        }
+
+        @Override
+        public Type visitCapturedType(CapturedType t, Void s) {
+            return visitWildcardType(t.wildcard, null);
+        }
+
+        @Override
+        public Type visitTypeVar(TypeVar t, Void s) {
+            if (rewriteTypeVars)
+                return high ? t.bound : syms.botType;
+            else
+                return t;
+        }
+
+        @Override
+        public Type visitWildcardType(WildcardType t, Void s) {
+            Type bound = high ? t.getExtendsBound() :
+                                t.getSuperBound();
+            if (bound == null)
+                bound = high ? syms.objectType : syms.botType;
+            return bound;
+        }
     }
 
     /**
