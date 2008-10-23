@@ -554,7 +554,6 @@ public class Resolve {
                       boolean useVarargs,
                       boolean operator) {
         if (sym.kind == ERR) return bestSoFar;
-        if (!sym.isInheritedIn(site.tsym, types)) return bestSoFar;
         assert sym.kind < AMBIGUOUS;
         try {
             if (rawInstantiate(env, site, sym, argtypes, typeargtypes,
