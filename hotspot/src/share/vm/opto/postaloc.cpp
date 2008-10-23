@@ -34,7 +34,7 @@ static bool is_single_register(uint x) {
 #endif
 }
 
-//------------------------------may_be_copy_of_callee-----------------------------
+//---------------------------may_be_copy_of_callee-----------------------------
 // Check to see if we can possibly be a copy of a callee-save value.
 bool PhaseChaitin::may_be_copy_of_callee( Node *def ) const {
   // Short circuit if there are no callee save registers
@@ -225,6 +225,20 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List &v
 
   // Scan all registers to see if this value is around already
   for( uint reg = 0; reg < (uint)_max_reg; reg++ ) {
+    if (reg == (uint)nk_reg) {
+      // Found ourselves so check if there is only one user of this
+      // copy and keep on searching for a better copy if so.
+      bool ignore_self = true;
+      x = n->in(k);
+      DUIterator_Fast imax, i = x->fast_outs(imax);
+      Node* first = x->fast_out(i); i++;
+      while (i < imax && ignore_self) {
+        Node* use = x->fast_out(i); i++;
+        if (use != first) ignore_self = false;
+      }
+      if (ignore_self) continue;
+    }
+
     Node *vv = value[reg];
     if( !single ) {             // Doubles check for aligned-adjacent pair
       if( (reg&1)==0 ) continue;  // Wrong half of a pair
