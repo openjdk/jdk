@@ -2378,16 +2378,14 @@ public class Attr extends JCTree.Visitor {
             }
 
             if (warned && sym.type.tag == FORALL) {
-                String typeargs = "";
-                if (typeargtypes != null && typeargtypes.nonEmpty()) {
-                    typeargs = "<" + Type.toString(typeargtypes) + ">";
-                }
                 chk.warnUnchecked(env.tree.pos(),
                                   "unchecked.meth.invocation.applied",
-                                  sym,
-                                  sym.location(),
-                                  typeargs,
-                                  Type.toString(argtypes));
+                                  kindName(sym),
+                                  sym.name,
+                                  rs.methodArguments(sym.type.getParameterTypes()),
+                                  rs.methodArguments(argtypes),
+                                  kindName(sym.location()),
+                                  sym.location());
                 owntype = new MethodType(owntype.getParameterTypes(),
                                          types.erasure(owntype.getReturnType()),
                                          owntype.getThrownTypes(),
