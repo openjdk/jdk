@@ -23,14 +23,15 @@
 
 /*
  * @test
- * @bug     6651719
- * @summary Compiler crashes possibly during forward reference of TypeParameter
- * @compile T6651719b.java
+ * @bug     6762569
+ * @summary Javac crashes with AssertionError in Types.containedBy
+ * @compile T6762569a.java
  */
 import java.util.*;
 
-public class T6651719b {
+class T6762569a {
     <T> void m(T t, List<? super List<T>> list) {}
+
     void test(List<? super List<?>> list) {
         m("", list);
     }
