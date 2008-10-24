@@ -709,16 +709,13 @@ public class Types {
         case UNDETVAR:
             if (s.tag == WILDCARD) {
                 UndetVar undetvar = (UndetVar)t;
-
-                // Because of wildcard capture, s must be on the left
-                // hand side of an assignment.  Furthermore, t is an
-                // underconstrained type variable, for example, one
-                // that is only used in the return type of a method.
-                // If the type variable is truly underconstrained, it
-                // cannot have any low bounds:
-                assert undetvar.lobounds.isEmpty() : undetvar;
-
                 undetvar.inst = glb(upperBound(s), undetvar.inst);
+                // We should check instantiated type against any of the
+                // undetvar's lower bounds.
+                for (Type t2 : undetvar.lobounds) {
+                    if (!isSubtype(t2, undetvar.inst))
+                        return false;
+                }
                 return true;
             } else {
                 return isSameType(t, s);
