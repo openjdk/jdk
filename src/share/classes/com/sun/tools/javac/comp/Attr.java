@@ -2520,7 +2520,10 @@ public class Attr extends JCTree.Visitor {
             // accept class or interface or typevar as first bound.
             Type b = checkBase(bs.head, tree.bounds.head, env, false, false, false);
             boundSet.add(types.erasure(b));
-            if (b.tag == TYPEVAR) {
+            if (b.isErroneous()) {
+                a.bound = b;
+            }
+            else if (b.tag == TYPEVAR) {
                 // if first bound was a typevar, do not accept further bounds.
                 if (tree.bounds.tail.nonEmpty()) {
                     log.error(tree.bounds.tail.head.pos(),
@@ -2534,7 +2537,9 @@ public class Attr extends JCTree.Visitor {
                 for (JCExpression bound : tree.bounds.tail) {
                     bs = bs.tail;
                     Type i = checkBase(bs.head, bound, env, false, true, false);
-                    if (i.tag == CLASS)
+                    if (i.isErroneous())
+                        a.bound = i;
+                    else if (i.tag == CLASS)
                         chk.checkNotRepeated(bound.pos(), types.erasure(i), boundSet);
                 }
             }
