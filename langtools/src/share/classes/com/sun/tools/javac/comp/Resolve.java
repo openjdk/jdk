@@ -30,6 +30,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.tree.*;
+import com.sun.tools.javac.api.Formattable.LocalizedString;
 import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
 
 import com.sun.tools.javac.code.Type.*;
@@ -1478,6 +1479,12 @@ public class Resolve {
         error.report(log, tree.pos(), type.getEnclosingType(), null, null, null);
     }
 
+    private final LocalizedString noArgs = new LocalizedString("compiler.misc.no.args");
+
+    public Object methodArguments(List<Type> argtypes) {
+        return argtypes.isEmpty() ? noArgs : argtypes;
+    }
+
     /** Root class for resolve errors.
      *  Instances of this class indicate "Symbol not found".
      *  Instances of subclass indicate other errors.
@@ -1584,8 +1591,8 @@ public class Resolve {
                               "cant.apply.symbol" + (explanation != null ? ".1" : ""),
                               kindname,
                               ws.name == names.init ? ws.owner.name : ws.name,
-                              ws.type.getParameterTypes(),
-                              argtypes,
+                              methodArguments(ws.type.getParameterTypes()),
+                              methodArguments(argtypes),
                               kindName(ws.owner),
                               ws.owner.type,
                               explanation);
