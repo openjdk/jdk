@@ -23,29 +23,22 @@
 
 /*
  * @test
- * @bug 6531090 6711619
+ * @bug 6711619
  *
- * @summary Cannot access methods/fields of a captured type belonging to an intersection type
+ * @summary javac doesn't allow access to protected members in intersection types
  * @author Maurizio Cimadamore
  *
+ * @compile/fail/ref=T6711619a.out -XDrawDiagnostics T6711619a.java
  */
-public class T6531090b {
+class T6711619a {
 
     static class A {
-        public void a1() {}
-        protected void a2() {}
-        void a3() {}
-        public A a1;
-        protected A a2;
-        A a3;
+        private void a() {}
+        private A a;
     }
     static class B extends A {
-        public void b1() {}
-        protected void b2() {}
-        void b3() {}
-        public B b1;
-        protected B b2;
-        B b3;
+        private B b() {}
+        private B b;
     }
     static interface I{
         void i();
@@ -66,42 +59,16 @@ public class T6531090b {
         }
     }
 
-    public static void main(String... args) {
-        C<E,E> c = new C<E,E>(new E(), new E());
-        testMemberMethods(c);
-        testMemberFields(c);
-    }
-
     static void testMemberMethods(C<? extends A, ? extends I> arg) {
-        arg.t.a1();
-        arg.t.a2();
-        arg.t.a3();
-        arg.t.b1();
-        arg.t.b2();
-        arg.t.b3();
-        arg.t.i1();
-        arg.w.a1();
-        arg.w.a2();
-        arg.w.a3();
-        arg.w.b1();
-        arg.w.b2();
-        arg.w.b3();
-        arg.w.i1();
+        arg.t.a();
+        arg.t.b();
     }
 
     static void testMemberFields(C<? extends A, ? extends I> arg) {
         A ta; B tb;
-        ta = arg.t.a1;
-        ta = arg.t.a2;
-        ta = arg.t.a3;
-        tb = arg.t.b1;
-        tb = arg.t.b2;
-        tb = arg.t.b3;
-        ta = arg.w.a1;
-        ta = arg.w.a2;
-        ta = arg.w.a3;
-        tb = arg.w.b1;
-        tb = arg.w.b2;
-        tb = arg.w.b3;
+        ta = arg.t.a;
+        tb = arg.t.b;
+        ta = arg.w.a;
+        tb = arg.w.b;
     }
 }

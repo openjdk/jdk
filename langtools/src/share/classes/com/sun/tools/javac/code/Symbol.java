@@ -361,6 +361,8 @@ public abstract class Symbol implements Element {
             for (Symbol sup = clazz;
                  sup != null && sup != this.owner;
                  sup = types.supertype(sup.type).tsym) {
+                while (sup.type.tag == TYPEVAR)
+                    sup = sup.type.getUpperBound().tsym;
                 if (sup.type.isErroneous())
                     return true; // error recovery
                 if ((sup.flags() & COMPOUND) != 0)
@@ -1183,7 +1185,9 @@ public abstract class Symbol implements Element {
          *  as possible implementations.
          */
         public MethodSymbol implementation(TypeSymbol origin, Types types, boolean checkResult) {
-            for (Type t = origin.type; t.tag == CLASS; t = types.supertype(t)) {
+            for (Type t = origin.type; t.tag == CLASS || t.tag == TYPEVAR; t = types.supertype(t)) {
+                while (t.tag == TYPEVAR)
+                    t = t.getUpperBound();
                 TypeSymbol c = t.tsym;
                 for (Scope.Entry e = c.members().lookup(name);
                      e.scope != null;
