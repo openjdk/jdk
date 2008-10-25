@@ -424,43 +424,43 @@ public class Check {
      *  @param bs            The bound.
      */
     private void checkExtends(DiagnosticPosition pos, Type a, TypeVar bs) {
-        if (a.tag == TYPEVAR && ((TypeVar)a).isCaptured()) {
-            CapturedType ct = (CapturedType)a;
-            boolean ok;
-            if (ct.bound.isErroneous()) {//capture doesn't exist
-                ok = false;
+         if (a.isUnbound()) {
+             return;
+         } else if (a.tag != WILDCARD) {
+             a = types.upperBound(a);
+             for (List<Type> l = types.getBounds(bs); l.nonEmpty(); l = l.tail) {
+                 if (!types.isSubtype(a, l.head)) {
+                     log.error(pos, "not.within.bounds", a);
+                     return;
+                 }
+             }
+         } else if (a.isExtendsBound()) {
+             if (!types.isCastable(bs.getUpperBound(), types.upperBound(a), Warner.noWarnings))
+                 log.error(pos, "not.within.bounds", a);
+         } else if (a.isSuperBound()) {
+             if (types.notSoftSubtype(types.lowerBound(a), bs.getUpperBound()))
+                 log.error(pos, "not.within.bounds", a);
+         }
+     }
+
+    /** Check that a type is within some bounds.
+     *
+     *  Used in TypeApply to verify that, e.g., X in V<X> is a valid
+     *  type argument.
+     *  @param pos           Position to be used for error reporting.
+     *  @param a             The type that should be bounded by bs.
+     *  @param bs            The bound.
+     */
+    private void checkCapture(JCTypeApply tree) {
+        List<JCExpression> args = tree.getTypeArguments();
+        for (Type arg : types.capture(tree.type).getTypeArguments()) {
+            if (arg.tag == TYPEVAR && arg.getUpperBound().isErroneous()) {
+                log.error(args.head.pos, "not.within.bounds", args.head.type);
+                break;
             }
-            else {
-                switch (ct.wildcard.kind) {
-                    case EXTENDS:
-                        ok = types.isCastable(bs.getUpperBound(),
-                                types.upperBound(a),
-                                Warner.noWarnings);
-                        break;
-                    case SUPER:
-                        ok = !types.notSoftSubtype(types.lowerBound(a),
-                                bs.getUpperBound());
-                        break;
-                    case UNBOUND:
-                        ok = true;
-                        break;
-                    default:
-                        throw new AssertionError("Invalid bound kind");
-                }
-            }
-            if (!ok)
-                log.error(pos, "not.within.bounds", a);
+            args = args.tail;
         }
-        else {
-            a = types.upperBound(a);
-            for (List<Type> l = types.getBounds(bs); l.nonEmpty(); l = l.tail) {
-                if (!types.isSubtype(a, l.head)) {
-                    log.error(pos, "not.within.bounds", a);
-                    return;
-                }
-            }
-        }
-    }
+     }
 
     /** Check that type is different from 'void'.
      *  @param pos           Position to be used for error reporting.
@@ -802,10 +802,10 @@ public class Check {
 
         public void visitTypeApply(JCTypeApply tree) {
             if (tree.type.tag == CLASS) {
-                List<Type> formals = tree.type.tsym.type.getTypeArguments();
-                List<Type> actuals = types.capture(tree.type).getTypeArguments();
+                List<Type> formals = tree.type.tsym.type.allparams();
+                List<Type> actuals = tree.type.allparams();
                 List<JCExpression> args = tree.arguments;
-                List<Type> forms = formals;
+                List<Type> forms = tree.type.tsym.type.getTypeArguments();
                 ListBuffer<TypeVar> tvars_buf = new ListBuffer<TypeVar>();
 
                 // For matching pairs of actual argument types `a' and
@@ -826,24 +826,28 @@ public class Check {
                 }
 
                 args = tree.arguments;
-                List<TypeVar> tvars = tvars_buf.toList();
-                while (args.nonEmpty() && tvars.nonEmpty()) {
+                List<Type> tvars_cap = types.substBounds(formals,
+                                          formals,
+                                          types.capture(tree.type).allparams());
+                while (args.nonEmpty() && tvars_cap.nonEmpty()) {
                     // Let the actual arguments know their bound
-                    args.head.type.withTypeVar(tvars.head);
+                    args.head.type.withTypeVar((TypeVar)tvars_cap.head);
+                    args = args.tail;
+                    tvars_cap = tvars_cap.tail;
+                }
+
+                args = tree.arguments;
+                List<TypeVar> tvars = tvars_buf.toList();
+
+                while (args.nonEmpty() && tvars.nonEmpty()) {
+                    checkExtends(args.head.pos(),
+                                 args.head.type,
+                                 tvars.head);
                     args = args.tail;
                     tvars = tvars.tail;
                 }
 
-                args = tree.arguments;
-                tvars = tvars_buf.toList();
-                while (args.nonEmpty() && tvars.nonEmpty()) {
-                    checkExtends(args.head.pos(),
-                                 actuals.head,
-                                 tvars.head);
-                    args = args.tail;
-                    tvars = tvars.tail;
-                    actuals = actuals.tail;
-                }
+                checkCapture(tree);
 
                 // Check that this type is either fully parameterized, or
                 // not parameterized at all.
