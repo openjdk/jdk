@@ -31,7 +31,6 @@ import java.rmi.MarshalledObject;
 import java.rmi.Remote;
 import java.util.Set;
 
-import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.AttributeNotFoundException;
 import javax.management.InstanceAlreadyExistsException;
@@ -45,11 +44,11 @@ import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServerConnection;
 import javax.management.NotCompliantMBeanException;
 
-import javax.management.NotificationFilter;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
-import javax.management.QueryExp;
 import javax.management.ReflectionException;
+import javax.management.RuntimeMBeanException;
+import javax.management.RuntimeOperationsException;
 import javax.management.remote.NotificationResult;
 import javax.security.auth.Subject;
 
@@ -89,8 +88,9 @@ import javax.security.auth.Subject;
  * even though it would add useful information to the documentation.  The
  * reason is that it was only added in Mustang (Java SE 6), whereas versions
  * 1.4 and 2.0 of the JMX API must be implementable on Tiger per our
- * commitments for JSR 255.
+ * commitments for JSR 255.  This is also why we suppress rawtypes warnings.
  */
+@SuppressWarnings("rawtypes")
 public interface RMIConnection extends Closeable, Remote {
     /**
      * <p>Returns the connection ID.  This string is different for

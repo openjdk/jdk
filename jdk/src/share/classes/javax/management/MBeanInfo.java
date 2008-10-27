@@ -524,8 +524,8 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
      * a WeakHashMap so that we don't prevent a class from being
      * garbage collected just because we know whether it's immutable.
      */
-    private static final Map<Class, Boolean> arrayGettersSafeMap =
-        new WeakHashMap<Class, Boolean>();
+    private static final Map<Class<?>, Boolean> arrayGettersSafeMap =
+        new WeakHashMap<Class<?>, Boolean>();
 
     /**
      * Return true if <code>subclass</code> is known to preserve the
@@ -537,7 +537,7 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
      * This is obviously not an infallible test for immutability,
      * but it works for the public interfaces of the MBean*Info classes.
     */
-    static boolean arrayGettersSafe(Class subclass, Class immutableClass) {
+    static boolean arrayGettersSafe(Class<?> subclass, Class<?> immutableClass) {
         if (subclass == immutableClass)
             return true;
         synchronized (arrayGettersSafeMap) {

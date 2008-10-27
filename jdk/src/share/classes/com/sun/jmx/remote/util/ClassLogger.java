@@ -41,7 +41,7 @@ public class ClassLogger {
            people to use at least J2SE 1.4.  */
         boolean loaded = false;
         try {
-            Class c = java.util.logging.Logger.class;
+            Class<?> c = java.util.logging.Logger.class;
             loaded = true;
         } catch (Error e) {
             // OK.
