@@ -70,7 +70,7 @@ public class JMRuntimeException extends RuntimeException   {
         try {
             java.lang.reflect.Method initCause =
                 Throwable.class.getMethod("initCause",
-                                          new Class[] {Throwable.class});
+                                          new Class<?>[] {Throwable.class});
             initCause.invoke(this, new Object[] {cause});
         } catch (Exception e) {
             // OK: just means we won't have debugging info

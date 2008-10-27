@@ -152,7 +152,7 @@ public class ModelMBeanConstructorInfo
         * describing the MBean constructor.
         */
         public ModelMBeanConstructorInfo(String description,
-                                         Constructor constructorMethod)
+                                         Constructor<?> constructorMethod)
     {
                 super(description, constructorMethod);
                 if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
@@ -194,7 +194,7 @@ public class ModelMBeanConstructorInfo
         */
 
         public ModelMBeanConstructorInfo(String description,
-                                         Constructor constructorMethod,
+                                         Constructor<?> constructorMethod,
                                          Descriptor descriptor)
         {
 

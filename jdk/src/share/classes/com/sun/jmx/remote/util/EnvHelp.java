@@ -117,7 +117,7 @@ public class EnvHelp {
      * <code>jmx.remote.default.class.loader.name</code> is specified
      * and the ClassLoader MBean is not found in <var>mbs</var>.
      */
-    public static ClassLoader resolveServerClassLoader(Map env,
+    public static ClassLoader resolveServerClassLoader(Map<String, ?> env,
                                                        MBeanServer mbs)
         throws InstanceNotFoundException {
 
@@ -194,7 +194,7 @@ public class EnvHelp {
      * <code>jmx.remote.default.class.loader</code> is specified
      * and is not an instance of {@link ClassLoader}.
      */
-    public static ClassLoader resolveClientClassLoader(Map env) {
+    public static ClassLoader resolveClientClassLoader(Map<String, ?> env) {
 
         if (env == null)
             return Thread.currentThread().getContextClassLoader();
@@ -241,7 +241,7 @@ public class EnvHelp {
 
         try {
             java.lang.reflect.Method getCause =
-                t.getClass().getMethod("getCause", (Class[]) null);
+                t.getClass().getMethod("getCause", (Class<?>[]) null);
             ret = (Throwable)getCause.invoke(t, (Object[]) null);
 
         } catch (Exception e) {
@@ -264,7 +264,7 @@ public class EnvHelp {
      * Returns the size of a notification buffer for a connector server.
      * The default value is 1000.
      */
-    public static int getNotifBufferSize(Map env) {
+    public static int getNotifBufferSize(Map<String, ?> env) {
         int defaultQueueSize = 1000; // default value
 
         // keep it for the compability for the fix:
@@ -327,7 +327,7 @@ public class EnvHelp {
      * Returns the maximum notification number which a client will
      * fetch every time.
      */
-    public static int getMaxFetchNotifNumber(Map env) {
+    public static int getMaxFetchNotifNumber(Map<String, ?> env) {
         return (int) getIntegerAttribute(env, MAX_FETCH_NOTIFS, 1000, 1,
                                          Integer.MAX_VALUE);
     }
@@ -344,7 +344,7 @@ public class EnvHelp {
     /**
      * Returns the timeout for a client to fetch notifications.
      */
-    public static long getFetchTimeout(Map env) {
+    public static long getFetchTimeout(Map<String, ?> env) {
         return getIntegerAttribute(env, FETCH_TIMEOUT, 60000L, 0,
                 Long.MAX_VALUE);
     }
@@ -361,7 +361,7 @@ public class EnvHelp {
             "com.sun.jmx.remote.notification.access.controller";
 
     public static NotificationAccessController getNotificationAccessController(
-            Map env) {
+            Map<String, ?> env) {
         return (env == null) ? null :
             (NotificationAccessController) env.get(NOTIF_ACCESS_CONTROLLER);
     }
@@ -378,7 +378,7 @@ public class EnvHelp {
      * an entry for <code>name</code> but it does not meet the
      * constraints above.
      */
-    public static long getIntegerAttribute(Map env, String name,
+    public static long getIntegerAttribute(Map<String, ?> env, String name,
                                            long defaultValue, long minValue,
                                            long maxValue) {
         final Object o;
@@ -421,9 +421,8 @@ public class EnvHelp {
 
     /* Check that all attributes have a key that is a String.
        Could make further checks, e.g. appropriate types for attributes.  */
-    public static void checkAttributes(Map attributes) {
-        for (Iterator it = attributes.keySet().iterator(); it.hasNext(); ) {
-            Object key = it.next();
+    public static void checkAttributes(Map<?, ?> attributes) {
+        for (Object key : attributes.keySet()) {
             if (!(key instanceof String)) {
                 final String msg =
                     "Attributes contain key that is not a string: " + key;
@@ -455,7 +454,7 @@ public class EnvHelp {
         logger.trace("purgeUnserializable", "starts");
         ObjectOutputStream oos = null;
         int i = 0;
-        for (Iterator it = objects.iterator(); it.hasNext(); i++) {
+        for (Iterator<?> it = objects.iterator(); it.hasNext(); i++) {
             Object v = it.next();
 
             if (v == null || v instanceof String) {
@@ -564,18 +563,18 @@ public class EnvHelp {
            guarantees that we will never call next() on the corresponding
            iterator.  */
         String sentinelKey = map.lastKey() + "X";
-        Iterator keyIterator = map.keySet().iterator();
-        Iterator stringIterator = hiddenStrings.iterator();
-        Iterator prefixIterator = hiddenPrefixes.iterator();
+        Iterator<String> keyIterator = map.keySet().iterator();
+        Iterator<String> stringIterator = hiddenStrings.iterator();
+        Iterator<String> prefixIterator = hiddenPrefixes.iterator();
 
         String nextString;
         if (stringIterator.hasNext())
-            nextString = (String) stringIterator.next();
+            nextString = stringIterator.next();
         else
             nextString = sentinelKey;
         String nextPrefix;
         if (prefixIterator.hasNext())
-            nextPrefix = (String) prefixIterator.next();
+            nextPrefix = prefixIterator.next();
         else
             nextPrefix = sentinelKey;
 
@@ -583,7 +582,7 @@ public class EnvHelp {
            or prefix, remove it. */
     keys:
         while (keyIterator.hasNext()) {
-            String key = (String) keyIterator.next();
+            String key = keyIterator.next();
 
             /* Continue through string-match values until we find one
                that is either greater than the current key, or equal
@@ -591,7 +590,7 @@ public class EnvHelp {
             int cmp = +1;
             while ((cmp = nextString.compareTo(key)) < 0) {
                 if (stringIterator.hasNext())
-                    nextString = (String) stringIterator.next();
+                    nextString = stringIterator.next();
                 else
                     nextString = sentinelKey;
             }
@@ -609,7 +608,7 @@ public class EnvHelp {
                     continue keys;
                 }
                 if (prefixIterator.hasNext())
-                    nextPrefix = (String) prefixIterator.next();
+                    nextPrefix = prefixIterator.next();
                 else
                     nextPrefix = sentinelKey;
             }
@@ -640,7 +639,7 @@ public class EnvHelp {
     /**
      * Returns the server side connection timeout.
      */
-    public static long getServerConnectionTimeout(Map env) {
+    public static long getServerConnectionTimeout(Map<String, ?> env) {
         return getIntegerAttribute(env, SERVER_CONNECTION_TIMEOUT, 120000L,
                                    0, Long.MAX_VALUE);
     }
@@ -656,7 +655,7 @@ public class EnvHelp {
     /**
      * Returns the client connection check period.
      */
-    public static long getConnectionCheckPeriod(Map env) {
+    public static long getConnectionCheckPeriod(Map<String, ?> env) {
         return getIntegerAttribute(env, CLIENT_CONNECTION_CHECK_PERIOD, 60000L,
                                    0, Long.MAX_VALUE);
     }
@@ -691,7 +690,7 @@ public class EnvHelp {
      * to {@code String}.
      */
     public static boolean computeBooleanFromString(
-            Map env, String prop, boolean systemProperty) {
+            Map<String, ?> env, String prop, boolean systemProperty) {
 
         if (env == null)
             throw new IllegalArgumentException("env map cannot be null");
@@ -744,7 +743,8 @@ public class EnvHelp {
      * to {@code String}.
      */
     public static boolean computeBooleanFromString(
-            Map env, String prop, boolean systemProperty, boolean defaultValue) {
+            Map<String, ?> env, String prop,
+            boolean systemProperty, boolean defaultValue) {
 
         if (env == null)
             throw new IllegalArgumentException("env map cannot be null");
@@ -774,7 +774,7 @@ public class EnvHelp {
     public static <K, V> Hashtable<K, V> mapToHashtable(Map<K, V> map) {
         HashMap<K, V> m = new HashMap<K, V>(map);
         if (m.containsKey(null)) m.remove(null);
-        for (Iterator i = m.values().iterator(); i.hasNext(); )
+        for (Iterator<?> i = m.values().iterator(); i.hasNext(); )
             if (i.next() == null) i.remove();
         return new Hashtable<K, V>(m);
     }
@@ -783,7 +783,7 @@ public class EnvHelp {
      * Returns true if the parameter JMXConnector.USE_EVENT_SERVICE is set to a
      * String equals "true" by ignoring case in the map or in the System.
      */
-    public static boolean eventServiceEnabled(Map env) {
+    public static boolean eventServiceEnabled(Map<String, ?> env) {
         return computeBooleanFromString(env, JMXConnector.USE_EVENT_SERVICE, true);
     }
 
@@ -793,7 +793,7 @@ public class EnvHelp {
      * If the property DELEGATE_TO_EVENT_SERVICE is not set, returns
      * a default value of "true".
      */
-    public static boolean delegateToEventService(Map env) {
+    public static boolean delegateToEventService(Map<String, ?> env) {
         return computeBooleanFromString(env,
                 JMXConnectorServer.DELEGATE_TO_EVENT_SERVICE, true, true);
     }

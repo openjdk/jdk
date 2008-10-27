@@ -70,7 +70,7 @@ public class MBeanInstantiator {
      * instantiate an MBean of this class in the MBeanServer.
      * e.g. it must have a public constructor, be a concrete class...
      */
-    public void testCreation(Class c) throws NotCompliantMBeanException {
+    public void testCreation(Class<?> c) throws NotCompliantMBeanException {
         Introspector.testCreation(c);
     }
 
@@ -78,10 +78,10 @@ public class MBeanInstantiator {
      * Loads the class with the specified name using this object's
      * Default Loader Repository.
      **/
-    public Class findClassWithDefaultLoaderRepository(String className)
+    public Class<?> findClassWithDefaultLoaderRepository(String className)
         throws ReflectionException {
 
-        Class theClass;
+        Class<?> theClass;
         if (className == null) {
             throw new RuntimeOperationsException(new
                 IllegalArgumentException("The class name cannot be null"),
@@ -105,7 +105,7 @@ public class MBeanInstantiator {
      * Gets the class for the specified class name using the MBean
      * Interceptor's classloader
      */
-    public Class findClass(String className, ClassLoader loader)
+    public Class<?> findClass(String className, ClassLoader loader)
         throws ReflectionException {
 
         return loadClass(className,loader);
@@ -115,7 +115,7 @@ public class MBeanInstantiator {
      * Gets the class for the specified class name using the specified
      * class loader
      */
-    public Class findClass(String className, ObjectName aLoader)
+    public Class<?> findClass(String className, ObjectName aLoader)
         throws ReflectionException, InstanceNotFoundException  {
 
         if (aLoader == null)
@@ -140,14 +140,14 @@ public class MBeanInstantiator {
      * Return an array of Class corresponding to the given signature, using
      * the specified class loader.
      */
-    public Class[] findSignatureClasses(String signature[],
-                                        ClassLoader loader)
-        throws  ReflectionException {
+    public Class<?>[] findSignatureClasses(String signature[],
+                                           ClassLoader loader)
+        throws ReflectionException {
 
         if (signature == null) return null;
         final ClassLoader aLoader = loader;
         final int length= signature.length;
-        final Class tab[]=new Class[length];
+        final Class<?> tab[]=new Class<?>[length];
 
         if (length == 0) return tab;
         try {
@@ -156,7 +156,7 @@ public class MBeanInstantiator {
                 // forth)
                 //
 
-                final Class primCla = primitiveClasses.get(signature[i]);
+                final Class<?> primCla = primitiveClasses.get(signature[i]);
                 if (primCla != null) {
                     tab[i] = primCla;
                     continue;
@@ -203,14 +203,14 @@ public class MBeanInstantiator {
      * Instantiates an object given its class, using its empty constructor.
      * The call returns a reference to the newly created object.
      */
-    public Object instantiate(Class theClass)
+    public Object instantiate(Class<?> theClass)
         throws ReflectionException, MBeanException {
         Object moi;
 
 
         // ------------------------------
         // ------------------------------
-        Constructor cons = findConstructor(theClass, null);
+        Constructor<?> cons = findConstructor(theClass, null);
         if (cons == null) {
             throw new ReflectionException(new
                 NoSuchMethodException("No such constructor"));
@@ -257,14 +257,14 @@ public class MBeanInstantiator {
      * signature of its constructor The call returns a reference to
      * the newly created object.
      */
-    public Object instantiate(Class theClass, Object params[],
+    public Object instantiate(Class<?> theClass, Object params[],
                               String signature[], ClassLoader loader)
         throws ReflectionException, MBeanException {
         // Instantiate the new object
 
         // ------------------------------
         // ------------------------------
-        final Class[] tab;
+        final Class<?>[] tab;
         Object moi;
         try {
             // Build the signature of the method
@@ -283,7 +283,7 @@ public class MBeanInstantiator {
         }
 
         // Query the metadata service to get the right constructor
-        Constructor cons = findConstructor(theClass, tab);
+        Constructor<?> cons = findConstructor(theClass, tab);
 
         if (cons == null) {
             throw new ReflectionException(new
@@ -407,7 +407,7 @@ public class MBeanInstantiator {
             throw new  RuntimeOperationsException(new
              IllegalArgumentException(), "Null className passed in parameter");
         }
-        Class theClass;
+        Class<?> theClass;
         if (loaderName == null) {
             // Load the class using the agent class loader
             theClass = findClass(className, loader);
@@ -547,7 +547,7 @@ public class MBeanInstantiator {
         throws ReflectionException,
         MBeanException {
 
-        Class theClass = findClassWithDefaultLoaderRepository(className);
+        Class<?> theClass = findClassWithDefaultLoaderRepository(className);
         return instantiate(theClass, params, signature, loader);
     }
 
@@ -595,7 +595,7 @@ public class MBeanInstantiator {
 
         // ------------------------------
         // ------------------------------
-        Class theClass;
+        Class<?> theClass;
 
         if (loaderName == null) {
             theClass = findClass(className, loader);
@@ -617,10 +617,10 @@ public class MBeanInstantiator {
      * Load a class with the specified loader, or with this object
      * class loader if the specified loader is null.
      **/
-    static Class loadClass(String className, ClassLoader loader)
+    static Class<?> loadClass(String className, ClassLoader loader)
         throws ReflectionException {
 
-        Class theClass;
+        Class<?> theClass;
         if (className == null) {
             throw new RuntimeOperationsException(new
                 IllegalArgumentException("The class name cannot be null"),
@@ -647,15 +647,15 @@ public class MBeanInstantiator {
      * Load the classes specified in the signature with the given loader,
      * or with this object class loader.
      **/
-    static Class[] loadSignatureClasses(String signature[],
-                                        ClassLoader loader)
+    static Class<?>[] loadSignatureClasses(String signature[],
+                                           ClassLoader loader)
         throws  ReflectionException {
 
         if (signature == null) return null;
         final ClassLoader aLoader =
            (loader==null?MBeanInstantiator.class.getClassLoader():loader);
         final int length= signature.length;
-        final Class tab[]=new Class[length];
+        final Class<?> tab[]=new Class<?>[length];
 
         if (length == 0) return tab;
         try {
@@ -664,7 +664,7 @@ public class MBeanInstantiator {
                 // forth)
                 //
 
-                final Class primCla = primitiveClasses.get(signature[i]);
+                final Class<?> primCla = primitiveClasses.get(signature[i]);
                 if (primCla != null) {
                     tab[i] = primCla;
                     continue;
@@ -710,9 +710,9 @@ public class MBeanInstantiator {
 
     private static final Map<String, Class<?>> primitiveClasses = Util.newMap();
     static {
-        for (Class<?> c : new Class[] {byte.class, short.class, int.class,
-                                       long.class, float.class, double.class,
-                                       char.class, boolean.class})
+        for (Class<?> c : new Class<?>[] {byte.class, short.class, int.class,
+                                          long.class, float.class, double.class,
+                                          char.class, boolean.class})
             primitiveClasses.put(c.getName(), c);
     }
 }

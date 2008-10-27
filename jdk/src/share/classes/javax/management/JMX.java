@@ -703,12 +703,12 @@ public class JMX {
 
         InvocationHandler handler = new MBeanServerInvocationHandler(
                 connection, objectName, opts);
-        final Class[] interfaces;
+        final Class<?>[] interfaces;
         if (notificationEmitter) {
             interfaces =
                 new Class<?>[] {interfaceClass, NotificationEmitter.class};
         } else
-            interfaces = new Class[] {interfaceClass};
+            interfaces = new Class<?>[] {interfaceClass};
         Object proxy = Proxy.newProxyInstance(
                 interfaceClass.getClassLoader(),
                 interfaces,

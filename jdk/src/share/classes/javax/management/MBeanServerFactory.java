@@ -747,7 +747,7 @@ public class MBeanServerFactory {
      * Load the builder class through the context class loader.
      * @param builderClassName The name of the builder class.
      **/
-    private static Class loadBuilderClass(String builderClassName)
+    private static Class<?> loadBuilderClass(String builderClassName)
     throws ClassNotFoundException {
         final ClassLoader loader =
                 Thread.currentThread().getContextClassLoader();
@@ -767,7 +767,7 @@ public class MBeanServerFactory {
      * If any checked exception needs to be thrown, it is embedded in
      * a JMRuntimeException.
      **/
-    private static MBeanServerBuilder newBuilder(Class builderClass) {
+    private static MBeanServerBuilder newBuilder(Class<?> builderClass) {
         try {
             final Object abuilder = builderClass.newInstance();
             return (MBeanServerBuilder)abuilder;
@@ -792,7 +792,7 @@ public class MBeanServerFactory {
             String builderClassName = AccessController.doPrivileged(act);
 
             try {
-                final Class newBuilderClass;
+                final Class<?> newBuilderClass;
                 if (builderClassName == null || builderClassName.length() == 0)
                     newBuilderClass = MBeanServerBuilder.class;
                 else
@@ -800,7 +800,7 @@ public class MBeanServerFactory {
 
                 // Check whether a new builder needs to be created
                 if (builder != null) {
-                    final Class builderClass = builder.getClass();
+                    final Class<?> builderClass = builder.getClass();
                     if (newBuilderClass == builderClass)
                         return; // no need to create a new builder...
                 }

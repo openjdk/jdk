@@ -316,7 +316,7 @@ public class MBeanAttributeInfo extends MBeanFeatureInfo implements Cloneable {
      */
     private static String attributeType(Method getter, Method setter)
             throws IntrospectionException {
-        Class type = null;
+        Class<?> type = null;
 
         if (getter != null) {
             if (getter.getParameterTypes().length != 0) {
@@ -330,7 +330,7 @@ public class MBeanAttributeInfo extends MBeanFeatureInfo implements Cloneable {
         }
 
         if (setter != null) {
-            Class params[] = setter.getParameterTypes();
+            Class<?> params[] = setter.getParameterTypes();
             if (params.length != 1) {
                 throw new IntrospectionException("bad setter arg count");
             }
