@@ -332,6 +332,7 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
   uint *jmp_end    = NEW_RESOURCE_ARRAY(uint,_cfg->_num_blocks);
   uint *blk_starts = NEW_RESOURCE_ARRAY(uint,_cfg->_num_blocks+1);
   DEBUG_ONLY( uint *jmp_target = NEW_RESOURCE_ARRAY(uint,_cfg->_num_blocks); )
+  DEBUG_ONLY( uint *jmp_rule = NEW_RESOURCE_ARRAY(uint,_cfg->_num_blocks); )
   blk_starts[0]    = 0;
 
   // Initialize the sizes to 0
@@ -443,9 +444,9 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
         uintptr_t target = blk_starts[bnum];
         if( mach->is_pc_relative() ) {
           int offset = target-(blk_starts[i] + jmp_end[i]);
-          if (_matcher->is_short_branch_offset(offset)) {
+          if (_matcher->is_short_branch_offset(mach->rule(), offset)) {
             // We've got a winner.  Replace this branch.
-            MachNode *replacement = mach->short_branch_version(this);
+            MachNode* replacement = mach->short_branch_version(this);
             b->_nodes.map(j, replacement);
             mach->subsume_by(replacement);
 
@@ -453,6 +454,7 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
             // next pass.
             jmp_end[i] -= (mach->size(_regalloc) - replacement->size(_regalloc));
             DEBUG_ONLY( jmp_target[i] = bnum; );
+            DEBUG_ONLY( jmp_rule[i] = mach->rule(); );
           }
         } else {
 #ifndef PRODUCT
@@ -524,10 +526,10 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
   for( i=0; i<_cfg->_num_blocks; i++ ) { // For all blocks
     if( jmp_target[i] != 0 ) {
       int offset = blk_starts[jmp_target[i]]-(blk_starts[i] + jmp_end[i]);
-      if (!_matcher->is_short_branch_offset(offset)) {
+      if (!_matcher->is_short_branch_offset(jmp_rule[i], offset)) {
         tty->print_cr("target (%d) - jmp_end(%d) = offset (%d), jmp_block B%d, target_block B%d", blk_starts[jmp_target[i]], blk_starts[i] + jmp_end[i], offset, i, jmp_target[i]);
       }
-      assert(_matcher->is_short_branch_offset(offset), "Displacement too large for short jmp");
+      assert(_matcher->is_short_branch_offset(jmp_rule[i], offset), "Displacement too large for short jmp");
     }
   }
 #endif
@@ -1069,7 +1071,7 @@ void Compile::Fill_buffer() {
 
   // If this machine supports different size branch offsets, then pre-compute
   // the length of the blocks
-  if( _matcher->is_short_branch_offset(0) ) {
+  if( _matcher->is_short_branch_offset(-1, 0) ) {
     Shorten_branches(blk_labels, code_req, locs_req, stub_req, const_req);
     labels_not_set = false;
   }

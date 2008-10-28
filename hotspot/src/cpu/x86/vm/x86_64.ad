@@ -2004,9 +2004,12 @@ const uint Matcher::vector_ideal_reg(void) {
 //
 // NOTE: If the platform does not provide any short branch variants, then
 //       this method should return false for offset 0.
-bool Matcher::is_short_branch_offset(int offset)
-{
-  return -0x80 <= offset && offset < 0x80;
+bool Matcher::is_short_branch_offset(int rule, int offset) {
+  // the short version of jmpConUCF2 contains multiple branches,
+  // making the reach slightly less
+  if (rule == jmpConUCF2_rule)
+    return (-126 <= offset && offset <= 125);
+  return (-128 <= offset && offset <= 127);
 }
 
 const bool Matcher::isSimpleConstant64(jlong value) {
@@ -5134,6 +5137,15 @@ operand rFlagsRegU()
   interface(REG_INTER);
 %}
 
+operand rFlagsRegUCF() %{
+  constraint(ALLOC_IN_RC(int_flags));
+  match(RegFlags);
+  predicate(false);
+
+  format %{ "RFLAGS_U_CF" %}
+  interface(REG_INTER);
+%}
+
 // Float register operands
 operand regF()
 %{
@@ -5405,12 +5417,12 @@ operand cmpOp()
 
   format %{ "" %}
   interface(COND_INTER) %{
-    equal(0x4);
-    not_equal(0x5);
-    less(0xC);
-    greater_equal(0xD);
-    less_equal(0xE);
-    greater(0xF);
+    equal(0x4, "e");
+    not_equal(0x5, "ne");
+    less(0xC, "l");
+    greater_equal(0xD, "ge");
+    less_equal(0xE, "le");
+    greater(0xF, "g");
   %}
 %}
 
@@ -5423,12 +5435,48 @@ operand cmpOpU()
 
   format %{ "" %}
   interface(COND_INTER) %{
-    equal(0x4);
-    not_equal(0x5);
-    less(0x2);
-    greater_equal(0x3);
-    less_equal(0x6);
-    greater(0x7);
+    equal(0x4, "e");
+    not_equal(0x5, "ne");
+    less(0x2, "b");
+    greater_equal(0x3, "nb");
+    less_equal(0x6, "be");
+    greater(0x7, "nbe");
+  %}
+%}
+
+
+// Floating comparisons that don't require any fixup for the unordered case
+operand cmpOpUCF() %{
+  match(Bool);
+  predicate(n->as_Bool()->_test._test == BoolTest::lt ||
+            n->as_Bool()->_test._test == BoolTest::ge ||
+            n->as_Bool()->_test._test == BoolTest::le ||
+            n->as_Bool()->_test._test == BoolTest::gt);
+  format %{ "" %}
+  interface(COND_INTER) %{
+    equal(0x4, "e");
+    not_equal(0x5, "ne");
+    less(0x2, "b");
+    greater_equal(0x3, "nb");
+    less_equal(0x6, "be");
+    greater(0x7, "nbe");
+  %}
+%}
+
+
+// Floating comparisons that can be fixed up with extra conditional jumps
+operand cmpOpUCF2() %{
+  match(Bool);
+  predicate(n->as_Bool()->_test._test == BoolTest::ne ||
+            n->as_Bool()->_test._test == BoolTest::eq);
+  format %{ "" %}
+  interface(COND_INTER) %{
+    equal(0x4, "e");
+    not_equal(0x5, "ne");
+    less(0x2, "b");
+    greater_equal(0x3, "nb");
+    less_equal(0x6, "be");
+    greater(0x7, "nbe");
   %}
 %}
 
@@ -7176,8 +7224,7 @@ instruct cmovI_reg(rRegI dst, rRegI src, rFlagsReg cr, cmpOp cop)
   ins_pipe(pipe_cmov_reg);
 %}
 
-instruct cmovI_regU(rRegI dst, rRegI src, rFlagsRegU cr, cmpOpU cop)
-%{
+instruct cmovI_regU(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src) %{
   match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -7187,9 +7234,16 @@ instruct cmovI_regU(rRegI dst, rRegI src, rFlagsRegU cr, cmpOpU cop)
   ins_pipe(pipe_cmov_reg);
 %}
 
+instruct cmovI_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
+  match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovI_regU(cop, cr, dst, src);
+  %}
+%}
+
 // Conditional move
-instruct cmovI_mem(cmpOp cop, rFlagsReg cr, rRegI dst, memory src)
-%{
+instruct cmovI_mem(cmpOp cop, rFlagsReg cr, rRegI dst, memory src) %{
   match(Set dst (CMoveI (Binary cop cr) (Binary dst (LoadI src))));
 
   ins_cost(250); // XXX
@@ -7211,6 +7265,14 @@ instruct cmovI_memU(cmpOpU cop, rFlagsRegU cr, rRegI dst, memory src)
   ins_pipe(pipe_cmov_mem);
 %}
 
+instruct cmovI_memUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegI dst, memory src) %{
+  match(Set dst (CMoveI (Binary cop cr) (Binary dst (LoadI src))));
+  ins_cost(250);
+  expand %{
+    cmovI_memU(cop, cr, dst, src);
+  %}
+%}
+
 // Conditional move
 instruct cmovN_reg(rRegN dst, rRegN src, rFlagsReg cr, cmpOp cop)
 %{
@@ -7224,7 +7286,7 @@ instruct cmovN_reg(rRegN dst, rRegN src, rFlagsReg cr, cmpOp cop)
 %}
 
 // Conditional move
-instruct cmovN_regU(rRegN dst, rRegN src, rFlagsRegU cr, cmpOpU cop)
+instruct cmovN_regU(cmpOpU cop, rFlagsRegU cr, rRegN dst, rRegN src)
 %{
   match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
 
@@ -7233,6 +7295,14 @@ instruct cmovN_regU(rRegN dst, rRegN src, rFlagsRegU cr, cmpOpU cop)
   opcode(0x0F, 0x40);
   ins_encode(REX_reg_reg(dst, src), enc_cmov(cop), reg_reg(dst, src));
   ins_pipe(pipe_cmov_reg);
+%}
+
+instruct cmovN_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegN dst, rRegN src) %{
+  match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovN_regU(cop, cr, dst, src);
+  %}
 %}
 
 // Conditional move
@@ -7248,7 +7318,7 @@ instruct cmovP_reg(rRegP dst, rRegP src, rFlagsReg cr, cmpOp cop)
 %}
 
 // Conditional move
-instruct cmovP_regU(rRegP dst, rRegP src, rFlagsRegU cr, cmpOpU cop)
+instruct cmovP_regU(cmpOpU cop, rFlagsRegU cr, rRegP dst, rRegP src)
 %{
   match(Set dst (CMoveP (Binary cop cr) (Binary dst src)));
 
@@ -7257,6 +7327,14 @@ instruct cmovP_regU(rRegP dst, rRegP src, rFlagsRegU cr, cmpOpU cop)
   opcode(0x0F, 0x40);
   ins_encode(REX_reg_reg_wide(dst, src), enc_cmov(cop), reg_reg(dst, src));
   ins_pipe(pipe_cmov_reg); // XXX
+%}
+
+instruct cmovP_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
+  match(Set dst (CMoveP (Binary cop cr) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovP_regU(cop, cr, dst, src);
+  %}
 %}
 
 // DISABLED: Requires the ADLC to emit a bottom_type call that
@@ -7319,6 +7397,14 @@ instruct cmovL_regU(cmpOpU cop, rFlagsRegU cr, rRegL dst, rRegL src)
   ins_pipe(pipe_cmov_reg); // XXX
 %}
 
+instruct cmovL_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
+  match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovL_regU(cop, cr, dst, src);
+  %}
+%}
+
 instruct cmovL_memU(cmpOpU cop, rFlagsRegU cr, rRegL dst, memory src)
 %{
   match(Set dst (CMoveL (Binary cop cr) (Binary dst (LoadL src))));
@@ -7328,6 +7414,14 @@ instruct cmovL_memU(cmpOpU cop, rFlagsRegU cr, rRegL dst, memory src)
   opcode(0x0F, 0x40);
   ins_encode(REX_reg_mem_wide(dst, src), enc_cmov(cop), reg_mem(dst, src));
   ins_pipe(pipe_cmov_mem); // XXX
+%}
+
+instruct cmovL_memUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegL dst, memory src) %{
+  match(Set dst (CMoveL (Binary cop cr) (Binary dst (LoadL src))));
+  ins_cost(200);
+  expand %{
+    cmovL_memU(cop, cr, dst, src);
+  %}
 %}
 
 instruct cmovF_reg(cmpOp cop, rFlagsReg cr, regF dst, regF src)
@@ -7366,6 +7460,14 @@ instruct cmovF_regU(cmpOpU cop, rFlagsRegU cr, regF dst, regF src)
   ins_pipe(pipe_slow);
 %}
 
+instruct cmovF_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, regF dst, regF src) %{
+  match(Set dst (CMoveF (Binary cop cr) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovF_regU(cop, cr, dst, src);
+  %}
+%}
+
 instruct cmovD_reg(cmpOp cop, rFlagsReg cr, regD dst, regD src)
 %{
   match(Set dst (CMoveD (Binary cop cr) (Binary dst src)));
@@ -7388,6 +7490,14 @@ instruct cmovD_regU(cmpOpU cop, rFlagsRegU cr, regD dst, regD src)
     "skip:" %}
   ins_encode(enc_cmovd_branch(cop, dst, src));
   ins_pipe(pipe_slow);
+%}
+
+instruct cmovD_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, regD dst, regD src) %{
+  match(Set dst (CMoveD (Binary cop cr) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovD_regU(cop, cr, dst, src);
+  %}
 %}
 
 //----------Arithmetic Instructions--------------------------------------------
@@ -9716,6 +9826,17 @@ instruct cmpF_cc_reg(rFlagsRegU cr, regF src1, regF src2)
   ins_pipe(pipe_slow);
 %}
 
+instruct cmpF_cc_reg_CF(rFlagsRegUCF cr, regF src1, regF src2) %{
+  match(Set cr (CmpF src1 src2));
+
+  ins_cost(145);
+  format %{ "ucomiss $src1, $src2" %}
+  ins_encode %{
+    __ ucomiss($src1$$XMMRegister, $src2$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct cmpF_cc_mem(rFlagsRegU cr, regF src1, memory src2)
 %{
   match(Set cr (CmpF src1 (LoadF src2)));
@@ -9730,6 +9851,16 @@ instruct cmpF_cc_mem(rFlagsRegU cr, regF src1, memory src2)
   opcode(0x0F, 0x2E);
   ins_encode(REX_reg_mem(src1, src2), OpcP, OpcS, reg_mem(src1, src2),
              cmpfp_fixup);
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpF_cc_memCF(rFlagsRegUCF cr, regF src1, memory src2) %{
+  match(Set cr (CmpF src1 (LoadF src2)));
+
+  ins_cost(100);
+  format %{ "ucomiss $src1, $src2" %}
+  opcode(0x0F, 0x2E);
+  ins_encode(REX_reg_mem(src1, src2), OpcP, OpcS, reg_mem(src1, src2));
   ins_pipe(pipe_slow);
 %}
 
@@ -9750,6 +9881,16 @@ instruct cmpF_cc_imm(rFlagsRegU cr, regF src1, immF src2)
   ins_pipe(pipe_slow);
 %}
 
+instruct cmpF_cc_immCF(rFlagsRegUCF cr, regF src1, immF src2) %{
+  match(Set cr (CmpF src1 src2));
+
+  ins_cost(100);
+  format %{ "ucomiss $src1, $src2" %}
+  opcode(0x0F, 0x2E);
+  ins_encode(REX_reg_mem(src1, src2), OpcP, OpcS, load_immF(src1, src2));
+  ins_pipe(pipe_slow);
+%}
+
 instruct cmpD_cc_reg(rFlagsRegU cr, regD src1, regD src2)
 %{
   match(Set cr (CmpD src1 src2));
@@ -9764,6 +9905,17 @@ instruct cmpD_cc_reg(rFlagsRegU cr, regD src1, regD src2)
   opcode(0x66, 0x0F, 0x2E);
   ins_encode(OpcP, REX_reg_reg(src1, src2), OpcS, OpcT, reg_reg(src1, src2),
              cmpfp_fixup);
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpD_cc_reg_CF(rFlagsRegUCF cr, regD src1, regD src2) %{
+  match(Set cr (CmpD src1 src2));
+
+  ins_cost(100);
+  format %{ "ucomisd $src1, $src2 test" %}
+  ins_encode %{
+    __ ucomisd($src1$$XMMRegister, $src2$$XMMRegister);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -9784,6 +9936,16 @@ instruct cmpD_cc_mem(rFlagsRegU cr, regD src1, memory src2)
   ins_pipe(pipe_slow);
 %}
 
+instruct cmpD_cc_memCF(rFlagsRegUCF cr, regD src1, memory src2) %{
+  match(Set cr (CmpD src1 (LoadD src2)));
+
+  ins_cost(100);
+  format %{ "ucomisd $src1, $src2" %}
+  opcode(0x66, 0x0F, 0x2E);
+  ins_encode(OpcP, REX_reg_mem(src1, src2), OpcS, OpcT, reg_mem(src1, src2));
+  ins_pipe(pipe_slow);
+%}
+
 instruct cmpD_cc_imm(rFlagsRegU cr, regD src1, immD src2)
 %{
   match(Set cr (CmpD src1 src2));
@@ -9798,6 +9960,16 @@ instruct cmpD_cc_imm(rFlagsRegU cr, regD src1, immD src2)
   opcode(0x66, 0x0F, 0x2E);
   ins_encode(OpcP, REX_reg_mem(src1, src2), OpcS, OpcT, load_immD(src1, src2),
              cmpfp_fixup);
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpD_cc_immCF(rFlagsRegUCF cr, regD src1, immD src2) %{
+  match(Set cr (CmpD src1 src2));
+
+  ins_cost(100);
+  format %{ "ucomisd $src1, [$src2]" %}
+  opcode(0x66, 0x0F, 0x2E);
+  ins_encode(OpcP, REX_reg_mem(src1, src2), OpcS, OpcT, load_immD(src1, src2));
   ins_pipe(pipe_slow);
 %}
 
@@ -11406,8 +11578,7 @@ instruct jmpLoopEnd(cmpOp cop, rFlagsReg cr, label labl)
 %}
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
-instruct jmpLoopEndU(cmpOpU cop, rFlagsRegU cmp, label labl)
-%{
+instruct jmpLoopEndU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -11420,17 +11591,82 @@ instruct jmpLoopEndU(cmpOpU cop, rFlagsRegU cmp, label labl)
   ins_pc_relative(1);
 %}
 
+instruct jmpLoopEndUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(200);
+  format %{ "j$cop,u   $labl\t# loop end" %}
+  size(6);
+  opcode(0x0F, 0x80);
+  ins_encode(Jcc(cop, labl));
+  ins_pipe(pipe_jcc);
+  ins_pc_relative(1);
+%}
+
 // Jump Direct Conditional - using unsigned comparison
-instruct jmpConU(cmpOpU cop, rFlagsRegU cmp, label labl)
-%{
+instruct jmpConU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   match(If cop cmp);
   effect(USE labl);
 
   ins_cost(300);
-  format %{ "j$cop,u   $labl" %}
+  format %{ "j$cop,u  $labl" %}
   size(6);
   opcode(0x0F, 0x80);
   ins_encode(Jcc(cop, labl));
+  ins_pipe(pipe_jcc);
+  ins_pc_relative(1);
+%}
+
+instruct jmpConUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(200);
+  format %{ "j$cop,u  $labl" %}
+  size(6);
+  opcode(0x0F, 0x80);
+  ins_encode(Jcc(cop, labl));
+  ins_pipe(pipe_jcc);
+  ins_pc_relative(1);
+%}
+
+instruct jmpConUCF2(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(200);
+  format %{ $$template
+    if ($cop$$cmpcode == Assembler::notEqual) {
+      $$emit$$"jp,u   $labl\n\t"
+      $$emit$$"j$cop,u   $labl"
+    } else {
+      $$emit$$"jp,u   done\n\t"
+      $$emit$$"j$cop,u   $labl\n\t"
+      $$emit$$"done:"
+    }
+  %}
+  size(12);
+  opcode(0x0F, 0x80);
+  ins_encode %{
+    Label* l = $labl$$label;
+    $$$emit8$primary;
+    emit_cc(cbuf, $secondary, Assembler::parity);
+    int parity_disp = -1;
+    if ($cop$$cmpcode == Assembler::notEqual) {
+       // the two jumps 6 bytes apart so the jump distances are too
+       parity_disp = l ? (l->loc_pos() - (cbuf.code_size() + 4)) : 0;
+    } else if ($cop$$cmpcode == Assembler::equal) {
+       parity_disp = 6;
+    } else {
+       ShouldNotReachHere();
+    }
+    emit_d32(cbuf, parity_disp);
+    $$$emit8$primary;
+    emit_cc(cbuf, $secondary, $cop$$cmpcode);
+    int disp = l ? (l->loc_pos() - (cbuf.code_size() + 4)) : 0;
+    emit_d32(cbuf, disp);
+  %}
   ins_pipe(pipe_jcc);
   ins_pc_relative(1);
 %}
@@ -11505,8 +11741,7 @@ instruct partialSubtypeCheck_vs_Zero(rFlagsReg cr,
 // specific code section of the file.
 
 // Jump Direct - Label defines a relative address from JMP+1
-instruct jmpDir_short(label labl)
-%{
+instruct jmpDir_short(label labl) %{
   match(Goto);
   effect(USE labl);
 
@@ -11521,8 +11756,7 @@ instruct jmpDir_short(label labl)
 %}
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
-instruct jmpCon_short(cmpOp cop, rFlagsReg cr, label labl)
-%{
+instruct jmpCon_short(cmpOp cop, rFlagsReg cr, label labl) %{
   match(If cop cr);
   effect(USE labl);
 
@@ -11537,13 +11771,12 @@ instruct jmpCon_short(cmpOp cop, rFlagsReg cr, label labl)
 %}
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
-instruct jmpLoopEnd_short(cmpOp cop, rFlagsReg cr, label labl)
-%{
+instruct jmpLoopEnd_short(cmpOp cop, rFlagsReg cr, label labl) %{
   match(CountedLoopEnd cop cr);
   effect(USE labl);
 
   ins_cost(300);
-  format %{ "j$cop,s   $labl" %}
+  format %{ "j$cop,s   $labl\t# loop end" %}
   size(2);
   opcode(0x70);
   ins_encode(JccShort(cop, labl));
@@ -11553,9 +11786,37 @@ instruct jmpLoopEnd_short(cmpOp cop, rFlagsReg cr, label labl)
 %}
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
-instruct jmpLoopEndU_short(cmpOpU cop, rFlagsRegU cmp, label labl)
-%{
+instruct jmpLoopEndU_short(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,us  $labl\t# loop end" %}
+  size(2);
+  opcode(0x70);
+  ins_encode(JccShort(cop, labl));
+  ins_pipe(pipe_jcc);
+  ins_pc_relative(1);
+  ins_short_branch(1);
+%}
+
+instruct jmpLoopEndUCF_short(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,us  $labl\t# loop end" %}
+  size(2);
+  opcode(0x70);
+  ins_encode(JccShort(cop, labl));
+  ins_pipe(pipe_jcc);
+  ins_pc_relative(1);
+  ins_short_branch(1);
+%}
+
+// Jump Direct Conditional - using unsigned comparison
+instruct jmpConU_short(cmpOpU cop, rFlagsRegU cmp, label labl) %{
+  match(If cop cmp);
   effect(USE labl);
 
   ins_cost(300);
@@ -11568,9 +11829,7 @@ instruct jmpLoopEndU_short(cmpOpU cop, rFlagsRegU cmp, label labl)
   ins_short_branch(1);
 %}
 
-// Jump Direct Conditional - using unsigned comparison
-instruct jmpConU_short(cmpOpU cop, rFlagsRegU cmp, label labl)
-%{
+instruct jmpConUCF_short(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
   match(If cop cmp);
   effect(USE labl);
 
@@ -11579,6 +11838,46 @@ instruct jmpConU_short(cmpOpU cop, rFlagsRegU cmp, label labl)
   size(2);
   opcode(0x70);
   ins_encode(JccShort(cop, labl));
+  ins_pipe(pipe_jcc);
+  ins_pc_relative(1);
+  ins_short_branch(1);
+%}
+
+instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ $$template
+    if ($cop$$cmpcode == Assembler::notEqual) {
+      $$emit$$"jp,u,s   $labl\n\t"
+      $$emit$$"j$cop,u,s   $labl"
+    } else {
+      $$emit$$"jp,u,s   done\n\t"
+      $$emit$$"j$cop,u,s  $labl\n\t"
+      $$emit$$"done:"
+    }
+  %}
+  size(4);
+  opcode(0x70);
+  ins_encode %{
+    Label* l = $labl$$label;
+    emit_cc(cbuf, $primary, Assembler::parity);
+    int parity_disp = -1;
+    if ($cop$$cmpcode == Assembler::notEqual) {
+      parity_disp = l ? (l->loc_pos() - (cbuf.code_size() + 1)) : 0;
+    } else if ($cop$$cmpcode == Assembler::equal) {
+      parity_disp = 2;
+    } else {
+      ShouldNotReachHere();
+    }
+    emit_d8(cbuf, parity_disp);
+    emit_cc(cbuf, $primary, $cop$$cmpcode);
+    int disp = l ? (l->loc_pos() - (cbuf.code_size() + 1)) : 0;
+    emit_d8(cbuf, disp);
+    assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
+    assert(-128 <= parity_disp && parity_disp <= 127, "Displacement too large for short jmp");
+  %}
   ins_pipe(pipe_jcc);
   ins_pc_relative(1);
   ins_short_branch(1);
