@@ -26,7 +26,8 @@
 package com.sun.jmx.mbeanserver;
 
 import static com.sun.jmx.mbeanserver.Util.*;
-import java.lang.annotation.ElementType;
+import static com.sun.jmx.mbeanserver.MXBeanIntrospector.typeName;
+
 import javax.management.openmbean.MXBeanMappingClass;
 
 import static javax.management.openmbean.SimpleType.*;
@@ -247,8 +248,10 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
     public synchronized MXBeanMapping mappingForType(Type objType,
                                                      MXBeanMappingFactory factory)
             throws OpenDataException {
-        if (inProgress.containsKey(objType))
-            throw new OpenDataException("Recursive data structure");
+        if (inProgress.containsKey(objType)) {
+            throw new OpenDataException(
+                    "Recursive data structure, including " + typeName(objType));
+        }
 
         MXBeanMapping mapping;
 
@@ -259,6 +262,8 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
         inProgress.put(objType, objType);
         try {
             mapping = makeMapping(objType, factory);
+        } catch (OpenDataException e) {
+            throw openDataException("Cannot convert type: " + typeName(objType), e);
         } finally {
             inProgress.remove(objType);
         }
@@ -411,7 +416,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                            MXBeanMappingFactory factory)
             throws OpenDataException {
 
-        final String objTypeName = objType.toString();
+        final String objTypeName = typeName(objType);
         final MXBeanMapping keyMapping = factory.mappingForType(keyType, factory);
         final MXBeanMapping valueMapping = factory.mappingForType(valueType, factory);
         final OpenType<?> keyOpenType = keyMapping.getOpenType();
@@ -926,6 +931,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                concatenating each Builder's explanation of why it
                isn't applicable.  */
             final StringBuilder whyNots = new StringBuilder();
+            Throwable possibleCause = null;
         find:
             for (CompositeBuilder[] relatedBuilders : builders) {
                 for (int i = 0; i < relatedBuilders.length; i++) {
@@ -935,6 +941,9 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                         foundBuilder = builder;
                         break find;
                     }
+                    Throwable cause = builder.possibleCause();
+                    if (cause != null)
+                        possibleCause = cause;
                     if (whyNot.length() > 0) {
                         if (whyNots.length() > 0)
                             whyNots.append("; ");
@@ -945,10 +954,12 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                 }
             }
             if (foundBuilder == null) {
-                final String msg =
+                String msg =
                     "Do not know how to make a " + targetClass.getName() +
                     " from a CompositeData: " + whyNots;
-                throw new InvalidObjectException(msg);
+                if (possibleCause != null)
+                    msg += ". Remaining exceptions show a POSSIBLE cause.";
+                throw invalidObjectException(msg, possibleCause);
             }
             compositeBuilder = foundBuilder;
         }
@@ -996,6 +1007,16 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
         abstract String applicable(Method[] getters)
                 throws InvalidObjectException;
 
+        /** If the subclass returns an explanation of why it is not applicable,
+            it can additionally indicate an exception with details.  This is
+            potentially confusing, because the real problem could be that one
+            of the other subclasses is supposed to be applicable but isn't.
+            But the advantage of less information loss probably outweighs the
+            disadvantage of possible confusion.  */
+        Throwable possibleCause() {
+            return null;
+        }
+
         abstract Object fromCompositeData(CompositeData cd,
                                           String[] itemNames,
                                           MXBeanMapping[] converters)
@@ -1031,8 +1052,8 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                 if (fromMethod.getReturnType() != getTargetClass()) {
                     final String msg =
                         "Method from(CompositeData) returns " +
-                        fromMethod.getReturnType().getName() +
-                        " not " + targetClass.getName();
+                        typeName(fromMethod.getReturnType()) +
+                        " not " + typeName(targetClass);
                     throw new InvalidObjectException(msg);
                 }
 
@@ -1083,11 +1104,17 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                 try {
                     getterConverters[i].checkReconstructible();
                 } catch (InvalidObjectException e) {
+                    possibleCause = e;
                     return "method " + getters[i].getName() + " returns type " +
                         "that cannot be mapped back from OpenData";
                 }
             }
             return "";
+        }
+
+        @Override
+        Throwable possibleCause() {
+            return possibleCause;
         }
 
         final Object fromCompositeData(CompositeData cd,
@@ -1097,6 +1124,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
         }
 
         private final MXBeanMapping[] getterConverters;
+        private Throwable possibleCause;
     }
 
     /** Builder for when the target class has a setter for every getter. */
@@ -1227,10 +1255,16 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                 for (int i = 0; i < propertyNames.length; i++) {
                     String propertyName = propertyNames[i];
                     if (!getterMap.containsKey(propertyName)) {
-                        final String msg =
+                        String msg =
                             "@ConstructorProperties includes name " + propertyName +
-                            " which does not correspond to a property: " +
-                            constr;
+                            " which does not correspond to a property";
+                        for (String getterName : getterMap.keySet()) {
+                            if (getterName.equalsIgnoreCase(propertyName)) {
+                                msg += " (differs only in case from property " +
+                                        getterName + ")";
+                            }
+                        }
+                        msg += ": " + constr;
                         throw new InvalidObjectException(msg);
                     }
                     int getterIndex = getterMap.get(propertyName);

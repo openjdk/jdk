@@ -361,7 +361,13 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
                 if (p != null)
                     return p;
             }
-            p = new MXBeanProxy(mxbeanInterface, mappingFactory);
+            try {
+                p = new MXBeanProxy(mxbeanInterface, mappingFactory);
+            } catch (IllegalArgumentException e) {
+                String msg = "Cannot make MXBean proxy for " +
+                        mxbeanInterface.getName() + ": " + e.getMessage();
+                throw new IllegalArgumentException(msg, e.getCause());
+            }
             classToProxy.put(mxbeanInterface, new WeakReference<MXBeanProxy>(p));
             return p;
         }
