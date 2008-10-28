@@ -391,26 +391,26 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
         if (type instanceof Class<?>)
             return ((Class<?>) type).getName();
         else
-            return genericTypeString(type);
+            return typeName(type);
     }
 
-    private static String genericTypeString(Type type) {
+    static String typeName(Type type) {
         if (type instanceof Class<?>) {
             Class<?> c = (Class<?>) type;
             if (c.isArray())
-                return genericTypeString(c.getComponentType()) + "[]";
+                return typeName(c.getComponentType()) + "[]";
             else
                 return c.getName();
         } else if (type instanceof GenericArrayType) {
             GenericArrayType gat = (GenericArrayType) type;
-            return genericTypeString(gat.getGenericComponentType()) + "[]";
+            return typeName(gat.getGenericComponentType()) + "[]";
         } else if (type instanceof ParameterizedType) {
             ParameterizedType pt = (ParameterizedType) type;
             StringBuilder sb = new StringBuilder();
-            sb.append(genericTypeString(pt.getRawType())).append("<");
+            sb.append(typeName(pt.getRawType())).append("<");
             String sep = "";
             for (Type t : pt.getActualTypeArguments()) {
-                sb.append(sep).append(genericTypeString(t));
+                sb.append(sep).append(typeName(t));
                 sep = ", ";
             }
             return sb.append(">").toString();
