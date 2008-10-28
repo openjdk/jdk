@@ -1743,7 +1743,7 @@ const bool Matcher::convL2FSupported(void) {
 //
 // NOTE: If the platform does not provide any short branch variants, then
 //       this method should return false for offset 0.
-bool Matcher::is_short_branch_offset(int offset) {
+bool Matcher::is_short_branch_offset(int rule, int offset) {
   return false;
 }
 
@@ -1926,18 +1926,23 @@ encode %{
                        $mem$$base, $mem$$disp, $mem$$index, $dst$$reg);
   %}
 
+  enc_class simple_form3_mem_reg( memory mem, iRegI dst ) %{
+    emit_form3_mem_reg(cbuf, this, $primary, -1,
+                       $mem$$base, $mem$$disp, $mem$$index, $dst$$reg);
+  %}
+
   enc_class form3_mem_reg_little( memory mem, iRegI dst) %{
-    emit_form3_mem_reg_asi(cbuf, this, $primary, $tertiary,
+    emit_form3_mem_reg_asi(cbuf, this, $primary, -1,
                      $mem$$base, $mem$$disp, $mem$$index, $dst$$reg, Assembler::ASI_PRIMARY_LITTLE);
   %}
 
   enc_class form3_mem_prefetch_read( memory mem ) %{
-    emit_form3_mem_reg(cbuf, this, $primary, $tertiary,
+    emit_form3_mem_reg(cbuf, this, $primary, -1,
                        $mem$$base, $mem$$disp, $mem$$index, 0/*prefetch function many-reads*/);
   %}
 
   enc_class form3_mem_prefetch_write( memory mem ) %{
-    emit_form3_mem_reg(cbuf, this, $primary, $tertiary,
+    emit_form3_mem_reg(cbuf, this, $primary, -1,
                        $mem$$base, $mem$$disp, $mem$$index, 2/*prefetch function many-writes*/);
   %}
 
@@ -1945,8 +1950,8 @@ encode %{
     assert( Assembler::is_simm13($mem$$disp  ), "need disp and disp+4" );
     assert( Assembler::is_simm13($mem$$disp+4), "need disp and disp+4" );
     guarantee($mem$$index == R_G0_enc, "double index?");
-    emit_form3_mem_reg(cbuf, this, $primary, $tertiary, $mem$$base, $mem$$disp+4, R_G0_enc, R_O7_enc );
-    emit_form3_mem_reg(cbuf, this, $primary, $tertiary, $mem$$base, $mem$$disp,   R_G0_enc, $reg$$reg );
+    emit_form3_mem_reg(cbuf, this, $primary, -1, $mem$$base, $mem$$disp+4, R_G0_enc, R_O7_enc );
+    emit_form3_mem_reg(cbuf, this, $primary, -1, $mem$$base, $mem$$disp,   R_G0_enc, $reg$$reg );
     emit3_simm13( cbuf, Assembler::arith_op, $reg$$reg, Assembler::sllx_op3, $reg$$reg, 0x1020 );
     emit3( cbuf, Assembler::arith_op, $reg$$reg, Assembler::or_op3, $reg$$reg, 0, R_O7_enc );
   %}
@@ -1956,14 +1961,14 @@ encode %{
     assert( Assembler::is_simm13($mem$$disp+4), "need disp and disp+4" );
     guarantee($mem$$index == R_G0_enc, "double index?");
     // Load long with 2 instructions
-    emit_form3_mem_reg(cbuf, this, $primary, $tertiary, $mem$$base, $mem$$disp,   R_G0_enc, $reg$$reg+0 );
-    emit_form3_mem_reg(cbuf, this, $primary, $tertiary, $mem$$base, $mem$$disp+4, R_G0_enc, $reg$$reg+1 );
+    emit_form3_mem_reg(cbuf, this, $primary, -1, $mem$$base, $mem$$disp,   R_G0_enc, $reg$$reg+0 );
+    emit_form3_mem_reg(cbuf, this, $primary, -1, $mem$$base, $mem$$disp+4, R_G0_enc, $reg$$reg+1 );
   %}
 
   //%%% form3_mem_plus_4_reg is a hack--get rid of it
   enc_class form3_mem_plus_4_reg( memory mem, iRegI dst ) %{
     guarantee($mem$$disp, "cannot offset a reg-reg operand by 4");
-    emit_form3_mem_reg(cbuf, this, $primary, $tertiary, $mem$$base, $mem$$disp + 4, $mem$$index, $dst$$reg);
+    emit_form3_mem_reg(cbuf, this, $primary, -1, $mem$$base, $mem$$disp + 4, $mem$$index, $dst$$reg);
   %}
 
   enc_class form3_g0_rs2_rd_move( iRegI rs2, iRegI rd ) %{
@@ -5062,7 +5067,7 @@ instruct stkI_to_regF(regF dst, stackSlotI src) %{
   size(4);
   format %{ "LDF    $src,$dst\t! stkI to regF" %}
   opcode(Assembler::ldf_op3);
-  ins_encode(form3_mem_reg(src, dst));
+  ins_encode(simple_form3_mem_reg(src, dst));
   ins_pipe(floadF_stk);
 %}
 
@@ -5073,7 +5078,7 @@ instruct stkL_to_regD(regD dst, stackSlotL src) %{
   size(4);
   format %{ "LDDF   $src,$dst\t! stkL to regD" %}
   opcode(Assembler::lddf_op3);
-  ins_encode(form3_mem_reg(src, dst));
+  ins_encode(simple_form3_mem_reg(src, dst));
   ins_pipe(floadD_stk);
 %}
 
@@ -5084,7 +5089,7 @@ instruct regF_to_stkI(stackSlotI dst, regF src) %{
   size(4);
   format %{ "STF    $src,$dst\t! regF to stkI" %}
   opcode(Assembler::stf_op3);
-  ins_encode(form3_mem_reg(dst, src));
+  ins_encode(simple_form3_mem_reg(dst, src));
   ins_pipe(fstoreF_stk_reg);
 %}
 
@@ -5095,7 +5100,7 @@ instruct regD_to_stkL(stackSlotL dst, regD src) %{
   size(4);
   format %{ "STDF   $src,$dst\t! regD to stkL" %}
   opcode(Assembler::stdf_op3);
-  ins_encode(form3_mem_reg(dst, src));
+  ins_encode(simple_form3_mem_reg(dst, src));
   ins_pipe(fstoreD_stk_reg);
 %}
 
@@ -5106,7 +5111,7 @@ instruct regI_to_stkLHi(stackSlotL dst, iRegI src) %{
   format %{ "STW    $src,$dst.hi\t! long\n\t"
             "STW    R_G0,$dst.lo" %}
   opcode(Assembler::stw_op3);
-  ins_encode(form3_mem_reg(dst, src), form3_mem_plus_4_reg(dst, R_G0));
+  ins_encode(simple_form3_mem_reg(dst, src), form3_mem_plus_4_reg(dst, R_G0));
   ins_pipe(lstoreI_stk_reg);
 %}
 
@@ -5117,7 +5122,7 @@ instruct regL_to_stkD(stackSlotD dst, iRegL src) %{
   size(4);
   format %{ "STX    $src,$dst\t! regL to stkD" %}
   opcode(Assembler::stx_op3);
-  ins_encode( form3_mem_reg( dst, src ) );
+  ins_encode(simple_form3_mem_reg( dst, src ) );
   ins_pipe(istore_stk_reg);
 %}
 
@@ -5131,7 +5136,7 @@ instruct stkI_to_regI( iRegI dst, stackSlotI src ) %{
   size(4);
   format %{ "LDUW   $src,$dst\t!stk" %}
   opcode(Assembler::lduw_op3);
-  ins_encode( form3_mem_reg( src, dst ) );
+  ins_encode(simple_form3_mem_reg( src, dst ) );
   ins_pipe(iload_mem);
 %}
 
@@ -5143,7 +5148,7 @@ instruct regI_to_stkI( stackSlotI dst, iRegI src ) %{
   size(4);
   format %{ "STW    $src,$dst\t!stk" %}
   opcode(Assembler::stw_op3);
-  ins_encode( form3_mem_reg( dst, src ) );
+  ins_encode(simple_form3_mem_reg( dst, src ) );
   ins_pipe(istore_mem_reg);
 %}
 
@@ -5155,7 +5160,7 @@ instruct stkL_to_regL( iRegL dst, stackSlotL src ) %{
   size(4);
   format %{ "LDX    $src,$dst\t! long" %}
   opcode(Assembler::ldx_op3);
-  ins_encode( form3_mem_reg( src, dst ) );
+  ins_encode(simple_form3_mem_reg( src, dst ) );
   ins_pipe(iload_mem);
 %}
 
@@ -5167,7 +5172,7 @@ instruct regL_to_stkL(stackSlotL dst, iRegL src) %{
   size(4);
   format %{ "STX    $src,$dst\t! long" %}
   opcode(Assembler::stx_op3);
-  ins_encode( form3_mem_reg( dst, src ) );
+  ins_encode(simple_form3_mem_reg( dst, src ) );
   ins_pipe(istore_mem_reg);
 %}
 
@@ -5179,7 +5184,7 @@ instruct stkP_to_regP( iRegP dst, stackSlotP src ) %{
   size(4);
   format %{ "LDX    $src,$dst\t!ptr" %}
   opcode(Assembler::ldx_op3);
-  ins_encode( form3_mem_reg( src, dst ) );
+  ins_encode(simple_form3_mem_reg( src, dst ) );
   ins_pipe(iload_mem);
 %}
 
@@ -5190,7 +5195,7 @@ instruct regP_to_stkP(stackSlotP dst, iRegP src) %{
   size(4);
   format %{ "STX    $src,$dst\t!ptr" %}
   opcode(Assembler::stx_op3);
-  ins_encode( form3_mem_reg( dst, src ) );
+  ins_encode(simple_form3_mem_reg( dst, src ) );
   ins_pipe(istore_mem_reg);
 %}
 #else // _LP64
@@ -5200,7 +5205,7 @@ instruct stkP_to_regP( iRegP dst, stackSlotP src ) %{
   ins_cost(MEMORY_REF_COST);
   format %{ "LDUW   $src,$dst\t!ptr" %}
   opcode(Assembler::lduw_op3, Assembler::ldst_op);
-  ins_encode( form3_mem_reg( src, dst ) );
+  ins_encode(simple_form3_mem_reg( src, dst ) );
   ins_pipe(iload_mem);
 %}
 
@@ -5210,7 +5215,7 @@ instruct regP_to_stkP(stackSlotP dst, iRegP src) %{
   ins_cost(MEMORY_REF_COST);
   format %{ "STW    $src,$dst\t!ptr" %}
   opcode(Assembler::stw_op3, Assembler::ldst_op);
-  ins_encode( form3_mem_reg( dst, src ) );
+  ins_encode(simple_form3_mem_reg( dst, src ) );
   ins_pipe(istore_mem_reg);
 %}
 #endif // _LP64
@@ -5273,7 +5278,7 @@ instruct loadB(iRegI dst, memory mem) %{
   size(4);
   format %{ "LDSB   $mem,$dst" %}
   opcode(Assembler::ldsb_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
 %}
 
@@ -5285,7 +5290,7 @@ instruct loadUB(iRegI dst, memory mem, immI_255 bytemask) %{
   size(4);
   format %{ "LDUB   $mem,$dst" %}
   opcode(Assembler::ldub_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
 %}
 
@@ -5297,7 +5302,7 @@ instruct loadUBL(iRegL dst, memory mem, immL_FF bytemask) %{
   size(4);
   format %{ "LDUB   $mem,$dst" %}
   opcode(Assembler::ldub_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
 %}
 
@@ -5309,7 +5314,7 @@ instruct loadUCL(iRegL dst, memory mem, immL_FFFF bytemask) %{
   size(4);
   format %{ "LDUH   $mem,$dst" %}
   opcode(Assembler::lduh_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
 %}
 
@@ -5321,7 +5326,7 @@ instruct loadC(iRegI dst, memory mem) %{
   size(4);
   format %{ "LDUH   $mem,$dst" %}
   opcode(Assembler::lduh_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
 %}
 
@@ -5333,7 +5338,7 @@ instruct loadI(iRegI dst, memory mem) %{
 
   format %{ "LDUW   $mem,$dst" %}
   opcode(Assembler::lduw_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mem);
 %}
 
@@ -5344,7 +5349,7 @@ instruct loadL(iRegL dst, memory mem ) %{
   size(4);
   format %{ "LDX    $mem,$dst\t! long" %}
   opcode(Assembler::ldx_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mem);
 %}
 
@@ -5359,7 +5364,7 @@ instruct loadL_unaligned(iRegL dst, memory mem, o7RegI tmp) %{
           "\tSLLX   #32, $dst, $dst\n"
           "\tOR     $dst, R_O7, $dst" %}
   opcode(Assembler::lduw_op3);
-  ins_encode( form3_mem_reg_long_unaligned_marshal( mem, dst ));
+  ins_encode(form3_mem_reg_long_unaligned_marshal( mem, dst ));
   ins_pipe(iload_mem);
 %}
 
@@ -5370,7 +5375,7 @@ instruct loadA8B(regD dst, memory mem) %{
   size(4);
   format %{ "LDDF   $mem,$dst\t! packed8B" %}
   opcode(Assembler::lddf_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(floadD_mem);
 %}
 
@@ -5381,7 +5386,7 @@ instruct loadA4C(regD dst, memory mem) %{
   size(4);
   format %{ "LDDF   $mem,$dst\t! packed4C" %}
   opcode(Assembler::lddf_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(floadD_mem);
 %}
 
@@ -5392,7 +5397,7 @@ instruct loadA4S(regD dst, memory mem) %{
   size(4);
   format %{ "LDDF   $mem,$dst\t! packed4S" %}
   opcode(Assembler::lddf_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(floadD_mem);
 %}
 
@@ -5403,7 +5408,7 @@ instruct loadA2I(regD dst, memory mem) %{
   size(4);
   format %{ "LDDF   $mem,$dst\t! packed2I" %}
   opcode(Assembler::lddf_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(floadD_mem);
 %}
 
@@ -5415,7 +5420,7 @@ instruct loadRange(iRegI dst, memory mem) %{
   size(4);
   format %{ "LDUW   $mem,$dst\t! range" %}
   opcode(Assembler::lduw_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mem);
 %}
 
@@ -5427,7 +5432,7 @@ instruct loadI_freg(regF dst, memory mem) %{
 
   format %{ "LDF    $mem,$dst\t! for fitos/fitod" %}
   opcode(Assembler::ldf_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(floadF_mem);
 %}
 
@@ -5514,7 +5519,7 @@ instruct loadS(iRegI dst, memory mem) %{
   size(4);
   format %{ "LDSH   $mem,$dst" %}
   opcode(Assembler::ldsh_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
 %}
 
@@ -5526,7 +5531,7 @@ instruct loadD(regD dst, memory mem) %{
   size(4);
   format %{ "LDDF   $mem,$dst" %}
   opcode(Assembler::lddf_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(floadD_mem);
 %}
 
@@ -5550,7 +5555,7 @@ instruct loadF(regF dst, memory mem) %{
   size(4);
   format %{ "LDF    $mem,$dst" %}
   opcode(Assembler::ldf_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(floadF_mem);
 %}
 
@@ -5719,7 +5724,7 @@ instruct storeB(memory mem, iRegI src) %{
   size(4);
   format %{ "STB    $src,$mem\t! byte" %}
   opcode(Assembler::stb_op3);
-  ins_encode( form3_mem_reg( mem, src ) );
+  ins_encode(simple_form3_mem_reg( mem, src ) );
   ins_pipe(istore_mem_reg);
 %}
 
@@ -5730,7 +5735,7 @@ instruct storeB0(memory mem, immI0 src) %{
   size(4);
   format %{ "STB    $src,$mem\t! byte" %}
   opcode(Assembler::stb_op3);
-  ins_encode( form3_mem_reg( mem, R_G0 ) );
+  ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
   ins_pipe(istore_mem_zero);
 %}
 
@@ -5741,7 +5746,7 @@ instruct storeCM0(memory mem, immI0 src) %{
   size(4);
   format %{ "STB    $src,$mem\t! CMS card-mark byte 0" %}
   opcode(Assembler::stb_op3);
-  ins_encode( form3_mem_reg( mem, R_G0 ) );
+  ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
   ins_pipe(istore_mem_zero);
 %}
 
@@ -5753,7 +5758,7 @@ instruct storeC(memory mem, iRegI src) %{
   size(4);
   format %{ "STH    $src,$mem\t! short" %}
   opcode(Assembler::sth_op3);
-  ins_encode( form3_mem_reg( mem, src ) );
+  ins_encode(simple_form3_mem_reg( mem, src ) );
   ins_pipe(istore_mem_reg);
 %}
 
@@ -5764,7 +5769,7 @@ instruct storeC0(memory mem, immI0 src) %{
   size(4);
   format %{ "STH    $src,$mem\t! short" %}
   opcode(Assembler::sth_op3);
-  ins_encode( form3_mem_reg( mem, R_G0 ) );
+  ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
   ins_pipe(istore_mem_zero);
 %}
 
@@ -5776,7 +5781,7 @@ instruct storeI(memory mem, iRegI src) %{
   size(4);
   format %{ "STW    $src,$mem" %}
   opcode(Assembler::stw_op3);
-  ins_encode( form3_mem_reg( mem, src ) );
+  ins_encode(simple_form3_mem_reg( mem, src ) );
   ins_pipe(istore_mem_reg);
 %}
 
@@ -5787,7 +5792,7 @@ instruct storeL(memory mem, iRegL src) %{
   size(4);
   format %{ "STX    $src,$mem\t! long" %}
   opcode(Assembler::stx_op3);
-  ins_encode( form3_mem_reg( mem, src ) );
+  ins_encode(simple_form3_mem_reg( mem, src ) );
   ins_pipe(istore_mem_reg);
 %}
 
@@ -5798,7 +5803,7 @@ instruct storeI0(memory mem, immI0 src) %{
   size(4);
   format %{ "STW    $src,$mem" %}
   opcode(Assembler::stw_op3);
-  ins_encode( form3_mem_reg( mem, R_G0 ) );
+  ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
   ins_pipe(istore_mem_zero);
 %}
 
@@ -5809,7 +5814,7 @@ instruct storeL0(memory mem, immL0 src) %{
   size(4);
   format %{ "STX    $src,$mem" %}
   opcode(Assembler::stx_op3);
-  ins_encode( form3_mem_reg( mem, R_G0 ) );
+  ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
   ins_pipe(istore_mem_zero);
 %}
 
@@ -5821,7 +5826,7 @@ instruct storeI_Freg(memory mem, regF src) %{
   size(4);
   format %{ "STF    $src,$mem\t! after fstoi/fdtoi" %}
   opcode(Assembler::stf_op3);
-  ins_encode( form3_mem_reg( mem, src ) );
+  ins_encode(simple_form3_mem_reg( mem, src ) );
   ins_pipe(fstoreF_mem_reg);
 %}
 
@@ -5904,7 +5909,7 @@ instruct storeD( memory mem, regD src) %{
   size(4);
   format %{ "STDF   $src,$mem" %}
   opcode(Assembler::stdf_op3);
-  ins_encode( form3_mem_reg( mem, src ) );
+  ins_encode(simple_form3_mem_reg( mem, src ) );
   ins_pipe(fstoreD_mem_reg);
 %}
 
@@ -5915,7 +5920,7 @@ instruct storeD0( memory mem, immD0 src) %{
   size(4);
   format %{ "STX    $src,$mem" %}
   opcode(Assembler::stx_op3);
-  ins_encode( form3_mem_reg( mem, R_G0 ) );
+  ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
   ins_pipe(fstoreD_mem_zero);
 %}
 
@@ -5927,7 +5932,7 @@ instruct storeF( memory mem, regF src) %{
   size(4);
   format %{ "STF    $src,$mem" %}
   opcode(Assembler::stf_op3);
-  ins_encode( form3_mem_reg( mem, src ) );
+  ins_encode(simple_form3_mem_reg( mem, src ) );
   ins_pipe(fstoreF_mem_reg);
 %}
 
@@ -5938,7 +5943,7 @@ instruct storeF0( memory mem, immF0 src) %{
   size(4);
   format %{ "STW    $src,$mem\t! storeF0" %}
   opcode(Assembler::stw_op3);
-  ins_encode( form3_mem_reg( mem, R_G0 ) );
+  ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
   ins_pipe(fstoreF_mem_zero);
 %}
 
@@ -5949,7 +5954,7 @@ instruct storeA8B(memory mem, regD src) %{
   size(4);
   format %{ "STDF   $src,$mem\t! packed8B" %}
   opcode(Assembler::stdf_op3);
-  ins_encode( form3_mem_reg( mem, src ) );
+  ins_encode(simple_form3_mem_reg( mem, src ) );
   ins_pipe(fstoreD_mem_reg);
 %}
 
@@ -6004,7 +6009,7 @@ instruct storeA8B0(memory mem, immI0 zero) %{
   size(4);
   format %{ "STX    $zero,$mem\t! packed8B" %}
   opcode(Assembler::stx_op3);
-  ins_encode( form3_mem_reg( mem, R_G0 ) );
+  ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
   ins_pipe(fstoreD_mem_zero);
 %}
 
@@ -6015,7 +6020,7 @@ instruct storeA4C(memory mem, regD src) %{
   size(4);
   format %{ "STDF   $src,$mem\t! packed4C" %}
   opcode(Assembler::stdf_op3);
-  ins_encode( form3_mem_reg( mem, src ) );
+  ins_encode(simple_form3_mem_reg( mem, src ) );
   ins_pipe(fstoreD_mem_reg);
 %}
 
@@ -6026,7 +6031,7 @@ instruct storeA4C0(memory mem, immI0 zero) %{
   size(4);
   format %{ "STX    $zero,$mem\t! packed4C" %}
   opcode(Assembler::stx_op3);
-  ins_encode( form3_mem_reg( mem, R_G0 ) );
+  ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
   ins_pipe(fstoreD_mem_zero);
 %}
 
@@ -6037,7 +6042,7 @@ instruct storeA2I(memory mem, regD src) %{
   size(4);
   format %{ "STDF   $src,$mem\t! packed2I" %}
   opcode(Assembler::stdf_op3);
-  ins_encode( form3_mem_reg( mem, src ) );
+  ins_encode(simple_form3_mem_reg( mem, src ) );
   ins_pipe(fstoreD_mem_reg);
 %}
 
@@ -6048,7 +6053,7 @@ instruct storeA2I0(memory mem, immI0 zero) %{
   size(4);
   format %{ "STX    $zero,$mem\t! packed2I" %}
   opcode(Assembler::stx_op3);
-  ins_encode( form3_mem_reg( mem, R_G0 ) );
+  ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
   ins_pipe(fstoreD_mem_zero);
 %}
 
@@ -6162,7 +6167,7 @@ instruct stfSSD(stackSlotD stkSlot, regD src) %{
   ins_cost(MEMORY_REF_COST);
   format %{ "STDF   $src,$stkSlot\t!stk" %}
   opcode(Assembler::stdf_op3);
-  ins_encode(form3_mem_reg(stkSlot, src));
+  ins_encode(simple_form3_mem_reg(stkSlot, src));
   ins_pipe(fstoreD_stk_reg);
 %}
 
@@ -6172,7 +6177,7 @@ instruct ldfSSD(regD dst, stackSlotD stkSlot) %{
   ins_cost(MEMORY_REF_COST);
   format %{ "LDDF   $stkSlot,$dst\t!stk" %}
   opcode(Assembler::lddf_op3);
-  ins_encode(form3_mem_reg(stkSlot, dst));
+  ins_encode(simple_form3_mem_reg(stkSlot, dst));
   ins_pipe(floadD_stk);
 %}
 
@@ -6182,7 +6187,7 @@ instruct stfSSF(stackSlotF stkSlot, regF src) %{
   ins_cost(MEMORY_REF_COST);
   format %{ "STF   $src,$stkSlot\t!stk" %}
   opcode(Assembler::stf_op3);
-  ins_encode(form3_mem_reg(stkSlot, src));
+  ins_encode(simple_form3_mem_reg(stkSlot, src));
   ins_pipe(fstoreF_stk_reg);
 %}
 
@@ -6584,7 +6589,7 @@ instruct loadLLocked(iRegL dst, memory mem) %{
   size(4);
   format %{ "LDX    $mem,$dst\t! long" %}
   opcode(Assembler::ldx_op3);
-  ins_encode( form3_mem_reg( mem, dst ) );
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mem);
 %}
 
@@ -7666,7 +7671,7 @@ instruct convI2D_mem( regD_low dst, memory mem ) %{
   format %{ "LDF    $mem,$dst\n\t"
             "FITOD  $dst,$dst" %}
   opcode(Assembler::ldf_op3, Assembler::fitod_opf);
-  ins_encode( form3_mem_reg( mem, dst ), form3_convI2F(dst, dst));
+  ins_encode(simple_form3_mem_reg( mem, dst ), form3_convI2F(dst, dst));
   ins_pipe(floadF_mem);
 %}
 
@@ -7696,7 +7701,7 @@ instruct convI2F_mem( regF dst, memory mem ) %{
   format %{ "LDF    $mem,$dst\n\t"
             "FITOS  $dst,$dst" %}
   opcode(Assembler::ldf_op3, Assembler::fitos_opf);
-  ins_encode( form3_mem_reg( mem, dst ), form3_convI2F(dst, dst));
+  ins_encode(simple_form3_mem_reg( mem, dst ), form3_convI2F(dst, dst));
   ins_pipe(floadF_mem);
 %}
 
@@ -7738,7 +7743,7 @@ instruct MoveF2I_stack_reg(iRegI dst, stackSlotF src) %{
   size(4);
   format %{ "LDUW   $src,$dst\t! MoveF2I" %}
   opcode(Assembler::lduw_op3);
-  ins_encode( form3_mem_reg( src, dst ) );
+  ins_encode(simple_form3_mem_reg( src, dst ) );
   ins_pipe(iload_mem);
 %}
 
@@ -7750,7 +7755,7 @@ instruct MoveI2F_stack_reg(regF dst, stackSlotI src) %{
   size(4);
   format %{ "LDF    $src,$dst\t! MoveI2F" %}
   opcode(Assembler::ldf_op3);
-  ins_encode(form3_mem_reg(src, dst));
+  ins_encode(simple_form3_mem_reg(src, dst));
   ins_pipe(floadF_stk);
 %}
 
@@ -7762,7 +7767,7 @@ instruct MoveD2L_stack_reg(iRegL dst, stackSlotD src) %{
   size(4);
   format %{ "LDX    $src,$dst\t! MoveD2L" %}
   opcode(Assembler::ldx_op3);
-  ins_encode( form3_mem_reg( src, dst ) );
+  ins_encode(simple_form3_mem_reg( src, dst ) );
   ins_pipe(iload_mem);
 %}
 
@@ -7774,7 +7779,7 @@ instruct MoveL2D_stack_reg(regD dst, stackSlotL src) %{
   size(4);
   format %{ "LDDF   $src,$dst\t! MoveL2D" %}
   opcode(Assembler::lddf_op3);
-  ins_encode(form3_mem_reg(src, dst));
+  ins_encode(simple_form3_mem_reg(src, dst));
   ins_pipe(floadD_stk);
 %}
 
@@ -7786,7 +7791,7 @@ instruct MoveF2I_reg_stack(stackSlotI dst, regF src) %{
   size(4);
   format %{ "STF   $src,$dst\t!MoveF2I" %}
   opcode(Assembler::stf_op3);
-  ins_encode(form3_mem_reg(dst, src));
+  ins_encode(simple_form3_mem_reg(dst, src));
   ins_pipe(fstoreF_stk_reg);
 %}
 
@@ -7798,7 +7803,7 @@ instruct MoveI2F_reg_stack(stackSlotF dst, iRegI src) %{
   size(4);
   format %{ "STW    $src,$dst\t!MoveI2F" %}
   opcode(Assembler::stw_op3);
-  ins_encode( form3_mem_reg( dst, src ) );
+  ins_encode(simple_form3_mem_reg( dst, src ) );
   ins_pipe(istore_mem_reg);
 %}
 
@@ -7810,7 +7815,7 @@ instruct MoveD2L_reg_stack(stackSlotL dst, regD src) %{
   size(4);
   format %{ "STDF   $src,$dst\t!MoveD2L" %}
   opcode(Assembler::stdf_op3);
-  ins_encode(form3_mem_reg(dst, src));
+  ins_encode(simple_form3_mem_reg(dst, src));
   ins_pipe(fstoreD_stk_reg);
 %}
 
@@ -7822,7 +7827,7 @@ instruct MoveL2D_reg_stack(stackSlotD dst, iRegL src) %{
   size(4);
   format %{ "STX    $src,$dst\t!MoveL2D" %}
   opcode(Assembler::stx_op3);
-  ins_encode( form3_mem_reg( dst, src ) );
+  ins_encode(simple_form3_mem_reg( dst, src ) );
   ins_pipe(istore_mem_reg);
 %}
 

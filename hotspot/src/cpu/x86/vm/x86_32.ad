@@ -495,8 +495,8 @@ void encode_CopyXD( CodeBuffer &cbuf, int dst_encoding, int src_encoding ) {
 void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
   Compile* C = ra_->C;
   if( C->in_24_bit_fp_mode() ) {
-    tty->print("FLDCW  24 bit fpu control word");
-    tty->print_cr(""); tty->print("\t");
+    st->print("FLDCW  24 bit fpu control word");
+    st->print_cr(""); st->print("\t");
   }
 
   int framesize = C->frame_slots() << LogBytesPerInt;
@@ -510,22 +510,22 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
   // stack.  But the stack safety zone should account for that.
   // See bugs 4446381, 4468289, 4497237.
   if (C->need_stack_bang(framesize)) {
-    tty->print_cr("# stack bang"); tty->print("\t");
+    st->print_cr("# stack bang"); st->print("\t");
   }
-  tty->print_cr("PUSHL  EBP"); tty->print("\t");
+  st->print_cr("PUSHL  EBP"); st->print("\t");
 
   if( VerifyStackAtCalls ) { // Majik cookie to verify stack depth
-    tty->print("PUSH   0xBADB100D\t# Majik cookie for stack depth check");
-    tty->print_cr(""); tty->print("\t");
+    st->print("PUSH   0xBADB100D\t# Majik cookie for stack depth check");
+    st->print_cr(""); st->print("\t");
     framesize -= wordSize;
   }
 
   if ((C->in_24_bit_fp_mode() || VerifyStackAtCalls ) && framesize < 128 ) {
     if (framesize) {
-      tty->print("SUB    ESP,%d\t# Create frame",framesize);
+      st->print("SUB    ESP,%d\t# Create frame",framesize);
     }
   } else {
-    tty->print("SUB    ESP,%d\t# Create frame",framesize);
+    st->print("SUB    ESP,%d\t# Create frame",framesize);
   }
 }
 #endif
@@ -725,18 +725,19 @@ static enum RC rc_class( OptoReg::Name reg ) {
   return rc_xmm;
 }
 
-static int impl_helper( CodeBuffer *cbuf, bool do_size, bool is_load, int offset, int reg, int opcode, const char *op_str, int size ) {
+static int impl_helper( CodeBuffer *cbuf, bool do_size, bool is_load, int offset, int reg,
+                        int opcode, const char *op_str, int size, outputStream* st ) {
   if( cbuf ) {
     emit_opcode  (*cbuf, opcode );
     encode_RegMem(*cbuf, Matcher::_regEncode[reg], ESP_enc, 0x4, 0, offset, false);
 #ifndef PRODUCT
   } else if( !do_size ) {
-    if( size != 0 ) tty->print("\n\t");
+    if( size != 0 ) st->print("\n\t");
     if( opcode == 0x8B || opcode == 0x89 ) { // MOV
-      if( is_load ) tty->print("%s   %s,[ESP + #%d]",op_str,Matcher::regName[reg],offset);
-      else          tty->print("%s   [ESP + #%d],%s",op_str,offset,Matcher::regName[reg]);
+      if( is_load ) st->print("%s   %s,[ESP + #%d]",op_str,Matcher::regName[reg],offset);
+      else          st->print("%s   [ESP + #%d],%s",op_str,offset,Matcher::regName[reg]);
     } else { // FLD, FST, PUSH, POP
-      tty->print("%s [ESP + #%d]",op_str,offset);
+      st->print("%s [ESP + #%d]",op_str,offset);
     }
 #endif
   }
@@ -746,7 +747,7 @@ static int impl_helper( CodeBuffer *cbuf, bool do_size, bool is_load, int offset
 
 // Helper for XMM registers.  Extra opcode bits, limited syntax.
 static int impl_x_helper( CodeBuffer *cbuf, bool do_size, bool is_load,
-                         int offset, int reg_lo, int reg_hi, int size ) {
+                         int offset, int reg_lo, int reg_hi, int size, outputStream* st ) {
   if( cbuf ) {
     if( reg_lo+1 == reg_hi ) { // double move?
       if( is_load && !UseXmmLoadAndClearUpper )
@@ -764,17 +765,17 @@ static int impl_x_helper( CodeBuffer *cbuf, bool do_size, bool is_load,
     encode_RegMem(*cbuf, Matcher::_regEncode[reg_lo], ESP_enc, 0x4, 0, offset, false);
 #ifndef PRODUCT
   } else if( !do_size ) {
-    if( size != 0 ) tty->print("\n\t");
+    if( size != 0 ) st->print("\n\t");
     if( reg_lo+1 == reg_hi ) { // double move?
-      if( is_load ) tty->print("%s %s,[ESP + #%d]",
+      if( is_load ) st->print("%s %s,[ESP + #%d]",
                                UseXmmLoadAndClearUpper ? "MOVSD " : "MOVLPD",
                                Matcher::regName[reg_lo], offset);
-      else          tty->print("MOVSD  [ESP + #%d],%s",
+      else          st->print("MOVSD  [ESP + #%d],%s",
                                offset, Matcher::regName[reg_lo]);
     } else {
-      if( is_load ) tty->print("MOVSS  %s,[ESP + #%d]",
+      if( is_load ) st->print("MOVSS  %s,[ESP + #%d]",
                                Matcher::regName[reg_lo], offset);
-      else          tty->print("MOVSS  [ESP + #%d],%s",
+      else          st->print("MOVSS  [ESP + #%d],%s",
                                offset, Matcher::regName[reg_lo]);
     }
 #endif
@@ -785,7 +786,7 @@ static int impl_x_helper( CodeBuffer *cbuf, bool do_size, bool is_load,
 
 
 static int impl_movx_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo,
-                            int src_hi, int dst_hi, int size ) {
+                            int src_hi, int dst_hi, int size, outputStream* st ) {
   if( UseXmmRegToRegMoveAll ) {//Use movaps,movapd to move between xmm registers
     if( cbuf ) {
       if( (src_lo+1 == src_hi && dst_lo+1 == dst_hi) ) {
@@ -796,11 +797,11 @@ static int impl_movx_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst
       emit_rm    (*cbuf, 0x3, Matcher::_regEncode[dst_lo], Matcher::_regEncode[src_lo] );
 #ifndef PRODUCT
     } else if( !do_size ) {
-      if( size != 0 ) tty->print("\n\t");
+      if( size != 0 ) st->print("\n\t");
       if( src_lo+1 == src_hi && dst_lo+1 == dst_hi ) { // double move?
-        tty->print("MOVAPD %s,%s",Matcher::regName[dst_lo],Matcher::regName[src_lo]);
+        st->print("MOVAPD %s,%s",Matcher::regName[dst_lo],Matcher::regName[src_lo]);
       } else {
-        tty->print("MOVAPS %s,%s",Matcher::regName[dst_lo],Matcher::regName[src_lo]);
+        st->print("MOVAPS %s,%s",Matcher::regName[dst_lo],Matcher::regName[src_lo]);
       }
 #endif
     }
@@ -813,11 +814,11 @@ static int impl_movx_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst
       emit_rm    (*cbuf, 0x3, Matcher::_regEncode[dst_lo], Matcher::_regEncode[src_lo] );
 #ifndef PRODUCT
     } else if( !do_size ) {
-      if( size != 0 ) tty->print("\n\t");
+      if( size != 0 ) st->print("\n\t");
       if( src_lo+1 == src_hi && dst_lo+1 == dst_hi ) { // double move?
-        tty->print("MOVSD  %s,%s",Matcher::regName[dst_lo],Matcher::regName[src_lo]);
+        st->print("MOVSD  %s,%s",Matcher::regName[dst_lo],Matcher::regName[src_lo]);
       } else {
-        tty->print("MOVSS  %s,%s",Matcher::regName[dst_lo],Matcher::regName[src_lo]);
+        st->print("MOVSS  %s,%s",Matcher::regName[dst_lo],Matcher::regName[src_lo]);
       }
 #endif
     }
@@ -825,28 +826,29 @@ static int impl_movx_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst
   }
 }
 
-static int impl_mov_helper( CodeBuffer *cbuf, bool do_size, int src, int dst, int size ) {
+static int impl_mov_helper( CodeBuffer *cbuf, bool do_size, int src, int dst, int size, outputStream* st ) {
   if( cbuf ) {
     emit_opcode(*cbuf, 0x8B );
     emit_rm    (*cbuf, 0x3, Matcher::_regEncode[dst], Matcher::_regEncode[src] );
 #ifndef PRODUCT
   } else if( !do_size ) {
-    if( size != 0 ) tty->print("\n\t");
-    tty->print("MOV    %s,%s",Matcher::regName[dst],Matcher::regName[src]);
+    if( size != 0 ) st->print("\n\t");
+    st->print("MOV    %s,%s",Matcher::regName[dst],Matcher::regName[src]);
 #endif
   }
   return size+2;
 }
 
-static int impl_fp_store_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int src_hi, int dst_lo, int dst_hi, int offset, int size ) {
+static int impl_fp_store_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int src_hi, int dst_lo, int dst_hi,
+                                 int offset, int size, outputStream* st ) {
   if( src_lo != FPR1L_num ) {      // Move value to top of FP stack, if not already there
     if( cbuf ) {
       emit_opcode( *cbuf, 0xD9 );  // FLD (i.e., push it)
       emit_d8( *cbuf, 0xC0-1+Matcher::_regEncode[src_lo] );
 #ifndef PRODUCT
     } else if( !do_size ) {
-      if( size != 0 ) tty->print("\n\t");
-      tty->print("FLD    %s",Matcher::regName[src_lo]);
+      if( size != 0 ) st->print("\n\t");
+      st->print("FLD    %s",Matcher::regName[src_lo]);
 #endif
     }
     size += 2;
@@ -864,7 +866,7 @@ static int impl_fp_store_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int
     assert( !OptoReg::is_valid(src_hi) && !OptoReg::is_valid(dst_hi), "no non-adjacent float-stores" );
   }
 
-  return impl_helper(cbuf,do_size,false,offset,st_op,op,op_str,size);
+  return impl_helper(cbuf,do_size,false,offset,st_op,op,op_str,size, st);
 }
 
 uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bool do_size, outputStream* st ) const {
@@ -892,16 +894,16 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   if( src_first_rc == rc_stack && dst_first_rc == rc_stack ) {
     if( src_second == dst_first ) { // overlapping stack copy ranges
       assert( src_second_rc == rc_stack && dst_second_rc == rc_stack, "we only expect a stk-stk copy here" );
-      size = impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_second),ESI_num,0xFF,"PUSH  ",size);
-      size = impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_second),EAX_num,0x8F,"POP   ",size);
+      size = impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_second),ESI_num,0xFF,"PUSH  ",size, st);
+      size = impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_second),EAX_num,0x8F,"POP   ",size, st);
       src_second_rc = dst_second_rc = rc_bad;  // flag as already moved the second bits
     }
     // move low bits
-    size = impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_first),ESI_num,0xFF,"PUSH  ",size);
-    size = impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_first),EAX_num,0x8F,"POP   ",size);
+    size = impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_first),ESI_num,0xFF,"PUSH  ",size, st);
+    size = impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_first),EAX_num,0x8F,"POP   ",size, st);
     if( src_second_rc == rc_stack && dst_second_rc == rc_stack ) { // mov second bits
-      size = impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_second),ESI_num,0xFF,"PUSH  ",size);
-      size = impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_second),EAX_num,0x8F,"POP   ",size);
+      size = impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_second),ESI_num,0xFF,"PUSH  ",size, st);
+      size = impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_second),EAX_num,0x8F,"POP   ",size, st);
     }
     return size;
   }
@@ -909,15 +911,15 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   // --------------------------------------
   // Check for integer reg-reg copy
   if( src_first_rc == rc_int && dst_first_rc == rc_int )
-    size = impl_mov_helper(cbuf,do_size,src_first,dst_first,size);
+    size = impl_mov_helper(cbuf,do_size,src_first,dst_first,size, st);
 
   // Check for integer store
   if( src_first_rc == rc_int && dst_first_rc == rc_stack )
-    size = impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_first),src_first,0x89,"MOV ",size);
+    size = impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_first),src_first,0x89,"MOV ",size, st);
 
   // Check for integer load
   if( dst_first_rc == rc_int && src_first_rc == rc_stack )
-    size = impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_first),dst_first,0x8B,"MOV ",size);
+    size = impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_first),dst_first,0x8B,"MOV ",size, st);
 
   // --------------------------------------
   // Check for float reg-reg copy
@@ -951,7 +953,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
 
   // Check for float store
   if( src_first_rc == rc_float && dst_first_rc == rc_stack ) {
-    return impl_fp_store_helper(cbuf,do_size,src_first,src_second,dst_first,dst_second,ra_->reg2offset(dst_first),size);
+    return impl_fp_store_helper(cbuf,do_size,src_first,src_second,dst_first,dst_second,ra_->reg2offset(dst_first),size, st);
   }
 
   // Check for float load
@@ -987,17 +989,17 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
     assert( (src_second_rc == rc_bad && dst_second_rc == rc_bad) ||
             (src_first+1 == src_second && dst_first+1 == dst_second),
             "no non-adjacent float-moves" );
-    return impl_movx_helper(cbuf,do_size,src_first,dst_first,src_second, dst_second, size);
+    return impl_movx_helper(cbuf,do_size,src_first,dst_first,src_second, dst_second, size, st);
   }
 
   // Check for xmm store
   if( src_first_rc == rc_xmm && dst_first_rc == rc_stack ) {
-    return impl_x_helper(cbuf,do_size,false,ra_->reg2offset(dst_first),src_first, src_second, size);
+    return impl_x_helper(cbuf,do_size,false,ra_->reg2offset(dst_first),src_first, src_second, size, st);
   }
 
   // Check for float xmm load
   if( dst_first_rc == rc_xmm && src_first_rc == rc_stack ) {
-    return impl_x_helper(cbuf,do_size,true ,ra_->reg2offset(src_first),dst_first, dst_second, size);
+    return impl_x_helper(cbuf,do_size,true ,ra_->reg2offset(src_first),dst_first, dst_second, size, st);
   }
 
   // Copy from float reg to xmm reg
@@ -1017,10 +1019,10 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
     }
     size += 4;
 
-    size = impl_fp_store_helper(cbuf,do_size,src_first,src_second,dst_first,dst_second,0,size);
+    size = impl_fp_store_helper(cbuf,do_size,src_first,src_second,dst_first,dst_second,0,size, st);
 
     // Copy from the temp memory to the xmm reg.
-    size = impl_x_helper(cbuf,do_size,true ,0,dst_first, dst_second, size);
+    size = impl_x_helper(cbuf,do_size,true ,0,dst_first, dst_second, size, st);
 
     if( cbuf ) {
       emit_opcode(*cbuf,0x8D);  // LEA  ESP,[ESP+8]
@@ -1047,15 +1049,15 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
 
   // Check for second word int-int move
   if( src_second_rc == rc_int && dst_second_rc == rc_int )
-    return impl_mov_helper(cbuf,do_size,src_second,dst_second,size);
+    return impl_mov_helper(cbuf,do_size,src_second,dst_second,size, st);
 
   // Check for second word integer store
   if( src_second_rc == rc_int && dst_second_rc == rc_stack )
-    return impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_second),src_second,0x89,"MOV ",size);
+    return impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_second),src_second,0x89,"MOV ",size, st);
 
   // Check for second word integer load
   if( dst_second_rc == rc_int && src_second_rc == rc_stack )
-    return impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_second),dst_second,0x8B,"MOV ",size);
+    return impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_second),dst_second,0x8B,"MOV ",size, st);
 
 
   Unimplemented();
@@ -1318,7 +1320,11 @@ const uint Matcher::vector_ideal_reg(void) {
 //
 // NOTE: If the platform does not provide any short branch variants, then
 //       this method should return false for offset 0.
-bool Matcher::is_short_branch_offset(int offset) {
+bool Matcher::is_short_branch_offset(int rule, int offset) {
+  // the short version of jmpConUCF2 contains multiple branches,
+  // making the reach slightly less
+  if (rule == jmpConUCF2_rule)
+    return (-126 <= offset && offset <= 125);
   return (-128 <= offset && offset <= 127);
 }
 
@@ -5272,6 +5278,15 @@ operand eFlagsRegU() %{
   interface(REG_INTER);
 %}
 
+operand eFlagsRegUCF() %{
+  constraint(ALLOC_IN_RC(int_flags));
+  match(RegFlags);
+  predicate(false);
+
+  format %{ "EFLAGS_U_CF" %}
+  interface(REG_INTER);
+%}
+
 // Condition Code Register used by long compare
 operand flagsReg_long_LTGE() %{
   constraint(ALLOC_IN_RC(int_flags));
@@ -5749,12 +5764,12 @@ operand cmpOp() %{
 
   format %{ "" %}
   interface(COND_INTER) %{
-    equal(0x4);
-    not_equal(0x5);
-    less(0xC);
-    greater_equal(0xD);
-    less_equal(0xE);
-    greater(0xF);
+    equal(0x4, "e");
+    not_equal(0x5, "ne");
+    less(0xC, "l");
+    greater_equal(0xD, "ge");
+    less_equal(0xE, "le");
+    greater(0xF, "g");
   %}
 %}
 
@@ -5766,12 +5781,47 @@ operand cmpOpU() %{
 
   format %{ "" %}
   interface(COND_INTER) %{
-    equal(0x4);
-    not_equal(0x5);
-    less(0x2);
-    greater_equal(0x3);
-    less_equal(0x6);
-    greater(0x7);
+    equal(0x4, "e");
+    not_equal(0x5, "ne");
+    less(0x2, "b");
+    greater_equal(0x3, "nb");
+    less_equal(0x6, "be");
+    greater(0x7, "nbe");
+  %}
+%}
+
+// Floating comparisons that don't require any fixup for the unordered case
+operand cmpOpUCF() %{
+  match(Bool);
+  predicate(n->as_Bool()->_test._test == BoolTest::lt ||
+            n->as_Bool()->_test._test == BoolTest::ge ||
+            n->as_Bool()->_test._test == BoolTest::le ||
+            n->as_Bool()->_test._test == BoolTest::gt);
+  format %{ "" %}
+  interface(COND_INTER) %{
+    equal(0x4, "e");
+    not_equal(0x5, "ne");
+    less(0x2, "b");
+    greater_equal(0x3, "nb");
+    less_equal(0x6, "be");
+    greater(0x7, "nbe");
+  %}
+%}
+
+
+// Floating comparisons that can be fixed up with extra conditional jumps
+operand cmpOpUCF2() %{
+  match(Bool);
+  predicate(n->as_Bool()->_test._test == BoolTest::ne ||
+            n->as_Bool()->_test._test == BoolTest::eq);
+  format %{ "" %}
+  interface(COND_INTER) %{
+    equal(0x4, "e");
+    not_equal(0x5, "ne");
+    less(0x2, "b");
+    greater_equal(0x3, "nb");
+    less_equal(0x6, "be");
+    greater(0x7, "nbe");
   %}
 %}
 
@@ -5796,12 +5846,12 @@ operand cmpOp_commute() %{
 
   format %{ "" %}
   interface(COND_INTER) %{
-    equal(0x4);
-    not_equal(0x5);
-    less(0xF);
-    greater_equal(0xE);
-    less_equal(0xD);
-    greater(0xC);
+    equal(0x4, "e");
+    not_equal(0x5, "ne");
+    less(0xF, "g");
+    greater_equal(0xE, "le");
+    less_equal(0xD, "ge");
+    greater(0xC, "l");
   %}
 %}
 
@@ -7357,7 +7407,7 @@ instruct cmovI_reg(eRegI dst, eRegI src, eFlagsReg cr, cmpOp cop ) %{
   ins_pipe( pipe_cmov_reg );
 %}
 
-instruct cmovI_regU( eRegI dst, eRegI src, eFlagsRegU cr, cmpOpU cop ) %{
+instruct cmovI_regU( cmpOpU cop, eFlagsRegU cr, eRegI dst, eRegI src ) %{
   predicate(VM_Version::supports_cmov() );
   match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
   ins_cost(200);
@@ -7365,6 +7415,15 @@ instruct cmovI_regU( eRegI dst, eRegI src, eFlagsRegU cr, cmpOpU cop ) %{
   opcode(0x0F,0x40);
   ins_encode( enc_cmov(cop), RegReg( dst, src ) );
   ins_pipe( pipe_cmov_reg );
+%}
+
+instruct cmovI_regUCF( cmpOpUCF cop, eFlagsRegUCF cr, eRegI dst, eRegI src ) %{
+  predicate(VM_Version::supports_cmov() );
+  match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovI_regU(cop, cr, dst, src);
+  %}
 %}
 
 // Conditional move
@@ -7379,7 +7438,7 @@ instruct cmovI_mem(cmpOp cop, eFlagsReg cr, eRegI dst, memory src) %{
 %}
 
 // Conditional move
-instruct cmovI_memu(cmpOpU cop, eFlagsRegU cr, eRegI dst, memory src) %{
+instruct cmovI_memU(cmpOpU cop, eFlagsRegU cr, eRegI dst, memory src) %{
   predicate(VM_Version::supports_cmov() );
   match(Set dst (CMoveI (Binary cop cr) (Binary dst (LoadI src))));
   ins_cost(250);
@@ -7387,6 +7446,15 @@ instruct cmovI_memu(cmpOpU cop, eFlagsRegU cr, eRegI dst, memory src) %{
   opcode(0x0F,0x40);
   ins_encode( enc_cmov(cop), RegMem( dst, src ) );
   ins_pipe( pipe_cmov_mem );
+%}
+
+instruct cmovI_memUCF(cmpOpUCF cop, eFlagsRegUCF cr, eRegI dst, memory src) %{
+  predicate(VM_Version::supports_cmov() );
+  match(Set dst (CMoveI (Binary cop cr) (Binary dst (LoadI src))));
+  ins_cost(250);
+  expand %{
+    cmovI_memU(cop, cr, dst, src);
+  %}
 %}
 
 // Conditional move
@@ -7416,7 +7484,7 @@ instruct cmovP_reg_nonP6(eRegP dst, eRegP src, eFlagsReg cr, cmpOp cop ) %{
 %}
 
 // Conditional move
-instruct cmovP_regU(eRegP dst, eRegP src, eFlagsRegU cr, cmpOpU cop ) %{
+instruct cmovP_regU(cmpOpU cop, eFlagsRegU cr, eRegP dst, eRegP src ) %{
   predicate(VM_Version::supports_cmov() );
   match(Set dst (CMoveP (Binary cop cr) (Binary dst src)));
   ins_cost(200);
@@ -7424,6 +7492,15 @@ instruct cmovP_regU(eRegP dst, eRegP src, eFlagsRegU cr, cmpOpU cop ) %{
   opcode(0x0F,0x40);
   ins_encode( enc_cmov(cop), RegReg( dst, src ) );
   ins_pipe( pipe_cmov_reg );
+%}
+
+instruct cmovP_regUCF(cmpOpUCF cop, eFlagsRegUCF cr, eRegP dst, eRegP src ) %{
+  predicate(VM_Version::supports_cmov() );
+  match(Set dst (CMoveP (Binary cop cr) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovP_regU(cop, cr, dst, src);
+  %}
 %}
 
 // DISABLED: Requires the ADLC to emit a bottom_type call that
@@ -7555,6 +7632,15 @@ instruct fcmovX_regU(cmpOpU cop, eFlagsRegU cr, regX dst, regX src) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct fcmovX_regUCF(cmpOpUCF cop, eFlagsRegUCF cr, regX dst, regX src) %{
+  predicate (UseSSE>=1);
+  match(Set dst (CMoveF (Binary cop cr) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    fcmovX_regU(cop, cr, dst, src);
+  %}
+%}
+
 // unsigned version
 instruct fcmovXD_regU(cmpOpU cop, eFlagsRegU cr, regXD dst, regXD src) %{
   predicate (UseSSE>=2);
@@ -7571,6 +7657,15 @@ instruct fcmovXD_regU(cmpOpU cop, eFlagsRegU cr, regXD dst, regXD src) %{
     __ bind(skip);
   %}
   ins_pipe( pipe_slow );
+%}
+
+instruct fcmovXD_regUCF(cmpOpUCF cop, eFlagsRegUCF cr, regXD dst, regXD src) %{
+  predicate (UseSSE>=2);
+  match(Set dst (CMoveD (Binary cop cr) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    fcmovXD_regU(cop, cr, dst, src);
+  %}
 %}
 
 instruct cmovL_reg(cmpOp cop, eFlagsReg cr, eRegL dst, eRegL src) %{
@@ -7593,6 +7688,15 @@ instruct cmovL_regU(cmpOpU cop, eFlagsRegU cr, eRegL dst, eRegL src) %{
   opcode(0x0F,0x40);
   ins_encode( enc_cmov(cop), RegReg_Lo2( dst, src ), enc_cmov(cop), RegReg_Hi2( dst, src ) );
   ins_pipe( pipe_cmov_reg_long );
+%}
+
+instruct cmovL_regUCF(cmpOpUCF cop, eFlagsRegUCF cr, eRegL dst, eRegL src) %{
+  predicate(VM_Version::supports_cmov() );
+  match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovL_regU(cop, cr, dst, src);
+  %}
 %}
 
 //----------Arithmetic Instructions--------------------------------------------
@@ -9200,6 +9304,18 @@ instruct cmpD_cc_P6(eFlagsRegU cr, regD src1, regD src2, eAXRegI rax) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct cmpD_cc_P6CF(eFlagsRegUCF cr, regD src1, regD src2) %{
+  predicate(VM_Version::supports_cmov() && UseSSE <=1);
+  match(Set cr (CmpD src1 src2));
+  ins_cost(150);
+  format %{ "FLD    $src1\n\t"
+            "FUCOMIP ST,$src2  // P6 instruction" %}
+  opcode(0xDF, 0x05); /* DF E8+i or DF /5 */
+  ins_encode( Push_Reg_D(src1),
+              OpcP, RegOpc(src2));
+  ins_pipe( pipe_slow );
+%}
+
 // Compare & branch
 instruct cmpD_cc(eFlagsRegU cr, regD src1, regD src2, eAXRegI rax) %{
   predicate(UseSSE<=1);
@@ -9264,6 +9380,16 @@ instruct cmpXD_cc(eFlagsRegU cr, regXD dst, regXD src, eAXRegI rax) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct cmpXD_ccCF(eFlagsRegUCF cr, regXD dst, regXD src) %{
+  predicate(UseSSE>=2);
+  match(Set cr (CmpD dst src));
+  ins_cost(100);
+  format %{ "COMISD $dst,$src" %}
+  opcode(0x66, 0x0F, 0x2F);
+  ins_encode(OpcP, OpcS, Opcode(tertiary), RegReg(dst, src));
+  ins_pipe( pipe_slow );
+%}
+
 // float compare and set condition codes in EFLAGS by XMM regs
 instruct cmpXD_ccmem(eFlagsRegU cr, regXD dst, memory src, eAXRegI rax) %{
   predicate(UseSSE>=2);
@@ -9277,6 +9403,16 @@ instruct cmpXD_ccmem(eFlagsRegU cr, regXD dst, memory src, eAXRegI rax) %{
      "exit:\tNOP               // avoid branch to branch" %}
   opcode(0x66, 0x0F, 0x2F);
   ins_encode(OpcP, OpcS, Opcode(tertiary), RegMem(dst, src), cmpF_P6_fixup);
+  ins_pipe( pipe_slow );
+%}
+
+instruct cmpXD_ccmemCF(eFlagsRegUCF cr, regXD dst, memory src) %{
+  predicate(UseSSE>=2);
+  match(Set cr (CmpD dst (LoadD src)));
+  ins_cost(100);
+  format %{ "COMISD $dst,$src" %}
+  opcode(0x66, 0x0F, 0x2F);
+  ins_encode(OpcP, OpcS, Opcode(tertiary), RegMem(dst, src));
   ins_pipe( pipe_slow );
 %}
 
@@ -10167,6 +10303,18 @@ instruct cmpF_cc_P6(eFlagsRegU cr, regF src1, regF src2, eAXRegI rax) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct cmpF_cc_P6CF(eFlagsRegUCF cr, regF src1, regF src2) %{
+  predicate(VM_Version::supports_cmov() && UseSSE == 0);
+  match(Set cr (CmpF src1 src2));
+  ins_cost(100);
+  format %{ "FLD    $src1\n\t"
+            "FUCOMIP ST,$src2  // P6 instruction" %}
+  opcode(0xDF, 0x05); /* DF E8+i or DF /5 */
+  ins_encode( Push_Reg_D(src1),
+              OpcP, RegOpc(src2));
+  ins_pipe( pipe_slow );
+%}
+
 
 // Compare & branch
 instruct cmpF_cc(eFlagsRegU cr, regF src1, regF src2, eAXRegI rax) %{
@@ -10232,6 +10380,16 @@ instruct cmpX_cc(eFlagsRegU cr, regX dst, regX src, eAXRegI rax) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct cmpX_ccCF(eFlagsRegUCF cr, regX dst, regX src) %{
+  predicate(UseSSE>=1);
+  match(Set cr (CmpF dst src));
+  ins_cost(100);
+  format %{ "COMISS $dst,$src" %}
+  opcode(0x0F, 0x2F);
+  ins_encode(OpcP, OpcS, RegReg(dst, src));
+  ins_pipe( pipe_slow );
+%}
+
 // float compare and set condition codes in EFLAGS by XMM regs
 instruct cmpX_ccmem(eFlagsRegU cr, regX dst, memory src, eAXRegI rax) %{
   predicate(UseSSE>=1);
@@ -10245,6 +10403,16 @@ instruct cmpX_ccmem(eFlagsRegU cr, regX dst, memory src, eAXRegI rax) %{
      "exit:\tNOP               // avoid branch to branch" %}
   opcode(0x0F, 0x2F);
   ins_encode(OpcP, OpcS, RegMem(dst, src), cmpF_P6_fixup);
+  ins_pipe( pipe_slow );
+%}
+
+instruct cmpX_ccmemCF(eFlagsRegUCF cr, regX dst, memory src) %{
+  predicate(UseSSE>=1);
+  match(Set cr (CmpF dst (LoadF src)));
+  ins_cost(100);
+  format %{ "COMISS $dst,$src" %}
+  opcode(0x0F, 0x2F);
+  ins_encode(OpcP, OpcS, RegMem(dst, src));
   ins_pipe( pipe_slow );
 %}
 
@@ -12099,6 +12267,19 @@ instruct jmpLoopEndU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
   ins_pc_relative(1);
 %}
 
+instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(200);
+  format %{ "J$cop,u  $labl\t# Loop end" %}
+  size(6);
+  opcode(0x0F, 0x80);
+  ins_encode( Jcc( cop, labl) );
+  ins_pipe( pipe_jcc );
+  ins_pc_relative(1);
+%}
+
 // Jump Direct Conditional - using unsigned comparison
 instruct jmpConU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
   match(If cop cmp);
@@ -12108,8 +12289,63 @@ instruct jmpConU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
   format %{ "J$cop,u  $labl" %}
   size(6);
   opcode(0x0F, 0x80);
-  ins_encode( Jcc( cop, labl) );
-  ins_pipe( pipe_jcc );
+  ins_encode(Jcc(cop, labl));
+  ins_pipe(pipe_jcc);
+  ins_pc_relative(1);
+%}
+
+instruct jmpConUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(200);
+  format %{ "J$cop,u  $labl" %}
+  size(6);
+  opcode(0x0F, 0x80);
+  ins_encode(Jcc(cop, labl));
+  ins_pipe(pipe_jcc);
+  ins_pc_relative(1);
+%}
+
+instruct jmpConUCF2(cmpOpUCF2 cop, eFlagsRegUCF cmp, label labl) %{
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(200);
+  format %{ $$template
+    if ($cop$$cmpcode == Assembler::notEqual) {
+      $$emit$$"JP,u   $labl\n\t"
+      $$emit$$"J$cop,u   $labl"
+    } else {
+      $$emit$$"JP,u   done\n\t"
+      $$emit$$"J$cop,u   $labl\n\t"
+      $$emit$$"done:"
+    }
+  %}
+  size(12);
+  opcode(0x0F, 0x80);
+  ins_encode %{
+    Label* l = $labl$$label;
+    $$$emit8$primary;
+    emit_cc(cbuf, $secondary, Assembler::parity);
+    int parity_disp = -1;
+    bool ok = false;
+    if ($cop$$cmpcode == Assembler::notEqual) {
+       // the two jumps 6 bytes apart so the jump distances are too
+       parity_disp = l ? (l->loc_pos() - (cbuf.code_size() + 4)) : 0;
+    } else if ($cop$$cmpcode == Assembler::equal) {
+       parity_disp = 6;
+       ok = true;
+    } else {
+       ShouldNotReachHere();
+    }
+    emit_d32(cbuf, parity_disp);
+    $$$emit8$primary;
+    emit_cc(cbuf, $secondary, $cop$$cmpcode);
+    int disp = l ? (l->loc_pos() - (cbuf.code_size() + 4)) : 0;
+    emit_d32(cbuf, disp);
+  %}
+  ins_pipe(pipe_jcc);
   ins_pc_relative(1);
 %}
 
@@ -12208,7 +12444,7 @@ instruct jmpLoopEnd_short(cmpOp cop, eFlagsReg cr, label labl) %{
   effect(USE labl);
 
   ins_cost(300);
-  format %{ "J$cop,s  $labl" %}
+  format %{ "J$cop,s  $labl\t# Loop end" %}
   size(2);
   opcode(0x70);
   ins_encode( JccShort( cop, labl) );
@@ -12223,7 +12459,21 @@ instruct jmpLoopEndU_short(cmpOpU cop, eFlagsRegU cmp, label labl) %{
   effect(USE labl);
 
   ins_cost(300);
-  format %{ "J$cop,us $labl" %}
+  format %{ "J$cop,us $labl\t# Loop end" %}
+  size(2);
+  opcode(0x70);
+  ins_encode( JccShort( cop, labl) );
+  ins_pipe( pipe_jcc );
+  ins_pc_relative(1);
+  ins_short_branch(1);
+%}
+
+instruct jmpLoopEndUCF_short(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "J$cop,us $labl\t# Loop end" %}
   size(2);
   opcode(0x70);
   ins_encode( JccShort( cop, labl) );
@@ -12243,6 +12493,60 @@ instruct jmpConU_short(cmpOpU cop, eFlagsRegU cmp, label labl) %{
   opcode(0x70);
   ins_encode( JccShort( cop, labl) );
   ins_pipe( pipe_jcc );
+  ins_pc_relative(1);
+  ins_short_branch(1);
+%}
+
+instruct jmpConUCF_short(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "J$cop,us $labl" %}
+  size(2);
+  opcode(0x70);
+  ins_encode( JccShort( cop, labl) );
+  ins_pipe( pipe_jcc );
+  ins_pc_relative(1);
+  ins_short_branch(1);
+%}
+
+instruct jmpConUCF2_short(cmpOpUCF2 cop, eFlagsRegUCF cmp, label labl) %{
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ $$template
+    if ($cop$$cmpcode == Assembler::notEqual) {
+      $$emit$$"JP,u,s   $labl\n\t"
+      $$emit$$"J$cop,u,s   $labl"
+    } else {
+      $$emit$$"JP,u,s   done\n\t"
+      $$emit$$"J$cop,u,s  $labl\n\t"
+      $$emit$$"done:"
+    }
+  %}
+  size(4);
+  opcode(0x70);
+  ins_encode %{
+    Label* l = $labl$$label;
+    emit_cc(cbuf, $primary, Assembler::parity);
+    int parity_disp = -1;
+    if ($cop$$cmpcode == Assembler::notEqual) {
+      parity_disp = l ? (l->loc_pos() - (cbuf.code_size() + 1)) : 0;
+    } else if ($cop$$cmpcode == Assembler::equal) {
+      parity_disp = 2;
+    } else {
+      ShouldNotReachHere();
+    }
+    emit_d8(cbuf, parity_disp);
+    emit_cc(cbuf, $primary, $cop$$cmpcode);
+    int disp = l ? (l->loc_pos() - (cbuf.code_size() + 1)) : 0;
+    emit_d8(cbuf, disp);
+    assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
+    assert(-128 <= parity_disp && parity_disp <= 127, "Displacement too large for short jmp");
+  %}
+  ins_pipe(pipe_jcc);
   ins_pc_relative(1);
   ins_short_branch(1);
 %}
