@@ -706,12 +706,12 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        // Check that the variable's declared type is well-formed.
-        chk.validate(tree.vartype, env);
-
         VarSymbol v = tree.sym;
         Lint lint = env.info.lint.augment(v.attributes_field, v.flags());
         Lint prevLint = chk.setLint(lint);
+
+        // Check that the variable's declared type is well-formed.
+        chk.validate(tree.vartype, env);
 
         try {
             chk.checkDeprecatedAnnotation(tree.pos(), v);
