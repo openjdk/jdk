@@ -53,7 +53,7 @@ class Request {
         do {
             startLine = readLine();
             /* skip blank lines */
-        } while (startLine.equals (""));
+        } while (startLine == null ? false : startLine.equals (""));
     }
 
 
