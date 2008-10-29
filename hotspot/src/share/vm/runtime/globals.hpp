@@ -2792,7 +2792,7 @@ class CommandLineFlags {
   product(intx, TargetSurvivorRatio,    50,                                 \
           "Desired percentage of survivor space used after scavenge")       \
                                                                             \
-  product(intx, MarkSweepDeadRatio,     5,                                  \
+  product(uintx, MarkSweepDeadRatio,     5,                                 \
           "Percentage (0-100) of the old gen allowed as dead wood."         \
           "Serial mark sweep treats this as both the min and max value."    \
           "CMS uses this value only if it falls back to mark sweep."        \
@@ -2801,7 +2801,7 @@ class CommandLineFlags {
           "either completely full or completely empty.  Par compact also"   \
           "has a smaller default value; see arguments.cpp.")                \
                                                                             \
-  product(intx, PermMarkSweepDeadRatio,    20,                              \
+  product(uintx, PermMarkSweepDeadRatio,    20,                             \
           "Percentage (0-100) of the perm gen allowed as dead wood."        \
           "See MarkSweepDeadRatio for collector-specific comments.")        \
                                                                             \
