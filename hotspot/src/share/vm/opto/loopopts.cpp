@@ -1903,9 +1903,6 @@ void PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, N
       // Use in a phi is considered a use in the associated predecessor block
       use_c = use->in(0)->in(j);
     }
-    if (use_c->is_CountedLoop()) {
-      use_c = use_c->in(LoopNode::EntryControl);
-    }
     set_ctrl(n_clone, use_c);
     assert(!loop->is_member(get_loop(use_c)), "should be outside loop");
     get_loop(use_c)->_body.push(n_clone);

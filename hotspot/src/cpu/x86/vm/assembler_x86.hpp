@@ -1055,6 +1055,11 @@ private:
   void movdqa(XMMRegister dst, Address src);
   void movdqa(XMMRegister dst, XMMRegister src);
 
+  // Move Unaligned Double Quadword
+  void movdqu(Address     dst, XMMRegister src);
+  void movdqu(XMMRegister dst, Address src);
+  void movdqu(XMMRegister dst, XMMRegister src);
+
   void movl(Register dst, int32_t imm32);
   void movl(Address dst, int32_t imm32);
   void movl(Register dst, Register src);

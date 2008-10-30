@@ -1251,6 +1251,7 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
+
   // Copy big chunks forward
   //
   // Inputs:
@@ -1268,14 +1269,22 @@ class StubGenerator: public StubCodeGenerator {
     Label L_loop;
     __ align(16);
   __ BIND(L_loop);
-    __ movq(to, Address(end_from, qword_count, Address::times_8, -24));
-    __ movq(Address(end_to, qword_count, Address::times_8, -24), to);
-    __ movq(to, Address(end_from, qword_count, Address::times_8, -16));
-    __ movq(Address(end_to, qword_count, Address::times_8, -16), to);
-    __ movq(to, Address(end_from, qword_count, Address::times_8, - 8));
-    __ movq(Address(end_to, qword_count, Address::times_8, - 8), to);
-    __ movq(to, Address(end_from, qword_count, Address::times_8, - 0));
-    __ movq(Address(end_to, qword_count, Address::times_8, - 0), to);
+    if(UseUnalignedLoadStores) {
+      __ movdqu(xmm0, Address(end_from, qword_count, Address::times_8, -24));
+      __ movdqu(Address(end_to, qword_count, Address::times_8, -24), xmm0);
+      __ movdqu(xmm1, Address(end_from, qword_count, Address::times_8, - 8));
+      __ movdqu(Address(end_to, qword_count, Address::times_8, - 8), xmm1);
+
+    } else {
+      __ movq(to, Address(end_from, qword_count, Address::times_8, -24));
+      __ movq(Address(end_to, qword_count, Address::times_8, -24), to);
+      __ movq(to, Address(end_from, qword_count, Address::times_8, -16));
+      __ movq(Address(end_to, qword_count, Address::times_8, -16), to);
+      __ movq(to, Address(end_from, qword_count, Address::times_8, - 8));
+      __ movq(Address(end_to, qword_count, Address::times_8, - 8), to);
+      __ movq(to, Address(end_from, qword_count, Address::times_8, - 0));
+      __ movq(Address(end_to, qword_count, Address::times_8, - 0), to);
+    }
   __ BIND(L_copy_32_bytes);
     __ addptr(qword_count, 4);
     __ jcc(Assembler::lessEqual, L_loop);
@@ -1301,14 +1310,22 @@ class StubGenerator: public StubCodeGenerator {
     Label L_loop;
     __ align(16);
   __ BIND(L_loop);
-    __ movq(to, Address(from, qword_count, Address::times_8, 24));
-    __ movq(Address(dest, qword_count, Address::times_8, 24), to);
-    __ movq(to, Address(from, qword_count, Address::times_8, 16));
-    __ movq(Address(dest, qword_count, Address::times_8, 16), to);
-    __ movq(to, Address(from, qword_count, Address::times_8,  8));
-    __ movq(Address(dest, qword_count, Address::times_8,  8), to);
-    __ movq(to, Address(from, qword_count, Address::times_8,  0));
-    __ movq(Address(dest, qword_count, Address::times_8,  0), to);
+    if(UseUnalignedLoadStores) {
+      __ movdqu(xmm0, Address(from, qword_count, Address::times_8, 16));
+      __ movdqu(Address(dest, qword_count, Address::times_8, 16), xmm0);
+      __ movdqu(xmm1, Address(from, qword_count, Address::times_8,  0));
+      __ movdqu(Address(dest, qword_count, Address::times_8,  0), xmm1);
+
+    } else {
+      __ movq(to, Address(from, qword_count, Address::times_8, 24));
+      __ movq(Address(dest, qword_count, Address::times_8, 24), to);
+      __ movq(to, Address(from, qword_count, Address::times_8, 16));
+      __ movq(Address(dest, qword_count, Address::times_8, 16), to);
+      __ movq(to, Address(from, qword_count, Address::times_8,  8));
+      __ movq(Address(dest, qword_count, Address::times_8,  8), to);
+      __ movq(to, Address(from, qword_count, Address::times_8,  0));
+      __ movq(Address(dest, qword_count, Address::times_8,  0), to);
+    }
   __ BIND(L_copy_32_bytes);
     __ subptr(qword_count, 4);
     __ jcc(Assembler::greaterEqual, L_loop);
