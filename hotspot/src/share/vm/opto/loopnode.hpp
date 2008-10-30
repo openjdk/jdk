@@ -325,12 +325,14 @@ public:
   // Returns TRUE if loop tree is structurally changed.
   bool beautify_loops( PhaseIdealLoop *phase );
 
-  // Perform iteration-splitting on inner loops.  Split iterations to avoid
-  // range checks or one-shot null checks.
-  void iteration_split( PhaseIdealLoop *phase, Node_List &old_new );
+  // Perform iteration-splitting on inner loops.  Split iterations to
+  // avoid range checks or one-shot null checks.  Returns false if the
+  // current round of loop opts should stop.
+  bool iteration_split( PhaseIdealLoop *phase, Node_List &old_new );
 
-  // Driver for various flavors of iteration splitting
-  void iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_new );
+  // Driver for various flavors of iteration splitting.  Returns false
+  // if the current round of loop opts should stop.
+  bool iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_new );
 
   // Given dominators, try to find loops with calls that must always be
   // executed (call dominates loop tail).  These loops do not need non-call
