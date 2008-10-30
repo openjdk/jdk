@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6757225
+ * @bug 6757225 6763051
  * @summary Test that type names in MXBeans match their spec.
  * @author Eamonn McManus
  */

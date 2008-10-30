@@ -884,9 +884,9 @@ public class DescriptorSupport
      * not a String with value "t", "f", "true", "false". These String
      * values must not be case sensitive.
      * <LI> visibility fieldName, if defined, is null, or not a
-     * Numeric String or a not Numeric Value >= 1 and <= 4
+     * Numeric String or a not Numeric Value >= 1 and &lt;= 4
      * <LI> severity fieldName, if defined, is null, or not a Numeric
-     * String or not a Numeric Value >= 0 and <= 6<br>
+     * String or not a Numeric Value >= 0 and &lt;= 6<br>
      * <LI> persistPolicy fieldName, if defined, is null, or not one of
      * the following strings:<br>
      *   "OnUpdate", "OnTimer", "NoMoreOftenThan", "OnUnregister", "Always",
