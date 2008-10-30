@@ -64,14 +64,15 @@ AQ	-7824+10654	Antarctica/Vostok	Vostok Station, S Magnetic Pole
 AQ	-6640+14001	Antarctica/DumontDUrville	Dumont-d'Urville Station, Terre Adelie
 AQ	-690022+0393524	Antarctica/Syowa	Syowa Station, E Ongul I
 AR	-3436-05827	America/Argentina/Buenos_Aires	Buenos Aires (BA, CF)
-AR	-3124-06411	America/Argentina/Cordoba	most locations (CB, CC, CN, ER, FM, LP, MN, NQ, RN, SA, SE, SF)
-AR	-3319-06621	America/Argentina/San_Luis	San Luis (SL)
+AR	-3124-06411	America/Argentina/Cordoba	most locations (CB, CC, CN, ER, FM, MN, SE, SF)
+AR	-2447-06525	America/Argentina/Salta	(SA, LP, NQ, RN)
 AR	-2411-06518	America/Argentina/Jujuy	Jujuy (JY)
 AR	-2649-06513	America/Argentina/Tucuman	Tucuman (TM)
 AR	-2828-06547	America/Argentina/Catamarca	Catamarca (CT), Chubut (CH)
 AR	-2926-06651	America/Argentina/La_Rioja	La Rioja (LR)
 AR	-3132-06831	America/Argentina/San_Juan	San Juan (SJ)
 AR	-3253-06849	America/Argentina/Mendoza	Mendoza (MZ)
+AR	-3319-06621	America/Argentina/San_Luis	San Luis (SL)
 AR	-5138-06913	America/Argentina/Rio_Gallegos	Santa Cruz (SC)
 AR	-5448-06818	America/Argentina/Ushuaia	Tierra del Fuego (TF)
 AS	-1416-17042	Pacific/Pago_Pago
@@ -406,13 +407,13 @@ US	+381515-0854534	America/Kentucky/Louisville	Eastern Time - Kentucky - Louisvi
 US	+364947-0845057	America/Kentucky/Monticello	Eastern Time - Kentucky - Wayne County
 US	+394606-0860929	America/Indiana/Indianapolis	Eastern Time - Indiana - most locations
 US	+384038-0873143	America/Indiana/Vincennes	Eastern Time - Indiana - Daviess, Dubois, Knox & Martin Counties
-US	+411745-0863730	America/Indiana/Knox	Eastern Time - Indiana - Starke County
 US	+410305-0863611	America/Indiana/Winamac	Eastern Time - Indiana - Pulaski County
 US	+382232-0862041	America/Indiana/Marengo	Eastern Time - Indiana - Crawford County
+US	+382931-0871643	America/Indiana/Petersburg	Eastern Time - Indiana - Pike County
 US	+384452-0850402	America/Indiana/Vevay	Eastern Time - Indiana - Switzerland County
 US	+415100-0873900	America/Chicago	Central Time
 US	+375711-0864541	America/Indiana/Tell_City	Central Time - Indiana - Perry County
-US	+382931-0871643	America/Indiana/Petersburg	Central Time - Indiana - Pike County
+US	+411745-0863730	America/Indiana/Knox	Central Time - Indiana - Starke County
 US	+450628-0873651	America/Menominee	Central Time - Michigan - Dickinson, Gogebic, Iron & Menominee Counties
 US	+470659-1011757	America/North_Dakota/Center	Central Time - North Dakota - Oliver County
 US	+465042-1012439	America/North_Dakota/New_Salem	Central Time - North Dakota - Morton County (except Mandan area)
