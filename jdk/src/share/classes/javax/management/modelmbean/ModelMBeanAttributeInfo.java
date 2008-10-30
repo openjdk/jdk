@@ -39,7 +39,6 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.lang.reflect.Method;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.logging.Level;
 
 import javax.management.Descriptor;
@@ -49,32 +48,56 @@ import javax.management.MBeanAttributeInfo;
 import javax.management.RuntimeOperationsException;
 
 /**
- * The ModelMBeanAttributeInfo object describes an attribute of the ModelMBean.
+ * <p>The ModelMBeanAttributeInfo object describes an attribute of the ModelMBean.
  * It is a subclass of MBeanAttributeInfo with the addition of an associated Descriptor
- * and an implementation of the DescriptorAccess interface.
- * <P>
- * The fields in the descriptor are defined, but not limited to, the following: <P>
- * <PRE>
- * name           : attribute name
- * descriptorType : must be "attribute"
- * value          : current value for attribute
- * default        : default value for attribute
- * displayName    : name of attribute to be used in displays
- * getMethod      : name of operation descriptor for get method
- * setMethod      : name of operation descriptor for set method
- * protocolMap    : object which implements the Descriptor interface: mappings
- *                  must be appropriate for the attribute
- *                  and entries can be updated or augmented at runtime.
- * persistPolicy  : OnUpdate|OnTimer|NoMoreOftenThan|OnUnregister|Always|Never
- * persistPeriod  : seconds - frequency of persist cycle. Used when persistPolicy
- *                  is "OnTimer" or "NoMoreOftenThan".
- * currencyTimeLimit : how long value is valid, &lt;0 never, =0 always, &gt;0 seconds
- * lastUpdatedTimeStamp : when value was set
- * visibility     : 1-4 where 1: always visible, 4: rarely visible
- * presentationString : xml formatted string to allow presentation of data
- * </PRE>
- * The default descriptor contains the name, descriptorType and displayName fields.
- * The default value of the name and displayName fields is the name of the attribute.
+ * and an implementation of the DescriptorAccess interface.</p>
+ *
+ * <P id="descriptor">
+ * The fields in the descriptor are defined, but not limited to, the following.
+ * Note that when the Type in this table is Number, a String that is the decimal
+ * representation of a Long can also be used.</P>
+ *
+ * <table border="1" cellpadding="5">
+ * <tr><th>Name</th><th>Type</th><th>Meaning</th></tr>
+ * <tr><td>name</td><td>String</td>
+ *     <td>Attribute name.</td></tr>
+ * <tr><td>descriptorType</td><td>String</td>
+ *     <td>Must be "attribute".</td></tr>
+ * <tr id="value-field"><td>value</td><td>Object</td>
+ *     <td>Current (cached) value for attribute.</td></tr>
+ * <tr><td>default</td><td>Object</td>
+ *     <td>Default value for attribute.</td></tr>
+ * <tr><td>displayName</td><td>String</td>
+ *     <td>Name of attribute to be used in displays.</td></tr>
+ * <tr><td>getMethod</td><td>String</td>
+ *     <td>Name of operation descriptor for get method.</td></tr>
+ * <tr><td>setMethod</td><td>String</td>
+ *     <td>Name of operation descriptor for set method.</td></tr>
+ * <tr><td>protocolMap</td><td>Descriptor</td>
+ *     <td>See the section "Protocol Map Support" in the JMX specification
+ *         document.  Mappings must be appropriate for the attribute and entries
+ *         can be updated or augmented at runtime.</td></tr>
+ * <tr><td>persistPolicy</td><td>String</td>
+ *     <td>One of: OnUpdate|OnTimer|NoMoreOftenThan|OnUnregister|Always|Never.
+ *         See the section "MBean Descriptor Fields" in the JMX specification
+ *         document.</td></tr>
+ * <tr><td>persistPeriod</td><td>Number</td>
+ *     <td>Frequency of persist cycle in seconds. Used when persistPolicy is
+ *         "OnTimer" or "NoMoreOftenThan".</td></tr>
+ * <tr><td>currencyTimeLimit</td><td>Number</td>
+ *     <td>How long <a href="#value=field">value</a> is valid: &lt;0 never,
+ *         =0 always, &gt;0 seconds.</td></tr>
+ * <tr><td>lastUpdatedTimeStamp</td><td>Number</td>
+ *     <td>When <a href="#value-field">value</a> was set.</td></tr>
+ * <tr><td>visibility</td><td>Number</td>
+ *     <td>1-4 where 1: always visible, 4: rarely visible.</td></tr>
+ * <tr><td>presentationString</td><td>String</td>
+ *     <td>XML formatted string to allow presentation of data.</td></tr>
+ * </table>
+ *
+ * <p>The default descriptor contains the name, descriptorType and displayName
+ * fields.  The default value of the name and displayName fields is the name of
+ * the attribute.</p>
  *
  * <p><b>Note:</b> because of inconsistencies in previous versions of
  * this specification, it is recommended not to use negative or zero

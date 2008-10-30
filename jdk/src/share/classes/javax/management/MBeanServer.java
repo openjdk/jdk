@@ -377,19 +377,19 @@ public interface MBeanServer extends MBeanServerConnection {
      * MBean will not be registered.
      * @exception RuntimeMBeanException If the <CODE>postRegister</CODE>
      * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws a
-     * <CODE>RuntimeException</CODE>, the <CODE>registerMBean<CODE> method will
+     * <CODE>RuntimeException</CODE>, the <CODE>registerMBean</CODE> method will
      * throw a <CODE>RuntimeMBeanException</CODE>, although the MBean
      * registration succeeded. In such a case, the MBean will be actually
-     * registered even though the <CODE>registerMBean<CODE> method
+     * registered even though the <CODE>registerMBean</CODE> method
      * threw an exception.  Note that <CODE>RuntimeMBeanException</CODE> can
      * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
      * will not be registered.
      * @exception RuntimeErrorException If the <CODE>postRegister</CODE>
      * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws an
-     * <CODE>Error</CODE>, the <CODE>registerMBean<CODE> method will
+     * <CODE>Error</CODE>, the <CODE>registerMBean</CODE> method will
      * throw a <CODE>RuntimeErrorException</CODE>, although the MBean
      * registration succeeded. In such a case, the MBean will be actually
-     * registered even though the <CODE>registerMBean<CODE> method
+     * registered even though the <CODE>registerMBean</CODE> method
      * threw an exception.  Note that <CODE>RuntimeErrorException</CODE> can
      * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
      * will not be registered.
@@ -411,6 +411,8 @@ public interface MBeanServer extends MBeanServerConnection {
      * is sent as described <a href="#notif">above</a>.</p>
      *
      * @throws RuntimeOperationsException {@inheritDoc}
+     * @throws RuntimeMBeanException {@inheritDoc}
+     * @throws RuntimeErrorException {@inheritDoc}
      */
     public void unregisterMBean(ObjectName name)
             throws InstanceNotFoundException, MBeanRegistrationException;
