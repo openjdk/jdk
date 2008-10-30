@@ -215,6 +215,26 @@ Rule	Arg	2000	only	-	Mar	3	0:00	0	-
 # </a>
 # So there is no summer time in Argentina for now.
 
+# From Mariano Absatz (2008-10-20):
+# Decree 1693/2008 applies Law 26.350 for the summer 2008/2009 establishing DST in Argentina
+# From 2008-10-19 until 2009-03-15
+# <a href="http://www.boletinoficial.gov.ar/Bora.Portal/CustomControls/PdfContent.aspx?fp=16102008&pi=3&pf=4&s=0&sec=01">
+# http://www.boletinoficial.gov.ar/Bora.Portal/CustomControls/PdfContent.aspx?fp=16102008&pi=3&pf=4&s=0&sec=01
+# </a>
+#
+# Decree 1705/2008 excepting 12 Provinces from applying DST in the summer 2008/2009:
+# Catamarca, La Rioja, Mendoza, Salta, San Juan, San Luis, La Pampa, Neuquen, Rio Negro, Chubut, Santa Cruz
+# and Tierra del Fuego
+# <a href="http://www.boletinoficial.gov.ar/Bora.Portal/CustomControls/PdfContent.aspx?fp=17102008&pi=1&pf=1&s=0&sec=01">
+# http://www.boletinoficial.gov.ar/Bora.Portal/CustomControls/PdfContent.aspx?fp=17102008&pi=1&pf=1&s=0&sec=01
+# </a>
+#
+# Press release 235 dated Saturday October 18th, from the Government of the Province of Jujuy saying
+# it will not apply DST either (even when it was not included in Decree 1705/2008)
+# <a href="http://www.jujuy.gov.ar/index2/partes_prensa/18_10_08/235-181008.doc">
+# http://www.jujuy.gov.ar/index2/partes_prensa/18_10_08/235-181008.doc
+# </a>
+
 Rule	Arg	2007	only	-	Dec	30	0:00	1:00	S
 Rule	Arg	2008	max	-	Mar	Sun>=15	0:00	0	-
 Rule	Arg	2008	max	-	Oct	Sun>=15	0:00	1:00	S
@@ -365,9 +385,8 @@ Zone America/Argentina/Buenos_Aires -3:53:48 - LMT 1894 Oct 31
 			-4:00	Arg	AR%sT	2000 Mar  3
 			-3:00	Arg	AR%sT
 #
-# Santa Fe (SF), Entre Rios (ER), Corrientes (CN), Misiones (MN), Chaco (CC),
-# Formosa (FM), Salta (SA), Santiago del Estero (SE), Cordoba (CB),
-# La Pampa (LP), Neuquen (NQ), Rio Negro (RN)
+# Cordoba (CB), Santa Fe (SF), Entre Rios (ER), Corrientes (CN), Misiones (MN),
+# Chaco (CC), Formosa (FM), Santiago del Estero (SE)
 #
 # Shanks & Pottenger also make the following claims, which we haven't verified:
 # - Formosa switched to -3:00 on 1991-01-07.
@@ -385,6 +404,18 @@ Zone America/Argentina/Cordoba -4:16:48 - LMT	1894 Oct 31
 			-3:00	Arg	AR%sT	1999 Oct  3
 			-4:00	Arg	AR%sT	2000 Mar  3
 			-3:00	Arg	AR%sT
+#
+# Salta (SA), La Pampa (LP), Neuquen (NQ), Rio Negro (RN)
+Zone America/Argentina/Salta -4:21:40 - LMT	1894 Oct 31
+			-4:16:48 -	CMT	1920 May
+			-4:00	-	ART	1930 Dec
+			-4:00	Arg	AR%sT	1969 Oct  5
+			-3:00	Arg	AR%sT	1991 Mar  3
+			-4:00	-	WART	1991 Oct 20
+			-3:00	Arg	AR%sT	1999 Oct  3
+			-4:00	Arg	AR%sT	2000 Mar  3
+			-3:00	Arg	AR%sT	2008 Oct 18
+			-3:00	-	ART
 #
 # Tucuman (TM)
 Zone America/Argentina/Tucuman -4:20:52 - LMT	1894 Oct 31
@@ -410,7 +441,8 @@ Zone America/Argentina/La_Rioja -4:27:24 - LMT	1894 Oct 31
 			-4:00	Arg	AR%sT	2000 Mar  3
 			-3:00	-	ART	2004 Jun  1
 			-4:00	-	WART	2004 Jun 20
-			-3:00	Arg	AR%sT
+			-3:00	Arg	AR%sT	2008 Oct 18
+			-3:00	-	ART
 #
 # San Juan (SJ)
 Zone America/Argentina/San_Juan -4:34:04 - LMT	1894 Oct 31
@@ -423,7 +455,8 @@ Zone America/Argentina/San_Juan -4:34:04 - LMT	1894 Oct 31
 			-4:00	Arg	AR%sT	2000 Mar  3
 			-3:00	-	ART	2004 May 31
 			-4:00	-	WART	2004 Jul 25
-			-3:00	Arg	AR%sT
+			-3:00	Arg	AR%sT	2008 Oct 18
+			-3:00	-	ART
 #
 # Jujuy (JY)
 Zone America/Argentina/Jujuy -4:21:12 -	LMT	1894 Oct 31
@@ -437,7 +470,8 @@ Zone America/Argentina/Jujuy -4:21:12 -	LMT	1894 Oct 31
 			-3:00	1:00	ARST	1992
 			-3:00	Arg	AR%sT	1999 Oct  3
 			-4:00	Arg	AR%sT	2000 Mar  3
-			-3:00	Arg	AR%sT
+			-3:00	Arg	AR%sT	2008 Oct 18
+			-3:00	-	ART
 #
 # Catamarca (CT), Chubut (CH)
 Zone America/Argentina/Catamarca -4:23:08 - LMT	1894 Oct 31
@@ -450,7 +484,8 @@ Zone America/Argentina/Catamarca -4:23:08 - LMT	1894 Oct 31
 			-4:00	Arg	AR%sT	2000 Mar  3
 			-3:00	-	ART	2004 Jun  1
 			-4:00	-	WART	2004 Jun 20
-			-3:00	Arg	AR%sT
+			-3:00	Arg	AR%sT	2008 Oct 18
+			-3:00	-	ART
 #
 # Mendoza (MZ)
 Zone America/Argentina/Mendoza -4:35:16 - LMT	1894 Oct 31
@@ -467,7 +502,8 @@ Zone America/Argentina/Mendoza -4:35:16 - LMT	1894 Oct 31
 			-4:00	Arg	AR%sT	2000 Mar  3
 			-3:00	-	ART	2004 May 23
 			-4:00	-	WART	2004 Sep 26
-			-3:00	Arg	AR%sT
+			-3:00	Arg	AR%sT	2008 Oct 18
+			-3:00	-	ART
 #
 # San Luis (SL)
 Zone America/Argentina/San_Luis -4:25:24 - LMT	1894 Oct 31
@@ -495,7 +531,8 @@ Zone America/Argentina/Rio_Gallegos -4:36:52 - LMT 1894 Oct 31
 			-4:00	Arg	AR%sT	2000 Mar  3
 			-3:00	-	ART	2004 Jun  1
 			-4:00	-	WART	2004 Jun 20
-			-3:00	Arg	AR%sT
+			-3:00	Arg	AR%sT	2008 Oct 18
+			-3:00	-	ART
 #
 # Tierra del Fuego, Antartida e Islas del Atlantico Sur (TF)
 Zone America/Argentina/Ushuaia -4:33:12 - LMT 1894 Oct 31
@@ -506,7 +543,8 @@ Zone America/Argentina/Ushuaia -4:33:12 - LMT 1894 Oct 31
 			-4:00	Arg	AR%sT	2000 Mar  3
 			-3:00	-	ART	2004 May 30
 			-4:00	-	WART	2004 Jun 20
-			-3:00	Arg	AR%sT
+			-3:00	Arg	AR%sT	2008 Oct 18
+			-3:00	-	ART
 
 # Aruba
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
