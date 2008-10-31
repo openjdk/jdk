@@ -5,21 +5,16 @@ of Linz in Austria and has been included as part of hotspot since that
 was the primary target of the tool.  The tool itself is fairly general
 with only a few modules that contain C2 specific elements.
 
-The tool is built on top of the NetBeans 6.0 rich client
+The tool is built on top of the NetBeans 6.1 rich client
 infrastructure and so requires NetBeans to build.  It currently
 requires Java 6 to run as it needs support for JavaScript for its
 filtering mechanism and assumes it's built into the platform.  It
-should build out of the box whit NetBeans 6 and Java 6 or later.  It's
-possible to run it on 1.5 by including Rhino on the classpath though
-that currently isn't working correctly.  Support for exporting graphs
-as SVG can be enabled by adding batik to the classpath which isn't
-included by default.
-
-It can be built on top of NetBeans 6.1 if you change the required
-modules to be platform8 instead of platform7.  The tool could run on
-JDK 1.5 with some reworking of the how the JavaScript support is
-enabled but currently it requires some tweaking of the setup.  This
-will be fixed in a later setup.
+should build out of the box with NetBeans 6.1 and Java 6 or later.
+It's possible to run it on 1.5 by including Rhino on the classpath
+though that currently isn't working correctly.  Support for exporting
+graphs as SVG can be enabled by adding batik to the classpath which
+isn't included by default.  It can be built on top of NetBeans 6.0 if
+you change the required modules to be platform7 instead of platform8.
 
 The JVM support is controlled by the flag -XX:PrintIdealGraphLevel=#
 where # is:

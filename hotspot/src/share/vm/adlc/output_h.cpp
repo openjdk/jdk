@@ -377,7 +377,7 @@ static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i, Operand
     ++i;
   }
   else if (!strcmp(ideal_type, "ConN")) {
-    fprintf(fp,"    _c%d->dump();\n", i);
+    fprintf(fp,"    _c%d->dump_on(st);\n", i);
     ++i;
   }
   else if (!strcmp(ideal_type, "ConL")) {
