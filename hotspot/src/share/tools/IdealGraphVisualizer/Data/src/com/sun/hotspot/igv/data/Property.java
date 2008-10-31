@@ -32,18 +32,19 @@ import java.io.Serializable;
 public class Property implements Serializable {
 
     public static final long serialVersionUID = 1L;
+
     private String name;
     private String value;
 
-    public Property() {
+    private Property() {
         this(null, null);
     }
 
-    public Property(Property p) {
+    private Property(Property p) {
         this(p.getName(), p.getValue());
     }
 
-    public Property(String name) {
+    private Property(String name) {
         this(name, null);
     }
 
@@ -60,16 +61,19 @@ public class Property implements Serializable {
         return value;
     }
 
-    public void setName(String s) {
-        this.name = s;
-    }
-
-    public void setValue(String s) {
-        this.value = s;
-    }
-
     @Override
     public String toString() {
         return name + " = " + value + "; ";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Property)) return false;
+        Property p2 = (Property)o;
+        return name.equals(p2.name) && value.equals(p2.value);
+    }
+    @Override
+    public int hashCode() {
+        return name.hashCode() + value == null ? 0 : value.hashCode();
     }
 }

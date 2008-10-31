@@ -83,12 +83,12 @@ void RegisterMap::print_on(outputStream* st) const {
     intptr_t* src = (intptr_t*) location(r);
     if (src != NULL) {
 
-      r->print();
-      tty->print(" [" INTPTR_FORMAT "] = ", src);
+      r->print_on(st);
+      st->print(" [" INTPTR_FORMAT "] = ", src);
       if (((uintptr_t)src & (sizeof(*src)-1)) != 0) {
-        tty->print_cr("<misaligned>");
+        st->print_cr("<misaligned>");
       } else {
-        tty->print_cr(INTPTR_FORMAT, *src);
+        st->print_cr(INTPTR_FORMAT, *src);
       }
     }
   }

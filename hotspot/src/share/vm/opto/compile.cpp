@@ -551,7 +551,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       rethrow_exceptions(kit.transfer_exceptions_into_jvms());
     }
 
-    print_method("Before RemoveUseless");
+    print_method("Before RemoveUseless", 3);
 
     // Remove clutter produced by parsing.
     if (!failing()) {
