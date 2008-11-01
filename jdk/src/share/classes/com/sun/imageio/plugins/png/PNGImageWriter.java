@@ -671,13 +671,13 @@ public class PNGImageWriter extends ImageWriter {
         }
     }
 
-    private byte[] deflate(String s) throws IOException {
+    private byte[] deflate(byte[] b) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DeflaterOutputStream dos = new DeflaterOutputStream(baos);
 
-        int len = s.length();
+        int len = b.length;
         for (int i = 0; i < len; i++) {
-            dos.write((int)s.charAt(i));
+            dos.write((int)(0xff & b[i]));
         }
         dos.close();
 
@@ -685,38 +685,37 @@ public class PNGImageWriter extends ImageWriter {
     }
 
     private void write_iTXt() throws IOException {
-        Iterator keywordIter = metadata.iTXt_keyword.iterator();
-        Iterator flagIter = metadata.iTXt_compressionFlag.iterator();
-        Iterator methodIter = metadata.iTXt_compressionMethod.iterator();
-        Iterator languageIter = metadata.iTXt_languageTag.iterator();
-        Iterator translatedKeywordIter =
+        Iterator<String> keywordIter = metadata.iTXt_keyword.iterator();
+        Iterator<Boolean> flagIter = metadata.iTXt_compressionFlag.iterator();
+        Iterator<Integer> methodIter = metadata.iTXt_compressionMethod.iterator();
+        Iterator<String> languageIter = metadata.iTXt_languageTag.iterator();
+        Iterator<String> translatedKeywordIter =
             metadata.iTXt_translatedKeyword.iterator();
-        Iterator textIter = metadata.iTXt_text.iterator();
+        Iterator<String> textIter = metadata.iTXt_text.iterator();
 
         while (keywordIter.hasNext()) {
             ChunkStream cs = new ChunkStream(PNGImageReader.iTXt_TYPE, stream);
-            String keyword = (String)keywordIter.next();
-            cs.writeBytes(keyword);
+
+            cs.writeBytes(keywordIter.next());
             cs.writeByte(0);
 
-            int flag = ((Integer)flagIter.next()).intValue();
-            cs.writeByte(flag);
-            int method = ((Integer)methodIter.next()).intValue();
-            cs.writeByte(method);
+            Boolean compressed = flagIter.next();
+            cs.writeByte(compressed ? 1 : 0);
 
-            String languageTag = (String)languageIter.next();
-            cs.writeBytes(languageTag);
+            cs.writeByte(methodIter.next().intValue());
+
+            cs.writeBytes(languageIter.next());
             cs.writeByte(0);
 
-            String translatedKeyword = (String)translatedKeywordIter.next();
-            cs.writeBytes(translatedKeyword);
+
+            cs.write(translatedKeywordIter.next().getBytes("UTF8"));
             cs.writeByte(0);
 
-            String text = (String)textIter.next();
-            if (flag == 1) {
-                cs.write(deflate(text));
+            String text = textIter.next();
+            if (compressed) {
+                cs.write(deflate(text.getBytes("UTF8")));
             } else {
-                cs.writeUTF(text);
+                cs.write(text.getBytes("UTF8"));
             }
             cs.finish();
         }
@@ -737,7 +736,7 @@ public class PNGImageWriter extends ImageWriter {
             cs.writeByte(compressionMethod);
 
             String text = (String)textIter.next();
-            cs.write(deflate(text));
+            cs.write(deflate(text.getBytes()));
             cs.finish();
         }
     }
