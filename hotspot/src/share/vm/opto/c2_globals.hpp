@@ -396,5 +396,15 @@
                                                                             \
   diagnostic(intx, DominatorSearchLimit, 1000,                              \
           "Iterations limit in Node::dominates")                            \
+                                                                            \
+  product(bool, BlockLayoutByFrequency, true,                               \
+          "Use edge frequencies to drive block ordering")                   \
+                                                                            \
+  product(intx, BlockLayoutMinDiamondPercentage, 20,                        \
+          "Miniumum %% of a successor (predecessor) for which block layout "\
+          "a will allow a fork (join) in a single chain")                   \
+                                                                            \
+  product(bool, BlockLayoutRotateLoops, false,                              \
+          "Allow back branches to be fall throughs in the block layour")    \
 
 C2_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG)
