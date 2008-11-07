@@ -3572,7 +3572,7 @@ encode %{
         // at [FETCH], below, will never observe a biased encoding (*101b).
         // If this invariant is not held we'll suffer exclusion (safety) failure.
 
-        if (UseBiasedLocking) {
+        if (UseBiasedLocking && !UseOptoBiasInlining) {
           masm.biased_locking_enter(boxReg, objReg, tmpReg, scrReg, true, DONE_LABEL, NULL, _counters);
           masm.movptr(tmpReg, Address(objReg, 0)) ;        // [FETCH]
         }
@@ -3660,7 +3660,7 @@ encode %{
     } else {
        Label DONE_LABEL, Stacked, CheckSucc ;
 
-       if (UseBiasedLocking) {
+       if (UseBiasedLocking && !UseOptoBiasInlining) {
          masm.biased_locking_exit(objReg, tmpReg, DONE_LABEL);
        }
         
@@ -7845,7 +7845,7 @@ instruct storePConditional(memory heap_top_ptr,
                            rFlagsReg cr)
 %{
   match(Set cr (StorePConditional heap_top_ptr (Binary oldval newval)));
-
+ 
   format %{ "cmpxchgq $heap_top_ptr, $newval\t# (ptr) "
             "If rax == $heap_top_ptr then store $newval into $heap_top_ptr" %}
   opcode(0x0F, 0xB1);
@@ -7856,53 +7856,40 @@ instruct storePConditional(memory heap_top_ptr,
   ins_pipe(pipe_cmpxchg);
 %}
 
-// Conditional-store of a long value
-// Returns a boolean value (0/1) on success.  Implemented with a
-// CMPXCHG8 on Intel.  mem_ptr can actually be in either RSI or RDI
-
-instruct storeLConditional(rRegI res,
-                           memory mem_ptr,
-                           rax_RegL oldval, rRegL newval,
-                           rFlagsReg cr)
+// Conditional-store of an int value.
+// ZF flag is set on success, reset otherwise.  Implemented with a CMPXCHG.
+instruct storeIConditional(memory mem, rax_RegI oldval, rRegI newval, rFlagsReg cr)
 %{
-  match(Set res (StoreLConditional mem_ptr (Binary oldval newval)));
-  effect(KILL cr);
+  match(Set cr (StoreIConditional mem (Binary oldval newval)));
+  effect(KILL oldval);
 
-  format %{ "cmpxchgq $mem_ptr, $newval\t# (long) "
-            "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"
-            "sete    $res\n\t"
-            "movzbl  $res, $res" %}
+  format %{ "cmpxchgl $mem, $newval\t# If rax == $mem then store $newval into $mem" %}
   opcode(0x0F, 0xB1);
   ins_encode(lock_prefix,
-             REX_reg_mem_wide(newval, mem_ptr),
+             REX_reg_mem(newval, mem),
              OpcP, OpcS,
-             reg_mem(newval, mem_ptr),
-             REX_breg(res), Opcode(0x0F), Opcode(0x94), reg(res), // sete
-             REX_reg_breg(res, res), // movzbl
-             Opcode(0xF), Opcode(0xB6), reg_reg(res, res));
+             reg_mem(newval, mem));
   ins_pipe(pipe_cmpxchg);
 %}
 
-// Conditional-store of a long value
-// ZF flag is set on success, reset otherwise. Implemented with a
-// CMPXCHG8 on Intel.  mem_ptr can actually be in either RSI or RDI
-instruct storeLConditional_flags(memory mem_ptr,
-                                 rax_RegL oldval, rRegL newval,
-                                 rFlagsReg cr,
-                                 immI0 zero)
+// Conditional-store of a long value.
+// ZF flag is set on success, reset otherwise.  Implemented with a CMPXCHG.
+instruct storeLConditional(memory mem, rax_RegL oldval, rRegL newval, rFlagsReg cr)
 %{
-  match(Set cr (CmpI (StoreLConditional mem_ptr (Binary oldval newval)) zero));
+  match(Set cr (StoreLConditional mem (Binary oldval newval)));
+  effect(KILL oldval);
 
-  format %{ "cmpxchgq $mem_ptr, $newval\t# (long) "
-            "If rax == $mem_ptr then store $newval into $mem_ptr" %}
+  format %{ "cmpxchgq $mem, $newval\t# If rax == $mem then store $newval into $mem" %}
   opcode(0x0F, 0xB1);
   ins_encode(lock_prefix,
-             REX_reg_mem_wide(newval, mem_ptr),
+             REX_reg_mem_wide(newval, mem),
              OpcP, OpcS,
-             reg_mem(newval, mem_ptr));
+             reg_mem(newval, mem));
   ins_pipe(pipe_cmpxchg);
 %}
 
+
+// XXX No flag versions for CompareAndSwap{P,I,L} because matcher can't match them
 instruct compareAndSwapP(rRegI res,
                          memory mem_ptr,
                          rax_RegP oldval, rRegP newval,
@@ -7926,7 +7913,6 @@ instruct compareAndSwapP(rRegI res,
   ins_pipe( pipe_cmpxchg );
 %}
 
-// XXX No flag versions for CompareAndSwap{P,I,L} because matcher can't match them
 instruct compareAndSwapL(rRegI res,
                          memory mem_ptr,
                          rax_RegL oldval, rRegL newval,
@@ -8876,6 +8862,7 @@ instruct shrL_rReg_imm(rRegL dst, immI8 shift, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
+
 // Logical Shift Right by 8-bit immediate
 instruct shrL_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 %{
@@ -9584,6 +9571,18 @@ instruct orL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
   ins_encode(REX_reg_reg_wide(dst, src), OpcP, reg_reg(dst, src));
   ins_pipe(ialu_reg_reg);
 %}
+
+// Use any_RegP to match R15 (TLS register) without spilling.
+instruct orL_rReg_castP2X(rRegL dst, any_RegP src, rFlagsReg cr) %{
+  match(Set dst (OrL dst (CastP2X src)));
+  effect(KILL cr);
+
+  format %{ "orq     $dst, $src\t# long" %}
+  opcode(0x0B);
+  ins_encode(REX_reg_reg_wide(dst, src), OpcP, reg_reg(dst, src));
+  ins_pipe(ialu_reg_reg);
+%}
+
 
 // Or Register with Immediate
 instruct orL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)

@@ -2001,6 +2001,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_StorePConditional:
   case Op_StoreI:
   case Op_StoreL:
+  case Op_StoreIConditional:
   case Op_StoreLConditional:
   case Op_CompareAndSwapI:
   case Op_CompareAndSwapL:

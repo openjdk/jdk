@@ -395,6 +395,7 @@ reg_class long_reg(             R_G1H,R_G1,             R_G3H,R_G3, R_G4H,R_G4, 
                   );
 
 reg_class g1_regL(R_G1H,R_G1);
+reg_class g3_regL(R_G3H,R_G3);
 reg_class o2_regL(R_O2H,R_O2);
 reg_class o7_regL(R_O7H,R_O7);
 
@@ -2688,7 +2689,7 @@ enc_class Fast_Lock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     assert(Rbox  != Rscratch, "");
     assert(Rbox  != Rmark, "");
 
-    __ compiler_lock_object(Roop, Rmark, Rbox, Rscratch, _counters);
+    __ compiler_lock_object(Roop, Rmark, Rbox, Rscratch, _counters, UseBiasedLocking && !UseOptoBiasInlining);
 %}
 
 enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
@@ -2704,7 +2705,7 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     assert(Rbox  != Rscratch, "");
     assert(Rbox  != Rmark, "");
 
-    __ compiler_unlock_object(Roop, Rmark, Rbox, Rscratch);
+    __ compiler_unlock_object(Roop, Rmark, Rbox, Rscratch, UseBiasedLocking && !UseOptoBiasInlining);
   %}
 
   enc_class enc_cas( iRegP mem, iRegP old, iRegP new ) %{
@@ -2716,8 +2717,7 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     // casx_under_lock picks 1 of 3 encodings:
     // For 32-bit pointers you get a 32-bit CAS
     // For 64-bit pointers you get a 64-bit CASX
-    __ casx_under_lock(Rmem, Rold, Rnew, // Swap(*Rmem,Rnew) if *Rmem == Rold
-                        (address) StubRoutines::Sparc::atomic_memory_operation_lock_addr());
+    __ casn(Rmem, Rold, Rnew); // Swap(*Rmem,Rnew) if *Rmem == Rold
     __ cmp( Rold, Rnew );
   %}
 
@@ -3760,6 +3760,14 @@ operand o7RegL() %{
 
 operand g1RegL() %{
   constraint(ALLOC_IN_RC(g1_regL));
+  match(iRegL);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand g3RegL() %{
+  constraint(ALLOC_IN_RC(g3_regL));
   match(iRegL);
 
   format %{ %}
@@ -6602,32 +6610,23 @@ instruct storePConditional( iRegP heap_top_ptr, iRegP oldval, g3RegP newval, fla
   ins_pipe( long_memory_op );
 %}
 
-instruct storeLConditional_bool(iRegP mem_ptr, iRegL oldval, iRegL newval, iRegI res, o7RegI tmp1, flagsReg ccr ) %{
-  match(Set res (StoreLConditional mem_ptr (Binary oldval newval)));
-  effect( USE mem_ptr, KILL ccr, KILL tmp1);
-  // Marshal the register pairs into V9 64-bit registers, then do the compare-and-swap
-  format %{
-            "MOV    $newval,R_O7\n\t"
-            "CASXA  [$mem_ptr],$oldval,R_O7\t! If $oldval==[$mem_ptr] Then store R_O7 into [$mem_ptr], set R_O7=[$mem_ptr] in any case\n\t"
-            "CMP    $oldval,R_O7\t\t! See if we made progress\n\t"
-            "MOV    1,$res\n\t"
-            "MOVne  xcc,R_G0,$res"
-  %}
-  ins_encode( enc_casx(mem_ptr, oldval, newval),
-              enc_lflags_ne_to_boolean(res) );
+// Conditional-store of an int value.
+instruct storeIConditional( iRegP mem_ptr, iRegI oldval, g3RegI newval, flagsReg icc ) %{
+  match(Set icc (StoreIConditional mem_ptr (Binary oldval newval)));
+  effect( KILL newval );
+  format %{ "CASA   [$mem_ptr],$oldval,$newval\t! If $oldval==[$mem_ptr] Then store $newval into [$mem_ptr], set $newval=[$mem_ptr] in any case\n\t"
+            "CMP    $oldval,$newval\t\t! See if we made progress"  %}
+  ins_encode( enc_cas(mem_ptr,oldval,newval) );
   ins_pipe( long_memory_op );
 %}
 
-instruct storeLConditional_flags(iRegP mem_ptr, iRegL oldval, iRegL newval, flagsRegL xcc, o7RegI tmp1, immI0 zero) %{
-  match(Set xcc (CmpI (StoreLConditional mem_ptr (Binary oldval newval)) zero));
-  effect( USE mem_ptr, KILL tmp1);
-  // Marshal the register pairs into V9 64-bit registers, then do the compare-and-swap
-  format %{
-            "MOV    $newval,R_O7\n\t"
-            "CASXA  [$mem_ptr],$oldval,R_O7\t! If $oldval==[$mem_ptr] Then store R_O7 into [$mem_ptr], set R_O7=[$mem_ptr] in any case\n\t"
-            "CMP    $oldval,R_O7\t\t! See if we made progress"
-  %}
-  ins_encode( enc_casx(mem_ptr, oldval, newval));
+// Conditional-store of a long value.
+instruct storeLConditional( iRegP mem_ptr, iRegL oldval, g3RegL newval, flagsRegL xcc ) %{
+  match(Set xcc (StoreLConditional mem_ptr (Binary oldval newval)));
+  effect( KILL newval );
+  format %{ "CASXA  [$mem_ptr],$oldval,$newval\t! If $oldval==[$mem_ptr] Then store $newval into [$mem_ptr], set $newval=[$mem_ptr] in any case\n\t"
+            "CMP    $oldval,$newval\t\t! See if we made progress"  %}
+  ins_encode( enc_cas(mem_ptr,oldval,newval) );
   ins_pipe( long_memory_op );
 %}
 
@@ -7409,6 +7408,34 @@ instruct orL_reg_imm13(iRegL dst, iRegL src1, immL13 con) %{
   ins_encode( form3_rs1_simm13_rd( src1, con, dst ) );
   ins_pipe(ialu_reg_imm);
 %}
+
+#ifndef _LP64
+
+// Use sp_ptr_RegP to match G2 (TLS register) without spilling.
+instruct orI_reg_castP2X(iRegI dst, iRegI src1, sp_ptr_RegP src2) %{
+  match(Set dst (OrI src1 (CastP2X src2)));
+
+  size(4);
+  format %{ "OR     $src1,$src2,$dst" %}
+  opcode(Assembler::or_op3, Assembler::arith_op);
+  ins_encode( form3_rs1_rs2_rd( src1, src2, dst ) );
+  ins_pipe(ialu_reg_reg);
+%}
+
+#else
+
+instruct orL_reg_castP2X(iRegL dst, iRegL src1, sp_ptr_RegP src2) %{
+  match(Set dst (OrL src1 (CastP2X src2)));
+
+  ins_cost(DEFAULT_COST);
+  size(4);
+  format %{ "OR     $src1,$src2,$dst\t! long" %}
+  opcode(Assembler::or_op3, Assembler::arith_op);
+  ins_encode( form3_rs1_rs2_rd( src1, src2, dst ) );
+  ins_pipe(ialu_reg_reg);
+%}
+
+#endif
 
 // Xor Instructions
 // Register Xor

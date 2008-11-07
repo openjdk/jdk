@@ -1519,6 +1519,7 @@ void IdealLoopTree::adjust_loop_exit_prob( PhaseIdealLoop *phase ) {
         Node *bol = iff->in(1);
         if( bol && bol->req() > 1 && bol->in(1) &&
             ((bol->in(1)->Opcode() == Op_StorePConditional ) ||
+             (bol->in(1)->Opcode() == Op_StoreIConditional ) ||
              (bol->in(1)->Opcode() == Op_StoreLConditional ) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapI ) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapL ) ||
