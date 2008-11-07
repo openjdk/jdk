@@ -103,16 +103,16 @@ encode %{
 // This name is KNOWN by the ADLC and cannot be changed.
 // The ADLC forces a 'TypeRawPtr::BOTTOM' output type
 // for this guy.
-instruct tlsLoadP(eAXRegP dst, eFlagsReg cr) %{
+instruct tlsLoadP(eRegP dst, eFlagsReg cr) %{
   match(Set dst (ThreadLocal));
   effect(DEF dst, KILL cr);
 
-  format %{ "MOV    EAX, Thread::current()" %}
+  format %{ "MOV    $dst, Thread::current()" %}
   ins_encode( linux_tlsencode(dst) );
   ins_pipe( ialu_reg_fat );
 %}
 
-instruct TLS(eAXRegP dst) %{
+instruct TLS(eRegP dst) %{
   match(Set dst (ThreadLocal));
 
   expand %{

@@ -2628,6 +2628,12 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   FLAG_SET_DEFAULT(UseBiasedLocking, false);
 #endif /* CC_INTERP */
 
+#ifdef COMPILER2
+  if (!UseBiasedLocking || EmitSync != 0) {
+    UseOptoBiasInlining = false;
+  }
+#endif
+
   if (PrintCommandLineFlags) {
     CommandLineFlags::printSetFlags();
   }

@@ -621,6 +621,10 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     debug_only(has_disp32 = true);
     break;
 
+  case 0xF0:                    // Lock
+    assert(os::is_MP(), "only on MP");
+    goto again_after_prefix;
+
   case 0xF3:                    // For SSE
   case 0xF2:                    // For SSE2
     switch (0xFF & *ip++) {

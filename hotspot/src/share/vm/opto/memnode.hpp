@@ -632,6 +632,17 @@ public:
   virtual uint ideal_reg() const { return Op_RegFlags; }
 };
 
+//------------------------------StoreIConditionalNode---------------------------
+// Conditionally store int to memory, if no change since prior
+// load-locked.  Sets flags for success or failure of the store.
+class StoreIConditionalNode : public LoadStoreNode {
+public:
+  StoreIConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ii ) : LoadStoreNode(c, mem, adr, val, ii) { }
+  virtual int Opcode() const;
+  // Produces flags
+  virtual uint ideal_reg() const { return Op_RegFlags; }
+};
+
 //------------------------------StoreLConditionalNode---------------------------
 // Conditionally store long to memory, if no change since prior
 // load-locked.  Sets flags for success or failure of the store.
@@ -639,6 +650,8 @@ class StoreLConditionalNode : public LoadStoreNode {
 public:
   StoreLConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ll ) : LoadStoreNode(c, mem, adr, val, ll) { }
   virtual int Opcode() const;
+  // Produces flags
+  virtual uint ideal_reg() const { return Op_RegFlags; }
 };
 
 

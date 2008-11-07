@@ -3313,7 +3313,7 @@ encode %{
       // Beware -- there's a subtle invariant that fetch of the markword
       // at [FETCH], below, will never observe a biased encoding (*101b).
       // If this invariant is not held we risk exclusion (safety) failure.
-      if (UseBiasedLocking) {
+      if (UseBiasedLocking && !UseOptoBiasInlining) {
         masm.biased_locking_enter(boxReg, objReg, tmpReg, scrReg, false, DONE_LABEL, NULL, _counters);
       }
 
@@ -3534,7 +3534,7 @@ encode %{
 
       // Critically, the biased locking test must have precedence over
       // and appear before the (box->dhw == 0) recursive stack-lock test.
-      if (UseBiasedLocking) {
+      if (UseBiasedLocking && !UseOptoBiasInlining) {
          masm.biased_locking_exit(objReg, tmpReg, DONE_LABEL);
       }
       
@@ -7930,33 +7930,36 @@ instruct storePConditional( memory heap_top_ptr, eAXRegP oldval, eRegP newval, e
   ins_pipe( pipe_cmpxchg );
 %}
 
-// Conditional-store of a long value
-// Returns a boolean value (0/1) on success.  Implemented with a CMPXCHG8 on Intel.
-// mem_ptr can actually be in either ESI or EDI
-instruct storeLConditional( eRegI res, eSIRegP mem_ptr, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr ) %{
-  match(Set res (StoreLConditional mem_ptr (Binary oldval newval)));
-  effect(KILL cr);
-  // EDX:EAX is killed if there is contention, but then it's also unused.
-  // In the common case of no contention, EDX:EAX holds the new oop address.
-  format %{ "CMPXCHG8 [$mem_ptr],$newval\t# If EDX:EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t"
-            "MOV    $res,0\n\t"
-            "JNE,s  fail\n\t"
-            "MOV    $res,1\n"
-          "fail:" %}
-  ins_encode( enc_cmpxchg8(mem_ptr),
-              enc_flags_ne_to_boolean(res) );
+// Conditional-store of an int value.
+// ZF flag is set on success, reset otherwise.  Implemented with a CMPXCHG on Intel.
+instruct storeIConditional( memory mem, eAXRegI oldval, eRegI newval, eFlagsReg cr ) %{
+  match(Set cr (StoreIConditional mem (Binary oldval newval)));
+  effect(KILL oldval);
+  format %{ "CMPXCHG $mem,$newval\t# If EAX==$mem Then store $newval into $mem" %}
+  ins_encode( lock_prefix, Opcode(0x0F), Opcode(0xB1), RegMem(newval, mem) );
   ins_pipe( pipe_cmpxchg );
 %}
 
-// Conditional-store of a long value
-// ZF flag is set on success, reset otherwise. Implemented with a CMPXCHG8 on Intel.
-// mem_ptr can actually be in either ESI or EDI
-instruct storeLConditional_flags( eSIRegP mem_ptr, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr, immI0 zero ) %{
-  match(Set cr (CmpI (StoreLConditional mem_ptr (Binary oldval newval)) zero));
-  // EDX:EAX is killed if there is contention, but then it's also unused.
-  // In the common case of no contention, EDX:EAX holds the new oop address.
-  format %{ "CMPXCHG8 [$mem_ptr],$newval\t# If EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t" %}
-  ins_encode( enc_cmpxchg8(mem_ptr) );
+// Conditional-store of a long value.
+// ZF flag is set on success, reset otherwise.  Implemented with a CMPXCHG8 on Intel.
+instruct storeLConditional( memory mem, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr ) %{
+  match(Set cr (StoreLConditional mem (Binary oldval newval)));
+  effect(KILL oldval);
+  format %{ "XCHG   EBX,ECX\t# correct order for CMPXCHG8 instruction\n\t"
+            "CMPXCHG8 $mem,ECX:EBX\t# If EDX:EAX==$mem Then store ECX:EBX into $mem\n\t"
+            "XCHG   EBX,ECX"
+  %}
+  ins_encode %{
+    // Note: we need to swap rbx, and rcx before and after the
+    //       cmpxchg8 instruction because the instruction uses
+    //       rcx as the high order word of the new value to store but
+    //       our register encoding uses rbx.
+    __ xchgl(as_Register(EBX_enc), as_Register(ECX_enc));
+    if( os::is_MP() )
+      __ lock();
+    __ cmpxchg8(Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp));
+    __ xchgl(as_Register(EBX_enc), as_Register(ECX_enc));
+  %}
   ins_pipe( pipe_cmpxchg );
 %}
 
@@ -8423,6 +8426,7 @@ instruct shrI_eReg_imm(eRegI dst, immI8 shift, eFlagsReg cr) %{
   ins_pipe( ialu_reg );
 %}
 
+
 // Logical Shift Right by 24, followed by Arithmetic Shift Left by 24.
 // This idiom is used by the compiler for the i2b bytecode.
 instruct i2b(eRegI dst, xRegI src, immI_24 twentyfour, eFlagsReg cr) %{
@@ -8539,6 +8543,18 @@ instruct orI_eReg(eRegI dst, eRegI src, eFlagsReg cr) %{
   ins_encode( OpcP, RegReg( dst, src) );
   ins_pipe( ialu_reg_reg );
 %}
+
+instruct orI_eReg_castP2X(eRegI dst, eRegP src, eFlagsReg cr) %{
+  match(Set dst (OrI dst (CastP2X src)));
+  effect(KILL cr);
+
+  size(2);
+  format %{ "OR     $dst,$src" %}
+  opcode(0x0B);
+  ins_encode( OpcP, RegReg( dst, src) );
+  ins_pipe( ialu_reg_reg );
+%}
+
 
 // Or Register with Immediate
 instruct orI_eReg_imm(eRegI dst, immI src, eFlagsReg cr) %{

@@ -388,6 +388,9 @@
   product(intx, EliminateAllocationArraySizeLimit, 64,                      \
           "Array size (number of elements) limit for scalar replacement")   \
                                                                             \
+  product(bool, UseOptoBiasInlining, true,                                 \
+          "Generate biased locking code in C2 ideal graph")                 \
+                                                                            \
   product(intx, ValueSearchLimit, 1000,                                     \
           "Recursion limit in PhaseMacroExpand::value_from_mem_phi")        \
                                                                             \
