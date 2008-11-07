@@ -200,8 +200,7 @@ public class CustomForwarderTest {
 
     public static void main(String[] args) throws Exception {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        MBeanServerForwarder mbsf = EventClientDelegate.newForwarder();
-        mbsf.setMBeanServer(mbs);
+        MBeanServerForwarder mbsf = EventClientDelegate.newForwarder(mbs, null);
         mbs = mbsf;
 
         // for 1.5

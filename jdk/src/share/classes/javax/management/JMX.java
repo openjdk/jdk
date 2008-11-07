@@ -30,6 +30,7 @@ import com.sun.jmx.mbeanserver.MBeanInjector;
 import com.sun.jmx.remote.util.ClassLogger;
 import java.beans.BeanInfo;
 import java.beans.PropertyDescriptor;
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -37,6 +38,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Map;
 import java.util.TreeMap;
+import javax.management.namespace.JMXNamespaces;
 import javax.management.openmbean.MXBeanMappingFactory;
 
 /**
@@ -60,6 +62,21 @@ public class JMX {
      */
     public static final String DEFAULT_VALUE_FIELD = "defaultValue";
 
+   /**
+     * The name of the <a
+     * href="Descriptor.html#descriptionResourceBundleBaseName">{@code
+     * descriptionResourceBundleBaseName}</a> field.
+     */
+    public static final String DESCRIPTION_RESOURCE_BUNDLE_BASE_NAME_FIELD =
+            "descriptionResourceBundleBaseName";
+
+    /**
+     * The name of the <a href="Descriptor.html#descriptionResourceKey">{@code
+     * descriptionResourceKey}</a> field.
+     */
+    public static final String DESCRIPTION_RESOURCE_KEY_FIELD =
+            "descriptionResourceKey";
+
     /**
      * The name of the <a href="Descriptor.html#immutableInfo">{@code
      * immutableInfo}</a> field.
@@ -77,6 +94,12 @@ public class JMX {
      * legalValues}</a> field.
      */
     public static final String LEGAL_VALUES_FIELD = "legalValues";
+
+    /**
+     * The name of the <a href="Descriptor.html#locale">{@code locale}</a>
+     * field.
+     */
+    public static final String LOCALE_FIELD = "locale";
 
     /**
      * The name of the <a href="Descriptor.html#maxValue">{@code
@@ -120,13 +143,12 @@ public class JMX {
      * <p>Options to apply to an MBean proxy or to an instance of {@link
      * StandardMBean}.</p>
      *
-     * <p>For example, to specify a custom {@link MXBeanMappingFactory}
-     * for a {@code StandardMBean}, you might write this:</p>
+     * <p>For example, to specify the "wrapped object visible" option for a
+     * {@code StandardMBean}, you might write this:</p>
      *
      * <pre>
-     * MXBeanMappingFactory factory = new MyMXBeanMappingFactory();
-     * JMX.MBeanOptions opts = new JMX.MBeanOptions();
-     * opts.setMXBeanMappingFactory(factory);
+     * StandardMBean.Options opts = new StandardMBean.Options();
+     * opts.setWrappedObjectVisible(true);
      * StandardMBean mbean = new StandardMBean(impl, intf, opts);
      * </pre>
      *
