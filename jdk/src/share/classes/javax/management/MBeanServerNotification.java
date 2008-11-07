@@ -64,6 +64,33 @@ package javax.management;
  *             MBeanServerDelegate.DELEGATE_NAME, printListener, null, null);
  * </pre>
  *
+ * <p>The following code prints a message every time an MBean is registered
+ * or unregistered in the MBean Server {@code mbeanServer}:</p>
+ *
+ * <pre>
+ * private static final NotificationListener printListener = new NotificationListener() {
+ *     public void handleNotification(Notification n, Object handback) {
+ *         if (!(n instanceof MBeanServerNotification)) {
+ *             System.out.println("Ignored notification of class " + n.getClass().getName());
+ *             return;
+ *         }
+ *         MBeanServerNotification mbsn = (MBeanServerNotification) n;
+ *         String what;
+ *         if (n.getType().equals(MBeanServerNotification.REGISTRATION_NOTIFICATION))
+ *             what = "MBean registered";
+ *         else if (n.getType().equals(MBeanServerNotification.UNREGISTRATION_NOTIFICATION))
+ *             what = "MBean unregistered";
+ *         else
+ *             what = "Unknown type " + n.getType();
+ *         System.out.println("Received MBean Server notification: " + what + ": " +
+ *                 mbsn.getMBeanName());
+ * };
+ *
+ * ...
+ *     mbeanServer.addNotificationListener(
+ *             MBeanServerDelegate.DELEGATE_NAME, printListener, null, null);
+ * </pre>
+ *
  * @since 1.5
  */
 public class MBeanServerNotification extends Notification {
