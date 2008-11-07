@@ -3485,11 +3485,32 @@ bool LibraryCallKit::inline_native_AtomicLong_attemptUpdate() {
   const TypePtr *adr_type = _gvn.type(adr)->is_ptr();
   int alias_idx = C->get_alias_index(adr_type);
 
-  Node *result = _gvn.transform(new (C, 5) StoreLConditionalNode(control(), memory(alias_idx), adr, newVal, oldVal));
-  Node *store_proj = _gvn.transform( new (C, 1) SCMemProjNode(result));
+  Node *cas = _gvn.transform(new (C, 5) StoreLConditionalNode(control(), memory(alias_idx), adr, newVal, oldVal));
+  Node *store_proj = _gvn.transform( new (C, 1) SCMemProjNode(cas));
   set_memory(store_proj, alias_idx);
+  Node *bol = _gvn.transform( new (C, 2) BoolNode( cas, BoolTest::eq ) );
 
-  push(result);
+  Node *result;
+  // CMove node is not used to be able fold a possible check code
+  // after attemptUpdate() call. This code could be transformed
+  // into CMove node by loop optimizations.
+  {
+    RegionNode *r = new (C, 3) RegionNode(3);
+    result = new (C, 3) PhiNode(r, TypeInt::BOOL);
+
+    Node *iff = create_and_xform_if(control(), bol, PROB_FAIR, COUNT_UNKNOWN);
+    Node *iftrue = opt_iff(r, iff);
+    r->init_req(1, iftrue);
+    result->init_req(1, intcon(1));
+    result->init_req(2, intcon(0));
+
+    set_control(_gvn.transform(r));
+    record_for_igvn(r);
+
+    C->set_has_split_ifs(true); // Has chance for split-if optimization
+  }
+
+  push(_gvn.transform(result));
   return true;
 }
 

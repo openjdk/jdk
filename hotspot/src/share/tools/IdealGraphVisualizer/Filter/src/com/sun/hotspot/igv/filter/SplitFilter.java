@@ -56,8 +56,8 @@ public class SplitFilter extends AbstractFilter {
             for (OutputSlot os : f.getOutputSlots()) {
                 for (Connection c : os.getConnections()) {
                     InputSlot is = c.getInputSlot();
-                    is.setName(f.getProperties().getProperty("dump_spec"));
-                    String s = f.getProperties().getProperty("short_name");
+                    is.setName(f.getProperties().get("dump_spec"));
+                    String s = f.getProperties().get("short_name");
                     if (s != null) {
                         is.setShortName(s);
                     }

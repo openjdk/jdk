@@ -1951,6 +1951,7 @@ void Matcher::find_shared( Node *n ) {
       // Now hack a few special opcodes
       switch( n->Opcode() ) {       // Handle some opcodes special
       case Op_StorePConditional:
+      case Op_StoreIConditional:
       case Op_StoreLConditional:
       case Op_CompareAndSwapI:
       case Op_CompareAndSwapL:

@@ -433,6 +433,10 @@ public:
   uint n_fields()    const { return _n_fields; }
   DEBUG_ONLY(AllocateNode* alloc() const { return _alloc; })
 
+  // SafePointScalarObject should be always pinned to the control edge
+  // of the SafePoint node for which it was generated.
+  virtual bool pinned() const; // { return true; }
+
   virtual uint size_of() const { return sizeof(*this); }
 
   // Assumes that "this" is an argument to a safepoint node "s", and that

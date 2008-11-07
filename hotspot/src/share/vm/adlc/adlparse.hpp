@@ -70,7 +70,6 @@ class ADLParser {
 protected:
   char     *_curline;           // Start of current line
   char     *_ptr;               // Pointer into current location in File Buffer
-  int       _linenum;           // Count of line numbers seen so far
   char      _curchar;           // Current character from buffer
   FormDict &_globalNames;       // Global names
 
@@ -160,9 +159,10 @@ protected:
   Interface     *interface_parse();      // Parse operand interface rule
   Interface     *mem_interface_parse();  // Parse memory interface rule
   Interface     *cond_interface_parse(); // Parse conditional interface rule
-  char          *interface_field_parse();// Parse field contents
+  char          *interface_field_parse(const char** format = NULL);// Parse field contents
 
   FormatRule    *format_parse(void);     // Parse format rule
+  FormatRule    *template_parse(void);     // Parse format rule
   void           effect_parse(InstructForm *instr); // Parse effect rule
   ExpandRule    *expand_parse(InstructForm *instr); // Parse expand rule
   RewriteRule   *rewrite_parse(void);    // Parse rewrite rule
@@ -263,7 +263,7 @@ public:
 
   void parse(void);             // Do the parsing & build forms lists
 
-  int getlines( ) { return _linenum; }
+  int linenum() { return _buf.linenum(); }
 
   static bool is_literal_constant(const char *hex_string);
   static bool is_hex_digit(char digit);
