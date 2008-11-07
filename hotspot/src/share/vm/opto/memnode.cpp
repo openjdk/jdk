@@ -227,6 +227,14 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   const Type *t_adr = phase->type( address );
   if( t_adr == Type::TOP )              return NodeSentinel; // caller will return NULL
 
+  PhaseIterGVN *igvn = phase->is_IterGVN();
+  if( can_reshape && igvn != NULL && igvn->_worklist.member(address) ) {
+    // The address's base and type may change when the address is processed.
+    // Delay this mem node transformation until the address is processed.
+    phase->is_IterGVN()->_worklist.push(this);
+    return NodeSentinel; // caller will return NULL
+  }
+
   // Avoid independent memory operations
   Node* old_mem = mem;
 

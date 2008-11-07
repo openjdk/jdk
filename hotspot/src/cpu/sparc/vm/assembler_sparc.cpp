@@ -2615,7 +2615,8 @@ void MacroAssembler::cas_under_lock(Register top_ptr_reg, Register top_reg, Regi
   }
 }
 
-void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg, Register temp_reg,
+void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
+                                          Register temp_reg,
                                           Label& done, Label* slow_case,
                                           BiasedLockingCounters* counters) {
   assert(UseBiasedLocking, "why call this otherwise?");
@@ -2691,8 +2692,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg, R
                   markOopDesc::biased_lock_mask_in_place | markOopDesc::age_mask_in_place | markOopDesc::epoch_mask_in_place,
                   mark_reg);
   or3(G2_thread, mark_reg, temp_reg);
-  casx_under_lock(mark_addr.base(), mark_reg, temp_reg,
-                  (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
+  casn(mark_addr.base(), mark_reg, temp_reg);
   // If the biasing toward our thread failed, this means that
   // another thread succeeded in biasing it toward itself and we
   // need to revoke that bias. The revocation will occur in the
@@ -2721,8 +2721,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg, R
   load_klass(obj_reg, temp_reg);
   ld_ptr(Address(temp_reg, 0, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()), temp_reg);
   or3(G2_thread, temp_reg, temp_reg);
-  casx_under_lock(mark_addr.base(), mark_reg, temp_reg,
-                  (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
+  casn(mark_addr.base(), mark_reg, temp_reg);
   // If the biasing toward our thread failed, this means that
   // another thread succeeded in biasing it toward itself and we
   // need to revoke that bias. The revocation will occur in the
@@ -2752,8 +2751,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg, R
   // bits in this situation. Should attempt to preserve them.
   load_klass(obj_reg, temp_reg);
   ld_ptr(Address(temp_reg, 0, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()), temp_reg);
-  casx_under_lock(mark_addr.base(), mark_reg, temp_reg,
-                  (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
+  casn(mark_addr.base(), mark_reg, temp_reg);
   // Fall through to the normal CAS-based lock, because no matter what
   // the result of the above CAS, some thread must have succeeded in
   // removing the bias bit from the object's header.
@@ -2815,8 +2813,10 @@ void MacroAssembler::casn (Register addr_reg, Register cmp_reg, Register set_reg
 // effect).
 
 
-void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark, Register Rbox, Register Rscratch,
-                                          BiasedLockingCounters* counters) {
+void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
+                                          Register Rbox, Register Rscratch,
+                                          BiasedLockingCounters* counters,
+                                          bool try_bias) {
    Address mark_addr(Roop, 0, oopDesc::mark_offset_in_bytes());
 
    verify_oop(Roop);
@@ -2838,7 +2838,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark, Registe
      // Fetch object's markword
      ld_ptr(mark_addr, Rmark);
 
-     if (UseBiasedLocking) {
+     if (try_bias) {
         biased_locking_enter(Roop, Rmark, Rscratch, done, NULL, counters);
      }
 
@@ -2881,7 +2881,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark, Registe
 
       ld_ptr (mark_addr, Rmark);           // fetch obj->mark
       // Triage: biased, stack-locked, neutral, inflated
-      if (UseBiasedLocking) {
+      if (try_bias) {
         biased_locking_enter(Roop, Rmark, Rscratch, done, NULL, counters);
         // Invariant: if control reaches this point in the emitted stream
         // then Rmark has not been modified.
@@ -2945,7 +2945,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark, Registe
       ld_ptr (mark_addr, Rmark);           // fetch obj->mark
       // Triage: biased, stack-locked, neutral, inflated
 
-      if (UseBiasedLocking) {
+      if (try_bias) {
         biased_locking_enter(Roop, Rmark, Rscratch, done, NULL, counters);
         // Invariant: if control reaches this point in the emitted stream
         // then Rmark has not been modified.
@@ -3039,7 +3039,9 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark, Registe
    bind   (done) ;
 }
 
-void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark, Register Rbox, Register Rscratch) {
+void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
+                                            Register Rbox, Register Rscratch,
+                                            bool try_bias) {
    Address mark_addr(Roop, 0, oopDesc::mark_offset_in_bytes());
 
    Label done ;
@@ -3050,7 +3052,7 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark, Regis
    }
 
    if (EmitSync & 8) {
-     if (UseBiasedLocking) {
+     if (try_bias) {
         biased_locking_exit(mark_addr, Rscratch, done);
      }
 
@@ -3077,7 +3079,7 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark, Regis
    // I$ effects.
    Label LStacked ;
 
-   if (UseBiasedLocking) {
+   if (try_bias) {
       // TODO: eliminate redundant LDs of obj->mark
       biased_locking_exit(mark_addr, Rscratch, done);
    }
