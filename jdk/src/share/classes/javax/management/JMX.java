@@ -830,4 +830,80 @@ public class JMX {
             ((DynamicWrapperMBean) mbean).getWrappedObject() : mbean;
         return (MBeanInjector.injectsSendNotification(resource));
     }
+
+    /**
+     * <p>Return the version of the JMX specification that a (possibly remote)
+     * MBean Server is using.  The JMX specification described in this
+     * documentation is version 2.0.  The earlier versions that might be
+     * reported by this method are 1.0, 1.1, 1.2, and 1.4.  (There is no 1.3.)
+     * All of these versions and all future versions can be compared using
+     * {@link String#compareTo(String)}.  So, for example, to tell if
+     * {@code mbsc} is running at least version 2.0 you can write:</p>
+     *
+     * <pre>
+     * String version = JMX.getSpecificationVersion(mbsc, null);
+     * boolean atLeast2dot0 = (version.compareTo("2.0") >= 0);
+     * </pre>
+     *
+     * <p>A remote MBean Server might be running an earlier version of the
+     * JMX API, and in that case <a href="package-summary.html#interop">certain
+     * features</a> might not be available in it.</p>
+     *
+     * <p>The version of the MBean Server {@code mbsc} is not necessarily
+     * the version of all namespaces within that MBean Server, for example
+     * if some of them use {@link javax.management.namespace.JMXRemoteNamespace
+     * JMXRemoteNamespace}.  To determine the version of the namespace
+     * that a particular MBean is in, give its name as the {@code mbeanName}
+     * parameter.</p>
+     *
+     * @param mbsc a connection to an MBean Server.
+     *
+     * @param mbeanName the name of an MBean within that MBean Server, or null.
+     * If non-null, the namespace of this name, as determined by
+     * {@link JMXNamespaces#getContainingNamespace
+     * JMXNamespaces.getContainingNamespace}, is the one whose specification
+     * version will be returned.
+     *
+     * @return the JMX specification version reported by that MBean Server.
+     *
+     * @throws IllegalArgumentException if {@code mbsc} is null, or if
+     * {@code mbeanName} includes a wildcard character ({@code *} or {@code ?})
+     * in its namespace.
+     *
+     * @throws IOException if the version cannot be obtained, either because
+     * there is a communication problem or because the remote MBean Server
+     * does not have the appropriate {@linkplain
+     * MBeanServerDelegateMBean#getSpecificationVersion() attribute}.
+     *
+     * @see <a href="package-summary.html#interop">Interoperability between
+     * versions of the JMX specification</a>
+     * @see MBeanServerDelegateMBean#getSpecificationVersion
+     */
+    public static String getSpecificationVersion(
+            MBeanServerConnection mbsc, ObjectName mbeanName)
+            throws IOException {
+        if (mbsc == null)
+            throw new IllegalArgumentException("Null MBeanServerConnection");
+
+        String namespace;
+        if (mbeanName == null)
+            namespace = "";
+        else
+            namespace = JMXNamespaces.getContainingNamespace(mbeanName);
+        if (namespace.contains("*") || namespace.contains("?")) {
+            throw new IllegalArgumentException(
+                    "ObjectName contains namespace wildcard: " + mbeanName);
+        }
+
+        try {
+            if (namespace.length() > 0)
+                mbsc = JMXNamespaces.narrowToNamespace(mbsc, namespace);
+            return (String) mbsc.getAttribute(
+                    MBeanServerDelegate.DELEGATE_NAME, "SpecificationVersion");
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+    }
 }
