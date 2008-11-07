@@ -956,7 +956,7 @@ class StubGenerator: public StubCodeGenerator {
     // Load a little early; will load 1 off the end of the array.
     // Ok for now; revisit if we have other uses of this routine.
     if (UseCompressedOops) {
-      __ ld(L1_ary_ptr,0,L2_super);// Will load a little early
+      __ lduw(L1_ary_ptr,0,L2_super);// Will load a little early
     } else {
       __ ld_ptr(L1_ary_ptr,0,L2_super);// Will load a little early
     }
@@ -973,7 +973,7 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef  _LP64
       __ subcc(L2_super,L4_ooptmp,Rret);   // Check for match; zero in Rret for a hit
       __ br( Assembler::notEqual, false, Assembler::pt, loop );
-      __ delayed()->ld(L1_ary_ptr,0,L2_super);// Will load a little early
+      __ delayed()->lduw(L1_ary_ptr,0,L2_super);// Will load a little early
 #else
       ShouldNotReachHere();
 #endif
