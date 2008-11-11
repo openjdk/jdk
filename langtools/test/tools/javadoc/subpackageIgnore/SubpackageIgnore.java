@@ -36,6 +36,7 @@ public class SubpackageIgnore extends Doclet {
         if (com.sun.tools.javadoc.Main.execute(
                 "javadoc",
                 "SubpackageIgnore",
+                SubpackageIgnore.class.getClassLoader(),
                 new String[] {"-Xwerror",
                               "-sourcepath",
                               System.getProperty("test.src", "."),

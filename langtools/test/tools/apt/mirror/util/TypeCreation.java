@@ -27,6 +27,7 @@
  * @bug 5033381
  * @summary Test the type creation methods in Types.
  * @library ../../lib
+ * @run main/othervm TypeCreation
  */
 
 

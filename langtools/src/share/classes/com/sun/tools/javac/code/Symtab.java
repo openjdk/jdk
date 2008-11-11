@@ -336,7 +336,7 @@ public class Symtab {
 
         // create the basic builtin symbols
         rootPackage = new PackageSymbol(names.empty, null);
-        final Messages messages = Messages.instance(context);
+        final JavacMessages messages = JavacMessages.instance(context);
         unnamedPackage = new PackageSymbol(names.empty, rootPackage) {
                 public String toString() {
                     return messages.getLocalizedString("compiler.misc.unnamed.package");

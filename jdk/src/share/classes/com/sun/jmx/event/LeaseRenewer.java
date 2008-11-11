@@ -128,7 +128,7 @@ public class LeaseRenewer {
     };
 
     private final Callable<Long> doRenew;
-    private ScheduledFuture future;
+    private ScheduledFuture<?> future;
     private boolean closed = false;
     private long nextRenewTime;
 

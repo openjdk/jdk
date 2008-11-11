@@ -28,7 +28,7 @@
  * @summary WildcardType tests
  * @library ../../lib
  * @compile -source 1.5 WildcardTyp.java
- * @run main WildcardTyp
+ * @run main/othervm WildcardTyp
  */
 
 

@@ -28,7 +28,7 @@
  * @summary Tests AnnotationMirror and AnnotationValue methods.
  * @library ../../lib
  * @compile -source 1.5 AnnoMirror.java
- * @run main AnnoMirror
+ * @run main/othervm AnnoMirror
  */
 
 

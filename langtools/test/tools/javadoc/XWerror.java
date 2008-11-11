@@ -36,7 +36,7 @@ public class XWerror extends Doclet
 {
     public static void main(String[] args) {
         if (com.sun.tools.javadoc.Main.
-            execute("javadoc", "XWerror",
+            execute("javadoc", "XWerror", XWerror.class.getClassLoader(),
                     new String[] {"-Xwerror",
                                   System.getProperty("test.src", ".") +
                                   java.io.File.separatorChar +

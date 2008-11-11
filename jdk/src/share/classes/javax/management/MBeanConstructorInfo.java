@@ -64,7 +64,7 @@ public class MBeanConstructorInfo extends MBeanFeatureInfo implements Cloneable 
      * @param constructor The <CODE>java.lang.reflect.Constructor</CODE>
      * object describing the MBean constructor.
      */
-    public MBeanConstructorInfo(String description, Constructor constructor) {
+    public MBeanConstructorInfo(String description, Constructor<?> constructor) {
         this(constructor.getName(), description,
              constructorSignature(constructor),
              Introspector.descriptorForElement(constructor));
@@ -210,8 +210,8 @@ public class MBeanConstructorInfo extends MBeanFeatureInfo implements Cloneable 
         return hash;
     }
 
-    private static MBeanParameterInfo[] constructorSignature(Constructor cn) {
-        final Class[] classes = cn.getParameterTypes();
+    private static MBeanParameterInfo[] constructorSignature(Constructor<?> cn) {
+        final Class<?>[] classes = cn.getParameterTypes();
         final Annotation[][] annots = cn.getParameterAnnotations();
         return MBeanOperationInfo.parameters(classes, annots);
     }

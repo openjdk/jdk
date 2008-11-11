@@ -86,14 +86,18 @@ template <class T> void objArrayKlass::do_copy(arrayOop s, T* src,
 
   const size_t word_len = objArrayOopDesc::array_size(length);
 
-  // For performance reasons, we assume we are using a card marking write
-  // barrier. The assert will fail if this is not the case.
   BarrierSet* bs = Universe::heap()->barrier_set();
+  // For performance reasons, we assume we are that the write barrier we
+  // are using has optimized modes for arrays of references.  At least one
+  // of the asserts below will fail if this is not the case.
   assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
+  assert(bs->has_write_ref_array_pre_opt(), "For pre-barrier as well.");
 
+  MemRegion dst_mr = MemRegion((HeapWord*)dst, word_len);
   if (s == d) {
     // since source and destination are equal we do not need conversion checks.
     assert(length > 0, "sanity check");
+    bs->write_ref_array_pre(dst_mr);
     Copy::conjoint_oops_atomic(src, dst, length);
   } else {
     // We have to make sure all elements conform to the destination array
@@ -101,6 +105,7 @@ template <class T> void objArrayKlass::do_copy(arrayOop s, T* src,
     klassOop stype = objArrayKlass::cast(s->klass())->element_klass();
     if (stype == bound || Klass::cast(stype)->is_subtype_of(bound)) {
       // elements are guaranteed to be subtypes, so no check necessary
+      bs->write_ref_array_pre(dst_mr);
       Copy::conjoint_oops_atomic(src, dst, length);
     } else {
       // slow case: need individual subtype checks
@@ -110,8 +115,13 @@ template <class T> void objArrayKlass::do_copy(arrayOop s, T* src,
       for (T* p = dst; from < end; from++, p++) {
         // XXX this is going to be slow.
         T element = *from;
-        if (oopDesc::is_null(element) ||
-            Klass::cast(oopDesc::decode_heap_oop_not_null(element)->klass())->is_subtype_of(bound)) {
+        // even slower now
+        bool element_is_null = oopDesc::is_null(element);
+        oop new_val = element_is_null ? oop(NULL)
+                                      : oopDesc::decode_heap_oop_not_null(element);
+        if (element_is_null ||
+            Klass::cast((new_val->klass()))->is_subtype_of(bound)) {
+          bs->write_ref_field_pre(p, new_val);
           *p = *from;
         } else {
           // We must do a barrier to cover the partial copy.
@@ -401,11 +411,11 @@ int objArrayKlass::oop_oop_iterate_range##nv_suffix(oop obj,                    
 }
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayKlass_OOP_OOP_ITERATE_DEFN)
-ALL_OOP_OOP_ITERATE_CLOSURES_3(ObjArrayKlass_OOP_OOP_ITERATE_DEFN)
+ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayKlass_OOP_OOP_ITERATE_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayKlass_OOP_OOP_ITERATE_DEFN_m)
-ALL_OOP_OOP_ITERATE_CLOSURES_3(ObjArrayKlass_OOP_OOP_ITERATE_DEFN_m)
+ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayKlass_OOP_OOP_ITERATE_DEFN_m)
 ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayKlass_OOP_OOP_ITERATE_DEFN_r)
-ALL_OOP_OOP_ITERATE_CLOSURES_3(ObjArrayKlass_OOP_OOP_ITERATE_DEFN_r)
+ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayKlass_OOP_OOP_ITERATE_DEFN_r)
 
 int objArrayKlass::oop_adjust_pointers(oop obj) {
   assert(obj->is_objArray(), "obj must be obj array");
@@ -465,8 +475,8 @@ jint objArrayKlass::compute_modifier_flags(TRAPS) const {
     assert(Universe::is_bootstrapping(), "partial objArray only at startup");
     return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
   }
-  // Recurse down the element list
-  jint element_flags = Klass::cast(element_klass())->compute_modifier_flags(CHECK_0);
+  // Return the flags of the bottom element type.
+  jint element_flags = Klass::cast(bottom_klass())->compute_modifier_flags(CHECK_0);
 
   return (element_flags & (JVM_ACC_PUBLIC | JVM_ACC_PRIVATE | JVM_ACC_PROTECTED))
                         | (JVM_ACC_ABSTRACT | JVM_ACC_FINAL);

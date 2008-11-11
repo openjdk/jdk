@@ -118,7 +118,8 @@ class NoCallStackClassLoader extends ClassLoader {
      * if it is one of the classes whose byte code we have, or
      * delegate the load if it is one of the referenced classes.
      */
-    protected Class findClass(String name) throws ClassNotFoundException {
+    @Override
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
         for (int i = 0; i < classNames.length; i++) {
             if (name.equals(classNames[i])) {
                 return defineClass(classNames[i], byteCodes[i], 0,

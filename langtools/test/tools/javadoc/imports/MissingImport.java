@@ -41,6 +41,7 @@ public class MissingImport extends Doclet {
         if (com.sun.tools.javadoc.Main.execute(
                 "javadoc",
                 "MissingImport",
+                MissingImport.class.getClassLoader(),
                 new String[] {thisFile}) != 0)
             throw new Error("Javadoc encountered warnings or errors.");
     }

@@ -100,5 +100,15 @@ void* MemAlloc(size_t size);
  * Make launcher spit debug output.
  */
 extern jboolean _launcher_debug;
+/*
+ * This allows for finding classes from the VM's bootstrap class loader
+ * directly, FindClass uses the application class loader internally, this will
+ * cause unnecessary searching of the classpath for the required classes.
+ */
+typedef jclass (JNICALL FindClassFromBootLoader_t(JNIEnv *env,
+                                                const char *name,
+                                                jboolean throwError));
+
+jclass FindBootStrapClass(JNIEnv *env, const char *classname);
 
 #endif /* _JAVA_H_ */

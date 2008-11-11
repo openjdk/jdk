@@ -285,16 +285,7 @@ jlong LIRItem::get_jlong_constant() const {
 
 
 void LIRGenerator::init() {
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableModRef, "Wrong barrier set kind");
-  CardTableModRefBS* ct = (CardTableModRefBS*)bs;
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-
-#ifdef _LP64
-  _card_table_base = new LIR_Const((jlong)ct->byte_map_base);
-#else
-  _card_table_base = new LIR_Const((jint)ct->byte_map_base);
-#endif
+  _bs = Universe::heap()->barrier_set();
 }
 
 
@@ -1239,8 +1230,37 @@ LIR_Opr LIRGenerator::load_constant(LIR_Const* c) {
 
 // Various barriers
 
+void LIRGenerator::pre_barrier(LIR_Opr addr_opr, bool patch,  CodeEmitInfo* info) {
+  // Do the pre-write barrier, if any.
+  switch (_bs->kind()) {
+#ifndef SERIALGC
+    case BarrierSet::G1SATBCT:
+    case BarrierSet::G1SATBCTLogging:
+      G1SATBCardTableModRef_pre_barrier(addr_opr, patch, info);
+      break;
+#endif // SERIALGC
+    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableExtension:
+      // No pre barriers
+      break;
+    case BarrierSet::ModRef:
+    case BarrierSet::Other:
+      // No pre barriers
+      break;
+    default      :
+      ShouldNotReachHere();
+
+  }
+}
+
 void LIRGenerator::post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val) {
-  switch (Universe::heap()->barrier_set()->kind()) {
+  switch (_bs->kind()) {
+#ifndef SERIALGC
+    case BarrierSet::G1SATBCT:
+    case BarrierSet::G1SATBCTLogging:
+      G1SATBCardTableModRef_post_barrier(addr,  new_val);
+      break;
+#endif // SERIALGC
     case BarrierSet::CardTableModRef:
     case BarrierSet::CardTableExtension:
       CardTableModRef_post_barrier(addr,  new_val);
@@ -1254,11 +1274,120 @@ void LIRGenerator::post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val) {
     }
 }
 
+////////////////////////////////////////////////////////////////////////
+#ifndef SERIALGC
+
+void LIRGenerator::G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, bool patch,  CodeEmitInfo* info) {
+  if (G1DisablePreBarrier) return;
+
+  // First we test whether marking is in progress.
+  BasicType flag_type;
+  if (in_bytes(PtrQueue::byte_width_of_active()) == 4) {
+    flag_type = T_INT;
+  } else {
+    guarantee(in_bytes(PtrQueue::byte_width_of_active()) == 1,
+              "Assumption");
+    flag_type = T_BYTE;
+  }
+  LIR_Opr thrd = getThreadPointer();
+  LIR_Address* mark_active_flag_addr =
+    new LIR_Address(thrd,
+                    in_bytes(JavaThread::satb_mark_queue_offset() +
+                             PtrQueue::byte_offset_of_active()),
+                    flag_type);
+  // Read the marking-in-progress flag.
+  LIR_Opr flag_val = new_register(T_INT);
+  __ load(mark_active_flag_addr, flag_val);
+
+  LabelObj* start_store = new LabelObj();
+
+  LIR_PatchCode pre_val_patch_code =
+    patch ? lir_patch_normal : lir_patch_none;
+
+  LIR_Opr pre_val = new_register(T_OBJECT);
+
+  __ cmp(lir_cond_notEqual, flag_val, LIR_OprFact::intConst(0));
+  if (!addr_opr->is_address()) {
+    assert(addr_opr->is_register(), "must be");
+    addr_opr = LIR_OprFact::address(new LIR_Address(addr_opr, 0, T_OBJECT));
+  }
+  CodeStub* slow = new G1PreBarrierStub(addr_opr, pre_val, pre_val_patch_code,
+                                        info);
+  __ branch(lir_cond_notEqual, T_INT, slow);
+  __ branch_destination(slow->continuation());
+}
+
+void LIRGenerator::G1SATBCardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val) {
+  if (G1DisablePostBarrier) return;
+
+  // If the "new_val" is a constant NULL, no barrier is necessary.
+  if (new_val->is_constant() &&
+      new_val->as_constant_ptr()->as_jobject() == NULL) return;
+
+  if (!new_val->is_register()) {
+    LIR_Opr new_val_reg = new_pointer_register();
+    if (new_val->is_constant()) {
+      __ move(new_val, new_val_reg);
+    } else {
+      __ leal(new_val, new_val_reg);
+    }
+    new_val = new_val_reg;
+  }
+  assert(new_val->is_register(), "must be a register at this point");
+
+  if (addr->is_address()) {
+    LIR_Address* address = addr->as_address_ptr();
+    LIR_Opr ptr = new_pointer_register();
+    if (!address->index()->is_valid() && address->disp() == 0) {
+      __ move(address->base(), ptr);
+    } else {
+      assert(address->disp() != max_jint, "lea doesn't support patched addresses!");
+      __ leal(addr, ptr);
+    }
+    addr = ptr;
+  }
+  assert(addr->is_register(), "must be a register at this point");
+
+  LIR_Opr xor_res = new_pointer_register();
+  LIR_Opr xor_shift_res = new_pointer_register();
+
+  if (TwoOperandLIRForm ) {
+    __ move(addr, xor_res);
+    __ logical_xor(xor_res, new_val, xor_res);
+    __ move(xor_res, xor_shift_res);
+    __ unsigned_shift_right(xor_shift_res,
+                            LIR_OprFact::intConst(HeapRegion::LogOfHRGrainBytes),
+                            xor_shift_res,
+                            LIR_OprDesc::illegalOpr());
+  } else {
+    __ logical_xor(addr, new_val, xor_res);
+    __ unsigned_shift_right(xor_res,
+                            LIR_OprFact::intConst(HeapRegion::LogOfHRGrainBytes),
+                            xor_shift_res,
+                            LIR_OprDesc::illegalOpr());
+  }
+
+  if (!new_val->is_register()) {
+    LIR_Opr new_val_reg = new_pointer_register();
+    __ leal(new_val, new_val_reg);
+    new_val = new_val_reg;
+  }
+  assert(new_val->is_register(), "must be a register at this point");
+
+  __ cmp(lir_cond_notEqual, xor_shift_res, LIR_OprFact::intptrConst(NULL_WORD));
+
+  CodeStub* slow = new G1PostBarrierStub(addr, new_val);
+  __ branch(lir_cond_notEqual, T_INT, slow);
+  __ branch_destination(slow->continuation());
+}
+
+#endif // SERIALGC
+////////////////////////////////////////////////////////////////////////
+
 void LIRGenerator::CardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val) {
 
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(sizeof(*((CardTableModRefBS*)bs)->byte_map_base) == sizeof(jbyte), "adjust this code");
-  LIR_Const* card_table_base = new LIR_Const(((CardTableModRefBS*)bs)->byte_map_base);
+  assert(sizeof(*((CardTableModRefBS*)_bs)->byte_map_base) == sizeof(jbyte), "adjust this code");
+  LIR_Const* card_table_base = new LIR_Const(((CardTableModRefBS*)_bs)->byte_map_base);
   if (addr->is_address()) {
     LIR_Address* address = addr->as_address_ptr();
     LIR_Opr ptr = new_register(T_OBJECT);
@@ -1388,6 +1517,13 @@ void LIRGenerator::do_StoreField(StoreField* x) {
     __ membar_release();
   }
 
+  if (is_oop) {
+    // Do the pre-write barrier, if any.
+    pre_barrier(LIR_OprFact::address(address),
+                needs_patching,
+                (info ? new CodeEmitInfo(info) : NULL));
+  }
+
   if (is_volatile) {
     assert(!needs_patching && x->is_loaded(),
            "how do we know it's volatile if it's not loaded");
@@ -1398,7 +1534,12 @@ void LIRGenerator::do_StoreField(StoreField* x) {
   }
 
   if (is_oop) {
+#ifdef PRECISE_CARDMARK
+    // Precise cardmarks don't work
+    post_barrier(LIR_OprFact::address(address), value.result());
+#else
     post_barrier(object.result(), value.result());
+#endif // PRECISE_CARDMARK
   }
 
   if (is_volatile && os::is_MP()) {
