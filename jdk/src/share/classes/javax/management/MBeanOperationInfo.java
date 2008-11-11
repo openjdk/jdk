@@ -308,17 +308,18 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
        wrong should be less than the penalty we would pay if it were
        right and we needlessly hashed in the description and the
        parameter array.  */
+    @Override
     public int hashCode() {
         return getName().hashCode() ^ getReturnType().hashCode();
     }
 
     private static MBeanParameterInfo[] methodSignature(Method method) {
-        final Class[] classes = method.getParameterTypes();
+        final Class<?>[] classes = method.getParameterTypes();
         final Annotation[][] annots = method.getParameterAnnotations();
         return parameters(classes, annots);
     }
 
-    static MBeanParameterInfo[] parameters(Class[] classes,
+    static MBeanParameterInfo[] parameters(Class<?>[] classes,
                                            Annotation[][] annots) {
         final MBeanParameterInfo[] params =
             new MBeanParameterInfo[classes.length];

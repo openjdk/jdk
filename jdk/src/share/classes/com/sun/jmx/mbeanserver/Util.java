@@ -669,7 +669,7 @@ public class Util {
     }
 
     public static <T> Set<T> cloneSet(Set<T> set) {
-        if (set instanceof SortedSet) {
+        if (set instanceof SortedSet<?>) {
             @SuppressWarnings("unchecked")
             SortedSet<T> sset = (SortedSet<T>) set;
             set = new TreeSet<T>(sset.comparator());
@@ -680,7 +680,7 @@ public class Util {
     }
 
     public static <T> Set<T> equivalentEmptySet(Set<T> set) {
-        if (set instanceof SortedSet) {
+        if (set instanceof SortedSet<?>) {
             @SuppressWarnings("unchecked")
             SortedSet<T> sset = (SortedSet<T>) set;
             set = new TreeSet<T>(sset.comparator());

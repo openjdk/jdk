@@ -28,7 +28,7 @@
  * @summary Tests Declaration.getAnnotation method
  * @library ../../lib
  * @compile -source 1.5 GetAnno.java
- * @run main GetAnno
+ * @run main/othervm GetAnno
  */
 
 

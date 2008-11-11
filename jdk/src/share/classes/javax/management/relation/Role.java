@@ -228,9 +228,9 @@ public class Role implements Serializable {
     public String toString() {
         StringBuilder result = new StringBuilder();
         result.append("role name: " + name + "; role value: ");
-        for (Iterator objNameIter = objectNameList.iterator();
+        for (Iterator<ObjectName> objNameIter = objectNameList.iterator();
              objNameIter.hasNext();) {
-            ObjectName currObjName = (ObjectName)(objNameIter.next());
+            ObjectName currObjName = objNameIter.next();
             result.append(currObjName.toString());
             if (objNameIter.hasNext()) {
                 result.append(", ");
@@ -325,7 +325,7 @@ public class Role implements Serializable {
         //
         ObjectOutputStream.PutField fields = out.putFields();
         fields.put("myName", name);
-        fields.put("myObjNameList", (ArrayList)objectNameList);
+        fields.put("myObjNameList", objectNameList);
         out.writeFields();
       }
       else

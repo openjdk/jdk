@@ -166,7 +166,7 @@ public:
   // List of IfFalse or IfTrue Nodes that indicate a taken null test.
   // List is valid in the post-matching space.
   Node_List _null_check_tests;
-  void collect_null_checks( Node *proj );
+  void collect_null_checks( Node *proj, Node *orig_proj );
   void validate_null_checks( );
 
   Matcher( Node_List &proj_list );

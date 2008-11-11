@@ -484,7 +484,7 @@ public class Main {
     public static String getLocalizedString(String key, Object... args) { // FIXME sb private
         try {
             if (messages == null)
-                messages = new Messages(javacBundleName);
+                messages = new JavacMessages(javacBundleName);
             return messages.getLocalizedString("javac." + key, args);
         }
         catch (MissingResourceException e) {
@@ -494,18 +494,18 @@ public class Main {
 
     public static void useRawMessages(boolean enable) {
         if (enable) {
-            messages = new Messages(javacBundleName) {
+            messages = new JavacMessages(javacBundleName) {
                     public String getLocalizedString(String key, Object... args) {
                         return key;
                     }
                 };
         } else {
-            messages = new Messages(javacBundleName);
+            messages = new JavacMessages(javacBundleName);
         }
     }
 
     private static final String javacBundleName =
         "com.sun.tools.javac.resources.javac";
 
-    private static Messages messages;
+    private static JavacMessages messages;
 }

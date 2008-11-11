@@ -28,7 +28,7 @@
  * @summary PackageDeclaration tests
  * @library ../../lib
  * @compile -source 1.5 PackageDecl.java
- * @run main PackageDecl
+ * @run main/othervm PackageDecl
  */
 
 

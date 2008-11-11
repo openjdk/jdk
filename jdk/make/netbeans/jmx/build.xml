@@ -44,13 +44,13 @@
         <!-- because they depend on the values of BUILD_DATE and BUILD_DATE_SIMPLE  -->
         <!-- At this time, ./build.properties has not been loaded yet. -->
         <property name="project.build.name" value="openjdk-bXX"/>
-	<property name="project.build.fulltag" 
+	<property name="project.build.fulltag"
                   value="${ant.project.name}-${project.build.name}-${BUILD_DATE}" />
 
         <!-- unchecked warnings will be fixed in JMX 2.0 as part of the work
              being done on JSR 255 new features                              -->
-        <property name="javac.options" 
-                  value="-Xlint -Xlint:-unchecked -Xlint:-deprecation"/>
+        <property name="javac.options"
+                  value="-Xlint -Xlint:-deprecation"/>
     </target>
 
 
@@ -58,13 +58,13 @@
 	<!-- Dir to keep generated stub source -->
         <mkdir dir="${gensrc.dir}" />
     </target>
-    
+
 
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     <!-- Call rmic-jmx subtargets -->
 
     <target name="-rmic-jmx" depends="-init,-rmic-jmx-jrmp,-rmic-jmx-iiop"
-	    description="Calls -init,-rmic-jmx-jrmp,-rmic-jmx-iiop" 
+	    description="Calls -init,-rmic-jmx-jrmp,-rmic-jmx-iiop"
     />
 
 
@@ -96,7 +96,7 @@
 
     <target name="-rmic-jmx-iiop" depends="-init,-check-jmx-iiop-uptodate" unless="jmx-iiop-uptodate"
             description="Generate RMI IIOP stub class files for remote objects. Do not keep generated java files." >
- 
+
 	<rmic 	base="${classes.dir}"
 		includeAntRuntime="no"
 		includeJavaRuntime="no"
@@ -115,11 +115,11 @@
 
     <target name="-check-jmx-iiop-uptodate" depends="-init">
 
-	<uptodate property="jmx-iiop-uptodate" 
+	<uptodate property="jmx-iiop-uptodate"
 		   srcfile="${classes.dir}/javax/management/remote/rmi/RMIConnectionImpl.class"
 		targetfile="${classes.dir}/org/omg/stub/javax/management/remote/rmi/_RMIConnectionImpl_Tie.class"
 	/>
-	<uptodate property="jmx-iiop-uptodate" 
+	<uptodate property="jmx-iiop-uptodate"
 		   srcfile="${classes.dir}/javax/management/remote/rmi/RMIServerImpl.class"
 		targetfile="${classes.dir}/org/omg/stub/javax/management/remote/rmi/_RMIServerImpl_Tie.class"
 	/>
@@ -131,7 +131,7 @@
     <target name="-post-compile" depends="-init,-rmic-jmx"
             description="Jar JMX class files (including RMI stubs)" >
        <mkdir dir="${dist.dir}/lib"/>
-       <jar jarfile="${dist.dir}/lib/${jar.jmx.name}" 
+       <jar jarfile="${dist.dir}/lib/${jar.jmx.name}"
 	    update="true"
 	    index="false"
 	    duplicate="fail">
@@ -144,7 +144,7 @@
 		    <attribute name="Specification-Version"  value="${jar.jmx.spec.version}" />
 		    <attribute name="Specification-Vendor"   value="${jar.jmx.spec.vendor}" />
 		    <attribute name="Implementation-Title"   value="${jar.jmx.impl.title}" />
-		    <attribute name="Implementation-Version" value="${project.build.fulltag}" /> 
+		    <attribute name="Implementation-Version" value="${project.build.fulltag}" />
 		    <attribute name="Implementation-Vendor"  value="${jar.jmx.impl.vendor}" />
 		</section>
 	    </manifest>

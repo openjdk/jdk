@@ -60,6 +60,7 @@ public class InlineTagsWithBraces extends Doclet {
         if (com.sun.tools.javadoc.Main.execute(
                 "javadoc",
                 "InlineTagsWithBraces",
+                InlineTagsWithBraces.class.getClassLoader(),
                 new String[] {"-Xwerror", thisFile}) != 0)
             throw new Error("Javadoc encountered warnings or errors.");
     }

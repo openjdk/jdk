@@ -120,7 +120,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
     private final Collection<ShareBuffer> sharers = new HashSet<ShareBuffer>(1);
 
     public static NotificationBuffer getNotificationBuffer(
-            MBeanServer mbs, Map env) {
+            MBeanServer mbs, Map<String, ?> env) {
 
         if (env == null)
             env = Collections.emptyMap();

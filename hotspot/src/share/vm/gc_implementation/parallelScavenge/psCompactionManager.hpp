@@ -52,7 +52,7 @@ class ParCompactionManager : public CHeapObj {
   friend class ParallelTaskTerminator;
   friend class ParMarkBitMap;
   friend class PSParallelCompact;
-  friend class StealChunkCompactionTask;
+  friend class StealRegionCompactionTask;
   friend class UpdateAndFillClosure;
   friend class RefProcTaskExecutor;
 
@@ -72,27 +72,27 @@ class ParCompactionManager : public CHeapObj {
 // ------------------------  End don't putback if not needed
 
  private:
-  static ParCompactionManager**  _manager_array;
-  static OopTaskQueueSet*      _stack_array;
-  static ObjectStartArray*     _start_array;
-  static ChunkTaskQueueSet*    _chunk_array;
-  static PSOldGen*             _old_gen;
+  static ParCompactionManager** _manager_array;
+  static OopTaskQueueSet*       _stack_array;
+  static ObjectStartArray*      _start_array;
+  static RegionTaskQueueSet*    _region_array;
+  static PSOldGen*              _old_gen;
 
-  OopTaskQueue                 _marking_stack;
-  GrowableArray<oop>*          _overflow_stack;
+  OopTaskQueue                  _marking_stack;
+  GrowableArray<oop>*           _overflow_stack;
   // Is there a way to reuse the _marking_stack for the
-  // saving empty chunks?  For now just create a different
+  // saving empty regions?  For now just create a different
   // type of TaskQueue.
 
-#ifdef USE_ChunkTaskQueueWithOverflow
-  ChunkTaskQueueWithOverflow   _chunk_stack;
+#ifdef USE_RegionTaskQueueWithOverflow
+  RegionTaskQueueWithOverflow   _region_stack;
 #else
-  ChunkTaskQueue               _chunk_stack;
-  GrowableArray<size_t>*       _chunk_overflow_stack;
+  RegionTaskQueue               _region_stack;
+  GrowableArray<size_t>*        _region_overflow_stack;
 #endif
 
 #if 1  // does this happen enough to need a per thread stack?
-  GrowableArray<Klass*>*       _revisit_klass_stack;
+  GrowableArray<Klass*>*        _revisit_klass_stack;
 #endif
   static ParMarkBitMap* _mark_bitmap;
 
@@ -100,21 +100,22 @@ class ParCompactionManager : public CHeapObj {
 
   static PSOldGen* old_gen()             { return _old_gen; }
   static ObjectStartArray* start_array() { return _start_array; }
-  static OopTaskQueueSet* stack_array()   { return _stack_array; }
+  static OopTaskQueueSet* stack_array()  { return _stack_array; }
 
   static void initialize(ParMarkBitMap* mbm);
 
  protected:
   // Array of tasks.  Needed by the ParallelTaskTerminator.
-  static ChunkTaskQueueSet* chunk_array()   { return _chunk_array; }
-
-  OopTaskQueue*  marking_stack()          { return &_marking_stack; }
-  GrowableArray<oop>* overflow_stack()    { return _overflow_stack; }
-#ifdef USE_ChunkTaskQueueWithOverflow
-  ChunkTaskQueueWithOverflow* chunk_stack() { return &_chunk_stack; }
+  static RegionTaskQueueSet* region_array()      { return _region_array; }
+  OopTaskQueue*  marking_stack()                 { return &_marking_stack; }
+  GrowableArray<oop>* overflow_stack()           { return _overflow_stack; }
+#ifdef USE_RegionTaskQueueWithOverflow
+  RegionTaskQueueWithOverflow* region_stack()    { return &_region_stack; }
 #else
-  ChunkTaskQueue*  chunk_stack()          { return &_chunk_stack; }
-  GrowableArray<size_t>* chunk_overflow_stack() { return _chunk_overflow_stack; }
+  RegionTaskQueue*  region_stack()               { return &_region_stack; }
+  GrowableArray<size_t>* region_overflow_stack() {
+    return _region_overflow_stack;
+  }
 #endif
 
   // Pushes onto the marking stack.  If the marking stack is full,
@@ -123,9 +124,9 @@ class ParCompactionManager : public CHeapObj {
   // Do not implement an equivalent stack_pop.  Deal with the
   // marking stack and overflow stack directly.
 
-  // Pushes onto the chunk stack.  If the chunk stack is full,
-  // pushes onto the chunk overflow stack.
-  void chunk_stack_push(size_t chunk_index);
+  // Pushes onto the region stack.  If the region stack is full,
+  // pushes onto the region overflow stack.
+  void region_stack_push(size_t region_index);
  public:
 
   Action action() { return _action; }
@@ -160,10 +161,10 @@ class ParCompactionManager : public CHeapObj {
   // Get a oop for scanning.  If returns null, no oop were found.
   oop retrieve_for_scanning();
 
-  // Save chunk for later processing.  Must not fail.
-  void save_for_processing(size_t chunk_index);
-  // Get a chunk for processing.  If returns null, no chunk were found.
-  bool retrieve_for_processing(size_t& chunk_index);
+  // Save region for later processing.  Must not fail.
+  void save_for_processing(size_t region_index);
+  // Get a region for processing.  If returns null, no region were found.
+  bool retrieve_for_processing(size_t& region_index);
 
   // Access function for compaction managers
   static ParCompactionManager* gc_thread_compaction_manager(int index);
@@ -172,18 +173,18 @@ class ParCompactionManager : public CHeapObj {
     return stack_array()->steal(queue_num, seed, t);
   }
 
-  static bool steal(int queue_num, int* seed, ChunkTask& t) {
-    return chunk_array()->steal(queue_num, seed, t);
+  static bool steal(int queue_num, int* seed, RegionTask& t) {
+    return region_array()->steal(queue_num, seed, t);
   }
 
   // Process tasks remaining on any stack
   void drain_marking_stacks(OopClosure *blk);
 
   // Process tasks remaining on any stack
-  void drain_chunk_stacks();
+  void drain_region_stacks();
 
   // Process tasks remaining on any stack
-  void drain_chunk_overflow_stack();
+  void drain_region_overflow_stack();
 
   // Debugging support
 #ifdef ASSERT

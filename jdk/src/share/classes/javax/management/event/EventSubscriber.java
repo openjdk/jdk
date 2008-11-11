@@ -350,8 +350,7 @@ public class EventSubscriber implements EventConsumer {
     static {
         QueryExp broadcasterExp;
         try {
-            final Method m = Query.class.getMethod("isInstanceOf",
-                    new Class[] {String.class});
+            final Method m = Query.class.getMethod("isInstanceOf", String.class);
             broadcasterExp = (QueryExp)m.invoke(Query.class,
                     new Object[] {NotificationBroadcaster.class.getName()});
         } catch (Exception e) {

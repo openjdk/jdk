@@ -23,6 +23,12 @@
 # have any questions.
 #
 
+# @test
+# @bug 4266026
+# @summary javac no longer follows symlinks
+#
+# @run shell links.sh
+
 
 if [ "${TESTSRC}" = "" ]
 then
@@ -58,8 +64,11 @@ case "$OS" in
     ;;
 esac
 
+mkdir tmp
+cp ${TESTSRC}/b/B.java tmp
+
 rm -rf T.class B.class b/B.class "${TESTCLASSES}/a" "${TESTCLASSES}/classes"
-ln -s "${TESTSRC}/b" "${TESTCLASSES}/a"
+ln -s `pwd`/tmp "${TESTCLASSES}/a"
 mkdir "${TESTCLASSES}/classes"
 
-exec "${TESTJAVA}/bin/javac" ${TESTTOOLVMOPTS} -sourcepath "${TESTCLASSES}" -d "${TESTCLASSES}/classes" "${TESTSRC}/T.java" 2>&1
+"${TESTJAVA}/bin/javac" ${TESTTOOLVMOPTS} -sourcepath "${TESTCLASSES}" -d "${TESTCLASSES}/classes" "${TESTSRC}/T.java" 2>&1
