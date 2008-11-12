@@ -360,6 +360,10 @@ public class Context {
                     if (me.x.isEstablished()) {
                         me.f = true;
                         System.out.println(c.name + " side established");
+                        if (input != null) {
+                            throw new Exception("Context established but " +
+                                    "still receive token at " + c.name);
+                        }
                         return null;
                     } else {
                         System.out.println(c.name + " call initSecContext");
@@ -374,6 +378,10 @@ public class Context {
                     if (me.x.isEstablished()) {
                         me.f = true;
                         System.out.println(s.name + " side established");
+                        if (input != null) {
+                            throw new Exception("Context established but " +
+                                    "still receive token at " + s.name);
+                        }
                         return null;
                     } else {
                         System.out.println(s.name + " called acceptSecContext");
