@@ -39,6 +39,10 @@ public interface LayoutCharacters {
      */
     final static int TabInc = 8;
 
+    /** Diagnostic standard indentation
+     */
+    final static int DiagInc = 2;
+
     /** Tabulator character.
      */
     final static byte TAB   = 0x8;
