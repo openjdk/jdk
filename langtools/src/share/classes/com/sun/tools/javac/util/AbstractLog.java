@@ -67,6 +67,12 @@ public abstract class AbstractLog {
         return s;
     }
 
+    /** Return the underlying diagnostic source
+     */
+    public DiagnosticSource currentSource() {
+        return source;
+    }
+
     /** Report an error, unless another error was already reported at same
      *  source position.
      *  @param key    The key for the localized error message.

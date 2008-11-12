@@ -118,7 +118,7 @@ public class MandatoryWarningHandler {
      * Report a mandatory warning.
      */
     public void report(DiagnosticPosition pos, String msg, Object... args) {
-        JavaFileObject currentSource = log.currentSource();
+        JavaFileObject currentSource = log.currentSourceFile();
 
         if (verbose) {
             if (sourcesWithReportedWarnings == null)
