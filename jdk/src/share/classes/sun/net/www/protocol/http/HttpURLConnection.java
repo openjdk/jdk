@@ -435,8 +435,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             if (streaming()) {
                 if (chunkLength != -1) {
                     requests.set ("Transfer-Encoding", "chunked");
-                } else {
-                    requests.set ("Content-Length", String.valueOf(fixedContentLength));
+                } else { /* fixed content length */
+                    if (fixedContentLengthLong != -1) {
+                        requests.set ("Content-Length",
+                                      String.valueOf(fixedContentLengthLong));
+                    } else if (fixedContentLength != -1) {
+                        requests.set ("Content-Length",
+                                      String.valueOf(fixedContentLength));
+                    }
                 }
             } else if (poster != null) {
                 /* add Content-Length & POST/PUT data */
@@ -871,11 +877,17 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             ps = (PrintStream)http.getOutputStream();
             if (streaming()) {
                 if (strOutputStream == null) {
-                    if (fixedContentLength != -1) {
-                        strOutputStream = new StreamingOutputStream (ps, fixedContentLength);
-                    } else if (chunkLength != -1) {
-                        strOutputStream =
-                            new StreamingOutputStream (new ChunkedOutputStream (ps, chunkLength), -1);
+                    if (chunkLength != -1) { /* chunked */
+                         strOutputStream = new StreamingOutputStream(
+                               new ChunkedOutputStream(ps, chunkLength), -1L);
+                    } else { /* must be fixed content length */
+                        long length = 0L;
+                        if (fixedContentLengthLong != -1) {
+                            length = fixedContentLengthLong;
+                        } else if (fixedContentLength != -1) {
+                            length = fixedContentLength;
+                        }
+                        strOutputStream = new StreamingOutputStream(ps, length);
                     }
                 }
                 return strOutputStream;
@@ -895,7 +907,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     }
 
     private boolean streaming () {
-        return (fixedContentLength != -1) || (chunkLength != -1);
+        return (fixedContentLength != -1) || (fixedContentLengthLong != -1) ||
+               (chunkLength != -1);
     }
 
     /*
@@ -2619,8 +2632,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
     class StreamingOutputStream extends FilterOutputStream {
 
-        int expected;
-        int written;
+        long expected;
+        long written;
         boolean closed;
         boolean error;
         IOException errorExcp;
@@ -2631,10 +2644,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
          *    In the 2nd case, we make sure the expected number of
          *    of bytes are actually written
          */
-        StreamingOutputStream (OutputStream os, int expectedLength) {
+        StreamingOutputStream (OutputStream os, long expectedLength) {
             super (os);
             expected = expectedLength;
-            written = 0;
+            written = 0L;
             closed = false;
             error = false;
         }
@@ -2643,7 +2656,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         public void write (int b) throws IOException {
             checkError();
             written ++;
-            if (expected != -1 && written > expected) {
+            if (expected != -1L && written > expected) {
                 throw new IOException ("too many bytes written");
             }
             out.write (b);
@@ -2658,7 +2671,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         public void write (byte[] b, int off, int len) throws IOException {
             checkError();
             written += len;
-            if (expected != -1 && written > expected) {
+            if (expected != -1L && written > expected) {
                 out.close ();
                 throw new IOException ("too many bytes written");
             }
@@ -2691,7 +2704,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 return;
             }
             closed = true;
-            if (expected != -1) {
+            if (expected != -1L) {
                 /* not chunked */
                 if (written != expected) {
                     error = true;
