@@ -26,7 +26,7 @@ Obj_Files += solaris_sparc.o
 ASFLAGS += $(AS_ARCHFLAG)
 
 ifeq ("${Platform_compiler}", "sparcWorks")
-ifeq ($(shell expr $(COMPILER_REV) \< 5.5), 1)
+ifeq ($(shell expr $(COMPILER_REV_NUMARIC) \< 505), 1)
 # For 5.2 ad_sparc file is compiled with -O2 %%%% remove when adlc is fixed
 OPT_CFLAGS/ad_sparc.o = $(OPT_CFLAGS/SLOWER)
 OPT_CFLAGS/dfa_sparc.o = $(OPT_CFLAGS/SLOWER)
