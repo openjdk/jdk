@@ -109,13 +109,22 @@ public class Context {
         out.s = new Subject();
         Krb5LoginModule krb5 = new Krb5LoginModule();
         Map<String, String> map = new HashMap<String, String>();
-        map.put("tryFirstPass", "true");
+        Map<String, Object> shared = new HashMap<String, Object>();
+
+        if (pass != null) {
+            map.put("useFirstPass", "true");
+            shared.put("javax.security.auth.login.name", user);
+            shared.put("javax.security.auth.login.password", pass);
+        } else {
+            map.put("doNotPrompt", "true");
+            map.put("useTicketCache", "true");
+            if (user != null) {
+                map.put("principal", user);
+            }
+        }
         if (storeKey) {
             map.put("storeKey", "true");
         }
-        Map<String, Object> shared = new HashMap<String, Object>();
-        shared.put("javax.security.auth.login.name", user);
-        shared.put("javax.security.auth.login.password", pass);
 
         krb5.initialize(out.s, null, shared, map);
         krb5.login();
