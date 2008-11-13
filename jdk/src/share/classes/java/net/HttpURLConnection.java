@@ -73,9 +73,22 @@ abstract public class HttpURLConnection extends URLConnection {
      * The fixed content-length when using fixed-length streaming mode.
      * A value of <code>-1</code> means fixed-length streaming mode is disabled
      * for output.
+     *
+     * <P> <B>NOTE:</B> {@link #fixedContentLengthLong} is recommended instead
+     * of this field, as it allows larger content lengths to be set.
+     *
      * @since 1.5
      */
     protected int fixedContentLength = -1;
+
+    /**
+     * The fixed content-length when using fixed-length streaming mode.
+     * A value of {@code -1} means fixed-length streaming mode is disabled
+     * for output.
+     *
+     * @since 1.7
+     */
+    protected long fixedContentLengthLong = -1;
 
     /**
      * Returns the key for the <code>n</code><sup>th</sup> header field.
@@ -109,6 +122,9 @@ abstract public class HttpURLConnection extends URLConnection {
      * This exception can be queried for the details of the error.
      * <p>
      * This method must be called before the URLConnection is connected.
+     * <p>
+     * <B>NOTE:</B> {@link #setFixedLengthStreamingMode(long)} is recommended
+     * instead of this method as it allows larger content lengths to be set.
      *
      * @param   contentLength The number of bytes which will be written
      *          to the OutputStream.
@@ -133,6 +149,52 @@ abstract public class HttpURLConnection extends URLConnection {
             throw new IllegalArgumentException ("invalid content length");
         }
         fixedContentLength = contentLength;
+    }
+
+    /**
+     * This method is used to enable streaming of a HTTP request body
+     * without internal buffering, when the content length is known in
+     * advance.
+     *
+     * <P> An exception will be thrown if the application attempts to write
+     * more data than the indicated content-length, or if the application
+     * closes the OutputStream before writing the indicated amount.
+     *
+     * <P> When output streaming is enabled, authentication and redirection
+     * cannot be handled automatically. A {@linkplain HttpRetryException} will
+     * be thrown when reading the response if authentication or redirection
+     * are required. This exception can be queried for the details of the
+     * error.
+     *
+     * <P> This method must be called before the URLConnection is connected.
+     *
+     * <P> The content length set by invoking this method takes precedence
+     * over any value set by {@link #setFixedLengthStreamingMode(int)}.
+     *
+     * @param  contentLength
+     *         The number of bytes which will be written to the OutputStream.
+     *
+     * @throws  IllegalStateException
+     *          if URLConnection is already connected or if a different
+     *          streaming mode is already enabled.
+     *
+     * @throws  IllegalArgumentException
+     *          if a content length less than zero is specified.
+     *
+     * @since 1.7
+     */
+    public void setFixedLengthStreamingMode(long contentLength) {
+        if (connected) {
+            throw new IllegalStateException("Already connected");
+        }
+        if (chunkLength != -1) {
+            throw new IllegalStateException(
+                "Chunked encoding streaming mode set");
+        }
+        if (contentLength < 0) {
+            throw new IllegalArgumentException("invalid content length");
+        }
+        fixedContentLengthLong = contentLength;
     }
 
     /* Default chunk size (including chunk header) if not specified;
@@ -170,7 +232,7 @@ abstract public class HttpURLConnection extends URLConnection {
         if (connected) {
             throw new IllegalStateException ("Can't set streaming mode: already connected");
         }
-        if (fixedContentLength != -1) {
+        if (fixedContentLength != -1 || fixedContentLengthLong != -1) {
             throw new IllegalStateException ("Fixed length streaming mode set");
         }
         chunkLength = chunklen <=0? DEFAULT_CHUNK_SIZE : chunklen;

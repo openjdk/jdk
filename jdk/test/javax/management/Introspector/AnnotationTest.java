@@ -39,7 +39,8 @@ import javax.management.*;
 
 /*
   This test checks that annotations produce Descriptor entries as
-  specified in javax.management.DescriptorKey.  It does two things:
+  specified in javax.management.DescriptorKey and javax.management.DescriptorField.
+  It does the following:
 
   - An annotation consisting of an int and a String, each with an
     appropriate @DescriptorKey annotation, is placed on every program
@@ -61,6 +62,10 @@ import javax.management.*;
     The test checks that in each case the corresponding Descriptor
     appears in the appropriate place inside the MBean's MBeanInfo.
 
+ - A @DescriptorFields annotation defining two fields is placed in the
+   same places and again the test checks that the two fields appear
+   in the corresponding MBean*Info objects.
+
   - An annotation consisting of enough other types to ensure coverage
     is placed on a getter.  The test checks that the generated
     MBeanAttributeInfo contains the corresponding Descriptor.  The tested
@@ -77,12 +82,6 @@ import javax.management.*;
  */
 public class AnnotationTest {
     private static String failed = null;
-
-//    @Retention(RetentionPolicy.RUNTIME) @Inherited
-//    @Target(ElementType.METHOD)
-//    public static @interface DescriptorKey {
-//        String value();
-//    }
 
     @Retention(RetentionPolicy.RUNTIME)
     public static @interface Pair {
@@ -112,11 +111,12 @@ public class AnnotationTest {
         boolean[] booleanArrayValue();
     }
 
-    /* We use the annotation @Pair(x = 3, y = "foo") everywhere, and this is
-       the Descriptor that it should produce: */
+    /* We use the annotations @Pair(x = 3, y = "foo")
+       and @DescriptorFields({"foo=bar", "baz="}) everywhere, and this is
+       the Descriptor that they should produce: */
     private static Descriptor expectedDescriptor =
-        new ImmutableDescriptor(new String[] {"x", "y"},
-                                new Object[] {3, "foo"});
+        new ImmutableDescriptor(new String[] {"x", "y", "foo", "baz"},
+                                new Object[] {3, "foo", "bar", ""});
 
     private static Descriptor expectedFullDescriptor =
         new ImmutableDescriptor(new String[] {
@@ -136,8 +136,10 @@ public class AnnotationTest {
                                 });
 
     @Pair(x = 3, y = "foo")
+    @DescriptorFields({"foo=bar", "baz="})
     public static interface ThingMBean {
         @Pair(x = 3, y = "foo")
+        @DescriptorFields({"foo=bar", "baz="})
         @Full(classValue=Full.class,
               enumValue=RetentionPolicy.RUNTIME,
               booleanValue=false,
@@ -149,32 +151,47 @@ public class AnnotationTest {
         int getReadOnly();
 
         @Pair(x = 3, y = "foo")
+        @DescriptorFields({"foo=bar", "baz="})
         void setWriteOnly(int x);
 
         @Pair(x = 3, y = "foo")
+        @DescriptorFields({"foo=bar", "baz="})
         int getReadWrite1();
         void setReadWrite1(int x);
 
         @Pair(x = 3, y = "foo")
+        @DescriptorFields({"foo=bar", "baz="})
         int getReadWrite2();
         @Pair(x = 3, y = "foo")
+        @DescriptorFields({"foo=bar", "baz="})
         void setReadWrite2(int x);
 
         int getReadWrite3();
         @Pair(x = 3, y = "foo")
+        @DescriptorFields({"foo=bar", "baz="})
         void setReadWrite3(int x);
 
         @Pair(x = 3, y = "foo")
-        int operation(@Pair(x = 3, y = "foo") int p1,
-                      @Pair(x = 3, y = "foo") int p2);
+        @DescriptorFields({"foo=bar", "baz="})
+        int operation(@Pair(x = 3, y = "foo")
+                      @DescriptorFields({"foo=bar", "baz="})
+                      int p1,
+                      @Pair(x = 3, y = "foo")
+                      @DescriptorFields({"foo=bar", "baz="})
+                      int p2);
     }
 
     public static class Thing implements ThingMBean {
         @Pair(x = 3, y = "foo")
+        @DescriptorFields({"foo=bar", "baz="})
         public Thing() {}
 
         @Pair(x = 3, y = "foo")
-        public Thing(@Pair(x = 3, y = "foo") int p1) {}
+        @DescriptorFields({"foo=bar", "baz="})
+        public Thing(
+                @Pair(x = 3, y = "foo")
+                @DescriptorFields({"foo=bar", "baz="})
+                int p1) {}
 
         public int getReadOnly() {return 0;}
 
@@ -193,14 +210,20 @@ public class AnnotationTest {
     }
 
     @Pair(x = 3, y = "foo")
+    @DescriptorFields({"foo=bar", "baz="})
     public static interface ThingMXBean extends ThingMBean {}
 
     public static class ThingImpl implements ThingMXBean {
         @Pair(x = 3, y = "foo")
+        @DescriptorFields({"foo=bar", "baz="})
         public ThingImpl() {}
 
         @Pair(x = 3, y = "foo")
-        public ThingImpl(@Pair(x = 3, y = "foo") int p1) {}
+        @DescriptorFields({"foo=bar", "baz="})
+        public ThingImpl(
+                @Pair(x = 3, y = "foo")
+                @DescriptorFields({"foo=bar", "baz="})
+                int p1) {}
 
         public int getReadOnly() {return 0;}
 
@@ -218,6 +241,79 @@ public class AnnotationTest {
         public int operation(int p1, int p2) {return 0;}
     }
 
+    @Retention(RetentionPolicy.RUNTIME)
+    public static @interface DefaultTest {
+        @DescriptorKey(value = "string1", omitIfDefault = true)
+        String string1() default "";
+        @DescriptorKey(value = "string2", omitIfDefault = true)
+        String string2() default "tiddly pom";
+        @DescriptorKey(value = "int", omitIfDefault = true)
+        int intx() default 23;
+        @DescriptorKey(value = "intarray1", omitIfDefault = true)
+        int[] intArray1() default {};
+        @DescriptorKey(value = "intarray2", omitIfDefault = true)
+        int[] intArray2() default {1, 2};
+        @DescriptorKey(value = "stringarray1", omitIfDefault = true)
+        String[] stringArray1() default {};
+        @DescriptorKey(value = "stringarray2", omitIfDefault = true)
+        String[] stringArray2() default {"foo", "bar"};
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    public static @interface Expect {
+        String[] value() default {};
+    }
+
+    public static interface DefaultMBean {
+        @DefaultTest
+        @Expect()
+        public void a();
+
+        @DefaultTest(string1="")
+        @Expect()
+        public void b();
+
+        @DefaultTest(string1="nondefault")
+        @Expect("string1=nondefault")
+        public void c();
+
+        @DefaultTest(string2="tiddly pom")
+        @Expect()
+        public void d();
+
+        @DefaultTest(intx=23)
+        @Expect()
+        public void e();
+
+        @DefaultTest(intx=34)
+        @Expect("int=34")
+        public void f();
+
+        @DefaultTest(intArray1={})
+        @Expect()
+        public void g();
+
+        @DefaultTest(intArray1={2,3})
+        @Expect("intarray1=[2, 3]")
+        public void h();
+
+        @DefaultTest(intArray2={})
+        @Expect("intarray2=[]")
+        public void i();
+
+        @DefaultTest(stringArray1={})
+        @Expect()
+        public void j();
+
+        @DefaultTest(stringArray1={"foo"})
+        @Expect("stringarray1=[foo]")
+        public void k();
+
+        @DefaultTest(stringArray2={})
+        @Expect("stringarray2=[]")
+        public void l();
+    }
+
     public static void main(String[] args) throws Exception {
         System.out.println("Testing that annotations are correctly " +
                            "reflected in Descriptor entries");
@@ -225,20 +321,62 @@ public class AnnotationTest {
         MBeanServer mbs =
             java.lang.management.ManagementFactory.getPlatformMBeanServer();
         ObjectName on = new ObjectName("a:b=c");
+
         Thing thing = new Thing();
         mbs.registerMBean(thing, on);
         check(mbs, on);
         mbs.unregisterMBean(on);
+
         ThingImpl thingImpl = new ThingImpl();
         mbs.registerMBean(thingImpl, on);
+        Descriptor d = mbs.getMBeanInfo(on).getDescriptor();
+        if (!d.getFieldValue("mxbean").equals("true")) {
+            System.out.println("NOT OK: expected MXBean");
+            failed = "Expected MXBean";
+        }
         check(mbs, on);
+
+        System.out.println();
+        System.out.println("Testing that omitIfDefault works");
+        DefaultMBean defaultImpl = (DefaultMBean) Proxy.newProxyInstance(
+                DefaultMBean.class.getClassLoader(),
+                new Class<?>[] {DefaultMBean.class},
+                new InvocationHandler(){
+                    public Object invoke(Object proxy, Method method, Object[] args) {
+                        return null;
+                    }
+                });
+        DynamicMBean mbean = new StandardMBean(defaultImpl, DefaultMBean.class);
+        MBeanOperationInfo[] ops = mbean.getMBeanInfo().getOperations();
+        for (MBeanOperationInfo op : ops) {
+            String name = op.getName();
+            Expect expect =
+                    DefaultMBean.class.getMethod(name).getAnnotation(Expect.class);
+            Descriptor opd = op.getDescriptor();
+            List<String> fields = new ArrayList<String>();
+            for (String fieldName : opd.getFieldNames()) {
+                Object value = opd.getFieldValue(fieldName);
+                String s = Arrays.deepToString(new Object[] {value});
+                s = s.substring(1, s.length() - 1);
+                fields.add(fieldName + "=" + s);
+            }
+            Descriptor opds = new ImmutableDescriptor(fields.toArray(new String[0]));
+            Descriptor expd = new ImmutableDescriptor(expect.value());
+            if (opds.equals(expd))
+                System.out.println("OK: op " + name + ": " + opds);
+            else {
+                String failure = "Bad descriptor for op " + name + ": " +
+                        "expected " + expd + ", got " + opds;
+                System.out.println("NOT OK: " + failure);
+                failed = failure;
+            }
+        }
+        System.out.println();
 
         if (failed == null)
             System.out.println("Test passed");
-        else if (true)
-            throw new Exception("TEST FAILED: " + failed);
         else
-            System.out.println("Test disabled until 6221321 implemented");
+            throw new Exception("TEST FAILED: " + failed);
     }
 
     private static void check(MBeanServer mbs, ObjectName on) throws Exception {
@@ -294,152 +432,5 @@ public class AnnotationTest {
     private static void check(DescriptorRead[] xx) {
         for (DescriptorRead x : xx)
             check(x);
-    }
-
-    public static class AnnotatedMBean extends StandardMBean {
-        <T> AnnotatedMBean(T resource, Class<T> interfaceClass, boolean mx) {
-            super(resource, interfaceClass, mx);
-        }
-
-        private static final String[] attrPrefixes = {"get", "set", "is"};
-
-        protected void cacheMBeanInfo(MBeanInfo info) {
-            MBeanAttributeInfo[] attrs = info.getAttributes();
-            MBeanOperationInfo[] ops = info.getOperations();
-
-            for (int i = 0; i < attrs.length; i++) {
-                MBeanAttributeInfo attr = attrs[i];
-                String name = attr.getName();
-                Descriptor d = attr.getDescriptor();
-                Method m;
-                if ((m = getMethod("get" + name)) != null)
-                    d = ImmutableDescriptor.union(d, descriptorFor(m));
-                if (attr.getType().equals("boolean") &&
-                        (m = getMethod("is" + name)) != null)
-                    d = ImmutableDescriptor.union(d, descriptorFor(m));
-                if ((m = getMethod("set" + name, attr)) != null)
-                    d = ImmutableDescriptor.union(d, descriptorFor(m));
-                if (!d.equals(attr.getDescriptor())) {
-                    attrs[i] =
-                        new MBeanAttributeInfo(name, attr.getType(),
-                            attr.getDescription(), attr.isReadable(),
-                            attr.isWritable(), attr.isIs(), d);
-                }
-            }
-
-            for (int i = 0; i < ops.length; i++) {
-                MBeanOperationInfo op = ops[i];
-                String name = op.getName();
-                Descriptor d = op.getDescriptor();
-                MBeanParameterInfo[] params = op.getSignature();
-                Method m = getMethod(name, params);
-                if (m != null) {
-                    d = ImmutableDescriptor.union(d, descriptorFor(m));
-                    Annotation[][] annots = m.getParameterAnnotations();
-                    for (int pi = 0; pi < params.length; pi++) {
-                        MBeanParameterInfo param = params[pi];
-                        Descriptor pd =
-                                ImmutableDescriptor.union(param.getDescriptor(),
-                                    descriptorFor(annots[pi]));
-                        params[pi] = new MBeanParameterInfo(param.getName(),
-                                param.getType(), param.getDescription(), pd);
-                    }
-                    op = new MBeanOperationInfo(op.getName(),
-                            op.getDescription(), params, op.getReturnType(),
-                            op.getImpact(), d);
-                    if (!ops[i].equals(op))
-                        ops[i] = op;
-                }
-            }
-
-            Descriptor id = descriptorFor(getMBeanInterface());
-            info = new MBeanInfo(info.getClassName(), info.getDescription(),
-                    attrs, info.getConstructors(), ops, info.getNotifications(),
-                    ImmutableDescriptor.union(id, info.getDescriptor()));
-            super.cacheMBeanInfo(info);
-        }
-
-        private Descriptor descriptorFor(AnnotatedElement x) {
-            Annotation[] annots = x.getAnnotations();
-            return descriptorFor(annots);
-        }
-
-        private Descriptor descriptorFor(Annotation[] annots) {
-            if (annots.length == 0)
-                return ImmutableDescriptor.EMPTY_DESCRIPTOR;
-            Map<String, Object> descriptorMap = new HashMap<String, Object>();
-            for (Annotation a : annots) {
-                Class<? extends Annotation> c = a.annotationType();
-                Method[] elements = c.getMethods();
-                for (Method element : elements) {
-                    DescriptorKey key =
-                        element.getAnnotation(DescriptorKey.class);
-                    if (key != null) {
-                        String name = key.value();
-                        Object value;
-                        try {
-                            value = element.invoke(a);
-                        } catch (Exception e) {
-                            // we don't expect this
-                            throw new RuntimeException(e);
-                        }
-                        Object oldValue = descriptorMap.put(name, value);
-                        if (oldValue != null && !oldValue.equals(value)) {
-                            final String msg =
-                                "Inconsistent values for descriptor field " +
-                                name + " from annotations: " + value + " :: " +
-                                oldValue;
-                            throw new IllegalArgumentException(msg);
-                        }
-                    }
-                }
-            }
-            if (descriptorMap.isEmpty())
-                return ImmutableDescriptor.EMPTY_DESCRIPTOR;
-            else
-                return new ImmutableDescriptor(descriptorMap);
-        }
-
-        private Method getMethod(String name, MBeanFeatureInfo... params) {
-            Class<?> intf = getMBeanInterface();
-            ClassLoader loader = intf.getClassLoader();
-            Class[] classes = new Class[params.length];
-            for (int i = 0; i < params.length; i++) {
-                MBeanFeatureInfo param = params[i];
-                Descriptor d = param.getDescriptor();
-                String type = (String) d.getFieldValue("originalType");
-                if (type == null) {
-                    if (param instanceof MBeanAttributeInfo)
-                        type = ((MBeanAttributeInfo) param).getType();
-                    else
-                        type = ((MBeanParameterInfo) param).getType();
-                }
-                Class<?> c = primitives.get(type);
-                if (c == null) {
-                    try {
-                        c = Class.forName(type, false, loader);
-                    } catch (ClassNotFoundException e) {
-                        return null;
-                    }
-                }
-                classes[i] = c;
-            }
-            try {
-                return intf.getMethod(name, classes);
-            } catch (Exception e) {
-                return null;
-            }
-        }
-
-        private static final Map<String, Class<?>> primitives =
-                new HashMap<String, Class<?>>();
-        static {
-            for (Class<?> c :
-                    new Class[] {boolean.class, byte.class, short.class,
-                                 int.class, long.class, float.class,
-                                 double.class, char.class, void.class}) {
-                primitives.put(c.getName(), c);
-            }
-        }
     }
 }
