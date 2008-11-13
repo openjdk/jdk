@@ -49,11 +49,6 @@ public class ObjectNameRouter {
     final int tlen;
     final boolean identity;
 
-
-    public ObjectNameRouter(String targetDirName) {
-        this(targetDirName,null);
-    }
-
     /** Creates a new instance of ObjectNameRouter */
     public ObjectNameRouter(final String remove, final String add) {
         this.targetPrefix = (remove==null?"":remove);
@@ -186,6 +181,4 @@ public class ObjectNameRouter {
             b.append(NAMESPACE_SEPARATOR);
         return b.toString();
     }
-
-
 }
