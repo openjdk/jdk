@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6756771
+ * @bug 6756771 6755625
  * @summary  com.sun.net.httpserver.HttpServer should handle POSTs larger than 2Gig
  */
 
@@ -44,34 +44,16 @@ public class FixedLengthInputStream
 {
     static final long POST_SIZE = 4L * 1024L * 1024L * 1024L; // 4Gig
 
-    /* Remove when CR 6755625 is fixed */
-    static final String requestHeaders =  ((new StringBuilder())
-        .append("POST /flis/ HTTP/1.1\r\n")
-        .append("User-Agent: Java/1.7.0\r\n")
-        .append("Host: localhost\r\n")
-        .append("Accept: text/html, image/gif, image/jpeg,")
-        .append(        " *; q=.2, */*; q=.2\r\n")
-        .append("Content-Length: 4294967296\r\n\r\n")).toString();
-
     void test(String[] args) throws IOException {
         HttpServer httpServer = startHttpServer();
         int port = httpServer.getAddress().getPort();
         try {
-          /* Uncomment & when CR 6755625 is fixed, remove socket code
             URL url = new URL("http://localhost:" + port + "/flis/");
             HttpURLConnection uc = (HttpURLConnection)url.openConnection();
             uc.setDoOutput(true);
             uc.setRequestMethod("POST");
             uc.setFixedLengthStreamingMode(POST_SIZE);
             OutputStream os = uc.getOutputStream();
-          */
-
-            Socket socket = new Socket("localhost", port);
-            OutputStream os = socket.getOutputStream();
-            PrintStream ps = new PrintStream(os);
-            debug("Request: " + requestHeaders);
-            ps.print(requestHeaders);
-            ps.flush();
 
             /* create a 32K byte array with data to POST */
             int thirtyTwoK = 32 * 1024;
@@ -84,18 +66,12 @@ public class FixedLengthInputStream
                 os.write(ba);
             }
 
-          /* Uncomment & when CR 6755625 is fixed, remove socket code
             os.close();
             InputStream is = uc.getInputStream();
             while(is.read(ba) != -1);
             is.close();
-           */
 
-           InputStream is = socket.getInputStream();
-           is.read();
-           socket.close();
-
-           pass();
+            pass();
         } finally {
             httpServer.stop(0);
         }
