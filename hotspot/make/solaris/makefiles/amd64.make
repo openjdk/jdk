@@ -26,7 +26,6 @@
 CFLAGS += -DVM_LITTLE_ENDIAN
 
 # Not included in includeDB because it has no dependencies
-# Obj_Files += solaris_amd64.o
 Obj_Files += solaris_x86_64.o
 
 #

@@ -35,13 +35,13 @@ Obj_Files += solaris_x86_32.o
 ifeq ("${Platform_compiler}", "sparcWorks")
 
 # _lwp_create_interpose must have a frame
-OPT_CFLAGS/os_solaris_i486.o = -xO1
+OPT_CFLAGS/os_solaris_x86.o = -xO1
 else
 
 ifeq ("${Platform_compiler}", "gcc")
 # gcc
 # _lwp_create_interpose must have a frame
-OPT_CFLAGS/os_solaris_i486.o = -fno-omit-frame-pointer
+OPT_CFLAGS/os_solaris_x86.o = -fno-omit-frame-pointer
 #
 else
 # error
