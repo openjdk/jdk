@@ -3230,6 +3230,9 @@ class CommandLineFlags {
           "Skip assert() and verify() which page-in unwanted shared "       \
           "objects. ")                                                      \
                                                                             \
+  product(bool, AnonymousClasses, false,                                    \
+          "support sun.misc.Unsafe.defineAnonymousClass")                   \
+                                                                            \
   product(bool, TaggedStackInterpreter, false,                              \
           "Insert tags in interpreter execution stack for oopmap generaion")\
                                                                             \

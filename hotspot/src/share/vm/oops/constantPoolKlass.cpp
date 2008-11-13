@@ -35,6 +35,7 @@ constantPoolOop constantPoolKlass::allocate(int length, TRAPS) {
   c->set_tags(NULL);
   c->set_cache(NULL);
   c->set_pool_holder(NULL);
+  c->set_flags(0);
   // only set to non-zero if constant pool is merged by RedefineClasses
   c->set_orig_length(0);
   // all fields are initialized; needed for GC
@@ -261,10 +262,32 @@ constantPoolKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
 
 void constantPoolKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->is_constantPool(), "should be constant pool");
+  constantPoolOop cp = (constantPoolOop) obj;
+  if (AnonymousClasses && cp->has_pseudo_string() && cp->tags() != NULL) {
+    oop* base = (oop*)cp->base();
+    for (int i = 0; i < cp->length(); ++i, ++base) {
+      if (cp->tag_at(i).is_string()) {
+        if (PSScavenge::should_scavenge(base)) {
+          pm->claim_or_forward_breadth(base);
+        }
+      }
+    }
+  }
 }
 
 void constantPoolKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->is_constantPool(), "should be constant pool");
+  constantPoolOop cp = (constantPoolOop) obj;
+  if (AnonymousClasses && cp->has_pseudo_string() && cp->tags() != NULL) {
+    oop* base = (oop*)cp->base();
+    for (int i = 0; i < cp->length(); ++i, ++base) {
+      if (cp->tag_at(i).is_string()) {
+        if (PSScavenge::should_scavenge(base)) {
+          pm->claim_or_forward_depth(base);
+        }
+      }
+    }
+  }
 }
 #endif // SERIALGC
 
@@ -278,6 +301,11 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
   assert(obj->is_constantPool(), "must be constantPool");
   Klass::oop_print_on(obj, st);
   constantPoolOop cp = constantPoolOop(obj);
+  if (cp->flags() != 0) {
+    st->print(" - flags : 0x%x", cp->flags());
+    if (cp->has_pseudo_string()) st->print(" has_pseudo_string");
+    st->cr();
+  }
 
   // Temp. remove cache so we can do lookups with original indicies.
   constantPoolCacheHandle cache (THREAD, cp->cache());
@@ -302,7 +330,11 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
         break;
       case JVM_CONSTANT_UnresolvedString :
       case JVM_CONSTANT_String :
-        anObj = cp->string_at(index, CATCH);
+        if (cp->is_pseudo_string_at(index)) {
+          anObj = cp->pseudo_string_at(index);
+        } else {
+          anObj = cp->string_at(index, CATCH);
+        }
         anObj->print_value_on(st);
         st->print(" {0x%lx}", (address)anObj);
         break;
@@ -382,8 +414,12 @@ void constantPoolKlass::oop_verify_on(oop obj, outputStream* st) {
                   "should be symbol or instance");
       }
       if (cp->tag_at(i).is_string()) {
-        guarantee((*base)->is_perm(),     "should be in permspace");
-        guarantee((*base)->is_instance(), "should be instance");
+        if (!cp->has_pseudo_string()) {
+          guarantee((*base)->is_perm(),   "should be in permspace");
+          guarantee((*base)->is_instance(), "should be instance");
+        } else {
+          // can be non-perm, can be non-instance (array)
+        }
       }
       base++;
     }
