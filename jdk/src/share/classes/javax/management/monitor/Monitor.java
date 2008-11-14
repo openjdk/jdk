@@ -34,7 +34,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -517,7 +516,7 @@ public abstract class Monitor
         //
         ObservedObject o = createObservedObject(object);
         o.setAlreadyNotified(RESET_FLAGS_ALREADY_NOTIFIED);
-        o.setDerivedGauge(null);
+        o.setDerivedGauge(INTEGER_ZERO);
         o.setDerivedGaugeTimeStamp(System.currentTimeMillis());
         observedObjects.add(o);
 
