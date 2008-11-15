@@ -89,7 +89,7 @@ public class XMLWriter extends Writer {
         inner.write("<" + name);
         elementStack.push(name);
 
-        for (Property p : attributes.getProperties()) {
+        for (Property p : attributes) {
             inner.write(" " + p.getName() + "=\"");
             write(p.getValue().toCharArray());
             inner.write("\"");
@@ -101,7 +101,7 @@ public class XMLWriter extends Writer {
     public void simpleTag(String name, Properties attributes) throws IOException {
         inner.write("<" + name);
 
-        for (Property p : attributes.getProperties()) {
+        for (Property p : attributes) {
             inner.write(" " + p.getName() + "=\"");
             write(p.getValue().toCharArray());
             inner.write("\"");
@@ -111,13 +111,13 @@ public class XMLWriter extends Writer {
     }
 
     public void writeProperties(Properties props) throws IOException {
-        if (props.getProperties().size() == 0) {
+        if (props.getProperties().hasNext() == false) {
             return;
         }
 
         startTag(Parser.PROPERTIES_ELEMENT);
 
-        for (Property p : props.getProperties()) {
+        for (Property p : props) {
             startTag(Parser.PROPERTY_ELEMENT, new Properties(Parser.PROPERTY_NAME_PROPERTY, p.getName()));
             this.write(p.getValue().toCharArray());
             endTag();
