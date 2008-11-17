@@ -299,7 +299,7 @@ class GTKPainter extends SynthPainter {
             // Paint the default indicator
             GTKStyle style = (GTKStyle)context.getStyle();
             if (defaultCapable && !toolButton) {
-                Insets defaultInsets = (Insets)style.getClassSpecificInsetsValue(
+                Insets defaultInsets = style.getClassSpecificInsetsValue(
                         context, "default-border",
                         GTKStyle.BUTTON_DEFAULT_BORDER_INSETS);
 
