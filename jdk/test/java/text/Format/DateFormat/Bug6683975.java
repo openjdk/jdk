@@ -35,7 +35,6 @@ public class Bug6683975 {
 
     private static Locale th = new Locale("th", "");
     private static Locale th_TH = new Locale("th", "TH");
-    private static Date date = new Date(2008-1900, Calendar.OCTOBER, 1, 0, 0, 0);
     private static String expected_th[] = {
         "\u0e27\u0e31\u0e19\u0e2d\u0e31\u0e07\u0e04\u0e32\u0e23\u0e17\u0e35\u0e48 30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 \u0e04.\u0e28. 2008, 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 0 \u0e19\u0e32\u0e17\u0e35 00 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35",  // 0: FULL
         "30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 2008, 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 0 \u0e19\u0e32\u0e17\u0e35",  // 1: LONG
@@ -65,6 +64,7 @@ public class Bug6683975 {
             System.err.println("\tth_TH: " + str_th_TH);
         }
 
+        Date date = new Date(2008-1900, Calendar.SEPTEMBER, 30, 8, 0, 0);
         str_th = df_th.format(date);
         if (!expected_th[style].equals(str_th)) {
             err = true;
