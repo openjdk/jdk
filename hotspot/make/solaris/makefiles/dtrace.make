@@ -115,27 +115,25 @@ $(GENOFFS): $(DTRACE_SRCDIR)/$(GENOFFS)Main.c lib$(GENOFFS).so
 	$(QUIETLY) $(LINK.CC) -z nodefs -o $@ $(DTRACE_SRCDIR)/$(GENOFFS)Main.c \
 		./lib$(GENOFFS).so
 
-# $@.tmp is created first. It's to avoid empty $(JVMOFFS).h produced in error case.
+CONDITIONALLY_UPDATE_JVMOFFS_TARGET = \
+	cmp -s $@ $@.tmp; \
+	case $$? in \
+	0) rm -f $@.tmp;; \
+	*) rm -f $@ && mv $@.tmp $@ && echo Updated $@;; \
+	esac
+
+# $@.tmp is created first to avoid an empty $(JVMOFFS).h if an error occurs.
 $(JVMOFFS).h: $(GENOFFS)
-	$(QUIETLY) LD_LIBRARY_PATH=. ./$(GENOFFS) -header > $@.tmp ; \
-	if [ `diff $@.tmp $@ > /dev/null 2>&1; echo $$?` -ne 0 ] ; \
-	then rm -f $@; mv $@.tmp $@; echo Updated $@ ; \
-	else rm -f $@.tmp; \
-	fi
+	$(QUIETLY) LD_LIBRARY_PATH=. ./$(GENOFFS) -header > $@.tmp
+	$(QUIETLY) $(CONDITIONALLY_UPDATE_JVMOFFS_TARGET)
 
 $(JVMOFFS)Index.h: $(GENOFFS)
-	$(QUIETLY) LD_LIBRARY_PATH=. ./$(GENOFFS) -index > $@.tmp ; \
-	if [ `diff $@.tmp $@ > /dev/null 2>&1; echo $$?` -ne 0 ] ; \
-	then rm -f $@; mv $@.tmp $@; echo Updated $@ ; \
-	else rm -f $@.tmp; \
-	fi
+	$(QUIETLY) LD_LIBRARY_PATH=. ./$(GENOFFS) -index > $@.tmp
+	$(QUIETLY)  $(CONDITIONALLY_UPDATE_JVMOFFS_TARGET)
 
 $(JVMOFFS).cpp: $(GENOFFS) $(JVMOFFS).h $(JVMOFFS)Index.h
-	$(QUIETLY) LD_LIBRARY_PATH=. ./$(GENOFFS) -table > $@.tmp ; \
-	if [ `diff $@.tmp $@ > /dev/null 2>&1; echo $$?` -ne 0 ] ; \
-	then rm -f $@; mv $@.tmp $@; echo Updated $@ ; \
-	else rm -f $@.tmp; \
-	fi
+	$(QUIETLY) LD_LIBRARY_PATH=. ./$(GENOFFS) -table > $@.tmp
+	$(QUIETLY) $(CONDITIONALLY_UPDATE_JVMOFFS_TARGET)
 
 $(JVMOFFS.o): $(JVMOFFS).h $(JVMOFFS).cpp 
 	$(QUIETLY) $(CCC) -c -I. -o $@ $(ARCHFLAG) -D$(TYPE) $(JVMOFFS).cpp
