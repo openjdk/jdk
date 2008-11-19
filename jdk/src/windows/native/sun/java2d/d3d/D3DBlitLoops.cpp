@@ -252,10 +252,14 @@ D3DBL_CopyImageToIntXrgbSurface(SurfaceDataRasInfo *pSrcInfo,
                                        pSrcInfo, &dstInfo, NULL, NULL);
             break;
         case ST_INT_ARGB_PRE:
-        case ST_INT_RGB:
             AnyIntIsomorphicCopy(pSrcBase, pDstBase,
                                  srcWidth, srcHeight,
                                  pSrcInfo, &dstInfo, NULL, NULL);
+            break;
+        case ST_INT_RGB:
+            IntRgbToIntArgbConvert(pSrcBase, pDstBase,
+                                   srcWidth, srcHeight,
+                                   pSrcInfo, &dstInfo, NULL, NULL);
             break;
         case ST_INT_ARGB_BM:
             // REMIND: we don't have such sw loop
