@@ -22,9 +22,6 @@
  *
  */
 
-// make sure the defines don't screw up the declarations later on in this file
-#define DONT_USE_REGISTER_DEFINES
-
 #include "incls/_precompiled.incl"
 #include "incls/_register_definitions_x86.cpp.incl"
 

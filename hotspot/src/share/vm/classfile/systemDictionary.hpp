@@ -228,6 +228,16 @@ public:
                                Handle class_loader,
                                Handle protection_domain,
                                ClassFileStream* st,
+                               TRAPS) {
+    KlassHandle nullHandle;
+    return parse_stream(class_name, class_loader, protection_domain, st, nullHandle, NULL, THREAD);
+  }
+  static klassOop parse_stream(symbolHandle class_name,
+                               Handle class_loader,
+                               Handle protection_domain,
+                               ClassFileStream* st,
+                               KlassHandle host_klass,
+                               GrowableArray<Handle>* cp_patches,
                                TRAPS);
 
   // Resolve from stream (called by jni_DefineClass and JVM_DefineClass)

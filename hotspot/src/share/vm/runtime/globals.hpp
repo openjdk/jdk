@@ -493,7 +493,7 @@ class CommandLineFlags {
   develop(bool, DeoptimizeALot, false,                                      \
           "deoptimize at every exit from the runtime system")               \
                                                                             \
-  develop(ccstrlist, DeoptimizeOnlyAt, "",                                  \
+  notproduct(ccstrlist, DeoptimizeOnlyAt, "",                               \
           "a comma separated list of bcis to deoptimize at")                \
                                                                             \
   product(bool, DeoptimizeRandom, false,                                    \
@@ -3229,6 +3229,9 @@ class CommandLineFlags {
   diagnostic(bool, SharedSkipVerify, false,                                 \
           "Skip assert() and verify() which page-in unwanted shared "       \
           "objects. ")                                                      \
+                                                                            \
+  product(bool, AnonymousClasses, false,                                    \
+          "support sun.misc.Unsafe.defineAnonymousClass")                   \
                                                                             \
   product(bool, TaggedStackInterpreter, false,                              \
           "Insert tags in interpreter execution stack for oopmap generaion")\

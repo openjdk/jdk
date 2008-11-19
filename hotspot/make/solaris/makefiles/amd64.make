@@ -26,7 +26,6 @@
 CFLAGS += -DVM_LITTLE_ENDIAN
 
 # Not included in includeDB because it has no dependencies
-# Obj_Files += solaris_amd64.o
 Obj_Files += solaris_x86_64.o
 
 #
@@ -38,8 +37,6 @@ ifeq ("${Platform_compiler}", "sparcWorks")
 
 # _lwp_create_interpose must have a frame
 OPT_CFLAGS/os_solaris_x86_64.o = -xO1
-# force C++ interpreter to be full optimization
-#OPT_CFLAGS/interpret.o = -fast -O4
 
 # Temporary until SS10 C++ compiler is fixed
 OPT_CFLAGS/generateOptoStub.o = -xO2
@@ -51,8 +48,6 @@ ifeq ("${Platform_compiler}", "gcc")
 # gcc
 # The serviceability agent relies on frame pointer (%rbp) to walk thread stack
 CFLAGS += -fno-omit-frame-pointer
-# force C++ interpreter to be full optimization
-#OPT_CFLAGS/interpret.o = -O3
 
 else
 # error
