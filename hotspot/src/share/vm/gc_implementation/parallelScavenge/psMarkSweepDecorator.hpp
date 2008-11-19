@@ -39,14 +39,16 @@ class PSMarkSweepDecorator: public CHeapObj {
   HeapWord* _first_dead;
   HeapWord* _end_of_live;
   HeapWord* _compaction_top;
-  unsigned int _allowed_dead_ratio;
+  size_t _allowed_dead_ratio;
 
-  bool insert_deadspace(ssize_t& allowed_deadspace_words, HeapWord* q, size_t word_len);
+  bool insert_deadspace(size_t& allowed_deadspace_words, HeapWord* q,
+                        size_t word_len);
 
  public:
   PSMarkSweepDecorator(MutableSpace* space, ObjectStartArray* start_array,
-                       unsigned int allowed_dead_ratio) :
-    _space(space), _start_array(start_array), _allowed_dead_ratio(allowed_dead_ratio) { }
+                       size_t allowed_dead_ratio) :
+    _space(space), _start_array(start_array),
+    _allowed_dead_ratio(allowed_dead_ratio) { }
 
   // During a compacting collection, we need to collapse objects into
   // spaces in a given order. We want to fill space A, space B, and so
@@ -57,14 +59,14 @@ class PSMarkSweepDecorator: public CHeapObj {
   static PSMarkSweepDecorator* destination_decorator();
 
   // Accessors
-  MutableSpace* space()                           { return _space; }
-  ObjectStartArray* start_array()                 { return _start_array; }
+  MutableSpace* space()                     { return _space; }
+  ObjectStartArray* start_array()           { return _start_array; }
 
-  HeapWord* compaction_top()                      { return _compaction_top; }
-  void set_compaction_top(HeapWord* value)        { _compaction_top = value; }
+  HeapWord* compaction_top()                { return _compaction_top; }
+  void set_compaction_top(HeapWord* value)  { _compaction_top = value; }
 
-  unsigned int allowed_dead_ratio()               { return _allowed_dead_ratio; }
-  void set_allowed_dead_ratio(unsigned int value) { _allowed_dead_ratio = value; }
+  size_t allowed_dead_ratio()               { return _allowed_dead_ratio; }
+  void set_allowed_dead_ratio(size_t value) { _allowed_dead_ratio = value; }
 
   // Work methods
   void adjust_pointers();
