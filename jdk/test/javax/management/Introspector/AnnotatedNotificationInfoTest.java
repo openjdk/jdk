@@ -22,8 +22,8 @@
  */
 
 /*
- * @test %M% %I%
- * @bug 6323980
+ * @test
+ * @bug 6323980 6772779
  * @summary Test &#64;NotificationInfo annotation
  * @author Eamonn McManus
  * @run main/othervm -ea AnnotatedNotificationInfoTest
@@ -32,6 +32,7 @@
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import javax.annotation.Resource;
 import javax.management.AttributeChangeNotification;
 import javax.management.Description;
@@ -134,6 +135,23 @@ public class AnnotatedNotificationInfoTest {
 
     private static Object mbeanIntf5 = new Intf5Impl();
 
+    @NotificationInfo(
+            types = {"foo", "bar"},
+            notificationClass = AttributeChangeNotification.class,
+            description = @Description(
+                value = "description",
+                bundleBaseName = "bundle",
+                key = "key"),
+            descriptorFields = {"foo=bar"})
+    public static interface Intf6MBean {}
+
+    public static class Intf6 implements Intf6MBean {
+        @Resource
+        private volatile SendNotification send;
+    }
+
+    private static Object mbeanIntf6 = new Intf6();
+
     public static interface Impl1MBean {}
 
     @NotificationInfo(
@@ -202,22 +220,21 @@ public class AnnotatedNotificationInfoTest {
 
     private static Object mbeanMBean2 = new MBean2();
 
-    // Following disabled until we support it
-//    @MBean
-//    @NotificationInfo(
-//            types = {"foo", "bar"},
-//            notificationClass = AttributeChangeNotification.class,
-//            description = @Description(
-//                value = "description",
-//                bundleBaseName = "bundle",
-//                key = "key"),
-//            descriptorFields = {"foo=bar"})
-//    public static class MBean3 {
-//        @Resource
-//        private volatile SendNotification send;
-//    }
-//
-//    private static Object mbeanMBean3 = new MBean3();
+    @MBean
+    @NotificationInfo(
+            types = {"foo", "bar"},
+            notificationClass = AttributeChangeNotification.class,
+            description = @Description(
+                value = "description",
+                bundleBaseName = "bundle",
+                key = "key"),
+            descriptorFields = {"foo=bar"})
+    public static class MBean3 {
+        @Resource
+        private volatile SendNotification send;
+    }
+
+    private static Object mbeanMBean3 = new MBean3();
 
     @MXBean
     @NotificationInfo(
@@ -236,6 +253,23 @@ public class AnnotatedNotificationInfoTest {
     public static class MXBean2 extends ParentImpl {}
 
     private static Object mbeanMXBean2 = new MXBean2();
+
+    // Classes for the second test.  This tests the simplest case, which is
+    // the first example in the javadoc for @NotificationInfo.  Notice that
+    // this MBean is not a NotificationBroadcaster and does not inject a
+    // SendNotification!  That should possibly be an error, but it's currently
+    // allowed by the spec.
+    @NotificationInfo(types={"com.example.notifs.create",
+                             "com.example.notifs.destroy"})
+    public static interface CacheMBean {
+        public int getCachedNum();
+    }
+
+    public static class Cache implements CacheMBean {
+        public int getCachedNum() {
+            return 0;
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         if (!AnnotatedNotificationInfoTest.class.desiredAssertionStatus())
@@ -267,5 +301,14 @@ public class AnnotatedNotificationInfoTest {
             assert mbnis[0].equals(expected) : mbnis[0];
             mbs.unregisterMBean(on);
         }
+
+        mbs.registerMBean(new Cache(), on);
+        MBeanInfo mbi = mbs.getMBeanInfo(on);
+        MBeanNotificationInfo[] mbnis = mbi.getNotifications();
+        assert mbnis.length == 1 : mbnis.length;
+        String[] types = mbnis[0].getNotifTypes();
+        String[] expectedTypes =
+                CacheMBean.class.getAnnotation(NotificationInfo.class).types();
+        assert Arrays.equals(types, expectedTypes) : Arrays.toString(types);
     }
 }
