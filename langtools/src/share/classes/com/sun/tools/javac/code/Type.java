@@ -360,17 +360,6 @@ public class Type implements PrimitiveType {
     public boolean isUnbound() { return false; }
     public Type withTypeVar(Type t) { return this; }
 
-    public static List<Type> removeBounds(List<Type> ts) {
-        ListBuffer<Type> result = new ListBuffer<Type>();
-        for(;ts.nonEmpty(); ts = ts.tail) {
-            result.append(ts.head.removeBounds());
-        }
-        return result.toList();
-    }
-    public Type removeBounds() {
-        return this;
-    }
-
     /** The underlying method type of this type.
      */
     public MethodType asMethodType() { throw new AssertionError(); }
@@ -487,10 +476,6 @@ public class Type implements PrimitiveType {
                 return this;
             else
                 return new WildcardType(t, kind, tsym, bound);
-        }
-
-        public Type removeBounds() {
-            return isUnbound() ? this : type;
         }
 
         public Type getExtendsBound() {

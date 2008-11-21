@@ -484,11 +484,16 @@ ciConstant ciEnv::get_constant_by_index_impl(ciInstanceKlass* accessor,
   } else if (tag.is_double()) {
     return ciConstant((jdouble)cpool->double_at(index));
   } else if (tag.is_string() || tag.is_unresolved_string()) {
-    oop string = cpool->string_at(index, THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;
-      record_out_of_memory_failure();
-      return ciConstant();
+    oop string = NULL;
+    if (cpool->is_pseudo_string_at(index)) {
+      string = cpool->pseudo_string_at(index);
+    } else {
+      string = cpool->string_at(index, THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        CLEAR_PENDING_EXCEPTION;
+        record_out_of_memory_failure();
+        return ciConstant();
+      }
     }
     ciObject* constant = get_object(string);
     assert (constant->is_instance(), "must be an instance, or not? ");

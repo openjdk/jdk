@@ -423,7 +423,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
                 try {
                     if (tracing) logger.trace("start", "binding to " + jndiUrl);
 
-                    final Hashtable usemap = EnvHelp.mapToHashtable(attributes);
+                    final Hashtable<?, ?> usemap = EnvHelp.mapToHashtable(attributes);
 
                     bind(jndiUrl, usemap, objref, rebind);
 
@@ -555,7 +555,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
                     logger.trace("stop",
                           "unbind from external directory: " + boundJndiUrl);
 
-                final Hashtable usemap = EnvHelp.mapToHashtable(attributes);
+                final Hashtable<?, ?> usemap = EnvHelp.mapToHashtable(attributes);
 
                 InitialContext ctx =
                     new InitialContext(usemap);
@@ -655,7 +655,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
      * @param rmiServer The object to bind in the registry
      * @param rebind true if the object must be rebound.
      **/
-    void bind(String jndiUrl, Hashtable attributes,
+    void bind(String jndiUrl, Hashtable<?, ?> attributes,
               RMIServer rmiServer, boolean rebind)
         throws NamingException, MalformedURLException {
         // if jndiURL is not null, we nust bind the stub to a
@@ -692,7 +692,8 @@ public class RMIConnectorServer extends JMXConnectorServer {
      * @param attributes A Map containing environment parameters,
      *        built from the Map specified at this object creation.
      **/
-    private void encodeStubInAddress(RMIServer rmiServer, Map attributes)
+    private void encodeStubInAddress(
+            RMIServer rmiServer, Map<String, ?> attributes)
             throws IOException {
 
         final String protocol, host;
@@ -735,14 +736,16 @@ public class RMIConnectorServer extends JMXConnectorServer {
     /**
      * Returns the IOR of the given rmiServer.
      **/
-    static String encodeStub(RMIServer rmiServer, Map env) throws IOException {
+    static String encodeStub(
+            RMIServer rmiServer, Map<String, ?> env) throws IOException {
         if (rmiServer instanceof javax.rmi.CORBA.Stub)
             return "/ior/" + encodeIIOPStub(rmiServer, env);
         else
             return "/stub/" + encodeJRMPStub(rmiServer, env);
     }
 
-    static String encodeJRMPStub(RMIServer rmiServer, Map env)
+    static String encodeJRMPStub(
+            RMIServer rmiServer, Map<String, ?> env)
             throws IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         ObjectOutputStream oout = new ObjectOutputStream(bout);
@@ -752,7 +755,8 @@ public class RMIConnectorServer extends JMXConnectorServer {
         return byteArrayToBase64(bytes);
     }
 
-    static String encodeIIOPStub(RMIServer rmiServer, Map env)
+    static String encodeIIOPStub(
+            RMIServer rmiServer, Map<String, ?> env)
             throws IOException {
         try {
             javax.rmi.CORBA.Stub stub =
@@ -767,7 +771,8 @@ public class RMIConnectorServer extends JMXConnectorServer {
      * Object that we will bind to the registry.
      * This object is a stub connected to our RMIServerImpl.
      **/
-    private static RMIServer objectToBind(RMIServerImpl rmiServer, Map env)
+    private static RMIServer objectToBind(
+            RMIServerImpl rmiServer, Map<String, ?> env)
         throws IOException {
         return RMIConnector.
             connectStub((RMIServer)rmiServer.toStub(),env);

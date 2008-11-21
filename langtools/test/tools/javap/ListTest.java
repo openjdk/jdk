@@ -82,16 +82,16 @@ public class ListTest {
         String[] args = new String[options.size() + 1];
         options.toArray(args);
         args[args.length - 1] = testClassName;
-        String oldOut = runOldJavap(args);
-        String newOut = runNewJavap(args);
-        boolean ok = oldOut.equals(newOut);
+        byte[] oldOut = runOldJavap(args);
+        byte[] newOut = runNewJavap(args);
+        boolean ok = equal(oldOut, newOut);
         System.err.println((ok ? "pass" : "FAIL") + ": " + testClassName);
         if (!ok && viewResults)
             view(oldOut, newOut);
         return ok;
     }
 
-    String runOldJavap(String[] args) {
+    byte[] runOldJavap(String[] args) {
         //System.err.println("OLD: " + Arrays.asList(args));
         PrintStream oldOut = System.out;
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -101,29 +101,34 @@ public class ListTest {
         } finally {
             System.setOut(oldOut);
         }
-        return out.toString();
+        return out.toByteArray();
     }
 
-    String runNewJavap(String[] args) {
+    byte[] runNewJavap(String[] args) {
         String[] nArgs = new String[args.length + 2];
         nArgs[0] = "-XDcompat";
         nArgs[1] = "-XDignore.symbol.file";
         System.arraycopy(args, 0, nArgs, 2, args.length);
         //System.err.println("NEW: " + Arrays.asList(nArgs));
-        StringWriter out = new StringWriter();
-        com.sun.tools.javap.Main.run(nArgs, new PrintWriter(out, true));
-        return out.toString();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        com.sun.tools.javap.Main.run(nArgs,
+                                     new PrintWriter(new OutputStreamWriter(out), true));
+        return out.toByteArray();
     }
 
-    File write(String text, String suffix) throws IOException {
-        File f = File.createTempFile("ListTest", suffix);
-        FileWriter out = new FileWriter(f);
+    File write(byte[] text, String suffix) throws IOException {
+        File f = new File("ListTest." + suffix);
+        FileOutputStream out = new FileOutputStream(f);
         out.write(text);
         out.close();
         return f;
     }
 
-    void view(String oldOut, String newOut) throws Exception {
+    boolean equal(byte[] a1, byte[] a2) {
+        return Arrays.equals(a1, a2);
+    }
+
+    void view(byte[] oldOut, byte[] newOut) throws Exception {
         File oldFile = write(oldOut, "old");
         File newFile = write(newOut, "new");
         List<String> cmd = new ArrayList<String>();

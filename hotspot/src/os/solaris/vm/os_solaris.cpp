@@ -3756,7 +3756,6 @@ int     set_lwp_priority (int ThreadID, int lwpid, int newPrio )
     int maxClamped     = MIN2(iaLimits.maxPrio, (int)iaInfo->ia_uprilim);
     iaInfo->ia_upri    = scale_to_lwp_priority(iaLimits.minPrio, maxClamped, newPrio);
     iaInfo->ia_uprilim = IA_NOCHANGE;
-    iaInfo->ia_nice    = IA_NOCHANGE;
     iaInfo->ia_mode    = IA_NOCHANGE;
     if (ThreadPriorityVerbose) {
       tty->print_cr ("IA: [%d...%d] %d->%d\n",

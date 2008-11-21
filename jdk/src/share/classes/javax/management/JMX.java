@@ -463,6 +463,12 @@ public class JMX {
      * likewise for the other methods of {@link
      * NotificationBroadcaster} and {@link NotificationEmitter}.</p>
      *
+     * <p>This method is equivalent to {@link
+     * #newMBeanProxy(MBeanServerConnection, ObjectName, Class, JMX.MBeanOptions)
+     * newMBeanProxy(connection, objectName, interfaceClass, opts)}, where
+     * {@code opts} is a {@link JMX.ProxyOptions} representing the
+     * {@code notificationEmitter} parameter.</p>
+     *
      * @param connection the MBean server to forward to.
      * @param objectName the name of the MBean within
      * {@code connection} to forward to.
@@ -555,10 +561,6 @@ public class JMX {
      *
      * </ul>
      *
-     * <p>The object returned by this method is a
-     * {@link Proxy} whose {@code InvocationHandler} is an
-     * {@link MBeanServerInvocationHandler}.</p>
-     *
      * <p>This method is equivalent to {@link
      * #newMXBeanProxy(MBeanServerConnection, ObjectName, Class,
      * boolean) newMXBeanProxy(connection, objectName, interfaceClass,
@@ -600,6 +602,17 @@ public class JMX {
      * NotificationListener, NotificationFilter, Object)}, and
      * likewise for the other methods of {@link
      * NotificationBroadcaster} and {@link NotificationEmitter}.</p>
+     *
+     * <p>This method is equivalent to {@link
+     * #newMBeanProxy(MBeanServerConnection, ObjectName, Class, JMX.MBeanOptions)
+     * newMBeanProxy(connection, objectName, interfaceClass, opts)}, where
+     * {@code opts} is a {@link JMX.ProxyOptions} where the {@link
+     * JMX.ProxyOptions#getMXBeanMappingFactory() MXBeanMappingFactory}
+     * property is
+     * {@link MXBeanMappingFactory#forInterface(Class)
+     * MXBeanMappingFactory.forInterface(interfaceClass)} and the {@link
+     * JMX.ProxyOptions#isNotificationEmitter() notificationEmitter} property
+     * is equal to the {@code notificationEmitter} parameter.</p>
      *
      * @param connection the MBean server to forward to.
      * @param objectName the name of the MBean within
@@ -655,6 +668,36 @@ public class JMX {
      *     arbitrary Java types and Open Types.</li>
      * </ul>
      *
+     * <p>The object returned by this method is a
+     * {@link Proxy} whose {@code InvocationHandler} is an
+     * {@link MBeanServerInvocationHandler}.  This means that it is possible
+     * to retrieve the parameters that were used to produce the proxy.  If the
+     * proxy was produced as follows...</p>
+     *
+     * <pre>
+     * FooMBean proxy =
+     *     JMX.newMBeanProxy(connection, objectName, FooMBean.class, opts);
+     * </pre>
+     *
+     * <p>...then you can get the {@code MBeanServerInvocationHandler} like
+     * this...</p>
+     *
+     * <pre>
+     * MBeanServerInvocationHandler mbsih = (MBeanServerInvocationHandler)
+     *     {@link Proxy#getInvocationHandler(Object)
+     *            Proxy.getInvocationHandler}(proxy);
+     * </pre>
+     *
+     * <p>...and you can retrieve {@code connection}, {@code
+     * objectName}, and {@code opts} using the {@link
+     * MBeanServerInvocationHandler#getMBeanServerConnection()
+     * getMBeanServerConnection()}, {@link
+     * MBeanServerInvocationHandler#getObjectName() getObjectName()}, and
+     * {@link MBeanServerInvocationHandler#getMBeanOptions() getMBeanOptions()}
+     * methods on {@code mbsih}.  You can retrieve {@code FooMBean.class}
+     * using {@code proxy.getClass().}{@link
+     * Class#getInterfaces() getInterfaces()}.</p>
+     *
      * @param connection the MBean server to forward to.
      * @param objectName the name of the MBean within
      * {@code connection} to forward to.
@@ -703,12 +746,12 @@ public class JMX {
 
         InvocationHandler handler = new MBeanServerInvocationHandler(
                 connection, objectName, opts);
-        final Class[] interfaces;
+        final Class<?>[] interfaces;
         if (notificationEmitter) {
             interfaces =
                 new Class<?>[] {interfaceClass, NotificationEmitter.class};
         } else
-            interfaces = new Class[] {interfaceClass};
+            interfaces = new Class<?>[] {interfaceClass};
         Object proxy = Proxy.newProxyInstance(
                 interfaceClass.getClassLoader(),
                 interfaces,
