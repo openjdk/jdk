@@ -1291,7 +1291,7 @@ public class MLet extends java.net.URLClassLoader
          if (c != null) {
             try {
                 Constructor<?> cons =
-                    c.getConstructor(new Class[] {String.class});
+                    c.getConstructor(String.class);
                 Object[] oo = new Object[1];
                 oo[0]=param;
                 return(cons.newInstance(oo));

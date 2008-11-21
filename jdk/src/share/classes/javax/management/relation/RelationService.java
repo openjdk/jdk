@@ -1111,7 +1111,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        if (!(oldValue instanceof ArrayList))
+        if (!(oldValue instanceof ArrayList<?>))
             oldValue = new ArrayList<ObjectName>(oldValue);
 
         RELATION_LOGGER.entering(RelationService.class.getName(),
@@ -1881,7 +1881,7 @@ public class RelationService extends NotificationBroadcasterSupport
                                          "getRole",
                                          params,
                                          signature));
-                if (invokeResult == null || invokeResult instanceof ArrayList)
+                if (invokeResult == null || invokeResult instanceof ArrayList<?>)
                     result = invokeResult;
                 else
                     result = new ArrayList<ObjectName>(invokeResult);
@@ -2786,7 +2786,7 @@ public class RelationService extends NotificationBroadcasterSupport
             // Note that it is possible that the MBean has already been removed
             // from the internal map: this is the case when the MBean is
             // unregistered, the role is updated, then we arrive here.
-            HashMap mbeanRefMap = (HashMap)
+            Map<String,List<String>> mbeanRefMap =
                 (myRefedMBeanObjName2RelIdsMap.get(objectName));
 
             if (mbeanRefMap == null) {
@@ -2796,11 +2796,11 @@ public class RelationService extends NotificationBroadcasterSupport
                 return true;
             }
 
-            ArrayList roleNames = new ArrayList();
+            List<String> roleNames = null;
             if (!allRolesFlag) {
                 // Now retrieves the roles of current relation where the MBean
                 // was referenced
-                roleNames = (ArrayList)(mbeanRefMap.get(relationId));
+                roleNames = mbeanRefMap.get(relationId);
 
                 // Removes obsolete reference to role
                 int obsRefIdx = roleNames.indexOf(roleName);
@@ -2840,8 +2840,8 @@ public class RelationService extends NotificationBroadcasterSupport
     //
     // -exception RelationServiceNotRegisteredException  if the Relation
     //  Service is not registered in the MBean Server.
-    private void updateUnregistrationListener(List newRefList,
-                                              List obsoleteRefList)
+    private void updateUnregistrationListener(List<ObjectName> newRefList,
+                                              List<ObjectName> obsoleteRefList)
         throws RelationServiceNotRegisteredException {
 
         if (newRefList != null && obsoleteRefList != null) {
@@ -2871,24 +2871,14 @@ public class RelationService extends NotificationBroadcasterSupport
 
                 // Enables ObjectNames in newRefList
                 if (newRefList != null) {
-                    for (Iterator newRefIter = newRefList.iterator();
-                         newRefIter.hasNext();) {
-
-                        ObjectName newObjName = (ObjectName)
-                            (newRefIter.next());
+                    for (ObjectName newObjName : newRefList)
                         myUnregNtfFilter.enableObjectName(newObjName);
-                    }
                 }
 
                 if (obsoleteRefList != null) {
                     // Disables ObjectNames in obsoleteRefList
-                    for (Iterator obsRefIter = obsoleteRefList.iterator();
-                         obsRefIter.hasNext();) {
-
-                        ObjectName obsObjName = (ObjectName)
-                            (obsRefIter.next());
+                    for (ObjectName obsObjName : obsoleteRefList)
                         myUnregNtfFilter.disableObjectName(obsObjName);
-                    }
                 }
 
 // Under test
@@ -3047,18 +3037,13 @@ public class RelationService extends NotificationBroadcasterSupport
         // to see which roles have not been initialized
         // Note: no need to test if list not null before cloning, not allowed
         //       to have an empty relation type.
-        ArrayList roleInfoList = (ArrayList)
-            (((ArrayList)(relType.getRoleInfos())).clone());
+        List<RoleInfo> roleInfoList = new ArrayList<RoleInfo>(relType.getRoleInfos());
 
         if (roleList != null) {
 
-            for (Iterator roleIter = roleList.iterator();
-                 roleIter.hasNext();) {
-
-                Role currRole = (Role)(roleIter.next());
+            for (Role currRole : roleList.asList()) {
                 String currRoleName = currRole.getRoleName();
-                ArrayList currRoleValue = (ArrayList)
-                    (currRole.getRoleValue());
+                List<ObjectName> currRoleValue = currRole.getRoleValue();
                 // Retrieves corresponding role info
                 // Can throw a RoleInfoNotFoundException to be converted into a
                 // RoleNotFoundException
@@ -3137,9 +3122,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // Only role list parameter used, as default initialization of roles
         // done automatically in initializeMissingRoles() sets each
         // uninitialized role to an empty value.
-        for (Iterator roleIter = roleList.iterator();
-             roleIter.hasNext();) {
-            Role currRole = (Role)(roleIter.next());
+        for (Role currRole : roleList.asList()) {
             // Creates a dummy empty ArrayList of ObjectNames to be the old
             // role value :)
             List<ObjectName> dummyList = new ArrayList<ObjectName>();
@@ -3191,7 +3174,7 @@ public class RelationService extends NotificationBroadcasterSupport
     // -exception IllegalArgumentException  if null parameter
     private Integer checkRoleInt(int chkType,
                                  String roleName,
-                                 List roleValue,
+                                 List<ObjectName> roleValue,
                                  RoleInfo roleInfo,
                                  boolean writeChkFlag)
         throws IllegalArgumentException {
@@ -3266,9 +3249,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // registered in the same MBean Server.
         String expClassName = roleInfo.getRefMBeanClassName();
 
-        for (Iterator refMBeanIter = roleValue.iterator();
-             refMBeanIter.hasNext();) {
-            ObjectName currObjName = (ObjectName)(refMBeanIter.next());
+        for (ObjectName currObjName : roleValue) {
 
             // Checks it is registered
             if (currObjName == null) {
@@ -3330,7 +3311,7 @@ public class RelationService extends NotificationBroadcasterSupport
                                         ObjectName relationObjName,
                                         String relationId,
                                         String relationTypeName,
-                                        List roleInfoList)
+                                        List<RoleInfo> roleInfoList)
         throws IllegalArgumentException,
                RelationServiceNotRegisteredException,
                InvalidRoleValueException {
@@ -3361,10 +3342,8 @@ public class RelationService extends NotificationBroadcasterSupport
         // with an empty list of ObjectNames.
         // A check is performed to verify that the role can be set to an
         // empty value, according to its minimum cardinality
-        for (Iterator roleInfoIter = roleInfoList.iterator();
-             roleInfoIter.hasNext();) {
+        for (RoleInfo currRoleInfo : roleInfoList) {
 
-            RoleInfo currRoleInfo = (RoleInfo)(roleInfoIter.next());
             String roleName = currRoleInfo.getName();
 
             // Creates an empty value
@@ -3663,7 +3642,7 @@ public class RelationService extends NotificationBroadcasterSupport
     //  not exist in the relation
     private void handleReferenceUnregistration(String relationId,
                                                ObjectName objectName,
-                                               List roleNameList)
+                                               List<String> roleNameList)
         throws IllegalArgumentException,
                RelationServiceNotRegisteredException,
                RelationNotFoundException,
@@ -3694,14 +3673,12 @@ public class RelationService extends NotificationBroadcasterSupport
         // Flag to specify if the relation has to be deleted
         boolean deleteRelFlag = false;
 
-        for (Iterator roleNameIter = roleNameList.iterator();
-             roleNameIter.hasNext();) {
+        for (String currRoleName : roleNameList) {
 
             if (deleteRelFlag) {
                 break;
             }
 
-            String currRoleName = (String)(roleNameIter.next());
             // Retrieves number of MBeans currently referenced in role
             // BEWARE! Do not use getRole() as role may be not readable
             //
@@ -3753,10 +3730,7 @@ public class RelationService extends NotificationBroadcasterSupport
             //         using setRole(). So the Relation Service will update the
             //         myRefedMBeanObjName2RelIdsMap to refelect the new role
             //         value!
-            for (Iterator roleNameIter = roleNameList.iterator();
-                 roleNameIter.hasNext();) {
-
-                String currRoleName = (String)(roleNameIter.next());
+            for (String currRoleName : roleNameList) {
 
                 if (relObj instanceof RelationSupport) {
                     // Internal relation

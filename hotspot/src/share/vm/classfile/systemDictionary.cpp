@@ -937,6 +937,8 @@ klassOop SystemDictionary::parse_stream(symbolHandle class_name,
                                         Handle class_loader,
                                         Handle protection_domain,
                                         ClassFileStream* st,
+                                        KlassHandle host_klass,
+                                        GrowableArray<Handle>* cp_patches,
                                         TRAPS) {
   symbolHandle parsed_name;
 
@@ -953,9 +955,9 @@ klassOop SystemDictionary::parse_stream(symbolHandle class_name,
   instanceKlassHandle k = ClassFileParser(st).parseClassFile(class_name,
                                                              class_loader,
                                                              protection_domain,
+                                                             cp_patches,
                                                              parsed_name,
                                                              THREAD);
-
 
   // We don't redefine the class, so we just need to clean up whether there
   // was an error or not (don't want to modify any system dictionary
@@ -970,6 +972,30 @@ klassOop SystemDictionary::parse_stream(symbolHandle class_name,
     MutexLocker mu(SystemDictionary_lock, THREAD);
     placeholders()->find_and_remove(p_index, p_hash, parsed_name, class_loader, THREAD);
     SystemDictionary_lock->notify_all();
+    }
+  }
+
+  if (host_klass.not_null() && k.not_null()) {
+    assert(AnonymousClasses, "");
+    // If it's anonymous, initialize it now, since nobody else will.
+    k->set_host_klass(host_klass());
+
+    {
+      MutexLocker mu_r(Compile_lock, THREAD);
+
+      // Add to class hierarchy, initialize vtables, and do possible
+      // deoptimizations.
+      add_to_hierarchy(k, CHECK_NULL); // No exception, but can block
+
+      // But, do not add to system dictionary.
+    }
+
+    k->eager_initialize(THREAD);
+
+    // notify jvmti
+    if (JvmtiExport::should_post_class_load()) {
+        assert(THREAD->is_Java_thread(), "thread->is_Java_thread()");
+        JvmtiExport::post_class_load((JavaThread *) THREAD, k());
     }
   }
 

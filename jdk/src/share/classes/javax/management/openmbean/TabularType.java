@@ -237,7 +237,7 @@ public class TabularType extends OpenType<TabularData> {
     }
 
     @Override
-    boolean isAssignableFrom(OpenType ot) {
+    boolean isAssignableFrom(OpenType<?> ot) {
         if (!(ot instanceof TabularType))
             return false;
         TabularType tt = (TabularType) ot;
@@ -329,9 +329,8 @@ public class TabularType extends OpenType<TabularData> {
             int value = 0;
             value += this.getTypeName().hashCode();
             value += this.rowType.hashCode();
-            for (Iterator k = indexNames.iterator(); k.hasNext();  ) {
-                value += k.next().hashCode();
-            }
+            for (String index : indexNames)
+                value += index.hashCode();
             myHashCode = Integer.valueOf(value);
         }
 
@@ -364,12 +363,10 @@ public class TabularType extends OpenType<TabularData> {
                 .append(",rowType=")
                 .append(rowType.toString())
                 .append(",indexNames=(");
-            int i=0;
-            Iterator k = indexNames.iterator();
-            while( k.hasNext() ) {
-                if (i > 0) result.append(",");
-                result.append(k.next().toString());
-                i++;
+            String sep = "";
+            for (String index : indexNames) {
+                result.append(sep).append(index);
+                sep = ",";
             }
             result.append("))");
             myToString = result.toString();
