@@ -811,6 +811,7 @@ void ConcurrentMark::checkpointRootsInitialPost() {
   ReferenceProcessor* rp = g1h->ref_processor();
   rp->verify_no_references_recorded();
   rp->enable_discovery(); // enable ("weak") refs discovery
+  rp->snap_policy(false); // snapshot the soft ref policy to be used in this cycle
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
   satb_mq_set.set_process_completed_threshold(G1SATBProcessCompletedThreshold);
@@ -1829,32 +1830,21 @@ class G1CMDrainMarkingStackClosure: public VoidClosure {
 void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   ResourceMark rm;
   HandleMark   hm;
-  ReferencePolicy* soft_ref_policy;
+  G1CollectedHeap* g1h   = G1CollectedHeap::heap();
+  ReferenceProcessor* rp = g1h->ref_processor();
 
   // Process weak references.
-  if (clear_all_soft_refs) {
-    soft_ref_policy = new AlwaysClearPolicy();
-  } else {
-#ifdef COMPILER2
-    soft_ref_policy = new LRUMaxHeapPolicy();
-#else
-    soft_ref_policy = new LRUCurrentHeapPolicy();
-#endif
-  }
+  rp->snap_policy(clear_all_soft_refs);
   assert(_markStack.isEmpty(), "mark stack should be empty");
 
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  G1CMIsAliveClosure g1IsAliveClosure(g1);
-
-  G1CMKeepAliveClosure g1KeepAliveClosure(g1, this, nextMarkBitMap());
+  G1CMIsAliveClosure   g1IsAliveClosure  (g1h);
+  G1CMKeepAliveClosure g1KeepAliveClosure(g1h, this, nextMarkBitMap());
   G1CMDrainMarkingStackClosure
     g1DrainMarkingStackClosure(nextMarkBitMap(), &_markStack,
                                &g1KeepAliveClosure);
 
   // XXXYYY  Also: copy the parallel ref processing code from CMS.
-  ReferenceProcessor* rp = g1->ref_processor();
-  rp->process_discovered_references(soft_ref_policy,
-                                    &g1IsAliveClosure,
+  rp->process_discovered_references(&g1IsAliveClosure,
                                     &g1KeepAliveClosure,
                                     &g1DrainMarkingStackClosure,
                                     NULL);

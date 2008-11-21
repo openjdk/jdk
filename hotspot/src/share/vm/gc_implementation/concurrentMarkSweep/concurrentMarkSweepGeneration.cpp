@@ -1961,6 +1961,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
 
   ref_processor()->set_enqueuing_is_done(false);
   ref_processor()->enable_discovery();
+  ref_processor()->snap_policy(clear_all_soft_refs);
   // If an asynchronous collection finishes, the _modUnionTable is
   // all clear.  If we are assuming the collection from an asynchronous
   // collection, clear the _modUnionTable.
@@ -2383,6 +2384,9 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
     Universe::verify(true);
   }
+
+  // Snapshot the soft reference policy to be used in this collection cycle.
+  ref_processor()->snap_policy(clear_all_soft_refs);
 
   bool init_mark_was_synchronous = false; // until proven otherwise
   while (_collectorState != Idling) {
@@ -4591,11 +4595,11 @@ size_t CMSCollector::preclean_mod_union_table(
     if (!dirtyRegion.is_empty()) {
       assert(numDirtyCards > 0, "consistency check");
       HeapWord* stop_point = NULL;
+      stopTimer();
+      CMSTokenSyncWithLocks ts(true, gen->freelistLock(),
+                               bitMapLock());
+      startTimer();
       {
-        stopTimer();
-        CMSTokenSyncWithLocks ts(true, gen->freelistLock(),
-                                 bitMapLock());
-        startTimer();
         verify_work_stacks_empty();
         verify_overflow_empty();
         sample_eden();
@@ -4612,10 +4616,6 @@ size_t CMSCollector::preclean_mod_union_table(
         assert((CMSPermGenPrecleaningEnabled && (gen == _permGen)) ||
                (_collectorState == AbortablePreclean && should_abort_preclean()),
                "Unparsable objects should only be in perm gen.");
-
-        stopTimer();
-        CMSTokenSyncWithLocks ts(true, bitMapLock());
-        startTimer();
         _modUnionTable.mark_range(MemRegion(stop_point, dirtyRegion.end()));
         if (should_abort_preclean()) {
           break; // out of preclean loop
@@ -5678,23 +5678,14 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
 
   ResourceMark rm;
   HandleMark   hm;
-  ReferencePolicy* soft_ref_policy;
-
-  assert(!ref_processor()->enqueuing_is_done(), "Enqueuing should not be complete");
-  // Process weak references.
-  if (clear_all_soft_refs) {
-    soft_ref_policy = new AlwaysClearPolicy();
-  } else {
-#ifdef COMPILER2
-    soft_ref_policy = new LRUMaxHeapPolicy();
-#else
-    soft_ref_policy = new LRUCurrentHeapPolicy();
-#endif // COMPILER2
-  }
-  verify_work_stacks_empty();
 
   ReferenceProcessor* rp = ref_processor();
   assert(rp->span().equals(_span), "Spans should be equal");
+  assert(!rp->enqueuing_is_done(), "Enqueuing should not be complete");
+  // Process weak references.
+  rp->snap_policy(clear_all_soft_refs);
+  verify_work_stacks_empty();
+
   CMSKeepAliveClosure cmsKeepAliveClosure(this, _span, &_markBitMap,
                                           &_markStack, false /* !preclean */);
   CMSDrainMarkingStackClosure cmsDrainMarkingStackClosure(this,
@@ -5704,14 +5695,12 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
     TraceTime t("weak refs processing", PrintGCDetails, false, gclog_or_tty);
     if (rp->processing_is_mt()) {
       CMSRefProcTaskExecutor task_executor(*this);
-      rp->process_discovered_references(soft_ref_policy,
-                                        &_is_alive_closure,
+      rp->process_discovered_references(&_is_alive_closure,
                                         &cmsKeepAliveClosure,
                                         &cmsDrainMarkingStackClosure,
                                         &task_executor);
     } else {
-      rp->process_discovered_references(soft_ref_policy,
-                                        &_is_alive_closure,
+      rp->process_discovered_references(&_is_alive_closure,
                                         &cmsKeepAliveClosure,
                                         &cmsDrainMarkingStackClosure,
                                         NULL);
@@ -6166,8 +6155,8 @@ void CMSCollector::verify_ok_to_terminate() const {
 #endif
 
 size_t CMSCollector::block_size_using_printezis_bits(HeapWord* addr) const {
-  assert(_markBitMap.isMarked(addr) && _markBitMap.isMarked(addr + 1),
-         "missing Printezis mark?");
+   assert(_markBitMap.isMarked(addr) && _markBitMap.isMarked(addr + 1),
+          "missing Printezis mark?");
   HeapWord* nextOneAddr = _markBitMap.getNextMarkedWordAddress(addr + 2);
   size_t size = pointer_delta(nextOneAddr + 1, addr);
   assert(size == CompactibleFreeListSpace::adjustObjectSize(size),

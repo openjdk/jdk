@@ -33,8 +33,9 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
 
   // hook up weak ref data so it can be used during Mark-Sweep
   assert(GenMarkSweep::ref_processor() == NULL, "no stomping");
-  GenMarkSweep::_ref_processor = rp;
   assert(rp != NULL, "should be non-NULL");
+  GenMarkSweep::_ref_processor = rp;
+  rp->snap_policy(clear_all_softrefs);
 
   // When collecting the permanent generation methodOops may be moving,
   // so we either have to flush all bcp data or convert it into bci.
@@ -121,23 +122,12 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
                            &GenMarkSweep::follow_root_closure);
 
   // Process reference objects found during marking
-  ReferencePolicy *soft_ref_policy;
-  if (clear_all_softrefs) {
-    soft_ref_policy = new AlwaysClearPolicy();
-  } else {
-#ifdef COMPILER2
-    soft_ref_policy = new LRUMaxHeapPolicy();
-#else
-    soft_ref_policy = new LRUCurrentHeapPolicy();
-#endif
-  }
-  assert(soft_ref_policy != NULL,"No soft reference policy");
-  GenMarkSweep::ref_processor()->process_discovered_references(
-                                   soft_ref_policy,
-                                   &GenMarkSweep::is_alive,
-                                   &GenMarkSweep::keep_alive,
-                                   &GenMarkSweep::follow_stack_closure,
-                                   NULL);
+  ReferenceProcessor* rp = GenMarkSweep::ref_processor();
+  rp->snap_policy(clear_all_softrefs);
+  rp->process_discovered_references(&GenMarkSweep::is_alive,
+                                    &GenMarkSweep::keep_alive,
+                                    &GenMarkSweep::follow_stack_closure,
+                                    NULL);
 
   // Follow system dictionary roots and unload classes
   bool purged_class = SystemDictionary::do_unloading(&GenMarkSweep::is_alive);

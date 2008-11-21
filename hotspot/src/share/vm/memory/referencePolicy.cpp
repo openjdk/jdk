@@ -26,6 +26,11 @@
 # include "incls/_referencePolicy.cpp.incl"
 
 LRUCurrentHeapPolicy::LRUCurrentHeapPolicy() {
+  snap();
+}
+
+// Capture state (of-the-VM) information needed to evaluate the policy
+void LRUCurrentHeapPolicy::snap() {
   _max_interval = (Universe::get_heap_free_at_last_gc() / M) * SoftRefLRUPolicyMSPerMB;
   assert(_max_interval >= 0,"Sanity check");
 }
@@ -47,6 +52,11 @@ bool LRUCurrentHeapPolicy::should_clear_reference(oop p) {
 /////////////////////// MaxHeap //////////////////////
 
 LRUMaxHeapPolicy::LRUMaxHeapPolicy() {
+  snap();
+}
+
+// Capture state (of-the-VM) information needed to evaluate the policy
+void LRUMaxHeapPolicy::snap() {
   size_t max_heap = MaxHeapSize;
   max_heap -= Universe::get_heap_used_at_last_gc();
   max_heap /= M;
