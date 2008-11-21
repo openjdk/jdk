@@ -172,6 +172,7 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 
     ref_processor()->enable_discovery();
+    ref_processor()->snap_policy(clear_all_softrefs);
 
     mark_sweep_phase1(clear_all_softrefs);
 
@@ -517,20 +518,9 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   // Process reference objects found during marking
   {
-    ReferencePolicy *soft_ref_policy;
-    if (clear_all_softrefs) {
-      soft_ref_policy = new AlwaysClearPolicy();
-    } else {
-#ifdef COMPILER2
-      soft_ref_policy = new LRUMaxHeapPolicy();
-#else
-      soft_ref_policy = new LRUCurrentHeapPolicy();
-#endif // COMPILER2
-    }
-    assert(soft_ref_policy != NULL,"No soft reference policy");
+    ref_processor()->snap_policy(clear_all_softrefs);
     ref_processor()->process_discovered_references(
-      soft_ref_policy, is_alive_closure(), mark_and_push_closure(),
-      follow_stack_closure(), NULL);
+      is_alive_closure(), mark_and_push_closure(), follow_stack_closure(), NULL);
   }
 
   // Follow system dictionary roots and unload classes

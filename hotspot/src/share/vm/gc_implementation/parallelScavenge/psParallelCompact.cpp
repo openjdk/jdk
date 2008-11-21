@@ -1578,6 +1578,7 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 
     ref_processor()->enable_discovery();
+    ref_processor()->snap_policy(maximum_heap_compaction);
 
     bool marked_for_unloading = false;
 
@@ -1894,26 +1895,14 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   // Process reference objects found during marking
   {
     TraceTime tm_r("reference processing", print_phases(), true, gclog_or_tty);
-    ReferencePolicy *soft_ref_policy;
-    if (maximum_heap_compaction) {
-      soft_ref_policy = new AlwaysClearPolicy();
-    } else {
-#ifdef COMPILER2
-      soft_ref_policy = new LRUMaxHeapPolicy();
-#else
-      soft_ref_policy = new LRUCurrentHeapPolicy();
-#endif // COMPILER2
-    }
-    assert(soft_ref_policy != NULL, "No soft reference policy");
     if (ref_processor()->processing_is_mt()) {
       RefProcTaskExecutor task_executor;
       ref_processor()->process_discovered_references(
-        soft_ref_policy, is_alive_closure(), &mark_and_push_closure,
-        &follow_stack_closure, &task_executor);
+        is_alive_closure(), &mark_and_push_closure, &follow_stack_closure,
+        &task_executor);
     } else {
       ref_processor()->process_discovered_references(
-        soft_ref_policy, is_alive_closure(), &mark_and_push_closure,
-        &follow_stack_closure, NULL);
+        is_alive_closure(), &mark_and_push_closure, &follow_stack_closure, NULL);
     }
   }
 

@@ -25,6 +25,11 @@
 # include "incls/_precompiled.incl"
 # include "incls/_referenceProcessor.cpp.incl"
 
+ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
+ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
+oop              ReferenceProcessor::_sentinelRef = NULL;
+const int        subclasses_of_ref                = REF_PHANTOM - REF_OTHER;
+
 // List of discovered references.
 class DiscoveredList {
 public:
@@ -58,10 +63,6 @@ private:
   size_t _len;
 };
 
-oop  ReferenceProcessor::_sentinelRef = NULL;
-
-const int subclasses_of_ref = REF_PHANTOM - REF_OTHER;
-
 void referenceProcessor_init() {
   ReferenceProcessor::init_statics();
 }
@@ -82,6 +83,12 @@ void ReferenceProcessor::init_statics() {
   }
   assert(_sentinelRef != NULL && _sentinelRef->is_oop(),
          "Just constructed it!");
+  _always_clear_soft_ref_policy = new AlwaysClearPolicy();
+  _default_soft_ref_policy      = new COMPILER2_PRESENT(LRUMaxHeapPolicy())
+                                      NOT_COMPILER2(LRUCurrentHeapPolicy());
+  if (_always_clear_soft_ref_policy == NULL || _default_soft_ref_policy == NULL) {
+    vm_exit_during_initialization("Could not allocate reference policy object");
+  }
   guarantee(RefDiscoveryPolicy == ReferenceBasedDiscovery ||
             RefDiscoveryPolicy == ReferentBasedDiscovery,
             "Unrecongnized RefDiscoveryPolicy");
@@ -108,6 +115,7 @@ ReferenceProcessor::create_ref_processor(MemRegion          span,
     vm_exit_during_initialization("Could not allocate ReferenceProcessor object");
   }
   rp->set_is_alive_non_header(is_alive_non_header);
+  rp->snap_policy(false /* default soft ref policy */);
   return rp;
 }
 
@@ -194,7 +202,6 @@ void ReferenceProcessor::update_soft_ref_master_clock() {
 }
 
 void ReferenceProcessor::process_discovered_references(
-  ReferencePolicy*             policy,
   BoolObjectClosure*           is_alive,
   OopClosure*                  keep_alive,
   VoidClosure*                 complete_gc,
@@ -209,7 +216,7 @@ void ReferenceProcessor::process_discovered_references(
   // Soft references
   {
     TraceTime tt("SoftReference", trace_time, false, gclog_or_tty);
-    process_discovered_reflist(_discoveredSoftRefs, policy, true,
+    process_discovered_reflist(_discoveredSoftRefs, _current_soft_ref_policy, true,
                                is_alive, keep_alive, complete_gc, task_executor);
   }
 
@@ -1092,13 +1099,26 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   // reachable.
   if (is_alive_non_header() != NULL) {
     oop referent = java_lang_ref_Reference::referent(obj);
-    // We'd like to assert the following:
-    // assert(referent != NULL, "Refs with null referents already filtered");
-    // However, since this code may be executed concurrently with
-    // mutators, which can clear() the referent, it is not
-    // guaranteed that the referent is non-NULL.
+    // In the case of non-concurrent discovery, the last
+    // disjunct below should hold. It may not hold in the
+    // case of concurrent discovery because mutators may
+    // concurrently clear() a Reference.
+    assert(UseConcMarkSweepGC || UseG1GC || referent != NULL,
+           "Refs with null referents already filtered");
     if (is_alive_non_header()->do_object_b(referent)) {
       return false;  // referent is reachable
+    }
+  }
+  if (rt == REF_SOFT) {
+    // For soft refs we can decide now if these are not
+    // current candidates for clearing, in which case we
+    // can mark through them now, rather than delaying that
+    // to the reference-processing phase. Since all current
+    // time-stamp policies advance the soft-ref clock only
+    // at a major collection cycle, this is always currently
+    // accurate.
+    if (!_current_soft_ref_policy->should_clear_reference(obj)) {
+      return false;
     }
   }
 

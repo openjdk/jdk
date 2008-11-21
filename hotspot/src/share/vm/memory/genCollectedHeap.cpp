@@ -525,8 +525,9 @@ void GenCollectedHeap::do_collection(bool  full,
           if (rp->discovery_is_atomic()) {
             rp->verify_no_references_recorded();
             rp->enable_discovery();
+            rp->snap_policy(clear_all_soft_refs);
           } else {
-            // collect() will enable discovery as appropriate
+            // collect() below will enable discovery as appropriate
           }
           _gens[i]->collect(full, clear_all_soft_refs, size, is_tlab);
           if (!rp->enqueuing_is_done()) {
