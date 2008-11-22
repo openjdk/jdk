@@ -44,6 +44,7 @@ import javax.management.Descriptor;
 import javax.management.ImmutableDescriptor;
 import javax.management.IntrospectionException;
 import javax.management.InvalidAttributeValueException;
+import javax.management.JMX;
 import javax.management.MBean;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanConstructorInfo;
@@ -538,21 +539,22 @@ abstract class MBeanIntrospector<M> {
     }
 
     static MBeanNotificationInfo[] findNotifications(Object moi) {
-        if (!(moi instanceof NotificationBroadcaster))
-            return null;
-        MBeanNotificationInfo[] mbn =
-                ((NotificationBroadcaster) moi).getNotificationInfo();
-        if (mbn == null || mbn.length == 0)
-            return findNotificationsFromAnnotations(moi.getClass());
-        MBeanNotificationInfo[] result =
-                new MBeanNotificationInfo[mbn.length];
-        for (int i = 0; i < mbn.length; i++) {
-            MBeanNotificationInfo ni = mbn[i];
-            if (ni.getClass() != MBeanNotificationInfo.class)
-                ni = (MBeanNotificationInfo) ni.clone();
-            result[i] = ni;
+        if (moi instanceof NotificationBroadcaster) {
+            MBeanNotificationInfo[] mbn =
+                    ((NotificationBroadcaster) moi).getNotificationInfo();
+            if (mbn != null && mbn.length > 0) {
+                MBeanNotificationInfo[] result =
+                        new MBeanNotificationInfo[mbn.length];
+                for (int i = 0; i < mbn.length; i++) {
+                    MBeanNotificationInfo ni = mbn[i];
+                    if (ni.getClass() != MBeanNotificationInfo.class)
+                        ni = (MBeanNotificationInfo) ni.clone();
+                    result[i] = ni;
+                }
+                return result;
+            }
         }
-        return result;
+        return findNotificationsFromAnnotations(moi.getClass());
     }
 
     private static MBeanNotificationInfo[] findNotificationsFromAnnotations(
