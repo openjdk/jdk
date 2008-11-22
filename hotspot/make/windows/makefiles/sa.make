@@ -92,13 +92,18 @@ SA_LINK_FLAGS = bufferoverflowU.lib
 !else
 SA_CFLAGS = /nologo $(MS_RUNTIME_OPTION) /W3 /Gm $(GX_OPTION) /ZI /Od /D "WIN32" /D "_WINDOWS" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
 !endif
-
+!if "$(MT)" != ""
+    SA_LINK_FLAGS = /manifest $(SA_LINK_FLAGS)
+!endif
 SASRCFILE = $(AGENT_DIR)/src/os/win32/windbg/sawindbg.cpp
 SA_LFLAGS = $(SA_LINK_FLAGS) /nologo /subsystem:console /map /debug /machine:$(MACHINE)
 
 # Note that we do not keep sawindbj.obj around as it would then
 # get included in the dumpbin command in build_vm_def.sh
 
+# In VS2005 or VS2008 the link command creates a .manifest file that we want
+# to insert into the linked artifact so we do not need to track it separately.
+# Use ";#2" for .dll and ";#1" for .exe in the MT command below:
 $(SAWINDBG): $(SASRCFILE)
 	set INCLUDE=$(SA_INCLUDE)$(INCLUDE)
 	$(CPP) @<<
@@ -109,6 +114,9 @@ $(SAWINDBG): $(SASRCFILE)
 <<
 	set LIB=$(SA_LIB)$(LIB)
 	$(LINK) /out:$@ /DLL sawindbg.obj dbgeng.lib $(SA_LFLAGS)
+!if "$(MT)" != ""
+	$(MT) /manifest $(@F).manifest /outputresource:$(@F);#2
+!endif
 	-@rm -f sawindbg.obj
 
 cleanall :
