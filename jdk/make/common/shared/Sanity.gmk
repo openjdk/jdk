@@ -1350,10 +1350,11 @@ $(ALSA_VERSION_CHECK): $(ALSA_VERSION_CHECK).c
 $(ALSA_VERSION_CHECK).c:
 	@$(prep-target)
 	@$(ECHO) "#include <alsa/asoundlib.h>\n" \
-                  "int main(char** argv, int argc) {\n" \
-                   "  printf(\"%s\", SND_LIB_VERSION_STR);\n" \
-                    "  return 0;\n" \
-                    "}\n" \
+		 "#include <stdio.h>\n" \
+		 "int main(int argc, char** argv) {\n" \
+		 "  printf(\"%s\", SND_LIB_VERSION_STR);\n" \
+		 "  return 0;\n" \
+		 "}\n" \
                     > $@
 endif
 
