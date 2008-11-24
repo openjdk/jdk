@@ -1205,7 +1205,7 @@ ParNewGeneration::take_from_overflow_list(ParScanThreadState* par_scan_state) {
   int n = 0;
   while (cur != NULL) {
     oop obj_to_push = cur->forwardee();
-    oop next        = oop(cur->klass());
+    oop next        = oop(cur->klass_or_null());
     cur->set_klass(obj_to_push->klass());
     if (par_scan_state->should_be_partially_scanned(obj_to_push, cur)) {
       obj_to_push = cur;
