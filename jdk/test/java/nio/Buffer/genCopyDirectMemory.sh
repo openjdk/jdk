@@ -23,10 +23,10 @@
 # have any questions.
 #
 
-SPP='sh ../../../../make/java/nio/spp.sh'
+javac -d . ../../../../make/tools/src/build/tools/spp/Spp.java > Spp.java
 
 gen() {
-  $SPP -K$1 -Dtype=$1 -DType=$2 -DFulltype=$3<CopyDirect-X-Memory.java >CopyDirect$2Memory.java
+    java  build.tools.spp.Spp -K$1 -Dtype=$1 -DType=$2 -DFulltype=$3<CopyDirect-X-Memory.java >CopyDirect$2Memory.java
 }
 
 gen byte Byte Byte
@@ -37,3 +37,4 @@ gen long Long Long
 gen float Float Float
 gen double Double Double
 
+rm -rf build
