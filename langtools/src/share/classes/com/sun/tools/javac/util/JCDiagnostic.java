@@ -289,7 +289,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         this.source = source;
         this.position = pos;
         this.key = key;
-        this.args = args;
+            this.args = args;
 
         int n = (pos == null ? Position.NOPOS : pos.getPreferredPosition());
         if (n == Position.NOPOS || source == null)
@@ -306,6 +306,18 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
      */
     public DiagnosticType getType() {
         return type;
+    }
+
+    /**
+     * Get the subdiagnostic list
+     * @return subdiagnostic list
+     */
+    public List<JCDiagnostic> getSubdiagnostics() {
+        return List.nil();
+    }
+
+    public boolean isMultiline() {
+        return false;
     }
 
     /**
@@ -440,7 +452,32 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     }
 
     public String getMessage(Locale locale) {
-        // RFE 6406133: JCDiagnostic.getMessage ignores locale argument
         return defaultFormatter.formatMessage(this, locale);
+    }
+
+    public static class MultilineDiagnostic extends JCDiagnostic {
+
+        private final List<JCDiagnostic> subdiagnostics;
+
+        public MultilineDiagnostic(JCDiagnostic other, List<JCDiagnostic> subdiagnostics) {
+            super(other.defaultFormatter,
+                  other.getType(),
+                  other.isMandatory(),
+                  other.getDiagnosticSource(),
+                  other.position,
+                  other.getCode(),
+                  other.getArgs());
+            this.subdiagnostics = subdiagnostics;
+        }
+
+        @Override
+        public List<JCDiagnostic> getSubdiagnostics() {
+            return subdiagnostics;
+        }
+
+        @Override
+        public boolean isMultiline() {
+            return true;
+        }
     }
 }

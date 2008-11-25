@@ -430,13 +430,11 @@ public class EventClientConnection implements InvocationHandler,
      *        The {@code EventClient} is created lazily, when it is needed
      *        for the first time. If null, a default factory will be used
      *        (see {@link #createEventClient}).
-     * @return the
+     * @return the MBeanServerConnection.
      **/
     public static MBeanServerConnection getEventConnectionFor(
                     MBeanServerConnection connection,
                     Callable<EventClient> eventClientFactory) {
-        // if c already uses an EventClient no need to create a new one.
-        //
         if (connection instanceof EventClientFactory
             && eventClientFactory != null)
             throw new IllegalArgumentException("connection already uses EventClient");

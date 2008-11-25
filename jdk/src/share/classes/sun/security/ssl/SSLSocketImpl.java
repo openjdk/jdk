@@ -1012,6 +1012,22 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      */
     ServerHandshaker getServerHandshaker() throws SSLException {
         initHandshaker();
+
+         // The connection state would have been set to cs_HANDSHAKE during the
+         // handshaking initializing, however the caller may not have the
+         // the low level connection's established, which is not consistent with
+         // the HANDSHAKE state. As if it is unconnected, we need to reset the
+         // connection state to cs_START.
+         if (!isConnected()) {
+             connectionState = cs_START;
+         }
+
+         // Make sure that we get a ServerHandshaker.
+         // This should never happen.
+         if (!(handshaker instanceof ServerHandshaker)) {
+             throw new SSLProtocolException("unexpected handshaker instance");
+         }
+
         return (ServerHandshaker)handshaker;
     }
 
@@ -1273,7 +1289,8 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         }
     }
 
-    private void closeSocket() throws IOException {
+    protected void closeSocket() throws IOException {
+
         if ((debug != null) && Debug.isOn("ssl")) {
             System.out.println(threadName() + ", called closeSocket()");
         }

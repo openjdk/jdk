@@ -1,7 +1,7 @@
 <html>
-<head>
-<title>javax.management package</title>
-<!--
+    <head>
+        <title>javax.management package</title>
+        <!--
 Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
@@ -24,37 +24,37 @@ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
 CA 95054 USA or visit www.sun.com if you need additional information or
 have any questions.
--->
-</head>
-<body bgcolor="white">
-      <p>Provides the core classes for the Java Management Extensions.</p>
+        -->
+    </head>
+    <body bgcolor="white">
+        <p>Provides the core classes for the Java Management Extensions.</p>
 
-      <p>The Java Management Extensions
-	(JMX<sup><font size="-1">TM</font></sup>) API is a standard
-	API for management and monitoring.  Typical uses include:</p>
+        <p>The Java Management Extensions
+            (JMX<sup><font size="-1">TM</font></sup>) API is a standard
+        API for management and monitoring.  Typical uses include:</p>
 
-      <ul>
-	<li>consulting and changing application configuration</li>
+        <ul>
+            <li>consulting and changing application configuration</li>
 
-	<li>accumulating statistics about application behavior and
-	  making them available</li>
+            <li>accumulating statistics about application behavior and
+            making them available</li>
 
-	<li>notifying of state changes and erroneous conditions.</li>
-      </ul>
+            <li>notifying of state changes and erroneous conditions.</li>
+        </ul>
 
-      <p>The JMX API can also be used as part of a solution for
-	managing systems, networks, and so on.</p>
+        <p>The JMX API can also be used as part of a solution for
+        managing systems, networks, and so on.</p>
 
-      <p>The API includes remote access, so a remote management
-	program can interact with a running application for these
-	purposes.</p>
+        <p>The API includes remote access, so a remote management
+            program can interact with a running application for these
+        purposes.</p>
 
-      <h2>MBeans</h2>
+        <h2>MBeans</h2>
 
-      <p>The fundamental notion of the JMX API is the <em>MBean</em>.
-	An MBean is a named <em>managed object</em> representing a
-	resource.  It has a <em>management interface</em> consisting
-	of:</p>
+        <p>The fundamental notion of the JMX API is the <em>MBean</em>.
+            An MBean is a named <em>managed object</em> representing a
+            resource.  It has a <em>management interface</em> consisting
+        of:</p>
 
         <ul>
             <li>named and typed attributes that can be read and/or
@@ -92,40 +92,40 @@ have any questions.
 
         <pre>
     public interface ConfigurationMBean {
-	public int getCacheSize();
-	public void setCacheSize(int size);
-	public long getLastChangedTime();
-	public void save();
+         public int getCacheSize();
+         public void setCacheSize(int size);
+         public long getLastChangedTime();
+         public void save();
     }
-      </pre>
+        </pre>
 
-      <p>The methods <code>getCacheSize</code> and
-	<code>setCacheSize</code> define a read-write attribute of
-	type <code>int</code> called <code>CacheSize</code> (with an
-	initial capital, unlike the JavaBeans convention).</p>
+        <p>The methods <code>getCacheSize</code> and
+            <code>setCacheSize</code> define a read-write attribute of
+            type <code>int</code> called <code>CacheSize</code> (with an
+        initial capital, unlike the JavaBeans convention).</p>
 
-      <p>The method <code>getLastChangedTime</code> defines an
-	attribute of type <code>long</code> called
-	<code>LastChangedTime</code>.  This is a read-only attribute,
-	since there is no method <code>setLastChangedTime</code>.</p>
+        <p>The method <code>getLastChangedTime</code> defines an
+            attribute of type <code>long</code> called
+            <code>LastChangedTime</code>.  This is a read-only attribute,
+        since there is no method <code>setLastChangedTime</code>.</p>
 
-      <p>The method <code>save</code> defines an operation called
-	<code>save</code>.  It is not an attribute, since its name
-	does not begin with <code>get</code>, <code>set</code>, or
-	<code>is</code>.</p>
+        <p>The method <code>save</code> defines an operation called
+            <code>save</code>.  It is not an attribute, since its name
+            does not begin with <code>get</code>, <code>set</code>, or
+        <code>is</code>.</p>
 
-      <p>The exact naming patterns for Standard MBeans are detailed in
-	the <a href="#spec">JMX Specification</a>.</p>
+        <p>The exact naming patterns for Standard MBeans are detailed in
+        the <a href="#spec">JMX Specification</a>.</p>
 
-      <p>There are two ways to make a Java object that is an MBean
-	with this management interface.  One is for the object to be
-	of a class that has exactly the same name as the Java
-	interface but without the <code>MBean</code> suffix.  So in
-	the example the object would be of the class
-	<code>Configuration</code>, in the same Java package as
-	<code>ConfigurationMBean</code>.  The second way is to use the
-	{@link javax.management.StandardMBean StandardMBean}
-	class.</p>
+        <p>There are two ways to make a Java object that is an MBean
+            with this management interface.  One is for the object to be
+            of a class that has exactly the same name as the Java
+            interface but without the <code>MBean</code> suffix.  So in
+            the example the object would be of the class
+            <code>Configuration</code>, in the same Java package as
+            <code>ConfigurationMBean</code>.  The second way is to use the
+            {@link javax.management.StandardMBean StandardMBean}
+        class.</p>
 
 
         <h3 id="stdannot">Defining Standard MBeans with annotations</h3>
@@ -272,37 +272,37 @@ have any questions.
         <pre>
     int cacheSize = mbs.getAttribute(name, "CacheSize");
     {@link javax.management.Attribute Attribute} newCacheSize =
-    	new Attribute("CacheSize", new Integer(2000));
+         new Attribute("CacheSize", new Integer(2000));
     mbs.setAttribute(name, newCacheSize);
     mbs.invoke(name, "save", new Object[0], new Class[0]);
-      </pre>
+        </pre>
 
         <p id="proxy">Alternatively, if you have a Java interface that
             corresponds to the management interface for the MBean, you can use an
         <em>MBean proxy</em> like this:</p>
 
-      <pre>
+        <pre>
     ConfigurationMBean conf =
         {@link javax.management.JMX#newMBeanProxy
             JMX.newMBeanProxy}(mbs, name, ConfigurationMBean.class);
     int cacheSize = conf.getCacheSize();
     conf.setCacheSize(2000);
     conf.save();
-      </pre>
+        </pre>
 
-      <p>Using an MBean proxy is just a convenience.  The second
-	example ends up calling the same <code>MBeanServer</code>
-	operations as the first one.</p>
+        <p>Using an MBean proxy is just a convenience.  The second
+            example ends up calling the same <code>MBeanServer</code>
+        operations as the first one.</p>
 
-      <p>An MBean Server can be queried for MBeans whose names match
-	certain patterns and/or whose attributes meet certain
-	constraints.  Name patterns are constructed using the {@link
-	javax.management.ObjectName ObjectName} class and constraints
-	are constructed using the {@link javax.management.Query Query}
-	class.  The methods {@link
-	javax.management.MBeanServer#queryNames queryNames} and {@link
-	javax.management.MBeanServer#queryMBeans queryMBeans} then
-	perform the query.</p>
+        <p>An MBean Server can be queried for MBeans whose names match
+            certain patterns and/or whose attributes meet certain
+            constraints.  Name patterns are constructed using the {@link
+            javax.management.ObjectName ObjectName} class and constraints
+            are constructed using the {@link javax.management.Query Query}
+            class.  The methods {@link
+            javax.management.MBeanServer#queryNames queryNames} and {@link
+            javax.management.MBeanServer#queryMBeans queryMBeans} then
+        perform the query.</p>
 
 
         <h3>MBean lifecycle and resource injection</h3>
@@ -406,6 +406,92 @@ have any questions.
             protocol such as SNMP or HTML and accesses to an MBean Server.
             So for example an SNMP GET operation might result in a
         <code>getAttribute</code> on the MBean Server.</p>
+
+	<h3 id="interop">Interoperability between versions of the JMX
+	  specification</h3>
+
+	<p>When a client connects to a server using the JMX Remote
+	  API, it is possible that they do not have the same version
+	  of the JMX specification.  The version of the JMX
+	  specification described here is version 2.0.  Previous
+	  versions were 1.0, 1.1, 1.2, and 1.4.  (There was no 1.3.)
+	  The standard JMX Remote API is defined to work with version
+	  1.2 onwards, so in standards-based deployment the only
+	  interoperability questions that arise concern version 1.2
+	  onwards.</p>
+
+	<p>Every version of the JMX specification continues to
+	  implement the features of previous versions.  So when the
+	  client is running an earlier version than the server, there
+	  should not be any interoperability concerns.  The only
+	  exception is the unlikely one where a pre-2.0 client used
+	  the string {@code //} in the domain part of an {@link
+	  javax.management.ObjectName ObjectName}.</p>
+
+	<p>When the client is running a later version than the server,
+	  certain newer features may not be available, as detailed in
+	  the next sections.  The method {@link
+	  javax.management.JMX#getSpecificationVersion
+	  JMX.getSpecificationVersion} can be used to determine the
+	  server version to check if required features are
+	  available.</p>
+
+	<h4 id="interop-1.4">If the remote MBean Server is 1.4</h4>
+
+	<ul>
+
+	  <li><p>You cannot use {@link
+	      javax.management.QueryNotificationFilter
+	      QueryNotificationFilter} in {@link
+	      javax.management.MBeanServerConnection#addNotificationListener
+	      addNotificationListener} since this class did not exist
+	      in 1.4.</p>
+
+	  <li><p>In an attribute in a query, you cannot access values
+	      inside complex types using dot syntax, for example
+	      {@link javax.management.Query#attr Query.attr}{@code
+	      ("HeapMemoryUsage.used")}.</p>
+
+	  <li><p>The packages {@link javax.management.event} and
+	      {@link javax.management.namespace} did not exist in 1.4,
+	      so you cannot remotely create instances of the MBeans
+	      they define.</p>
+
+	  <li><p>Even if the remote MBean Server is 2.0, you cannot in
+	      general suppose that {@link
+	      javax.management.event.EventClient EventClient} or
+	      {@link javax.management.ClientContext ClientContext}
+	      will work there without first checking. If the remote
+	      MBean Server is 1.4 then those checks will return false.
+	      An attempt to use these features without checking will
+	      fail in the same way as for a remote 2.0 that is not
+	      configured to support them.</p>
+	</ul>
+
+	<h4 id="interop-1.2">If the remote MBean Server is 1.2</h4>
+
+	<p><b>In addition to the above</b>,</p>
+
+	<ul>
+
+	  <li><p>You cannot use wildcards in a key property of an
+	      {@link javax.management.ObjectName ObjectName}, for
+	      example {@code domain:type=Foo,name=*}. Wildcards that
+	      match whole properties are still allowed, for example
+	      {@code *:*} or {@code *:type=Foo,*}.</p>
+
+	  <li><p>You cannot use {@link
+	      javax.management.Query#isInstanceOf Query.isInstanceOf}
+	      in a query.</p>
+
+	  <li><p>You cannot use dot syntax such as {@code
+	      HeapMemoryUsage.used} in the {@linkplain
+	      javax.management.monitor.Monitor#setObservedAttribute
+	      observed attribute} of a monitor, as described in the
+	      documentation for the {@link javax.management.monitor}
+	      package.</p>
+
+	</ul>
 
         <p id="spec">
         @see <a href="{@docRoot}/../technotes/guides/jmx/index.html">
