@@ -1961,6 +1961,16 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         }
     }
 
+    /**
+     * Returns true if specified FileChooser should use ShellFolder
+     */
+    public static boolean usesShellFolder(JFileChooser chooser) {
+        Boolean prop = (Boolean) chooser.getClientProperty("FileChooser.useShellFolder");
+
+        return prop == null ? chooser.getFileSystemView().equals(FileSystemView.getFileSystemView())
+                : prop.booleanValue();
+    }
+
     // This interface is used to access methods in the FileChooserUI
     // that are not public.
     public interface FileChooserUIAccessor {
