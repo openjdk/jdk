@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,10 +256,12 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
                 // ignore
             }
         } finally {
-            // we call close on the underlying socket anyway, but be
-            // doubly sure all resources get released.
-            // note that we don't need to worry about self, the GC
-            // will finalize that separately
+            // We called close on the underlying socket above to
+            // make doubly sure all resources got released.  We
+            // don't finalize self in the case of overlain sockets,
+            // that's a different object which the GC will finalize
+            // separately.
+
             super.finalize();
         }
     }

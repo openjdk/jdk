@@ -273,8 +273,8 @@ static const jlong END_MAXLEN = 0xFFFF + ENDHDR;
 /*
  * Searches for end of central directory (END) header. The contents of
  * the END header will be read and placed in endbuf. Returns the file
- * position of the END header, otherwise returns 0 if the END header
- * was not found or -1 if an error occurred.
+ * position of the END header, otherwise returns -1 if the END header
+ * was not found or an error occurred.
  */
 static jlong
 findEND(jzfile *zip, void *endbuf)
@@ -314,7 +314,7 @@ findEND(jzfile *zip, void *endbuf)
             }
         }
     }
-    return 0; /* END header not found */
+    return -1; /* END header not found */
 }
 
 /*
@@ -460,9 +460,8 @@ if (1) { zip->msg = message; goto Catch; } else ((void)0)
 
 /*
  * Reads zip file central directory. Returns the file position of first
- * CEN header, otherwise returns 0 if central directory not found or -1
- * if an error occurred. If zip->msg != NULL then the error was a zip
- * format error and zip->msg has the error text.
+ * CEN header, otherwise returns -1 if an error occured. If zip->msg != NULL
+ * then the error was a zip format error and zip->msg has the error text.
  * Always pass in -1 for knownTotal; it's used for a recursive call.
  */
 static jlong
@@ -488,9 +487,9 @@ readCEN(jzfile *zip, jint knownTotal)
 
     /* Get position of END header */
     if ((endpos = findEND(zip, endbuf)) == -1)
-        return -1; /* system error */
+        return -1; /* no END header or system error */
 
-    if (endpos == 0) return 0;  /* END header not found */
+    if (endpos == 0) return 0;  /* only END header present */
 
     freeCEN(zip);
 

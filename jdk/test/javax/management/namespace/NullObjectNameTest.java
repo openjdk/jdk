@@ -162,7 +162,7 @@ public class NullObjectNameTest {
             // this case.
             //
             RoutingServerProxy proxy =
-                    new RoutingServerProxy(sub,"","faked",false);
+                    new RoutingServerProxy(sub, "", "faked", true);
             final ObjectInstance moi3 =
                     proxy.registerMBean(new MyWombat(),null);
             System.out.println(moi3.getObjectName().toString()+

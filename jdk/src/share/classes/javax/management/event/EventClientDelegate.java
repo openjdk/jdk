@@ -149,6 +149,7 @@ public class EventClientDelegate implements EventClientDelegateMBean {
     // of a setMBeanServer on some other forwarder later in the chain.
 
     private static class Forwarder extends SingleMBeanForwarder {
+        private MBeanServer loopMBS;
 
         private static class UnsupportedInvocationHandler
                 implements InvocationHandler {
@@ -173,7 +174,11 @@ public class EventClientDelegate implements EventClientDelegateMBean {
         private volatile boolean madeECD;
 
         Forwarder() {
-            super(OBJECT_NAME, makeUnsupportedECD());
+            super(OBJECT_NAME, makeUnsupportedECD(), true);
+        }
+
+        synchronized void setLoopMBS(MBeanServer loopMBS) {
+            this.loopMBS = loopMBS;
         }
 
         @Override
@@ -186,7 +191,7 @@ public class EventClientDelegate implements EventClientDelegateMBean {
                         AccessController.doPrivileged(
                             new PrivilegedAction<EventClientDelegate>() {
                                 public EventClientDelegate run() {
-                                    return getEventClientDelegate(Forwarder.this);
+                                    return getEventClientDelegate(loopMBS);
                                 }
                             });
                     DynamicMBean mbean = new StandardMBean(
@@ -208,11 +213,46 @@ public class EventClientDelegate implements EventClientDelegateMBean {
      * that are targeted for that MBean and handles them itself.  All other
      * requests are forwarded to the next element in the forwarder chain.</p>
      *
+     * @param nextMBS the next {@code MBeanServer} in the chain of forwarders,
+     * which might be another {@code MBeanServerForwarder} or a plain {@code
+     * MBeanServer}.  This is the object to which {@code MBeanServer} requests
+     * that do not concern the {@code EventClientDelegateMBean} are sent.
+     * It will be the value of {@link MBeanServerForwarder#getMBeanServer()
+     * getMBeanServer()} on the returned object, and can be changed with {@link
+     * MBeanServerForwarder#setMBeanServer setMBeanServer}.  It can be null but
+     * must be set to a non-null value before any {@code MBeanServer} requests
+     * arrive.
+     *
+     * @param loopMBS the {@code MBeanServer} to which requests from the
+     * {@code EventClientDelegateMBean} should be sent.  For example,
+     * when you invoke the {@link EventClientDelegateMBean#addListener
+     * addListener} operation on the {@code EventClientDelegateMBean}, it will
+     * result in a call to {@link
+     * MBeanServer#addNotificationListener(ObjectName, NotificationListener,
+     * NotificationFilter, Object) addNotificationListener} on this object.
+     * If this parameter is null, then these requests will be sent to the
+     * newly-created {@code MBeanServerForwarder}.  Usually the parameter will
+     * either be null or will be the result of {@link
+     * javax.management.remote.JMXConnectorServer#getSystemMBeanServerForwarder()
+     * getSystemMBeanServerForwarder()} for the connector server in which
+     * this forwarder will be installed.
+     *
      * @return a new {@code MBeanServerForwarder} that simulates the existence
      * of an {@code EventClientDelegateMBean}.
+     *
+     * @see javax.management.remote.JMXConnectorServer#installStandardForwarders
      */
-    public static MBeanServerForwarder newForwarder() {
-        return new Forwarder();
+    public static MBeanServerForwarder newForwarder(
+            MBeanServer nextMBS, MBeanServer loopMBS) {
+        Forwarder mbsf = new Forwarder();
+        // We must setLoopMBS before setMBeanServer, because when we
+        // setMBeanServer that will call getEventClientDelegate(loopMBS).
+        if (loopMBS == null)
+            loopMBS = mbsf;
+        mbsf.setLoopMBS(loopMBS);
+        if (nextMBS != null)
+            mbsf.setMBeanServer(nextMBS);
+        return mbsf;
     }
 
     /**
@@ -437,10 +477,9 @@ public class EventClientDelegate implements EventClientDelegateMBean {
     // private classes
     // ------------------------------------
     private class ClientInfo {
-        String clientId;
-        EventBuffer buffer;
-        NotificationListener clientListener;
-        Map<Integer, AddedListener> listenerInfoMap =
+        final String clientId;
+        final NotificationListener clientListener;
+        final Map<Integer, AddedListener> listenerInfoMap =
                 new HashMap<Integer, AddedListener>();
 
         ClientInfo(String clientId, EventForwarder forwarder) {
@@ -703,7 +742,8 @@ public class EventClientDelegate implements EventClientDelegateMBean {
         clientInfo = clientInfoMap.get(clientId);
 
         if (clientInfo == null) {
-            throw new EventClientNotFoundException("The client is not found.");
+            throw new EventClientNotFoundException(
+                    "Client not found (id " + clientId + ")");
         }
 
         return clientInfo;
