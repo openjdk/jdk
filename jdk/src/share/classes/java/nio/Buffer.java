@@ -543,6 +543,10 @@ public abstract class Buffer {
         return mark;
     }
 
+    final void discardMark() {                          // package-private
+        mark = -1;
+    }
+
     static void checkBounds(int off, int len, int size) { // package-private
         if ((off | len | (off + len) | (size - (off + len))) < 0)
             throw new IndexOutOfBoundsException();
