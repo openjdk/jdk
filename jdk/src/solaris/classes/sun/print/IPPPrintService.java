@@ -62,14 +62,23 @@ import java.util.HashSet;
 
 public class IPPPrintService implements PrintService, SunPrinterJobService {
 
-    public static boolean debugPrint = false;
-    private static String debugPrefix = "IPPPrintService>> ";
+    public static final boolean debugPrint;
+    private static final String debugPrefix = "IPPPrintService>> ";
     protected static void debug_println(String str) {
         if (debugPrint) {
             System.out.println(str);
         }
     }
 
+    private static final String FORCE_PIPE_PROP = "sun.print.ippdebug";
+
+    static {
+        String debugStr =
+                (String)java.security.AccessController.doPrivileged(
+                  new sun.security.action.GetPropertyAction(FORCE_PIPE_PROP));
+
+        debugPrint = "true".equalsIgnoreCase(debugStr);
+    }
 
     private String printer;
     private URI    myURI;
@@ -383,7 +392,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             if ((urlConnection = getIPPConnection(myURL)) == null) {
                 mediaSizeNames = new MediaSizeName[0];
                 mediaTrays = new MediaTray[0];
-                debug_println("NULL urlConnection ");
+                debug_println(debugPrefix+"initAttributes, NULL urlConnection ");
                 init = true;
                 return;
             }
@@ -408,7 +417,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                     return;
                 } catch (Exception e) {
                     IPPPrintService.debug_println(debugPrefix+
-                                       " error creating CUPSPrinter e="+e);
+                                       "initAttributes, error creating CUPSPrinter e="+e);
                 }
             }
 
@@ -912,6 +921,9 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
      * Finds matching CustomMediaSizeName of given media.
      */
     public CustomMediaSizeName findCustomMedia(MediaSizeName media) {
+        if (customMediaSizeNames == null) {
+            return null;
+        }
         for (int i=0; i< customMediaSizeNames.length; i++) {
             CustomMediaSizeName custom =
                 (CustomMediaSizeName)customMediaSizeNames[i];
@@ -1193,7 +1205,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             return true;
         }
         for (int i=0; i<mediaSizeNames.length; i++) {
-            debug_println("mediaSizeNames[i] "+mediaSizeNames[i]);
+            debug_println(debugPrefix+"isSupportedMedia, mediaSizeNames[i] "+mediaSizeNames[i]);
             if (msn.equals(mediaSizeNames[i])) {
                 return true;
             }
@@ -1654,9 +1666,10 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         try {
             osw = new OutputStreamWriter(os, "UTF-8");
         } catch (java.io.UnsupportedEncodingException exc) {
-            debug_println("UTF-8 not supported? Exception: "+exc);
+            debug_println(debugPrefix+"writeIPPRequest, UTF-8 not supported? Exception: "+exc);
             return false;
         }
+        debug_println(debugPrefix+"writeIPPRequest, op code= "+operCode);
         char[] opCode =  new char[2];
         opCode[0] =  (char)Byte.parseByte(operCode.substring(0,2), 16);
         opCode[1] =  (char)Byte.parseByte(operCode.substring(2,4), 16);
@@ -1697,7 +1710,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             osw.flush();
             osw.close();
         } catch (java.io.IOException ioe) {
-            debug_println(debugPrefix+"IPPPrintService Exception in writeIPPRequest: "+ioe);
+            debug_println(debugPrefix+"writeIPPRequest, IPPPrintService Exception in writeIPPRequest: "+ioe);
             return false;
         }
         return true;
@@ -1734,7 +1747,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 while ((response[0] >= GRPTAG_OP_ATTRIBUTES) &&
                        (response[0] <= GRPTAG_PRINTER_ATTRIBUTES)
                           && (response[0] != GRPTAG_END_ATTRIBUTES)) {
-                    debug_println(debugPrefix+"checking group tag,  response[0]= "+
+                    debug_println(debugPrefix+"readIPPResponse, checking group tag,  response[0]= "+
                                   response[0]);
 
                     outObj = new ByteArrayOutputStream();
@@ -1773,6 +1786,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                                                        outArray);
 
                                 responseMap.put(ac.getName(), ac);
+                                debug_println(debugPrefix+ "readIPPResponse "+ac);
                             }
 
                             outObj = new ByteArrayOutputStream();
@@ -1845,6 +1859,9 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
         } catch (java.io.IOException e) {
             debug_println(debugPrefix+"readIPPResponse: "+e);
+            if (debugPrint) {
+                e.printStackTrace();
+            }
             return null;
         }
     }
