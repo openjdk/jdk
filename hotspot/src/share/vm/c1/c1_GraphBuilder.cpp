@@ -676,21 +676,6 @@ GraphBuilder::ScopeData::ScopeData(ScopeData* parent)
 }
 
 
-void GraphBuilder::kill_field(ciField* field) {
-  if (UseLocalValueNumbering) {
-    vmap()->kill_field(field);
-  }
-}
-
-
-void GraphBuilder::kill_array(Value value) {
-  if (UseLocalValueNumbering) {
-    vmap()->kill_array(value->type());
-  }
-  _memory->store_value(value);
-}
-
-
 void GraphBuilder::kill_all() {
   if (UseLocalValueNumbering) {
     vmap()->kill_all();
@@ -987,8 +972,8 @@ void GraphBuilder::store_indexed(BasicType type) {
     length = append(new ArrayLength(array, lock_stack()));
   }
   StoreIndexed* result = new StoreIndexed(array, index, length, type, value, lock_stack());
-  kill_array(value); // invalidate all CSEs that are memory accesses of the same type
   append(result);
+  _memory->store_value(value);
 }
 
 
@@ -1478,9 +1463,6 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
     case Bytecodes::_putstatic:
       { Value val = pop(type);
         append(new StoreField(append(obj), offset, field, val, true, lock_stack(), state_copy, is_loaded, is_initialized));
-        if (UseLocalValueNumbering) {
-          vmap()->kill_field(field);   // invalidate all CSEs that are memory accesses
-        }
       }
       break;
     case Bytecodes::_getfield :
@@ -1503,7 +1485,6 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
         if (is_loaded) store = _memory->store(store);
         if (store != NULL) {
           append(store);
-          kill_field(field);   // invalidate all CSEs that are accesses of this field
         }
       }
       break;
@@ -1900,6 +1881,8 @@ Instruction* GraphBuilder::append_with_bci(Instruction* instr, int bci) {
       assert(i2->bci() != -1, "should already be linked");
       return i2;
     }
+    ValueNumberingEffects vne(vmap());
+    i1->visit(&vne);
   }
 
   if (i1->as_Phi() == NULL && i1->as_Local() == NULL) {
@@ -1926,14 +1909,8 @@ Instruction* GraphBuilder::append_with_bci(Instruction* instr, int bci) {
     assert(_last == i1, "adjust code below");
     StateSplit* s = i1->as_StateSplit();
     if (s != NULL && i1->as_BlockEnd() == NULL) {
-      // Continue CSE across certain intrinsics
-      Intrinsic* intrinsic = s->as_Intrinsic();
-      if (UseLocalValueNumbering) {
-        if (intrinsic == NULL || !intrinsic->preserves_state()) {
-          vmap()->kill_all();      // for now, hopefully we need this only for calls eventually
-          }
-      }
       if (EliminateFieldAccess) {
+        Intrinsic* intrinsic = s->as_Intrinsic();
         if (s->as_Invoke() != NULL || (intrinsic && !intrinsic->preserves_state())) {
           _memory->kill();
         }
