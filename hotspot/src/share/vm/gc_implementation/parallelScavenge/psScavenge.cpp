@@ -330,6 +330,7 @@ bool PSScavenge::invoke_no_policy() {
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 
     reference_processor()->enable_discovery();
+    reference_processor()->snap_policy(false);
 
     // We track how much was promoted to the next generation for
     // the AdaptiveSizePolicy.
@@ -394,24 +395,16 @@ bool PSScavenge::invoke_no_policy() {
 
     // Process reference objects discovered during scavenge
     {
-#ifdef COMPILER2
-      ReferencePolicy *soft_ref_policy = new LRUMaxHeapPolicy();
-#else
-      ReferencePolicy *soft_ref_policy = new LRUCurrentHeapPolicy();
-#endif // COMPILER2
-
+      reference_processor()->snap_policy(false); // not always_clear
       PSKeepAliveClosure keep_alive(promotion_manager);
       PSEvacuateFollowersClosure evac_followers(promotion_manager);
-      assert(soft_ref_policy != NULL,"No soft reference policy");
       if (reference_processor()->processing_is_mt()) {
         PSRefProcTaskExecutor task_executor;
         reference_processor()->process_discovered_references(
-          soft_ref_policy, &_is_alive_closure, &keep_alive, &evac_followers,
-          &task_executor);
+          &_is_alive_closure, &keep_alive, &evac_followers, &task_executor);
       } else {
         reference_processor()->process_discovered_references(
-          soft_ref_policy, &_is_alive_closure, &keep_alive, &evac_followers,
-          NULL);
+          &_is_alive_closure, &keep_alive, &evac_followers, NULL);
       }
     }
 

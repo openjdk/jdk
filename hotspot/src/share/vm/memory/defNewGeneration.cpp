@@ -540,14 +540,6 @@ void DefNewGeneration::collect(bool   full,
   assert(gch->no_allocs_since_save_marks(0),
          "save marks have not been newly set.");
 
-  // Weak refs.
-  // FIXME: Are these storage leaks, or are they resource objects?
-#ifdef COMPILER2
-  ReferencePolicy *soft_ref_policy = new LRUMaxHeapPolicy();
-#else
-  ReferencePolicy *soft_ref_policy = new LRUCurrentHeapPolicy();
-#endif // COMPILER2
-
   // Not very pretty.
   CollectorPolicy* cp = gch->collector_policy();
 
@@ -574,8 +566,10 @@ void DefNewGeneration::collect(bool   full,
   evacuate_followers.do_void();
 
   FastKeepAliveClosure keep_alive(this, &scan_weak_ref);
-  ref_processor()->process_discovered_references(
-    soft_ref_policy, &is_alive, &keep_alive, &evacuate_followers, NULL);
+  ReferenceProcessor* rp = ref_processor();
+  rp->snap_policy(clear_all_soft_refs);
+  rp->process_discovered_references(&is_alive, &keep_alive, &evacuate_followers,
+                                    NULL);
   if (!promotion_failed()) {
     // Swap the survivor spaces.
     eden()->clear(SpaceDecorator::Mangle);

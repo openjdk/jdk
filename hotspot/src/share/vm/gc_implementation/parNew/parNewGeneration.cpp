@@ -759,17 +759,12 @@ void ParNewGeneration::collect(bool   full,
                thread_state_set.steals(),
                thread_state_set.pops()+thread_state_set.steals());
   }
-  assert(thread_state_set.pushes() == thread_state_set.pops() + thread_state_set.steals(),
+  assert(thread_state_set.pushes() == thread_state_set.pops()
+                                    + thread_state_set.steals(),
          "Or else the queues are leaky.");
 
-  // For now, process discovered weak refs sequentially.
-#ifdef COMPILER2
-  ReferencePolicy *soft_ref_policy = new LRUMaxHeapPolicy();
-#else
-  ReferencePolicy *soft_ref_policy = new LRUCurrentHeapPolicy();
-#endif // COMPILER2
-
   // Process (weak) reference objects found during scavenge.
+  ReferenceProcessor* rp = ref_processor();
   IsAliveClosure is_alive(this);
   ScanWeakRefClosure scan_weak_ref(this);
   KeepAliveClosure keep_alive(&scan_weak_ref);
@@ -778,18 +773,17 @@ void ParNewGeneration::collect(bool   full,
   set_promo_failure_scan_stack_closure(&scan_without_gc_barrier);
   EvacuateFollowersClosureGeneral evacuate_followers(gch, _level,
     &scan_without_gc_barrier, &scan_with_gc_barrier);
-  if (ref_processor()->processing_is_mt()) {
+  rp->snap_policy(clear_all_soft_refs);
+  if (rp->processing_is_mt()) {
     ParNewRefProcTaskExecutor task_executor(*this, thread_state_set);
-    ref_processor()->process_discovered_references(
-        soft_ref_policy, &is_alive, &keep_alive, &evacuate_followers,
-        &task_executor);
+    rp->process_discovered_references(&is_alive, &keep_alive,
+                                      &evacuate_followers, &task_executor);
   } else {
     thread_state_set.flush();
     gch->set_par_threads(0);  // 0 ==> non-parallel.
     gch->save_marks();
-    ref_processor()->process_discovered_references(
-      soft_ref_policy, &is_alive, &keep_alive, &evacuate_followers,
-      NULL);
+    rp->process_discovered_references(&is_alive, &keep_alive,
+                                      &evacuate_followers, NULL);
   }
   if (!promotion_failed()) {
     // Swap the survivor spaces.
@@ -851,14 +845,14 @@ void ParNewGeneration::collect(bool   full,
 
   SpecializationStats::print();
 
-  ref_processor()->set_enqueuing_is_done(true);
-  if (ref_processor()->processing_is_mt()) {
+  rp->set_enqueuing_is_done(true);
+  if (rp->processing_is_mt()) {
     ParNewRefProcTaskExecutor task_executor(*this, thread_state_set);
-    ref_processor()->enqueue_discovered_references(&task_executor);
+    rp->enqueue_discovered_references(&task_executor);
   } else {
-    ref_processor()->enqueue_discovered_references(NULL);
+    rp->enqueue_discovered_references(NULL);
   }
-  ref_processor()->verify_no_references_recorded();
+  rp->verify_no_references_recorded();
 }
 
 static int sum;
@@ -1211,7 +1205,7 @@ ParNewGeneration::take_from_overflow_list(ParScanThreadState* par_scan_state) {
   int n = 0;
   while (cur != NULL) {
     oop obj_to_push = cur->forwardee();
-    oop next        = oop(cur->klass());
+    oop next        = oop(cur->klass_or_null());
     cur->set_klass(obj_to_push->klass());
     if (par_scan_state->should_be_partially_scanned(obj_to_push, cur)) {
       obj_to_push = cur;
