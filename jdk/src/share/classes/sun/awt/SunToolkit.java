@@ -2008,26 +2008,12 @@ class PostEventQueue {
     /*
      * Continually post pending AWTEvents to the Java EventQueue.
      */
-    public void flush() {
-        if (queueHead != null) {
-            EventQueueItem tempQueue;
-            /*
-             * We have to execute the loop inside the synchronized block
-             * to ensure that the flush is completed before a new event
-             * can be posted to this queue.
-             */
-            synchronized (this) {
-                tempQueue = queueHead;
-                queueHead = queueTail = null;
-                /*
-                 * If this PostEventQueue is flushed in parallel on two
-                 * different threads tempQueue will be null for one of them.
-                 */
-                while (tempQueue != null) {
-                    eventQueue.postEvent(tempQueue.event);
-                    tempQueue = tempQueue.next;
-                }
-            }
+    public synchronized void flush() {
+        EventQueueItem tempQueue = queueHead;
+        queueHead = queueTail = null;
+        while (tempQueue != null) {
+            eventQueue.postEvent(tempQueue.event);
+            tempQueue = tempQueue.next;
         }
     }
 
