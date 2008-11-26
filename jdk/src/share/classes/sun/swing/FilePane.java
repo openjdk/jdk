@@ -689,7 +689,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
         void updateColumnInfo() {
             File dir = chooser.getCurrentDirectory();
-            if (dir != null && fileChooserUIAccessor.usesShellFolder()) {
+            if (dir != null && usesShellFolder(chooser)) {
                 try {
                     dir = ShellFolder.getShellFolder(dir);
                 } catch (FileNotFoundException e) {
@@ -1947,7 +1947,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         if (f instanceof ShellFolder) {
             return ((ShellFolder) f).isFileSystem();
         } else {
-            if (fileChooserUIAccessor.usesShellFolder()) {
+            if (usesShellFolder(getFileChooser())) {
                 try {
                     return ShellFolder.getShellFolder(f).isFileSystem();
                 } catch (FileNotFoundException ex) {
@@ -1985,6 +1985,5 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         public Action getNewFolderAction();
         public MouseListener createDoubleClickListener(JList list);
         public ListSelectionListener createListSelectionListener();
-        public boolean usesShellFolder();
     }
 }
