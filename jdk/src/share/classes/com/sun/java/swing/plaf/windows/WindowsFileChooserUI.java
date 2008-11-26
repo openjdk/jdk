@@ -70,7 +70,6 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     private JTextField filenameTextField;
     private FilePane filePane;
     private WindowsPlacesBar placesBar;
-    private boolean useShellFolder;
 
     private JButton approveButton;
     private JButton cancelButton;
@@ -209,10 +208,6 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
 
         public ListSelectionListener createListSelectionListener() {
             return WindowsFileChooserUI.this.createListSelectionListener(getFileChooser());
-        }
-
-        public boolean usesShellFolder() {
-            return useShellFolder;
         }
     }
 
@@ -625,15 +620,8 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         // Decide whether to use the ShellFolder class to populate shortcut
         // panel and combobox.
         JFileChooser fc = getFileChooser();
-        Boolean prop =
-            (Boolean)fc.getClientProperty("FileChooser.useShellFolder");
-        if (prop != null) {
-            useShellFolder = prop.booleanValue();
-        } else {
-            useShellFolder = fc.getFileSystemView().equals(FileSystemView.getFileSystemView());
-        }
         if (OS_VERSION.compareTo(OSInfo.WINDOWS_ME) >= 0) {
-            if (useShellFolder) {
+            if (FilePane.usesShellFolder(fc)) {
                 if (placesBar == null && !UIManager.getBoolean("FileChooser.noPlacesBar")) {
                     placesBar = new WindowsPlacesBar(fc, XPStyle.getXP() != null);
                     fc.add(placesBar, BorderLayout.BEFORE_LINE_BEGINS);
@@ -1148,6 +1136,8 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
             if(directory == null) {
                 return;
             }
+
+            boolean useShellFolder = FilePane.usesShellFolder(chooser);
 
             directories.clear();
 
