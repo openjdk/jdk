@@ -263,13 +263,13 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         ListSelectionModel sm = directoryList.getSelectionModel();
         if (sm instanceof DefaultListSelectionModel) {
             ((DefaultListSelectionModel)sm).moveLeadSelectionIndex(0);
-            ((DefaultListSelectionModel)sm).setAnchorSelectionIndex(0);
+            sm.setAnchorSelectionIndex(0);
         }
         fileList.clearSelection();
         sm = fileList.getSelectionModel();
         if (sm instanceof DefaultListSelectionModel) {
             ((DefaultListSelectionModel)sm).moveLeadSelectionIndex(0);
-            ((DefaultListSelectionModel)sm).setAnchorSelectionIndex(0);
+            sm.setAnchorSelectionIndex(0);
         }
 
         File currentDirectory = getFileChooser().getCurrentDirectory();
@@ -1073,7 +1073,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
      * Data model for a type-face selection combo-box.
      */
     protected class DirectoryComboBoxModel extends AbstractListModel implements ComboBoxModel {
-        Vector directories = new Vector();
+        Vector<File> directories = new Vector<File>();
         File selectedDirectory = null;
         JFileChooser chooser = getFileChooser();
         FileSystemView fsv = chooser.getFileSystemView();
@@ -1215,7 +1215,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
                     ListSelectionModel sm = fileList.getSelectionModel();
                     if (sm instanceof DefaultListSelectionModel) {
                         ((DefaultListSelectionModel)sm).moveLeadSelectionIndex(0);
-                        ((DefaultListSelectionModel)sm).setAnchorSelectionIndex(0);
+                        sm.setAnchorSelectionIndex(0);
                     }
                     rescanCurrentDirectory(getFileChooser());
                     return;
