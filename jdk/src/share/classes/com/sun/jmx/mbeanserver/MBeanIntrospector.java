@@ -80,7 +80,7 @@ import javax.management.ReflectionException;
  * ancestor with ConvertingMethod.  But that would mean an extra object
  * for every Method in every Standard MBean interface.
  */
-abstract class MBeanIntrospector<M> {
+public abstract class MBeanIntrospector<M> {
     static final class PerInterfaceMap<M>
             extends WeakHashMap<Class<?>, WeakReference<PerInterface<M>>> {}
 
@@ -557,7 +557,7 @@ abstract class MBeanIntrospector<M> {
         return findNotificationsFromAnnotations(moi.getClass());
     }
 
-    private static MBeanNotificationInfo[] findNotificationsFromAnnotations(
+    public static MBeanNotificationInfo[] findNotificationsFromAnnotations(
             Class<?> mbeanClass) {
         Class<?> c = getAnnotatedNotificationInfoClass(mbeanClass);
         if (c == null)
