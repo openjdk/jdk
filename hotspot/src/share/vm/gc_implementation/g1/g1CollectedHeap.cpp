@@ -891,7 +891,7 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     ReferenceProcessorIsAliveMutator rp_is_alive_null(ref_processor(), NULL);
 
     ref_processor()->enable_discovery();
-    ref_processor()->snap_policy(clear_all_soft_refs);
+    ref_processor()->setup_policy(clear_all_soft_refs);
 
     // Do collection work
     {

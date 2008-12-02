@@ -525,7 +525,7 @@ void GenCollectedHeap::do_collection(bool  full,
           if (rp->discovery_is_atomic()) {
             rp->verify_no_references_recorded();
             rp->enable_discovery();
-            rp->snap_policy(clear_all_soft_refs);
+            rp->setup_policy(clear_all_soft_refs);
           } else {
             // collect() below will enable discovery as appropriate
           }

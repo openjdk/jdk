@@ -98,10 +98,10 @@ class ReferenceProcessor : public CHeapObj {
   DiscoveredList* discovered_soft_refs() { return _discoveredSoftRefs; }
   static oop  sentinel_ref()             { return _sentinelRef; }
   static oop* adr_sentinel_ref()         { return &_sentinelRef; }
-  ReferencePolicy* snap_policy(bool always_clear) {
+  ReferencePolicy* setup_policy(bool always_clear) {
     _current_soft_ref_policy = always_clear ?
       _always_clear_soft_ref_policy : _default_soft_ref_policy;
-    _current_soft_ref_policy->snap();   // snapshot the policy threshold
+    _current_soft_ref_policy->setup();   // snapshot the policy threshold
     return _current_soft_ref_policy;
   }
 

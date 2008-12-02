@@ -773,7 +773,7 @@ void ParNewGeneration::collect(bool   full,
   set_promo_failure_scan_stack_closure(&scan_without_gc_barrier);
   EvacuateFollowersClosureGeneral evacuate_followers(gch, _level,
     &scan_without_gc_barrier, &scan_with_gc_barrier);
-  rp->snap_policy(clear_all_soft_refs);
+  rp->setup_policy(clear_all_soft_refs);
   if (rp->processing_is_mt()) {
     ParNewRefProcTaskExecutor task_executor(*this, thread_state_set);
     rp->process_discovered_references(&is_alive, &keep_alive,

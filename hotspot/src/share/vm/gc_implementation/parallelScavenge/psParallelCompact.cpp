@@ -1578,7 +1578,7 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 
     ref_processor()->enable_discovery();
-    ref_processor()->snap_policy(maximum_heap_compaction);
+    ref_processor()->setup_policy(maximum_heap_compaction);
 
     bool marked_for_unloading = false;
 

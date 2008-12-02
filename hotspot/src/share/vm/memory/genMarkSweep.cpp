@@ -33,7 +33,7 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp,
   assert(ref_processor() == NULL, "no stomping");
   assert(rp != NULL, "should be non-NULL");
   _ref_processor = rp;
-  rp->snap_policy(clear_all_softrefs);
+  rp->setup_policy(clear_all_softrefs);
 
   TraceTime t1("Full GC", PrintGC && !PrintGCDetails, true, gclog_or_tty);
 
@@ -246,7 +246,7 @@ void GenMarkSweep::mark_sweep_phase1(int level,
 
   // Process reference objects found during marking
   {
-    ref_processor()->snap_policy(clear_all_softrefs);
+    ref_processor()->setup_policy(clear_all_softrefs);
     ref_processor()->process_discovered_references(
       &is_alive, &keep_alive, &follow_stack_closure, NULL);
   }

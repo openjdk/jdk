@@ -811,7 +811,7 @@ void ConcurrentMark::checkpointRootsInitialPost() {
   ReferenceProcessor* rp = g1h->ref_processor();
   rp->verify_no_references_recorded();
   rp->enable_discovery(); // enable ("weak") refs discovery
-  rp->snap_policy(false); // snapshot the soft ref policy to be used in this cycle
+  rp->setup_policy(false); // snapshot the soft ref policy to be used in this cycle
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
   satb_mq_set.set_process_completed_threshold(G1SATBProcessCompletedThreshold);
@@ -1834,7 +1834,7 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   ReferenceProcessor* rp = g1h->ref_processor();
 
   // Process weak references.
-  rp->snap_policy(clear_all_soft_refs);
+  rp->setup_policy(clear_all_soft_refs);
   assert(_markStack.isEmpty(), "mark stack should be empty");
 
   G1CMIsAliveClosure   g1IsAliveClosure  (g1h);
