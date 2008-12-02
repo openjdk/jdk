@@ -567,7 +567,7 @@ void DefNewGeneration::collect(bool   full,
 
   FastKeepAliveClosure keep_alive(this, &scan_weak_ref);
   ReferenceProcessor* rp = ref_processor();
-  rp->snap_policy(clear_all_soft_refs);
+  rp->setup_policy(clear_all_soft_refs);
   rp->process_discovered_references(&is_alive, &keep_alive, &evacuate_followers,
                                     NULL);
   if (!promotion_failed()) {

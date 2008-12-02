@@ -115,7 +115,7 @@ ReferenceProcessor::create_ref_processor(MemRegion          span,
     vm_exit_during_initialization("Could not allocate ReferenceProcessor object");
   }
   rp->set_is_alive_non_header(is_alive_non_header);
-  rp->snap_policy(false /* default soft ref policy */);
+  rp->setup_policy(false /* default soft ref policy */);
   return rp;
 }
 
