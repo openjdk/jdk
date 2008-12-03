@@ -30,7 +30,7 @@ class ReferencePolicy : public CHeapObj {
  public:
   virtual bool should_clear_reference(oop p)       { ShouldNotReachHere(); return true; }
   // Capture state (of-the-VM) information needed to evaluate the policy
-  virtual void snap() { /* do nothing */ }
+  virtual void setup() { /* do nothing */ }
 };
 
 class NeverClearPolicy : public ReferencePolicy {
@@ -51,7 +51,7 @@ class LRUCurrentHeapPolicy : public ReferencePolicy {
   LRUCurrentHeapPolicy();
 
   // Capture state (of-the-VM) information needed to evaluate the policy
-  void snap();
+  void setup();
   bool should_clear_reference(oop p);
 };
 
@@ -63,6 +63,6 @@ class LRUMaxHeapPolicy : public ReferencePolicy {
   LRUMaxHeapPolicy();
 
   // Capture state (of-the-VM) information needed to evaluate the policy
-  void snap();
+  void setup();
   bool should_clear_reference(oop p);
 };

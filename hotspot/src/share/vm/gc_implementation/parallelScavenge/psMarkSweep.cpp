@@ -172,7 +172,7 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 
     ref_processor()->enable_discovery();
-    ref_processor()->snap_policy(clear_all_softrefs);
+    ref_processor()->setup_policy(clear_all_softrefs);
 
     mark_sweep_phase1(clear_all_softrefs);
 
@@ -518,7 +518,7 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   // Process reference objects found during marking
   {
-    ref_processor()->snap_policy(clear_all_softrefs);
+    ref_processor()->setup_policy(clear_all_softrefs);
     ref_processor()->process_discovered_references(
       is_alive_closure(), mark_and_push_closure(), follow_stack_closure(), NULL);
   }

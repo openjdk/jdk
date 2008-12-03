@@ -330,7 +330,7 @@ bool PSScavenge::invoke_no_policy() {
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 
     reference_processor()->enable_discovery();
-    reference_processor()->snap_policy(false);
+    reference_processor()->setup_policy(false);
 
     // We track how much was promoted to the next generation for
     // the AdaptiveSizePolicy.
@@ -395,7 +395,7 @@ bool PSScavenge::invoke_no_policy() {
 
     // Process reference objects discovered during scavenge
     {
-      reference_processor()->snap_policy(false); // not always_clear
+      reference_processor()->setup_policy(false); // not always_clear
       PSKeepAliveClosure keep_alive(promotion_manager);
       PSEvacuateFollowersClosure evac_followers(promotion_manager);
       if (reference_processor()->processing_is_mt()) {
