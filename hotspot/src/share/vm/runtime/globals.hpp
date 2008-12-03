@@ -342,6 +342,9 @@ class CommandLineFlags {
   product(bool, UseNUMA, false,                                             \
           "Use NUMA if available")                                          \
                                                                             \
+  product(bool, ForceNUMA, false,                                           \
+          "Force NUMA optimizations on single-node/UMA systems")            \
+                                                                            \
   product(intx, NUMAChunkResizeWeight, 20,                                  \
           "Percentage (0-100) used to weight the current sample when "      \
           "computing exponentially decaying average for "                   \
