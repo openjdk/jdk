@@ -1961,7 +1961,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
 
   ref_processor()->set_enqueuing_is_done(false);
   ref_processor()->enable_discovery();
-  ref_processor()->snap_policy(clear_all_soft_refs);
+  ref_processor()->setup_policy(clear_all_soft_refs);
   // If an asynchronous collection finishes, the _modUnionTable is
   // all clear.  If we are assuming the collection from an asynchronous
   // collection, clear the _modUnionTable.
@@ -2386,7 +2386,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
   }
 
   // Snapshot the soft reference policy to be used in this collection cycle.
-  ref_processor()->snap_policy(clear_all_soft_refs);
+  ref_processor()->setup_policy(clear_all_soft_refs);
 
   bool init_mark_was_synchronous = false; // until proven otherwise
   while (_collectorState != Idling) {
@@ -5683,7 +5683,7 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
   assert(rp->span().equals(_span), "Spans should be equal");
   assert(!rp->enqueuing_is_done(), "Enqueuing should not be complete");
   // Process weak references.
-  rp->snap_policy(clear_all_soft_refs);
+  rp->setup_policy(clear_all_soft_refs);
   verify_work_stacks_empty();
 
   CMSKeepAliveClosure cmsKeepAliveClosure(this, _span, &_markBitMap,

@@ -35,7 +35,7 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   assert(GenMarkSweep::ref_processor() == NULL, "no stomping");
   assert(rp != NULL, "should be non-NULL");
   GenMarkSweep::_ref_processor = rp;
-  rp->snap_policy(clear_all_softrefs);
+  rp->setup_policy(clear_all_softrefs);
 
   // When collecting the permanent generation methodOops may be moving,
   // so we either have to flush all bcp data or convert it into bci.
@@ -123,7 +123,7 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
 
   // Process reference objects found during marking
   ReferenceProcessor* rp = GenMarkSweep::ref_processor();
-  rp->snap_policy(clear_all_softrefs);
+  rp->setup_policy(clear_all_softrefs);
   rp->process_discovered_references(&GenMarkSweep::is_alive,
                                     &GenMarkSweep::keep_alive,
                                     &GenMarkSweep::follow_stack_closure,
