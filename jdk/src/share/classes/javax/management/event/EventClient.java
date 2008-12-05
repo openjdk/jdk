@@ -29,7 +29,6 @@ import com.sun.jmx.event.DaemonThreadFactory;
 import com.sun.jmx.event.LeaseRenewer;
 import com.sun.jmx.event.ReceiverBuffer;
 import com.sun.jmx.event.RepeatedSingletonJob;
-import com.sun.jmx.namespace.JMXNamespaceUtils;
 import com.sun.jmx.mbeanserver.PerThreadGroupPool;
 import com.sun.jmx.remote.util.ClassLogger;
 
@@ -58,7 +57,6 @@ import javax.management.NotificationBroadcasterSupport;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
-import javax.management.remote.JMXConnector;
 import javax.management.remote.NotificationResult;
 import javax.management.remote.TargetedNotification;
 
@@ -129,11 +127,12 @@ public class EventClient implements EventConsumer, NotificationManager {
     public static final String NOTIFS_LOST = "jmx.event.service.notifs.lost";
 
     /**
-     * The default lease time, {@value}, in milliseconds.
+     * The default lease time that EventClient instances will request, in
+     * milliseconds.  This value is {@value}.
      *
      * @see EventClientDelegateMBean#lease
      */
-    public static final long DEFAULT_LEASE_TIMEOUT = 300000;
+    public static final long DEFAULT_REQUESTED_LEASE_TIME = 300000;
 
     /**
      * <p>Constructs a default {@code EventClient} object.</p>
@@ -173,7 +172,7 @@ public class EventClient implements EventConsumer, NotificationManager {
      */
     public EventClient(EventClientDelegateMBean delegate)
     throws IOException {
-        this(delegate, null, null, null, DEFAULT_LEASE_TIMEOUT);
+        this(delegate, null, null, null, DEFAULT_REQUESTED_LEASE_TIME);
     }
 
     /**
@@ -196,7 +195,7 @@ public class EventClient implements EventConsumer, NotificationManager {
      * If {@code null}, a default scheduler will be used.
      * @param requestedLeaseTime The lease time used to keep this client alive
      * in the {@link EventClientDelegateMBean}.  A value of zero is equivalent
-     * to the {@linkplain #DEFAULT_LEASE_TIMEOUT default value}.
+     * to the {@linkplain #DEFAULT_REQUESTED_LEASE_TIME default value}.
      *
      * @throws IllegalArgumentException If {@code delegate} is null.
      * @throws IOException If an I/O error occurs when communicating with the
@@ -213,7 +212,7 @@ public class EventClient implements EventConsumer, NotificationManager {
         }
 
         if (requestedLeaseTime == 0)
-            requestedLeaseTime = DEFAULT_LEASE_TIMEOUT;
+            requestedLeaseTime = DEFAULT_REQUESTED_LEASE_TIME;
         else if (requestedLeaseTime < 0) {
             throw new IllegalArgumentException(
                     "Negative lease time: " + requestedLeaseTime);
@@ -269,7 +268,13 @@ public class EventClient implements EventConsumer, NotificationManager {
                         new ScheduledThreadPoolExecutor(20, daemonThreadFactory);
                 executor.setKeepAliveTime(1, TimeUnit.SECONDS);
                 executor.allowCoreThreadTimeOut(true);
-                executor.setRemoveOnCancelPolicy(true);
+                if (setRemoveOnCancelPolicy != null) {
+                    try {
+                        setRemoveOnCancelPolicy.invoke(executor, true);
+                    } catch (Exception e) {
+                        logger.trace("setRemoveOnCancelPolicy", e);
+                    }
+                }
                 // By default, a ScheduledThreadPoolExecutor will keep jobs
                 // in its queue even after they have been cancelled.  They
                 // will only be removed when their scheduled time arrives.
@@ -277,12 +282,25 @@ public class EventClient implements EventConsumer, NotificationManager {
                 // this EventClient, this can lead to a moderately large number
                 // of objects remaining referenced until the renewal time
                 // arrives.  Hence the above call, which removes the job from
-                // the queue as soon as it is cancelled.
+                // the queue as soon as it is cancelled.  Since the call is
+                // new with JDK 7, we invoke it via reflection to make it
+                // easier to use this code on JDK 6.
                 return executor;
             }
         };
         return leaseRenewerThreadPool.getThreadPoolExecutor(create);
+    }
 
+    private static final Method setRemoveOnCancelPolicy;
+    static {
+        Method m;
+        try {
+            m = ScheduledThreadPoolExecutor.class.getMethod(
+                    "setRemoveOnCancelPolicy", boolean.class);
+        } catch (Exception e) {
+            m = null;
+        }
+        setRemoveOnCancelPolicy = m;
     }
 
     /**
@@ -1042,7 +1060,7 @@ public class EventClient implements EventConsumer, NotificationManager {
             final public EventClient call() throws Exception {
                 EventClientDelegateMBean ecd = EventClientDelegate.getProxy(conn);
                 return new EventClient(ecd, eventRelay, null, null,
-                        DEFAULT_LEASE_TIMEOUT);
+                        DEFAULT_REQUESTED_LEASE_TIME);
             }
         };
 
@@ -1078,24 +1096,6 @@ public class EventClient implements EventConsumer, NotificationManager {
      */
     public String getClientId() {
         return clientId;
-    }
-
-    /**
-     * Returns a JMX Connector that will use an {@link EventClient}
-     * to subscribe for notifications. If the server doesn't have
-     * an {@link EventClientDelegateMBean}, then the connector will
-     * use the legacy notification mechanism instead.
-     *
-     * @param wrapped The underlying JMX Connector wrapped by the returned
-     *               connector.
-     *
-     * @return A JMX Connector that will uses an {@link EventClient}, if
-     *         available.
-     *
-     * @see EventClient#getEventClientConnection(MBeanServerConnection)
-     */
-    public static JMXConnector withEventClient(final JMXConnector wrapped) {
-        return JMXNamespaceUtils.withEventClient(wrapped);
     }
 
     private static final PerThreadGroupPool<ScheduledThreadPoolExecutor>

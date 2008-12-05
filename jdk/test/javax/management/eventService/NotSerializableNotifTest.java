@@ -95,7 +95,7 @@ public class NotSerializableNotifTest {
                 FetchingEventRelay.DEFAULT_MAX_NOTIFICATIONS,
                 null);
         EventClient ec = new EventClient(ecd, eventRelay, null, null,
-                EventClient.DEFAULT_LEASE_TIMEOUT);
+                EventClient.DEFAULT_REQUESTED_LEASE_TIME);
 
         // add listener from the client side
         Listener listener = new Listener();

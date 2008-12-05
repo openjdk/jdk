@@ -49,6 +49,9 @@ SA_PROPERTIES = $(SA_CLASSDIR)\sa.properties
 
 default::  $(GENERATED)\sa-jdi.jar
 
+# Remove the space between $(SA_BUILD_VERSION_PROP) and > below as it adds a white space
+# at the end of SA version string and causes a version mismatch with the target VM version.
+
 $(GENERATED)\sa-jdi.jar: $(AGENT_FILES1:/=\) $(AGENT_FILES2:/=\)
 	@if not exist $(SA_CLASSDIR) mkdir $(SA_CLASSDIR)
 	@echo ...Building sa-jdi.jar
@@ -56,15 +59,15 @@ $(GENERATED)\sa-jdi.jar: $(AGENT_FILES1:/=\) $(AGENT_FILES2:/=\)
 	@$(COMPILE_JAVAC) -source 1.4 -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -g -d $(SA_CLASSDIR) $(AGENT_FILES1:/=\)
 	@$(COMPILE_JAVAC) -source 1.4 -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -g -d $(SA_CLASSDIR) $(AGENT_FILES2:/=\)
 	$(COMPILE_RMIC) -classpath $(SA_CLASSDIR) -d $(SA_CLASSDIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
-	$(QUIETLY) echo $(SA_BUILD_VERSION_PROP) > $(SA_PROPERTIES)
-	$(RUN_JAR) cf $@ -C saclasses . 
-	$(RUN_JAR) uf $@ -C $(AGENT_SRC_DIR:/=\) META-INF\services\com.sun.jdi.connect.Connector 
+	$(QUIETLY) echo $(SA_BUILD_VERSION_PROP)> $(SA_PROPERTIES)
 	$(QUIETLY) rm -f $(SA_CLASSDIR)/sun/jvm/hotspot/utilities/soql/sa.js
 	$(QUIETLY) cp $(AGENT_SRC_DIR)/sun/jvm/hotspot/utilities/soql/sa.js $(SA_CLASSDIR)/sun/jvm/hotspot/utilities/soql
-	$(QUIETLY) mkdir -p $(SA_CLASSDIR)/sun/jvm/hotspot/ui/resources
-	$(QUIETLY) rm -f $(SA_CLASSDIR)/sun/jvm/hotspot/ui/resources/*
-	$(QUIETLY) cp $(AGENT_SRC_DIR)/sun/jvm/hotspot/ui/resources/*.png $(SA_CLASSDIR)/sun/jvm/hotspot/ui/resources/
-	$(QUIETLY) cp -r $(AGENT_SRC_DIR)/images/* $(SA_CLASSDIR)/
+	$(QUIETLY) rm -rf $(SA_CLASSDIR)/sun/jvm/hotspot/ui/resources
+	$(QUIETLY) mkdir $(SA_CLASSDIR)\sun\jvm\hotspot\ui\resources
+	$(QUIETLY) cp $(AGENT_SRC_DIR)/sun/jvm/hotspot/ui/resources/*.png $(SA_CLASSDIR)/sun/jvm/hotspot/ui/resources
+	$(QUIETLY) cp -r $(AGENT_SRC_DIR)/images/* $(SA_CLASSDIR)
+	$(RUN_JAR) cf $@ -C saclasses .
+	$(RUN_JAR) uf $@ -C $(AGENT_SRC_DIR:/=\) META-INF\services\com.sun.jdi.connect.Connector
 	$(RUN_JAVAH) -classpath $(SA_CLASSDIR) -jni sun.jvm.hotspot.debugger.windbg.WindbgDebuggerLocal
 	$(RUN_JAVAH) -classpath $(SA_CLASSDIR) -jni sun.jvm.hotspot.debugger.x86.X86ThreadContext 
 	$(RUN_JAVAH) -classpath $(SA_CLASSDIR) -jni sun.jvm.hotspot.debugger.ia64.IA64ThreadContext 
@@ -93,7 +96,7 @@ SA_LINK_FLAGS = bufferoverflowU.lib
 SA_CFLAGS = /nologo $(MS_RUNTIME_OPTION) /W3 /Gm $(GX_OPTION) /ZI /Od /D "WIN32" /D "_WINDOWS" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
 !endif
 !if "$(MT)" != ""
-    SA_LINK_FLAGS = /manifest $(SA_LINK_FLAGS)
+SA_LINK_FLAGS = /manifest $(SA_LINK_FLAGS)
 !endif
 SASRCFILE = $(AGENT_DIR)/src/os/win32/windbg/sawindbg.cpp
 SA_LFLAGS = $(SA_LINK_FLAGS) /nologo /subsystem:console /map /debug /machine:$(MACHINE)

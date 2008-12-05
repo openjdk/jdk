@@ -3347,6 +3347,10 @@ jint os::init_2(void) {
   // initialize thread priority policy
   prio_init();
 
+  if (UseNUMA && !ForceNUMA) {
+    UseNUMA = false; // Currently unsupported.
+  }
+
   return JNI_OK;
 }
 

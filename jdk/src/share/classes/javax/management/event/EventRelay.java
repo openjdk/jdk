@@ -27,7 +27,6 @@ package javax.management.event;
 
 import java.io.IOException;
 import java.util.concurrent.Executors;  // for javadoc
-import java.util.concurrent.ScheduledFuture;
 
 /**
  * This interface is used to specify a way to receive
