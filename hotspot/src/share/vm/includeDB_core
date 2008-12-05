@@ -3435,6 +3435,7 @@ referenceProcessor.cpp                  referenceProcessor.hpp
 referenceProcessor.cpp                  systemDictionary.hpp
 
 referenceProcessor.hpp                  instanceRefKlass.hpp
+referenceProcessor.hpp                  referencePolicy.hpp
 
 reflection.cpp                          arguments.hpp
 reflection.cpp                          handles.inline.hpp

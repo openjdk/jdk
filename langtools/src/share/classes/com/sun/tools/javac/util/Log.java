@@ -190,9 +190,9 @@ public class Log extends AbstractLog {
         getSource(name).setEndPosTable(table);
     }
 
-    /** Return current source name.
+    /** Return current sourcefile.
      */
-    public JavaFileObject currentSource() {
+    public JavaFileObject currentSourceFile() {
         return source == null ? null : source.getFile();
     }
 
@@ -395,7 +395,7 @@ public class Log extends AbstractLog {
             printLines(errWriter, "error: " + msg);
         } else {
             int line = source.getLineNumber(pos);
-            JavaFileObject file = currentSource();
+            JavaFileObject file = source.getFile();
             if (file != null)
                 printLines(errWriter,
                            JavacFileManager.getJavacFileName(file) + ":" +
@@ -408,7 +408,7 @@ public class Log extends AbstractLog {
     /** report an error:
      */
     public void rawError(int pos, String msg) {
-        if (nerrors < MaxErrors && shouldReport(currentSource(), pos)) {
+        if (nerrors < MaxErrors && shouldReport(currentSourceFile(), pos)) {
             printRawError(pos, msg);
             prompt();
             nerrors++;

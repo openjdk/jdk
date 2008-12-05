@@ -1532,11 +1532,6 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
-  // get rid of the connection graph since it's information is not
-  // updated by optimizations
-  _congraph = NULL;
-
-
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.
 

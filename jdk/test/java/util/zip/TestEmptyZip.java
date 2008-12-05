@@ -39,34 +39,23 @@ public class TestEmptyZip {
             throw new Exception("failed to delete " + zipName);
         }
 
-        // Verify 0-length file cannot be read
         f.createNewFile();
-        ZipFile zf = null;
         try {
-            zf = new ZipFile(f);
-            fail();
-        } catch (Exception ex) {
-            check(ex.getMessage().contains("zip file is empty"));
-        } finally {
-            if (zf != null) {
-                zf.close();
-            }
-        }
+            // Verify 0-length file cannot be read
+            checkCannotRead(f);
 
-        ZipInputStream zis = null;
-        try {
-            zis = new ZipInputStream(new FileInputStream(f));
-            ZipEntry ze = zis.getNextEntry();
-            check(ze == null);
-        } catch (Exception ex) {
-            unexpected(ex);
-        } finally {
-            if (zis != null) {
-                zis.close();
+            // Verify non-zip file cannot be read
+            OutputStream out = new FileOutputStream(f);
+            try {
+                out.write("class Foo { }".getBytes());
+            } finally {
+                out.close();
             }
-        }
+            checkCannotRead(f);
 
-        f.delete();
+        } finally {
+            f.delete();
+        }
 
         // Verify 0-entries file can be written
         write(f);
@@ -76,6 +65,29 @@ public class TestEmptyZip {
         readStream(f);
 
         f.delete();
+    }
+
+    static void checkCannotRead(File f) throws IOException {
+        try {
+            new ZipFile(f).close();
+            fail();
+        } catch (ZipException ze) {
+            if (f.length() == 0) {
+                check(ze.getMessage().contains("zip file is empty"));
+            } else {
+                pass();
+            }
+        }
+        ZipInputStream zis = null;
+        try {
+            zis = new ZipInputStream(new FileInputStream(f));
+            ZipEntry ze = zis.getNextEntry();
+            check(ze == null);
+        } catch (IOException ex) {
+            unexpected(ex);
+        } finally {
+            if (zis != null) zis.close();
+        }
     }
 
     static void write(File f) throws Exception {

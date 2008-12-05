@@ -85,6 +85,20 @@ public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
     }
 
     @Override
+    protected String formatSubdiagnostics(JCDiagnostic d, Locale l) {
+        StringBuilder buf = new StringBuilder();
+        String sep = "";
+        buf.append(",{");
+        for (JCDiagnostic d2 : d.getSubdiagnostics()) {
+            buf.append(sep);
+            buf.append("(" + format(d2, l) + ")");
+            sep = ",";
+        }
+        buf.append('}');
+        return buf.toString();
+    }
+
+    @Override
     protected String localize(Locale l, String s, Object... args) {
         StringBuffer buf = new StringBuffer();
         buf.append(s);

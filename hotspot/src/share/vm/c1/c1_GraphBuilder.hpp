@@ -283,8 +283,6 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   Dependencies* dependency_recorder() const; // = compilation()->dependencies()
   bool direct_compare(ciKlass* k);
 
-  void kill_field(ciField* field);
-  void kill_array(Value value);
   void kill_all();
 
   ValueStack* lock_stack();
