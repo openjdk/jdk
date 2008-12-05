@@ -112,18 +112,6 @@ static const char * fatal_instance_field_mismatch = "Field type (instance) misma
 static const char * fatal_non_string = "JNI string operation received a non-string";
 
 
-
-// Report a JNI failure caught by -Xcheck:jni.  Perform a core dump.
-// Note: two variations -- one to be called when in VM state (e.g. when
-// within IN_VM macro), one to be called when in NATIVE state.
-
-// When in VM state:
-static void ReportJNIFatalError(JavaThread* thr, const char *msg) {
-  tty->print_cr("FATAL ERROR in native method: %s", msg);
-  thr->print_stack();
-  os::abort(true);
-}
-
 // When in VM state:
 static void ReportJNIWarning(JavaThread* thr, const char *msg) {
   tty->print_cr("WARNING in native method: %s", msg);
