@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6531090
+ * @bug 6531090 6711619
  *
  * @summary Cannot access methods/fields of a captured type belonging to an intersection type
  * @author Maurizio Cimadamore
@@ -32,12 +32,20 @@
 public class T6531090b {
 
     static class A {
-        public void a() {}
-        public A a;
+        public void a1() {}
+        protected void a2() {}
+        void a3() {}
+        public A a1;
+        protected A a2;
+        A a3;
     }
     static class B extends A {
-        public void b(){}
-        public B b;
+        public void b1() {}
+        protected void b2() {}
+        void b3() {}
+        public B b1;
+        protected B b2;
+        B b3;
     }
     static interface I{
         void i();
@@ -65,18 +73,35 @@ public class T6531090b {
     }
 
     static void testMemberMethods(C<? extends A, ? extends I> arg) {
-        arg.t.a();
-        arg.t.b();
+        arg.t.a1();
+        arg.t.a2();
+        arg.t.a3();
+        arg.t.b1();
+        arg.t.b2();
+        arg.t.b3();
         arg.t.i1();
-        arg.w.a();
-        arg.w.b();
+        arg.w.a1();
+        arg.w.a2();
+        arg.w.a3();
+        arg.w.b1();
+        arg.w.b2();
+        arg.w.b3();
         arg.w.i1();
     }
 
     static void testMemberFields(C<? extends A, ? extends I> arg) {
-        A ta = arg.t.a;
-        B tb = arg.t.b;
-        A wa = arg.w.a;
-        B wb = arg.w.b;
+        A ta; B tb;
+        ta = arg.t.a1;
+        ta = arg.t.a2;
+        ta = arg.t.a3;
+        tb = arg.t.b1;
+        tb = arg.t.b2;
+        tb = arg.t.b3;
+        ta = arg.w.a1;
+        ta = arg.w.a2;
+        ta = arg.w.a3;
+        tb = arg.w.b1;
+        tb = arg.w.b2;
+        tb = arg.w.b3;
     }
 }

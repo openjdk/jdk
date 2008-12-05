@@ -54,7 +54,7 @@ import com.sun.jmx.remote.util.EnvHelp;
 
 
 public abstract class ClientNotifForwarder {
-    public ClientNotifForwarder(Map env) {
+    public ClientNotifForwarder(Map<String, ?> env) {
         this(null, env);
     }
 
@@ -113,7 +113,7 @@ public abstract class ClientNotifForwarder {
         private Thread thread;
     }
 
-    public ClientNotifForwarder(ClassLoader defaultClassLoader, Map env) {
+    public ClientNotifForwarder(ClassLoader defaultClassLoader, Map<String, ?> env) {
         maxNotifications = EnvHelp.getMaxFetchNotifNumber(env);
         timeout = EnvHelp.getFetchTimeout(env);
 

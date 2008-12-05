@@ -2085,7 +2085,7 @@ void TemplateTable::jvmti_post_field_access(Register Rcache,
     } else {
       if (has_tos) {
       // save object pointer before call_VM() clobbers it
-        __ mov(Otos_i, Lscratch);
+        __ push_ptr(Otos_i);  // put object on tos where GC wants it.
       } else {
         // Load top of stack (do not pop the value off the stack);
         __ ld_ptr(Lesp, Interpreter::expr_offset_in_bytes(0), Otos_i);
@@ -2097,7 +2097,7 @@ void TemplateTable::jvmti_post_field_access(Register Rcache,
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_access),
                Otos_i, Rcache);
     if (!is_static && has_tos) {
-      __ mov(Lscratch, Otos_i);  // restore object pointer
+      __ pop_ptr(Otos_i);  // restore object pointer
       __ verify_oop(Otos_i);
     }
     __ get_cache_and_index_at_bcp(Rcache, index, 1);

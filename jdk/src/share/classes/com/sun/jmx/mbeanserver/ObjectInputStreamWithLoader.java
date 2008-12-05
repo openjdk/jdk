@@ -54,7 +54,8 @@ class ObjectInputStreamWithLoader extends ObjectInputStream {
         this.loader = theLoader;
     }
 
-    protected Class resolveClass(ObjectStreamClass aClass)
+    @Override
+    protected Class<?> resolveClass(ObjectStreamClass aClass)
             throws IOException, ClassNotFoundException {
         if (loader == null) {
             return super.resolveClass(aClass);

@@ -493,7 +493,7 @@ class CommandLineFlags {
   develop(bool, DeoptimizeALot, false,                                      \
           "deoptimize at every exit from the runtime system")               \
                                                                             \
-  develop(ccstrlist, DeoptimizeOnlyAt, "",                                  \
+  notproduct(ccstrlist, DeoptimizeOnlyAt, "",                               \
           "a comma separated list of bcis to deoptimize at")                \
                                                                             \
   product(bool, DeoptimizeRandom, false,                                    \
@@ -2792,7 +2792,7 @@ class CommandLineFlags {
   product(intx, TargetSurvivorRatio,    50,                                 \
           "Desired percentage of survivor space used after scavenge")       \
                                                                             \
-  product(intx, MarkSweepDeadRatio,     5,                                  \
+  product(uintx, MarkSweepDeadRatio,     5,                                 \
           "Percentage (0-100) of the old gen allowed as dead wood."         \
           "Serial mark sweep treats this as both the min and max value."    \
           "CMS uses this value only if it falls back to mark sweep."        \
@@ -2801,7 +2801,7 @@ class CommandLineFlags {
           "either completely full or completely empty.  Par compact also"   \
           "has a smaller default value; see arguments.cpp.")                \
                                                                             \
-  product(intx, PermMarkSweepDeadRatio,    20,                              \
+  product(uintx, PermMarkSweepDeadRatio,    20,                             \
           "Percentage (0-100) of the perm gen allowed as dead wood."        \
           "See MarkSweepDeadRatio for collector-specific comments.")        \
                                                                             \
@@ -3230,6 +3230,9 @@ class CommandLineFlags {
           "Skip assert() and verify() which page-in unwanted shared "       \
           "objects. ")                                                      \
                                                                             \
+  product(bool, AnonymousClasses, false,                                    \
+          "support sun.misc.Unsafe.defineAnonymousClass")                   \
+                                                                            \
   product(bool, TaggedStackInterpreter, false,                              \
           "Insert tags in interpreter execution stack for oopmap generaion")\
                                                                             \
@@ -3259,9 +3262,10 @@ class CommandLineFlags {
   diagnostic(bool, PrintDTraceDOF, false,                                   \
              "Print the DTrace DOF passed to the system for JSDT probes")   \
                                                                             \
-  product(bool, UseVMInterruptibleIO, true,                                 \
+  product(bool, UseVMInterruptibleIO, false,                                \
           "(Unstable, Solaris-specific) Thread interrupt before or with "   \
-          "EINTR for I/O operations results in OS_INTRPT")
+          "EINTR for I/O operations results in OS_INTRPT. The default value"\
+          " of this flag is true for JDK 6 and earliers")
 
 
 /*

@@ -69,7 +69,7 @@ public class DefaultLoaderRepository {
      * @exception ClassNotFoundException The specified class could not be
      *            found.
      */
-    public static Class loadClass(String className)
+    public static Class<?> loadClass(String className)
         throws ClassNotFoundException {
         MBEANSERVER_LOGGER.logp(Level.FINEST,
                 DefaultLoaderRepository.class.getName(),
@@ -93,7 +93,7 @@ public class DefaultLoaderRepository {
      * @exception ClassNotFoundException The specified class could not be
      *    found.
      */
-    public static Class loadClassWithout(ClassLoader loader,
+    public static Class<?> loadClassWithout(ClassLoader loader,
                                          String className)
         throws ClassNotFoundException {
         MBEANSERVER_LOGGER.logp(Level.FINEST,
@@ -102,12 +102,11 @@ public class DefaultLoaderRepository {
         return load(loader, className);
     }
 
-    private static Class load(ClassLoader without, String className)
+    private static Class<?> load(ClassLoader without, String className)
             throws ClassNotFoundException {
-        final List mbsList = MBeanServerFactory.findMBeanServer(null);
+        final List<MBeanServer> mbsList = MBeanServerFactory.findMBeanServer(null);
 
-        for (Iterator it = mbsList.iterator(); it.hasNext(); ) {
-            MBeanServer mbs = (MBeanServer) it.next();
+        for (MBeanServer mbs : mbsList) {
             ClassLoaderRepository clr = mbs.getClassLoaderRepository();
             try {
                 return clr.loadClassWithout(without, className);

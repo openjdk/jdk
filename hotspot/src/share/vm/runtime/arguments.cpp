@@ -1365,6 +1365,9 @@ void Arguments::set_aggressive_opts_flags() {
   if (AggressiveOpts && FLAG_IS_DEFAULT(SpecialArraysEquals)) {
     FLAG_SET_DEFAULT(SpecialArraysEquals, true);
   }
+  if (AggressiveOpts && FLAG_IS_DEFAULT(BiasedLockingStartupDelay)) {
+    FLAG_SET_DEFAULT(BiasedLockingStartupDelay, 500);
+  }
 #endif
 
   if (AggressiveOpts) {
@@ -2319,7 +2322,12 @@ SOLARIS_ONLY(
       return JNI_ERR;
     }
   }
-
+  // Change the default value for flags  which have different default values
+  // when working with older JDKs.
+  if (JDK_Version::current().compare_major(6) <= 0 &&
+      FLAG_IS_DEFAULT(UseVMInterruptibleIO)) {
+    FLAG_SET_DEFAULT(UseVMInterruptibleIO, true);
+  }
   return JNI_OK;
 }
 
@@ -2624,6 +2632,12 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // Biased locking is not implemented with c++ interpreter
   FLAG_SET_DEFAULT(UseBiasedLocking, false);
 #endif /* CC_INTERP */
+
+#ifdef COMPILER2
+  if (!UseBiasedLocking || EmitSync != 0) {
+    UseOptoBiasInlining = false;
+  }
+#endif
 
   if (PrintCommandLineFlags) {
     CommandLineFlags::printSetFlags();
