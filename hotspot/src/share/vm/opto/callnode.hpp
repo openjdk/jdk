@@ -780,7 +780,8 @@ public:
 //------------------------------AbstractLockNode-----------------------------------
 class AbstractLockNode: public CallNode {
 private:
- bool _eliminate;    // indicates this lock can be safely eliminated
+  bool _eliminate;    // indicates this lock can be safely eliminated
+  bool _coarsened;    // indicates this lock was coarsened
 #ifndef PRODUCT
   NamedCounter* _counter;
 #endif
@@ -801,6 +802,7 @@ protected:
 public:
   AbstractLockNode(const TypeFunc *tf)
     : CallNode(tf, NULL, TypeRawPtr::BOTTOM),
+      _coarsened(false),
       _eliminate(false)
   {
 #ifndef PRODUCT
@@ -818,6 +820,9 @@ public:
   bool is_eliminated()         {return _eliminate; }
   // mark node as eliminated and update the counter if there is one
   void set_eliminated();
+
+  bool is_coarsened()  { return _coarsened; }
+  void set_coarsened() { _coarsened = true; }
 
   // locking does not modify its arguments
   virtual bool        may_modify(const TypePtr *addr_t, PhaseTransform *phase){ return false;}

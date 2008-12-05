@@ -150,7 +150,7 @@ class JavaCallArguments : public StackObj {
   int   size_of_parameters() const { return _size; }
 
   // Verify that pushed arguments fits a given method
-  void verify(methodHandle method, BasicType return_type, Thread *thread) PRODUCT_RETURN;
+  void verify(methodHandle method, BasicType return_type, Thread *thread);
 };
 
 // All calls to Java have to go via JavaCalls. Sets up the stack frame

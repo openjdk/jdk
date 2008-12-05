@@ -2217,15 +2217,10 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
                 // We only expect null pointers in the stubs (vtable)
                 // the rest are checked explicitly now.
                 //
-                CodeBlob* cb = CodeCache::find_blob(pc);
-                if (cb != NULL) {
-                  if (VtableStubs::stub_containing(pc) != NULL) {
-                    if (((uintptr_t)addr) < os::vm_page_size() ) {
-                      // an access to the first page of VM--assume it is a null pointer
-                      return Handle_Exception(exceptionInfo,
-                        SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL));
-                    }
-                  }
+                if (((uintptr_t)addr) < os::vm_page_size() ) {
+                  // an access to the first page of VM--assume it is a null pointer
+                  address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
+                  if (stub != NULL) return Handle_Exception(exceptionInfo, stub);
                 }
               }
             } // in_java
@@ -2241,9 +2236,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             // Windows 98 reports faulting addresses incorrectly
             if (!MacroAssembler::needs_explicit_null_check((intptr_t)addr) ||
                 !os::win32::is_nt()) {
-
-              return Handle_Exception(exceptionInfo,
-                  SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL));
+              address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
+              if (stub != NULL) return Handle_Exception(exceptionInfo, stub);
             }
             report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
                          exceptionInfo->ContextRecord);
@@ -3352,6 +3346,10 @@ jint os::init_2(void) {
 
   // initialize thread priority policy
   prio_init();
+
+  if (UseNUMA && !ForceNUMA) {
+    UseNUMA = false; // Currently unsupported.
+  }
 
   return JNI_OK;
 }
