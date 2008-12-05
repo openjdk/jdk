@@ -263,7 +263,7 @@ bool Compile::is_node_getting_a_safepoint( Node* n) {
 # endif // ENABLE_ZAP_DEAD_LOCALS
 
 //------------------------------compute_loop_first_inst_sizes------------------
-// Compute the size of first NumberOfLoopInstrToAlign instructions at head
+// Compute the size of first NumberOfLoopInstrToAlign instructions at the top
 // of a loop. When aligning a loop we need to provide enough instructions
 // in cpu's fetch buffer to feed decoders. The loop alignment could be
 // avoided if we have enough instructions in fetch buffer at the head of a loop.
@@ -284,34 +284,23 @@ void Compile::compute_loop_first_inst_sizes() {
     for( uint i=1; i <= last_block; i++ ) {
       Block *b = _cfg->_blocks[i];
       // Check the first loop's block which requires an alignment.
-      if( b->head()->is_Loop() &&
-          b->code_alignment() > (uint)relocInfo::addr_unit() ) {
+      if( b->loop_alignment() > (uint)relocInfo::addr_unit() ) {
         uint sum_size = 0;
         uint inst_cnt = NumberOfLoopInstrToAlign;
-        inst_cnt = b->compute_first_inst_size(sum_size, inst_cnt,
-                                              _regalloc);
-        // Check the next fallthrough block if first loop's block does not have
-        // enough instructions.
-        if( inst_cnt > 0 && i < last_block ) {
-          // First, check if the first loop's block contains whole loop.
-          // LoopNode::LoopBackControl == 2.
-          Block *bx = _cfg->_bbs[b->pred(2)->_idx];
-          // Skip connector blocks (with limit in case of irreducible loops).
-          int search_limit = 16;
-          while( bx->is_connector() && search_limit-- > 0) {
-            bx = _cfg->_bbs[bx->pred(1)->_idx];
-          }
-          if( bx != b ) { // loop body is in several blocks.
-            Block *nb = NULL;
-            while( inst_cnt > 0 && i < last_block && nb != bx &&
-                  !_cfg->_blocks[i+1]->head()->is_Loop() ) {
-              i++;
-              nb = _cfg->_blocks[i];
-              inst_cnt  = nb->compute_first_inst_size(sum_size, inst_cnt,
-                                                      _regalloc);
-            } // while( inst_cnt > 0 && i < last_block  )
-          } // if( bx != b )
-        } // if( inst_cnt > 0 && i < last_block )
+        inst_cnt = b->compute_first_inst_size(sum_size, inst_cnt, _regalloc);
+
+        // Check subsequent fallthrough blocks if the loop's first
+        // block(s) does not have enough instructions.
+        Block *nb = b;
+        while( inst_cnt > 0 &&
+               i < last_block &&
+               !_cfg->_blocks[i+1]->has_loop_alignment() &&
+               !nb->has_successor(b) ) {
+          i++;
+          nb = _cfg->_blocks[i];
+          inst_cnt  = nb->compute_first_inst_size(sum_size, inst_cnt, _regalloc);
+        } // while( inst_cnt > 0 && i < last_block  )
+
         b->set_first_inst_size(sum_size);
       } // f( b->head()->is_Loop() )
     } // for( i <= last_block )
@@ -332,6 +321,7 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
   uint *jmp_end    = NEW_RESOURCE_ARRAY(uint,_cfg->_num_blocks);
   uint *blk_starts = NEW_RESOURCE_ARRAY(uint,_cfg->_num_blocks+1);
   DEBUG_ONLY( uint *jmp_target = NEW_RESOURCE_ARRAY(uint,_cfg->_num_blocks); )
+  DEBUG_ONLY( uint *jmp_rule = NEW_RESOURCE_ARRAY(uint,_cfg->_num_blocks); )
   blk_starts[0]    = 0;
 
   // Initialize the sizes to 0
@@ -443,9 +433,9 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
         uintptr_t target = blk_starts[bnum];
         if( mach->is_pc_relative() ) {
           int offset = target-(blk_starts[i] + jmp_end[i]);
-          if (_matcher->is_short_branch_offset(offset)) {
+          if (_matcher->is_short_branch_offset(mach->rule(), offset)) {
             // We've got a winner.  Replace this branch.
-            MachNode *replacement = mach->short_branch_version(this);
+            MachNode* replacement = mach->short_branch_version(this);
             b->_nodes.map(j, replacement);
             mach->subsume_by(replacement);
 
@@ -453,6 +443,7 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
             // next pass.
             jmp_end[i] -= (mach->size(_regalloc) - replacement->size(_regalloc));
             DEBUG_ONLY( jmp_target[i] = bnum; );
+            DEBUG_ONLY( jmp_rule[i] = mach->rule(); );
           }
         } else {
 #ifndef PRODUCT
@@ -510,7 +501,7 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
       // Get the size of the block
       uint blk_size = adr - blk_starts[i];
 
-      // When the next block starts a loop, we may insert pad NOP
+      // When the next block is the top of a loop, we may insert pad NOP
       // instructions.
       Block *nb = _cfg->_blocks[i+1];
       int current_offset = blk_starts[i] + blk_size;
@@ -524,10 +515,10 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
   for( i=0; i<_cfg->_num_blocks; i++ ) { // For all blocks
     if( jmp_target[i] != 0 ) {
       int offset = blk_starts[jmp_target[i]]-(blk_starts[i] + jmp_end[i]);
-      if (!_matcher->is_short_branch_offset(offset)) {
+      if (!_matcher->is_short_branch_offset(jmp_rule[i], offset)) {
         tty->print_cr("target (%d) - jmp_end(%d) = offset (%d), jmp_block B%d, target_block B%d", blk_starts[jmp_target[i]], blk_starts[i] + jmp_end[i], offset, i, jmp_target[i]);
       }
-      assert(_matcher->is_short_branch_offset(offset), "Displacement too large for short jmp");
+      assert(_matcher->is_short_branch_offset(jmp_rule[i], offset), "Displacement too large for short jmp");
     }
   }
 #endif
@@ -1069,7 +1060,7 @@ void Compile::Fill_buffer() {
 
   // If this machine supports different size branch offsets, then pre-compute
   // the length of the blocks
-  if( _matcher->is_short_branch_offset(0) ) {
+  if( _matcher->is_short_branch_offset(-1, 0) ) {
     Shorten_branches(blk_labels, code_req, locs_req, stub_req, const_req);
     labels_not_set = false;
   }
@@ -1380,8 +1371,8 @@ void Compile::Fill_buffer() {
 
     } // End for all instructions in block
 
-    // If the next block _starts_ a loop, pad this block out to align
-    // the loop start a little. Helps prevent pipe stalls at loop starts
+    // If the next block is the top of a loop, pad this block out to align
+    // the loop top a little. Helps prevent pipe stalls at loop back branches.
     int nop_size = (new (this) MachNopNode())->size(_regalloc);
     if( i<_cfg->_num_blocks-1 ) {
       Block *nb = _cfg->_blocks[i+1];

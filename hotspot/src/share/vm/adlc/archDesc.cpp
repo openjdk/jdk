@@ -212,9 +212,9 @@ ArchDesc::ArchDesc()
       // Initialize I/O Files
       _ADL_file._name = NULL; _ADL_file._fp = NULL;
       // Machine dependent output files
-      _DFA_file._name    = "dfa_i486.cpp";  _DFA_file._fp = NULL;
-      _HPP_file._name    = "ad_i486.hpp";   _HPP_file._fp = NULL;
-      _CPP_file._name    = "ad_i486.cpp";   _CPP_file._fp = NULL;
+      _DFA_file._name    = NULL;  _DFA_file._fp = NULL;
+      _HPP_file._name    = NULL;  _HPP_file._fp = NULL;
+      _CPP_file._name    = NULL;  _CPP_file._fp = NULL;
       _bug_file._name    = "bugs.out";      _bug_file._fp = NULL;
 
       // Initialize Register & Pipeline Form Pointers

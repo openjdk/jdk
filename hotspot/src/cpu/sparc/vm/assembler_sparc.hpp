@@ -2220,9 +2220,13 @@ class MacroAssembler: public Assembler {
 
   // These set the icc condition code to equal if the lock succeeded
   // and notEqual if it failed and requires a slow case
-  void compiler_lock_object(Register Roop, Register Rmark, Register Rbox, Register Rscratch,
-                              BiasedLockingCounters* counters = NULL);
-  void compiler_unlock_object(Register Roop, Register Rmark, Register Rbox, Register Rscratch);
+  void compiler_lock_object(Register Roop, Register Rmark, Register Rbox,
+                            Register Rscratch,
+                            BiasedLockingCounters* counters = NULL,
+                            bool try_bias = UseBiasedLocking);
+  void compiler_unlock_object(Register Roop, Register Rmark, Register Rbox,
+                              Register Rscratch,
+                              bool try_bias = UseBiasedLocking);
 
   // Biased locking support
   // Upon entry, lock_reg must point to the lock record on the stack,

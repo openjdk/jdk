@@ -25,7 +25,6 @@
 package com.sun.hotspot.igv.filter;
 
 import com.sun.hotspot.igv.graph.Diagram;
-import com.sun.hotspot.igv.data.Property;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,7 +55,7 @@ public class CustomFilter extends AbstractFilter {
     public CustomFilter(String name, String code) {
         this.name = name;
         this.code = code;
-        getProperties().add(new Property("name", name));
+        getProperties().setProperty("name", name);
     }
 
     public String getName() {

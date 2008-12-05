@@ -247,7 +247,7 @@ public class DefaultMBeanServerInterceptor
                MBeanRegistrationException, MBeanException,
                NotCompliantMBeanException, InstanceNotFoundException {
 
-        Class theClass;
+        Class<?> theClass;
 
         if (className == null) {
             final RuntimeException wrapped =
@@ -327,7 +327,7 @@ public class DefaultMBeanServerInterceptor
 
         // ------------------------------
         // ------------------------------
-        Class theClass = object.getClass();
+        Class<?> theClass = object.getClass();
 
         Introspector.checkCompliance(theClass);
 
@@ -808,9 +808,8 @@ public class DefaultMBeanServerInterceptor
             // on each specific attribute
             //
             allowedAttributes = new AttributeList(attributes.size());
-            for (Iterator i = attributes.iterator(); i.hasNext();) {
+            for (Attribute attribute : attributes.asList()) {
                 try {
-                    Attribute attribute = (Attribute) i.next();
                     checkMBeanPermission(mbeanServerName, classname, attribute.getName(),
                                          name, "setAttribute");
                     allowedAttributes.add(attribute);
@@ -1857,7 +1856,7 @@ public class DefaultMBeanServerInterceptor
         }
     }
 
-    private static void checkMBeanTrustPermission(final Class theClass)
+    private static void checkMBeanTrustPermission(final Class<?> theClass)
         throws SecurityException {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {

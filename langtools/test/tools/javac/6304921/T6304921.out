@@ -1,4 +1,4 @@
-T6304921.java:671/671/680: warning: [raw-type] found raw type: java.util.ArrayList
+T6304921.java:671/671/680: warning: [rawtypes] found raw type: java.util.ArrayList
 missing type parameters for generic class java.util.ArrayList<E>
         List<Integer> list = new ArrayList();
                                  ^

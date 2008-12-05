@@ -163,7 +163,7 @@ public final class SimpleType<T> extends OpenType<T> {
     public static final SimpleType<ObjectName> OBJECTNAME =
         new SimpleType<ObjectName>(ObjectName.class);
 
-    private static final SimpleType[] typeArray = {
+    private static final SimpleType<?>[] typeArray = {
         VOID, BOOLEAN, CHARACTER, BYTE, SHORT, INTEGER, LONG, FLOAT,
         DOUBLE, STRING, BIGDECIMAL, BIGINTEGER, DATE, OBJECTNAME,
     };
@@ -232,10 +232,10 @@ public final class SimpleType<T> extends OpenType<T> {
            return (this == obj);
         */
 
-        if (!(obj instanceof SimpleType))
+        if (!(obj instanceof SimpleType<?>))
             return false;
 
-        SimpleType other = (SimpleType) obj;
+        SimpleType<?> other = (SimpleType<?>) obj;
 
         // Test if other's className field is the same as for this instance
         //
@@ -290,11 +290,11 @@ public final class SimpleType<T> extends OpenType<T> {
         return myToString;
     }
 
-    private static final Map<SimpleType,SimpleType> canonicalTypes =
-        new HashMap<SimpleType,SimpleType>();
+    private static final Map<SimpleType<?>,SimpleType<?>> canonicalTypes =
+        new HashMap<SimpleType<?>,SimpleType<?>>();
     static {
         for (int i = 0; i < typeArray.length; i++) {
-            final SimpleType type = typeArray[i];
+            final SimpleType<?> type = typeArray[i];
             canonicalTypes.put(type, type);
         }
     }
@@ -310,7 +310,7 @@ public final class SimpleType<T> extends OpenType<T> {
      * resolved.
      */
     public Object readResolve() throws ObjectStreamException {
-        final SimpleType canonical = canonicalTypes.get(this);
+        final SimpleType<?> canonical = canonicalTypes.get(this);
         if (canonical == null) {
             // Should not happen
             throw new InvalidObjectException("Invalid SimpleType: " + this);

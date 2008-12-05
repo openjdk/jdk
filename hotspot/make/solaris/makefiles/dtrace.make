@@ -87,17 +87,16 @@ ifneq ("${ISA}","${BUILDARCH}")
 
 XLIBJVM_DB = 64/$(LIBJVM_DB)
 XLIBJVM_DTRACE = 64/$(LIBJVM_DTRACE)
-XARCH = $(subst sparcv9,v9,$(shell echo $(ISA)))
 
 $(XLIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS).h $(LIBJVM_DB_MAPFILE)
 	@echo Making $@
 	$(QUIETLY) mkdir -p 64/ ; \
-	$(CC) $(SYMFLAG) $(ARCHFLAG/$(XARCH)) -D$(TYPE) -I. -I$(GENERATED) \
+	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -lc
 $(XLIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
 	@echo Making $@
 	$(QUIETLY) mkdir -p 64/ ; \
-	$(CC) $(SYMFLAG) $(ARCHFLAG/$(XARCH)) -D$(TYPE) -I. \
+	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
 endif # ifneq ("${ISA}","${BUILDARCH}")
 
@@ -116,27 +115,25 @@ $(GENOFFS): $(DTRACE_SRCDIR)/$(GENOFFS)Main.c lib$(GENOFFS).so
 	$(QUIETLY) $(LINK.CC) -z nodefs -o $@ $(DTRACE_SRCDIR)/$(GENOFFS)Main.c \
 		./lib$(GENOFFS).so
 
-# $@.tmp is created first. It's to avoid empty $(JVMOFFS).h produced in error case.
+CONDITIONALLY_UPDATE_JVMOFFS_TARGET = \
+	cmp -s $@ $@.tmp; \
+	case $$? in \
+	0) rm -f $@.tmp;; \
+	*) rm -f $@ && mv $@.tmp $@ && echo Updated $@;; \
+	esac
+
+# $@.tmp is created first to avoid an empty $(JVMOFFS).h if an error occurs.
 $(JVMOFFS).h: $(GENOFFS)
-	$(QUIETLY) LD_LIBRARY_PATH=. ./$(GENOFFS) -header > $@.tmp ; \
-	if [ `diff $@.tmp $@ > /dev/null 2>&1; echo $$?` -ne 0 ] ; \
-	then rm -f $@; mv $@.tmp $@; echo Updated $@ ; \
-	else rm -f $@.tmp; \
-	fi
+	$(QUIETLY) LD_LIBRARY_PATH=. ./$(GENOFFS) -header > $@.tmp
+	$(QUIETLY) $(CONDITIONALLY_UPDATE_JVMOFFS_TARGET)
 
 $(JVMOFFS)Index.h: $(GENOFFS)
-	$(QUIETLY) LD_LIBRARY_PATH=. ./$(GENOFFS) -index > $@.tmp ; \
-	if [ `diff $@.tmp $@ > /dev/null 2>&1; echo $$?` -ne 0 ] ; \
-	then rm -f $@; mv $@.tmp $@; echo Updated $@ ; \
-	else rm -f $@.tmp; \
-	fi
+	$(QUIETLY) LD_LIBRARY_PATH=. ./$(GENOFFS) -index > $@.tmp
+	$(QUIETLY)  $(CONDITIONALLY_UPDATE_JVMOFFS_TARGET)
 
 $(JVMOFFS).cpp: $(GENOFFS) $(JVMOFFS).h $(JVMOFFS)Index.h
-	$(QUIETLY) LD_LIBRARY_PATH=. ./$(GENOFFS) -table > $@.tmp ; \
-	if [ `diff $@.tmp $@ > /dev/null 2>&1; echo $$?` -ne 0 ] ; \
-	then rm -f $@; mv $@.tmp $@; echo Updated $@ ; \
-	else rm -f $@.tmp; \
-	fi
+	$(QUIETLY) LD_LIBRARY_PATH=. ./$(GENOFFS) -table > $@.tmp
+	$(QUIETLY) $(CONDITIONALLY_UPDATE_JVMOFFS_TARGET)
 
 $(JVMOFFS.o): $(JVMOFFS).h $(JVMOFFS).cpp 
 	$(QUIETLY) $(CCC) -c -I. -o $@ $(ARCHFLAG) -D$(TYPE) $(JVMOFFS).cpp

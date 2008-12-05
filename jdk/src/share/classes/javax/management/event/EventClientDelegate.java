@@ -104,8 +104,8 @@ public class EventClientDelegate implements EventClientDelegateMBean {
     public static EventClientDelegate getEventClientDelegate(MBeanServer server) {
         EventClientDelegate delegate = null;
         synchronized(delegateMap) {
-            final WeakReference wrf = delegateMap.get(server);
-            delegate = (wrf == null) ? null : (EventClientDelegate)wrf.get();
+            final WeakReference<EventClientDelegate> wrf = delegateMap.get(server);
+            delegate = (wrf == null) ? null : wrf.get();
 
             if (delegate == null) {
                 delegate = new EventClientDelegate(server);
@@ -282,7 +282,7 @@ public class EventClientDelegate implements EventClientDelegateMBean {
             Constructor<?> foundCons = null;
             if (sig == null)
                 sig = new String[0];
-            for (Constructor cons : c.getConstructors()) {
+            for (Constructor<?> cons : c.getConstructors()) {
                 Class<?>[] types = cons.getParameterTypes();
                 String[] consSig = new String[types.length];
                 for (int i = 0; i < types.length; i++)

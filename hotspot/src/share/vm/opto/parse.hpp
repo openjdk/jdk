@@ -175,7 +175,7 @@ class Parse : public GraphKit {
     bool is_SEL_backedge(Block* pred) const{ return is_SEL_head() && pred->rpo() >= rpo(); }
     bool is_invariant_local(uint i) const  {
       const JVMState* jvms = start_map()->jvms();
-      if (!jvms->is_loc(i)) return false;
+      if (!jvms->is_loc(i) || flow()->outer()->has_irreducible_entry()) return false;
       return flow()->is_invariant_local(i - jvms->locoff());
     }
     bool can_elide_SEL_phi(uint i) const  { assert(is_SEL_head(),""); return is_invariant_local(i); }

@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import java.awt.BorderLayout;
 import java.io.Serializable;
 import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 import org.openide.ErrorManager;
 import org.openide.util.Lookup;
 import org.openide.util.LookupEvent;
@@ -143,12 +144,16 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
 
     public void resultChanged(LookupEvent lookupEvent) {
 
-        InputGraphProvider p = Lookup.getDefault().lookup(InputGraphProvider.class);
+        final InputGraphProvider p = Lookup.getDefault().lookup(InputGraphProvider.class);
         if (p != null) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
             InputGraph g = p.getGraph();
             if (g != null) {
                 scene.setGraph(g);
             }
+        }
+            });
         }
     }
 
