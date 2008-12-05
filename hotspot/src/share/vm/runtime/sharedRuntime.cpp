@@ -556,7 +556,10 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
           // the caller was at a call site, it's safe to destroy all
           // caller-saved registers, as these entry points do.
           VtableStub* vt_stub = VtableStubs::stub_containing(pc);
-          guarantee(vt_stub != NULL, "unable to find SEGVing vtable stub");
+
+          // If vt_stub is NULL, then return NULL to signal handler to report the SEGV error.
+          if (vt_stub == NULL) return NULL;
+
           if (vt_stub->is_abstract_method_error(pc)) {
             assert(!vt_stub->is_vtable_stub(), "should never see AbstractMethodErrors from vtable-type VtableStubs");
             return StubRoutines::throw_AbstractMethodError_entry();
@@ -565,7 +568,9 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
           }
         } else {
           CodeBlob* cb = CodeCache::find_blob(pc);
-          guarantee(cb != NULL, "exception happened outside interpreter, nmethods and vtable stubs (1)");
+
+          // If code blob is NULL, then return NULL to signal handler to report the SEGV error.
+          if (cb == NULL) return NULL;
 
           // Exception happened in CodeCache. Must be either:
           // 1. Inline-cache check in C2I handler blob,
@@ -574,7 +579,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
 
           if (!cb->is_nmethod()) {
             guarantee(cb->is_adapter_blob(),
-                      "exception happened outside interpreter, nmethods and vtable stubs (2)");
+                      "exception happened outside interpreter, nmethods and vtable stubs (1)");
             // There is no handler here, so we will simply unwind.
             return StubRoutines::throw_NullPointerException_at_call_entry();
           }
