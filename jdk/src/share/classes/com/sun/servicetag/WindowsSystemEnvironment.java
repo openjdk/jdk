@@ -107,11 +107,17 @@ class WindowsSystemEnvironment extends SystemEnvironment {
             Process p = pb.start();
             // need this for executing windows commands (at least
             // needed for executing wmic command)
-            BufferedWriter bw = new BufferedWriter(
-                new OutputStreamWriter(p.getOutputStream()));
-            bw.write(13);
-            bw.flush();
-            bw.close();
+            BufferedWriter bw = null;
+            try {
+                bw = new BufferedWriter(
+                         new OutputStreamWriter(p.getOutputStream()));
+                bw.write(13);
+                bw.flush();
+            } finally {
+                if (bw != null) {
+                    bw.close();
+                }
+            }
 
             p.waitFor();
             if (p.exitValue() == 0) {
