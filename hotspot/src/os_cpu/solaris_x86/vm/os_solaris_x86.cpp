@@ -203,10 +203,10 @@ frame os::get_sender_for_C_frame(frame* fr) {
   return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
 }
 
-extern "C" intptr_t *_get_previous_fp();  // in .il file.
+extern "C" intptr_t *_get_current_fp();  // in .il file
 
 frame os::current_frame() {
-  intptr_t* fp = _get_previous_fp();
+  intptr_t* fp = _get_current_fp();  // it's inlined so want current fp
   frame myframe((intptr_t*)os::current_stack_pointer(),
                 (intptr_t*)fp,
                 CAST_FROM_FN_PTR(address, os::current_frame));
