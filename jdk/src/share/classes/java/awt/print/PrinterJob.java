@@ -117,15 +117,18 @@ public abstract class PrinterJob {
      * FileOutputStream outstream;
      * StreamPrintService psPrinter;
      * String psMimeType = "application/postscript";
+     * PrinterJob pj = PrinterJob.getPrinterJob();
      *
      * StreamPrintServiceFactory[] factories =
      *     PrinterJob.lookupStreamPrintServices(psMimeType);
      * if (factories.length > 0) {
      *     try {
      *         outstream = new File("out.ps");
-     *         psPrinter =  factories[0].getPrintService(fos);
+     *         psPrinter =  factories[0].getPrintService(outstream);
      *         // psPrinter can now be set as the service on a PrinterJob
-     *     } catch (FileNotFoundException e) {
+     *         pj.setPrintService(psPrinter)
+     *     } catch (Exception e) {
+     *         e.printStackTrace();
      *     }
      * }
      * </pre>
