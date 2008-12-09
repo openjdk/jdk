@@ -602,6 +602,26 @@ public class RMIConnectorServer extends JMXConnectorServer {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     * <P>The {@code RMIConnectorServer} class does support closing a specified
+     * client connection.
+     * @throws IllegalStateException if the server is not started or is closed.
+     * @throws IllegalArgumentException if {@code connectionId} is null or is
+     * not the id of any open connection.
+     * @since 1.7
+     */
+    @Override
+    public void closeConnection(String connectionId)
+            throws IOException {
+        if (isActive()) {
+            rmiServerImpl.closeConnection(connectionId);
+        } else {
+            throw new IllegalStateException(
+                    "The server is not started or is closed.");
+        }
+    }
+
     /* We repeat the definitions of connection{Opened,Closed,Failed}
        here so that they are accessible to other classes in this package
        even though they have protected access.  */
