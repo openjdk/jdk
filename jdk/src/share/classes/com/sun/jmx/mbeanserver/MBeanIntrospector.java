@@ -518,7 +518,7 @@ public abstract class MBeanIntrospector<M> {
      * see the version of the @ManagedAttribute (or ...Operation) annotation
      * from that method, which might have a different description or whatever.
      */
-    private static void getAnnotatedMethods(Class<?> c, List<Method> methods)
+    public static void getAnnotatedMethods(Class<?> c, List<Method> methods)
     throws Exception {
         Class<?> sup = c.getSuperclass();
         if (sup != null)
