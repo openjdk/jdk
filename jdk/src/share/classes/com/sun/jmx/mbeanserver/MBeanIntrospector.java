@@ -403,7 +403,7 @@ public abstract class MBeanIntrospector<M> {
                     new ImmutableDescriptor(interfaceClassName);
             final Descriptor mbeanDescriptor = getBasicMBeanDescriptor();
             final Descriptor annotatedDescriptor =
-                    Introspector.descriptorForElement(mbeanInterface);
+                    Introspector.descriptorForElement(mbeanInterface, false);
             final Descriptor descriptor =
                 DescriptorCache.getInstance().union(
                     classNameDescriptor,
