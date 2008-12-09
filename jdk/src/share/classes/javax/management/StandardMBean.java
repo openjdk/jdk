@@ -135,6 +135,7 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
         private static final long serialVersionUID = 5107355471177517164L;
 
         private boolean wrappedVisible;
+        private boolean forwardRegistration;
 
         /**
          * <p>Construct an {@code Options} object where all options have
@@ -177,8 +178,41 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
             this.wrappedVisible = visible;
         }
 
-        // Canonical objects for each of (MXBean,!MXBean) x (WVisible,!WVisible)
+        /**
+         * <p>Defines whether the {@link MBeanRegistration MBeanRegistration}
+         * callbacks are forwarded to the wrapped object.</p>
+         *
+         * <p>If this option is true, then
+         * {@link #preRegister(MBeanServer, ObjectName) preRegister},
+         * {@link #postRegister(Boolean) postRegister},
+         * {@link #preDeregister preDeregister} and
+         * {@link #postDeregister postDeregister} methods are forwarded
+         * to the wrapped object, in addition to the behaviour specified
+         * for the StandardMBean instance itself.
+         * The default value is false for compatibility reasons, but true
+         * is a better value for most new code.</p>
+         *
+         * @return true if the <code>MBeanRegistration</code> callbacks
+         * are forwarded to the wrapped object.
+         */
+        public boolean isMBeanRegistrationForwarded() {
+            return this.forwardRegistration;
+        }
+
+        /**
+         * <p>Set the
+         * {@link #isMBeanRegistrationForwarded MBeanRegistrationForwarded}
+         * option to the given value.</p>
+         * @param forward the new value.
+         */
+        public void setMBeanRegistrationForwarded(boolean forward) {
+            this.forwardRegistration = forward;
+        }
+
+        // Canonical objects for each of
+        // (MXBean,!MXBean) x (WVisible,!WVisible) x (Forward,!Forward)
         private static final Options[] CANONICALS = {
+            new Options(), new Options(), new Options(), new Options(),
             new Options(), new Options(), new Options(), new Options(),
         };
         static {
@@ -186,6 +220,14 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
             CANONICALS[2].setWrappedObjectVisible(true);
             CANONICALS[3].setMXBeanMappingFactory(MXBeanMappingFactory.DEFAULT);
             CANONICALS[3].setWrappedObjectVisible(true);
+            CANONICALS[4].setMBeanRegistrationForwarded(true);
+            CANONICALS[5].setMXBeanMappingFactory(MXBeanMappingFactory.DEFAULT);
+            CANONICALS[5].setMBeanRegistrationForwarded(true);
+            CANONICALS[6].setWrappedObjectVisible(true);
+            CANONICALS[6].setMBeanRegistrationForwarded(true);
+            CANONICALS[7].setMXBeanMappingFactory(MXBeanMappingFactory.DEFAULT);
+            CANONICALS[7].setWrappedObjectVisible(true);
+            CANONICALS[7].setMBeanRegistrationForwarded(true);
         }
         @Override
         MBeanOptions[] canonicals() {
@@ -195,7 +237,8 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
         @Override
         boolean same(MBeanOptions opts) {
             return (super.same(opts) && opts instanceof Options &&
-                    ((Options) opts).wrappedVisible == wrappedVisible);
+                    ((Options) opts).wrappedVisible == wrappedVisible &&
+                    ((Options) opts).forwardRegistration ==forwardRegistration);
         }
     }
 
@@ -477,7 +520,9 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
      *
      * @exception IllegalArgumentException if the given
      * <var>implementation</var> is null.
-     *
+     * @exception IllegalStateException if the
+     * {@link Options#isMBeanRegistrationForwarded MBeanRegistrationForwarded}
+     * option is true.
      * @exception NotCompliantMBeanException if the given
      * <var>implementation</var> does not implement the
      * Standard MBean (or MXBean) interface that was
@@ -490,6 +535,12 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
 
         if (implementation == null)
             throw new IllegalArgumentException("implementation is null");
+
+        if(options instanceof Options &&
+                ((Options) options).isMBeanRegistrationForwarded())
+           throw new IllegalStateException("Implementation can't be changed " +
+                   "because MBeanRegistrationForwarded option is true");
+
         setImplementation2(implementation);
     }
 
@@ -1273,10 +1324,14 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
      * registered in the MBean server.</p>
      *
      * <p>The default implementation of this method returns the {@code name}
-     * parameter.  It does nothing else for
-     * Standard MBeans.  For MXBeans, it records the {@code MBeanServer}
-     * and {@code ObjectName} parameters so they can be used to translate
-     * inter-MXBean references.</p>
+     * parameter. If the
+     * {@link Options#isMBeanRegistrationForwarded MBeanRegistrationForwarded}
+     * option is set to true, then this method is forwarded to the object
+     * returned by the {@link #getImplementation getImplementation()} method.
+     * The name returned by this call is then returned by this method.
+     * It does nothing else for Standard MBeans.  For MXBeans, it records
+     * the {@code MBeanServer} and {@code ObjectName} parameters so they can
+     * be used to translate inter-MXBean references.</p>
      *
      * <p>It is good practice for a subclass that overrides this method
      * to call the overridden method via {@code super.preRegister(...)}.
@@ -1311,6 +1366,11 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
      */
     public ObjectName preRegister(MBeanServer server, ObjectName name)
             throws Exception {
+        // Forward preRegister before to call register and
+        // inject parameters.
+        if(shouldForwardMBeanRegistration())
+            name = ((MBeanRegistration)getImplementation()).
+                    preRegister(server, name);
         mbean.register(server, name);
         MBeanInjector.inject(mbean.getWrappedObject(), server, name);
         return name;
@@ -1320,7 +1380,11 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
      * <p>Allows the MBean to perform any operations needed after having been
      * registered in the MBean server or after the registration has failed.</p>
      *
-     * <p>The default implementation of this method does nothing for
+     * <p>If the
+     * {@link Options#isMBeanRegistrationForwarded MBeanRegistrationForwarded}
+     * option is set to true, then this method is forwarded to the object
+     * returned by the {@link #getImplementation getImplementation()} method.
+     * The default implementation of this method does nothing else for
      * Standard MBeans.  For MXBeans, it undoes any work done by
      * {@link #preRegister preRegister} if registration fails.</p>
      *
@@ -1338,16 +1402,24 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
     public void postRegister(Boolean registrationDone) {
         if (!registrationDone)
             mbean.unregister();
+        if(shouldForwardMBeanRegistration())
+            ((MBeanRegistration)getImplementation()).
+                    postRegister(registrationDone);
     }
 
     /**
      * <p>Allows the MBean to perform any operations it needs before
      * being unregistered by the MBean server.</p>
      *
-     * <p>The default implementation of this method does nothing.</p>
+     * <p>If the
+     * {@link Options#isMBeanRegistrationForwarded MBeanRegistrationForwarded}
+     * option is set to true, then this method is forwarded to the object
+     * returned by the {@link #getImplementation getImplementation()} method.
+     * Other than that, the default implementation of this method does nothing.
+     * </p>
      *
      * <p>It is good practice for a subclass that overrides this method
-     * to call the overridden method via {@code super.preDeegister(...)}.</p>
+     * to call the overridden method via {@code super.preDeregister(...)}.</p>
      *
      * @throws Exception no checked exceptions are throw by this method
      * but {@code Exception} is declared so that subclasses can override
@@ -1356,13 +1428,19 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
      * @since 1.6
      */
     public void preDeregister() throws Exception {
+        if(shouldForwardMBeanRegistration())
+            ((MBeanRegistration)getImplementation()).preDeregister();
     }
 
     /**
      * <p>Allows the MBean to perform any operations needed after having been
      * unregistered in the MBean server.</p>
      *
-     * <p>The default implementation of this method does nothing for
+     * <p>If the
+     * {@link Options#isMBeanRegistrationForwarded MBeanRegistrationForwarded}
+     * option is set to true, then this method is forwarded to the object
+     * returned by the {@link #getImplementation getImplementation()} method.
+     * The default implementation of this method does nothing else for
      * Standard MBeans.  For MXBeans, it removes any information that
      * was recorded by the {@link #preRegister preRegister} method.</p>
      *
@@ -1375,8 +1453,15 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
      */
     public void postDeregister() {
         mbean.unregister();
+        if(shouldForwardMBeanRegistration())
+            ((MBeanRegistration)getImplementation()).postDeregister();
     }
 
+    private boolean shouldForwardMBeanRegistration() {
+        return (getImplementation() instanceof MBeanRegistration) &&
+           (options instanceof Options &&
+                ((Options) options).isMBeanRegistrationForwarded());
+    }
     //
     // MBeanInfo immutability
     //
