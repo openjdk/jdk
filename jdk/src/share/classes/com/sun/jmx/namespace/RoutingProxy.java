@@ -199,8 +199,7 @@ public abstract class RoutingProxy<T extends MBeanServerConnection>
     public T source() { return source; }
 
     @Override
-    public ObjectName toSource(ObjectName targetName)
-        throws MalformedObjectNameException {
+    public ObjectName toSource(ObjectName targetName) {
         if (targetName == null) return null;
         if (targetName.getDomain().equals("") && targetNs.equals("")) {
             try {
@@ -229,8 +228,7 @@ public abstract class RoutingProxy<T extends MBeanServerConnection>
     }
 
     @Override
-    public ObjectName toTarget(ObjectName sourceName)
-        throws MalformedObjectNameException {
+    public ObjectName toTarget(ObjectName sourceName) {
         if (sourceName == null) return null;
         return router.toTargetContext(sourceName,false);
     }
