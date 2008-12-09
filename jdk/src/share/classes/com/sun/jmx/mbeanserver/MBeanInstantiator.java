@@ -645,7 +645,7 @@ public class MBeanInstantiator {
             }
         } catch (ClassNotFoundException e) {
             throw new ReflectionException(e,
-            "The MBean class could not be loaded by the context classloader");
+            "The MBean class could not be loaded");
         }
         return theClass;
     }
