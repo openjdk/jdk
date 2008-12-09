@@ -85,6 +85,19 @@ static const ADAPTER_INFO badHardware[] = {
     { 0x1002, 0x71C5, D_VERSION(6,14,10,6706), OS_WINXP },
     { 0x1002, 0x71C5, D_VERSION(7,14,10,0567), OS_VISTA },
 
+    // ATI Mobility Radeon 9700
+    // Reason: workaround for 6773336
+    { 0x1002, 0x4E50, D_VERSION(6,14,10,6561), OS_WINXP },
+
+    // Nvidia FX 5200
+    // Reason: workaround for 6717988
+    { 0x10DE, 0x0322, D_VERSION(6,14,11,6921), OS_WINXP },
+
+    // Nvidia FX Go5600, Go5700
+    // Reason: workaround for 6714579
+    { 0x10DE, 0x031A, D_VERSION(6,14,11,6921), OS_WINXP },
+    { 0x10DE, 0x0347, D_VERSION(6,14,11,6921), OS_WINXP },
+
     // Nvidia Quadro NVS 110M
     // Reason: workaround for 6629891
     { 0x10DE, 0x01D7, D_VERSION(6,14,11,5665), OS_WINXP },
@@ -92,6 +105,32 @@ static const ADAPTER_INFO badHardware[] = {
     // Nvidia Quadro PCI-E series
     // Reason: workaround for 6653860
     { 0x10DE, 0x00FD, D_VERSION(6,14,10,6573), OS_WINXP },
+
+    // Nvidia Quadro FX family
+    // Reason: workaround for 6772137
+    { 0x10DE, 0x00F8, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x009D, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x029C, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x029D, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x029E, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x029F, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x01DE, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x039E, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x019D, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x019E, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x040A, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x040E, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x040F, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x061A, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x06F9, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x05FD, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x05FE, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x004E, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x00CD, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x00CE, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x014C, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x014D, D_VERSION(6,14,10,9381), OS_WINXP },
+    { 0x10DE, 0x014E, D_VERSION(6,14,10,9381), OS_WINXP },
 
     // Nvidia GeForce 6200 TurboCache(TM)
     // Reason: workaround for 6588384
