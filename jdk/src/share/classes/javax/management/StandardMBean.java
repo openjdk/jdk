@@ -28,14 +28,21 @@ package javax.management;
 import com.sun.jmx.mbeanserver.DescriptorCache;
 import com.sun.jmx.mbeanserver.Introspector;
 import com.sun.jmx.mbeanserver.MBeanInjector;
+import com.sun.jmx.mbeanserver.MBeanInstantiator;
+import com.sun.jmx.mbeanserver.MBeanIntrospector;
 import com.sun.jmx.mbeanserver.MBeanSupport;
 import com.sun.jmx.mbeanserver.MXBeanSupport;
 import com.sun.jmx.mbeanserver.StandardMBeanSupport;
 import com.sun.jmx.mbeanserver.Util;
+import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
 import javax.management.openmbean.MXBeanMappingFactory;
@@ -1314,6 +1321,145 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
             natts[i] = customize(a, getDescription(a));
         }
         return natts;
+    }
+
+    // ------------------------------------------------------------------
+    // Resolve from a type name to a Class.
+    // ------------------------------------------------------------------
+    private static Class<?> resolveClass(MBeanFeatureInfo info, String type,
+            Class<?> mbeanItf)
+            throws ClassNotFoundException {
+        String t = (String) info.getDescriptor().
+                getFieldValue(JMX.ORIGINAL_TYPE_FIELD);
+        if (t == null) {
+            t = type;
+        }
+        Class<?> clazz = MBeanInstantiator.primitiveType(t);
+        if(clazz == null)
+            clazz = Class.forName(t, false, mbeanItf.getClassLoader());
+        return clazz;
+    }
+
+    // ------------------------------------------------------------------
+    // Return the subset of valid Management methods
+    // ------------------------------------------------------------------
+    private static Method getManagementMethod(final Class<?> mbeanType,
+            String opName, Class<?>... parameters) throws NoSuchMethodException,
+            SecurityException {
+        Method m = mbeanType.getMethod(opName, parameters);
+        if (mbeanType.isInterface()) {
+            return m;
+        }
+        final List<Method> methods = new ArrayList<Method>();
+        try {
+            MBeanIntrospector.getAnnotatedMethods(mbeanType, methods);
+        }catch (SecurityException ex) {
+            throw ex;
+        }catch (NoSuchMethodException ex) {
+            throw ex;
+        }catch (Exception ex) {
+            NoSuchMethodException nsme =
+                    new NoSuchMethodException(ex.toString());
+            nsme.initCause(ex);
+            throw nsme;
+        }
+
+        if(methods.contains(m)) return m;
+
+        throw new NoSuchMethodException("Operation " + opName +
+                " not found in management interface " + mbeanType.getName());
+    }
+    /**
+     * Retrieve the set of MBean attribute accessor <code>Method</code>s
+     * located in the <code>mbeanInterface</code> MBean interface that
+     * correspond to the <code>attr</code> <code>MBeanAttributeInfo</code>
+     * parameter.
+     * @param mbeanInterface the management interface.
+     * Can be a standard MBean or MXBean interface, or a Java class
+     * annotated with {@link MBean &#64;MBean} or {@link MXBean &#64;MXBean}.
+     * @param attr The attribute we want the accessors for.
+     * @return The set of accessors.
+     * @throws java.lang.NoSuchMethodException if no accessor exists
+     * for the given {@link MBeanAttributeInfo MBeanAttributeInfo}.
+     * @throws java.lang.IllegalArgumentException if at least one
+     * of the two parameters is null.
+     * @throws java.lang.ClassNotFoundException if the class named in the
+     * attribute type is not found.
+     * @throws java.lang.SecurityException if this exception is
+     * encountered while introspecting the MBean interface.
+     */
+    public static Set<Method> findAttributeAccessors(Class<?> mbeanInterface,
+            MBeanAttributeInfo attr)
+            throws NoSuchMethodException,
+            ClassNotFoundException {
+        if (mbeanInterface == null || attr == null) {
+            throw new IllegalArgumentException("mbeanInterface or attr " +
+                    "parameter is null");
+        }
+        String attributeName = attr.getName();
+        Set<Method> methods = new HashSet<Method>();
+        Class<?> clazz = resolveClass(attr, attr.getType(), mbeanInterface);
+        if (attr.isReadable()) {
+            String radical = "get";
+            if(attr.isIs()) radical = "is";
+            Method getter = getManagementMethod(mbeanInterface, radical +
+                    attributeName);
+            if (getter.getReturnType().equals(clazz)) {
+                methods.add(getter);
+            } else {
+                throw new NoSuchMethodException("Invalid getter return type, " +
+                        "should be " + clazz + ", found " +
+                        getter.getReturnType());
+            }
+        }
+        if (attr.isWritable()) {
+            Method setter = getManagementMethod(mbeanInterface, "set" +
+                    attributeName,
+                    clazz);
+            if (setter.getReturnType().equals(Void.TYPE)) {
+                methods.add(setter);
+            } else {
+                throw new NoSuchMethodException("Invalid setter return type, " +
+                        "should be void, found " + setter.getReturnType());
+            }
+        }
+        return methods;
+    }
+
+    /**
+     * Retrieve the MBean operation <code>Method</code>
+     * located in the <code>mbeanInterface</code> MBean interface that
+     * corresponds to the provided <code>op</code>
+     * <code>MBeanOperationInfo</code> parameter.
+     * @param mbeanInterface the management interface.
+     * Can be a standard MBean or MXBean interface, or a Java class
+     * annotated with {@link MBean &#64;MBean} or {@link MXBean &#64;MXBean}.
+     * @param op The operation we want the method for.
+     * @return the method corresponding to the provided MBeanOperationInfo.
+     * @throws java.lang.NoSuchMethodException if no method exists
+     * for the given {@link MBeanOperationInfo MBeanOperationInfo}.
+     * @throws java.lang.IllegalArgumentException if at least one
+     * of the two parameters is null.
+     * @throws java.lang.ClassNotFoundException if one of the
+     * classes named in the operation signature array is not found.
+     * @throws java.lang.SecurityException if this exception is
+     * encountered while introspecting the MBean interface.
+     */
+    public static Method findOperationMethod(Class<?> mbeanInterface,
+            MBeanOperationInfo op)
+            throws ClassNotFoundException, NoSuchMethodException {
+        if (mbeanInterface == null || op == null) {
+            throw new IllegalArgumentException("mbeanInterface or op " +
+                    "parameter is null");
+        }
+        List<Class<?>> classes = new ArrayList<Class<?>>();
+        for (MBeanParameterInfo info : op.getSignature()) {
+            Class<?> clazz = resolveClass(info, info.getType(), mbeanInterface);
+            classes.add(clazz);
+        }
+        Class<?>[] signature = new Class<?>[classes.size()];
+        classes.toArray(signature);
+        return getManagementMethod(mbeanInterface, op.getName(), signature);
     }
 
     /**
