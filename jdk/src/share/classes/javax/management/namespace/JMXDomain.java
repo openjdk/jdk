@@ -35,7 +35,6 @@ import static javax.management.namespace.JMXNamespaces.NAMESPACE_SEPARATOR;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerDelegate;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
 /**
@@ -291,12 +290,9 @@ public class JMXDomain extends JMXNamespace {
     public static ObjectName getDomainObjectName(String domain) {
         if (domain == null) return null;
         if (domain.contains(NAMESPACE_SEPARATOR))
-            throw new IllegalArgumentException(domain);
-        try {
-            return ObjectName.getInstance(domain, "type", TYPE);
-        } catch (MalformedObjectNameException x) {
-            throw new IllegalArgumentException(domain,x);
-        }
+            throw new IllegalArgumentException("domain contains " +
+                    NAMESPACE_SEPARATOR+": "+domain);
+        return ObjectName.valueOf(domain, "type", TYPE);
     }
 
 
