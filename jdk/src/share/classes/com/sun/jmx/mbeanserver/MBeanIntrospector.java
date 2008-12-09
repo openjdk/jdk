@@ -44,7 +44,6 @@ import javax.management.Descriptor;
 import javax.management.ImmutableDescriptor;
 import javax.management.IntrospectionException;
 import javax.management.InvalidAttributeValueException;
-import javax.management.JMX;
 import javax.management.MBean;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanConstructorInfo;
@@ -538,6 +537,14 @@ public abstract class MBeanIntrospector<M> {
         }
     }
 
+    /*
+     * Return the array of MBeanNotificationInfo for the given MBean object.
+     * If the object implements NotificationBroadcaster and its
+     * getNotificationInfo() method returns a non-empty array, then that
+     * is the result.  Otherwise, if the object has a @NotificationInfo
+     * or @NotificationInfos annotation, then its contents form the result.
+     * Otherwise, the result is null.
+     */
     static MBeanNotificationInfo[] findNotifications(Object moi) {
         if (moi instanceof NotificationBroadcaster) {
             MBeanNotificationInfo[] mbn =
@@ -552,6 +559,13 @@ public abstract class MBeanIntrospector<M> {
                     result[i] = ni;
                 }
                 return result;
+            }
+        } else {
+            try {
+                if (!MBeanInjector.injectsSendNotification(moi))
+                    return null;
+            } catch (NotCompliantMBeanException e) {
+                throw new RuntimeException(e);
             }
         }
         return findNotificationsFromAnnotations(moi.getClass());

@@ -38,19 +38,34 @@ import javax.management.AttributeChangeNotification;
 import javax.management.Description;
 import javax.management.Descriptor;
 import javax.management.ImmutableDescriptor;
+import javax.management.ListenerNotFoundException;
 import javax.management.MBean;
 import javax.management.MBeanInfo;
 import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanServer;
 import javax.management.MXBean;
+import javax.management.Notification;
+import javax.management.NotificationBroadcaster;
 import javax.management.NotificationBroadcasterSupport;
+import javax.management.NotificationFilter;
 import javax.management.NotificationInfo;
 import javax.management.NotificationInfos;
+import javax.management.NotificationListener;
 import javax.management.ObjectName;
 import javax.management.SendNotification;
 
 public class AnnotatedNotificationInfoTest {
-    // Data for the first test.  This tests that MBeanNotificationInfo
+
+    static final Descriptor expectedDescriptor = new ImmutableDescriptor(
+            "foo=bar", "descriptionResourceBundleBaseName=bundle",
+            "descriptionResourceKey=key");
+    static final MBeanNotificationInfo expected = new MBeanNotificationInfo(
+            new String[] {"foo", "bar"},
+            AttributeChangeNotification.class.getName(),
+            "description",
+            expectedDescriptor);
+
+    // Data for the first kind of test.  This tests that MBeanNotificationInfo
     // is correctly derived from @NotificationInfo.
     // Every static field called mbean* is expected to be an MBean
     // with a single MBeanNotificationInfo that has the same value
@@ -254,11 +269,48 @@ public class AnnotatedNotificationInfoTest {
 
     private static Object mbeanMXBean2 = new MXBean2();
 
-    // Classes for the second test.  This tests the simplest case, which is
-    // the first example in the javadoc for @NotificationInfo.  Notice that
-    // this MBean is not a NotificationBroadcaster and does not inject a
-    // SendNotification!  That should possibly be an error, but it's currently
-    // allowed by the spec.
+    // Test that @NotificationInfo and @NotificationInfos are ignored if
+    // the MBean returns a non-empty MBeanNotificationInfo[] from its
+    // NotificationBroadcaster.getNotifications() implementation.
+
+    @NotificationInfo(types={"blim", "blam"})
+    public static interface Explicit1MBean {}
+
+    public static class Explicit1
+            extends NotificationBroadcasterSupport implements Explicit1MBean {
+        public Explicit1() {
+            super(expected);
+        }
+    }
+
+    private static Object mbeanExplicit1 = new Explicit1();
+
+    @NotificationInfos(
+        {
+            @NotificationInfo(types="blim"), @NotificationInfo(types="blam")
+        }
+    )
+    public static interface Explicit2MXBean {}
+
+    public static class Explicit2
+            implements NotificationBroadcaster, Explicit2MXBean {
+        public void addNotificationListener(NotificationListener listener,
+                NotificationFilter filter, Object handback) {}
+
+        public void removeNotificationListener(NotificationListener listener)
+                throws ListenerNotFoundException {}
+
+        public MBeanNotificationInfo[] getNotificationInfo() {
+            return new MBeanNotificationInfo[] {expected};
+        }
+    }
+
+    // Data for the second kind of test.  This tests that @NotificationInfo is
+    // ignored if the MBean is not a notification source.  Every static
+    // field called ignoredMBean* is expected to be an MBean on which
+    // isInstanceOf(NotificationBroadcaster.class.getName() is false,
+    // addNotificationListener produces an exception, and the
+    // MBeanNotificationInfo array is empty.
     @NotificationInfo(types={"com.example.notifs.create",
                              "com.example.notifs.destroy"})
     public static interface CacheMBean {
@@ -271,6 +323,73 @@ public class AnnotatedNotificationInfoTest {
         }
     }
 
+    private static Object ignoredMBean1 = new Cache();
+
+    @NotificationInfos(
+        @NotificationInfo(types={"foo", "bar"})
+    )
+    public static interface Cache2MBean {
+        public int getCachedNum();
+    }
+
+    public static class Cache2 implements Cache2MBean {
+        public int getCachedNum() {
+            return 0;
+        }
+    }
+
+    private static Object ignoredMBean2 = new Cache2();
+
+    private static final NotificationListener nullListener =
+            new NotificationListener() {
+                public void handleNotification(
+                        Notification notification, Object handback) {}
+            };
+
+    // Test that inheriting inconsistent @NotificationInfo annotations is
+    // an error, but not if they are overridden by a non-empty getNotifications()
+
+    @NotificationInfo(types={"blim"})
+    public static interface Inconsistent1 {}
+
+    @NotificationInfo(types={"blam"})
+    public static interface Inconsistent2 {}
+
+    public static interface InconsistentMBean extends Inconsistent1, Inconsistent2 {}
+
+    public static class Inconsistent
+            extends NotificationBroadcasterSupport implements InconsistentMBean {}
+
+    public static class Consistent
+            extends Inconsistent implements NotificationBroadcaster {
+        public void addNotificationListener(NotificationListener listener,
+                NotificationFilter filter, Object handback) {}
+
+        public void removeNotificationListener(NotificationListener listener)
+                throws ListenerNotFoundException {}
+
+        public MBeanNotificationInfo[] getNotificationInfo() {
+            return new MBeanNotificationInfo[] {expected};
+        }
+    }
+
+    private static Object mbeanConsistent = new Consistent();
+
+    @NotificationInfo(
+            types = {"foo", "bar"},
+            notificationClass = AttributeChangeNotification.class,
+            description = @Description(
+                value = "description",
+                bundleBaseName = "bundle",
+                key = "key"),
+            descriptorFields = {"foo=bar"})
+    public static interface Consistent2MBean extends Inconsistent1, Inconsistent2 {}
+
+    public static class Consistent2
+            extends NotificationBroadcasterSupport implements Consistent2MBean {}
+
+    private static Object mbeanConsistent2 = new Consistent2();
+
     public static void main(String[] args) throws Exception {
         if (!AnnotatedNotificationInfoTest.class.desiredAssertionStatus())
             throw new Exception("Test must be run with -ea");
@@ -278,37 +397,46 @@ public class AnnotatedNotificationInfoTest {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         ObjectName on = new ObjectName("a:b=c");
 
-        Descriptor expectedDescriptor = new ImmutableDescriptor(
-                "foo=bar", "descriptionResourceBundleBaseName=bundle",
-                "descriptionResourceKey=key");
-        MBeanNotificationInfo expected = new MBeanNotificationInfo(
-                new String[] {"foo", "bar"},
-                AttributeChangeNotification.class.getName(),
-                "description",
-                expectedDescriptor);
-
         System.out.println("Testing MBeans...");
         for (Field mbeanField :
                 AnnotatedNotificationInfoTest.class.getDeclaredFields()) {
-            if (!mbeanField.getName().startsWith("mbean"))
+            boolean notifier;
+            if (mbeanField.getName().startsWith("mbean"))
+                notifier = true;
+            else if (mbeanField.getName().startsWith("ignoredMBean"))
+                notifier = false;
+            else
                 continue;
             System.out.println("..." + mbeanField.getName());
             Object mbean = mbeanField.get(null);
             mbs.registerMBean(mbean, on);
             MBeanInfo mbi = mbs.getMBeanInfo(on);
             MBeanNotificationInfo[] mbnis = mbi.getNotifications();
-            assert mbnis.length == 1 : mbnis.length;
-            assert mbnis[0].equals(expected) : mbnis[0];
+            if (notifier) {
+                assert mbnis.length == 1 : mbnis.length;
+                assert mbnis[0].equals(expected) : mbnis[0];
+            } else {
+                assert mbnis.length == 0 : mbnis.length;
+                assert !mbs.isInstanceOf(on, NotificationBroadcaster.class.getName());
+                try {
+                    mbs.addNotificationListener(on, nullListener, null, null);
+                    assert false : "addNotificationListener works";
+                } catch (Exception e) {
+                    // OK: addNL correctly refused
+                }
+            }
             mbs.unregisterMBean(on);
         }
 
-        mbs.registerMBean(new Cache(), on);
-        MBeanInfo mbi = mbs.getMBeanInfo(on);
-        MBeanNotificationInfo[] mbnis = mbi.getNotifications();
-        assert mbnis.length == 1 : mbnis.length;
-        String[] types = mbnis[0].getNotifTypes();
-        String[] expectedTypes =
-                CacheMBean.class.getAnnotation(NotificationInfo.class).types();
-        assert Arrays.equals(types, expectedTypes) : Arrays.toString(types);
+        // Test that inconsistent @NotificationInfo annotations produce an
+        // error.
+        try {
+            mbs.registerMBean(new Inconsistent(), on);
+            System.out.println(mbs.getMBeanInfo(on));
+            assert false : "Inconsistent @NotificationInfo not detected";
+        } catch (Exception e) {
+            System.out.println(
+                    "Inconsistent @NotificationInfo correctly produced " + e);
+        }
     }
 }
