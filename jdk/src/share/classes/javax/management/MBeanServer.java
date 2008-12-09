@@ -351,11 +351,14 @@ public interface MBeanServer extends MBeanServerConnection {
 
     /**
      * <p>Registers a pre-existing object as an MBean with the MBean
-     * server. If the object name given is null, the MBean must
-     * provide its own name by implementing the {@link
+     * server.  If the object name given is null, the
+     * MBean must provide its own name in one or both of two ways: by implementing the {@link
      * javax.management.MBeanRegistration MBeanRegistration} interface
      * and returning the name from the {@link
-     * MBeanRegistration#preRegister preRegister} method.</p>
+     * MBeanRegistration#preRegister preRegister} method; or by defining
+     * an {@code objectNameTemplate} field in its {@link Descriptor},
+     * typically using the {@link ObjectNameTemplate &#64;ObjectNameTemplate}
+     * annotation.</p>
      *
      * <p>If this method successfully registers an MBean, a notification
      * is sent as described <a href="#notif">above</a>.</p>
