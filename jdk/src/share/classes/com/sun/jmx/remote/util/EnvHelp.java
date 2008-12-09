@@ -812,7 +812,7 @@ public class EnvHelp {
      * @param env
      * @return
      */
-    public static boolean isServerDaemon(Map env) {
+    public static boolean isServerDaemon(Map<String, ?> env) {
         return (env != null) &&
                 ("true".equalsIgnoreCase((String)env.get(JMX_SERVER_DAEMON)));
     }
