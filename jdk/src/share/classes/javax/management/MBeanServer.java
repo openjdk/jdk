@@ -424,10 +424,16 @@ public interface MBeanServer extends MBeanServerConnection {
     public ObjectInstance getObjectInstance(ObjectName name)
             throws InstanceNotFoundException;
 
-    // doc comment inherited from MBeanServerConnection
+    /**
+     * {@inheritDoc}
+      * @throws RuntimeOperationsException {@inheritDoc}
+     */
     public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query);
 
-    // doc comment inherited from MBeanServerConnection
+    /**
+     * {@inheritDoc}
+      * @throws RuntimeOperationsException {@inheritDoc}
+    */
     public Set<ObjectName> queryNames(ObjectName name, QueryExp query);
 
     // doc comment inherited from MBeanServerConnection

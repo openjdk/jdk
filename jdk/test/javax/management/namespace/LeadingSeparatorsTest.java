@@ -24,7 +24,7 @@
  * @test LeadingSeparatorsTest.java
  * @summary Test that the semantics of a leading // in ObjectName is respected.
  * @author Daniel Fuchs
- * @bug 5072476
+ * @bug 5072476 6768935
  * @run clean LeadingSeparatorsTest Wombat WombatMBean
  * @compile -XDignore.symbol.file=true  LeadingSeparatorsTest.java
  * @run build LeadingSeparatorsTest Wombat WombatMBean
@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.logging.Logger;
+import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.NotCompliantMBeanException;
@@ -121,19 +122,29 @@ public class LeadingSeparatorsTest {
             // register wombat using an object name with a leading //
             final Object     obj = new MyWombat();
             // check that returned object name doesn't have the leading //
-            assertEquals(n2,top.registerMBean(obj, n1).getObjectName());
+            assertEquals(n2,top.registerMBean(obj, n2).getObjectName());
             System.out.println(n1+" registered");
 
             // check that the registered Wombat can be accessed with all its
             // names.
             System.out.println(n2+" mood is: "+top.getAttribute(n2, "Mood"));
-            System.out.println(n1+" mood is: "+top.getAttribute(n1, "Mood"));
+            try {
+                System.out.println(n1+" mood is: "+top.getAttribute(n1, "Mood"));
+                throw new Exception("Excepected exception not thrown for "+n1);
+            } catch (InstanceNotFoundException x) {
+                System.out.println("OK: "+x);
+            }
             System.out.println(n4+" mood is: "+top.getAttribute(n4, "Mood"));
-            System.out.println(n3+" mood is: "+top.getAttribute(n3, "Mood"));
+            try {
+                System.out.println(n3+" mood is: "+top.getAttribute(n3, "Mood"));
+                throw new Exception("Excepected exception not thrown for "+n3);
+            } catch (InstanceNotFoundException x) {
+                System.out.println("OK: "+x);
+            }
 
             // call listMatching. The result should not contain any prefix.
             final Set<ObjectName> res = (Set<ObjectName>)
-                    top.invoke(n3, "listMatching",
+                    top.invoke(n4, "listMatching",
                     // remove rmi// from rmi//*:*
                     JMXNamespaces.deepReplaceHeadNamespace(
                     new Object[] {ObjectName.WILDCARD.withDomain("rmi//*")},
@@ -158,7 +169,7 @@ public class LeadingSeparatorsTest {
             // //niark//niark//
             //
             final Set<ObjectName> res4 = (Set<ObjectName>)
-                    top.invoke(n3, "untrue",
+                    top.invoke(n4, "untrue",
                     // remove niark//niark : should remove nothing since
                     // our ObjectName begins with a leading //
                     JMXNamespaces.deepReplaceHeadNamespace(

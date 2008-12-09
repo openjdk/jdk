@@ -436,7 +436,17 @@ public interface MBeanServerConnection extends NotificationManager {
      * specified, all the MBeans registered will be retrieved.
      * @param query The query expression to be applied for selecting
      * MBeans. If null no query expression will be applied for
-     * selecting MBeans.
+     * selecting MBeans.  ObjectName patterns that may be contained in the
+     * query expression will be
+     * <a href="namespace/package-summary.html#NamespaceAndQueries"><!--
+     * -->evaluated</a> in the context of the
+     * {@link javax.management.namespace namespace}
+     * in which the MBeans selected by {@code name} are registered.
+     * Thus, in the {@code query} parameter, no ObjectName pattern containing a
+     * namespace path can match any of the MBean names selected by {@code name}.
+     * See the
+     * <a href="namespace/package-summary.html#RejectedNamespacePatterns"><!--
+     * -->namespaces documentation</a> for more details.
      *
      * @return A set containing the <CODE>ObjectInstance</CODE>
      * objects for the selected MBeans.  If no MBean satisfies the
@@ -444,6 +454,11 @@ public interface MBeanServerConnection extends NotificationManager {
      *
      * @exception IOException A communication problem occurred when
      * talking to the MBean server.
+     * @exception RuntimeOperationsException Wraps a
+     * <CODE>java.lang.IllegalArgumentException</CODE>: The <em>name</em>
+     * parameter contains an invalid pattern. See the
+     * <a href="namespace/package-summary.html#RejectedNamespacePatterns"><!--
+     * -->namespaces documentation</a> for more details.
      */
     public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query)
             throws IOException;
@@ -464,7 +479,17 @@ public interface MBeanServerConnection extends NotificationManager {
      * specified, the name of all registered MBeans will be retrieved.
      * @param query The query expression to be applied for selecting
      * MBeans. If null no query expression will be applied for
-     * selecting MBeans.
+     * selecting MBeans. ObjectName patterns that may be contained in the
+     * query expression will be
+     * <a href="namespace/package-summary.html#NamespaceAndQueries"><!--
+     * -->evaluated</a> in the context of the
+     * {@link javax.management.namespace namespace}
+     * in which the MBeans slected by {@code name} are registered.
+     * Thus, in the {@code query} parameter, no ObjectName pattern containing a
+     * namespace path can match any of the MBean names selected by {@code name}.
+     * See the
+     * <a href="namespace/package-summary.html#RejectedNamespacePatterns"><!--
+     * -->namespaces documentation</a> for more details.
      *
      * @return A set containing the ObjectNames for the MBeans
      * selected.  If no MBean satisfies the query, an empty list is
@@ -472,6 +497,11 @@ public interface MBeanServerConnection extends NotificationManager {
      *
      * @exception IOException A communication problem occurred when
      * talking to the MBean server.
+     * @exception RuntimeOperationsException Wraps a
+     * <CODE>java.lang.IllegalArgumentException</CODE>: The <em>name</em>
+     * parameter contains an invalid pattern. See the
+     * <a href="namespace/package-summary.html#RejectedNamespacePatterns"><!--
+     * -->namespaces documentation</a> for more details.
      */
     public Set<ObjectName> queryNames(ObjectName name, QueryExp query)
             throws IOException;
