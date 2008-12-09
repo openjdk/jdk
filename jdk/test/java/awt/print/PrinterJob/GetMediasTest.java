@@ -1,12 +1,10 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,38 +21,26 @@
  * have any questions.
  */
 
-package sun.print;
-
-import javax.print.attribute.PrintRequestAttribute;
-
-/*
- * A class used to determine minimum and maximum pages.
+/**
+ * @test
+ * @bug 6653384
+ * @summary No exception should be thrown.
+ * @run main GetMediasTest
  */
-public final class SunMinMaxPage implements PrintRequestAttribute {
-    private int page_max, page_min;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.print.attribute.standard.Media;
 
-    public SunMinMaxPage(int min, int max) {
-       page_min = min;
-       page_max = max;
+public class GetMediasTest {
+    public static void main(String[] args) {
+        PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
+        for(final PrintService service: services) {
+            Thread thread = new Thread() {
+                public void run() {
+                    service.getSupportedAttributeValues(Media.class, null, null);
+                }
+            };
+            thread.start();
+        }
     }
-
-
-    public final Class getCategory() {
-        return SunMinMaxPage.class;
-    }
-
-
-    public final int getMin() {
-        return page_min;
-    }
-
-    public final int getMax() {
-        return page_max;
-    }
-
-
-    public final String getName() {
-        return "sun-page-minmax";
-    }
-
 }
