@@ -186,11 +186,11 @@ import javax.management.loading.ClassLoaderRepository;
  * caller's permissions must imply {@link
  * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
  * MBeanPermission(mbeanServerName, null, null, null, "queryMBeans")}.
- * Additionally, for each MBean that matches <code>name</code>,
+ * Additionally, for each MBean <em>n</em> that matches <code>name</code>,
  * if the caller's permissions do not imply {@link
  * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, null, name, "queryMBeans")}, the
- * MBean server will behave as if that MBean did not exist.</p>
+ * MBeanPermission(mbeanServerName, className, null, <em>n</em>, "queryMBeans")},
+ * the MBean server will behave as if that MBean did not exist.</p>
  *
  * <p>Certain query elements perform operations on the MBean server.
  * If the caller does not have the required permissions for a given
