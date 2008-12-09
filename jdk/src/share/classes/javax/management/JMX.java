@@ -150,6 +150,12 @@ public class JMX {
     public static final String SET_EXCEPTIONS_FIELD = "setExceptions";
 
     /**
+     * The name of the <a href="Descriptor.html#objectNameTemplate">{@code
+     * objectNameTemplate}</a> field.
+     */
+    public static final String OBJECT_NAME_TEMPLATE = "objectNameTemplate";
+
+    /**
      * <p>Options to apply to an MBean proxy or to an instance of {@link
      * StandardMBean}.</p>
      *

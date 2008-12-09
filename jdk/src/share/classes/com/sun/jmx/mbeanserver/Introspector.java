@@ -65,8 +65,12 @@ import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.management.AttributeNotFoundException;
 import javax.management.JMX;
+import javax.management.ObjectName;
+import javax.management.ObjectNameTemplate;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.MXBeanMappingFactory;
 
@@ -78,7 +82,13 @@ import javax.management.openmbean.MXBeanMappingFactory;
  */
 public class Introspector {
 
-
+    /**
+     * Pattern used to extract Attribute Names from ObjectNameTemplate Annotation
+     * For example, in the following example, the Name attribute value is
+     * retrieved : ":type=MyType, name={Name}"
+     */
+    private static Pattern OBJECT_NAME_PATTERN_TEMPLATE =
+            Pattern.compile("(\\{[^\\}]+\\})|(=\"\\{[^\\}]+\\}\")");
      /*
      * ------------------------------------------
      *  PRIVATE CONSTRUCTORS
@@ -390,6 +400,42 @@ public class Introspector {
             return getMXBeanInterface(baseClass);
         else
             return getStandardMBeanInterface(baseClass);
+    }
+
+    public static ObjectName templateToObjectName(Descriptor descriptor,
+            DynamicMBean mbean)
+            throws NotCompliantMBeanException {
+        String template = (String)
+            descriptor.getFieldValue(JMX.OBJECT_NAME_TEMPLATE);
+        if(template == null) return null;
+        try {
+            Matcher m = OBJECT_NAME_PATTERN_TEMPLATE.matcher(template);
+            while (m.find()){
+                String grp = m.group();
+                System.out.println("GROUP " + grp);
+                String attributeName = null;
+                boolean quote = false;
+                if(grp.startsWith("=\"{")) {
+                    attributeName = grp.substring(3, grp.length() - 2);
+                    quote = true;
+                } else
+                    attributeName = grp.substring(1, grp.length() - 1);
+
+                Object attributeValue = mbean.getAttribute(attributeName);
+                String validValue = quote ?
+                    "=" + ObjectName.quote(attributeValue.toString()) :
+                    attributeValue.toString();
+                template = template.replace(grp, validValue);
+            }
+            return new ObjectName(template);
+        }catch(Exception ex) {
+            NotCompliantMBeanException ncex = new
+                    NotCompliantMBeanException(ObjectNameTemplate.class.
+                    getSimpleName() + " annotation value [" + template + "] " +
+                    "is invalid. " + ex);
+            ncex.initCause(ex);
+            throw ncex;
+        }
     }
 
     /*

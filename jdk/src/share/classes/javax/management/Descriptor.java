@@ -245,6 +245,13 @@ import javax.management.openmbean.OpenType;
  * MXBean, if it was not the {@linkplain MXBeanMappingFactory#DEFAULT default}
  * one.</td>
  *
+ * <tr><td id="objectNameTemplate"><i>objectNameTemplate</i>
+ * </td><td>String</td>
+ * <td>MBeanInfo</td>
+ *
+ * <td>The template to use to name this MBean. Its value must be compliant with
+ * the specification of the {@link ObjectNameTemplate} annotation.</td>
+ *
  * <tr id="openType"><td><i>openType</i><td>{@link OpenType}</td>
  * <td>MBeanAttributeInfo<br>MBeanOperationInfo<br>MBeanParameterInfo</td>
  *
