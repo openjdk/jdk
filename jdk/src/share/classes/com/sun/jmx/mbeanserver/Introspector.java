@@ -63,7 +63,10 @@ import java.beans.BeanInfo;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import javax.management.AttributeNotFoundException;
+import javax.management.JMX;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.MXBeanMappingFactory;
 
@@ -462,11 +465,31 @@ public class Introspector {
         return null;
     }
 
-    public static Descriptor descriptorForElement(final AnnotatedElement elmt) {
+    public static Descriptor descriptorForElement(final AnnotatedElement elmt,
+            boolean isSetter) {
         if (elmt == null)
             return ImmutableDescriptor.EMPTY_DESCRIPTOR;
         final Annotation[] annots = elmt.getAnnotations();
-        return descriptorForAnnotations(annots);
+        Descriptor descr = descriptorForAnnotations(annots);
+        String[] exceptions = {};
+        if(elmt instanceof Method)
+            exceptions = getAllExceptions(((Method) elmt).getExceptionTypes());
+        else
+            if(elmt instanceof Constructor<?>)
+                exceptions = getAllExceptions(((Constructor<?>) elmt).
+                        getExceptionTypes());
+
+        if(exceptions.length > 0 ) {
+            String fieldName = isSetter ? JMX.SET_EXCEPTIONS_FIELD :
+                JMX.EXCEPTIONS_FIELD;
+
+            String[] fieldNames = {fieldName};
+            Object[] fieldValues = {exceptions};
+            descr = ImmutableDescriptor.union(descr,
+                    new ImmutableDescriptor(fieldNames, fieldValues));
+        }
+
+        return descr;
     }
 
     public static Descriptor descriptorForAnnotation(Annotation annot) {
@@ -487,6 +510,20 @@ public class Introspector {
             return ImmutableDescriptor.EMPTY_DESCRIPTOR;
         else
             return new ImmutableDescriptor(descriptorMap);
+    }
+
+    /**
+     * Array of thrown excepions.
+     * @param exceptions can be null;
+     * @return An Array of Exception class names. Size is 0 if method is null.
+     */
+    private static String[] getAllExceptions(Class<?>[] exceptions) {
+        Set<String> set = new LinkedHashSet<String>();
+        for(Class<?>ex : exceptions)
+            set.add(ex.getName());
+
+        String[] arr = new String[set.size()];
+        return set.toArray(arr);
     }
 
     private static void addDescriptorFieldsToMap(
