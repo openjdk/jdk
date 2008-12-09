@@ -53,7 +53,7 @@ final class ConvertingMethod {
     }
 
     Descriptor getDescriptor() {
-        return Introspector.descriptorForElement(method);
+        return Introspector.descriptorForElement(method, false);
     }
 
     Type getGenericReturnType() {

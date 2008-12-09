@@ -147,6 +147,14 @@ import javax.management.openmbean.OpenType;
  * might be disabled if it cannot currently be emitted but could be in
  * other circumstances.</td>
  *
+ * <tr id="exceptions"><td><i>exceptions</i><td>String[]</td>
+ * <td>MBeanAttributeInfo, MBeanConstructorInfo, MBeanOperationInfo</td>
+ *
+ * <td>The class names of the exceptions that can be thrown when invoking a
+ * constructor or operation, or getting an attribute. Exceptions thrown when
+ * setting an attribute are specified by the field
+ * <a href="#setExceptions">{@code setExceptions}</a>.
+ *
  * <tr id="immutableInfo"><td><i>immutableInfo</i><td>String</td>
  * <td>MBeanInfo</td>
  *
@@ -237,6 +245,13 @@ import javax.management.openmbean.OpenType;
  * MXBean, if it was not the {@linkplain MXBeanMappingFactory#DEFAULT default}
  * one.</td>
  *
+ * <tr><td id="objectNameTemplate"><i>objectNameTemplate</i>
+ * </td><td>String</td>
+ * <td>MBeanInfo</td>
+ *
+ * <td>The template to use to name this MBean. Its value must be compliant with
+ * the specification of the {@link ObjectNameTemplate} annotation.</td>
+ *
  * <tr id="openType"><td><i>openType</i><td>{@link OpenType}</td>
  * <td>MBeanAttributeInfo<br>MBeanOperationInfo<br>MBeanParameterInfo</td>
  *
@@ -269,6 +284,13 @@ import javax.management.openmbean.OpenType;
  * <p>The format of this string is described in the section <a
  * href="MXBean.html#type-names">Type Names</a> of the MXBean
  * specification.</p>
+ *
+ * <tr id="setExceptions"><td><i>setExceptions</i><td>String[]</td>
+ * <td>MBeanAttributeInfo</td>
+ *
+ * <td>The class names of the exceptions that can be thrown when setting
+ * an attribute. Exceptions thrown when getting an attribute are specified
+ * by the field <a href="#exceptions">{@code exceptions}</a>.
  *
  * <tr><td>severity</td><td>String<br>Integer</td>
  * <td>MBeanNotificationInfo</td>

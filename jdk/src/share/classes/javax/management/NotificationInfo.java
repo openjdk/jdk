@@ -44,7 +44,13 @@ import java.lang.annotation.Target;
  *                          "com.example.notifs.destroy"})
  * public interface CacheMBean {...}
  *
- * public class Cache implements CacheMBean {...}
+ * public class Cache
+ *         extends NotificationBroadcasterSupport implements CacheMBean {
+ *     public Cache() {
+ *         super();   // do not supply any MBeanNotificationInfo[]
+ *     }
+ *     ...
+ * }
  * </pre>
  *
  * <pre>
@@ -52,7 +58,11 @@ import java.lang.annotation.Target;
  * {@link MBean @MBean}
  * {@code @NotificationInfo}(types={"com.example.notifs.create",
  *                          "com.example.notifs.destroy"})
- * public class Cache {...}
+ * public class Cache {
+ *     <a href="MBeanRegistration.html#injection">{@code @Resource}</a>
+ *     private volatile SendNotification sendNotification;
+ *     ...
+ * }
  * </pre>
  *
  * <p>Each {@code @NotificationInfo} produces an {@link
@@ -64,6 +74,13 @@ import java.lang.annotation.Target;
  * several {@code @NotificationInfo} annotations into a containing
  * {@link NotificationInfos @NotificationInfos} annotation.
  *
+ * <p>The {@code @NotificationInfo} and {@code @NotificationInfos} annotations
+ * are ignored on an MBean that is not a {@linkplain JMX#isNotificationSource
+ * notification source} or that implements {@link NotificationBroadcaster} and
+ * returns a non-empty array from its {@link
+ * NotificationBroadcaster#getNotificationInfo() getNotificationInfo()}
+ * method.</p>
+ *
  * <p>The {@code NotificationInfo} and {@code NotificationInfos}
  * annotations can be applied to the MBean implementation class, or to
  * any parent class or interface.  These annotations on a class take
@@ -71,7 +88,8 @@ import java.lang.annotation.Target;
  * If an MBean does not have these annotations on its class or any
  * superclass, then superinterfaces are examined.  It is an error for
  * more than one superinterface to have these annotations, unless one
- * of them is a child of all the others.</p>
+ * of them is a descendant of all the others; registering such an erroneous
+ * MBean will cause a {@link NotCompliantMBeanException}.</p>
  */
 @Documented
 @Inherited

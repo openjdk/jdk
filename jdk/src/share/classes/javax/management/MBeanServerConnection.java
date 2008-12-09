@@ -46,11 +46,14 @@ public interface MBeanServerConnection extends NotificationManager {
      * MBean server will use its {@link
      * javax.management.loading.ClassLoaderRepository Default Loader
      * Repository} to load the class of the MBean.  An object name is
-     * associated to the MBean.  If the object name given is null, the
-     * MBean must provide its own name by implementing the {@link
+     * associated with the MBean.  If the object name given is null, the
+     * MBean must provide its own name in one or both of two ways: by implementing the {@link
      * javax.management.MBeanRegistration MBeanRegistration} interface
      * and returning the name from the {@link
-     * MBeanRegistration#preRegister preRegister} method.</p>
+     * MBeanRegistration#preRegister preRegister} method; or by defining
+     * an {@code objectNameTemplate} field in its {@link Descriptor},
+     * typically using the {@link ObjectNameTemplate &#64;ObjectNameTemplate}
+     * annotation.</p>
      *
      * <p>This method is equivalent to {@link
      * #createMBean(String,ObjectName,Object[],String[])
@@ -117,13 +120,16 @@ public interface MBeanServerConnection extends NotificationManager {
     /**
      * <p>Instantiates and registers an MBean in the MBean server.  The
      * class loader to be used is identified by its object name. An
-     * object name is associated to the MBean. If the object name of
+     * object name is associated with the MBean. If the object name of
      * the loader is null, the ClassLoader that loaded the MBean
-     * server will be used.  If the MBean's object name given is null,
-     * the MBean must provide its own name by implementing the {@link
+     * server will be used.  If the object name given is null, the
+     * MBean must provide its own name in one or both of two ways: by implementing the {@link
      * javax.management.MBeanRegistration MBeanRegistration} interface
      * and returning the name from the {@link
-     * MBeanRegistration#preRegister preRegister} method.</p>
+     * MBeanRegistration#preRegister preRegister} method; or by defining
+     * an {@code objectNameTemplate} field in its {@link Descriptor},
+     * typically using the {@link ObjectNameTemplate &#64;ObjectNameTemplate}
+     * annotation.</p>
      *
      * <p>This method is equivalent to {@link
      * #createMBean(String,ObjectName,ObjectName,Object[],String[])
@@ -198,11 +204,14 @@ public interface MBeanServerConnection extends NotificationManager {
      * MBean server will use its {@link
      * javax.management.loading.ClassLoaderRepository Default Loader
      * Repository} to load the class of the MBean.  An object name is
-     * associated to the MBean.  If the object name given is null, the
-     * MBean must provide its own name by implementing the {@link
+     * associated with the MBean.  If the object name given is null, the
+     * MBean must provide its own name in one or both of two ways: by implementing the {@link
      * javax.management.MBeanRegistration MBeanRegistration} interface
      * and returning the name from the {@link
-     * MBeanRegistration#preRegister preRegister} method.
+     * MBeanRegistration#preRegister preRegister} method; or by defining
+     * an {@code objectNameTemplate} field in its {@link Descriptor},
+     * typically using the {@link ObjectNameTemplate &#64;ObjectNameTemplate}
+     * annotation.</p>
      *
      * @param className The class name of the MBean to be instantiated.
      * @param name The object name of the MBean. May be null.
@@ -267,15 +276,18 @@ public interface MBeanServerConnection extends NotificationManager {
                    NotCompliantMBeanException, IOException;
 
     /**
-     * Instantiates and registers an MBean in the MBean server.  The
+     * <p>Instantiates and registers an MBean in the MBean server.  The
      * class loader to be used is identified by its object name. An
-     * object name is associated to the MBean. If the object name of
+     * object name is associated with the MBean. If the object name of
      * the loader is not specified, the ClassLoader that loaded the
-     * MBean server will be used.  If the MBean object name given is
-     * null, the MBean must provide its own name by implementing the
-     * {@link javax.management.MBeanRegistration MBeanRegistration}
-     * interface and returning the name from the {@link
-     * MBeanRegistration#preRegister preRegister} method.
+     * MBean server will be used.  If the object name given is null, the
+     * MBean must provide its own name in one or both of two ways: by implementing the {@link
+     * javax.management.MBeanRegistration MBeanRegistration} interface
+     * and returning the name from the {@link
+     * MBeanRegistration#preRegister preRegister} method; or by defining
+     * an {@code objectNameTemplate} field in its {@link Descriptor},
+     * typically using the {@link ObjectNameTemplate &#64;ObjectNameTemplate}
+     * annotation.</p>
      *
      * @param className The class name of the MBean to be instantiated.
      * @param name The object name of the MBean. May be null.
