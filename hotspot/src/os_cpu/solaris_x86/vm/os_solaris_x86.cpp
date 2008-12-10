@@ -576,10 +576,11 @@ int JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid, int abort_
       if (addr != last_addr &&
           (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
 
-        // Unguard and retry
+        // Make memory rwx and retry
         address page_start =
           (address) align_size_down((intptr_t) addr, (intptr_t) page_size);
-        bool res = os::unguard_memory((char*) page_start, page_size);
+        bool res = os::protect_memory((char*) page_start, page_size,
+                                      os::MEM_PROT_RWX);
 
         if (PrintMiscellaneous && Verbose) {
           char buf[256];
