@@ -182,7 +182,9 @@ CS_GEN=$(NIO_GEN)/charset
 SCH_GEN=$(SNIO_GEN)/ch
 SCS_GEN=$(SNIO_GEN)/cs
 
-sources: $(SPP_JARFILE) $(FILES_genout)
+FILES_gensbcs_out = $(FILES_gen_sbcs:%.java=$(GENSRCDIR)/%.java)
+
+sources: $(SPP_JARFILE) $(FILES_genout) $(FILES_gensbcs_out)
 
 #
 # Generated buffer classes
@@ -656,5 +658,16 @@ $(SCH_GEN)/SocketOptionRegistry.java: $(GENSOR_EXE)
 	$(prep-target)
 	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e addNotices.sh $(SOR_COPYRIGHT_YEARS) > $@
 	$(GENSOR_EXE) >> $@
+
+#
+# Generated sun.nio.cs SingleByte classes
+#
+GENCSSRC = $(BUILDDIR)/tools/CharsetMapping
+CHARSETMAPPING_JARFILE = $(BUILDTOOLJARDIR)/charsetmapping.jar
+
+$(FILES_gensbcs_out): $(GENCSSRC)/SingleByte-X.java $(GENCSSRC)/sbcs
+	@$(prep-target)
+	$(BOOT_JAVA_CMD) -cp $(CHARSETMAPPING_JARFILE) build.tools.charsetmapping.GenerateSBCS \
+		$(GENCSSRC) $(SCS_GEN) sbcs
 
 .PHONY: sources 
