@@ -3026,6 +3026,8 @@ static bool solaris_mprotect(char* addr, size_t bytes, int prot) {
 
 // Protect memory (Used to pass readonly pages through
 // JNI GetArray<type>Elements with empty arrays.)
+// Also, used for serialization page and for compressed oops null pointer
+// checking.
 bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
                         bool is_committed) {
   unsigned int p = 0;
@@ -3049,7 +3051,7 @@ bool os::guard_memory(char* addr, size_t bytes) {
 }
 
 bool os::unguard_memory(char* addr, size_t bytes) {
-  return solaris_mprotect(addr, bytes, PROT_READ|PROT_WRITE|PROT_EXEC);
+  return solaris_mprotect(addr, bytes, PROT_READ|PROT_WRITE);
 }
 
 // Large page support
