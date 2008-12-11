@@ -36,6 +36,123 @@ class PreGCValues;
 class MoveAndUpdateClosure;
 class RefProcTaskExecutor;
 
+// The SplitInfo class holds the information needed to 'split' a source region
+// so that the live data can be copied to two destination *spaces*.  Normally,
+// all the live data in a region is copied to a single destination space (e.g.,
+// everything live in a region in eden is copied entirely into the old gen).
+// However, when the heap is nearly full, all the live data in eden may not fit
+// into the old gen.  Copying only some of the regions from eden to old gen
+// requires finding a region that does not contain a partial object (i.e., no
+// live object crosses the region boundary) somewhere near the last object that
+// does fit into the old gen.  Since it's not always possible to find such a
+// region, splitting is necessary for predictable behavior.
+//
+// A region is always split at the end of the partial object.  This avoids
+// additional tests when calculating the new location of a pointer, which is a
+// very hot code path.  The partial object and everything to its left will be
+// copied to another space (call it dest_space_1).  The live data to the right
+// of the partial object will be copied either within the space itself, or to a
+// different destination space (distinct from dest_space_1).
+//
+// Split points are identified during the summary phase, when region
+// destinations are computed:  data about the split, including the
+// partial_object_size, is recorded in a SplitInfo record and the
+// partial_object_size field in the summary data is set to zero.  The zeroing is
+// possible (and necessary) since the partial object will move to a different
+// destination space than anything to its right, thus the partial object should
+// not affect the locations of any objects to its right.
+//
+// The recorded data is used during the compaction phase, but only rarely:  when
+// the partial object on the split region will be copied across a destination
+// region boundary.  This test is made once each time a region is filled, and is
+// a simple address comparison, so the overhead is negligible (see
+// PSParallelCompact::first_src_addr()).
+//
+// Notes:
+//
+// Only regions with partial objects are split; a region without a partial
+// object does not need any extra bookkeeping.
+//
+// At most one region is split per space, so the amount of data required is
+// constant.
+//
+// A region is split only when the destination space would overflow.  Once that
+// happens, the destination space is abandoned and no other data (even from
+// other source spaces) is targeted to that destination space.  Abandoning the
+// destination space may leave a somewhat large unused area at the end, if a
+// large object caused the overflow.
+//
+// Future work:
+//
+// More bookkeeping would be required to continue to use the destination space.
+// The most general solution would allow data from regions in two different
+// source spaces to be "joined" in a single destination region.  At the very
+// least, additional code would be required in next_src_region() to detect the
+// join and skip to an out-of-order source region.  If the join region was also
+// the last destination region to which a split region was copied (the most
+// likely case), then additional work would be needed to get fill_region() to
+// stop iteration and switch to a new source region at the right point.  Basic
+// idea would be to use a fake value for the top of the source space.  It is
+// doable, if a bit tricky.
+//
+// A simpler (but less general) solution would fill the remainder of the
+// destination region with a dummy object and continue filling the next
+// destination region.
+
+class SplitInfo
+{
+public:
+  // Return true if this split info is valid (i.e., if a split has been
+  // recorded).  The very first region cannot have a partial object and thus is
+  // never split, so 0 is the 'invalid' value.
+  bool is_valid() const { return _src_region_idx > 0; }
+
+  // Return true if this split holds data for the specified source region.
+  inline bool is_split(size_t source_region) const;
+
+  // The index of the split region, the size of the partial object on that
+  // region and the destination of the partial object.
+  size_t    src_region_idx() const   { return _src_region_idx; }
+  size_t    partial_obj_size() const { return _partial_obj_size; }
+  HeapWord* destination() const      { return _destination; }
+
+  // The destination count of the partial object referenced by this split
+  // (either 1 or 2).  This must be added to the destination count of the
+  // remainder of the source region.
+  unsigned int destination_count() const { return _destination_count; }
+
+  // If a word within the partial object will be written to the first word of a
+  // destination region, this is the address of the destination region;
+  // otherwise this is NULL.
+  HeapWord* dest_region_addr() const     { return _dest_region_addr; }
+
+  // If a word within the partial object will be written to the first word of a
+  // destination region, this is the address of that word within the partial
+  // object; otherwise this is NULL.
+  HeapWord* first_src_addr() const       { return _first_src_addr; }
+
+  // Record the data necessary to split the region src_region_idx.
+  void record(size_t src_region_idx, size_t partial_obj_size,
+              HeapWord* destination);
+
+  void clear();
+
+  DEBUG_ONLY(void verify_clear();)
+
+private:
+  size_t       _src_region_idx;
+  size_t       _partial_obj_size;
+  HeapWord*    _destination;
+  unsigned int _destination_count;
+  HeapWord*    _dest_region_addr;
+  HeapWord*    _first_src_addr;
+};
+
+inline bool SplitInfo::is_split(size_t region_idx) const
+{
+  return _src_region_idx == region_idx && is_valid();
+}
+
 class SpaceInfo
 {
  public:
@@ -58,11 +175,15 @@ class SpaceInfo
   // is no start array.
   ObjectStartArray* start_array() const { return _start_array; }
 
+  SplitInfo& split_info() { return _split_info; }
+
   void set_space(MutableSpace* s)           { _space = s; }
   void set_new_top(HeapWord* addr)          { _new_top = addr; }
   void set_min_dense_prefix(HeapWord* addr) { _min_dense_prefix = addr; }
   void set_dense_prefix(HeapWord* addr)     { _dense_prefix = addr; }
   void set_start_array(ObjectStartArray* s) { _start_array = s; }
+
+  void publish_new_top() const              { _space->set_top(_new_top); }
 
  private:
   MutableSpace*     _space;
@@ -70,6 +191,7 @@ class SpaceInfo
   HeapWord*         _min_dense_prefix;
   HeapWord*         _dense_prefix;
   ObjectStartArray* _start_array;
+  SplitInfo         _split_info;
 };
 
 class ParallelCompactData
@@ -230,9 +352,14 @@ public:
   // must be region-aligned; end need not be.
   void summarize_dense_prefix(HeapWord* beg, HeapWord* end);
 
-  bool summarize(HeapWord* target_beg, HeapWord* target_end,
+  HeapWord* summarize_split_space(size_t src_region, SplitInfo& split_info,
+                                  HeapWord* destination, HeapWord* target_end,
+                                  HeapWord** target_next);
+  bool summarize(SplitInfo& split_info,
                  HeapWord* source_beg, HeapWord* source_end,
-                 HeapWord** target_next, HeapWord** source_next = 0);
+                 HeapWord** source_next,
+                 HeapWord* target_beg, HeapWord* target_end,
+                 HeapWord** target_next);
 
   void clear();
   void clear_range(size_t beg_region, size_t end_region);
@@ -838,12 +965,12 @@ class PSParallelCompact : AllStatic {
   // non-empty.
   static void fill_dense_prefix_end(SpaceId id);
 
+  // Clear the summary data source_region field for the specified addresses.
+  static void clear_source_region(HeapWord* beg_addr, HeapWord* end_addr);
+
   static void summarize_spaces_quick();
   static void summarize_space(SpaceId id, bool maximum_compaction);
   static void summary_phase(ParCompactionManager* cm, bool maximum_compaction);
-
-  // The space that is compacted after space_id.
-  static SpaceId next_compaction_space_id(SpaceId space_id);
 
   // Adjust addresses in roots.  Does not adjust addresses in heap.
   static void adjust_roots();
@@ -999,6 +1126,7 @@ class PSParallelCompact : AllStatic {
   // Return the address of the word to be copied to dest_addr, which must be
   // aligned to a region boundary.
   static HeapWord* first_src_addr(HeapWord* const dest_addr,
+                                  SpaceId src_space_id,
                                   size_t src_region_idx);
 
   // Determine the next source region, set closure.source() to the start of the
@@ -1081,6 +1209,10 @@ class PSParallelCompact : AllStatic {
                                        const SpaceId id,
                                        const bool maximum_compaction,
                                        HeapWord* const addr);
+  static void summary_phase_msg(SpaceId dst_space_id,
+                                HeapWord* dst_beg, HeapWord* dst_end,
+                                SpaceId src_space_id,
+                                HeapWord* src_beg, HeapWord* src_end);
 #endif  // #ifndef PRODUCT
 
 #ifdef  ASSERT
