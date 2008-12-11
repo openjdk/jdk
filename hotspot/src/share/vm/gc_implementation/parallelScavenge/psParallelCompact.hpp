@@ -1324,31 +1324,28 @@ inline void UpdateOnlyClosure::do_addr(HeapWord* addr)
   oop(addr)->update_contents(compaction_manager());
 }
 
-class FillClosure: public ParMarkBitMapClosure {
- public:
+class FillClosure: public ParMarkBitMapClosure
+{
+public:
   FillClosure(ParCompactionManager* cm, PSParallelCompact::SpaceId space_id) :
     ParMarkBitMapClosure(PSParallelCompact::mark_bitmap(), cm),
-    _space_id(space_id),
-    _start_array(PSParallelCompact::start_array(space_id)) {
-    assert(_space_id == PSParallelCompact::perm_space_id ||
-           _space_id == PSParallelCompact::old_space_id,
+    _start_array(PSParallelCompact::start_array(space_id))
+  {
+    assert(space_id == PSParallelCompact::perm_space_id ||
+           space_id == PSParallelCompact::old_space_id,
            "cannot use FillClosure in the young gen");
-    assert(bitmap() != NULL, "need a bitmap");
-    assert(_start_array != NULL, "need a start array");
-  }
-
-  void fill_region(HeapWord* addr, size_t size) {
-    MemRegion region(addr, size);
-    SharedHeap::fill_region_with_object(region);
-    _start_array->allocate_block(addr);
   }
 
   virtual IterationStatus do_addr(HeapWord* addr, size_t size) {
-    fill_region(addr, size);
+    CollectedHeap::fill_with_objects(addr, size);
+    HeapWord* const end = addr + size;
+    do {
+      _start_array->allocate_block(addr);
+      addr += oop(addr)->size();
+    } while (addr < end);
     return ParMarkBitMap::incomplete;
   }
 
 private:
-  const PSParallelCompact::SpaceId _space_id;
-  ObjectStartArray* const          _start_array;
+  ObjectStartArray* const _start_array;
 };

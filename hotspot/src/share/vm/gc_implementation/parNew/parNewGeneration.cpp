@@ -201,7 +201,7 @@ void ParScanThreadState::undo_alloc_in_to_space(HeapWord* obj,
            "Should contain whole object.");
     to_space_alloc_buffer()->undo_allocation(obj, word_sz);
   } else {
-    SharedHeap::fill_region_with_object(MemRegion(obj, word_sz));
+    CollectedHeap::fill_with_object(obj, word_sz);
   }
 }
 
