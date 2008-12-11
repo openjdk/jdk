@@ -1327,6 +1327,13 @@ HeapWord*
 PSParallelCompact::compute_dense_prefix(const SpaceId id,
                                         bool maximum_compaction)
 {
+  if (ParallelOldGCSplitALot) {
+    if (_space_info[id].dense_prefix() != _space_info[id].space()->bottom()) {
+      // The value was chosen to provoke splitting a young gen space; use it.
+      return _space_info[id].dense_prefix();
+    }
+  }
+
   const size_t region_size = ParallelCompactData::RegionSize;
   const ParallelCompactData& sd = summary_data();
 
@@ -1414,6 +1421,160 @@ PSParallelCompact::compute_dense_prefix(const SpaceId id,
 
   return sd.region_to_addr(best_cp);
 }
+
+#ifndef PRODUCT
+void
+PSParallelCompact::fill_with_live_objects(SpaceId id, HeapWord* const start,
+                                          size_t words)
+{
+  if (TraceParallelOldGCSummaryPhase) {
+    tty->print_cr("fill_with_live_objects [" PTR_FORMAT " " PTR_FORMAT ") "
+                  SIZE_FORMAT, start, start + words, words);
+  }
+
+  ObjectStartArray* const start_array = _space_info[id].start_array();
+  CollectedHeap::fill_with_objects(start, words);
+  for (HeapWord* p = start; p < start + words; p += oop(p)->size()) {
+    _mark_bitmap.mark_obj(p, words);
+    _summary_data.add_obj(p, words);
+    start_array->allocate_block(p);
+  }
+}
+
+void
+PSParallelCompact::summarize_new_objects(SpaceId id, HeapWord* start)
+{
+  ParallelCompactData& sd = summary_data();
+  MutableSpace* space = _space_info[id].space();
+
+  // Find the source and destination start addresses.
+  HeapWord* const src_addr = sd.region_align_down(start);
+  HeapWord* dst_addr;
+  if (src_addr < start) {
+    dst_addr = sd.addr_to_region_ptr(src_addr)->destination();
+  } else if (src_addr > space->bottom()) {
+    // The start (the original top() value) is aligned to a region boundary so
+    // the associated region does not have a destination.  Compute the
+    // destination from the previous region.
+    RegionData* const cp = sd.addr_to_region_ptr(src_addr) - 1;
+    dst_addr = cp->destination() + cp->data_size();
+  } else {
+    // Filling the entire space.
+    dst_addr = space->bottom();
+  }
+  assert(dst_addr != NULL, "sanity");
+
+  // Update the summary data.
+  bool result = _summary_data.summarize(_space_info[id].split_info(),
+                                        src_addr, space->top(), NULL,
+                                        dst_addr, space->end(),
+                                        _space_info[id].new_top_addr());
+  assert(result, "should not fail:  bad filler object size");
+}
+
+void
+PSParallelCompact::provoke_split(bool & max_compaction)
+{
+  const size_t region_size = ParallelCompactData::RegionSize;
+  ParallelCompactData& sd = summary_data();
+
+  MutableSpace* const eden_space = _space_info[eden_space_id].space();
+  MutableSpace* const from_space = _space_info[from_space_id].space();
+  const size_t eden_live = pointer_delta(eden_space->top(),
+                                         _space_info[eden_space_id].new_top());
+  const size_t from_live = pointer_delta(from_space->top(),
+                                         _space_info[from_space_id].new_top());
+
+  const size_t min_fill_size = CollectedHeap::min_fill_size();
+  const size_t eden_free = pointer_delta(eden_space->end(), eden_space->top());
+  const size_t eden_fillable = eden_free >= min_fill_size ? eden_free : 0;
+  const size_t from_free = pointer_delta(from_space->end(), from_space->top());
+  const size_t from_fillable = from_free >= min_fill_size ? from_free : 0;
+
+  // Choose the space to split; need at least 2 regions live (or fillable).
+  SpaceId id;
+  MutableSpace* space;
+  size_t live_words;
+  size_t fill_words;
+  if (eden_live + eden_fillable >= region_size * 2) {
+    id = eden_space_id;
+    space = eden_space;
+    live_words = eden_live;
+    fill_words = eden_fillable;
+  } else if (from_live + from_fillable >= region_size * 2) {
+    id = from_space_id;
+    space = from_space;
+    live_words = from_live;
+    fill_words = from_fillable;
+  } else {
+    return; // Give up.
+  }
+  assert(fill_words == 0 || fill_words >= min_fill_size, "sanity");
+
+  if (live_words < region_size * 2) {
+    // Fill from top() to end() w/live objects of mixed sizes.
+    HeapWord* const fill_start = space->top();
+    live_words += fill_words;
+
+    space->set_top(fill_start + fill_words);
+    if (ZapUnusedHeapArea) {
+      space->set_top_for_allocations();
+    }
+
+    HeapWord* cur_addr = fill_start;
+    while (fill_words > 0) {
+      const size_t r = (size_t)os::random() % (region_size / 2) + min_fill_size;
+      size_t cur_size = MIN2(align_object_size_(r), fill_words);
+      if (fill_words - cur_size < min_fill_size) {
+        cur_size = fill_words; // Avoid leaving a fragment too small to fill.
+      }
+
+      CollectedHeap::fill_with_object(cur_addr, cur_size);
+      mark_bitmap()->mark_obj(cur_addr, cur_size);
+      sd.add_obj(cur_addr, cur_size);
+
+      cur_addr += cur_size;
+      fill_words -= cur_size;
+    }
+
+    summarize_new_objects(id, fill_start);
+  }
+
+  max_compaction = false;
+
+  // Manipulate the old gen so that it has room for about half of the live data
+  // in the target young gen space (live_words / 2).
+  id = old_space_id;
+  space = _space_info[id].space();
+  const size_t free_at_end = space->free_in_words();
+  const size_t free_target = align_object_size(live_words / 2);
+  const size_t dead = pointer_delta(space->top(), _space_info[id].new_top());
+
+  if (free_at_end >= free_target + min_fill_size) {
+    // Fill space above top() and set the dense prefix so everything survives.
+    HeapWord* const fill_start = space->top();
+    const size_t fill_size = free_at_end - free_target;
+    space->set_top(space->top() + fill_size);
+    if (ZapUnusedHeapArea) {
+      space->set_top_for_allocations();
+    }
+    fill_with_live_objects(id, fill_start, fill_size);
+    summarize_new_objects(id, fill_start);
+    _space_info[id].set_dense_prefix(sd.region_align_down(space->top()));
+  } else if (dead + free_at_end > free_target) {
+    // Find a dense prefix that makes the right amount of space available.
+    HeapWord* cur = sd.region_align_down(space->top());
+    HeapWord* cur_destination = sd.addr_to_region_ptr(cur)->destination();
+    size_t dead_to_right = pointer_delta(space->end(), cur_destination);
+    while (dead_to_right < free_target) {
+      cur -= region_size;
+      cur_destination = sd.addr_to_region_ptr(cur)->destination();
+      dead_to_right = pointer_delta(space->end(), cur_destination);
+    }
+    _space_info[id].set_dense_prefix(cur);
+  }
+}
+#endif // #ifndef PRODUCT
 
 void PSParallelCompact::summarize_spaces_quick()
 {
@@ -1508,8 +1669,9 @@ void
 PSParallelCompact::summarize_space(SpaceId id, bool maximum_compaction)
 {
   assert(id < last_space_id, "id out of range");
-  assert(_space_info[id].dense_prefix() == _space_info[id].space()->bottom(),
-         "should have been set in summarize_spaces_quick()");
+  assert(_space_info[id].dense_prefix() == _space_info[id].space()->bottom() ||
+         ParallelOldGCSplitALot && id == old_space_id,
+         "should have been reset in summarize_spaces_quick()");
 
   const MutableSpace* space = _space_info[id].space();
   if (_space_info[id].new_top() != space->bottom()) {
@@ -1525,15 +1687,15 @@ PSParallelCompact::summarize_space(SpaceId id, bool maximum_compaction)
     }
 #endif  // #ifndef PRODUCT
 
-    // Recompute the summary data, taking into account the dense prefix.  If every
-    // last byte will be reclaimed, then the existing summary data which compacts
-    // everything can be left in place.
+    // Recompute the summary data, taking into account the dense prefix.  If
+    // every last byte will be reclaimed, then the existing summary data which
+    // compacts everything can be left in place.
     if (!maximum_compaction && dense_prefix_end != space->bottom()) {
       // If dead space crosses the dense prefix boundary, it is (at least
       // partially) filled with a dummy object, marked live and added to the
       // summary data.  This simplifies the copy/update phase and must be done
-      // before the final locations of objects are determined, to prevent leaving
-      // a fragment of dead space that is too small to fill with an object.
+      // before the final locations of objects are determined, to prevent
+      // leaving a fragment of dead space that is too small to fill.
       fill_dense_prefix_end(id);
 
       // Compute the destination of each Region, and thus each object.
@@ -1625,10 +1787,18 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
   }
 
   MutableSpace* const old_space = _space_info[old_space_id].space();
-  if (old_space_total_live > old_space->capacity_in_words()) {
+  const size_t old_capacity = old_space->capacity_in_words();
+  if (old_space_total_live > old_capacity) {
     // XXX - should also try to expand
     maximum_compaction = true;
   }
+#ifndef PRODUCT
+  if (ParallelOldGCSplitALot && old_space_total_live < old_capacity) {
+    if (total_invocations() % ParallelOldGCSplitInterval == 0) {
+      provoke_split(maximum_compaction);
+    }
+  }
+#endif // #ifndef PRODUCT
 
   // Permanent and Old generations.
   summarize_space(perm_space_id, maximum_compaction);
