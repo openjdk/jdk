@@ -26,20 +26,24 @@
 #include "incls/_permGen.cpp.incl"
 
 HeapWord* PermGen::mem_allocate_in_gen(size_t size, Generation* gen) {
-  MutexLocker ml(Heap_lock);
   GCCause::Cause next_cause = GCCause::_permanent_generation_full;
   GCCause::Cause prev_cause = GCCause::_no_gc;
+  unsigned int gc_count_before, full_gc_count_before;
+  HeapWord* obj;
 
   for (;;) {
-    HeapWord* obj = gen->allocate(size, false);
-    if (obj != NULL) {
-      return obj;
-    }
-    if (gen->capacity() < _capacity_expansion_limit ||
-        prev_cause != GCCause::_no_gc) {
-      obj = gen->expand_and_allocate(size, false);
-    }
-    if (obj == NULL && prev_cause != GCCause::_last_ditch_collection) {
+    {
+      MutexLocker ml(Heap_lock);
+      if ((obj = gen->allocate(size, false)) != NULL) {
+        return obj;
+      }
+      if (gen->capacity() < _capacity_expansion_limit ||
+          prev_cause != GCCause::_no_gc) {
+        obj = gen->expand_and_allocate(size, false);
+      }
+      if (obj != NULL || prev_cause == GCCause::_last_ditch_collection) {
+        return obj;
+      }
       if (GC_locker::is_active_and_needs_gc()) {
         // If this thread is not in a jni critical section, we stall
         // the requestor until the critical section has cleared and
@@ -61,31 +65,27 @@ HeapWord* PermGen::mem_allocate_in_gen(size_t size, Generation* gen) {
           return NULL;
         }
       }
-
       // Read the GC count while holding the Heap_lock
-      unsigned int gc_count_before      = SharedHeap::heap()->total_collections();
-      unsigned int full_gc_count_before = SharedHeap::heap()->total_full_collections();
-      {
-        MutexUnlocker mu(Heap_lock);  // give up heap lock, execute gets it back
-        VM_GenCollectForPermanentAllocation op(size, gc_count_before, full_gc_count_before,
-                                               next_cause);
-        VMThread::execute(&op);
-        if (!op.prologue_succeeded() || op.gc_locked()) {
-          assert(op.result() == NULL, "must be NULL if gc_locked() is true");
-          continue;  // retry and/or stall as necessary
-        }
-        obj = op.result();
-        assert(obj == NULL || SharedHeap::heap()->is_in_reserved(obj),
-               "result not in heap");
-        if (obj != NULL) {
-          return obj;
-        }
-      }
-      prev_cause = next_cause;
-      next_cause = GCCause::_last_ditch_collection;
-    } else {
+      gc_count_before      = SharedHeap::heap()->total_collections();
+      full_gc_count_before = SharedHeap::heap()->total_full_collections();
+    }
+
+    // Give up heap lock above, VMThread::execute below gets it back
+    VM_GenCollectForPermanentAllocation op(size, gc_count_before, full_gc_count_before,
+                                           next_cause);
+    VMThread::execute(&op);
+    if (!op.prologue_succeeded() || op.gc_locked()) {
+      assert(op.result() == NULL, "must be NULL if gc_locked() is true");
+      continue;  // retry and/or stall as necessary
+    }
+    obj = op.result();
+    assert(obj == NULL || SharedHeap::heap()->is_in_reserved(obj),
+           "result not in heap");
+    if (obj != NULL) {
       return obj;
     }
+    prev_cause = next_cause;
+    next_cause = GCCause::_last_ditch_collection;
   }
 }
 
