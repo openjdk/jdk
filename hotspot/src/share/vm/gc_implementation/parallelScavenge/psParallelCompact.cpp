@@ -1308,8 +1308,7 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id)
     }
 #endif  // #ifdef _LP64
 
-    MemRegion region(obj_beg, obj_len);
-    SharedHeap::fill_region_with_object(region);
+    gc_heap()->fill_with_object(obj_beg, obj_len);
     _mark_bitmap.mark_obj(obj_beg, obj_len);
     _summary_data.add_obj(obj_beg, obj_len);
     assert(start_array(id) != NULL, "sanity");
@@ -1807,9 +1806,14 @@ bool PSParallelCompact::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_po
 
   // Fill the unused part of the old gen.
   MutableSpace* const old_space = old_gen->object_space();
-  MemRegion old_gen_unused(old_space->top(), old_space->end());
-  if (!old_gen_unused.is_empty()) {
-    SharedHeap::fill_region_with_object(old_gen_unused);
+  HeapWord* const unused_start = old_space->top();
+  size_t const unused_words = pointer_delta(old_space->end(), unused_start);
+
+  if (unused_words > 0) {
+    if (unused_words < CollectedHeap::min_fill_size()) {
+      return false;  // If the old gen cannot be filled, must give up.
+    }
+    CollectedHeap::fill_with_objects(unused_start, unused_words);
   }
 
   // Take the live data from eden and set both top and end in the old gen to
@@ -1825,9 +1829,8 @@ bool PSParallelCompact::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_po
 
   // Update the object start array for the filler object and the data from eden.
   ObjectStartArray* const start_array = old_gen->start_array();
-  HeapWord* const start = old_gen_unused.start();
-  for (HeapWord* addr = start; addr < new_top; addr += oop(addr)->size()) {
-    start_array->allocate_block(addr);
+  for (HeapWord* p = unused_start; p < new_top; p += oop(p)->size()) {
+    start_array->allocate_block(p);
   }
 
   // Could update the promoted average here, but it is not typically updated at

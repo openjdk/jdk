@@ -625,6 +625,9 @@ class CommandLineFlags {
   develop(bool, CheckZapUnusedHeapArea, false,                              \
           "Check zapping of unused heap space")                             \
                                                                             \
+  develop(bool, ZapFillerObjects, trueInDebug,                              \
+          "Zap filler objects with 0xDEAFBABE")                             \
+                                                                            \
   develop(bool, PrintVMMessages, true,                                      \
           "Print vm messages on console")                                   \
                                                                             \
