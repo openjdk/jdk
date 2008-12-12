@@ -1040,7 +1040,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
             node.setAttribute("language",
                               iTXt_languageTag.get(i));
             if (iTXt_compressionFlag.get(i)) {
-                node.setAttribute("compression", "deflate");
+                node.setAttribute("compression", "zip");
             } else {
                 node.setAttribute("compression", "none");
             }
@@ -1052,7 +1052,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
             node = new IIOMetadataNode("TextEntry");
             node.setAttribute("keyword", (String)zTXt_keyword.get(i));
             node.setAttribute("value", (String)zTXt_text.get(i));
-            node.setAttribute("compression", "deflate");
+            node.setAttribute("compression", "zip");
 
             text_node.appendChild(node);
         }
@@ -1421,26 +1421,30 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                     }
 
                     String keyword = getAttribute(iTXt_node, "keyword");
-                    iTXt_keyword.add(keyword);
+                    if (isValidKeyword(keyword)) {
+                        iTXt_keyword.add(keyword);
 
-                    boolean compressionFlag =
-                        getBooleanAttribute(iTXt_node, "compressionFlag");
-                    iTXt_compressionFlag.add(Boolean.valueOf(compressionFlag));
+                        boolean compressionFlag =
+                            getBooleanAttribute(iTXt_node, "compressionFlag");
+                        iTXt_compressionFlag.add(Boolean.valueOf(compressionFlag));
 
-                    String compressionMethod =
-                        getAttribute(iTXt_node, "compressionMethod");
-                    iTXt_compressionMethod.add(Integer.valueOf(compressionMethod));
+                        String compressionMethod =
+                            getAttribute(iTXt_node, "compressionMethod");
+                        iTXt_compressionMethod.add(Integer.valueOf(compressionMethod));
 
-                    String languageTag =
-                        getAttribute(iTXt_node, "languageTag");
-                    iTXt_languageTag.add(languageTag);
+                        String languageTag =
+                            getAttribute(iTXt_node, "languageTag");
+                        iTXt_languageTag.add(languageTag);
 
-                    String translatedKeyword =
-                        getAttribute(iTXt_node, "translatedKeyword");
-                    iTXt_translatedKeyword.add(translatedKeyword);
+                        String translatedKeyword =
+                            getAttribute(iTXt_node, "translatedKeyword");
+                        iTXt_translatedKeyword.add(translatedKeyword);
 
-                    String text = getAttribute(iTXt_node, "text");
-                    iTXt_text.add(text);
+                        String text = getAttribute(iTXt_node, "text");
+                        iTXt_text.add(text);
+
+                    }
+                    // silently skip invalid text entry
 
                     iTXt_node = iTXt_node.getNextSibling();
                 }
@@ -1692,11 +1696,45 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         }
     }
 
-    private boolean isISOLatin(String s) {
+    /*
+     * Accrding to PNG spec, keywords are restricted to 1 to 79 bytes
+     * in length. Keywords shall contain only printable Latin-1 characters
+     * and spaces; To reduce the chances for human misreading of a keyword,
+     * leading spaces, trailing spaces, and consecutive spaces are not
+     * permitted in keywords.
+     *
+     * See: http://www.w3.org/TR/PNG/#11keywords
+     */
+    private boolean isValidKeyword(String s) {
+        int len = s.length();
+        if (len < 1 || len >= 80) {
+            return false;
+        }
+        if (s.startsWith(" ") || s.endsWith(" ") || s.contains("  ")) {
+            return false;
+        }
+        return isISOLatin(s, false);
+    }
+
+    /*
+     * According to PNG spec, keyword shall contain only printable
+     * Latin-1 [ISO-8859-1] characters and spaces; that is, only
+     * character codes 32-126 and 161-255 decimal are allowed.
+     * For Latin-1 value fields the 0x10 (linefeed) control
+     * character is aloowed too.
+     *
+     * See: http://www.w3.org/TR/PNG/#11keywords
+     */
+    private boolean isISOLatin(String s, boolean isLineFeedAllowed) {
         int len = s.length();
         for (int i = 0; i < len; i++) {
-            if (s.charAt(i) > 255) {
-                return false;
+            char c = s.charAt(i);
+            if (c < 32 || c > 255 || (c > 126 && c < 161)) {
+                // not printable. Check whether this is an allowed
+                // control char
+                if (!isLineFeedAllowed || c != 0x10) {
+                    return false;
+                }
             }
         }
         return true;
@@ -1929,19 +1967,22 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                 while (child != null) {
                     String childName = child.getNodeName();
                     if (childName.equals("TextEntry")) {
-                        String keyword = getAttribute(child, "keyword");
+                        String keyword =
+                            getAttribute(child, "keyword", "", false);
                         String value = getAttribute(child, "value");
-                        String encoding = getAttribute(child, "encoding");
-                        String language = getAttribute(child, "language");
+                        String language =
+                            getAttribute(child, "language", "", false);
                         String compression =
-                            getAttribute(child, "compression");
+                            getAttribute(child, "compression", "none", false);
 
-                        if (isISOLatin(value)) {
+                        if (!isValidKeyword(keyword)) {
+                            // Just ignore this node, PNG requires keywords
+                        } else if (isISOLatin(value, true)) {
                             if (compression.equals("zip")) {
                                 // Use a zTXt node
                                 zTXt_keyword.add(keyword);
                                 zTXt_text.add(value);
-                                zTXt_compressionMethod.add(new Integer(0));
+                                zTXt_compressionMethod.add(Integer.valueOf(0));
                             } else {
                                 // Use a tEXt node
                                 tEXt_keyword.add(keyword);
