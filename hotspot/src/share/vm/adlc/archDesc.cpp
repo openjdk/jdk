@@ -140,7 +140,7 @@ bool MatchList::search(const char *opc, const char *res, const char *lch,
       if ((rch == _rchild) || (rch && _rchild && !strcmp(rch, _rchild))) {
         char * predStr = get_pred();
         char * prStr = pr?pr->_pred:NULL;
-        if ((prStr == predStr) || (prStr && predStr && !strcmp(prStr, predStr))) {
+        if (ADLParser::equivalent_expressions(prStr, predStr)) {
           return true;
         }
       }

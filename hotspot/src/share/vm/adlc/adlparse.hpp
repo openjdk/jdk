@@ -93,6 +93,7 @@ protected:
   void pipe_parse(void);        // Parse pipeline section
   void definitions_parse(void); // Parse definitions section
   void peep_parse(void);        // Parse peephole rule definitions
+  void preproc_line(void);      // Parse a #line statement
   void preproc_define(void);    // Parse a #define statement
   void preproc_undef(void);     // Parse an #undef statement
 
@@ -226,7 +227,7 @@ protected:
   void  get_effectlist(FormDict &effects, FormDict &operands); // Parse effect-operand pairs
   // Return the contents of a parenthesized expression.
   // Requires initial '(' and consumes final ')', which is replaced by '\0'.
-  char *get_paren_expr(const char *description);
+  char *get_paren_expr(const char *description, bool include_location = false);
   // Return expression up to next stop-char, which terminator replaces.
   // Does not require initial '('.  Does not consume final stop-char.
   // Final stop-char is left in _curchar, but is also is replaced by '\0'.
@@ -234,6 +235,11 @@ protected:
   char *find_cpp_block(const char *description); // Parse a C++ code block
   // Issue parser error message & go to EOL
   void parse_err(int flag, const char *fmt, ...);
+  // Create a location marker for this file and line.
+  char *get_line_string(int linenum = 0);
+  // Return a location marker which tells the C preprocessor to
+  // forget the previous location marker.  (Requires awk postprocessing.)
+  char *end_line_marker() { return (char*)"\n#line 999999\n"; }
 
   // Return pointer to current character
   inline char  cur_char(void);
@@ -268,5 +274,6 @@ public:
   static bool is_literal_constant(const char *hex_string);
   static bool is_hex_digit(char digit);
   static bool is_int_token(const char* token, int& intval);
+  static bool equivalent_expressions(const char* str1, const char* str2);
   static void trim(char* &token);  // trim leading & trailing spaces
 };
