@@ -625,6 +625,9 @@ class CommandLineFlags {
   develop(bool, CheckZapUnusedHeapArea, false,                              \
           "Check zapping of unused heap space")                             \
                                                                             \
+  develop(bool, ZapFillerObjects, trueInDebug,                              \
+          "Zap filler objects with 0xDEAFBABE")                             \
+                                                                            \
   develop(bool, PrintVMMessages, true,                                      \
           "Print vm messages on console")                                   \
                                                                             \
@@ -1200,11 +1203,12 @@ class CommandLineFlags {
   product(uintx, ParallelCMSThreads, 0,                                     \
           "Max number of threads CMS will use for concurrent work")         \
                                                                             \
-  develop(bool, ParallelOldMTUnsafeMarkBitMap, false,                       \
-          "Use the Parallel Old MT unsafe in marking the bitmap")           \
+  develop(bool, ParallelOldGCSplitALot, false,                              \
+          "Provoke splitting (copying data from a young gen space to"       \
+          "multiple destination spaces)")                                   \
                                                                             \
-  develop(bool, ParallelOldMTUnsafeUpdateLiveData, false,                   \
-          "Use the Parallel Old MT unsafe in update of live size")          \
+  develop(uintx, ParallelOldGCSplitInterval, 3,                             \
+          "How often to provoke splitting a young gen space")               \
                                                                             \
   develop(bool, TraceRegionTasksQueuing, false,                             \
           "Trace the queuing of the region tasks")                          \
