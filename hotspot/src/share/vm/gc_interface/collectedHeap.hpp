@@ -47,6 +47,9 @@ class CollectedHeap : public CHeapObj {
   static int       _fire_out_of_memory_count;
 #endif
 
+  // Used for filler objects (static, but initialized in ctor).
+  static size_t _filler_array_max_size;
+
  protected:
   MemRegion _reserved;
   BarrierSet* _barrier_set;
@@ -118,6 +121,21 @@ class CollectedHeap : public CHeapObj {
 
   // Clears an allocated object.
   inline static void init_obj(HeapWord* obj, size_t size);
+
+  // Filler object utilities.
+  static inline size_t filler_array_hdr_size();
+  static inline size_t filler_array_min_size();
+  static inline size_t filler_array_max_size();
+
+  DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
+  DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words);)
+
+  // Fill with a single array; caller must ensure filler_array_min_size() <=
+  // words <= filler_array_max_size().
+  static inline void fill_with_array(HeapWord* start, size_t words);
+
+  // Fill with a single object (either an int array or a java.lang.Object).
+  static inline void fill_with_object_impl(HeapWord* start, size_t words);
 
   // Verification functions
   virtual void check_for_bad_heap_word_value(HeapWord* addr, size_t size)
@@ -293,6 +311,27 @@ class CollectedHeap : public CHeapObj {
 
   // The boundary between a "large" and "small" array of primitives, in words.
   virtual size_t large_typearray_limit() = 0;
+
+  // Utilities for turning raw memory into filler objects.
+  //
+  // min_fill_size() is the smallest region that can be filled.
+  // fill_with_objects() can fill arbitrary-sized regions of the heap using
+  // multiple objects.  fill_with_object() is for regions known to be smaller
+  // than the largest array of integers; it uses a single object to fill the
+  // region and has slightly less overhead.
+  static size_t min_fill_size() {
+    return size_t(align_object_size(oopDesc::header_size()));
+  }
+
+  static void fill_with_objects(HeapWord* start, size_t words);
+
+  static void fill_with_object(HeapWord* start, size_t words);
+  static void fill_with_object(MemRegion region) {
+    fill_with_object(region.start(), region.word_size());
+  }
+  static void fill_with_object(HeapWord* start, HeapWord* end) {
+    fill_with_object(start, pointer_delta(end, start));
+  }
 
   // Some heaps may offer a contiguous region for shared non-blocking
   // allocation, via inlined code (by exporting the address of the top and
