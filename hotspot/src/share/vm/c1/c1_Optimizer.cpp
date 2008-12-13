@@ -327,8 +327,6 @@ class BlockMerger: public BlockClosure {
                 BlockBegin* fsux = if_->fsux();
                 if (swapped) {
                   cond = Instruction::mirror(cond);
-                  tsux = if_->fsux();
-                  fsux = if_->tsux();
                 }
 
                 BlockBegin* tblock = tval->compare(cond, con, tsux, fsux);
