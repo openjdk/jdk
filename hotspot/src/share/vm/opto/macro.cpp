@@ -1724,6 +1724,13 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
     if (klass_node == NULL) {
       Node* k_adr = basic_plus_adr(obj, oopDesc::klass_offset_in_bytes());
       klass_node = transform_later( LoadKlassNode::make(_igvn, mem, k_adr, _igvn.type(k_adr)->is_ptr()) );
+#ifdef _LP64
+      if (UseCompressedOops && klass_node->is_DecodeN()) {
+        assert(klass_node->in(1)->Opcode() == Op_LoadNKlass, "sanity");
+        klass_node->in(1)->init_req(0, ctrl);
+      } else
+#endif
+      klass_node->init_req(0, ctrl);
     }
     Node *proto_node = make_load(ctrl, mem, klass_node, Klass::prototype_header_offset_in_bytes() + sizeof(oopDesc), TypeX_X, TypeX_X->basic_type());
 
