@@ -2192,6 +2192,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
 
   case Op_DecodeN:
     assert(!n->in(1)->is_EncodeP(), "should be optimized out");
+    assert(n->in(0) == NULL, "no control");
     break;
 
   case Op_EncodeP: {
