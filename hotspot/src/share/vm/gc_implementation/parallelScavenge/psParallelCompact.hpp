@@ -1154,8 +1154,10 @@ class PSParallelCompact : AllStatic {
                                 HeapWord* end_addr);
 
   // Decrement the destination count for each non-empty source region in the
-  // range [beg_region, region(region_align_up(end_addr))).
+  // range [beg_region, region(region_align_up(end_addr))).  If the destination
+  // count for a region goes to 0 and it needs to be filled, enqueue it.
   static void decrement_destination_counts(ParCompactionManager* cm,
+                                           SpaceId src_space_id,
                                            size_t beg_region,
                                            HeapWord* end_addr);
 
@@ -1230,6 +1232,8 @@ class PSParallelCompact : AllStatic {
 #endif  // #ifndef PRODUCT
 
 #ifdef  ASSERT
+  // Sanity check the new location of a word in the heap.
+  static inline void check_new_location(HeapWord* old_addr, HeapWord* new_addr);
   // Verify that all the regions have been emptied.
   static void verify_complete(SpaceId space_id);
 #endif  // #ifdef ASSERT
@@ -1396,6 +1400,15 @@ inline void PSParallelCompact::adjust_pointer(T* p,
     adjust_pointer(p);
   }
 }
+
+#ifdef ASSERT
+inline void
+PSParallelCompact::check_new_location(HeapWord* old_addr, HeapWord* new_addr)
+{
+  assert(old_addr >= new_addr || space_id(old_addr) != space_id(new_addr),
+         "must move left or to a different space");
+}
+#endif // ASSERT
 
 class MoveAndUpdateClosure: public ParMarkBitMapClosure {
  public:
