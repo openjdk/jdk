@@ -726,7 +726,7 @@ HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr) {
   size_t live_to_left = bitmap->live_words_in_range(search_start, oop(addr));
 
   result += partial_obj_size + live_to_left;
-  assert(result <= addr, "object cannot move to the right");
+  DEBUG_ONLY(PSParallelCompact::check_new_location(addr, result);)
   return result;
 }
 
@@ -1828,14 +1828,6 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
                                           new_top_addr);
       assert(done, "space must fit into old gen");
 
-      // XXX - this is necessary because decrement_destination_counts() tests
-      // source_region() to determine if a region will be filled.  Probably
-      // better to pass src_space->new_top() into decrement_destination_counts
-      // and test that instead.
-      //
-      // Clear the source_region field for each region in the space.
-      clear_source_region(space->bottom(), _space_info[id].new_top());
-
       // Reset the new_top value for the space.
       _space_info[id].set_new_top(space->bottom());
     } else if (live > 0) {
@@ -1854,7 +1846,6 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
       dst_space_id = SpaceId(id);
       dst_space_end = space->end();
       new_top_addr = _space_info[id].new_top_addr();
-      HeapWord* const clear_end = _space_info[id].new_top();
       NOT_PRODUCT(summary_phase_msg(dst_space_id,
                                     space->bottom(), dst_space_end,
                                     SpaceId(id), next_src_addr, space->top());)
@@ -1865,13 +1856,6 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
                                      new_top_addr);
       assert(done, "space must fit when compacted into itself");
       assert(*new_top_addr <= space->top(), "usage should not grow");
-
-      // XXX - this should go away.  See comments above.
-      //
-      // Clear the source_region field in regions at the end of the space that
-      // will not be filled.
-      HeapWord* const clear_beg = _summary_data.region_align_up(*new_top_addr);
-      clear_source_region(clear_beg, clear_end);
     }
   }
 
@@ -3051,19 +3035,34 @@ HeapWord* PSParallelCompact::first_src_addr(HeapWord* const dest_addr,
 }
 
 void PSParallelCompact::decrement_destination_counts(ParCompactionManager* cm,
+                                                     SpaceId src_space_id,
                                                      size_t beg_region,
                                                      HeapWord* end_addr)
 {
   ParallelCompactData& sd = summary_data();
+
+#ifdef ASSERT
+  MutableSpace* const src_space = _space_info[src_space_id].space();
+  HeapWord* const beg_addr = sd.region_to_addr(beg_region);
+  assert(src_space->contains(beg_addr) || beg_addr == src_space->end(),
+         "src_space_id does not match beg_addr");
+  assert(src_space->contains(end_addr) || end_addr == src_space->end(),
+         "src_space_id does not match end_addr");
+#endif // #ifdef ASSERT
+
   RegionData* const beg = sd.region(beg_region);
-  HeapWord* const end_addr_aligned_up = sd.region_align_up(end_addr);
-  RegionData* const end = sd.addr_to_region_ptr(end_addr_aligned_up);
-  size_t cur_idx = beg_region;
-  for (RegionData* cur = beg; cur < end; ++cur, ++cur_idx) {
+  RegionData* const end = sd.addr_to_region_ptr(sd.region_align_up(end_addr));
+
+  // Regions up to new_top() are enqueued if they become available.
+  HeapWord* const new_top = _space_info[src_space_id].new_top();
+  RegionData* const enqueue_end =
+    sd.addr_to_region_ptr(sd.region_align_up(new_top));
+
+  for (RegionData* cur = beg; cur < end; ++cur) {
     assert(cur->data_size() > 0, "region must have live data");
     cur->decrement_destination_count();
-    if (cur_idx <= cur->source_region() && cur->available() && cur->claim()) {
-      cm->save_for_processing(cur_idx);
+    if (cur < enqueue_end && cur->available() && cur->claim()) {
+      cm->save_for_processing(sd.region(cur));
     }
   }
 }
@@ -3178,7 +3177,8 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, size_t region_idx)
     HeapWord* const old_src_addr = closure.source();
     closure.copy_partial_obj();
     if (closure.is_full()) {
-      decrement_destination_counts(cm, src_region_idx, closure.source());
+      decrement_destination_counts(cm, src_space_id, src_region_idx,
+                                   closure.source());
       region_ptr->set_deferred_obj_addr(NULL);
       region_ptr->set_completed();
       return;
@@ -3187,7 +3187,7 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, size_t region_idx)
     HeapWord* const end_addr = sd.region_align_down(closure.source());
     if (sd.region_align_down(old_src_addr) != end_addr) {
       // The partial object was copied from more than one source region.
-      decrement_destination_counts(cm, src_region_idx, end_addr);
+      decrement_destination_counts(cm, src_space_id, src_region_idx, end_addr);
 
       // Move to the next source region, possibly switching spaces as well.  All
       // args except end_addr may be modified.
@@ -3227,19 +3227,21 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, size_t region_idx)
       region_ptr->set_deferred_obj_addr(closure.destination());
       status = closure.copy_until_full(); // copies from closure.source()
 
-      decrement_destination_counts(cm, src_region_idx, closure.source());
+      decrement_destination_counts(cm, src_space_id, src_region_idx,
+                                   closure.source());
       region_ptr->set_completed();
       return;
     }
 
     if (status == ParMarkBitMap::full) {
-      decrement_destination_counts(cm, src_region_idx, closure.source());
+      decrement_destination_counts(cm, src_space_id, src_region_idx,
+                                   closure.source());
       region_ptr->set_deferred_obj_addr(NULL);
       region_ptr->set_completed();
       return;
     }
 
-    decrement_destination_counts(cm, src_region_idx, end_addr);
+    decrement_destination_counts(cm, src_space_id, src_region_idx, end_addr);
 
     // Move to the next source region, possibly switching spaces as well.  All
     // args except end_addr may be modified.
@@ -3318,7 +3320,7 @@ void PSParallelCompact::reset_millis_since_last_gc() {
 ParMarkBitMap::IterationStatus MoveAndUpdateClosure::copy_until_full()
 {
   if (source() != destination()) {
-    assert(source() > destination(), "must copy to the left");
+    DEBUG_ONLY(PSParallelCompact::check_new_location(source(), destination());)
     Copy::aligned_conjoint_words(source(), destination(), words_remaining());
   }
   update_state(words_remaining());
@@ -3339,7 +3341,7 @@ void MoveAndUpdateClosure::copy_partial_obj()
   // This test is necessary; if omitted, the pointer updates to a partial object
   // that crosses the dense prefix boundary could be overwritten.
   if (source() != destination()) {
-    assert(source() > destination(), "must copy to the left");
+    DEBUG_ONLY(PSParallelCompact::check_new_location(source(), destination());)
     Copy::aligned_conjoint_words(source(), destination(), words);
   }
   update_state(words);
@@ -3364,7 +3366,7 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
   }
 
   if (destination() != source()) {
-    assert(destination() < source(), "must copy to the left");
+    DEBUG_ONLY(PSParallelCompact::check_new_location(source(), destination());)
     Copy::aligned_conjoint_words(source(), destination(), words);
   }
 
