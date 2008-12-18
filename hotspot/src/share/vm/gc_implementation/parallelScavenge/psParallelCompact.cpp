@@ -1473,8 +1473,52 @@ PSParallelCompact::summarize_new_objects(SpaceId id, HeapWord* start)
 }
 
 void
+PSParallelCompact::provoke_split_fill_survivor(SpaceId id)
+{
+  if (total_invocations() % (ParallelOldGCSplitInterval * 3) != 0) {
+    return;
+  }
+
+  MutableSpace* const space = _space_info[id].space();
+  if (space->is_empty()) {
+    HeapWord* b = space->bottom();
+    HeapWord* t = b + space->capacity_in_words() / 2;
+    space->set_top(t);
+    if (ZapUnusedHeapArea) {
+      space->set_top_for_allocations();
+    }
+
+    size_t obj_len = 8;
+    while (b + obj_len <= t) {
+      CollectedHeap::fill_with_object(b, obj_len);
+      mark_bitmap()->mark_obj(b, obj_len);
+      summary_data().add_obj(b, obj_len);
+      b += obj_len;
+      obj_len = (obj_len & 0x18) + 8; // 8 16 24 32 8 16 24 32 ...
+    }
+    if (b < t) {
+      // The loop didn't completely fill to t (top); adjust top downward.
+      space->set_top(b);
+      if (ZapUnusedHeapArea) {
+        space->set_top_for_allocations();
+      }
+    }
+
+    HeapWord** nta = _space_info[id].new_top_addr();
+    bool result = summary_data().summarize(_space_info[id].split_info(),
+                                           space->bottom(), space->top(), NULL,
+                                           space->bottom(), space->end(), nta);
+    assert(result, "space must fit into itself");
+  }
+}
+
+void
 PSParallelCompact::provoke_split(bool & max_compaction)
 {
+  if (total_invocations() % ParallelOldGCSplitInterval != 0) {
+    return;
+  }
+
   const size_t region_size = ParallelCompactData::RegionSize;
   ParallelCompactData& sd = summary_data();
 
@@ -1587,6 +1631,12 @@ void PSParallelCompact::summarize_spaces_quick()
     assert(result, "space must fit into itself");
     _space_info[i].set_dense_prefix(space->bottom());
   }
+
+#ifndef PRODUCT
+  if (ParallelOldGCSplitALot) {
+    provoke_split_fill_survivor(to_space_id);
+  }
+#endif // #ifndef PRODUCT
 }
 
 void PSParallelCompact::fill_dense_prefix_end(SpaceId id)
@@ -1794,9 +1844,7 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
   }
 #ifndef PRODUCT
   if (ParallelOldGCSplitALot && old_space_total_live < old_capacity) {
-    if (total_invocations() % ParallelOldGCSplitInterval == 0) {
-      provoke_split(maximum_compaction);
-    }
+    provoke_split(maximum_compaction);
   }
 #endif // #ifndef PRODUCT
 

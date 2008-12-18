@@ -978,6 +978,10 @@ class PSParallelCompact : AllStatic {
   // Include the new objects in the summary data.
   static void summarize_new_objects(SpaceId id, HeapWord* start);
 
+  // Add live objects to a survivor space since it's rare that both survivors
+  // are non-empty.
+  static void provoke_split_fill_survivor(SpaceId id);
+
   // Add live objects and/or choose the dense prefix to provoke splitting.
   static void provoke_split(bool & maximum_compaction);
 #endif
