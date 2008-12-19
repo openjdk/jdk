@@ -592,6 +592,7 @@ class CMSCollector: public CHeapObj {
   size_t        _ser_pmc_preclean_ovflw;
   size_t        _ser_pmc_remark_ovflw;
   size_t        _par_pmc_remark_ovflw;
+  size_t        _ser_kac_preclean_ovflw;
   size_t        _ser_kac_ovflw;
   size_t        _par_kac_ovflw;
   NOT_PRODUCT(size_t _num_par_pushes;)
@@ -1749,21 +1750,30 @@ class SweepClosure: public BlkClosureCareful {
 // work-routine/closure used to complete transitive
 // marking of objects as live after a certain point
 // in which an initial set has been completely accumulated.
+// This closure is currently used both during the final
+// remark stop-world phase, as well as during the concurrent
+// precleaning of the discovered reference lists.
 class CMSDrainMarkingStackClosure: public VoidClosure {
   CMSCollector*        _collector;
   MemRegion            _span;
   CMSMarkStack*        _mark_stack;
   CMSBitMap*           _bit_map;
   CMSKeepAliveClosure* _keep_alive;
+  bool                 _concurrent_precleaning;
  public:
   CMSDrainMarkingStackClosure(CMSCollector* collector, MemRegion span,
                       CMSBitMap* bit_map, CMSMarkStack* mark_stack,
-                      CMSKeepAliveClosure* keep_alive):
+                      CMSKeepAliveClosure* keep_alive,
+                      bool cpc):
     _collector(collector),
     _span(span),
     _bit_map(bit_map),
     _mark_stack(mark_stack),
-    _keep_alive(keep_alive) { }
+    _keep_alive(keep_alive),
+    _concurrent_precleaning(cpc) {
+    assert(_concurrent_precleaning == _keep_alive->concurrent_precleaning(),
+           "Mismatch");
+  }
 
   void do_void();
 };

@@ -414,9 +414,20 @@ size_t MutableNUMASpace::adaptive_chunk_size(int i, size_t limit) {
   if (limit > 0) {
     limit = round_down(limit, page_size());
     if (chunk_size > current_chunk_size(i)) {
-      chunk_size = MIN2((off_t)chunk_size, (off_t)current_chunk_size(i) + (off_t)limit);
+      size_t upper_bound = pages_available * page_size();
+      if (upper_bound > limit &&
+          current_chunk_size(i) < upper_bound - limit) {
+        // The resulting upper bound should not exceed the available
+        // amount of memory (pages_available * page_size()).
+        upper_bound = current_chunk_size(i) + limit;
+      }
+      chunk_size = MIN2(chunk_size, upper_bound);
     } else {
-      chunk_size = MAX2((off_t)chunk_size, (off_t)current_chunk_size(i) - (off_t)limit);
+      size_t lower_bound = page_size();
+      if (current_chunk_size(i) > limit) { // lower_bound shouldn't underflow.
+        lower_bound = current_chunk_size(i) - limit;
+      }
+      chunk_size = MAX2(chunk_size, lower_bound);
     }
   }
   assert(chunk_size <= pages_available * page_size(), "Chunk size out of range");

@@ -115,6 +115,8 @@ heapInspection.cpp                      klassOop.hpp
 heapInspection.cpp                      os.hpp
 heapInspection.cpp                      resourceArea.hpp
 
+javaCalls.cpp                           jniCheck.hpp
+
 jniCheck.cpp                            fieldDescriptor.hpp
 jniCheck.cpp                            handles.hpp
 jniCheck.cpp                            instanceKlass.hpp

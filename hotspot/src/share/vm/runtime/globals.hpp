@@ -342,6 +342,9 @@ class CommandLineFlags {
   product(bool, UseNUMA, false,                                             \
           "Use NUMA if available")                                          \
                                                                             \
+  product(bool, ForceNUMA, false,                                           \
+          "Force NUMA optimizations on single-node/UMA systems")            \
+                                                                            \
   product(intx, NUMAChunkResizeWeight, 20,                                  \
           "Percentage (0-100) used to weight the current sample when "      \
           "computing exponentially decaying average for "                   \
@@ -1474,7 +1477,7 @@ class CommandLineFlags {
           "CMSPrecleanNumerator:CMSPrecleanDenominator yields convergence"  \
           " ratio")                                                         \
                                                                             \
-  product(bool, CMSPrecleanRefLists1, false,                                \
+  product(bool, CMSPrecleanRefLists1, true,                                 \
           "Preclean ref lists during (initial) preclean phase")             \
                                                                             \
   product(bool, CMSPrecleanRefLists2, false,                                \
@@ -3262,9 +3265,10 @@ class CommandLineFlags {
   diagnostic(bool, PrintDTraceDOF, false,                                   \
              "Print the DTrace DOF passed to the system for JSDT probes")   \
                                                                             \
-  product(bool, UseVMInterruptibleIO, true,                                 \
+  product(bool, UseVMInterruptibleIO, false,                                \
           "(Unstable, Solaris-specific) Thread interrupt before or with "   \
-          "EINTR for I/O operations results in OS_INTRPT")
+          "EINTR for I/O operations results in OS_INTRPT. The default value"\
+          " of this flag is true for JDK 6 and earliers")
 
 
 /*
