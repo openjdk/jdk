@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -891,6 +891,7 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     ReferenceProcessorIsAliveMutator rp_is_alive_null(ref_processor(), NULL);
 
     ref_processor()->enable_discovery();
+    ref_processor()->setup_policy(clear_all_soft_refs);
 
     // Do collection work
     {
@@ -2463,7 +2464,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
 
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 
-    // We want to turn off ref discovere, if necessary, and turn it back on
+    // We want to turn off ref discovery, if necessary, and turn it back on
     // on again later if we do.
     bool was_enabled = ref_processor()->discovery_enabled();
     if (was_enabled) ref_processor()->disable_discovery();
