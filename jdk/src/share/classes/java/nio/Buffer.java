@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -541,6 +541,10 @@ public abstract class Buffer {
 
     final int markValue() {                             // package-private
         return mark;
+    }
+
+    final void discardMark() {                          // package-private
+        mark = -1;
     }
 
     static void checkBounds(int off, int len, int size) { // package-private

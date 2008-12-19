@@ -365,6 +365,7 @@ class Direct$Type$Buffer$RW$$BO$
         unsafe.copyMemory(ix(pos), ix(0), rem << $LG_BYTES_PER_VALUE$);
         position(rem);
         limit(capacity());
+        discardMark();
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();

@@ -4638,7 +4638,7 @@ void os::Solaris::synchronization_init() {
   }
 }
 
-void os::Solaris::liblgrp_init() {
+bool os::Solaris::liblgrp_init() {
   void *handle = dlopen("liblgrp.so.1", RTLD_LAZY);
   if (handle != NULL) {
     os::Solaris::set_lgrp_home(CAST_TO_FN_PTR(lgrp_home_func_t, dlsym(handle, "lgrp_home")));
@@ -4653,9 +4653,9 @@ void os::Solaris::liblgrp_init() {
 
     lgrp_cookie_t c = lgrp_init(LGRP_VIEW_CALLER);
     set_lgrp_cookie(c);
-  } else {
-    warning("your OS does not support NUMA");
+    return true;
   }
+  return false;
 }
 
 void os::Solaris::misc_sym_init() {
@@ -4824,9 +4824,25 @@ jint os::init_2(void) {
         vm_page_size()));
 
   Solaris::libthread_init();
+
   if (UseNUMA) {
-    Solaris::liblgrp_init();
+    if (!Solaris::liblgrp_init()) {
+      UseNUMA = false;
+    } else {
+      size_t lgrp_limit = os::numa_get_groups_num();
+      int *lgrp_ids = NEW_C_HEAP_ARRAY(int, lgrp_limit);
+      size_t lgrp_num = os::numa_get_leaf_groups(lgrp_ids, lgrp_limit);
+      FREE_C_HEAP_ARRAY(int, lgrp_ids);
+      if (lgrp_num < 2) {
+        // There's only one locality group, disable NUMA.
+        UseNUMA = false;
+      }
+    }
+    if (!UseNUMA && ForceNUMA) {
+      UseNUMA = true;
+    }
   }
+
   Solaris::misc_sym_init();
   Solaris::signal_sets_init();
   Solaris::init_signal_mem();

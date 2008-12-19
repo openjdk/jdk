@@ -2303,6 +2303,7 @@ javaCalls.cpp                           handles.inline.hpp
 javaCalls.cpp                           interfaceSupport.hpp
 javaCalls.cpp                           interpreter.hpp
 javaCalls.cpp                           javaCalls.hpp
+javaCalls.cpp                           jniCheck.hpp
 javaCalls.cpp                           linkResolver.hpp
 javaCalls.cpp                           mutexLocker.hpp
 javaCalls.cpp                           nmethod.hpp
@@ -3434,6 +3435,7 @@ referenceProcessor.cpp                  referenceProcessor.hpp
 referenceProcessor.cpp                  systemDictionary.hpp
 
 referenceProcessor.hpp                  instanceRefKlass.hpp
+referenceProcessor.hpp                  referencePolicy.hpp
 
 reflection.cpp                          arguments.hpp
 reflection.cpp                          handles.inline.hpp

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ class JavaCallArguments : public StackObj {
   int   size_of_parameters() const { return _size; }
 
   // Verify that pushed arguments fits a given method
-  void verify(methodHandle method, BasicType return_type, Thread *thread) PRODUCT_RETURN;
+  void verify(methodHandle method, BasicType return_type, Thread *thread);
 };
 
 // All calls to Java have to go via JavaCalls. Sets up the stack frame
