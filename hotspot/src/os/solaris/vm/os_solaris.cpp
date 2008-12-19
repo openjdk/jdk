@@ -1638,16 +1638,24 @@ inline hrtime_t oldgetTimeNanos() {
 // getTimeNanos is guaranteed to not move backward on Solaris
 inline hrtime_t getTimeNanos() {
   if (VM_Version::supports_cx8()) {
-    bool retry = false;
-    hrtime_t newtime = gethrtime();
-    hrtime_t oldmaxtime = max_hrtime;
-    hrtime_t retmaxtime = oldmaxtime;
-    while ((newtime > retmaxtime) && (retry == false || retmaxtime != oldmaxtime)) {
-      oldmaxtime = retmaxtime;
-      retmaxtime = Atomic::cmpxchg(newtime, (volatile jlong *)&max_hrtime, oldmaxtime);
-      retry = true;
-    }
-    return (newtime > retmaxtime) ? newtime : retmaxtime;
+    const hrtime_t now = gethrtime();
+    const hrtime_t prev = max_hrtime;
+    if (now <= prev)  return prev;   // same or retrograde time;
+    const hrtime_t obsv = Atomic::cmpxchg(now, (volatile jlong*)&max_hrtime, prev);
+    assert(obsv >= prev, "invariant");   // Monotonicity
+    // If the CAS succeeded then we're done and return "now".
+    // If the CAS failed and the observed value "obs" is >= now then
+    // we should return "obs".  If the CAS failed and now > obs > prv then
+    // some other thread raced this thread and installed a new value, in which case
+    // we could either (a) retry the entire operation, (b) retry trying to install now
+    // or (c) just return obs.  We use (c).   No loop is required although in some cases
+    // we might discard a higher "now" value in deference to a slightly lower but freshly
+    // installed obs value.   That's entirely benign -- it admits no new orderings compared
+    // to (a) or (b) -- and greatly reduces coherence traffic.
+    // We might also condition (c) on the magnitude of the delta between obs and now.
+    // Avoiding excessive CAS operations to hot RW locations is critical.
+    // See http://blogs.sun.com/dave/entry/cas_and_cache_trivia_invalidate
+    return (prev == obsv) ? now : obsv ;
   } else {
     return oldgetTimeNanos();
   }
