@@ -504,7 +504,7 @@ class SignatureChekker : public SignatureIterator {
       intptr_t v = _value[p];
       if (v != 0 ) {
         size_t t = (size_t)v;
-        bad = (t < (size_t)os::vm_page_size() ) || !(*(oop*)v)->is_oop_or_null(true);
+        bad = (t < (size_t)os::vm_page_size() ) || !Handle::raw_resolve((oop *)v)->is_oop_or_null(true);
         if (CheckJNICalls && bad) {
           ReportJNIFatalError((JavaThread*)_thread, "Bad JNI oop argument");
         }
