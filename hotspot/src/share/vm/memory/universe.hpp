@@ -133,7 +133,6 @@ class Universe: AllStatic {
   static klassOop _constantPoolCacheKlassObj;
   static klassOop _compiledICHolderKlassObj;
   static klassOop _systemObjArrayKlassObj;
-  static klassOop _fillerArrayKlassObj;
 
   // Known objects in the VM
 
@@ -266,7 +265,6 @@ class Universe: AllStatic {
   static klassOop constantPoolCacheKlassObj()         { return _constantPoolCacheKlassObj; }
   static klassOop compiledICHolderKlassObj()          { return _compiledICHolderKlassObj;  }
   static klassOop systemObjArrayKlassObj()            { return _systemObjArrayKlassObj;    }
-  static klassOop fillerArrayKlassObj()               { return _fillerArrayKlassObj;       }
 
   // Known objects in tbe VM
   static oop int_mirror()                   { return check_mirror(_int_mirror);
