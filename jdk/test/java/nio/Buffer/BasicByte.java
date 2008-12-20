@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 // -- This file was mechanically generated: Do not edit! -- //
 
 import java.nio.*;
+import java.lang.reflect.Method;
 
 
 public class BasicByte
@@ -184,32 +185,57 @@ public class BasicByte
         b.position(p);
     }
 
+    private static void compact(Buffer b) {
+        try {
+            Class<?> cl = b.getClass();
+            Method m = cl.getDeclaredMethod("compact");
+            m.setAccessible(true);
+            m.invoke(b);
+        } catch (Exception e) {
+            fail(e.getMessage(), b);
+        }
+    }
+
+    private static void checkInvalidMarkException(final Buffer b) {
+        tryCatch(b, InvalidMarkException.class, new Runnable() {
+            public void run() {
+                b.mark();
+                compact(b);
+                b.reset();
+            }});
+    }
+
     private static void testViews(int level, ByteBuffer b, boolean direct) {
 
         ShortBuffer sb = b.asShortBuffer();
         BasicShort.test(level, sb, direct);
         checkBytes(b, new byte[] { 0, (byte)ic(0) });
+        checkInvalidMarkException(sb);
 
         CharBuffer cb = b.asCharBuffer();
         BasicChar.test(level, cb, direct);
         checkBytes(b, new byte[] { 0, (byte)ic(0) });
+        checkInvalidMarkException(cb);
 
         IntBuffer ib = b.asIntBuffer();
         BasicInt.test(level, ib, direct);
         checkBytes(b, new byte[] { 0, 0, 0, (byte)ic(0) });
+        checkInvalidMarkException(ib);
 
         LongBuffer lb = b.asLongBuffer();
         BasicLong.test(level, lb, direct);
         checkBytes(b, new byte[] { 0, 0, 0, 0, 0, 0, 0, (byte)ic(0) });
+        checkInvalidMarkException(lb);
 
         FloatBuffer fb = b.asFloatBuffer();
         BasicFloat.test(level, fb, direct);
         checkBytes(b, new byte[] { 0x42, (byte)0xc2, 0, 0 });
+        checkInvalidMarkException(fb);
 
         DoubleBuffer db = b.asDoubleBuffer();
         BasicDouble.test(level, db, direct);
         checkBytes(b, new byte[] { 0x40, 0x58, 0x40, 0, 0, 0, 0, 0 });
-
+        checkInvalidMarkException(db);
     }
 
     private static void testHet(int level, ByteBuffer b) {
@@ -288,8 +314,11 @@ public class BasicByte
         try {
             thunk.run();
         } catch (Throwable x) {
-            if (ex.isAssignableFrom(x.getClass()))
+            if (ex.isAssignableFrom(x.getClass())) {
                 caught = true;
+            } else {
+                fail(x.getMessage() + " not expected");
+            }
         }
         if (!caught)
             fail(ex.getName() + " not thrown", b);
@@ -356,7 +385,6 @@ public class BasicByte
 
         // Exceptions
 
-        boolean caught = false;
         relPut(b);
         b.limit(b.capacity() / 2);
         b.position(b.limit());
@@ -384,6 +412,14 @@ public class BasicByte
         tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
                 public void run() {
                     b.put(b.limit(), (byte)42);
+                }});
+
+        tryCatch(b, InvalidMarkException.class, new Runnable() {
+                public void run() {
+                    b.position(0);
+                    b.mark();
+                    b.compact();
+                    b.reset();
                 }});
 
         // Values

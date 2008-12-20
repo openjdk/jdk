@@ -29,32 +29,58 @@ import java.io.*;
 /**
  * OutputStream that sends the output to the underlying stream using chunked
  * encoding as specified in RFC 2068.
- *
- * @author  Alan Bateman
  */
 public class ChunkedOutputStream extends PrintStream {
 
     /* Default chunk size (including chunk header) if not specified */
     static final int DEFAULT_CHUNK_SIZE = 4096;
+    private static final byte[] CRLF = {'\r', '\n'};
+    private static final int CRLF_SIZE = CRLF.length;
+    private static final byte[] FOOTER = CRLF;
+    private static final int FOOTER_SIZE = CRLF_SIZE;
+    private static final byte[] EMPTY_CHUNK_HEADER = getHeader(0);
+    private static final int EMPTY_CHUNK_HEADER_SIZE = getHeaderSize(0);
 
     /* internal buffer */
     private byte buf[];
+    /* size of data (excluding footers and headers) already stored in buf */
+    private int size;
+    /* current index in buf (i.e. buf[count] */
     private int count;
+    /* number of bytes to be filled up to complete a data chunk
+     * currently being built */
+    private int spaceInCurrentChunk;
 
     /* underlying stream */
     private PrintStream out;
 
     /* the chunk size we use */
-    private int preferredChunkSize;
-
-    /* if the users write buffer is bigger than this size, we
-     * write direct from the users buffer instead of copying
-     */
-    static final int MAX_BUF_SIZE = 10 * 1024;
+    private int preferredChunkDataSize;
+    private int preferedHeaderSize;
+    private int preferredChunkGrossSize;
+    /* header for a complete Chunk */
+    private byte[] completeHeader;
 
     /* return the size of the header for a particular chunk size */
-    private int headerSize(int size) {
-        return 2 + (Integer.toHexString(size)).length();
+    private static int getHeaderSize(int size) {
+        return (Integer.toHexString(size)).length() + CRLF_SIZE;
+    }
+
+    /* return a header for a particular chunk size */
+    private static byte[] getHeader(int size){
+        try {
+            String hexStr =  Integer.toHexString(size);
+            byte[] hexBytes = hexStr.getBytes("US-ASCII");
+            byte[] header = new byte[getHeaderSize(size)];
+            for (int i=0; i<hexBytes.length; i++)
+                header[i] = hexBytes[i];
+            header[hexBytes.length] = CRLF[0];
+            header[hexBytes.length+1] = CRLF[1];
+            return header;
+        } catch (java.io.UnsupportedEncodingException e) {
+            /* This should never happen */
+            throw new InternalError(e.getMessage());
+        }
     }
 
     public ChunkedOutputStream(PrintStream o) {
@@ -63,103 +89,94 @@ public class ChunkedOutputStream extends PrintStream {
 
     public ChunkedOutputStream(PrintStream o, int size) {
         super(o);
-
         out = o;
 
         if (size <= 0) {
             size = DEFAULT_CHUNK_SIZE;
         }
+
         /* Adjust the size to cater for the chunk header - eg: if the
          * preferred chunk size is 1k this means the chunk size should
-         * be 1019 bytes (differs by 5 from preferred size because of
-         * 3 bytes for chunk size in hex and CRLF).
+         * be 1017 bytes (differs by 7 from preferred size because of
+         * 3 bytes for chunk size in hex and CRLF (header) and CRLF (footer)).
+         *
+         * If headerSize(adjusted_size) is shorter then headerSize(size)
+         * then try to use the extra byte unless headerSize(adjusted_size+1)
+         * increases back to headerSize(size)
          */
         if (size > 0) {
-            int adjusted_size = size - headerSize(size);
-            if (adjusted_size + headerSize(adjusted_size) < size) {
+            int adjusted_size = size - getHeaderSize(size) - FOOTER_SIZE;
+            if (getHeaderSize(adjusted_size+1) < getHeaderSize(size)){
                 adjusted_size++;
             }
             size = adjusted_size;
         }
 
         if (size > 0) {
-            preferredChunkSize = size;
+            preferredChunkDataSize = size;
         } else {
-            preferredChunkSize = DEFAULT_CHUNK_SIZE - headerSize(DEFAULT_CHUNK_SIZE);
+            preferredChunkDataSize = DEFAULT_CHUNK_SIZE -
+                    getHeaderSize(DEFAULT_CHUNK_SIZE) - FOOTER_SIZE;
         }
+
+        preferedHeaderSize = getHeaderSize(preferredChunkDataSize);
+        preferredChunkGrossSize = preferedHeaderSize + preferredChunkDataSize
+                + FOOTER_SIZE;
+        completeHeader = getHeader(preferredChunkDataSize);
 
         /* start with an initial buffer */
-        buf = new byte[preferredChunkSize + 32];
+        buf = new byte[preferredChunkDataSize + 32];
+        reset();
     }
 
     /*
-     * If flushAll is true, then all data is flushed in one chunk.
-     *
-     * If false and the size of the buffer data exceeds the preferred
-     * chunk size then chunks are flushed to the output stream.
-     * If there isn't enough data to make up a complete chunk,
-     * then the method returns.
+     * Flush a buffered, completed chunk to an underlying stream. If the data in
+     * the buffer is insufficient to build up a chunk of "preferredChunkSize"
+     * then the data do not get flushed unless flushAll is true. If flushAll is
+     * true then the remaining data builds up a last chunk which size is smaller
+     * than preferredChunkSize, and then the last chunk gets flushed to
+     * underlying stream. If flushAll is true and there is no data in a buffer
+     * at all then an empty chunk (containing a header only) gets flushed to
+     * underlying stream.
      */
-    private void flush(byte[] buf, boolean flushAll) {
-        flush (buf, flushAll, 0);
-    }
-
-    private void flush(byte[] buf, boolean flushAll, int offset) {
-        int chunkSize;
-
-        do {
-            if (count < preferredChunkSize) {
-                if (!flushAll) {
-                    break;
-                }
-                chunkSize = count;
-            } else {
-                chunkSize = preferredChunkSize;
-            }
-
-            byte[] bytes = null;
-            try {
-                bytes = (Integer.toHexString(chunkSize)).getBytes("US-ASCII");
-            } catch (java.io.UnsupportedEncodingException e) {
-                //This should never happen.
-                throw new InternalError(e.getMessage());
-            }
-
-            out.write(bytes, 0, bytes.length);
-            out.write((byte)'\r');
-            out.write((byte)'\n');
-            if (chunkSize > 0) {
-                out.write(buf, offset, chunkSize);
-                out.write((byte)'\r');
-                out.write((byte)'\n');
-            }
+     private void flush(boolean flushAll) {
+        if (spaceInCurrentChunk == 0) {
+            /* flush a completed chunk to underlying stream */
+            out.write(buf, 0, preferredChunkGrossSize);
             out.flush();
-            if (checkError()) {
-                break;
-            }
-            if (chunkSize > 0) {
-                count -= chunkSize;
-                offset += chunkSize;
-            }
-        } while (count > 0);
+            reset();
+        } else if (flushAll){
+            /* complete the last chunk and flush it to underlying stream */
+            if (size > 0){
+                /* adjust a header start index in case the header of the last
+                 * chunk is shorter then preferedHeaderSize */
 
-        if (!checkError() && count > 0) {
-            System.arraycopy(buf, offset, this.buf, 0, count);
-        }
+                int adjustedHeaderStartIndex = preferedHeaderSize -
+                        getHeaderSize(size);
+
+                /* write header */
+                System.arraycopy(getHeader(size), 0, buf,
+                        adjustedHeaderStartIndex, getHeaderSize(size));
+
+                /* write footer */
+                buf[count++] = FOOTER[0];
+                buf[count++] = FOOTER[1];
+
+                //send the last chunk to underlying stream
+                out.write(buf, adjustedHeaderStartIndex, count - adjustedHeaderStartIndex);
+            } else {
+                //send an empty chunk (containing just a header) to underlying stream
+                out.write(EMPTY_CHUNK_HEADER, 0, EMPTY_CHUNK_HEADER_SIZE);
+            }
+
+            out.flush();
+            reset();
+         }
     }
 
+    @Override
     public boolean checkError() {
         return out.checkError();
-    }
-
-    /*
-     * Check if we have enough data for a chunk and if so flush to the
-     * underlying output stream.
-     */
-    private void checkFlush() {
-        if (count >= preferredChunkSize) {
-            flush(buf, false);
-        }
     }
 
     /* Check that the output stream is still open */
@@ -168,6 +185,18 @@ public class ChunkedOutputStream extends PrintStream {
             setError();
     }
 
+   /*
+    * Writes data from b[] to an internal buffer and stores the data as data
+    * chunks of a following format: {Data length in Hex}{CRLF}{data}{CRLF}
+    * The size of the data is preferredChunkSize. As soon as a completed chunk
+    * is read from b[] a process of reading from b[] suspends, the chunk gets
+    * flushed to the underlying stream and then the reading process from b[]
+    * continues. When there is no more sufficient data in b[] to build up a
+    * chunk of preferredChunkSize size the data get stored as an incomplete
+    * chunk of a following format: {space for data length}{CRLF}{data}
+    * The size of the data is of course smaller than preferredChunkSize.
+    */
+    @Override
     public synchronized void write(byte b[], int off, int len) {
         ensureOpen();
         if ((off < 0) || (off > b.length) || (len < 0) ||
@@ -177,81 +206,95 @@ public class ChunkedOutputStream extends PrintStream {
             return;
         }
 
-        int l = preferredChunkSize - count;
+        /* if b[] contains enough data then one loop cycle creates one complete
+         * data chunk with a header, body and a footer, and then flushes the
+         * chunk to the underlying stream. Otherwise, the last loop cycle
+         * creates incomplete data chunk with empty header and with no footer
+         * and stores this incomplete chunk in an internal buffer buf[]
+         */
+        int bytesToWrite = len;
+        int inputIndex = off;  /* the index of the byte[] currently being written */
 
-        if ((len > MAX_BUF_SIZE) && (len > l)) {
-            /* current chunk is empty just write the data */
-            if (count == 0) {
-                count = len;
-                flush (b, false, off);
-                return;
+        do {
+            /* enough data to complete a chunk */
+            if (bytesToWrite >= spaceInCurrentChunk) {
+
+                /* header */
+                for (int i=0; i<completeHeader.length; i++)
+                    buf[i] = completeHeader[i];
+
+                /* data */
+                System.arraycopy(b, inputIndex, buf, count, spaceInCurrentChunk);
+                inputIndex += spaceInCurrentChunk;
+                bytesToWrite -= spaceInCurrentChunk;
+                count += spaceInCurrentChunk;
+
+                /* footer */
+                buf[count++] = FOOTER[0];
+                buf[count++] = FOOTER[1];
+                spaceInCurrentChunk = 0; //chunk is complete
+
+                flush(false);
+                if (checkError()){
+                    break;
+                }
             }
 
-            /* first finish the current chunk */
-            if (l > 0) {
-                System.arraycopy(b, off, buf, count, l);
-                count = preferredChunkSize;
-                flush(buf, false);
-            }
+            /* not enough data to build a chunk */
+            else {
+                /* header */
+                /* do not write header if not enough bytes to build a chunk yet */
 
-            count = len - l;
-            /* Now write the rest of the data */
-            flush (b, false, l+off);
-        } else {
-            int newcount = count + len;
+                /* data */
+                System.arraycopy(b, inputIndex, buf, count, bytesToWrite);
+                count += bytesToWrite;
+                size += bytesToWrite;
+                spaceInCurrentChunk -= bytesToWrite;
+                bytesToWrite = 0;
 
-            if (newcount > buf.length) {
-                byte newbuf[] = new byte[Math.max(buf.length << 1, newcount)];
-                System.arraycopy(buf, 0, newbuf, 0, count);
-                buf = newbuf;
+                /* footer */
+                /* do not write header if not enough bytes to build a chunk yet */
             }
-            System.arraycopy(b, off, buf, count, len);
-            count = newcount;
-            checkFlush();
-        }
+        } while (bytesToWrite > 0);
     }
 
-    public synchronized void write(int b) {
-        ensureOpen();
-        int newcount = count + 1;
-        if (newcount > buf.length) {
-            byte newbuf[] = new byte[Math.max(buf.length << 1, newcount)];
-            System.arraycopy(buf, 0, newbuf, 0, count);
-            buf = newbuf;
-        }
-        buf[count] = (byte)b;
-        count = newcount;
-        checkFlush();
+    @Override
+    public synchronized void write(int _b) {
+        byte b[] = {(byte)_b};
+        write(b, 0, 1);
     }
 
     public synchronized void reset() {
-        count = 0;
+        count = preferedHeaderSize;
+        size = 0;
+        spaceInCurrentChunk = preferredChunkDataSize;
     }
 
     public int size() {
-        return count;
+        return size;
     }
 
+    @Override
     public synchronized void close() {
         ensureOpen();
 
         /* if we have buffer a chunked send it */
-        if (count > 0) {
-            flush(buf, true);
+        if (size > 0) {
+            flush(true);
         }
 
         /* send a zero length chunk */
-        flush(buf, true);
+        flush(true);
 
         /* don't close the underlying stream */
         out = null;
     }
 
+    @Override
     public synchronized void flush() {
         ensureOpen();
-        if (count > 0) {
-            flush(buf, true);
+        if (size > 0) {
+            flush(true);
         }
     }
-
 }
