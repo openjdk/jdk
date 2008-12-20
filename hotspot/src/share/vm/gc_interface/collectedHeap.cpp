@@ -178,8 +178,7 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words)
 
   // Set the length first for concurrent GC.
   ((arrayOop)start)->set_length((int)len);
-  post_allocation_setup_common(Universe::fillerArrayKlassObj(), start,
-                               words);
+  post_allocation_setup_common(Universe::intArrayKlassObj(), start, words);
   DEBUG_ONLY(zap_filler_array(start, words);)
 }
 
