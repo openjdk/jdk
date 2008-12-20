@@ -49,7 +49,6 @@ klassOop Universe::_constantPoolKlassObj              = NULL;
 klassOop Universe::_constantPoolCacheKlassObj         = NULL;
 klassOop Universe::_compiledICHolderKlassObj          = NULL;
 klassOop Universe::_systemObjArrayKlassObj            = NULL;
-klassOop Universe::_fillerArrayKlassObj               = NULL;
 oop Universe::_int_mirror                             = NULL;
 oop Universe::_float_mirror                           = NULL;
 oop Universe::_double_mirror                          = NULL;
@@ -127,7 +126,6 @@ void Universe::system_classes_do(void f(klassOop)) {
   f(instanceKlassKlassObj());
   f(constantPoolKlassObj());
   f(systemObjArrayKlassObj());
-  f(fillerArrayKlassObj());
 }
 
 void Universe::oops_do(OopClosure* f, bool do_all) {
@@ -182,7 +180,6 @@ void Universe::oops_do(OopClosure* f, bool do_all) {
   f->do_oop((oop*)&_constantPoolCacheKlassObj);
   f->do_oop((oop*)&_compiledICHolderKlassObj);
   f->do_oop((oop*)&_systemObjArrayKlassObj);
-  f->do_oop((oop*)&_fillerArrayKlassObj);
   f->do_oop((oop*)&_the_empty_byte_array);
   f->do_oop((oop*)&_the_empty_short_array);
   f->do_oop((oop*)&_the_empty_int_array);
@@ -268,7 +265,6 @@ void Universe::genesis(TRAPS) {
 
         _compiledICHolderKlassObj   = compiledICHolderKlass::create_klass(CHECK);
         _systemObjArrayKlassObj     = objArrayKlassKlass::cast(objArrayKlassKlassObj())->allocate_system_objArray_klass(CHECK);
-        _fillerArrayKlassObj        = typeArrayKlass::create_klass(T_INT, sizeof(jint), "<filler>", CHECK);
 
         _the_empty_byte_array       = oopFactory::new_permanent_byteArray(0, CHECK);
         _the_empty_short_array      = oopFactory::new_permanent_shortArray(0, CHECK);
