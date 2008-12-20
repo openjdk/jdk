@@ -339,9 +339,9 @@ class Arguments : AllStatic {
   }
   static bool verify_percentage(uintx value, const char* name);
   static void describe_range_error(ArgsRange errcode);
-  static ArgsRange check_memory_size(jlong size, jlong min_size);
-  static ArgsRange parse_memory_size(const char* s, jlong* long_arg,
-                                     jlong min_size);
+  static ArgsRange check_memory_size(julong size, julong min_size);
+  static ArgsRange parse_memory_size(const char* s, julong* long_arg,
+                                     julong min_size);
 
   // methods to build strings from individual args
   static void build_jvm_args(const char* arg);
