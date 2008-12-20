@@ -444,9 +444,9 @@ char* SysClassPath::add_jars_to_path(char* path, const char* directory) {
 }
 
 // Parses a memory size specification string.
-static bool atomll(const char *s, jlong* result) {
-  jlong n = 0;
-  int args_read = sscanf(s, os::jlong_format_specifier(), &n);
+static bool atomull(const char *s, julong* result) {
+  julong n = 0;
+  int args_read = sscanf(s, os::julong_format_specifier(), &n);
   if (args_read != 1) {
     return false;
   }
@@ -460,15 +460,20 @@ static bool atomll(const char *s, jlong* result) {
   switch (*s) {
     case 'T': case 't':
       *result = n * G * K;
+      // Check for overflow.
+      if (*result/((julong)G * K) != n) return false;
       return true;
     case 'G': case 'g':
       *result = n * G;
+      if (*result/G != n) return false;
       return true;
     case 'M': case 'm':
       *result = n * M;
+      if (*result/M != n) return false;
       return true;
     case 'K': case 'k':
       *result = n * K;
+      if (*result/K != n) return false;
       return true;
     case '\0':
       *result = n;
@@ -478,10 +483,10 @@ static bool atomll(const char *s, jlong* result) {
   }
 }
 
-Arguments::ArgsRange Arguments::check_memory_size(jlong size, jlong min_size) {
+Arguments::ArgsRange Arguments::check_memory_size(julong size, julong min_size) {
   if (size < min_size) return arg_too_small;
   // Check that size will fit in a size_t (only relevant on 32-bit)
-  if ((julong) size > max_uintx) return arg_too_big;
+  if (size > max_uintx) return arg_too_big;
   return arg_in_range;
 }
 
@@ -522,10 +527,10 @@ static bool set_fp_numeric_flag(char* name, char* value, FlagValueOrigin origin)
 
 
 static bool set_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
-  jlong v;
+  julong v;
   intx intx_v;
   bool is_neg = false;
-  // Check the sign first since atomll() parses only unsigned values.
+  // Check the sign first since atomull() parses only unsigned values.
   if (*value == '-') {
     if (!CommandLineFlags::intxAt(name, &intx_v)) {
       return false;
@@ -533,7 +538,7 @@ static bool set_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
     value++;
     is_neg = true;
   }
-  if (!atomll(value, &v)) {
+  if (!atomull(value, &v)) {
     return false;
   }
   intx_v = (intx) v;
@@ -1677,9 +1682,9 @@ static bool match_option(const JavaVMOption* option, const char** names, const c
 }
 
 Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
-                                                  jlong* long_arg,
-                                                  jlong min_size) {
-  if (!atomll(s, long_arg)) return arg_unreadable;
+                                                  julong* long_arg,
+                                                  julong min_size) {
+  if (!atomull(s, long_arg)) return arg_unreadable;
   return check_memory_size(*long_arg, min_size);
 }
 
@@ -1857,7 +1862,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       FLAG_SET_CMDLINE(bool, BackgroundCompilation, false);
     // -Xmn for compatibility with other JVM vendors
     } else if (match_option(option, "-Xmn", &tail)) {
-      jlong long_initial_eden_size = 0;
+      julong long_initial_eden_size = 0;
       ArgsRange errcode = parse_memory_size(tail, &long_initial_eden_size, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
@@ -1869,7 +1874,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       FLAG_SET_CMDLINE(uintx, NewSize, (size_t) long_initial_eden_size);
     // -Xms
     } else if (match_option(option, "-Xms", &tail)) {
-      jlong long_initial_heap_size = 0;
+      julong long_initial_heap_size = 0;
       ArgsRange errcode = parse_memory_size(tail, &long_initial_heap_size, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
@@ -1882,7 +1887,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       set_min_heap_size(initial_heap_size());
     // -Xmx
     } else if (match_option(option, "-Xmx", &tail)) {
-      jlong long_max_heap_size = 0;
+      julong long_max_heap_size = 0;
       ArgsRange errcode = parse_memory_size(tail, &long_max_heap_size, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
@@ -1915,7 +1920,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       }
     // -Xss
     } else if (match_option(option, "-Xss", &tail)) {
-      jlong long_ThreadStackSize = 0;
+      julong long_ThreadStackSize = 0;
       ArgsRange errcode = parse_memory_size(tail, &long_ThreadStackSize, 1000);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
@@ -1931,9 +1936,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
           // HotSpot does not have separate native and Java stacks, ignore silently for compatibility
     // -Xmaxjitcodesize
     } else if (match_option(option, "-Xmaxjitcodesize", &tail)) {
-      jlong long_ReservedCodeCacheSize = 0;
+      julong long_ReservedCodeCacheSize = 0;
       ArgsRange errcode = parse_memory_size(tail, &long_ReservedCodeCacheSize,
-                                            InitialCodeCacheSize);
+                                            (size_t)InitialCodeCacheSize);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
                     "Invalid maximum code cache size: %s\n",
@@ -2238,7 +2243,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     } else if (match_option(option, "-XX:TLEFragmentationRatio=", &tail)) {
       // No longer used.
     } else if (match_option(option, "-XX:TLESize=", &tail)) {
-      jlong long_tlab_size = 0;
+      julong long_tlab_size = 0;
       ArgsRange errcode = parse_memory_size(tail, &long_tlab_size, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
@@ -2293,7 +2298,7 @@ SOLARIS_ONLY(
         "-XX:ParCMSPromoteBlocksToClaim in the future\n");
     } else
     if (match_option(option, "-XX:ParallelGCOldGenAllocBufferSize=", &tail)) {
-      jlong old_plab_size = 0;
+      julong old_plab_size = 0;
       ArgsRange errcode = parse_memory_size(tail, &old_plab_size, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
@@ -2301,13 +2306,13 @@ SOLARIS_ONLY(
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      FLAG_SET_CMDLINE(uintx, OldPLABSize, (julong)old_plab_size);
+      FLAG_SET_CMDLINE(uintx, OldPLABSize, old_plab_size);
       jio_fprintf(defaultStream::error_stream(),
                   "Please use -XX:OldPLABSize in place of "
                   "-XX:ParallelGCOldGenAllocBufferSize in the future\n");
     } else
     if (match_option(option, "-XX:ParallelGCToSpaceAllocBufferSize=", &tail)) {
-      jlong young_plab_size = 0;
+      julong young_plab_size = 0;
       ArgsRange errcode = parse_memory_size(tail, &young_plab_size, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
@@ -2315,7 +2320,7 @@ SOLARIS_ONLY(
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      FLAG_SET_CMDLINE(uintx, YoungPLABSize, (julong)young_plab_size);
+      FLAG_SET_CMDLINE(uintx, YoungPLABSize, young_plab_size);
       jio_fprintf(defaultStream::error_stream(),
                   "Please use -XX:YoungPLABSize in place of "
                   "-XX:ParallelGCToSpaceAllocBufferSize in the future\n");
