@@ -101,7 +101,7 @@ public class CompositeDataSupport
      * the same size as <tt>itemNames</tt>; must not be null.
      *
      * @throws IllegalArgumentException <tt>compositeType</tt> is null, or
-     * <tt>itemNames[]</tt> or <tt>itemValues[]</tt> is null or empty, or one
+     * <tt>itemNames[]</tt> or <tt>itemValues[]</tt> is null, or one
      * of the elements in <tt>itemNames[]</tt> is a null or empty string, or
      * <tt>itemNames[]</tt> and <tt>itemValues[]</tt> are not of the same size.
      *

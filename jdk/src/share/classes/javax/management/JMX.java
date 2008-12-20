@@ -51,8 +51,6 @@ public class JMX {
      * this class.
      */
     static final JMX proof = new JMX();
-    private static final ClassLogger logger =
-        new ClassLogger("javax.management.misc", "JMX");
 
     private JMX() {}
 
@@ -824,11 +822,16 @@ public class JMX {
      */
     public static boolean isNotificationSource(Object mbean)
             throws NotCompliantMBeanException {
-        if (mbean instanceof NotificationBroadcaster)
-            return true;
-        Object resource = (mbean instanceof DynamicWrapperMBean) ?
-            ((DynamicWrapperMBean) mbean).getWrappedObject() : mbean;
-        return (MBeanInjector.injectsSendNotification(resource));
+        for (int i = 0; i < 2; i++) {
+            if (mbean instanceof NotificationBroadcaster ||
+                    MBeanInjector.injectsSendNotification(mbean))
+                return true;
+            if (mbean instanceof DynamicWrapperMBean)
+                mbean = ((DynamicWrapperMBean) mbean).getWrappedObject();
+            else
+                break;
+        }
+        return false;
     }
 
     /**

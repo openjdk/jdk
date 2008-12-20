@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,20 @@
 
 /*
  * @test
- * @bug 4773013
- * @summary When hunting subpackages, silently ignore any directory name that
- *          can't be part of a subpackage.
+ * @bug 6776289
+ * @summary Regression: javac7 doesnt resolve method calls properly
+ * @compile T6776289.java
  */
 
-import com.sun.javadoc.*;
+class A {
+    private void m(int a, int b) { }
+}
 
-public class SubpackageIgnore extends Doclet {
-
-    public static void main(String[] args) {
-        if (com.sun.tools.javadoc.Main.execute(
-                "javadoc",
-                "SubpackageIgnore",
-                SubpackageIgnore.class.getClassLoader(),
-                new String[] {"-Xwerror",
-                              "-sourcepath",
-                              System.getProperty("test.src", "."),
-                              "-subpackages",
-                              "pkg1"}) != 0)
-            throw new Error("Javadoc encountered warnings or errors.");
-    }
-
-    /*
-     * The world's simplest doclet.
-     */
-    public static boolean start(RootDoc root) {
-        return true;
+class T6776289 {
+    static void m(int a, String s) { }
+    class B extends A {
+        public void test() {
+            m(1, "");
+        }
     }
 }
