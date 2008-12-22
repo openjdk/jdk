@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,49 +22,47 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-package com.sun.beans.finder;
-
-import java.util.HashMap;
-import java.util.Map;
+package com.sun.beans.decoder;
 
 /**
- * This utility class associates
- * name of primitive type with appropriate class.
+ * This class is intended to handle &lt;void&gt; element.
+ * This element looks like &lt;object&gt; element,
+ * but its value is not used as an argument for element
+ * that contains this one.
+ * <p>The following atributes are supported:
+ * <dl>
+ * <dt>class
+ * <dd>the type is used for static methods and fields
+ * <dt>method
+ * <dd>the method name
+ * <dt>property
+ * <dd>the property name
+ * <dt>index
+ * <dd>the property index
+ * <dt>field
+ * <dd>the field name
+ * <dt>idref
+ * <dd>the identifier to refer to the variable
+ * <dt>id
+ * <dd>the identifier of the variable that is intended to store the result
+ * </dl>
  *
  * @since 1.7
  *
  * @author Sergey A. Malenkov
  */
-final class PrimitiveTypeMap {
+final class VoidElementHandler extends ObjectElementHandler {
 
     /**
-     * Returns primitive type class by its name.
+     * Tests whether the value of this element can be used
+     * as an argument of the element that contained in this one.
      *
-     * @param name  the name of primitive type
-     * @return found primitive type class,
-     *         or {@code null} if not found
+     * @return {@code true} if the value of this element should be used
+     *         as an argument of the element that contained in this one,
+     *         {@code false} otherwise
      */
-    static Class<?> getType(String name) {
-        return map.get(name);
-    }
-
-    private static final Map<String, Class<?>> map = new HashMap<String, Class<?>>(9);
-
-    static {
-        map.put(boolean.class.getName(), boolean.class);
-        map.put(char.class.getName(), char.class);
-        map.put(byte.class.getName(), byte.class);
-        map.put(short.class.getName(), short.class);
-        map.put(int.class.getName(), int.class);
-        map.put(long.class.getName(), long.class);
-        map.put(float.class.getName(), float.class);
-        map.put(double.class.getName(), double.class);
-        map.put(void.class.getName(), void.class);
-    }
-
-    /**
-     * Disable instantiation.
-     */
-    private PrimitiveTypeMap() {
+    @Override
+    protected boolean isArgument() {
+        return false; // hack for compatibility
     }
 }

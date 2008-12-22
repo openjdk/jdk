@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 package java.beans;
 
+import com.sun.beans.finder.PrimitiveWrapperMap;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -34,7 +36,6 @@ import java.lang.ref.SoftReference;
 
 import java.util.*;
 
-import com.sun.beans.ObjectHandler;
 import sun.reflect.misc.MethodUtil;
 import sun.reflect.misc.ConstructorUtil;
 import sun.reflect.misc.ReflectUtil;
@@ -46,10 +47,6 @@ import sun.reflect.misc.ReflectUtil;
 class ReflectionUtils {
 
     private static Reference methodCacheRef;
-
-    public static Class typeToClass(Class type) {
-        return type.isPrimitive() ? ObjectHandler.typeNameToClass(type.getName()) : type;
-    }
 
     public static boolean isPrimitive(Class type) {
         return primitiveTypeFor(type) != null;
@@ -99,7 +96,7 @@ class ReflectionUtils {
         for(int j = 0; j < argClasses.length && match; j++) {
             Class argType = argTypes[j];
             if (argType.isPrimitive()) {
-                argType = typeToClass(argType);
+                argType = PrimitiveWrapperMap.getType(argType.getName());
             }
             if (explicit) {
                 // Test each element for equality
@@ -210,7 +207,7 @@ class ReflectionUtils {
             for (int i = 0; i < args.length; i++) {
                 Class mArg = mArgs[i];
                 if (mArg.isPrimitive()) {
-                    mArg = typeToClass(mArg);
+                    mArg = PrimitiveWrapperMap.getType(mArg.getName());
                 }
                 if (args[i] == mArg) {
                     matches++;
