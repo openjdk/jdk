@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,42 +29,58 @@ import java.util.Map;
 
 /**
  * This utility class associates
- * name of primitive type with appropriate class.
+ * name of primitive type with appropriate wrapper.
  *
  * @since 1.7
  *
  * @author Sergey A. Malenkov
  */
-final class PrimitiveTypeMap {
+public final class PrimitiveWrapperMap {
 
     /**
-     * Returns primitive type class by its name.
+     * Replaces all primitive types in specified array with wrappers.
+     *
+     * @param types  array of classes where all primitive types
+     *               will be replaced by appropriate wrappers
+     */
+    static void replacePrimitivesWithWrappers(Class<?>[] types) {
+        for (int i = 0; i < types.length; i++) {
+            if (types[i] != null) {
+                if (types[i].isPrimitive()) {
+                    types[i] = getType(types[i].getName());
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns wrapper for primitive type by its name.
      *
      * @param name  the name of primitive type
-     * @return found primitive type class,
+     * @return found wrapper for primitive type,
      *         or {@code null} if not found
      */
-    static Class<?> getType(String name) {
+    public static Class<?> getType(String name) {
         return map.get(name);
     }
 
     private static final Map<String, Class<?>> map = new HashMap<String, Class<?>>(9);
 
     static {
-        map.put(boolean.class.getName(), boolean.class);
-        map.put(char.class.getName(), char.class);
-        map.put(byte.class.getName(), byte.class);
-        map.put(short.class.getName(), short.class);
-        map.put(int.class.getName(), int.class);
-        map.put(long.class.getName(), long.class);
-        map.put(float.class.getName(), float.class);
-        map.put(double.class.getName(), double.class);
-        map.put(void.class.getName(), void.class);
+        map.put(Boolean.TYPE.getName(), Boolean.class);
+        map.put(Character.TYPE.getName(), Character.class);
+        map.put(Byte.TYPE.getName(), Byte.class);
+        map.put(Short.TYPE.getName(), Short.class);
+        map.put(Integer.TYPE.getName(), Integer.class);
+        map.put(Long.TYPE.getName(), Long.class);
+        map.put(Float.TYPE.getName(), Float.class);
+        map.put(Double.TYPE.getName(), Double.class);
+        map.put(Void.TYPE.getName(), Void.class);
     }
 
     /**
      * Disable instantiation.
      */
-    private PrimitiveTypeMap() {
+    private PrimitiveWrapperMap() {
     }
 }

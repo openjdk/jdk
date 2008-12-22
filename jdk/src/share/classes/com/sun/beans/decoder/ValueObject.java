@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,49 +22,29 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-package com.sun.beans.finder;
-
-import java.util.HashMap;
-import java.util.Map;
+package com.sun.beans.decoder;
 
 /**
- * This utility class associates
- * name of primitive type with appropriate class.
+ * This interface represents the result of method execution.
  *
  * @since 1.7
  *
  * @author Sergey A. Malenkov
  */
-final class PrimitiveTypeMap {
+public interface ValueObject {
 
     /**
-     * Returns primitive type class by its name.
+     * Returns the result of method execution.
      *
-     * @param name  the name of primitive type
-     * @return found primitive type class,
-     *         or {@code null} if not found
+     * @return the result of method execution
      */
-    static Class<?> getType(String name) {
-        return map.get(name);
-    }
-
-    private static final Map<String, Class<?>> map = new HashMap<String, Class<?>>(9);
-
-    static {
-        map.put(boolean.class.getName(), boolean.class);
-        map.put(char.class.getName(), char.class);
-        map.put(byte.class.getName(), byte.class);
-        map.put(short.class.getName(), short.class);
-        map.put(int.class.getName(), int.class);
-        map.put(long.class.getName(), long.class);
-        map.put(float.class.getName(), float.class);
-        map.put(double.class.getName(), double.class);
-        map.put(void.class.getName(), void.class);
-    }
+    Object getValue();
 
     /**
-     * Disable instantiation.
+     * Returns {@code void} state of this value object.
+     *
+     * @return {@code true} if value can be ignored,
+     *         {@code false} otherwise
      */
-    private PrimitiveTypeMap() {
-    }
+    boolean isVoid();
 }
