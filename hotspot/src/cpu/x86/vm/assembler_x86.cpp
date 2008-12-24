@@ -5212,15 +5212,15 @@ void MacroAssembler::pushptr(AddressLiteral src) {
 void MacroAssembler::reset_last_Java_frame(bool clear_fp,
                                            bool clear_pc) {
   // we must set sp to zero to clear frame
-  movptr(Address(r15_thread, JavaThread::last_Java_sp_offset()), (int32_t)NULL_WORD);
+  movptr(Address(r15_thread, JavaThread::last_Java_sp_offset()), NULL_WORD);
   // must clear fp, so that compiled frames are not confused; it is
   // possible that we need it only for debugging
   if (clear_fp) {
-    movptr(Address(r15_thread, JavaThread::last_Java_fp_offset()), (int32_t)NULL_WORD);
+    movptr(Address(r15_thread, JavaThread::last_Java_fp_offset()), NULL_WORD);
   }
 
   if (clear_pc) {
-    movptr(Address(r15_thread, JavaThread::last_Java_pc_offset()), (int32_t)NULL_WORD);
+    movptr(Address(r15_thread, JavaThread::last_Java_pc_offset()), NULL_WORD);
   }
 }
 
@@ -5670,7 +5670,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
   // get oop result if there is one and reset the value in the thread
   if (oop_result->is_valid()) {
     movptr(oop_result, Address(java_thread, JavaThread::vm_result_offset()));
-    movptr(Address(java_thread, JavaThread::vm_result_offset()), (int32_t)NULL_WORD);
+    movptr(Address(java_thread, JavaThread::vm_result_offset()), NULL_WORD);
     verify_oop(oop_result, "broken oop in call_VM_base");
   }
 }
@@ -6426,13 +6426,13 @@ void MacroAssembler::reset_last_Java_frame(Register java_thread, bool clear_fp, 
     get_thread(java_thread);
   }
   // we must set sp to zero to clear frame
-  movptr(Address(java_thread, JavaThread::last_Java_sp_offset()), (int32_t)NULL_WORD);
+  movptr(Address(java_thread, JavaThread::last_Java_sp_offset()), NULL_WORD);
   if (clear_fp) {
-    movptr(Address(java_thread, JavaThread::last_Java_fp_offset()), (int32_t)NULL_WORD);
+    movptr(Address(java_thread, JavaThread::last_Java_fp_offset()), NULL_WORD);
   }
 
   if (clear_pc)
-    movptr(Address(java_thread, JavaThread::last_Java_pc_offset()), (int32_t)NULL_WORD);
+    movptr(Address(java_thread, JavaThread::last_Java_pc_offset()), NULL_WORD);
 
 }
 
