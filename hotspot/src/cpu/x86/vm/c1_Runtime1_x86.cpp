@@ -78,10 +78,10 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
     movptr(rax, Address(thread, Thread::pending_exception_offset()));
     // make sure that the vm_results are cleared
     if (oop_result1->is_valid()) {
-      movptr(Address(thread, JavaThread::vm_result_offset()), (int32_t)NULL_WORD);
+      movptr(Address(thread, JavaThread::vm_result_offset()), NULL_WORD);
     }
     if (oop_result2->is_valid()) {
-      movptr(Address(thread, JavaThread::vm_result_2_offset()), (int32_t)NULL_WORD);
+      movptr(Address(thread, JavaThread::vm_result_2_offset()), NULL_WORD);
     }
     if (frame_size() == no_frame_size) {
       leave();
@@ -96,12 +96,12 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
   // get oop results if there are any and reset the values in the thread
   if (oop_result1->is_valid()) {
     movptr(oop_result1, Address(thread, JavaThread::vm_result_offset()));
-    movptr(Address(thread, JavaThread::vm_result_offset()), (int32_t)NULL_WORD);
+    movptr(Address(thread, JavaThread::vm_result_offset()), NULL_WORD);
     verify_oop(oop_result1);
   }
   if (oop_result2->is_valid()) {
     movptr(oop_result2, Address(thread, JavaThread::vm_result_2_offset()));
-    movptr(Address(thread, JavaThread::vm_result_2_offset()), (int32_t)NULL_WORD);
+    movptr(Address(thread, JavaThread::vm_result_2_offset()), NULL_WORD);
     verify_oop(oop_result2);
   }
   return call_offset;
@@ -728,8 +728,8 @@ void Runtime1::generate_handle_exception(StubAssembler *sasm, OopMapSet* oop_map
 
   // clear exception fields in JavaThread because they are no longer needed
   // (fields must be cleared because they are processed by GC otherwise)
-  __ movptr(Address(thread, JavaThread::exception_oop_offset()), (int32_t)NULL_WORD);
-  __ movptr(Address(thread, JavaThread::exception_pc_offset()), (int32_t)NULL_WORD);
+  __ movptr(Address(thread, JavaThread::exception_oop_offset()), NULL_WORD);
+  __ movptr(Address(thread, JavaThread::exception_pc_offset()), NULL_WORD);
 
   // pop the stub frame off
   __ leave();
@@ -878,7 +878,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
 
     // load and clear pending exception
     __ movptr(rax, Address(thread, Thread::pending_exception_offset()));
-    __ movptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+    __ movptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
 
     // check that there is really a valid exception
     __ verify_not_null_oop(rax);
@@ -971,14 +971,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // load pending exception oop into rax,
         __ movptr(exception_oop, Address(thread, Thread::pending_exception_offset()));
         // clear pending exception
-        __ movptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+        __ movptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
 
         // load issuing PC (the return address for this stub) into rdx
         __ movptr(exception_pc, Address(rbp, 1*BytesPerWord));
 
         // make sure that the vm_results are cleared (may be unnecessary)
-        __ movptr(Address(thread, JavaThread::vm_result_offset()), (int32_t)NULL_WORD);
-        __ movptr(Address(thread, JavaThread::vm_result_2_offset()), (int32_t)NULL_WORD);
+        __ movptr(Address(thread, JavaThread::vm_result_offset()), NULL_WORD);
+        __ movptr(Address(thread, JavaThread::vm_result_2_offset()), NULL_WORD);
 
         // verify that that there is really a valid exception in rax,
         __ verify_not_null_oop(exception_oop);

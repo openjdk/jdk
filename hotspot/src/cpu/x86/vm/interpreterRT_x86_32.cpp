@@ -54,7 +54,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::box(int from_offset, int to_
   __ cmpptr(Address(from(), Interpreter::local_offset_in_bytes(from_offset)), (int32_t)NULL_WORD); // do not use temp() to avoid AGI
   Label L;
   __ jcc(Assembler::notZero, L);
-  __ movptr(temp(), ((int32_t)NULL_WORD));
+  __ movptr(temp(), NULL_WORD);
   __ bind(L);
   __ movptr(Address(to(), to_offset * wordSize), temp());
 }

@@ -137,7 +137,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
         // Do the actual store
         // noreg means NULL
         if (val == noreg) {
-          __ movl(Address(rdx, 0), NULL_WORD);
+          __ movl(Address(rdx, 0), (int32_t)NULL_WORD);
           // No post barrier for NULL
         } else {
           __ movl(Address(rdx, 0), val);
