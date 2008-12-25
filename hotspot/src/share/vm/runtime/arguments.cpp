@@ -1361,7 +1361,7 @@ void Arguments::set_aggressive_opts_flags() {
 
     // Feed the cache size setting into the JDK
     char buffer[1024];
-    sprintf(buffer, "java.lang.Integer.IntegerCache.high=%d", AutoBoxCacheMax);
+    sprintf(buffer, "java.lang.Integer.IntegerCache.high=" INTX_FORMAT, AutoBoxCacheMax);
     add_property(buffer);
   }
   if (AggressiveOpts && FLAG_IS_DEFAULT(DoEscapeAnalysis)) {
