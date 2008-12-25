@@ -50,7 +50,7 @@ class VMError : public StackObj {
 
   // additional info for VM internal errors
   const char * _filename;
-  int          _lineno;
+  size_t       _lineno;
 
   // used by fatal error handler
   int          _current_step;

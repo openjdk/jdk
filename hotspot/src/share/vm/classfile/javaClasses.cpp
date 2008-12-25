@@ -866,7 +866,7 @@ char* java_lang_Throwable::print_stack_element_to_buffer(methodOop method, int b
     }
     nmethod* nm = method->code();
     if (WizardMode && nm != NULL) {
-      sprintf(buf + (int)strlen(buf), "(nmethod %#x)", nm);
+      sprintf(buf + (int)strlen(buf), "(nmethod " PTR_FORMAT ")", (intptr_t)nm);
     }
   }
 
