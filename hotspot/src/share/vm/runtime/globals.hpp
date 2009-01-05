@@ -835,8 +835,21 @@ class CommandLineFlags {
           "Prints the system dictionary at exit")                           \
                                                                             \
   diagnostic(bool, UnsyncloadClass, false,                                  \
-          "Unstable: VM calls loadClass unsynchronized. Custom classloader "\
-          "must call VM synchronized for findClass & defineClass")          \
+          "Unstable: VM calls loadClass unsynchronized. Custom "            \
+          "class loader  must call VM synchronized for findClass "          \
+          "and defineClass.")                                               \
+                                                                            \
+  product(bool, AlwaysLockClassLoader, false,                               \
+          "Require the VM to acquire the class loader lock before calling " \
+          "loadClass() even for class loaders registering "                 \
+          "as parallel capable. Default false. ")                           \
+                                                                            \
+  product(bool, AllowParallelDefineClass, false,                            \
+          "Allow parallel defineClass requests for class loaders "          \
+          "registering as parallel capable. Default false")                 \
+                                                                            \
+  product(bool, MustCallLoadClassInternal, false,                           \
+          "Call loadClassInternal() rather than loadClass().Default false") \
                                                                             \
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls (for SOLARIS only)")       \
