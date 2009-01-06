@@ -3018,6 +3018,16 @@ ConcurrentMarkSweepGeneration::object_iterate(ObjectClosure* cl) {
 }
 
 void
+ConcurrentMarkSweepGeneration::safe_object_iterate(ObjectClosure* cl) {
+  if (freelistLock()->owned_by_self()) {
+    Generation::safe_object_iterate(cl);
+  } else {
+    MutexLockerEx x(freelistLock(), Mutex::_no_safepoint_check_flag);
+    Generation::safe_object_iterate(cl);
+  }
+}
+
+void
 ConcurrentMarkSweepGeneration::pre_adjust_pointers() {
 }
 
@@ -7001,7 +7011,6 @@ void MarkFromRootsClosure::scanOopsInOop(HeapWord* ptr) {
       _mut->clear_range(mr);
     }
   DEBUG_ONLY(})
-
   // Note: the finger doesn't advance while we drain
   // the stack below.
   PushOrMarkClosure pushOrMarkClosure(_collector,

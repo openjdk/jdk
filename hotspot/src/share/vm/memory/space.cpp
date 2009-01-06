@@ -705,6 +705,12 @@ void ContiguousSpace::object_iterate(ObjectClosure* blk) {
   object_iterate_from(bm, blk);
 }
 
+// For a continguous space object_iterate() and safe_object_iterate()
+// are the same.
+void ContiguousSpace::safe_object_iterate(ObjectClosure* blk) {
+  object_iterate(blk);
+}
+
 void ContiguousSpace::object_iterate_from(WaterMark mark, ObjectClosure* blk) {
   assert(mark.space() == this, "Mark does not match space");
   HeapWord* p = mark.point();
