@@ -55,6 +55,7 @@ import java.io.*;
 import java.util.*;
 import sun.font.FontDesignMetrics;
 import sun.font.FontManager;
+import sun.java2d.SunGraphicsEnvironment;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -1478,22 +1479,14 @@ public class SwingUtilities2 {
      * appear capable of performing gamma correction needed for LCD text.
      */
     public static boolean isLocalDisplay() {
-        try {
-            // On Windows just return true. Permission to read os.name
-            // is granted to all code but wrapped in try to be safe.
-            if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
-                return true;
-            }
-            // Else probably Solaris or Linux in which case may be remote X11
-            Class<?> x11Class = Class.forName("sun.awt.X11GraphicsEnvironment");
-            Method isDisplayLocalMethod = x11Class.getMethod(
-                      "isDisplayLocal", new Class[0]);
-            return (Boolean)isDisplayLocalMethod.invoke(null, (Object[])null);
-        } catch (Throwable t) {
+        boolean isLocal;
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        if (ge instanceof SunGraphicsEnvironment) {
+            isLocal = ((SunGraphicsEnvironment) ge).isDisplayLocal();
+        } else {
+            isLocal = true;
         }
-        // If we get here we're most likely being run on some other O/S
-        // or we didn't properly detect Windows.
-        return true;
+        return isLocal;
     }
 
     /**

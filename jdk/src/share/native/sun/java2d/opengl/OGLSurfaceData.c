@@ -73,7 +73,8 @@ OGLPixelFormat PixelFormats[] = {
       1, 0, 1,                                     }, /* 9 - ByteGray     */
     { GL_LUMINANCE, GL_UNSIGNED_SHORT,
       2, 0, 1,                                     }, /*10 - UshortGray   */
-};
+    { GL_BGR,  GL_UNSIGNED_BYTE,
+      1, 0, 1,                                     }, /*11 - ThreeByteBgr */};
 
 /**
  * Given a starting value and a maximum limit, returns the first power-of-two
