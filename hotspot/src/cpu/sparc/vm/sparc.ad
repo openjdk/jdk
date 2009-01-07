@@ -3869,6 +3869,8 @@ operand regD() %{
   constraint(ALLOC_IN_RC(dflt_reg));
   match(RegD);
 
+  match(regD_low);
+
   format %{ %}
   interface(REG_INTER);
 %}
@@ -3883,7 +3885,7 @@ operand regF() %{
 
 operand regD_low() %{
   constraint(ALLOC_IN_RC(dflt_low_reg));
-  match(RegD);
+  match(regD);
 
   format %{ %}
   interface(REG_INTER);
