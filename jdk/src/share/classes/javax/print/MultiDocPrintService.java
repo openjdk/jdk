@@ -25,11 +25,6 @@
 
 package javax.print;
 
-import java.util.Map;
-
-import javax.print.attribute.Attribute;
-import javax.print.event.PrintServiceAttributeListener;
-
 
  /** Interface MultiPrintService is the factory for a MultiDocPrintJob.
   * A MultiPrintService
