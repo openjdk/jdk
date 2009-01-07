@@ -307,7 +307,7 @@ void PhaseChaitin::Register_Allocate() {
     if (C->failing())  return;
 
 #ifdef ASSERT
-    if( VerifyOpto ) {
+    if( VerifyOpto || VerifyRegisterAllocator ) {
       _cfg.verify();
       verify_base_ptrs(&live_arena);
     }
@@ -340,7 +340,7 @@ void PhaseChaitin::Register_Allocate() {
     compress_uf_map_for_nodes();
 
 #ifdef ASSERT
-    if( VerifyOpto ) _ifg->verify(this);
+    if( VerifyOpto || VerifyRegisterAllocator ) _ifg->verify(this);
 #endif
   } else {
     ifg.SquareUp();
@@ -377,7 +377,7 @@ void PhaseChaitin::Register_Allocate() {
     C->check_node_count(2*NodeLimitFudgeFactor, "out of nodes after split");
     if (C->failing())  return;
 #ifdef ASSERT
-    if( VerifyOpto ) {
+    if( VerifyOpto || VerifyRegisterAllocator ) {
       _cfg.verify();
       verify_base_ptrs(&live_arena);
     }
@@ -412,7 +412,7 @@ void PhaseChaitin::Register_Allocate() {
     }
     compress_uf_map_for_nodes();
 #ifdef ASSERT
-    if( VerifyOpto ) _ifg->verify(this);
+    if( VerifyOpto || VerifyRegisterAllocator ) _ifg->verify(this);
 #endif
     cache_lrg_info();           // Count degree of LRGs
 
@@ -956,7 +956,7 @@ void PhaseChaitin::Simplify( ) {
       while ((neighbor = elements.next()) != 0) {
         LRG *n = &lrgs(neighbor);
 #ifdef ASSERT
-        if( VerifyOpto ) {
+        if( VerifyOpto || VerifyRegisterAllocator ) {
           assert( _ifg->effective_degree(neighbor) == n->degree(), "" );
         }
 #endif
