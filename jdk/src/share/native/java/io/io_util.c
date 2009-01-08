@@ -58,12 +58,24 @@ readSingle(JNIEnv *env, jobject this, jfieldID fid) {
  */
 #define BUF_SIZE 8192
 
+/*
+ * Returns true if the array slice defined by the given offset and length
+ * is out of bounds.
+ */
+static int
+outOfBounds(JNIEnv *env, jint off, jint len, jbyteArray array) {
+    return ((off < 0) ||
+            (len < 0) ||
+            // We are very careful to avoid signed integer overflow,
+            // the result of which is undefined in C.
+            ((*env)->GetArrayLength(env, array) - off < len));
+}
 
 int
 readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
           jint off, jint len, jfieldID fid)
 {
-    int nread, datalen;
+    int nread;
     char stackBuf[BUF_SIZE];
     char *buf = 0;
     FD fd;
@@ -72,10 +84,8 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         JNU_ThrowNullPointerException(env, 0);
         return -1;
     }
-    datalen = (*env)->GetArrayLength(env, bytes);
 
-    if ((off < 0) || (off > datalen) ||
-        (len < 0) || ((off + len) > datalen) || ((off + len) < 0)) {
+    if (outOfBounds(env, off, len, bytes)) {
         JNU_ThrowByName(env, "java/lang/IndexOutOfBoundsException", 0);
         return -1;
     }
@@ -136,7 +146,7 @@ void
 writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
           jint off, jint len, jfieldID fid)
 {
-    int n, datalen;
+    int n;
     char stackBuf[BUF_SIZE];
     char *buf = 0;
     FD fd;
@@ -145,10 +155,8 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         JNU_ThrowNullPointerException(env, 0);
         return;
     }
-    datalen = (*env)->GetArrayLength(env, bytes);
 
-    if ((off < 0) || (off > datalen) ||
-        (len < 0) || ((off + len) > datalen) || ((off + len) < 0)) {
+    if (outOfBounds(env, off, len, bytes)) {
         JNU_ThrowByName(env, "java/lang/IndexOutOfBoundsException", 0);
         return;
     }
