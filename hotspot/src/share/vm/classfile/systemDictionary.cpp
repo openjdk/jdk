@@ -1471,26 +1471,27 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
 instanceKlassHandle SystemDictionary::find_or_define_instance_class(symbolHandle class_name, Handle class_loader, instanceKlassHandle k, TRAPS) {
 
   instanceKlassHandle nh = instanceKlassHandle(); // null Handle
+  symbolHandle name_h(THREAD, k->name()); // passed in class_name may be null
 
-  unsigned int d_hash = dictionary()->compute_hash(class_name, class_loader);
+  unsigned int d_hash = dictionary()->compute_hash(name_h, class_loader);
   int d_index = dictionary()->hash_to_index(d_hash);
 
 // Hold SD lock around find_class and placeholder creation for DEFINE_CLASS
-  unsigned int p_hash = placeholders()->compute_hash(class_name, class_loader);
+  unsigned int p_hash = placeholders()->compute_hash(name_h, class_loader);
   int p_index = placeholders()->hash_to_index(p_hash);
   PlaceholderEntry* probe;
 
   {
     MutexLocker mu(SystemDictionary_lock, THREAD);
     // First check if class already defined
-    klassOop check = find_class(d_index, d_hash, class_name, class_loader);
+    klassOop check = find_class(d_index, d_hash, name_h, class_loader);
     if (check != NULL) {
       return(instanceKlassHandle(THREAD, check));
     }
 
     // Acquire define token for this class/classloader
     symbolHandle nullsymbolHandle;
-    probe = placeholders()->find_and_add(p_index, p_hash, class_name, class_loader, PlaceholderTable::DEFINE_CLASS, nullsymbolHandle, THREAD);
+    probe = placeholders()->find_and_add(p_index, p_hash, name_h, class_loader, PlaceholderTable::DEFINE_CLASS, nullsymbolHandle, THREAD);
     // Wait if another thread defining in parallel
     // All threads wait - even those that will throw duplicate class: otherwise
     // caller is surprised by LinkageError: duplicate, but findLoadedClass fails
@@ -1503,10 +1504,10 @@ instanceKlassHandle SystemDictionary::find_or_define_instance_class(symbolHandle
     // caught by finding an entry in the SystemDictionary
     if ((UnsyncloadClass || AllowParallelDefineClass) && (probe->instanceKlass() != NULL)) {
         probe->remove_seen_thread(THREAD, PlaceholderTable::DEFINE_CLASS);
-        placeholders()->find_and_remove(p_index, p_hash, class_name, class_loader, THREAD);
+        placeholders()->find_and_remove(p_index, p_hash, name_h, class_loader, THREAD);
         SystemDictionary_lock->notify_all();
 #ifdef ASSERT
-        klassOop check = find_class(d_index, d_hash, class_name, class_loader);
+        klassOop check = find_class(d_index, d_hash, name_h, class_loader);
         assert(check != NULL, "definer missed recording success");
 #endif
         return(instanceKlassHandle(THREAD, probe->instanceKlass()));
@@ -1523,7 +1524,7 @@ instanceKlassHandle SystemDictionary::find_or_define_instance_class(symbolHandle
   // definer must notify any waiting threads
   {
     MutexLocker mu(SystemDictionary_lock, THREAD);
-    PlaceholderEntry* probe = placeholders()->get_entry(p_index, p_hash, class_name, class_loader);
+    PlaceholderEntry* probe = placeholders()->get_entry(p_index, p_hash, name_h, class_loader);
     assert(probe != NULL, "DEFINE_CLASS placeholder lost?");
     if (probe != NULL) {
       if (HAS_PENDING_EXCEPTION) {
@@ -1534,7 +1535,7 @@ instanceKlassHandle SystemDictionary::find_or_define_instance_class(symbolHandle
       }
       probe->set_definer(NULL);
       probe->remove_seen_thread(THREAD, PlaceholderTable::DEFINE_CLASS);
-      placeholders()->find_and_remove(p_index, p_hash, class_name, class_loader, THREAD);
+      placeholders()->find_and_remove(p_index, p_hash, name_h, class_loader, THREAD);
       SystemDictionary_lock->notify_all();
     }
   }
