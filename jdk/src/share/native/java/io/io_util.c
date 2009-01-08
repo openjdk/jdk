@@ -105,18 +105,18 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
     fd = GET_FD(this, fid);
     if (fd == -1) {
         JNU_ThrowIOException(env, "Stream Closed");
-        return -1;
-    }
-
-    nread = IO_Read(fd, buf, len);
-    if (nread > 0) {
-        (*env)->SetByteArrayRegion(env, bytes, off, nread, (jbyte *)buf);
-    } else if (nread == JVM_IO_ERR) {
-        JNU_ThrowIOExceptionWithLastError(env, "Read error");
-    } else if (nread == JVM_IO_INTR) { /* EOF */
-        JNU_ThrowByName(env, "java/io/InterruptedIOException", 0);
-    } else { /* EOF */
         nread = -1;
+    } else {
+        nread = IO_Read(fd, buf, len);
+        if (nread > 0) {
+            (*env)->SetByteArrayRegion(env, bytes, off, nread, (jbyte *)buf);
+        } else if (nread == JVM_IO_ERR) {
+            JNU_ThrowIOExceptionWithLastError(env, "Read error");
+        } else if (nread == JVM_IO_INTR) { /* EOF */
+            JNU_ThrowByName(env, "java/io/InterruptedIOException", 0);
+        } else { /* EOF */
+            nread = -1;
+        }
     }
 
     if (buf != stackBuf) {
