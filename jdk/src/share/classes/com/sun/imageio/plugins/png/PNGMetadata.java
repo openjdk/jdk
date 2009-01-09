@@ -174,12 +174,12 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
     public byte[] iCCP_compressedProfile;
 
     // iTXt chunk
-    public ArrayList iTXt_keyword = new ArrayList(); // Strings
-    public ArrayList iTXt_compressionFlag = new ArrayList(); // Integers
-    public ArrayList iTXt_compressionMethod = new ArrayList(); // Integers
-    public ArrayList iTXt_languageTag = new ArrayList(); // Strings
-    public ArrayList iTXt_translatedKeyword = new ArrayList(); // Strings
-    public ArrayList iTXt_text = new ArrayList(); // Strings
+    public ArrayList<String> iTXt_keyword = new ArrayList<String>();
+    public ArrayList<Boolean> iTXt_compressionFlag = new ArrayList<Boolean>();
+    public ArrayList<Integer> iTXt_compressionMethod = new ArrayList<Integer>();
+    public ArrayList<String> iTXt_languageTag = new ArrayList<String>();
+    public ArrayList<String> iTXt_translatedKeyword = new ArrayList<String>();
+    public ArrayList<String> iTXt_text = new ArrayList<String>();
 
     // pHYs chunk
     public boolean pHYs_present;
@@ -597,19 +597,17 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         if (iTXt_keyword.size() > 0) {
             IIOMetadataNode iTXt_parent = new IIOMetadataNode("iTXt");
             for (int i = 0; i < iTXt_keyword.size(); i++) {
-                Integer val;
-
                 IIOMetadataNode iTXt_node = new IIOMetadataNode("iTXtEntry");
-                iTXt_node.setAttribute("keyword", (String)iTXt_keyword.get(i));
-                val = (Integer)iTXt_compressionFlag.get(i);
-                iTXt_node.setAttribute("compressionFlag", val.toString());
-                val = (Integer)iTXt_compressionMethod.get(i);
-                iTXt_node.setAttribute("compressionMethod", val.toString());
+                iTXt_node.setAttribute("keyword", iTXt_keyword.get(i));
+                iTXt_node.setAttribute("compressionFlag",
+                        iTXt_compressionFlag.get(i) ? "1" : "0");
+                iTXt_node.setAttribute("compressionMethod",
+                        iTXt_compressionMethod.get(i).toString());
                 iTXt_node.setAttribute("languageTag",
-                                       (String)iTXt_languageTag.get(i));
+                                       iTXt_languageTag.get(i));
                 iTXt_node.setAttribute("translatedKeyword",
-                                       (String)iTXt_translatedKeyword.get(i));
-                iTXt_node.setAttribute("text", (String)iTXt_text.get(i));
+                                       iTXt_translatedKeyword.get(i));
+                iTXt_node.setAttribute("text", iTXt_text.get(i));
 
                 iTXt_parent.appendChild(iTXt_node);
             }
@@ -1037,11 +1035,11 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
 
         for (int i = 0; i < iTXt_keyword.size(); i++) {
             node = new IIOMetadataNode("TextEntry");
-            node.setAttribute("keyword", (String)iTXt_keyword.get(i));
-            node.setAttribute("value", (String)iTXt_text.get(i));
+            node.setAttribute("keyword", iTXt_keyword.get(i));
+            node.setAttribute("value", iTXt_text.get(i));
             node.setAttribute("language",
-                              (String)iTXt_languageTag.get(i));
-            if (((Integer)iTXt_compressionFlag.get(i)).intValue() == 1) {
+                              iTXt_languageTag.get(i));
+            if (iTXt_compressionFlag.get(i)) {
                 node.setAttribute("compression", "deflate");
             } else {
                 node.setAttribute("compression", "none");
@@ -1427,11 +1425,11 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
 
                     boolean compressionFlag =
                         getBooleanAttribute(iTXt_node, "compressionFlag");
-                    iTXt_compressionFlag.add(new Boolean(compressionFlag));
+                    iTXt_compressionFlag.add(Boolean.valueOf(compressionFlag));
 
                     String compressionMethod =
                         getAttribute(iTXt_node, "compressionMethod");
-                    iTXt_compressionMethod.add(compressionMethod);
+                    iTXt_compressionMethod.add(Integer.valueOf(compressionMethod));
 
                     String languageTag =
                         getAttribute(iTXt_node, "languageTag");
@@ -1950,13 +1948,10 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                                 tEXt_text.add(value);
                             }
                         } else {
-                            int flag = compression.equals("zip") ?
-                                1 : 0;
-
                             // Use an iTXt node
                             iTXt_keyword.add(keyword);
-                            iTXt_compressionFlag.add(new Integer(flag));
-                            iTXt_compressionMethod.add(new Integer(0));
+                            iTXt_compressionFlag.add(Boolean.valueOf(compression.equals("zip")));
+                            iTXt_compressionMethod.add(Integer.valueOf(0));
                             iTXt_languageTag.add(language);
                             iTXt_translatedKeyword.add(keyword); // fake it
                             iTXt_text.add(value);
@@ -1993,12 +1988,12 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         gAMA_present = false;
         hIST_present = false;
         iCCP_present = false;
-        iTXt_keyword = new ArrayList();
-        iTXt_compressionFlag = new ArrayList();
-        iTXt_compressionMethod = new ArrayList();
-        iTXt_languageTag = new ArrayList();
-        iTXt_translatedKeyword = new ArrayList();
-        iTXt_text = new ArrayList();
+        iTXt_keyword = new ArrayList<String>();
+        iTXt_compressionFlag = new ArrayList<Boolean>();
+        iTXt_compressionMethod = new ArrayList<Integer>();
+        iTXt_languageTag = new ArrayList<String>();
+        iTXt_translatedKeyword = new ArrayList<String>();
+        iTXt_text = new ArrayList<String>();
         pHYs_present = false;
         sBIT_present = false;
         sPLT_present = false;

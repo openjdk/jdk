@@ -47,6 +47,10 @@ import java.util.List;
 import javax.management.SendNotification;
 
 public class MBeanInjector {
+    // There are no instances of this class
+    private MBeanInjector() {
+    }
+
     private static Class<?>[] injectedClasses = {
         MBeanServer.class, ObjectName.class, SendNotification.class,
     };

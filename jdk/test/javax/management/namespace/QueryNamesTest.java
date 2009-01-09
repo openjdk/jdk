@@ -25,7 +25,7 @@
  * @test QueryNamesTest.java 1.4
  * @summary Test how queryNames works with Namespaces.
  * @author Daniel Fuchs
- * @bug 5072476
+ * @bug 5072476 6768935
  * @run clean QueryNamesTest Wombat WombatMBean
  * @run build QueryNamesTest Wombat WombatMBean
  * @run main QueryNamesTest
@@ -34,6 +34,7 @@
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,7 +53,9 @@ import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerFactory;
 import javax.management.MalformedObjectNameException;
+import javax.management.ObjectInstance;
 import javax.management.ObjectName;
+import javax.management.RuntimeOperationsException;
 import javax.management.namespace.JMXNamespace;
 import javax.management.namespace.JMXNamespaces;
 
@@ -366,6 +369,66 @@ public class QueryNamesTest {
         return res;
     }
 
+    private static void checkNsPattern(MBeanServer server) throws Exception {
+        final List<String> list = new ArrayList<String>();
+        for (String s : namespaces) {
+            final String[] cmpnt = s.split("//");
+            for (int i=0;i<cmpnt.length;i++) {
+                final String[] clone = cmpnt.clone();
+                if (clone[i].length() < 3) {
+                    clone[i] = "*";
+                } else {
+                    clone[i] = "?"+cmpnt[i].substring(1, cmpnt[i].length()-2)+"*";
+                }
+                final StringBuilder sb = new StringBuilder();
+                for (int j=0;j<cmpnt.length;j++) {
+                    sb.append(clone[j]).append("//");
+                }
+                list.add(sb.toString()+"*:*");
+            }
+        }
+        for (String s : list) {
+            final Set<ObjectName> res = new HashSet<ObjectName>();
+
+            try {
+                res.addAll(server.queryNames(ObjectName.valueOf(s),null));
+            } catch (RuntimeOperationsException x) {
+                if (x.getCause() instanceof IllegalArgumentException) {
+                    System.out.println("queryNames("+s+"): OK - received "+x.getCause());
+                    continue;
+                }
+                System.err.println("queryNames("+s+"): Bad cause: "+x.getCause());
+                throw x;
+            } catch (Exception x) {
+                System.err.println("queryNames("+s+"): Bad exception: "+x);
+                throw x;
+            }
+            System.err.println("queryNames("+s+"): Bad result: "+res);
+            System.err.println("queryNames("+s+"): Excpected exception not thrown.");
+            throw new Exception("queryNames("+s+"): Excpected exception not thrown.");
+        }
+        for (String s : list) {
+            final Set<ObjectInstance> res = new HashSet<ObjectInstance>();
+
+            try {
+                res.addAll(server.queryMBeans(ObjectName.valueOf(s),null));
+            } catch (RuntimeOperationsException x) {
+                if (x.getCause() instanceof IllegalArgumentException) {
+                    System.out.println("queryMBeans("+s+"): OK - received "+x.getCause());
+                    continue;
+                }
+                System.err.println("queryMBeans("+s+"): Bad cause: "+x.getCause());
+                throw x;
+            } catch (Exception x) {
+                System.err.println("queryMBeans("+s+"): Bad exception: "+x);
+                throw x;
+            }
+            System.err.println("queryMBeans("+s+"): Bad result: "+res);
+            System.err.println("queryMBeans("+s+"): Excpected exception not thrown.");
+            throw new Exception("queryMBeans("+s+"): Excpected exception not thrown.");
+        }
+    }
+
     public static void main(String[] args)
         throws Exception {
         final MBeanServer server = ManagementFactory.getPlatformMBeanServer();
@@ -378,6 +441,7 @@ public class QueryNamesTest {
             System.out.println("Domains: " +Arrays.asList(server.getDomains()));
             checkRegistration(server);
             checkNsQuery(server);
+            checkNsPattern(server);
         } finally {
             boolean res = true;
             res = res && removeWombats(server, wombats);

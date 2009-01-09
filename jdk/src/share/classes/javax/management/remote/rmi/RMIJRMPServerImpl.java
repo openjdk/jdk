@@ -38,6 +38,9 @@ import java.util.Collections;
 import javax.security.auth.Subject;
 
 import com.sun.jmx.remote.internal.RMIExporter;
+import com.sun.jmx.remote.util.EnvHelp;
+import sun.rmi.server.UnicastServerRef;
+import sun.rmi.server.UnicastServerRef2;
 
 /**
  * <p>An {@link RMIServer} object that is exported through JRMP and that
@@ -93,12 +96,27 @@ public class RMIJRMPServerImpl extends RMIServerImpl {
     }
 
     private void export(Remote obj) throws RemoteException {
-        RMIExporter exporter =
+        final RMIExporter exporter =
             (RMIExporter) env.get(RMIExporter.EXPORTER_ATTRIBUTE);
-        if (exporter == null)
-            UnicastRemoteObject.exportObject(obj, port, csf, ssf);
-        else
+        final boolean daemon = EnvHelp.isServerDaemon(env);
+
+        if (daemon && exporter != null) {
+            throw new IllegalArgumentException("If "+EnvHelp.JMX_SERVER_DAEMON+
+                    " is specified as true, "+RMIExporter.EXPORTER_ATTRIBUTE+
+                    " cannot be used to specify an exporter!");
+        }
+
+        if (daemon) {
+            if (csf == null && ssf == null) {
+                new UnicastServerRef(port).exportObject(obj, null, true);
+            } else {
+                new UnicastServerRef2(port, csf, ssf).exportObject(obj, null, true);
+            }
+        } else if (exporter != null) {
             exporter.exportObject(obj, port, csf, ssf);
+        } else {
+            UnicastRemoteObject.exportObject(obj, port, csf, ssf);
+        }
     }
 
     private void unexport(Remote obj, boolean force)
