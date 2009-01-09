@@ -113,7 +113,7 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
              methodSignature(method),
              method.getReturnType().getName(),
              UNKNOWN,
-             Introspector.descriptorForElement(method));
+             Introspector.descriptorForElement(method, false));
     }
 
     /**

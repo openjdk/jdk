@@ -581,7 +581,8 @@ objArrayHandle ClassFileParser::parse_interfaces(constantPoolHandle cp,
       interf = KlassHandle(THREAD, k);
       vmtimer->resume();
 
-      cp->klass_at_put(interface_index, interf()); // eagerly resolve
+      if (LinkWellKnownClasses)  // my super type is well known to me
+        cp->klass_at_put(interface_index, interf()); // eagerly resolve
     }
 
     if (!Klass::cast(interf())->is_interface()) {
@@ -2699,7 +2700,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
                                                            CHECK_(nullHandle));
       KlassHandle kh (THREAD, k);
       super_klass = instanceKlassHandle(THREAD, kh());
-      cp->klass_at_put(super_class_index, super_klass()); // eagerly resolve
+      if (LinkWellKnownClasses)  // my super class is well known to me
+        cp->klass_at_put(super_class_index, super_klass()); // eagerly resolve
     }
     if (super_klass.not_null()) {
       if (super_klass->is_interface()) {
@@ -3128,7 +3130,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     this_klass->set_method_ordering(method_ordering());
     this_klass->set_initial_method_idnum(methods->length());
     this_klass->set_name(cp->klass_name_at(this_class_index));
-    cp->klass_at_put(this_class_index, this_klass()); // eagerly resolve
+    if (LinkWellKnownClasses)  // I am well known to myself
+      cp->klass_at_put(this_class_index, this_klass()); // eagerly resolve
     this_klass->set_protection_domain(protection_domain());
     this_klass->set_fields_annotations(fields_annotations());
     this_klass->set_methods_annotations(methods_annotations());

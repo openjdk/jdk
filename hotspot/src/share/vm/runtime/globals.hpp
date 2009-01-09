@@ -342,6 +342,9 @@ class CommandLineFlags {
   product(bool, UseNUMA, false,                                             \
           "Use NUMA if available")                                          \
                                                                             \
+  product(bool, ForceNUMA, false,                                           \
+          "Force NUMA optimizations on single-node/UMA systems")            \
+                                                                            \
   product(intx, NUMAChunkResizeWeight, 20,                                  \
           "Percentage (0-100) used to weight the current sample when "      \
           "computing exponentially decaying average for "                   \
@@ -622,6 +625,9 @@ class CommandLineFlags {
   develop(bool, CheckZapUnusedHeapArea, false,                              \
           "Check zapping of unused heap space")                             \
                                                                             \
+  develop(bool, ZapFillerObjects, trueInDebug,                              \
+          "Zap filler objects with 0xDEAFBABE")                             \
+                                                                            \
   develop(bool, PrintVMMessages, true,                                      \
           "Print vm messages on console")                                   \
                                                                             \
@@ -815,7 +821,7 @@ class CommandLineFlags {
   product(bool, ClassUnloading, true,                                       \
           "Do unloading of classes")                                        \
                                                                             \
-  diagnostic(bool, LinkWellKnownClasses, true,                              \
+  diagnostic(bool, LinkWellKnownClasses, false,                             \
           "Resolve a well known class as soon as its name is seen")         \
                                                                             \
   develop(bool, DisableStartThread, false,                                  \
@@ -1197,11 +1203,12 @@ class CommandLineFlags {
   product(uintx, ParallelCMSThreads, 0,                                     \
           "Max number of threads CMS will use for concurrent work")         \
                                                                             \
-  develop(bool, ParallelOldMTUnsafeMarkBitMap, false,                       \
-          "Use the Parallel Old MT unsafe in marking the bitmap")           \
+  develop(bool, ParallelOldGCSplitALot, false,                              \
+          "Provoke splitting (copying data from a young gen space to"       \
+          "multiple destination spaces)")                                   \
                                                                             \
-  develop(bool, ParallelOldMTUnsafeUpdateLiveData, false,                   \
-          "Use the Parallel Old MT unsafe in update of live size")          \
+  develop(uintx, ParallelOldGCSplitInterval, 3,                             \
+          "How often to provoke splitting a young gen space")               \
                                                                             \
   develop(bool, TraceRegionTasksQueuing, false,                             \
           "Trace the queuing of the region tasks")                          \
@@ -1474,7 +1481,7 @@ class CommandLineFlags {
           "CMSPrecleanNumerator:CMSPrecleanDenominator yields convergence"  \
           " ratio")                                                         \
                                                                             \
-  product(bool, CMSPrecleanRefLists1, false,                                \
+  product(bool, CMSPrecleanRefLists1, true,                                 \
           "Preclean ref lists during (initial) preclean phase")             \
                                                                             \
   product(bool, CMSPrecleanRefLists2, false,                                \
@@ -3262,9 +3269,10 @@ class CommandLineFlags {
   diagnostic(bool, PrintDTraceDOF, false,                                   \
              "Print the DTrace DOF passed to the system for JSDT probes")   \
                                                                             \
-  product(bool, UseVMInterruptibleIO, true,                                 \
+  product(bool, UseVMInterruptibleIO, false,                                \
           "(Unstable, Solaris-specific) Thread interrupt before or with "   \
-          "EINTR for I/O operations results in OS_INTRPT")
+          "EINTR for I/O operations results in OS_INTRPT. The default value"\
+          " of this flag is true for JDK 6 and earliers")
 
 
 /*

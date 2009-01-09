@@ -932,8 +932,9 @@ void os::serialize_thread_states() {
   // the mutator thread if such case is encountered. See bug 6546278 for details.
   Thread::muxAcquire(&SerializePageLock, "serialize_thread_states");
   os::protect_memory((char *)os::get_memory_serialize_page(),
-                     os::vm_page_size(), MEM_PROT_READ, /*is_committed*/true );
-  os::unguard_memory((char *)os::get_memory_serialize_page(), os::vm_page_size());
+                     os::vm_page_size(), MEM_PROT_READ);
+  os::protect_memory((char *)os::get_memory_serialize_page(),
+                     os::vm_page_size(), MEM_PROT_RW);
   Thread::muxRelease(&SerializePageLock);
 }
 

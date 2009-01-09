@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ HeapRegionSeq::alloc_obj_from_region_index(int ind, size_t word_size) {
       HeapWord* tmp = hr->allocate(sz);
       assert(tmp != NULL, "Humongous allocation failure");
       MemRegion mr = MemRegion(tmp, sz);
-      SharedHeap::fill_region_with_object(mr);
+      CollectedHeap::fill_with_object(mr);
       hr->declare_filled_region_to_BOT(mr);
       if (i == first) {
         first_hr->set_startsHumongous();

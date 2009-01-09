@@ -49,16 +49,16 @@ klassOop Universe::_constantPoolKlassObj              = NULL;
 klassOop Universe::_constantPoolCacheKlassObj         = NULL;
 klassOop Universe::_compiledICHolderKlassObj          = NULL;
 klassOop Universe::_systemObjArrayKlassObj            = NULL;
-oop Universe::_int_mirror                             =  NULL;
-oop Universe::_float_mirror                           =  NULL;
-oop Universe::_double_mirror                          =  NULL;
-oop Universe::_byte_mirror                            =  NULL;
-oop Universe::_bool_mirror                            =  NULL;
-oop Universe::_char_mirror                            =  NULL;
-oop Universe::_long_mirror                            =  NULL;
-oop Universe::_short_mirror                           =  NULL;
-oop Universe::_void_mirror                            =  NULL;
-oop Universe::_mirrors[T_VOID+1]                      =  { NULL /*, NULL...*/ };
+oop Universe::_int_mirror                             = NULL;
+oop Universe::_float_mirror                           = NULL;
+oop Universe::_double_mirror                          = NULL;
+oop Universe::_byte_mirror                            = NULL;
+oop Universe::_bool_mirror                            = NULL;
+oop Universe::_char_mirror                            = NULL;
+oop Universe::_long_mirror                            = NULL;
+oop Universe::_short_mirror                           = NULL;
+oop Universe::_void_mirror                            = NULL;
+oop Universe::_mirrors[T_VOID+1]                      = { NULL /*, NULL...*/ };
 oop Universe::_main_thread_group                      = NULL;
 oop Universe::_system_thread_group                    = NULL;
 typeArrayOop Universe::_the_empty_byte_array          = NULL;
@@ -96,7 +96,7 @@ bool            Universe::_bootstrapping = false;
 bool            Universe::_fully_initialized = false;
 
 size_t          Universe::_heap_capacity_at_last_gc;
-size_t          Universe::_heap_used_at_last_gc;
+size_t          Universe::_heap_used_at_last_gc = 0;
 
 CollectedHeap*  Universe::_collectedHeap = NULL;
 address         Universe::_heap_base = NULL;
@@ -257,16 +257,16 @@ void Universe::genesis(TRAPS) {
         _typeArrayKlassObjs[T_INT]     = _intArrayKlassObj;
         _typeArrayKlassObjs[T_LONG]    = _longArrayKlassObj;
 
-        _methodKlassObj         = methodKlass::create_klass(CHECK);
-        _constMethodKlassObj    = constMethodKlass::create_klass(CHECK);
-        _methodDataKlassObj     = methodDataKlass::create_klass(CHECK);
+        _methodKlassObj             = methodKlass::create_klass(CHECK);
+        _constMethodKlassObj        = constMethodKlass::create_klass(CHECK);
+        _methodDataKlassObj         = methodDataKlass::create_klass(CHECK);
         _constantPoolKlassObj       = constantPoolKlass::create_klass(CHECK);
         _constantPoolCacheKlassObj  = constantPoolCacheKlass::create_klass(CHECK);
 
         _compiledICHolderKlassObj   = compiledICHolderKlass::create_klass(CHECK);
         _systemObjArrayKlassObj     = objArrayKlassKlass::cast(objArrayKlassKlassObj())->allocate_system_objArray_klass(CHECK);
 
-        _the_empty_byte_array      = oopFactory::new_permanent_byteArray(0, CHECK);
+        _the_empty_byte_array       = oopFactory::new_permanent_byteArray(0, CHECK);
         _the_empty_short_array      = oopFactory::new_permanent_shortArray(0, CHECK);
         _the_empty_int_array        = oopFactory::new_permanent_intArray(0, CHECK);
         _the_empty_system_obj_array = oopFactory::new_system_objArray(0, CHECK);
@@ -274,7 +274,6 @@ void Universe::genesis(TRAPS) {
         _the_array_interfaces_array = oopFactory::new_system_objArray(2, CHECK);
         _vm_exception               = oopFactory::new_symbol("vm exception holder", CHECK);
       } else {
-
         FileMapInfo *mapinfo = FileMapInfo::current_info();
         char* buffer = mapinfo->region_base(CompactingPermGenGen::md);
         void** vtbl_list = (void**)buffer;

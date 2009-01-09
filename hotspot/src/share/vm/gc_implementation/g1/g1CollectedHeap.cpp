@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -891,6 +891,7 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     ReferenceProcessorIsAliveMutator rp_is_alive_null(ref_processor(), NULL);
 
     ref_processor()->enable_discovery();
+    ref_processor()->setup_policy(clear_all_soft_refs);
 
     // Do collection work
     {
@@ -2463,7 +2464,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
 
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 
-    // We want to turn off ref discovere, if necessary, and turn it back on
+    // We want to turn off ref discovery, if necessary, and turn it back on
     // on again later if we do.
     bool was_enabled = ref_processor()->discovery_enabled();
     if (was_enabled) ref_processor()->disable_discovery();
@@ -2953,7 +2954,7 @@ public:
       // The object has been either evacuated or is dead. Fill it with a
       // dummy object.
       MemRegion mr((HeapWord*)obj, obj->size());
-      SharedHeap::fill_region_with_object(mr);
+      CollectedHeap::fill_with_object(mr);
       _cm->clearRangeBothMaps(mr);
     }
   }
@@ -3224,7 +3225,7 @@ void G1CollectedHeap::par_allocate_remaining_space(HeapRegion* r) {
     // Otherwise, try to claim it.
     block = r->par_allocate(free_words);
   } while (block == NULL);
-  SharedHeap::fill_region_with_object(MemRegion(block, free_words));
+  fill_with_object(block, free_words);
 }
 
 #define use_local_bitmaps         1
@@ -3618,9 +3619,8 @@ public:
       guarantee(alloc_buffer(purpose)->contains(obj + word_sz - 1),
                 "should contain whole object");
       alloc_buffer(purpose)->undo_allocation(obj, word_sz);
-    }
-    else {
-      SharedHeap::fill_region_with_object(MemRegion(obj, word_sz));
+    } else {
+      CollectedHeap::fill_with_object(obj, word_sz);
       add_to_undo_waste(word_sz);
     }
   }

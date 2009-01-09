@@ -96,19 +96,20 @@ class arrayOopDesc : public oopDesc {
       : typesize_in_bytes/HeapWordSize);
   }
 
-  // This method returns the  maximum length that can passed into
-  // typeArrayOop::object_size(scale, length, header_size) without causing an
-  // overflow. We substract an extra 2*wordSize to guard against double word
-  // alignments.  It gets the scale from the type2aelembytes array.
+  // Return the maximum length of an array of BasicType.  The length can passed
+  // to typeArrayOop::object_size(scale, length, header_size) without causing an
+  // overflow.
   static int32_t max_array_length(BasicType type) {
     assert(type >= 0 && type < T_CONFLICT, "wrong type");
     assert(type2aelembytes(type) != 0, "wrong type");
-    // We use max_jint, since object_size is internally represented by an 'int'
-    // This gives us an upper bound of max_jint words for the size of the oop.
-    int32_t max_words = (max_jint - header_size(type) - 2);
-    int elembytes = type2aelembytes(type);
-    jlong len = ((jlong)max_words * HeapWordSize) / elembytes;
-    return (len > max_jint) ? max_jint : (int32_t)len;
-  }
+    const int bytes_per_element = type2aelembytes(type);
+    if (bytes_per_element < HeapWordSize) {
+      return max_jint;
+    }
 
+    const int32_t max_words = align_size_down(max_jint, MinObjAlignment);
+    const int32_t max_element_words = max_words - header_size(type);
+    const int32_t words_per_element = bytes_per_element >> LogHeapWordSize;
+    return max_element_words / words_per_element;
+  }
 };

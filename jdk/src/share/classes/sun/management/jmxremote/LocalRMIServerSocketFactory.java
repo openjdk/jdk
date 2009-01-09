@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,34 @@ public final class LocalRMIServerSocketFactory implements RMIServerSocketFactory
         return new ServerSocket(port) {
             @Override
             public Socket accept() throws IOException {
-                Socket socket = super.accept();
-                InetAddress remoteAddr = socket.getInetAddress();
+                final Socket socket = super.accept();
+                final InetAddress remoteAddr = socket.getInetAddress();
                 final String msg = "The server sockets created using the " +
-                        "LocalRMIServerSocketFactory only accept connections " +
-                        "from clients running on the host where the RMI " +
-                        "remote objects have been exported.";
-                if (remoteAddr.isAnyLocalAddress()) {
+                       "LocalRMIServerSocketFactory only accept connections " +
+                       "from clients running on the host where the RMI " +
+                       "remote objects have been exported.";
+
+                if (remoteAddr == null) {
+                    // Though unlikeky, the socket could be already
+                    // closed... Send a more detailed message in
+                    // this case. Also avoid throwing NullPointerExceptiion
+                    //
+                    String details = "";
+                    if (socket.isClosed()) {
+                        details = " Socket is closed.";
+                    } else if (!socket.isConnected()) {
+                        details = " Socket is not connected";
+                    }
+                    try {
+                        socket.close();
+                    } catch (Exception ok) {
+                        // ok - this is just cleanup before throwing detailed
+                        // exception.
+                    }
+                    throw new IOException(msg +
+                            " Couldn't determine client address." +
+                            details);
+                } else if (remoteAddr.isLoopbackAddress()) {
                     // local address: accept the connection.
                     return socket;
                 }
