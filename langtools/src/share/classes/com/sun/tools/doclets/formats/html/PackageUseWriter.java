@@ -178,9 +178,9 @@ public class PackageUseWriter extends SubWriterHolderWriter {
 
         trBgcolorStyle("white", "TableRowColor");
         summaryRow(0);
-        bold();
+        strong();
         printHyperLink(path, packageName, usedClass.name(), true);
-        boldEnd();
+        strongEnd();
         println(); br();
         printNbsps();
         printIndexComment(usedClass);
@@ -219,7 +219,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         hr();
         center();
         h2();
-        boldText("doclet.ClassUse_Title", packageLabel, name);
+        strongText("doclet.ClassUse_Title", packageLabel, name);
         h2End();
         centerEnd();
     }
@@ -251,7 +251,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     protected void navLinkClassUse() {
         navCellRevStart();
         fontStyle("NavBarFont1Rev");
-        boldText("doclet.navClassUse");
+        strongText("doclet.navClassUse");
         fontEnd();
         navCellEnd();
     }

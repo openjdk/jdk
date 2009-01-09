@@ -160,7 +160,7 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
      */
     protected void printAllClassesTableHeader() {
         fontSizeStyle("+1", "FrameHeadingFont");
-        boldText("doclet.All_Classes");
+        strongText("doclet.All_Classes");
         fontEnd();
         br();
         table();

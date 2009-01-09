@@ -394,7 +394,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         hr();
         center();
         h2();
-        boldText("doclet.ClassUse_Title", cltype, clname);
+        strongText("doclet.ClassUse_Title", cltype, clname);
         h2End();
         centerEnd();
     }
@@ -436,7 +436,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     protected void navLinkClassUse() {
         navCellRevStart();
         fontStyle("NavBarFont1Rev");
-        boldText("doclet.navClassUse");
+        strongText("doclet.navClassUse");
         fontEnd();
         navCellEnd();
     }

@@ -71,7 +71,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
             member.position().line() != classdoc.position().line()) {
             writer.printSrcLink(member, member.name());
         } else {
-            bold(member.name());
+            strong(member.name());
         }
         writeParameters(member);
         writeExceptions(member);
@@ -87,10 +87,10 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     protected void writeSummaryLink(int context, ClassDoc cd, ProgramElementDoc member) {
         ExecutableMemberDoc emd = (ExecutableMemberDoc)member;
         String name = emd.name();
-        writer.bold();
+        writer.strong();
         writer.printDocLink(context, cd, (MemberDoc) emd,
             name, false);
-        writer.boldEnd();
+        writer.strongEnd();
         writer.displayLength = name.length();
         writeParameters(emd, false);
     }
