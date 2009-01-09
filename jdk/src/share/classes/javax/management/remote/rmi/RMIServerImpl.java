@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,18 +249,71 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
 
         RMIConnection client = makeClient(connectionId, subject);
 
-        connServer.connectionOpened(connectionId, "Connection opened", null);
-
         dropDeadReferences();
         WeakReference<RMIConnection> wr = new WeakReference<RMIConnection>(client);
         synchronized (clientList) {
             clientList.add(wr);
         }
 
+        connServer.connectionOpened(connectionId, "Connection opened", null);
+
+        synchronized (clientList) {
+            if (!clientList.contains(wr)) {
+                // can be removed only by a JMXConnectionNotification listener
+                throw new IOException("The connection is refused.");
+            }
+        }
+
         if (tracing)
             logger.trace("newClient","new connection done: " + connectionId );
 
         return client;
+    }
+
+    /**
+     * Closes a client connection.
+     * @param connectionId the id of the client connection to be closed.
+     * @throws IllegalArgumentException if {@code connectionId} is null or is
+     * not the id of any open connection.
+     * @throws java.io.IOException if an I/O error appears when closing the
+     * connection.
+     *
+     * @since 1.7
+     */
+    public void closeConnection(String connectionId)
+            throws IOException {
+        final boolean debug = logger.debugOn();
+
+        if (debug) logger.trace("closeConnection","cconnectionId="+connectionId);
+
+        if (connectionId == null)
+            throw new IllegalArgumentException("Null connectionId.");
+
+        RMIConnection client = null;
+        synchronized (clientList) {
+            dropDeadReferences();
+            for (Iterator<WeakReference<RMIConnection>> it = clientList.iterator();
+                 it.hasNext(); ) {
+                client = it.next().get();
+                if (client != null && connectionId.equals(client.getConnectionId())) {
+                    it.remove();
+                    break;
+                }
+            }
+        }
+
+        if (client == null) {
+            throw new IllegalArgumentException("Unknown id: "+connectionId);
+        }
+
+        if (debug) logger.trace("closeConnection", "closing client connection.");
+        closeClient(client);
+
+        if (debug) logger.trace("closeConnection", "sending notif");
+        connServer.connectionClosed(connectionId,
+                                    "Client connection closed", null);
+
+        if (debug) logger.trace("closeConnection","done");
     }
 
     /**

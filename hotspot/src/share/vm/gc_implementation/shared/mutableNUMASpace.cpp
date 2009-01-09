@@ -76,8 +76,8 @@ void MutableNUMASpace::ensure_parsability() {
     MutableSpace *s = ls->space();
     if (s->top() < top()) { // For all spaces preceeding the one containing top()
       if (s->free_in_words() > 0) {
-        SharedHeap::fill_region_with_object(MemRegion(s->top(), s->end()));
         size_t area_touched_words = pointer_delta(s->end(), s->top());
+        CollectedHeap::fill_with_object(s->top(), area_touched_words);
 #ifndef ASSERT
         if (!ZapUnusedHeapArea) {
           area_touched_words = MIN2((size_t)align_object_size(typeArrayOopDesc::header_size(T_INT)),
@@ -414,9 +414,20 @@ size_t MutableNUMASpace::adaptive_chunk_size(int i, size_t limit) {
   if (limit > 0) {
     limit = round_down(limit, page_size());
     if (chunk_size > current_chunk_size(i)) {
-      chunk_size = MIN2((off_t)chunk_size, (off_t)current_chunk_size(i) + (off_t)limit);
+      size_t upper_bound = pages_available * page_size();
+      if (upper_bound > limit &&
+          current_chunk_size(i) < upper_bound - limit) {
+        // The resulting upper bound should not exceed the available
+        // amount of memory (pages_available * page_size()).
+        upper_bound = current_chunk_size(i) + limit;
+      }
+      chunk_size = MIN2(chunk_size, upper_bound);
     } else {
-      chunk_size = MAX2((off_t)chunk_size, (off_t)current_chunk_size(i) - (off_t)limit);
+      size_t lower_bound = page_size();
+      if (current_chunk_size(i) > limit) { // lower_bound shouldn't underflow.
+        lower_bound = current_chunk_size(i) - limit;
+      }
+      chunk_size = MAX2(chunk_size, lower_bound);
     }
   }
   assert(chunk_size <= pages_available * page_size(), "Chunk size out of range");
@@ -675,11 +686,11 @@ void MutableNUMASpace::set_top(HeapWord* value) {
       // a minimal object; assuming that's not the last chunk in which case we don't care.
       if (i < lgrp_spaces()->length() - 1) {
         size_t remainder = pointer_delta(s->end(), value);
-        const size_t minimal_object_size = oopDesc::header_size();
-        if (remainder < minimal_object_size && remainder > 0) {
-          // Add a filler object of a minimal size, it will cross the chunk boundary.
-          SharedHeap::fill_region_with_object(MemRegion(value, minimal_object_size));
-          value += minimal_object_size;
+        const size_t min_fill_size = CollectedHeap::min_fill_size();
+        if (remainder < min_fill_size && remainder > 0) {
+          // Add a minimum size filler object; it will cross the chunk boundary.
+          CollectedHeap::fill_with_object(value, min_fill_size);
+          value += min_fill_size;
           assert(!s->contains(value), "Should be in the next chunk");
           // Restart the loop from the same chunk, since the value has moved
           // to the next one.

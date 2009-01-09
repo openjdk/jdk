@@ -46,9 +46,9 @@ import javax.print.attribute.standard.PrinterName;
 
 
 public class CUPSPrinter  {
-
+    private static final String debugPrefix = "CUPSPrinter>> ";
     private static final double PRINTER_DPI = 72.0;
-    private static boolean initialized;
+    private boolean initialized;
     private static native String getCupsServer();
     private static native int getCupsPort();
     private static native boolean canConnect(String server, int port);
@@ -156,7 +156,7 @@ public class CUPSPrinter  {
     /**
      * Initialize media by translating PPD info to PrintService attributes.
      */
-    private void initMedia() {
+    private synchronized void initMedia() {
         if (initialized) {
             return;
         } else {
@@ -392,9 +392,9 @@ public class CUPSPrinter  {
      * Detects if CUPS is running.
      */
     public static boolean isCupsRunning() {
-        IPPPrintService.debug_println("libFound "+libFound);
+        IPPPrintService.debug_println(debugPrefix+"libFound "+libFound);
         if (libFound) {
-            IPPPrintService.debug_println("CUPS server "+getServer()+
+            IPPPrintService.debug_println(debugPrefix+"CUPS server "+getServer()+
                                           " port "+getPort());
             return canConnect(getServer(), getPort());
         } else {

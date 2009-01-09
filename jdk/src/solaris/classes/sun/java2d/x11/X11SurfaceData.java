@@ -50,6 +50,7 @@ import sun.awt.image.PixelConverter;
 import sun.font.X11TextRenderer;
 import sun.java2d.InvalidPipeException;
 import sun.java2d.SunGraphics2D;
+import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceData;
 import sun.java2d.SurfaceDataProxy;
 import sun.java2d.loops.SurfaceType;
@@ -240,6 +241,11 @@ public abstract class X11SurfaceData extends SurfaceData {
      */
     public static native boolean isDgaAvailable();
 
+    /**
+     * Returns true if shared memory pixmaps are available
+     */
+    private static native boolean isShmPMAvailable();
+
     public static boolean isAccelerationEnabled() {
         if (accelerationEnabled == null) {
 
@@ -253,8 +259,17 @@ public abstract class X11SurfaceData extends SurfaceData {
                     // true iff prop==true, false otherwise
                     accelerationEnabled = Boolean.valueOf(prop);
                 } else {
-                    // use pixmaps if there is no dga, no matter local or remote
-                    accelerationEnabled = Boolean.valueOf(!isDgaAvailable());
+                    boolean isDisplayLocal = false;
+                    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                    if (ge instanceof SunGraphicsEnvironment) {
+                        isDisplayLocal = ((SunGraphicsEnvironment) ge).isDisplayLocal();
+                     }
+
+                    // EXA based drivers tend to place pixmaps in VRAM, slowing down readbacks.
+                    // Don't use pixmaps if dga is available,
+                    // or we are local and shared memory Pixmaps are not available.
+                    accelerationEnabled =
+                        !(isDgaAvailable() || (isDisplayLocal && !isShmPMAvailable()));
                 }
             }
         }

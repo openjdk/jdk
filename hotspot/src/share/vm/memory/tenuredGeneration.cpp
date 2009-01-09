@@ -387,7 +387,7 @@ void TenuredGeneration::par_promote_alloc_undo(int thread_num,
               "should contain whole object");
     buf->undo_allocation(obj, word_sz);
   } else {
-    SharedHeap::fill_region_with_object(MemRegion(obj, word_sz));
+    CollectedHeap::fill_with_object(obj, word_sz);
   }
 }
 

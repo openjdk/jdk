@@ -150,6 +150,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
         sb.compact();
         position(rem);
         limit(capacity());
+        discardMark();
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();

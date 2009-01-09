@@ -2020,10 +2020,11 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         if (UnguardOnExecutionViolation > 0 && addr != last_addr &&
             (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
 
-          // Unguard and retry
+          // Set memory to RWX and retry
           address page_start =
             (address) align_size_down((intptr_t) addr, (intptr_t) page_size);
-          bool res = os::unguard_memory((char*) page_start, page_size);
+          bool res = os::protect_memory((char*) page_start, page_size,
+                                        os::MEM_PROT_RWX);
 
           if (PrintMiscellaneous && Verbose) {
             char buf[256];
@@ -2217,15 +2218,10 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
                 // We only expect null pointers in the stubs (vtable)
                 // the rest are checked explicitly now.
                 //
-                CodeBlob* cb = CodeCache::find_blob(pc);
-                if (cb != NULL) {
-                  if (VtableStubs::stub_containing(pc) != NULL) {
-                    if (((uintptr_t)addr) < os::vm_page_size() ) {
-                      // an access to the first page of VM--assume it is a null pointer
-                      return Handle_Exception(exceptionInfo,
-                        SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL));
-                    }
-                  }
+                if (((uintptr_t)addr) < os::vm_page_size() ) {
+                  // an access to the first page of VM--assume it is a null pointer
+                  address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
+                  if (stub != NULL) return Handle_Exception(exceptionInfo, stub);
                 }
               }
             } // in_java
@@ -2241,9 +2237,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             // Windows 98 reports faulting addresses incorrectly
             if (!MacroAssembler::needs_explicit_null_check((intptr_t)addr) ||
                 !os::win32::is_nt()) {
-
-              return Handle_Exception(exceptionInfo,
-                  SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL));
+              address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
+              if (stub != NULL) return Handle_Exception(exceptionInfo, stub);
             }
             report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
                          exceptionInfo->ContextRecord);
@@ -2761,12 +2756,12 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
 
 bool os::guard_memory(char* addr, size_t bytes) {
   DWORD old_status;
-  return VirtualProtect(addr, bytes, PAGE_EXECUTE_READWRITE | PAGE_GUARD, &old_status) != 0;
+  return VirtualProtect(addr, bytes, PAGE_READWRITE | PAGE_GUARD, &old_status) != 0;
 }
 
 bool os::unguard_memory(char* addr, size_t bytes) {
   DWORD old_status;
-  return VirtualProtect(addr, bytes, PAGE_EXECUTE_READWRITE, &old_status) != 0;
+  return VirtualProtect(addr, bytes, PAGE_READWRITE, &old_status) != 0;
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
@@ -3352,6 +3347,10 @@ jint os::init_2(void) {
 
   // initialize thread priority policy
   prio_init();
+
+  if (UseNUMA && !ForceNUMA) {
+    UseNUMA = false; // Currently unsupported.
+  }
 
   return JNI_OK;
 }
