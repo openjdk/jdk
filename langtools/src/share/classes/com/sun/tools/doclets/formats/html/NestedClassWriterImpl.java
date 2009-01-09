@@ -149,7 +149,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     }
 
     public void printSummaryLabel(ClassDoc cd) {
-        writer.boldText("doclet.Nested_Class_Summary");
+        writer.strongText("doclet.Nested_Class_Summary");
     }
 
     public void printSummaryAnchor(ClassDoc cd) {
@@ -164,18 +164,18 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     public void printInheritedSummaryLabel(ClassDoc cd) {
         String clslink = writer.getPreQualifiedClassLink(
             LinkInfoImpl.CONTEXT_MEMBER, cd, false);
-        writer.bold();
+        writer.strong();
         writer.printText(cd.isInterface() ?
             "doclet.Nested_Classes_Interface_Inherited_From_Interface" :
             "doclet.Nested_Classes_Interfaces_Inherited_From_Class",
             clslink);
-        writer.boldEnd();
+        writer.strongEnd();
     }
 
     protected void writeSummaryLink(int context, ClassDoc cd, ProgramElementDoc member) {
-        writer.bold();
+        writer.strong();
         writer.printLink(new LinkInfoImpl(context, (ClassDoc)member, false));
-        writer.boldEnd();
+        writer.strongEnd();
     }
 
     protected void writeInheritedSummaryLink(ClassDoc cd,

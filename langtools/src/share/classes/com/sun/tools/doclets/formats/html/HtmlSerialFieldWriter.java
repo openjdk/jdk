@@ -100,7 +100,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
                 fieldType));
         }
         print(fieldDimensions + ' ');
-        bold(fieldName);
+        strong(fieldName);
         writer.preEnd();
         writer.dl();
     }

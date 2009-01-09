@@ -123,14 +123,14 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 }
                 trBgcolorStyle("white", "TableRowColor");
                 summaryRow(15);
-                bold();
+                strong();
                 printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_PACKAGE,
                     classes[i], false));
-                boldEnd();
+                strongEnd();
                 summaryRowEnd();
                 summaryRow(0);
                 if (Util.isDeprecated(classes[i])) {
-                    boldText("doclet.Deprecated");
+                    strongText("doclet.Deprecated");
                     if (classes[i].tags("deprecated").length > 0) {
                         space();
                         printSummaryDeprecatedComment(classes[i],
@@ -155,7 +155,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     protected void printFirstRow(String label) {
         tableHeaderStart("#CCCCFF");
-        bold(label);
+        strong(label);
         tableHeaderEnd();
     }
 
@@ -194,7 +194,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         if (packageDoc.inlineTags().length > 0 && ! configuration.nocomment) {
             printSummaryComment(packageDoc);
             p();
-            bold(configuration.getText("doclet.See"));
+            strong(configuration.getText("doclet.See"));
             br();
             printNbsps();
             printHyperLink("", "package_description",
@@ -268,7 +268,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     protected void navLinkPackage() {
         navCellRevStart();
         fontStyle("NavBarFont1Rev");
-        boldText("doclet.Package");
+        strongText("doclet.Package");
         fontEnd();
         navCellEnd();
     }

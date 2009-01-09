@@ -98,8 +98,8 @@ public abstract class AbstractMemberWriter {
         writer.displayLength++;
     }
 
-    protected void bold(String str) {
-        writer.bold(str);
+    protected void strong(String str) {
+        writer.strong(str);
         writer.displayLength += str.length();
     }
 
@@ -321,7 +321,7 @@ public abstract class AbstractMemberWriter {
         if (deprmembers.size() > 0) {
             writer.tableIndexSummary();
             writer.tableHeaderStart("#CCCCFF");
-            writer.boldText(headingKey);
+            writer.strongText(headingKey);
             writer.tableHeaderEnd();
             for (int i = 0; i < deprmembers.size(); i++) {
                 ProgramElementDoc member =(ProgramElementDoc)deprmembers.get(i);
@@ -363,7 +363,7 @@ public abstract class AbstractMemberWriter {
                 if (cd != null && !(pgmdoc instanceof ConstructorDoc)
                                && !(pgmdoc instanceof ClassDoc)) {
                     // Add class context
-                    writer.bold(cd.name() + ".");
+                    writer.strong(cd.name() + ".");
                 }
                 writeSummaryLink(
                     pgmdoc instanceof ClassDoc ?

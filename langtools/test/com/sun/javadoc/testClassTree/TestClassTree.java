@@ -49,12 +49,12 @@ public class TestClassTree extends JavadocTester {
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg" + FS + "package-tree.html",
             "<LI TYPE=\"circle\">pkg.<A HREF=\"../pkg/ParentClass.html\" " +
-            "title=\"class in pkg\"><B>ParentClass</B></A><UL>"},
+            "title=\"class in pkg\"><STRONG>ParentClass</STRONG></A><UL>"},
 
         {BUG_ID + FS + "pkg" + FS + "package-tree.html",
             "Annotation Type Hierarchy" + NL + "</H2>" + NL + "<UL>" + NL +
             "<LI TYPE=\"circle\">pkg.<A HREF=\"../pkg/AnnotationType.html\" " +
-            "title=\"annotation in pkg\"><B>AnnotationType</B></A> " +
+            "title=\"annotation in pkg\"><STRONG>AnnotationType</STRONG></A> " +
             "(implements java.lang.annotation.Annotation)" + NL + "</UL>"},
 
         {BUG_ID + FS + "pkg" + FS + "package-tree.html",
@@ -65,7 +65,7 @@ public class TestClassTree extends JavadocTester {
             "<LI TYPE=\"circle\">java.lang.Object<UL>" + NL +
             "<LI TYPE=\"circle\">java.lang.Enum&lt;E&gt; (implements java.lang.Comparable&lt;T&gt;, java.io.Serializable)" + NL +
             "<UL>" + NL +
-            "<LI TYPE=\"circle\">pkg.<A HREF=\"../pkg/Coin.html\" title=\"enum in pkg\"><B>Coin</B></A></UL>" + NL +
+            "<LI TYPE=\"circle\">pkg.<A HREF=\"../pkg/Coin.html\" title=\"enum in pkg\"><STRONG>Coin</STRONG></A></UL>" + NL +
             "</UL>" + NL +
             "</UL>"
         },
@@ -73,7 +73,7 @@ public class TestClassTree extends JavadocTester {
     private static final String[][] NEGATED_TEST = {
         {BUG_ID + FS + "pkg" + FS + "package-tree.html",
             "<LI TYPE=\"circle\">class pkg.<A HREF=\"../pkg/ParentClass.html\" " +
-            "title=\"class in pkg\"><B>ParentClass</B></A><UL>"}
+            "title=\"class in pkg\"><STRONG>ParentClass</STRONG></A><UL>"}
         };
 
     /**

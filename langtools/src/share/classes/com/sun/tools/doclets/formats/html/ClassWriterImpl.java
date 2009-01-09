@@ -91,7 +91,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
     protected void navLinkClass() {
         navCellRevStart();
         fontStyle("NavBarFont1Rev");
-        boldText("doclet.Class");
+        strongText("doclet.Class");
         fontEnd();
         navCellEnd();
     }
@@ -185,7 +185,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         if (configuration().linksource) {
             printSrcLink(classDoc, name);
         } else {
-            bold(name);
+            strong(name);
         }
         if (!isInterface) {
             Type superclass = Util.getFirstVisibleSuperClass(classDoc,
@@ -258,7 +258,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         hr();
         Tag[] deprs = classDoc.tags("deprecated");
         if (Util.isDeprecated(classDoc)) {
-            boldText("doclet.Deprecated");
+            strongText("doclet.Deprecated");
             if (deprs.length > 0) {
                 Tag[] commentTags = deprs[0].inlineTags();
                 if (commentTags.length > 0) {
@@ -307,9 +307,9 @@ public class ClassWriterImpl extends SubWriterHolderWriter
                     classDoc, false));
             if (configuration.shouldExcludeQualifier(
                     classDoc.containingPackage().name())) {
-                bold(type.asClassDoc().name() + typeParameters);
+                strong(type.asClassDoc().name() + typeParameters);
             } else {
-                bold(type.asClassDoc().qualifiedName() + typeParameters);
+                strong(type.asClassDoc().qualifiedName() + typeParameters);
             }
         } else {
             print(getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_CLASS_TREE_PARENT,
@@ -359,7 +359,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             if (subclasses.size() > 0) {
                 dl();
                 dt();
-                boldText("doclet.Subclasses");
+                strongText("doclet.Subclasses");
                 writeClassLinks(LinkInfoImpl.CONTEXT_SUBCLASSES,
                     subclasses);
             }
@@ -375,7 +375,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             if (subInterfaces.size() > 0) {
                 dl();
                 dt();
-                boldText("doclet.Subinterfaces");
+                strongText("doclet.Subinterfaces");
                 writeClassLinks(LinkInfoImpl.CONTEXT_SUBINTERFACES,
                     subInterfaces);
             }
@@ -397,7 +397,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         if (implcl.size() > 0) {
             dl();
             dt();
-            boldText("doclet.Implementing_Classes");
+            strongText("doclet.Implementing_Classes");
             writeClassLinks(LinkInfoImpl.CONTEXT_IMPLEMENTED_CLASSES,
                 implcl);
         }
@@ -413,7 +413,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         if (classDoc.isClass() && interfaceArray.size() > 0) {
             dl();
             dt();
-            boldText("doclet.All_Implemented_Interfaces");
+            strongText("doclet.All_Implemented_Interfaces");
             writeClassLinks(LinkInfoImpl.CONTEXT_IMPLEMENTED_INTERFACES,
                 interfaceArray);
         }
@@ -429,7 +429,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         if (classDoc.isInterface() && interfaceArray.size() > 0) {
             dl();
             dt();
-            boldText("doclet.All_Superinterfaces");
+            strongText("doclet.All_Superinterfaces");
             writeClassLinks(LinkInfoImpl.CONTEXT_SUPER_INTERFACES,
                 interfaceArray);
         }
@@ -570,9 +570,9 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             dl();
             dt();
             if (outerClass.isInterface()) {
-                boldText("doclet.Enclosing_Interface");
+                strongText("doclet.Enclosing_Interface");
             } else {
-                boldText("doclet.Enclosing_Class");
+                strongText("doclet.Enclosing_Class");
             }
             dd();
             printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_CLASS, outerClass,

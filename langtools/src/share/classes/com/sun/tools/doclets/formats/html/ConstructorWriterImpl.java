@@ -144,7 +144,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         if (configuration().linksource) {
             writer.printSrcLink(constructor, constructor.name());
         } else {
-            bold(constructor.name());
+            strong(constructor.name());
         }
         writeParameters(constructor);
         writeExceptions(constructor);
@@ -220,7 +220,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     }
 
     public void printSummaryLabel(ClassDoc cd) {
-        writer.boldText("doclet.Constructor_Summary");
+        writer.strongText("doclet.Constructor_Summary");
     }
 
     public void printSummaryAnchor(ClassDoc cd) {
