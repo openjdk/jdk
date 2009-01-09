@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,34 @@
 
 /*
  * @test
- * @bug 4773013
- * @summary When hunting subpackages, silently ignore any directory name that
- *          can't be part of a subpackage.
+ * @bug 6512707
+ * @summary "incompatible types" after (unrelated) annotation processing
+ * @author  Peter Runge
+ * @compile T6512707.java
+ *
+ * @compile -processor T6512707 TestAnnotation.java
  */
 
-import com.sun.javadoc.*;
+import java.util.Set;
+import javax.annotation.processing.*;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.*;
+import javax.lang.model.util.*;
 
-public class SubpackageIgnore extends Doclet {
+/**
+ * Dummy processor to force bug 6512707 to show - it does not matter what
+ * the annotation processor does for this bug.
+ */
+@SupportedAnnotationTypes("*")
+public class T6512707 extends AbstractProcessor {
 
-    public static void main(String[] args) {
-        if (com.sun.tools.javadoc.Main.execute(
-                "javadoc",
-                "SubpackageIgnore",
-                SubpackageIgnore.class.getClassLoader(),
-                new String[] {"-Xwerror",
-                              "-sourcepath",
-                              System.getProperty("test.src", "."),
-                              "-subpackages",
-                              "pkg1"}) != 0)
-            throw new Error("Javadoc encountered warnings or errors.");
+    public boolean process(Set<? extends TypeElement> annotations,
+                           RoundEnvironment roundEnv) {
+        return(false);
     }
 
-    /*
-     * The world's simplest doclet.
-     */
-    public static boolean start(RootDoc root) {
-        return true;
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 }

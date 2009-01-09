@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,34 +21,9 @@
  * have any questions.
  */
 
-/*
- * @test
- * @bug 4773013
- * @summary When hunting subpackages, silently ignore any directory name that
- *          can't be part of a subpackage.
- */
-
-import com.sun.javadoc.*;
-
-public class SubpackageIgnore extends Doclet {
-
-    public static void main(String[] args) {
-        if (com.sun.tools.javadoc.Main.execute(
-                "javadoc",
-                "SubpackageIgnore",
-                SubpackageIgnore.class.getClassLoader(),
-                new String[] {"-Xwerror",
-                              "-sourcepath",
-                              System.getProperty("test.src", "."),
-                              "-subpackages",
-                              "pkg1"}) != 0)
-            throw new Error("Javadoc encountered warnings or errors.");
-    }
-
-    /*
-     * The world's simplest doclet.
-     */
-    public static boolean start(RootDoc root) {
-        return true;
-    }
+public enum TestEnum
+{
+    ONE,
+    TWO
 }
+
