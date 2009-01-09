@@ -56,14 +56,38 @@ import java.util.Map;
  * properties.</p>
  *
  * <p>The <em>domain</em> is a string of characters not including
- * the character colon (<code>:</code>).  It is recommended that the domain
- * should not contain the string "{@code //}", which is reserved for future use.
+ * the character colon (<code>:</code>).</p>
+ * <p>Starting with the version 2.0 of the JMX specification, the
+ * <em>domain</em> can also start with a {@linkplain
+ * javax.management.namespace#NamespacePrefix namespace prefix} identifying
+ * the {@linkplain javax.management.namespace namespace} in which the
+ * MBean is registered. A namespace prefix is a path string where
+ * elements are separated by a double slash (<code>//</code>).
+ * It identifies the {@linkplain  javax.management.namespace namespace} in
+ * which the MBean so named is registered.</p>
+ *
+ * <p>For instance the ObjectName <em>bar//baz:k=v</em> identifiies an MBean
+ * named <em>baz:k=v</em> in the namespace <em>bar</em>. Similarly the
+ * ObjectName <em>foo//bar//baz:k=v</em> identifiies an MBean named
+ * <em>baz:k=v</em> in the namespace <em>foo//bar</em>. See the {@linkplain
+ * javax.management.namespace namespace} documentation for more details.</p>
  *
  * <p>If the domain includes at least one occurrence of the wildcard
  * characters asterisk (<code>*</code>) or question mark
  * (<code>?</code>), then the object name is a pattern.  The asterisk
  * matches any sequence of zero or more characters, while the question
- * mark matches any single character.</p>
+ * mark matches any single character. <br>
+ * A namespace separator <code>//</code> does not match wildcard
+ * characters unless it is at the very end of the domain string.
+ * So <em>foo*bar*:*</em> does not match <em>foo//bar:k=v</em> but it
+ * does match <em>fooxbar//:k=v</em>.
+ * </p>
+ *
+ * <p>When included in a namespace path the special path element
+ * <code>**</code> matches any number of sub namespaces
+ * recursively, but only if used as a complete namespace path element,
+ * as in <code>*&#42;//b//c//D:k=v</code> or <code>a//*&#42;//c//D:k=v</code>
+ * - see <a href="#metawildcard">below</a>.
  *
  * <p>If the domain is empty, it will be replaced in certain contexts
  * by the <em>default domain</em> of the MBean server in which the
@@ -170,6 +194,51 @@ import java.util.Map;
  *     inside quotes, and like other special characters can be escaped
  *     with {@code \}.</li>
  * </ul>
+ *
+ * <p id="metawildcard"><b>Pattern and namespaces:</b></p>
+ * <p>In an object name pattern, a path element
+ *    of exactly <code>**</code> corresponds to a meta
+ *    wildcard that will match any number of sub namespaces.<br>Hence:</p>
+ * <table border="0" cellpadding="5">
+ * <thead><th>pattern</th><th>matches</th><th>doesn't match</th></thead>
+ * <tbody>
+ * <tr><td><ul><li><code>*&#42;//D:k=v</code></li></ul></td>
+ *     <td><code>a//D:k=v</code><br>
+ *         <code>a//b//D:k=v</code><br>
+ *         <code>a//b//c//D:k=v</code></td>
+ *     <td><code>D:k=v</code></td></tr>
+ * <tr><td><ul><li><code>a//*&#42;//D:k=v</code></li></ul></td>
+ *     <td><code>a//b//D:k=v</code><br>
+ *         <code>a//b//c//D:k=v</code></td>
+ *     <td><code>b//b//c//D:k=v</code><br>
+ *         <code>a//D:k=v</code><br>
+ *         <code>D:k=v</code></td></tr>
+ * <tr><td><ul><li><code>a//*&#42;//e//D:k=v</code></li></ul></td>
+ *     <td><code>a//b//e//D:k=v</code><br>
+ *         <code>a//b//c//e//D:k=v</code></td>
+ *     <td><code>a//b//c//c//D:k=v</code><br>
+ *         <code>b//b//c//e//D:k=v</code><br>
+ *         <code>a//e//D:k=v</code><br>
+ *         <code>e//D:k=v</code></td></tr>
+ * <tr><td><ul><li><code>a//b*&#42;//e//D:k=v</code></li></ul></td>
+ *      <td><code>a//b//e//D:k=v</code></td>
+ *      <td><code>a//b//c//e//D:k=v</code><br>
+ *          because in that case <code>b*&#42;</code><br>
+ *         is not a meta-wildcard - and <code>b**</code><br>
+ *         is thus equivalent to <code>b*</code>.</td></tr>
+ * </tbody>
+ * </table>
+ *</ul>
+ * </p>
+ * <p>
+ * <b>Note:</b> Although ObjectName patterns where the characters
+ * <code>*</code> and <code>?</code> appear in the namespace path are legal,
+ * they are not valid in the {@code name} parameter of the MBean Server's
+ * {@link MBeanServer#queryNames queryNames} and {@link MBeanServer#queryMBeans
+ * queryMBeans} methods. See the
+ * <a href="namespace/package-summary.html#RejectedNamespacePatterns"><!--
+ * -->namespaces documentation</a> for more details.
+ * </p>
  *
  * <p>An ObjectName can be written as a String with the following
  * elements in order:</p>
@@ -439,11 +508,6 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
         _propertyList = aname._propertyList;
         _property_list_pattern = aname._property_list_pattern;
         _property_value_pattern = aname._property_value_pattern;
-        // TODO remove this hack
-        // if (toString().endsWith("//javax.management.service:type1=event_client_delegeate_mbean,type2=default")) {
-        //    Thread.currentThread().dumpStack();
-        //    throw new Error("************************ Gotcha!");
-        //}
     }
 
     // Instance private fields <=======================================
@@ -1096,11 +1160,10 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      */
     private boolean isDomain(String domain) {
         if (domain == null) return true;
-        final char[] d=domain.toCharArray();
-        final int len = d.length;
+        final int len = domain.length();
         int next = 0;
         while (next < len) {
-            final char c = d[next++];
+            final char c = domain.charAt(next++);
             switch (c) {
                 case ':' :
                 case '\n' :
@@ -1234,12 +1297,6 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
         if (!nw.equals("")) {
             nameString = nw + NAMESPACE_SEPARATOR + nameString;
         }
-        // TODO remove this hack
-        // if (nameString.endsWith("//javax.management.service:type1=event_client_delegeate_mbean,type2=default")) {
-        //    System.err.println("old="+old+", nw="+nw);
-        //    Thread.currentThread().dumpStack();
-        //    throw new Error("************************ Gotcha!");
-        // }
         return nameString;
     }
 
@@ -1584,13 +1641,18 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * @return A new {@code ObjectName} that is the same as {@code this}
      *         except the domain is {@code newDomain}.
      * @throws NullPointerException if {@code newDomain} is null.
-     * @throws MalformedObjectNameException if the new domain is syntactically
-     *         illegal.
+     * @exception IllegalArgumentException The {@code newDomain} passed as a
+     * parameter does not have the right format.  The {@linkplain
+     * Throwable#getCause() cause} of this exception will be a
+     * {@link MalformedObjectNameException}.
      * @since 1.7
      **/
-    public final ObjectName withDomain(String newDomain)
-            throws MalformedObjectNameException {
-        return new ObjectName(newDomain, this);
+    public final ObjectName withDomain(String newDomain) {
+        try {
+            return new ObjectName(newDomain, this);
+        } catch (MalformedObjectNameException x) {
+            throw new IllegalArgumentException(x.getMessage(),x);
+        }
     }
 
     /**

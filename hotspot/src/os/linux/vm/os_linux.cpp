@@ -279,7 +279,11 @@ void os::init_system_properties_values() {
  *        ...
  *        7: The default directories, normally /lib and /usr/lib.
  */
+#if defined(AMD64) || defined(_LP64) && (defined(SPARC) || defined(PPC) || defined(S390))
+#define DEFAULT_LIBPATH "/usr/lib64:/lib64:/lib:/usr/lib"
+#else
 #define DEFAULT_LIBPATH "/lib:/usr/lib"
+#endif
 
 #define EXTENSIONS_DIR  "/lib/ext"
 #define ENDORSED_DIR    "/lib/endorsed"

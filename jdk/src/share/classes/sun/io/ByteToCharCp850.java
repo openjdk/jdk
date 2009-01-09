@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2002 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  * have any questions.
  */
 
-
 package sun.io;
 
 import sun.nio.cs.IBM850;
@@ -32,6 +31,7 @@ import sun.nio.cs.IBM850;
  * A table to convert to Cp850 to Unicode
  *
  * @author  ConverterGenerator tool
+ * @version >= JDK1.1.6
  */
 
 public class ByteToCharCp850 extends ByteToCharSingleByte {
@@ -41,6 +41,6 @@ public class ByteToCharCp850 extends ByteToCharSingleByte {
     }
 
     public ByteToCharCp850() {
-        super.byteToCharTable = IBM850.getDecoderSingleByteMappings();
+        super.byteToCharTable = new IBM850().getDecoderSingleByteMappings();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,8 +186,10 @@ public class MBeanAttributeInfo extends MBeanFeatureInfo implements Cloneable {
              (getter != null),
              (setter != null),
              isIs(getter),
-             ImmutableDescriptor.union(Introspector.descriptorForElement(getter),
-                                   Introspector.descriptorForElement(setter)));
+             ImmutableDescriptor.union(Introspector.
+             descriptorForElement(getter, false),
+                                   Introspector.descriptorForElement(setter,
+                                   true)));
     }
 
     /**

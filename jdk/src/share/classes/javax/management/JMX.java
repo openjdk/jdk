@@ -51,8 +51,6 @@ public class JMX {
      * this class.
      */
     static final JMX proof = new JMX();
-    private static final ClassLogger logger =
-        new ClassLogger("javax.management.misc", "JMX");
 
     private JMX() {}
 
@@ -76,6 +74,12 @@ public class JMX {
      */
     public static final String DESCRIPTION_RESOURCE_KEY_FIELD =
             "descriptionResourceKey";
+
+    /**
+     * The name of the <a href="Descriptor.html#exceptions">{@code
+     * exceptions}</a> field.
+     */
+    public static final String EXCEPTIONS_FIELD = "exceptions";
 
     /**
      * The name of the <a href="Descriptor.html#immutableInfo">{@code
@@ -138,6 +142,18 @@ public class JMX {
      * originalType}</a> field.
      */
     public static final String ORIGINAL_TYPE_FIELD = "originalType";
+
+    /**
+     * The name of the <a href="Descriptor.html#setExceptions">{@code
+     * setExceptions}</a> field.
+     */
+    public static final String SET_EXCEPTIONS_FIELD = "setExceptions";
+
+    /**
+     * The name of the <a href="Descriptor.html#objectNameTemplate">{@code
+     * objectNameTemplate}</a> field.
+     */
+    public static final String OBJECT_NAME_TEMPLATE = "objectNameTemplate";
 
     /**
      * <p>Options to apply to an MBean proxy or to an instance of {@link
@@ -824,11 +840,16 @@ public class JMX {
      */
     public static boolean isNotificationSource(Object mbean)
             throws NotCompliantMBeanException {
-        if (mbean instanceof NotificationBroadcaster)
-            return true;
-        Object resource = (mbean instanceof DynamicWrapperMBean) ?
-            ((DynamicWrapperMBean) mbean).getWrappedObject() : mbean;
-        return (MBeanInjector.injectsSendNotification(resource));
+        for (int i = 0; i < 2; i++) {
+            if (mbean instanceof NotificationBroadcaster ||
+                    MBeanInjector.injectsSendNotification(mbean))
+                return true;
+            if (mbean instanceof DynamicWrapperMBean)
+                mbean = ((DynamicWrapperMBean) mbean).getWrappedObject();
+            else
+                break;
+        }
+        return false;
     }
 
     /**

@@ -25,7 +25,6 @@
 
 package javax.print.event;
 
-import java.util.List;
 import javax.print.PrintService;
 import javax.print.attribute.AttributeSetUtilities;
 import javax.print.attribute.PrintServiceAttributeSet;

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2002-2004 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,15 +23,15 @@
 
 /**
  * <pre>
- * 		This source
- * 		is indented
- * 		with tabs.
+ * \t\tThis source
+ * \t\tis indented
+ * \t\twith tabs.
  * </pre>
  */
 public class C {
-    
-		//This source
-		//is indented
-		//with tabs.
-    
+
+\t\t//This source
+\t\t//is indented
+\t\t//with tabs.
+
 }
