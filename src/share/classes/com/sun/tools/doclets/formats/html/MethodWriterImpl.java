@@ -167,7 +167,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         if (configuration().linksource) {
             writer.printSrcLink(method, method.name());
         } else {
-            bold(method.name());
+            strong(method.name());
         }
         writeParameters(method);
         writeExceptions(method);
@@ -210,7 +210,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                             holder.typeName() : holder.qualifiedTypeName(),
                         false));
                 writer.dd();
-                writer.boldText(holder.asClassDoc().isClass()?
+                writer.strongText(holder.asClassDoc().isClass()?
                         "doclet.Description_From_Class":
                         "doclet.Description_From_Interface",
                     classlink);
@@ -259,7 +259,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     }
 
     public void printSummaryLabel(ClassDoc cd) {
-        writer.boldText("doclet.Method_Summary");
+        writer.strongText("doclet.Method_Summary");
     }
 
     public void printSummaryAnchor(ClassDoc cd) {
@@ -274,12 +274,12 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     public void printInheritedSummaryLabel(ClassDoc cd) {
         String classlink = writer.getPreQualifiedClassLink(
             LinkInfoImpl.CONTEXT_MEMBER, cd, false);
-        writer.bold();
+        writer.strong();
         String key = cd.isClass()?
             "doclet.Methods_Inherited_From_Class" :
             "doclet.Methods_Inherited_From_Interface";
         writer.printText(key, classlink);
-        writer.boldEnd();
+        writer.strongEnd();
     }
 
     protected void printSummaryType(ProgramElementDoc member) {
@@ -317,7 +317,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 writer.getLink(new LinkInfoImpl(context, overriddenType)));
             String name = method.name();
             writer.dt();
-            writer.boldText(label);
+            writer.strongText(label);
             writer.dd();
             String methLink = writer.codeText(
                 writer.getLink(
@@ -363,7 +363,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 writer.getLink(new LinkInfoImpl(
                     LinkInfoImpl.CONTEXT_METHOD_SPECIFIED_BY, intfac)));
             writer.dt();
-            writer.boldText("doclet.Specified_By");
+            writer.strongText("doclet.Specified_By");
             writer.dd();
             methlink = writer.codeText(writer.getDocLink(
                 LinkInfoImpl.CONTEXT_MEMBER, implementedMeth,

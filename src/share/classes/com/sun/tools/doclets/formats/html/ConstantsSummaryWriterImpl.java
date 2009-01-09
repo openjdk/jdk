@@ -92,7 +92,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      * {@inheritDoc}
      */
     public void writeContentsHeader() {
-        bold(configuration.getText("doclet.Contents"));
+        strong(configuration.getText("doclet.Contents"));
         ul();
     }
 

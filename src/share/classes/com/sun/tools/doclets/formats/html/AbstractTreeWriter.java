@@ -173,7 +173,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      */
     protected void printPartialInfo(ClassDoc cd) {
         li("circle");
-        printPreQualifiedBoldClassLink(LinkInfoImpl.CONTEXT_TREE, cd);
+        printPreQualifiedStrongClassLink(LinkInfoImpl.CONTEXT_TREE, cd);
     }
 
     /**
@@ -193,7 +193,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
     protected void navLinkTree() {
         navCellRevStart();
         fontStyle("NavBarFont1Rev");
-        boldText("doclet.Tree");
+        strongText("doclet.Tree");
         fontEnd();
         navCellEnd();
     }
