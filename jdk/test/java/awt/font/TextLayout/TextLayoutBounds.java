@@ -22,7 +22,7 @@
  */
 /* @test
  * @summary verify TextLayout.getBounds() return visual bounds
- * @bug 6323611
+ * @bug 6323611 6761856
  */
 
 import java.awt.*;
@@ -39,10 +39,15 @@ public class TextLayoutBounds {
        Rectangle2D tlBounds = tl.getBounds();
        GlyphVector gv = f.createGlyphVector(frc, s);
        Rectangle2D gvvBounds = gv.getVisualBounds();
+       Rectangle2D oBounds = tl.getOutline(null).getBounds2D();
        System.out.println("tlbounds="+tlBounds);
        System.out.println("gvbounds="+gvvBounds);
+       System.out.println("outlineBounds="+oBounds);
        if (!gvvBounds.equals(tlBounds)) {
-          throw new RuntimeException("Bounds differ");
+          throw new RuntimeException("Bounds differ [gvv != tl]");
+       }
+       if (!tlBounds.equals(oBounds)) {
+          throw new RuntimeException("Bounds differ [tl != outline]");
        }
     }
 }

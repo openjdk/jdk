@@ -248,46 +248,6 @@ void SharedHeap::ref_processing_init() {
   perm_gen()->ref_processor_init();
 }
 
-void SharedHeap::fill_region_with_object(MemRegion mr) {
-  // Disable the posting of JVMTI VMObjectAlloc events as we
-  // don't want the filling of tlabs with filler arrays to be
-  // reported to the profiler.
-  NoJvmtiVMObjectAllocMark njm;
-
-  // Disable low memory detector because there is no real allocation.
-  LowMemoryDetectorDisabler lmd_dis;
-
-  // It turns out that post_allocation_setup_array takes a handle, so the
-  // call below contains an implicit conversion.  Best to free that handle
-  // as soon as possible.
-  HandleMark hm;
-
-  size_t word_size = mr.word_size();
-  size_t aligned_array_header_size =
-    align_object_size(typeArrayOopDesc::header_size(T_INT));
-
-  if (word_size >= aligned_array_header_size) {
-    const size_t array_length =
-      pointer_delta(mr.end(), mr.start()) -
-      typeArrayOopDesc::header_size(T_INT);
-    const size_t array_length_words =
-      array_length * (HeapWordSize/sizeof(jint));
-    post_allocation_setup_array(Universe::intArrayKlassObj(),
-                                mr.start(),
-                                mr.word_size(),
-                                (int)array_length_words);
-#ifdef ASSERT
-    HeapWord* elt_words = (mr.start() + typeArrayOopDesc::header_size(T_INT));
-    Copy::fill_to_words(elt_words, array_length, 0xDEAFBABE);
-#endif
-  } else {
-    assert(word_size == (size_t)oopDesc::header_size(), "Unaligned?");
-    post_allocation_setup_obj(SystemDictionary::object_klass(),
-                              mr.start(),
-                              mr.word_size());
-  }
-}
-
 // Some utilities.
 void SharedHeap::print_size_transition(outputStream* out,
                                        size_t bytes_before,
