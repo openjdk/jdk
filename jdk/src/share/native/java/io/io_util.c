@@ -25,6 +25,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "jni.h"
 #include "jni_util.h"
@@ -34,9 +35,9 @@
 
 /* IO helper functions */
 
-int
+jint
 readSingle(JNIEnv *env, jobject this, jfieldID fid) {
-    int nread;
+    jint nread;
     char ret;
     FD fd = GET_FD(this, fid);
     if (fd == -1) {
@@ -49,7 +50,7 @@ readSingle(JNIEnv *env, jobject this, jfieldID fid) {
     } else if (nread == JVM_IO_ERR) { /* error */
         JNU_ThrowIOExceptionWithLastError(env, "Read error");
     } else if (nread == JVM_IO_INTR) {
-        JNU_ThrowByName(env, "java/io/InterruptedIOException", 0);
+        JNU_ThrowByName(env, "java/io/InterruptedIOException", NULL);
     }
     return ret & 0xFF;
 }
@@ -71,22 +72,22 @@ outOfBounds(JNIEnv *env, jint off, jint len, jbyteArray array) {
             ((*env)->GetArrayLength(env, array) - off < len));
 }
 
-int
+jint
 readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
           jint off, jint len, jfieldID fid)
 {
-    int nread;
+    jint nread;
     char stackBuf[BUF_SIZE];
-    char *buf = 0;
+    char *buf = NULL;
     FD fd;
 
     if (IS_NULL(bytes)) {
-        JNU_ThrowNullPointerException(env, 0);
+        JNU_ThrowNullPointerException(env, NULL);
         return -1;
     }
 
     if (outOfBounds(env, off, len, bytes)) {
-        JNU_ThrowByName(env, "java/lang/IndexOutOfBoundsException", 0);
+        JNU_ThrowByName(env, "java/lang/IndexOutOfBoundsException", NULL);
         return -1;
     }
 
@@ -94,8 +95,8 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         return 0;
     } else if (len > BUF_SIZE) {
         buf = malloc(len);
-        if (buf == 0) {
-            JNU_ThrowOutOfMemoryError(env, 0);
+        if (buf == NULL) {
+            JNU_ThrowOutOfMemoryError(env, NULL);
             return 0;
         }
     } else {
@@ -112,8 +113,8 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
             (*env)->SetByteArrayRegion(env, bytes, off, nread, (jbyte *)buf);
         } else if (nread == JVM_IO_ERR) {
             JNU_ThrowIOExceptionWithLastError(env, "Read error");
-        } else if (nread == JVM_IO_INTR) { /* EOF */
-            JNU_ThrowByName(env, "java/io/InterruptedIOException", 0);
+        } else if (nread == JVM_IO_INTR) {
+            JNU_ThrowByName(env, "java/io/InterruptedIOException", NULL);
         } else { /* EOF */
             nread = -1;
         }
@@ -127,8 +128,9 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
 
 void
 writeSingle(JNIEnv *env, jobject this, jint byte, jfieldID fid) {
-    char c = byte;
-    int n;
+    // Discard the 24 high-order bits of byte. See OutputStream#write(int)
+    char c = (char) byte;
+    jint n;
     FD fd = GET_FD(this, fid);
     if (fd == -1) {
         JNU_ThrowIOException(env, "Stream Closed");
@@ -138,26 +140,26 @@ writeSingle(JNIEnv *env, jobject this, jint byte, jfieldID fid) {
     if (n == JVM_IO_ERR) {
         JNU_ThrowIOExceptionWithLastError(env, "Write error");
     } else if (n == JVM_IO_INTR) {
-        JNU_ThrowByName(env, "java/io/InterruptedIOException", 0);
+        JNU_ThrowByName(env, "java/io/InterruptedIOException", NULL);
     }
 }
 
 void
 writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
-          jint off, jint len, jfieldID fid)
+           jint off, jint len, jfieldID fid)
 {
-    int n;
+    jint n;
     char stackBuf[BUF_SIZE];
-    char *buf = 0;
+    char *buf = NULL;
     FD fd;
 
     if (IS_NULL(bytes)) {
-        JNU_ThrowNullPointerException(env, 0);
+        JNU_ThrowNullPointerException(env, NULL);
         return;
     }
 
     if (outOfBounds(env, off, len, bytes)) {
-        JNU_ThrowByName(env, "java/lang/IndexOutOfBoundsException", 0);
+        JNU_ThrowByName(env, "java/lang/IndexOutOfBoundsException", NULL);
         return;
     }
 
@@ -165,8 +167,8 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         return;
     } else if (len > BUF_SIZE) {
         buf = malloc(len);
-        if (buf == 0) {
-            JNU_ThrowOutOfMemoryError(env, 0);
+        if (buf == NULL) {
+            JNU_ThrowOutOfMemoryError(env, NULL);
             return;
         }
     } else {
@@ -188,7 +190,7 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
                 JNU_ThrowIOExceptionWithLastError(env, "Write error");
                 break;
             } else if (n == JVM_IO_INTR) {
-                JNU_ThrowByName(env, "java/io/InterruptedIOException", 0);
+                JNU_ThrowByName(env, "java/io/InterruptedIOException", NULL);
                 break;
             }
             off += n;
@@ -204,19 +206,19 @@ void
 throwFileNotFoundException(JNIEnv *env, jstring path)
 {
     char buf[256];
-    int n;
+    jint n;
     jobject x;
     jstring why = NULL;
 
     n = JVM_GetLastErrorString(buf, sizeof(buf));
     if (n > 0) {
-    why = JNU_NewStringPlatform(env, buf);
+        why = JNU_NewStringPlatform(env, buf);
     }
     x = JNU_NewObjectByName(env,
-                "java/io/FileNotFoundException",
-                "(Ljava/lang/String;Ljava/lang/String;)V",
-                path, why);
+                            "java/io/FileNotFoundException",
+                            "(Ljava/lang/String;Ljava/lang/String;)V",
+                            path, why);
     if (x != NULL) {
-    (*env)->Throw(env, x);
+        (*env)->Throw(env, x);
     }
 }
