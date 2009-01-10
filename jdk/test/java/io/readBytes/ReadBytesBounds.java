@@ -22,107 +22,76 @@
  */
 
 /*
-  @test
-  @bug 4017728 4079849
-  @summary Check for correct Array Bounds check in read of FileInputStream and
-  RandomAccessFile
-  */
+ * @test
+ * @bug 4017728 4079849 6788196
+ * @summary Check for correct Array Bounds check in read of FileInputStream and
+ * RandomAccessFile
+ */
 
 import java.io.*;
 
-
 /*
- * The test calls the read(byte buf[] , int off , int len) of FileInputStream with
- * different values of off and len to see if the ArrayOutOfBoundsException is
- * thrown according to the JLS1.0 specification.  The read(...) method calls
- * readBytes(...) in native code(io_util.c).  The read(...) method in RandomAccessFile
- * also calls the same native method.  So one should see similar results.
+ * The test calls the read(byte buf[] , int off , int len) of
+ * FileInputStream with different values of off and len to see if the
+ * IndexOutOfBoundsException is thrown.  The read(...) method calls
+ * readBytes(...) in native code(io_util.c).  The read(...) method in
+ * RandomAccessFile also calls the same native method.  So one should
+ * see similar results.
  */
-
 
 public class ReadBytesBounds {
 
-    public static void main(String argv[]) throws Exception{
+    static final FileInputStream fis;
+    static final RandomAccessFile raf;
+    static final byte[] b = new byte[32];
 
-        int num_test_cases = 12;
-        int off[] =     {-1 , -1 ,  0 , 0  , 33 , 33 , 0  , 32 , 32 , 4  , 1  , 0};
-        int len[] =     {-1 ,  0 , -1 , 33 , 0  , 4  , 32 , 0  , 4  , 16 , 31 , 0};
-        boolean results[] = { false ,  false ,  false , false  , false  , false  ,
-                              true  , true  , false  , true  , true  , true};
-
-
-        FileInputStream fis = null;
-        RandomAccessFile raf = null;
-        byte b[] = new byte[32];
-
-        int num_good = 0;
-        int num_bad = 0;
-
-        String dir = System.getProperty("test.src", ".");
-        File testFile = new File(dir, "input.txt");
-        fis = new FileInputStream(testFile);
-        for(int i = 0; i < num_test_cases; i++) {
-
-            try {
-                int bytes_read = fis.read(b , off[i] , len[i]);
-            } catch(IndexOutOfBoundsException aiobe) {
-                if (results[i]) {
-                    throw new RuntimeException("Unexpected result");
-                }
-                else {
-                    num_good++;
-                }
-                continue;
-            }
-
-            if (results[i]) {
-                num_good++;
-            }
-            else {
-                throw new RuntimeException("Unexpected result");
-            }
-
+    static {
+        try {
+            String dir = System.getProperty("test.src", ".");
+            File testFile = new File(dir, "input.txt");
+            fis = new FileInputStream(testFile);
+            raf = new RandomAccessFile(testFile , "r");
+        } catch (Throwable t) {
+            throw new Error(t);
         }
-        System.out.println("Results for FileInputStream.read");
-        System.out.println("\nTotal number of test cases = " + num_test_cases +
-                           "\nNumber succeded = " + num_good +
-                           "\nNumber failed   = " + num_bad);
-
-
-
-        num_good = 0;
-        num_bad = 0;
-
-        raf = new RandomAccessFile(testFile , "r");
-        for(int i = 0; i < num_test_cases; i++) {
-
-            try {
-                int bytes_read = raf.read(b , off[i] , len[i]);
-            } catch(IndexOutOfBoundsException aiobe) {
-                if (results[i]) {
-                    throw new RuntimeException("Unexpected result");
-                }
-                else {
-                    num_good++;
-                }
-                continue;
-            }
-
-            if (results[i]) {
-                num_good++;
-            }
-            else {
-                throw new RuntimeException("Unexpected result");
-            }
-
-        }
-
-        System.out.println("Results for RandomAccessFile.read");
-        System.out.println("\nTotal number of test cases = " + num_test_cases +
-                           "\nNumber succeded = " + num_good +
-                           "\nNumber failed   = " + num_bad);
-
-
     }
 
+    public static void main(String argv[]) throws Throwable {
+        byte b[] = new byte[32];
+        testRead(-1, -1, false);
+        testRead(-1,  0, false);
+        testRead( 0, -1, false);
+        testRead( 0, 33, false);
+        testRead(33,  0, false);
+        testRead(33,  4, false);
+        testRead( 0, 32, true);
+        testRead(32,  0, true);
+        testRead(32,  4, false);
+        testRead( 4, 16, true);
+        testRead( 1, 31, true);
+        testRead( 0,  0, true);
+        testRead(31,  Integer.MAX_VALUE, false);
+        testRead( 0,  Integer.MAX_VALUE, false);
+        testRead(-1,  Integer.MAX_VALUE, false);
+        testRead(-4,  Integer.MIN_VALUE, false);
+        testRead( 0,  Integer.MIN_VALUE, false);
+    }
+
+    static void testRead(int off, int len, boolean expected) throws Throwable {
+        System.err.printf("off=%d len=%d expected=%b%n", off, len, expected);
+        boolean result;
+        try {
+            fis.read(b, off, len);
+            raf.read(b, off, len);
+            result = true;
+        } catch (IndexOutOfBoundsException e) {
+            result = false;
+        }
+
+        if (result != expected) {
+            throw new RuntimeException
+                (String.format("Unexpected result off=%d len=%d expected=%b",
+                               off, len, expected));
+        }
+    }
 }
