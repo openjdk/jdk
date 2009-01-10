@@ -25,7 +25,6 @@
 
 package sun.print;
 
-import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.PrintRequestAttribute;
 
 /*

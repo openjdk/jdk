@@ -120,6 +120,7 @@ public abstract class OGLSurfaceData extends SurfaceData
     public static final int PF_USHORT_555_RGBX = 8;
     public static final int PF_BYTE_GRAY       = 9;
     public static final int PF_USHORT_GRAY     = 10;
+    public static final int PF_3BYTE_BGR       = 11;
 
     /**
      * SurfaceTypes
@@ -401,6 +402,7 @@ public abstract class OGLSurfaceData extends SurfaceData
      *   - the fragment shader extension is available, and
      *   - blending is disabled, and
      *   - the source color is opaque
+     *   - and the destination is opaque
      *
      * Eventually, we could enhance the native OGL text rendering code
      * and remove the above restrictions, but that would require significantly
@@ -410,7 +412,8 @@ public abstract class OGLSurfaceData extends SurfaceData
         return
             graphicsConfig.isCapPresent(CAPS_EXT_LCD_SHADER) &&
             sg2d.compositeState <= SunGraphics2D.COMP_ISCOPY &&
-            sg2d.paintState <= SunGraphics2D.PAINT_OPAQUECOLOR;
+            sg2d.paintState <= SunGraphics2D.PAINT_OPAQUECOLOR &&
+            sg2d.surfaceData.getTransparency() == Transparency.OPAQUE;
     }
 
     public void validatePipe(SunGraphics2D sg2d) {

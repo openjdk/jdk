@@ -28,9 +28,7 @@ package javax.print;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 
-import javax.print.attribute.AttributeSet;
 import javax.print.attribute.DocAttributeSet;
 
 

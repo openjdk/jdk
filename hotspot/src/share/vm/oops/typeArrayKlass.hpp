@@ -39,7 +39,11 @@ class typeArrayKlass : public arrayKlass {
 
   // klass allocation
   DEFINE_ALLOCATE_PERMANENT(typeArrayKlass);
-  static klassOop create_klass(BasicType type, int scale, TRAPS);
+  static klassOop create_klass(BasicType type, int scale, const char* name_str,
+                               TRAPS);
+  static inline klassOop create_klass(BasicType type, int scale, TRAPS) {
+    return create_klass(type, scale, external_name(type), CHECK_NULL);
+  }
 
   int oop_size(oop obj) const;
   int klass_oop_size() const  { return object_size(); }
