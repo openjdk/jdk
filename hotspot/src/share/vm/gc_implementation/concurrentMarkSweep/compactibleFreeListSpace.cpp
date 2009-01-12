@@ -885,7 +885,9 @@ const {
     } else {
       // must read from what 'p' points to in each loop.
       klassOop k = ((volatile oopDesc*)p)->klass_or_null();
-      if (k != NULL && ((oopDesc*)p)->is_parsable()) {
+      if (k != NULL &&
+          ((oopDesc*)p)->is_parsable() &&
+          ((oopDesc*)p)->is_conc_safe()) {
         assert(k->is_oop(), "Should really be klass oop.");
         oop o = (oop)p;
         assert(o->is_oop(), "Should be an oop");

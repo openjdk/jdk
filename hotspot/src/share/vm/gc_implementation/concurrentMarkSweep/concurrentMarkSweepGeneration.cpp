@@ -6633,7 +6633,11 @@ size_t ScanMarkedObjectsAgainCarefullyClosure::do_object_careful_m(
   if (_bitMap->isMarked(addr)) {
     // it's marked; is it potentially uninitialized?
     if (p->klass_or_null() != NULL) {
-      if (CMSPermGenPrecleaningEnabled && !p->is_parsable()) {
+      // If is_conc_safe is false, the object may be undergoing
+      // change by the VM outside a safepoint.  Don't try to
+      // scan it, but rather leave it for the remark phase.
+      if (CMSPermGenPrecleaningEnabled &&
+          (!p->is_conc_safe() || !p->is_parsable())) {
         // Signal precleaning to redirty the card since
         // the klass pointer is already installed.
         assert(size == 0, "Initial value");
@@ -8071,9 +8075,13 @@ size_t SweepClosure::doLiveChunk(FreeChunk* fc) {
     #ifdef DEBUG
       if (oop(addr)->klass_or_null() != NULL &&
           (   !_collector->should_unload_classes()
-           || oop(addr)->is_parsable())) {
+           || (oop(addr)->is_parsable()) &&
+               oop(addr)->is_conc_safe())) {
         // Ignore mark word because we are running concurrent with mutators
         assert(oop(addr)->is_oop(true), "live block should be an oop");
+        // is_conc_safe is checked before performing this assertion
+        // because an object that is not is_conc_safe may yet have
+        // the return from size() correct.
         assert(size ==
                CompactibleFreeListSpace::adjustObjectSize(oop(addr)->size()),
                "P-mark and computed size do not agree");
@@ -8086,6 +8094,13 @@ size_t SweepClosure::doLiveChunk(FreeChunk* fc) {
            (!_collector->should_unload_classes()
             || oop(addr)->is_parsable()),
            "Should be an initialized object");
+    // Note that there are objects used during class redefinition
+    // (e.g., merge_cp in VM_RedefineClasses::merge_cp_and_rewrite()
+    // which are discarded with their is_conc_safe state still
+    // false.  These object may be floating garbage so may be
+    // seen here.  If they are floating garbage their size
+    // should be attainable from their klass.  Do not that
+    // is_conc_safe() is true for oop(addr).
     // Ignore mark word because we are running concurrent with mutators
     assert(oop(addr)->is_oop(true), "live block should be an oop");
     // Verify that the bit map has no bits marked between

@@ -569,7 +569,15 @@ void Space::object_iterate_mem(MemRegion mr, UpwardsObjectClosure* cl) {
   if (prev > mr.start()) {
     region_start_addr = prev;
     blk_start_addr    = prev;
-    assert(blk_start_addr == block_start(region_start_addr), "invariant");
+    // The previous invocation may have pushed "prev" beyond the
+    // last allocated block yet there may be still be blocks
+    // in this region due to a particular coalescing policy.
+    // Relax the assertion so that the case where the unallocated
+    // block is maintained and "prev" is beyond the unallocated
+    // block does not cause the assertion to fire.
+    assert((BlockOffsetArrayUseUnallocatedBlock &&
+            (!is_in(prev))) ||
+           (blk_start_addr == block_start(region_start_addr)), "invariant");
   } else {
     region_start_addr = mr.start();
     blk_start_addr    = block_start(region_start_addr);
