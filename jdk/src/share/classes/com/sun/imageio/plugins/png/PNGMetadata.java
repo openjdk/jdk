@@ -600,7 +600,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                 IIOMetadataNode iTXt_node = new IIOMetadataNode("iTXtEntry");
                 iTXt_node.setAttribute("keyword", iTXt_keyword.get(i));
                 iTXt_node.setAttribute("compressionFlag",
-                        iTXt_compressionFlag.get(i) ? "1" : "0");
+                        iTXt_compressionFlag.get(i) ? "TRUE" : "FALSE");
                 iTXt_node.setAttribute("compressionMethod",
                         iTXt_compressionMethod.get(i).toString());
                 iTXt_node.setAttribute("languageTag",
@@ -832,7 +832,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         }
 
         node = new IIOMetadataNode("BlackIsZero");
-        node.setAttribute("value", "true");
+        node.setAttribute("value", "TRUE");
         chroma_node.appendChild(node);
 
         if (PLTE_present) {
@@ -894,7 +894,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         compression_node.appendChild(node);
 
         node = new IIOMetadataNode("Lossless");
-        node.setAttribute("value", "true");
+        node.setAttribute("value", "TRUE");
         compression_node.appendChild(node);
 
         node = new IIOMetadataNode("NumProgressiveScans");
@@ -1162,12 +1162,13 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
             }
         }
         String value = attr.getNodeValue();
-        if (value.equals("true")) {
+        // Allow lower case booleans for backward compatibility, #5082756
+        if (value.equals("TRUE") || value.equals("true")) {
             return true;
-        } else if (value.equals("false")) {
+        } else if (value.equals("FALSE") || value.equals("false")) {
             return false;
         } else {
-            fatal(node, "Attribute " + name + " must be 'true' or 'false'!");
+            fatal(node, "Attribute " + name + " must be 'TRUE' or 'FALSE'!");
             return false;
         }
     }
