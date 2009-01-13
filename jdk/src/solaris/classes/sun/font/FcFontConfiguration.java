@@ -173,7 +173,7 @@ public class FcFontConfiguration extends FontConfiguration {
 
     @Override
     public FontDescriptor[] getFontDescriptors(String fontName, int style) {
-        throw new InternalError("Not implemented");
+        return new FontDescriptor[0];
     }
 
     @Override
