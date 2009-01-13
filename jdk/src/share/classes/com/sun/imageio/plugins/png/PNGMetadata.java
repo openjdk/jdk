@@ -211,8 +211,8 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
     public int sRGB_renderingIntent;
 
     // tEXt chunk
-    public ArrayList tEXt_keyword = new ArrayList(); // 1-79 char Strings
-    public ArrayList tEXt_text = new ArrayList(); // Strings
+    public ArrayList<String> tEXt_keyword = new ArrayList<String>(); // 1-79 characters
+    public ArrayList<String> tEXt_text = new ArrayList<String>();
 
     // tIME chunk
     public boolean tIME_present;
@@ -235,13 +235,13 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
     public int tRNS_blue;
 
     // zTXt chunk
-    public ArrayList zTXt_keyword = new ArrayList(); // Strings
-    public ArrayList zTXt_compressionMethod = new ArrayList(); // Integers
-    public ArrayList zTXt_text = new ArrayList(); // Strings
+    public ArrayList<String> zTXt_keyword = new ArrayList<String>();
+    public ArrayList<Integer> zTXt_compressionMethod = new ArrayList<Integer>();
+    public ArrayList<String> zTXt_text = new ArrayList<String>();
 
     // Unknown chunks
-    public ArrayList unknownChunkType = new ArrayList(); // Strings
-    public ArrayList unknownChunkData = new ArrayList(); // byte arrays
+    public ArrayList<String> unknownChunkType = new ArrayList<String>();
+    public ArrayList<byte[]> unknownChunkData = new ArrayList<byte[]>();
 
     public PNGMetadata() {
         super(true,
@@ -426,21 +426,14 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         return false;
     }
 
-    private ArrayList cloneBytesArrayList(ArrayList in) {
+    private ArrayList<byte[]> cloneBytesArrayList(ArrayList<byte[]> in) {
         if (in == null) {
             return null;
         } else {
-            ArrayList list = new ArrayList(in.size());
-            Iterator iter = in.iterator();
-            while (iter.hasNext()) {
-                Object o = iter.next();
-                if (o == null) {
-                    list.add(null);
-                } else {
-                    list.add(((byte[])o).clone());
-                }
+            ArrayList<byte[]> list = new ArrayList<byte[]>(in.size());
+            for (byte[] b: in) {
+                list.add((b == null) ? null : (byte[])b.clone());
             }
-
             return list;
         }
     }
@@ -2040,14 +2033,14 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         sBIT_present = false;
         sPLT_present = false;
         sRGB_present = false;
-        tEXt_keyword = new ArrayList();
-        tEXt_text = new ArrayList();
+        tEXt_keyword = new ArrayList<String>();
+        tEXt_text = new ArrayList<String>();
         tIME_present = false;
         tRNS_present = false;
-        zTXt_keyword = new ArrayList();
-        zTXt_compressionMethod = new ArrayList();
-        zTXt_text = new ArrayList();
-        unknownChunkType = new ArrayList();
-        unknownChunkData = new ArrayList();
+        zTXt_keyword = new ArrayList<String>();
+        zTXt_compressionMethod = new ArrayList<Integer>();
+        zTXt_text = new ArrayList<String>();
+        unknownChunkType = new ArrayList<String>();
+        unknownChunkData = new ArrayList<byte[]>();
     }
 }
