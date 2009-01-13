@@ -1076,13 +1076,14 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
       // of the original value.
       Node* mem_phi = in(Memory);
       Node* offset = in(Address)->in(AddPNode::Offset);
+      Node* region = base->in(0);
 
       Node* in1 = clone();
       Node* in1_addr = in1->in(Address)->clone();
       in1_addr->set_req(AddPNode::Base, base->in(allocation_index));
       in1_addr->set_req(AddPNode::Address, base->in(allocation_index));
       in1_addr->set_req(AddPNode::Offset, offset);
-      in1->set_req(0, base->in(allocation_index));
+      in1->set_req(0, region->in(allocation_index));
       in1->set_req(Address, in1_addr);
       in1->set_req(Memory, mem_phi->in(allocation_index));
 
@@ -1091,7 +1092,7 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
       in2_addr->set_req(AddPNode::Base, base->in(load_index));
       in2_addr->set_req(AddPNode::Address, base->in(load_index));
       in2_addr->set_req(AddPNode::Offset, offset);
-      in2->set_req(0, base->in(load_index));
+      in2->set_req(0, region->in(load_index));
       in2->set_req(Address, in2_addr);
       in2->set_req(Memory, mem_phi->in(load_index));
 
@@ -1100,7 +1101,7 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
       in2_addr = phase->transform(in2_addr);
       in2 =      phase->transform(in2);
 
-      PhiNode* result = PhiNode::make_blank(base->in(0), this);
+      PhiNode* result = PhiNode::make_blank(region, this);
       result->set_req(allocation_index, in1);
       result->set_req(load_index, in2);
       return result;
