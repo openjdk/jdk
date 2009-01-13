@@ -51,7 +51,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         super(writer, classdoc);
     }
 
-    public List members(ClassDoc cd) {
+    public List<FieldDoc> members(ClassDoc cd) {
         return Util.asList(cd.serializableFields());
     }
 

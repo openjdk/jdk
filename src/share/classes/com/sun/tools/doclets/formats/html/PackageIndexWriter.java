@@ -54,7 +54,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     /**
      * List to store the order groups as specified on the command line.
      */
-    private List groupList;
+    private List<String> groupList;
 
     /**
      * Construct the PackageIndexWriter. Also constructs the grouping

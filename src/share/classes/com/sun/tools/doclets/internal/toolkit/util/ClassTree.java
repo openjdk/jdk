@@ -177,9 +177,9 @@ public class ClassTree {
                 bases.add(cd);
             }
         }
-        List intfacs = Util.getAllInterfaces(cd, configuration);
-        for (Iterator iter = intfacs.iterator(); iter.hasNext();) {
-            add(implementingclasses, ((Type) iter.next()).asClassDoc(), cd);
+        List<Type> intfacs = Util.getAllInterfaces(cd, configuration);
+        for (Iterator<Type> iter = intfacs.iterator(); iter.hasNext();) {
+            add(implementingclasses, iter.next().asClassDoc(), cd);
         }
     }
 
@@ -278,13 +278,13 @@ public class ClassTree {
 
         //If class x implements a subinterface of cd, then it follows
         //that class x implements cd.
-        Iterator implementingClassesIter, subInterfacesIter = subinterfaces.listIterator();
+        Iterator<ClassDoc> implementingClassesIter, subInterfacesIter = subinterfaces.listIterator();
         ClassDoc c;
         while(subInterfacesIter.hasNext()){
-            implementingClassesIter = implementingclasses((ClassDoc)
+            implementingClassesIter = implementingclasses(
                     subInterfacesIter.next()).listIterator();
             while(implementingClassesIter.hasNext()){
-                c = (ClassDoc)implementingClassesIter.next();
+                c = implementingClassesIter.next();
                 if(! result.contains(c)){
                     result.add(c);
                 }
@@ -328,9 +328,9 @@ public class ClassTree {
         List<ClassDoc> list = subs(cd, isEnum);
         for (int i = 0; i < list.size(); i++) {
             cd = list.get(i);
-            List tlist = subs(cd, isEnum);
+            List<ClassDoc> tlist = subs(cd, isEnum);
             for (int j = 0; j < tlist.size(); j++) {
-                ClassDoc tcd = (ClassDoc)tlist.get(j);
+                ClassDoc tcd = tlist.get(j);
                 if (!list.contains(tcd)) {
                     list.add(tcd);
                 }
@@ -345,7 +345,7 @@ public class ClassTree {
      *  thw classdoc for java.lang.Object, since this is the base class for all
      *  classes.
      */
-    public List baseclasses() {
+    public List<ClassDoc> baseclasses() {
         return baseclasses;
     }
 
@@ -353,7 +353,7 @@ public class ClassTree {
      *  Return the list of base interfaces. This is the list of interfaces
      *  which do not have super-interface.
      */
-    public List baseinterfaces() {
+    public List<ClassDoc> baseinterfaces() {
         return baseinterfaces;
     }
 
@@ -361,7 +361,7 @@ public class ClassTree {
      *  Return the list of base enums. This is the list of enums
      *  which do not have super-enums.
      */
-    public List baseEnums() {
+    public List<ClassDoc> baseEnums() {
         return baseEnums;
     }
 
@@ -369,7 +369,7 @@ public class ClassTree {
      *  Return the list of base annotation types. This is the list of
      *  annotation types which do not have super-annotation types.
      */
-    public List baseAnnotationTypes() {
+    public List<ClassDoc> baseAnnotationTypes() {
         return baseAnnotationTypes;
     }
 }
