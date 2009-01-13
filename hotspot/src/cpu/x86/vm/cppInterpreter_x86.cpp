@@ -594,7 +594,7 @@ void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), rax);
 
   // for c++ interpreter can rsi really be munged?
-  __ lea(state, Address(rbp, -sizeof(BytecodeInterpreter)));                               // restore state
+  __ lea(state, Address(rbp, -(int)sizeof(BytecodeInterpreter)));                               // restore state
   __ movptr(rbx, Address(state, byte_offset_of(BytecodeInterpreter, _method)));            // restore method
   __ movptr(rdi, Address(state, byte_offset_of(BytecodeInterpreter, _locals)));            // get locals pointer
 
@@ -658,7 +658,7 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
     const Address size_of_stack    (rbx, methodOopDesc::max_stack_offset());
     // Always give one monitor to allow us to start interp if sync method.
     // Any additional monitors need a check when moving the expression stack
-    const one_monitor = frame::interpreter_frame_monitor_size() * wordSize;
+    const int one_monitor = frame::interpreter_frame_monitor_size() * wordSize;
   __ load_unsigned_word(rax, size_of_stack);                            // get size of expression stack in words
   __ lea(rax, Address(noreg, rax, Interpreter::stackElementScale(), one_monitor));
   __ lea(rax, Address(rax, rdx, Interpreter::stackElementScale(), overhead_size));
@@ -1829,7 +1829,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   Label unwind_and_forward;
 
   // restore state pointer.
-  __ lea(state, Address(rbp,  -sizeof(BytecodeInterpreter)));
+  __ lea(state, Address(rbp,  -(int)sizeof(BytecodeInterpreter)));
 
   __ movptr(rbx, STATE(_method));                       // get method
 #ifdef _LP64
@@ -1877,14 +1877,14 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // The FPU stack is clean if UseSSE >= 2 but must be cleaned in other cases
   if (UseSSE < 2) {
-    __ lea(state, Address(rbp,  -sizeof(BytecodeInterpreter)));
+    __ lea(state, Address(rbp,  -(int)sizeof(BytecodeInterpreter)));
     __ movptr(rbx, STATE(_result._to_call._callee));                   // get method just executed
     __ movl(rcx, Address(rbx, methodOopDesc::result_index_offset()));
     __ cmpl(rcx, AbstractInterpreter::BasicType_as_index(T_FLOAT));    // Result stub address array index
     __ jcc(Assembler::equal, do_float);
     __ cmpl(rcx, AbstractInterpreter::BasicType_as_index(T_DOUBLE));    // Result stub address array index
     __ jcc(Assembler::equal, do_double);
-#ifdef COMPILER2
+#if !defined(_LP64) || defined(COMPILER1) || !defined(COMPILER2)
     __ empty_FPU_stack();
 #endif // COMPILER2
     __ jmp(done_conv);
@@ -1928,7 +1928,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // Restore rsi/r13 as compiled code may not preserve it
 
-  __ lea(state, Address(rbp,  -sizeof(BytecodeInterpreter)));
+  __ lea(state, Address(rbp,  -(int)sizeof(BytecodeInterpreter)));
 
   // restore stack to what we had when we left (in case i2c extended it)
 
@@ -1942,7 +1942,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
 #else
   __ movptr(rcx, STATE(_thread));                       // get thread
   __ cmpptr(Address(rcx, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
-#endif / __LP64
+#endif // _LP64
   __ jcc(Assembler::notZero, return_with_exception);
 
   // get method just executed

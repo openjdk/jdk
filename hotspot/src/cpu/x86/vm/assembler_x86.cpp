@@ -6943,29 +6943,32 @@ void MacroAssembler::trigfunc(char trig, int num_fpu_regs_in_use) {
 
   Label slow_case, done;
 
-  // x ?<= pi/4
-  fld_d(ExternalAddress((address)&pi_4));
-  fld_s(1);                // Stack:  X  PI/4  X
-  fabs();                  // Stack: |X| PI/4  X
-  fcmp(tmp);
-  jcc(Assembler::above, slow_case);
+  ExternalAddress pi4_adr = (address)&pi_4;
+  if (reachable(pi4_adr)) {
+    // x ?<= pi/4
+    fld_d(pi4_adr);
+    fld_s(1);                // Stack:  X  PI/4  X
+    fabs();                  // Stack: |X| PI/4  X
+    fcmp(tmp);
+    jcc(Assembler::above, slow_case);
 
-  // fastest case: -pi/4 <= x <= pi/4
-  switch(trig) {
-  case 's':
-    fsin();
-    break;
-  case 'c':
-    fcos();
-    break;
-  case 't':
-    ftan();
-    break;
-  default:
-    assert(false, "bad intrinsic");
-    break;
+    // fastest case: -pi/4 <= x <= pi/4
+    switch(trig) {
+    case 's':
+      fsin();
+      break;
+    case 'c':
+      fcos();
+      break;
+    case 't':
+      ftan();
+      break;
+    default:
+      assert(false, "bad intrinsic");
+      break;
+    }
+    jmp(done);
   }
-  jmp(done);
 
   // slow case: runtime call
   bind(slow_case);
