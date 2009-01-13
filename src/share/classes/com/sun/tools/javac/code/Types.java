@@ -3148,7 +3148,7 @@ public class Types {
             giveWarning = giveWarning || (reverse ? giveWarning(t2, t1) : giveWarning(t1, t2));
             commonSupers = commonSupers.tail;
         }
-        if (giveWarning && !isReifiable(to))
+        if (giveWarning && !isReifiable(reverse ? from : to))
             warn.warnUnchecked();
         if (!source.allowCovariantReturns())
             // reject if there is a common method signature with
