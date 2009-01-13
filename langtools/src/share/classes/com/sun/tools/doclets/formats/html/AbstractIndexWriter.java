@@ -95,14 +95,14 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @param unicode Unicode for which member list information to be generated.
      * @param memberlist List of members for the unicode character.
      */
-    protected void generateContents(Character unicode, List memberlist) {
+    protected void generateContents(Character unicode, List<? extends Doc> memberlist) {
         anchor("_" + unicode + "_");
         h2();
         strong(unicode.toString());
         h2End();
         dl();
         for (int i = 0; i < memberlist.size(); i++) {
-            Doc element = (Doc)memberlist.get(i);
+            Doc element = memberlist.get(i);
             if (element instanceof MemberDoc) {
                 printDescription((MemberDoc)element);
             } else if (element instanceof ClassDoc) {

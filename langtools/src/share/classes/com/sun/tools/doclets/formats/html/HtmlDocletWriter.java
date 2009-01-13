@@ -1728,13 +1728,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param descList the array of {@link AnnotationDesc}.
      */
     private boolean writeAnnotationInfo(int indent, Doc doc, AnnotationDesc[] descList, boolean lineBreak) {
-        List annotations = getAnnotations(indent, descList, lineBreak);
+        List<String> annotations = getAnnotations(indent, descList, lineBreak);
         if (annotations.size() == 0) {
             return false;
         }
         fontNoNewLine("-1");
-        for (Iterator iter = annotations.iterator(); iter.hasNext();) {
-            print((String) iter.next());
+        for (Iterator<String> iter = annotations.iterator(); iter.hasNext();) {
+            print(iter.next());
         }
         fontEnd();
         return true;
@@ -1792,8 +1792,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                         annotationTypeValues.add(annotationValue);
                     }
                     annotation.append(annotationTypeValues.size() == 1 ? "" : "{");
-                    for (Iterator iter = annotationTypeValues.iterator(); iter.hasNext(); ) {
-                        annotation.append(annotationValueToString((AnnotationValue) iter.next()));
+                    for (Iterator<AnnotationValue> iter = annotationTypeValues.iterator(); iter.hasNext(); ) {
+                        annotation.append(annotationValueToString(iter.next()));
                         annotation.append(iter.hasNext() ? "," : "");
                     }
                     annotation.append(annotationTypeValues.size() == 1 ? "" : "}");
@@ -1820,11 +1820,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 return type.typeName() + type.dimension() + ".class";
             }
         } else if (annotationValue.value() instanceof AnnotationDesc) {
-            List list = getAnnotations(0,
+            List<String> list = getAnnotations(0,
                 new AnnotationDesc[]{(AnnotationDesc) annotationValue.value()},
                     false);
             StringBuffer buf = new StringBuffer();
-            for (Iterator iter = list.iterator(); iter.hasNext(); ) {
+            for (Iterator<String> iter = list.iterator(); iter.hasNext(); ) {
                 buf.append(iter.next());
             }
             return buf.toString();

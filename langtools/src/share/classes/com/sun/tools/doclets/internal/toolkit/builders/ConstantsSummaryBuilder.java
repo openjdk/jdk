@@ -109,7 +109,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     /**
      * {@inheritDoc}
      */
-    public void invokeMethod(String methodName, Class[] paramClasses,
+    public void invokeMethod(String methodName, Class<?>[] paramClasses,
             Object[] params)
     throws Exception {
         if (DEBUG) {
@@ -144,7 +144,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @param elements the list of elements describing constant summary
      *                 documentation.
      */
-    public void buildConstantSummary(List elements) throws Exception {
+    public void buildConstantSummary(List<?> elements) throws Exception {
         build(elements);
         writer.close();
     }
@@ -186,7 +186,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @param elements the XML elements that represent the components
      *                 of documentation for each package.
      */
-    public void buildConstantSummaries(List elements) {
+    public void buildConstantSummaries(List<?> elements) {
         PackageDoc[] packages = configuration.packages;
         printedPackageHeaders = new HashSet<String>();
         for (int i = 0; i < packages.length; i++) {
@@ -204,7 +204,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @param elements the list of XML elements that make up package
      *                 documentation.
      */
-    public void buildPackageConstantSummary(List elements) {
+    public void buildPackageConstantSummary(List<?> elements) {
         build(elements);
     }
 
@@ -214,7 +214,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @param elements the list of XML elements that make up the class
      *                 constant summary.
      */
-    public void buildClassConstantSummary(List elements) {
+    public void buildClassConstantSummary(List<?> elements) {
         ClassDoc[] classes = currentPackage.name().length() > 0 ?
             currentPackage.allClasses() :
             configuration.classDocCatalog.allClasses(
@@ -297,8 +297,8 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     private boolean hasConstantField (ClassDoc classDoc) {
         VisibleMemberMap visibleMemberMapFields = new VisibleMemberMap(classDoc,
             VisibleMemberMap.FIELDS, configuration.nodeprecated);
-        List fields = visibleMemberMapFields.getLeafClassMembers(configuration);
-        for (Iterator iter = fields.iterator(); iter.hasNext(); ) {
+        List<?> fields = visibleMemberMapFields.getLeafClassMembers(configuration);
+        for (Iterator<?> iter = fields.iterator(); iter.hasNext(); ) {
             FieldDoc field = (FieldDoc) iter.next();
             if (field.constantValueExpression() != null) {
                 classDocsWithConstFields.add(classDoc);

@@ -71,9 +71,10 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
      */
     @SuppressWarnings("unchecked")
     public static <A> List<A> nil() {
-        return EMPTY_LIST;
+        return (List<A>)EMPTY_LIST;
     }
-    private static List EMPTY_LIST = new List<Object>(null,null) {
+
+    private static List<?> EMPTY_LIST = new List<Object>(null,null) {
         public List<Object> setTail(List<Object> tail) {
             throw new UnsupportedOperationException();
         }
@@ -318,7 +319,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
 
     /** Are the two lists the same?
      */
-    public static boolean equals(List xs, List ys) {
+    public static boolean equals(List<?> xs, List<?> ys) {
         while (xs.tail != null && ys.tail != null) {
             if (xs.head == null) {
                 if (ys.head != null) return false;
@@ -368,7 +369,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         return (List<T>)list;
     }
 
-    private static Iterator EMPTYITERATOR = new Iterator() {
+    private static Iterator<?> EMPTYITERATOR = new Iterator<Object>() {
             public boolean hasNext() {
                 return false;
             }
@@ -382,7 +383,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
 
     @SuppressWarnings("unchecked")
     private static <A> Iterator<A> emptyIterator() {
-        return EMPTYITERATOR;
+        return (Iterator<A>)EMPTYITERATOR;
     }
 
     @Override

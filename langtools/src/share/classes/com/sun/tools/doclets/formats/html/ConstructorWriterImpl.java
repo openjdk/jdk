@@ -238,7 +238,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         return VisibleMemberMap.CONSTRUCTORS;
     }
 
-    protected void navSummaryLink(List members) {
+    protected void navSummaryLink(List<?> members) {
         printNavSummaryLink(classdoc,
                 members.size() > 0? true: false);
     }

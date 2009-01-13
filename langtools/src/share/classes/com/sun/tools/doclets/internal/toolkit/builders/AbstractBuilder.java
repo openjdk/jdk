@@ -97,22 +97,22 @@ public abstract class AbstractBuilder {
      * @param elements the XML elements that specify which components to
      *                 document.
      */
-    protected void build(List elements) {
+    protected void build(List<?> elements) {
         for (int i = 0; i < elements.size(); i++ ) {
             Object element = elements.get(i);
             String component = (String)
                 ((element instanceof String) ?
                      element :
-                    ((List) element).get(0));
+                    ((List<?>) element).get(0));
             try {
                 invokeMethod("build" + component,
                     element instanceof String ?
-                        new Class[] {} :
-                        new Class[] {List.class},
+                        new Class<?>[] {} :
+                        new Class<?>[] {List.class},
                     element instanceof String ?
                         new Object[] {} :
-                        new Object[] {((List) element).subList(1,
-                            ((List) element).size())});
+                        new Object[] {((List<?>) element).subList(1,
+                            ((List<?>) element).size())});
             } catch (NoSuchMethodException e) {
                 e.printStackTrace();
                 configuration.root.printError("Unknown element: " + component);
@@ -138,7 +138,7 @@ public abstract class AbstractBuilder {
      * @param paramClasses the types for each parameter.
      * @param params       the parameters of the method.
      */
-    protected abstract void invokeMethod(String methodName, Class[] paramClasses,
+    protected abstract void invokeMethod(String methodName, Class<?>[] paramClasses,
             Object[] params)
     throws Exception;
 }

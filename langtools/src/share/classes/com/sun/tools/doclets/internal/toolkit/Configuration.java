@@ -441,13 +441,13 @@ public abstract class Configuration {
      * @param customTagStrs the set two dimentional arrays of strings.  These arrays contain
      * either -tag or -taglet arguments.
      */
-    private void initTagletManager(Set customTagStrs) {
+    private void initTagletManager(Set<String[]> customTagStrs) {
         tagletManager = tagletManager == null ?
             new TagletManager(nosince, showversion, showauthor, message) :
             tagletManager;
         String[] args;
-        for (Iterator it = customTagStrs.iterator(); it.hasNext(); ) {
-            args = (String[]) it.next();
+        for (Iterator<String[]> it = customTagStrs.iterator(); it.hasNext(); ) {
+            args = it.next();
             if (args[0].equals("-taglet")) {
                 tagletManager.addCustomTag(args[1], tagletpath);
                 continue;
