@@ -955,7 +955,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
         // Lossless - false
         IIOMetadataNode lossless = new IIOMetadataNode("Lossless");
-        lossless.setAttribute("value", "false");
+        lossless.setAttribute("value", "FALSE");
         compression.appendChild(lossless);
 
         // NumProgressiveScans - count sos segments
