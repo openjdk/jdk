@@ -355,7 +355,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
                 classDoc.qualifiedName().equals("org.omg.CORBA.Object")) {
                 return;    // Don't generate the list, too huge
             }
-            List subclasses = classtree.subs(classDoc, false);
+            List<ClassDoc> subclasses = classtree.subs(classDoc, false);
             if (subclasses.size() > 0) {
                 dl();
                 dt();
@@ -371,7 +371,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
      */
     public void writeSubInterfacesInfo() {
         if (classDoc.isInterface()) {
-            List subInterfaces = classtree.allSubs(classDoc, false);
+            List<ClassDoc> subInterfaces = classtree.allSubs(classDoc, false);
             if (subInterfaces.size() > 0) {
                 dl();
                 dt();
@@ -393,7 +393,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             classDoc.qualifiedName().equals("java.io.Serializable")) {
             return;   // Don't generate the list, too big
         }
-        List implcl = classtree.implementingclasses(classDoc);
+        List<ClassDoc> implcl = classtree.implementingclasses(classDoc);
         if (implcl.size() > 0) {
             dl();
             dt();
@@ -409,7 +409,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
     public void writeImplementedInterfacesInfo() {
         //NOTE:  we really should be using ClassDoc.interfaceTypes() here, but
         //       it doesn't walk up the tree like we want it to.
-        List interfaceArray = Util.getAllInterfaces(classDoc, configuration);
+        List<Type> interfaceArray = Util.getAllInterfaces(classDoc, configuration);
         if (classDoc.isClass() && interfaceArray.size() > 0) {
             dl();
             dt();
@@ -425,7 +425,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
     public void writeSuperInterfacesInfo() {
         //NOTE:  we really should be using ClassDoc.interfaceTypes() here, but
         //       it doesn't walk up the tree like we want it to.
-        List interfaceArray = Util.getAllInterfaces(classDoc, configuration);
+        List<Type> interfaceArray = Util.getAllInterfaces(classDoc, configuration);
         if (classDoc.isInterface() && interfaceArray.size() > 0) {
             dl();
             dt();
@@ -438,7 +438,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
     /**
      * Generate links to the given classes.
      */
-    private void writeClassLinks(int context, List list) {
+    private void writeClassLinks(int context, List<?> list) {
         Object[] typeList = list.toArray();
         //Sort the list to be printed.
         print(' ');

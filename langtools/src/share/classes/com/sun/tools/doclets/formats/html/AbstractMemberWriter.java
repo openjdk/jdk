@@ -317,7 +317,7 @@ public abstract class AbstractMemberWriter {
      * format for listing the API. Call methods from the sub-class to complete
      * the generation.
      */
-    protected void printDeprecatedAPI(List deprmembers, String headingKey) {
+    protected void printDeprecatedAPI(List<Doc> deprmembers, String headingKey) {
         if (deprmembers.size() > 0) {
             writer.tableIndexSummary();
             writer.tableHeaderStart("#CCCCFF");
@@ -377,12 +377,12 @@ public abstract class AbstractMemberWriter {
         }
     }
 
-    protected void navDetailLink(List members) {
+    protected void navDetailLink(List<?> members) {
             printNavDetailLink(members.size() > 0? true: false);
     }
 
 
-    protected void navSummaryLink(List members,
+    protected void navSummaryLink(List<?> members,
             VisibleMemberMap visibleMemberMap) {
         if (members.size() > 0) {
             printNavSummaryLink(null, true);
@@ -390,7 +390,7 @@ public abstract class AbstractMemberWriter {
         } else {
             ClassDoc icd = classdoc.superclass();
             while (icd != null) {
-                List inhmembers = visibleMemberMap.getMembersFor(icd);
+                List<?> inhmembers = visibleMemberMap.getMembersFor(icd);
                 if (inhmembers.size() > 0) {
                     printNavSummaryLink(icd, true);
                     return;

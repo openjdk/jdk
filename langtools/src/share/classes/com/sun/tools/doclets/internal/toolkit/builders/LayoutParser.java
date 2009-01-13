@@ -78,9 +78,9 @@ public class LayoutParser extends DefaultHandler {
      *
      * @return List the list of XML elements parsed.
      */
-    public List parseXML(String root) {
+    public List<?> parseXML(String root) {
         if (xmlElementsMap.containsKey(root)) {
-            return (List) xmlElementsMap.get(root);
+            return xmlElementsMap.get(root);
         }
         try {
             List<Object> xmlElements = new ArrayList<Object>();

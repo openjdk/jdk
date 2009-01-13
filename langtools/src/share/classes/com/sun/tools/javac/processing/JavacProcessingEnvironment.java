@@ -1060,7 +1060,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             next.put(Names.namesKey, names);
         }
 
-        DiagnosticListener dl = context.get(DiagnosticListener.class);
+        DiagnosticListener<?> dl = context.get(DiagnosticListener.class);
         if (dl != null)
             next.put(DiagnosticListener.class, dl);
 
