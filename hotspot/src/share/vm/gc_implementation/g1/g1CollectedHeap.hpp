@@ -850,6 +850,7 @@ public:
 
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl);
+  virtual void safe_object_iterate(ObjectClosure* cl) { object_iterate(cl); }
 
   // Iterate over all objects allocated since the last collection, calling
   // "cl.do_object" on each.  The heap must have been initialized properly

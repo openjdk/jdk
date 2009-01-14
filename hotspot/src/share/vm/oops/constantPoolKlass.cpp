@@ -25,7 +25,7 @@
 # include "incls/_precompiled.incl"
 # include "incls/_constantPoolKlass.cpp.incl"
 
-constantPoolOop constantPoolKlass::allocate(int length, TRAPS) {
+constantPoolOop constantPoolKlass::allocate(int length, bool is_conc_safe, TRAPS) {
   int size = constantPoolOopDesc::object_size(length);
   KlassHandle klass (THREAD, as_klassOop());
   constantPoolOop c =
@@ -38,6 +38,9 @@ constantPoolOop constantPoolKlass::allocate(int length, TRAPS) {
   c->set_flags(0);
   // only set to non-zero if constant pool is merged by RedefineClasses
   c->set_orig_length(0);
+  // if constant pool may change during RedefineClasses, it is created
+  // unsafe for GC concurrent processing.
+  c->set_is_conc_safe(is_conc_safe);
   // all fields are initialized; needed for GC
 
   // initialize tag array
@@ -205,6 +208,11 @@ int constantPoolKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr)
   addr = cp->pool_holder_addr();
   blk->do_oop(addr);
   return size;
+}
+
+bool constantPoolKlass::oop_is_conc_safe(oop obj) const {
+  assert(obj->is_constantPool(), "must be constantPool");
+  return constantPoolOop(obj)->is_conc_safe();
 }
 
 #ifndef SERIALGC
