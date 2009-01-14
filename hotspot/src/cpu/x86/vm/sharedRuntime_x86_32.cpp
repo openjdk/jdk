@@ -39,6 +39,8 @@ RuntimeStub*       SharedRuntime::_resolve_opt_virtual_call_blob;
 RuntimeStub*       SharedRuntime::_resolve_virtual_call_blob;
 RuntimeStub*       SharedRuntime::_resolve_static_call_blob;
 
+const int StackAlignmentInSlots = StackAlignmentInBytes / VMRegImpl::stack_slot_size;
+
 class RegisterSaver {
   enum { FPU_regs_live = 8 /*for the FPU stack*/+8/*eight more for XMM registers*/ };
   // Capture info about frame layout
@@ -1299,7 +1301,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // Now compute actual number of stack words we need rounding to make
   // stack properly aligned.
-  stack_slots = round_to(stack_slots, 2 * VMRegImpl::slots_per_word);
+  stack_slots = round_to(stack_slots, StackAlignmentInSlots);
 
   int stack_size = stack_slots * VMRegImpl::stack_slot_size;
 
