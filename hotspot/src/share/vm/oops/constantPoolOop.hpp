@@ -43,6 +43,8 @@ class constantPoolOopDesc : public oopDesc {
   klassOop             _pool_holder;   // the corresponding class
   int                  _flags;         // a few header bits to describe contents for GC
   int                  _length; // number of elements in the array
+  volatile bool        _is_conc_safe; // if true, safe for concurrent
+                                      // GC processing
   // only set to non-zero if constant pool is merged by RedefineClasses
   int                  _orig_length;
 
@@ -378,6 +380,9 @@ class constantPoolOopDesc : public oopDesc {
   static int header_size()             { return sizeof(constantPoolOopDesc)/HeapWordSize; }
   static int object_size(int length)   { return align_object_size(header_size() + length); }
   int object_size()                    { return object_size(length()); }
+
+  bool is_conc_safe()                  { return _is_conc_safe; }
+  void set_is_conc_safe(bool v)        { _is_conc_safe = v; }
 
   friend class constantPoolKlass;
   friend class ClassFileParser;

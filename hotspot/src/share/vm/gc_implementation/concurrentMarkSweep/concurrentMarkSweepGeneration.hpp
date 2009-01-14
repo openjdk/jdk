@@ -1212,6 +1212,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // More iteration support
   virtual void oop_iterate(MemRegion mr, OopClosure* cl);
   virtual void oop_iterate(OopClosure* cl);
+  virtual void safe_object_iterate(ObjectClosure* cl);
   virtual void object_iterate(ObjectClosure* cl);
 
   // Need to declare the full complement of closures, whether we'll
