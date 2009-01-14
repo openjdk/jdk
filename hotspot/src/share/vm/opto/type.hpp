@@ -882,6 +882,8 @@ class TypeKlassPtr : public TypeOopPtr {
 public:
   ciSymbol* name()  const { return _klass->name(); }
 
+  bool  is_loaded() const { return _klass->is_loaded(); }
+
   // ptr to klass 'k'
   static const TypeKlassPtr *make( ciKlass* k ) { return make( TypePtr::Constant, k, 0); }
   // ptr to klass 'k' with offset
