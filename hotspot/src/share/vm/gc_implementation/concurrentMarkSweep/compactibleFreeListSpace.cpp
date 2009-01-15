@@ -706,6 +706,30 @@ void CompactibleFreeListSpace::object_iterate(ObjectClosure* blk) {
   }
 }
 
+// Apply the given closure to each live object in the space
+//   The usage of CompactibleFreeListSpace
+// by the ConcurrentMarkSweepGeneration for concurrent GC's allows
+// objects in the space with references to objects that are no longer
+// valid.  For example, an object may reference another object
+// that has already been sweep up (collected).  This method uses
+// obj_is_alive() to determine whether it is safe to apply the closure to
+// an object.  See obj_is_alive() for details on how liveness of an
+// object is decided.
+
+void CompactibleFreeListSpace::safe_object_iterate(ObjectClosure* blk) {
+  assert_lock_strong(freelistLock());
+  NOT_PRODUCT(verify_objects_initialized());
+  HeapWord *cur, *limit;
+  size_t curSize;
+  for (cur = bottom(), limit = end(); cur < limit;
+       cur += curSize) {
+    curSize = block_size(cur);
+    if (block_is_obj(cur) && obj_is_alive(cur)) {
+      blk->do_object(oop(cur));
+    }
+  }
+}
+
 void CompactibleFreeListSpace::object_iterate_mem(MemRegion mr,
                                                   UpwardsObjectClosure* cl) {
   assert_locked();
@@ -861,7 +885,9 @@ const {
     } else {
       // must read from what 'p' points to in each loop.
       klassOop k = ((volatile oopDesc*)p)->klass_or_null();
-      if (k != NULL && ((oopDesc*)p)->is_parsable()) {
+      if (k != NULL &&
+          ((oopDesc*)p)->is_parsable() &&
+          ((oopDesc*)p)->is_conc_safe()) {
         assert(k->is_oop(), "Should really be klass oop.");
         oop o = (oop)p;
         assert(o->is_oop(), "Should be an oop");
