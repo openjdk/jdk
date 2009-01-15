@@ -34,6 +34,7 @@ cardTableRS.cpp				g1SATBCardTableModRefBS.hpp
 collectionSetChooser.cpp		g1CollectedHeap.hpp
 collectionSetChooser.cpp		g1CollectorPolicy.hpp
 collectionSetChooser.cpp		collectionSetChooser.hpp
+collectionSetChooser.cpp		space.inline.hpp
 
 collectionSetChooser.hpp		heapRegion.hpp
 collectionSetChooser.hpp                growableArray.hpp
@@ -44,6 +45,7 @@ concurrentG1Refine.cpp			concurrentG1RefineThread.hpp
 concurrentG1Refine.cpp			copy.hpp
 concurrentG1Refine.cpp			g1CollectedHeap.hpp
 concurrentG1Refine.cpp			g1RemSet.hpp
+concurrentG1Refine.cpp			space.inline.hpp
 
 concurrentG1Refine.hpp			globalDefinitions.hpp
 
@@ -264,7 +266,7 @@ heapRegion.cpp                          heapRegionSeq.inline.hpp
 heapRegion.cpp                          iterator.hpp
 heapRegion.cpp                          oop.inline.hpp
 
-heapRegion.hpp                          space.hpp
+heapRegion.hpp                          space.inline.hpp
 heapRegion.hpp                          spaceDecorator.hpp
 heapRegion.hpp                          g1BlockOffsetTable.inline.hpp
 heapRegion.hpp                          watermark.hpp
