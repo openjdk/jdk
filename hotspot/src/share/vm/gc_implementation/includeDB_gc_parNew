@@ -29,6 +29,8 @@ asParNewGeneration.cpp                  asParNewGeneration.hpp
 asParNewGeneration.cpp                  cmsAdaptiveSizePolicy.hpp
 asParNewGeneration.cpp                  cmsGCAdaptivePolicyCounters.hpp
 asParNewGeneration.cpp                  defNewGeneration.inline.hpp
+asParNewGeneration.cpp                  markOop.inline.hpp
+asParNewGeneration.cpp                  markSweep.inline.hpp
 asParNewGeneration.cpp                  oop.pcgc.inline.hpp
 asParNewGeneration.cpp                  parNewGeneration.hpp
 asParNewGeneration.cpp                  referencePolicy.hpp
@@ -40,7 +42,7 @@ parCardTableModRefBS.cpp                cardTableRS.hpp
 parCardTableModRefBS.cpp                java.hpp
 parCardTableModRefBS.cpp                mutexLocker.hpp
 parCardTableModRefBS.cpp                sharedHeap.hpp
-parCardTableModRefBS.cpp                space.hpp
+parCardTableModRefBS.cpp                space.inline.hpp
 parCardTableModRefBS.cpp                universe.hpp
 parCardTableModRefBS.cpp                virtualspace.hpp
 
