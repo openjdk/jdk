@@ -599,7 +599,6 @@ public class Util {
         }
         if (docencoding == null) {
             OutputStreamWriter oswriter = new OutputStreamWriter(fos);
-            docencoding = oswriter.getEncoding();
             return oswriter;
         } else {
             return new OutputStreamWriter(fos, docencoding);
