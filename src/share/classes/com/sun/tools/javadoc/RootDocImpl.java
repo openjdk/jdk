@@ -36,6 +36,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Position;
+import java.util.Locale;
 
 /**
  * This class holds the information from one run of javadoc.
@@ -350,5 +351,12 @@ public class RootDocImpl extends DocImpl implements RootDoc {
         return ((path = getOverviewPath()) == null) ?
             null :
             SourcePositionImpl.make(path, Position.NOPOS, null);
+    }
+
+    /**
+     * Return the locale provided by the user or the default locale value.
+     */
+    public Locale getLocale() {
+        return env.doclocale.locale;
     }
 }

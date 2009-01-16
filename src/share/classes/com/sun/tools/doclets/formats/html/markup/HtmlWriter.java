@@ -85,7 +85,7 @@ public class HtmlWriter extends PrintWriter {
      * Print &lt;HTML&gt; tag. Add a newline character at the end.
      */
     public void html() {
-        println("<HTML>");
+        println("<HTML lang=\"" + configuration.getLocale().getLanguage() + "\">");
     }
 
     /**
