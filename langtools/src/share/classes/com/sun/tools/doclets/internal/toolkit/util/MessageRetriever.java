@@ -81,46 +81,14 @@ public class MessageRetriever {
     }
 
     /**
-     * get and format message string from resource
-     *
-     * @param key selects message from resource
-     */
-    public String getText(String key) {
-        return getText(key, (String)null);
-    }
-
-    /**
      * Get and format message string from resource
      *
      * @param key selects message from resource
-     * @param a1 Argument, to be repalced in the message.
-     */
-    public String getText(String key, String a1) {
-        return getText(key, a1, null);
-    }
-
-    /**
-     * Get and format message string from resource
-     *
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     * @param a2 second argument to be replaced in the message.
-     */
-    public String getText(String key, String a1, String a2) {
-        return getText(key, a1, a2, null);
-    }
-
-    /**
-     * Get and format message string from resource
-     *
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     * @param a2 second argument to be replaced in the message.
-     * @param a3 third argument to be replaced in the message.
+     * @param args arguments to be replaced in the message.
      * @throws MissingResourceException when the key does not
      * exist in the properties file.
      */
-    public String getText(String key, String a1, String a2, String a3) throws MissingResourceException {
+    public String getText(String key, Object... args) throws MissingResourceException {
         if (messageRB == null) {
             try {
                 messageRB = ResourceBundle.getBundle(resourcelocation);
@@ -130,7 +98,7 @@ public class MessageRetriever {
             }
         }
         String message = messageRB.getString(key);
-        return MessageFormat.format(message, a1, a2, a3);
+        return MessageFormat.format(message, args);
     }
 
     /**
@@ -195,87 +163,20 @@ public class MessageRetriever {
      *
      * @param pos the position of the source
      * @param key selects message from resource
+     * @param args arguments to be replaced in the message.
      */
-    public void error(SourcePosition pos, String key) {
-        printError(pos, getText(key));
+    public void error(SourcePosition pos, String key, Object... args) {
+        printError(pos, getText(key, args));
     }
 
     /**
      * Print error message, increment error count.
      *
      * @param key selects message from resource
+     * @param args arguments to be replaced in the message.
      */
-    public void error(String key) {
-        printError(getText(key));
-    }
-
-    /**
-     * Print error message, increment error count.
-     *
-     * @param pos the position of the source
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     */
-    public void error(SourcePosition pos, String key, String a1) {
-        printError(pos, getText(key, a1));
-    }
-
-    /**
-     * Print error message, increment error count.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     */
-    public void error(String key, String a1) {
-        printError(getText(key, a1));
-    }
-
-    /**
-     * Print error message, increment error count.
-     *
-     * @param pos the position of the source
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     * @param a2 second argument to be replaced in the message.
-     */
-    public void error(SourcePosition pos, String key, String a1, String a2) {
-        printError(pos, getText(key, a1, a2));
-    }
-
-    /**
-     * Print error message, increment error count.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     * @param a2 second argument to be replaced in the message.
-     */
-    public void error(String key, String a1, String a2) {
-        printError(getText(key, a1, a2));
-    }
-
-    /**
-     * Print error message, increment error count.
-     *
-     * @param pos the position of the source
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     * @param a2 second argument to be replaced in the message.
-     * @param a3 third argument to be replaced in the message.
-     */
-    public void error(SourcePosition pos, String key, String a1, String a2, String a3) {
-        printError(pos, getText(key, a1, a2, a3));
-    }
-
-    /**
-     * Print error message, increment error count.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     * @param a2 second argument to be replaced in the message.
-     * @param a3 third argument to be replaced in the message.
-     */
-    public void error(String key, String a1, String a2, String a3) {
-        printError(getText(key, a1, a2, a3));
+    public void error(String key, Object... args) {
+        printError(getText(key, args));
     }
 
     /**
@@ -283,87 +184,20 @@ public class MessageRetriever {
      *
      * @param pos the position of the source
      * @param key selects message from resource
+     * @param args arguments to be replaced in the message.
      */
-    public void warning(SourcePosition pos, String key) {
-        printWarning(pos, getText(key));
+    public void warning(SourcePosition pos, String key, Object... args) {
+        printWarning(pos, getText(key, args));
     }
 
     /**
      * Print warning message, increment warning count.
      *
      * @param key selects message from resource
+     * @param args arguments to be replaced in the message.
      */
-    public void warning(String key) {
-        printWarning(getText(key));
-    }
-
-    /**
-     * Print warning message, increment warning count.
-     *
-     * @param pos the position of the source
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     */
-    public void warning(SourcePosition pos, String key, String a1) {
-        printWarning(pos, getText(key, a1));
-    }
-
-    /**
-     * Print warning message, increment warning count.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     */
-    public void warning(String key, String a1) {
-        printWarning(getText(key, a1));
-    }
-
-    /**
-     * Print warning message, increment warning count.
-     *
-     * @param pos the position of the source
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     * @param a2 second argument to be replaced in the message.
-     */
-    public void warning(SourcePosition pos, String key, String a1, String a2) {
-        printWarning(pos, getText(key, a1, a2));
-    }
-
-    /**
-     * Print warning message, increment warning count.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     * @param a2 second argument to be replaced in the message.
-     */
-    public void warning(String key, String a1, String a2) {
-        printWarning(getText(key, a1, a2));
-    }
-
-    /**
-     * Print warning message, increment warning count.
-     *
-     * @param pos the position of the source
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     * @param a2 second argument to be replaced in the message.
-     * @param a3 third argument to be replaced in the message.
-     */
-    public void warning(SourcePosition pos, String key, String a1, String a2, String a3) {
-        printWarning(pos, getText(key, a1, a2, a3));
-    }
-
-    /**
-     * Print warning message, increment warning count.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     * @param a2 second argument to be replaced in the message.
-     * @param a3 third argument to be replaced in the message.
-     */
-    public void warning(String key, String a1, String a2, String a3) {
-        printWarning(getText(key, a1, a2, a3));
+    public void warning(String key, Object... args) {
+        printWarning(getText(key, args));
     }
 
     /**
@@ -371,85 +205,19 @@ public class MessageRetriever {
      *
      * @param pos the position of the source
      * @param key selects message from resource
+     * @param args arguments to be replaced in the message.
      */
-    public void notice(SourcePosition pos, String key) {
-        printNotice(pos, getText(key));
+    public void notice(SourcePosition pos, String key, Object... args) {
+        printNotice(pos, getText(key, args));
     }
 
     /**
      * Print a message.
      *
      * @param key selects message from resource
+     * @param args arguments to be replaced in the message.
      */
-    public void notice(String key) {
-        printNotice(getText(key));
-    }
-
-    /**
-     * Print a message.
-     * @param pos the position of the source
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     */
-    public void notice(SourcePosition pos, String key, String a1) {
-        printNotice(pos, getText(key, a1));
-    }
-
-    /**
-     * Print a message.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     */
-    public void notice(String key, String a1) {
-        printNotice(getText(key, a1));
-    }
-
-    /**
-     * Print a message.
-     *
-     * @param pos the position of the source
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     * @param a2 second argument to be replaced in the message.
-     */
-    public void notice(SourcePosition pos, String key, String a1, String a2) {
-        printNotice(pos, getText(key, a1, a2));
-    }
-
-    /**
-     * Print a message.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     * @param a2 second argument to be replaced in the message.
-     */
-    public void notice(String key, String a1, String a2) {
-        printNotice(getText(key, a1, a2));
-    }
-
-    /**
-     * Print a message.
-     *
-     * @param pos the position of the source
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     * @param a2 second argument to be replaced in the message.
-     * @param a3 third argument to be replaced in the message.
-     */
-    public void notice(SourcePosition pos, String key, String a1, String a2, String a3) {
-        printNotice(pos, getText(key, a1, a2, a3));
-    }
-
-    /**
-     * Print a message.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument to be replaced in the message.
-     * @param a2 second argument to be replaced in the message.
-     * @param a3 third argument to be replaced in the message.
-     */
-    public void notice(String key, String a1, String a2, String a3) {
-        printNotice(getText(key, a1, a2, a3));
+    public void notice(String key, Object... args) {
+        printNotice(getText(key, args));
     }
 }
