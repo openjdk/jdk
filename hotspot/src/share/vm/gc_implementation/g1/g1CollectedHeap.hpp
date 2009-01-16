@@ -247,6 +247,27 @@ private:
   NumberSeq _pop_obj_rc_at_copy;
   void print_popularity_summary_info() const;
 
+  // This is used for a quick test on whether a reference points into
+  // the collection set or not. Basically, we have an array, with one
+  // byte per region, and that byte denotes whether the corresponding
+  // region is in the collection set or not. The entry corresponding
+  // the bottom of the heap, i.e., region 0, is pointed to by
+  // _in_cset_fast_test_base.  The _in_cset_fast_test field has been
+  // biased so that it actually points to address 0 of the address
+  // space, to make the test as fast as possible (we can simply shift
+  // the address to address into it, instead of having to subtract the
+  // bottom of the heap from the address before shifting it; basically
+  // it works in the same way the card table works).
+  bool* _in_cset_fast_test;
+
+  // The allocated array used for the fast test on whether a reference
+  // points into the collection set or not. This field is also used to
+  // free the array.
+  bool* _in_cset_fast_test_base;
+
+  // The length of the _in_cset_fast_test_base array.
+  size_t _in_cset_fast_test_length;
+
   volatile unsigned _gc_time_stamp;
 
   size_t* _surviving_young_words;
@@ -367,6 +388,38 @@ public:
   // Do anything common to GC's.
   virtual void gc_prologue(bool full);
   virtual void gc_epilogue(bool full);
+
+  // We register a region with the fast "in collection set" test. We
+  // simply set to true the array slot corresponding to this region.
+  void register_region_with_in_cset_fast_test(HeapRegion* r) {
+    assert(_in_cset_fast_test_base != NULL, "sanity");
+    assert(r->in_collection_set(), "invariant");
+    int index = r->hrs_index();
+    assert(0 <= (size_t) index && (size_t) index < _in_cset_fast_test_length,
+           "invariant");
+    assert(!_in_cset_fast_test_base[index], "invariant");
+    _in_cset_fast_test_base[index] = true;
+  }
+
+  // This is a fast test on whether a reference points into the
+  // collection set or not. It does not assume that the reference
+  // points into the heap; if it doesn't, it will return false.
+  bool in_cset_fast_test(oop obj) {
+    assert(_in_cset_fast_test != NULL, "sanity");
+    if (_g1_committed.contains((HeapWord*) obj)) {
+      // no need to subtract the bottom of the heap from obj,
+      // _in_cset_fast_test is biased
+      size_t index = ((size_t) obj) >> HeapRegion::LogOfHRGrainBytes;
+      bool ret = _in_cset_fast_test[index];
+      // let's make sure the result is consistent with what the slower
+      // test returns
+      assert( ret || !obj_in_cs(obj), "sanity");
+      assert(!ret ||  obj_in_cs(obj), "sanity");
+      return ret;
+    } else {
+      return false;
+    }
+  }
 
 protected:
 
