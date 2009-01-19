@@ -1,3 +1,2 @@
 # Providers for midi sequences
 com.sun.media.sound.StandardMidiFileReader
-com.sun.media.sound.RmfFileReader
