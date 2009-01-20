@@ -186,8 +186,10 @@ public class MBeanAttributeInfo extends MBeanFeatureInfo implements Cloneable {
              (getter != null),
              (setter != null),
              isIs(getter),
-             ImmutableDescriptor.union(Introspector.descriptorForElement(getter),
-                                   Introspector.descriptorForElement(setter)));
+             ImmutableDescriptor.union(Introspector.
+             descriptorForElement(getter, false),
+                                   Introspector.descriptorForElement(setter,
+                                   true)));
     }
 
     /**
