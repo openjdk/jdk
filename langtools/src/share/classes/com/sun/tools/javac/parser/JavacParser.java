@@ -863,13 +863,13 @@ public class JavacParser implements Parser {
                         accept(GT);
                         t = F.at(pos1).TypeApply(t, args.toList());
                         checkGenerics();
-                        t = bracketsOpt(toP(t));
                         while (S.token() == DOT) {
                             S.nextToken();
                             mode = TYPE;
                             t = toP(F.at(S.pos()).Select(t, ident()));
                             t = typeArgumentsOpt(t);
                         }
+                        t = bracketsOpt(toP(t));
                     } else if ((mode & EXPR) != 0) {
                         mode = EXPR;
                         t = F.at(pos1).Binary(op, t, term2Rest(t1, TreeInfo.shiftPrec));
