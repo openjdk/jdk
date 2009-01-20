@@ -213,10 +213,16 @@ class SunConnection {
             con.setRequestProperty("Content-Type", "text/xml;charset=\"utf-8\"");
             con.connect();
 
-            OutputStream out = con.getOutputStream();
-            registration.storeToXML(out);
-            out.flush();
-            out.close();
+            OutputStream out = null;
+            try {
+                out = con.getOutputStream();
+                registration.storeToXML(out);
+                out.flush();
+            } finally {
+                if (out != null) {
+                    out.close();
+                }
+            }
 
             int returnCode = con.getResponseCode();
             if (Util.isVerbose()) {

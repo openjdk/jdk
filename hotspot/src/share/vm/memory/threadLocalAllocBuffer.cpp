@@ -100,8 +100,7 @@ void ThreadLocalAllocBuffer::accumulate_statistics() {
 void ThreadLocalAllocBuffer::make_parsable(bool retire) {
   if (end() != NULL) {
     invariants();
-    MemRegion mr(top(), hard_end());
-    SharedHeap::fill_region_with_object(mr);
+    CollectedHeap::fill_with_object(top(), hard_end());
 
     if (retire || ZeroTLAB) {  // "Reset" the TLAB
       set_start(NULL);

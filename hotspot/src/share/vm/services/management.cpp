@@ -694,10 +694,10 @@ JVM_ENTRY(jlong, jmm_SetPoolThreshold(JNIEnv* env, jobject obj, jmmThresholdType
                -1);
   }
 
-  if (threshold > max_intx) {
-    THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
-               "Invalid threshold value > max value of size_t",
-               -1);
+  if ((size_t)threshold > max_uintx) {
+    stringStream st;
+    st.print("Invalid valid threshold value. Threshold value (" UINT64_FORMAT ") > max value of size_t (" SIZE_FORMAT ")", (size_t)threshold, max_uintx);
+    THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(), st.as_string(), -1);
   }
 
   MemoryPool* pool = get_memory_pool_from_jobject(obj, CHECK_(0L));

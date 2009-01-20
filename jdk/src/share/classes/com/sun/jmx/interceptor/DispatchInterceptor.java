@@ -44,7 +44,6 @@ import javax.management.MBeanException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
@@ -205,8 +204,7 @@ public abstract class DispatchInterceptor
 
     // Returns the ObjectName of the JMXNamespace (or JMXDomain) for that
     // key (a namespace or a domain name).
-    abstract ObjectName getHandlerNameFor(String key)
-        throws MalformedObjectNameException;
+    abstract ObjectName getHandlerNameFor(String key);
 
     // Creates an interceptor for the given key, name, JMXNamespace (or
     // JMXDomain). Note: this will be either a NamespaceInterceptor
@@ -263,14 +261,10 @@ public abstract class DispatchInterceptor
     void validateHandlerNameFor(String key, ObjectName name) {
         if (key == null || key.equals(""))
             throw new IllegalArgumentException("invalid key for "+name+": "+key);
-        try {
-            final ObjectName handlerName = getHandlerNameFor(key);
-            if (!name.equals(handlerName))
-                throw new IllegalArgumentException("bad handler name: "+name+
-                        ". Should be: "+handlerName);
-        } catch (MalformedObjectNameException x) {
-            throw new IllegalArgumentException(name.toString(),x);
-        }
+        final ObjectName handlerName = getHandlerNameFor(key);
+        if (!name.equals(handlerName))
+            throw new IllegalArgumentException("bad handler name: "+name+
+                    ". Should be: "+handlerName);
     }
 
     // Called by the DefaultMBeanServerInterceptor when an instance

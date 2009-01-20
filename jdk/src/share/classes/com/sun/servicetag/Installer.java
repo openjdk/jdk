@@ -475,7 +475,7 @@ public class Installer {
 
         String filename = "/com/sun/servicetag/resources/javase_" +
                 version + "_swordfish.properties";
-        InputStream in = Installer.class.getClass().getResourceAsStream(filename);
+        InputStream in = Installer.class.getResourceAsStream(filename);
         if (in == null) {
             return null;
         }
@@ -813,7 +813,7 @@ public class Installer {
                                    locale,
                                    String.valueOf(version)).toString();
             try {
-                in = Installer.class.getClass().getResourceAsStream(resource + ".html");
+                in = Installer.class.getResourceAsStream(resource + ".html");
                 if (in == null) {
                     // if the resource file is missing
                     if (isVerbose()) {
@@ -825,33 +825,38 @@ public class Installer {
                     System.out.println("Generating " + f + " from " + resource + ".html");
                 }
 
-                br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-                pw = new PrintWriter(f, "UTF-8");
-                String line = null;
-                while ((line = br.readLine()) != null) {
-                    String output = line;
-                    if (line.contains(JDK_VERSION_KEY)) {
-                        output = line.replace(JDK_VERSION_KEY, jdkVersion);
-                    } else if (line.contains(JDK_HEADER_PNG_KEY)) {
-                        output = line.replace(JDK_HEADER_PNG_KEY, headerImageSrc);
-                    } else if (line.contains(REGISTRATION_URL_KEY)) {
-                        output = line.replace(REGISTRATION_URL_KEY, registerURL);
-                    } else if (line.contains(REGISTRATION_PAYLOAD_KEY)) {
-                        output = line.replace(REGISTRATION_PAYLOAD_KEY, payload.toString());
+                try {
+                    br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+                    pw = new PrintWriter(f, "UTF-8");
+                    String line = null;
+                    while ((line = br.readLine()) != null) {
+                        String output = line;
+                        if (line.contains(JDK_VERSION_KEY)) {
+                            output = line.replace(JDK_VERSION_KEY, jdkVersion);
+                        } else if (line.contains(JDK_HEADER_PNG_KEY)) {
+                            output = line.replace(JDK_HEADER_PNG_KEY, headerImageSrc);
+                        } else if (line.contains(REGISTRATION_URL_KEY)) {
+                            output = line.replace(REGISTRATION_URL_KEY, registerURL);
+                        } else if (line.contains(REGISTRATION_PAYLOAD_KEY)) {
+                            output = line.replace(REGISTRATION_PAYLOAD_KEY, payload.toString());
+                        }
+                        pw.println(output);
                     }
-                    pw.println(output);
+                    f.setReadOnly();
+                    pw.flush();
+                } finally {
+                    // It's safe for this finally block to have two close statements
+                    // consecutively as PrintWriter.close doesn't throw IOException.
+                    if (pw != null) {
+                        pw.close();
+                    }
+                    if (br!= null) {
+                        br.close();
+                    }
                 }
-                f.setReadOnly();
-                pw.flush();
             } finally {
-                if (pw != null) {
-                    pw.close();
-                }
                 if (in != null) {
                     in.close();
-                }
-                if (br!= null) {
-                    br.close();
                 }
             }
         }

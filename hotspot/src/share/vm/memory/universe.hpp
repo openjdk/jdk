@@ -92,6 +92,7 @@ class LatestMethodOopCache : public CommonMethodOopCache {
 
 
 class Universe: AllStatic {
+  // Ugh.  Universe is much too friendly.
   friend class MarkSweep;
   friend class oopDesc;
   friend class ClassLoader;
