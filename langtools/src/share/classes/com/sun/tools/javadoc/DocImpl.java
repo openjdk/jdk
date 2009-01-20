@@ -25,11 +25,13 @@
 
 package com.sun.tools.javadoc;
 
-import com.sun.javadoc.*;
-
 import java.io.InputStream;
 import java.io.IOException;
 import java.text.CollationKey;
+import javax.tools.FileObject;
+
+import com.sun.javadoc.*;
+
 import com.sun.tools.javac.util.Position;
 
 /**
@@ -43,7 +45,7 @@ import com.sun.tools.javac.util.Position;
  * @author Atul M Dambalkar
  * @author Neal Gafter (rewrite)
  */
-abstract class DocImpl implements Doc, Comparable<Object> {
+public abstract class DocImpl implements Doc, Comparable<Object> {
 
     /**
      * Doc environment
@@ -163,7 +165,7 @@ abstract class DocImpl implements Doc, Comparable<Object> {
     /**
      * Utility for subclasses which read HTML documentation files.
      */
-    String readHTMLDocumentation(InputStream input, String filename) throws IOException {
+    String readHTMLDocumentation(InputStream input, FileObject filename) throws IOException {
         int filesize = input.available();
         byte[] filecontents = new byte[filesize];
         input.read(filecontents, 0, filesize);
