@@ -398,7 +398,7 @@ Java_sun_awt_windows_WDataTransferer_platformImageBytesToImageData(
                 case  4:
                 case  8:
                     nColorEntries = (pSrcBmih->biClrUsed != 0) ?
-                        pSrcBmih->biClrUsed : 1 << (pSrcBmih->biBitCount - 1);
+                        pSrcBmih->biClrUsed : (1 << pSrcBmih->biBitCount);
                     break;
                 case 16:
                 case 24:
