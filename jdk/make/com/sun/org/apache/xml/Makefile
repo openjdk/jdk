@@ -41,7 +41,7 @@ AUTO_FILES_JAVA_DIRS = com/sun/org/apache/xml
 # Resources
 #
 LOCALE_SET_DEFINITION = jre
-NEW_RESOURCE_BUNDLES_PROPERTIES = \
+NEW_RESOURCE_BUNDLES_UNCOMPILED_PROPERTIES = \
    $(PKGDIR)/internal/security/resource/config.dtd \
    $(PKGDIR)/internal/security/resource/config.xml \
    $(PKGDIR)/internal/security/resource/xmlsecurity_de.properties \
