@@ -2933,32 +2933,16 @@ public class Types {
      * Language Specification, Third Ed. (8.4.5)</a>
      */
     public boolean returnTypeSubstitutable(Type r1, Type r2) {
+        return returnTypeSubstitutable(r1, r2, Warner.noWarnings);
+    }
+    //where
+    public boolean returnTypeSubstitutable(Type r1, Type r2, Warner warner) {
         if (hasSameArgs(r1, r2))
-            return resultSubtype(r1, r2, Warner.noWarnings);
+            return resultSubtype(r1, r2, warner);
         else
             return covariantReturnType(r1.getReturnType(),
-                                       erasure(r2.getReturnType()),
-                                       Warner.noWarnings);
-    }
-
-    public boolean returnTypeSubstitutable(Type r1,
-                                           Type r2, Type r2res,
-                                           Warner warner) {
-        if (isSameType(r1.getReturnType(), r2res))
-            return true;
-        if (r1.getReturnType().isPrimitive() || r2res.isPrimitive())
-            return false;
-
-        if (hasSameArgs(r1, r2))
-            return covariantReturnType(r1.getReturnType(), r2res, warner);
-        if (!source.allowCovariantReturns())
-            return false;
-        if (isSubtypeUnchecked(r1.getReturnType(), r2res, warner))
-            return true;
-        if (!isSubtype(r1.getReturnType(), erasure(r2res)))
-            return false;
-        warner.warnUnchecked();
-        return true;
+                                       r2.getReturnType(),
+                                       warner);
     }
 
     /**
@@ -2966,12 +2950,24 @@ public class Types {
      * method that returns s?
      */
     public boolean covariantReturnType(Type t, Type s, Warner warner) {
-        return
-            isSameType(t, s) ||
-            source.allowCovariantReturns() &&
+        //are return types identical?
+        if (isSameType(t, s))
+            return true;
+        //if t and s are both reference types...
+        else if(source.allowCovariantReturns() &&
             !t.isPrimitive() &&
-            !s.isPrimitive() &&
-            isAssignable(t, s, warner);
+            !s.isPrimitive()) {
+            //check that t is some unchecked subtype of s
+            if (isSubtypeUnchecked(t, s, warner))
+                return true;
+            //otherwise check that t = |s|
+            else if (isSameType(t, erasure(s))) {
+                warner.warnUnchecked();
+                return true;
+            }
+        }
+        //otherwise t is not return type substitutable for s
+        return false;
     }
     // </editor-fold>
 
