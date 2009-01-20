@@ -37,7 +37,7 @@ AUTO_FILES_JAVA_DIRS = sun/launcher
 # Resources
 #
 LOCALE_SET_DEFINITION = jre
-NEW_RESOURCE_BUNDLES_PROPERTIES = $(PKGDIR)/resources/launcher.properties
+NEW_RESOURCE_BUNDLES_COMPILED_PROPERTIES = $(PKGDIR)/resources/launcher.properties
 
 #
 # Rules
