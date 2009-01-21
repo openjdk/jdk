@@ -3667,7 +3667,7 @@ const TypePtr *TypeKlassPtr::add_offset( intptr_t offset ) const {
 
 //------------------------------cast_to_ptr_type-------------------------------
 const Type *TypeKlassPtr::cast_to_ptr_type(PTR ptr) const {
-  assert(_base == OopPtr, "subclass must override cast_to_ptr_type");
+  assert(_base == KlassPtr, "subclass must override cast_to_ptr_type");
   if( ptr == _ptr ) return this;
   return make(ptr, _klass, _offset);
 }
