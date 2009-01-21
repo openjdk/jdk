@@ -229,6 +229,7 @@ public:
 
   inline void set_base(const char* base);
   inline void add_prefix(const char* prefix);
+  inline void add_suffix_to_prefix(const char* suffix);
   inline void add_suffix(const char* suffix);
   inline void reset_path(const char* base);
 
@@ -288,6 +289,10 @@ inline void SysClassPath::set_base(const char* base) {
 
 inline void SysClassPath::add_prefix(const char* prefix) {
   _items[_scp_prefix] = add_to_path(_items[_scp_prefix], prefix, true);
+}
+
+inline void SysClassPath::add_suffix_to_prefix(const char* suffix) {
+  _items[_scp_prefix] = add_to_path(_items[_scp_prefix], suffix, false);
 }
 
 inline void SysClassPath::add_suffix(const char* suffix) {
@@ -512,7 +517,6 @@ static bool set_bool_flag(char* name, bool value, FlagValueOrigin origin) {
   return CommandLineFlags::boolAtPut(name, &value, origin);
 }
 
-
 static bool set_fp_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
   double v;
   if (sscanf(value, "%lf", &v) != 1) {
@@ -524,7 +528,6 @@ static bool set_fp_numeric_flag(char* name, char* value, FlagValueOrigin origin)
   }
   return false;
 }
-
 
 static bool set_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
   julong v;
@@ -554,7 +557,6 @@ static bool set_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
   }
   return false;
 }
-
 
 static bool set_string_flag(char* name, const char* value, FlagValueOrigin origin) {
   if (!CommandLineFlags::ccstrAtPut(name, &value, origin))  return false;
@@ -590,7 +592,6 @@ static bool append_to_string_flag(char* name, const char* new_value, FlagValueOr
   }
   return true;
 }
-
 
 bool Arguments::parse_argument(const char* arg, FlagValueOrigin origin) {
 
@@ -651,7 +652,6 @@ bool Arguments::parse_argument(const char* arg, FlagValueOrigin origin) {
 
   return false;
 }
-
 
 void Arguments::add_string(char*** bldarray, int* count, const char* arg) {
   assert(bldarray != NULL, "illegal argument");
@@ -755,7 +755,6 @@ bool Arguments::process_argument(const char* arg,
   }
   return true;
 }
-
 
 bool Arguments::process_settings_file(const char* file_name, bool should_exist, jboolean ignore_unrecognized) {
   FILE* stream = fopen(file_name, "rb");
@@ -932,7 +931,6 @@ void Arguments::set_mode_flags(Mode mode) {
   }
 }
 
-
 // Conflict: required to use shared spaces (-Xshare:on), but
 // incompatible command line options were chosen.
 
@@ -945,7 +943,6 @@ static void no_shared_spaces() {
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
   }
 }
-
 
 // If the user has chosen ParallelGCThreads > 0, we set UseParNewGC
 // if it's not explictly set or unset. If the user has chosen
@@ -1714,6 +1711,21 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
     return result;
   }
 
+  if (AggressiveOpts) {
+    // Insert alt-rt.jar between user-specified bootclasspath
+    // prefix and the default bootclasspath.  os::set_boot_path()
+    // uses meta_index_dir as the default bootclasspath directory.
+    const char* altclasses_jar = "alt-rt.jar";
+    size_t altclasses_path_len = strlen(get_meta_index_dir()) + 1 +
+                                 strlen(altclasses_jar);
+    char* altclasses_path = NEW_C_HEAP_ARRAY(char, altclasses_path_len);
+    strcpy(altclasses_path, get_meta_index_dir());
+    strcat(altclasses_path, altclasses_jar);
+    scp.add_suffix_to_prefix(altclasses_path);
+    scp_assembly_required = true;
+    FREE_C_HEAP_ARRAY(char, altclasses_path);
+  }
+
   // Parse _JAVA_OPTIONS environment variable (if present) (mimics classic VM)
   result = parse_java_options_environment_variable(&scp, &scp_assembly_required);
   if (result != JNI_OK) {
@@ -1728,7 +1740,6 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
 
   return JNI_OK;
 }
-
 
 jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
                                        SysClassPath* scp_p,
@@ -1795,7 +1806,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       *scp_assembly_required_p = true;
     // -Xrun
     } else if (match_option(option, "-Xrun", &tail)) {
-      if(tail != NULL) {
+      if (tail != NULL) {
         const char* pos = strchr(tail, ':');
         size_t len = (pos == NULL) ? strlen(tail) : pos - tail;
         char* name = (char*)memcpy(NEW_C_HEAP_ARRAY(char, len + 1), tail, len);
@@ -2557,7 +2568,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       }
     }
   }
-
 
   // Parse JavaVMInitArgs structure passed in, as well as JAVA_TOOL_OPTIONS and _JAVA_OPTIONS
   jint result = parse_vm_init_args(args);
