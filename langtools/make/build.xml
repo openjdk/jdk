@@ -390,6 +390,7 @@
             <attribute name="classes.dir" default="${build.classes.dir}"/>
             <attribute name="gensrc.dir" default="${build.gensrc.dir}"/>
             <attribute name="lib.dir" default="${dist.lib.dir}"/>
+            <attribute name="java" default="java"/>
             <attribute name="javac.bootclasspath" default="-J-Xbootclasspath/p:${build.bootstrap.dir}/classes"/>
             <attribute name="javac.java.home" default="${boot.java.home}"/>
             <attribute name="javac.target" default="${javac.target}"/>
@@ -544,6 +545,7 @@
                 classes.dir="${build.bootstrap.dir}/classes"
                 bin.dir="${build.bootstrap.dir}/bin"
                 lib.dir="${build.bootstrap.dir}/lib"
+                java="${boot.java}"
                 javac.bootclasspath=""
                 release="${bootstrap.release}"
                 full.version="${bootstrap.full.version}"/>
