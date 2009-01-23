@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -30,34 +30,32 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-<!--
- Build file for the compiler.
- - The basic functionality of the build is imported from make/build.xml.
- - Additional support for NetBeans actions is imported from 
-   make/netbeans/common/shared.xml.
- - This file gives the final customizations.
+<!-- 
+ This file defines the actions that will appear on the project's context
+ menu, in the Projects viewer.
+ It is normally included as an entity into a project's project.xml file.
+
+ For information on these actions, see
+   - NetBeans: Setting Up Projects
+     at http://www.netbeans.org/kb/55/using-netbeans/project_setup.html
+   - NetBeans: Advanced Freeform Project Configuration
+     at http://www.netbeans.org/kb/41/freeform-config.html 
 -->
 
-<project name="compiler" default="build" basedir="../../..">
-    <property name="tool.name" value="javac"/>
-    
-    <import file="../common/shared.xml"/>
-    
-    <!-- 
-      Alias the following imported targets, giving descriptions as appropriate.
-      NetBeans will emphasize targets with descriptions in the Ant Targets list,
-      and will display the targets in the context menu (under Run Target) for 
-      this file in the Projects viewer. 
-    -->
-    
-    <target name="build" depends="build-javac" description="Build the compiler."/>
-    
-    <target name="debug" depends="-debug-nb" description="Debug the compiler."/>
-    
-    <target name="-javadoc" depends="javadoc-javac"/>
-    <target name="javadoc" depends="-javadoc-nb" description="Generate javadoc documentation for the compiler."/>
-    
-    <target name="-jtreg" depends="jtreg-javac"/>
-    <target name="jtreg" depends="-jtreg-nb" description="Run the jtreg tests for the compiler."/>
-    
-</project>
+<ide-action name="select-tool"/>
+
+<separator/>
+  
+<ide-action name="build"/>
+<ide-action name="rebuild"/>
+<ide-action name="clean"/>
+<ide-action name="javadoc"/>
+
+<separator/>
+
+<ide-action name="run"/>
+<ide-action name="debug"/>
+
+<separator/>
+
+<ide-action name="test"/>
