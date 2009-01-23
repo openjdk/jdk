@@ -660,7 +660,7 @@
                 <!-- the next two properties are for convenience, when only 
                      a single instance of jtreg will be invoked. -->
                 <condition property="jtreg.passed">
-                    <equals arg1="${jtreg.javac.result}" arg2="0"/>
+                    <equals arg1="${jtreg.@{name}.result}" arg2="0"/>
                 </condition>
                 <property name="jtreg.report" value="${build.jtreg.dir}/@{name}/report"/>
             </sequential>
