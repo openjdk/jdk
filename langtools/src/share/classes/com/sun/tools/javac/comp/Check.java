@@ -1163,7 +1163,7 @@ public class Check {
 
         overrideWarner.warned = false;
         boolean resultTypesOK =
-            types.covariantReturnType(mtres, otres, overrideWarner);
+            types.returnTypeSubstitutable(mt, ot, otres, overrideWarner);
         if (!resultTypesOK) {
             if (!source.allowCovariantReturns() &&
                 m.owner != origin &&
