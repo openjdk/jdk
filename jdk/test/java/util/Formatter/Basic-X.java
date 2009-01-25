@@ -1054,6 +1054,52 @@ public class Basic$Type$ extends Basic {
         test("%4.1f", " 1.0", val);
         test("%4.2f", "0.99", val);
         test("%4.3f", "0.990", val);
+
+        // #6476425
+        val = new BigDecimal("0.00001");
+        test("%.0f", "0", val);
+        test("%.1f", "0.0", val);
+        test("%.2f", "0.00", val);
+        test("%.3f", "0.000", val);
+        test("%.4f", "0.0000", val);
+        test("%.5f", "0.00001", val);
+
+        val = new BigDecimal("1.00001");
+        test("%.0f", "1", val);
+        test("%.1f", "1.0", val);
+        test("%.2f", "1.00", val);
+        test("%.3f", "1.000", val);
+        test("%.4f", "1.0000", val);
+        test("%.5f", "1.00001", val);
+
+        val = new BigDecimal("1.23456");
+        test("%.0f", "1", val);
+        test("%.1f", "1.2", val);
+        test("%.2f", "1.23", val);
+        test("%.3f", "1.235", val);
+        test("%.4f", "1.2346", val);
+        test("%.5f", "1.23456", val);
+        test("%.6f", "1.234560", val);
+
+        val = new BigDecimal("9.99999");
+        test("%.0f", "10", val);
+        test("%.1f", "10.0", val);
+        test("%.2f", "10.00", val);
+        test("%.3f", "10.000", val);
+        test("%.4f", "10.0000", val);
+        test("%.5f", "9.99999", val);
+        test("%.6f", "9.999990", val);
+
+
+        val = new BigDecimal("1.99999");
+        test("%.0f", "2", val);
+        test("%.1f", "2.0", val);
+        test("%.2f", "2.00", val);
+        test("%.3f", "2.000", val);
+        test("%.4f", "2.0000", val);
+        test("%.5f", "1.99999", val);
+        test("%.6f", "1.999990", val);
+
 #end[BigDecimal]
 
 #if[float]
