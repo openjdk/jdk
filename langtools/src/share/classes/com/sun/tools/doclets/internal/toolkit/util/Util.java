@@ -25,10 +25,11 @@
 
 package com.sun.tools.doclets.internal.toolkit.util;
 
+import java.io.*;
+import java.util.*;
+
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
-import java.util.*;
-import java.io.*;
 
 /**
  * Utilities Class for Doclets.
@@ -579,7 +580,7 @@ public class Util {
      * @param docencoding Encoding to be used for this file.
      * @exception IOException Exception raised by the FileWriter is passed on
      * to next level.
-     * @exception UnSupportedEncodingException Exception raised by the
+     * @exception UnsupportedEncodingException Exception raised by the
      * OutputStreamWriter is passed on to next level.
      * @return Writer Writer for the file getting generated.
      * @see java.io.FileOutputStream
@@ -598,9 +599,7 @@ public class Util {
             fos = new FileOutputStream(filename);
         }
         if (docencoding == null) {
-            OutputStreamWriter oswriter = new OutputStreamWriter(fos);
-            docencoding = oswriter.getEncoding();
-            return oswriter;
+            return new OutputStreamWriter(fos);
         } else {
             return new OutputStreamWriter(fos, docencoding);
         }

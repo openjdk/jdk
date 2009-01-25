@@ -108,11 +108,11 @@
 </action>
 
 <action name="debug">
-    <target>debug-nb</target>
+    <target>debug</target>
 </action>
 
 <action name="debug.single">
-    <target>debug-single-nb</target>
+    <target>debug-single</target>
     <context>
         <property>debug.classname</property>
         <folder>${root}/src/share/classes</folder>
@@ -130,7 +130,7 @@
 -->
 
 <action name="debug.single">
-    <target>debug-jtreg-nb</target>
+    <target>debug-jtreg</target>
     <context>
         <property>jtreg.tests</property>
         <folder>${root}/test</folder>
@@ -157,5 +157,17 @@
 </action>
 
 <action name="javadoc">
-    <target>-javadoc-nb</target>
+    <target>javadoc</target>
+</action>
+
+<action name="select-tool">
+    <target>select-tool</target>
+</action>
+
+<action name="test-select-tool-1">
+    <target>test-select-tool-1</target>
+</action>
+
+<action name="test-select-tool-2">
+    <target>test-select-tool-2</target>
 </action>
