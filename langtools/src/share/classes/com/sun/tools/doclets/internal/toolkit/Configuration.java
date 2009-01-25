@@ -707,6 +707,11 @@ public abstract class Configuration {
     }
 
     /**
+     * Return the Locale for this document.
+     */
+    public abstract Locale getLocale();
+
+    /**
      * Return the comparator that will be used to sort member documentation.
      * To no do any sorting, return null.
      *

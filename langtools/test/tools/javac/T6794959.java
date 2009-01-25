@@ -1,12 +1,10 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,20 +21,16 @@
  * have any questions.
  */
 
-
-package com.sun.tools.classfile;
-
 /*
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * @test
+ * @bug 6794959
+ * @summary add new switch -XDexpectKeys=key,key,...
+ * @compile T6794959.java
+ * @compile/fail -XDfailcomplete=java.lang.String T6794959.java
+ * @compile -XDfailcomplete=java.lang.String -XDexpectKeys=compiler.err.cant.resolve.location T6794959.java
+ * @compile/fail -XDexpectKeys=compiler.err.cant.resolve.location T6794959.java
  */
-public class ConstantPoolException extends Exception {
-    private static final long serialVersionUID = -2324397349644754565L;
-    ConstantPoolException(int index) {
-        this.index = index;
-    }
 
-    public final int index;
+class T6794959 {
+    String s;
 }

@@ -25,10 +25,12 @@
 
 package com.sun.tools.doclets.internal.toolkit.util;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.javadoc.*;
 import java.io.*;
 import java.util.*;
+import javax.tools.FileObject;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
  * Converts Java Source Code to HTML.
@@ -123,16 +125,27 @@ public class SourceToHTMLConverter {
         if (cd == null || outputdir == null) {
             return;
         }
-        File file;
-        SourcePosition sp = cd.position();
-        if (sp == null || (file = sp.file()) == null) {
-            return;
-        }
         try {
+            SourcePosition sp = cd.position();
+            if (sp == null)
+                return;
+            Reader r;
+            // temp hack until we can update SourcePosition API.
+            if (sp instanceof com.sun.tools.javadoc.SourcePositionImpl) {
+                FileObject fo = ((com.sun.tools.javadoc.SourcePositionImpl) sp).fileObject();
+                if (fo == null)
+                    return;
+                r = fo.openReader(true);
+            } else {
+                File file = sp.file();
+                if (file == null)
+                    return;
+                r = new FileReader(file);
+            }
+            LineNumberReader reader = new LineNumberReader(r);
             int lineno = 1;
             String line;
             StringBuffer output = new StringBuffer();
-            LineNumberReader reader = new LineNumberReader(new FileReader(file));
             try {
                 while ((line = reader.readLine()) != null) {
                     output.append(formatLine(line, configuration.sourcetab, lineno));
@@ -142,7 +155,7 @@ public class SourceToHTMLConverter {
                 reader.close();
             }
             output = addLineNumbers(output.toString());
-            output.insert(0, getHeader());
+            output.insert(0, getHeader(configuration));
             output.append(getFooter());
             writeToFile(output.toString(), outputdir, cd.name(), configuration);
         } catch (Exception e){
@@ -192,10 +205,11 @@ public class SourceToHTMLConverter {
 
     /**
      * Get the header.
+     * @param configuration the Doclet configuration
      * @return the header to the output file
      */
-    protected static String getHeader() {
-        StringBuffer result = new StringBuffer("<HTML>" + DocletConstants.NL);
+    protected static String getHeader(Configuration configuration) {
+        StringBuffer result = new StringBuffer("<HTML lang=\"" + configuration.getLocale().getLanguage() + "\">" + DocletConstants.NL);
         result.append("<BODY BGCOLOR=\""+ BGCOLOR + "\">" + DocletConstants.NL);
         result.append("<PRE>" + DocletConstants.NL);
         return result.toString();

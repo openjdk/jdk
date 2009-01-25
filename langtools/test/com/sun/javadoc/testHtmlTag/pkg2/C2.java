@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,9 @@
  * have any questions.
  */
 
+package pkg2;
 
-package com.sun.tools.classfile;
-
-/*
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
- *  you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+/**
+ * <B>Comments:</B> Class 2
  */
-public class ConstantPoolException extends Exception {
-    private static final long serialVersionUID = -2324397349644754565L;
-    ConstantPoolException(int index) {
-        this.index = index;
-    }
-
-    public final int index;
-}
+public class C2 {}
