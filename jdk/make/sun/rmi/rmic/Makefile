@@ -43,7 +43,7 @@ FILES_java = $(RMIC_java)
 # Resources
 #
 LOCALE_SET_DEFINITION = jdk
-RESOURCE_BUNDLES_PROPERTIES = $(PKGDIR)/resources/rmic.properties
+RESOURCE_BUNDLES_UNCOMPILED_PROPERTIES = $(PKGDIR)/resources/rmic.properties
 
 #
 # Rules
