@@ -1496,7 +1496,7 @@ Zone	Asia/Choibalsan	7:38:00 -	LMT	1905 Aug
 
 # Nepal
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Katmandu	5:41:16 -	LMT	1920
+Zone	Asia/Kathmandu	5:41:16 -	LMT	1920
 			5:30	-	IST	1986
 			5:45	-	NPT	# Nepal Time
 
