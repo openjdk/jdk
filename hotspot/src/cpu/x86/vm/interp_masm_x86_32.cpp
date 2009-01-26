@@ -149,7 +149,7 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
   // Clean up tos value in the thread object
   movl(tos_addr,  (int32_t) ilgl);
   movptr(val_addr,  NULL_WORD);
-  NOT_LP64(movl(val_addr1, (int32_t)NULL_WORD));
+  NOT_LP64(movptr(val_addr1, NULL_WORD));
 }
 
 

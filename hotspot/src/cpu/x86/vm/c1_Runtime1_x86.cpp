@@ -1393,7 +1393,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ ret(0);
 
         __ bind(miss);
-        __ movptr(Address(rsp, (super_off) * VMRegImpl::stack_slot_size), 0); // result
+        __ movptr(Address(rsp, (super_off) * VMRegImpl::stack_slot_size), NULL_WORD); // result
         __ pop(rax);
         __ pop(rcx);
         __ pop(rsi);

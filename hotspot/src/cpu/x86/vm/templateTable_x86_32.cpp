@@ -137,7 +137,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
         // Do the actual store
         // noreg means NULL
         if (val == noreg) {
-          __ movl(Address(rdx, 0), (int32_t)NULL_WORD);
+          __ movptr(Address(rdx, 0), NULL_WORD);
           // No post barrier for NULL
         } else {
           __ movl(Address(rdx, 0), val);
@@ -152,7 +152,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
     case BarrierSet::CardTableExtension:
       {
         if (val == noreg) {
-          __ movl(obj, NULL_WORD);
+          __ movptr(obj, NULL_WORD);
         } else {
           __ movl(obj, val);
           // flatten object address if needed
@@ -168,7 +168,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
     case BarrierSet::ModRef:
     case BarrierSet::Other:
       if (val == noreg) {
-        __ movl(obj, NULL_WORD);
+        __ movptr(obj, NULL_WORD);
       } else {
         __ movl(obj, val);
       }
