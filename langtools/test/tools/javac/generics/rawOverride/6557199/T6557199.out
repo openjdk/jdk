@@ -1,2 +1,0 @@
-T6557199.java:40:25: compiler.err.prob.found.req: (- compiler.misc.override.incompatible.ret: (- compiler.misc.cant.override: test(), T6557199.B, <U>test(), T6557199.X)), T6557199.B, T6557199.X<U>
-1 error
