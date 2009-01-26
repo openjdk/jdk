@@ -138,7 +138,7 @@ CA	+4901-08816	America/Nipigon	Eastern Time - Ontario & Quebec - places that did
 CA	+4823-08915	America/Thunder_Bay	Eastern Time - Thunder Bay, Ontario
 CA	+6344-06828	America/Iqaluit	Eastern Time - east Nunavut - most locations
 CA	+6608-06544	America/Pangnirtung	Eastern Time - Pangnirtung, Nunavut
-CA	+744144-0944945	America/Resolute	Eastern Time - Resolute, Nunavut
+CA	+744144-0944945	America/Resolute	Eastern Standard Time - Resolute, Nunavut
 CA	+484531-0913718	America/Atikokan	Eastern Standard Time - Atikokan, Ontario and Southampton I, Nunavut
 CA	+624900-0920459	America/Rankin_Inlet	Central Time - central Nunavut
 CA	+4953-09709	America/Winnipeg	Central Time - Manitoba & west Ontario
@@ -314,7 +314,7 @@ NG	+0627+00324	Africa/Lagos
 NI	+1209-08617	America/Managua
 NL	+5222+00454	Europe/Amsterdam
 NO	+5955+01045	Europe/Oslo
-NP	+2743+08519	Asia/Katmandu
+NP	+2743+08519	Asia/Kathmandu
 NR	-0031+16655	Pacific/Nauru
 NU	-1901-16955	Pacific/Niue
 NZ	-3652+17446	Pacific/Auckland	most locations
