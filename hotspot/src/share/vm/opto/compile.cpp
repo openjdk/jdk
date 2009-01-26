@@ -2005,7 +2005,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_StoreP:
   case Op_StoreN:
   case Op_LoadB:
-  case Op_LoadC:
+  case Op_LoadUS:
   case Op_LoadI:
   case Op_LoadKlass:
   case Op_LoadNKlass:

@@ -779,14 +779,14 @@ Node *LoadNode::make( PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const Type
          "use LoadRangeNode instead");
   switch (bt) {
   case T_BOOLEAN:
-  case T_BYTE:    return new (C, 3) LoadBNode(ctl, mem, adr, adr_type, rt->is_int()    );
-  case T_INT:     return new (C, 3) LoadINode(ctl, mem, adr, adr_type, rt->is_int()    );
-  case T_CHAR:    return new (C, 3) LoadCNode(ctl, mem, adr, adr_type, rt->is_int()    );
-  case T_SHORT:   return new (C, 3) LoadSNode(ctl, mem, adr, adr_type, rt->is_int()    );
-  case T_LONG:    return new (C, 3) LoadLNode(ctl, mem, adr, adr_type, rt->is_long()   );
-  case T_FLOAT:   return new (C, 3) LoadFNode(ctl, mem, adr, adr_type, rt              );
-  case T_DOUBLE:  return new (C, 3) LoadDNode(ctl, mem, adr, adr_type, rt              );
-  case T_ADDRESS: return new (C, 3) LoadPNode(ctl, mem, adr, adr_type, rt->is_ptr()    );
+  case T_BYTE:    return new (C, 3) LoadBNode (ctl, mem, adr, adr_type, rt->is_int()    );
+  case T_INT:     return new (C, 3) LoadINode (ctl, mem, adr, adr_type, rt->is_int()    );
+  case T_CHAR:    return new (C, 3) LoadUSNode(ctl, mem, adr, adr_type, rt->is_int()    );
+  case T_SHORT:   return new (C, 3) LoadSNode (ctl, mem, adr, adr_type, rt->is_int()    );
+  case T_LONG:    return new (C, 3) LoadLNode (ctl, mem, adr, adr_type, rt->is_long()   );
+  case T_FLOAT:   return new (C, 3) LoadFNode (ctl, mem, adr, adr_type, rt              );
+  case T_DOUBLE:  return new (C, 3) LoadDNode (ctl, mem, adr, adr_type, rt              );
+  case T_ADDRESS: return new (C, 3) LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr()    );
   case T_OBJECT:
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
@@ -1357,7 +1357,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Steps (a), (b):  Walk past independent stores to find an exact match.
   if (prev_mem != NULL && prev_mem != in(MemNode::Memory)) {
     // (c) See if we can fold up on the spot, but don't fold up here.
-    // Fold-up might require truncation (for LoadB/LoadS/LoadC) or
+    // Fold-up might require truncation (for LoadB/LoadS/LoadUS) or
     // just return a prior value, which is done by Identity calls.
     if (can_see_stored_value(prev_mem, phase)) {
       // Make ready for step (d):
@@ -1606,14 +1606,14 @@ Node *LoadBNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return LoadNode::Ideal(phase, can_reshape);
 }
 
-//--------------------------LoadCNode::Ideal--------------------------------------
+//--------------------------LoadUSNode::Ideal-------------------------------------
 //
 //  If the previous store is to the same address as this load,
 //  and the value stored was larger than a char, replace this load
 //  with the value stored truncated to a char.  If no truncation is
 //  needed, the replacement is done in LoadNode::Identity().
 //
-Node *LoadCNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node *LoadUSNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
   if( value && !phase->type(value)->higher_equal( _type ) )

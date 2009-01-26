@@ -6096,25 +6096,25 @@ instruct loadS(rRegI dst, memory mem)
 //   ins_pipe(ialu_reg_mem);
 // %}
 
-// Load Char (16 bit UNsigned)
-instruct loadC(rRegI dst, memory mem)
+// Load Unsigned Short/Char (16 bit UNsigned)
+instruct loadUS(rRegI dst, memory mem)
 %{
-  match(Set dst (LoadC mem));
+  match(Set dst (LoadUS mem));
 
   ins_cost(125);
-  format %{ "movzwl  $dst, $mem\t# char" %}
+  format %{ "movzwl  $dst, $mem\t# ushort/char" %}
   opcode(0x0F, 0xB7);
   ins_encode(REX_reg_mem(dst, mem), OpcP, OpcS, reg_mem(dst, mem));
   ins_pipe(ialu_reg_mem);
 %}
 
-// Load Char (16 bit UNsigned) into long
-// instruct loadC2L(rRegL dst, memory mem)
+// Load Unsigned Short/Char (16 bit UNsigned) into long
+// instruct loadUS2L(rRegL dst, memory mem)
 // %{
-//   match(Set dst (ConvI2L (LoadC mem)));
+//   match(Set dst (ConvI2L (LoadUS mem)));
 
 //   ins_cost(125);
-//   format %{ "movzwl  $dst, $mem\t# char -> long" %}
+//   format %{ "movzwl  $dst, $mem\t# ushort/char -> long" %}
 //   opcode(0x0F, 0xB7);
 //   ins_encode(REX_reg_mem(dst, mem), OpcP, OpcS, reg_mem(dst, mem));
 //   ins_pipe(ialu_reg_mem);
