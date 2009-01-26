@@ -77,6 +77,7 @@ parNewGeneration.cpp                    resourceArea.hpp
 parNewGeneration.cpp                    sharedHeap.hpp
 parNewGeneration.cpp                    space.hpp
 parNewGeneration.cpp                    spaceDecorator.hpp
+parNewGeneration.cpp                    thread.hpp
 parNewGeneration.cpp                    workgroup.hpp
 
 parNewGeneration.hpp                    defNewGeneration.hpp
