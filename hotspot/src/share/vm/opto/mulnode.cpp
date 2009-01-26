@@ -442,7 +442,7 @@ Node *AndINode::Identity( PhaseTransform *phase ) {
         return load;
     }
     uint lop = load->Opcode();
-    if( lop == Op_LoadC &&
+    if( lop == Op_LoadUS &&
         con == 0x0000FFFF )     // Already zero-extended
       return load;
     // Masking off the high bits of a unsigned-shift-right is not
@@ -470,19 +470,19 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   uint lop = load->Opcode();
 
   // Masking bits off of a Character?  Hi bits are already zero.
-  if( lop == Op_LoadC &&
+  if( lop == Op_LoadUS &&
       (mask & 0xFFFF0000) )     // Can we make a smaller mask?
     return new (phase->C, 3) AndINode(load,phase->intcon(mask&0xFFFF));
 
   // Masking bits off of a Short?  Loading a Character does some masking
   if( lop == Op_LoadS &&
       (mask & 0xFFFF0000) == 0 ) {
-    Node *ldc = new (phase->C, 3) LoadCNode(load->in(MemNode::Control),
+    Node *ldus = new (phase->C, 3) LoadUSNode(load->in(MemNode::Control),
                                   load->in(MemNode::Memory),
                                   load->in(MemNode::Address),
                                   load->adr_type());
-    ldc = phase->transform(ldc);
-    return new (phase->C, 3) AndINode(ldc,phase->intcon(mask&0xFFFF));
+    ldus = phase->transform(ldus);
+    return new (phase->C, 3) AndINode(ldus, phase->intcon(mask&0xFFFF));
   }
 
   // Masking sign bits off of a Byte?  Let the matcher use an unsigned load
@@ -913,7 +913,7 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       set_req(2, phase->intcon(0));
       return this;
     }
-    else if( ld->Opcode() == Op_LoadC )
+    else if( ld->Opcode() == Op_LoadUS )
       // Replace zero-extension-load with sign-extension-load
       return new (phase->C, 3) LoadSNode( ld->in(MemNode::Control),
                                 ld->in(MemNode::Memory),
