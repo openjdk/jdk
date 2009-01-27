@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Unit test for java.net.HttpCookie
- * @bug 6244040 6277796 6277801 6277808 6294071 6692802
+ * @bug 6244040 6277796 6277801 6277808 6294071 6692802 6790677
  * @author Edward Wang
  */
 
@@ -278,10 +278,6 @@ public class TestHttpCookie {
         .c("this is a coyote").cu("http://www.coyote.org").dsc(true)
         .d(".coyote.org").a(3600).port("80");
 
-        // illegal characters in set-cookie header
-        test("Set-Cookie2:Customer=;Version#=\"1\";Path=&\"/acme\"")
-        .nil();
-
         // empty set-cookie string
         test("").nil();
 
@@ -311,6 +307,9 @@ public class TestHttpCookie {
         test("Set-Cookie2:C1=\"V1\";Domain=\".sun1.com\";path=\"/www1\";Max-Age=\"100\",C2=\"V2\";Domain=\".sun2.com\";path=\"/www2\";Max-Age=\"200\"")
         .n(0, "C1").v(0, "V1").p(0, "/www1").a(0, 100).d(0, ".sun1.com")
         .n(1, "C2").v(1, "V2").p(1, "/www2").a(1, 200).d(1, ".sun2.com");
+
+        // Bug 6790677: Should ignore bogus attributes
+        test("Set-Cookie2:C1=\"V1\";foobar").n(0, "C1").v(0, "V1");
     }
 
     static void netscape() {
