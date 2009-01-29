@@ -709,12 +709,31 @@ public class Types {
         case UNDETVAR:
             if (s.tag == WILDCARD) {
                 UndetVar undetvar = (UndetVar)t;
-                undetvar.inst = glb(upperBound(s), undetvar.inst);
-                // We should check instantiated type against any of the
-                // undetvar's lower bounds.
-                for (Type t2 : undetvar.lobounds) {
-                    if (!isSubtype(t2, undetvar.inst))
-                        return false;
+                WildcardType wt = (WildcardType)s;
+                switch(wt.kind) {
+                    case UNBOUND: //similar to ? extends Object
+                    case EXTENDS: {
+                        Type bound = upperBound(s);
+                        // We should check the new upper bound against any of the
+                        // undetvar's lower bounds.
+                        for (Type t2 : undetvar.lobounds) {
+                            if (!isSubtype(t2, bound))
+                                return false;
+                        }
+                        undetvar.hibounds = undetvar.hibounds.prepend(bound);
+                        break;
+                    }
+                    case SUPER: {
+                        Type bound = lowerBound(s);
+                        // We should check the new lower bound against any of the
+                        // undetvar's lower bounds.
+                        for (Type t2 : undetvar.hibounds) {
+                            if (!isSubtype(bound, t2))
+                                return false;
+                        }
+                        undetvar.lobounds = undetvar.lobounds.prepend(bound);
+                        break;
+                    }
                 }
                 return true;
             } else {
@@ -2825,6 +2844,16 @@ public class Types {
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Greatest lower bound">
+    public Type glb(List<Type> ts) {
+        Type t1 = ts.head;
+        for (Type t2 : ts.tail) {
+            if (t1.isErroneous())
+                return t1;
+            t1 = glb(t1, t2);
+        }
+        return t1;
+    }
+    //where
     public Type glb(Type t, Type s) {
         if (s == null)
             return t;
