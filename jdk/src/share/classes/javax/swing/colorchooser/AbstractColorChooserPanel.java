@@ -26,6 +26,8 @@
 package javax.swing.colorchooser;
 
 import java.awt.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.*;
 
 /**
@@ -46,6 +48,15 @@ import javax.swing.*;
  * @author Steve Wilson
  */
 public abstract class AbstractColorChooserPanel extends JPanel {
+
+    private final PropertyChangeListener enabledListener = new PropertyChangeListener() {
+        public void propertyChange(PropertyChangeEvent event) {
+            Object value = event.getNewValue();
+            if (value instanceof Boolean) {
+                setEnabled((Boolean) value);
+            }
+        }
+    };
 
     /**
      *
@@ -142,6 +153,8 @@ public abstract class AbstractColorChooserPanel extends JPanel {
             throw new RuntimeException ("This chooser panel is already installed");
         }
         chooser = enclosingChooser;
+        chooser.addPropertyChangeListener("enabled", enabledListener);
+        setEnabled(chooser.isEnabled());
         buildChooser();
         updateChooser();
     }
@@ -151,6 +164,7 @@ public abstract class AbstractColorChooserPanel extends JPanel {
      * If override this, be sure to call <code>super</code>.
      */
   public void uninstallChooserPanel(JColorChooser enclosingChooser) {
+        chooser.removePropertyChangeListener("enabled", enabledListener);
         chooser = null;
     }
 
