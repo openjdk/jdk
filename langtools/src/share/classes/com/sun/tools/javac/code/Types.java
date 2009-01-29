@@ -2131,9 +2131,6 @@ public class Types {
                                   List<Type> to) {
         if (tvars.isEmpty())
             return tvars;
-        if (tvars.tail.isEmpty())
-            // fast common case
-            return List.<Type>of(substBound((TypeVar)tvars.head, from, to));
         ListBuffer<Type> newBoundsBuf = lb();
         boolean changed = false;
         // calculate new bounds
@@ -2173,8 +2170,14 @@ public class Types {
         Type bound1 = subst(t.bound, from, to);
         if (bound1 == t.bound)
             return t;
-        else
-            return new TypeVar(t.tsym, bound1, syms.botType);
+        else {
+            // create new type variable without bounds
+            TypeVar tv = new TypeVar(t.tsym, null, syms.botType);
+            // the new bound should use the new type variable in place
+            // of the old
+            tv.bound = subst(bound1, List.<Type>of(t), List.<Type>of(tv));
+            return tv;
+        }
     }
     // </editor-fold>
 
