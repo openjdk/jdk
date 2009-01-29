@@ -949,12 +949,16 @@ public class Types {
                 }
 
                 if (t.isCompound()) {
+                    Warner oldWarner = warnStack.head;
+                    warnStack.head = Warner.noWarnings;
                     if (!visit(supertype(t), s))
                         return false;
                     for (Type intf : interfaces(t)) {
                         if (!visit(intf, s))
                             return false;
                     }
+                    if (warnStack.head.unchecked == true)
+                        oldWarner.warnUnchecked();
                     return true;
                 }
 
