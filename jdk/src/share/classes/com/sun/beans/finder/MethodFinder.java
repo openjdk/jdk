@@ -24,10 +24,14 @@
  */
 package com.sun.beans.finder;
 
+import com.sun.beans.TypeResolver;
 import com.sun.beans.WeakCache;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Arrays;
 
 /**
  * This utility class provides {@code static} methods
@@ -122,30 +126,52 @@ public final class MethodFinder extends AbstractFinder<Method> {
         if (Modifier.isStatic(method.getModifiers())) {
             throw new NoSuchMethodException("Method '" + method.getName() + "' is not accessible");
         }
-        for (Class<?> face : type.getInterfaces()) {
+        for (Type generic : type.getGenericInterfaces()) {
             try {
-                return findAccessibleMethod(method, face);
+                return findAccessibleMethod(method, generic);
             }
             catch (NoSuchMethodException exception) {
                 // try to find in superclass or another interface
             }
         }
-        return findAccessibleMethod(method, type.getSuperclass());
+        return findAccessibleMethod(method, type.getGenericSuperclass());
     }
 
     /**
      * Finds method that accessible from specified class.
      *
      * @param method  object that represents found method
-     * @param type    class that is used to find accessible method
+     * @param generic generic type that is used to find accessible method
      * @return object that represents accessible method
      * @throws NoSuchMethodException if method is not accessible or is not found
      *                               in specified superclass or interface
      */
-    private static Method findAccessibleMethod(Method method, Class<?> type) throws NoSuchMethodException {
+    private static Method findAccessibleMethod(Method method, Type generic) throws NoSuchMethodException {
         String name = method.getName();
         Class<?>[] params = method.getParameterTypes();
-        return findAccessibleMethod(type.getMethod(name, params));
+        if (generic instanceof Class) {
+            Class<?> type = (Class<?>) generic;
+            return findAccessibleMethod(type.getMethod(name, params));
+        }
+        if (generic instanceof ParameterizedType) {
+            ParameterizedType pt = (ParameterizedType) generic;
+            Class<?> type = (Class<?>) pt.getRawType();
+            for (Method m : type.getMethods()) {
+                if (m.getName().equals(name)) {
+                    Class<?>[] pts = m.getParameterTypes();
+                    if (pts.length == params.length) {
+                        if (Arrays.equals(params, pts)) {
+                            return findAccessibleMethod(m);
+                        }
+                        Type[] gpts = m.getGenericParameterTypes();
+                        if (Arrays.equals(params, TypeResolver.erase(TypeResolver.resolve(pt, gpts)))) {
+                            return findAccessibleMethod(m);
+                        }
+                    }
+                }
+            }
+        }
+        throw new NoSuchMethodException("Method '" + name + "' is not accessible");
     }
 
 
