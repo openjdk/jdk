@@ -59,6 +59,8 @@ dump.cpp                                vm_operations.hpp
 
 dump_<arch_model>.cpp                   assembler_<arch>.inline.hpp
 dump_<arch_model>.cpp                   compactingPermGenGen.hpp
+dump_<arch_model>.cpp                   generation.inline.hpp
+dump_<arch_model>.cpp                   space.inline.hpp
 
 forte.cpp                               collectedHeap.inline.hpp
 forte.cpp                               debugInfoRec.hpp
