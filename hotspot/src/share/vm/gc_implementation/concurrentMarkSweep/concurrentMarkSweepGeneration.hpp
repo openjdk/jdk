@@ -595,7 +595,7 @@ class CMSCollector: public CHeapObj {
   size_t        _ser_kac_preclean_ovflw;
   size_t        _ser_kac_ovflw;
   size_t        _par_kac_ovflw;
-  NOT_PRODUCT(size_t _num_par_pushes;)
+  NOT_PRODUCT(ssize_t _num_par_pushes;)
 
   // ("Weak") Reference processing support
   ReferenceProcessor*            _ref_processor;

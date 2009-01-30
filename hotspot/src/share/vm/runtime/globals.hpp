@@ -1307,7 +1307,14 @@ class CommandLineFlags {
   product(intx, ParGCArrayScanChunk, 50,                                    \
           "Scan a subset and push remainder, if array is bigger than this") \
                                                                             \
-  product(intx, ParGCDesiredObjsFromOverflowList, 20,                       \
+  notproduct(bool, ParGCWorkQueueOverflowALot, false,                       \
+          "Whether we should simulate work queue overflow in ParNew")       \
+                                                                            \
+  notproduct(uintx, ParGCWorkQueueOverflowInterval, 1000,                   \
+          "An `interval' counter that determines how frequently"            \
+          " we simulate overflow; a smaller number increases frequency")    \
+                                                                            \
+  product(uintx, ParGCDesiredObjsFromOverflowList, 20,                      \
           "The desired number of objects to claim from the overflow list")  \
                                                                             \
   product(uintx, CMSParPromoteBlocksToClaim, 50,                            \
@@ -1429,8 +1436,8 @@ class CommandLineFlags {
           "Whether we should simulate frequent marking stack / work queue"  \
           " overflow")                                                      \
                                                                             \
-  notproduct(intx, CMSMarkStackOverflowInterval, 1000,                      \
-          "A per-thread `interval' counter that determines how frequently"  \
+  notproduct(uintx, CMSMarkStackOverflowInterval, 1000,                     \
+          "An `interval' counter that determines how frequently"            \
           " we simulate overflow; a smaller number increases frequency")    \
                                                                             \
   product(uintx, CMSMaxAbortablePrecleanLoops, 0,                           \
@@ -1648,7 +1655,7 @@ class CommandLineFlags {
   develop(uintx, WorkStealingYieldsBeforeSleep, 1000,                       \
           "Number of yields before a sleep is done during workstealing")    \
                                                                             \
-  product(uintx, PreserveMarkStackSize, 40,                                 \
+  product(uintx, PreserveMarkStackSize, 1024,                               \
            "Size for stack used in promotion failure handling")             \
                                                                             \
   product_pd(bool, UseTLAB, "Use thread-local object allocation")           \
