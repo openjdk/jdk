@@ -795,7 +795,7 @@ ciMethod* Parse::optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass* k
 
     ciInstanceKlass *ikl = receiver_type->klass()->as_instance_klass();
     if (ikl->is_loaded() && ikl->is_initialized() && !ikl->is_interface() &&
-        (ikl == actual_receiver || ikl->is_subclass_of(actual_receiver))) {
+        (ikl == actual_receiver || ikl->is_subtype_of(actual_receiver))) {
       // ikl is a same or better type than the original actual_receiver,
       // e.g. static receiver from bytecodes.
       actual_receiver = ikl;

@@ -55,12 +55,12 @@ class ServiceProxy {
 
     private static final String prefix = "META-INF/services/";
 
-    private static void fail(Class service, String msg)
+    private static void fail(Class<?> service, String msg)
             throws ServiceConfigurationError {
         throw new ServiceConfigurationError(service.getName() + ": " + msg);
     }
 
-    private static void fail(Class service, URL u, int line, String msg)
+    private static void fail(Class<?> service, URL u, int line, String msg)
             throws ServiceConfigurationError {
         fail(service, u + ":" + line + ": " + msg);
     }
@@ -81,7 +81,7 @@ class ServiceProxy {
      *         If an I/O error occurs while reading from the given URL, or
      *         if a configuration-file format error is detected
      */
-    private static boolean parse(Class service, URL u) throws ServiceConfigurationError {
+    private static boolean parse(Class<?> service, URL u) throws ServiceConfigurationError {
         InputStream in = null;
         BufferedReader r = null;
         try {

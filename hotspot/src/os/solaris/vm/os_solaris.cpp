@@ -462,16 +462,14 @@ int os::active_processor_count() {
   int online_cpus = sysconf(_SC_NPROCESSORS_ONLN);
   pid_t pid = getpid();
   psetid_t pset = PS_NONE;
-  // Are we running in a processor set?
+  // Are we running in a processor set or is there any processor set around?
   if (pset_bind(PS_QUERY, P_PID, pid, &pset) == 0) {
-    if (pset != PS_NONE) {
-      uint_t pset_cpus;
-      // Query number of cpus in processor set
-      if (pset_info(pset, NULL, &pset_cpus, NULL) == 0) {
-        assert(pset_cpus > 0 && pset_cpus <= online_cpus, "sanity check");
-        _processors_online = pset_cpus;
-        return pset_cpus;
-      }
+    uint_t pset_cpus;
+    // Query the number of cpus available to us.
+    if (pset_info(pset, NULL, &pset_cpus, NULL) == 0) {
+      assert(pset_cpus > 0 && pset_cpus <= online_cpus, "sanity check");
+      _processors_online = pset_cpus;
+      return pset_cpus;
     }
   }
   // Otherwise return number of online cpus
@@ -1640,16 +1638,24 @@ inline hrtime_t oldgetTimeNanos() {
 // getTimeNanos is guaranteed to not move backward on Solaris
 inline hrtime_t getTimeNanos() {
   if (VM_Version::supports_cx8()) {
-    bool retry = false;
-    hrtime_t newtime = gethrtime();
-    hrtime_t oldmaxtime = max_hrtime;
-    hrtime_t retmaxtime = oldmaxtime;
-    while ((newtime > retmaxtime) && (retry == false || retmaxtime != oldmaxtime)) {
-      oldmaxtime = retmaxtime;
-      retmaxtime = Atomic::cmpxchg(newtime, (volatile jlong *)&max_hrtime, oldmaxtime);
-      retry = true;
-    }
-    return (newtime > retmaxtime) ? newtime : retmaxtime;
+    const hrtime_t now = gethrtime();
+    const hrtime_t prev = max_hrtime;
+    if (now <= prev)  return prev;   // same or retrograde time;
+    const hrtime_t obsv = Atomic::cmpxchg(now, (volatile jlong*)&max_hrtime, prev);
+    assert(obsv >= prev, "invariant");   // Monotonicity
+    // If the CAS succeeded then we're done and return "now".
+    // If the CAS failed and the observed value "obs" is >= now then
+    // we should return "obs".  If the CAS failed and now > obs > prv then
+    // some other thread raced this thread and installed a new value, in which case
+    // we could either (a) retry the entire operation, (b) retry trying to install now
+    // or (c) just return obs.  We use (c).   No loop is required although in some cases
+    // we might discard a higher "now" value in deference to a slightly lower but freshly
+    // installed obs value.   That's entirely benign -- it admits no new orderings compared
+    // to (a) or (b) -- and greatly reduces coherence traffic.
+    // We might also condition (c) on the magnitude of the delta between obs and now.
+    // Avoiding excessive CAS operations to hot RW locations is critical.
+    // See http://blogs.sun.com/dave/entry/cas_and_cache_trivia_invalidate
+    return (prev == obsv) ? now : obsv ;
   } else {
     return oldgetTimeNanos();
   }
@@ -1689,6 +1695,40 @@ bool os::getTimesSecs(double* process_real_time,
 
     return true;
   }
+}
+
+bool os::supports_vtime() { return true; }
+
+bool os::enable_vtime() {
+  int fd = open("/proc/self/ctl", O_WRONLY);
+  if (fd == -1)
+    return false;
+
+  long cmd[] = { PCSET, PR_MSACCT };
+  int res = write(fd, cmd, sizeof(long) * 2);
+  close(fd);
+  if (res != sizeof(long) * 2)
+    return false;
+
+  return true;
+}
+
+bool os::vtime_enabled() {
+  int fd = open("/proc/self/status", O_RDONLY);
+  if (fd == -1)
+    return false;
+
+  pstatus_t status;
+  int res = read(fd, (void*) &status, sizeof(pstatus_t));
+  close(fd);
+  if (res != sizeof(pstatus_t))
+    return false;
+
+  return status.pr_flags & PR_MSACCT;
+}
+
+double os::elapsedVTime() {
+  return (double)gethrvtime() / (double)hrtime_hz;
 }
 
 // Used internally for comparisons only
@@ -2688,7 +2728,7 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
    return bottom;
 }
 
-// Detect the topology change. Typically happens during CPU pluggin-unplugging.
+// Detect the topology change. Typically happens during CPU plugging-unplugging.
 bool os::numa_topology_changed() {
   int is_stale = Solaris::lgrp_cookie_stale(Solaris::lgrp_cookie());
   if (is_stale != -1 && is_stale) {
@@ -2994,6 +3034,8 @@ static bool solaris_mprotect(char* addr, size_t bytes, int prot) {
 
 // Protect memory (Used to pass readonly pages through
 // JNI GetArray<type>Elements with empty arrays.)
+// Also, used for serialization page and for compressed oops null pointer
+// checking.
 bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
                         bool is_committed) {
   unsigned int p = 0;
@@ -3017,7 +3059,7 @@ bool os::guard_memory(char* addr, size_t bytes) {
 }
 
 bool os::unguard_memory(char* addr, size_t bytes) {
-  return solaris_mprotect(addr, bytes, PROT_READ|PROT_WRITE|PROT_EXEC);
+  return solaris_mprotect(addr, bytes, PROT_READ|PROT_WRITE);
 }
 
 // Large page support
@@ -3724,7 +3766,6 @@ int     set_lwp_priority (int ThreadID, int lwpid, int newPrio )
     int maxClamped     = MIN2(iaLimits.maxPrio, (int)iaInfo->ia_uprilim);
     iaInfo->ia_upri    = scale_to_lwp_priority(iaLimits.minPrio, maxClamped, newPrio);
     iaInfo->ia_uprilim = IA_NOCHANGE;
-    iaInfo->ia_nice    = IA_NOCHANGE;
     iaInfo->ia_mode    = IA_NOCHANGE;
     if (ThreadPriorityVerbose) {
       tty->print_cr ("IA: [%d...%d] %d->%d\n",
@@ -4607,7 +4648,7 @@ void os::Solaris::synchronization_init() {
   }
 }
 
-void os::Solaris::liblgrp_init() {
+bool os::Solaris::liblgrp_init() {
   void *handle = dlopen("liblgrp.so.1", RTLD_LAZY);
   if (handle != NULL) {
     os::Solaris::set_lgrp_home(CAST_TO_FN_PTR(lgrp_home_func_t, dlsym(handle, "lgrp_home")));
@@ -4622,9 +4663,9 @@ void os::Solaris::liblgrp_init() {
 
     lgrp_cookie_t c = lgrp_init(LGRP_VIEW_CALLER);
     set_lgrp_cookie(c);
-  } else {
-    warning("your OS does not support NUMA");
+    return true;
   }
+  return false;
 }
 
 void os::Solaris::misc_sym_init() {
@@ -4793,9 +4834,25 @@ jint os::init_2(void) {
         vm_page_size()));
 
   Solaris::libthread_init();
+
   if (UseNUMA) {
-    Solaris::liblgrp_init();
+    if (!Solaris::liblgrp_init()) {
+      UseNUMA = false;
+    } else {
+      size_t lgrp_limit = os::numa_get_groups_num();
+      int *lgrp_ids = NEW_C_HEAP_ARRAY(int, lgrp_limit);
+      size_t lgrp_num = os::numa_get_leaf_groups(lgrp_ids, lgrp_limit);
+      FREE_C_HEAP_ARRAY(int, lgrp_ids);
+      if (lgrp_num < 2) {
+        // There's only one locality group, disable NUMA.
+        UseNUMA = false;
+      }
+    }
+    if (!UseNUMA && ForceNUMA) {
+      UseNUMA = true;
+    }
   }
+
   Solaris::misc_sym_init();
   Solaris::signal_sets_init();
   Solaris::init_signal_mem();

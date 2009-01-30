@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ ParCompactionManager**  ParCompactionManager::_manager_array = NULL;
 OopTaskQueueSet*     ParCompactionManager::_stack_array = NULL;
 ObjectStartArray*    ParCompactionManager::_start_array = NULL;
 ParMarkBitMap*       ParCompactionManager::_mark_bitmap = NULL;
-ChunkTaskQueueSet*   ParCompactionManager::_chunk_array = NULL;
+RegionTaskQueueSet*   ParCompactionManager::_region_array = NULL;
 
 ParCompactionManager::ParCompactionManager() :
     _action(CopyAndUpdate) {
@@ -46,13 +46,13 @@ ParCompactionManager::ParCompactionManager() :
 
   // We want the overflow stack to be permanent
   _overflow_stack = new (ResourceObj::C_HEAP) GrowableArray<oop>(10, true);
-#ifdef USE_ChunkTaskQueueWithOverflow
-  chunk_stack()->initialize();
+#ifdef USE_RegionTaskQueueWithOverflow
+  region_stack()->initialize();
 #else
-  chunk_stack()->initialize();
+  region_stack()->initialize();
 
   // We want the overflow stack to be permanent
-  _chunk_overflow_stack =
+  _region_overflow_stack =
     new (ResourceObj::C_HEAP) GrowableArray<size_t>(10, true);
 #endif
 
@@ -86,18 +86,18 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
 
   _stack_array = new OopTaskQueueSet(parallel_gc_threads);
   guarantee(_stack_array != NULL, "Count not initialize promotion manager");
-  _chunk_array = new ChunkTaskQueueSet(parallel_gc_threads);
-  guarantee(_chunk_array != NULL, "Count not initialize promotion manager");
+  _region_array = new RegionTaskQueueSet(parallel_gc_threads);
+  guarantee(_region_array != NULL, "Count not initialize promotion manager");
 
   // Create and register the ParCompactionManager(s) for the worker threads.
   for(uint i=0; i<parallel_gc_threads; i++) {
     _manager_array[i] = new ParCompactionManager();
     guarantee(_manager_array[i] != NULL, "Could not create ParCompactionManager");
     stack_array()->register_queue(i, _manager_array[i]->marking_stack());
-#ifdef USE_ChunkTaskQueueWithOverflow
-    chunk_array()->register_queue(i, _manager_array[i]->chunk_stack()->task_queue());
+#ifdef USE_RegionTaskQueueWithOverflow
+    region_array()->register_queue(i, _manager_array[i]->region_stack()->task_queue());
 #else
-    chunk_array()->register_queue(i, _manager_array[i]->chunk_stack());
+    region_array()->register_queue(i, _manager_array[i]->region_stack());
 #endif
   }
 
@@ -153,31 +153,31 @@ oop ParCompactionManager::retrieve_for_scanning() {
   return NULL;
 }
 
-// Save chunk on a stack
-void ParCompactionManager::save_for_processing(size_t chunk_index) {
+// Save region on a stack
+void ParCompactionManager::save_for_processing(size_t region_index) {
 #ifdef ASSERT
   const ParallelCompactData& sd = PSParallelCompact::summary_data();
-  ParallelCompactData::ChunkData* const chunk_ptr = sd.chunk(chunk_index);
-  assert(chunk_ptr->claimed(), "must be claimed");
-  assert(chunk_ptr->_pushed++ == 0, "should only be pushed once");
+  ParallelCompactData::RegionData* const region_ptr = sd.region(region_index);
+  assert(region_ptr->claimed(), "must be claimed");
+  assert(region_ptr->_pushed++ == 0, "should only be pushed once");
 #endif
-  chunk_stack_push(chunk_index);
+  region_stack_push(region_index);
 }
 
-void ParCompactionManager::chunk_stack_push(size_t chunk_index) {
+void ParCompactionManager::region_stack_push(size_t region_index) {
 
-#ifdef USE_ChunkTaskQueueWithOverflow
-  chunk_stack()->save(chunk_index);
+#ifdef USE_RegionTaskQueueWithOverflow
+  region_stack()->save(region_index);
 #else
-  if(!chunk_stack()->push(chunk_index)) {
-    chunk_overflow_stack()->push(chunk_index);
+  if(!region_stack()->push(region_index)) {
+    region_overflow_stack()->push(region_index);
   }
 #endif
 }
 
-bool ParCompactionManager::retrieve_for_processing(size_t& chunk_index) {
-#ifdef USE_ChunkTaskQueueWithOverflow
-  return chunk_stack()->retrieve(chunk_index);
+bool ParCompactionManager::retrieve_for_processing(size_t& region_index) {
+#ifdef USE_RegionTaskQueueWithOverflow
+  return region_stack()->retrieve(region_index);
 #else
   // Should not be used in the parallel case
   ShouldNotReachHere();
@@ -230,14 +230,14 @@ void ParCompactionManager::drain_marking_stacks(OopClosure* blk) {
   assert(overflow_stack()->length() == 0, "Sanity");
 }
 
-void ParCompactionManager::drain_chunk_overflow_stack() {
-  size_t chunk_index = (size_t) -1;
-  while(chunk_stack()->retrieve_from_overflow(chunk_index)) {
-    PSParallelCompact::fill_and_update_chunk(this, chunk_index);
+void ParCompactionManager::drain_region_overflow_stack() {
+  size_t region_index = (size_t) -1;
+  while(region_stack()->retrieve_from_overflow(region_index)) {
+    PSParallelCompact::fill_and_update_region(this, region_index);
   }
 }
 
-void ParCompactionManager::drain_chunk_stacks() {
+void ParCompactionManager::drain_region_stacks() {
 #ifdef ASSERT
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
@@ -249,42 +249,42 @@ void ParCompactionManager::drain_chunk_stacks() {
 #if 1 // def DO_PARALLEL - the serial code hasn't been updated
   do {
 
-#ifdef USE_ChunkTaskQueueWithOverflow
+#ifdef USE_RegionTaskQueueWithOverflow
     // Drain overflow stack first, so other threads can steal from
     // claimed stack while we work.
-    size_t chunk_index = (size_t) -1;
-    while(chunk_stack()->retrieve_from_overflow(chunk_index)) {
-      PSParallelCompact::fill_and_update_chunk(this, chunk_index);
+    size_t region_index = (size_t) -1;
+    while(region_stack()->retrieve_from_overflow(region_index)) {
+      PSParallelCompact::fill_and_update_region(this, region_index);
     }
 
-    while (chunk_stack()->retrieve_from_stealable_queue(chunk_index)) {
-      PSParallelCompact::fill_and_update_chunk(this, chunk_index);
+    while (region_stack()->retrieve_from_stealable_queue(region_index)) {
+      PSParallelCompact::fill_and_update_region(this, region_index);
     }
-  } while (!chunk_stack()->is_empty());
+  } while (!region_stack()->is_empty());
 #else
     // Drain overflow stack first, so other threads can steal from
     // claimed stack while we work.
-    while(!chunk_overflow_stack()->is_empty()) {
-      size_t chunk_index = chunk_overflow_stack()->pop();
-      PSParallelCompact::fill_and_update_chunk(this, chunk_index);
+    while(!region_overflow_stack()->is_empty()) {
+      size_t region_index = region_overflow_stack()->pop();
+      PSParallelCompact::fill_and_update_region(this, region_index);
     }
 
-    size_t chunk_index = -1;
+    size_t region_index = -1;
     // obj is a reference!!!
-    while (chunk_stack()->pop_local(chunk_index)) {
+    while (region_stack()->pop_local(region_index)) {
       // It would be nice to assert about the type of objects we might
       // pop, but they can come from anywhere, unfortunately.
-      PSParallelCompact::fill_and_update_chunk(this, chunk_index);
+      PSParallelCompact::fill_and_update_region(this, region_index);
     }
-  } while((chunk_stack()->size() != 0) ||
-          (chunk_overflow_stack()->length() != 0));
+  } while((region_stack()->size() != 0) ||
+          (region_overflow_stack()->length() != 0));
 #endif
 
-#ifdef USE_ChunkTaskQueueWithOverflow
-  assert(chunk_stack()->is_empty(), "Sanity");
+#ifdef USE_RegionTaskQueueWithOverflow
+  assert(region_stack()->is_empty(), "Sanity");
 #else
-  assert(chunk_stack()->size() == 0, "Sanity");
-  assert(chunk_overflow_stack()->length() == 0, "Sanity");
+  assert(region_stack()->size() == 0, "Sanity");
+  assert(region_overflow_stack()->length() == 0, "Sanity");
 #endif
 #else
   oop obj;

@@ -136,7 +136,8 @@ import java.security.Permission;
  * <code>**</code> matches any number of sub namespaces
  * recursively, but only if used as a complete namespace path element,
  * as in <code>*&#42;//b//c//D:k=v</code> or <code>a//*&#42;//c//D:k=v</code>
- * - see <a href="#metawildcard">below</a>.
+ * - see ObjectName <a href="../ObjectName.html#metawildcard">documentation</a>
+ * for more details.
  * </p>
  *
  *
@@ -270,38 +271,9 @@ import java.security.Permission;
  * </pre>
  * <p><b>Note on wildcards:</b> In an object name pattern, a path element
  *    of exactly <code>**</code> corresponds to a meta
- *    wildcard that will match any number of sub namespaces. Hence:</p>
- * <ul>
- * <table border="1">
- * <thead><th>pattern</th><th>matches</th><th>doesn't match</th></thead>
- * <tbody>
- * <tr><td><code>*&#42;//D:k=v</code></td>
- *     <td><code>a//D:k=v</code><br>
- *         <code>a//b//D:k=v</code><br>
- *         <code>a//b//c//D:k=v</code></td>
- *     <td><code>D:k=v</code></td></tr>
- * <tr><td><code>a//*&#42;//D:k=v</code></td>
- *     <td><code>a//b//D:k=v</code><br>
- *         <code>a//b//c//D:k=v</code></td>
- *     <td><code>b//b//c//D:k=v</code><br>
- *         <code>a//D:k=v</code><br>
- *         <code>D:k=v</code></td></tr>
- * <tr><td><code>a//*&#42;//e//D:k=v</code></td>
- *     <td><code>a//b//e//D:k=v</code><br>
- *         <code>a//b//c//e//D:k=v</code></td>
- *     <td><code>a//b//c//c//D:k=v</code><br>
- *         <code>b//b//c//e//D:k=v</code><br>
- *         <code>a//e//D:k=v</code><br>
- *         <code>e//D:k=v</code></td></tr>
- * <tr><td><code>a//b*&#42;//e//D:k=v</code></td>
- *      <td><code>a//b//e//D:k=v</code></td>
- *      <td><code>a//b//c//e//D:k=v</code><br>
- *          because in that case <code>b*&#42;</code><br>
- *         is not a meta-wildcard - and <code>b**</code><br>
- *         is thus equivalent to <code>b*</code>.</td></tr>
- * </tbody>
- * </table>
- *</ul>
+ *    wildcard that will match any number of sub namespaces.
+ *    See ObjectName <a href="../ObjectName.html#metawildcard">documentation</a>
+ *    for more details.</p>
  *
  * <p>If {@code <mbean server name>::} is omitted, then one of
  * <code>member</code> or <code>object name</code> may be omitted.

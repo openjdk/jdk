@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
   bool is_string_index() const      { return _tag == JVM_CONSTANT_StringIndex; }
 
   bool is_klass_reference() const   { return is_klass_index() || is_unresolved_klass(); }
+  bool is_klass_or_reference() const{ return is_klass() || is_klass_reference(); }
   bool is_field_or_method() const   { return is_field() || is_method() || is_interface_method(); }
   bool is_symbol() const            { return is_utf8(); }
 

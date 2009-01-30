@@ -28,43 +28,31 @@
 #include <math.h>
 
 // All sizes are in HeapWords.
-const size_t ParallelCompactData::Log2ChunkSize  = 9; // 512 words
-const size_t ParallelCompactData::ChunkSize      = (size_t)1 << Log2ChunkSize;
-const size_t ParallelCompactData::ChunkSizeBytes = ChunkSize << LogHeapWordSize;
-const size_t ParallelCompactData::ChunkSizeOffsetMask = ChunkSize - 1;
-const size_t ParallelCompactData::ChunkAddrOffsetMask = ChunkSizeBytes - 1;
-const size_t ParallelCompactData::ChunkAddrMask  = ~ChunkAddrOffsetMask;
+const size_t ParallelCompactData::Log2RegionSize  = 9; // 512 words
+const size_t ParallelCompactData::RegionSize      = (size_t)1 << Log2RegionSize;
+const size_t ParallelCompactData::RegionSizeBytes =
+  RegionSize << LogHeapWordSize;
+const size_t ParallelCompactData::RegionSizeOffsetMask = RegionSize - 1;
+const size_t ParallelCompactData::RegionAddrOffsetMask = RegionSizeBytes - 1;
+const size_t ParallelCompactData::RegionAddrMask  = ~RegionAddrOffsetMask;
 
-// 32-bit:  128 words covers 4 bitmap words
-// 64-bit:  128 words covers 2 bitmap words
-const size_t ParallelCompactData::Log2BlockSize   = 7; // 128 words
-const size_t ParallelCompactData::BlockSize       = (size_t)1 << Log2BlockSize;
-const size_t ParallelCompactData::BlockOffsetMask = BlockSize - 1;
-const size_t ParallelCompactData::BlockMask       = ~BlockOffsetMask;
+const ParallelCompactData::RegionData::region_sz_t
+ParallelCompactData::RegionData::dc_shift = 27;
 
-const size_t ParallelCompactData::BlocksPerChunk = ChunkSize / BlockSize;
+const ParallelCompactData::RegionData::region_sz_t
+ParallelCompactData::RegionData::dc_mask = ~0U << dc_shift;
 
-const ParallelCompactData::ChunkData::chunk_sz_t
-ParallelCompactData::ChunkData::dc_shift = 27;
+const ParallelCompactData::RegionData::region_sz_t
+ParallelCompactData::RegionData::dc_one = 0x1U << dc_shift;
 
-const ParallelCompactData::ChunkData::chunk_sz_t
-ParallelCompactData::ChunkData::dc_mask = ~0U << dc_shift;
+const ParallelCompactData::RegionData::region_sz_t
+ParallelCompactData::RegionData::los_mask = ~dc_mask;
 
-const ParallelCompactData::ChunkData::chunk_sz_t
-ParallelCompactData::ChunkData::dc_one = 0x1U << dc_shift;
+const ParallelCompactData::RegionData::region_sz_t
+ParallelCompactData::RegionData::dc_claimed = 0x8U << dc_shift;
 
-const ParallelCompactData::ChunkData::chunk_sz_t
-ParallelCompactData::ChunkData::los_mask = ~dc_mask;
-
-const ParallelCompactData::ChunkData::chunk_sz_t
-ParallelCompactData::ChunkData::dc_claimed = 0x8U << dc_shift;
-
-const ParallelCompactData::ChunkData::chunk_sz_t
-ParallelCompactData::ChunkData::dc_completed = 0xcU << dc_shift;
-
-#ifdef ASSERT
-short   ParallelCompactData::BlockData::_cur_phase = 0;
-#endif
+const ParallelCompactData::RegionData::region_sz_t
+ParallelCompactData::RegionData::dc_completed = 0xcU << dc_shift;
 
 SpaceInfo PSParallelCompact::_space_info[PSParallelCompact::last_space_id];
 bool      PSParallelCompact::_print_phases = false;
@@ -100,99 +88,78 @@ GrowableArray<HeapWord*>* PSParallelCompact::_last_gc_live_oops_moved_to = NULL;
 GrowableArray<size_t>   * PSParallelCompact::_last_gc_live_oops_size = NULL;
 #endif
 
-// XXX beg - verification code; only works while we also mark in object headers
-static void
-verify_mark_bitmap(ParMarkBitMap& _mark_bitmap)
+void SplitInfo::record(size_t src_region_idx, size_t partial_obj_size,
+                       HeapWord* destination)
 {
-  ParallelScavengeHeap* heap = PSParallelCompact::gc_heap();
+  assert(src_region_idx != 0, "invalid src_region_idx");
+  assert(partial_obj_size != 0, "invalid partial_obj_size argument");
+  assert(destination != NULL, "invalid destination argument");
 
-  PSPermGen* perm_gen = heap->perm_gen();
-  PSOldGen* old_gen = heap->old_gen();
-  PSYoungGen* young_gen = heap->young_gen();
+  _src_region_idx = src_region_idx;
+  _partial_obj_size = partial_obj_size;
+  _destination = destination;
 
-  MutableSpace* perm_space = perm_gen->object_space();
-  MutableSpace* old_space = old_gen->object_space();
-  MutableSpace* eden_space = young_gen->eden_space();
-  MutableSpace* from_space = young_gen->from_space();
-  MutableSpace* to_space = young_gen->to_space();
+  // These fields may not be updated below, so make sure they're clear.
+  assert(_dest_region_addr == NULL, "should have been cleared");
+  assert(_first_src_addr == NULL, "should have been cleared");
 
-  // 'from_space' here is the survivor space at the lower address.
-  if (to_space->bottom() < from_space->bottom()) {
-    from_space = to_space;
-    to_space = young_gen->from_space();
-  }
+  // Determine the number of destination regions for the partial object.
+  HeapWord* const last_word = destination + partial_obj_size - 1;
+  const ParallelCompactData& sd = PSParallelCompact::summary_data();
+  HeapWord* const beg_region_addr = sd.region_align_down(destination);
+  HeapWord* const end_region_addr = sd.region_align_down(last_word);
 
-  HeapWord* boundaries[12];
-  unsigned int bidx = 0;
-  const unsigned int bidx_max = sizeof(boundaries) / sizeof(boundaries[0]);
-
-  boundaries[0] = perm_space->bottom();
-  boundaries[1] = perm_space->top();
-  boundaries[2] = old_space->bottom();
-  boundaries[3] = old_space->top();
-  boundaries[4] = eden_space->bottom();
-  boundaries[5] = eden_space->top();
-  boundaries[6] = from_space->bottom();
-  boundaries[7] = from_space->top();
-  boundaries[8] = to_space->bottom();
-  boundaries[9] = to_space->top();
-  boundaries[10] = to_space->end();
-  boundaries[11] = to_space->end();
-
-  BitMap::idx_t beg_bit = 0;
-  BitMap::idx_t end_bit;
-  BitMap::idx_t tmp_bit;
-  const BitMap::idx_t last_bit = _mark_bitmap.size();
-  do {
-    HeapWord* addr = _mark_bitmap.bit_to_addr(beg_bit);
-    if (_mark_bitmap.is_marked(beg_bit)) {
-      oop obj = (oop)addr;
-      assert(obj->is_gc_marked(), "obj header is not marked");
-      end_bit = _mark_bitmap.find_obj_end(beg_bit, last_bit);
-      const size_t size = _mark_bitmap.obj_size(beg_bit, end_bit);
-      assert(size == (size_t)obj->size(), "end bit wrong?");
-      beg_bit = _mark_bitmap.find_obj_beg(beg_bit + 1, last_bit);
-      assert(beg_bit > end_bit, "bit set in middle of an obj");
-    } else {
-      if (addr >= boundaries[bidx] && addr < boundaries[bidx + 1]) {
-        // a dead object in the current space.
-        oop obj = (oop)addr;
-        end_bit = _mark_bitmap.addr_to_bit(addr + obj->size());
-        assert(!obj->is_gc_marked(), "obj marked in header, not in bitmap");
-        tmp_bit = beg_bit + 1;
-        beg_bit = _mark_bitmap.find_obj_beg(tmp_bit, end_bit);
-        assert(beg_bit == end_bit, "beg bit set in unmarked obj");
-        beg_bit = _mark_bitmap.find_obj_end(tmp_bit, end_bit);
-        assert(beg_bit == end_bit, "end bit set in unmarked obj");
-      } else if (addr < boundaries[bidx + 2]) {
-        // addr is between top in the current space and bottom in the next.
-        end_bit = beg_bit + pointer_delta(boundaries[bidx + 2], addr);
-        tmp_bit = beg_bit;
-        beg_bit = _mark_bitmap.find_obj_beg(tmp_bit, end_bit);
-        assert(beg_bit == end_bit, "beg bit set above top");
-        beg_bit = _mark_bitmap.find_obj_end(tmp_bit, end_bit);
-        assert(beg_bit == end_bit, "end bit set above top");
-        bidx += 2;
-      } else if (bidx < bidx_max - 2) {
-        bidx += 2; // ???
-      } else {
-        tmp_bit = beg_bit;
-        beg_bit = _mark_bitmap.find_obj_beg(tmp_bit, last_bit);
-        assert(beg_bit == last_bit, "beg bit set outside heap");
-        beg_bit = _mark_bitmap.find_obj_end(tmp_bit, last_bit);
-        assert(beg_bit == last_bit, "end bit set outside heap");
-      }
+  if (beg_region_addr == end_region_addr) {
+    // One destination region.
+    _destination_count = 1;
+    if (end_region_addr == destination) {
+      // The destination falls on a region boundary, thus the first word of the
+      // partial object will be the first word copied to the destination region.
+      _dest_region_addr = end_region_addr;
+      _first_src_addr = sd.region_to_addr(src_region_idx);
     }
-  } while (beg_bit < last_bit);
+  } else {
+    // Two destination regions.  When copied, the partial object will cross a
+    // destination region boundary, so a word somewhere within the partial
+    // object will be the first word copied to the second destination region.
+    _destination_count = 2;
+    _dest_region_addr = end_region_addr;
+    const size_t ofs = pointer_delta(end_region_addr, destination);
+    assert(ofs < _partial_obj_size, "sanity");
+    _first_src_addr = sd.region_to_addr(src_region_idx) + ofs;
+  }
 }
-// XXX end - verification code; only works while we also mark in object headers
+
+void SplitInfo::clear()
+{
+  _src_region_idx = 0;
+  _partial_obj_size = 0;
+  _destination = NULL;
+  _destination_count = 0;
+  _dest_region_addr = NULL;
+  _first_src_addr = NULL;
+  assert(!is_valid(), "sanity");
+}
+
+#ifdef  ASSERT
+void SplitInfo::verify_clear()
+{
+  assert(_src_region_idx == 0, "not clear");
+  assert(_partial_obj_size == 0, "not clear");
+  assert(_destination == NULL, "not clear");
+  assert(_destination_count == 0, "not clear");
+  assert(_dest_region_addr == NULL, "not clear");
+  assert(_first_src_addr == NULL, "not clear");
+}
+#endif  // #ifdef ASSERT
+
 
 #ifndef PRODUCT
 const char* PSParallelCompact::space_names[] = {
   "perm", "old ", "eden", "from", "to  "
 };
 
-void PSParallelCompact::print_chunk_ranges()
+void PSParallelCompact::print_region_ranges()
 {
   tty->print_cr("space  bottom     top        end        new_top");
   tty->print_cr("------ ---------- ---------- ---------- ----------");
@@ -203,31 +170,31 @@ void PSParallelCompact::print_chunk_ranges()
                   SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) " "
                   SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) " ",
                   id, space_names[id],
-                  summary_data().addr_to_chunk_idx(space->bottom()),
-                  summary_data().addr_to_chunk_idx(space->top()),
-                  summary_data().addr_to_chunk_idx(space->end()),
-                  summary_data().addr_to_chunk_idx(_space_info[id].new_top()));
+                  summary_data().addr_to_region_idx(space->bottom()),
+                  summary_data().addr_to_region_idx(space->top()),
+                  summary_data().addr_to_region_idx(space->end()),
+                  summary_data().addr_to_region_idx(_space_info[id].new_top()));
   }
 }
 
 void
-print_generic_summary_chunk(size_t i, const ParallelCompactData::ChunkData* c)
+print_generic_summary_region(size_t i, const ParallelCompactData::RegionData* c)
 {
-#define CHUNK_IDX_FORMAT        SIZE_FORMAT_W(7)
-#define CHUNK_DATA_FORMAT       SIZE_FORMAT_W(5)
+#define REGION_IDX_FORMAT        SIZE_FORMAT_W(7)
+#define REGION_DATA_FORMAT       SIZE_FORMAT_W(5)
 
   ParallelCompactData& sd = PSParallelCompact::summary_data();
-  size_t dci = c->destination() ? sd.addr_to_chunk_idx(c->destination()) : 0;
-  tty->print_cr(CHUNK_IDX_FORMAT " " PTR_FORMAT " "
-                CHUNK_IDX_FORMAT " " PTR_FORMAT " "
-                CHUNK_DATA_FORMAT " " CHUNK_DATA_FORMAT " "
-                CHUNK_DATA_FORMAT " " CHUNK_IDX_FORMAT " %d",
+  size_t dci = c->destination() ? sd.addr_to_region_idx(c->destination()) : 0;
+  tty->print_cr(REGION_IDX_FORMAT " " PTR_FORMAT " "
+                REGION_IDX_FORMAT " " PTR_FORMAT " "
+                REGION_DATA_FORMAT " " REGION_DATA_FORMAT " "
+                REGION_DATA_FORMAT " " REGION_IDX_FORMAT " %d",
                 i, c->data_location(), dci, c->destination(),
                 c->partial_obj_size(), c->live_obj_size(),
-                c->data_size(), c->source_chunk(), c->destination_count());
+                c->data_size(), c->source_region(), c->destination_count());
 
-#undef  CHUNK_IDX_FORMAT
-#undef  CHUNK_DATA_FORMAT
+#undef  REGION_IDX_FORMAT
+#undef  REGION_DATA_FORMAT
 }
 
 void
@@ -236,14 +203,14 @@ print_generic_summary_data(ParallelCompactData& summary_data,
                            HeapWord* const end_addr)
 {
   size_t total_words = 0;
-  size_t i = summary_data.addr_to_chunk_idx(beg_addr);
-  const size_t last = summary_data.addr_to_chunk_idx(end_addr);
+  size_t i = summary_data.addr_to_region_idx(beg_addr);
+  const size_t last = summary_data.addr_to_region_idx(end_addr);
   HeapWord* pdest = 0;
 
   while (i <= last) {
-    ParallelCompactData::ChunkData* c = summary_data.chunk(i);
+    ParallelCompactData::RegionData* c = summary_data.region(i);
     if (c->data_size() != 0 || c->destination() != pdest) {
-      print_generic_summary_chunk(i, c);
+      print_generic_summary_region(i, c);
       total_words += c->data_size();
       pdest = c->destination();
     }
@@ -265,16 +232,16 @@ print_generic_summary_data(ParallelCompactData& summary_data,
 }
 
 void
-print_initial_summary_chunk(size_t i,
-                            const ParallelCompactData::ChunkData* c,
-                            bool newline = true)
+print_initial_summary_region(size_t i,
+                             const ParallelCompactData::RegionData* c,
+                             bool newline = true)
 {
   tty->print(SIZE_FORMAT_W(5) " " PTR_FORMAT " "
              SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " "
              SIZE_FORMAT_W(5) " " SIZE_FORMAT_W(5) " %d",
              i, c->destination(),
              c->partial_obj_size(), c->live_obj_size(),
-             c->data_size(), c->source_chunk(), c->destination_count());
+             c->data_size(), c->source_region(), c->destination_count());
   if (newline) tty->cr();
 }
 
@@ -285,47 +252,48 @@ print_initial_summary_data(ParallelCompactData& summary_data,
     return;
   }
 
-  const size_t chunk_size = ParallelCompactData::ChunkSize;
-  HeapWord* const top_aligned_up = summary_data.chunk_align_up(space->top());
-  const size_t end_chunk = summary_data.addr_to_chunk_idx(top_aligned_up);
-  const ParallelCompactData::ChunkData* c = summary_data.chunk(end_chunk - 1);
+  const size_t region_size = ParallelCompactData::RegionSize;
+  typedef ParallelCompactData::RegionData RegionData;
+  HeapWord* const top_aligned_up = summary_data.region_align_up(space->top());
+  const size_t end_region = summary_data.addr_to_region_idx(top_aligned_up);
+  const RegionData* c = summary_data.region(end_region - 1);
   HeapWord* end_addr = c->destination() + c->data_size();
   const size_t live_in_space = pointer_delta(end_addr, space->bottom());
 
-  // Print (and count) the full chunks at the beginning of the space.
-  size_t full_chunk_count = 0;
-  size_t i = summary_data.addr_to_chunk_idx(space->bottom());
-  while (i < end_chunk && summary_data.chunk(i)->data_size() == chunk_size) {
-    print_initial_summary_chunk(i, summary_data.chunk(i));
-    ++full_chunk_count;
+  // Print (and count) the full regions at the beginning of the space.
+  size_t full_region_count = 0;
+  size_t i = summary_data.addr_to_region_idx(space->bottom());
+  while (i < end_region && summary_data.region(i)->data_size() == region_size) {
+    print_initial_summary_region(i, summary_data.region(i));
+    ++full_region_count;
     ++i;
   }
 
-  size_t live_to_right = live_in_space - full_chunk_count * chunk_size;
+  size_t live_to_right = live_in_space - full_region_count * region_size;
 
   double max_reclaimed_ratio = 0.0;
-  size_t max_reclaimed_ratio_chunk = 0;
+  size_t max_reclaimed_ratio_region = 0;
   size_t max_dead_to_right = 0;
   size_t max_live_to_right = 0;
 
-  // Print the 'reclaimed ratio' for chunks while there is something live in the
-  // chunk or to the right of it.  The remaining chunks are empty (and
+  // Print the 'reclaimed ratio' for regions while there is something live in
+  // the region or to the right of it.  The remaining regions are empty (and
   // uninteresting), and computing the ratio will result in division by 0.
-  while (i < end_chunk && live_to_right > 0) {
-    c = summary_data.chunk(i);
-    HeapWord* const chunk_addr = summary_data.chunk_to_addr(i);
-    const size_t used_to_right = pointer_delta(space->top(), chunk_addr);
+  while (i < end_region && live_to_right > 0) {
+    c = summary_data.region(i);
+    HeapWord* const region_addr = summary_data.region_to_addr(i);
+    const size_t used_to_right = pointer_delta(space->top(), region_addr);
     const size_t dead_to_right = used_to_right - live_to_right;
     const double reclaimed_ratio = double(dead_to_right) / live_to_right;
 
     if (reclaimed_ratio > max_reclaimed_ratio) {
             max_reclaimed_ratio = reclaimed_ratio;
-            max_reclaimed_ratio_chunk = i;
+            max_reclaimed_ratio_region = i;
             max_dead_to_right = dead_to_right;
             max_live_to_right = live_to_right;
     }
 
-    print_initial_summary_chunk(i, c, false);
+    print_initial_summary_region(i, c, false);
     tty->print_cr(" %12.10f " SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10),
                   reclaimed_ratio, dead_to_right, live_to_right);
 
@@ -333,14 +301,14 @@ print_initial_summary_data(ParallelCompactData& summary_data,
     ++i;
   }
 
-  // Any remaining chunks are empty.  Print one more if there is one.
-  if (i < end_chunk) {
-    print_initial_summary_chunk(i, summary_data.chunk(i));
+  // Any remaining regions are empty.  Print one more if there is one.
+  if (i < end_region) {
+    print_initial_summary_region(i, summary_data.region(i));
   }
 
   tty->print_cr("max:  " SIZE_FORMAT_W(4) " d2r=" SIZE_FORMAT_W(10) " "
                 "l2r=" SIZE_FORMAT_W(10) " max_ratio=%14.12f",
-                max_reclaimed_ratio_chunk, max_dead_to_right,
+                max_reclaimed_ratio_region, max_dead_to_right,
                 max_live_to_right, max_reclaimed_ratio);
 }
 
@@ -372,13 +340,9 @@ ParallelCompactData::ParallelCompactData()
 {
   _region_start = 0;
 
-  _chunk_vspace = 0;
-  _chunk_data = 0;
-  _chunk_count = 0;
-
-  _block_vspace = 0;
-  _block_data = 0;
-  _block_count = 0;
+  _region_vspace = 0;
+  _region_data = 0;
+  _region_count = 0;
 }
 
 bool ParallelCompactData::initialize(MemRegion covered_region)
@@ -387,18 +351,12 @@ bool ParallelCompactData::initialize(MemRegion covered_region)
   const size_t region_size = covered_region.word_size();
   DEBUG_ONLY(_region_end = _region_start + region_size;)
 
-  assert(chunk_align_down(_region_start) == _region_start,
+  assert(region_align_down(_region_start) == _region_start,
          "region start not aligned");
-  assert((region_size & ChunkSizeOffsetMask) == 0,
-         "region size not a multiple of ChunkSize");
+  assert((region_size & RegionSizeOffsetMask) == 0,
+         "region size not a multiple of RegionSize");
 
-  bool result = initialize_chunk_data(region_size);
-
-  // Initialize the block data if it will be used for updating pointers, or if
-  // this is a debug build.
-  if (!UseParallelOldGCChunkPointerCalc || trueInDebug) {
-    result = result && initialize_block_data(region_size);
-  }
+  bool result = initialize_region_data(region_size);
 
   return result;
 }
@@ -429,25 +387,13 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   return 0;
 }
 
-bool ParallelCompactData::initialize_chunk_data(size_t region_size)
+bool ParallelCompactData::initialize_region_data(size_t region_size)
 {
-  const size_t count = (region_size + ChunkSizeOffsetMask) >> Log2ChunkSize;
-  _chunk_vspace = create_vspace(count, sizeof(ChunkData));
-  if (_chunk_vspace != 0) {
-    _chunk_data = (ChunkData*)_chunk_vspace->reserved_low_addr();
-    _chunk_count = count;
-    return true;
-  }
-  return false;
-}
-
-bool ParallelCompactData::initialize_block_data(size_t region_size)
-{
-  const size_t count = (region_size + BlockOffsetMask) >> Log2BlockSize;
-  _block_vspace = create_vspace(count, sizeof(BlockData));
-  if (_block_vspace != 0) {
-    _block_data = (BlockData*)_block_vspace->reserved_low_addr();
-    _block_count = count;
+  const size_t count = (region_size + RegionSizeOffsetMask) >> Log2RegionSize;
+  _region_vspace = create_vspace(count, sizeof(RegionData));
+  if (_region_vspace != 0) {
+    _region_data = (RegionData*)_region_vspace->reserved_low_addr();
+    _region_count = count;
     return true;
   }
   return false;
@@ -455,38 +401,27 @@ bool ParallelCompactData::initialize_block_data(size_t region_size)
 
 void ParallelCompactData::clear()
 {
-  if (_block_data) {
-    memset(_block_data, 0, _block_vspace->committed_size());
-  }
-  memset(_chunk_data, 0, _chunk_vspace->committed_size());
+  memset(_region_data, 0, _region_vspace->committed_size());
 }
 
-void ParallelCompactData::clear_range(size_t beg_chunk, size_t end_chunk) {
-  assert(beg_chunk <= _chunk_count, "beg_chunk out of range");
-  assert(end_chunk <= _chunk_count, "end_chunk out of range");
-  assert(ChunkSize % BlockSize == 0, "ChunkSize not a multiple of BlockSize");
+void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
+  assert(beg_region <= _region_count, "beg_region out of range");
+  assert(end_region <= _region_count, "end_region out of range");
 
-  const size_t chunk_cnt = end_chunk - beg_chunk;
-
-  if (_block_data) {
-    const size_t blocks_per_chunk = ChunkSize / BlockSize;
-    const size_t beg_block = beg_chunk * blocks_per_chunk;
-    const size_t block_cnt = chunk_cnt * blocks_per_chunk;
-    memset(_block_data + beg_block, 0, block_cnt * sizeof(BlockData));
-  }
-  memset(_chunk_data + beg_chunk, 0, chunk_cnt * sizeof(ChunkData));
+  const size_t region_cnt = end_region - beg_region;
+  memset(_region_data + beg_region, 0, region_cnt * sizeof(RegionData));
 }
 
-HeapWord* ParallelCompactData::partial_obj_end(size_t chunk_idx) const
+HeapWord* ParallelCompactData::partial_obj_end(size_t region_idx) const
 {
-  const ChunkData* cur_cp = chunk(chunk_idx);
-  const ChunkData* const end_cp = chunk(chunk_count() - 1);
+  const RegionData* cur_cp = region(region_idx);
+  const RegionData* const end_cp = region(region_count() - 1);
 
-  HeapWord* result = chunk_to_addr(chunk_idx);
+  HeapWord* result = region_to_addr(region_idx);
   if (cur_cp < end_cp) {
     do {
       result += cur_cp->partial_obj_size();
-    } while (cur_cp->partial_obj_size() == ChunkSize && ++cur_cp < end_cp);
+    } while (cur_cp->partial_obj_size() == RegionSize && ++cur_cp < end_cp);
   }
   return result;
 }
@@ -494,195 +429,265 @@ HeapWord* ParallelCompactData::partial_obj_end(size_t chunk_idx) const
 void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
 {
   const size_t obj_ofs = pointer_delta(addr, _region_start);
-  const size_t beg_chunk = obj_ofs >> Log2ChunkSize;
-  const size_t end_chunk = (obj_ofs + len - 1) >> Log2ChunkSize;
+  const size_t beg_region = obj_ofs >> Log2RegionSize;
+  const size_t end_region = (obj_ofs + len - 1) >> Log2RegionSize;
 
   DEBUG_ONLY(Atomic::inc_ptr(&add_obj_count);)
   DEBUG_ONLY(Atomic::add_ptr(len, &add_obj_size);)
 
-  if (beg_chunk == end_chunk) {
-    // All in one chunk.
-    _chunk_data[beg_chunk].add_live_obj(len);
+  if (beg_region == end_region) {
+    // All in one region.
+    _region_data[beg_region].add_live_obj(len);
     return;
   }
 
-  // First chunk.
-  const size_t beg_ofs = chunk_offset(addr);
-  _chunk_data[beg_chunk].add_live_obj(ChunkSize - beg_ofs);
+  // First region.
+  const size_t beg_ofs = region_offset(addr);
+  _region_data[beg_region].add_live_obj(RegionSize - beg_ofs);
 
   klassOop klass = ((oop)addr)->klass();
-  // Middle chunks--completely spanned by this object.
-  for (size_t chunk = beg_chunk + 1; chunk < end_chunk; ++chunk) {
-    _chunk_data[chunk].set_partial_obj_size(ChunkSize);
-    _chunk_data[chunk].set_partial_obj_addr(addr);
+  // Middle regions--completely spanned by this object.
+  for (size_t region = beg_region + 1; region < end_region; ++region) {
+    _region_data[region].set_partial_obj_size(RegionSize);
+    _region_data[region].set_partial_obj_addr(addr);
   }
 
-  // Last chunk.
-  const size_t end_ofs = chunk_offset(addr + len - 1);
-  _chunk_data[end_chunk].set_partial_obj_size(end_ofs + 1);
-  _chunk_data[end_chunk].set_partial_obj_addr(addr);
+  // Last region.
+  const size_t end_ofs = region_offset(addr + len - 1);
+  _region_data[end_region].set_partial_obj_size(end_ofs + 1);
+  _region_data[end_region].set_partial_obj_addr(addr);
 }
 
 void
 ParallelCompactData::summarize_dense_prefix(HeapWord* beg, HeapWord* end)
 {
-  assert(chunk_offset(beg) == 0, "not ChunkSize aligned");
-  assert(chunk_offset(end) == 0, "not ChunkSize aligned");
+  assert(region_offset(beg) == 0, "not RegionSize aligned");
+  assert(region_offset(end) == 0, "not RegionSize aligned");
 
-  size_t cur_chunk = addr_to_chunk_idx(beg);
-  const size_t end_chunk = addr_to_chunk_idx(end);
+  size_t cur_region = addr_to_region_idx(beg);
+  const size_t end_region = addr_to_region_idx(end);
   HeapWord* addr = beg;
-  while (cur_chunk < end_chunk) {
-    _chunk_data[cur_chunk].set_destination(addr);
-    _chunk_data[cur_chunk].set_destination_count(0);
-    _chunk_data[cur_chunk].set_source_chunk(cur_chunk);
-    _chunk_data[cur_chunk].set_data_location(addr);
+  while (cur_region < end_region) {
+    _region_data[cur_region].set_destination(addr);
+    _region_data[cur_region].set_destination_count(0);
+    _region_data[cur_region].set_source_region(cur_region);
+    _region_data[cur_region].set_data_location(addr);
 
-    // Update live_obj_size so the chunk appears completely full.
-    size_t live_size = ChunkSize - _chunk_data[cur_chunk].partial_obj_size();
-    _chunk_data[cur_chunk].set_live_obj_size(live_size);
+    // Update live_obj_size so the region appears completely full.
+    size_t live_size = RegionSize - _region_data[cur_region].partial_obj_size();
+    _region_data[cur_region].set_live_obj_size(live_size);
 
-    ++cur_chunk;
-    addr += ChunkSize;
+    ++cur_region;
+    addr += RegionSize;
   }
 }
 
-bool ParallelCompactData::summarize(HeapWord* target_beg, HeapWord* target_end,
-                                    HeapWord* source_beg, HeapWord* source_end,
-                                    HeapWord** target_next,
-                                    HeapWord** source_next) {
-  // This is too strict.
-  // assert(chunk_offset(source_beg) == 0, "not ChunkSize aligned");
+// Find the point at which a space can be split and, if necessary, record the
+// split point.
+//
+// If the current src region (which overflowed the destination space) doesn't
+// have a partial object, the split point is at the beginning of the current src
+// region (an "easy" split, no extra bookkeeping required).
+//
+// If the current src region has a partial object, the split point is in the
+// region where that partial object starts (call it the split_region).  If
+// split_region has a partial object, then the split point is just after that
+// partial object (a "hard" split where we have to record the split data and
+// zero the partial_obj_size field).  With a "hard" split, we know that the
+// partial_obj ends within split_region because the partial object that caused
+// the overflow starts in split_region.  If split_region doesn't have a partial
+// obj, then the split is at the beginning of split_region (another "easy"
+// split).
+HeapWord*
+ParallelCompactData::summarize_split_space(size_t src_region,
+                                           SplitInfo& split_info,
+                                           HeapWord* destination,
+                                           HeapWord* target_end,
+                                           HeapWord** target_next)
+{
+  assert(destination <= target_end, "sanity");
+  assert(destination + _region_data[src_region].data_size() > target_end,
+    "region should not fit into target space");
 
-  if (TraceParallelOldGCSummaryPhase) {
-    tty->print_cr("tb=" PTR_FORMAT " te=" PTR_FORMAT " "
-                  "sb=" PTR_FORMAT " se=" PTR_FORMAT " "
-                  "tn=" PTR_FORMAT " sn=" PTR_FORMAT,
-                  target_beg, target_end,
-                  source_beg, source_end,
-                  target_next != 0 ? *target_next : (HeapWord*) 0,
-                  source_next != 0 ? *source_next : (HeapWord*) 0);
+  size_t split_region = src_region;
+  HeapWord* split_destination = destination;
+  size_t partial_obj_size = _region_data[src_region].partial_obj_size();
+
+  if (destination + partial_obj_size > target_end) {
+    // The split point is just after the partial object (if any) in the
+    // src_region that contains the start of the object that overflowed the
+    // destination space.
+    //
+    // Find the start of the "overflow" object and set split_region to the
+    // region containing it.
+    HeapWord* const overflow_obj = _region_data[src_region].partial_obj_addr();
+    split_region = addr_to_region_idx(overflow_obj);
+
+    // Clear the source_region field of all destination regions whose first word
+    // came from data after the split point (a non-null source_region field
+    // implies a region must be filled).
+    //
+    // An alternative to the simple loop below:  clear during post_compact(),
+    // which uses memcpy instead of individual stores, and is easy to
+    // parallelize.  (The downside is that it clears the entire RegionData
+    // object as opposed to just one field.)
+    //
+    // post_compact() would have to clear the summary data up to the highest
+    // address that was written during the summary phase, which would be
+    //
+    //         max(top, max(new_top, clear_top))
+    //
+    // where clear_top is a new field in SpaceInfo.  Would have to set clear_top
+    // to destination + partial_obj_size, where both have the values passed to
+    // this routine.
+    const RegionData* const sr = region(split_region);
+    const size_t beg_idx =
+      addr_to_region_idx(region_align_up(sr->destination() +
+                                         sr->partial_obj_size()));
+    const size_t end_idx =
+      addr_to_region_idx(region_align_up(destination + partial_obj_size));
+
+    if (TraceParallelOldGCSummaryPhase) {
+        gclog_or_tty->print_cr("split:  clearing source_region field in ["
+                               SIZE_FORMAT ", " SIZE_FORMAT ")",
+                               beg_idx, end_idx);
+    }
+    for (size_t idx = beg_idx; idx < end_idx; ++idx) {
+      _region_data[idx].set_source_region(0);
+    }
+
+    // Set split_destination and partial_obj_size to reflect the split region.
+    split_destination = sr->destination();
+    partial_obj_size = sr->partial_obj_size();
   }
 
-  size_t cur_chunk = addr_to_chunk_idx(source_beg);
-  const size_t end_chunk = addr_to_chunk_idx(chunk_align_up(source_end));
+  // The split is recorded only if a partial object extends onto the region.
+  if (partial_obj_size != 0) {
+    _region_data[split_region].set_partial_obj_size(0);
+    split_info.record(split_region, partial_obj_size, split_destination);
+  }
+
+  // Setup the continuation addresses.
+  *target_next = split_destination + partial_obj_size;
+  HeapWord* const source_next = region_to_addr(split_region) + partial_obj_size;
+
+  if (TraceParallelOldGCSummaryPhase) {
+    const char * split_type = partial_obj_size == 0 ? "easy" : "hard";
+    gclog_or_tty->print_cr("%s split:  src=" PTR_FORMAT " src_c=" SIZE_FORMAT
+                           " pos=" SIZE_FORMAT,
+                           split_type, source_next, split_region,
+                           partial_obj_size);
+    gclog_or_tty->print_cr("%s split:  dst=" PTR_FORMAT " dst_c=" SIZE_FORMAT
+                           " tn=" PTR_FORMAT,
+                           split_type, split_destination,
+                           addr_to_region_idx(split_destination),
+                           *target_next);
+
+    if (partial_obj_size != 0) {
+      HeapWord* const po_beg = split_info.destination();
+      HeapWord* const po_end = po_beg + split_info.partial_obj_size();
+      gclog_or_tty->print_cr("%s split:  "
+                             "po_beg=" PTR_FORMAT " " SIZE_FORMAT " "
+                             "po_end=" PTR_FORMAT " " SIZE_FORMAT,
+                             split_type,
+                             po_beg, addr_to_region_idx(po_beg),
+                             po_end, addr_to_region_idx(po_end));
+    }
+  }
+
+  return source_next;
+}
+
+bool ParallelCompactData::summarize(SplitInfo& split_info,
+                                    HeapWord* source_beg, HeapWord* source_end,
+                                    HeapWord** source_next,
+                                    HeapWord* target_beg, HeapWord* target_end,
+                                    HeapWord** target_next)
+{
+  if (TraceParallelOldGCSummaryPhase) {
+    HeapWord* const source_next_val = source_next == NULL ? NULL : *source_next;
+    tty->print_cr("sb=" PTR_FORMAT " se=" PTR_FORMAT " sn=" PTR_FORMAT
+                  "tb=" PTR_FORMAT " te=" PTR_FORMAT " tn=" PTR_FORMAT,
+                  source_beg, source_end, source_next_val,
+                  target_beg, target_end, *target_next);
+  }
+
+  size_t cur_region = addr_to_region_idx(source_beg);
+  const size_t end_region = addr_to_region_idx(region_align_up(source_end));
 
   HeapWord *dest_addr = target_beg;
-  while (cur_chunk < end_chunk) {
-    size_t words = _chunk_data[cur_chunk].data_size();
+  while (cur_region < end_region) {
+    // The destination must be set even if the region has no data.
+    _region_data[cur_region].set_destination(dest_addr);
 
-#if     1
-    assert(pointer_delta(target_end, dest_addr) >= words,
-           "source region does not fit into target region");
-#else
-    // XXX - need some work on the corner cases here.  If the chunk does not
-    // fit, then must either make sure any partial_obj from the chunk fits, or
-    // 'undo' the initial part of the partial_obj that is in the previous chunk.
-    if (dest_addr + words >= target_end) {
-      // Let the caller know where to continue.
-      *target_next = dest_addr;
-      *source_next = chunk_to_addr(cur_chunk);
-      return false;
-    }
-#endif  // #if 1
-
-    _chunk_data[cur_chunk].set_destination(dest_addr);
-
-    // Set the destination_count for cur_chunk, and if necessary, update
-    // source_chunk for a destination chunk.  The source_chunk field is updated
-    // if cur_chunk is the first (left-most) chunk to be copied to a destination
-    // chunk.
-    //
-    // The destination_count calculation is a bit subtle.  A chunk that has data
-    // that compacts into itself does not count itself as a destination.  This
-    // maintains the invariant that a zero count means the chunk is available
-    // and can be claimed and then filled.
+    size_t words = _region_data[cur_region].data_size();
     if (words > 0) {
-      HeapWord* const last_addr = dest_addr + words - 1;
-      const size_t dest_chunk_1 = addr_to_chunk_idx(dest_addr);
-      const size_t dest_chunk_2 = addr_to_chunk_idx(last_addr);
-#if     0
-      // Initially assume that the destination chunks will be the same and
-      // adjust the value below if necessary.  Under this assumption, if
-      // cur_chunk == dest_chunk_2, then cur_chunk will be compacted completely
-      // into itself.
-      uint destination_count = cur_chunk == dest_chunk_2 ? 0 : 1;
-      if (dest_chunk_1 != dest_chunk_2) {
-        // Destination chunks differ; adjust destination_count.
-        destination_count += 1;
-        // Data from cur_chunk will be copied to the start of dest_chunk_2.
-        _chunk_data[dest_chunk_2].set_source_chunk(cur_chunk);
-      } else if (chunk_offset(dest_addr) == 0) {
-        // Data from cur_chunk will be copied to the start of the destination
-        // chunk.
-        _chunk_data[dest_chunk_1].set_source_chunk(cur_chunk);
+      // If cur_region does not fit entirely into the target space, find a point
+      // at which the source space can be 'split' so that part is copied to the
+      // target space and the rest is copied elsewhere.
+      if (dest_addr + words > target_end) {
+        assert(source_next != NULL, "source_next is NULL when splitting");
+        *source_next = summarize_split_space(cur_region, split_info, dest_addr,
+                                             target_end, target_next);
+        return false;
       }
-#else
-      // Initially assume that the destination chunks will be different and
-      // adjust the value below if necessary.  Under this assumption, if
-      // cur_chunk == dest_chunk2, then cur_chunk will be compacted partially
-      // into dest_chunk_1 and partially into itself.
-      uint destination_count = cur_chunk == dest_chunk_2 ? 1 : 2;
-      if (dest_chunk_1 != dest_chunk_2) {
-        // Data from cur_chunk will be copied to the start of dest_chunk_2.
-        _chunk_data[dest_chunk_2].set_source_chunk(cur_chunk);
-      } else {
-        // Destination chunks are the same; adjust destination_count.
-        destination_count -= 1;
-        if (chunk_offset(dest_addr) == 0) {
-          // Data from cur_chunk will be copied to the start of the destination
-          // chunk.
-          _chunk_data[dest_chunk_1].set_source_chunk(cur_chunk);
+
+      // Compute the destination_count for cur_region, and if necessary, update
+      // source_region for a destination region.  The source_region field is
+      // updated if cur_region is the first (left-most) region to be copied to a
+      // destination region.
+      //
+      // The destination_count calculation is a bit subtle.  A region that has
+      // data that compacts into itself does not count itself as a destination.
+      // This maintains the invariant that a zero count means the region is
+      // available and can be claimed and then filled.
+      uint destination_count = 0;
+      if (split_info.is_split(cur_region)) {
+        // The current region has been split:  the partial object will be copied
+        // to one destination space and the remaining data will be copied to
+        // another destination space.  Adjust the initial destination_count and,
+        // if necessary, set the source_region field if the partial object will
+        // cross a destination region boundary.
+        destination_count = split_info.destination_count();
+        if (destination_count == 2) {
+          size_t dest_idx = addr_to_region_idx(split_info.dest_region_addr());
+          _region_data[dest_idx].set_source_region(cur_region);
         }
       }
-#endif  // #if 0
 
-      _chunk_data[cur_chunk].set_destination_count(destination_count);
-      _chunk_data[cur_chunk].set_data_location(chunk_to_addr(cur_chunk));
+      HeapWord* const last_addr = dest_addr + words - 1;
+      const size_t dest_region_1 = addr_to_region_idx(dest_addr);
+      const size_t dest_region_2 = addr_to_region_idx(last_addr);
+
+      // Initially assume that the destination regions will be the same and
+      // adjust the value below if necessary.  Under this assumption, if
+      // cur_region == dest_region_2, then cur_region will be compacted
+      // completely into itself.
+      destination_count += cur_region == dest_region_2 ? 0 : 1;
+      if (dest_region_1 != dest_region_2) {
+        // Destination regions differ; adjust destination_count.
+        destination_count += 1;
+        // Data from cur_region will be copied to the start of dest_region_2.
+        _region_data[dest_region_2].set_source_region(cur_region);
+      } else if (region_offset(dest_addr) == 0) {
+        // Data from cur_region will be copied to the start of the destination
+        // region.
+        _region_data[dest_region_1].set_source_region(cur_region);
+      }
+
+      _region_data[cur_region].set_destination_count(destination_count);
+      _region_data[cur_region].set_data_location(region_to_addr(cur_region));
       dest_addr += words;
     }
 
-    ++cur_chunk;
+    ++cur_region;
   }
 
   *target_next = dest_addr;
   return true;
 }
 
-bool ParallelCompactData::partial_obj_ends_in_block(size_t block_index) {
-  HeapWord* block_addr = block_to_addr(block_index);
-  HeapWord* block_end_addr = block_addr + BlockSize;
-  size_t chunk_index = addr_to_chunk_idx(block_addr);
-  HeapWord* partial_obj_end_addr = partial_obj_end(chunk_index);
-
-  // An object that ends at the end of the block, ends
-  // in the block (the last word of the object is to
-  // the left of the end).
-  if ((block_addr < partial_obj_end_addr) &&
-      (partial_obj_end_addr <= block_end_addr)) {
-    return true;
-  }
-
-  return false;
-}
-
 HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr) {
-  HeapWord* result = NULL;
-  if (UseParallelOldGCChunkPointerCalc) {
-    result = chunk_calc_new_pointer(addr);
-  } else {
-    result = block_calc_new_pointer(addr);
-  }
-  return result;
-}
-
-// This method is overly complicated (expensive) to be called
-// for every reference.
-// Try to restructure this so that a NULL is returned if
-// the object is dead.  But don't wast the cycles to explicitly check
-// that it is dead since only live objects should be passed in.
-
-HeapWord* ParallelCompactData::chunk_calc_new_pointer(HeapWord* addr) {
   assert(addr != NULL, "Should detect NULL oop earlier");
   assert(PSParallelCompact::gc_heap()->is_in(addr), "addr not in heap");
 #ifdef ASSERT
@@ -692,80 +697,36 @@ HeapWord* ParallelCompactData::chunk_calc_new_pointer(HeapWord* addr) {
 #endif
   assert(PSParallelCompact::mark_bitmap()->is_marked(addr), "obj not marked");
 
-  // Chunk covering the object.
-  size_t chunk_index = addr_to_chunk_idx(addr);
-  const ChunkData* const chunk_ptr = chunk(chunk_index);
-  HeapWord* const chunk_addr = chunk_align_down(addr);
+  // Region covering the object.
+  size_t region_index = addr_to_region_idx(addr);
+  const RegionData* const region_ptr = region(region_index);
+  HeapWord* const region_addr = region_align_down(addr);
 
-  assert(addr < chunk_addr + ChunkSize, "Chunk does not cover object");
-  assert(addr_to_chunk_ptr(chunk_addr) == chunk_ptr, "sanity check");
+  assert(addr < region_addr + RegionSize, "Region does not cover object");
+  assert(addr_to_region_ptr(region_addr) == region_ptr, "sanity check");
 
-  HeapWord* result = chunk_ptr->destination();
+  HeapWord* result = region_ptr->destination();
 
-  // If all the data in the chunk is live, then the new location of the object
-  // can be calculated from the destination of the chunk plus the offset of the
-  // object in the chunk.
-  if (chunk_ptr->data_size() == ChunkSize) {
-    result += pointer_delta(addr, chunk_addr);
+  // If all the data in the region is live, then the new location of the object
+  // can be calculated from the destination of the region plus the offset of the
+  // object in the region.
+  if (region_ptr->data_size() == RegionSize) {
+    result += pointer_delta(addr, region_addr);
     return result;
   }
 
   // The new location of the object is
-  //    chunk destination +
-  //    size of the partial object extending onto the chunk +
-  //    sizes of the live objects in the Chunk that are to the left of addr
-  const size_t partial_obj_size = chunk_ptr->partial_obj_size();
-  HeapWord* const search_start = chunk_addr + partial_obj_size;
+  //    region destination +
+  //    size of the partial object extending onto the region +
+  //    sizes of the live objects in the Region that are to the left of addr
+  const size_t partial_obj_size = region_ptr->partial_obj_size();
+  HeapWord* const search_start = region_addr + partial_obj_size;
 
   const ParMarkBitMap* bitmap = PSParallelCompact::mark_bitmap();
   size_t live_to_left = bitmap->live_words_in_range(search_start, oop(addr));
 
   result += partial_obj_size + live_to_left;
-  assert(result <= addr, "object cannot move to the right");
-  return result;
-}
-
-HeapWord* ParallelCompactData::block_calc_new_pointer(HeapWord* addr) {
-  assert(addr != NULL, "Should detect NULL oop earlier");
-  assert(PSParallelCompact::gc_heap()->is_in(addr), "addr not in heap");
-#ifdef ASSERT
-  if (PSParallelCompact::mark_bitmap()->is_unmarked(addr)) {
-    gclog_or_tty->print_cr("calc_new_pointer:: addr " PTR_FORMAT, addr);
-  }
-#endif
-  assert(PSParallelCompact::mark_bitmap()->is_marked(addr), "obj not marked");
-
-  // Chunk covering the object.
-  size_t chunk_index = addr_to_chunk_idx(addr);
-  const ChunkData* const chunk_ptr = chunk(chunk_index);
-  HeapWord* const chunk_addr = chunk_align_down(addr);
-
-  assert(addr < chunk_addr + ChunkSize, "Chunk does not cover object");
-  assert(addr_to_chunk_ptr(chunk_addr) == chunk_ptr, "sanity check");
-
-  HeapWord* result = chunk_ptr->destination();
-
-  // If all the data in the chunk is live, then the new location of the object
-  // can be calculated from the destination of the chunk plus the offset of the
-  // object in the chunk.
-  if (chunk_ptr->data_size() == ChunkSize) {
-    result += pointer_delta(addr, chunk_addr);
-    return result;
-  }
-
-  // The new location of the object is
-  //    chunk destination +
-  //    block offset +
-  //    sizes of the live objects in the Block that are to the left of addr
-  const size_t block_offset = addr_to_block_ptr(addr)->offset();
-  HeapWord* const search_start = chunk_addr + block_offset;
-
-  const ParMarkBitMap* bitmap = PSParallelCompact::mark_bitmap();
-  size_t live_to_left = bitmap->live_words_in_range(search_start, oop(addr));
-
-  result += block_offset + live_to_left;
-  assert(result <= addr, "object cannot move to the right");
-  assert(result == chunk_calc_new_pointer(addr), "Should match");
+  DEBUG_ONLY(PSParallelCompact::check_new_location(addr, result);)
   return result;
 }
 
@@ -792,15 +753,14 @@ void ParallelCompactData::verify_clear(const PSVirtualSpace* vspace)
 
 void ParallelCompactData::verify_clear()
 {
-  verify_clear(_chunk_vspace);
-  verify_clear(_block_vspace);
+  verify_clear(_region_vspace);
 }
 #endif  // #ifdef ASSERT
 
 #ifdef NOT_PRODUCT
-ParallelCompactData::ChunkData* debug_chunk(size_t chunk_index) {
+ParallelCompactData::RegionData* debug_region(size_t region_index) {
   ParallelCompactData& sd = PSParallelCompact::summary_data();
-  return sd.chunk(chunk_index);
+  return sd.region(region_index);
 }
 #endif
 
@@ -953,10 +913,17 @@ PSParallelCompact::clear_data_covering_space(SpaceId id)
   const idx_t end_bit = BitMap::word_align_up(_mark_bitmap.addr_to_bit(top));
   _mark_bitmap.clear_range(beg_bit, end_bit);
 
-  const size_t beg_chunk = _summary_data.addr_to_chunk_idx(bot);
-  const size_t end_chunk =
-    _summary_data.addr_to_chunk_idx(_summary_data.chunk_align_up(max_top));
-  _summary_data.clear_range(beg_chunk, end_chunk);
+  const size_t beg_region = _summary_data.addr_to_region_idx(bot);
+  const size_t end_region =
+    _summary_data.addr_to_region_idx(_summary_data.region_align_up(max_top));
+  _summary_data.clear_range(beg_region, end_region);
+
+  // Clear the data used to 'split' regions.
+  SplitInfo& split_info = _space_info[id].split_info();
+  if (split_info.is_valid()) {
+    split_info.clear();
+  }
+  DEBUG_ONLY(split_info.verify_clear();)
 }
 
 void PSParallelCompact::pre_compact(PreGCValues* pre_gc_values)
@@ -1015,10 +982,11 @@ void PSParallelCompact::post_compact()
 {
   TraceTime tm("post compact", print_phases(), true, gclog_or_tty);
 
-  // Clear the marking bitmap and summary data and update top() in each space.
   for (unsigned int id = perm_space_id; id < last_space_id; ++id) {
+    // Clear the marking bitmap, summary data and split info.
     clear_data_covering_space(SpaceId(id));
-    _space_info[id].space()->set_top(_space_info[id].new_top());
+    // Update top().  Must be done after clearing the bitmap and summary data.
+    _space_info[id].publish_new_top();
   }
 
   MutableSpace* const eden_space = _space_info[eden_space_id].space();
@@ -1072,19 +1040,19 @@ HeapWord*
 PSParallelCompact::compute_dense_prefix_via_density(const SpaceId id,
                                                     bool maximum_compaction)
 {
-  const size_t chunk_size = ParallelCompactData::ChunkSize;
+  const size_t region_size = ParallelCompactData::RegionSize;
   const ParallelCompactData& sd = summary_data();
 
   const MutableSpace* const space = _space_info[id].space();
-  HeapWord* const top_aligned_up = sd.chunk_align_up(space->top());
-  const ChunkData* const beg_cp = sd.addr_to_chunk_ptr(space->bottom());
-  const ChunkData* const end_cp = sd.addr_to_chunk_ptr(top_aligned_up);
+  HeapWord* const top_aligned_up = sd.region_align_up(space->top());
+  const RegionData* const beg_cp = sd.addr_to_region_ptr(space->bottom());
+  const RegionData* const end_cp = sd.addr_to_region_ptr(top_aligned_up);
 
-  // Skip full chunks at the beginning of the space--they are necessarily part
+  // Skip full regions at the beginning of the space--they are necessarily part
   // of the dense prefix.
   size_t full_count = 0;
-  const ChunkData* cp;
-  for (cp = beg_cp; cp < end_cp && cp->data_size() == chunk_size; ++cp) {
+  const RegionData* cp;
+  for (cp = beg_cp; cp < end_cp && cp->data_size() == region_size; ++cp) {
     ++full_count;
   }
 
@@ -1093,7 +1061,7 @@ PSParallelCompact::compute_dense_prefix_via_density(const SpaceId id,
   const bool interval_ended = gcs_since_max > HeapMaximumCompactionInterval;
   if (maximum_compaction || cp == end_cp || interval_ended) {
     _maximum_compaction_gc_num = total_invocations();
-    return sd.chunk_to_addr(cp);
+    return sd.region_to_addr(cp);
   }
 
   HeapWord* const new_top = _space_info[id].new_top();
@@ -1116,52 +1084,53 @@ PSParallelCompact::compute_dense_prefix_via_density(const SpaceId id,
   }
 
   // XXX - Use binary search?
-  HeapWord* dense_prefix = sd.chunk_to_addr(cp);
-  const ChunkData* full_cp = cp;
-  const ChunkData* const top_cp = sd.addr_to_chunk_ptr(space->top() - 1);
+  HeapWord* dense_prefix = sd.region_to_addr(cp);
+  const RegionData* full_cp = cp;
+  const RegionData* const top_cp = sd.addr_to_region_ptr(space->top() - 1);
   while (cp < end_cp) {
-    HeapWord* chunk_destination = cp->destination();
-    const size_t cur_deadwood = pointer_delta(dense_prefix, chunk_destination);
+    HeapWord* region_destination = cp->destination();
+    const size_t cur_deadwood = pointer_delta(dense_prefix, region_destination);
     if (TraceParallelOldGCDensePrefix && Verbose) {
       tty->print_cr("c#=" SIZE_FORMAT_W(4) " dst=" PTR_FORMAT " "
                     "dp=" SIZE_FORMAT_W(8) " " "cdw=" SIZE_FORMAT_W(8),
-                    sd.chunk(cp), chunk_destination,
+                    sd.region(cp), region_destination,
                     dense_prefix, cur_deadwood);
     }
 
     if (cur_deadwood >= deadwood_goal) {
-      // Found the chunk that has the correct amount of deadwood to the left.
-      // This typically occurs after crossing a fairly sparse set of chunks, so
-      // iterate backwards over those sparse chunks, looking for the chunk that
-      // has the lowest density of live objects 'to the right.'
-      size_t space_to_left = sd.chunk(cp) * chunk_size;
+      // Found the region that has the correct amount of deadwood to the left.
+      // This typically occurs after crossing a fairly sparse set of regions, so
+      // iterate backwards over those sparse regions, looking for the region
+      // that has the lowest density of live objects 'to the right.'
+      size_t space_to_left = sd.region(cp) * region_size;
       size_t live_to_left = space_to_left - cur_deadwood;
       size_t space_to_right = space_capacity - space_to_left;
       size_t live_to_right = space_live - live_to_left;
       double density_to_right = double(live_to_right) / space_to_right;
       while (cp > full_cp) {
         --cp;
-        const size_t prev_chunk_live_to_right = live_to_right - cp->data_size();
-        const size_t prev_chunk_space_to_right = space_to_right + chunk_size;
-        double prev_chunk_density_to_right =
-          double(prev_chunk_live_to_right) / prev_chunk_space_to_right;
-        if (density_to_right <= prev_chunk_density_to_right) {
+        const size_t prev_region_live_to_right = live_to_right -
+          cp->data_size();
+        const size_t prev_region_space_to_right = space_to_right + region_size;
+        double prev_region_density_to_right =
+          double(prev_region_live_to_right) / prev_region_space_to_right;
+        if (density_to_right <= prev_region_density_to_right) {
           return dense_prefix;
         }
         if (TraceParallelOldGCDensePrefix && Verbose) {
           tty->print_cr("backing up from c=" SIZE_FORMAT_W(4) " d2r=%10.8f "
-                        "pc_d2r=%10.8f", sd.chunk(cp), density_to_right,
-                        prev_chunk_density_to_right);
+                        "pc_d2r=%10.8f", sd.region(cp), density_to_right,
+                        prev_region_density_to_right);
         }
-        dense_prefix -= chunk_size;
-        live_to_right = prev_chunk_live_to_right;
-        space_to_right = prev_chunk_space_to_right;
-        density_to_right = prev_chunk_density_to_right;
+        dense_prefix -= region_size;
+        live_to_right = prev_region_live_to_right;
+        space_to_right = prev_region_space_to_right;
+        density_to_right = prev_region_density_to_right;
       }
       return dense_prefix;
     }
 
-    dense_prefix += chunk_size;
+    dense_prefix += region_size;
     ++cp;
   }
 
@@ -1174,8 +1143,8 @@ void PSParallelCompact::print_dense_prefix_stats(const char* const algorithm,
                                                  const bool maximum_compaction,
                                                  HeapWord* const addr)
 {
-  const size_t chunk_idx = summary_data().addr_to_chunk_idx(addr);
-  ChunkData* const cp = summary_data().chunk(chunk_idx);
+  const size_t region_idx = summary_data().addr_to_region_idx(addr);
+  RegionData* const cp = summary_data().region(region_idx);
   const MutableSpace* const space = _space_info[id].space();
   HeapWord* const new_top = _space_info[id].new_top();
 
@@ -1191,7 +1160,7 @@ void PSParallelCompact::print_dense_prefix_stats(const char* const algorithm,
                 "d2l=" SIZE_FORMAT " d2l%%=%6.4f "
                 "d2r=" SIZE_FORMAT " l2r=" SIZE_FORMAT
                 " ratio=%10.8f",
-                algorithm, addr, chunk_idx,
+                algorithm, addr, region_idx,
                 space_live,
                 dead_to_left, dead_to_left_pct,
                 dead_to_right, live_to_right,
@@ -1253,52 +1222,52 @@ double PSParallelCompact::dead_wood_limiter(double density, size_t min_percent)
   return MAX2(limit, 0.0);
 }
 
-ParallelCompactData::ChunkData*
-PSParallelCompact::first_dead_space_chunk(const ChunkData* beg,
-                                          const ChunkData* end)
+ParallelCompactData::RegionData*
+PSParallelCompact::first_dead_space_region(const RegionData* beg,
+                                           const RegionData* end)
 {
-  const size_t chunk_size = ParallelCompactData::ChunkSize;
+  const size_t region_size = ParallelCompactData::RegionSize;
   ParallelCompactData& sd = summary_data();
-  size_t left = sd.chunk(beg);
-  size_t right = end > beg ? sd.chunk(end) - 1 : left;
+  size_t left = sd.region(beg);
+  size_t right = end > beg ? sd.region(end) - 1 : left;
 
   // Binary search.
   while (left < right) {
     // Equivalent to (left + right) / 2, but does not overflow.
     const size_t middle = left + (right - left) / 2;
-    ChunkData* const middle_ptr = sd.chunk(middle);
+    RegionData* const middle_ptr = sd.region(middle);
     HeapWord* const dest = middle_ptr->destination();
-    HeapWord* const addr = sd.chunk_to_addr(middle);
+    HeapWord* const addr = sd.region_to_addr(middle);
     assert(dest != NULL, "sanity");
     assert(dest <= addr, "must move left");
 
     if (middle > left && dest < addr) {
       right = middle - 1;
-    } else if (middle < right && middle_ptr->data_size() == chunk_size) {
+    } else if (middle < right && middle_ptr->data_size() == region_size) {
       left = middle + 1;
     } else {
       return middle_ptr;
     }
   }
-  return sd.chunk(left);
+  return sd.region(left);
 }
 
-ParallelCompactData::ChunkData*
-PSParallelCompact::dead_wood_limit_chunk(const ChunkData* beg,
-                                         const ChunkData* end,
-                                         size_t dead_words)
+ParallelCompactData::RegionData*
+PSParallelCompact::dead_wood_limit_region(const RegionData* beg,
+                                          const RegionData* end,
+                                          size_t dead_words)
 {
   ParallelCompactData& sd = summary_data();
-  size_t left = sd.chunk(beg);
-  size_t right = end > beg ? sd.chunk(end) - 1 : left;
+  size_t left = sd.region(beg);
+  size_t right = end > beg ? sd.region(end) - 1 : left;
 
   // Binary search.
   while (left < right) {
     // Equivalent to (left + right) / 2, but does not overflow.
     const size_t middle = left + (right - left) / 2;
-    ChunkData* const middle_ptr = sd.chunk(middle);
+    RegionData* const middle_ptr = sd.region(middle);
     HeapWord* const dest = middle_ptr->destination();
-    HeapWord* const addr = sd.chunk_to_addr(middle);
+    HeapWord* const addr = sd.region_to_addr(middle);
     assert(dest != NULL, "sanity");
     assert(dest <= addr, "must move left");
 
@@ -1311,13 +1280,13 @@ PSParallelCompact::dead_wood_limit_chunk(const ChunkData* beg,
       return middle_ptr;
     }
   }
-  return sd.chunk(left);
+  return sd.region(left);
 }
 
 // The result is valid during the summary phase, after the initial summarization
 // of each space into itself, and before final summarization.
 inline double
-PSParallelCompact::reclaimed_ratio(const ChunkData* const cp,
+PSParallelCompact::reclaimed_ratio(const RegionData* const cp,
                                    HeapWord* const bottom,
                                    HeapWord* const top,
                                    HeapWord* const new_top)
@@ -1331,12 +1300,13 @@ PSParallelCompact::reclaimed_ratio(const ChunkData* const cp,
   assert(top >= new_top, "summary data problem?");
   assert(new_top > bottom, "space is empty; should not be here");
   assert(new_top >= cp->destination(), "sanity");
-  assert(top >= sd.chunk_to_addr(cp), "sanity");
+  assert(top >= sd.region_to_addr(cp), "sanity");
 
   HeapWord* const destination = cp->destination();
   const size_t dense_prefix_live  = pointer_delta(destination, bottom);
   const size_t compacted_region_live = pointer_delta(new_top, destination);
-  const size_t compacted_region_used = pointer_delta(top, sd.chunk_to_addr(cp));
+  const size_t compacted_region_used = pointer_delta(top,
+                                                     sd.region_to_addr(cp));
   const size_t reclaimable = compacted_region_used - compacted_region_live;
 
   const double divisor = dense_prefix_live + 1.25 * compacted_region_live;
@@ -1344,39 +1314,47 @@ PSParallelCompact::reclaimed_ratio(const ChunkData* const cp,
 }
 
 // Return the address of the end of the dense prefix, a.k.a. the start of the
-// compacted region.  The address is always on a chunk boundary.
+// compacted region.  The address is always on a region boundary.
 //
-// Completely full chunks at the left are skipped, since no compaction can occur
-// in those chunks.  Then the maximum amount of dead wood to allow is computed,
-// based on the density (amount live / capacity) of the generation; the chunk
-// with approximately that amount of dead space to the left is identified as the
-// limit chunk.  Chunks between the last completely full chunk and the limit
-// chunk are scanned and the one that has the best (maximum) reclaimed_ratio()
-// is selected.
+// Completely full regions at the left are skipped, since no compaction can
+// occur in those regions.  Then the maximum amount of dead wood to allow is
+// computed, based on the density (amount live / capacity) of the generation;
+// the region with approximately that amount of dead space to the left is
+// identified as the limit region.  Regions between the last completely full
+// region and the limit region are scanned and the one that has the best
+// (maximum) reclaimed_ratio() is selected.
 HeapWord*
 PSParallelCompact::compute_dense_prefix(const SpaceId id,
                                         bool maximum_compaction)
 {
-  const size_t chunk_size = ParallelCompactData::ChunkSize;
+  if (ParallelOldGCSplitALot) {
+    if (_space_info[id].dense_prefix() != _space_info[id].space()->bottom()) {
+      // The value was chosen to provoke splitting a young gen space; use it.
+      return _space_info[id].dense_prefix();
+    }
+  }
+
+  const size_t region_size = ParallelCompactData::RegionSize;
   const ParallelCompactData& sd = summary_data();
 
   const MutableSpace* const space = _space_info[id].space();
   HeapWord* const top = space->top();
-  HeapWord* const top_aligned_up = sd.chunk_align_up(top);
+  HeapWord* const top_aligned_up = sd.region_align_up(top);
   HeapWord* const new_top = _space_info[id].new_top();
-  HeapWord* const new_top_aligned_up = sd.chunk_align_up(new_top);
+  HeapWord* const new_top_aligned_up = sd.region_align_up(new_top);
   HeapWord* const bottom = space->bottom();
-  const ChunkData* const beg_cp = sd.addr_to_chunk_ptr(bottom);
-  const ChunkData* const top_cp = sd.addr_to_chunk_ptr(top_aligned_up);
-  const ChunkData* const new_top_cp = sd.addr_to_chunk_ptr(new_top_aligned_up);
+  const RegionData* const beg_cp = sd.addr_to_region_ptr(bottom);
+  const RegionData* const top_cp = sd.addr_to_region_ptr(top_aligned_up);
+  const RegionData* const new_top_cp =
+    sd.addr_to_region_ptr(new_top_aligned_up);
 
-  // Skip full chunks at the beginning of the space--they are necessarily part
+  // Skip full regions at the beginning of the space--they are necessarily part
   // of the dense prefix.
-  const ChunkData* const full_cp = first_dead_space_chunk(beg_cp, new_top_cp);
-  assert(full_cp->destination() == sd.chunk_to_addr(full_cp) ||
+  const RegionData* const full_cp = first_dead_space_region(beg_cp, new_top_cp);
+  assert(full_cp->destination() == sd.region_to_addr(full_cp) ||
          space->is_empty(), "no dead space allowed to the left");
-  assert(full_cp->data_size() < chunk_size || full_cp == new_top_cp - 1,
-         "chunk must have dead space");
+  assert(full_cp->data_size() < region_size || full_cp == new_top_cp - 1,
+         "region must have dead space");
 
   // The gc number is saved whenever a maximum compaction is done, and used to
   // determine when the maximum compaction interval has expired.  This avoids
@@ -1387,7 +1365,7 @@ PSParallelCompact::compute_dense_prefix(const SpaceId id,
     total_invocations() == HeapFirstMaximumCompactionCount;
   if (maximum_compaction || full_cp == top_cp || interval_ended) {
     _maximum_compaction_gc_num = total_invocations();
-    return sd.chunk_to_addr(full_cp);
+    return sd.region_to_addr(full_cp);
   }
 
   const size_t space_live = pointer_delta(new_top, bottom);
@@ -1413,15 +1391,15 @@ PSParallelCompact::compute_dense_prefix(const SpaceId id,
                   dead_wood_max, dead_wood_limit);
   }
 
-  // Locate the chunk with the desired amount of dead space to the left.
-  const ChunkData* const limit_cp =
-    dead_wood_limit_chunk(full_cp, top_cp, dead_wood_limit);
+  // Locate the region with the desired amount of dead space to the left.
+  const RegionData* const limit_cp =
+    dead_wood_limit_region(full_cp, top_cp, dead_wood_limit);
 
-  // Scan from the first chunk with dead space to the limit chunk and find the
+  // Scan from the first region with dead space to the limit region and find the
   // one with the best (largest) reclaimed ratio.
   double best_ratio = 0.0;
-  const ChunkData* best_cp = full_cp;
-  for (const ChunkData* cp = full_cp; cp < limit_cp; ++cp) {
+  const RegionData* best_cp = full_cp;
+  for (const RegionData* cp = full_cp; cp < limit_cp; ++cp) {
     double tmp_ratio = reclaimed_ratio(cp, bottom, top, new_top);
     if (tmp_ratio > best_ratio) {
       best_cp = cp;
@@ -1430,38 +1408,243 @@ PSParallelCompact::compute_dense_prefix(const SpaceId id,
   }
 
 #if     0
-  // Something to consider:  if the chunk with the best ratio is 'close to' the
-  // first chunk w/free space, choose the first chunk with free space
-  // ("first-free").  The first-free chunk is usually near the start of the
+  // Something to consider:  if the region with the best ratio is 'close to' the
+  // first region w/free space, choose the first region with free space
+  // ("first-free").  The first-free region is usually near the start of the
   // heap, which means we are copying most of the heap already, so copy a bit
   // more to get complete compaction.
-  if (pointer_delta(best_cp, full_cp, sizeof(ChunkData)) < 4) {
+  if (pointer_delta(best_cp, full_cp, sizeof(RegionData)) < 4) {
     _maximum_compaction_gc_num = total_invocations();
     best_cp = full_cp;
   }
 #endif  // #if 0
 
-  return sd.chunk_to_addr(best_cp);
+  return sd.region_to_addr(best_cp);
 }
+
+#ifndef PRODUCT
+void
+PSParallelCompact::fill_with_live_objects(SpaceId id, HeapWord* const start,
+                                          size_t words)
+{
+  if (TraceParallelOldGCSummaryPhase) {
+    tty->print_cr("fill_with_live_objects [" PTR_FORMAT " " PTR_FORMAT ") "
+                  SIZE_FORMAT, start, start + words, words);
+  }
+
+  ObjectStartArray* const start_array = _space_info[id].start_array();
+  CollectedHeap::fill_with_objects(start, words);
+  for (HeapWord* p = start; p < start + words; p += oop(p)->size()) {
+    _mark_bitmap.mark_obj(p, words);
+    _summary_data.add_obj(p, words);
+    start_array->allocate_block(p);
+  }
+}
+
+void
+PSParallelCompact::summarize_new_objects(SpaceId id, HeapWord* start)
+{
+  ParallelCompactData& sd = summary_data();
+  MutableSpace* space = _space_info[id].space();
+
+  // Find the source and destination start addresses.
+  HeapWord* const src_addr = sd.region_align_down(start);
+  HeapWord* dst_addr;
+  if (src_addr < start) {
+    dst_addr = sd.addr_to_region_ptr(src_addr)->destination();
+  } else if (src_addr > space->bottom()) {
+    // The start (the original top() value) is aligned to a region boundary so
+    // the associated region does not have a destination.  Compute the
+    // destination from the previous region.
+    RegionData* const cp = sd.addr_to_region_ptr(src_addr) - 1;
+    dst_addr = cp->destination() + cp->data_size();
+  } else {
+    // Filling the entire space.
+    dst_addr = space->bottom();
+  }
+  assert(dst_addr != NULL, "sanity");
+
+  // Update the summary data.
+  bool result = _summary_data.summarize(_space_info[id].split_info(),
+                                        src_addr, space->top(), NULL,
+                                        dst_addr, space->end(),
+                                        _space_info[id].new_top_addr());
+  assert(result, "should not fail:  bad filler object size");
+}
+
+void
+PSParallelCompact::provoke_split_fill_survivor(SpaceId id)
+{
+  if (total_invocations() % (ParallelOldGCSplitInterval * 3) != 0) {
+    return;
+  }
+
+  MutableSpace* const space = _space_info[id].space();
+  if (space->is_empty()) {
+    HeapWord* b = space->bottom();
+    HeapWord* t = b + space->capacity_in_words() / 2;
+    space->set_top(t);
+    if (ZapUnusedHeapArea) {
+      space->set_top_for_allocations();
+    }
+
+    size_t obj_len = 8;
+    while (b + obj_len <= t) {
+      CollectedHeap::fill_with_object(b, obj_len);
+      mark_bitmap()->mark_obj(b, obj_len);
+      summary_data().add_obj(b, obj_len);
+      b += obj_len;
+      obj_len = (obj_len & 0x18) + 8; // 8 16 24 32 8 16 24 32 ...
+    }
+    if (b < t) {
+      // The loop didn't completely fill to t (top); adjust top downward.
+      space->set_top(b);
+      if (ZapUnusedHeapArea) {
+        space->set_top_for_allocations();
+      }
+    }
+
+    HeapWord** nta = _space_info[id].new_top_addr();
+    bool result = summary_data().summarize(_space_info[id].split_info(),
+                                           space->bottom(), space->top(), NULL,
+                                           space->bottom(), space->end(), nta);
+    assert(result, "space must fit into itself");
+  }
+}
+
+void
+PSParallelCompact::provoke_split(bool & max_compaction)
+{
+  if (total_invocations() % ParallelOldGCSplitInterval != 0) {
+    return;
+  }
+
+  const size_t region_size = ParallelCompactData::RegionSize;
+  ParallelCompactData& sd = summary_data();
+
+  MutableSpace* const eden_space = _space_info[eden_space_id].space();
+  MutableSpace* const from_space = _space_info[from_space_id].space();
+  const size_t eden_live = pointer_delta(eden_space->top(),
+                                         _space_info[eden_space_id].new_top());
+  const size_t from_live = pointer_delta(from_space->top(),
+                                         _space_info[from_space_id].new_top());
+
+  const size_t min_fill_size = CollectedHeap::min_fill_size();
+  const size_t eden_free = pointer_delta(eden_space->end(), eden_space->top());
+  const size_t eden_fillable = eden_free >= min_fill_size ? eden_free : 0;
+  const size_t from_free = pointer_delta(from_space->end(), from_space->top());
+  const size_t from_fillable = from_free >= min_fill_size ? from_free : 0;
+
+  // Choose the space to split; need at least 2 regions live (or fillable).
+  SpaceId id;
+  MutableSpace* space;
+  size_t live_words;
+  size_t fill_words;
+  if (eden_live + eden_fillable >= region_size * 2) {
+    id = eden_space_id;
+    space = eden_space;
+    live_words = eden_live;
+    fill_words = eden_fillable;
+  } else if (from_live + from_fillable >= region_size * 2) {
+    id = from_space_id;
+    space = from_space;
+    live_words = from_live;
+    fill_words = from_fillable;
+  } else {
+    return; // Give up.
+  }
+  assert(fill_words == 0 || fill_words >= min_fill_size, "sanity");
+
+  if (live_words < region_size * 2) {
+    // Fill from top() to end() w/live objects of mixed sizes.
+    HeapWord* const fill_start = space->top();
+    live_words += fill_words;
+
+    space->set_top(fill_start + fill_words);
+    if (ZapUnusedHeapArea) {
+      space->set_top_for_allocations();
+    }
+
+    HeapWord* cur_addr = fill_start;
+    while (fill_words > 0) {
+      const size_t r = (size_t)os::random() % (region_size / 2) + min_fill_size;
+      size_t cur_size = MIN2(align_object_size_(r), fill_words);
+      if (fill_words - cur_size < min_fill_size) {
+        cur_size = fill_words; // Avoid leaving a fragment too small to fill.
+      }
+
+      CollectedHeap::fill_with_object(cur_addr, cur_size);
+      mark_bitmap()->mark_obj(cur_addr, cur_size);
+      sd.add_obj(cur_addr, cur_size);
+
+      cur_addr += cur_size;
+      fill_words -= cur_size;
+    }
+
+    summarize_new_objects(id, fill_start);
+  }
+
+  max_compaction = false;
+
+  // Manipulate the old gen so that it has room for about half of the live data
+  // in the target young gen space (live_words / 2).
+  id = old_space_id;
+  space = _space_info[id].space();
+  const size_t free_at_end = space->free_in_words();
+  const size_t free_target = align_object_size(live_words / 2);
+  const size_t dead = pointer_delta(space->top(), _space_info[id].new_top());
+
+  if (free_at_end >= free_target + min_fill_size) {
+    // Fill space above top() and set the dense prefix so everything survives.
+    HeapWord* const fill_start = space->top();
+    const size_t fill_size = free_at_end - free_target;
+    space->set_top(space->top() + fill_size);
+    if (ZapUnusedHeapArea) {
+      space->set_top_for_allocations();
+    }
+    fill_with_live_objects(id, fill_start, fill_size);
+    summarize_new_objects(id, fill_start);
+    _space_info[id].set_dense_prefix(sd.region_align_down(space->top()));
+  } else if (dead + free_at_end > free_target) {
+    // Find a dense prefix that makes the right amount of space available.
+    HeapWord* cur = sd.region_align_down(space->top());
+    HeapWord* cur_destination = sd.addr_to_region_ptr(cur)->destination();
+    size_t dead_to_right = pointer_delta(space->end(), cur_destination);
+    while (dead_to_right < free_target) {
+      cur -= region_size;
+      cur_destination = sd.addr_to_region_ptr(cur)->destination();
+      dead_to_right = pointer_delta(space->end(), cur_destination);
+    }
+    _space_info[id].set_dense_prefix(cur);
+  }
+}
+#endif // #ifndef PRODUCT
 
 void PSParallelCompact::summarize_spaces_quick()
 {
   for (unsigned int i = 0; i < last_space_id; ++i) {
     const MutableSpace* space = _space_info[i].space();
-    bool result = _summary_data.summarize(space->bottom(), space->end(),
-                                          space->bottom(), space->top(),
-                                          _space_info[i].new_top_addr());
-    assert(result, "should never fail");
+    HeapWord** nta = _space_info[i].new_top_addr();
+    bool result = _summary_data.summarize(_space_info[i].split_info(),
+                                          space->bottom(), space->top(), NULL,
+                                          space->bottom(), space->end(), nta);
+    assert(result, "space must fit into itself");
     _space_info[i].set_dense_prefix(space->bottom());
   }
+
+#ifndef PRODUCT
+  if (ParallelOldGCSplitALot) {
+    provoke_split_fill_survivor(to_space_id);
+  }
+#endif // #ifndef PRODUCT
 }
 
 void PSParallelCompact::fill_dense_prefix_end(SpaceId id)
 {
   HeapWord* const dense_prefix_end = dense_prefix(id);
-  const ChunkData* chunk = _summary_data.addr_to_chunk_ptr(dense_prefix_end);
+  const RegionData* region = _summary_data.addr_to_region_ptr(dense_prefix_end);
   const idx_t dense_prefix_bit = _mark_bitmap.addr_to_bit(dense_prefix_end);
-  if (dead_space_crosses_boundary(chunk, dense_prefix_bit)) {
+  if (dead_space_crosses_boundary(region, dense_prefix_bit)) {
     // Only enough dead space is filled so that any remaining dead space to the
     // left is larger than the minimum filler object.  (The remainder is filled
     // during the copy/update phase.)
@@ -1513,8 +1696,7 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id)
     }
 #endif  // #ifdef _LP64
 
-    MemRegion region(obj_beg, obj_len);
-    SharedHeap::fill_region_with_object(region);
+    CollectedHeap::fill_with_object(obj_beg, obj_len);
     _mark_bitmap.mark_obj(obj_beg, obj_len);
     _summary_data.add_obj(obj_beg, obj_len);
     assert(start_array(id) != NULL, "sanity");
@@ -1523,11 +1705,23 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id)
 }
 
 void
+PSParallelCompact::clear_source_region(HeapWord* beg_addr, HeapWord* end_addr)
+{
+  RegionData* const beg_ptr = _summary_data.addr_to_region_ptr(beg_addr);
+  HeapWord* const end_aligned_up = _summary_data.region_align_up(end_addr);
+  RegionData* const end_ptr = _summary_data.addr_to_region_ptr(end_aligned_up);
+  for (RegionData* cur = beg_ptr; cur < end_ptr; ++cur) {
+    cur->set_source_region(0);
+  }
+}
+
+void
 PSParallelCompact::summarize_space(SpaceId id, bool maximum_compaction)
 {
   assert(id < last_space_id, "id out of range");
-  assert(_space_info[id].dense_prefix() == _space_info[id].space()->bottom(),
-         "should have been set in summarize_spaces_quick()");
+  assert(_space_info[id].dense_prefix() == _space_info[id].space()->bottom() ||
+         ParallelOldGCSplitALot && id == old_space_id,
+         "should have been reset in summarize_spaces_quick()");
 
   const MutableSpace* space = _space_info[id].space();
   if (_space_info[id].new_top() != space->bottom()) {
@@ -1543,38 +1737,66 @@ PSParallelCompact::summarize_space(SpaceId id, bool maximum_compaction)
     }
 #endif  // #ifndef PRODUCT
 
-    // If dead space crosses the dense prefix boundary, it is (at least
-    // partially) filled with a dummy object, marked live and added to the
-    // summary data.  This simplifies the copy/update phase and must be done
-    // before the final locations of objects are determined, to prevent leaving
-    // a fragment of dead space that is too small to fill with an object.
+    // Recompute the summary data, taking into account the dense prefix.  If
+    // every last byte will be reclaimed, then the existing summary data which
+    // compacts everything can be left in place.
     if (!maximum_compaction && dense_prefix_end != space->bottom()) {
+      // If dead space crosses the dense prefix boundary, it is (at least
+      // partially) filled with a dummy object, marked live and added to the
+      // summary data.  This simplifies the copy/update phase and must be done
+      // before the final locations of objects are determined, to prevent
+      // leaving a fragment of dead space that is too small to fill.
       fill_dense_prefix_end(id);
-    }
 
-    // Compute the destination of each Chunk, and thus each object.
-    _summary_data.summarize_dense_prefix(space->bottom(), dense_prefix_end);
-    _summary_data.summarize(dense_prefix_end, space->end(),
-                            dense_prefix_end, space->top(),
-                            _space_info[id].new_top_addr());
+      // Compute the destination of each Region, and thus each object.
+      _summary_data.summarize_dense_prefix(space->bottom(), dense_prefix_end);
+      _summary_data.summarize(_space_info[id].split_info(),
+                              dense_prefix_end, space->top(), NULL,
+                              dense_prefix_end, space->end(),
+                              _space_info[id].new_top_addr());
+    }
   }
 
   if (TraceParallelOldGCSummaryPhase) {
-    const size_t chunk_size = ParallelCompactData::ChunkSize;
+    const size_t region_size = ParallelCompactData::RegionSize;
     HeapWord* const dense_prefix_end = _space_info[id].dense_prefix();
-    const size_t dp_chunk = _summary_data.addr_to_chunk_idx(dense_prefix_end);
+    const size_t dp_region = _summary_data.addr_to_region_idx(dense_prefix_end);
     const size_t dp_words = pointer_delta(dense_prefix_end, space->bottom());
     HeapWord* const new_top = _space_info[id].new_top();
-    const HeapWord* nt_aligned_up = _summary_data.chunk_align_up(new_top);
+    const HeapWord* nt_aligned_up = _summary_data.region_align_up(new_top);
     const size_t cr_words = pointer_delta(nt_aligned_up, dense_prefix_end);
     tty->print_cr("id=%d cap=" SIZE_FORMAT " dp=" PTR_FORMAT " "
-                  "dp_chunk=" SIZE_FORMAT " " "dp_count=" SIZE_FORMAT " "
+                  "dp_region=" SIZE_FORMAT " " "dp_count=" SIZE_FORMAT " "
                   "cr_count=" SIZE_FORMAT " " "nt=" PTR_FORMAT,
                   id, space->capacity_in_words(), dense_prefix_end,
-                  dp_chunk, dp_words / chunk_size,
-                  cr_words / chunk_size, new_top);
+                  dp_region, dp_words / region_size,
+                  cr_words / region_size, new_top);
   }
 }
+
+#ifndef PRODUCT
+void PSParallelCompact::summary_phase_msg(SpaceId dst_space_id,
+                                          HeapWord* dst_beg, HeapWord* dst_end,
+                                          SpaceId src_space_id,
+                                          HeapWord* src_beg, HeapWord* src_end)
+{
+  if (TraceParallelOldGCSummaryPhase) {
+    tty->print_cr("summarizing %d [%s] into %d [%s]:  "
+                  "src=" PTR_FORMAT "-" PTR_FORMAT " "
+                  SIZE_FORMAT "-" SIZE_FORMAT " "
+                  "dst=" PTR_FORMAT "-" PTR_FORMAT " "
+                  SIZE_FORMAT "-" SIZE_FORMAT,
+                  src_space_id, space_names[src_space_id],
+                  dst_space_id, space_names[dst_space_id],
+                  src_beg, src_end,
+                  _summary_data.addr_to_region_idx(src_beg),
+                  _summary_data.addr_to_region_idx(src_end),
+                  dst_beg, dst_end,
+                  _summary_data.addr_to_region_idx(dst_beg),
+                  _summary_data.addr_to_region_idx(dst_end));
+  }
+}
+#endif  // #ifndef PRODUCT
 
 void PSParallelCompact::summary_phase(ParCompactionManager* cm,
                                       bool maximum_compaction)
@@ -1584,11 +1806,6 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
   // trace("2");
 
 #ifdef  ASSERT
-  if (VerifyParallelOldWithMarkSweep  &&
-      (PSParallelCompact::total_invocations() %
-         VerifyParallelOldWithMarkSweepInterval) == 0) {
-    verify_mark_bitmap(_mark_bitmap);
-  }
   if (TraceParallelOldGCMarkingPhase) {
     tty->print_cr("add_obj_count=" SIZE_FORMAT " "
                   "add_obj_bytes=" SIZE_FORMAT,
@@ -1605,7 +1822,7 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
   if (TraceParallelOldGCSummaryPhase) {
     tty->print_cr("summary_phase:  after summarizing each space to self");
     Universe::print();
-    NOT_PRODUCT(print_chunk_ranges());
+    NOT_PRODUCT(print_region_ranges());
     if (Verbose) {
       NOT_PRODUCT(print_initial_summary_data(_summary_data, _space_info));
     }
@@ -1613,294 +1830,91 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
 
   // The amount of live data that will end up in old space (assuming it fits).
   size_t old_space_total_live = 0;
-  unsigned int id;
-  for (id = old_space_id; id < last_space_id; ++id) {
+  assert(perm_space_id < old_space_id, "should not count perm data here");
+  for (unsigned int id = old_space_id; id < last_space_id; ++id) {
     old_space_total_live += pointer_delta(_space_info[id].new_top(),
                                           _space_info[id].space()->bottom());
   }
 
-  const MutableSpace* old_space = _space_info[old_space_id].space();
-  if (old_space_total_live > old_space->capacity_in_words()) {
+  MutableSpace* const old_space = _space_info[old_space_id].space();
+  const size_t old_capacity = old_space->capacity_in_words();
+  if (old_space_total_live > old_capacity) {
     // XXX - should also try to expand
     maximum_compaction = true;
-  } else if (!UseParallelOldGCDensePrefix) {
-    maximum_compaction = true;
   }
+#ifndef PRODUCT
+  if (ParallelOldGCSplitALot && old_space_total_live < old_capacity) {
+    provoke_split(maximum_compaction);
+  }
+#endif // #ifndef PRODUCT
 
   // Permanent and Old generations.
   summarize_space(perm_space_id, maximum_compaction);
   summarize_space(old_space_id, maximum_compaction);
 
-  // Summarize the remaining spaces (those in the young gen) into old space.  If
-  // the live data from a space doesn't fit, the existing summarization is left
-  // intact, so the data is compacted down within the space itself.
-  HeapWord** new_top_addr = _space_info[old_space_id].new_top_addr();
-  HeapWord* const target_space_end = old_space->end();
-  for (id = eden_space_id; id < last_space_id; ++id) {
+  // Summarize the remaining spaces in the young gen.  The initial target space
+  // is the old gen.  If a space does not fit entirely into the target, then the
+  // remainder is compacted into the space itself and that space becomes the new
+  // target.
+  SpaceId dst_space_id = old_space_id;
+  HeapWord* dst_space_end = old_space->end();
+  HeapWord** new_top_addr = _space_info[dst_space_id].new_top_addr();
+  for (unsigned int id = eden_space_id; id < last_space_id; ++id) {
     const MutableSpace* space = _space_info[id].space();
     const size_t live = pointer_delta(_space_info[id].new_top(),
                                       space->bottom());
-    const size_t available = pointer_delta(target_space_end, *new_top_addr);
+    const size_t available = pointer_delta(dst_space_end, *new_top_addr);
+
+    NOT_PRODUCT(summary_phase_msg(dst_space_id, *new_top_addr, dst_space_end,
+                                  SpaceId(id), space->bottom(), space->top());)
     if (live > 0 && live <= available) {
       // All the live data will fit.
-      if (TraceParallelOldGCSummaryPhase) {
-        tty->print_cr("summarizing %d into old_space @ " PTR_FORMAT,
-                      id, *new_top_addr);
-      }
-      _summary_data.summarize(*new_top_addr, target_space_end,
-                              space->bottom(), space->top(),
-                              new_top_addr);
-
-      // Clear the source_chunk field for each chunk in the space.
-      HeapWord* const new_top = _space_info[id].new_top();
-      HeapWord* const clear_end = _summary_data.chunk_align_up(new_top);
-      ChunkData* beg_chunk = _summary_data.addr_to_chunk_ptr(space->bottom());
-      ChunkData* end_chunk = _summary_data.addr_to_chunk_ptr(clear_end);
-      while (beg_chunk < end_chunk) {
-        beg_chunk->set_source_chunk(0);
-        ++beg_chunk;
-      }
+      bool done = _summary_data.summarize(_space_info[id].split_info(),
+                                          space->bottom(), space->top(),
+                                          NULL,
+                                          *new_top_addr, dst_space_end,
+                                          new_top_addr);
+      assert(done, "space must fit into old gen");
 
       // Reset the new_top value for the space.
       _space_info[id].set_new_top(space->bottom());
+    } else if (live > 0) {
+      // Attempt to fit part of the source space into the target space.
+      HeapWord* next_src_addr = NULL;
+      bool done = _summary_data.summarize(_space_info[id].split_info(),
+                                          space->bottom(), space->top(),
+                                          &next_src_addr,
+                                          *new_top_addr, dst_space_end,
+                                          new_top_addr);
+      assert(!done, "space should not fit into old gen");
+      assert(next_src_addr != NULL, "sanity");
+
+      // The source space becomes the new target, so the remainder is compacted
+      // within the space itself.
+      dst_space_id = SpaceId(id);
+      dst_space_end = space->end();
+      new_top_addr = _space_info[id].new_top_addr();
+      NOT_PRODUCT(summary_phase_msg(dst_space_id,
+                                    space->bottom(), dst_space_end,
+                                    SpaceId(id), next_src_addr, space->top());)
+      done = _summary_data.summarize(_space_info[id].split_info(),
+                                     next_src_addr, space->top(),
+                                     NULL,
+                                     space->bottom(), dst_space_end,
+                                     new_top_addr);
+      assert(done, "space must fit when compacted into itself");
+      assert(*new_top_addr <= space->top(), "usage should not grow");
     }
   }
-
-  // Fill in the block data after any changes to the chunks have
-  // been made.
-#ifdef  ASSERT
-  summarize_blocks(cm, perm_space_id);
-  summarize_blocks(cm, old_space_id);
-#else
-  if (!UseParallelOldGCChunkPointerCalc) {
-    summarize_blocks(cm, perm_space_id);
-    summarize_blocks(cm, old_space_id);
-  }
-#endif
 
   if (TraceParallelOldGCSummaryPhase) {
     tty->print_cr("summary_phase:  after final summarization");
     Universe::print();
-    NOT_PRODUCT(print_chunk_ranges());
+    NOT_PRODUCT(print_region_ranges());
     if (Verbose) {
       NOT_PRODUCT(print_generic_summary_data(_summary_data, _space_info));
     }
   }
-}
-
-// Fill in the BlockData.
-// Iterate over the spaces and within each space iterate over
-// the chunks and fill in the BlockData for each chunk.
-
-void PSParallelCompact::summarize_blocks(ParCompactionManager* cm,
-                                         SpaceId first_compaction_space_id) {
-#if     0
-  DEBUG_ONLY(ParallelCompactData::BlockData::set_cur_phase(1);)
-  for (SpaceId cur_space_id = first_compaction_space_id;
-       cur_space_id != last_space_id;
-       cur_space_id = next_compaction_space_id(cur_space_id)) {
-    // Iterate over the chunks in the space
-    size_t start_chunk_index =
-      _summary_data.addr_to_chunk_idx(space(cur_space_id)->bottom());
-    BitBlockUpdateClosure bbu(mark_bitmap(),
-                              cm,
-                              start_chunk_index);
-    // Iterate over blocks.
-    for (size_t chunk_index =  start_chunk_index;
-         chunk_index < _summary_data.chunk_count() &&
-         _summary_data.chunk_to_addr(chunk_index) < space(cur_space_id)->top();
-         chunk_index++) {
-
-      // Reset the closure for the new chunk.  Note that the closure
-      // maintains some data that does not get reset for each chunk
-      // so a new instance of the closure is no appropriate.
-      bbu.reset_chunk(chunk_index);
-
-      // Start the iteration with the first live object.  This
-      // may return the end of the chunk.  That is acceptable since
-      // it will properly limit the iterations.
-      ParMarkBitMap::idx_t left_offset = mark_bitmap()->addr_to_bit(
-        _summary_data.first_live_or_end_in_chunk(chunk_index));
-
-      // End the iteration at the end of the chunk.
-      HeapWord* chunk_addr = _summary_data.chunk_to_addr(chunk_index);
-      HeapWord* chunk_end = chunk_addr + ParallelCompactData::ChunkSize;
-      ParMarkBitMap::idx_t right_offset =
-        mark_bitmap()->addr_to_bit(chunk_end);
-
-      // Blocks that have not objects starting in them can be
-      // skipped because their data will never be used.
-      if (left_offset < right_offset) {
-
-        // Iterate through the objects in the chunk.
-        ParMarkBitMap::idx_t last_offset =
-          mark_bitmap()->pair_iterate(&bbu, left_offset, right_offset);
-
-        // If last_offset is less than right_offset, then the iterations
-        // terminated while it was looking for an end bit.  "last_offset"
-        // is then the offset for the last start bit.  In this situation
-        // the "offset" field for the next block to the right (_cur_block + 1)
-        // will not have been update although there may be live data
-        // to the left of the chunk.
-
-        size_t cur_block_plus_1 = bbu.cur_block() + 1;
-        HeapWord* cur_block_plus_1_addr =
-        _summary_data.block_to_addr(bbu.cur_block()) +
-        ParallelCompactData::BlockSize;
-        HeapWord* last_offset_addr = mark_bitmap()->bit_to_addr(last_offset);
- #if 1  // This code works.  The else doesn't but should.  Why does it?
-        // The current block (cur_block()) has already been updated.
-        // The last block that may need to be updated is either the
-        // next block (current block + 1) or the block where the
-        // last object starts (which can be greater than the
-        // next block if there were no objects found in intervening
-        // blocks).
-        size_t last_block =
-          MAX2(bbu.cur_block() + 1,
-               _summary_data.addr_to_block_idx(last_offset_addr));
- #else
-        // The current block has already been updated.  The only block
-        // that remains to be updated is the block where the last
-        // object in the chunk starts.
-        size_t last_block = _summary_data.addr_to_block_idx(last_offset_addr);
- #endif
-        assert_bit_is_start(last_offset);
-        assert((last_block == _summary_data.block_count()) ||
-             (_summary_data.block(last_block)->raw_offset() == 0),
-          "Should not have been set");
-        // Is the last block still in the current chunk?  If still
-        // in this chunk, update the last block (the counting that
-        // included the current block is meant for the offset of the last
-        // block).  If not in this chunk, do nothing.  Should not
-        // update a block in the next chunk.
-        if (ParallelCompactData::chunk_contains_block(bbu.chunk_index(),
-                                                      last_block)) {
-          if (last_offset < right_offset) {
-            // The last object started in this chunk but ends beyond
-            // this chunk.  Update the block for this last object.
-            assert(mark_bitmap()->is_marked(last_offset), "Should be marked");
-            // No end bit was found.  The closure takes care of
-            // the cases where
-            //   an objects crosses over into the next block
-            //   an objects starts and ends in the next block
-            // It does not handle the case where an object is
-            // the first object in a later block and extends
-            // past the end of the chunk (i.e., the closure
-            // only handles complete objects that are in the range
-            // it is given).  That object is handed back here
-            // for any special consideration necessary.
-            //
-            // Is the first bit in the last block a start or end bit?
-            //
-            // If the partial object ends in the last block L,
-            // then the 1st bit in L may be an end bit.
-            //
-            // Else does the last object start in a block after the current
-            // block? A block AA will already have been updated if an
-            // object ends in the next block AA+1.  An object found to end in
-            // the AA+1 is the trigger that updates AA.  Objects are being
-            // counted in the current block for updaing a following
-            // block.  An object may start in later block
-            // block but may extend beyond the last block in the chunk.
-            // Updates are only done when the end of an object has been
-            // found. If the last object (covered by block L) starts
-            // beyond the current block, then no object ends in L (otherwise
-            // L would be the current block).  So the first bit in L is
-            // a start bit.
-            //
-            // Else the last objects start in the current block and ends
-            // beyond the chunk.  The current block has already been
-            // updated and there is no later block (with an object
-            // starting in it) that needs to be updated.
-            //
-            if (_summary_data.partial_obj_ends_in_block(last_block)) {
-              _summary_data.block(last_block)->set_end_bit_offset(
-                bbu.live_data_left());
-            } else if (last_offset_addr >= cur_block_plus_1_addr) {
-              //   The start of the object is on a later block
-              // (to the right of the current block and there are no
-              // complete live objects to the left of this last object
-              // within the chunk.
-              //   The first bit in the block is for the start of the
-              // last object.
-              _summary_data.block(last_block)->set_start_bit_offset(
-                bbu.live_data_left());
-            } else {
-              //   The start of the last object was found in
-              // the current chunk (which has already
-              // been updated).
-              assert(bbu.cur_block() ==
-                      _summary_data.addr_to_block_idx(last_offset_addr),
-                "Should be a block already processed");
-            }
-#ifdef ASSERT
-            // Is there enough block information to find this object?
-            // The destination of the chunk has not been set so the
-            // values returned by calc_new_pointer() and
-            // block_calc_new_pointer() will only be
-            // offsets.  But they should agree.
-            HeapWord* moved_obj_with_chunks =
-              _summary_data.chunk_calc_new_pointer(last_offset_addr);
-            HeapWord* moved_obj_with_blocks =
-              _summary_data.calc_new_pointer(last_offset_addr);
-            assert(moved_obj_with_chunks == moved_obj_with_blocks,
-              "Block calculation is wrong");
-#endif
-          } else if (last_block < _summary_data.block_count()) {
-            // Iterations ended looking for a start bit (but
-            // did not run off the end of the block table).
-            _summary_data.block(last_block)->set_start_bit_offset(
-              bbu.live_data_left());
-          }
-        }
-#ifdef ASSERT
-        // Is there enough block information to find this object?
-          HeapWord* left_offset_addr = mark_bitmap()->bit_to_addr(left_offset);
-        HeapWord* moved_obj_with_chunks =
-          _summary_data.calc_new_pointer(left_offset_addr);
-        HeapWord* moved_obj_with_blocks =
-          _summary_data.calc_new_pointer(left_offset_addr);
-          assert(moved_obj_with_chunks == moved_obj_with_blocks,
-          "Block calculation is wrong");
-#endif
-
-        // Is there another block after the end of this chunk?
-#ifdef ASSERT
-        if (last_block < _summary_data.block_count()) {
-        // No object may have been found in a block.  If that
-        // block is at the end of the chunk, the iteration will
-        // terminate without incrementing the current block so
-        // that the current block is not the last block in the
-        // chunk.  That situation precludes asserting that the
-        // current block is the last block in the chunk.  Assert
-        // the lesser condition that the current block does not
-        // exceed the chunk.
-          assert(_summary_data.block_to_addr(last_block) <=
-               (_summary_data.chunk_to_addr(chunk_index) +
-                 ParallelCompactData::ChunkSize),
-              "Chunk and block inconsistency");
-          assert(last_offset <= right_offset, "Iteration over ran end");
-        }
-#endif
-      }
-#ifdef ASSERT
-      if (PrintGCDetails && Verbose) {
-        if (_summary_data.chunk(chunk_index)->partial_obj_size() == 1) {
-          size_t first_block =
-            chunk_index / ParallelCompactData::BlocksPerChunk;
-          gclog_or_tty->print_cr("first_block " PTR_FORMAT
-            " _offset " PTR_FORMAT
-            "_first_is_start_bit %d",
-            first_block,
-            _summary_data.block(first_block)->raw_offset(),
-            _summary_data.block(first_block)->first_is_start_bit());
-        }
-      }
-#endif
-    }
-  }
-  DEBUG_ONLY(ParallelCompactData::BlockData::set_cur_phase(16);)
-#endif  // #if 0
 }
 
 // This method should contain all heap-specific policy for invoking a full
@@ -1937,18 +1951,9 @@ void PSParallelCompact::invoke(bool maximum_heap_compaction) {
   }
 }
 
-bool ParallelCompactData::chunk_contains(size_t chunk_index, HeapWord* addr) {
-  size_t addr_chunk_index = addr_to_chunk_idx(addr);
-  return chunk_index == addr_chunk_index;
-}
-
-bool ParallelCompactData::chunk_contains_block(size_t chunk_index,
-                                               size_t block_index) {
-  size_t first_block_in_chunk = chunk_index * BlocksPerChunk;
-  size_t last_block_in_chunk = (chunk_index + 1) * BlocksPerChunk - 1;
-
-  return (first_block_in_chunk <= block_index) &&
-         (block_index <= last_block_in_chunk);
+bool ParallelCompactData::region_contains(size_t region_index, HeapWord* addr) {
+  size_t addr_region_index = addr_to_region_idx(addr);
+  return region_index == addr_region_index;
 }
 
 // This method contains no policy. You should probably
@@ -2023,6 +2028,7 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 
     ref_processor()->enable_discovery();
+    ref_processor()->setup_policy(maximum_heap_compaction);
 
     bool marked_for_unloading = false;
 
@@ -2038,38 +2044,8 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     }
 #endif  // #ifndef PRODUCT
 
-#ifdef ASSERT
-    if (VerifyParallelOldWithMarkSweep &&
-        (PSParallelCompact::total_invocations() %
-           VerifyParallelOldWithMarkSweepInterval) == 0) {
-      gclog_or_tty->print_cr("Verify marking with mark_sweep_phase1()");
-      if (PrintGCDetails && Verbose) {
-        gclog_or_tty->print_cr("mark_sweep_phase1:");
-      }
-      // Clear the discovered lists so that discovered objects
-      // don't look like they have been discovered twice.
-      ref_processor()->clear_discovered_references();
-
-      PSMarkSweep::allocate_stacks();
-      MemRegion mr = Universe::heap()->reserved_region();
-      PSMarkSweep::ref_processor()->enable_discovery();
-      PSMarkSweep::mark_sweep_phase1(maximum_heap_compaction);
-    }
-#endif
-
     bool max_on_system_gc = UseMaximumCompactionOnSystemGC && is_system_gc;
     summary_phase(vmthread_cm, maximum_heap_compaction || max_on_system_gc);
-
-#ifdef ASSERT
-    if (VerifyParallelOldWithMarkSweep &&
-        (PSParallelCompact::total_invocations() %
-           VerifyParallelOldWithMarkSweepInterval) == 0) {
-      if (PrintGCDetails && Verbose) {
-        gclog_or_tty->print_cr("mark_sweep_phase2:");
-      }
-      PSMarkSweep::mark_sweep_phase2();
-    }
-#endif
 
     COMPILER2_PRESENT(assert(DerivedPointerTable::is_active(), "Sanity"));
     COMPILER2_PRESENT(DerivedPointerTable::set_active(false));
@@ -2077,28 +2053,6 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     // adjust_roots() updates Universe::_intArrayKlassObj which is
     // needed by the compaction for filling holes in the dense prefix.
     adjust_roots();
-
-#ifdef ASSERT
-    if (VerifyParallelOldWithMarkSweep &&
-        (PSParallelCompact::total_invocations() %
-           VerifyParallelOldWithMarkSweepInterval) == 0) {
-      // Do a separate verify phase so that the verify
-      // code can use the the forwarding pointers to
-      // check the new pointer calculation.  The restore_marks()
-      // has to be done before the real compact.
-      vmthread_cm->set_action(ParCompactionManager::VerifyUpdate);
-      compact_perm(vmthread_cm);
-      compact_serial(vmthread_cm);
-      vmthread_cm->set_action(ParCompactionManager::ResetObjects);
-      compact_perm(vmthread_cm);
-      compact_serial(vmthread_cm);
-      vmthread_cm->set_action(ParCompactionManager::UpdateAndCopy);
-
-      // For debugging only
-      PSMarkSweep::restore_marks();
-      PSMarkSweep::deallocate_stacks();
-    }
-#endif
 
     compaction_start.update();
     // Does the perm gen always have to be done serially because
@@ -2303,9 +2257,14 @@ bool PSParallelCompact::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_po
 
   // Fill the unused part of the old gen.
   MutableSpace* const old_space = old_gen->object_space();
-  MemRegion old_gen_unused(old_space->top(), old_space->end());
-  if (!old_gen_unused.is_empty()) {
-    SharedHeap::fill_region_with_object(old_gen_unused);
+  HeapWord* const unused_start = old_space->top();
+  size_t const unused_words = pointer_delta(old_space->end(), unused_start);
+
+  if (unused_words > 0) {
+    if (unused_words < CollectedHeap::min_fill_size()) {
+      return false;  // If the old gen cannot be filled, must give up.
+    }
+    CollectedHeap::fill_with_objects(unused_start, unused_words);
   }
 
   // Take the live data from eden and set both top and end in the old gen to
@@ -2321,9 +2280,8 @@ bool PSParallelCompact::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_po
 
   // Update the object start array for the filler object and the data from eden.
   ObjectStartArray* const start_array = old_gen->start_array();
-  HeapWord* const start = old_gen_unused.start();
-  for (HeapWord* addr = start; addr < new_top; addr += oop(addr)->size()) {
-    start_array->allocate_block(addr);
+  for (HeapWord* p = unused_start; p < new_top; p += oop(p)->size()) {
+    start_array->allocate_block(p);
   }
 
   // Could update the promoted average here, but it is not typically updated at
@@ -2349,7 +2307,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
 
   ParallelScavengeHeap* heap = gc_heap();
   uint parallel_gc_threads = heap->gc_task_manager()->workers();
-  TaskQueueSetSuper* qset = ParCompactionManager::chunk_array();
+  TaskQueueSetSuper* qset = ParCompactionManager::region_array();
   ParallelTaskTerminator terminator(parallel_gc_threads, qset);
 
   PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
@@ -2391,26 +2349,14 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   // Process reference objects found during marking
   {
     TraceTime tm_r("reference processing", print_phases(), true, gclog_or_tty);
-    ReferencePolicy *soft_ref_policy;
-    if (maximum_heap_compaction) {
-      soft_ref_policy = new AlwaysClearPolicy();
-    } else {
-#ifdef COMPILER2
-      soft_ref_policy = new LRUMaxHeapPolicy();
-#else
-      soft_ref_policy = new LRUCurrentHeapPolicy();
-#endif // COMPILER2
-    }
-    assert(soft_ref_policy != NULL, "No soft reference policy");
     if (ref_processor()->processing_is_mt()) {
       RefProcTaskExecutor task_executor;
       ref_processor()->process_discovered_references(
-        soft_ref_policy, is_alive_closure(), &mark_and_push_closure,
-        &follow_stack_closure, &task_executor);
+        is_alive_closure(), &mark_and_push_closure, &follow_stack_closure,
+        &task_executor);
     } else {
       ref_processor()->process_discovered_references(
-        soft_ref_policy, is_alive_closure(), &mark_and_push_closure,
-        &follow_stack_closure, NULL);
+        is_alive_closure(), &mark_and_push_closure, &follow_stack_closure, NULL);
     }
   }
 
@@ -2487,8 +2433,9 @@ void PSParallelCompact::compact_perm(ParCompactionManager* cm) {
   move_and_update(cm, perm_space_id);
 }
 
-void PSParallelCompact::enqueue_chunk_draining_tasks(GCTaskQueue* q,
-                                                     uint parallel_gc_threads) {
+void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,
+                                                      uint parallel_gc_threads)
+{
   TraceTime tm("drain task setup", print_phases(), true, gclog_or_tty);
 
   const unsigned int task_count = MAX2(parallel_gc_threads, 1U);
@@ -2496,13 +2443,13 @@ void PSParallelCompact::enqueue_chunk_draining_tasks(GCTaskQueue* q,
     q->enqueue(new DrainStacksCompactionTask());
   }
 
-  // Find all chunks that are available (can be filled immediately) and
+  // Find all regions that are available (can be filled immediately) and
   // distribute them to the thread stacks.  The iteration is done in reverse
-  // order (high to low) so the chunks will be removed in ascending order.
+  // order (high to low) so the regions will be removed in ascending order.
 
   const ParallelCompactData& sd = PSParallelCompact::summary_data();
 
-  size_t fillable_chunks = 0;   // A count for diagnostic purposes.
+  size_t fillable_regions = 0;   // A count for diagnostic purposes.
   unsigned int which = 0;       // The worker thread number.
 
   for (unsigned int id = to_space_id; id > perm_space_id; --id) {
@@ -2510,25 +2457,26 @@ void PSParallelCompact::enqueue_chunk_draining_tasks(GCTaskQueue* q,
     MutableSpace* const space = space_info->space();
     HeapWord* const new_top = space_info->new_top();
 
-    const size_t beg_chunk = sd.addr_to_chunk_idx(space_info->dense_prefix());
-    const size_t end_chunk = sd.addr_to_chunk_idx(sd.chunk_align_up(new_top));
-    assert(end_chunk > 0, "perm gen cannot be empty");
+    const size_t beg_region = sd.addr_to_region_idx(space_info->dense_prefix());
+    const size_t end_region =
+      sd.addr_to_region_idx(sd.region_align_up(new_top));
+    assert(end_region > 0, "perm gen cannot be empty");
 
-    for (size_t cur = end_chunk - 1; cur >= beg_chunk; --cur) {
-      if (sd.chunk(cur)->claim_unsafe()) {
+    for (size_t cur = end_region - 1; cur >= beg_region; --cur) {
+      if (sd.region(cur)->claim_unsafe()) {
         ParCompactionManager* cm = ParCompactionManager::manager_array(which);
         cm->save_for_processing(cur);
 
         if (TraceParallelOldGCCompactionPhase && Verbose) {
-          const size_t count_mod_8 = fillable_chunks & 7;
+          const size_t count_mod_8 = fillable_regions & 7;
           if (count_mod_8 == 0) gclog_or_tty->print("fillable: ");
           gclog_or_tty->print(" " SIZE_FORMAT_W(7), cur);
           if (count_mod_8 == 7) gclog_or_tty->cr();
         }
 
-        NOT_PRODUCT(++fillable_chunks;)
+        NOT_PRODUCT(++fillable_regions;)
 
-        // Assign chunks to threads in round-robin fashion.
+        // Assign regions to threads in round-robin fashion.
         if (++which == task_count) {
           which = 0;
         }
@@ -2537,8 +2485,8 @@ void PSParallelCompact::enqueue_chunk_draining_tasks(GCTaskQueue* q,
   }
 
   if (TraceParallelOldGCCompactionPhase) {
-    if (Verbose && (fillable_chunks & 7) != 0) gclog_or_tty->cr();
-    gclog_or_tty->print_cr("%u initially fillable chunks", fillable_chunks);
+    if (Verbose && (fillable_regions & 7) != 0) gclog_or_tty->cr();
+    gclog_or_tty->print_cr("%u initially fillable regions", fillable_regions);
   }
 }
 
@@ -2551,44 +2499,44 @@ void PSParallelCompact::enqueue_dense_prefix_tasks(GCTaskQueue* q,
   ParallelCompactData& sd = PSParallelCompact::summary_data();
 
   // Iterate over all the spaces adding tasks for updating
-  // chunks in the dense prefix.  Assume that 1 gc thread
+  // regions in the dense prefix.  Assume that 1 gc thread
   // will work on opening the gaps and the remaining gc threads
   // will work on the dense prefix.
-  SpaceId space_id = old_space_id;
-  while (space_id != last_space_id) {
+  unsigned int space_id;
+  for (space_id = old_space_id; space_id < last_space_id; ++ space_id) {
     HeapWord* const dense_prefix_end = _space_info[space_id].dense_prefix();
     const MutableSpace* const space = _space_info[space_id].space();
 
     if (dense_prefix_end == space->bottom()) {
       // There is no dense prefix for this space.
-      space_id = next_compaction_space_id(space_id);
       continue;
     }
 
-    // The dense prefix is before this chunk.
-    size_t chunk_index_end_dense_prefix =
-        sd.addr_to_chunk_idx(dense_prefix_end);
-    ChunkData* const dense_prefix_cp = sd.chunk(chunk_index_end_dense_prefix);
+    // The dense prefix is before this region.
+    size_t region_index_end_dense_prefix =
+        sd.addr_to_region_idx(dense_prefix_end);
+    RegionData* const dense_prefix_cp =
+      sd.region(region_index_end_dense_prefix);
     assert(dense_prefix_end == space->end() ||
            dense_prefix_cp->available() ||
            dense_prefix_cp->claimed(),
-           "The chunk after the dense prefix should always be ready to fill");
+           "The region after the dense prefix should always be ready to fill");
 
-    size_t chunk_index_start = sd.addr_to_chunk_idx(space->bottom());
+    size_t region_index_start = sd.addr_to_region_idx(space->bottom());
 
     // Is there dense prefix work?
-    size_t total_dense_prefix_chunks =
-      chunk_index_end_dense_prefix - chunk_index_start;
-    // How many chunks of the dense prefix should be given to
+    size_t total_dense_prefix_regions =
+      region_index_end_dense_prefix - region_index_start;
+    // How many regions of the dense prefix should be given to
     // each thread?
-    if (total_dense_prefix_chunks > 0) {
+    if (total_dense_prefix_regions > 0) {
       uint tasks_for_dense_prefix = 1;
       if (UseParallelDensePrefixUpdate) {
-        if (total_dense_prefix_chunks <=
+        if (total_dense_prefix_regions <=
             (parallel_gc_threads * PAR_OLD_DENSE_PREFIX_OVER_PARTITIONING)) {
           // Don't over partition.  This assumes that
           // PAR_OLD_DENSE_PREFIX_OVER_PARTITIONING is a small integer value
-          // so there are not many chunks to process.
+          // so there are not many regions to process.
           tasks_for_dense_prefix = parallel_gc_threads;
         } else {
           // Over partition
@@ -2596,50 +2544,47 @@ void PSParallelCompact::enqueue_dense_prefix_tasks(GCTaskQueue* q,
             PAR_OLD_DENSE_PREFIX_OVER_PARTITIONING;
         }
       }
-      size_t chunks_per_thread = total_dense_prefix_chunks /
+      size_t regions_per_thread = total_dense_prefix_regions /
         tasks_for_dense_prefix;
-      // Give each thread at least 1 chunk.
-      if (chunks_per_thread == 0) {
-        chunks_per_thread = 1;
+      // Give each thread at least 1 region.
+      if (regions_per_thread == 0) {
+        regions_per_thread = 1;
       }
 
       for (uint k = 0; k < tasks_for_dense_prefix; k++) {
-        if (chunk_index_start >= chunk_index_end_dense_prefix) {
+        if (region_index_start >= region_index_end_dense_prefix) {
           break;
         }
-        // chunk_index_end is not processed
-        size_t chunk_index_end = MIN2(chunk_index_start + chunks_per_thread,
-                                      chunk_index_end_dense_prefix);
-        q->enqueue(new UpdateDensePrefixTask(
-                                 space_id,
-                                 chunk_index_start,
-                                 chunk_index_end));
-        chunk_index_start = chunk_index_end;
+        // region_index_end is not processed
+        size_t region_index_end = MIN2(region_index_start + regions_per_thread,
+                                       region_index_end_dense_prefix);
+        q->enqueue(new UpdateDensePrefixTask(SpaceId(space_id),
+                                             region_index_start,
+                                             region_index_end));
+        region_index_start = region_index_end;
       }
     }
     // This gets any part of the dense prefix that did not
     // fit evenly.
-    if (chunk_index_start < chunk_index_end_dense_prefix) {
-      q->enqueue(new UpdateDensePrefixTask(
-                                 space_id,
-                                 chunk_index_start,
-                                 chunk_index_end_dense_prefix));
+    if (region_index_start < region_index_end_dense_prefix) {
+      q->enqueue(new UpdateDensePrefixTask(SpaceId(space_id),
+                                           region_index_start,
+                                           region_index_end_dense_prefix));
     }
-    space_id = next_compaction_space_id(space_id);
-  }  // End tasks for dense prefix
+  }
 }
 
-void PSParallelCompact::enqueue_chunk_stealing_tasks(
+void PSParallelCompact::enqueue_region_stealing_tasks(
                                      GCTaskQueue* q,
                                      ParallelTaskTerminator* terminator_ptr,
                                      uint parallel_gc_threads) {
   TraceTime tm("steal task setup", print_phases(), true, gclog_or_tty);
 
-  // Once a thread has drained it's stack, it should try to steal chunks from
+  // Once a thread has drained it's stack, it should try to steal regions from
   // other threads.
   if (parallel_gc_threads > 1) {
     for (uint j = 0; j < parallel_gc_threads; j++) {
-      q->enqueue(new StealChunkCompactionTask(terminator_ptr));
+      q->enqueue(new StealRegionCompactionTask(terminator_ptr));
     }
   }
 }
@@ -2654,13 +2599,13 @@ void PSParallelCompact::compact() {
   PSOldGen* old_gen = heap->old_gen();
   old_gen->start_array()->reset();
   uint parallel_gc_threads = heap->gc_task_manager()->workers();
-  TaskQueueSetSuper* qset = ParCompactionManager::chunk_array();
+  TaskQueueSetSuper* qset = ParCompactionManager::region_array();
   ParallelTaskTerminator terminator(parallel_gc_threads, qset);
 
   GCTaskQueue* q = GCTaskQueue::create();
-  enqueue_chunk_draining_tasks(q, parallel_gc_threads);
+  enqueue_region_draining_tasks(q, parallel_gc_threads);
   enqueue_dense_prefix_tasks(q, parallel_gc_threads);
-  enqueue_chunk_stealing_tasks(q, &terminator, parallel_gc_threads);
+  enqueue_region_stealing_tasks(q, &terminator, parallel_gc_threads);
 
   {
     TraceTime tm_pc("par compact", print_phases(), true, gclog_or_tty);
@@ -2676,9 +2621,9 @@ void PSParallelCompact::compact() {
     WaitForBarrierGCTask::destroy(fin);
 
 #ifdef  ASSERT
-    // Verify that all chunks have been processed before the deferred updates.
+    // Verify that all regions have been processed before the deferred updates.
     // Note that perm_space_id is skipped; this type of verification is not
-    // valid until the perm gen is compacted by chunks.
+    // valid until the perm gen is compacted by regions.
     for (unsigned int id = old_space_id; id < last_space_id; ++id) {
       verify_complete(SpaceId(id));
     }
@@ -2697,42 +2642,42 @@ void PSParallelCompact::compact() {
 
 #ifdef  ASSERT
 void PSParallelCompact::verify_complete(SpaceId space_id) {
-  // All Chunks between space bottom() to new_top() should be marked as filled
-  // and all Chunks between new_top() and top() should be available (i.e.,
+  // All Regions between space bottom() to new_top() should be marked as filled
+  // and all Regions between new_top() and top() should be available (i.e.,
   // should have been emptied).
   ParallelCompactData& sd = summary_data();
   SpaceInfo si = _space_info[space_id];
-  HeapWord* new_top_addr = sd.chunk_align_up(si.new_top());
-  HeapWord* old_top_addr = sd.chunk_align_up(si.space()->top());
-  const size_t beg_chunk = sd.addr_to_chunk_idx(si.space()->bottom());
-  const size_t new_top_chunk = sd.addr_to_chunk_idx(new_top_addr);
-  const size_t old_top_chunk = sd.addr_to_chunk_idx(old_top_addr);
+  HeapWord* new_top_addr = sd.region_align_up(si.new_top());
+  HeapWord* old_top_addr = sd.region_align_up(si.space()->top());
+  const size_t beg_region = sd.addr_to_region_idx(si.space()->bottom());
+  const size_t new_top_region = sd.addr_to_region_idx(new_top_addr);
+  const size_t old_top_region = sd.addr_to_region_idx(old_top_addr);
 
   bool issued_a_warning = false;
 
-  size_t cur_chunk;
-  for (cur_chunk = beg_chunk; cur_chunk < new_top_chunk; ++cur_chunk) {
-    const ChunkData* const c = sd.chunk(cur_chunk);
+  size_t cur_region;
+  for (cur_region = beg_region; cur_region < new_top_region; ++cur_region) {
+    const RegionData* const c = sd.region(cur_region);
     if (!c->completed()) {
-      warning("chunk " SIZE_FORMAT " not filled:  "
+      warning("region " SIZE_FORMAT " not filled:  "
               "destination_count=" SIZE_FORMAT,
-              cur_chunk, c->destination_count());
+              cur_region, c->destination_count());
       issued_a_warning = true;
     }
   }
 
-  for (cur_chunk = new_top_chunk; cur_chunk < old_top_chunk; ++cur_chunk) {
-    const ChunkData* const c = sd.chunk(cur_chunk);
+  for (cur_region = new_top_region; cur_region < old_top_region; ++cur_region) {
+    const RegionData* const c = sd.region(cur_region);
     if (!c->available()) {
-      warning("chunk " SIZE_FORMAT " not empty:   "
+      warning("region " SIZE_FORMAT " not empty:   "
               "destination_count=" SIZE_FORMAT,
-              cur_chunk, c->destination_count());
+              cur_region, c->destination_count());
       issued_a_warning = true;
     }
   }
 
   if (issued_a_warning) {
-    print_chunk_ranges();
+    print_region_ranges();
   }
 }
 #endif  // #ifdef ASSERT
@@ -2933,46 +2878,47 @@ void PSParallelCompact::print_new_location_of_heap_address(HeapWord* q) {
 }
 #endif //VALIDATE_MARK_SWEEP
 
-// Update interior oops in the ranges of chunks [beg_chunk, end_chunk).
+// Update interior oops in the ranges of regions [beg_region, end_region).
 void
 PSParallelCompact::update_and_deadwood_in_dense_prefix(ParCompactionManager* cm,
                                                        SpaceId space_id,
-                                                       size_t beg_chunk,
-                                                       size_t end_chunk) {
+                                                       size_t beg_region,
+                                                       size_t end_region) {
   ParallelCompactData& sd = summary_data();
   ParMarkBitMap* const mbm = mark_bitmap();
 
-  HeapWord* beg_addr = sd.chunk_to_addr(beg_chunk);
-  HeapWord* const end_addr = sd.chunk_to_addr(end_chunk);
-  assert(beg_chunk <= end_chunk, "bad chunk range");
+  HeapWord* beg_addr = sd.region_to_addr(beg_region);
+  HeapWord* const end_addr = sd.region_to_addr(end_region);
+  assert(beg_region <= end_region, "bad region range");
   assert(end_addr <= dense_prefix(space_id), "not in the dense prefix");
 
 #ifdef  ASSERT
-  // Claim the chunks to avoid triggering an assert when they are marked as
+  // Claim the regions to avoid triggering an assert when they are marked as
   // filled.
-  for (size_t claim_chunk = beg_chunk; claim_chunk < end_chunk; ++claim_chunk) {
-    assert(sd.chunk(claim_chunk)->claim_unsafe(), "claim() failed");
+  for (size_t claim_region = beg_region; claim_region < end_region; ++claim_region) {
+    assert(sd.region(claim_region)->claim_unsafe(), "claim() failed");
   }
 #endif  // #ifdef ASSERT
 
   if (beg_addr != space(space_id)->bottom()) {
     // Find the first live object or block of dead space that *starts* in this
-    // range of chunks.  If a partial object crosses onto the chunk, skip it; it
-    // will be marked for 'deferred update' when the object head is processed.
-    // If dead space crosses onto the chunk, it is also skipped; it will be
-    // filled when the prior chunk is processed.  If neither of those apply, the
-    // first word in the chunk is the start of a live object or dead space.
+    // range of regions.  If a partial object crosses onto the region, skip it;
+    // it will be marked for 'deferred update' when the object head is
+    // processed.  If dead space crosses onto the region, it is also skipped; it
+    // will be filled when the prior region is processed.  If neither of those
+    // apply, the first word in the region is the start of a live object or dead
+    // space.
     assert(beg_addr > space(space_id)->bottom(), "sanity");
-    const ChunkData* const cp = sd.chunk(beg_chunk);
+    const RegionData* const cp = sd.region(beg_region);
     if (cp->partial_obj_size() != 0) {
-      beg_addr = sd.partial_obj_end(beg_chunk);
+      beg_addr = sd.partial_obj_end(beg_region);
     } else if (dead_space_crosses_boundary(cp, mbm->addr_to_bit(beg_addr))) {
       beg_addr = mbm->find_obj_beg(beg_addr, end_addr);
     }
   }
 
   if (beg_addr < end_addr) {
-    // A live object or block of dead space starts in this range of Chunks.
+    // A live object or block of dead space starts in this range of Regions.
      HeapWord* const dense_prefix_end = dense_prefix(space_id);
 
     // Create closures and iterate.
@@ -2986,10 +2932,10 @@ PSParallelCompact::update_and_deadwood_in_dense_prefix(ParCompactionManager* cm,
     }
   }
 
-  // Mark the chunks as filled.
-  ChunkData* const beg_cp = sd.chunk(beg_chunk);
-  ChunkData* const end_cp = sd.chunk(end_chunk);
-  for (ChunkData* cp = beg_cp; cp < end_cp; ++cp) {
+  // Mark the regions as filled.
+  RegionData* const beg_cp = sd.region(beg_region);
+  RegionData* const end_cp = sd.region(end_region);
+  for (RegionData* cp = beg_cp; cp < end_cp; ++cp) {
     cp->set_completed();
   }
 }
@@ -3021,13 +2967,13 @@ void PSParallelCompact::update_deferred_objects(ParCompactionManager* cm,
   const MutableSpace* const space = space_info->space();
   assert(space_info->dense_prefix() >= space->bottom(), "dense_prefix not set");
   HeapWord* const beg_addr = space_info->dense_prefix();
-  HeapWord* const end_addr = sd.chunk_align_up(space_info->new_top());
+  HeapWord* const end_addr = sd.region_align_up(space_info->new_top());
 
-  const ChunkData* const beg_chunk = sd.addr_to_chunk_ptr(beg_addr);
-  const ChunkData* const end_chunk = sd.addr_to_chunk_ptr(end_addr);
-  const ChunkData* cur_chunk;
-  for (cur_chunk = beg_chunk; cur_chunk < end_chunk; ++cur_chunk) {
-    HeapWord* const addr = cur_chunk->deferred_obj_addr();
+  const RegionData* const beg_region = sd.addr_to_region_ptr(beg_addr);
+  const RegionData* const end_region = sd.addr_to_region_ptr(end_addr);
+  const RegionData* cur_region;
+  for (cur_region = beg_region; cur_region < end_region; ++cur_region) {
+    HeapWord* const addr = cur_region->deferred_obj_addr();
     if (addr != NULL) {
       if (start_array != NULL) {
         start_array->allocate_block(addr);
@@ -3071,47 +3017,55 @@ PSParallelCompact::skip_live_words(HeapWord* beg, HeapWord* end, size_t count)
   return m->bit_to_addr(cur_beg);
 }
 
-HeapWord*
-PSParallelCompact::first_src_addr(HeapWord* const dest_addr,
-                                 size_t src_chunk_idx)
+HeapWord* PSParallelCompact::first_src_addr(HeapWord* const dest_addr,
+                                            SpaceId src_space_id,
+                                            size_t src_region_idx)
 {
-  ParMarkBitMap* const bitmap = mark_bitmap();
+  assert(summary_data().is_region_aligned(dest_addr), "not aligned");
+
+  const SplitInfo& split_info = _space_info[src_space_id].split_info();
+  if (split_info.dest_region_addr() == dest_addr) {
+    // The partial object ending at the split point contains the first word to
+    // be copied to dest_addr.
+    return split_info.first_src_addr();
+  }
+
   const ParallelCompactData& sd = summary_data();
-  const size_t ChunkSize = ParallelCompactData::ChunkSize;
+  ParMarkBitMap* const bitmap = mark_bitmap();
+  const size_t RegionSize = ParallelCompactData::RegionSize;
 
-  assert(sd.is_chunk_aligned(dest_addr), "not aligned");
+  assert(sd.is_region_aligned(dest_addr), "not aligned");
+  const RegionData* const src_region_ptr = sd.region(src_region_idx);
+  const size_t partial_obj_size = src_region_ptr->partial_obj_size();
+  HeapWord* const src_region_destination = src_region_ptr->destination();
 
-  const ChunkData* const src_chunk_ptr = sd.chunk(src_chunk_idx);
-  const size_t partial_obj_size = src_chunk_ptr->partial_obj_size();
-  HeapWord* const src_chunk_destination = src_chunk_ptr->destination();
+  assert(dest_addr >= src_region_destination, "wrong src region");
+  assert(src_region_ptr->data_size() > 0, "src region cannot be empty");
 
-  assert(dest_addr >= src_chunk_destination, "wrong src chunk");
-  assert(src_chunk_ptr->data_size() > 0, "src chunk cannot be empty");
+  HeapWord* const src_region_beg = sd.region_to_addr(src_region_idx);
+  HeapWord* const src_region_end = src_region_beg + RegionSize;
 
-  HeapWord* const src_chunk_beg = sd.chunk_to_addr(src_chunk_idx);
-  HeapWord* const src_chunk_end = src_chunk_beg + ChunkSize;
-
-  HeapWord* addr = src_chunk_beg;
-  if (dest_addr == src_chunk_destination) {
-    // Return the first live word in the source chunk.
+  HeapWord* addr = src_region_beg;
+  if (dest_addr == src_region_destination) {
+    // Return the first live word in the source region.
     if (partial_obj_size == 0) {
-      addr = bitmap->find_obj_beg(addr, src_chunk_end);
-      assert(addr < src_chunk_end, "no objects start in src chunk");
+      addr = bitmap->find_obj_beg(addr, src_region_end);
+      assert(addr < src_region_end, "no objects start in src region");
     }
     return addr;
   }
 
   // Must skip some live data.
-  size_t words_to_skip = dest_addr - src_chunk_destination;
-  assert(src_chunk_ptr->data_size() > words_to_skip, "wrong src chunk");
+  size_t words_to_skip = dest_addr - src_region_destination;
+  assert(src_region_ptr->data_size() > words_to_skip, "wrong src region");
 
   if (partial_obj_size >= words_to_skip) {
     // All the live words to skip are part of the partial object.
     addr += words_to_skip;
     if (partial_obj_size == words_to_skip) {
       // Find the first live word past the partial object.
-      addr = bitmap->find_obj_beg(addr, src_chunk_end);
-      assert(addr < src_chunk_end, "wrong src chunk");
+      addr = bitmap->find_obj_beg(addr, src_region_end);
+      assert(addr < src_region_end, "wrong src region");
     }
     return addr;
   }
@@ -3122,63 +3076,79 @@ PSParallelCompact::first_src_addr(HeapWord* const dest_addr,
     addr += partial_obj_size;
   }
 
-  // Skip over live words due to objects that start in the chunk.
-  addr = skip_live_words(addr, src_chunk_end, words_to_skip);
-  assert(addr < src_chunk_end, "wrong src chunk");
+  // Skip over live words due to objects that start in the region.
+  addr = skip_live_words(addr, src_region_end, words_to_skip);
+  assert(addr < src_region_end, "wrong src region");
   return addr;
 }
 
 void PSParallelCompact::decrement_destination_counts(ParCompactionManager* cm,
-                                                     size_t beg_chunk,
+                                                     SpaceId src_space_id,
+                                                     size_t beg_region,
                                                      HeapWord* end_addr)
 {
   ParallelCompactData& sd = summary_data();
-  ChunkData* const beg = sd.chunk(beg_chunk);
-  HeapWord* const end_addr_aligned_up = sd.chunk_align_up(end_addr);
-  ChunkData* const end = sd.addr_to_chunk_ptr(end_addr_aligned_up);
-  size_t cur_idx = beg_chunk;
-  for (ChunkData* cur = beg; cur < end; ++cur, ++cur_idx) {
-    assert(cur->data_size() > 0, "chunk must have live data");
+
+#ifdef ASSERT
+  MutableSpace* const src_space = _space_info[src_space_id].space();
+  HeapWord* const beg_addr = sd.region_to_addr(beg_region);
+  assert(src_space->contains(beg_addr) || beg_addr == src_space->end(),
+         "src_space_id does not match beg_addr");
+  assert(src_space->contains(end_addr) || end_addr == src_space->end(),
+         "src_space_id does not match end_addr");
+#endif // #ifdef ASSERT
+
+  RegionData* const beg = sd.region(beg_region);
+  RegionData* const end = sd.addr_to_region_ptr(sd.region_align_up(end_addr));
+
+  // Regions up to new_top() are enqueued if they become available.
+  HeapWord* const new_top = _space_info[src_space_id].new_top();
+  RegionData* const enqueue_end =
+    sd.addr_to_region_ptr(sd.region_align_up(new_top));
+
+  for (RegionData* cur = beg; cur < end; ++cur) {
+    assert(cur->data_size() > 0, "region must have live data");
     cur->decrement_destination_count();
-    if (cur_idx <= cur->source_chunk() && cur->available() && cur->claim()) {
-      cm->save_for_processing(cur_idx);
+    if (cur < enqueue_end && cur->available() && cur->claim()) {
+      cm->save_for_processing(sd.region(cur));
     }
   }
 }
 
-size_t PSParallelCompact::next_src_chunk(MoveAndUpdateClosure& closure,
-                                         SpaceId& src_space_id,
-                                         HeapWord*& src_space_top,
-                                         HeapWord* end_addr)
+size_t PSParallelCompact::next_src_region(MoveAndUpdateClosure& closure,
+                                          SpaceId& src_space_id,
+                                          HeapWord*& src_space_top,
+                                          HeapWord* end_addr)
 {
-  typedef ParallelCompactData::ChunkData ChunkData;
+  typedef ParallelCompactData::RegionData RegionData;
 
   ParallelCompactData& sd = PSParallelCompact::summary_data();
-  const size_t chunk_size = ParallelCompactData::ChunkSize;
+  const size_t region_size = ParallelCompactData::RegionSize;
 
-  size_t src_chunk_idx = 0;
+  size_t src_region_idx = 0;
 
-  // Skip empty chunks (if any) up to the top of the space.
-  HeapWord* const src_aligned_up = sd.chunk_align_up(end_addr);
-  ChunkData* src_chunk_ptr = sd.addr_to_chunk_ptr(src_aligned_up);
-  HeapWord* const top_aligned_up = sd.chunk_align_up(src_space_top);
-  const ChunkData* const top_chunk_ptr = sd.addr_to_chunk_ptr(top_aligned_up);
-  while (src_chunk_ptr < top_chunk_ptr && src_chunk_ptr->data_size() == 0) {
-    ++src_chunk_ptr;
+  // Skip empty regions (if any) up to the top of the space.
+  HeapWord* const src_aligned_up = sd.region_align_up(end_addr);
+  RegionData* src_region_ptr = sd.addr_to_region_ptr(src_aligned_up);
+  HeapWord* const top_aligned_up = sd.region_align_up(src_space_top);
+  const RegionData* const top_region_ptr =
+    sd.addr_to_region_ptr(top_aligned_up);
+  while (src_region_ptr < top_region_ptr && src_region_ptr->data_size() == 0) {
+    ++src_region_ptr;
   }
 
-  if (src_chunk_ptr < top_chunk_ptr) {
-    // The next source chunk is in the current space.  Update src_chunk_idx and
-    // the source address to match src_chunk_ptr.
-    src_chunk_idx = sd.chunk(src_chunk_ptr);
-    HeapWord* const src_chunk_addr = sd.chunk_to_addr(src_chunk_idx);
-    if (src_chunk_addr > closure.source()) {
-      closure.set_source(src_chunk_addr);
+  if (src_region_ptr < top_region_ptr) {
+    // The next source region is in the current space.  Update src_region_idx
+    // and the source address to match src_region_ptr.
+    src_region_idx = sd.region(src_region_ptr);
+    HeapWord* const src_region_addr = sd.region_to_addr(src_region_idx);
+    if (src_region_addr > closure.source()) {
+      closure.set_source(src_region_addr);
     }
-    return src_chunk_idx;
+    return src_region_idx;
   }
 
-  // Switch to a new source space and find the first non-empty chunk.
+  // Switch to a new source space and find the first non-empty region.
   unsigned int space_id = src_space_id + 1;
   assert(space_id < last_space_id, "not enough spaces");
 
@@ -3187,14 +3157,14 @@ size_t PSParallelCompact::next_src_chunk(MoveAndUpdateClosure& closure,
   do {
     MutableSpace* space = _space_info[space_id].space();
     HeapWord* const bottom = space->bottom();
-    const ChunkData* const bottom_cp = sd.addr_to_chunk_ptr(bottom);
+    const RegionData* const bottom_cp = sd.addr_to_region_ptr(bottom);
 
     // Iterate over the spaces that do not compact into themselves.
     if (bottom_cp->destination() != bottom) {
-      HeapWord* const top_aligned_up = sd.chunk_align_up(space->top());
-      const ChunkData* const top_cp = sd.addr_to_chunk_ptr(top_aligned_up);
+      HeapWord* const top_aligned_up = sd.region_align_up(space->top());
+      const RegionData* const top_cp = sd.addr_to_region_ptr(top_aligned_up);
 
-      for (const ChunkData* src_cp = bottom_cp; src_cp < top_cp; ++src_cp) {
+      for (const RegionData* src_cp = bottom_cp; src_cp < top_cp; ++src_cp) {
         if (src_cp->live_obj_size() > 0) {
           // Found it.
           assert(src_cp->destination() == destination,
@@ -3204,9 +3174,9 @@ size_t PSParallelCompact::next_src_chunk(MoveAndUpdateClosure& closure,
 
           src_space_id = SpaceId(space_id);
           src_space_top = space->top();
-          const size_t src_chunk_idx = sd.chunk(src_cp);
-          closure.set_source(sd.chunk_to_addr(src_chunk_idx));
-          return src_chunk_idx;
+          const size_t src_region_idx = sd.region(src_cp);
+          closure.set_source(sd.region_to_addr(src_region_idx));
+          return src_region_idx;
         } else {
           assert(src_cp->data_size() == 0, "sanity");
         }
@@ -3214,38 +3184,38 @@ size_t PSParallelCompact::next_src_chunk(MoveAndUpdateClosure& closure,
     }
   } while (++space_id < last_space_id);
 
-  assert(false, "no source chunk was found");
+  assert(false, "no source region was found");
   return 0;
 }
 
-void PSParallelCompact::fill_chunk(ParCompactionManager* cm, size_t chunk_idx)
+void PSParallelCompact::fill_region(ParCompactionManager* cm, size_t region_idx)
 {
   typedef ParMarkBitMap::IterationStatus IterationStatus;
-  const size_t ChunkSize = ParallelCompactData::ChunkSize;
+  const size_t RegionSize = ParallelCompactData::RegionSize;
   ParMarkBitMap* const bitmap = mark_bitmap();
   ParallelCompactData& sd = summary_data();
-  ChunkData* const chunk_ptr = sd.chunk(chunk_idx);
+  RegionData* const region_ptr = sd.region(region_idx);
 
   // Get the items needed to construct the closure.
-  HeapWord* dest_addr = sd.chunk_to_addr(chunk_idx);
+  HeapWord* dest_addr = sd.region_to_addr(region_idx);
   SpaceId dest_space_id = space_id(dest_addr);
   ObjectStartArray* start_array = _space_info[dest_space_id].start_array();
   HeapWord* new_top = _space_info[dest_space_id].new_top();
   assert(dest_addr < new_top, "sanity");
-  const size_t words = MIN2(pointer_delta(new_top, dest_addr), ChunkSize);
+  const size_t words = MIN2(pointer_delta(new_top, dest_addr), RegionSize);
 
-  // Get the source chunk and related info.
-  size_t src_chunk_idx = chunk_ptr->source_chunk();
-  SpaceId src_space_id = space_id(sd.chunk_to_addr(src_chunk_idx));
+  // Get the source region and related info.
+  size_t src_region_idx = region_ptr->source_region();
+  SpaceId src_space_id = space_id(sd.region_to_addr(src_region_idx));
   HeapWord* src_space_top = _space_info[src_space_id].space()->top();
 
   MoveAndUpdateClosure closure(bitmap, cm, start_array, dest_addr, words);
-  closure.set_source(first_src_addr(dest_addr, src_chunk_idx));
+  closure.set_source(first_src_addr(dest_addr, src_space_id, src_region_idx));
 
-  // Adjust src_chunk_idx to prepare for decrementing destination counts (the
-  // destination count is not decremented when a chunk is copied to itself).
-  if (src_chunk_idx == chunk_idx) {
-    src_chunk_idx += 1;
+  // Adjust src_region_idx to prepare for decrementing destination counts (the
+  // destination count is not decremented when a region is copied to itself).
+  if (src_region_idx == region_idx) {
+    src_region_idx += 1;
   }
 
   if (bitmap->is_unmarked(closure.source())) {
@@ -3255,32 +3225,34 @@ void PSParallelCompact::fill_chunk(ParCompactionManager* cm, size_t chunk_idx)
     HeapWord* const old_src_addr = closure.source();
     closure.copy_partial_obj();
     if (closure.is_full()) {
-      decrement_destination_counts(cm, src_chunk_idx, closure.source());
-      chunk_ptr->set_deferred_obj_addr(NULL);
-      chunk_ptr->set_completed();
+      decrement_destination_counts(cm, src_space_id, src_region_idx,
+                                   closure.source());
+      region_ptr->set_deferred_obj_addr(NULL);
+      region_ptr->set_completed();
       return;
     }
 
-    HeapWord* const end_addr = sd.chunk_align_down(closure.source());
-    if (sd.chunk_align_down(old_src_addr) != end_addr) {
-      // The partial object was copied from more than one source chunk.
-      decrement_destination_counts(cm, src_chunk_idx, end_addr);
+    HeapWord* const end_addr = sd.region_align_down(closure.source());
+    if (sd.region_align_down(old_src_addr) != end_addr) {
+      // The partial object was copied from more than one source region.
+      decrement_destination_counts(cm, src_space_id, src_region_idx, end_addr);
 
-      // Move to the next source chunk, possibly switching spaces as well.  All
+      // Move to the next source region, possibly switching spaces as well.  All
       // args except end_addr may be modified.
-      src_chunk_idx = next_src_chunk(closure, src_space_id, src_space_top,
-                                     end_addr);
+      src_region_idx = next_src_region(closure, src_space_id, src_space_top,
+                                       end_addr);
     }
   }
 
   do {
     HeapWord* const cur_addr = closure.source();
-    HeapWord* const end_addr = MIN2(sd.chunk_align_up(cur_addr + 1),
+    HeapWord* const end_addr = MIN2(sd.region_align_up(cur_addr + 1),
                                     src_space_top);
     IterationStatus status = bitmap->iterate(&closure, cur_addr, end_addr);
 
     if (status == ParMarkBitMap::incomplete) {
-      // The last obj that starts in the source chunk does not end in the chunk.
+      // The last obj that starts in the source region does not end in the
+      // region.
       assert(closure.source() < end_addr, "sanity")
       HeapWord* const obj_beg = closure.source();
       HeapWord* const range_end = MIN2(obj_beg + closure.words_remaining(),
@@ -3299,28 +3271,30 @@ void PSParallelCompact::fill_chunk(ParCompactionManager* cm, size_t chunk_idx)
 
     if (status == ParMarkBitMap::would_overflow) {
       // The last object did not fit.  Note that interior oop updates were
-      // deferred, then copy enough of the object to fill the chunk.
-      chunk_ptr->set_deferred_obj_addr(closure.destination());
+      // deferred, then copy enough of the object to fill the region.
+      region_ptr->set_deferred_obj_addr(closure.destination());
       status = closure.copy_until_full(); // copies from closure.source()
 
-      decrement_destination_counts(cm, src_chunk_idx, closure.source());
-      chunk_ptr->set_completed();
+      decrement_destination_counts(cm, src_space_id, src_region_idx,
+                                   closure.source());
+      region_ptr->set_completed();
       return;
     }
 
     if (status == ParMarkBitMap::full) {
-      decrement_destination_counts(cm, src_chunk_idx, closure.source());
-      chunk_ptr->set_deferred_obj_addr(NULL);
-      chunk_ptr->set_completed();
+      decrement_destination_counts(cm, src_space_id, src_region_idx,
+                                   closure.source());
+      region_ptr->set_deferred_obj_addr(NULL);
+      region_ptr->set_completed();
       return;
     }
 
-    decrement_destination_counts(cm, src_chunk_idx, end_addr);
+    decrement_destination_counts(cm, src_space_id, src_region_idx, end_addr);
 
-    // Move to the next source chunk, possibly switching spaces as well.  All
+    // Move to the next source region, possibly switching spaces as well.  All
     // args except end_addr may be modified.
-    src_chunk_idx = next_src_chunk(closure, src_space_id, src_space_top,
-                                   end_addr);
+    src_region_idx = next_src_region(closure, src_space_id, src_space_top,
+                                     end_addr);
   } while (true);
 }
 
@@ -3352,15 +3326,15 @@ PSParallelCompact::move_and_update(ParCompactionManager* cm, SpaceId space_id) {
   }
 #endif
 
-  const size_t beg_chunk = sd.addr_to_chunk_idx(beg_addr);
-  const size_t dp_chunk = sd.addr_to_chunk_idx(dp_addr);
-  if (beg_chunk < dp_chunk) {
-    update_and_deadwood_in_dense_prefix(cm, space_id, beg_chunk, dp_chunk);
+  const size_t beg_region = sd.addr_to_region_idx(beg_addr);
+  const size_t dp_region = sd.addr_to_region_idx(dp_addr);
+  if (beg_region < dp_region) {
+    update_and_deadwood_in_dense_prefix(cm, space_id, beg_region, dp_region);
   }
 
-  // The destination of the first live object that starts in the chunk is one
-  // past the end of the partial object entering the chunk (if any).
-  HeapWord* const dest_addr = sd.partial_obj_end(dp_chunk);
+  // The destination of the first live object that starts in the region is one
+  // past the end of the partial object entering the region (if any).
+  HeapWord* const dest_addr = sd.partial_obj_end(dp_region);
   HeapWord* const new_top = _space_info[space_id].new_top();
   assert(new_top >= dest_addr, "bad new_top value");
   const size_t words = pointer_delta(new_top, dest_addr);
@@ -3394,7 +3368,7 @@ void PSParallelCompact::reset_millis_since_last_gc() {
 ParMarkBitMap::IterationStatus MoveAndUpdateClosure::copy_until_full()
 {
   if (source() != destination()) {
-    assert(source() > destination(), "must copy to the left");
+    DEBUG_ONLY(PSParallelCompact::check_new_location(source(), destination());)
     Copy::aligned_conjoint_words(source(), destination(), words_remaining());
   }
   update_state(words_remaining());
@@ -3415,7 +3389,7 @@ void MoveAndUpdateClosure::copy_partial_obj()
   // This test is necessary; if omitted, the pointer updates to a partial object
   // that crosses the dense prefix boundary could be overwritten.
   if (source() != destination()) {
-    assert(source() > destination(), "must copy to the left");
+    DEBUG_ONLY(PSParallelCompact::check_new_location(source(), destination());)
     Copy::aligned_conjoint_words(source(), destination(), words);
   }
   update_state(words);
@@ -3440,7 +3414,7 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
   }
 
   if (destination() != source()) {
-    assert(destination() < source(), "must copy to the left");
+    DEBUG_ONLY(PSParallelCompact::check_new_location(source(), destination());)
     Copy::aligned_conjoint_words(source(), destination(), words);
   }
 
@@ -3467,172 +3441,6 @@ ParMarkBitMapClosure::IterationStatus
 UpdateOnlyClosure::do_addr(HeapWord* addr, size_t words) {
   do_addr(addr);
   return ParMarkBitMap::incomplete;
-}
-
-BitBlockUpdateClosure::BitBlockUpdateClosure(ParMarkBitMap* mbm,
-                        ParCompactionManager* cm,
-                        size_t chunk_index) :
-                        ParMarkBitMapClosure(mbm, cm),
-                        _live_data_left(0),
-                        _cur_block(0) {
-  _chunk_start =
-    PSParallelCompact::summary_data().chunk_to_addr(chunk_index);
-  _chunk_end =
-    PSParallelCompact::summary_data().chunk_to_addr(chunk_index) +
-                 ParallelCompactData::ChunkSize;
-  _chunk_index = chunk_index;
-  _cur_block =
-    PSParallelCompact::summary_data().addr_to_block_idx(_chunk_start);
-}
-
-bool BitBlockUpdateClosure::chunk_contains_cur_block() {
-  return ParallelCompactData::chunk_contains_block(_chunk_index, _cur_block);
-}
-
-void BitBlockUpdateClosure::reset_chunk(size_t chunk_index) {
-  DEBUG_ONLY(ParallelCompactData::BlockData::set_cur_phase(7);)
-  ParallelCompactData& sd = PSParallelCompact::summary_data();
-  _chunk_index = chunk_index;
-  _live_data_left = 0;
-  _chunk_start = sd.chunk_to_addr(chunk_index);
-  _chunk_end = sd.chunk_to_addr(chunk_index) + ParallelCompactData::ChunkSize;
-
-  // The first block in this chunk
-  size_t first_block =  sd.addr_to_block_idx(_chunk_start);
-  size_t partial_live_size = sd.chunk(chunk_index)->partial_obj_size();
-
-  // Set the offset to 0. By definition it should have that value
-  // but it may have been written while processing an earlier chunk.
-  if (partial_live_size == 0) {
-    // No live object extends onto the chunk.  The first bit
-    // in the bit map for the first chunk must be a start bit.
-    // Although there may not be any marked bits, it is safe
-    // to set it as a start bit.
-    sd.block(first_block)->set_start_bit_offset(0);
-    sd.block(first_block)->set_first_is_start_bit(true);
-  } else if (sd.partial_obj_ends_in_block(first_block)) {
-    sd.block(first_block)->set_end_bit_offset(0);
-    sd.block(first_block)->set_first_is_start_bit(false);
-  } else {
-    // The partial object extends beyond the first block.
-    // There is no object starting in the first block
-    // so the offset and bit parity are not needed.
-    // Set the the bit parity to start bit so assertions
-    // work when not bit is found.
-    sd.block(first_block)->set_end_bit_offset(0);
-    sd.block(first_block)->set_first_is_start_bit(false);
-  }
-  _cur_block = first_block;
-#ifdef ASSERT
-  if (sd.block(first_block)->first_is_start_bit()) {
-    assert(!sd.partial_obj_ends_in_block(first_block),
-      "Partial object cannot end in first block");
-  }
-
-  if (PrintGCDetails && Verbose) {
-    if (partial_live_size == 1) {
-    gclog_or_tty->print_cr("first_block " PTR_FORMAT
-      " _offset " PTR_FORMAT
-      " _first_is_start_bit %d",
-      first_block,
-      sd.block(first_block)->raw_offset(),
-      sd.block(first_block)->first_is_start_bit());
-    }
-  }
-#endif
-  DEBUG_ONLY(ParallelCompactData::BlockData::set_cur_phase(17);)
-}
-
-// This method is called when a object has been found (both beginning
-// and end of the object) in the range of iteration.  This method is
-// calculating the words of live data to the left of a block.  That live
-// data includes any object starting to the left of the block (i.e.,
-// the live-data-to-the-left of block AAA will include the full size
-// of any object entering AAA).
-
-ParMarkBitMapClosure::IterationStatus
-BitBlockUpdateClosure::do_addr(HeapWord* addr, size_t words) {
-  // add the size to the block data.
-  HeapWord* obj = addr;
-  ParallelCompactData& sd = PSParallelCompact::summary_data();
-
-  assert(bitmap()->obj_size(obj) == words, "bad size");
-  assert(_chunk_start <= obj, "object is not in chunk");
-  assert(obj + words <= _chunk_end, "object is not in chunk");
-
-  // Update the live data to the left
-  size_t prev_live_data_left = _live_data_left;
-  _live_data_left = _live_data_left + words;
-
-  // Is this object in the current block.
-  size_t block_of_obj = sd.addr_to_block_idx(obj);
-  size_t block_of_obj_last = sd.addr_to_block_idx(obj + words - 1);
-  HeapWord* block_of_obj_last_addr = sd.block_to_addr(block_of_obj_last);
-  if (_cur_block < block_of_obj) {
-
-    //
-    // No object crossed the block boundary and this object was found
-    // on the other side of the block boundary.  Update the offset for
-    // the new block with the data size that does not include this object.
-    //
-    // The first bit in block_of_obj is a start bit except in the
-    // case where the partial object for the chunk extends into
-    // this block.
-    if (sd.partial_obj_ends_in_block(block_of_obj)) {
-      sd.block(block_of_obj)->set_end_bit_offset(prev_live_data_left);
-    } else {
-      sd.block(block_of_obj)->set_start_bit_offset(prev_live_data_left);
-    }
-
-    // Does this object pass beyond the its block?
-    if (block_of_obj < block_of_obj_last) {
-      // Object crosses block boundary.  Two blocks need to be udpated:
-      //        the current block where the object started
-      //        the block where the object ends
-      //
-      // The offset for blocks with no objects starting in them
-      // (e.g., blocks between _cur_block and  block_of_obj_last)
-      // should not be needed.
-      // Note that block_of_obj_last may be in another chunk.  If so,
-      // it should be overwritten later.  This is a problem (writting
-      // into a block in a later chunk) for parallel execution.
-      assert(obj < block_of_obj_last_addr,
-        "Object should start in previous block");
-
-      // obj is crossing into block_of_obj_last so the first bit
-      // is and end bit.
-      sd.block(block_of_obj_last)->set_end_bit_offset(_live_data_left);
-
-      _cur_block = block_of_obj_last;
-    } else {
-      // _first_is_start_bit has already been set correctly
-      // in the if-then-else above so don't reset it here.
-      _cur_block = block_of_obj;
-    }
-  } else {
-    // The current block only changes if the object extends beyound
-    // the block it starts in.
-    //
-    // The object starts in the current block.
-    // Does this object pass beyond the end of it?
-    if (block_of_obj < block_of_obj_last) {
-      // Object crosses block boundary.
-      // See note above on possible blocks between block_of_obj and
-      // block_of_obj_last
-      assert(obj < block_of_obj_last_addr,
-        "Object should start in previous block");
-
-      sd.block(block_of_obj_last)->set_end_bit_offset(_live_data_left);
-
-      _cur_block = block_of_obj_last;
-    }
-  }
-
-  // Return incomplete if there are more blocks to be done.
-  if (chunk_contains_cur_block()) {
-    return ParMarkBitMap::incomplete;
-  }
-  return ParMarkBitMap::complete;
 }
 
 // Verify the new location using the forwarding pointer
@@ -3676,43 +3484,3 @@ void PSParallelCompact::compact_prologue() {
     summary_data().calc_new_pointer(Universe::intArrayKlassObj());
 }
 
-// The initial implementation of this method created a field
-// _next_compaction_space_id in SpaceInfo and initialized
-// that field in SpaceInfo::initialize_space_info().  That
-// required that _next_compaction_space_id be declared a
-// SpaceId in SpaceInfo and that would have required that
-// either SpaceId be declared in a separate class or that
-// it be declared in SpaceInfo.  It didn't seem consistent
-// to declare it in SpaceInfo (didn't really fit logically).
-// Alternatively, defining a separate class to define SpaceId
-// seem excessive.  This implementation is simple and localizes
-// the knowledge.
-
-PSParallelCompact::SpaceId
-PSParallelCompact::next_compaction_space_id(SpaceId id) {
-  assert(id < last_space_id, "id out of range");
-  switch (id) {
-    case perm_space_id :
-      return last_space_id;
-    case old_space_id :
-      return eden_space_id;
-    case eden_space_id :
-      return from_space_id;
-    case from_space_id :
-      return to_space_id;
-    case to_space_id :
-      return last_space_id;
-    default:
-      assert(false, "Bad space id");
-      return last_space_id;
-  }
-}
-
-// Here temporarily for debugging
-#ifdef ASSERT
-  size_t ParallelCompactData::block_idx(BlockData* block) {
-    size_t index = pointer_delta(block,
-      PSParallelCompact::summary_data()._block_data, sizeof(BlockData));
-    return index;
-  }
-#endif

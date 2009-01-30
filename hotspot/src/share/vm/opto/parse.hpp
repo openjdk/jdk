@@ -167,8 +167,18 @@ class Parse : public GraphKit {
 
     int start() const                      { return flow()->start(); }
     int limit() const                      { return flow()->limit(); }
-    int pre_order() const                  { return flow()->pre_order(); }
+    int rpo() const                        { return flow()->rpo(); }
     int start_sp() const                   { return flow()->stack_size(); }
+
+    bool is_loop_head() const              { return flow()->is_loop_head(); }
+    bool is_SEL_head() const               { return flow()->is_single_entry_loop_head(); }
+    bool is_SEL_backedge(Block* pred) const{ return is_SEL_head() && pred->rpo() >= rpo(); }
+    bool is_invariant_local(uint i) const  {
+      const JVMState* jvms = start_map()->jvms();
+      if (!jvms->is_loc(i) || flow()->outer()->has_irreducible_entry()) return false;
+      return flow()->is_invariant_local(i - jvms->locoff());
+    }
+    bool can_elide_SEL_phi(uint i) const  { assert(is_SEL_head(),""); return is_invariant_local(i); }
 
     const Type* peek(int off=0) const      { return stack_type_at(start_sp() - (off+1)); }
 
@@ -305,7 +315,7 @@ class Parse : public GraphKit {
   //            entry_bci()     -- see osr_bci, etc.
 
   ciTypeFlow*   flow()          const { return _flow; }
-  //            blocks()        -- see pre_order_at, start_block, etc.
+  //            blocks()        -- see rpo_at, start_block, etc.
   int           block_count()   const { return _block_count; }
 
   GraphKit&     exits()               { return _exits; }
@@ -330,12 +340,12 @@ class Parse : public GraphKit {
   // Must this parse be aborted?
   bool failing()                { return C->failing(); }
 
-  Block* pre_order_at(int po) {
-    assert(0 <= po && po < _block_count, "oob");
-    return &_blocks[po];
+  Block* rpo_at(int rpo) {
+    assert(0 <= rpo && rpo < _block_count, "oob");
+    return &_blocks[rpo];
   }
   Block* start_block() {
-    return pre_order_at(flow()->start_block()->pre_order());
+    return rpo_at(flow()->start_block()->rpo());
   }
   // Can return NULL if the flow pass did not complete a block.
   Block* successor_for_bci(int bci) {
@@ -358,9 +368,6 @@ class Parse : public GraphKit {
 
   // Parse all the basic blocks.
   void do_all_blocks();
-
-  // Helper for do_all_blocks; makes one pass in pre-order.
-  void visit_blocks();
 
   // Parse the current basic block
   void do_one_block();

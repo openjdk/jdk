@@ -835,15 +835,13 @@ ifeq ($(PLATFORM), windows)
 	    "" >> $(ERROR_FILE) ; \
 	fi
   ifeq ($(ARCH_DATA_MODEL), 32)
-    ifeq ($(COMPILER_VERSION), VS2003)
-	@if [ ! -r "$(MSVCR71_DLL_PATH)/msvcr71.dll" ]; then \
-	  $(ECHO) "ERROR: You do not have access to msvcr71.dll. \n" \
+	@if [ ! -r "$(MSVCRNN_DLL_PATH)/$(MSVCRNN_DLL)" ]; then \
+	  $(ECHO) "ERROR: You do not have access to $(MSVCRNN_DLL). \n" \
 	    "      Please check your access to \n" \
-	    "          $(MSVCR71_DLL_PATH) \n" \
-	    "      and/or check your value of ALT_MSVCR71_DLL_PATH. \n" \
+	    "          $(MSVCRNN_DLL_PATH) \n" \
+	    "      and/or check your value of ALT_MSVCRNN_DLL_PATH. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
-    endif
   endif
 endif
 
@@ -1350,10 +1348,11 @@ $(ALSA_VERSION_CHECK): $(ALSA_VERSION_CHECK).c
 $(ALSA_VERSION_CHECK).c:
 	@$(prep-target)
 	@$(ECHO) "#include <alsa/asoundlib.h>\n" \
-                  "int main(char** argv, int argc) {\n" \
-                   "  printf(\"%s\", SND_LIB_VERSION_STR);\n" \
-                    "  return 0;\n" \
-                    "}\n" \
+		 "#include <stdio.h>\n" \
+		 "int main(int argc, char** argv) {\n" \
+		 "  printf(\"%s\", SND_LIB_VERSION_STR);\n" \
+		 "  return 0;\n" \
+		 "}\n" \
                     > $@
 endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   u2   _major_version;
   u2   _minor_version;
   symbolHandle _class_name;
+  GrowableArray<Handle>* _cp_patches; // overrides for CP entries
 
   bool _has_finalizer;
   bool _has_empty_finalizer;
@@ -203,6 +204,35 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   char* skip_over_field_name(char* name, bool slash_ok, unsigned int length);
   char* skip_over_field_signature(char* signature, bool void_ok, unsigned int length, TRAPS);
 
+  bool has_cp_patch_at(int index) {
+    assert(AnonymousClasses, "");
+    assert(index >= 0, "oob");
+    return (_cp_patches != NULL
+            && index < _cp_patches->length()
+            && _cp_patches->adr_at(index)->not_null());
+  }
+  Handle cp_patch_at(int index) {
+    assert(has_cp_patch_at(index), "oob");
+    return _cp_patches->at(index);
+  }
+  Handle clear_cp_patch_at(int index) {
+    Handle patch = cp_patch_at(index);
+    _cp_patches->at_put(index, Handle());
+    assert(!has_cp_patch_at(index), "");
+    return patch;
+  }
+  void patch_constant_pool(constantPoolHandle cp, int index, Handle patch, TRAPS);
+
+  // Wrapper for constantTag.is_klass_[or_]reference.
+  // In older versions of the VM, klassOops cannot sneak into early phases of
+  // constant pool construction, but in later versions they can.
+  // %%% Let's phase out the old is_klass_reference.
+  bool is_klass_reference(constantPoolHandle cp, int index) {
+    return ((LinkWellKnownClasses || AnonymousClasses)
+            ? cp->tag_at(index).is_klass_or_reference()
+            : cp->tag_at(index).is_klass_reference());
+  }
+
  public:
   // Constructor
   ClassFileParser(ClassFileStream* st) { set_stream(st); }
@@ -217,6 +247,14 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   instanceKlassHandle parseClassFile(symbolHandle name,
                                      Handle class_loader,
                                      Handle protection_domain,
+                                     symbolHandle& parsed_name,
+                                     TRAPS) {
+    return parseClassFile(name, class_loader, protection_domain, NULL, parsed_name, THREAD);
+  }
+  instanceKlassHandle parseClassFile(symbolHandle name,
+                                     Handle class_loader,
+                                     Handle protection_domain,
+                                     GrowableArray<Handle>* cp_patches,
                                      symbolHandle& parsed_name,
                                      TRAPS);
 

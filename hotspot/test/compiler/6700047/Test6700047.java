@@ -29,6 +29,8 @@
  */
 
 public class Test6700047 {
+    static byte[] dummy = new byte[256];
+
     public static void main(String[] args) {
         for (int i = 0; i < 100000; i++) {
             intToLeftPaddedAsciiBytes();
@@ -53,6 +55,7 @@ public class Test6700047 {
         if (offset > 0) {
             for(int j = 0; j < offset; j++) {
                 result++;
+                dummy[i] = 0;
             }
         }
         return result;

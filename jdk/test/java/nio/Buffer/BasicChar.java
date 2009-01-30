@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 // -- This file was mechanically generated: Do not edit! -- //
 
 import java.nio.*;
+import java.lang.reflect.Method;
 
 
 public class BasicChar
@@ -283,13 +284,41 @@ public class BasicChar
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     private static void tryCatch(Buffer b, Class ex, Runnable thunk) {
         boolean caught = false;
         try {
             thunk.run();
         } catch (Throwable x) {
-            if (ex.isAssignableFrom(x.getClass()))
+            if (ex.isAssignableFrom(x.getClass())) {
                 caught = true;
+            } else {
+                fail(x.getMessage() + " not expected");
+            }
         }
         if (!caught)
             fail(ex.getName() + " not thrown", b);
@@ -356,7 +385,6 @@ public class BasicChar
 
         // Exceptions
 
-        boolean caught = false;
         relPut(b);
         b.limit(b.capacity() / 2);
         b.position(b.limit());
@@ -384,6 +412,14 @@ public class BasicChar
         tryCatch(b, IndexOutOfBoundsException.class, new Runnable() {
                 public void run() {
                     b.put(b.limit(), (char)42);
+                }});
+
+        tryCatch(b, InvalidMarkException.class, new Runnable() {
+                public void run() {
+                    b.position(0);
+                    b.mark();
+                    b.compact();
+                    b.reset();
                 }});
 
         // Values

@@ -56,7 +56,8 @@ IncludeDBs_gc=$(HOTSPOTWORKSPACE)/src/share/vm/includeDB_gc_parallel       \
     $(HOTSPOTWORKSPACE)/src/share/vm/gc_implementation/includeDB_gc_shared \
     $(HOTSPOTWORKSPACE)/src/share/vm/gc_implementation/includeDB_gc_parNew \
     $(HOTSPOTWORKSPACE)/src/share/vm/gc_implementation/includeDB_gc_parallelScavenge \
-    $(HOTSPOTWORKSPACE)/src/share/vm/gc_implementation/includeDB_gc_concurrentMarkSweep
+    $(HOTSPOTWORKSPACE)/src/share/vm/gc_implementation/includeDB_gc_concurrentMarkSweep \
+    $(HOTSPOTWORKSPACE)/src/share/vm/gc_implementation/includeDB_gc_g1
 
 
 IncludeDBs_kernel =$(IncludeDBs_base) \

@@ -29,7 +29,7 @@
 # Core character converters are built from make/java/java.
 #
 
-FILES_java = \
+FILES_src = \
 	sun/io/ByteToCharDoubleByte.java \
 	sun/io/ByteToCharDBCS_ASCII.java \
 	sun/io/ByteToCharDBCS_EBCDIC.java \
@@ -303,3 +303,77 @@ FILES_java = \
 	sun/io/CharToByteMacTurkish.java \
 	sun/io/CharToByteMacUkraine.java \
 	sun/io/CharToByteTIS620.java
+
+FILES_gen_extsbcs = \
+	sun/nio/cs/ext/IBM037.java \
+	sun/nio/cs/ext/IBM1006.java \
+	sun/nio/cs/ext/IBM1025.java \
+	sun/nio/cs/ext/IBM1026.java \
+	sun/nio/cs/ext/IBM1046.java \
+	sun/nio/cs/ext/IBM1047.java \
+	sun/nio/cs/ext/IBM1097.java \
+	sun/nio/cs/ext/IBM1098.java \
+	sun/nio/cs/ext/IBM1112.java \
+	sun/nio/cs/ext/IBM1122.java \
+	sun/nio/cs/ext/IBM1123.java \
+	sun/nio/cs/ext/IBM1124.java \
+	sun/nio/cs/ext/IBM1140.java \
+	sun/nio/cs/ext/IBM1141.java \
+	sun/nio/cs/ext/IBM1142.java \
+	sun/nio/cs/ext/IBM1143.java \
+	sun/nio/cs/ext/IBM1144.java \
+	sun/nio/cs/ext/IBM1145.java \
+	sun/nio/cs/ext/IBM1146.java \
+	sun/nio/cs/ext/IBM1147.java \
+	sun/nio/cs/ext/IBM1148.java \
+	sun/nio/cs/ext/IBM1149.java \
+	sun/nio/cs/ext/IBM273.java \
+	sun/nio/cs/ext/IBM277.java \
+	sun/nio/cs/ext/IBM278.java \
+	sun/nio/cs/ext/IBM280.java \
+	sun/nio/cs/ext/IBM284.java \
+	sun/nio/cs/ext/IBM285.java \
+	sun/nio/cs/ext/IBM297.java \
+	sun/nio/cs/ext/IBM420.java \
+	sun/nio/cs/ext/IBM424.java \
+	sun/nio/cs/ext/IBM500.java \
+	sun/nio/cs/ext/IBM838.java \
+	sun/nio/cs/ext/IBM856.java \
+	sun/nio/cs/ext/IBM860.java \
+	sun/nio/cs/ext/IBM861.java \
+	sun/nio/cs/ext/IBM863.java \
+	sun/nio/cs/ext/IBM864.java \
+	sun/nio/cs/ext/IBM865.java \
+	sun/nio/cs/ext/IBM868.java \
+	sun/nio/cs/ext/IBM869.java \
+	sun/nio/cs/ext/IBM870.java \
+	sun/nio/cs/ext/IBM871.java \
+	sun/nio/cs/ext/IBM875.java \
+	sun/nio/cs/ext/IBM918.java \
+	sun/nio/cs/ext/IBM921.java \
+	sun/nio/cs/ext/IBM922.java \
+	sun/nio/cs/ext/ISO_8859_11.java \
+	sun/nio/cs/ext/ISO_8859_3.java \
+	sun/nio/cs/ext/ISO_8859_6.java \
+	sun/nio/cs/ext/ISO_8859_8.java \
+	sun/nio/cs/ext/MS1255.java \
+	sun/nio/cs/ext/MS1256.java \
+	sun/nio/cs/ext/MS1258.java \
+	sun/nio/cs/ext/MS874.java \
+	sun/nio/cs/ext/MacArabic.java \
+	sun/nio/cs/ext/MacCentralEurope.java \
+	sun/nio/cs/ext/MacCroatian.java \
+	sun/nio/cs/ext/MacCyrillic.java \
+	sun/nio/cs/ext/MacDingbat.java \
+	sun/nio/cs/ext/MacGreek.java \
+	sun/nio/cs/ext/MacHebrew.java \
+	sun/nio/cs/ext/MacIceland.java \
+	sun/nio/cs/ext/MacRoman.java \
+	sun/nio/cs/ext/MacRomania.java \
+	sun/nio/cs/ext/MacSymbol.java \
+	sun/nio/cs/ext/MacThai.java \
+	sun/nio/cs/ext/MacTurkish.java \
+	sun/nio/cs/ext/MacUkraine.java \
+	sun/nio/cs/ext/TIS_620.java
+
+FILES_java = $(FILES_src) $(FILES_gen_extsbcs)

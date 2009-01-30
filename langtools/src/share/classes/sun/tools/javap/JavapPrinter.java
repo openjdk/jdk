@@ -175,7 +175,7 @@ public class JavapPrinter {
 
     /* print field attribute information. */
     public void printFieldAttributes(FieldData field){
-        Vector fieldattrs = field.getAttributes();
+        Vector<?> fieldattrs = field.getAttributes();
         for(int j = 0; j < fieldattrs.size(); j++){
             String fieldattrname = ((AttrData)fieldattrs.elementAt(j)).getAttrName();
             if(fieldattrname.equals("ConstantValue")){
@@ -256,8 +256,8 @@ public class JavapPrinter {
      * print method attribute information.
      */
     public void printMethodAttributes(MethodData method){
-        Vector methodattrs = method.getAttributes();
-        Vector codeattrs =  method.getCodeAttributes();
+        Vector<?> methodattrs = method.getAttributes();
+        Vector<?> codeattrs =  method.getCodeAttributes();
         for(int k = 0; k < methodattrs.size(); k++){
             String methodattrname = ((AttrData)methodattrs.elementAt(k)).getAttrName();
             if(methodattrname.equals("Code")){
@@ -519,7 +519,7 @@ public class JavapPrinter {
      * Print the exception table for this method code
      */
     void printExceptionTable(MethodData method){//throws IOException
-        Vector exception_table = method.getexception_table();
+        Vector<?> exception_table = method.getexception_table();
         if (exception_table.size() > 0) {
             out.println("  Exception table:");
             out.println("   from   to  target type");
@@ -546,7 +546,7 @@ public class JavapPrinter {
      */
     public void printLineNumTable(MethodData method) {
         int numlines = method.getnumlines();
-        Vector lin_num_tb = method.getlin_num_tb();
+        Vector<?> lin_num_tb = method.getlin_num_tb();
         if( lin_num_tb.size() > 0){
             out.println("  LineNumberTable: ");
             for (int i=0; i<numlines; i++) {
@@ -568,7 +568,7 @@ public class JavapPrinter {
             out.print("   ");
             out.println("Start  Length  Slot  Name   Signature");
         }
-        Vector loc_var_tb = method.getloc_var_tb();
+        Vector<?> loc_var_tb = method.getloc_var_tb();
 
         for (int i=0; i<siz; i++) {
             LocVarData entry=(LocVarData)loc_var_tb.elementAt(i);

@@ -25,7 +25,7 @@
 # The common definitions for hotspot windows builds.
 # Include the top level defs.make under make directory instead of this one.
 # This file is included into make/defs.make.
-# On windows it is only used to construct parameters for 
+# On windows it is only used to construct parameters for
 # make/windows/build.make when make/Makefile is used to build VM.
 
 SLASH_JAVA ?= J:
@@ -69,7 +69,7 @@ endif
 
 JDK_INCLUDE_SUBDIR=win32
 
-# HOTSPOT_RELEASE_VERSION and HOTSPOT_BUILD_VERSION are defined 
+# HOTSPOT_RELEASE_VERSION and HOTSPOT_BUILD_VERSION are defined
 # and added to MAKE_ARGS list in $(GAMMADIR)/make/defs.make.
 
 # next parameters are defined in $(GAMMADIR)/make/defs.make.
@@ -119,13 +119,13 @@ endif
 # we want to release it.  If we build it here,
 # the SDK makefiles will copy it over and put it into
 # the created image.
-BUILD_WIN_SA = 0
+BUILD_WIN_SA = 1
 ifneq ($(ALT_BUILD_WIN_SA),)
   BUILD_WIN_SA = $(ALT_BUILD_WIN_SA)
 endif
 
 ifeq ($(BUILD_WIN_SA), 1)
-  ifeq ($(ARCH),ia64)   
+  ifeq ($(ARCH),ia64)
     BUILD_WIN_SA = 0
   endif
 endif
@@ -154,7 +154,7 @@ ifeq ($(BUILD_WIN_SA), 1)
   EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.dll
   EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.pdb
   EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.map
-  EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar 
+  EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar
   # Must pass this down to nmake.
   MAKE_ARGS += BUILD_WIN_SA=1
 endif

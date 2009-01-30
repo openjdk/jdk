@@ -35,6 +35,8 @@ Arena *Form::generate_arena() {
 //------------------------------NameList---------------------------------------
 // reserved user-defined string
 const char  *NameList::_signal   = "$$SIGNAL$$";
+const char  *NameList::_signal2  = "$$SIGNAL2$$";
+const char  *NameList::_signal3  = "$$SIGNAL3$$";
 
 // Constructor and Destructor
 NameList::NameList() : _cur(0), _max(4), _iter(0), _justReset(true) {

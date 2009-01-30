@@ -1138,6 +1138,10 @@ void WatcherThread::print_on(outputStream* st) const {
 
 void JavaThread::initialize() {
   // Initialize fields
+
+  // Set the claimed par_id to -1 (ie not claiming any par_ids)
+  set_claimed_par_id(-1);
+
   set_saved_exception_pc(NULL);
   set_threadObj(NULL);
   _anchor.clear();
@@ -1209,7 +1213,18 @@ void JavaThread::initialize() {
   pd_initialize();
 }
 
-JavaThread::JavaThread(bool is_attaching) : Thread() {
+#ifndef SERIALGC
+SATBMarkQueueSet JavaThread::_satb_mark_queue_set;
+DirtyCardQueueSet JavaThread::_dirty_card_queue_set;
+#endif // !SERIALGC
+
+JavaThread::JavaThread(bool is_attaching) :
+  Thread()
+#ifndef SERIALGC
+  , _satb_mark_queue(&_satb_mark_queue_set),
+  _dirty_card_queue(&_dirty_card_queue_set)
+#endif // !SERIALGC
+{
   initialize();
   _is_attaching = is_attaching;
 }
@@ -1255,7 +1270,13 @@ void JavaThread::block_if_vm_exited() {
 // Remove this ifdef when C1 is ported to the compiler interface.
 static void compiler_thread_entry(JavaThread* thread, TRAPS);
 
-JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) : Thread() {
+JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
+  Thread()
+#ifndef SERIALGC
+  , _satb_mark_queue(&_satb_mark_queue_set),
+  _dirty_card_queue(&_dirty_card_queue_set)
+#endif // !SERIALGC
+{
   if (TraceThreadEvents) {
     tty->print_cr("creating thread %p", this);
   }
@@ -1400,6 +1421,7 @@ static void ensure_join(JavaThread* thread) {
   // Ignore pending exception (ThreadDeath), since we are exiting anyway
   thread->clear_pending_exception();
 }
+
 
 // For any new cleanup additions, please check to see if they need to be applied to
 // cleanup_failed_attach_current_thread as well.
@@ -1571,37 +1593,60 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     JvmtiExport::cleanup_thread(this);
   }
 
+#ifndef SERIALGC
+  // We must flush G1-related buffers before removing a thread from
+  // the list of active threads.
+  if (UseG1GC) {
+    flush_barrier_queues();
+  }
+#endif
+
   // Remove from list of active threads list, and notify VM thread if we are the last non-daemon thread
   Threads::remove(this);
 }
 
-void JavaThread::cleanup_failed_attach_current_thread() {
-
-     if (get_thread_profiler() != NULL) {
-       get_thread_profiler()->disengage();
-       ResourceMark rm;
-       get_thread_profiler()->print(get_thread_name());
-     }
-
-     if (active_handles() != NULL) {
-      JNIHandleBlock* block = active_handles();
-      set_active_handles(NULL);
-      JNIHandleBlock::release_block(block);
-     }
-
-     if (free_handle_block() != NULL) {
-       JNIHandleBlock* block = free_handle_block();
-       set_free_handle_block(NULL);
-       JNIHandleBlock::release_block(block);
-     }
-
-     if (UseTLAB) {
-       tlab().make_parsable(true);  // retire TLAB, if any
-     }
-
-     Threads::remove(this);
-     delete this;
+#ifndef SERIALGC
+// Flush G1-related queues.
+void JavaThread::flush_barrier_queues() {
+  satb_mark_queue().flush();
+  dirty_card_queue().flush();
 }
+#endif
+
+void JavaThread::cleanup_failed_attach_current_thread() {
+  if (get_thread_profiler() != NULL) {
+    get_thread_profiler()->disengage();
+    ResourceMark rm;
+    get_thread_profiler()->print(get_thread_name());
+  }
+
+  if (active_handles() != NULL) {
+    JNIHandleBlock* block = active_handles();
+    set_active_handles(NULL);
+    JNIHandleBlock::release_block(block);
+  }
+
+  if (free_handle_block() != NULL) {
+    JNIHandleBlock* block = free_handle_block();
+    set_free_handle_block(NULL);
+    JNIHandleBlock::release_block(block);
+  }
+
+  if (UseTLAB) {
+    tlab().make_parsable(true);  // retire TLAB, if any
+  }
+
+#ifndef SERIALGC
+  if (UseG1GC) {
+    flush_barrier_queues();
+  }
+#endif
+
+  Threads::remove(this);
+  delete this;
+}
+
+
 
 
 JavaThread* JavaThread::active() {
@@ -2964,10 +3009,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       if (UseStringCache) {
         // Forcibly initialize java/lang/String and mutate the private
         // static final "stringCacheEnabled" field before we start creating instances
-#ifdef ASSERT
-        klassOop tmp_k = SystemDictionary::find(vmSymbolHandles::java_lang_String(), Handle(), Handle(), CHECK_0);
-        assert(tmp_k == NULL, "java/lang/String should not be loaded yet");
-#endif
         klassOop k_o = SystemDictionary::resolve_or_null(vmSymbolHandles::java_lang_String(), Handle(), Handle(), CHECK_0);
         KlassHandle k = KlassHandle(THREAD, k_o);
         guarantee(k.not_null(), "Must find java/lang/String");
@@ -3071,9 +3112,14 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
 #ifndef SERIALGC
   // Support for ConcurrentMarkSweep. This should be cleaned up
-  // and better encapsulated. XXX YSR
-  if (UseConcMarkSweepGC) {
-    ConcurrentMarkSweepThread::makeSurrogateLockerThread(THREAD);
+  // and better encapsulated. The ugly nested if test would go away
+  // once things are properly refactored. XXX YSR
+  if (UseConcMarkSweepGC || UseG1GC) {
+    if (UseConcMarkSweepGC) {
+      ConcurrentMarkSweepThread::makeSurrogateLockerThread(THREAD);
+    } else {
+      ConcurrentMarkThread::makeSurrogateLockerThread(THREAD);
+    }
     if (HAS_PENDING_EXCEPTION) {
       vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
     }

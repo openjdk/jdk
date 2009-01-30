@@ -56,8 +56,6 @@ import java.util.*;
  */
 public class Group {
 
-    private static Group instance;
-
     /**
      * Map of regular expressions with the corresponding group name.
      */
@@ -96,15 +94,8 @@ public class Group {
         }
     }
 
-    private Group(Configuration configuration) {
+    public Group(Configuration configuration) {
         this.configuration = configuration;
-    }
-
-    public static Group getInstance(Configuration configuration) {
-        if (instance == null) {
-            instance = new Group(configuration);
-        }
-        return instance;
     }
 
     /**
@@ -161,7 +152,7 @@ public class Group {
      *
      * @return true if package name format found in the map, else false.
      */
-    boolean foundGroupFormat(Map map, String pkgFormat) {
+    boolean foundGroupFormat(Map<String,?> map, String pkgFormat) {
         if (map.containsKey(pkgFormat)) {
             configuration.message.error("doclet.Same_package_name_used", pkgFormat);
             return true;
@@ -248,7 +239,7 @@ public class Group {
      * Return the list of groups, in the same order as specified
      * on the command line.
      */
-    public List getGroupList() {
+    public List<String> getGroupList() {
         return groupList;
     }
 }

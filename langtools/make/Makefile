@@ -82,7 +82,11 @@ ifdef FULL_VERSION
 endif 
 
 ifdef MILESTONE
+ifneq ($(MILESTONE),fcs)
   ANT_OPTIONS += -Dmilestone=$(MILESTONE)
+else
+  ANT_OPTIONS += -Drelease=$(JDK_VERSION)
+endif
 endif
 
 ifdef BUILD_NUMBER

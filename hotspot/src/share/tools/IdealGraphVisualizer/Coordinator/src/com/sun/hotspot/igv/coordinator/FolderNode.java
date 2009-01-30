@@ -24,6 +24,7 @@
 package com.sun.hotspot.igv.coordinator;
 
 import com.sun.hotspot.igv.coordinator.actions.RemoveCookie;
+import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.services.GroupOrganizer;
 import com.sun.hotspot.igv.data.InputGraph;
@@ -50,16 +51,23 @@ public class FolderNode extends AbstractNode {
     private List<String> subFolders;
     private FolderChildren children;
 
-    private static class FolderChildren extends Children.Keys {
+    private static class FolderChildren extends Children.Keys implements ChangedListener<Group> {
 
         private FolderNode parent;
+        private List<Group> registeredGroups;
 
         public void setParent(FolderNode parent) {
             this.parent = parent;
+            this.registeredGroups = new ArrayList<Group>();
         }
 
         @Override
         protected Node[] createNodes(Object arg0) {
+
+            for(Group g : registeredGroups) {
+                g.getChangedEvent().removeListener(this);
+            }
+            registeredGroups.clear();
 
             Pair<String, List<Group>> p = (Pair<String, List<Group>>) arg0;
             if (p.getLeft().length() == 0) {
@@ -69,6 +77,8 @@ public class FolderNode extends AbstractNode {
                     for (InputGraph graph : g.getGraphs()) {
                         curNodes.add(new GraphNode(graph));
                     }
+                    g.getChangedEvent().addListener(this);
+                    registeredGroups.add(g);
                 }
 
                 Node[] result = new Node[curNodes.size()];
@@ -85,7 +95,13 @@ public class FolderNode extends AbstractNode {
         @Override
         public void addNotify() {
             this.setKeys(parent.structure);
+        }
 
+        public void changed(Group source) {
+            List<Pair<String, List<Group>>> newStructure = new ArrayList<Pair<String, List<Group>>>();
+            for(Pair<String, List<Group>> p : parent.structure) {
+                refreshKey(p);
+            }
         }
     }
 

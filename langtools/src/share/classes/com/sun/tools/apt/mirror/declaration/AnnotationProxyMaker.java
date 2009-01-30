@@ -217,7 +217,7 @@ class AnnotationProxyMaker {
             }
         }
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "rawtypes"})
         public void visitEnum(Attribute.Enum e) {
             if (runtimeType.isEnum()) {
                 String constName = e.value.toString();
@@ -225,7 +225,7 @@ class AnnotationProxyMaker {
                     value = Enum.valueOf((Class)runtimeType, constName);
                 } catch (IllegalArgumentException ex) {
                     value = new EnumConstantNotPresentExceptionProxy(
-                                                        (Class)runtimeType, constName);
+                                                        (Class<Enum<?>>)runtimeType, constName);
                 }
             } else {
                 value = null;   // indicates a type mismatch

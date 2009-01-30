@@ -236,8 +236,8 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
         if (other == null)
             return false;
 
-        final Class proxyClass = proxy.getClass();
-        final Class otherClass = other.getClass();
+        final Class<?> proxyClass = proxy.getClass();
+        final Class<?> otherClass = other.getClass();
         if (proxyClass != otherClass)
             return false;
         InvocationHandler otherih = Proxy.getInvocationHandler(other);

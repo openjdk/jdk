@@ -23,7 +23,7 @@
 
 /*
  * @test CustomForwarderTest
- * @bug 5108776
+ * @bug 5108776 6759619
  * @summary Test that a custom EventForwarder can be added
  * @author Eamonn McManus
  */
@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.Notification;
@@ -105,6 +106,14 @@ public class CustomForwarderTest {
         public void stop() throws IOException {
             closed.set(true);
             socket.close();
+        }
+
+        void simulateNonFatal() {
+            receiver.nonFatal(new Exception("NonFatal"));
+        }
+
+        void simulateFailed() {
+            receiver.failed(new Error("Failed"));
         }
 
         private class Receiver implements Runnable {
@@ -191,8 +200,7 @@ public class CustomForwarderTest {
 
     public static void main(String[] args) throws Exception {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        MBeanServerForwarder mbsf = EventClientDelegate.newForwarder();
-        mbsf.setMBeanServer(mbs);
+        MBeanServerForwarder mbsf = EventClientDelegate.newForwarder(mbs, null);
         mbs = mbsf;
 
         // for 1.5
@@ -216,16 +224,26 @@ public class CustomForwarderTest {
                 EventClientDelegateMBean.OBJECT_NAME,
                 EventClientDelegateMBean.class,
                 false);
-        EventRelay relay = new UdpEventRelay(delegate);
+        UdpEventRelay relay = new UdpEventRelay(delegate);
         EventClient client = new EventClient(delegate, relay, null, null, 0L);
 
         final Semaphore lostCountSema = new Semaphore(0);
+        final BlockingQueue<Notification> nonFatalNotifs =
+                new ArrayBlockingQueue<Notification>(1);
+        final BlockingQueue<Notification> failedNotifs =
+                new ArrayBlockingQueue<Notification>(1);
         NotificationListener lostListener = new NotificationListener() {
             public void handleNotification(Notification notification, Object handback) {
                 if (notification.getType().equals(EventClient.NOTIFS_LOST)) {
                     System.out.println("Got lost-notifs notif: count=" +
                             notification.getUserData());
                     lostCountSema.release(((Long) notification.getUserData()).intValue());
+                } else if (notification.getType().equals(EventClient.NONFATAL)) {
+                    System.out.println("Got nonFatal notif");
+                    nonFatalNotifs.add(notification);
+                } else if (notification.getType().equals(EventClient.FAILED)) {
+                    System.out.println("Got failed notif");
+                    failedNotifs.add(notification);
                 } else
                     System.out.println("Mysterious EventClient notif: " + notification);
             }
@@ -299,6 +317,35 @@ public class CustomForwarderTest {
 
         Thread.sleep(10);
         assertEquals("Further lost-notifs", 0, lostCountSema.availablePermits());
+
+        System.out.println("Testing error notifs");
+        relay.simulateNonFatal();
+        n = nonFatalNotifs.poll(10, TimeUnit.SECONDS);
+        assertEquals("Exception message for non-fatal exception", "NonFatal",
+                ((Throwable) n.getSource()).getMessage());
+        relay.simulateFailed();
+        n = failedNotifs.poll(10, TimeUnit.SECONDS);
+        assertEquals("Exception message for failed exception", "Failed",
+                ((Throwable) n.getSource()).getMessage());
+
+        // 6759619
+        System.out.println("Test EventClient.getEventClientNotificationInfo");
+        MBeanNotificationInfo[] mbnis = client.getEventClientNotificationInfo();
+        final String[] expectedTypes = {
+            EventClient.NOTIFS_LOST, EventClient.NONFATAL, EventClient.FAILED
+        };
+    check:
+        for (String type : expectedTypes) {
+            for (MBeanNotificationInfo mbni : mbnis) {
+                for (String t : mbni.getNotifTypes()) {
+                    if (type.equals(t)) {
+                        System.out.println("...found " + type);
+                        continue check;
+                    }
+                }
+            }
+            throw new Exception("TEST FAILED: Did not find notif type " + type);
+        }
 
         client.close();
 

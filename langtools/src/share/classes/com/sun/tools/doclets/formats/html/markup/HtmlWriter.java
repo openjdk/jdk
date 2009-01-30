@@ -433,46 +433,46 @@ public class HtmlWriter extends PrintWriter {
     }
 
     /**
-     * Get the "&lt;B&gt;" string.
+     * Get the "&lt;STRONG&gt;" string.
      *
-     * @return String Return String "&lt;B&gt;";
+     * @return String Return String "&lt;STRONG&gt;";
      */
-    public String getBold() {
-        return "<B>";
+    public String getStrong() {
+        return "<STRONG>";
     }
 
     /**
-     * Get the "&lt;/B&gt;" string.
+     * Get the "&lt;/STRONG&gt;" string.
      *
-     * @return String Return String "&lt;/B&gt;";
+     * @return String Return String "&lt;/STRONG&gt;";
      */
-    public String getBoldEnd() {
-        return "</B>";
+    public String getStrongEnd() {
+        return "</STRONG>";
     }
 
     /**
-     * Print &lt;B&gt; tag.
+     * Print &lt;STRONG&gt; tag.
      */
-    public void bold() {
-        print("<B>");
+    public void strong() {
+        print("<STRONG>");
     }
 
     /**
-     * Print &lt;/B&gt; tag.
+     * Print &lt;/STRONG&gt; tag.
      */
-    public void boldEnd() {
-        print("</B>");
+    public void strongEnd() {
+        print("</STRONG>");
     }
 
     /**
-     * Print text passed, in bold format using &lt;B&gt; and &lt;/B&gt; tags.
+     * Print text passed, in strong format using &lt;STRONG&gt; and &lt;/STRONG&gt; tags.
      *
-     * @param text String to be printed in between &lt;B&gt; and &lt;/B&gt; tags.
+     * @param text String to be printed in between &lt;STRONG&gt; and &lt;/STRONG&gt; tags.
      */
-    public void bold(String text) {
-        bold();
+    public void strong(String text) {
+        strong();
         print(text);
-        boldEnd();
+        strongEnd();
     }
 
     /**

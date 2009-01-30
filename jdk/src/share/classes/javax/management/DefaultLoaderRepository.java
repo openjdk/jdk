@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class DefaultLoaderRepository {
      *
      * @exception ClassNotFoundException The specified class could not be found.
      */
-    public static Class loadClass(String className)
+    public static Class<?> loadClass(String className)
         throws ClassNotFoundException {
         return javax.management.loading.DefaultLoaderRepository.loadClass(className);
     }
@@ -82,7 +82,7 @@ public class DefaultLoaderRepository {
      *
      * @exception ClassNotFoundException The specified class could not be found.
      */
-    public static Class loadClassWithout(ClassLoader loader,String className)
+    public static Class<?> loadClassWithout(ClassLoader loader,String className)
         throws ClassNotFoundException {
         return javax.management.loading.DefaultLoaderRepository.loadClassWithout(loader, className);
     }

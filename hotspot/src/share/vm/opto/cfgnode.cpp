@@ -1665,7 +1665,11 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             // compress paths and change unreachable cycles to TOP
             // If not, we can update the input infinitely along a MergeMem cycle
             // Equivalent code is in MemNode::Ideal_common
-            Node         *m  = phase->transform(n);
+            Node *m  = phase->transform(n);
+            if (outcnt() == 0) {  // Above transform() may kill us!
+              progress = phase->C->top();
+              break;
+            }
             // If tranformed to a MergeMem, get the desired slice
             // Otherwise the returned node represents memory for every slice
             Node *new_mem = (m->is_MergeMem()) ?
@@ -1765,7 +1769,58 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+#ifdef _LP64
+  // Push DecodeN down through phi.
+  // The rest of phi graph will transform by split EncodeP node though phis up.
+  if (UseCompressedOops && can_reshape && progress == NULL) {
+    bool may_push = true;
+    bool has_decodeN = false;
+    Node* in_decodeN = NULL;
+    for (uint i=1; i<req(); ++i) {// For all paths in
+      Node *ii = in(i);
+      if (ii->is_DecodeN() && ii->bottom_type() == bottom_type()) {
+        has_decodeN = true;
+        in_decodeN = ii->in(1);
+      } else if (!ii->is_Phi()) {
+        may_push = false;
+      }
+    }
+
+    if (has_decodeN && may_push) {
+      PhaseIterGVN *igvn = phase->is_IterGVN();
+      // Note: in_decodeN is used only to define the type of new phi here.
+      PhiNode *new_phi = PhiNode::make_blank(in(0), in_decodeN);
+      uint orig_cnt = req();
+      for (uint i=1; i<req(); ++i) {// For all paths in
+        Node *ii = in(i);
+        Node* new_ii = NULL;
+        if (ii->is_DecodeN()) {
+          assert(ii->bottom_type() == bottom_type(), "sanity");
+          new_ii = ii->in(1);
+        } else {
+          assert(ii->is_Phi(), "sanity");
+          if (ii->as_Phi() == this) {
+            new_ii = new_phi;
+          } else {
+            new_ii = new (phase->C, 2) EncodePNode(ii, in_decodeN->bottom_type());
+            igvn->register_new_node_with_optimizer(new_ii);
+          }
+        }
+        new_phi->set_req(i, new_ii);
+      }
+      igvn->register_new_node_with_optimizer(new_phi, this);
+      progress = new (phase->C, 2) DecodeNNode(new_phi, bottom_type());
+    }
+  }
+#endif
+
   return progress;              // Return any progress
+}
+
+//------------------------------is_tripcount-----------------------------------
+bool PhiNode::is_tripcount() const {
+  return (in(0) != NULL && in(0)->is_CountedLoop() &&
+          in(0)->as_CountedLoop()->phi() == this);
 }
 
 //------------------------------out_RegMask------------------------------------
@@ -1783,9 +1838,7 @@ const RegMask &PhiNode::out_RegMask() const {
 #ifndef PRODUCT
 void PhiNode::dump_spec(outputStream *st) const {
   TypeNode::dump_spec(st);
-  if (in(0) != NULL &&
-      in(0)->is_CountedLoop() &&
-      in(0)->as_CountedLoop()->phi() == this) {
+  if (is_tripcount()) {
     st->print(" #tripcount");
   }
 }

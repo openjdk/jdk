@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -486,4 +486,21 @@ final class CipherBox {
 
         return newlen;
     }
+
+    /*
+     * Dispose of any intermediate state in the underlying cipher.
+     * For PKCS11 ciphers, this will release any attached sessions, and
+     * thus make finalization faster.
+     */
+    void dispose() {
+        try {
+            if (cipher != null) {
+                // ignore return value.
+                cipher.doFinal();
+            }
+        } catch (GeneralSecurityException e) {
+            // swallow for now.
+        }
+    }
+
 }

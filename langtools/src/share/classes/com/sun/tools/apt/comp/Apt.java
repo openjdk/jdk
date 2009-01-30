@@ -281,7 +281,7 @@ public class Apt extends ListBuffer<Env<AttrContext>> {
             // Discovery process
 
             // List of annotation processory factory instances
-            java.util.Iterator providers = null;
+            java.util.Iterator<AnnotationProcessorFactory> providers = null;
             {
                 /*
                  * If a factory is provided by the user, the

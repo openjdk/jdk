@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -574,12 +574,23 @@ void ComputeLinearScanOrder::count_edges(BlockBegin* cur, BlockBegin* parent) {
     TRACE_LINEAR_SCAN(3, tty->print_cr("backward branch"));
     assert(is_visited(cur), "block must be visisted when block is active");
     assert(parent != NULL, "must have parent");
-    assert(parent->number_of_sux() == 1, "loop end blocks must have one successor (critical edges are split)");
 
     cur->set(BlockBegin::linear_scan_loop_header_flag);
     cur->set(BlockBegin::backward_branch_target_flag);
 
     parent->set(BlockBegin::linear_scan_loop_end_flag);
+
+    // When a loop header is also the start of an exception handler, then the backward branch is
+    // an exception edge. Because such edges are usually critical edges which cannot be split, the
+    // loop must be excluded here from processing.
+    if (cur->is_set(BlockBegin::exception_entry_flag)) {
+      // Make sure that dominators are correct in this weird situation
+      _iterative_dominators = true;
+      return;
+    }
+    assert(parent->number_of_sux() == 1 && parent->sux_at(0) == cur,
+           "loop end blocks must have one successor (critical edges are split)");
+
     _loop_end_blocks.append(parent);
     return;
   }

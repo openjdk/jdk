@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,14 @@
 
 # include "incls/_precompiled.incl"
 # include "incls/_perfMemory.cpp.incl"
+
+// Prefix of performance data file.
+const char               PERFDATA_NAME[] = "hsperfdata";
+
+// Add 1 for the '_' character between PERFDATA_NAME and pid. The '\0' terminating
+// character will be included in the sizeof(PERFDATA_NAME) operation.
+static const size_t PERFDATA_FILENAME_LEN = sizeof(PERFDATA_NAME) +
+                                            UINT_CHARS + 1;
 
 char*                    PerfMemory::_start = NULL;
 char*                    PerfMemory::_end = NULL;

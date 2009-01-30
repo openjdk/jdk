@@ -30,6 +30,8 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.tree.*;
+import com.sun.tools.javac.api.Formattable.LocalizedString;
+import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
 
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
@@ -39,6 +41,9 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;
 import javax.lang.model.element.ElementVisitor;
+
+import java.util.Map;
+import java.util.HashMap;
 
 /** Helper class for name resolution, used mostly by the attribution phase.
  *
@@ -651,8 +656,9 @@ public class Resolve {
                 // both abstract or both concrete
                 if (!m1Abstract && !m2Abstract)
                     return new AmbiguityError(m1, m2);
-                // check for same erasure
-                if (!types.isSameType(m1.erasure(types), m2.erasure(types)))
+                // check that both signatures have the same erasure
+                if (!types.isSameTypes(m1.erasure(types).getParameterTypes(),
+                                       m2.erasure(types).getParameterTypes()))
                     return new AmbiguityError(m1, m2);
                 // both abstract, neither overridden; merge throws clause and result type
                 Symbol result;
@@ -741,7 +747,7 @@ public class Resolve {
             while (ct.tag == TYPEVAR)
                 ct = ct.getUpperBound();
             ClassSymbol c = (ClassSymbol)ct.tsym;
-            if ((c.flags() & (ABSTRACT | INTERFACE)) == 0)
+            if ((c.flags() & (ABSTRACT | INTERFACE | ENUM)) == 0)
                 abstractok = false;
             for (Scope.Entry e = c.members().lookup(name);
                  e.scope != null;
@@ -1192,15 +1198,23 @@ public class Resolve {
                          Name name,
                          List<Type> argtypes,
                          List<Type> typeargtypes) {
-        Symbol sym = findFun(env, name, argtypes, typeargtypes, false, env.info.varArgs=false);
-        if (varargsEnabled && sym.kind >= WRONG_MTHS) {
-            sym = findFun(env, name, argtypes, typeargtypes, true, false);
-            if (sym.kind >= WRONG_MTHS)
-                sym = findFun(env, name, argtypes, typeargtypes, true, env.info.varArgs=true);
+        Symbol sym = methodNotFound;
+        List<MethodResolutionPhase> steps = methodResolutionSteps;
+        while (steps.nonEmpty() &&
+               steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
+               sym.kind >= ERRONEOUS) {
+            sym = findFun(env, name, argtypes, typeargtypes,
+                    steps.head.isBoxingRequired,
+                    env.info.varArgs = steps.head.isVarargsRequired);
+            methodResolutionCache.put(steps.head, sym);
+            steps = steps.tail;
         }
-        if (sym.kind >= AMBIGUOUS) {
-            sym = access(
-                sym, pos, env.enclClass.sym.type, name, false, argtypes, typeargtypes);
+        if (sym.kind >= AMBIGUOUS) {//if nothing is found return the 'first' error
+            MethodResolutionPhase errPhase =
+                    firstErroneousResolutionPhase();
+            sym = access(methodResolutionCache.get(errPhase),
+                    pos, env.enclClass.sym.type, name, false, argtypes, typeargtypes);
+            env.info.varArgs = errPhase.isVarargsRequired;
         }
         return sym;
     }
@@ -1217,17 +1231,23 @@ public class Resolve {
     Symbol resolveQualifiedMethod(DiagnosticPosition pos, Env<AttrContext> env,
                                   Type site, Name name, List<Type> argtypes,
                                   List<Type> typeargtypes) {
-        Symbol sym = findMethod(env, site, name, argtypes, typeargtypes, false,
-                                env.info.varArgs=false, false);
-        if (varargsEnabled && sym.kind >= WRONG_MTHS) {
-            sym = findMethod(env, site, name, argtypes, typeargtypes, true,
-                             false, false);
-            if (sym.kind >= WRONG_MTHS)
-                sym = findMethod(env, site, name, argtypes, typeargtypes, true,
-                                 env.info.varArgs=true, false);
+        Symbol sym = methodNotFound;
+        List<MethodResolutionPhase> steps = methodResolutionSteps;
+        while (steps.nonEmpty() &&
+               steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
+               sym.kind >= ERRONEOUS) {
+            sym = findMethod(env, site, name, argtypes, typeargtypes,
+                    steps.head.isBoxingRequired(),
+                    env.info.varArgs = steps.head.isVarargsRequired(), false);
+            methodResolutionCache.put(steps.head, sym);
+            steps = steps.tail;
         }
-        if (sym.kind >= AMBIGUOUS) {
-            sym = access(sym, pos, site, name, true, argtypes, typeargtypes);
+        if (sym.kind >= AMBIGUOUS) {//if nothing is found return the 'first' error
+            MethodResolutionPhase errPhase =
+                    firstErroneousResolutionPhase();
+            sym = access(methodResolutionCache.get(errPhase),
+                    pos, site, name, true, argtypes, typeargtypes);
+            env.info.varArgs = errPhase.isVarargsRequired;
         }
         return sym;
     }
@@ -1268,14 +1288,22 @@ public class Resolve {
                               Type site,
                               List<Type> argtypes,
                               List<Type> typeargtypes) {
-        Symbol sym = resolveConstructor(pos, env, site, argtypes, typeargtypes, false, env.info.varArgs=false);
-        if (varargsEnabled && sym.kind >= WRONG_MTHS) {
-            sym = resolveConstructor(pos, env, site, argtypes, typeargtypes, true, false);
-            if (sym.kind >= WRONG_MTHS)
-                sym = resolveConstructor(pos, env, site, argtypes, typeargtypes, true, env.info.varArgs=true);
+        Symbol sym = methodNotFound;
+        List<MethodResolutionPhase> steps = methodResolutionSteps;
+        while (steps.nonEmpty() &&
+               steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
+               sym.kind >= ERRONEOUS) {
+            sym = resolveConstructor(pos, env, site, argtypes, typeargtypes,
+                    steps.head.isBoxingRequired(),
+                    env.info.varArgs = steps.head.isVarargsRequired());
+            methodResolutionCache.put(steps.head, sym);
+            steps = steps.tail;
         }
-        if (sym.kind >= AMBIGUOUS) {
-            sym = access(sym, pos, site, names.init, true, argtypes, typeargtypes);
+        if (sym.kind >= AMBIGUOUS) {//if nothing is found return the 'first' error
+            MethodResolutionPhase errPhase = firstErroneousResolutionPhase();
+            sym = access(methodResolutionCache.get(errPhase),
+                    pos, site, names.init, true, argtypes, typeargtypes);
+            env.info.varArgs = errPhase.isVarargsRequired();
         }
         return sym;
     }
@@ -1452,6 +1480,12 @@ public class Resolve {
         error.report(log, tree.pos(), type.getEnclosingType(), null, null, null);
     }
 
+    private final LocalizedString noArgs = new LocalizedString("compiler.misc.no.args");
+
+    public Object methodArguments(List<Type> argtypes) {
+        return argtypes.isEmpty() ? noArgs : argtypes;
+    }
+
     /** Root class for resolve errors.
      *  Instances of this class indicate "Symbol not found".
      *  Instances of subclass indicate other errors.
@@ -1558,8 +1592,8 @@ public class Resolve {
                               "cant.apply.symbol" + (explanation != null ? ".1" : ""),
                               kindname,
                               ws.name == names.init ? ws.owner.name : ws.name,
-                              ws.type.getParameterTypes(),
-                              argtypes,
+                              methodArguments(ws.type.getParameterTypes()),
+                              methodArguments(argtypes),
                               kindName(ws.owner),
                               ws.owner.type,
                               explanation);
@@ -1732,5 +1766,51 @@ public class Resolve {
                       pair.sym2,
                       pair.sym2.location(site, types));
         }
+    }
+
+    enum MethodResolutionPhase {
+        BASIC(false, false),
+        BOX(true, false),
+        VARARITY(true, true);
+
+        boolean isBoxingRequired;
+        boolean isVarargsRequired;
+
+        MethodResolutionPhase(boolean isBoxingRequired, boolean isVarargsRequired) {
+           this.isBoxingRequired = isBoxingRequired;
+           this.isVarargsRequired = isVarargsRequired;
+        }
+
+        public boolean isBoxingRequired() {
+            return isBoxingRequired;
+        }
+
+        public boolean isVarargsRequired() {
+            return isVarargsRequired;
+        }
+
+        public boolean isApplicable(boolean boxingEnabled, boolean varargsEnabled) {
+            return (varargsEnabled || !isVarargsRequired) &&
+                   (boxingEnabled || !isBoxingRequired);
+        }
+    }
+
+    private Map<MethodResolutionPhase, Symbol> methodResolutionCache =
+        new HashMap<MethodResolutionPhase, Symbol>(MethodResolutionPhase.values().length);
+
+    final List<MethodResolutionPhase> methodResolutionSteps = List.of(BASIC, BOX, VARARITY);
+
+    private MethodResolutionPhase firstErroneousResolutionPhase() {
+        MethodResolutionPhase bestSoFar = BASIC;
+        Symbol sym = methodNotFound;
+        List<MethodResolutionPhase> steps = methodResolutionSteps;
+        while (steps.nonEmpty() &&
+               steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
+               sym.kind >= WRONG_MTHS) {
+            sym = methodResolutionCache.get(steps.head);
+            bestSoFar = steps.head;
+            steps = steps.tail;
+        }
+        return bestSoFar;
     }
 }
