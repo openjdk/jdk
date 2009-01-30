@@ -69,7 +69,7 @@ bool
 ParallelTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   Atomic::inc(&_offered_termination);
 
-  juint yield_count = 0;
+  uint yield_count = 0;
   while (true) {
     if (_offered_termination == _n_threads) {
       //inner_termination_loop();
