@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package com.sun.hotspot.igv.filter;
 
 import com.sun.hotspot.igv.graph.Diagram;
-import com.sun.hotspot.igv.data.Property;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,7 +55,7 @@ public class CustomFilter extends AbstractFilter {
     public CustomFilter(String name, String code) {
         this.name = name;
         this.code = code;
-        getProperties().add(new Property("name", name));
+        getProperties().setProperty("name", name);
     }
 
     public String getName() {

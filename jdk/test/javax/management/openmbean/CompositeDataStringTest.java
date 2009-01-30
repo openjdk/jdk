@@ -21,19 +21,19 @@
  * have any questions.
  */
 
-import javax.management.openmbean.CompositeType;
-import javax.management.openmbean.OpenType;
-import javax.management.openmbean.SimpleType;
-
 /*
  * @test
  * @bug 6610174
  * @summary Test that CompositeDataSupport.toString() represents arrays correctly
  * @author Eamonn McManus
  */
+
 import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.CompositeType;
+import javax.management.openmbean.OpenType;
+import javax.management.openmbean.SimpleType;
 
 public class CompositeDataStringTest {
     public static void main(String[] args) throws Exception {

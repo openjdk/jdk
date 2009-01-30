@@ -499,26 +499,15 @@ oop PSPromotionManager::copy_to_survivor_space(oop o, bool depth_first) {
       // We lost, someone else "owns" this object
       guarantee(o->is_forwarded(), "Object must be forwarded if the cas failed.");
 
-      // Unallocate the space used. NOTE! We may have directly allocated
-      // the object. If so, we cannot deallocate it, so we have to test!
+      // Try to deallocate the space.  If it was directly allocated we cannot
+      // deallocate it, so we have to test.  If the deallocation fails,
+      // overwrite with a filler object.
       if (new_obj_is_tenured) {
         if (!_old_lab.unallocate_object(new_obj)) {
-          // The promotion lab failed to unallocate the object.
-          // We need to overwrite the object with a filler that
-          // contains no interior pointers.
-          MemRegion mr((HeapWord*)new_obj, new_obj_size);
-          // Clean this up and move to oopFactory (see bug 4718422)
-          SharedHeap::fill_region_with_object(mr);
+          CollectedHeap::fill_with_object((HeapWord*) new_obj, new_obj_size);
         }
-      } else {
-        if (!_young_lab.unallocate_object(new_obj)) {
-          // The promotion lab failed to unallocate the object.
-          // We need to overwrite the object with a filler that
-          // contains no interior pointers.
-          MemRegion mr((HeapWord*)new_obj, new_obj_size);
-          // Clean this up and move to oopFactory (see bug 4718422)
-          SharedHeap::fill_region_with_object(mr);
-        }
+      } else if (!_young_lab.unallocate_object(new_obj)) {
+        CollectedHeap::fill_with_object((HeapWord*) new_obj, new_obj_size);
       }
 
       // don't update this before the unallocation!

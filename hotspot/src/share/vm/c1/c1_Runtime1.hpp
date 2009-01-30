@@ -56,6 +56,8 @@ class StubAssembler;
   stub(access_field_patching)        \
   stub(load_klass_patching)          \
   stub(jvmti_exception_throw)        \
+  stub(g1_pre_barrier_slow)          \
+  stub(g1_post_barrier_slow)         \
   stub(fpu2long_stub)                \
   stub(counter_overflow)             \
   last_entry(number_of_ids)

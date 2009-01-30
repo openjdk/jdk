@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import javax.lang.model.element.Element;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.util.Messages;
+import com.sun.tools.javac.util.JavacMessages;
 
 import javax.tools.*;
 
@@ -63,7 +63,7 @@ public class T6457284 {
         throw new AssertionError("No top-level classes!");
     }
 
-    static class MyMessages extends Messages {
+    static class MyMessages extends JavacMessages {
         static void preRegister(Context context) {
             context.put(messagesKey, new MyMessages());
         }

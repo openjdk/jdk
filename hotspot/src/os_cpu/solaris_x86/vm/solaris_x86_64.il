@@ -30,10 +30,10 @@
       movq     %fs:0, %rax 
       .end
 
-  // Get the frame pointer from previous frame.
-      .inline _get_previous_fp,0
+  // Get the frame pointer from current frame.
+      .inline _get_current_fp,0
+      .volatile
       movq     %rbp, %rax 
-      movq     %rax, %rax 
       .end
 
   // Support for jint Atomic::add(jint add_value, volatile jint* dest)

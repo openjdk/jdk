@@ -33,6 +33,7 @@
 
 class AllocationProfiler: AllStatic {
   friend class GenCollectedHeap;
+  friend class G1CollectedHeap;
   friend class MarkSweep;
  private:
   static bool _active;                          // tells whether profiler is active

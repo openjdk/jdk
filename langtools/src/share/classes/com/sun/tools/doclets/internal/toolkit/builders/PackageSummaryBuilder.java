@@ -88,7 +88,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
          */
         public void invokeMethod(
                 String methodName,
-                Class[] paramClasses,
+                Class<?>[] paramClasses,
                 Object[] params)
                 throws Exception {
                 if (DEBUG) {
@@ -120,7 +120,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         /**
          * Build the package documentation.
          */
-        public void buildPackageDoc(List elements) throws Exception {
+        public void buildPackageDoc(List<?> elements) throws Exception {
                 build(elements);
                 packageWriter.close();
                 Util.copyDocFiles(
@@ -162,7 +162,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         /**
          * Build the package summary.
          */
-        public void buildSummary(List elements) {
+        public void buildSummary(List<?> elements) {
                 build(elements);
         }
 

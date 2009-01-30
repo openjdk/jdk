@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright 1999-2002 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,8 @@ cp ${TESTSRC}/servicesPhantomTouch ./META-INF/services/com.sun.mirror.apt.Annota
 
 ${JAR} cf0 phantom/phantom.jar PhantomTouch*.class META-INF
 
-
+# cleanup file to prevent accidental discovery in current directory
+rm -f META-INF/services/com.sun.mirror.apt.AnnotationProcessorFactory
 
 # Jar files created; verify right output file is touched
 

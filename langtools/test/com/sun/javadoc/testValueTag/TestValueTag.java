@@ -88,7 +88,7 @@ public class TestValueTag extends JavadocTester {
             "Result: <A HREF=\"../pkg2/Class3.html#TEST_17_PASSES\">\"Test 17 passes\"</A>"},
         //Test @value tag used with custom tag.
         {BUG_ID + FS + "pkg1" + FS + "CustomTagUsage.html",
-            "<DT><B>Todo:</B></DT>" + NL +
+            "<DT><STRONG>Todo:</STRONG></DT>" + NL +
                 "  <DD>the value of this constant is 55.</DD>"},
         //Test @value warning printed when used with non-constant.
         {WARNING_OUTPUT,"warning - @value tag (which references nonConstant) " +

@@ -210,10 +210,6 @@ void ParallelScavengeHeap::post_initialize() {
   PSScavenge::initialize();
   if (UseParallelOldGC) {
     PSParallelCompact::post_initialize();
-    if (VerifyParallelOldWithMarkSweep) {
-      // Will be used for verification of par old.
-      PSMarkSweep::initialize();
-    }
   } else {
     PSMarkSweep::initialize();
   }
@@ -402,7 +398,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
         return result;
       }
       if (!is_tlab &&
-          size >= (young_gen()->eden_space()->capacity_in_words() / 2)) {
+          size >= (young_gen()->eden_space()->capacity_in_words(Thread::current()) / 2)) {
         result = old_gen()->allocate(size, is_tlab);
         if (result != NULL) {
           return result;

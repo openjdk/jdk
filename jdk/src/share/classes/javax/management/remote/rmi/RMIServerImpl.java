@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
      * to an empty Map.
      */
     public RMIServerImpl(Map<String,?> env) {
-        this.env = (env == null) ? Collections.EMPTY_MAP : env;
+        this.env = (env == null) ? Collections.<String,Object>emptyMap() : env;
     }
 
     void setRMIConnectorServer(RMIConnectorServer connServer)
@@ -249,18 +249,71 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
 
         RMIConnection client = makeClient(connectionId, subject);
 
-        connServer.connectionOpened(connectionId, "Connection opened", null);
-
         dropDeadReferences();
         WeakReference<RMIConnection> wr = new WeakReference<RMIConnection>(client);
         synchronized (clientList) {
             clientList.add(wr);
         }
 
+        connServer.connectionOpened(connectionId, "Connection opened", null);
+
+        synchronized (clientList) {
+            if (!clientList.contains(wr)) {
+                // can be removed only by a JMXConnectionNotification listener
+                throw new IOException("The connection is refused.");
+            }
+        }
+
         if (tracing)
             logger.trace("newClient","new connection done: " + connectionId );
 
         return client;
+    }
+
+    /**
+     * Closes a client connection.
+     * @param connectionId the id of the client connection to be closed.
+     * @throws IllegalArgumentException if {@code connectionId} is null or is
+     * not the id of any open connection.
+     * @throws java.io.IOException if an I/O error appears when closing the
+     * connection.
+     *
+     * @since 1.7
+     */
+    public void closeConnection(String connectionId)
+            throws IOException {
+        final boolean debug = logger.debugOn();
+
+        if (debug) logger.trace("closeConnection","cconnectionId="+connectionId);
+
+        if (connectionId == null)
+            throw new IllegalArgumentException("Null connectionId.");
+
+        RMIConnection client = null;
+        synchronized (clientList) {
+            dropDeadReferences();
+            for (Iterator<WeakReference<RMIConnection>> it = clientList.iterator();
+                 it.hasNext(); ) {
+                client = it.next().get();
+                if (client != null && connectionId.equals(client.getConnectionId())) {
+                    it.remove();
+                    break;
+                }
+            }
+        }
+
+        if (client == null) {
+            throw new IllegalArgumentException("Unknown id: "+connectionId);
+        }
+
+        if (debug) logger.trace("closeConnection", "closing client connection.");
+        closeClient(client);
+
+        if (debug) logger.trace("closeConnection", "sending notif");
+        connServer.connectionClosed(connectionId,
+                                    "Client connection closed", null);
+
+        if (debug) logger.trace("closeConnection","done");
     }
 
     /**
@@ -337,8 +390,9 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
 
         synchronized (clientList) {
             dropDeadReferences();
-            for (Iterator it = clientList.iterator(); it.hasNext(); ) {
-                WeakReference wr = (WeakReference) it.next();
+            for (Iterator<WeakReference<RMIConnection>> it = clientList.iterator();
+                 it.hasNext(); ) {
+                WeakReference<RMIConnection> wr = it.next();
                 if (wr.get() == client) {
                     it.remove();
                     break;
@@ -417,9 +471,10 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
                    dropDeadReferences(), this will usually be the first
                    element of the list, but a garbage collection could have
                    happened in between.  */
-                for (Iterator it = clientList.iterator(); it.hasNext(); ) {
-                    WeakReference wr = (WeakReference) it.next();
-                    RMIConnection client = (RMIConnection) wr.get();
+                for (Iterator<WeakReference<RMIConnection>> it = clientList.iterator();
+                     it.hasNext(); ) {
+                    WeakReference<RMIConnection> wr = it.next();
+                    RMIConnection client = wr.get();
                     it.remove();
                     if (client != null) {
                         try {
@@ -475,10 +530,10 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
             buf.append("//").append(clientHost);
         buf.append(" ");
         if (subject != null) {
-            Set principals = subject.getPrincipals();
+            Set<Principal> principals = subject.getPrincipals();
             String sep = "";
-            for (Iterator it = principals.iterator(); it.hasNext(); ) {
-                Principal p = (Principal) it.next();
+            for (Iterator<Principal> it = principals.iterator(); it.hasNext(); ) {
+                Principal p = it.next();
                 String name = p.getName().replace(' ', '_').replace(';', ':');
                 buf.append(sep).append(name);
                 sep = ";";
@@ -492,8 +547,9 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
 
     private void dropDeadReferences() {
         synchronized (clientList) {
-            for (Iterator it = clientList.iterator(); it.hasNext(); ) {
-                WeakReference wr = (WeakReference) it.next();
+            for (Iterator<WeakReference<RMIConnection>> it = clientList.iterator();
+                 it.hasNext(); ) {
+                WeakReference<RMIConnection> wr = it.next();
                 if (wr.get() == null)
                     it.remove();
             }
@@ -522,7 +578,7 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
 
     private MBeanServer mbeanServer;
 
-    private final Map env;
+    private final Map<String, ?> env;
 
     private RMIConnectorServer connServer;
 

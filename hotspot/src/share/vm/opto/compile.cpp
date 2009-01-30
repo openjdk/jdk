@@ -467,6 +467,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
     }
   }
   set_print_assembly(print_opto_assembly);
+  set_parsed_irreducible_loop(false);
 #endif
 
   if (ProfileTraps) {
@@ -550,6 +551,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       rethrow_exceptions(kit.transfer_exceptions_into_jvms());
     }
 
+    print_method("Before RemoveUseless", 3);
+
     // Remove clutter produced by parsing.
     if (!failing()) {
       ResourceMark rm;
@@ -614,8 +617,6 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   Optimize();
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
-
-  print_method("Before Matching");
 
 #ifndef PRODUCT
   if (PrintIdeal) {
@@ -720,6 +721,7 @@ Compile::Compile( ciEnv* ci_env,
   TraceTime t1(NULL, &_t_totalCompilation, TimeCompiler, false);
   TraceTime t2(NULL, &_t_stubCompilation, TimeCompiler, false);
   set_print_assembly(PrintFrameConverterAssembly);
+  set_parsed_irreducible_loop(false);
 #endif
   CompileWrapper cw(this);
   Init(/*AliasLevel=*/ 0);
@@ -820,6 +822,7 @@ void Compile::Init(int aliaslevel) {
   Copy::zero_to_bytes(_trap_hist, sizeof(_trap_hist));
   set_decompile_count(0);
 
+  set_do_freq_based_layout(BlockLayoutByFrequency || method_has_option("BlockLayoutByFrequency"));
   // Compilation level related initialization
   if (env()->comp_level() == CompLevel_fast_compile) {
     set_num_loop_opts(Tier1LoopOptsCount);
@@ -1529,11 +1532,6 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
-  // get rid of the connection graph since it's information is not
-  // updated by optimizations
-  _congraph = NULL;
-
-
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.
 
@@ -1699,8 +1697,14 @@ void Compile::Code_Gen() {
   // are not adding any new instructions.  If any basic block is empty, we
   // can now safely remove it.
   {
-    NOT_PRODUCT( TracePhase t2("removeEmpty", &_t_removeEmptyBlocks, TimeCompiler); )
-    cfg.RemoveEmpty();
+    NOT_PRODUCT( TracePhase t2("blockOrdering", &_t_blockOrdering, TimeCompiler); )
+    cfg.remove_empty();
+    if (do_freq_based_layout()) {
+      PhaseBlockLayout layout(cfg);
+    } else {
+      cfg.set_loop_alignment();
+    }
+    cfg.fixup_flow();
   }
 
   // Perform any platform dependent postallocation verifications.
@@ -1992,6 +1996,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_StorePConditional:
   case Op_StoreI:
   case Op_StoreL:
+  case Op_StoreIConditional:
   case Op_StoreLConditional:
   case Op_CompareAndSwapI:
   case Op_CompareAndSwapL:
@@ -2073,6 +2078,44 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   }
 
 #ifdef _LP64
+  case Op_CastPP:
+    if (n->in(1)->is_DecodeN() && UseImplicitNullCheckForNarrowOop) {
+      Compile* C = Compile::current();
+      Node* in1 = n->in(1);
+      const Type* t = n->bottom_type();
+      Node* new_in1 = in1->clone();
+      new_in1->as_DecodeN()->set_type(t);
+
+      if (!Matcher::clone_shift_expressions) {
+        //
+        // x86, ARM and friends can handle 2 adds in addressing mode
+        // and Matcher can fold a DecodeN node into address by using
+        // a narrow oop directly and do implicit NULL check in address:
+        //
+        // [R12 + narrow_oop_reg<<3 + offset]
+        // NullCheck narrow_oop_reg
+        //
+        // On other platforms (Sparc) we have to keep new DecodeN node and
+        // use it to do implicit NULL check in address:
+        //
+        // decode_not_null narrow_oop_reg, base_reg
+        // [base_reg + offset]
+        // NullCheck base_reg
+        //
+        // Pin the new DecodeN node to non-null path on these patforms (Sparc)
+        // to keep the information to which NULL check the new DecodeN node
+        // corresponds to use it as value in implicit_null_check().
+        //
+        new_in1->set_req(0, n->in(0));
+      }
+
+      n->subsume_by(new_in1);
+      if (in1->outcnt() == 0) {
+        in1->disconnect_inputs(NULL);
+      }
+    }
+    break;
+
   case Op_CmpP:
     // Do this transformation here to preserve CmpPNode::sub() and
     // other TypePtr related Ideal optimizations (for example, ptr nullness).
@@ -2092,24 +2135,44 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
       } else if (in2->Opcode() == Op_ConP) {
         const Type* t = in2->bottom_type();
         if (t == TypePtr::NULL_PTR && UseImplicitNullCheckForNarrowOop) {
-          if (Matcher::clone_shift_expressions) {
-            // x86, ARM and friends can handle 2 adds in addressing mode.
-            // Decode a narrow oop and do implicit NULL check in address
-            // [R12 + narrow_oop_reg<<3 + offset]
-            new_in2 = ConNode::make(C, TypeNarrowOop::NULL_PTR);
-          } else {
-            // Don't replace CmpP(o ,null) if 'o' is used in AddP
-            // to generate implicit NULL check on Sparc where
-            // narrow oops can't be used in address.
-            uint i = 0;
-            for (; i < in1->outcnt(); i++) {
-              if (in1->raw_out(i)->is_AddP())
-                break;
-            }
-            if (i >= in1->outcnt()) {
-              new_in2 = ConNode::make(C, TypeNarrowOop::NULL_PTR);
-            }
-          }
+          new_in2 = ConNode::make(C, TypeNarrowOop::NULL_PTR);
+          //
+          // This transformation together with CastPP transformation above
+          // will generated code for implicit NULL checks for compressed oops.
+          //
+          // The original code after Optimize()
+          //
+          //    LoadN memory, narrow_oop_reg
+          //    decode narrow_oop_reg, base_reg
+          //    CmpP base_reg, NULL
+          //    CastPP base_reg // NotNull
+          //    Load [base_reg + offset], val_reg
+          //
+          // after these transformations will be
+          //
+          //    LoadN memory, narrow_oop_reg
+          //    CmpN narrow_oop_reg, NULL
+          //    decode_not_null narrow_oop_reg, base_reg
+          //    Load [base_reg + offset], val_reg
+          //
+          // and the uncommon path (== NULL) will use narrow_oop_reg directly
+          // since narrow oops can be used in debug info now (see the code in
+          // final_graph_reshaping_walk()).
+          //
+          // At the end the code will be matched to
+          // on x86:
+          //
+          //    Load_narrow_oop memory, narrow_oop_reg
+          //    Load [R12 + narrow_oop_reg<<3 + offset], val_reg
+          //    NullCheck narrow_oop_reg
+          //
+          // and on sparc:
+          //
+          //    Load_narrow_oop memory, narrow_oop_reg
+          //    decode_not_null narrow_oop_reg, base_reg
+          //    Load [base_reg + offset], val_reg
+          //    NullCheck base_reg
+          //
         } else if (t->isa_oopptr()) {
           new_in2 = ConNode::make(C, t->make_narrowoop());
         }
@@ -2126,6 +2189,52 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
       }
     }
     break;
+
+  case Op_DecodeN:
+    assert(!n->in(1)->is_EncodeP(), "should be optimized out");
+    // DecodeN could be pinned on Sparc where it can't be fold into
+    // an address expression, see the code for Op_CastPP above.
+    assert(n->in(0) == NULL || !Matcher::clone_shift_expressions, "no control except on sparc");
+    break;
+
+  case Op_EncodeP: {
+    Node* in1 = n->in(1);
+    if (in1->is_DecodeN()) {
+      n->subsume_by(in1->in(1));
+    } else if (in1->Opcode() == Op_ConP) {
+      Compile* C = Compile::current();
+      const Type* t = in1->bottom_type();
+      if (t == TypePtr::NULL_PTR) {
+        n->subsume_by(ConNode::make(C, TypeNarrowOop::NULL_PTR));
+      } else if (t->isa_oopptr()) {
+        n->subsume_by(ConNode::make(C, t->make_narrowoop()));
+      }
+    }
+    if (in1->outcnt() == 0) {
+      in1->disconnect_inputs(NULL);
+    }
+    break;
+  }
+
+  case Op_Phi:
+    if (n->as_Phi()->bottom_type()->isa_narrowoop()) {
+      // The EncodeP optimization may create Phi with the same edges
+      // for all paths. It is not handled well by Register Allocator.
+      Node* unique_in = n->in(1);
+      assert(unique_in != NULL, "");
+      uint cnt = n->req();
+      for (uint i = 2; i < cnt; i++) {
+        Node* m = n->in(i);
+        assert(m != NULL, "");
+        if (unique_in != m)
+          unique_in = NULL;
+      }
+      if (unique_in != NULL) {
+        n->subsume_by(unique_in);
+      }
+    }
+    break;
+
 #endif
 
   case Op_ModI:

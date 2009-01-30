@@ -27,7 +27,7 @@ package com.sun.hotspot.igv.data;
  *
  * @author Thomas Wuerthinger
  */
-public class InputNode extends Properties.Object {
+public class InputNode extends Properties.Entity {
 
     private int id;
 

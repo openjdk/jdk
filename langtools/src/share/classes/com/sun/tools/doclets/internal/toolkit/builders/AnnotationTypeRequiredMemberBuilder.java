@@ -116,7 +116,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     /**
      * {@inheritDoc}
      */
-    public void invokeMethod(String methodName, Class[] paramClasses,
+    public void invokeMethod(String methodName, Class<?>[] paramClasses,
             Object[] params)
     throws Exception {
         if (DEBUG) {
@@ -135,7 +135,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
      * @param classDoc the {@link ClassDoc} we want to check.
      * @return a list of members that will be documented.
      */
-    public List members(ClassDoc classDoc) {
+    public List<ProgramElementDoc> members(ClassDoc classDoc) {
         return visibleMemberMap.getMembersFor(classDoc);
     }
 
@@ -161,7 +161,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
      * @param elements the XML elements that specify how to construct this
      *                documentation.
      */
-    public void buildAnnotationTypeRequiredMember(List elements) {
+    public void buildAnnotationTypeRequiredMember(List<?> elements) {
         if (writer == null) {
             return;
         }

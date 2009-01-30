@@ -383,7 +383,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
         try {
             if (tracing) logger.trace("start", "setting default class loader");
             defaultClassLoader = EnvHelp.resolveServerClassLoader(
-                    attributes, getSystemMBeanServer());
+                    attributes, getSystemMBeanServerForwarder());
         } catch (InstanceNotFoundException infc) {
             IllegalArgumentException x = new
                 IllegalArgumentException("ClassLoader not found: "+infc);
@@ -398,7 +398,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
         else
             rmiServer = newServer();
 
-        rmiServer.setMBeanServer(getSystemMBeanServer());
+        rmiServer.setMBeanServer(getSystemMBeanServerForwarder());
         rmiServer.setDefaultClassLoader(defaultClassLoader);
         rmiServer.setRMIConnectorServer(this);
         rmiServer.export();
@@ -423,7 +423,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
                 try {
                     if (tracing) logger.trace("start", "binding to " + jndiUrl);
 
-                    final Hashtable usemap = EnvHelp.mapToHashtable(attributes);
+                    final Hashtable<?, ?> usemap = EnvHelp.mapToHashtable(attributes);
 
                     bind(jndiUrl, usemap, objref, rebind);
 
@@ -555,7 +555,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
                     logger.trace("stop",
                           "unbind from external directory: " + boundJndiUrl);
 
-                final Hashtable usemap = EnvHelp.mapToHashtable(attributes);
+                final Hashtable<?, ?> usemap = EnvHelp.mapToHashtable(attributes);
 
                 InitialContext ctx =
                     new InitialContext(usemap);
@@ -592,31 +592,6 @@ public class RMIConnectorServer extends JMXConnectorServer {
         return Collections.unmodifiableMap(map);
     }
 
-    @Override
-    public synchronized void setMBeanServerForwarder(MBeanServerForwarder mbsf) {
-        MBeanServer oldSMBS = getSystemMBeanServer();
-        super.setMBeanServerForwarder(mbsf);
-        if (oldSMBS != getSystemMBeanServer())
-            updateMBeanServer();
-        // If the system chain of MBeanServerForwarders is not empty, then
-        // there is no need to call rmiServerImpl.setMBeanServer, because
-        // it is pointing to the head of the system chain and that has not
-        // changed.  (The *end* of the system chain will have been changed
-        // to point to mbsf.)
-    }
-
-    private void updateMBeanServer() {
-        if (rmiServerImpl != null)
-            rmiServerImpl.setMBeanServer(getSystemMBeanServer());
-    }
-
-    @Override
-    public synchronized void setSystemMBeanServerForwarder(
-            MBeanServerForwarder mbsf) {
-        super.setSystemMBeanServerForwarder(mbsf);
-        updateMBeanServer();
-    }
-
     /**
      * {@inheritDoc}
      * @return true, since this connector server does support a system chain
@@ -627,20 +602,43 @@ public class RMIConnectorServer extends JMXConnectorServer {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     * <P>The {@code RMIConnectorServer} class does support closing a specified
+     * client connection.
+     * @throws IllegalStateException if the server is not started or is closed.
+     * @throws IllegalArgumentException if {@code connectionId} is null or is
+     * not the id of any open connection.
+     * @since 1.7
+     */
+    @Override
+    public void closeConnection(String connectionId)
+            throws IOException {
+        if (isActive()) {
+            rmiServerImpl.closeConnection(connectionId);
+        } else {
+            throw new IllegalStateException(
+                    "The server is not started or is closed.");
+        }
+    }
+
     /* We repeat the definitions of connection{Opened,Closed,Failed}
        here so that they are accessible to other classes in this package
        even though they have protected access.  */
 
+    @Override
     protected void connectionOpened(String connectionId, String message,
                                     Object userData) {
         super.connectionOpened(connectionId, message, userData);
     }
 
+    @Override
     protected void connectionClosed(String connectionId, String message,
                                     Object userData) {
         super.connectionClosed(connectionId, message, userData);
     }
 
+    @Override
     protected void connectionFailed(String connectionId, String message,
                                     Object userData) {
         super.connectionFailed(connectionId, message, userData);
@@ -655,7 +653,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
      * @param rmiServer The object to bind in the registry
      * @param rebind true if the object must be rebound.
      **/
-    void bind(String jndiUrl, Hashtable attributes,
+    void bind(String jndiUrl, Hashtable<?, ?> attributes,
               RMIServer rmiServer, boolean rebind)
         throws NamingException, MalformedURLException {
         // if jndiURL is not null, we nust bind the stub to a
@@ -692,7 +690,8 @@ public class RMIConnectorServer extends JMXConnectorServer {
      * @param attributes A Map containing environment parameters,
      *        built from the Map specified at this object creation.
      **/
-    private void encodeStubInAddress(RMIServer rmiServer, Map attributes)
+    private void encodeStubInAddress(
+            RMIServer rmiServer, Map<String, ?> attributes)
             throws IOException {
 
         final String protocol, host;
@@ -735,14 +734,16 @@ public class RMIConnectorServer extends JMXConnectorServer {
     /**
      * Returns the IOR of the given rmiServer.
      **/
-    static String encodeStub(RMIServer rmiServer, Map env) throws IOException {
+    static String encodeStub(
+            RMIServer rmiServer, Map<String, ?> env) throws IOException {
         if (rmiServer instanceof javax.rmi.CORBA.Stub)
             return "/ior/" + encodeIIOPStub(rmiServer, env);
         else
             return "/stub/" + encodeJRMPStub(rmiServer, env);
     }
 
-    static String encodeJRMPStub(RMIServer rmiServer, Map env)
+    static String encodeJRMPStub(
+            RMIServer rmiServer, Map<String, ?> env)
             throws IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         ObjectOutputStream oout = new ObjectOutputStream(bout);
@@ -752,7 +753,8 @@ public class RMIConnectorServer extends JMXConnectorServer {
         return byteArrayToBase64(bytes);
     }
 
-    static String encodeIIOPStub(RMIServer rmiServer, Map env)
+    static String encodeIIOPStub(
+            RMIServer rmiServer, Map<String, ?> env)
             throws IOException {
         try {
             javax.rmi.CORBA.Stub stub =
@@ -767,7 +769,8 @@ public class RMIConnectorServer extends JMXConnectorServer {
      * Object that we will bind to the registry.
      * This object is a stub connected to our RMIServerImpl.
      **/
-    private static RMIServer objectToBind(RMIServerImpl rmiServer, Map env)
+    private static RMIServer objectToBind(
+            RMIServerImpl rmiServer, Map<String, ?> env)
         throws IOException {
         return RMIConnector.
             connectStub((RMIServer)rmiServer.toStub(),env);

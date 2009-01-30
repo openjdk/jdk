@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1826,3 +1826,23 @@ UnsetEnv(char *name)
 {
     return(borrowed_unsetenv(name));
 }
+/*
+ * The implementation for finding classes from the bootstrap
+ * class loader, refer to java.h
+ */
+static FindClassFromBootLoader_t *findBootClass = NULL;
+
+jclass
+FindBootStrapClass(JNIEnv *env, const char* classname)
+{
+   if (findBootClass == NULL) {
+       findBootClass = (FindClassFromBootLoader_t *)dlsym(RTLD_DEFAULT,
+          "JVM_FindClassFromBootLoader");
+       if (findBootClass == NULL) {
+           fprintf(stderr, "Error: could load method JVM_FindClassFromBootLoader");
+           return NULL;
+       }
+   }
+   return findBootClass(env, classname, JNI_FALSE);
+}
+

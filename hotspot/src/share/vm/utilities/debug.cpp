@@ -567,7 +567,7 @@ static void find(intptr_t x, bool print_pc) {
       }
       // the InlineCacheBuffer is using stubs generated into a buffer blob
       if (InlineCacheBuffer::contains(addr)) {
-        tty->print_cr(INTPTR_FORMAT "is pointing into InlineCacheBuffer", addr);
+        tty->print_cr(INTPTR_FORMAT " is pointing into InlineCacheBuffer", addr);
         return;
       }
       VtableStub* v = VtableStubs::stub_containing(addr);
@@ -595,7 +595,7 @@ static void find(intptr_t x, bool print_pc) {
     return;
   }
 
-  if (Universe::heap()->is_in_reserved(addr)) {
+  if (Universe::heap()->is_in(addr)) {
     HeapWord* p = Universe::heap()->block_start(addr);
     bool print = false;
     // If we couldn't find it it just may mean that heap wasn't parseable
@@ -621,24 +621,28 @@ static void find(intptr_t x, bool print_pc) {
       }
       return;
     }
+  } else if (Universe::heap()->is_in_reserved(addr)) {
+    tty->print_cr(INTPTR_FORMAT " is an unallocated location in the heap", addr);
+    return;
   }
+
   if (JNIHandles::is_global_handle((jobject) addr)) {
-    tty->print_cr(INTPTR_FORMAT "is a global jni handle", addr);
+    tty->print_cr(INTPTR_FORMAT " is a global jni handle", addr);
     return;
   }
   if (JNIHandles::is_weak_global_handle((jobject) addr)) {
-    tty->print_cr(INTPTR_FORMAT "is a weak global jni handle", addr);
+    tty->print_cr(INTPTR_FORMAT " is a weak global jni handle", addr);
     return;
   }
   if (JNIHandleBlock::any_contains((jobject) addr)) {
-    tty->print_cr(INTPTR_FORMAT "is a local jni handle", addr);
+    tty->print_cr(INTPTR_FORMAT " is a local jni handle", addr);
     return;
   }
 
   for(JavaThread *thread = Threads::first(); thread; thread = thread->next()) {
-    // Check for priviledge stack
+    // Check for privilege stack
     if (thread->privileged_stack_top() != NULL && thread->privileged_stack_top()->contains(addr)) {
-      tty->print_cr(INTPTR_FORMAT "is pointing into the priviledge stack for thread: " INTPTR_FORMAT, addr, thread);
+      tty->print_cr(INTPTR_FORMAT " is pointing into the privilege stack for thread: " INTPTR_FORMAT, addr, thread);
       return;
     }
     // If the addr is a java thread print information about that.
@@ -659,7 +663,7 @@ static void find(intptr_t x, bool print_pc) {
     return;
   }
 
-  tty->print_cr(INTPTR_FORMAT "is pointing to unknown location", addr);
+  tty->print_cr(INTPTR_FORMAT " is pointing to unknown location", addr);
 }
 
 
@@ -668,7 +672,7 @@ public:
   oop target;
   void do_oop(oop* o) {
     if (o != NULL && *o == target) {
-      tty->print_cr("0x%08x", o);
+      tty->print_cr(INTPTR_FORMAT, o);
     }
   }
   void do_oop(narrowOop* o) { ShouldNotReachHere(); }
@@ -687,13 +691,13 @@ public:
 
 
 static void findref(intptr_t x) {
-  GenCollectedHeap *gch = GenCollectedHeap::heap();
+  CollectedHeap *ch = Universe::heap();
   LookForRefInGenClosure lookFor;
   lookFor.target = (oop) x;
   LookForRefInObjectClosure look_in_object((oop) x);
 
   tty->print_cr("Searching heap:");
-  gch->object_iterate(&look_in_object);
+  ch->object_iterate(&look_in_object);
 
   tty->print_cr("Searching strong roots:");
   Universe::oops_do(&lookFor, false);

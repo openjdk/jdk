@@ -170,7 +170,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
          * @return a list of methods that will be documented.
          * @see VisibleMemberMap
          */
-        public List members(int type) {
+        public List<ProgramElementDoc> members(int type) {
                 return visibleMemberMaps[type].getLeafClassMembers(configuration);
         }
 
@@ -179,7 +179,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
          */
         public void invokeMethod(
                 String methodName,
-                Class[] paramClasses,
+                Class<?>[] paramClasses,
                 Object[] params)
                 throws Exception {
                 if (DEBUG) {
@@ -339,9 +339,9 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
      */
         private void buildInheritedSummary(MemberSummaryWriter writer,
             VisibleMemberMap visibleMemberMap) {
-        for (Iterator iter = visibleMemberMap.getVisibleClassesList().iterator();
+        for (Iterator<ClassDoc> iter = visibleMemberMap.getVisibleClassesList().iterator();
                 iter.hasNext();) {
-            ClassDoc inhclass = (ClassDoc) (iter.next());
+            ClassDoc inhclass = iter.next();
             if (! (inhclass.isPublic() ||
                 Util.isLinkable(inhclass, configuration))) {
                 continue;

@@ -67,7 +67,7 @@ public class Types {
         new Context.Key<Types>();
 
     final Symtab syms;
-    final Messages messages;
+    final JavacMessages messages;
     final Names names;
     final boolean allowBoxing;
     final ClassReader reader;
@@ -93,7 +93,7 @@ public class Types {
         source = Source.instance(context);
         chk = Check.instance(context);
         capturedName = names.fromString("<captured wildcard>");
-        messages = Messages.instance(context);
+        messages = JavacMessages.instance(context);
     }
     // </editor-fold>
 
@@ -709,16 +709,13 @@ public class Types {
         case UNDETVAR:
             if (s.tag == WILDCARD) {
                 UndetVar undetvar = (UndetVar)t;
-
-                // Because of wildcard capture, s must be on the left
-                // hand side of an assignment.  Furthermore, t is an
-                // underconstrained type variable, for example, one
-                // that is only used in the return type of a method.
-                // If the type variable is truly underconstrained, it
-                // cannot have any low bounds:
-                assert undetvar.lobounds.isEmpty() : undetvar;
-
                 undetvar.inst = glb(upperBound(s), undetvar.inst);
+                // We should check instantiated type against any of the
+                // undetvar's lower bounds.
+                for (Type t2 : undetvar.lobounds) {
+                    if (!isSubtype(t2, undetvar.inst))
+                        return false;
+                }
                 return true;
             } else {
                 return isSameType(t, s);
@@ -883,12 +880,12 @@ public class Types {
         if (warn != warnStack.head) {
             try {
                 warnStack = warnStack.prepend(warn);
-                return isCastable.visit(t, s);
+                return isCastable.visit(t,s);
             } finally {
                 warnStack = warnStack.tail;
             }
         } else {
-            return isCastable.visit(t, s);
+            return isCastable.visit(t,s);
         }
     }
     // where
@@ -986,10 +983,10 @@ public class Types {
                         if (highSub != null) {
                             assert a.tsym == highSub.tsym && a.tsym == lowSub.tsym
                                 : a.tsym + " != " + highSub.tsym + " != " + lowSub.tsym;
-                            if (!disjointTypes(aHigh.getTypeArguments(), highSub.getTypeArguments())
-                                && !disjointTypes(aHigh.getTypeArguments(), lowSub.getTypeArguments())
-                                && !disjointTypes(aLow.getTypeArguments(), highSub.getTypeArguments())
-                                && !disjointTypes(aLow.getTypeArguments(), lowSub.getTypeArguments())) {
+                            if (!disjointTypes(aHigh.allparams(), highSub.allparams())
+                                && !disjointTypes(aHigh.allparams(), lowSub.allparams())
+                                && !disjointTypes(aLow.allparams(), highSub.allparams())
+                                && !disjointTypes(aLow.allparams(), lowSub.allparams())) {
                                 if (upcast ? giveWarning(a, highSub) || giveWarning(a, lowSub)
                                            : giveWarning(highSub, a) || giveWarning(lowSub, a))
                                     warnStack.head.warnUnchecked();
@@ -1200,6 +1197,7 @@ public class Types {
             s = upperBound(s);
         if (s.tag == TYPEVAR)
             s = s.getUpperBound();
+
         return !isSubtype(t, s);
     }
     // </editor-fold>
@@ -1430,6 +1428,10 @@ public class Types {
                 long flags = sym.flags();
                 if (((flags & STATIC) == 0) && owner.type.isParameterized()) {
                     Type base = asOuterSuper(t, owner);
+                    //if t is an intersection type T = CT & I1 & I2 ... & In
+                    //its supertypes CT, I1, ... In might contain wildcards
+                    //so we need to go through capture conversion
+                    base = t.isCompound() ? capture(base) : base;
                     if (base != null) {
                         List<Type> ownerParams = owner.type.allparams();
                         List<Type> baseParams = base.allparams();
@@ -3146,7 +3148,7 @@ public class Types {
             giveWarning = giveWarning || (reverse ? giveWarning(t2, t1) : giveWarning(t1, t2));
             commonSupers = commonSupers.tail;
         }
-        if (giveWarning && !isReifiable(to))
+        if (giveWarning && !isReifiable(reverse ? from : to))
             warn.warnUnchecked();
         if (!source.allowCovariantReturns())
             // reject if there is a common method signature with
@@ -3188,7 +3190,7 @@ public class Types {
     private boolean giveWarning(Type from, Type to) {
         // To and from are (possibly different) parameterizations
         // of the same class or interface
-        return to.isParameterized() && !containsType(to.getTypeArguments(), from.getTypeArguments());
+        return to.isParameterized() && !containsType(to.allparams(), from.allparams());
     }
 
     private List<Type> superClosure(Type t, Type s) {
@@ -3209,6 +3211,7 @@ public class Types {
             containsType(t, s) && containsType(s, t);
     }
 
+    // <editor-fold defaultstate="collapsed" desc="adapt">
     /**
      * Adapt a type by computing a substitution which maps a source
      * type to a target type.
@@ -3222,92 +3225,113 @@ public class Types {
                        Type target,
                        ListBuffer<Type> from,
                        ListBuffer<Type> to) throws AdaptFailure {
-        Map<Symbol,Type> mapping = new HashMap<Symbol,Type>();
-        adaptRecursive(source, target, from, to, mapping);
-        List<Type> fromList = from.toList();
-        List<Type> toList = to.toList();
-        while (!fromList.isEmpty()) {
-            Type val = mapping.get(fromList.head.tsym);
-            if (toList.head != val)
-                toList.head = val;
-            fromList = fromList.tail;
-            toList = toList.tail;
-        }
+        new Adapter(from, to).adapt(source, target);
     }
-    // where
-        private void adaptRecursive(Type source,
-                                    Type target,
-                                    ListBuffer<Type> from,
-                                    ListBuffer<Type> to,
-                                    Map<Symbol,Type> mapping) throws AdaptFailure {
-            if (source.tag == TYPEVAR) {
-                // Check to see if there is
-                // already a mapping for $source$, in which case
-                // the old mapping will be merged with the new
-                Type val = mapping.get(source.tsym);
-                if (val != null) {
-                    if (val.isSuperBound() && target.isSuperBound()) {
-                        val = isSubtype(lowerBound(val), lowerBound(target))
-                            ? target : val;
-                    } else if (val.isExtendsBound() && target.isExtendsBound()) {
-                        val = isSubtype(upperBound(val), upperBound(target))
-                            ? val : target;
-                    } else if (!isSameType(val, target)) {
-                        throw new AdaptFailure();
-                    }
-                } else {
-                    val = target;
-                    from.append(source);
-                    to.append(target);
-                }
-                mapping.put(source.tsym, val);
-            } else if (source.tag == target.tag) {
-                switch (source.tag) {
-                    case CLASS:
-                        adapt(source.allparams(), target.allparams(),
-                              from, to, mapping);
-                        break;
-                    case ARRAY:
-                        adaptRecursive(elemtype(source), elemtype(target),
-                                       from, to, mapping);
-                        break;
-                    case WILDCARD:
-                        if (source.isExtendsBound()) {
-                            adaptRecursive(upperBound(source), upperBound(target),
-                                           from, to, mapping);
-                        } else if (source.isSuperBound()) {
-                            adaptRecursive(lowerBound(source), lowerBound(target),
-                                           from, to, mapping);
-                        }
-                        break;
-                }
-            }
-        }
-        public static class AdaptFailure extends Exception {
-            static final long serialVersionUID = -7490231548272701566L;
+
+    class Adapter extends SimpleVisitor<Void, Type> {
+
+        ListBuffer<Type> from;
+        ListBuffer<Type> to;
+        Map<Symbol,Type> mapping;
+
+        Adapter(ListBuffer<Type> from, ListBuffer<Type> to) {
+            this.from = from;
+            this.to = to;
+            mapping = new HashMap<Symbol,Type>();
         }
 
-    /**
-     * Adapt a type by computing a substitution which maps a list of
-     * source types to a list of target types.
-     *
-     * @param source    the source type
-     * @param target    the target type
-     * @param from      the type variables of the computed substitution
-     * @param to        the types of the computed substitution.
-     */
-    private void adapt(List<Type> source,
-                       List<Type> target,
-                       ListBuffer<Type> from,
-                       ListBuffer<Type> to,
-                       Map<Symbol,Type> mapping) throws AdaptFailure {
-        if (source.length() == target.length()) {
-            while (source.nonEmpty()) {
-                adaptRecursive(source.head, target.head, from, to, mapping);
-                source = source.tail;
-                target = target.tail;
+        public void adapt(Type source, Type target) throws AdaptFailure {
+            visit(source, target);
+            List<Type> fromList = from.toList();
+            List<Type> toList = to.toList();
+            while (!fromList.isEmpty()) {
+                Type val = mapping.get(fromList.head.tsym);
+                if (toList.head != val)
+                    toList.head = val;
+                fromList = fromList.tail;
+                toList = toList.tail;
             }
         }
+
+        @Override
+        public Void visitClassType(ClassType source, Type target) throws AdaptFailure {
+            if (target.tag == CLASS)
+                adaptRecursive(source.allparams(), target.allparams());
+            return null;
+        }
+
+        @Override
+        public Void visitArrayType(ArrayType source, Type target) throws AdaptFailure {
+            if (target.tag == ARRAY)
+                adaptRecursive(elemtype(source), elemtype(target));
+            return null;
+        }
+
+        @Override
+        public Void visitWildcardType(WildcardType source, Type target) throws AdaptFailure {
+            if (source.isExtendsBound())
+                adaptRecursive(upperBound(source), upperBound(target));
+            else if (source.isSuperBound())
+                adaptRecursive(lowerBound(source), lowerBound(target));
+            return null;
+        }
+
+        @Override
+        public Void visitTypeVar(TypeVar source, Type target) throws AdaptFailure {
+            // Check to see if there is
+            // already a mapping for $source$, in which case
+            // the old mapping will be merged with the new
+            Type val = mapping.get(source.tsym);
+            if (val != null) {
+                if (val.isSuperBound() && target.isSuperBound()) {
+                    val = isSubtype(lowerBound(val), lowerBound(target))
+                        ? target : val;
+                } else if (val.isExtendsBound() && target.isExtendsBound()) {
+                    val = isSubtype(upperBound(val), upperBound(target))
+                        ? val : target;
+                } else if (!isSameType(val, target)) {
+                    throw new AdaptFailure();
+                }
+            } else {
+                val = target;
+                from.append(source);
+                to.append(target);
+            }
+            mapping.put(source.tsym, val);
+            return null;
+        }
+
+        @Override
+        public Void visitType(Type source, Type target) {
+            return null;
+        }
+
+        private Set<TypePair> cache = new HashSet<TypePair>();
+
+        private void adaptRecursive(Type source, Type target) {
+            TypePair pair = new TypePair(source, target);
+            if (cache.add(pair)) {
+                try {
+                    visit(source, target);
+                } finally {
+                    cache.remove(pair);
+                }
+            }
+        }
+
+        private void adaptRecursive(List<Type> source, List<Type> target) {
+            if (source.length() == target.length()) {
+                while (source.nonEmpty()) {
+                    adaptRecursive(source.head, target.head);
+                    source = source.tail;
+                    target = target.tail;
+                }
+            }
+        }
+    }
+
+    public static class AdaptFailure extends RuntimeException {
+        static final long serialVersionUID = -7490231548272701566L;
     }
 
     private void adaptSelf(Type t,
@@ -3322,6 +3346,7 @@ public class Types {
             throw new AssertionError(ex);
         }
     }
+    // </editor-fold>
 
     /**
      * Rewrite all type variables (universal quantifiers) in the given
@@ -3340,33 +3365,67 @@ public class Types {
      * quantifiers) only
      */
     private Type rewriteQuantifiers(Type t, boolean high, boolean rewriteTypeVars) {
-        ListBuffer<Type> from = new ListBuffer<Type>();
-        ListBuffer<Type> to = new ListBuffer<Type>();
-        adaptSelf(t, from, to);
-        ListBuffer<Type> rewritten = new ListBuffer<Type>();
-        List<Type> formals = from.toList();
-        boolean changed = false;
-        for (Type arg : to.toList()) {
-            Type bound;
-            if (rewriteTypeVars && arg.tag == TYPEVAR) {
-                TypeVar tv = (TypeVar)arg;
-                bound = high ? tv.bound : syms.botType;
-            } else {
-                bound = high ? upperBound(arg) : lowerBound(arg);
-            }
-            Type newarg = bound;
-            if (arg != bound) {
-                changed = true;
-                newarg = high ? makeExtendsWildcard(bound, (TypeVar)formals.head)
-                              : makeSuperWildcard(bound, (TypeVar)formals.head);
-            }
-            rewritten.append(newarg);
-            formals = formals.tail;
+        return new Rewriter(high, rewriteTypeVars).rewrite(t);
+    }
+
+    class Rewriter extends UnaryVisitor<Type> {
+
+        boolean high;
+        boolean rewriteTypeVars;
+
+        Rewriter(boolean high, boolean rewriteTypeVars) {
+            this.high = high;
+            this.rewriteTypeVars = rewriteTypeVars;
         }
-        if (changed)
-            return subst(t.tsym.type, from.toList(), rewritten.toList());
-        else
-            return t;
+
+        Type rewrite(Type t) {
+            ListBuffer<Type> from = new ListBuffer<Type>();
+            ListBuffer<Type> to = new ListBuffer<Type>();
+            adaptSelf(t, from, to);
+            ListBuffer<Type> rewritten = new ListBuffer<Type>();
+            List<Type> formals = from.toList();
+            boolean changed = false;
+            for (Type arg : to.toList()) {
+                Type bound = visit(arg);
+                if (arg != bound) {
+                    changed = true;
+                    bound = high ? makeExtendsWildcard(bound, (TypeVar)formals.head)
+                              : makeSuperWildcard(bound, (TypeVar)formals.head);
+                }
+                rewritten.append(bound);
+                formals = formals.tail;
+            }
+            if (changed)
+                return subst(t.tsym.type, from.toList(), rewritten.toList());
+            else
+                return t;
+        }
+
+        public Type visitType(Type t, Void s) {
+            return high ? upperBound(t) : lowerBound(t);
+        }
+
+        @Override
+        public Type visitCapturedType(CapturedType t, Void s) {
+            return visitWildcardType(t.wildcard, null);
+        }
+
+        @Override
+        public Type visitTypeVar(TypeVar t, Void s) {
+            if (rewriteTypeVars)
+                return high ? t.bound : syms.botType;
+            else
+                return t;
+        }
+
+        @Override
+        public Type visitWildcardType(WildcardType t, Void s) {
+            Type bound = high ? t.getExtendsBound() :
+                                t.getSuperBound();
+            if (bound == null)
+                bound = high ? syms.objectType : syms.botType;
+            return bound;
+        }
     }
 
     /**

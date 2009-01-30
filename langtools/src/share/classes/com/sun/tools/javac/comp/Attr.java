@@ -706,12 +706,12 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        // Check that the variable's declared type is well-formed.
-        chk.validate(tree.vartype, env);
-
         VarSymbol v = tree.sym;
         Lint lint = env.info.lint.augment(v.attributes_field, v.flags());
         Lint prevLint = chk.setLint(lint);
+
+        // Check that the variable's declared type is well-formed.
+        chk.validate(tree.vartype, env);
 
         try {
             chk.checkDeprecatedAnnotation(tree.pos(), v);
@@ -1457,7 +1457,7 @@ public class Attr extends JCTree.Visitor {
                 localEnv.info.varArgs = false;
                 tree.constructor = rs.resolveConstructor(
                     tree.pos(), localEnv, clazztype, argtypes, typeargtypes);
-                Type ctorType = checkMethod(clazztype,
+                tree.constructorType = checkMethod(clazztype,
                                             tree.constructor,
                                             localEnv,
                                             tree.args,
@@ -1465,7 +1465,7 @@ public class Attr extends JCTree.Visitor {
                                             typeargtypes,
                                             localEnv.info.varArgs);
                 if (localEnv.info.varArgs)
-                    assert ctorType.isErroneous() || tree.varargsElement != null;
+                    assert tree.constructorType.isErroneous() || tree.varargsElement != null;
             }
 
             if (cdef != null) {
@@ -1527,6 +1527,13 @@ public class Attr extends JCTree.Visitor {
                     typeargtypes, true, tree.varargsElement != null);
                 assert sym.kind < AMBIGUOUS || tree.constructor.type.isErroneous();
                 tree.constructor = sym;
+                tree.constructorType = checkMethod(clazztype,
+                                            tree.constructor,
+                                            localEnv,
+                                            tree.args,
+                                            argtypes,
+                                            typeargtypes,
+                                            localEnv.info.varArgs);
             }
 
             if (tree.constructor != null && tree.constructor.kind == MTH)
@@ -2007,6 +2014,10 @@ public class Attr extends JCTree.Visitor {
                     log.error(pos, "type.var.cant.be.deref");
                     return syms.errSymbol;
                 } else {
+                    Symbol sym2 = (sym.flags() & Flags.PRIVATE) != 0 ?
+                        rs.new AccessError(env, site, sym) :
+                                sym;
+                    rs.access(sym2, pos, site, name, true);
                     return sym;
                 }
             case ERROR:
@@ -2374,16 +2385,14 @@ public class Attr extends JCTree.Visitor {
             }
 
             if (warned && sym.type.tag == FORALL) {
-                String typeargs = "";
-                if (typeargtypes != null && typeargtypes.nonEmpty()) {
-                    typeargs = "<" + Type.toString(typeargtypes) + ">";
-                }
                 chk.warnUnchecked(env.tree.pos(),
                                   "unchecked.meth.invocation.applied",
-                                  sym,
-                                  sym.location(),
-                                  typeargs,
-                                  Type.toString(argtypes));
+                                  kindName(sym),
+                                  sym.name,
+                                  rs.methodArguments(sym.type.getParameterTypes()),
+                                  rs.methodArguments(argtypes),
+                                  kindName(sym.location()),
+                                  sym.location());
                 owntype = new MethodType(owntype.getParameterTypes(),
                                          types.erasure(owntype.getReturnType()),
                                          owntype.getThrownTypes(),
@@ -2516,7 +2525,10 @@ public class Attr extends JCTree.Visitor {
             // accept class or interface or typevar as first bound.
             Type b = checkBase(bs.head, tree.bounds.head, env, false, false, false);
             boundSet.add(types.erasure(b));
-            if (b.tag == TYPEVAR) {
+            if (b.isErroneous()) {
+                a.bound = b;
+            }
+            else if (b.tag == TYPEVAR) {
                 // if first bound was a typevar, do not accept further bounds.
                 if (tree.bounds.tail.nonEmpty()) {
                     log.error(tree.bounds.tail.head.pos(),
@@ -2530,7 +2542,9 @@ public class Attr extends JCTree.Visitor {
                 for (JCExpression bound : tree.bounds.tail) {
                     bs = bs.tail;
                     Type i = checkBase(bs.head, bound, env, false, true, false);
-                    if (i.tag == CLASS)
+                    if (i.isErroneous())
+                        a.bound = i;
+                    else if (i.tag == CLASS)
                         chk.checkNotRepeated(bound.pos(), types.erasure(i), boundSet);
                 }
             }

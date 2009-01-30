@@ -1884,6 +1884,9 @@ public class Lower extends TreeTranslator {
                     }
                 });
         }
+        case JCTree.TYPECAST: {
+            return abstractLval(((JCTypeCast)lval).expr, builder);
+        }
         }
         throw new AssertionError(lval);
     }
@@ -2713,10 +2716,7 @@ public class Lower extends TreeTranslator {
             // boxing required; need to rewrite as x = (unbox typeof x)(x op y);
             // or if x == (typeof x)z then z = (unbox typeof x)((typeof x)z op y)
             // (but without recomputing x)
-            JCTree arg = (tree.lhs.getTag() == JCTree.TYPECAST)
-                ? ((JCTypeCast)tree.lhs).expr
-                : tree.lhs;
-            JCTree newTree = abstractLval(arg, new TreeBuilder() {
+            JCTree newTree = abstractLval(tree.lhs, new TreeBuilder() {
                     public JCTree build(final JCTree lhs) {
                         int newTag = tree.getTag() - JCTree.ASGOffset;
                         // Erasure (TransTypes) can change the type of
@@ -2768,9 +2768,8 @@ public class Lower extends TreeTranslator {
         // or
         // translate to tmp1=lval(e); tmp2=tmp1; (typeof tree)tmp1 OP 1; tmp2
         // where OP is += or -=
-        final boolean cast = tree.arg.getTag() == JCTree.TYPECAST;
-        final JCExpression arg = cast ? ((JCTypeCast)tree.arg).expr : tree.arg;
-        return abstractLval(arg, new TreeBuilder() {
+        final boolean cast = TreeInfo.skipParens(tree.arg).getTag() == JCTree.TYPECAST;
+        return abstractLval(tree.arg, new TreeBuilder() {
                 public JCTree build(final JCTree tmp1) {
                     return abstractRval(tmp1, tree.arg.type, new TreeBuilder() {
                             public JCTree build(final JCTree tmp2) {

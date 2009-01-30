@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,8 @@ import javax.management.MBeanServer;
 /*
  * Tests jar services provider are called
  */
+import provider.JMXConnectorProviderImpl;
+import provider.JMXConnectorServerProviderImpl;
 public class ProviderTest {
     public static void main(String[] args) throws Exception {
         System.out.println("Starting ProviderTest");
@@ -56,8 +58,14 @@ public class ProviderTest {
 
         dotest(url, mbs);
 
-        if(!provider.JMXConnectorProviderImpl.called() ||
-           !provider.JMXConnectorServerProviderImpl.called()) {
+        boolean clientCalled = provider.JMXConnectorProviderImpl.called();
+        boolean serverCalled = provider.JMXConnectorServerProviderImpl.called();
+        boolean ok = clientCalled && serverCalled;
+        if (!ok) {
+            if (!clientCalled)
+                System.out.println("Client provider not called");
+            if (!serverCalled)
+                System.out.println("Server provider not called");
             System.out.println("Test Failed");
             System.exit(1);
         }

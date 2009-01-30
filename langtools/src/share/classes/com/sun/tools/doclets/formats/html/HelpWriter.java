@@ -223,7 +223,7 @@ public class HelpWriter extends HtmlDocletWriter {
     protected void navLinkHelp() {
         navCellRevStart();
         fontStyle("NavBarFont1Rev");
-        boldText("doclet.Help");
+        strongText("doclet.Help");
         fontEnd();
         navCellEnd();
     }

@@ -60,6 +60,8 @@ class GCCause : public AllStatic {
     _old_generation_too_full_to_scavenge,
     _adaptive_size_policy,
 
+    _g1_inc_collection_pause, _g1_pop_region_collection_pause,
+
     _last_ditch_collection,
     _last_gc_cause
   };
@@ -68,12 +70,14 @@ class GCCause : public AllStatic {
     return (cause == GCCause::_java_lang_system_gc ||
             cause == GCCause::_jvmti_force_gc);
   }
+
   inline static bool is_serviceability_requested_gc(GCCause::Cause
                                                              cause) {
     return (cause == GCCause::_jvmti_force_gc ||
             cause == GCCause::_heap_inspection ||
             cause == GCCause::_heap_dump);
   }
+
   // Return a string describing the GCCause.
   static const char* to_string(GCCause::Cause cause);
   // Return true if the GCCause is for a full collection.

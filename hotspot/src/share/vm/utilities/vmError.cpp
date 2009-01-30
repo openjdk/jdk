@@ -263,7 +263,7 @@ void VMError::report(outputStream* st) {
          st->print("# java.lang.OutOfMemoryError: ");
          if (_size) {
            st->print("requested ");
-           sprintf(buf,"%d",_size);
+           sprintf(buf,SIZE_FORMAT,_size);
            st->print(buf);
            st->print(" bytes");
            if (_message != NULL) {
@@ -332,6 +332,8 @@ void VMError::report(outputStream* st) {
 
      // VM version
      st->print_cr("#");
+     JDK_Version::current().to_string(buf, sizeof(buf));
+     st->print_cr("# JRE version: %s", buf);
      st->print_cr("# Java VM: %s (%s %s %s %s)",
                    Abstract_VM_Version::vm_name(),
                    Abstract_VM_Version::vm_release(),

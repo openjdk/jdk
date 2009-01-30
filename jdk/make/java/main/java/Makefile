@@ -28,11 +28,10 @@ PROGRAM = java
 PRODUCT = java
 
 #
-# Statically link java to avoid the dependency on msvcr71.dll.  This
+# Statically link java to avoid the dependency on msvcrNN.dll.  This
 # must be set before Defs.gmk is included.
 #
 MS_RUNTIME_STATIC = true
-
 #
 # Statically link java to avoid the dependency on jli.dll.  This
 # must be set before Program.gmk is included.
@@ -44,6 +43,7 @@ include $(BUILDDIR)/common/Defs.gmk
 # Override the default version info with our own resource file (see 5106536)
 ifeq ($(PLATFORM), windows)
 LDLIBS_COMMON += user32.lib comctl32.lib
+
 ifdef OPENJDK
     RC_FLAGS += -i "$(PLATFORM_SRC)/resource/icons"
 else

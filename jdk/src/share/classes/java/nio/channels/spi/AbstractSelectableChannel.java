@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,6 +175,16 @@ public abstract class AbstractSelectableChannel
      * the selector is invoked while holding the appropriate locks.  The
      * resulting key is added to this channel's key set before being returned.
      * </p>
+     *
+     * @throws  ClosedSelectorException {@inheritDoc}
+     *
+     * @throws  IllegalBlockingModeException {@inheritDoc}
+     *
+     * @throws  IllegalSelectorException {@inheritDoc}
+     *
+     * @throws  CancelledKeyException {@inheritDoc}
+     *
+     * @throws  IllegalArgumentException {@inheritDoc}
      */
     public final SelectionKey register(Selector sel, int ops,
                                        Object att)

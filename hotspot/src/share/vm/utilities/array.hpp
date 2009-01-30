@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,18 @@ class ResourceArray: public ResourceObj {
     _length  = 0;
     _data    = NULL;
     DEBUG_ONLY(init_nesting();)
+    // client may call initialize, at most once
   }
 
 
   ResourceArray(size_t esize, int length) {
+    DEBUG_ONLY(_data = NULL);
+    initialize(esize, length);
+  }
+
+  void initialize(size_t esize, int length) {
     assert(length >= 0, "illegal length");
+    assert(_data == NULL, "must be new object");
     _length  = length;
     _data    = resource_allocate_bytes(esize * length);
     DEBUG_ONLY(init_nesting();)
@@ -111,7 +118,10 @@ class CHeapArray: public CHeapObj {
     /* creation */                                                                       \
     array_name() : base_class()                       {}                                 \
     array_name(const int length) : base_class(esize, length) {}                          \
-    array_name(const int length, const etype fx) : base_class(esize, length) {           \
+    array_name(const int length, const etype fx)      { initialize(length, fx); }        \
+    void initialize(const int length)     { base_class::initialize(esize, length); }     \
+    void initialize(const int length, const etype fx) {                                  \
+      initialize(length);                                                                \
       for (int i = 0; i < length; i++) ((etype*)_data)[i] = fx;                          \
     }                                                                                    \
                                                                                          \
@@ -157,16 +167,29 @@ class CHeapArray: public CHeapObj {
                                                                                          \
    public:                                                                               \
     /* creation */                                                                       \
-    stack_name() : array_name()                  { _size = 0; }                          \
-    stack_name(const int size) : array_name(size){ _length = 0; _size = size; }          \
-    stack_name(const int size, const etype fx) : array_name(size, fx) { _size = size; }  \
+    stack_name() : array_name()                     { _size = 0; }                       \
+    stack_name(const int size)                      { initialize(size); }                \
+    stack_name(const int size, const etype fx)      { initialize(size, fx); }            \
+    void initialize(const int size, const etype fx) {                                    \
+      _size = size;                                                                      \
+      array_name::initialize(size, fx);                                                  \
+      /* _length == size, allocation and size are the same */                            \
+    }                                                                                    \
+    void initialize(const int size) {                                                    \
+      _size = size;                                                                      \
+      array_name::initialize(size);                                                      \
+      _length = 0;          /* reset length to zero; _size records the allocation */     \
+    }                                                                                    \
                                                                                          \
     /* standard operations */                                                            \
     int size() const                             { return _size; }                       \
                                                                                          \
-    void push(const etype x) {                                                           \
-      if (length() >= size()) expand(esize, length(), _size);                            \
-      ((etype*)_data)[_length++] = x;                                                    \
+    int push(const etype x) {                                                            \
+      int len = length();                                                                \
+      if (len >= size()) expand(esize, len, _size);                                      \
+      ((etype*)_data)[len] = x;                                                          \
+      _length = len+1;                                                                   \
+      return len;                                                                        \
     }                                                                                    \
                                                                                          \
     etype pop() {                                                                        \
@@ -235,7 +258,7 @@ class CHeapArray: public CHeapObj {
     int  capacity() const                        { return size(); }                      \
     void clear()                                 { truncate(0); }                        \
     void trunc_to(const int length)              { truncate(length); }                   \
-    void append(const etype x)                   { push(x); }                            \
+    int  append(const etype x)                   { return push(x); }                     \
     void appendAll(const stack_name* stack)      { push_all(stack); }                    \
     etype last() const                           { return top(); }                       \
   };                                                                                     \

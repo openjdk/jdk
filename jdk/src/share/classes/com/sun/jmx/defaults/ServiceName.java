@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,9 +69,9 @@ public class ServiceName {
     /**
      * The version of the JMX specification implemented by this product.
      * <BR>
-     * The value is <CODE>1.4</CODE>.
+     * The value is <CODE>2.0</CODE>.
      */
-    public static final String JMX_SPEC_VERSION = "1.4";
+    public static final String JMX_SPEC_VERSION = "2.0";
 
     /**
      * The vendor of the JMX specification implemented by this product.

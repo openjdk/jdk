@@ -81,7 +81,7 @@ public class LinkFactoryImpl extends LinkFactory {
                                 !(linkInfo.classDoc.name() + ".html").equals(m_writer.filename)) {
                         linkOutput.append(m_writer.getHyperLink(filename,
                             classLinkInfo.where, label.toString(),
-                            classLinkInfo.isBold, classLinkInfo.styleName,
+                            classLinkInfo.isStrong, classLinkInfo.styleName,
                             title, classLinkInfo.target));
                         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
                             linkOutput.append(getTypeParameterLinks(linkInfo).toString());
@@ -92,7 +92,7 @@ public class LinkFactoryImpl extends LinkFactory {
         } else {
             String crossLink = m_writer.getCrossClassLink(
                 classDoc.qualifiedName(), classLinkInfo.where,
-                label.toString(), classLinkInfo.isBold, classLinkInfo.styleName,
+                label.toString(), classLinkInfo.isStrong, classLinkInfo.styleName,
                 true);
             if (crossLink != null) {
                 linkOutput.append(crossLink);

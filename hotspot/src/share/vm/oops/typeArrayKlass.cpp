@@ -36,13 +36,14 @@ bool typeArrayKlass::compute_is_subtype_of(klassOop k) {
   return element_type() == tak->element_type();
 }
 
-klassOop typeArrayKlass::create_klass(BasicType type, int scale, TRAPS) {
+klassOop typeArrayKlass::create_klass(BasicType type, int scale,
+                                      const char* name_str, TRAPS) {
   typeArrayKlass o;
 
   symbolHandle sym(symbolOop(NULL));
   // bootstrapping: don't create sym if symbolKlass not created yet
-  if (Universe::symbolKlassObj() != NULL) {
-    sym = oopFactory::new_symbol_handle(external_name(type), CHECK_NULL);
+  if (Universe::symbolKlassObj() != NULL && name_str != NULL) {
+    sym = oopFactory::new_symbol_handle(name_str, CHECK_NULL);
   }
   KlassHandle klassklass (THREAD, Universe::typeArrayKlassKlassObj());
 

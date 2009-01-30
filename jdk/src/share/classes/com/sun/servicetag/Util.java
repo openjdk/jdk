@@ -140,11 +140,14 @@ class Util {
             }
             return e.getMessage();
         } finally {
-            if (r != null) {
-                r.close();
-            }
-            if (err != null) {
-                err.close();
+            try {
+                if (r != null) {
+                    r.close();
+                }
+            } finally {
+                if (err != null) {
+                    err.close();
+                }
             }
         }
     }

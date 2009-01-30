@@ -94,7 +94,7 @@ public class AccessAsciiArt {
 
             // Test the third line of the class tree
             {
-"          <IMG SRC=\"../../resources/inherit.gif\" ALT=\"extended by \"><B>p1.subpkg.SSC</B>",
+"          <IMG SRC=\"../../resources/inherit.gif\" ALT=\"extended by \"><STRONG>p1.subpkg.SSC</STRONG>",
                      TMPDEST_DIR1 + "p1" + FS + "subpkg" + FS +"SSC.html" },
 
         };

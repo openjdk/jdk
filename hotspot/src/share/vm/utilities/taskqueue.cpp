@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,8 @@ void ParallelTaskTerminator::sleep(uint millis) {
   os::sleep(Thread::current(), millis, false);
 }
 
-bool ParallelTaskTerminator::offer_termination() {
+bool
+ParallelTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   Atomic::inc(&_offered_termination);
 
   juint yield_count = 0;
@@ -91,7 +92,8 @@ bool ParallelTaskTerminator::offer_termination() {
         sleep(WorkStealingSleepMillis);
       }
 
-      if (peek_in_queue_set()) {
+      if (peek_in_queue_set() ||
+          (terminator != NULL && terminator->should_exit_termination())) {
         Atomic::dec(&_offered_termination);
         return false;
       }
@@ -107,72 +109,72 @@ void ParallelTaskTerminator::reset_for_reuse() {
   }
 }
 
-bool ChunkTaskQueueWithOverflow::is_empty() {
-  return (_chunk_queue.size() == 0) &&
+bool RegionTaskQueueWithOverflow::is_empty() {
+  return (_region_queue.size() == 0) &&
          (_overflow_stack->length() == 0);
 }
 
-bool ChunkTaskQueueWithOverflow::stealable_is_empty() {
-  return _chunk_queue.size() == 0;
+bool RegionTaskQueueWithOverflow::stealable_is_empty() {
+  return _region_queue.size() == 0;
 }
 
-bool ChunkTaskQueueWithOverflow::overflow_is_empty() {
+bool RegionTaskQueueWithOverflow::overflow_is_empty() {
   return _overflow_stack->length() == 0;
 }
 
-void ChunkTaskQueueWithOverflow::initialize() {
-  _chunk_queue.initialize();
+void RegionTaskQueueWithOverflow::initialize() {
+  _region_queue.initialize();
   assert(_overflow_stack == 0, "Creating memory leak");
   _overflow_stack =
-    new (ResourceObj::C_HEAP) GrowableArray<ChunkTask>(10, true);
+    new (ResourceObj::C_HEAP) GrowableArray<RegionTask>(10, true);
 }
 
-void ChunkTaskQueueWithOverflow::save(ChunkTask t) {
-  if (TraceChunkTasksQueuing && Verbose) {
+void RegionTaskQueueWithOverflow::save(RegionTask t) {
+  if (TraceRegionTasksQueuing && Verbose) {
     gclog_or_tty->print_cr("CTQ: save " PTR_FORMAT, t);
   }
-  if(!_chunk_queue.push(t)) {
+  if(!_region_queue.push(t)) {
     _overflow_stack->push(t);
   }
 }
 
-// Note that using this method will retrieve all chunks
+// Note that using this method will retrieve all regions
 // that have been saved but that it will always check
 // the overflow stack.  It may be more efficient to
 // check the stealable queue and the overflow stack
 // separately.
-bool ChunkTaskQueueWithOverflow::retrieve(ChunkTask& chunk_task) {
-  bool result = retrieve_from_overflow(chunk_task);
+bool RegionTaskQueueWithOverflow::retrieve(RegionTask& region_task) {
+  bool result = retrieve_from_overflow(region_task);
   if (!result) {
-    result = retrieve_from_stealable_queue(chunk_task);
+    result = retrieve_from_stealable_queue(region_task);
   }
-  if (TraceChunkTasksQueuing && Verbose && result) {
+  if (TraceRegionTasksQueuing && Verbose && result) {
     gclog_or_tty->print_cr("  CTQ: retrieve " PTR_FORMAT, result);
   }
   return result;
 }
 
-bool ChunkTaskQueueWithOverflow::retrieve_from_stealable_queue(
-                                   ChunkTask& chunk_task) {
-  bool result = _chunk_queue.pop_local(chunk_task);
-  if (TraceChunkTasksQueuing && Verbose) {
-    gclog_or_tty->print_cr("CTQ: retrieve_stealable " PTR_FORMAT, chunk_task);
+bool RegionTaskQueueWithOverflow::retrieve_from_stealable_queue(
+                                   RegionTask& region_task) {
+  bool result = _region_queue.pop_local(region_task);
+  if (TraceRegionTasksQueuing && Verbose) {
+    gclog_or_tty->print_cr("CTQ: retrieve_stealable " PTR_FORMAT, region_task);
   }
   return result;
 }
 
-bool ChunkTaskQueueWithOverflow::retrieve_from_overflow(
-                                        ChunkTask& chunk_task) {
+bool
+RegionTaskQueueWithOverflow::retrieve_from_overflow(RegionTask& region_task) {
   bool result;
   if (!_overflow_stack->is_empty()) {
-    chunk_task = _overflow_stack->pop();
+    region_task = _overflow_stack->pop();
     result = true;
   } else {
-    chunk_task = (ChunkTask) NULL;
+    region_task = (RegionTask) NULL;
     result = false;
   }
-  if (TraceChunkTasksQueuing && Verbose) {
-    gclog_or_tty->print_cr("CTQ: retrieve_stealable " PTR_FORMAT, chunk_task);
+  if (TraceRegionTasksQueuing && Verbose) {
+    gclog_or_tty->print_cr("CTQ: retrieve_stealable " PTR_FORMAT, region_task);
   }
   return result;
 }

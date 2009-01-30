@@ -49,6 +49,7 @@ import com.sun.tools.javac.main.RecognizedOptions.GrumpyHelper;
 import com.sun.tools.javac.main.RecognizedOptions;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Pair;
 import java.nio.charset.Charset;
@@ -144,6 +145,7 @@ public final class JavacTool implements JavaCompiler {
         Locale locale,
         Charset charset) {
         Context context = new Context();
+        JavacMessages.instance(context).setCurrentLocale(locale);
         if (diagnosticListener != null)
             context.put(DiagnosticListener.class, diagnosticListener);
         context.put(Log.outKey, new PrintWriter(System.err, true)); // FIXME
