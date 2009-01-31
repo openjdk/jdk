@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,11 @@ import java.io.ObjectStreamException;
 
 /**
  * This is the common base class of all Java language enumeration types.
+ *
+ * More information about enums, including implicit methods synthesised
+ * by the compiler, can be found in <i>The Java&trade; Language
+ * Specification, Third Edition</i>, <a
+ * href="http://java.sun.com/docs/books/jls/third_edition/html/classes.html#8.9">&sect;8.9</a>.
  *
  * @author  Josh Bloch
  * @author  Neal Gafter
@@ -212,7 +217,7 @@ public abstract class Enum<E extends Enum<E>>
         if (name == null)
             throw new NullPointerException("Name is null");
         throw new IllegalArgumentException(
-            "No enum const " + enumType +"." + name);
+            "No enum constant " + enumType.getCanonicalName() + "." + name);
     }
 
     /**
@@ -225,10 +230,10 @@ public abstract class Enum<E extends Enum<E>>
      */
     private void readObject(ObjectInputStream in) throws IOException,
         ClassNotFoundException {
-            throw new InvalidObjectException("can't deserialize enum");
+        throw new InvalidObjectException("can't deserialize enum");
     }
 
     private void readObjectNoData() throws ObjectStreamException {
-            throw new InvalidObjectException("can't deserialize enum");
+        throw new InvalidObjectException("can't deserialize enum");
     }
 }
