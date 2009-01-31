@@ -42,6 +42,7 @@ class Thread;
 class CollectedHeap : public CHeapObj {
   friend class VMStructs;
   friend class IsGCActiveMark; // Block structured external access to _is_gc_active
+  friend class constantPoolCacheKlass; // allocate() method inserts is_conc_safe
 
 #ifdef ASSERT
   static int       _fire_out_of_memory_count;
@@ -81,8 +82,6 @@ class CollectedHeap : public CHeapObj {
 
   // Reinitialize tlabs before resuming mutators.
   virtual void resize_all_tlabs();
-
-  debug_only(static void check_for_valid_allocation_state();)
 
  protected:
   // Allocate from the current thread's TLAB, with broken-out slow path.
@@ -142,6 +141,7 @@ class CollectedHeap : public CHeapObj {
     PRODUCT_RETURN;
   virtual void check_for_non_bad_heap_word_value(HeapWord* addr, size_t size)
     PRODUCT_RETURN;
+  debug_only(static void check_for_valid_allocation_state();)
 
  public:
   enum Name {
