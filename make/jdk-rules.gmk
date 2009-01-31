@@ -106,7 +106,7 @@ jdk-clobber::
 	  $(MAKE) $(JDK_CLOBBER_TARGETS) $(JDK_BUILD_ARGUMENTS) ; )
 
 jdk-sanity::
-	@( $(CD) $(JDK_TOPDIR)/make && \
+	( $(CD) $(JDK_TOPDIR)/make && \
 	  $(MAKE) sanity HOTSPOT_IMPORT_CHECK=false $(JDK_BUILD_ARGUMENTS) ; )
 
 compare-images: compare-image
