@@ -167,8 +167,6 @@ ALL_SETTINGS+=$(call addRequiredSetting,ARCHPROP)
 ifeq ($(PLATFORM),windows)
   ALL_SETTINGS+=$(call addRequiredSetting,PROCESSOR_ARCHITECTURE)
   ALL_SETTINGS+=$(call addRequiredSetting,PROCESSOR_IDENTIFIER)
-  ALL_SETTINGS+=$(call addRequiredSetting,WINDOWS_VERSION)
-  ALL_SETTINGS+=$(call addRequiredSetting,WINDOWS_NT_VERSION_STRING)
   ifdef USING_CYGWIN
     ALL_SETTINGS+=$(call addRequiredSetting,USING_CYGWIN)
     ALL_SETTINGS+=$(call addRequiredVersionSetting,CYGWIN_VER)
@@ -179,13 +177,11 @@ ifeq ($(PLATFORM),windows)
   endif
 endif
 ifeq ($(PLATFORM),linux)
-  ALL_SETTINGS+=$(call addRequiredSetting,LINUX_VERSION)
-  ifneq ($(ARCH), ia64)
-    ALL_SETTINGS+=$(call addRequiredSetting,ALSA_VERSION)
-  endif
+  ALL_SETTINGS+=$(call addRequiredSetting,ALSA_VERSION)
 endif
 ALL_SETTINGS+=$(call addRequiredVersionSetting,OS_VERSION)
-ALL_SETTINGS+=$(call addRequiredSetting,OS_NAME)
+ALL_SETTINGS+=$(call addOptionalSetting,OS_VARIANT_NAME)
+ALL_SETTINGS+=$(call addOptionalSetting,OS_VARIANT_VERSION)
 ALL_SETTINGS+=$(call addRequiredSetting,TEMP_FREE_SPACE)
 ALL_SETTINGS+=$(call addRequiredSetting,FREE_SPACE)
 ALL_SETTINGS+=$(call addRequiredSetting,MB_OF_MEMORY)
