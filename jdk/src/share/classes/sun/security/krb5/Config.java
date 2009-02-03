@@ -39,7 +39,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.StringTokenizer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -156,11 +155,7 @@ public class Config {
                 configFile = loadConfigFile();
                 stanzaTable = parseStanzaTable(configFile);
             } catch (IOException ioe) {
-                KrbException ke = new KrbException("Could not load " +
-                                                   "configuration file " +
-                                                   ioe.getMessage());
-                ke.initCause(ioe);
-                throw(ke);
+                // No krb5.conf, no problem. We'll use DNS etc.
             }
         }
     }
@@ -1057,7 +1052,12 @@ public class Config {
     public boolean useDNS(String name) {
         String value = getDefault(name, "libdefaults");
         if (value == null) {
-            return getDefaultBooleanValue("dns_fallback", "libdefaults");
+            value = getDefault("dns_fallback", "libdefaults");
+            if ("false".equalsIgnoreCase(value)) {
+                return false;
+            } else {
+                return true;
+            }
         } else {
             return value.equalsIgnoreCase("true");
         }
@@ -1117,7 +1117,7 @@ public class Config {
         String realm = null;
         String hostName = null;
         try {
-            hostName = InetAddress.getLocalHost().getHostName();
+            hostName = InetAddress.getLocalHost().getCanonicalHostName();
         } catch (UnknownHostException e) {
             KrbException ke = new KrbException(Krb5.KRB_ERR_GENERIC,
                 "Unable to locate Kerberos realm: " + e.getMessage());
