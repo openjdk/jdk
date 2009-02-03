@@ -1079,12 +1079,39 @@ public class Config {
 
     /**
      * Gets default realm.
+     * @throws KrbException where no realm can be located
+     * @return the default realm, always non null
      */
     public String getDefaultRealm() throws KrbException {
+        Exception cause = null;
         String realm = getDefault("default_realm", "libdefaults");
         if ((realm == null) && useDNS_Realm()) {
             // use DNS to locate Kerberos realm
-            realm = getRealmFromDNS();
+            try {
+                realm = getRealmFromDNS();
+            } catch (KrbException ke) {
+                cause = ke;
+            }
+        }
+        if (realm == null) {
+            realm = java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<String>() {
+                @Override
+                public String run() {
+                    String osname = System.getProperty("os.name");
+                    if (osname.startsWith("Windows")) {
+                        return System.getenv("USERDNSDOMAIN");
+                    }
+                    return null;
+                }
+            });
+        }
+        if (realm == null) {
+            KrbException ke = new KrbException("Cannot locate default realm");
+            if (cause != null) {
+                ke.initCause(cause);
+            }
+            throw ke;
         }
         return realm;
     }
@@ -1092,17 +1119,48 @@ public class Config {
     /**
      * Returns a list of KDC's with each KDC separated by a space
      *
-     * @param realm the realm for which the master KDC is desired
-     * @return the list of KDCs
+     * @param realm the realm for which the KDC list is desired
+     * @throws KrbException if there's no way to find KDC for the realm
+     * @return the list of KDCs separated by a space, always non null
      */
     public String getKDCList(String realm) throws KrbException {
         if (realm == null) {
             realm = getDefaultRealm();
         }
+        Exception cause = null;
         String kdcs = getDefault("kdc", realm);
         if ((kdcs == null) && useDNS_KDC()) {
             // use DNS to locate KDC
-            kdcs = getKDCFromDNS(realm);
+            try {
+                kdcs = getKDCFromDNS(realm);
+            } catch (KrbException ke) {
+                cause = ke;
+            }
+        }
+        if (kdcs == null) {
+            kdcs = java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<String>() {
+                @Override
+                public String run() {
+                    String osname = System.getProperty("os.name");
+                    if (osname.startsWith("Windows")) {
+                        String logonServer = System.getenv("LOGONSERVER");
+                        if (logonServer != null
+                                && logonServer.startsWith("\\\\")) {
+                            logonServer = logonServer.substring(2);
+                        }
+                        return logonServer;
+                    }
+                    return null;
+                }
+            });
+        }
+        if (kdcs == null) {
+            KrbException ke = new KrbException("Cannot locate KDC");
+            if (cause != null) {
+                ke.initCause(cause);
+            }
+            throw ke;
         }
         return kdcs;
     }
