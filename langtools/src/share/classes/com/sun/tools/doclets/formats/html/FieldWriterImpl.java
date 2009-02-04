@@ -153,7 +153,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
         if (configuration().linksource) {
             writer.printSrcLink(field, field.name());
         } else {
-            bold(field.name());
+            strong(field.name());
         }
         writer.preEnd();
         writer.dl();
@@ -190,7 +190,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
                             holder.typeName() : holder.qualifiedTypeName(),
                         false));
                 writer.dd();
-                writer.bold(configuration().getText(holder.isClass()?
+                writer.strong(configuration().getText(holder.isClass()?
                    "doclet.Description_From_Class" :
                     "doclet.Description_From_Interface", classlink));
                 writer.ddEnd();
@@ -237,7 +237,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     }
 
     public void printSummaryLabel(ClassDoc cd) {
-        writer.boldText("doclet.Field_Summary");
+        writer.strongText("doclet.Field_Summary");
     }
 
     public void printSummaryAnchor(ClassDoc cd) {
@@ -251,18 +251,18 @@ public class FieldWriterImpl extends AbstractMemberWriter
     public void printInheritedSummaryLabel(ClassDoc cd) {
         String classlink = writer.getPreQualifiedClassLink(
             LinkInfoImpl.CONTEXT_MEMBER, cd, false);
-        writer.bold();
+        writer.strong();
         String key = cd.isClass()?
             "doclet.Fields_Inherited_From_Class" :
             "doclet.Fields_Inherited_From_Interface";
         writer.printText(key, classlink);
-        writer.boldEnd();
+        writer.strongEnd();
     }
 
     protected void writeSummaryLink(int context, ClassDoc cd, ProgramElementDoc member) {
-        writer.bold();
+        writer.strong();
         writer.printDocLink(context, cd , (MemberDoc) member, member.name(), false);
-        writer.boldEnd();
+        writer.strongEnd();
     }
 
     protected void writeInheritedSummaryLink(ClassDoc cd,

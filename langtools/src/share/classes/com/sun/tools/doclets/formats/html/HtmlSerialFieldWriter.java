@@ -51,7 +51,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         super(writer, classdoc);
     }
 
-    public List members(ClassDoc cd) {
+    public List<FieldDoc> members(ClassDoc cd) {
         return Util.asList(cd.serializableFields());
     }
 
@@ -100,7 +100,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
                 fieldType));
         }
         print(fieldDimensions + ' ');
-        bold(fieldName);
+        strong(fieldName);
         writer.preEnd();
         writer.dl();
     }

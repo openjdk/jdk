@@ -51,6 +51,7 @@ public class TypeMaker {
      * @param errToClassDoc  if true, ERROR type results in a ClassDoc;
      *          false preserves legacy behavior
      */
+    @SuppressWarnings("fallthrough")
     public static com.sun.javadoc.Type getType(DocEnv env, Type t,
                                                boolean errToClassDoc) {
         if (env.legacyDoclet) {

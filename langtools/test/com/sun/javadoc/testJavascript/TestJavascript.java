@@ -45,9 +45,9 @@ public class TestJavascript extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<A HREF=\"../index.html?pkg/C.html\" target=\"_top\"><B>FRAMES</B></A>"},
+            "<A HREF=\"../index.html?pkg/C.html\" target=\"_top\"><STRONG>FRAMES</STRONG></A>"},
         {BUG_ID + FS + "TestJavascript.html",
-            "<A HREF=\"index.html?TestJavascript.html\" target=\"_top\"><B>FRAMES</B></A>"},
+            "<A HREF=\"index.html?TestJavascript.html\" target=\"_top\"><STRONG>FRAMES</STRONG></A>"},
         {BUG_ID + FS + "index.html",
             "<SCRIPT type=\"text/javascript\">" + NL +
                         "    targetPage = \"\" + window.location.search;" + NL +

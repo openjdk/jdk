@@ -49,7 +49,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
      * The classes to be documented.  Use this to filter out classes
      * that will not be documented.
      */
-    private Set documentedClasses;
+    private Set<ClassDoc> documentedClasses;
 
     /**
      * The name of the output file.

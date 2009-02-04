@@ -86,12 +86,12 @@ public class AuthorDD
 
              // Test single @since tag:
 
-            { "<DT><B>Since:</B></DT>"+NL+"  <DD>JDK 1.0</DD>",
+            { "<DT><STRONG>Since:</STRONG></DT>"+NL+"  <DD>JDK 1.0</DD>",
                                   BUGID + FS + "p1" + FS + "C1.html" },
 
             // Test multiple @author tags:
 
-            { "<DT><B>Author:</B></DT>"+NL+"  <DD>Doug Kramer, Jamie, Neal</DD>"+NL,
+            { "<DT><STRONG>Author:</STRONG></DT>"+NL+"  <DD>Doug Kramer, Jamie, Neal</DD>"+NL,
                                   BUGID + FS + "p1" + FS + "C1.html" },
 
         };

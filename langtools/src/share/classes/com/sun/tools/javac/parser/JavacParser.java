@@ -863,6 +863,12 @@ public class JavacParser implements Parser {
                         accept(GT);
                         t = F.at(pos1).TypeApply(t, args.toList());
                         checkGenerics();
+                        while (S.token() == DOT) {
+                            S.nextToken();
+                            mode = TYPE;
+                            t = toP(F.at(S.pos()).Select(t, ident()));
+                            t = typeArgumentsOpt(t);
+                        }
                         t = bracketsOpt(toP(t));
                     } else if ((mode & EXPR) != 0) {
                         mode = EXPR;
@@ -871,7 +877,8 @@ public class JavacParser implements Parser {
                     } else {
                         accept(GT);
                     }
-                } else {
+                }
+                else {
                     t = termRest(term1Rest(term2Rest(t, TreeInfo.orPrec)));
                 }
                 accept(RPAREN);

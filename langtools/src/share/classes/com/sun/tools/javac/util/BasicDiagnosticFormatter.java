@@ -61,6 +61,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
      * @param opts list of command-line options
      * @param msgs JavacMessages object used for i18n
      */
+    @SuppressWarnings("fallthrough")
     BasicDiagnosticFormatter(Options opts, JavacMessages msgs) {
         super(msgs, opts, true);
         initAvailableFormats();

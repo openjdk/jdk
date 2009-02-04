@@ -60,9 +60,6 @@ public class FileChannelImpl
     // Memory allocation size for mapping buffers
     private static final long allocationGranularity;
 
-    // Cached field for MappedByteBuffer.isAMappedBuffer
-    private static final Field isAMappedBufferField;
-
     // File descriptor
     private final FileDescriptor fd;
 
@@ -1315,8 +1312,6 @@ public class FileChannelImpl
         Util.load();
         allocationGranularity = initIDs();
         nd = new FileDispatcher();
-        isAMappedBufferField = Reflect.lookupField("java.nio.MappedByteBuffer",
-                                          "isAMappedBuffer");
     }
 
 }
