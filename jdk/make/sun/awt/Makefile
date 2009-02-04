@@ -47,7 +47,7 @@ OTHER_CFLAGS += -D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES
 # sun/awt/resources       handled by java/awt/Makefile
 # sun/java2d/pisces       handled by sun/pisces/Makefile
 #
-AUTO_FILES_JAVA_DIRS = sun/awt sun/java2d
+AUTO_FILES_JAVA_DIRS = sun/awt sun/java2d com/sun/awt
 AUTO_JAVA_PRUNE = resources pisces
 
 ifeq ($(PLATFORM), windows)

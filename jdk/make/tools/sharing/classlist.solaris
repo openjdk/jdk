@@ -961,6 +961,7 @@ sun/awt/SunToolkit$3
 javax/swing/SystemEventQueueUtilities$ComponentWorkRequest
 java/applet/Applet
 java/awt/Panel
+com/sun/awt/AWTUtilities
 sun/awt/X11/XExposeEvent
 java/util/jar/Manifest
 java/io/ByteArrayInputStream

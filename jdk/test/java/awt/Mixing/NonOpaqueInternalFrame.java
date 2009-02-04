@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,42 +22,50 @@
  */
 
 /*
-  @test
-  @bug 4811096
-  @summary Tests whether opaque and non-opaque components mix correctly
+  @test %W% %E%
+  @bug 6768332
+  @summary Tests whether internal frames are always considered opaque
   @author anthony.petrov@...: area=awt.mixing
   @library ../regtesthelpers
   @build Util
-  @run main OpaqueTest
+  @run main NonOpaqueInternalFrame
 */
 
 
 /**
- * OpaqueTest.java
+ * NonOpaqueInternalFrame.java
  *
- * summary:  OpaqueTest
+ * summary:  Tests whether internal frames are always considered opaque
  */
 
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyVetoException;
 import javax.swing.*;
+import java.util.Vector;
 import test.java.awt.regtesthelpers.Util;
-import com.sun.awt.AWTUtilities;
 
 
 
-public class OpaqueTest
+public class NonOpaqueInternalFrame
 {
+    static volatile boolean failed = false;
 
-    //*** test-writer defined static variables go here ***
+    private static final class MyButton extends Button
+            implements ActionListener
+        {
+            public MyButton() {
+                setPreferredSize(new Dimension(100, 100));
+                addActionListener(this);
+            }
 
-    static String testSeq = new String("");
-    final static String checkSeq = new String("010000101");
+            public void actionPerformed(ActionEvent e) {
+                failed = true;
+            }
+        }
 
     private static void init()
     {
-        //*** Create instructions for the user here ***
-
         String[] instructions =
         {
             "This is an AUTOMATIC test, simply wait until it is done.",
@@ -68,82 +76,55 @@ public class OpaqueTest
         Sysout.printInstructions( instructions );
 
 
-        // Create components
-        final Frame f = new Frame("Button-JButton mix test");
-        final Panel p = new Panel();
-        final Button heavy = new Button("  Heavyweight Button  ");
-        final JButton light = new JButton("  LW Button  ");
-
-        // Actions for the buttons add appropriate number to the test sequence
-        heavy.addActionListener(new java.awt.event.ActionListener()
-                {
-                    public void actionPerformed(java.awt.event.ActionEvent e) {
-                        p.setComponentZOrder(light, 0);
-                        f.validate();
-                        testSeq = testSeq + "0";
-                    }
-                }
-                );
-
-        light.addActionListener(new java.awt.event.ActionListener()
-                {
-                    public void actionPerformed(java.awt.event.ActionEvent e) {
-                        p.setComponentZOrder(heavy, 0);
-                        f.validate();
-                        testSeq = testSeq + "1";
-                    }
-                }
-                );
-
-        // Overlap the buttons
-        heavy.setBounds(30, 30, 200, 200);
-        light.setBounds(10, 10, 50, 50);
-
-        // Put the components into the frame
-        p.setLayout(null);
-        p.add(heavy);
-        p.add(light);
-        f.add(p);
-        f.setBounds(50, 50, 400, 400);
-        f.show();
-
+        // Create a frame with two non-opaque JInternalFrame's containing
+        // heavyweight buttons.
+        JFrame jframe = new JFrame("mixing test");
+        JDesktopPane desktop = new JDesktopPane();
+        jframe.setContentPane(desktop);
+        JInternalFrame iframe1 = new JInternalFrame("iframe 1");
+        iframe1.setIconifiable(true);
+        iframe1.add(new MyButton());
+        iframe1.setBounds(10, 10, 100, 100);
+        iframe1.setOpaque(false);
+        iframe1.setVisible(true);
+        desktop.add(iframe1);
+        JInternalFrame iframe2 = new JInternalFrame("iframe 2");
+        iframe2.setIconifiable(true);
+        iframe2.add(new MyButton());
+        iframe2.setBounds(50, 50, 100, 100);
+        iframe2.setOpaque(false);
+        iframe2.setVisible(true);
+        desktop.add(iframe2);
+        jframe.setSize(300, 300);
+        jframe.setVisible(true);
 
         Robot robot = Util.createRobot();
         robot.setAutoDelay(20);
 
         Util.waitForIdle(robot);
 
-        // Move the mouse pointer to the position where both
-        //    buttons overlap
-        Point heavyLoc = heavy.getLocationOnScreen();
-        robot.mouseMove(heavyLoc.x + 5, heavyLoc.y + 5);
-
-        // Now perform the click at this point for 9 times
-        // In the middle of the process toggle the opaque
-        // flag value.
-        for (int i = 0; i < 9; ++i) {
-            if (i == 3) {
-                AWTUtilities.setComponentMixingCutoutShape(light,
-                        new Rectangle());
-            }
-            if (i == 6) {
-                AWTUtilities.setComponentMixingCutoutShape(light,
-                        null);
-            }
-
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
-            Util.waitForIdle(robot);
+        // Try selecting the bottommost frame
+        try {
+            iframe2.setSelected(true);
+        } catch (PropertyVetoException ex) {
+            ex.printStackTrace();
         }
 
+        // Click the title bar of the internal frame
+        Point lLoc = iframe2.getLocationOnScreen();
+        System.err.println("lLoc: " + lLoc);
+        robot.mouseMove(lLoc.x + 10, lLoc.y + 10);
         Util.waitForIdle(robot);
 
-        // If the buttons are correctly mixed, the test sequence
-        // is equal to the check sequence.
-        if (testSeq.equals(checkSeq)) {
-            OpaqueTest.pass();
+        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        Util.waitForIdle(robot);
+
+
+        if (failed) {
+            fail("The JInternalFrame is considered non-opaque.");
         } else {
-            OpaqueTest.fail("The components changed their visible Z-order in a wrong sequence: '" + testSeq + "' instead of '" + checkSeq + "'");
+            pass();
         }
     }//End  init()
 
@@ -260,7 +241,7 @@ public class OpaqueTest
         mainThread.interrupt();
     }//fail()
 
-}// class OpaqueTest
+}// class NonOpaqueInternalFrame
 
 //This exception is used to exit from any level of call nesting
 // when it's determined that the test has passed, and immediately
@@ -291,13 +272,13 @@ class NewClass implements anInterface
        {
          //got enough events, so pass
 
-         OpaqueTest.pass();
+         NonOpaqueInternalFrame.pass();
        }
       else if( tries == 20 )
        {
          //tried too many times without getting enough events so fail
 
-         OpaqueTest.fail();
+         NonOpaqueInternalFrame.fail();
        }
 
     }// eventDispatched()
@@ -449,3 +430,5 @@ class TestDialog extends Dialog
     }
 
 }// TestDialog  class
+
+

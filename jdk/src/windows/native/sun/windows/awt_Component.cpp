@@ -6114,30 +6114,36 @@ void AwtComponent::_SetRectangularShape(void *param)
     c = (AwtComponent *)pData;
     if (::IsWindow(c->GetHWnd()))
     {
-        RGNDATA *pRgnData = NULL;
-        RGNDATAHEADER *pRgnHdr;
+        HRGN hRgn = NULL;
 
-        /* reserving memory for the worst case */
-        size_t worstBufferSize = size_t(((x2 - x1) / 2 + 1) * (y2 - y1));
-        pRgnData = (RGNDATA *) safe_Malloc(sizeof(RGNDATAHEADER) +
-                sizeof(RECT_T) * worstBufferSize);
-        pRgnHdr = (RGNDATAHEADER *) pRgnData;
+        if (region || x1 || x2 || y1 || y2) {
+            // If all the params are zeros, the shape must be simply reset.
+            // Otherwise, convert it into a region.
+            RGNDATA *pRgnData = NULL;
+            RGNDATAHEADER *pRgnHdr;
 
-        pRgnHdr->dwSize = sizeof(RGNDATAHEADER);
-        pRgnHdr->iType = RDH_RECTANGLES;
-        pRgnHdr->nRgnSize = 0;
-        pRgnHdr->rcBound.top = 0;
-        pRgnHdr->rcBound.left = 0;
-        pRgnHdr->rcBound.bottom = LONG(y2 - y1);
-        pRgnHdr->rcBound.right = LONG(x2 - x1);
+            /* reserving memory for the worst case */
+            size_t worstBufferSize = size_t(((x2 - x1) / 2 + 1) * (y2 - y1));
+            pRgnData = (RGNDATA *) safe_Malloc(sizeof(RGNDATAHEADER) +
+                    sizeof(RECT_T) * worstBufferSize);
+            pRgnHdr = (RGNDATAHEADER *) pRgnData;
 
-        RECT_T * pRect = (RECT_T *) (((BYTE *) pRgnData) + sizeof(RGNDATAHEADER));
-        pRgnHdr->nCount = RegionToYXBandedRectangles(env, x1, y1, x2, y2, region, &pRect, worstBufferSize);
+            pRgnHdr->dwSize = sizeof(RGNDATAHEADER);
+            pRgnHdr->iType = RDH_RECTANGLES;
+            pRgnHdr->nRgnSize = 0;
+            pRgnHdr->rcBound.top = 0;
+            pRgnHdr->rcBound.left = 0;
+            pRgnHdr->rcBound.bottom = LONG(y2 - y1);
+            pRgnHdr->rcBound.right = LONG(x2 - x1);
 
-        HRGN hRgn = ::ExtCreateRegion(NULL,
-                sizeof(RGNDATAHEADER) + sizeof(RECT_T) * pRgnHdr->nCount, pRgnData);
+            RECT_T * pRect = (RECT_T *) (((BYTE *) pRgnData) + sizeof(RGNDATAHEADER));
+            pRgnHdr->nCount = RegionToYXBandedRectangles(env, x1, y1, x2, y2, region, &pRect, worstBufferSize);
 
-        free(pRgnData);
+            hRgn = ::ExtCreateRegion(NULL,
+                    sizeof(RGNDATAHEADER) + sizeof(RECT_T) * pRgnHdr->nCount, pRgnData);
+
+            free(pRgnData);
+        }
 
         ::SetWindowRgn(c->GetHWnd(), hRgn, TRUE);
     }
