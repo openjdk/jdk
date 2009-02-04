@@ -880,12 +880,12 @@ public class Types {
         if (warn != warnStack.head) {
             try {
                 warnStack = warnStack.prepend(warn);
-                return isCastable.visit(t, s);
+                return isCastable.visit(t,s);
             } finally {
                 warnStack = warnStack.tail;
             }
         } else {
-            return isCastable.visit(t, s);
+            return isCastable.visit(t,s);
         }
     }
     // where
@@ -983,10 +983,10 @@ public class Types {
                         if (highSub != null) {
                             assert a.tsym == highSub.tsym && a.tsym == lowSub.tsym
                                 : a.tsym + " != " + highSub.tsym + " != " + lowSub.tsym;
-                            if (!disjointTypes(aHigh.getTypeArguments(), highSub.getTypeArguments())
-                                && !disjointTypes(aHigh.getTypeArguments(), lowSub.getTypeArguments())
-                                && !disjointTypes(aLow.getTypeArguments(), highSub.getTypeArguments())
-                                && !disjointTypes(aLow.getTypeArguments(), lowSub.getTypeArguments())) {
+                            if (!disjointTypes(aHigh.allparams(), highSub.allparams())
+                                && !disjointTypes(aHigh.allparams(), lowSub.allparams())
+                                && !disjointTypes(aLow.allparams(), highSub.allparams())
+                                && !disjointTypes(aLow.allparams(), lowSub.allparams())) {
                                 if (upcast ? giveWarning(a, highSub) || giveWarning(a, lowSub)
                                            : giveWarning(highSub, a) || giveWarning(lowSub, a))
                                     warnStack.head.warnUnchecked();
@@ -1197,6 +1197,7 @@ public class Types {
             s = upperBound(s);
         if (s.tag == TYPEVAR)
             s = s.getUpperBound();
+
         return !isSubtype(t, s);
     }
     // </editor-fold>
@@ -3147,7 +3148,7 @@ public class Types {
             giveWarning = giveWarning || (reverse ? giveWarning(t2, t1) : giveWarning(t1, t2));
             commonSupers = commonSupers.tail;
         }
-        if (giveWarning && !isReifiable(to))
+        if (giveWarning && !isReifiable(reverse ? from : to))
             warn.warnUnchecked();
         if (!source.allowCovariantReturns())
             // reject if there is a common method signature with
@@ -3189,7 +3190,7 @@ public class Types {
     private boolean giveWarning(Type from, Type to) {
         // To and from are (possibly different) parameterizations
         // of the same class or interface
-        return to.isParameterized() && !containsType(to.getTypeArguments(), from.getTypeArguments());
+        return to.isParameterized() && !containsType(to.allparams(), from.allparams());
     }
 
     private List<Type> superClosure(Type t, Type s) {

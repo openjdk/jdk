@@ -144,7 +144,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     protected void printLinkToMainTree() {
         dl();
         dt();
-        boldText("doclet.Package_Hierarchies");
+        strongText("doclet.Package_Hierarchies");
         dd();
         navLinkMainTree(configuration.getText("doclet.All_Packages"));
         dlEnd();

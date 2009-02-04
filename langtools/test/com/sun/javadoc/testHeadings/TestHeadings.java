@@ -48,16 +48,16 @@ public class TestHeadings extends JavadocTester {
         //Package summary
         {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
             "<TH ALIGN=\"left\" COLSPAN=\"2\"><FONT SIZE=\"+2\">" + NL +
-            "<B>Class Summary</B></FONT></TH>"
+            "<STRONG>Class Summary</STRONG></FONT></TH>"
         },
 
         // Class documentation
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
             "<TH ALIGN=\"left\" COLSPAN=\"2\"><FONT SIZE=\"+2\">" + NL +
-            "<B>Field Summary</B></FONT></TH>"
+            "<STRONG>Field Summary</STRONG></FONT></TH>"
         },
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<TH ALIGN=\"left\"><B>Methods inherited from class " +            "java.lang.Object</B></TH>"
+            "<TH ALIGN=\"left\"><STRONG>Methods inherited from class " +            "java.lang.Object</STRONG></TH>"
         },
 
         // Class use documentation
@@ -76,7 +76,7 @@ public class TestHeadings extends JavadocTester {
         // Deprecated
         {BUG_ID + FS + "deprecated-list.html",
             "<TH ALIGN=\"left\" COLSPAN=\"2\"><FONT SIZE=\"+2\">" + NL +
-            "<B>Deprecated Methods</B></FONT></TH>"
+            "<STRONG>Deprecated Methods</STRONG></FONT></TH>"
         },
 
         // Constant values
@@ -90,20 +90,20 @@ public class TestHeadings extends JavadocTester {
         // Serialized Form
         {BUG_ID + FS + "serialized-form.html",
             "<TH ALIGN=\"center\"><FONT SIZE=\"+2\">" + NL +
-            "<B>Package</B> <B>pkg1</B></FONT></TH>"
+            "<STRONG>Package</STRONG> <STRONG>pkg1</STRONG></FONT></TH>"
         },
         {BUG_ID + FS + "serialized-form.html",
             "<TH ALIGN=\"left\" COLSPAN=\"2\"><FONT SIZE=\"+2\">" + NL +
-            "<B>Class <A HREF=\"pkg1/C1.html\" " +            "title=\"class in pkg1\">pkg1.C1</A> extends java.lang.Object " +            "implements Serializable</B></FONT></TH>"
+            "<STRONG>Class <A HREF=\"pkg1/C1.html\" " +            "title=\"class in pkg1\">pkg1.C1</A> extends java.lang.Object " +            "implements Serializable</STRONG></FONT></TH>"
         },
         {BUG_ID + FS + "serialized-form.html",
             "<TH ALIGN=\"left\" COLSPAN=\"1\"><FONT SIZE=\"+2\">" + NL +
-            "<B>Serialized Fields</B></FONT></TH>"
+            "<STRONG>Serialized Fields</STRONG></FONT></TH>"
         },
 
         // Overview Frame
         {BUG_ID + FS + "overview-frame.html",
-            "<TH ALIGN=\"left\" NOWRAP><FONT size=\"+1\" " +            "CLASS=\"FrameTitleFont\">" + NL + "<B>Test Files</B></FONT></TH>"
+            "<TH ALIGN=\"left\" NOWRAP><FONT size=\"+1\" " +            "CLASS=\"FrameTitleFont\">" + NL + "<STRONG>Test Files</STRONG></FONT></TH>"
         },
         {BUG_ID + FS + "overview-frame.html",
             "<TITLE>" + NL +

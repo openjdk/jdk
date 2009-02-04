@@ -1457,7 +1457,7 @@ public class Attr extends JCTree.Visitor {
                 localEnv.info.varArgs = false;
                 tree.constructor = rs.resolveConstructor(
                     tree.pos(), localEnv, clazztype, argtypes, typeargtypes);
-                Type ctorType = checkMethod(clazztype,
+                tree.constructorType = checkMethod(clazztype,
                                             tree.constructor,
                                             localEnv,
                                             tree.args,
@@ -1465,7 +1465,7 @@ public class Attr extends JCTree.Visitor {
                                             typeargtypes,
                                             localEnv.info.varArgs);
                 if (localEnv.info.varArgs)
-                    assert ctorType.isErroneous() || tree.varargsElement != null;
+                    assert tree.constructorType.isErroneous() || tree.varargsElement != null;
             }
 
             if (cdef != null) {
@@ -1527,6 +1527,13 @@ public class Attr extends JCTree.Visitor {
                     typeargtypes, true, tree.varargsElement != null);
                 assert sym.kind < AMBIGUOUS || tree.constructor.type.isErroneous();
                 tree.constructor = sym;
+                tree.constructorType = checkMethod(clazztype,
+                                            tree.constructor,
+                                            localEnv,
+                                            tree.args,
+                                            argtypes,
+                                            typeargtypes,
+                                            localEnv.info.varArgs);
             }
 
             if (tree.constructor != null && tree.constructor.kind == MTH)

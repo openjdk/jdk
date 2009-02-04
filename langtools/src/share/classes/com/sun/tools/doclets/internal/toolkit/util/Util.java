@@ -25,10 +25,11 @@
 
 package com.sun.tools.doclets.internal.toolkit.util;
 
+import java.io.*;
+import java.util.*;
+
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
-import java.util.*;
-import java.io.*;
 
 /**
  * Utilities Class for Doclets.
@@ -88,10 +89,10 @@ public class Util {
     /**
      * Return the list of ProgramElementDoc objects as Array.
      */
-    public static ProgramElementDoc[] toProgramElementDocArray(List list) {
+    public static ProgramElementDoc[] toProgramElementDocArray(List<ProgramElementDoc> list) {
         ProgramElementDoc[] pgmarr = new ProgramElementDoc[list.size()];
         for (int i = 0; i < list.size(); i++) {
-            pgmarr[i] = (ProgramElementDoc)(list.get(i));
+            pgmarr[i] = list.get(i);
         }
         return pgmarr;
     }
@@ -416,9 +417,9 @@ public class Util {
                 continue;
             }
             results.put(interfaceClassDoc, interfaceType);
-            List superInterfaces = getAllInterfaces(interfaceType, configuration, sort);
-            for (Iterator iter = superInterfaces.iterator(); iter.hasNext(); ) {
-                Type t = (Type) iter.next();
+            List<Type> superInterfaces = getAllInterfaces(interfaceType, configuration, sort);
+            for (Iterator<Type> iter = superInterfaces.iterator(); iter.hasNext(); ) {
+                Type t = iter.next();
                 results.put(t.asClassDoc(), t);
             }
         }
@@ -438,7 +439,7 @@ public class Util {
         return resultsList;
     }
 
-    public static List getAllInterfaces(Type type, Configuration configuration) {
+    public static List<Type> getAllInterfaces(Type type, Configuration configuration) {
         return getAllInterfaces(type, configuration, true);
     }
 
@@ -480,9 +481,9 @@ public class Util {
             if (raw)
                 interfaceType = interfaceType.asClassDoc();
             results.put(interfaceClassDoc, interfaceType);
-            List superInterfaces = getAllInterfaces(interfaceType, configuration);
-            for (Iterator iter = superInterfaces.iterator(); iter.hasNext(); ) {
-                Type superInterface = (Type) iter.next();
+            List<Type> superInterfaces = getAllInterfaces(interfaceType, configuration);
+            for (Iterator<Type> iter = superInterfaces.iterator(); iter.hasNext(); ) {
+                Type superInterface = iter.next();
                 results.put(superInterface.asClassDoc(), superInterface);
             }
         }
@@ -495,8 +496,8 @@ public class Util {
     }
 
 
-    public static List<ProgramElementDoc> asList(ProgramElementDoc[] members) {
-        List<ProgramElementDoc> list = new ArrayList<ProgramElementDoc>();
+    public static <T extends ProgramElementDoc> List<T> asList(T[] members) {
+        List<T> list = new ArrayList<T>();
         for (int i = 0; i < members.length; i++) {
             list.add(members[i]);
         }
@@ -579,7 +580,7 @@ public class Util {
      * @param docencoding Encoding to be used for this file.
      * @exception IOException Exception raised by the FileWriter is passed on
      * to next level.
-     * @exception UnSupportedEncodingException Exception raised by the
+     * @exception UnsupportedEncodingException Exception raised by the
      * OutputStreamWriter is passed on to next level.
      * @return Writer Writer for the file getting generated.
      * @see java.io.FileOutputStream
@@ -598,9 +599,7 @@ public class Util {
             fos = new FileOutputStream(filename);
         }
         if (docencoding == null) {
-            OutputStreamWriter oswriter = new OutputStreamWriter(fos);
-            docencoding = oswriter.getEncoding();
-            return oswriter;
+            return new OutputStreamWriter(fos);
         } else {
             return new OutputStreamWriter(fos, docencoding);
         }

@@ -152,7 +152,7 @@ public class Group {
      *
      * @return true if package name format found in the map, else false.
      */
-    boolean foundGroupFormat(Map map, String pkgFormat) {
+    boolean foundGroupFormat(Map<String,?> map, String pkgFormat) {
         if (map.containsKey(pkgFormat)) {
             configuration.message.error("doclet.Same_package_name_used", pkgFormat);
             return true;
@@ -239,7 +239,7 @@ public class Group {
      * Return the list of groups, in the same order as specified
      * on the command line.
      */
-    public List getGroupList() {
+    public List<String> getGroupList() {
         return groupList;
     }
 }

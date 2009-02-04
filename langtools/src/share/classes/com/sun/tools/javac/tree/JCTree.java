@@ -1326,6 +1326,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCClassDecl def;
         public Symbol constructor;
         public Type varargsElement;
+        public Type constructorType;
         protected JCNewClass(JCExpression encl,
                            List<JCExpression> typeargs,
                            JCExpression clazz,

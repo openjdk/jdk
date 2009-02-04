@@ -84,7 +84,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
     protected void navLinkClass() {
         navCellRevStart();
         fontStyle("NavBarFont1Rev");
-        boldText("doclet.Class");
+        strongText("doclet.Class");
         fontEnd();
         navCellEnd();
     }
@@ -176,7 +176,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         if (configuration().linksource) {
             printSrcLink(annotationType, name);
         } else {
-            bold(name);
+            strong(name);
         }
         dlEnd();
         preEnd();
@@ -220,7 +220,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         hr();
         Tag[] deprs = annotationType.tags("deprecated");
         if (Util.isDeprecated(annotationType)) {
-            boldText("doclet.Deprecated");
+            strongText("doclet.Deprecated");
             if (deprs.length > 0) {
                 Tag[] commentTags = deprs[0].inlineTags();
                 if (commentTags.length > 0) {
@@ -330,9 +330,9 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
             dl();
             dt();
             if (annotationType.isInterface()) {
-                boldText("doclet.Enclosing_Interface");
+                strongText("doclet.Enclosing_Interface");
             } else {
-                boldText("doclet.Enclosing_Class");
+                strongText("doclet.Enclosing_Class");
             }
             dd();
             printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_CLASS, outerClass,

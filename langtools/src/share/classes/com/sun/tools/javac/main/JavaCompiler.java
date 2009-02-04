@@ -471,6 +471,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         private int value;
     };
     protected class CompileStates extends HashMap<Env<AttrContext>,CompileState> {
+        private static final long serialVersionUID = 1812267524140424433L;
         boolean isDone(Env<AttrContext> env, CompileState cs) {
             CompileState ecs = get(env);
             return ecs != null && ecs.isDone(cs);
