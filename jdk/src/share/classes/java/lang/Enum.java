@@ -34,11 +34,13 @@ import java.io.ObjectStreamException;
 /**
  * This is the common base class of all Java language enumeration types.
  *
- * More information about enums, including implicit methods synthesised
- * by the compiler, can be found in <i>The Java&trade; Language
- * Specification, Third Edition</i>, <a
+ * More information about enums, including descriptions of the
+ * implicitly declared methods synthesized by the compiler, can be
+ * found in <i>The Java&trade; Language Specification, Third
+ * Edition</i>, <a
  * href="http://java.sun.com/docs/books/jls/third_edition/html/classes.html#8.9">&sect;8.9</a>.
  *
+ * @param <E> The enum type subclass
  * @author  Josh Bloch
  * @author  Neal Gafter
  * @see     Class#getEnumConstants()
@@ -197,6 +199,15 @@ public abstract class Enum<E extends Enum<E>>
      * to declare an enum constant in this type.  (Extraneous whitespace
      * characters are not permitted.)
      *
+     * <p>Note that for a particular enum type {@code T}, the
+     * implicitly declared {@code public static T valueOf(String)}
+     * method on that enum may be used instead of this method to map
+     * from a name to the corresponding enum constant.  All the
+     * constants of an enum type can be obtained by calling the
+     * implicit {@code public static T[] values()} method of that
+     * type.
+     *
+     * @param <T> The enum type whose constant is to be returned
      * @param enumType the {@code Class} object of the enum type from which
      *      to return a constant
      * @param name the name of the constant to return
