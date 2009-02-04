@@ -68,8 +68,6 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     private JToggleButton listViewButton;
     private JToggleButton detailsViewButton;
 
-    private boolean useShellFolder;
-
     private JButton approveButton;
     private JButton cancelButton;
 
@@ -204,10 +202,6 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         public ListSelectionListener createListSelectionListener() {
             return MetalFileChooserUI.this.createListSelectionListener(getFileChooser());
         }
-
-        public boolean usesShellFolder() {
-            return useShellFolder;
-        }
     }
 
     public void installComponents(JFileChooser fc) {
@@ -218,8 +212,6 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
 
         filePane = new FilePane(new MetalFileChooserUIAccessor());
         fc.addPropertyChangeListener(filePane);
-
-        updateUseShellFolder();
 
         // ********************************* //
         // **** Construct the top panel **** //
@@ -446,19 +438,6 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         }
 
         groupLabels(new AlignedLabel[] { fileNameLabel, filesOfTypeLabel });
-    }
-
-    private void updateUseShellFolder() {
-        // Decide whether to use the ShellFolder class to populate shortcut
-        // panel and combobox.
-        JFileChooser fc = getFileChooser();
-        Boolean prop =
-            (Boolean)fc.getClientProperty("FileChooser.useShellFolder");
-        if (prop != null) {
-            useShellFolder = prop.booleanValue();
-        } else {
-            useShellFolder = fc.getFileSystemView().equals(FileSystemView.getFileSystemView());
-        }
     }
 
     protected JPanel getButtonPanel() {
@@ -786,7 +765,6 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
                         cc.applyComponentOrientation(o);
                     }
                 } else if (s == "FileChooser.useShellFolder") {
-                    updateUseShellFolder();
                     doDirectoryChanged(e);
                 } else if (s.equals("ancestor")) {
                     if (e.getOldValue() == null && e.getNewValue() != null) {
@@ -952,6 +930,8 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
             if(directory == null) {
                 return;
             }
+
+            boolean useShellFolder = FilePane.usesShellFolder(chooser);
 
             directories.clear();
 

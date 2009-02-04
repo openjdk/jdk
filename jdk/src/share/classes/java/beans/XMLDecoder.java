@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,14 @@
  */
 package java.beans;
 
-import com.sun.beans.ObjectHandler;
+import com.sun.beans.decoder.DocumentHandler;
 
+import java.io.Closeable;
 import java.io.InputStream;
 import java.io.IOException;
 
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
-
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
+import org.xml.sax.InputSource;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * The <code>XMLDecoder</code> class is used to read XML documents
@@ -66,11 +61,11 @@ import javax.xml.parsers.SAXParser;
  * @author Philip Milne
  */
 public class XMLDecoder {
-    private InputStream in;
+    private final DocumentHandler handler = new DocumentHandler();
+    private final InputSource input;
     private Object owner;
-    private ExceptionListener exceptionListener;
-    private ObjectHandler handler;
-    private Reference clref;
+    private Object[] array;
+    private int index;
 
     /**
      * Creates a new input stream for reading archives
@@ -126,36 +121,45 @@ public class XMLDecoder {
      */
     public XMLDecoder(InputStream in, Object owner,
                       ExceptionListener exceptionListener, ClassLoader cl) {
-        this.in = in;
-        setOwner(owner);
-        setExceptionListener(exceptionListener);
-        setClassLoader(cl);
+        this(new InputSource(in), owner, exceptionListener, cl);
     }
 
 
     /**
-     * Set the class loader used to instantiate objects for this stream.
+     * Creates a new decoder to parse XML archives
+     * created by the {@code XMLEncoder} class.
+     * If the input source {@code is} is {@code null},
+     * no exception is thrown and no parsing is performed.
+     * This behavior is similar to behavior of other constructors
+     * that use {@code InputStream} as a parameter.
      *
-     * @param cl a classloader to use; if null then the default class loader
-     *           will be used
+     * @param is  the input source to parse
+     *
+     * @since 1.7
      */
-    private void setClassLoader(ClassLoader cl) {
-        if (cl != null) {
-            this.clref = new WeakReference(cl);
-        }
+    public XMLDecoder(InputSource is) {
+        this(is, null, null, null);
     }
 
     /**
-     * Return the class loader used to instantiate objects. If the class loader
-     * has not been explicitly set then null is returned.
+     * Creates a new decoder to parse XML archives
+     * created by the {@code XMLEncoder} class.
      *
-     * @return the class loader used to instantiate objects
+     * @param is     the input source to parse
+     * @param owner  the owner of this decoder
+     * @param el     the exception handler for the parser,
+     *               or {@code null} to use the default exception handler
+     * @param cl     the class loader used for instantiating objects,
+     *               or {@code null} to use the default class loader
+     *
+     * @since 1.7
      */
-    private ClassLoader getClassLoader() {
-        if (clref != null) {
-            return (ClassLoader)clref.get();
-        }
-        return null;
+    private XMLDecoder(InputSource is, Object owner, ExceptionListener el, ClassLoader cl) {
+        this.input = is;
+        this.owner = owner;
+        setExceptionListener(el);
+        this.handler.setClassLoader(cl);
+        this.handler.setOwner(this);
     }
 
     /**
@@ -163,8 +167,14 @@ public class XMLDecoder {
      * with this stream.
      */
     public void close() {
+        if (parsingComplete()) {
+            close(this.input.getCharacterStream());
+            close(this.input.getByteStream());
+        }
+    }
+
+    private void close(Closeable in) {
         if (in != null) {
-            getHandler();
             try {
                 in.close();
             }
@@ -172,6 +182,17 @@ public class XMLDecoder {
                 getExceptionListener().exceptionThrown(e);
             }
         }
+    }
+
+    private boolean parsingComplete() {
+        if (this.input == null) {
+            return false;
+        }
+        if (this.array == null) {
+            this.handler.parse(this.input);
+            this.array = this.handler.getObjects();
+        }
+        return true;
     }
 
     /**
@@ -185,7 +206,10 @@ public class XMLDecoder {
      * @see #getExceptionListener
      */
     public void setExceptionListener(ExceptionListener exceptionListener) {
-        this.exceptionListener = exceptionListener;
+        if (exceptionListener == null) {
+            exceptionListener = Statement.defaultExceptionListener;
+        }
+        this.handler.setExceptionListener(exceptionListener);
     }
 
     /**
@@ -197,8 +221,7 @@ public class XMLDecoder {
      * @see #setExceptionListener
      */
     public ExceptionListener getExceptionListener() {
-        return (exceptionListener != null) ? exceptionListener :
-            Statement.defaultExceptionListener;
+        return this.handler.getExceptionListener();
     }
 
     /**
@@ -212,10 +235,9 @@ public class XMLDecoder {
      * @see XMLEncoder#writeObject
      */
     public Object readObject() {
-        if (in == null) {
-            return null;
-        }
-        return getHandler().dequeueResult();
+        return (parsingComplete())
+                ? this.array[this.index++]
+                : null;
     }
 
     /**
@@ -241,33 +263,32 @@ public class XMLDecoder {
     }
 
     /**
-     * Returns the object handler for input stream.
-     * The object handler is created if necessary.
+     * Creates a new handler for SAX parser
+     * that can be used to parse embedded XML archives
+     * created by the {@code XMLEncoder} class.
      *
-     * @return  the object handler
+     * The {@code owner} should be used if parsed XML document contains
+     * the method call within context of the &lt;java&gt; element.
+     * The {@code null} value may cause illegal parsing in such case.
+     * The same problem may occur, if the {@code owner} class
+     * does not contain expected method to call. See details <a
+     * href="http://java.sun.com/products/jfc/tsc/articles/persistence3/">here</a>.
+     *
+     * @param owner  the owner of the default handler
+     *               that can be used as a value of &lt;java&gt; element
+     * @param el     the exception handler for the parser,
+     *               or {@code null} to use the default exception handler
+     * @param cl     the class loader used for instantiating objects,
+     *               or {@code null} to use the default class loader
+     * @return an instance of {@code DefaultHandler} for SAX parser
+     *
+     * @since 1.7
      */
-    private ObjectHandler getHandler() {
-        if ( handler == null ) {
-            SAXParserFactory factory = SAXParserFactory.newInstance();
-            try {
-                SAXParser parser = factory.newSAXParser();
-                handler = new ObjectHandler( this, getClassLoader() );
-                parser.parse( in, handler );
-            }
-            catch ( ParserConfigurationException e ) {
-                getExceptionListener().exceptionThrown( e );
-            }
-            catch ( SAXException se ) {
-                Exception e = se.getException();
-                if ( e == null ) {
-                    e = se;
-                }
-                getExceptionListener().exceptionThrown( e );
-            }
-            catch ( IOException ioe ) {
-                getExceptionListener().exceptionThrown( ioe );
-            }
-        }
+    public static DefaultHandler createHandler(Object owner, ExceptionListener el, ClassLoader cl) {
+        DocumentHandler handler = new DocumentHandler();
+        handler.setOwner(owner);
+        handler.setExceptionListener(el);
+        handler.setClassLoader(cl);
         return handler;
     }
 }
