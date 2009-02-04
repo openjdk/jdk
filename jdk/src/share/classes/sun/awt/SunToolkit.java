@@ -1972,6 +1972,21 @@ public abstract class SunToolkit extends Toolkit
         AWTAutoShutdown.getInstance().dumpPeers(aLog);
     }
 
+    private static Boolean sunAwtDisableMixing = null;
+
+    /**
+     * Returns the value of "sun.awt.disableMixing" property. Default
+     * value is {@code false}.
+     */
+    public synchronized static boolean getSunAwtDisableMixing() {
+        if (sunAwtDisableMixing == null) {
+            sunAwtDisableMixing = Boolean.valueOf(
+                    AccessController.doPrivileged(
+                        new GetBooleanAction("sun.awt.disableMixing")));
+        }
+        return sunAwtDisableMixing.booleanValue();
+    }
+
     /**
      * Returns true if the native GTK libraries are available.  The
      * default implementation returns false, but UNIXToolkit overrides this

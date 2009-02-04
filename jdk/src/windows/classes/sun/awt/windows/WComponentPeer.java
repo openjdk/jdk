@@ -957,8 +957,12 @@ public abstract class WComponentPeer extends WObjectPeer
                     + "; SHAPE: " + shape);
         }
 
-        setRectangularShape(shape.getLoX(), shape.getLoY(), shape.getHiX(), shape.getHiY(),
-                (shape.isRectangular() ? null : shape));
+        if (shape != null) {
+            setRectangularShape(shape.getLoX(), shape.getLoY(), shape.getHiX(), shape.getHiY(),
+                    (shape.isRectangular() ? null : shape));
+        } else {
+            setRectangularShape(0, 0, 0, 0, null);
+        }
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,37 +22,34 @@
  */
 
 /*
-  @test
-  @bug 4811096
-  @summary Tests whether opaque and non-opaque components mix correctly
-  @author anthony.petrov@...: area=awt.mixing
+  @test %W% %E%
+  @bug 6777320
+  @summary PIT : Canvas is not fully painted on the internal frame & internal frame goes behind the canvas
+  @author dmitry.cherepanov@...: area=awt.mixing
   @library ../regtesthelpers
   @build Util
-  @run main OpaqueTest
+  @run main MixingOnShrinkingHWButton
 */
 
 
 /**
- * OpaqueTest.java
+ * MixingOnDialog.java
  *
- * summary:  OpaqueTest
+ * summary:  Tests whether awt.Button and swing.JButton mix correctly
+ *           when awt.Button's width got shrinked
  */
 
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import test.java.awt.regtesthelpers.Util;
-import com.sun.awt.AWTUtilities;
 
 
 
-public class OpaqueTest
+public class MixingOnShrinkingHWButton
 {
-
-    //*** test-writer defined static variables go here ***
-
-    static String testSeq = new String("");
-    final static String checkSeq = new String("010000101");
+    static volatile boolean heavyClicked = false;
+    static volatile boolean lightClicked = false;
 
     private static void init()
     {
@@ -69,8 +66,7 @@ public class OpaqueTest
 
 
         // Create components
-        final Frame f = new Frame("Button-JButton mix test");
-        final Panel p = new Panel();
+        final Dialog d = new Dialog((Frame)null, "Button-JButton mix test");
         final Button heavy = new Button("  Heavyweight Button  ");
         final JButton light = new JButton("  LW Button  ");
 
@@ -78,9 +74,7 @@ public class OpaqueTest
         heavy.addActionListener(new java.awt.event.ActionListener()
                 {
                     public void actionPerformed(java.awt.event.ActionEvent e) {
-                        p.setComponentZOrder(light, 0);
-                        f.validate();
-                        testSeq = testSeq + "0";
+                        heavyClicked = true;
                     }
                 }
                 );
@@ -88,24 +82,21 @@ public class OpaqueTest
         light.addActionListener(new java.awt.event.ActionListener()
                 {
                     public void actionPerformed(java.awt.event.ActionEvent e) {
-                        p.setComponentZOrder(heavy, 0);
-                        f.validate();
-                        testSeq = testSeq + "1";
+                        lightClicked = true;
                     }
                 }
                 );
 
-        // Overlap the buttons
-        heavy.setBounds(30, 30, 200, 200);
-        light.setBounds(10, 10, 50, 50);
+        // Shrink the HW button under LW button
+        heavy.setBounds(30, 30, 100, 100);
+        light.setBounds(40, 30, 100, 100);
 
         // Put the components into the frame
-        p.setLayout(null);
-        p.add(heavy);
-        p.add(light);
-        f.add(p);
-        f.setBounds(50, 50, 400, 400);
-        f.show();
+        d.setLayout(null);
+        d.add(light);
+        d.add(heavy);
+        d.setBounds(50, 50, 400, 400);
+        d.setVisible(true);
 
 
         Robot robot = Util.createRobot();
@@ -116,34 +107,19 @@ public class OpaqueTest
         // Move the mouse pointer to the position where both
         //    buttons overlap
         Point heavyLoc = heavy.getLocationOnScreen();
-        robot.mouseMove(heavyLoc.x + 5, heavyLoc.y + 5);
+        robot.mouseMove(heavyLoc.x + 20, heavyLoc.y + 20);
 
-        // Now perform the click at this point for 9 times
-        // In the middle of the process toggle the opaque
-        // flag value.
-        for (int i = 0; i < 9; ++i) {
-            if (i == 3) {
-                AWTUtilities.setComponentMixingCutoutShape(light,
-                        new Rectangle());
-            }
-            if (i == 6) {
-                AWTUtilities.setComponentMixingCutoutShape(light,
-                        null);
-            }
-
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
-            Util.waitForIdle(robot);
-        }
-
+        // Now perform the click at this point
+        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_MASK);
         Util.waitForIdle(robot);
 
         // If the buttons are correctly mixed, the test sequence
         // is equal to the check sequence.
-        if (testSeq.equals(checkSeq)) {
-            OpaqueTest.pass();
+        if (lightClicked == true) {
+            MixingOnShrinkingHWButton.pass();
         } else {
-            OpaqueTest.fail("The components changed their visible Z-order in a wrong sequence: '" + testSeq + "' instead of '" + checkSeq + "'");
+            MixingOnShrinkingHWButton.fail("The lightweight component left behind the heavyweight one.");
         }
     }//End  init()
 
@@ -260,7 +236,7 @@ public class OpaqueTest
         mainThread.interrupt();
     }//fail()
 
-}// class OpaqueTest
+}// class MixingOnDialog
 
 //This exception is used to exit from any level of call nesting
 // when it's determined that the test has passed, and immediately
@@ -291,13 +267,13 @@ class NewClass implements anInterface
        {
          //got enough events, so pass
 
-         OpaqueTest.pass();
+         MixingOnDialog.pass();
        }
       else if( tries == 20 )
        {
          //tried too many times without getting enough events so fail
 
-         OpaqueTest.fail();
+         MixingOnDialog.fail();
        }
 
     }// eventDispatched()
@@ -449,3 +425,5 @@ class TestDialog extends Dialog
     }
 
 }// TestDialog  class
+
+

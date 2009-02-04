@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,37 +22,30 @@
  */
 
 /*
-  @test
-  @bug 4811096
-  @summary Tests whether opaque and non-opaque components mix correctly
+  @test %W% %E%
+  @bug 6769511
+  @summary AWT components are invisible for a while after frame is moved & menu items are visible
   @author anthony.petrov@...: area=awt.mixing
   @library ../regtesthelpers
   @build Util
-  @run main OpaqueTest
+  @run main HWDisappear
 */
 
-
 /**
- * OpaqueTest.java
+ * HWDisappear.java
  *
- * summary:  OpaqueTest
+ * summary:  AWT components are invisible for a while after frame is moved & menu items are visible
  */
 
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import test.java.awt.regtesthelpers.Util;
-import com.sun.awt.AWTUtilities;
 
-
-
-public class OpaqueTest
+public class HWDisappear
 {
 
-    //*** test-writer defined static variables go here ***
-
-    static String testSeq = new String("");
-    final static String checkSeq = new String("010000101");
+    static volatile boolean clickPassed = false;
 
     private static void init()
     {
@@ -68,82 +61,64 @@ public class OpaqueTest
         Sysout.printInstructions( instructions );
 
 
-        // Create components
-        final Frame f = new Frame("Button-JButton mix test");
-        final Panel p = new Panel();
-        final Button heavy = new Button("  Heavyweight Button  ");
-        final JButton light = new JButton("  LW Button  ");
+        // Create the frame and the button
+        JFrame f = new JFrame();
+        f.setBounds(100, 100, 400, 300);
 
-        // Actions for the buttons add appropriate number to the test sequence
-        heavy.addActionListener(new java.awt.event.ActionListener()
-                {
-                    public void actionPerformed(java.awt.event.ActionEvent e) {
-                        p.setComponentZOrder(light, 0);
-                        f.validate();
-                        testSeq = testSeq + "0";
-                    }
-                }
-                );
+        JMenuBar menubar = new JMenuBar();
+        f.setJMenuBar(menubar);
 
-        light.addActionListener(new java.awt.event.ActionListener()
-                {
-                    public void actionPerformed(java.awt.event.ActionEvent e) {
-                        p.setComponentZOrder(heavy, 0);
-                        f.validate();
-                        testSeq = testSeq + "1";
-                    }
-                }
-                );
+        // Create lightweight-enabled menu
+        JMenu lmenu = new JMenu("Lite Menu");
+        lmenu.add("Salad");
+        lmenu.add("Fruit Plate");
+        lmenu.add("Water");
+        menubar.add(lmenu);
 
-        // Overlap the buttons
-        heavy.setBounds(30, 30, 200, 200);
-        light.setBounds(10, 10, 50, 50);
+        Button b = new Button("OK");
 
-        // Put the components into the frame
-        p.setLayout(null);
-        p.add(heavy);
-        p.add(light);
-        f.add(p);
-        f.setBounds(50, 50, 400, 400);
-        f.show();
+        f.setLayout(null);
+        f.add(b);
+        b.setBounds(50, 50, 200, 50);
 
+        b.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                clickPassed = true;
+            }
+        });
+
+        f.setVisible(true);
 
         Robot robot = Util.createRobot();
         robot.setAutoDelay(20);
 
         Util.waitForIdle(robot);
 
-        // Move the mouse pointer to the position where both
-        //    buttons overlap
-        Point heavyLoc = heavy.getLocationOnScreen();
-        robot.mouseMove(heavyLoc.x + 5, heavyLoc.y + 5);
-
-        // Now perform the click at this point for 9 times
-        // In the middle of the process toggle the opaque
-        // flag value.
-        for (int i = 0; i < 9; ++i) {
-            if (i == 3) {
-                AWTUtilities.setComponentMixingCutoutShape(light,
-                        new Rectangle());
-            }
-            if (i == 6) {
-                AWTUtilities.setComponentMixingCutoutShape(light,
-                        null);
-            }
-
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
-            Util.waitForIdle(robot);
-        }
+        // Move quite far to ensure the button is hidden completely
+        f.setLocation(500, 200);
 
         Util.waitForIdle(robot);
 
-        // If the buttons are correctly mixed, the test sequence
-        // is equal to the check sequence.
-        if (testSeq.equals(checkSeq)) {
-            OpaqueTest.pass();
+        // Activate the menu
+        Point lLoc = lmenu.getLocationOnScreen();
+        robot.mouseMove(lLoc.x + 5, lLoc.y + 5);
+
+        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        Util.waitForIdle(robot);
+
+        // Click on the button.
+        Point bLoc = b.getLocationOnScreen();
+        robot.mouseMove(bLoc.x + b.getWidth() / 2, bLoc.y + 5);
+
+        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        Util.waitForIdle(robot);
+
+        if (clickPassed) {
+            pass();
         } else {
-            OpaqueTest.fail("The components changed their visible Z-order in a wrong sequence: '" + testSeq + "' instead of '" + checkSeq + "'");
+            fail("The button cannot be clicked.");
         }
     }//End  init()
 
@@ -260,7 +235,7 @@ public class OpaqueTest
         mainThread.interrupt();
     }//fail()
 
-}// class OpaqueTest
+}// class HWDisappear
 
 //This exception is used to exit from any level of call nesting
 // when it's determined that the test has passed, and immediately
@@ -291,13 +266,13 @@ class NewClass implements anInterface
        {
          //got enough events, so pass
 
-         OpaqueTest.pass();
+         HWDisappear.pass();
        }
       else if( tries == 20 )
        {
          //tried too many times without getting enough events so fail
 
-         OpaqueTest.fail();
+         HWDisappear.fail();
        }
 
     }// eventDispatched()
