@@ -172,6 +172,7 @@ g1CollectorPolicy.cpp                   g1CollectedHeap.inline.hpp
 g1CollectorPolicy.cpp                   g1CollectorPolicy.hpp
 g1CollectorPolicy.cpp                   heapRegionRemSet.hpp
 g1CollectorPolicy.cpp			mutexLocker.hpp
+g1CollectorPolicy.cpp			gcPolicyCounters.hpp
 
 g1CollectorPolicy.hpp                   collectorPolicy.hpp
 g1CollectorPolicy.hpp                   collectionSetChooser.hpp
@@ -272,6 +273,7 @@ heapRegion.hpp                          g1BlockOffsetTable.inline.hpp
 heapRegion.hpp                          watermark.hpp
 heapRegion.hpp				g1_specialized_oop_closures.hpp
 heapRegion.hpp				survRateGroup.hpp
+heapRegion.hpp				ageTable.hpp
 
 heapRegionRemSet.hpp			sparsePRT.hpp
 
