@@ -25,7 +25,6 @@
 package javax.swing.text;
 
 import java.util.Vector;
-import sun.awt.AppContext;
 
 /**
  * A queue of text layout tasks.
@@ -36,10 +35,10 @@ import sun.awt.AppContext;
  */
 public class LayoutQueue {
 
-    private static final Object DEFAULT_QUEUE = new Object();
+    Vector<Runnable> tasks;
+    Thread worker;
 
-    private Vector<Runnable> tasks;
-    private Thread worker;
+    static LayoutQueue defaultQueue;
 
     /**
      * Construct a layout queue.
@@ -52,31 +51,19 @@ public class LayoutQueue {
      * Fetch the default layout queue.
      */
     public static LayoutQueue getDefaultQueue() {
-        AppContext ac = AppContext.getAppContext();
-        synchronized (DEFAULT_QUEUE) {
-            LayoutQueue defaultQueue = (LayoutQueue) ac.get(DEFAULT_QUEUE);
-            if (defaultQueue == null) {
-                defaultQueue = new LayoutQueue();
-                ac.put(DEFAULT_QUEUE, defaultQueue);
-            }
-            return defaultQueue;
+        if (defaultQueue == null) {
+            defaultQueue = new LayoutQueue();
         }
+        return defaultQueue;
     }
 
     /**
      * Set the default layout queue.
      *
-     * @param defaultQueue the new queue.
+     * @param q the new queue.
      */
-    public static void setDefaultQueue(LayoutQueue defaultQueue) {
-        synchronized (DEFAULT_QUEUE) {
-            AppContext ac = AppContext.getAppContext();
-            if (defaultQueue == null) {
-                ac.remove(DEFAULT_QUEUE);
-            } else {
-                ac.put(DEFAULT_QUEUE, defaultQueue);
-            }
-        }
+    public static void setDefaultQueue(LayoutQueue q) {
+        defaultQueue = q;
     }
 
     /**
