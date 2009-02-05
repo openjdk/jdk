@@ -1836,10 +1836,7 @@ void GraphKit::write_barrier_post(Node* oop_store, Node* obj, Node* adr,
     (CardTableModRefBS*)(Universe::heap()->barrier_set());
   Node *b = _gvn.transform(new (C, 3) URShiftXNode( cast, _gvn.intcon(CardTableModRefBS::card_shift) ));
   // We store into a byte array, so do not bother to left-shift by zero
-  // Get base of card map
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte),
-         "adjust this code");
-  Node *c = makecon(TypeRawPtr::make((address)ct->byte_map_base));
+  Node *c = byte_map_base_node();
   // Combine
   Node *sb_ctl = control();
   Node *sb_adr = _gvn.transform(new (C, 4) AddPNode( top()/*no base ptr*/, c, b ));
@@ -3365,14 +3362,6 @@ void GraphKit::g1_write_barrier_post(Node* store,
 
   const TypeFunc *tf = OptoRuntime::g1_wb_post_Type();
 
-  // Get the address of the card table
-  CardTableModRefBS* ct =
-    (CardTableModRefBS*)(Universe::heap()->barrier_set());
-  Node *card_table = __ makecon(TypeRawPtr::make((address)ct->byte_map_base));
-  // Get base of card map
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-
-
   // Offsets into the thread
   const int index_offset  = in_bytes(JavaThread::dirty_card_queue_offset() +
                                      PtrQueue::byte_offset_of_index());
@@ -3402,7 +3391,7 @@ void GraphKit::g1_write_barrier_post(Node* store,
   Node* card_offset = __ URShiftX( cast, __ ConI(CardTableModRefBS::card_shift) );
 
   // Combine card table base and card offset
-  Node *card_adr = __ AddP(no_base, card_table, card_offset );
+  Node *card_adr = __ AddP(no_base, byte_map_base_node(), card_offset );
 
   // If we know the value being stored does it cross regions?
 
