@@ -37,6 +37,7 @@ import java.io.IOException;
  */
 public class Code_attribute extends Attribute {
     public class InvalidIndex extends AttributeException {
+        private static final long serialVersionUID = -8904527774589382802L;
         InvalidIndex(int index) {
             this.index = index;
         }

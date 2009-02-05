@@ -1,28 +1,39 @@
-Working on the "langtools" workspace using NetBeans.
+Using NetBeans to work on the langtools repository.
 
-This directory (make/netbeans) contains NetBeans projects that
-allow you to work on the various tools using the NetBeans IDE.
+Netbeans 6.0 or later is recommended.
 
-NetBeans 5.0 or later is required and sufficient to use these 
-projects. This is different from other projects in OpenJDK, 
-which requires version 6.0 or later.
+The "langtools" project in this directory allows you to
+edit, run, test and debug the tools in the OpenJDK langtools
+repository.
 
-The following projects are provided:
+The repository contains a number of tools:
+    apt, javac, javadoc and its doclets, javah and javap.
 
-compiler: for working on the compiler, javac
-javadoc:  for working on the documentation tool, javadoc
-doclets:  for working on the standard doclets used by the 
- 	  documentation tool, javadoc
-javah:    for working on the C header tool, javah
-javap:    for working on the disassembler, javap
-apt:      for working on the annotation processing tool, apt.
-          Note that this is just provided for completeness;
-          the tool has been superceded by new features in javac,
-          and work on apt itself is discouraged.
+Build Properties.
 
-However, any tool can be worked on from any project; the only difference
-between these projects is the behavior of the standard NetBeans actions,
-so that "Build" in the compiler project will build the compiler, etc.
+To build this repository, you must set some properties for Ant.
+You can set these properties in a number of ways:
 
+- Set the properties in the Properties panel under Tool> Options> Ant.
+  Properties set this way will apply globally to all the langtools 
+  repositories you may be working on.
 
+- Create a file build.properties in the root directory of a
+  langtools repository, and set the properties in that file.
+  These properties will be specific to that repository.
 
+To build the repository, at a minimum you must set the "boot.java.home"
+property.  To run the tools, you must also set "target.java.home". To
+run the regression tests, you must set "jtreg.home".
+
+By default, the build and test targets will build and test all
+of these tools. The run and debug targets will prompt you for the
+name of a tool to execute.
+
+As an alternative, you can focus on a single tool.  When you do
+this, you will still see all the source code for all the tools,
+but the various Ant targets will now be focussed on the selected tool.
+To focus on a tool, bring up the context menu on the "langtools"
+project (i.e. right-click on the project) and select "Select Tool".
+This brings up a dialog which allows you to specify which tool you
+wish to work on, and the arguments to use if and when you run it.

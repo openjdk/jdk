@@ -233,6 +233,7 @@ public class JavaCompiler extends com.sun.tools.javac.main.JavaCompiler {
 
         ListBuffer<ClassSymbol> classes = new ListBuffer<ClassSymbol>();
         try {
+            JavacFileManager fm = (JavacFileManager)fileManager;
             //parse all files
             ListBuffer<JCCompilationUnit> trees = new ListBuffer<JCCompilationUnit>();
             for (List<String> l = filenames; l.nonEmpty(); l = l.tail) {
@@ -250,7 +251,8 @@ public class JavaCompiler extends com.sun.tools.javac.main.JavaCompiler {
                         continue;
                     }
                 }
-                trees.append(parse(l.head));
+                JavaFileObject fo = fm.getJavaFileObjectsFromStrings(List.of(l.head)).iterator().next();
+                trees.append(parse(fo));
             }
 
             //enter symbols for all files
