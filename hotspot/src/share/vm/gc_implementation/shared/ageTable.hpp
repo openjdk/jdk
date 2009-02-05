@@ -56,6 +56,7 @@ class ageTable VALUE_OBJ_CLASS_SPEC {
   // Merge another age table with the current one.  Used
   // for parallel young generation gc.
   void merge(ageTable* subTable);
+  void merge_par(ageTable* subTable);
 
   // calculate new tenuring threshold based on age information
   int compute_tenuring_threshold(size_t survivor_capacity);

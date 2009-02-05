@@ -566,7 +566,11 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void note_end_of_copying() {
     assert(top() >= _next_top_at_mark_start,
            "Increase only");
-    _next_top_at_mark_start = top();
+    // Survivor regions will be scanned on the start of concurrent
+    // marking.
+    if (!is_survivor()) {
+      _next_top_at_mark_start = top();
+    }
   }
 
   // Returns "false" iff no object in the region was allocated when the

@@ -572,6 +572,9 @@ prepare_for_oops_into_collection_set_do() {
   }
   guarantee( _cards_scanned == NULL, "invariant" );
   _cards_scanned = NEW_C_HEAP_ARRAY(size_t, n_workers());
+  for (uint i = 0; i < n_workers(); ++i) {
+    _cards_scanned[i] = 0;
+  }
   _total_cards_scanned = 0;
 }
 
