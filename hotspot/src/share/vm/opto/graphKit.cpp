@@ -3233,12 +3233,11 @@ void GraphKit::g1_write_barrier_pre(Node* obj,
 
   // Now some of the values
 
-  Node* marking = __ load(no_ctrl, marking_adr, TypeInt::INT, active_type, Compile::AliasIdxRaw);
-  Node* index   = __ load(no_ctrl, index_adr, TypeInt::INT, T_INT, Compile::AliasIdxRaw);
-  Node* buffer  = __ load(no_ctrl, buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
+  Node* marking = __ load(__ ctrl(), marking_adr, TypeInt::INT, active_type, Compile::AliasIdxRaw);
 
   // if (!marking)
   __ if_then(marking, BoolTest::ne, zero); {
+    Node* index   = __ load(__ ctrl(), index_adr, TypeInt::INT, T_INT, Compile::AliasIdxRaw);
 
     const Type* t1 = adr->bottom_type();
     const Type* t2 = val->bottom_type();
@@ -3246,6 +3245,7 @@ void GraphKit::g1_write_barrier_pre(Node* obj,
     Node* orig = __ load(no_ctrl, adr, val_type, bt, alias_idx);
     // if (orig != NULL)
     __ if_then(orig, BoolTest::ne, null()); {
+      Node* buffer  = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
 
       // load original value
       // alias_idx correct??
