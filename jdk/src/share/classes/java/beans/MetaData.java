@@ -24,6 +24,8 @@
  */
 package java.beans;
 
+import com.sun.beans.finder.PrimitiveWrapperMap;
+
 import java.awt.AWTKeyStroke;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -204,7 +206,7 @@ class java_lang_Class_PersistenceDelegate extends PersistenceDelegate {
         if (c.isPrimitive()) {
             Field field = null;
             try {
-                field = ReflectionUtils.typeToClass(c).getDeclaredField("TYPE");
+                field = PrimitiveWrapperMap.getType(c.getName()).getDeclaredField("TYPE");
             } catch (NoSuchFieldException ex) {
                 System.err.println("Unknown primitive type: " + c);
             }

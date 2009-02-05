@@ -29,9 +29,7 @@
 
 # Names of native shared libraries
 
-PLUG_JSOUND_LIBRARY=$(LIB_PREFIX)jsoundhs.$(LIBRARY_SUFFIX)
-PLUG_LIBRARY_NAMES = \
-    $(PLUG_JSOUND_LIBRARY)
+PLUG_LIBRARY_NAMES=
 
 # Sub-directory where native shared libraries are located (e.g. jre/bin or...)
 
@@ -74,62 +72,10 @@ com/sun/jmx/snmp/daemon/SnmpSocket.class \
 com/sun/jmx/snmp/daemon/SnmpTimerServer.class \
 com/sun/jmx/snmp/daemon/WaitQ.class
 
-PLUG_SOUND_CLASS_NAMES = \
-com/sun/media/sound/AbstractPlayer.class \
-com/sun/media/sound/CircularBuffer.class \
-com/sun/media/sound/HeadspaceInstrument.class \
-com/sun/media/sound/HeadspaceMixer\$$1.class \
-com/sun/media/sound/HeadspaceMixer\$$MidiLine.class \
-com/sun/media/sound/HeadspaceMixer\$$MidiLineInfo.class \
-com/sun/media/sound/HeadspaceMixer\$$MixerInfo.class \
-com/sun/media/sound/HeadspaceMixer\$$MixerReverbControl\$$MixerReverbType.class \
-com/sun/media/sound/HeadspaceMixer\$$MixerReverbControl.class \
-com/sun/media/sound/HeadspaceMixer.class \
-com/sun/media/sound/HeadspaceMixerProvider.class \
-com/sun/media/sound/HeadspaceSample.class \
-com/sun/media/sound/HeadspaceSoundbank.class \
-com/sun/media/sound/HsbParser.class \
-com/sun/media/sound/MixerClip\$$1.class \
-com/sun/media/sound/MixerClip\$$MixerClipApplyReverbControl.class \
-com/sun/media/sound/MixerClip\$$MixerClipGainControl.class \
-com/sun/media/sound/MixerClip\$$MixerClipMuteControl.class \
-com/sun/media/sound/MixerClip\$$MixerClipPanControl.class \
-com/sun/media/sound/MixerClip\$$MixerClipSampleRateControl.class \
-com/sun/media/sound/MixerClip.class \
-com/sun/media/sound/MixerMidiChannel.class \
-com/sun/media/sound/MixerSequencer\$$1.class \
-com/sun/media/sound/MixerSequencer\$$ControllerVectorElement.class \
-com/sun/media/sound/MixerSequencer\$$MixerSequencerInfo.class \
-com/sun/media/sound/MixerSequencer\$$RecordingTrack.class \
-com/sun/media/sound/MixerSequencer.class \
-com/sun/media/sound/MixerSequencerProvider.class \
-com/sun/media/sound/MixerSourceLine\$$1.class \
-com/sun/media/sound/MixerSourceLine\$$MixerSourceLineApplyReverbControl.class \
-com/sun/media/sound/MixerSourceLine\$$MixerSourceLineGainControl.class \
-com/sun/media/sound/MixerSourceLine\$$MixerSourceLineMuteControl.class \
-com/sun/media/sound/MixerSourceLine\$$MixerSourceLinePanControl.class \
-com/sun/media/sound/MixerSourceLine\$$MixerSourceLineSampleRateControl.class \
-com/sun/media/sound/MixerSourceLine.class \
-com/sun/media/sound/MixerSynth\$$1.class \
-com/sun/media/sound/MixerSynth\$$MixerSynthInfo.class \
-com/sun/media/sound/MixerSynth\$$SynthReceiver.class \
-com/sun/media/sound/MixerSynth.class \
-com/sun/media/sound/MixerSynthProvider.class \
-com/sun/media/sound/MixerThread.class \
-com/sun/media/sound/RmfFileReader.class \
-com/sun/media/sound/SimpleInputDevice\$$1.class \
-com/sun/media/sound/SimpleInputDevice\$$InputDeviceDataLine.class \
-com/sun/media/sound/SimpleInputDevice\$$InputDevicePort.class \
-com/sun/media/sound/SimpleInputDevice\$$InputDevicePortInfo.class \
-com/sun/media/sound/SimpleInputDevice.class \
-com/sun/media/sound/SimpleInputDeviceProvider\$$1.class \
-com/sun/media/sound/SimpleInputDeviceProvider\$$InputDeviceInfo.class \
-com/sun/media/sound/SimpleInputDeviceProvider.class
-
 # Class list temp files (used by both import and export of plugs)
 
 PLUG_TEMPDIR=$(ABS_TEMPDIR)/plugs
-PLUG_CLASS_AREAS = jmf sound
+PLUG_CLASS_AREAS = jmf
 PLUG_CLISTS = $(PLUG_CLASS_AREAS:%=$(PLUG_TEMPDIR)/%.clist)
 
 # Create jargs file command
@@ -147,17 +93,10 @@ $(PLUG_TEMPDIR)/jmf.clist:
 	@for i in $(PLUG_JMF_CLASS_NAMES) ; do \
 	  $(ECHO) "$$i" >> $@; \
 	done
-$(PLUG_TEMPDIR)/sound.clist:
-	@$(prep-target)
-	@for i in $(PLUG_SOUND_CLASS_NAMES) ; do \
-	  $(ECHO) "$$i" >> $@ ; \
-	done
 $(PLUG_TEMPDIR)/all.clist: $(PLUG_CLISTS)
 	@$(prep-target)
 	$(CAT) $(PLUG_CLISTS) > $@
 $(PLUG_TEMPDIR)/jmf.jargs: $(PLUG_TEMPDIR)/jmf.clist
-	$(plug-create-jargs)
-$(PLUG_TEMPDIR)/sound.jargs: $(PLUG_TEMPDIR)/sound.clist
 	$(plug-create-jargs)
 $(PLUG_TEMPDIR)/all.jargs: $(PLUG_TEMPDIR)/all.clist
 	$(plug-create-jargs)
@@ -193,25 +132,11 @@ endef # import-binary-plug-classes
 
 import-binary-plug-jmf-classes: $(PLUG_IMPORT_JARFILE) $(PLUG_TEMPDIR)/jmf.clist
 	$(call import-binary-plug-classes,$(PLUG_TEMPDIR)/jmf.clist)
-import-binary-plug-sound-classes: $(PLUG_IMPORT_JARFILE) $(PLUG_TEMPDIR)/sound.clist
-	$(call import-binary-plug-classes,$(PLUG_TEMPDIR)/sound.clist)
 
 # Import all classes from the jar file
 
 import-binary-plug-jar: \
-	     import-binary-plug-jmf-classes \
-	     import-binary-plug-sound-classes
-
-# Import native libraries
-
-$(LIB_LOCATION)/$(PLUG_JSOUND_LIBRARY): \
-    $(PLUG_IMPORT_DIR)/$(PLUG_LOCATION_SUBDIR)/$(PLUG_JSOUND_LIBRARY)
-	$(import-binary-plug-file)
-
-# Rules only used by lower level makefiles
-
-import-binary-plug-jsound-library: \
-    $(LIB_LOCATION)/$(PLUG_JSOUND_LIBRARY)
+	     import-binary-plug-jmf-classes
 
 # Binary plug start/complete messages
 
@@ -241,9 +166,7 @@ import-binary-plugs: \
 	import-binary-plugs-libs \
 	import-binary-plugs \
 	import-binary-plug-jar \
-        import-binary-plug-jmf-classes \
-        import-binary-plug-sound-classes \
-        import-binary-plug-jsound-library
+	import-binary-plug-jmf-classes
 
 else # !OPENJDK
 
@@ -279,12 +202,6 @@ $(PLUG_EXPORT_JARFILE): $(PLUG_TEMPDIR)/all.clist $(PLUG_TEMPDIR)/all.jargs
 	$(BOOT_JAR_CMD) cf $@ @$(PLUG_TEMPDIR)/all.jargs $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 export-binary-plugs-jar: $(PLUG_EXPORT_JARFILE)
-
-# Export native libraries
-
-$(PLUG_EXPORT_DIR)/$(PLUG_LOCATION_SUBDIR)/$(PLUG_JSOUND_LIBRARY): \
-    $(LIB_LOCATION)/$(PLUG_JSOUND_LIBRARY)
-	$(export-binary-plug-file)
 
 # Export binary plug start/complete messages
 
