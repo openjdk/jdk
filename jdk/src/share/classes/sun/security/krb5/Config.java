@@ -39,7 +39,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.StringTokenizer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -156,11 +155,7 @@ public class Config {
                 configFile = loadConfigFile();
                 stanzaTable = parseStanzaTable(configFile);
             } catch (IOException ioe) {
-                KrbException ke = new KrbException("Could not load " +
-                                                   "configuration file " +
-                                                   ioe.getMessage());
-                ke.initCause(ioe);
-                throw(ke);
+                // No krb5.conf, no problem. We'll use DNS etc.
             }
         }
     }
@@ -1057,7 +1052,12 @@ public class Config {
     public boolean useDNS(String name) {
         String value = getDefault(name, "libdefaults");
         if (value == null) {
-            return getDefaultBooleanValue("dns_fallback", "libdefaults");
+            value = getDefault("dns_fallback", "libdefaults");
+            if ("false".equalsIgnoreCase(value)) {
+                return false;
+            } else {
+                return true;
+            }
         } else {
             return value.equalsIgnoreCase("true");
         }
@@ -1079,12 +1079,39 @@ public class Config {
 
     /**
      * Gets default realm.
+     * @throws KrbException where no realm can be located
+     * @return the default realm, always non null
      */
     public String getDefaultRealm() throws KrbException {
+        Exception cause = null;
         String realm = getDefault("default_realm", "libdefaults");
         if ((realm == null) && useDNS_Realm()) {
             // use DNS to locate Kerberos realm
-            realm = getRealmFromDNS();
+            try {
+                realm = getRealmFromDNS();
+            } catch (KrbException ke) {
+                cause = ke;
+            }
+        }
+        if (realm == null) {
+            realm = java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<String>() {
+                @Override
+                public String run() {
+                    String osname = System.getProperty("os.name");
+                    if (osname.startsWith("Windows")) {
+                        return System.getenv("USERDNSDOMAIN");
+                    }
+                    return null;
+                }
+            });
+        }
+        if (realm == null) {
+            KrbException ke = new KrbException("Cannot locate default realm");
+            if (cause != null) {
+                ke.initCause(cause);
+            }
+            throw ke;
         }
         return realm;
     }
@@ -1092,17 +1119,48 @@ public class Config {
     /**
      * Returns a list of KDC's with each KDC separated by a space
      *
-     * @param realm the realm for which the master KDC is desired
-     * @return the list of KDCs
+     * @param realm the realm for which the KDC list is desired
+     * @throws KrbException if there's no way to find KDC for the realm
+     * @return the list of KDCs separated by a space, always non null
      */
     public String getKDCList(String realm) throws KrbException {
         if (realm == null) {
             realm = getDefaultRealm();
         }
+        Exception cause = null;
         String kdcs = getDefault("kdc", realm);
         if ((kdcs == null) && useDNS_KDC()) {
             // use DNS to locate KDC
-            kdcs = getKDCFromDNS(realm);
+            try {
+                kdcs = getKDCFromDNS(realm);
+            } catch (KrbException ke) {
+                cause = ke;
+            }
+        }
+        if (kdcs == null) {
+            kdcs = java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<String>() {
+                @Override
+                public String run() {
+                    String osname = System.getProperty("os.name");
+                    if (osname.startsWith("Windows")) {
+                        String logonServer = System.getenv("LOGONSERVER");
+                        if (logonServer != null
+                                && logonServer.startsWith("\\\\")) {
+                            logonServer = logonServer.substring(2);
+                        }
+                        return logonServer;
+                    }
+                    return null;
+                }
+            });
+        }
+        if (kdcs == null) {
+            KrbException ke = new KrbException("Cannot locate KDC");
+            if (cause != null) {
+                ke.initCause(cause);
+            }
+            throw ke;
         }
         return kdcs;
     }
@@ -1117,7 +1175,7 @@ public class Config {
         String realm = null;
         String hostName = null;
         try {
-            hostName = InetAddress.getLocalHost().getHostName();
+            hostName = InetAddress.getLocalHost().getCanonicalHostName();
         } catch (UnknownHostException e) {
             KrbException ke = new KrbException(Krb5.KRB_ERR_GENERIC,
                 "Unable to locate Kerberos realm: " + e.getMessage());
