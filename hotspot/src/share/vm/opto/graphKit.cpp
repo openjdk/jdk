@@ -2942,16 +2942,10 @@ Node* GraphKit::new_instance(Node* klass_node,
 
   // Now generate allocation code
 
-  // With escape analysis, the entire memory state is needed to be able to
-  // eliminate the allocation.  If the allocations cannot be eliminated, this
-  // will be optimized to the raw slice when the allocation is expanded.
-  Node *mem;
-  if (C->do_escape_analysis()) {
-    mem = reset_memory();
-    set_all_memory(mem);
-  } else {
-    mem = memory(Compile::AliasIdxRaw);
-  }
+  // The entire memory state is needed for slow path of the allocation
+  // since GC and deoptimization can happened.
+  Node *mem = reset_memory();
+  set_all_memory(mem); // Create new memory state
 
   AllocateNode* alloc
     = new (C, AllocateNode::ParmLimit)
@@ -3088,16 +3082,10 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
 
   // Now generate allocation code
 
-  // With escape analysis, the entire memory state is needed to be able to
-  // eliminate the allocation.  If the allocations cannot be eliminated, this
-  // will be optimized to the raw slice when the allocation is expanded.
-  Node *mem;
-  if (C->do_escape_analysis()) {
-    mem = reset_memory();
-    set_all_memory(mem);
-  } else {
-    mem = memory(Compile::AliasIdxRaw);
-  }
+  // The entire memory state is needed for slow path of the allocation
+  // since GC and deoptimization can happened.
+  Node *mem = reset_memory();
+  set_all_memory(mem); // Create new memory state
 
   // Create the AllocateArrayNode and its result projections
   AllocateArrayNode* alloc
