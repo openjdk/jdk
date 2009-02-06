@@ -449,7 +449,7 @@ public class RecognizedOptions {
         },
 
         // treat warnings as errors
-        new HiddenOption(WERROR),
+        new Option(WERROR,                                      "opt.Werror"),
 
         // use complex inference from context in the position of a method call argument
         new HiddenOption(COMPLEXINFERENCE),
