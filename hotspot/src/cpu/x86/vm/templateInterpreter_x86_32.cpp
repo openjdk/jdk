@@ -110,7 +110,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
     if (message != NULL) {
       __ lea(rbx, ExternalAddress((address)message));
     } else {
-      __ movptr(rbx, (int32_t)NULL_WORD);
+      __ movptr(rbx, NULL_WORD);
     }
     __ call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::create_exception), rax, rbx);
   }
@@ -123,7 +123,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
 address TemplateInterpreterGenerator::generate_continuation_for(TosState state) {
   address entry = __ pc();
   // NULL last_sp until next java call
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
   __ dispatch_next(state);
   return entry;
 }
@@ -176,7 +176,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   // Restore stack bottom in case i2c adjusted stack
   __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
   // and NULL it as marker that rsp is now tos until next java call
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
 
   __ restore_bcp();
   __ restore_locals();
@@ -211,7 +211,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
 
   // The stack is not extended by deopt but we must NULL last_sp as this
   // entry is like a "return".
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
   __ restore_bcp();
   __ restore_locals();
   // handle exceptions
@@ -382,7 +382,7 @@ void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
   // indicating if the counter overflow occurs at a backwards branch (non-NULL bcp).
   // The call returns the address of the verified entry point for the method or NULL
   // if the compilation did not complete (either went background or bailed out).
-  __ movptr(rax, (int32_t)false);
+  __ movptr(rax, (intptr_t)false);
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), rax);
 
   __ movptr(rbx, Address(rbp, method_offset));   // restore methodOop
@@ -1028,7 +1028,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // reset handle block
   __ movptr(t, Address(thread, JavaThread::active_handles_offset()));
-  __ movptr(Address(t, JNIHandleBlock::top_offset_in_bytes()), (int32_t)NULL_WORD);
+  __ movptr(Address(t, JNIHandleBlock::top_offset_in_bytes()), NULL_WORD);
 
   // If result was an oop then unbox and save it in the frame
   { Label L;
@@ -1488,7 +1488,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // Restore sp to interpreter_frame_last_sp even though we are going
   // to empty the expression stack for the exception processing.
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
   // rax,: exception
   // rdx: return address/pc that threw exception
   __ restore_bcp();                              // rsi points to call/send
@@ -1608,7 +1608,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ reset_last_Java_frame(rcx, true, true);
   // Restore the last_sp and null it out
   __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
 
   __ restore_bcp();
   __ restore_locals();
@@ -1636,7 +1636,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // restore exception
   __ get_thread(rcx);
   __ movptr(rax, Address(rcx, JavaThread::vm_result_offset()));
-  __ movptr(Address(rcx, JavaThread::vm_result_offset()), (int32_t)NULL_WORD);
+  __ movptr(Address(rcx, JavaThread::vm_result_offset()), NULL_WORD);
   __ verify_oop(rax);
 
   // Inbetween activations - previous activation type unknown yet

@@ -279,7 +279,11 @@ void os::init_system_properties_values() {
  *        ...
  *        7: The default directories, normally /lib and /usr/lib.
  */
+#if defined(AMD64) || defined(_LP64) && (defined(SPARC) || defined(PPC) || defined(S390))
+#define DEFAULT_LIBPATH "/usr/lib64:/lib64:/lib:/usr/lib"
+#else
 #define DEFAULT_LIBPATH "/lib:/usr/lib"
+#endif
 
 #define EXTENSIONS_DIR  "/lib/ext"
 #define ENDORSED_DIR    "/lib/endorsed"
@@ -1160,7 +1164,10 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 
         /*                                     1   1   1   1   1   1   1   1   1   1   2   2   2   2   2   2   2   2   2 */
         /*              3  4  5  6  7  8   9   0   1   2   3   4   5   6   7   8   9   0   1   2   3   4   5   6   7   8 */
-        i = sscanf(s, "%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld %ld %lu %lu %ld %lu %lu %lu %lu",
+        i = sscanf(s, "%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld %ld "
+                   UINTX_FORMAT UINTX_FORMAT UINTX_FORMAT
+                   " %lu "
+                   UINTX_FORMAT UINTX_FORMAT UINTX_FORMAT,
              &state,          /* 3  %c  */
              &ppid,           /* 4  %d  */
              &pgrp,           /* 5  %d  */
@@ -1180,13 +1187,13 @@ void os::Linux::capture_initial_stack(size_t max_size) {
              &nice,           /* 19 %ld  */
              &junk,           /* 20 %ld  */
              &it_real,        /* 21 %ld  */
-             &start,          /* 22 %lu  */
-             &vsize,          /* 23 %lu  */
-             &rss,            /* 24 %ld  */
+             &start,          /* 22 UINTX_FORMAT  */
+             &vsize,          /* 23 UINTX_FORMAT  */
+             &rss,            /* 24 UINTX_FORMAT  */
              &rsslim,         /* 25 %lu  */
-             &scodes,         /* 26 %lu  */
-             &ecode,          /* 27 %lu  */
-             &stack_start);   /* 28 %lu  */
+             &scodes,         /* 26 UINTX_FORMAT  */
+             &ecode,          /* 27 UINTX_FORMAT  */
+             &stack_start);   /* 28 UINTX_FORMAT  */
       }
 
       if (i != 28 - 2) {
@@ -2024,7 +2031,8 @@ void os::jvm_path(char *buf, jint len) {
                 CAST_FROM_FN_PTR(address, os::jvm_path),
                 dli_fname, sizeof(dli_fname), NULL);
   assert(ret != 0, "cannot locate libjvm");
-  realpath(dli_fname, buf);
+  if (realpath(dli_fname, buf) == NULL)
+    return;
 
   if (strcmp(Arguments::sun_java_launcher(), "gamma") == 0) {
     // Support for the gamma launcher.  Typical value for buf is
@@ -2048,7 +2056,8 @@ void os::jvm_path(char *buf, jint len) {
         assert(strstr(p, "/libjvm") == p, "invalid library name");
         p = strstr(p, "_g") ? "_g" : "";
 
-        realpath(java_home_var, buf);
+        if (realpath(java_home_var, buf) == NULL)
+          return;
         sprintf(buf + strlen(buf), "/jre/lib/%s", cpu_arch);
         if (0 == access(buf, F_OK)) {
           // Use current module name "libjvm[_g].so" instead of
@@ -2059,7 +2068,8 @@ void os::jvm_path(char *buf, jint len) {
           sprintf(buf + strlen(buf), "/hotspot/libjvm%s.so", p);
         } else {
           // Go back to path of .so
-          realpath(dli_fname, buf);
+          if (realpath(dli_fname, buf) == NULL)
+            return;
         }
       }
     }
@@ -4184,11 +4194,11 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   // Skip blank chars
   do s++; while (isspace(*s));
 
-  count = sscanf(s,"%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu",
-                 &idummy, &idummy, &idummy, &idummy, &idummy, &idummy,
+  count = sscanf(s,"%*c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu",
+                 &idummy, &idummy, &idummy, &idummy, &idummy,
                  &ldummy, &ldummy, &ldummy, &ldummy, &ldummy,
                  &user_time, &sys_time);
-  if ( count != 13 ) return -1;
+  if ( count != 12 ) return -1;
   if (user_sys_cpu_time) {
     return ((jlong)sys_time + (jlong)user_time) * (1000000000 / clock_tics_per_sec);
   } else {

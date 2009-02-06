@@ -104,6 +104,7 @@ private:
   // loads and stores.  This value may updated and read without a lock by
   // multiple threads, so is volatile.
   volatile uint64_t _fingerprint;
+  volatile bool     _is_conc_safe; // if true, safe for concurrent GC processing
 
 public:
   oop* oop_block_beg() const { return adr_method(); }
@@ -273,6 +274,8 @@ public:
   oop*  adr_method() const             { return (oop*)&_method;          }
   oop*  adr_stackmap_data() const      { return (oop*)&_stackmap_data;   }
   oop*  adr_exception_table() const    { return (oop*)&_exception_table; }
+  bool is_conc_safe() { return _is_conc_safe; }
+  void set_is_conc_safe(bool v) { _is_conc_safe = v; }
 
   // Unique id for the method
   static const u2 MAX_IDNUM;

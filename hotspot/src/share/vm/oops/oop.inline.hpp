@@ -435,6 +435,10 @@ inline bool oopDesc::is_parsable() {
   return blueprint()->oop_is_parsable(this);
 }
 
+inline bool oopDesc::is_conc_safe() {
+  return blueprint()->oop_is_conc_safe(this);
+}
+
 inline void update_barrier_set(void* p, oop v) {
   assert(oopDesc::bs() != NULL, "Uninitialized bs in oop!");
   oopDesc::bs()->write_ref_field(p, v);

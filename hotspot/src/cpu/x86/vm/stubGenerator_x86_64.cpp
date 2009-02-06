@@ -472,7 +472,7 @@ class StubGenerator: public StubCodeGenerator {
     // setup rax & rdx, remove return address & clear pending exception
     __ pop(rdx);
     __ movptr(rax, Address(r15_thread, Thread::pending_exception_offset()));
-    __ movptr(Address(r15_thread, Thread::pending_exception_offset()), (int)NULL_WORD);
+    __ movptr(Address(r15_thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
 
 #ifdef ASSERT
     // make sure exception is set
@@ -954,9 +954,9 @@ class StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::zero, exit); // if obj is NULL it is OK
     // Check if the oop is in the right area of memory
     __ movptr(c_rarg2, rax);
-    __ movptr(c_rarg3, (int64_t) Universe::verify_oop_mask());
+    __ movptr(c_rarg3, (intptr_t) Universe::verify_oop_mask());
     __ andptr(c_rarg2, c_rarg3);
-    __ movptr(c_rarg3, (int64_t) Universe::verify_oop_bits());
+    __ movptr(c_rarg3, (intptr_t) Universe::verify_oop_bits());
     __ cmpptr(c_rarg2, c_rarg3);
     __ jcc(Assembler::notZero, error);
 
@@ -969,9 +969,9 @@ class StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::zero, error); // if klass is NULL it is broken
     // Check if the klass is in the right area of memory
     __ mov(c_rarg2, rax);
-    __ movptr(c_rarg3, (int64_t) Universe::verify_klass_mask());
+    __ movptr(c_rarg3, (intptr_t) Universe::verify_klass_mask());
     __ andptr(c_rarg2, c_rarg3);
-    __ movptr(c_rarg3, (int64_t) Universe::verify_klass_bits());
+    __ movptr(c_rarg3, (intptr_t) Universe::verify_klass_bits());
     __ cmpptr(c_rarg2, c_rarg3);
     __ jcc(Assembler::notZero, error);
 
@@ -980,9 +980,9 @@ class StubGenerator: public StubCodeGenerator {
     __ testptr(rax, rax);
     __ jcc(Assembler::zero, error); // if klass' klass is NULL it is broken
     // Check if the klass' klass is in the right area of memory
-    __ movptr(c_rarg3, (int64_t) Universe::verify_klass_mask());
+    __ movptr(c_rarg3, (intptr_t) Universe::verify_klass_mask());
     __ andptr(rax, c_rarg3);
-    __ movptr(c_rarg3, (int64_t) Universe::verify_klass_bits());
+    __ movptr(c_rarg3, (intptr_t) Universe::verify_klass_bits());
     __ cmpptr(rax, c_rarg3);
     __ jcc(Assembler::notZero, error);
 
