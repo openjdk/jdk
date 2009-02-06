@@ -3371,7 +3371,7 @@ encode %{
          masm.movptr(Address(boxReg, 0), 3) ;            // results in ST-before-CAS penalty
          masm.get_thread (scrReg) ; 
          masm.movptr(boxReg, tmpReg);                    // consider: LEA box, [tmp-2] 
-         masm.movptr(tmpReg, 0);                         // consider: xor vs mov
+         masm.movptr(tmpReg, NULL_WORD);                 // consider: xor vs mov
          if (os::is_MP()) { masm.lock(); } 
          masm.cmpxchgptr(scrReg, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2)) ; 
       } else 
@@ -3387,7 +3387,7 @@ encode %{
 
          if ((EmitSync & 64) == 0) {
            // Optimistic form: consider XORL tmpReg,tmpReg
-           masm.movptr(tmpReg, 0 ) ; 
+           masm.movptr(tmpReg, NULL_WORD) ; 
          } else { 
            // Can suffer RTS->RTO upgrades on shared or cold $ lines
            // Test-And-CAS instead of CAS
@@ -3587,7 +3587,7 @@ encode %{
          masm.orptr(boxReg, Address (tmpReg, ObjectMonitor::EntryList_offset_in_bytes()-2)) ; 
          masm.orptr(boxReg, Address (tmpReg, ObjectMonitor::cxq_offset_in_bytes()-2)) ; 
          masm.jccb  (Assembler::notZero, DONE_LABEL) ; 
-         masm.movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), 0) ; 
+         masm.movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), NULL_WORD) ; 
          masm.jmpb  (DONE_LABEL) ; 
       } else { 
          masm.xorptr(boxReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2)) ;  
@@ -3596,7 +3596,7 @@ encode %{
          masm.movptr(boxReg, Address (tmpReg, ObjectMonitor::EntryList_offset_in_bytes()-2)) ; 
          masm.orptr(boxReg, Address (tmpReg, ObjectMonitor::cxq_offset_in_bytes()-2)) ; 
          masm.jccb  (Assembler::notZero, CheckSucc) ; 
-         masm.movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), 0) ; 
+         masm.movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), NULL_WORD) ; 
          masm.jmpb  (DONE_LABEL) ; 
       }
 
@@ -3644,7 +3644,7 @@ encode %{
          // We currently use (3), although it's likely that switching to (2)
          // is correct for the future.
             
-         masm.movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), 0) ; 
+         masm.movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), NULL_WORD) ; 
          if (os::is_MP()) { 
             if (VM_Version::supports_sse2() && 1 == FenceInstruction) { 
               masm.mfence();

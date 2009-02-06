@@ -100,4 +100,4 @@ spaceCounters.hpp                       mutableSpace.hpp
 spaceCounters.hpp                       perfData.hpp
 spaceCounters.hpp                       generationCounters.hpp
 
-vmGCOperations.cpp                      g1CollectedHeap.hpp
+vmGCOperations.cpp                      g1CollectedHeap.inline.hpp
