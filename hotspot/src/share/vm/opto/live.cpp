@@ -329,8 +329,12 @@ void PhaseChaitin::verify_base_ptrs( ResourceArea *a ) const {
                       UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_DecodeN ||
 #endif
                       check->as_Mach()->ideal_Opcode() == Op_LoadP ||
-                      check->as_Mach()->ideal_Opcode() == Op_LoadKlass))
+                      check->as_Mach()->ideal_Opcode() == Op_LoadKlass)) {
+                    // Valid nodes
+                  } else {
+                    check->dump();
                     assert(false,"Bad base or derived pointer");
+                  }
                 } else {
                   assert(is_derived,"Bad base pointer");
                   assert(check->is_Mach() && check->as_Mach()->ideal_Opcode() == Op_AddP,"Bad derived pointer");
@@ -346,4 +350,18 @@ void PhaseChaitin::verify_base_ptrs( ResourceArea *a ) const {
   } // End of forall blocks
 #endif
 }
+
+//------------------------------verify-------------------------------------
+// Verify that graphs and base pointers are still sane.
+void PhaseChaitin::verify( ResourceArea *a, bool verify_ifg ) const {
+#ifdef ASSERT
+  if( VerifyOpto || VerifyRegisterAllocator ) {
+    _cfg.verify();
+    verify_base_ptrs(a);
+    if(verify_ifg)
+      _ifg->verify(this);
+  }
+#endif
+}
+
 #endif

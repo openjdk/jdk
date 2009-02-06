@@ -96,9 +96,7 @@ void PhaseChaitin::insert_proj( Block *b, uint i, Node *spill, uint maxlrg ) {
   // its definer.
   while( i < b->_nodes.size() &&
          (b->_nodes[i]->is_Proj() ||
-          b->_nodes[i]->is_Phi()  ||
-          (b->_nodes[i]->is_Mach() &&
-           b->_nodes[i]->as_Mach()->ideal_Opcode() == Op_CreateEx)) )
+          b->_nodes[i]->is_Phi() ) )
     i++;
 
   // Do not insert between a call and his Catch
