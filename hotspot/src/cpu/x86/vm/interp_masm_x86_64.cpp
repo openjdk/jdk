@@ -30,7 +30,7 @@
 
 #ifdef CC_INTERP
 void InterpreterMacroAssembler::get_method(Register reg) {
-  movptr(reg, Address(rbp, -(sizeof(BytecodeInterpreter) + 2 * wordSize)));
+  movptr(reg, Address(rbp, -((int)sizeof(BytecodeInterpreter) + 2 * wordSize)));
   movptr(reg, Address(reg, byte_offset_of(BytecodeInterpreter, _method)));
 }
 #endif // CC_INTERP

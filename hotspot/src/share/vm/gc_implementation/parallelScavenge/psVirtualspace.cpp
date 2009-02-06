@@ -78,7 +78,7 @@ void PSVirtualSpace::release() {
   _special = false;
 }
 
-bool PSVirtualSpace::expand_by(size_t bytes, bool pre_touch) {
+bool PSVirtualSpace::expand_by(size_t bytes) {
   assert(is_aligned(bytes), "arg not aligned");
   DEBUG_ONLY(PSVirtualSpaceVerifier this_verifier(this));
 
@@ -90,15 +90,6 @@ bool PSVirtualSpace::expand_by(size_t bytes, bool pre_touch) {
   bool result = special() || os::commit_memory(base_addr, bytes, alignment());
   if (result) {
     _committed_high_addr += bytes;
-  }
-
-  if (pre_touch || AlwaysPreTouch) {
-    for (char* curr = base_addr;
-         curr < _committed_high_addr;
-         curr += os::vm_page_size()) {
-      char tmp = *curr;
-      *curr = 0;
-    }
   }
 
   return result;
@@ -255,7 +246,7 @@ PSVirtualSpaceHighToLow::PSVirtualSpaceHighToLow(ReservedSpace rs) {
   DEBUG_ONLY(verify());
 }
 
-bool PSVirtualSpaceHighToLow::expand_by(size_t bytes, bool pre_touch) {
+bool PSVirtualSpaceHighToLow::expand_by(size_t bytes) {
   assert(is_aligned(bytes), "arg not aligned");
   DEBUG_ONLY(PSVirtualSpaceVerifier this_verifier(this));
 
@@ -267,15 +258,6 @@ bool PSVirtualSpaceHighToLow::expand_by(size_t bytes, bool pre_touch) {
   bool result = special() || os::commit_memory(base_addr, bytes, alignment());
   if (result) {
     _committed_low_addr -= bytes;
-  }
-
-  if (pre_touch || AlwaysPreTouch) {
-    for (char* curr = base_addr;
-         curr < _committed_high_addr;
-         curr += os::vm_page_size()) {
-      char tmp = *curr;
-      *curr = 0;
-    }
   }
 
   return result;

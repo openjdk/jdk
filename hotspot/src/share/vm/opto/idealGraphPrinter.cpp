@@ -557,7 +557,7 @@ void IdealGraphPrinter::visit_node(Node *n, void *param) {
 
         // max. 2 chars allowed
         if (value >= -9 && value <= 99) {
-          sprintf(buffer, "%d", value);
+          sprintf(buffer, INT64_FORMAT, value);
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "L");

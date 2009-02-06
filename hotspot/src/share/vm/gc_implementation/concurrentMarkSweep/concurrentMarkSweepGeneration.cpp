@@ -3018,6 +3018,16 @@ ConcurrentMarkSweepGeneration::object_iterate(ObjectClosure* cl) {
 }
 
 void
+ConcurrentMarkSweepGeneration::safe_object_iterate(ObjectClosure* cl) {
+  if (freelistLock()->owned_by_self()) {
+    Generation::safe_object_iterate(cl);
+  } else {
+    MutexLockerEx x(freelistLock(), Mutex::_no_safepoint_check_flag);
+    Generation::safe_object_iterate(cl);
+  }
+}
+
+void
 ConcurrentMarkSweepGeneration::pre_adjust_pointers() {
 }
 
@@ -6623,7 +6633,11 @@ size_t ScanMarkedObjectsAgainCarefullyClosure::do_object_careful_m(
   if (_bitMap->isMarked(addr)) {
     // it's marked; is it potentially uninitialized?
     if (p->klass_or_null() != NULL) {
-      if (CMSPermGenPrecleaningEnabled && !p->is_parsable()) {
+      // If is_conc_safe is false, the object may be undergoing
+      // change by the VM outside a safepoint.  Don't try to
+      // scan it, but rather leave it for the remark phase.
+      if (CMSPermGenPrecleaningEnabled &&
+          (!p->is_conc_safe() || !p->is_parsable())) {
         // Signal precleaning to redirty the card since
         // the klass pointer is already installed.
         assert(size == 0, "Initial value");
@@ -7001,7 +7015,6 @@ void MarkFromRootsClosure::scanOopsInOop(HeapWord* ptr) {
       _mut->clear_range(mr);
     }
   DEBUG_ONLY(})
-
   // Note: the finger doesn't advance while we drain
   // the stack below.
   PushOrMarkClosure pushOrMarkClosure(_collector,
@@ -8062,9 +8075,13 @@ size_t SweepClosure::doLiveChunk(FreeChunk* fc) {
     #ifdef DEBUG
       if (oop(addr)->klass_or_null() != NULL &&
           (   !_collector->should_unload_classes()
-           || oop(addr)->is_parsable())) {
+           || (oop(addr)->is_parsable()) &&
+               oop(addr)->is_conc_safe())) {
         // Ignore mark word because we are running concurrent with mutators
         assert(oop(addr)->is_oop(true), "live block should be an oop");
+        // is_conc_safe is checked before performing this assertion
+        // because an object that is not is_conc_safe may yet have
+        // the return from size() correct.
         assert(size ==
                CompactibleFreeListSpace::adjustObjectSize(oop(addr)->size()),
                "P-mark and computed size do not agree");
@@ -8077,6 +8094,13 @@ size_t SweepClosure::doLiveChunk(FreeChunk* fc) {
            (!_collector->should_unload_classes()
             || oop(addr)->is_parsable()),
            "Should be an initialized object");
+    // Note that there are objects used during class redefinition
+    // (e.g., merge_cp in VM_RedefineClasses::merge_cp_and_rewrite()
+    // which are discarded with their is_conc_safe state still
+    // false.  These object may be floating garbage so may be
+    // seen here.  If they are floating garbage their size
+    // should be attainable from their klass.  Do not that
+    // is_conc_safe() is true for oop(addr).
     // Ignore mark word because we are running concurrent with mutators
     assert(oop(addr)->is_oop(true), "live block should be an oop");
     // Verify that the bit map has no bits marked between
@@ -8484,7 +8508,7 @@ bool CMSCollector::take_from_overflow_list(size_t num, CMSMarkStack* stack) {
   size_t i = num;
   oop  cur = _overflow_list;
   const markOop proto = markOopDesc::prototype();
-  NOT_PRODUCT(size_t n = 0;)
+  NOT_PRODUCT(ssize_t n = 0;)
   for (oop next; i > 0 && cur != NULL; cur = next, i--) {
     next = oop(cur->mark());
     cur->set_mark(proto);   // until proven otherwise
@@ -8501,45 +8525,131 @@ bool CMSCollector::take_from_overflow_list(size_t num, CMSMarkStack* stack) {
   return !stack->isEmpty();
 }
 
-// Multi-threaded; use CAS to break off a prefix
+#define BUSY  (oop(0x1aff1aff))
+// (MT-safe) Get a prefix of at most "num" from the list.
+// The overflow list is chained through the mark word of
+// each object in the list. We fetch the entire list,
+// break off a prefix of the right size and return the
+// remainder. If other threads try to take objects from
+// the overflow list at that time, they will wait for
+// some time to see if data becomes available. If (and
+// only if) another thread places one or more object(s)
+// on the global list before we have returned the suffix
+// to the global list, we will walk down our local list
+// to find its end and append the global list to
+// our suffix before returning it. This suffix walk can
+// prove to be expensive (quadratic in the amount of traffic)
+// when there are many objects in the overflow list and
+// there is much producer-consumer contention on the list.
+// *NOTE*: The overflow list manipulation code here and
+// in ParNewGeneration:: are very similar in shape,
+// except that in the ParNew case we use the old (from/eden)
+// copy of the object to thread the list via its klass word.
+// Because of the common code, if you make any changes in
+// the code below, please check the ParNew version to see if
+// similar changes might be needed.
+// CR 6797058 has been filed to consolidate the common code.
 bool CMSCollector::par_take_from_overflow_list(size_t num,
                                                OopTaskQueue* work_q) {
-  assert(work_q->size() == 0, "That's the current policy");
+  assert(work_q->size() == 0, "First empty local work queue");
   assert(num < work_q->max_elems(), "Can't bite more than we can chew");
   if (_overflow_list == NULL) {
     return false;
   }
   // Grab the entire list; we'll put back a suffix
-  oop prefix = (oop)Atomic::xchg_ptr(NULL, &_overflow_list);
-  if (prefix == NULL) {  // someone grabbed it before we did ...
-    // ... we could spin for a short while, but for now we don't
-    return false;
+  oop prefix = (oop)Atomic::xchg_ptr(BUSY, &_overflow_list);
+  Thread* tid = Thread::current();
+  size_t CMSOverflowSpinCount = (size_t)ParallelGCThreads;
+  size_t sleep_time_millis = MAX2((size_t)1, num/100);
+  // If the list is busy, we spin for a short while,
+  // sleeping between attempts to get the list.
+  for (size_t spin = 0; prefix == BUSY && spin < CMSOverflowSpinCount; spin++) {
+    os::sleep(tid, sleep_time_millis, false);
+    if (_overflow_list == NULL) {
+      // Nothing left to take
+      return false;
+    } else if (_overflow_list != BUSY) {
+      // Try and grab the prefix
+      prefix = (oop)Atomic::xchg_ptr(BUSY, &_overflow_list);
+    }
   }
+  // If the list was found to be empty, or we spun long
+  // enough, we give up and return empty-handed. If we leave
+  // the list in the BUSY state below, it must be the case that
+  // some other thread holds the overflow list and will set it
+  // to a non-BUSY state in the future.
+  if (prefix == NULL || prefix == BUSY) {
+     // Nothing to take or waited long enough
+     if (prefix == NULL) {
+       // Write back the NULL in case we overwrote it with BUSY above
+       // and it is still the same value.
+       (void) Atomic::cmpxchg_ptr(NULL, &_overflow_list, BUSY);
+     }
+     return false;
+  }
+  assert(prefix != NULL && prefix != BUSY, "Error");
   size_t i = num;
   oop cur = prefix;
+  // Walk down the first "num" objects, unless we reach the end.
   for (; i > 1 && cur->mark() != NULL; cur = oop(cur->mark()), i--);
-  if (cur->mark() != NULL) {
+  if (cur->mark() == NULL) {
+    // We have "num" or fewer elements in the list, so there
+    // is nothing to return to the global list.
+    // Write back the NULL in lieu of the BUSY we wrote
+    // above, if it is still the same value.
+    if (_overflow_list == BUSY) {
+      (void) Atomic::cmpxchg_ptr(NULL, &_overflow_list, BUSY);
+    }
+  } else {
+    // Chop off the suffix and rerturn it to the global list.
+    assert(cur->mark() != BUSY, "Error");
     oop suffix_head = cur->mark(); // suffix will be put back on global list
     cur->set_mark(NULL);           // break off suffix
-    // Find tail of suffix so we can prepend suffix to global list
-    for (cur = suffix_head; cur->mark() != NULL; cur = (oop)(cur->mark()));
-    oop suffix_tail = cur;
-    assert(suffix_tail != NULL && suffix_tail->mark() == NULL,
-           "Tautology");
+    // It's possible that the list is still in the empty(busy) state
+    // we left it in a short while ago; in that case we may be
+    // able to place back the suffix without incurring the cost
+    // of a walk down the list.
     oop observed_overflow_list = _overflow_list;
-    do {
-      cur = observed_overflow_list;
-      suffix_tail->set_mark(markOop(cur));
+    oop cur_overflow_list = observed_overflow_list;
+    bool attached = false;
+    while (observed_overflow_list == BUSY || observed_overflow_list == NULL) {
       observed_overflow_list =
-        (oop) Atomic::cmpxchg_ptr(suffix_head, &_overflow_list, cur);
-    } while (cur != observed_overflow_list);
+        (oop) Atomic::cmpxchg_ptr(suffix_head, &_overflow_list, cur_overflow_list);
+      if (cur_overflow_list == observed_overflow_list) {
+        attached = true;
+        break;
+      } else cur_overflow_list = observed_overflow_list;
+    }
+    if (!attached) {
+      // Too bad, someone else sneaked in (at least) an element; we'll need
+      // to do a splice. Find tail of suffix so we can prepend suffix to global
+      // list.
+      for (cur = suffix_head; cur->mark() != NULL; cur = (oop)(cur->mark()));
+      oop suffix_tail = cur;
+      assert(suffix_tail != NULL && suffix_tail->mark() == NULL,
+             "Tautology");
+      observed_overflow_list = _overflow_list;
+      do {
+        cur_overflow_list = observed_overflow_list;
+        if (cur_overflow_list != BUSY) {
+          // Do the splice ...
+          suffix_tail->set_mark(markOop(cur_overflow_list));
+        } else { // cur_overflow_list == BUSY
+          suffix_tail->set_mark(NULL);
+        }
+        // ... and try to place spliced list back on overflow_list ...
+        observed_overflow_list =
+          (oop) Atomic::cmpxchg_ptr(suffix_head, &_overflow_list, cur_overflow_list);
+      } while (cur_overflow_list != observed_overflow_list);
+      // ... until we have succeeded in doing so.
+    }
   }
 
   // Push the prefix elements on work_q
   assert(prefix != NULL, "control point invariant");
   const markOop proto = markOopDesc::prototype();
   oop next;
-  NOT_PRODUCT(size_t n = 0;)
+  NOT_PRODUCT(ssize_t n = 0;)
   for (cur = prefix; cur != NULL; cur = next) {
     next = oop(cur->mark());
     cur->set_mark(proto);   // until proven otherwise
@@ -8573,11 +8683,16 @@ void CMSCollector::par_push_on_overflow_list(oop p) {
   oop cur_overflow_list;
   do {
     cur_overflow_list = observed_overflow_list;
-    p->set_mark(markOop(cur_overflow_list));
+    if (cur_overflow_list != BUSY) {
+      p->set_mark(markOop(cur_overflow_list));
+    } else {
+      p->set_mark(NULL);
+    }
     observed_overflow_list =
       (oop) Atomic::cmpxchg_ptr(p, &_overflow_list, cur_overflow_list);
   } while (cur_overflow_list != observed_overflow_list);
 }
+#undef BUSY
 
 // Single threaded
 // General Note on GrowableArray: pushes may silently fail
@@ -8586,7 +8701,7 @@ void CMSCollector::par_push_on_overflow_list(oop p) {
 // a lot of code in the JVM. The prudent thing for GrowableArray
 // to do (for now) is to exit with an error. However, that may
 // be too draconian in some cases because the caller may be
-// able to recover without much harm. For suych cases, we
+// able to recover without much harm. For such cases, we
 // should probably introduce a "soft_push" method which returns
 // an indication of success or failure with the assumption that
 // the caller may be able to recover from a failure; code in
@@ -8594,8 +8709,6 @@ void CMSCollector::par_push_on_overflow_list(oop p) {
 // failures where possible, thus, incrementally hardening the VM
 // in such low resource situations.
 void CMSCollector::preserve_mark_work(oop p, markOop m) {
-  int PreserveMarkStackSize = 128;
-
   if (_preserved_oop_stack == NULL) {
     assert(_preserved_mark_stack == NULL,
            "bijection with preserved_oop_stack");

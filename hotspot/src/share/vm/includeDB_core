@@ -1311,6 +1311,7 @@ cppInterpreter_<arch>.cpp               bytecodeHistogram.hpp
 cppInterpreter_<arch>.cpp               debug.hpp
 cppInterpreter_<arch>.cpp               deoptimization.hpp
 cppInterpreter_<arch>.cpp               frame.inline.hpp
+cppInterpreter_<arch>.cpp               interfaceSupport.hpp
 cppInterpreter_<arch>.cpp               interpreterRuntime.hpp
 cppInterpreter_<arch>.cpp               interpreter.hpp
 cppInterpreter_<arch>.cpp               interpreterGenerator.hpp
@@ -2014,7 +2015,7 @@ instanceKlass.cpp                       verifier.hpp
 instanceKlass.cpp                       vmSymbols.hpp
 
 instanceKlass.hpp                       accessFlags.hpp
-instanceKlass.hpp                       bitMap.hpp
+instanceKlass.hpp                       bitMap.inline.hpp
 instanceKlass.hpp                       constMethodOop.hpp
 instanceKlass.hpp                       constantPoolOop.hpp
 instanceKlass.hpp                       handles.hpp
@@ -3771,6 +3772,7 @@ spaceDecorator.hpp                      space.hpp
 
 spaceDecorator.cpp                      copy.hpp
 spaceDecorator.cpp                      spaceDecorator.hpp
+spaceDecorator.cpp                      space.inline.hpp
 
 specialized_oop_closures.cpp            ostream.hpp
 specialized_oop_closures.cpp            specialized_oop_closures.hpp
