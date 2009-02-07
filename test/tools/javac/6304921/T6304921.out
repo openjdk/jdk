@@ -7,12 +7,7 @@ found   : java.util.ArrayList
 required: java.util.List<java.lang.Integer>
         List<Integer> list = new ArrayList();
                              ^
-T6304921.java:445/445/453: warning: [fallthrough] possible fall-through into case
-        default:
-        ^
-T6304921.java:522/613/614: warning: [finally] finally clause cannot complete normally
-        }
-        ^
+error: warnings found and -Werror specified
 T6304921.java:727/733/737: cannot find symbol
 symbol  : variable orr
 location: class java.lang.System
@@ -21,5 +16,5 @@ location: class java.lang.System
 T6304921.java:812/816/822: operator + cannot be applied to int,boolean
         return 123 + true; // bad binary expression
                    ^
-2 errors
-4 warnings
+3 errors
+2 warnings
