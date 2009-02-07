@@ -371,6 +371,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                         context.get(DiagnosticListener.class) != null;
         devVerbose    = options.get("dev") != null;
         processPcks   = options.get("process.packages") != null;
+        werror        = options.get("-Werror")        != null;
 
         verboseCompilePolicy = options.get("verboseCompilePolicy") != null;
 
@@ -434,6 +435,10 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     protected boolean processPcks;
 
+    /** Switch: treat warnings as errors
+     */
+    protected boolean werror;
+
     /** Switch: is annotation processing requested explitly via
      * CompilationTask.setProcessors?
      */
@@ -490,7 +495,11 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     public int errorCount() {
         if (delegateCompiler != null && delegateCompiler != this)
             return delegateCompiler.errorCount();
-        else
+        else {
+            if (werror && log.nerrors == 0 && log.nwarnings > 0) {
+                log.error("warnings.and.werror");
+            }
+        }
             return log.nerrors;
     }
 
