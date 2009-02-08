@@ -161,7 +161,7 @@ int constantPoolCacheKlass::oop_adjust_pointers(oop obj) {
 }
 
 bool constantPoolCacheKlass::oop_is_conc_safe(oop obj) const {
-  assert(obj->is_constantPoolCache(), "must be constMethod oop");
+  assert(obj->is_constantPoolCache(), "should be constant pool");
   return constantPoolCacheOop(obj)->is_conc_safe();
 }
 

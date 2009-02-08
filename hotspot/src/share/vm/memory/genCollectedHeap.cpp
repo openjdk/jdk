@@ -610,6 +610,10 @@ void GenCollectedHeap::do_collection(bool  full,
     Universe::print_heap_after_gc();
   }
 
+#ifdef TRACESPINNING
+  ParallelTaskTerminator::print_termination_counts();
+#endif
+
   if (ExitAfterGCNum > 0 && total_collections() == ExitAfterGCNum) {
     tty->print_cr("Stopping after GC #%d", ExitAfterGCNum);
     vm_exit(-1);

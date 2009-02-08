@@ -426,11 +426,19 @@ public:
 // A class to aid in the termination of a set of parallel tasks using
 // TaskQueueSet's for work stealing.
 
+#undef TRACESPINNING
+
 class ParallelTaskTerminator: public StackObj {
 private:
   int _n_threads;
   TaskQueueSetSuper* _queue_set;
   int _offered_termination;
+
+#ifdef TRACESPINNING
+  static uint _total_yields;
+  static uint _total_spins;
+  static uint _total_peeks;
+#endif
 
   bool peek_in_queue_set();
 protected:
@@ -462,6 +470,12 @@ public:
   // the terminator is finished.
   void reset_for_reuse();
 
+#ifdef TRACESPINNING
+  static uint total_yields() { return _total_yields; }
+  static uint total_spins() { return _total_spins; }
+  static uint total_peeks() { return _total_peeks; }
+  static void print_termination_counts();
+#endif
 };
 
 #define SIMPLE_STACK 0
