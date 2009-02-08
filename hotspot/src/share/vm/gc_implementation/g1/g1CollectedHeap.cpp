@@ -949,6 +949,10 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     GCOverheadReporter::recordSTWEnd(end);
     g1_policy()->record_full_collection_end();
 
+#ifdef TRACESPINNING
+    ParallelTaskTerminator::print_termination_counts();
+#endif
+
     gc_epilogue(true);
 
     // Abandon concurrent refinement.  This must happen last: in the
@@ -2647,8 +2651,13 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
       }
     }
 
-    if (mark_in_progress())
+    if (mark_in_progress()) {
       concurrent_mark()->update_g1_committed();
+    }
+
+#ifdef TRACESPINNING
+    ParallelTaskTerminator::print_termination_counts();
+#endif
 
     gc_epilogue(false);
   }

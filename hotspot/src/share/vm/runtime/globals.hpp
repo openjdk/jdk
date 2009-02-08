@@ -1655,6 +1655,13 @@ class CommandLineFlags {
   develop(uintx, WorkStealingYieldsBeforeSleep, 1000,                       \
           "Number of yields before a sleep is done during workstealing")    \
                                                                             \
+  develop(uintx, WorkStealingHardSpins, 4096,                               \
+          "Number of iterations in a spin loop between checks on "          \
+          "time out of hard spin")                                          \
+                                                                            \
+  develop(uintx, WorkStealingSpinToYieldRatio, 10,                          \
+          "Ratio of hard spins to calls to yield")                          \
+                                                                            \
   product(uintx, PreserveMarkStackSize, 1024,                               \
            "Size for stack used in promotion failure handling")             \
                                                                             \
