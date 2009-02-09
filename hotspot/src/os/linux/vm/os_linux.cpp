@@ -1432,6 +1432,10 @@ char * os::local_time_string(char *buf, size_t buflen) {
   return buf;
 }
 
+struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
+  return localtime_r(clock, res);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // runtime exit support
 

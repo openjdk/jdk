@@ -323,6 +323,10 @@ size_t os::current_stack_size() {
   return (size_t)(base - bottom);
 }
 
+struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
+  return localtime_r(clock, res);
+}
+
 // interruptible infrastructure
 
 // setup_interruptible saves the thread state before going into an
