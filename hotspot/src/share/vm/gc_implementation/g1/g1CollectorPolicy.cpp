@@ -280,7 +280,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
   if (G1UseSurvivorSpace) {
     // if G1FixedSurvivorSpaceSize is 0 which means the size is not
     // fixed, then _max_survivor_regions will be calculated at
-    // calculate_young_list_target_config diring initialization
+    // calculate_young_list_target_config during initialization
     _max_survivor_regions = G1FixedSurvivorSpaceSize / HeapRegion::GrainBytes;
   } else {
     _max_survivor_regions = 0;
@@ -297,6 +297,9 @@ static void inc_mod(int& i, int len) {
 void G1CollectorPolicy::initialize_flags() {
   set_min_alignment(HeapRegion::GrainBytes);
   set_max_alignment(GenRemSet::max_alignment_constraint(rem_set_name()));
+  if (SurvivorRatio < 1) {
+    vm_exit_during_initialization("Invalid survivor ratio specified");
+  }
   CollectorPolicy::initialize_flags();
 }
 
@@ -2770,7 +2773,7 @@ void G1CollectorPolicy::calculate_survivors_policy()
   if (G1FixedSurvivorSpaceSize == 0) {
     _max_survivor_regions = _young_list_target_length / SurvivorRatio;
   } else {
-    _max_survivor_regions = G1FixedSurvivorSpaceSize;
+    _max_survivor_regions = G1FixedSurvivorSpaceSize / HeapRegion::GrainBytes;
   }
 
   if (G1FixedTenuringThreshold) {
