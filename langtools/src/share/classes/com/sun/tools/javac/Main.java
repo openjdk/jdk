@@ -56,7 +56,7 @@ public class Main {
       if (args.length > 0 && args[0].equals("-Xjdb")) {
         String[] newargs = new String[args.length + 2];
         Class<?> c = Class.forName("com.sun.tools.example.debug.tty.TTY");
-        Method method = c.getDeclaredMethod ("main", new Class[] {args.getClass()});
+        Method method = c.getDeclaredMethod ("main", new Class<?>[] {args.getClass()});
         method.setAccessible(true);
         System.arraycopy(args, 1, newargs, 3, args.length - 1);
         newargs[0] = "-connect";

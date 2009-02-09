@@ -1114,7 +1114,7 @@ public class ZipFileIndex {
                 writtenSoFar += dirNameBytesLen;
 
                 // Write the number of files in the dir
-                List dirEntries = dirEntry.getEntriesAsCollection();
+                List<Entry> dirEntries = dirEntry.getEntriesAsCollection();
                 raf.writeInt(dirEntries.size());
                 writtenSoFar += 4;
 

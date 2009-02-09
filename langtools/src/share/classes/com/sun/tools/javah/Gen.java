@@ -326,7 +326,7 @@ public abstract class Gen {
                 throws ClassNotFoundException {
         Vector<FieldDoc> fields = new Vector<FieldDoc>();
         ClassDoc cd = null;
-        Stack s = new Stack();
+        Stack<Object> s = new Stack<Object>();
 
         cd = subclazz;
         while (true) {

@@ -116,7 +116,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
          */
         public void invokeMethod(
                 String methodName,
-                Class[] paramClasses,
+                Class<?>[] paramClasses,
                 Object[] params)
                 throws Exception {
                 if (DEBUG) {
@@ -135,7 +135,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
          * @param classDoc the {@link ClassDoc} we want to check.
          * @return a list of methods that will be documented.
          */
-        public List members(ClassDoc classDoc) {
+        public List<ProgramElementDoc> members(ClassDoc classDoc) {
                 return visibleMemberMap.getMembersFor(classDoc);
         }
 
@@ -158,7 +158,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
         /**
          * Build the method documentation.
          */
-        public void buildMethodDoc(List elements) {
+        public void buildMethodDoc(List<?> elements) {
                 if (writer == null) {
                         return;
                 }

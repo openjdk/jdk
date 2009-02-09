@@ -137,9 +137,9 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
      * @param classlist Sorted list of classes.
      * @param wantFrames True if we want frames.
      */
-    protected void generateContents(List classlist, boolean wantFrames) {
+    protected void generateContents(List<Doc> classlist, boolean wantFrames) {
         for (int i = 0; i < classlist.size(); i++) {
-            ClassDoc cd = (ClassDoc)(classlist.get(i));
+            ClassDoc cd = (ClassDoc)classlist.get(i);
             if (!Util.isCoreClass(cd)) {
                 continue;
             }
@@ -160,7 +160,7 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
      */
     protected void printAllClassesTableHeader() {
         fontSizeStyle("+1", "FrameHeadingFont");
-        boldText("doclet.All_Classes");
+        strongText("doclet.All_Classes");
         fontEnd();
         br();
         table();

@@ -74,7 +74,7 @@ public class TypeSignature{
 
         String signature = null; //Java type signature.
         String typeSignature = null; //Internal type signature.
-        Vector params = new Vector(); //List of parameters.
+        Vector<Object> params = new Vector<Object>(); //List of parameters.
         String paramsig = null; //Java parameter signature.
         String paramJVMSig = null; //Internal parameter signature.
         String returnSig = null; //Java return type signature.

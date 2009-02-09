@@ -83,11 +83,11 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param where Position of the link in the file. Character '#' is not
      * needed.
      * @param label Tag for the link.
-     * @param bold  Boolean that sets label to bold.
+     * @param strong  Boolean that sets label to strong.
      */
     public void printHyperLink(String link, String where,
-                               String label, boolean bold) {
-        print(getHyperLink(link, where, label, bold, "", "", ""));
+                               String label, boolean strong) {
+        print(getHyperLink(link, where, label, strong, "", "", ""));
     }
 
     /**
@@ -109,13 +109,13 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param where      Position of the link in the file. Character '#' is not
      * needed.
      * @param label      Tag for the link.
-     * @param bold       Boolean that sets label to bold.
+     * @param strong       Boolean that sets label to strong.
      * @param stylename  String style of text defined in style sheet.
      */
     public void printHyperLink(String link, String where,
-                               String label, boolean bold,
+                               String label, boolean strong,
                                String stylename) {
-        print(getHyperLink(link, where, label, bold, stylename, "", ""));
+        print(getHyperLink(link, where, label, strong, stylename, "", ""));
     }
 
     /**
@@ -125,12 +125,12 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param where      Position of the link in the file. Character '#' is not
      * needed.
      * @param label      Tag for the link.
-     * @param bold       Boolean that sets label to bold.
+     * @param strong       Boolean that sets label to strong.
      * @return String    Hyper Link.
      */
     public String getHyperLink(String link, String where,
-                               String label, boolean bold) {
-        return getHyperLink(link, where, label, bold, "", "", "");
+                               String label, boolean strong) {
+        return getHyperLink(link, where, label, strong, "", "", "");
     }
 
     /**
@@ -140,14 +140,14 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param where      Position of the link in the file. Character '#' is not
      *                   needed.
      * @param label      Tag for the link.
-     * @param bold       Boolean that sets label to bold.
+     * @param strong       Boolean that sets label to strong.
      * @param stylename  String style of text defined in style sheet.
      * @return String    Hyper Link.
      */
     public String getHyperLink(String link, String where,
-                               String label, boolean bold,
+                               String label, boolean strong,
                                String stylename) {
-        return getHyperLink(link, where, label, bold, stylename, "", "");
+        return getHyperLink(link, where, label, strong, stylename, "", "");
     }
 
     /**
@@ -157,14 +157,14 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param where      Position of the link in the file. Character '#' is not
      *                   needed.
      * @param label      Tag for the link.
-     * @param bold       Boolean that sets label to bold.
+     * @param strong       Boolean that sets label to strong.
      * @param stylename  String style of text defined in style sheet.
      * @param title      String that describes the link's content for accessibility.
      * @param target     Target frame.
      * @return String    Hyper Link.
      */
     public String getHyperLink(String link, String where,
-                               String label, boolean bold,
+                               String label, boolean strong,
                                String stylename, String title, String target) {
         StringBuffer retlink = new StringBuffer();
         retlink.append("<A HREF=\"");
@@ -186,12 +186,12 @@ public abstract class HtmlDocWriter extends HtmlWriter {
             retlink.append(stylename);
             retlink.append("\">");
         }
-        if (bold) {
-            retlink.append("<B>");
+        if (strong) {
+            retlink.append("<STRONG>");
         }
         retlink.append(label);
-        if (bold) {
-            retlink.append("</B>");
+        if (strong) {
+            retlink.append("</STRONG>");
         }
         if (stylename != null && stylename.length() != 0) {
             retlink.append("</FONT>");

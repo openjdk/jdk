@@ -120,7 +120,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
          */
         public void invokeMethod(
                 String methodName,
-                Class[] paramClasses,
+                Class<?>[] paramClasses,
                 Object[] params)
                 throws Exception {
                 if (DEBUG) {
@@ -139,7 +139,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
          * @param classDoc the {@link ClassDoc} we want to check.
          * @return a list of enum constants that will be documented.
          */
-        public List members(ClassDoc classDoc) {
+        public List<ProgramElementDoc> members(ClassDoc classDoc) {
                 return visibleMemberMap.getMembersFor(classDoc);
         }
 
@@ -165,7 +165,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
          * @param elements the XML elements that specify how to construct this
          *                documentation.
          */
-        public void buildEnumConstant(List elements) {
+        public void buildEnumConstant(List<?> elements) {
                 if (writer == null) {
                         return;
                 }

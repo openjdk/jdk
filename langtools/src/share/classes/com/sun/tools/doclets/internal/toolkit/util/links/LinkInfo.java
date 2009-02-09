@@ -69,9 +69,9 @@ public abstract class LinkInfo {
     public String label;
 
     /**
-     * True if the link should be bolded.
+     * True if the link should be strong.
      */
-    public boolean isBold = false;
+    public boolean isStrong = false;
 
     /**
      * True if we should include the type in the link label.  False otherwise.

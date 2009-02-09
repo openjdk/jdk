@@ -50,14 +50,14 @@ public class TestMemberSummary extends JavadocTester {
         {BUG_ID + FS + "pkg" + FS + "PublicChild.html",
             "<CODE>&nbsp;<A HREF=\"../pkg/PublicChild.html\" " +
             "title=\"class in pkg\">PublicChild</A></CODE></FONT></TD>" + NL +
-            "<TD><CODE><B><A HREF=\"../pkg/PublicChild.html#" +
-            "returnTypeTest()\">returnTypeTest</A></B>()</CODE>"
+            "<TD><CODE><STRONG><A HREF=\"../pkg/PublicChild.html#" +
+            "returnTypeTest()\">returnTypeTest</A></STRONG>()</CODE>"
         },
         // Check return type in member detail.
         {BUG_ID + FS + "pkg" + FS + "PublicChild.html",
             "public <A HREF=\"../pkg/PublicChild.html\" " +
             "title=\"class in pkg\">PublicChild</A> " +
-            "<B>returnTypeTest</B>()"
+            "<STRONG>returnTypeTest</STRONG>()"
         },
 
          // Legacy anchor dimensions (6290760)

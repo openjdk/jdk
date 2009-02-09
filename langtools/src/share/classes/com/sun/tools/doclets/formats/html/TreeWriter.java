@@ -119,7 +119,7 @@ public class TreeWriter extends AbstractTreeWriter {
         if (!classesonly) {
             dl();
             dt();
-            boldText("doclet.Package_Hierarchies");
+            strongText("doclet.Package_Hierarchies");
             dd();
             for (int i = 0; i < packages.length; i++) {
                 if (packages[i].name().length() == 0) {

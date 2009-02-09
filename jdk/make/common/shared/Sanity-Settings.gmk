@@ -98,7 +98,7 @@ endif
 ifeq ($(PLATFORM),windows)
   ALL_SETTINGS+=$(call addAltSetting,MSVCRT_DLL_PATH)
   ifeq ($(ARCH_DATA_MODEL), 32)
-    ALL_SETTINGS+=$(call addAltSetting,MSVCR71_DLL_PATH)
+    ALL_SETTINGS+=$(call addAltSetting,MSVCRNN_DLL_PATH)
   endif
   ALL_SETTINGS+=$(call addAltSetting,MSDEVTOOLS_PATH)
 endif

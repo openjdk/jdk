@@ -86,6 +86,7 @@ public class TreeScanner extends Visitor {
         scan(tree.typarams);
         scan(tree.params);
         scan(tree.thrown);
+        scan(tree.defaultValue);
         scan(tree.body);
     }
 
