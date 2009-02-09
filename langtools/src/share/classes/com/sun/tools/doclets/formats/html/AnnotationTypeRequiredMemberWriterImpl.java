@@ -131,7 +131,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
         if (configuration().linksource) {
             writer.printSrcLink(member, member.name());
         } else {
-            bold(member.name());
+            strong(member.name());
         }
         writer.preEnd();
         writer.dl();
@@ -183,7 +183,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void printSummaryLabel(ClassDoc cd) {
-        writer.boldText("doclet.Annotation_Type_Required_Member_Summary");
+        writer.strongText("doclet.Annotation_Type_Required_Member_Summary");
     }
 
     /**
@@ -210,9 +210,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     protected void writeSummaryLink(int context, ClassDoc cd, ProgramElementDoc member) {
-        writer.bold();
+        writer.strong();
         writer.printDocLink(context, (MemberDoc) member, member.name(), false);
-        writer.boldEnd();
+        writer.strongEnd();
     }
 
     /**

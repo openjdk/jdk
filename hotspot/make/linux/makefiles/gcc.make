@@ -131,6 +131,14 @@ endif
 # Enable linker optimization
 LFLAGS += -Xlinker -O1
 
+# If this is a --hash-style=gnu system, use --hash-style=both
+#   The gnu .hash section won't work on some Linux systems like SuSE 10.
+_HAS_HASH_STYLE_GNU:=$(shell $(CC) -dumpspecs | grep -- '--hash-style=gnu')
+ifneq ($(_HAS_HASH_STYLE_GNU),)
+  LDFLAGS_HASH_STYLE = -Wl,--hash-style=both
+endif
+LFLAGS += $(LDFLAGS_HASH_STYLE)
+
 # Use $(MAPFLAG:FILENAME=real_file_name) to specify a map file.
 MAPFLAG = -Xlinker --version-script=FILENAME
 

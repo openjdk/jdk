@@ -43,23 +43,24 @@ public class TestPackagePage extends JavadocTester {
         },
         //With just one package, all general pages link to the single package page.
         {BUG_ID + "-1" + FS + "com" + FS + "pkg" + FS + "C.html",
-            "<A HREF=\"../../com/pkg/package-summary.html\">" +            "<FONT CLASS=\"NavBarFont1\"><B>Package</B></FONT></A>"
+            "<A HREF=\"../../com/pkg/package-summary.html\">" +
+            "<FONT CLASS=\"NavBarFont1\"><STRONG>Package</STRONG></FONT></A>"
         },
         {BUG_ID + "-1" + FS + "com" + FS + "pkg" + FS + "package-tree.html",
             "<A HREF=\"../../com/pkg/package-summary.html\">" +
-            "<FONT CLASS=\"NavBarFont1\"><B>Package</B></FONT></A>"
+            "<FONT CLASS=\"NavBarFont1\"><STRONG>Package</STRONG></FONT></A>"
         },
         {BUG_ID + "-1" + FS + "deprecated-list.html",
             "<A HREF=\"com/pkg/package-summary.html\">" +
-            "<FONT CLASS=\"NavBarFont1\"><B>Package</B></FONT></A>"
+            "<FONT CLASS=\"NavBarFont1\"><STRONG>Package</STRONG></FONT></A>"
         },
         {BUG_ID + "-1" + FS + "index-all.html",
             "<A HREF=\"./com/pkg/package-summary.html\">" +
-            "<FONT CLASS=\"NavBarFont1\"><B>Package</B></FONT></A>"
+            "<FONT CLASS=\"NavBarFont1\"><STRONG>Package</STRONG></FONT></A>"
         },
         {BUG_ID + "-1" + FS + "help-doc.html",
             "<A HREF=\"com/pkg/package-summary.html\">" +
-            "<FONT CLASS=\"NavBarFont1\"><B>Package</B></FONT></A>"
+            "<FONT CLASS=\"NavBarFont1\"><STRONG>Package</STRONG></FONT></A>"
         },
     };
 

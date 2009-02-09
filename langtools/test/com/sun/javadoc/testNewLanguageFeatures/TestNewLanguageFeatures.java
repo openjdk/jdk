@@ -54,14 +54,14 @@ public class TestNewLanguageFeatures extends JavadocTester {
             {BUG_ID + FS + "pkg" + FS + "Coin.html", "Enum Coin</H2>"},
             //Make sure enum signature is correct.
             {BUG_ID + FS + "pkg" + FS + "Coin.html", "public enum "+
-                "<B>Coin</B><DT>extends java.lang.Enum&lt;" +
+                "<STRONG>Coin</STRONG><DT>extends java.lang.Enum&lt;" +
                 "<A HREF=\"../pkg/Coin.html\" title=\"enum in pkg\">Coin</A>&gt;"
             },
             //Check for enum constant section
-            {BUG_ID + FS + "pkg" + FS + "Coin.html", "<B>Enum Constant Summary</B>"},
+            {BUG_ID + FS + "pkg" + FS + "Coin.html", "<STRONG>Enum Constant Summary</STRONG>"},
             //Detail for enum constant
             {BUG_ID + FS + "pkg" + FS + "Coin.html",
-                "<B><A HREF=\"../pkg/Coin.html#Dime\">Dime</A></B>"},
+                "<STRONG><A HREF=\"../pkg/Coin.html#Dime\">Dime</A></STRONG>"},
             //Automatically insert documentation for values() and valueOf().
             {BUG_ID + FS + "pkg" + FS + "Coin.html",
                 "Returns an array containing the constants of this enum type,"},
@@ -79,11 +79,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "Class TypeParameters&lt;E&gt;</H2>"},
             //Check class type parameters section.
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<DT><B>Type Parameters:</B><DD><CODE>E</CODE> - " +
+                "<DT><STRONG>Type Parameters:</STRONG><DD><CODE>E</CODE> - " +
                 "the type parameter for this class."},
             //Type parameters in @see/@link
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<DT><B>See Also:</B><DD><A HREF=\"../pkg/TypeParameters.html\" " +
+                "<DT><STRONG>See Also:</STRONG><DD><A HREF=\"../pkg/TypeParameters.html\" " +
                     "title=\"class in pkg\"><CODE>TypeParameters</CODE></A></DL>"},
             //Method that uses class type parameter.
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
@@ -91,13 +91,13 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     "parameter in TypeParameters\">E</A>&nbsp;param)"},
             //Method type parameter section.
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<B>Type Parameters:</B><DD><CODE>T</CODE> - This is the first " +
+                "<STRONG>Type Parameters:</STRONG><DD><CODE>T</CODE> - This is the first " +
                     "type parameter.<DD><CODE>V</CODE> - This is the second type " +
                     "parameter."},
             //Signature of method with type parameters
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
                 "public &lt;T extends java.util.List,V&gt; " +
-                    "java.lang.String[] <B>methodThatHasTypeParameters</B>"},
+                    "java.lang.String[] <STRONG>methodThatHasTypeParameters</STRONG>"},
             //Wildcard testing.
             {BUG_ID + FS + "pkg" + FS + "Wildcards.html",
                 "<A HREF=\"../pkg/TypeParameters.html\" title=\"class in pkg\">" +
@@ -116,18 +116,18 @@ public class TestNewLanguageFeatures extends JavadocTester {
 
             //Signature of subclass that has type parameters.
             {BUG_ID + FS + "pkg" + FS + "TypeParameterSubClass.html",
-                "public class <B>TypeParameterSubClass&lt;T extends java.lang.String&gt;" +
-                "</B><DT>extends <A HREF=\"../pkg/TypeParameterSuperClass.html\" " +
+                "public class <STRONG>TypeParameterSubClass&lt;T extends java.lang.String&gt;" +
+                "</STRONG><DT>extends <A HREF=\"../pkg/TypeParameterSuperClass.html\" " +
                 "title=\"class in pkg\">TypeParameterSuperClass</A>&lt;T&gt;"},
 
             //Interface generic parameter substitution
             //Signature of subclass that has type parameters.
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<B>All Implemented Interfaces:</B> <DD><A HREF=\"../pkg/SubInterface.html\" title=\"interface in pkg\">SubInterface</A>&lt;E&gt;, <A HREF=\"../pkg/SuperInterface.html\" title=\"interface in pkg\">SuperInterface</A>&lt;E&gt;</DD>"},
+                "<STRONG>All Implemented Interfaces:</STRONG> <DD><A HREF=\"../pkg/SubInterface.html\" title=\"interface in pkg\">SubInterface</A>&lt;E&gt;, <A HREF=\"../pkg/SuperInterface.html\" title=\"interface in pkg\">SuperInterface</A>&lt;E&gt;</DD>"},
             {BUG_ID + FS + "pkg" + FS + "SuperInterface.html",
-                "<B>All Known Subinterfaces:</B> <DD><A HREF=\"../pkg/SubInterface.html\" title=\"interface in pkg\">SubInterface</A>&lt;V&gt;</DD>"},
+                "<STRONG>All Known Subinterfaces:</STRONG> <DD><A HREF=\"../pkg/SubInterface.html\" title=\"interface in pkg\">SubInterface</A>&lt;V&gt;</DD>"},
             {BUG_ID + FS + "pkg" + FS + "SubInterface.html",
-                "<B>All Superinterfaces:</B> <DD><A HREF=\"../pkg/SuperInterface.html\" title=\"interface in pkg\">SuperInterface</A>&lt;V&gt;</DD>"},
+                "<STRONG>All Superinterfaces:</STRONG> <DD><A HREF=\"../pkg/SuperInterface.html\" title=\"interface in pkg\">SuperInterface</A>&lt;V&gt;</DD>"},
 
             //=================================
             // VAR ARG TESTING
@@ -155,18 +155,18 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "Annotation Type AnnotationType</H2>"},
             //Make sure the signature is correct.
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "public @interface <B>AnnotationType</B>"},
+                "public @interface <STRONG>AnnotationType</STRONG>"},
             //Make sure member summary headings are correct.
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "<B>Required Element Summary</B>"},
+                "<STRONG>Required Element Summary</STRONG>"},
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "<B>Optional Element Summary</B>"},
+                "<STRONG>Optional Element Summary</STRONG>"},
             //Make sure element detail heading is correct
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
                 "Element Detail"},
             //Make sure default annotation type value is printed when necessary.
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "<B>Default:</B><DD>\"unknown\"</DD>"},
+                "<STRONG>Default:</STRONG><DD>\"unknown\"</DD>"},
 
             //=================================
             // ANNOTATION TYPE USAGE TESTING
@@ -182,40 +182,40 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<FONT SIZE=\"-1\">" +
                 "<A HREF=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</A>(<A HREF=\"../pkg/AnnotationType.html#optional()\">optional</A>=\"Class Annotation\","+NL +
                 "                <A HREF=\"../pkg/AnnotationType.html#required()\">required</A>=1994)"+NL +
-                "</FONT>public class <B>AnnotationTypeUsage</B><DT>extends java.lang.Object</DL>"},
+                "</FONT>public class <STRONG>AnnotationTypeUsage</STRONG><DT>extends java.lang.Object</DL>"},
 
             //FIELD
             {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
                 "<FONT SIZE=\"-1\">" +
                 "<A HREF=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</A>(<A HREF=\"../pkg/AnnotationType.html#optional()\">optional</A>=\"Field Annotation\","+NL +
                 "                <A HREF=\"../pkg/AnnotationType.html#required()\">required</A>=1994)"+NL +
-                "</FONT>public int <B>field</B>"},
+                "</FONT>public int <STRONG>field</STRONG>"},
 
             //CONSTRUCTOR
             {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
                 "<FONT SIZE=\"-1\">" +
                 "<A HREF=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</A>(<A HREF=\"../pkg/AnnotationType.html#optional()\">optional</A>=\"Constructor Annotation\","+NL +
                 "                <A HREF=\"../pkg/AnnotationType.html#required()\">required</A>=1994)"+NL +
-                "</FONT>public <B>AnnotationTypeUsage</B>()"},
+                "</FONT>public <STRONG>AnnotationTypeUsage</STRONG>()"},
 
             //METHOD
             {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
                 "<FONT SIZE=\"-1\">" +
                 "<A HREF=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</A>(<A HREF=\"../pkg/AnnotationType.html#optional()\">optional</A>=\"Method Annotation\","+NL +
                 "                <A HREF=\"../pkg/AnnotationType.html#required()\">required</A>=1994)"+NL +
-                "</FONT>public void <B>method</B>()"},
+                "</FONT>public void <STRONG>method</STRONG>()"},
 
             //METHOD PARAMS
             {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
                 "<PRE>" + NL +
-                "public void <B>methodWithParams</B>(<FONT SIZE=\"-1\"><A HREF=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</A>(<A HREF=\"../pkg/AnnotationType.html#optional()\">optional</A>=\"Parameter Annotation\",<A HREF=\"../pkg/AnnotationType.html#required()\">required</A>=1994)</FONT>" + NL +
+                "public void <STRONG>methodWithParams</STRONG>(<FONT SIZE=\"-1\"><A HREF=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</A>(<A HREF=\"../pkg/AnnotationType.html#optional()\">optional</A>=\"Parameter Annotation\",<A HREF=\"../pkg/AnnotationType.html#required()\">required</A>=1994)</FONT>" + NL +
                 "                             int&nbsp;documented," + NL +
                 "                             int&nbsp;undocmented)</PRE>"},
 
             //CONSTRUCTOR PARAMS
             {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
                 "<PRE>" + NL +
-                                "public <B>AnnotationTypeUsage</B>(<FONT SIZE=\"-1\"><A HREF=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</A>(<A HREF=\"../pkg/AnnotationType.html#optional()\">optional</A>=\"Constructor Param Annotation\",<A HREF=\"../pkg/AnnotationType.html#required()\">required</A>=1994)</FONT>" + NL +
+                                "public <STRONG>AnnotationTypeUsage</STRONG>(<FONT SIZE=\"-1\"><A HREF=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</A>(<A HREF=\"../pkg/AnnotationType.html#optional()\">optional</A>=\"Constructor Param Annotation\",<A HREF=\"../pkg/AnnotationType.html#required()\">required</A>=1994)</FONT>" + NL +
                                 "                           int&nbsp;documented," + NL +
                 "                           int&nbsp;undocmented)</PRE>"},
 
@@ -270,7 +270,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
             {BUG_ID + FS + "pkg1" + FS + "B.html",
                 "<PRE><FONT SIZE=\"-1\"><A HREF=\"../pkg1/A.html\" title=\"annotation in pkg1\">@A</A>"},
             {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "</FONT>public interface <B>B</B></DL>" + NL +
+                "</FONT>public interface <STRONG>B</STRONG></DL>" + NL +
                     "</PRE>"},
 
 
@@ -278,7 +278,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
             // Handle multiple bounds.
             //==============================================================
             {BUG_ID + FS + "pkg" + FS + "MultiTypeParameters.html",
-                "public &lt;T extends java.lang.Number & java.lang.Runnable&gt; T <B>foo</B>(T&nbsp;t)"},
+                "public &lt;T extends java.lang.Number & java.lang.Runnable&gt; T <STRONG>foo</STRONG>(T&nbsp;t)"},
 
             //==============================================================
             // Test Class-Use Documenation for Type Parameters.
@@ -289,13 +289,13 @@ public class TestNewLanguageFeatures extends JavadocTester {
                  "<TH ALIGN=\"left\" COLSPAN=\"2\">Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo</A></FONT></TH>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
-                "<TD><CODE><B><A HREF=\"../../pkg2/ClassUseTest1.html\" title=\"class in pkg2\">ClassUseTest1&lt;T extends Foo & Foo2&gt;</A></B></CODE>"
+                "<TD><CODE><STRONG><A HREF=\"../../pkg2/ClassUseTest1.html\" title=\"class in pkg2\">ClassUseTest1&lt;T extends Foo & Foo2&gt;</A></STRONG></CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
                 "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo</A></FONT></TH>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
-                "<TD><CODE><B>ClassUseTest1.</B><B><A HREF=\"../../pkg2/ClassUseTest1.html#method(T)\">method</A></B>(T&nbsp;t)</CODE>"
+                "<TD><CODE><STRONG>ClassUseTest1.</STRONG><STRONG><A HREF=\"../../pkg2/ClassUseTest1.html#method(T)\">method</A></STRONG>(T&nbsp;t)</CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
                 "<TH ALIGN=\"left\" COLSPAN=\"2\">Fields in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo</A></FONT></TH>"
@@ -315,13 +315,13 @@ public class TestNewLanguageFeatures extends JavadocTester {
             "<TH ALIGN=\"left\" COLSPAN=\"2\">Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">Foo2</A></FONT></TH>"
            },
            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo2.html",
-            "<TD><CODE><B><A HREF=\"../../pkg2/ClassUseTest1.html\" title=\"class in pkg2\">ClassUseTest1&lt;T extends Foo & Foo2&gt;</A></B></CODE>"
+            "<TD><CODE><STRONG><A HREF=\"../../pkg2/ClassUseTest1.html\" title=\"class in pkg2\">ClassUseTest1&lt;T extends Foo & Foo2&gt;</A></STRONG></CODE>"
            },
            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo2.html",
                "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">Foo2</A></FONT></TH>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo2.html",
-               "<TD><CODE><B>ClassUseTest1.</B><B><A HREF=\"../../pkg2/ClassUseTest1.html#method(T)\">method</A></B>(T&nbsp;t)</CODE>"
+               "<TD><CODE><STRONG>ClassUseTest1.</STRONG><STRONG><A HREF=\"../../pkg2/ClassUseTest1.html#method(T)\">method</A></STRONG>(T&nbsp;t)</CODE>"
             },
 
             //ClassUseTest2: <T extends ParamTest<Foo3>>
@@ -329,13 +329,13 @@ public class TestNewLanguageFeatures extends JavadocTester {
               "<TH ALIGN=\"left\" COLSPAN=\"2\">Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</A></FONT></TH>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-              "<TD><CODE><B><A HREF=\"../../pkg2/ClassUseTest2.html\" title=\"class in pkg2\">ClassUseTest2&lt;T extends ParamTest&lt;<A HREF=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3</A>&gt;&gt;</A></B></CODE>"
+              "<TD><CODE><STRONG><A HREF=\"../../pkg2/ClassUseTest2.html\" title=\"class in pkg2\">ClassUseTest2&lt;T extends ParamTest&lt;<A HREF=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3</A>&gt;&gt;</A></STRONG></CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
               "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</A></FONT></TH>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-              "<TD><CODE><B>ClassUseTest2.</B><B><A HREF=\"../../pkg2/ClassUseTest2.html#method(T)\">method</A></B>(T&nbsp;t)</CODE>"
+              "<TD><CODE><STRONG>ClassUseTest2.</STRONG><STRONG><A HREF=\"../../pkg2/ClassUseTest2.html#method(T)\">method</A></STRONG>(T&nbsp;t)</CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
               "<TH ALIGN=\"left\" COLSPAN=\"2\">Fields in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> declared as <A HREF=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</A></FONT></TH>"
@@ -354,13 +354,13 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<TH ALIGN=\"left\" COLSPAN=\"2\">Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3</A></FONT></TH>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
-                "<TD><CODE><B><A HREF=\"../../pkg2/ClassUseTest2.html\" title=\"class in pkg2\">ClassUseTest2&lt;T extends ParamTest&lt;<A HREF=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3</A>&gt;&gt;</A></B></CODE>"
+                "<TD><CODE><STRONG><A HREF=\"../../pkg2/ClassUseTest2.html\" title=\"class in pkg2\">ClassUseTest2&lt;T extends ParamTest&lt;<A HREF=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3</A>&gt;&gt;</A></STRONG></CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
                 "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3</A></FONT></TH>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
-                "<TD><CODE><B>ClassUseTest2.</B><B><A HREF=\"../../pkg2/ClassUseTest2.html#method(T)\">method</A></B>(T&nbsp;t)</CODE>"
+                "<TD><CODE><STRONG>ClassUseTest2.</STRONG><STRONG><A HREF=\"../../pkg2/ClassUseTest2.html#method(T)\">method</A></STRONG>(T&nbsp;t)</CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
                 "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> that return types with arguments of type <A HREF=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3</A></FONT></TH>"
@@ -374,13 +374,13 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<TH ALIGN=\"left\" COLSPAN=\"2\">Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">ParamTest2</A></FONT></TH>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
-                "<TD><CODE><B><A HREF=\"../../pkg2/ClassUseTest3.html\" title=\"class in pkg2\">ClassUseTest3&lt;T extends ParamTest2&lt;java.util.List&lt;? extends Foo4&gt;&gt;&gt;</A></B></CODE>"
+                "<TD><CODE><STRONG><A HREF=\"../../pkg2/ClassUseTest3.html\" title=\"class in pkg2\">ClassUseTest3&lt;T extends ParamTest2&lt;java.util.List&lt;? extends Foo4&gt;&gt;&gt;</A></STRONG></CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
                 "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">ParamTest2</A></FONT></TH>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
-                "<TD><CODE><B>ClassUseTest3.</B><B><A HREF=\"../../pkg2/ClassUseTest3.html#method(T)\">method</A></B>(T&nbsp;t)</CODE>"
+                "<TD><CODE><STRONG>ClassUseTest3.</STRONG><STRONG><A HREF=\"../../pkg2/ClassUseTest3.html#method(T)\">method</A></STRONG>(T&nbsp;t)</CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
                 "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">ParamTest2</A></FONT></TH>"
@@ -393,13 +393,13 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<TH ALIGN=\"left\" COLSPAN=\"2\">Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A></FONT></TH>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
-                "<TD><CODE><B><A HREF=\"../../pkg2/ClassUseTest3.html\" title=\"class in pkg2\">ClassUseTest3&lt;T extends ParamTest2&lt;java.util.List&lt;? extends Foo4&gt;&gt;&gt;</A></B></CODE>"
+                "<TD><CODE><STRONG><A HREF=\"../../pkg2/ClassUseTest3.html\" title=\"class in pkg2\">ClassUseTest3&lt;T extends ParamTest2&lt;java.util.List&lt;? extends Foo4&gt;&gt;&gt;</A></STRONG></CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
                 "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A></FONT></TH>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
-                "<TD><CODE><B>ClassUseTest3.</B><B><A HREF=\"../../pkg2/ClassUseTest3.html#method(T)\">method</A></B>(T&nbsp;t)</CODE>"
+                "<TD><CODE><STRONG>ClassUseTest3.</STRONG><STRONG><A HREF=\"../../pkg2/ClassUseTest3.html#method(T)\">method</A></STRONG>(T&nbsp;t)</CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
                 "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> that return types with arguments of type <A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A></FONT></TH>"
@@ -415,13 +415,13 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
                 "<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\"><FONT SIZE=\"-1\">" + NL +
                 "<CODE>&nbsp;void</CODE></FONT></TD>" + NL +
-                "<TD><CODE><B>ClassUseTest3.</B><B><A HREF=\"../../pkg2/ClassUseTest3.html#method(java.util.Set)\">method</A></B>(java.util.Set&lt;<A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A>&gt;&nbsp;p)</CODE>"
+                "<TD><CODE><STRONG>ClassUseTest3.</STRONG><STRONG><A HREF=\"../../pkg2/ClassUseTest3.html#method(java.util.Set)\">method</A></STRONG>(java.util.Set&lt;<A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A>&gt;&nbsp;p)</CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
                 "<TH ALIGN=\"left\" COLSPAN=\"2\">Constructor parameters in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type arguments of type <A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A></FONT></TH>" + NL +
                 "</TR>" + NL +
                 "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
-                "<TD><CODE><B><A HREF=\"../../pkg2/ClassUseTest3.html#ClassUseTest3(java.util.Set)\">ClassUseTest3</A></B>(java.util.Set&lt;<A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A>&gt;&nbsp;p)</CODE>"
+                "<TD><CODE><STRONG><A HREF=\"../../pkg2/ClassUseTest3.html#ClassUseTest3(java.util.Set)\">ClassUseTest3</A></STRONG>(java.util.Set&lt;<A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A>&gt;&nbsp;p)</CODE>"
             },
 
             //=================================
@@ -432,7 +432,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "Packages with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" title=\"annotation in pkg\">AnnotationType</A></FONT></TH>" + NL +
                 "</TR>" + NL +
                 "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
-                "<TD><A HREF=\"../../pkg/package-summary.html\"><B>pkg</B></A></TD>"
+                "<TD><A HREF=\"../../pkg/package-summary.html\"><STRONG>pkg</STRONG></A></TD>"
             },
 
             {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
@@ -441,7 +441,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
                 "<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\"><FONT SIZE=\"-1\">" + NL +
                 "<CODE>&nbsp;class</CODE></FONT></TD>" + NL +
-                "<TD><CODE><B><A HREF=\"../../pkg/AnnotationTypeUsage.html\" title=\"class in pkg\">AnnotationTypeUsage</A></B></CODE>"
+                "<TD><CODE><STRONG><A HREF=\"../../pkg/AnnotationTypeUsage.html\" title=\"class in pkg\">AnnotationTypeUsage</A></STRONG></CODE>"
             },
 
             {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
@@ -450,7 +450,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
                 "<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\"><FONT SIZE=\"-1\">" + NL +
                 "<CODE>&nbsp;int</CODE></FONT></TD>" + NL +
-                "<TD><CODE><B>AnnotationTypeUsage.</B><B><A HREF=\"../../pkg/AnnotationTypeUsage.html#field\">field</A></B></CODE>"
+                "<TD><CODE><STRONG>AnnotationTypeUsage.</STRONG><STRONG><A HREF=\"../../pkg/AnnotationTypeUsage.html#field\">field</A></STRONG></CODE>"
             },
 
             {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
@@ -459,7 +459,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
                 "<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\"><FONT SIZE=\"-1\">" + NL +
                 "<CODE>&nbsp;void</CODE></FONT></TD>" + NL +
-                "<TD><CODE><B>AnnotationTypeUsage.</B><B><A HREF=\"../../pkg/AnnotationTypeUsage.html#method()\">method</A></B>()</CODE>"
+                "<TD><CODE><STRONG>AnnotationTypeUsage.</STRONG><STRONG><A HREF=\"../../pkg/AnnotationTypeUsage.html#method()\">method</A></STRONG>()</CODE>"
             },
 
             {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
@@ -468,7 +468,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
                 "<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\"><FONT SIZE=\"-1\">" + NL +
                 "<CODE>&nbsp;void</CODE></FONT></TD>" + NL +
-                "<TD><CODE><B>AnnotationTypeUsage.</B><B><A HREF=\"../../pkg/AnnotationTypeUsage.html#methodWithParams(int, int)\">methodWithParams</A></B>(int&nbsp;documented," + NL +
+                "<TD><CODE><STRONG>AnnotationTypeUsage.</STRONG><STRONG><A HREF=\"../../pkg/AnnotationTypeUsage.html#methodWithParams(int, int)\">methodWithParams</A></STRONG>(int&nbsp;documented," + NL +
                 "                 int&nbsp;undocmented)</CODE>"
             },
 
@@ -476,14 +476,14 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "Constructors in <A HREF=\"../../pkg/package-summary.html\">pkg</A> with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" title=\"annotation in pkg\">AnnotationType</A></FONT></TH>" + NL +
                 "</TR>" + NL +
                 "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
-                "<TD><CODE><B><A HREF=\"../../pkg/AnnotationTypeUsage.html#AnnotationTypeUsage()\">AnnotationTypeUsage</A></B>()</CODE>"
+                "<TD><CODE><STRONG><A HREF=\"../../pkg/AnnotationTypeUsage.html#AnnotationTypeUsage()\">AnnotationTypeUsage</A></STRONG>()</CODE>"
             },
 
             {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
                 "Constructor parameters in <A HREF=\"../../pkg/package-summary.html\">pkg</A> with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" title=\"annotation in pkg\">AnnotationType</A></FONT></TH>" + NL +
                 "</TR>" + NL +
                 "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
-                "<TD><CODE><B><A HREF=\"../../pkg/AnnotationTypeUsage.html#AnnotationTypeUsage(int, int)\">AnnotationTypeUsage</A></B>(int&nbsp;documented," + NL +
+                "<TD><CODE><STRONG><A HREF=\"../../pkg/AnnotationTypeUsage.html#AnnotationTypeUsage(int, int)\">AnnotationTypeUsage</A></STRONG>(int&nbsp;documented," + NL +
                 "                    int&nbsp;undocmented)</CODE>"
             },
 
@@ -491,13 +491,13 @@ public class TestNewLanguageFeatures extends JavadocTester {
             // TYPE PARAMETER IN INDEX
             //=================================
             {BUG_ID + FS + "index-all.html",
-                "<A HREF=\"./pkg2/Foo.html#method(java.util.Vector)\"><B>method(Vector&lt;Object&gt;)</B></A>"
+                "<A HREF=\"./pkg2/Foo.html#method(java.util.Vector)\"><STRONG>method(Vector&lt;Object&gt;)</STRONG></A>"
             },
             //=================================
             // TYPE PARAMETER IN INDEX
             //=================================
             {BUG_ID + FS + "index-all.html",
-                "<A HREF=\"./pkg2/Foo.html#method(java.util.Vector)\"><B>method(Vector&lt;Object&gt;)</B></A>"
+                "<A HREF=\"./pkg2/Foo.html#method(java.util.Vector)\"><STRONG>method(Vector&lt;Object&gt;)</STRONG></A>"
             },
         };
     private static final String[][] NEGATED_TEST = {
@@ -505,7 +505,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
         // ENUM TESTING
         //=================================
         //NO constructor section
-        {BUG_ID + FS + "pkg" + FS + "Coin.html", "<B>Constructor Summary</B>"},
+        {BUG_ID + FS + "pkg" + FS + "Coin.html", "<STRONG>Constructor Summary</STRONG>"},
         //=================================
         // TYPE PARAMETER TESTING
         //=================================
@@ -525,28 +525,28 @@ public class TestNewLanguageFeatures extends JavadocTester {
             "<FONT SIZE=\"-1\">" + NL +
             "<A HREF=\"../pkg/AnnotationTypeUndocumented.html\" title=\"annotation in pkg\">@AnnotationTypeUndocumented</A>(<A HREF=\"../pkg/AnnotationType.html#optional\">optional</A>=\"Class Annotation\"," + NL +
             "                <A HREF=\"../pkg/AnnotationType.html#required\">required</A>=1994)" + NL +
-            "</FONT>public class <B>AnnotationTypeUsage</B><DT>extends java.lang.Object</DL>"},
+            "</FONT>public class <STRONG>AnnotationTypeUsage</STRONG><DT>extends java.lang.Object</DL>"},
 
         //FIELD
         {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
             "<FONT SIZE=\"-1\">" + NL +
             "<A HREF=\"../pkg/AnnotationTypeUndocumented.html\" title=\"annotation in pkg\">@AnnotationTypeUndocumented</A>(<A HREF=\"../pkg/AnnotationType.html#optional\">optional</A>=\"Field Annotation\"," + NL +
             "                <A HREF=\"../pkg/AnnotationType.html#required\">required</A>=1994)" + NL +
-            "</FONT>public int <B>field</B>"},
+            "</FONT>public int <STRONG>field</STRONG>"},
 
         //CONSTRUCTOR
         {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
             "<FONT SIZE=\"-1\">" + NL +
             "<A HREF=\"../pkg/AnnotationTypeUndocumented.html\" title=\"annotation in pkg\">@AnnotationTypeUndocumented</A>(<A HREF=\"../pkg/AnnotationType.html#optional\">optional</A>=\"Constructor Annotation\"," + NL +
             "                <A HREF=\"../pkg/AnnotationType.html#required\">required</A>=1994)" + NL +
-            "</FONT>public <B>AnnotationTypeUsage</B>()"},
+            "</FONT>public <STRONG>AnnotationTypeUsage</STRONG>()"},
 
         //METHOD
         {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
             "<FONT SIZE=\"-1\">" + NL +
             "<A HREF=\"../pkg/AnnotationTypeUndocumented.html\" title=\"annotation in pkg\">@AnnotationTypeUndocumented</A>(<A HREF=\"../pkg/AnnotationType.html#optional\">optional</A>=\"Method Annotation\"," + NL +
             "                <A HREF=\"../pkg/AnnotationType.html#required\">required</A>=1994)" + NL +
-            "</FONT>public void <B>method</B>()"},
+            "</FONT>public void <STRONG>method</STRONG>()"},
 
         //=================================
         // Make sure annotation types do not

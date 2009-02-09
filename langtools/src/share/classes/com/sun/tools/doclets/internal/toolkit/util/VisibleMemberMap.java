@@ -116,7 +116,7 @@ public class VisibleMemberMap {
      *
      * @return the list of visible classes in this map.
      */
-    public List getVisibleClassesList() {
+    public List<ClassDoc> getVisibleClassesList() {
         sort(visibleClasses);
         return visibleClasses;
     }
@@ -130,8 +130,8 @@ public class VisibleMemberMap {
      */
     private List<ProgramElementDoc> getInheritedPackagePrivateMethods(Configuration configuration) {
         List<ProgramElementDoc> results = new ArrayList<ProgramElementDoc>();
-        for (Iterator iter = visibleClasses.iterator(); iter.hasNext(); ) {
-            ClassDoc currentClass = (ClassDoc) iter.next();
+        for (Iterator<ClassDoc> iter = visibleClasses.iterator(); iter.hasNext(); ) {
+            ClassDoc currentClass = iter.next();
             if (currentClass != classdoc &&
                 currentClass.isPackagePrivate() &&
                 !Util.isLinkable(currentClass, configuration)) {
@@ -203,10 +203,10 @@ public class VisibleMemberMap {
         }
     }
 
-    private void purgeMemberLevelMap(List list, String level) {
+    private void purgeMemberLevelMap(List<ProgramElementDoc> list, String level) {
         for (int i = 0; i < list.size(); i++) {
-            Object key = getMemberKey((ProgramElementDoc)list.get(i));
-            Map memberLevelMap = (Map) memberNameMap.get(key);
+            Object key = getMemberKey(list.get(i));
+            Map<ProgramElementDoc, String> memberLevelMap = memberNameMap.get(key);
             if (level.equals(memberLevelMap.get(list.get(i))))
                 memberLevelMap.remove(list.get(i));
         }
@@ -230,7 +230,7 @@ public class VisibleMemberMap {
         }
 
         public boolean isEqual(MethodDoc member) {
-            for (Iterator iter = members.iterator(); iter.hasNext(); ) {
+            for (Iterator<ProgramElementDoc> iter = members.iterator(); iter.hasNext(); ) {
                 MethodDoc member2 = (MethodDoc) iter.next();
                 if (Util.executableMembersEqual(member, member2)) {
                     members.add(member);
@@ -438,9 +438,9 @@ public class VisibleMemberMap {
             return targetMembers.toArray(new AnnotationTypeElementDoc[]{});
         }
 
-        private boolean found(List list, ProgramElementDoc elem) {
+        private boolean found(List<ProgramElementDoc> list, ProgramElementDoc elem) {
             for (int i = 0; i < list.size(); i++) {
-                ProgramElementDoc pgmelem = (ProgramElementDoc)list.get(i);
+                ProgramElementDoc pgmelem = list.get(i);
                 if (Util.matches(pgmelem, elem)) {
                     return true;
                 }
@@ -455,13 +455,13 @@ public class VisibleMemberMap {
          * level "111".
          */
         private boolean isOverridden(ProgramElementDoc pgmdoc, String level) {
-            Map memberLevelMap = (Map) memberNameMap.get(getMemberKey(pgmdoc));
+            Map<?,String> memberLevelMap = (Map<?,String>) memberNameMap.get(getMemberKey(pgmdoc));
             if (memberLevelMap == null)
                 return false;
             String mappedlevel = null;
-            Iterator iterator = memberLevelMap.values().iterator();
+            Iterator<String> iterator = memberLevelMap.values().iterator();
             while (iterator.hasNext()) {
-                mappedlevel = (String)(iterator.next());
+                mappedlevel = iterator.next();
                 if (mappedlevel.equals(STARTLEVEL) ||
                     (level.startsWith(mappedlevel) &&
                      !level.equals(mappedlevel))) {
@@ -482,7 +482,7 @@ public class VisibleMemberMap {
     }
 
     private ClassMember getClassMember(MethodDoc member) {
-        for (Iterator iter = memberNameMap.keySet().iterator(); iter.hasNext();) {
+        for (Iterator<?> iter = memberNameMap.keySet().iterator(); iter.hasNext();) {
             Object key = iter.next();
             if (key instanceof String) {
                 continue;

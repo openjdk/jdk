@@ -183,21 +183,21 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param where Position in the file
      * @param target Name of the target frame.
      * @param label Tag for the link.
-     * @param bold Whether the label should be bold or not?
+     * @param strong Whether the label should be strong or not?
      */
     public void printNoFramesTargetHyperLink(String link, String where,
                                                String target, String label,
-                                               boolean bold) {
+                                               boolean strong) {
         script();
         println("  <!--");
         println("  if(window==top) {");
         println("    document.writeln('"
-            + getHyperLink(link, where, label, bold, "", "", target) + "');");
+            + getHyperLink(link, where, label, strong, "", "", target) + "');");
         println("  }");
         println("  //-->");
         scriptEnd();
         noScript();
-        println("  " + getHyperLink(link, where, label, bold, "", "", target));
+        println("  " + getHyperLink(link, where, label, strong, "", "", target));
         noScriptEnd();
         println(DocletConstants.NL);
     }
@@ -958,10 +958,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      *
      * @param pkg the package to link to.
      * @param label the label for the link.
-     * @param isBold true if the label should be bold.
+     * @param isStrong true if the label should be strong.
      */
-    public void printPackageLink(PackageDoc pkg, String label, boolean isBold) {
-        print(getPackageLink(pkg, label, isBold));
+    public void printPackageLink(PackageDoc pkg, String label, boolean isStrong) {
+        print(getPackageLink(pkg, label, isStrong));
     }
 
     /**
@@ -969,12 +969,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      *
      * @param pkg the package to link to.
      * @param label the label for the link.
-     * @param isBold true if the label should be bold.
+     * @param isStrong true if the label should be strong.
      * @param style  the font of the package link label.
      */
-    public void printPackageLink(PackageDoc pkg, String label, boolean isBold,
+    public void printPackageLink(PackageDoc pkg, String label, boolean isStrong,
             String style) {
-        print(getPackageLink(pkg, label, isBold, style));
+        print(getPackageLink(pkg, label, isStrong, style));
     }
 
     /**
@@ -982,12 +982,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      *
      * @param pkg the package to link to.
      * @param label the label for the link.
-     * @param isBold true if the label should be bold.
+     * @param isStrong true if the label should be strong.
      * @return the link to the given package.
      */
     public String getPackageLink(PackageDoc pkg, String label,
-                                 boolean isBold) {
-        return getPackageLink(pkg, label, isBold, "");
+                                 boolean isStrong) {
+        return getPackageLink(pkg, label, isStrong, "");
     }
 
     /**
@@ -995,11 +995,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      *
      * @param pkg the package to link to.
      * @param label the label for the link.
-     * @param isBold true if the label should be bold.
+     * @param isStrong true if the label should be strong.
      * @param style  the font of the package link label.
      * @return the link to the given package.
      */
-    public String getPackageLink(PackageDoc pkg, String label, boolean isBold,
+    public String getPackageLink(PackageDoc pkg, String label, boolean isStrong,
             String style) {
         boolean included = pkg != null && pkg.isIncluded();
         if (! included) {
@@ -1013,11 +1013,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         }
         if (included || pkg == null) {
             return getHyperLink(pathString(pkg, "package-summary.html"),
-                                "", label, isBold, style);
+                                "", label, isStrong, style);
         } else {
             String crossPkgLink = getCrossPackageLink(Util.getPackageName(pkg));
             if (crossPkgLink != null) {
-                return getHyperLink(crossPkgLink, "", label, isBold, style);
+                return getHyperLink(crossPkgLink, "", label, isStrong, style);
             } else {
                 return label;
             }
@@ -1087,12 +1087,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param refMemName the name of the member being referenced.  This should
      * be null or empty string if no member is being referenced.
      * @param label the label for the external link.
-     * @param bold true if the link should be bold.
+     * @param strong true if the link should be strong.
      * @param style the style of the link.
      * @param code true if the label should be code font.
      */
     public String getCrossClassLink(String qualifiedClassName, String refMemName,
-                                    String label, boolean bold, String style,
+                                    String label, boolean strong, String style,
                                     boolean code) {
         String className = "",
             packageName = qualifiedClassName == null ? "" : qualifiedClassName;
@@ -1113,7 +1113,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                                 className + ".html?is-external=true"),
                     refMemName == null ? "" : refMemName,
                     label == null || label.length() == 0 ? defaultLabel : label,
-                    bold, style,
+                    strong, style,
                     configuration.getText("doclet.Href_Class_Or_Interface_Title", packageName),
                     "");
             }
@@ -1152,26 +1152,26 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * link label.
      *
      * @param cd the class to link to.
-     * @param isBold true if the link should be bold.
+     * @param isStrong true if the link should be strong.
      * @return the link with the package portion of the label in plain text.
      */
     public String getPreQualifiedClassLink(int context,
-            ClassDoc cd, boolean isBold) {
+            ClassDoc cd, boolean isStrong) {
         String classlink = "";
         PackageDoc pd = cd.containingPackage();
         if(pd != null && ! configuration.shouldExcludeQualifier(pd.name())) {
             classlink = getPkgName(cd);
         }
-        classlink += getLink(new LinkInfoImpl(context, cd, cd.name(), isBold));
+        classlink += getLink(new LinkInfoImpl(context, cd, cd.name(), isStrong));
         return classlink;
     }
 
 
     /**
-     * Print Class link, with only class name as the bold link and prefixing
+     * Print Class link, with only class name as the strong link and prefixing
      * plain package name.
      */
-    public void printPreQualifiedBoldClassLink(int context, ClassDoc cd) {
+    public void printPreQualifiedStrongClassLink(int context, ClassDoc cd) {
         print(getPreQualifiedClassLink(context, cd, true));
     }
 
@@ -1187,16 +1187,16 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         print(configuration.getText(key, a1, a2));
     }
 
-    public void boldText(String key) {
-        bold(configuration.getText(key));
+    public void strongText(String key) {
+        strong(configuration.getText(key));
     }
 
-    public void boldText(String key, String a1) {
-        bold(configuration.getText(key, a1));
+    public void strongText(String key, String a1) {
+        strong(configuration.getText(key, a1));
     }
 
-    public void boldText(String key, String a1, String a2) {
-        bold(configuration.getText(key, a1, a2));
+    public void strongText(String key, String a1, String a2) {
+        strong(configuration.getText(key, a1, a2));
     }
 
     /**
@@ -1205,11 +1205,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param context the id of the context where the link will be printed.
      * @param doc the member being linked to.
      * @param label the label for the link.
-     * @param bold true if the link should be bold.
+     * @param strong true if the link should be strong.
      */
     public void printDocLink(int context, MemberDoc doc, String label,
-            boolean bold) {
-        print(getDocLink(context, doc, label, bold));
+            boolean strong) {
+        print(getDocLink(context, doc, label, strong));
     }
 
     /**
@@ -1221,11 +1221,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      *                 inheriting comments.
      * @param doc the member being linked to.
      * @param label the label for the link.
-     * @param bold true if the link should be bold.
+     * @param strong true if the link should be strong.
      */
     public void printDocLink(int context, ClassDoc classDoc, MemberDoc doc,
-            String label, boolean bold) {
-        print(getDocLink(context, classDoc, doc, label, bold));
+            String label, boolean strong) {
+        print(getDocLink(context, classDoc, doc, label, strong));
     }
 
     /**
@@ -1234,12 +1234,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param context the id of the context where the link will be printed.
      * @param doc the member being linked to.
      * @param label the label for the link.
-     * @param bold true if the link should be bold.
+     * @param strong true if the link should be strong.
      * @return the link for the given member.
      */
     public String getDocLink(int context, MemberDoc doc, String label,
-                boolean bold) {
-        return getDocLink(context, doc.containingClass(), doc, label, bold);
+                boolean strong) {
+        return getDocLink(context, doc.containingClass(), doc, label, strong);
     }
 
     /**
@@ -1251,21 +1251,21 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      *                 inheriting comments.
      * @param doc the member being linked to.
      * @param label the label for the link.
-     * @param bold true if the link should be bold.
+     * @param strong true if the link should be strong.
      * @return the link for the given member.
      */
     public String getDocLink(int context, ClassDoc classDoc, MemberDoc doc,
-        String label, boolean bold) {
+        String label, boolean strong) {
         if (! (doc.isIncluded() ||
             Util.isLinkable(classDoc, configuration()))) {
             return label;
         } else if (doc instanceof ExecutableMemberDoc) {
             ExecutableMemberDoc emd = (ExecutableMemberDoc)doc;
             return getLink(new LinkInfoImpl(context, classDoc,
-                getAnchor(emd), label, bold));
+                getAnchor(emd), label, strong));
         } else if (doc instanceof MemberDoc) {
             return getLink(new LinkInfoImpl(context, classDoc,
-                doc.name(), label, bold));
+                doc.name(), label, strong));
         } else {
             return label;
         }
@@ -1728,13 +1728,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param descList the array of {@link AnnotationDesc}.
      */
     private boolean writeAnnotationInfo(int indent, Doc doc, AnnotationDesc[] descList, boolean lineBreak) {
-        List annotations = getAnnotations(indent, descList, lineBreak);
+        List<String> annotations = getAnnotations(indent, descList, lineBreak);
         if (annotations.size() == 0) {
             return false;
         }
         fontNoNewLine("-1");
-        for (Iterator iter = annotations.iterator(); iter.hasNext();) {
-            print((String) iter.next());
+        for (Iterator<String> iter = annotations.iterator(); iter.hasNext();) {
+            print(iter.next());
         }
         fontEnd();
         return true;
@@ -1792,8 +1792,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                         annotationTypeValues.add(annotationValue);
                     }
                     annotation.append(annotationTypeValues.size() == 1 ? "" : "{");
-                    for (Iterator iter = annotationTypeValues.iterator(); iter.hasNext(); ) {
-                        annotation.append(annotationValueToString((AnnotationValue) iter.next()));
+                    for (Iterator<AnnotationValue> iter = annotationTypeValues.iterator(); iter.hasNext(); ) {
+                        annotation.append(annotationValueToString(iter.next()));
                         annotation.append(iter.hasNext() ? "," : "");
                     }
                     annotation.append(annotationTypeValues.size() == 1 ? "" : "}");
@@ -1820,11 +1820,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 return type.typeName() + type.dimension() + ".class";
             }
         } else if (annotationValue.value() instanceof AnnotationDesc) {
-            List list = getAnnotations(0,
+            List<String> list = getAnnotations(0,
                 new AnnotationDesc[]{(AnnotationDesc) annotationValue.value()},
                     false);
             StringBuffer buf = new StringBuffer();
-            for (Iterator iter = list.iterator(); iter.hasNext(); ) {
+            for (Iterator<String> iter = list.iterator(); iter.hasNext(); ) {
                 buf.append(iter.next());
             }
             return buf.toString();

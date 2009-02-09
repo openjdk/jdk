@@ -88,7 +88,7 @@ public class DocletInvoker {
             appClassLoader = new URLClassLoader(urls, docletParentClassLoader);
 
         // attempt to find doclet
-        Class dc = null;
+        Class<?> dc = null;
         try {
             dc = appClassLoader.loadClass(docletClassName);
         } catch (ClassNotFoundException exc) {
@@ -104,7 +104,7 @@ public class DocletInvoker {
     public boolean start(RootDoc root) {
         Object retVal;
         String methodName = "start";
-        Class[] paramTypes = new Class[1];
+        Class<?>[] paramTypes = new Class<?>[1];
         Object[] params = new Object[1];
         paramTypes[0] = RootDoc.class;
         params[0] = root;
@@ -130,7 +130,7 @@ public class DocletInvoker {
     public int optionLength(String option) {
         Object retVal;
         String methodName = "optionLength";
-        Class[] paramTypes = new Class[1];
+        Class<?>[] paramTypes = new Class<?>[1];
         Object[] params = new Object[1];
         paramTypes[0] = option.getClass();
         params[0] = option;
@@ -157,7 +157,7 @@ public class DocletInvoker {
         String options[][] = optlist.toArray(new String[optlist.length()][]);
         String methodName = "validOptions";
         DocErrorReporter reporter = messager;
-        Class[] paramTypes = new Class[2];
+        Class<?>[] paramTypes = new Class<?>[2];
         Object[] params = new Object[2];
         paramTypes[0] = options.getClass();
         paramTypes[1] = DocErrorReporter.class;
@@ -185,7 +185,7 @@ public class DocletInvoker {
         try {
             Object retVal;
             String methodName = "languageVersion";
-            Class[] paramTypes = new Class[0];
+            Class<?>[] paramTypes = new Class<?>[0];
             Object[] params = new Object[0];
             try {
                 retVal = invoke(methodName, JAVA_1_1, paramTypes, params);
@@ -208,7 +208,7 @@ public class DocletInvoker {
      * Utility method for calling doclet functionality
      */
     private Object invoke(String methodName, Object returnValueIfNonExistent,
-                          Class[] paramTypes, Object[] params)
+                          Class<?>[] paramTypes, Object[] params)
         throws DocletInvokeException {
             Method meth;
             try {
