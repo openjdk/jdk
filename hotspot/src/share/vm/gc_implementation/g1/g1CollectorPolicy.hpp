@@ -49,7 +49,7 @@ public:                                                                       \
 class MainBodySummary;
 class PopPreambleSummary;
 
-class PauseSummary {
+class PauseSummary: public CHeapObj {
   define_num_seq(total)
     define_num_seq(other)
 
@@ -58,7 +58,7 @@ public:
   virtual PopPreambleSummary* pop_preamble_summary() { return NULL; }
 };
 
-class MainBodySummary {
+class MainBodySummary: public CHeapObj {
   define_num_seq(satb_drain) // optional
   define_num_seq(parallel) // parallel only
     define_num_seq(ext_root_scan)
@@ -75,7 +75,7 @@ class MainBodySummary {
   define_num_seq(clear_ct)  // parallel only
 };
 
-class PopPreambleSummary {
+class PopPreambleSummary: public CHeapObj {
   define_num_seq(pop_preamble)
     define_num_seq(pop_update_rs)
     define_num_seq(pop_scan_rs)

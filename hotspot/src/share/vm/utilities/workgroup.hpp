@@ -32,7 +32,7 @@ class WorkData;
 
 // An abstract task to be worked on by a gang.
 // You subclass this to supply your own work() method
-class AbstractGangTask: public CHeapObj {
+class AbstractGangTask VALUE_OBJ_CLASS_SPEC {
 public:
   // The abstract work method.
   // The argument tells you which member of the gang you are.
