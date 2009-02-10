@@ -23,7 +23,8 @@
  * have any questions.
  */
 
-#include "windows.h"
+#include "awt.h"
+
 #include <windowsx.h>
 #include <zmouse.h>
 
@@ -42,7 +43,6 @@
 #include "awt_MouseEvent.h"
 #include "awt_Palette.h"
 #include "awt_Toolkit.h"
-#include "awt_Unicode.h"
 #include "awt_Window.h"
 #include "awt_Win32GraphicsDevice.h"
 #include "Hashtable.h"
@@ -67,29 +67,9 @@
 #include <java_awt_event_MouseWheelEvent.h>
 
 // Begin -- Win32 SDK include files
-#include <tchar.h>
 #include <imm.h>
 #include <ime.h>
 // End -- Win32 SDK include files
-
-#ifndef GET_KEYSTATE_WPARAM     // defined for (_WIN32_WINNT >= 0x0400)
-#define GET_KEYSTATE_WPARAM(wParam)     (LOWORD(wParam))
-#endif
-
-#ifndef GET_WHEEL_DELTA_WPARAM  // defined for (_WIN32_WINNT >= 0x0500)
-#define GET_WHEEL_DELTA_WPARAM(wParam)  ((short)HIWORD(wParam))
-#endif
-
-// <XXX> <!-- TEMPORARY HACK TO TEST AGAINST OLD VC INLCUDES -->
-#if !defined(__int3264)
-#define GetWindowLongPtr GetWindowLong
-#define SetWindowLongPtr SetWindowLong
-#define GWLP_USERDATA GWL_USERDATA
-#define GWLP_WNDPROC  GWL_WNDPROC
-typedef __int32 LONG_PTR;
-typedef unsigned __int32 ULONG_PTR;
-#endif // __int3264
-// </XXX>
 
 #include <awt_DnDDT.h>
 
@@ -207,9 +187,7 @@ LANGID AwtComponent::m_idLang = LOWORD(::GetKeyboardLayout(0));
 UINT   AwtComponent::m_CodePage
                        = AwtComponent::LangToCodePage(m_idLang);
 
-BOOL AwtComponent::m_isWin95 = IS_WIN95;
-BOOL AwtComponent::m_isWin2000 = IS_WIN2000;
-BOOL AwtComponent::m_isWinNT = IS_NT;
+jint *AwtComponent::masks;
 
 static BOOL bLeftShiftIsDown = false;
 static BOOL bRightShiftIsDown = false;
@@ -544,7 +522,7 @@ AwtComponent::CreateHWnd(JNIEnv *env, LPCWSTR title,
         jobject createError = NULL;
         if (dw == ERROR_OUTOFMEMORY)
         {
-            jstring errorMsg = env->NewStringUTF("too many window handles");
+            jstring errorMsg = JNU_NewStringPlatform(env, L"too many window handles");
             createError = JNU_NewObjectByName(env, "java/lang/OutOfMemoryError",
                                                       "(Ljava/lang/String;)V",
                                                       errorMsg);
@@ -1201,6 +1179,9 @@ void SpyWinMessage(HWND hwnd, UINT message, LPCTSTR szComment) {
         WIN_MSG(WM_MBUTTONDOWN)
         WIN_MSG(WM_MBUTTONUP)
         WIN_MSG(WM_MBUTTONDBLCLK)
+        WIN_MSG(WM_XBUTTONDBLCLK)
+        WIN_MSG(WM_XBUTTONDOWN)
+        WIN_MSG(WM_XBUTTONUP)
         WIN_MSG(WM_MOUSEWHEEL)
         WIN_MSG(WM_PARENTNOTIFY)
         WIN_MSG(WM_ENTERMENULOOP)
@@ -1347,17 +1328,9 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
         return (LRESULT)TRUE;
     }
 
-    UINT switchMessage;
-    if (IS_WIN95 && !IS_WIN98 && message == Wheel95GetMsg()) {
-        // Wheel message is generated dynamically on 95.  A quick swap and
-        // we're good to go.
-        DTRACE_PRINTLN1("got wheel event on 95.  msg is %i\n", message);
-        switchMessage = WM_MOUSEWHEEL;
-    }
-    else {
-        switchMessage = message;
-    }
+    DWORD curPos = 0;
 
+    UINT switchMessage = message;
     switch (switchMessage) {
       case WM_AWT_GETDC:
       {
@@ -1644,67 +1617,87 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
       case WM_MBUTTONDOWN:
       case WM_MBUTTONDBLCLK:
       case WM_MBUTTONUP:
+      case WM_XBUTTONDBLCLK:
+      case WM_XBUTTONDOWN:
+      case WM_XBUTTONUP:
       case WM_MOUSEMOVE:
       case WM_MOUSEWHEEL:
       case WM_AWT_MOUSEENTER:
       case WM_AWT_MOUSEEXIT:
-      {
-          DWORD curPos = ::GetMessagePos();
+          curPos = ::GetMessagePos();
           POINT myPos;
           myPos.x = GET_X_LPARAM(curPos);
           myPos.y = GET_Y_LPARAM(curPos);
           ::ScreenToClient(GetHWnd(), &myPos);
           switch(switchMessage) {
           case WM_AWT_MOUSEENTER:
-              mr = WmMouseEnter(static_cast<UINT>(wParam), myPos.x, myPos.y); break;
+              mr = WmMouseEnter(static_cast<UINT>(wParam), myPos.x, myPos.y);
+              break;
           case WM_LBUTTONDOWN:
           case WM_LBUTTONDBLCLK:
-                mr = WmMouseDown(static_cast<UINT>(wParam), myPos.x, myPos.y,
-                           LEFT_BUTTON); break;
-            case WM_LBUTTONUP:
-                mr = WmMouseUp(static_cast<UINT>(wParam), myPos.x, myPos.y,
-                               LEFT_BUTTON); break;
-            case WM_MOUSEMOVE:
-                mr = WmMouseMove(static_cast<UINT>(wParam), myPos.x, myPos.y); break;
-      case WM_MBUTTONDOWN:
-      case WM_MBUTTONDBLCLK:
-                mr = WmMouseDown(static_cast<UINT>(wParam), myPos.x, myPos.y,
-                           MIDDLE_BUTTON); break;
-      case WM_RBUTTONDOWN:
-      case WM_RBUTTONDBLCLK:
-                mr = WmMouseDown(static_cast<UINT>(wParam), myPos.x, myPos.y,
-                           RIGHT_BUTTON); break;
-      case WM_RBUTTONUP:
-                mr = WmMouseUp(static_cast<UINT>(wParam), myPos.x, myPos.y,
-                         RIGHT_BUTTON);
-          break;
-      case WM_MBUTTONUP:
-                mr = WmMouseUp(static_cast<UINT>(wParam), myPos.x, myPos.y,
-                         MIDDLE_BUTTON);
-          break;
-      case WM_AWT_MOUSEEXIT:
-                mr = WmMouseExit(static_cast<UINT>(wParam), myPos.x, myPos.y);
-          break;
-      case  WM_MOUSEWHEEL:
-          if (IS_WIN95 && !IS_WIN98) {
-              // On 95, the wParam doesn't contain the keystate flags, just
-              // the wheel rotation.  The keystates are fetched in WmMouseWheel
-              // using GetJavaModifiers().
-              mr = WmMouseWheel(0,
-                                GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam),
-                                (int)wParam);
-              return FALSE;
-          }
-          else {
+              mr = WmMouseDown(static_cast<UINT>(wParam), myPos.x, myPos.y,
+                               LEFT_BUTTON);
+              break;
+          case WM_LBUTTONUP:
+              mr = WmMouseUp(static_cast<UINT>(wParam), myPos.x, myPos.y,
+                             LEFT_BUTTON);
+              break;
+          case WM_MOUSEMOVE:
+              mr = WmMouseMove(static_cast<UINT>(wParam), myPos.x, myPos.y);
+              break;
+          case WM_MBUTTONDOWN:
+          case WM_MBUTTONDBLCLK:
+              mr = WmMouseDown(static_cast<UINT>(wParam), myPos.x, myPos.y,
+                               MIDDLE_BUTTON);
+              break;
+          case WM_XBUTTONDOWN:
+          case WM_XBUTTONDBLCLK:
+              if (AwtToolkit::GetInstance().areExtraMouseButtonsEnabled()) {
+                  if (HIWORD(wParam) == 1) {
+                      mr = WmMouseDown(static_cast<UINT>(wParam), myPos.x, myPos.y,
+                                       X1_BUTTON);
+                  }
+                  if (HIWORD(wParam) == 2) {
+                      mr = WmMouseDown(static_cast<UINT>(wParam), myPos.x, myPos.y,
+                                       X2_BUTTON);
+                  }
+              }
+              break;
+          case WM_XBUTTONUP:
+              if (AwtToolkit::GetInstance().areExtraMouseButtonsEnabled()) {
+                  if (HIWORD(wParam) == 1) {
+                      mr = WmMouseUp(static_cast<UINT>(wParam), myPos.x, myPos.y,
+                                     X1_BUTTON);
+                  }
+                  if (HIWORD(wParam) == 2) {
+                      mr = WmMouseUp(static_cast<UINT>(wParam), myPos.x, myPos.y,
+                                     X2_BUTTON);
+                  }
+              }
+              break;
+          case WM_RBUTTONDOWN:
+          case WM_RBUTTONDBLCLK:
+              mr = WmMouseDown(static_cast<UINT>(wParam), myPos.x, myPos.y,
+                               RIGHT_BUTTON);
+              break;
+          case WM_RBUTTONUP:
+              mr = WmMouseUp(static_cast<UINT>(wParam), myPos.x, myPos.y,
+                             RIGHT_BUTTON);
+              break;
+          case WM_MBUTTONUP:
+              mr = WmMouseUp(static_cast<UINT>(wParam), myPos.x, myPos.y,
+                             MIDDLE_BUTTON);
+              break;
+          case WM_AWT_MOUSEEXIT:
+              mr = WmMouseExit(static_cast<UINT>(wParam), myPos.x, myPos.y);
+              break;
+          case  WM_MOUSEWHEEL:
               mr = WmMouseWheel(GET_KEYSTATE_WPARAM(wParam),
                                 GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam),
                                 GET_WHEEL_DELTA_WPARAM(wParam));
+              break;
           }
           break;
-          }
-      }
-          break;
-
       case WM_SETCURSOR:
           mr = mrDoDefault;
           if (LOWORD(lParam) == HTCLIENT) {
@@ -2589,8 +2582,12 @@ MsgRouting AwtComponent::WmMouseMove(UINT flags, int x, int y)
         lastComp = this;
         lastX = x;
         lastY = y;
-
-        if ( (flags & ALL_MK_BUTTONS) != 0 ) {
+        BOOL extraButtonsEnabled = AwtToolkit::GetInstance().areExtraMouseButtonsEnabled();
+        if (((flags & (ALL_MK_BUTTONS)) != 0) ||
+            (extraButtonsEnabled && (flags & (X_BUTTONS)) != 0))
+//        if (( extraButtonsEnabled && ( (flags & (ALL_MK_BUTTONS | X_BUTTONS)) != 0 )) ||
+//            ( !extraButtonsEnabled && (((flags & (ALL_MK_BUTTONS)) != 0 )) && ((flags & (X_BUTTONS)) == 0) ))
+        {
             // 6404008 : if Dragged event fired we shouldn't fire
             // Clicked event: m_firstDragSent set to TRUE.
             // This is a partial backout of 5039416 fix.
@@ -2649,21 +2646,10 @@ MsgRouting AwtComponent::WmMouseWheel(UINT flags, int x, int y,
     jdouble preciseWheelRotation = (jdouble) wheelRotation / (-1 * WHEEL_DELTA);
 
     MSG msg;
-
-    if (IS_WIN95 && !IS_WIN98) {
-        // 95 doesn't understand the SPI_GETWHEELSCROLLLINES - get the user
-        // preference by other means
-        DTRACE_PRINTLN("WmMouseWheel: using 95 branch");
-        platformLines = Wheel95GetScrLines();
-        result = true;
-        InitMessage(&msg, lastMessage, wheelRotation, MAKELPARAM(x, y));
-    }
-    else {
-        result = ::SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0,
-                                        &platformLines, 0);
-        InitMessage(&msg, lastMessage, MAKEWPARAM(flags, wheelRotation),
-                            MAKELPARAM(x, y));
-    }
+    result = ::SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0,
+                                    &platformLines, 0);
+    InitMessage(&msg, lastMessage, MAKEWPARAM(flags, wheelRotation),
+                MAKELPARAM(x, y));
 
     if (result) {
         if (platformLines == WHEEL_PAGESCROLL) {
@@ -2743,156 +2729,21 @@ jint AwtComponent::GetShiftKeyLocation(UINT vkey, UINT flags)
       "AwtComponent::GetShiftKeyLocation  vkey = %d = 0x%x  scan = %d",
       vkey, vkey, keyScanCode);
 
-    if (m_isWinNT) {
-        leftShiftScancode = ::MapVirtualKey(VK_LSHIFT, 0);
-        rightShiftScancode = ::MapVirtualKey(VK_RSHIFT, 0);
+    leftShiftScancode = ::MapVirtualKey(VK_LSHIFT, 0);
+    rightShiftScancode = ::MapVirtualKey(VK_RSHIFT, 0);
 
-        if (keyScanCode == leftShiftScancode) {
-            return java_awt_event_KeyEvent_KEY_LOCATION_LEFT;
-        }
-        if (keyScanCode == rightShiftScancode) {
-            return java_awt_event_KeyEvent_KEY_LOCATION_RIGHT;
-        }
-
-        DASSERT(false);
-        // Note: the above should not fail on NT (or 2000),
-        // but just in case it does, try the more complicated method
-        // we use for Win9x below.
+    if (keyScanCode == leftShiftScancode) {
+        return java_awt_event_KeyEvent_KEY_LOCATION_LEFT;
+    }
+    if (keyScanCode == rightShiftScancode) {
+        return java_awt_event_KeyEvent_KEY_LOCATION_RIGHT;
     }
 
-    // "Transition" bit = 0 if keyPressed, 1 if keyReleased
-    BOOL released = ((1<<15) & flags);
+    DASSERT(false);
+    // Note: the above should not fail on NT (or 2000)
 
-    DTRACE_PRINTLN2(
-      "AwtComponent::GetShiftKeyLocation  bLeftShiftIsDown = %d  bRightShiftIsDown == %d",
-      bLeftShiftIsDown, bRightShiftIsDown);
-    DTRACE_PRINTLN2(
-      "AwtComponent::GetShiftKeyLocation  lastShiftKeyPressed = %d  released = %d",
-      lastShiftKeyPressed, released);
-
-    jint keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_UNKNOWN;
-
-    // It is possible for somebody to hold down one or both
-    // Shift keys, causing repeat key events.  We need to
-    // handle all the cases.
-    //
-    // Just a side-note: if two or more keys are being held down,
-    // and then one key is released, whether more key presses are
-    // generated for the keys that are still held down depends on
-    // which keys they are, and whether you released the right or
-    // the left shift/ctrl/etc. key first.  This also differs
-    // between Win9x and NT.  Just plain screwy.
-    //
-    // Note: on my PC, the repeat count is always 1.  Yup, we need
-    // 16 bits to handle that, all right.
-
-    // Handle the case where only one of the Shift keys
-    // was down before this event took place
-    if (bLeftShiftIsDown && !bRightShiftIsDown) {
-        if (released) {
-            // This is a left Shift release
-            keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_LEFT;
-        } else {
-            // This is a right Shift press
-            keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_RIGHT;
-        }
-    } else if (!bLeftShiftIsDown && bRightShiftIsDown) {
-        if (released) {
-            // This is a right Shift release
-            keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_RIGHT;
-        } else {
-            // This is a left Shift press
-            keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_LEFT;
-        }
-    }
-
-    // Handle the case where neither of the Shift keys
-    // were down before this event took place
-    if (!bLeftShiftIsDown && !bRightShiftIsDown) {
-        DASSERT(!released);
-        if (HIBYTE(::GetKeyState(VK_LSHIFT)) != 0) {
-            // This is a left Shift press
-            keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_LEFT;
-        } else if (HIBYTE(::GetKeyState(VK_RSHIFT)) != 0) {
-            // This is a right Shift press
-            keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_RIGHT;
-        } else {
-            DASSERT(false);
-        }
-    }
-
-    // Handle the case where both Shift keys were down before
-    // this event took place
-    if (bLeftShiftIsDown && bRightShiftIsDown) {
-        // If this is a key release event, we can just check to see
-        // what the keyboard state is after the event
-        if (released) {
-            if (HIBYTE(::GetKeyState(VK_RSHIFT)) == 0) {
-                // This is a right Shift release
-                keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_RIGHT;
-            } else if (HIBYTE(::GetKeyState(VK_LSHIFT)) == 0) {
-                // This is a left Shift release
-                keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_LEFT;
-            } else {
-                DASSERT(false);
-            }
-        } else {
-            // If this is a key press event, and both Shift keys were
-            // already down, this is going to be a repeat of the last
-            // Shift press
-            if (lastShiftKeyPressed == VK_LSHIFT) {
-                keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_LEFT;
-            } else if (lastShiftKeyPressed == VK_RSHIFT) {
-                keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_RIGHT;
-            } else {
-                DASSERT(false);
-            }
-        }
-    }
-
-    if (keyLocation == java_awt_event_KeyEvent_KEY_LOCATION_UNKNOWN) {
-        // Nothing we tried above worked for some reason.  Sigh.
-        // Make a last-ditch effort to guess what happened:
-        // guess that the Shift scancodes are usually the same
-        // from system to system, even though this isn't guaranteed.
-        DTRACE_PRINTLN("Last-ditch effort at guessing Shift keyLocation");
-
-        // Tested on a couple of Windows keyboards: these are standard values
-        leftShiftScancode = 42;
-        rightShiftScancode = 54;
-
-        if (keyScanCode == leftShiftScancode) {
-            keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_LEFT;
-        } else if (keyScanCode == rightShiftScancode) {
-            keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_RIGHT;
-        }
-    }
-
-    // Set the Shift flags with the new key state.
-    bLeftShiftIsDown = (HIBYTE(::GetKeyState(VK_LSHIFT)) != 0);
-    bRightShiftIsDown = (HIBYTE(::GetKeyState(VK_RSHIFT)) != 0);
-
-    // Update lastShiftKeyPressed
-    if (released) {
-        // At most one shift key is down now, so just check which one
-        if (bLeftShiftIsDown) {
-            lastShiftKeyPressed = VK_LSHIFT;
-            DASSERT(!bRightShiftIsDown);
-        } else if (bRightShiftIsDown) {
-            lastShiftKeyPressed = VK_RSHIFT;
-        } else {
-            lastShiftKeyPressed = 0;
-        }
-    } else {
-        // It was a press, so at least one shift key is down now
-        if (keyLocation == java_awt_event_KeyEvent_KEY_LOCATION_LEFT) {
-            lastShiftKeyPressed = VK_LSHIFT;
-        } else if (keyLocation == java_awt_event_KeyEvent_KEY_LOCATION_RIGHT) {
-            lastShiftKeyPressed = VK_RSHIFT;
-        }
-    }
-
-    return keyLocation;
+    // default value
+    return java_awt_event_KeyEvent_KEY_LOCATION_LEFT;
 }
 
 /* Returns Java extended InputEvent modifieres.
@@ -2914,13 +2765,20 @@ AwtComponent::GetJavaModifiers()
         modifiers |= java_awt_event_InputEvent_ALT_DOWN_MASK;
     }
     if (HIBYTE(::GetKeyState(VK_MBUTTON)) != 0) {
-        modifiers |= java_awt_event_InputEvent_BUTTON2_DOWN_MASK;
+       modifiers |= java_awt_event_InputEvent_BUTTON2_DOWN_MASK;
     }
     if (HIBYTE(::GetKeyState(VK_RBUTTON)) != 0) {
         modifiers |= java_awt_event_InputEvent_BUTTON3_DOWN_MASK;
     }
     if (HIBYTE(::GetKeyState(VK_LBUTTON)) != 0) {
         modifiers |= java_awt_event_InputEvent_BUTTON1_DOWN_MASK;
+    }
+
+    if (HIBYTE(::GetKeyState(VK_XBUTTON1)) != 0) {
+        modifiers |= masks[3];
+    }
+    if (HIBYTE(::GetKeyState(VK_XBUTTON2)) != 0) {
+        modifiers |= masks[4];
     }
     return modifiers;
 }
@@ -2936,6 +2794,11 @@ AwtComponent::GetButton(int mouseButton)
         return java_awt_event_MouseEvent_BUTTON2;
     case RIGHT_BUTTON:
         return java_awt_event_MouseEvent_BUTTON3;
+    case X1_BUTTON: //16 :
+        //just assign 4 and 5 numbers because MouseEvent class doesn't contain const identifier for them now
+        return 4;
+    case X2_BUTTON: //32
+        return 5;
     }
     return java_awt_event_MouseEvent_NOBUTTON;
 }
@@ -2950,6 +2813,10 @@ AwtComponent::GetButtonMK(int mouseButton)
         return MK_MBUTTON;
     case RIGHT_BUTTON:
         return MK_RBUTTON;
+    case X1_BUTTON:
+        return MK_XBUTTON1;
+    case X2_BUTTON:
+        return MK_XBUTTON2;
     }
     return 0;
 }
@@ -2965,6 +2832,14 @@ AwtComponent::GetButtonMK(int mouseButton)
 #define VK_KANJI          0x19
 #define VK_CONVERT        0x1C
 #define VK_NONCONVERT     0x1D
+#endif
+
+#ifndef VK_XBUTTON1
+#define VK_XBUTTON1      0x05
+#endif
+
+#ifndef VK_XBUTTON2
+#define VK_XBUTTON2      0x06
 #endif
 
 typedef struct {
@@ -3786,22 +3661,6 @@ MsgRouting AwtComponent::WmChar(UINT character, UINT repCnt, UINT flags,
     // via WM_AWT_FORWARD_BYTE, but the Edit classes don't seem to
     // like that.
 
-    // Begin pollution
-    if (!m_isWinNT && IsDBCSLeadByteEx(GetCodePage(), BYTE(character))) {
-        if (GetDBCSEditHandle() != NULL) {
-            return mrDoDefault;
-        } else {
-            // Kludge: Some Chinese IMEs, e.g. QuanPin, sends two WM_CHAR
-            // messages for some punctuations (e.g. full stop) without sending
-            // WM_IME_CHAR message beforehand.
-            if (m_PendingLeadByte == 0) {
-                m_PendingLeadByte = character;
-                return mrConsume;
-            }
-        }
-    }
-    // End pollution
-
     // We will simply create Java events here.
     UINT message = system ? WM_SYSCHAR : WM_CHAR;
 
@@ -3861,43 +3720,8 @@ MsgRouting AwtComponent::WmChar(UINT character, UINT repCnt, UINT flags,
 MsgRouting AwtComponent::WmForwardChar(WCHAR character, LPARAM lParam,
                                        BOOL synthetic)
 {
-    if (m_isWinNT) {
-        // just post WM_CHAR with unicode key value
-        DefWindowProc(WM_CHAR, (WPARAM)character, lParam);
-        return mrConsume;
-    }
-
-    // This message is sent from the Java key event handler.
-    CHAR mbChar[2] = {'\0', '\0'};
-
-    int cBytes = ::WideCharToMultiByte(GetCodePage(), 0, &character, 1, mbChar, 2, NULL, NULL);
-    if (cBytes!=1 && cBytes!=2)    return mrConsume;
-
-    HWND hDBCSEditHandle = GetDBCSEditHandle();
-
-    if (hDBCSEditHandle != NULL && cBytes==2)
-    {
-        // The first WM_CHAR message will get handled by the WmChar, but
-        // the second WM_CHAR message will get picked off by the Edit class.
-        // WmChar will never see it.
-        // If an Edit class gets a lead byte, it immediately calls PeekMessage
-        // and pulls the trail byte out of the message queue.
-        ::PostMessage(hDBCSEditHandle, WM_CHAR, mbChar[0] & 0x00ff, lParam);
-        ::PostMessage(hDBCSEditHandle, WM_CHAR, mbChar[1] & 0x00ff, lParam);
-    }
-    else
-    {
-        MSG* pMsg;
-        pMsg = CreateMessage(WM_CHAR, mbChar[0] & 0x00ff, lParam);
-        ::PostMessage(GetHWnd(), WM_AWT_FORWARD_BYTE, (WPARAM)synthetic,
-                      (LPARAM)pMsg);
-        if (mbChar[1])
-        {
-            pMsg = CreateMessage(WM_CHAR, mbChar[1] & 0x00ff, lParam);
-            ::PostMessage(GetHWnd(), WM_AWT_FORWARD_BYTE, (WPARAM)synthetic,
-                          (LPARAM)pMsg);
-        }
-    }
+    // just post WM_CHAR with unicode key value
+    DefWindowProc(WM_CHAR, (WPARAM)character, lParam);
     return mrConsume;
 }
 
@@ -3929,7 +3753,7 @@ void AwtComponent::OpenCandidateWindow(int x, int y)
             SetCandidateWindow(iCandType, x-rc.left, y-rc.top);
     }
     if (m_bitsCandType != 0) {
-        DefWindowProc(WM_IME_NOTIFY, IMN_OPENCANDIDATE, m_bitsCandType);
+        ::DefWindowProc(GetHWnd(), WM_IME_NOTIFY, IMN_OPENCANDIDATE, m_bitsCandType);
     }
 }
 
@@ -4543,7 +4367,7 @@ MsgRouting AwtComponent::WmPrint(HDC hDC, LPARAM flags)
 
         // Special case for components with a sunken border. Windows does not
         // print the border correctly on PCL printers, so we have to do it ourselves.
-        if (IS_WIN4X && (GetStyleEx() & WS_EX_CLIENTEDGE)) {
+        if (GetStyleEx() & WS_EX_CLIENTEDGE) {
             RECT r;
             VERIFY(::GetWindowRect(GetHWnd(), &r));
             VERIFY(::OffsetRect(&r, -r.left, -r.top));
@@ -4559,7 +4383,7 @@ MsgRouting AwtComponent::WmPrint(HDC hDC, LPARAM flags)
          * We will first print the non-client area with the original offset,
          * then the client area with a corrected offset.
          */
-        if (IS_WIN4X && (GetStyleEx() & WS_EX_CLIENTEDGE)) {
+        if (GetStyleEx() & WS_EX_CLIENTEDGE) {
 
             int nEdgeWidth = ::GetSystemMetrics(SM_CXEDGE);
             int nEdgeHeight = ::GetSystemMetrics(SM_CYEDGE);
@@ -5305,7 +5129,12 @@ void AwtComponent::SynthesizeMouseMessage(JNIEnv *env, jobject mouseEvent)
           if (modifiers & java_awt_event_InputEvent_BUTTON3_DOWN_MASK) {
               wLow |= MK_MBUTTON;
           }
-
+          if (modifiers & X1_BUTTON) {
+              wLow |= GetButtonMK(X1_BUTTON);
+          }
+          if (modifiers & X2_BUTTON) {
+              wLow |= GetButtonMK(X2_BUTTON);
+          }
 
           wheelAmt = (jint)JNU_CallMethodByName(env,
                                                NULL,
@@ -5319,18 +5148,8 @@ void AwtComponent::SynthesizeMouseMessage(JNIEnv *env, jobject mouseEvent)
           // convert Java wheel amount value to Win32
           wheelAmt *= -1 * WHEEL_DELTA;
 
-          if (IS_WIN95 && !IS_WIN98) {
-              // 95 doesn't understand WM_MOUSEWHEEL, so plug in value of
-              // mouse wheel event on 95
-              DTRACE_PRINTLN("awt_C::synthmm - 95 case");
-              DASSERT(Wheel95GetMsg() != NULL);
-              message = Wheel95GetMsg();
-              wParam = wheelAmt;
-          }
-          else {
-              message = WM_MOUSEWHEEL;
-              wParam = MAKEWPARAM(wLow, wheelAmt);
-          }
+          message = WM_MOUSEWHEEL;
+          wParam = MAKEWPARAM(wLow, wheelAmt);
 
           break;
       default:
@@ -5443,45 +5262,6 @@ void AwtComponent::Enable(BOOL bEnable)
     sm_suppressFocusAndActivation = FALSE;
     CriticalSection::Lock l(GetLock());
     VerifyState();
-}
-
-/* Initialization of MouseWheel support on Windows 95 */
-void AwtComponent::Wheel95Init() {
-    DASSERT(IS_WIN95 && !IS_WIN98);
-
-    HWND mwHWND = NULL;
-    UINT wheelMSG = WM_NULL;
-    UINT suppMSG = WM_NULL;
-    UINT linesMSG = WM_NULL;
-    BOOL wheelActive;
-    INT lines;
-
-    mwHWND = HwndMSWheel(&wheelMSG, &suppMSG, &linesMSG, &wheelActive, &lines);
-    if (mwHWND != WM_NULL) {
-        sm_95WheelMessage = wheelMSG;
-        sm_95WheelSupport = suppMSG;
-    }
-}
-
-/* Win95 only
- * Return the user's preferred number of lines of test to scroll when the
- * mouse wheel is rotated.
- */
-UINT AwtComponent::Wheel95GetScrLines() {
-    DASSERT(IS_WIN95 && !IS_WIN98);
-    DASSERT(sm_95WheelSupport != NULL);
-
-    HWND mwHWND = NULL;
-    UINT linesMSG = WM_NULL;
-    INT numLines = 3;
-
-    linesMSG = RegisterWindowMessage(MSH_SCROLL_LINES);
-    mwHWND = FindWindow(MSH_WHEELMODULE_CLASS, MSH_WHEELMODULE_TITLE);
-
-    if (mwHWND && linesMSG) {
-        numLines = (INT)::SendMessage(mwHWND, linesMSG, 0, 0);
-    }
-    return numLines;
 }
 
 /*
@@ -5983,7 +5763,7 @@ void AwtComponent::_SetFont(void *param)
     {
         AwtFont *awtFont = (AwtFont *)env->GetLongField(font, AwtFont::pDataID);
         if (awtFont == NULL) {
-        /*arguments of AwtFont::Create are changed for multifont component */
+            /*arguments of AwtFont::Create are changed for multifont component */
             awtFont = AwtFont::Create(env, font);
         }
         env->SetLongField(font, AwtFont::pDataID, (jlong)awtFont);
@@ -6334,30 +6114,36 @@ void AwtComponent::_SetRectangularShape(void *param)
     c = (AwtComponent *)pData;
     if (::IsWindow(c->GetHWnd()))
     {
-        RGNDATA *pRgnData = NULL;
-        RGNDATAHEADER *pRgnHdr;
+        HRGN hRgn = NULL;
 
-        /* reserving memory for the worst case */
-        size_t worstBufferSize = size_t(((x2 - x1) / 2 + 1) * (y2 - y1));
-        pRgnData = (RGNDATA *) safe_Malloc(sizeof(RGNDATAHEADER) +
-                sizeof(RECT_T) * worstBufferSize);
-        pRgnHdr = (RGNDATAHEADER *) pRgnData;
+        if (region || x1 || x2 || y1 || y2) {
+            // If all the params are zeros, the shape must be simply reset.
+            // Otherwise, convert it into a region.
+            RGNDATA *pRgnData = NULL;
+            RGNDATAHEADER *pRgnHdr;
 
-        pRgnHdr->dwSize = sizeof(RGNDATAHEADER);
-        pRgnHdr->iType = RDH_RECTANGLES;
-        pRgnHdr->nRgnSize = 0;
-        pRgnHdr->rcBound.top = 0;
-        pRgnHdr->rcBound.left = 0;
-        pRgnHdr->rcBound.bottom = LONG(y2 - y1);
-        pRgnHdr->rcBound.right = LONG(x2 - x1);
+            /* reserving memory for the worst case */
+            size_t worstBufferSize = size_t(((x2 - x1) / 2 + 1) * (y2 - y1));
+            pRgnData = (RGNDATA *) safe_Malloc(sizeof(RGNDATAHEADER) +
+                    sizeof(RECT_T) * worstBufferSize);
+            pRgnHdr = (RGNDATAHEADER *) pRgnData;
 
-        RECT_T * pRect = (RECT_T *) (((BYTE *) pRgnData) + sizeof(RGNDATAHEADER));
-        pRgnHdr->nCount = RegionToYXBandedRectangles(env, x1, y1, x2, y2, region, &pRect, worstBufferSize);
+            pRgnHdr->dwSize = sizeof(RGNDATAHEADER);
+            pRgnHdr->iType = RDH_RECTANGLES;
+            pRgnHdr->nRgnSize = 0;
+            pRgnHdr->rcBound.top = 0;
+            pRgnHdr->rcBound.left = 0;
+            pRgnHdr->rcBound.bottom = LONG(y2 - y1);
+            pRgnHdr->rcBound.right = LONG(x2 - x1);
 
-        HRGN hRgn = ::ExtCreateRegion(NULL,
-                sizeof(RGNDATAHEADER) + sizeof(RECT_T) * pRgnHdr->nCount, pRgnData);
+            RECT_T * pRect = (RECT_T *) (((BYTE *) pRgnData) + sizeof(RGNDATAHEADER));
+            pRgnHdr->nCount = RegionToYXBandedRectangles(env, x1, y1, x2, y2, region, &pRect, worstBufferSize);
 
-        free(pRgnData);
+            hRgn = ::ExtCreateRegion(NULL,
+                    sizeof(RGNDATAHEADER) + sizeof(RECT_T) * pRgnHdr->nCount, pRgnData);
+
+            free(pRgnData);
+        }
 
         ::SetWindowRgn(c->GetHWnd(), hRgn, TRUE);
     }
@@ -6451,6 +6237,18 @@ JNIEXPORT void JNICALL
 Java_java_awt_Component_initIDs(JNIEnv *env, jclass cls)
 {
     TRY;
+    jclass inputEventClazz = env->FindClass("java/awt/event/InputEvent");
+    jmethodID getButtonDownMasksID = env->GetStaticMethodID(inputEventClazz, "getButtonDownMasks", "()[I");
+    jintArray obj = (jintArray)env->CallStaticObjectMethod(inputEventClazz, getButtonDownMasksID);
+    jint * tmp = env->GetIntArrayElements(obj, JNI_FALSE);
+
+    jsize len = env->GetArrayLength(obj);
+    AwtComponent::masks = new jint[len];
+    for (int i = 0; i < len; i++) {
+        AwtComponent::masks[i] = tmp[i];
+    }
+    env->ReleaseIntArrayElements(obj, tmp, 0);
+    env->DeleteLocalRef(obj);
 
     /* class ids */
     jclass peerCls = env->FindClass("sun/awt/windows/WComponentPeer");
@@ -7025,20 +6823,6 @@ Java_sun_awt_windows_WComponentPeer_isObscured(JNIEnv* env,
     CATCH_BAD_ALLOC_RET(NULL);
 }
 
-/*
- * Class:     sun_awt_windows_WComponentPeer
- * Method:    wheelInit
- * Signature: ()V
- */
-JNIEXPORT void JNICALL
-Java_sun_awt_windows_WComponentPeer_wheelInit(JNIEnv *env, jclass cls)
-{
-    // Only necessary on Win95
-    if (IS_WIN95 && !IS_WIN98) {
-        AwtComponent::Wheel95Init();
-    }
-}
-
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_windows_WComponentPeer_processSynchronousLightweightTransfer(JNIEnv *env, jclass cls,
                                                                           jobject heavyweight,
@@ -7217,7 +7001,9 @@ void AwtComponent::VerifyState()
                                               "getName",
                                               "()Ljava/lang/String;").l;
             DASSERT(!safe_ExceptionOccurred(env));
-            printf("\t%S\n", TO_WSTRING(targetStr));
+            LPCWSTR targetStrW = JNU_GetStringPlatformChars(env, targetStr, NULL);
+            printf("\t%S\n", targetStrW);
+            JNU_ReleaseStringPlatformChars(env, targetStr, targetStrW);
         }
         printf("\twas:       [%d,%d,%dx%d]\n", x, y, width, height);
         if (!fSizeValid) {

@@ -184,7 +184,7 @@ void D3DPipelineManager::NotifyAdapterEventListeners(UINT adapter,
     pMgr = D3DPipelineManager::GetInstance();
     RETURN_IF_NULL(pMgr);
     hMon = pMgr->pd3d9->GetAdapterMonitor(adapter);
-    gdiScreen = AwtWin32GraphicsDevice::GetScreenFromMHND((MHND)hMon);
+    gdiScreen = AwtWin32GraphicsDevice::GetScreenFromHMONITOR(hMon);
 
     JNU_CallStaticMethodByName(env, NULL,
         "sun/java2d/pipe/hw/AccelDeviceEventNotifier",
@@ -194,21 +194,21 @@ void D3DPipelineManager::NotifyAdapterEventListeners(UINT adapter,
 
 UINT D3DPipelineManager::GetAdapterOrdinalForScreen(jint gdiScreen)
 {
-    MHND mHnd = AwtWin32GraphicsDevice::GetMonitor(gdiScreen);
-    if (mHnd == (MHND)0) {
+    HMONITOR mHnd = AwtWin32GraphicsDevice::GetMonitor(gdiScreen);
+    if (mHnd == (HMONITOR)0) {
         return D3DADAPTER_DEFAULT;
     }
     return GetAdapterOrdinalByHmon((HMONITOR)mHnd);
 }
 
 // static
-HRESULT D3DPipelineManager::HandleAdaptersChange(HMONITOR *pMHNDs, UINT monNum)
+HRESULT D3DPipelineManager::HandleAdaptersChange(HMONITOR *pHMONITORs, UINT monNum)
 {
     HRESULT res = S_OK;
     BOOL bResetD3D = FALSE, bFound;
 
     D3DPipelineManager *pMgr = D3DPipelineManager::GetInstance();
-    RETURN_STATUS_IF_NULL(pMHNDs, E_FAIL);
+    RETURN_STATUS_IF_NULL(pHMONITORs, E_FAIL);
     if (pMgr == NULL) {
         // NULL pMgr is valid when the pipeline is not enabled or if it hasn't
         // been created yet
@@ -234,7 +234,7 @@ HRESULT D3DPipelineManager::HandleAdaptersChange(HMONITOR *pMHNDs, UINT monNum)
             }
             bFound = FALSE;
             for (UINT mon = 0; mon < monNum; mon++) {
-                if (pMHNDs[mon] == hMon) {
+                if (pHMONITORs[mon] == hMon) {
                     J2dTraceLn3(J2D_TRACE_VERBOSE,
                             "  adapter %d: found hmnd[%d]=0x%x", i, mon, hMon);
                     bFound = TRUE;
@@ -364,8 +364,8 @@ D3DPipelineManager::CheckOSVersion()
 HRESULT
 D3DPipelineManager::GDICheckForBadHardware()
 {
-    _DISPLAY_DEVICE dd;
-    dd.dwSize = sizeof(DISPLAY_DEVICE);
+    DISPLAY_DEVICE dd;
+    dd.cb = sizeof(DISPLAY_DEVICE);
 
     int failedDevices = 0;
     int attachedDevices = 0;
@@ -379,9 +379,9 @@ D3DPipelineManager::GDICheckForBadHardware()
 
     // i<20 is to guard against buggy drivers
     while (EnumDisplayDevices(NULL, i, &dd, 0) && i < 20) {
-        if (dd.dwFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) {
+        if (dd.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) {
             attachedDevices++;
-            id = dd.deviceID;
+            id = dd.DeviceID;
             if (wcslen(id) > 21) {
                 // get vendor ID
                 wcsncpy(vendorId, id+8, 4);
@@ -796,7 +796,7 @@ HWND D3DPipelineManager::CreateDefaultFocusWindow()
     ZeroMemory(&mi, sizeof(MONITORINFO));
     mi.cbSize = sizeof(MONITORINFO);
     HMONITOR hMon = pd3d9->GetAdapterMonitor(adapterOrdinal);
-    if (hMon == 0 || !GetMonitorInfo(hMon, (PMONITOR_INFO)&mi)) {
+    if (hMon == 0 || !GetMonitorInfo(hMon, (LPMONITORINFO)&mi)) {
         J2dRlsTraceLn1(J2D_TRACE_ERROR,
             "D3DPPLM::CreateDefaultFocusWindow: "\
             "error getting monitor info for adapter=%d", adapterOrdinal);
