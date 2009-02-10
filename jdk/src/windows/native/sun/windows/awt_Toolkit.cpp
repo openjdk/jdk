@@ -23,15 +23,16 @@
  * have any questions.
  */
 
+#include "awt.h"
 #include <signal.h>
 #include <windowsx.h>
 
-#if defined(_DEBUG) && defined(_MSC_VER) && _MSC_VER >= 1000
-#include <crtdbg.h>
-#endif
+//#if defined(_DEBUG) && defined(_MSC_VER) && _MSC_VER >= 1000
+//#include <crtdbg.h>
+//#endif
 
 #define _JNI_IMPLEMENTATION_
-#include "stdhdrs.h"
+
 #include "awt_DrawingSurface.h"
 #include "awt_AWTEvent.h"
 #include "awt_Component.h"
@@ -51,7 +52,6 @@
 #include "awt_FileDialog.h"
 #include "CmdIDList.h"
 #include "awt_new.h"
-#include "awt_Unicode.h"
 #include "debug_trace.h"
 #include "debug_mem.h"
 
@@ -225,8 +225,7 @@ BOOL AwtToolkit::activateKeyboardLayout(HKL hkl) {
     HKL prev = ::ActivateKeyboardLayout(hkl, 0);
 
     // If the above call fails, try loading the layout in case of NT
-    if ((prev == 0) && IS_NT) {
-
+    if (!prev) {
         // create input locale string, e.g., "00000409", from hkl.
         TCHAR inputLocale[9];
         TCHAR buf[9];
@@ -297,7 +296,7 @@ JavaStringBuffer::JavaStringBuffer(JNIEnv *env, jstring jstr) {
     if (jstr != NULL) {
         int length = env->GetStringLength(jstr);
         buffer = new TCHAR[length + 1];
-        LPCTSTR tmp = (LPCTSTR)JNU_GetStringPlatformChars(env, jstr, NULL);
+        LPCTSTR tmp = JNU_GetStringPlatformChars(env, jstr, NULL);
         _tcscpy(buffer, tmp);
         JNU_ReleaseStringPlatformChars(env, jstr, tmp);
     } else {
@@ -323,6 +322,7 @@ AwtToolkit::AwtToolkit() {
     m_vmSignalled = FALSE;
 
     m_isDynamicLayoutSet = FALSE;
+    m_areExtraMouseButtonsEnabled = TRUE;
 
     m_verifyComponents = FALSE;
     m_breakOnError = FALSE;
@@ -489,8 +489,6 @@ BOOL AwtToolkit::Dispose() {
     delete tk.m_cmdIDs;
 
     ::CloseHandle(m_waitEvent);
-
-    ComCtl32Util::GetInstance().FreeLibraries();
 
     tk.m_isDisposed = TRUE;
 
@@ -886,8 +884,6 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           return (DWORD)ImmGetOpenStatus((HIMC)wParam);
       }
       case WM_DISPLAYCHANGE: {
-          AwtCursor::DirtyAllCustomCursors();
-
           // Reinitialize screens
           initScreens(env);
 
@@ -1161,9 +1157,7 @@ BOOL AwtToolkit::PreProcessMsg(MSG& msg)
     if (p && p->PreProcessMsg(msg) == mrConsume)
         return TRUE;
 
-    if ((msg.message >= WM_MOUSEFIRST && msg.message <= WM_AWT_MOUSELAST) ||
-        (IS_WIN95 && !IS_WIN98 &&
-                                msg.message == AwtComponent::Wheel95GetMsg()) ||
+    if ((msg.message >= WM_MOUSEFIRST && msg.message <= WM_MOUSELAST) ||
         (msg.message >= WM_NCMOUSEMOVE && msg.message <= WM_NCMBUTTONDBLCLK)) {
         if (PreProcessMouseMsg(p, msg)) {
             return TRUE;
@@ -1190,9 +1184,7 @@ BOOL AwtToolkit::PreProcessMouseMsg(AwtComponent* p, MSG& msg)
         return FALSE;
     }
 
-    if (msg.message >= WM_MOUSEFIRST && msg.message <= WM_AWT_MOUSELAST ||
-        (IS_WIN95 && !IS_WIN98 && msg.message == AwtComponent::Wheel95GetMsg()))
-    {
+    if (msg.message >= WM_MOUSEFIRST && msg.message <= WM_MOUSELAST) {
         mouseWParam = msg.wParam;
         mouseLParam = msg.lParam;
     } else {
@@ -1286,21 +1278,6 @@ BOOL AwtToolkit::PreProcessMouseMsg(AwtComponent* p, MSG& msg)
         mouseWheelComp != NULL) { //i.e. mouse is over client area for this
                                   //window
         msg.hwnd = hWndForWheel;
-    }
-    else if (IS_WIN95 && !IS_WIN98 &&
-             msg.message == AwtComponent::Wheel95GetMsg() &&
-             mouseWheelComp != NULL) {
-
-        // On Win95, mouse wheels are _always_ delivered to the top level
-        // Frame.  Default behavior only takes place if the message's hwnd
-        // remains that of the Frame.  We only want to change the hwnd if
-        // we're changing it to a Component that DOESN'T handle the
-        // mousewheel natively.
-
-        if (!mouseWheelComp->InheritsNativeMouseWheelBehavior()) {
-            DTRACE_PRINTLN("AwtT::PPMM: changing hwnd on 95");
-            msg.hwnd = hWndForWheel;
-        }
     }
 
     /*
@@ -1792,7 +1769,7 @@ Java_sun_awt_windows_WToolkit_getScreenInsets(JNIEnv *env,
 {
     jobject insets = NULL;
     RECT rRW;
-    MONITOR_INFO *miInfo;
+    LPMONITORINFO miInfo;
 
     TRY;
 
@@ -1814,10 +1791,10 @@ Java_sun_awt_windows_WToolkit_getScreenInsets(JNIEnv *env,
         if (miInfo) {
             insets = env->NewObject(env->FindClass("java/awt/Insets"),
                 AwtToolkit::insetsMID,
-                miInfo->rWork.top    - miInfo->rMonitor.top,
-                miInfo->rWork.left   - miInfo->rMonitor.left,
-                miInfo->rMonitor.bottom - miInfo->rWork.bottom,
-                miInfo->rMonitor.right - miInfo->rWork.right);
+                miInfo->rcWork.top - miInfo->rcMonitor.top,
+                miInfo->rcWork.left - miInfo->rcMonitor.left,
+                miInfo->rcMonitor.bottom - miInfo->rcWork.bottom,
+                miInfo->rcMonitor.right - miInfo->rcWork.right);
         }
     }
 
@@ -2057,29 +2034,15 @@ Java_sun_awt_windows_WToolkit_getWindowsVersion(JNIEnv *env, jclass cls)
     swprintf(szVer, L"0x%x = %ld", version, version);
     int l = lstrlen(szVer);
 
-    if (IS_WIN95) {
-        if (IS_WIN98) {
-            if (IS_WINME) {
-                swprintf(szVer + l, L" (Windows ME)");
+    if (IS_WIN2000) {
+        if (IS_WINXP) {
+            if (IS_WINVISTA) {
+                swprintf(szVer + l, L" (Windows Vista)");
             } else {
-                swprintf(szVer + l, L" (Windows 98)");
+                swprintf(szVer + l, L" (Windows XP)");
             }
         } else {
-            swprintf(szVer + l, L" (Windows 95)");
-        }
-    } else if (IS_NT) {
-        if (IS_WIN2000) {
-            if (IS_WINXP) {
-                if (IS_WINVISTA) {
-                    swprintf(szVer + l, L" (Windows Vista)");
-                } else {
-                    swprintf(szVer + l, L" (Windows XP)");
-                }
-            } else {
-                swprintf(szVer + l, L" (Windows 2000)");
-            }
-        } else {
-            swprintf(szVer + l, L" (Windows NT)");
+            swprintf(szVer + l, L" (Windows 2000)");
         }
     } else {
         swprintf(szVer + l, L" (Unknown)");
@@ -2129,4 +2092,27 @@ Java_sun_awt_SunToolkit_closeSplashScreen(JNIEnv *env, jclass cls)
     if (splashClose) {
         splashClose();
     }
+}
+
+/*
+ * accessible from awt_Component
+ */
+BOOL AwtToolkit::areExtraMouseButtonsEnabled() {
+    return m_areExtraMouseButtonsEnabled;
+}
+
+/*
+ * Class:     sun_awt_windows_WToolkit
+ * Method:    setExtraMouseButtonsEnabledNative
+ * Signature: (Z)V
+ */
+extern "C" JNIEXPORT void JNICALL Java_sun_awt_windows_WToolkit_setExtraMouseButtonsEnabledNative
+(JNIEnv *env, jclass self, jboolean enable){
+    TRY;
+    AwtToolkit::GetInstance().setExtraMouseButtonsEnabled(enable);
+    CATCH_BAD_ALLOC;
+}
+
+void AwtToolkit::setExtraMouseButtonsEnabled(BOOL enable) {
+    m_areExtraMouseButtonsEnabled = enable;
 }

@@ -68,13 +68,6 @@ public abstract class WComponentPeer extends WObjectPeer
     private static final Logger log = Logger.getLogger("sun.awt.windows.WComponentPeer");
     private static final Logger shapeLog = Logger.getLogger("sun.awt.windows.shape.WComponentPeer");
 
-    static {
-        wheelInit();
-    }
-
-    // Only actually does stuff if running on 95
-    native static void wheelInit();
-
     // ComponentPeer implementation
     SurfaceData surfaceData;
 
@@ -964,8 +957,12 @@ public abstract class WComponentPeer extends WObjectPeer
                     + "; SHAPE: " + shape);
         }
 
-        setRectangularShape(shape.getLoX(), shape.getLoY(), shape.getHiX(), shape.getHiY(),
-                (shape.isRectangular() ? null : shape));
+        if (shape != null) {
+            setRectangularShape(shape.getLoX(), shape.getLoY(), shape.getHiX(), shape.getHiY(),
+                    (shape.isRectangular() ? null : shape));
+        } else {
+            setRectangularShape(0, 0, 0, 0, null);
+        }
     }
 
 }

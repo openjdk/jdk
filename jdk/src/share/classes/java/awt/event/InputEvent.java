@@ -31,6 +31,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.Arrays;
 
 /**
  * The root event class for all component-level input events.
@@ -153,13 +154,93 @@ public abstract class InputEvent extends ComponentEvent {
      */
     public static final int ALT_GRAPH_DOWN_MASK = 1 << 13;
 
+    /**
+     * An array of extended modifiers for additional buttons.
+     * @see getButtonDownMasks
+     * @since 7.0
+     */
+    private static final int [] BUTTON_DOWN_MASK = new int [] { BUTTON1_DOWN_MASK,
+                                                               BUTTON2_DOWN_MASK,
+                                                               BUTTON3_DOWN_MASK,
+                                                               1<<14, //4th phisical button (this is not a wheel!)
+                                                               1<<15, //(this is not a wheel!)
+                                                               1<<16,
+                                                               1<<17,
+                                                               1<<18,
+                                                               1<<19,
+                                                               1<<20,
+                                                               1<<21 };
+
+    /**
+     * A method to access an array of extended modifiers for additional buttons.
+     * @since 7.0
+     */
+    private static int [] getButtonDownMasks(){
+        return Arrays.copyOf(BUTTON_DOWN_MASK, BUTTON_DOWN_MASK.length);
+    }
+
+
+    /**
+     * A method to obtain a mask for any existing mouse button.
+     * The returned mask may be used for different purposes. Following are some of them:
+     * <ul>
+     * <li> {@link java.awt.Robot#mousePress(int) mousePress(buttons)} and
+     *      {@link java.awt.Robot#mouseRelease(int) mouseRelease(buttons)}
+     * <li> as a {@code modifiers} parameter when creating a new {@link MouseEvent} instance
+     * <li> to check {@link MouseEvent#getModifiersEx() modifiersEx} of existing {@code MouseEvent}
+     * </ul>
+     * @param button is a number to represent a button starting from 1.
+     * For example,
+     * <pre>
+     * int button = InputEvent.getMaskForButton(1);
+     * </pre>
+     * will have the same meaning as
+     * <pre>
+     * int button = InputEvent.getMaskForButton(MouseEvent.BUTTON1);
+     * </pre>
+     * because {@link MouseEvent#BUTTON1 MouseEvent.BUTTON1} equals to 1.
+     * If a mouse has three enabled buttons(see {@link java.awt.MouseInfo#getNumberOfButtons() MouseInfo.getNumberOfButtons()})
+     * then the values from the left column passed into the method will return
+     * corresponding values from the right column:
+     * <PRE>
+     *    <b>button </b>   <b>returned mask</b>
+     *    {@link MouseEvent#BUTTON1 BUTTON1}  {@link MouseEvent#BUTTON1_DOWN_MASK BUTTON1_DOWN_MASK}
+     *    {@link MouseEvent#BUTTON2 BUTTON2}  {@link MouseEvent#BUTTON2_DOWN_MASK BUTTON2_DOWN_MASK}
+     *    {@link MouseEvent#BUTTON3 BUTTON3}  {@link MouseEvent#BUTTON3_DOWN_MASK BUTTON3_DOWN_MASK}
+     * </PRE>
+     * If a mouse has more than three enabled buttons then more values
+     * are admissible (4, 5, etc.). There is no assigned constants for these extended buttons.
+     * The button masks for the extra buttons returned by this method have no assigned names like the
+     * first three button masks.
+     * <p>
+     * This method has the following implementation restriction.
+     * It returns masks for a limited number of buttons only. The maximum number is
+     * implementation dependent and may vary.
+     * This limit is defined by the relevant number
+     * of buttons that may hypothetically exist on the mouse but it is greater than the
+     * {@link java.awt.MouseInfo#getNumberOfButtons() MouseInfo.getNumberOfButtons()}.
+     * <p>
+     * @throws IllegalArgumentException if {@code button} is less than zero or greater than the number
+     *         of button masks reserved for buttons
+     * @since 7.0
+     * @see java.awt.MouseInfo#getNumberOfButtons()
+     * @see Toolkit#areExtraMouseButtonsEnabled()
+     * @see MouseEvent#getModifiers()
+     * @see MouseEvent#getModifiersEx()
+     */
+    public static int getMaskForButton(int button) {
+        if (button <= 0 || button > BUTTON_DOWN_MASK.length) {
+            throw new IllegalArgumentException("button doesn\'t exist " + button);
+        }
+        return BUTTON_DOWN_MASK[button - 1];
+    }
+
     // the constant below MUST be updated if any extra modifier
     // bits are to be added!
     // in fact, it is undesirable to add modifier bits
     // to the same field as this may break applications
     // see bug# 5066958
-
-    static final int FIRST_HIGH_BIT = 1 << 14;
+    static final int FIRST_HIGH_BIT = 1 << 22;
 
     static final int JDK_1_3_MODIFIERS = SHIFT_DOWN_MASK - 1;
     static final int HIGH_MODIFIERS = ~( FIRST_HIGH_BIT - 1 );
@@ -382,7 +463,7 @@ public abstract class InputEvent extends ComponentEvent {
      * cause the returning an empty string.
      *
      * @param modifiers a modifier mask describing the extended
-       *                modifier keys and mouse buttons for the event
+     *                modifier keys and mouse buttons for the event
      * @return a text description of the combination of extended
      *         modifier keys and mouse buttons that were held down
      *         during the event.
@@ -410,17 +491,14 @@ public abstract class InputEvent extends ComponentEvent {
             buf.append(Toolkit.getProperty("AWT.altGraph", "Alt Graph"));
             buf.append("+");
         }
-        if ((modifiers & InputEvent.BUTTON1_DOWN_MASK) != 0) {
-            buf.append(Toolkit.getProperty("AWT.button1", "Button1"));
-            buf.append("+");
-        }
-        if ((modifiers & InputEvent.BUTTON2_DOWN_MASK) != 0) {
-            buf.append(Toolkit.getProperty("AWT.button2", "Button2"));
-            buf.append("+");
-        }
-        if ((modifiers & InputEvent.BUTTON3_DOWN_MASK) != 0) {
-            buf.append(Toolkit.getProperty("AWT.button3", "Button3"));
-            buf.append("+");
+
+        int buttonNumber = 1;
+        for (int mask : InputEvent.BUTTON_DOWN_MASK){
+            if ((modifiers & mask) != 0) {
+                buf.append(Toolkit.getProperty("AWT.button"+buttonNumber, "Button"+buttonNumber));
+                buf.append("+");
+            }
+            buttonNumber++;
         }
         if (buf.length() > 0) {
             buf.setLength(buf.length()-1); // remove trailing '+'

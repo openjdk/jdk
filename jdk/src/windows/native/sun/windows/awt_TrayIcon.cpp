@@ -23,9 +23,10 @@
  * have any questions.
  */
 
-#include <windows.h>
+#include "awt.h"
 #include <windowsx.h>
 #include <shellapi.h>
+#include <shlwapi.h>
 
 #include "awt_Toolkit.h"
 #include "awt_TrayIcon.h"
@@ -173,27 +174,20 @@ AwtTrayIcon* AwtTrayIcon::Create(jobject self, jobject parent)
     env->DeleteLocalRef(target);
     return awtTrayIcon;
 }
-typedef struct _SDLLVERSIONINFO
-{
-    DWORD cbSize;
-    DWORD dwMajorVersion;                   // Major version
-    DWORD dwMinorVersion;                   // Minor version
-    DWORD dwBuildNumber;                    // Build number
-    DWORD dwPlatformID;                     // DLLVER_PLATFORM_*
-} SDLLVERSIONINFO;
-typedef HRESULT (CALLBACK* SDLLGETVERSIONPROC)(SDLLVERSIONINFO *);
 
 void AwtTrayIcon::InitNID(UINT uID)
 {
     // fix for 6271589: we MUST set the size of the structure to match
     // the shell version, otherwise some errors may occur (like missing
     // balloon messages on win2k)
-    SDLLVERSIONINFO dllVersionInfo;
-    dllVersionInfo.cbSize = sizeof(SDLLVERSIONINFO);
-    int shellVersion = 4; // WIN_98
+    DLLVERSIONINFO dllVersionInfo;
+    dllVersionInfo.cbSize = sizeof(DLLVERSIONINFO);
+    int shellVersion = 5; // WIN_2000
+    // MSDN: DllGetVersion should not be implicitly called, but rather
+    // loaded using GetProcAddress
     HMODULE hShell = LoadLibrary(TEXT("Shell32.dll"));
     if (hShell != NULL) {
-        SDLLGETVERSIONPROC proc = (SDLLGETVERSIONPROC)GetProcAddress(hShell, "DllGetVersion");
+        DLLGETVERSIONPROC proc = (DLLGETVERSIONPROC)GetProcAddress(hShell, "DllGetVersion");
         if (proc != NULL) {
             if (proc(&dllVersionInfo) == NOERROR) {
                 shellVersion = dllVersionInfo.dwMajorVersion;
@@ -202,14 +196,16 @@ void AwtTrayIcon::InitNID(UINT uID)
     }
     FreeLibrary(hShell);
     switch (shellVersion) {
-        case 5: // WIN_2000, WIN_ME
+        case 5: // WIN_2000
             m_nid.cbSize = (BYTE *)(&m_nid.guidItem) - (BYTE *)(&m_nid.cbSize);
             break;
         case 6: // WIN_XP
+            // Uncomment these two lines when moving to VS2008
+//            m_nid.cbSize = (BYTE *)(&m_nid.hBalloonIcon) - (BYTE *)(&m_nid.cbSize);
+//            break;
+        default: // WIN_VISTA?
             m_nid.cbSize = sizeof(m_nid);
             break;
-        default: // WIN_98, WIN_NT
-            m_nid.cbSize = (BYTE *)(&m_nid.szTip) - (BYTE *)(&m_nid.cbSize) + sizeof(m_nid.szTip) / 2;
     }
     m_nid.hWnd = AwtTrayIcon::sm_msgWindow;
     m_nid.uID = uID;
@@ -217,7 +213,7 @@ void AwtTrayIcon::InitNID(UINT uID)
     m_nid.uCallbackMessage = WM_AWT_TRAY_NOTIFY;
     m_nid.hIcon = AwtToolkit::GetInstance().GetAwtIcon();
     m_nid.szTip[0] = '\0';
-    m_nid.uVersion = IS_WIN2000 ? AWT_NOTIFYICON_VERSION : 0;
+    m_nid.uVersion = NOTIFYICON_VERSION;
 }
 
 BOOL AwtTrayIcon::SendTrayMessage(DWORD dwMessage)
@@ -304,13 +300,13 @@ MsgRouting AwtTrayIcon::WmAwtTrayNotify(WPARAM wParam, LPARAM lParam)
         case WM_CONTEXTMENU:
             mr = WmContextMenu(0, pos.x, pos.y);
             break;
-        case AWT_NIN_KEYSELECT:
+        case NIN_KEYSELECT:
             mr = WmKeySelect(0, pos.x, pos.y);
             break;
-        case AWT_NIN_SELECT:
+        case NIN_SELECT:
             mr = WmSelect(0, pos.x, pos.y);
             break;
-        case AWT_NIN_BALLOONUSERCLICK:
+        case NIN_BALLOONUSERCLICK:
             mr = WmBalloonUserClick(0, pos.x, pos.y);
             break;
     }
@@ -371,7 +367,7 @@ MsgRouting AwtTrayIcon::WmMouseUp(UINT flags, int x, int y, int button)
                    (AwtComponent::GetButton(button) == java_awt_event_MouseEvent_BUTTON3 ?
                     TRUE : FALSE), AwtComponent::GetButton(button), &msg);
 
-    if ((m_mouseButtonClickAllowed & AwtComponent::GetButtonMK(button)) != 1) { // No up-button in the drag-state
+    if ((m_mouseButtonClickAllowed & AwtComponent::GetButtonMK(button)) != 0) { // No up-button in the drag-state
         SendMouseEvent(java_awt_event_MouseEvent_MOUSE_CLICKED,
                        TimeHelper::windowsToUTC(::GetTickCount()), x, y, AwtComponent::GetJavaModifiers(),
                        clickCount, JNI_FALSE, AwtComponent::GetButton(button));
@@ -397,7 +393,7 @@ MsgRouting AwtTrayIcon::WmMouseMove(UINT flags, int x, int y)
         lastX = x;
         lastY = y;
         AwtComponent::InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
-        if ((flags & AwtComponent::ALL_MK_BUTTONS) != 0) {
+        if ((flags & ALL_MK_BUTTONS) != 0) {
             m_mouseButtonClickAllowed = 0;
         } else {
             SendMouseEvent(java_awt_event_MouseEvent_MOUSE_MOVED, TimeHelper::windowsToUTC(::GetTickCount()), x, y,
@@ -473,7 +469,7 @@ MsgRouting AwtTrayIcon::WmTaskbarCreated() {
         BOOL result = item->m_trayIcon->SendTrayMessage(NIM_ADD);
         // 6270114: Instructs the taskbar to behave according to the Shell version 5.0
         if (result) {
-            item->m_trayIcon->SendTrayMessage(AWT_NIM_SETVERSION);
+            item->m_trayIcon->SendTrayMessage(NIM_SETVERSION);
         }
     }
     return mrDoDefault;
@@ -733,9 +729,9 @@ void AwtTrayIcon::_SetToolTip(void *param)
         goto ret;
     }
 
-    tooltipStr = env->GetStringChars(jtooltip, (jboolean *)NULL);
+    tooltipStr = JNU_GetStringPlatformChars(env, jtooltip, (jboolean *)NULL);
     trayIcon->SetToolTip(tooltipStr);
-    env->ReleaseStringChars(jtooltip, tooltipStr);
+    JNU_ReleaseStringPlatformChars(env, jtooltip, tooltipStr);
 ret:
     env->DeleteGlobalRef(self);
     env->DeleteGlobalRef(jtooltip);
@@ -782,7 +778,7 @@ void AwtTrayIcon::_UpdateIcon(void *param)
     BOOL result = trayIcon->SendTrayMessage(jupdate == JNI_TRUE ? NIM_MODIFY : NIM_ADD);
     // 6270114: Instructs the taskbar to behave according to the Shell version 5.0
     if (result && jupdate == JNI_FALSE) {
-        trayIcon->SendTrayMessage(AWT_NIM_SETVERSION);
+        trayIcon->SendTrayMessage(NIM_SETVERSION);
     }
 ret:
     env->DeleteGlobalRef(self);
@@ -791,22 +787,19 @@ ret:
 
 void AwtTrayIcon::DisplayMessage(LPCTSTR caption, LPCTSTR text, LPCTSTR msgType)
 {
-    if (!IS_WIN2000)
-        return;
-
-    m_nid.uFlags |= AWT_NIF_INFO;
+    m_nid.uFlags |= NIF_INFO;
     m_nid.uTimeout = 10000;
 
     if (lstrcmp(msgType, TEXT("ERROR")) == 0) {
-        m_nid.dwInfoFlags = AWT_NIIF_ERROR;
+        m_nid.dwInfoFlags = NIIF_ERROR;
     } else if (lstrcmp(msgType, TEXT("WARNING")) == 0) {
-        m_nid.dwInfoFlags = AWT_NIIF_WARNING;
+        m_nid.dwInfoFlags = NIIF_WARNING;
     } else if (lstrcmp(msgType, TEXT("INFO")) == 0) {
-        m_nid.dwInfoFlags = AWT_NIIF_INFO;
+        m_nid.dwInfoFlags = NIIF_INFO;
     } else if (lstrcmp(msgType, TEXT("NONE")) == 0) {
-        m_nid.dwInfoFlags = AWT_NIIF_NONE;
+        m_nid.dwInfoFlags = NIIF_NONE;
     } else {
-        m_nid.dwInfoFlags = AWT_NIIF_NONE;
+        m_nid.dwInfoFlags = NIIF_NONE;
     }
 
     if (caption[0] == '\0') {
@@ -835,7 +828,7 @@ void AwtTrayIcon::DisplayMessage(LPCTSTR caption, LPCTSTR text, LPCTSTR msgType)
     }
 
     SendTrayMessage(NIM_MODIFY);
-    m_nid.uFlags &= ~AWT_NIF_INFO;
+    m_nid.uFlags &= ~NIF_INFO;
 }
 
 void AwtTrayIcon::_DisplayMessage(void *param)
@@ -855,15 +848,15 @@ void AwtTrayIcon::_DisplayMessage(void *param)
     JNI_CHECK_PEER_GOTO(self, ret);
     trayIcon = (AwtTrayIcon *)pData;
 
-    captionStr = env->GetStringChars(jcaption, (jboolean *)NULL);
-    textStr = env->GetStringChars(jtext, (jboolean *)NULL);
-    msgTypeStr = env->GetStringChars(jmsgType, (jboolean *)NULL);
+    captionStr = JNU_GetStringPlatformChars(env, jcaption, (jboolean *)NULL);
+    textStr = JNU_GetStringPlatformChars(env, jtext, (jboolean *)NULL);
+    msgTypeStr = JNU_GetStringPlatformChars(env, jmsgType, (jboolean *)NULL);
 
     trayIcon->DisplayMessage(captionStr, textStr, msgTypeStr);
 
-    env->ReleaseStringChars(jcaption, captionStr);
-    env->ReleaseStringChars(jtext, textStr);
-    env->ReleaseStringChars(jmsgType, msgTypeStr);
+    JNU_ReleaseStringPlatformChars(env, jcaption, captionStr);
+    JNU_ReleaseStringPlatformChars(env, jtext, textStr);
+    JNU_ReleaseStringPlatformChars(env, jmsgType, msgTypeStr);
 ret:
     env->DeleteGlobalRef(self);
     env->DeleteGlobalRef(jcaption);
@@ -1057,16 +1050,14 @@ Java_sun_awt_windows_WTrayIconPeer__1displayMessage(JNIEnv *env, jobject self,
 {
     TRY;
 
-    if (IS_WIN2000) {
-        DisplayMessageStruct *dms = new DisplayMessageStruct;
-        dms->trayIcon = env->NewGlobalRef(self);
-        dms->caption = (jstring)env->NewGlobalRef(caption);
-        dms->text = (jstring)env->NewGlobalRef(text);
-        dms->msgType = (jstring)env->NewGlobalRef(msgType);
+    DisplayMessageStruct *dms = new DisplayMessageStruct;
+    dms->trayIcon = env->NewGlobalRef(self);
+    dms->caption = (jstring)env->NewGlobalRef(caption);
+    dms->text = (jstring)env->NewGlobalRef(text);
+    dms->msgType = (jstring)env->NewGlobalRef(msgType);
 
-        AwtToolkit::GetInstance().SyncCall(AwtTrayIcon::_DisplayMessage, dms);
-        // global ref is deleted in _DisplayMessage
-    }
+    AwtToolkit::GetInstance().SyncCall(AwtTrayIcon::_DisplayMessage, dms);
+    // global ref is deleted in _DisplayMessage
 
     CATCH_BAD_ALLOC(NULL);
 }
