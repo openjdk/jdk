@@ -398,16 +398,7 @@ ifeq ($(ARCH), ia64)
   # SA will never be supported here.
   INCLUDE_SA = false
 else
-  # Hopefully, SA will be supported here one of these days,
-  # and these will be changed to true.  Until then,
-  # to build SA on windows, do a control build with
-  #    BUILD_WIN_SA=1
-  # on the make command.
-  ifdef BUILD_WIN_SA
-    INCLUDE_SA = true
-  else
-    INCLUDE_SA = false
-  endif
+  INCLUDE_SA = true
 endif
 
 # Settings for the VERSIONINFO tap on windows. 
