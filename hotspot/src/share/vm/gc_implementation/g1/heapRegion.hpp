@@ -833,7 +833,7 @@ class HeapRegionClosure : public StackObj {
 
 // A linked lists of heap regions.  It leaves the "next" field
 // unspecified; that's up to subtypes.
-class RegionList {
+class RegionList VALUE_OBJ_CLASS_SPEC {
 protected:
   virtual HeapRegion* get_next(HeapRegion* chr) = 0;
   virtual void set_next(HeapRegion* chr,
