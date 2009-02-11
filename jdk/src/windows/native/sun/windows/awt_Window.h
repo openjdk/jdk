@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,6 +182,9 @@ public:
 
     void moveToDefaultLocation(); /* moves Window to X,Y specified by Window Manger */
 
+    void UpdateWindow(JNIEnv* env, jintArray data, int width, int height,
+                      HBITMAP hNewBitmap = NULL);
+
     INLINE virtual BOOL IsTopLevel() { return TRUE; }
     static AwtWindow * GetGrabbedWindow() { return m_grabbedWindow; }
 
@@ -204,6 +207,9 @@ public:
     static void _SetModalExcludedNativeProp(void *param);
     static void _ModalDisable(void *param);
     static void _ModalEnable(void *param);
+    static void _SetOpacity(void* param);
+    static void _SetOpaque(void* param);
+    static void _UpdateWindow(void* param);
 
     inline static BOOL IsResizing() {
         return sm_resizing;
@@ -228,6 +234,32 @@ private:
                                        // from its hierarchy when shown. Currently applied to instances of
                                        // javax/swing/Popup$HeavyWeightWindow class.
 
+    BYTE m_opacity;         // The opacity level. == 0xff by default (when opacity mode is disabled)
+    BOOL m_opaque;          // Whether the window uses the perpixel translucency (false), or not (true).
+
+    inline BYTE getOpacity() {
+        return m_opacity;
+    }
+    inline void setOpacity(BYTE opacity) {
+        m_opacity = opacity;
+    }
+
+    inline BOOL isOpaque() {
+        return m_opaque;
+    }
+    inline void setOpaque(BOOL opaque) {
+        m_opaque = opaque;
+    }
+
+    CRITICAL_SECTION contentBitmapCS;
+    HBITMAP hContentBitmap;
+    UINT contentWidth;
+    UINT contentHeight;
+
+    void RedrawWindow();
+    void SetTranslucency(BYTE opacity, BOOL opaque);
+    void UpdateWindowImpl(int width, int height, HBITMAP hBitmap);
+
 protected:
     BOOL m_isResizable;
     static AwtWindow* m_grabbedWindow; // Current grabbing window
@@ -236,6 +268,10 @@ protected:
     BOOL m_iconInherited;     /* TRUE if icon is inherited from the owner */
     BOOL m_filterFocusAndActivation; /* Used in the WH_CBT hook */
 
+    //These are used in AwtComponent::CreatePrintedPixels. They are overridden
+    //here to handle non-opaque windows.
+    virtual void FillBackground(HDC hMemoryDC, SIZE &size);
+    virtual void FillAlpha(void *bitmapBits, SIZE &size, BYTE alpha);
 
 private:
     int m_screenNum;

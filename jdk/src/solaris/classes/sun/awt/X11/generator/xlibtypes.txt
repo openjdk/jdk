@@ -750,6 +750,7 @@ AwtGraphicsConfigData
     pixelStride int
     color_data pointer ColorData
     glxInfo pointer
+    isTranslucencySupported int
 
 AwtScreenData
     numConfigs int

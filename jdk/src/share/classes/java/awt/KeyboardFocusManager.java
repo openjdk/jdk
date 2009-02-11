@@ -2208,7 +2208,7 @@ public abstract class KeyboardFocusManager
                                                   boolean temporary, boolean focusedWindowChangeAllowed,
                                                   long time)
     {
-        Window parentWindow = Component.getContainingWindow(heavyweight);
+        Window parentWindow = SunToolkit.getContainingWindow(heavyweight);
         if (parentWindow == null || !parentWindow.syncLWRequests) {
             return false;
         }
@@ -2542,7 +2542,7 @@ public abstract class KeyboardFocusManager
                 (HeavyweightFocusRequest.CLEAR_GLOBAL_FOCUS_OWNER);
 
             Component activeWindow = ((hwFocusRequest != null)
-                ? Component.getContainingWindow(hwFocusRequest.heavyweight)
+                ? SunToolkit.getContainingWindow(hwFocusRequest.heavyweight)
                 : nativeFocusedWindow);
             while (activeWindow != null &&
                    !((activeWindow instanceof Frame) ||
@@ -3013,8 +3013,8 @@ public abstract class KeyboardFocusManager
     }
 
     private static boolean focusedWindowChanged(Component to, Component from) {
-        Window wto = Component.getContainingWindow(to);
-        Window wfrom = Component.getContainingWindow(from);
+        Window wto = SunToolkit.getContainingWindow(to);
+        Window wfrom = SunToolkit.getContainingWindow(from);
         if (wto == null && wfrom == null) {
             return true;
         }
@@ -3028,8 +3028,8 @@ public abstract class KeyboardFocusManager
     }
 
     private static boolean isTemporary(Component to, Component from) {
-        Window wto = Component.getContainingWindow(to);
-        Window wfrom = Component.getContainingWindow(from);
+        Window wto = SunToolkit.getContainingWindow(to);
+        Window wfrom = SunToolkit.getContainingWindow(from);
         if (wto == null && wfrom == null) {
             return false;
         }

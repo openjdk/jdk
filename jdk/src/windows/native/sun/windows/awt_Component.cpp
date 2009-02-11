@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,9 +198,6 @@ BOOL AwtComponent::sm_rtl = PRIMARYLANGID(GetInputLanguage()) == LANG_ARABIC ||
                             PRIMARYLANGID(GetInputLanguage()) == LANG_HEBREW;
 BOOL AwtComponent::sm_rtlReadingOrder =
     PRIMARYLANGID(GetInputLanguage()) == LANG_ARABIC;
-
-UINT AwtComponent::sm_95WheelMessage = WM_NULL;
-UINT AwtComponent::sm_95WheelSupport = WM_NULL;
 
 HWND AwtComponent::sm_cursorOn;
 BOOL AwtComponent::m_QueryNewPaletteCalled = FALSE;
@@ -4562,6 +4559,25 @@ HDC AwtComponent::GetDCFromComponent()
     return hdc;
 }
 
+void AwtComponent::FillBackground(HDC hMemoryDC, SIZE &size)
+{
+    RECT eraseR = { 0, 0, size.cx, size.cy };
+    VERIFY(::FillRect(hMemoryDC, &eraseR, GetBackgroundBrush()));
+}
+
+void AwtComponent::FillAlpha(void *bitmapBits, SIZE &size, BYTE alpha)
+{
+    if (bitmapBits) {
+        DWORD* dest = (DWORD*)bitmapBits;
+        //XXX: might be optimized to use one loop (cy*cx -> 0).
+        for (int i = 0; i < size.cy; i++ ) {
+            for (int j = 0; j < size.cx; j++ ) {
+                ((BYTE*)(dest++))[3] = alpha;
+            }
+        }
+    }
+}
+
 jintArray AwtComponent::CreatePrintedPixels(SIZE &loc, SIZE &size) {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
@@ -6107,15 +6123,12 @@ void AwtComponent::_SetRectangularShape(void *param)
 
     AwtComponent *c = NULL;
 
-
-
     PDATA pData;
     JNI_CHECK_PEER_GOTO(self, ret);
-    c = (AwtComponent *)pData;
-    if (::IsWindow(c->GetHWnd()))
-    {
-        HRGN hRgn = NULL;
 
+    c = (AwtComponent *)pData;
+    if (::IsWindow(c->GetHWnd())) {
+        HRGN hRgn = NULL;
         if (region || x1 || x2 || y1 || y2) {
             // If all the params are zeros, the shape must be simply reset.
             // Otherwise, convert it into a region.

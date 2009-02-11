@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 #include "awt.h"
+
+#include <jlong.h>
 
 #include "awt_Component.h"
 #include "awt_Container.h"
@@ -88,7 +90,6 @@ struct ReshapeFrameStruct {
     jint x, y;
     jint w, h;
 };
-
 // struct for _SetIconImagesData
 struct SetIconImagesDataStruct {
     jobject window;
@@ -97,7 +98,6 @@ struct SetIconImagesDataStruct {
     jintArray smallIconRaster;
     jint smw, smh;
 };
-
 // struct for _SetMinSize() method
 // and other methods setting sizes
 struct SizeStruct {
@@ -114,6 +114,24 @@ struct ModalDisableStruct {
     jobject window;
     jlong blockerHWnd;
 };
+// struct for _SetOpacity() method
+struct OpacityStruct {
+    jobject window;
+    jint iOpacity;
+};
+// struct for _SetOpaque() method
+struct OpaqueStruct {
+    jobject window;
+    jboolean isOpaque;
+};
+// struct for _UpdateWindow() method
+struct UpdateWindowStruct {
+    jobject window;
+    jintArray data;
+    HBITMAP hBitmap;
+    jint width, height;
+};
+
 /************************************************************************
  * AwtWindow fields
  */
@@ -162,6 +180,11 @@ AwtWindow::AwtWindow() {
             ::SetWindowsHookEx(WH_CBT, (HOOKPROC)AwtWindow::CBTFilter,
                                0, AwtToolkit::MainThread());
     }
+
+    m_opaque = TRUE;
+    m_opacity = 0xff;
+
+    ::InitializeCriticalSection(&contentBitmapCS);
 }
 
 AwtWindow::~AwtWindow()
@@ -1839,6 +1862,216 @@ void AwtWindow::DoUpdateIcon()
     //Does nothing for windows, is overriden for frames and dialogs
 }
 
+void AwtWindow::RedrawWindow()
+{
+    if (isOpaque()) {
+        ::RedrawWindow(GetHWnd(), NULL, NULL,
+                RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
+    } else {
+        ::EnterCriticalSection(&contentBitmapCS);
+        if (hContentBitmap != NULL) {
+            UpdateWindowImpl(contentWidth, contentHeight, hContentBitmap);
+        }
+        ::LeaveCriticalSection(&contentBitmapCS);
+    }
+}
+
+void AwtWindow::SetTranslucency(BYTE opacity, BOOL opaque)
+{
+    BYTE old_opacity = getOpacity();
+    BOOL old_opaque = isOpaque();
+
+    if (opacity == old_opacity && opaque == old_opaque) {
+        return;
+    }
+
+    setOpacity(opacity);
+    setOpaque(opaque);
+
+    HWND hwnd = GetHWnd();
+
+    LONG ex_style = ::GetWindowLong(hwnd, GWL_EXSTYLE);
+
+    if (opaque != old_opaque) {
+        ::EnterCriticalSection(&contentBitmapCS);
+        if (hContentBitmap != NULL) {
+            ::DeleteObject(hContentBitmap);
+            hContentBitmap = NULL;
+        }
+        ::LeaveCriticalSection(&contentBitmapCS);
+    }
+
+    if (opaque && opacity == 0xff) {
+        // Turn off all the effects
+        ::SetWindowLong(hwnd, GWL_EXSTYLE, ex_style & ~WS_EX_LAYERED);
+        // Ask the window to repaint itself and all the children
+        RedrawWindow();
+    } else {
+        // We're going to enable some effects
+        if (!(ex_style & WS_EX_LAYERED)) {
+            ::SetWindowLong(hwnd, GWL_EXSTYLE, ex_style | WS_EX_LAYERED);
+        } else {
+            if ((opaque && opacity < 0xff) ^ (old_opaque && old_opacity < 0xff)) {
+                // _One_ of the modes uses the SetLayeredWindowAttributes.
+                // Need to reset the style in this case.
+                // If both modes are simple (i.e. just changing the opacity level),
+                // no need to reset the style.
+                ::SetWindowLong(hwnd, GWL_EXSTYLE, ex_style & ~WS_EX_LAYERED);
+                ::SetWindowLong(hwnd, GWL_EXSTYLE, ex_style | WS_EX_LAYERED);
+            }
+        }
+
+        if (opaque) {
+            // Simple opacity mode
+            ::SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), opacity, LWA_ALPHA);
+        }
+    }
+}
+
+static HBITMAP CreateBitmapFromRaster(JNIEnv* env, jintArray raster, jint w, jint h)
+{
+    HBITMAP image = NULL;
+    if (raster != NULL) {
+        int* rasterBuffer = NULL;
+        try {
+            rasterBuffer = (int *)env->GetPrimitiveArrayCritical(raster, 0);
+            JNI_CHECK_NULL_GOTO(rasterBuffer, "raster data", done);
+            image = BitmapUtil::CreateBitmapFromARGBPre(w, h, w*4, rasterBuffer);
+        } catch (...) {
+            if (rasterBuffer != NULL) {
+                env->ReleasePrimitiveArrayCritical(raster, rasterBuffer, 0);
+            }
+            throw;
+        }
+        if (rasterBuffer != NULL) {
+            env->ReleasePrimitiveArrayCritical(raster, rasterBuffer, 0);
+        }
+    }
+done:
+    return image;
+}
+
+void AwtWindow::UpdateWindowImpl(int width, int height, HBITMAP hBitmap)
+{
+    if (isOpaque()) {
+        return;
+    }
+
+    HWND hWnd = GetHWnd();
+    HDC hdcDst = ::GetDC(NULL);
+    HDC hdcSrc = ::CreateCompatibleDC(NULL);
+    HBITMAP hOldBitmap = (HBITMAP)::SelectObject(hdcSrc, hBitmap);
+
+    //XXX: this code doesn't paint the children (say, the java.awt.Button)!
+    //So, if we ever want to support HWs here, we need to repaint them
+    //in some other way...
+    //::SendMessage(hWnd, WM_PRINT, (WPARAM)hdcSrc, /*PRF_CHECKVISIBLE |*/
+    //      PRF_CHILDREN /*| PRF_CLIENT | PRF_NONCLIENT*/);
+
+    POINT ptSrc;
+    ptSrc.x = ptSrc.y = 0;
+
+    RECT rect;
+    POINT ptDst;
+    SIZE size;
+
+    ::GetWindowRect(hWnd, &rect);
+    ptDst.x = rect.left;
+    ptDst.y = rect.top;
+    size.cx = width;
+    size.cy = height;
+
+    BLENDFUNCTION bf;
+
+    bf.SourceConstantAlpha = getOpacity();
+    bf.AlphaFormat = AC_SRC_ALPHA;
+    bf.BlendOp = AC_SRC_OVER;
+    bf.BlendFlags = 0;
+
+    ::UpdateLayeredWindow(hWnd, hdcDst, &ptDst, &size, hdcSrc, &ptSrc,
+            RGB(0, 0, 0), &bf, ULW_ALPHA);
+
+    ::ReleaseDC(NULL, hdcDst);
+    ::SelectObject(hdcSrc, hOldBitmap);
+    ::DeleteDC(hdcSrc);
+}
+
+void AwtWindow::UpdateWindow(JNIEnv* env, jintArray data, int width, int height,
+                             HBITMAP hNewBitmap)
+{
+    if (isOpaque()) {
+        return;
+    }
+
+    HBITMAP hBitmap;
+    if (hNewBitmap == NULL) {
+        if (data == NULL) {
+            return;
+        }
+        hBitmap = CreateBitmapFromRaster(env, data, width, height);
+        if (hBitmap == NULL) {
+            return;
+        }
+    } else {
+        hBitmap = hNewBitmap;
+    }
+
+    ::EnterCriticalSection(&contentBitmapCS);
+    if (hContentBitmap != NULL) {
+        ::DeleteObject(hContentBitmap);
+    }
+    hContentBitmap = hBitmap;
+    contentWidth = width;
+    contentHeight = height;
+    UpdateWindowImpl(width, height, hBitmap);
+    ::LeaveCriticalSection(&contentBitmapCS);
+}
+
+void AwtWindow::FillBackground(HDC hMemoryDC, SIZE &size)
+{
+    if (isOpaque()) {
+        AwtCanvas::FillBackground(hMemoryDC, size);
+    }
+}
+
+void AwtWindow::FillAlpha(void *bitmapBits, SIZE &size, BYTE alpha)
+{
+    if (isOpaque()) {
+        AwtCanvas::FillAlpha(bitmapBits, size, alpha);
+    }
+}
+
+/*
+ * Fixed 6353381: it's improved fix for 4792958
+ * which was backed-out to avoid 5059656
+ */
+BOOL AwtWindow::HasValidRect()
+{
+    RECT inside;
+    RECT outside;
+
+    if (::IsIconic(GetHWnd())) {
+        return FALSE;
+    }
+
+    ::GetClientRect(GetHWnd(), &inside);
+    ::GetWindowRect(GetHWnd(), &outside);
+
+    BOOL isZeroClientArea = (inside.right == 0 && inside.bottom == 0);
+    BOOL isInvalidLocation = ((outside.left == -32000 && outside.top == -32000) || // Win2k && WinXP
+                              (outside.left == 32000 && outside.top == 32000) || // Win95 && Win98
+                              (outside.left == 3000 && outside.top == 3000)); // Win95 && Win98
+
+    // the bounds correspond to iconic state
+    if (isZeroClientArea && isInvalidLocation)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+
 void AwtWindow::_SetIconImagesData(void * param)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -2009,35 +2242,67 @@ void AwtWindow::_ModalEnable(void *param)
     env->DeleteGlobalRef(self);
 }
 
-/*
- * Fixed 6353381: it's improved fix for 4792958
- * which was backed-out to avoid 5059656
- */
-BOOL AwtWindow::HasValidRect()
+void AwtWindow::_SetOpacity(void* param)
 {
-    RECT inside;
-    RECT outside;
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    if (::IsIconic(GetHWnd())) {
-        return FALSE;
-    }
+    OpacityStruct *os = (OpacityStruct *)param;
+    jobject self = os->window;
+    BYTE iOpacity = (BYTE)os->iOpacity;
 
-    ::GetClientRect(GetHWnd(), &inside);
-    ::GetWindowRect(GetHWnd(), &outside);
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    AwtWindow *window = (AwtWindow *)pData;
 
-    BOOL isZeroClientArea = (inside.right == 0 && inside.bottom == 0);
-    BOOL isInvalidLocation = ((outside.left == -32000 && outside.top == -32000) || // Win2k && WinXP
-                              (outside.left == 32000 && outside.top == 32000) || // Win95 && Win98
-                              (outside.left == 3000 && outside.top == 3000)); // Win95 && Win98
+    window->SetTranslucency(iOpacity, window->isOpaque());
 
-    // the bounds correspond to iconic state
-    if (isZeroClientArea && isInvalidLocation)
-    {
-        return FALSE;
-    }
-
-    return TRUE;
+  ret:
+    env->DeleteGlobalRef(self);
+    delete os;
 }
+
+void AwtWindow::_SetOpaque(void* param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    OpaqueStruct *os = (OpaqueStruct *)param;
+    jobject self = os->window;
+    BOOL isOpaque = (BOOL)os->isOpaque;
+
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    AwtWindow *window = (AwtWindow *)pData;
+
+    window->SetTranslucency(window->getOpacity(), isOpaque);
+
+  ret:
+    env->DeleteGlobalRef(self);
+    delete os;
+}
+
+void AwtWindow::_UpdateWindow(void* param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    UpdateWindowStruct *uws = (UpdateWindowStruct *)param;
+    jobject self = uws->window;
+    jintArray data = uws->data;
+
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    AwtWindow *window = (AwtWindow *)pData;
+
+    window->UpdateWindow(env, data, (int)uws->width, (int)uws->height,
+                         uws->hBitmap);
+
+  ret:
+    env->DeleteGlobalRef(self);
+    if (data != NULL) {
+        env->DeleteGlobalRef(data);
+    }
+    delete uws;
+}
+
 
 extern "C" {
 
@@ -2485,6 +2750,95 @@ Java_sun_awt_windows_WWindowPeer_nativeUngrab(JNIEnv *env, jobject self)
 
     AwtToolkit::GetInstance().SyncCall(AwtWindow::_Ungrab, env->NewGlobalRef(self));
     // global ref is deleted in _Ungrab()
+
+    CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WWindowPeer
+ * Method:    setOpacity
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WWindowPeer_setOpacity(JNIEnv *env, jobject self,
+                                              jint iOpacity)
+{
+    TRY;
+
+    OpacityStruct *os = new OpacityStruct;
+    os->window = env->NewGlobalRef(self);
+    os->iOpacity = iOpacity;
+
+    AwtToolkit::GetInstance().SyncCall(AwtWindow::_SetOpacity, os);
+    // global refs and mds are deleted in _SetMinSize
+
+    CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WWindowPeer
+ * Method:    setOpaqueImpl
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WWindowPeer_setOpaqueImpl(JNIEnv *env, jobject self,
+                                              jboolean isOpaque)
+{
+    TRY;
+
+    OpaqueStruct *os = new OpaqueStruct;
+    os->window = env->NewGlobalRef(self);
+    os->isOpaque = isOpaque;
+
+    AwtToolkit::GetInstance().SyncCall(AwtWindow::_SetOpaque, os);
+    // global refs and mds are deleted in _SetMinSize
+
+    CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WWindowPeer
+ * Method:    updateWindowImpl
+ * Signature: ([III)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WWindowPeer_updateWindowImpl(JNIEnv *env, jobject self,
+                                                  jintArray data,
+                                                  jint width, jint height)
+{
+    TRY;
+
+    UpdateWindowStruct *uws = new UpdateWindowStruct;
+    uws->window = env->NewGlobalRef(self);
+    uws->data = (jintArray)env->NewGlobalRef(data);
+    uws->hBitmap = NULL;
+    uws->width = width;
+    uws->height = height;
+
+    AwtToolkit::GetInstance().InvokeFunction(AwtWindow::_UpdateWindow, uws);
+    // global refs and mds are deleted in _UpdateWindow
+
+    CATCH_BAD_ALLOC;
+}
+
+/**
+ * This method is called from the WGL pipeline when it needs to update
+ * the layered window WindowPeer's C++ level object.
+ */
+void AwtWindow_UpdateWindow(JNIEnv *env, jobject peer,
+                            jint width, jint height, HBITMAP hBitmap)
+{
+    TRY;
+
+    UpdateWindowStruct *uws = new UpdateWindowStruct;
+    uws->window = env->NewGlobalRef(peer);
+    uws->data = NULL;
+    uws->hBitmap = hBitmap;
+    uws->width = width;
+    uws->height = height;
+
+    AwtToolkit::GetInstance().InvokeFunction(AwtWindow::_UpdateWindow, uws);
+    // global refs and mds are deleted in _UpdateWindow
 
     CATCH_BAD_ALLOC;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,6 +252,8 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
     XAtom XA_NET_WM_WINDOW_TYPE = XAtom.get("_NET_WM_WINDOW_TYPE");
     XAtom XA_NET_WM_WINDOW_TYPE_DIALOG = XAtom.get("_NET_WM_WINDOW_TYPE_DIALOG");
 
+    XAtom XA_NET_WM_WINDOW_OPACITY = XAtom.get("_NET_WM_WINDOW_OPACITY");
+
 /* For _NET_WM_STATE ClientMessage requests */
     final static int _NET_WM_STATE_REMOVE      =0; /* remove/unset property */
     final static int _NET_WM_STATE_ADD         =1; /* add/set property      */
@@ -289,6 +291,12 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
         boolean res = active() && checkProtocol(XA_NET_SUPPORTED, XA_NET_WM_STATE_MODAL);
         return res;
     }
+
+    boolean doOpacityProtocol() {
+        boolean res = active() && checkProtocol(XA_NET_SUPPORTED, XA_NET_WM_WINDOW_OPACITY);
+        return res;
+    }
+
     boolean isWMName(String name) {
         if (!active()) {
             return false;
