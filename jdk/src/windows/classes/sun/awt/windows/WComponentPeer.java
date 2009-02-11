@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,20 +39,21 @@ import java.awt.event.PaintEvent;
 import java.awt.event.InvocationEvent;
 import java.awt.event.KeyEvent;
 import sun.awt.Win32GraphicsConfig;
+import sun.awt.Win32GraphicsEnvironment;
 import sun.java2d.InvalidPipeException;
 import sun.java2d.SurfaceData;
-import sun.java2d.d3d.D3DScreenUpdateManager;
-import static sun.java2d.d3d.D3DSurfaceData.*;
 import sun.java2d.ScreenUpdateManager;
+import sun.java2d.d3d.D3DSurfaceData;
 import sun.java2d.opengl.OGLSurfaceData;
+import sun.java2d.pipe.Region;
 import sun.awt.DisplayChangedListener;
 import sun.awt.PaintEventDispatcher;
+import sun.awt.SunToolkit;
 import sun.awt.event.IgnorePaintEvent;
 
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.peer.DropTargetPeer;
 import sun.awt.ComponentAccessor;
-
 
 import java.util.logging.*;
 
@@ -186,7 +187,7 @@ public abstract class WComponentPeer extends WObjectPeer
                 cont.invalidate();
                 cont.validate();
 
-                if (surfaceData instanceof D3DWindowSurfaceData ||
+                if (surfaceData instanceof D3DSurfaceData.D3DWindowSurfaceData ||
                     surfaceData instanceof OGLSurfaceData)
                 {
                     // When OGL or D3D is enabled, it is necessary to
@@ -258,7 +259,7 @@ public abstract class WComponentPeer extends WObjectPeer
             int[] pix = createPrintedPixels(0, startY, totalW, h);
             if (pix != null) {
                 BufferedImage bim = new BufferedImage(totalW, h,
-                                              BufferedImage.TYPE_INT_RGB);
+                                              BufferedImage.TYPE_INT_ARGB);
                 bim.setRGB(0, 0, totalW, h, pix, 0, totalW);
                 g.drawImage(bim, 0, startY, null);
                 bim.flush();
@@ -895,9 +896,29 @@ public abstract class WComponentPeer extends WObjectPeer
     public void setBoundsOperation(int operation) {
     }
 
+    /**
+     * Returns whether this component is capable of being hw accelerated.
+     * More specifically, whether rendering to this component or a
+     * BufferStrategy's back-buffer for this component can be hw accelerated.
+     *
+     * Conditions which could prevent hw acceleration include the toplevel
+     * window containing this component being
+     * {@link com.sun.awt.AWTUtilities.Translucency#TRANSLUCENT TRANSLUCENT}.
+     *
+     * @return {@code true} if this component is capable of being hw
+     * accelerated, {@code false} otherwise
+     * @see com.sun.awt.AWTUtilities.Translucency#TRANSLUCENT
+     */
+    public boolean isAccelCapable() {
+        boolean isTranslucent =
+            SunToolkit.isContainingTopLevelTranslucent((Component)target);
+        // D3D/OGL and translucent windows interacted poorly in Windows XP;
+        // these problems are no longer present in Vista
+        return !isTranslucent || Win32GraphicsEnvironment.isVistaOS();
+    }
 
     native void setRectangularShape(int lox, int loy, int hix, int hiy,
-                     sun.java2d.pipe.Region region);
+                     Region region);
 
 
     // REMIND: Temp workaround for issues with using HW acceleration
@@ -915,41 +936,10 @@ public abstract class WComponentPeer extends WObjectPeer
     }
 
     /**
-     * Returns whether this component is capable of being hw accelerated.
-     * More specifically, whether rendering to this component or a
-     * BufferStrategy's back-buffer for this component can be hw accelerated.
-     *
-     * Conditions which could prevent hw acceleration include the toplevel
-     * window containing this component being
-     * {@link com.sun.awt.AWTUtilities.Translucency#TRANSLUCENT TRANSLUCENT}.
-     *
-     * @return {@code true} if this component is capable of being hw
-     * accelerated, {@code false} otherwise
-     * @see com.sun.awt.AWTUtilities.Translucency#TRANSLUCENT
-     */
-    public boolean isAccelCapable() {
-        // REMIND: Temp workaround for issues with using HW acceleration
-        // in the browser on Vista when DWM is enabled
-        if (!isContainingTopLevelAccelCapable((Component)target)) {
-            return false;
-        }
-
-        // REMIND: translucent windows support-related
-/*
-        boolean isTranslucent =
-            SunToolkit.isContainingTopLevelTranslucent((Component)target);
-        // D3D/OGL and translucent windows interacted poorly in Windows XP;
-        // these problems are no longer present in Vista
-        return !isTranslucent || Win32GraphicsEnvironment.isVistaOS();
-*/
-        return true;
-    }
-
-    /**
      * Applies the shape to the native component window.
      * @since 1.7
      */
-    public void applyShape(sun.java2d.pipe.Region shape) {
+    public void applyShape(Region shape) {
         if (shapeLog.isLoggable(Level.FINER)) {
             shapeLog.finer(
                     "*** INFO: Setting shape: PEER: " + this

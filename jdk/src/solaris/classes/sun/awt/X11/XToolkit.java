@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2272,5 +2272,37 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     public boolean areExtraMouseButtonsEnabled() throws HeadlessException {
         return areExtraMouseButtonsEnabled;
+    }
+
+    @Override
+    public boolean isWindowOpacitySupported() {
+        XNETProtocol net_protocol = XWM.getWM().getNETProtocol();
+
+        if (net_protocol == null) {
+            return false;
+        }
+
+        return net_protocol.doOpacityProtocol();
+    }
+
+    @Override
+    public boolean isWindowShapingSupported() {
+        return XlibUtil.isShapingSupported();
+    }
+
+    @Override
+    public boolean isWindowTranslucencySupported() {
+        //NOTE: it may not be supported. The actual check is being performed
+        //      at com.sun.awt.AWTUtilities(). In X11 we need to check
+        //      whether there's any translucency-capable GC available.
+        return true;
+    }
+
+    @Override
+    public boolean isTranslucencyCapable(GraphicsConfiguration gc) {
+        if (!(gc instanceof X11GraphicsConfig)) {
+            return false;
+        }
+        return ((X11GraphicsConfig)gc).isTranslucencyCapable();
     }
 }

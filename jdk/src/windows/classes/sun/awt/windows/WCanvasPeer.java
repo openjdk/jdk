@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.awt.*;
 import java.awt.peer.*;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import sun.awt.AWTAccessor;
 import sun.awt.ComponentAccessor;
 import sun.awt.SunToolkit;
 import sun.awt.Win32GraphicsDevice;
@@ -110,16 +111,20 @@ class WCanvasPeer extends WComponentPeer implements CanvasPeer {
     }
 
     public void print(Graphics g) {
-        Dimension d = ((Component)target).getSize();
-        if (g instanceof Graphics2D ||
-            g instanceof sun.awt.Graphics2Delegate) {
-            // background color is setup correctly, so just use clearRect
-            g.clearRect(0, 0, d.width, d.height);
-        } else {
-            // emulate clearRect
-            g.setColor(((Component)target).getBackground());
-            g.fillRect(0, 0, d.width, d.height);
-            g.setColor(((Component)target).getForeground());
+        if (!(target instanceof Window) ||
+            AWTAccessor.getWindowAccessor().isOpaque((Window)target))
+        {
+            Dimension d = ((Component)target).getSize();
+            if (g instanceof Graphics2D ||
+                g instanceof sun.awt.Graphics2Delegate) {
+                // background color is setup correctly, so just use clearRect
+                g.clearRect(0, 0, d.width, d.height);
+            } else {
+                // emulate clearRect
+                g.setColor(((Component)target).getBackground());
+                g.fillRect(0, 0, d.width, d.height);
+                g.setColor(((Component)target).getForeground());
+            }
         }
         super.print(g);
     }

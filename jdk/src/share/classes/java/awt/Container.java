@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,6 +166,9 @@ public class Container extends Component {
     transient int listeningChildren;
     transient int listeningBoundsChildren;
     transient int descendantsCount;
+
+    /* Non-opaque window support -- see Window.setLayersOpaque */
+    transient Color preserveBackgroundColor = null;
 
     /**
      * JDK 1.1 serialVersionUID

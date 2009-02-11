@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -859,14 +859,14 @@ public class WrapperGenerator {
                     pw.println("\n\tlong pData;");
                     pw.println("\n\tpublic long getPData() { return pData; }");
 
-                    pw.println("\n\n\t" + stp.getJavaClassName() + "(long addr) {");
+                    pw.println("\n\n\tpublic " + stp.getJavaClassName() + "(long addr) {");
                     if (generateLog) {
                         pw.println("\t\tlog.finest(\"Creating\");");
                     }
                     pw.println("\t\tpData=addr;");
                     pw.println("\t\tshould_free_memory = false;");
                     pw.println("\t}");
-                    pw.println("\n\n\t" + stp.getJavaClassName() + "() {");
+                    pw.println("\n\n\tpublic " + stp.getJavaClassName() + "() {");
                     if (generateLog) {
                         pw.println("\t\tlog.finest(\"Creating\");");
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.awt;
 import java.awt.event.*;
 import java.awt.im.InputContext;
 import java.awt.image.BufferStrategy;
+import java.awt.image.BufferedImage;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.WindowPeer;
 import java.beans.PropertyChangeListener;
@@ -49,6 +50,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.accessibility.*;
+import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.CausedFocusEvent;
 import sun.awt.SunToolkit;
@@ -290,6 +292,25 @@ public class Window extends Container implements Accessible {
      * @see Dialog#shouldBlock
      */
     transient boolean isInShow = false;
+
+    /*
+     * Opacity level of the window
+     *
+     * @see #setOpacity(float)
+     * @see #getOpacity()
+     * @since 1.7
+     */
+    private float opacity = 1.0f;
+
+    /*
+     * The shape assigned to this window. This field is set to null if
+     * no shape is set (rectangular window).
+     *
+     * @see #getShape()
+     * @see #setShape(Shape)
+     * @since 1.7
+     */
+    private Shape shape = null;
 
     private static final String base = "win";
     private static int nameCounter = 0;
@@ -666,9 +687,9 @@ public class Window extends Container implements Accessible {
             }
             if (peer == null) {
                 peer = getToolkit().createWindow(this);
-            }
-            synchronized (allWindows) {
-                allWindows.add(this);
+                synchronized (allWindows) {
+                    allWindows.add(this);
+                }
             }
             super.addNotify();
         }
@@ -2849,6 +2870,8 @@ public class Window extends Container implements Accessible {
          if(aot) {
              setAlwaysOnTop(aot); // since 1.5; subject to permission check
          }
+         shape = (Shape)f.get("shape", null);
+         opacity = (Float)f.get("opacity", 1.0f);
 
          deserializeResources(s);
     }
@@ -3016,7 +3039,7 @@ public class Window extends Container implements Accessible {
         Dimension windowSize = getSize();
 
         // search a top-level of c
-        Window componentWindow = Component.getContainingWindow(c);
+        Window componentWindow = SunToolkit.getContainingWindow(c);
         if ((c == null) || (componentWindow == null)) {
             GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
             gc = ge.getDefaultScreenDevice().getDefaultConfiguration();
@@ -3304,6 +3327,225 @@ public class Window extends Container implements Accessible {
     }
 
 
+    // ******************** SHAPES & TRANSPARENCY CODE ********************
+
+    /**
+     * JavaDoc
+     */
+    /*public */float getOpacity() {
+        synchronized (getTreeLock()) {
+            return opacity;
+        }
+    }
+
+    /**
+     * JavaDoc
+     */
+    /*public */void setOpacity(float opacity) {
+        synchronized (getTreeLock()) {
+            if (opacity < 0.0f || opacity > 1.0f) {
+                throw new IllegalArgumentException(
+                    "The value of opacity should be in the range [0.0f .. 1.0f].");
+            }
+            GraphicsConfiguration gc = getGraphicsConfiguration();
+            GraphicsDevice gd = gc.getDevice();
+            if (!gd.isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency.TRANSLUCENT)) {
+                throw new UnsupportedOperationException(
+                        "TRANSLUCENT translucency is not supported.");
+            }
+            if ((gc.getDevice().getFullScreenWindow() == this) && (opacity < 1.0f)) {
+                throw new IllegalArgumentException(
+                    "Setting opacity for full-screen window is not supported.");
+            }
+            this.opacity = opacity;
+            WindowPeer peer = (WindowPeer)getPeer();
+            if (peer != null) {
+                peer.setOpacity(opacity);
+            }
+        }
+    }
+
+    /**
+     * JavaDoc
+     */
+    /*public */Shape getShape() {
+        synchronized (getTreeLock()) {
+            return shape;
+        }
+    }
+
+    /**
+     * JavaDoc
+     *
+     * @param window the window to set the shape to
+     * @param shape the shape to set to the window
+     * @throws IllegalArgumentException if the window is in full screen mode,
+     *                                  and the shape is not null
+     */
+    /*public */void setShape(Shape shape) {
+        synchronized (getTreeLock()) {
+            GraphicsConfiguration gc = getGraphicsConfiguration();
+            GraphicsDevice gd = gc.getDevice();
+            if (!gd.isWindowTranslucencySupported(
+                    GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSPARENT))
+            {
+                throw new UnsupportedOperationException(
+                        "PERPIXEL_TRANSPARENT translucency is not supported.");
+            }
+            if ((gc.getDevice().getFullScreenWindow() == this) && (shape != null)) {
+                throw new IllegalArgumentException(
+                    "Setting shape for full-screen window is not supported.");
+            }
+            this.shape = shape;
+            WindowPeer peer = (WindowPeer)getPeer();
+            if (peer != null) {
+                peer.applyShape(shape == null ? null : Region.getInstance(shape, null));
+            }
+        }
+    }
+
+    /**
+     * JavaDoc
+     */
+/*
+    @Override
+    public void setBackground(Color bgColor) {
+        int alpha = bgColor.getAlpha();
+        if (alpha < 255) { // non-opaque window
+            GraphicsConfiguration gc = getGraphicsConfiguration();
+            GraphicsDevice gd = gc.getDevice();
+            if (gc.getDevice().getFullScreenWindow() == this) {
+                throw new IllegalArgumentException(
+                    "Making full-screen window non opaque is not supported.");
+            }
+            if (!gc.isTranslucencyCapable()) {
+                GraphicsConfiguration capableGC = gd.getTranslucencyCapableGC();
+                if (capableGC == null) {
+                    throw new IllegalArgumentException(
+                        "PERPIXEL_TRANSLUCENT translucency is not supported");
+                }
+                // TODO: change GC
+            }
+            setLayersOpaque(this, false);
+        }
+
+        super.setBackground(bgColor);
+
+        WindowPeer peer = (WindowPeer)getPeer();
+        if (peer != null) {
+            peer.setOpaque(alpha == 255);
+        }
+    }
+*/
+
+    private transient boolean opaque = true;
+
+    void setOpaque(boolean opaque) {
+        synchronized (getTreeLock()) {
+            GraphicsConfiguration gc = getGraphicsConfiguration();
+            if (!opaque && !com.sun.awt.AWTUtilities.isTranslucencyCapable(gc)) {
+            throw new IllegalArgumentException(
+                    "The window must use a translucency-compatible graphics configuration");
+            }
+            if (!com.sun.awt.AWTUtilities.isTranslucencySupported(
+                    com.sun.awt.AWTUtilities.Translucency.PERPIXEL_TRANSLUCENT))
+            {
+                throw new UnsupportedOperationException(
+                        "PERPIXEL_TRANSLUCENT translucency is not supported.");
+            }
+            if ((gc.getDevice().getFullScreenWindow() == this) && !opaque) {
+                throw new IllegalArgumentException(
+                    "Making full-screen window non opaque is not supported.");
+            }
+            setLayersOpaque(this, opaque);
+            this.opaque = opaque;
+            WindowPeer peer = (WindowPeer)getPeer();
+            if (peer != null) {
+                peer.setOpaque(opaque);
+            }
+        }
+    }
+
+    private void updateWindow(BufferedImage backBuffer) {
+        synchronized (getTreeLock()) {
+            WindowPeer peer = (WindowPeer)getPeer();
+            if (peer != null) {
+                peer.updateWindow(backBuffer);
+            }
+        }
+    }
+
+    private static final Color TRANSPARENT_BACKGROUND_COLOR = new Color(0, 0, 0, 0);
+
+    private static void setLayersOpaque(Component component, boolean isOpaque) {
+        // Shouldn't use instanceof to avoid loading Swing classes
+        //    if it's a pure AWT application.
+        if (Component.doesImplement(component, "javax.swing.RootPaneContainer")) {
+            javax.swing.RootPaneContainer rpc = (javax.swing.RootPaneContainer)component;
+            javax.swing.JRootPane root = rpc.getRootPane();
+            javax.swing.JLayeredPane lp = root.getLayeredPane();
+            Container c = root.getContentPane();
+            javax.swing.JComponent content =
+                (c instanceof javax.swing.JComponent) ? (javax.swing.JComponent)c : null;
+            javax.swing.JComponent gp =
+                (rpc.getGlassPane() instanceof javax.swing.JComponent) ?
+                (javax.swing.JComponent)rpc.getGlassPane() : null;
+            if (gp != null) {
+                gp.setDoubleBuffered(isOpaque);
+            }
+            lp.setOpaque(isOpaque);
+            root.setOpaque(isOpaque);
+            root.setDoubleBuffered(isOpaque); //XXX: the "white rect" workaround
+            if (content != null) {
+                content.setOpaque(isOpaque);
+                content.setDoubleBuffered(isOpaque); //XXX: the "white rect" workaround
+
+                // Iterate down one level to see whether we have a JApplet
+                // (which is also a RootPaneContainer) which requires processing
+                int numChildren = content.getComponentCount();
+                if (numChildren > 0) {
+                    Component child = content.getComponent(0);
+                    // It's OK to use instanceof here because we've
+                    // already loaded the RootPaneContainer class by now
+                    if (child instanceof javax.swing.RootPaneContainer) {
+                        setLayersOpaque(child, isOpaque);
+                    }
+                }
+            }
+        }
+
+        Color bg = component.getBackground();
+        boolean hasTransparentBg = TRANSPARENT_BACKGROUND_COLOR.equals(bg);
+
+        Container container = null;
+        if (component instanceof Container) {
+            container = (Container) component;
+        }
+
+        if (isOpaque) {
+            if (hasTransparentBg) {
+                // Note: we use the SystemColor.window color as the default.
+                // This color is used in the WindowPeer implementations to
+                // initialize the background color of the window if it is null.
+                // (This might not be the right thing to do for other
+                // RootPaneContainers we might be invoked with)
+                Color newColor = null;
+                if (container != null && container.preserveBackgroundColor != null) {
+                    newColor = container.preserveBackgroundColor;
+                } else {
+                    newColor = SystemColor.window;
+                }
+                component.setBackground(newColor);
+            }
+        } else {
+            if (!hasTransparentBg && container != null) {
+                container.preserveBackgroundColor = bg;
+            }
+            component.setBackground(TRANSPARENT_BACKGROUND_COLOR);
+        }
+    }
+
+
     // ************************** MIXING CODE *******************************
 
     // A window has a parent, but it does NOT have a container
@@ -3340,6 +3582,42 @@ public class Window extends Container implements Accessible {
     }
 
     // ****************** END OF MIXING CODE ********************************
+
+    static {
+        AWTAccessor.setWindowAccessor(new AWTAccessor.WindowAccessor() {
+            public float getOpacity(Window window) {
+                return window.opacity;
+            }
+            public void setOpacity(Window window, float opacity) {
+                window.setOpacity(opacity);
+            }
+            public Shape getShape(Window window) {
+                return window.getShape();
+            }
+            public void setShape(Window window, Shape shape) {
+                window.setShape(shape);
+            }
+            public boolean isOpaque(Window window) {
+                /*
+                return window.getBackground().getAlpha() < 255;
+                */
+                synchronized (window.getTreeLock()) {
+                    return window.opaque;
+                }
+            }
+            public void setOpaque(Window window, boolean opaque) {
+                /*
+                Color bg = window.getBackground();
+                window.setBackground(new Color(bg.getRed(), bg.getGreen(), bg.getBlue(),
+                                               opaque ? 255 : 0));
+                */
+                window.setOpaque(opaque);
+            }
+            public void updateWindow(Window window, BufferedImage backBuffer) {
+                window.updateWindow(backBuffer);
+            }
+        }); // WindowAccessor
+    } // static
 
 } // class Window
 

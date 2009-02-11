@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,4 +244,10 @@ public class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
     public boolean isRestackSupported() {
         return false;
     }
+
+    // The effects are not supported for system dialogs.
+    public void applyShape(sun.java2d.pipe.Region shape) {}
+    public void setOpacity(float opacity) {}
+    public void setOpaque(boolean isOpaque) {}
+    public void updateWindow(java.awt.image.BufferedImage backBuffer) {}
 }
