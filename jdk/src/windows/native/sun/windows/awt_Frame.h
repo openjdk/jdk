@@ -48,14 +48,14 @@ public:
         FRAME_SETMENUBAR
     };
 
-    /* int handle field for sun.awt.windows.WEmbeddedFrame */
+    /* java.awt.Frame fields and method IDs */
+    static jfieldID undecoratedID;
+
+    /* sun.awt.windows.WEmbeddedFrame fields and method IDs */
     static jfieldID handleID;
 
-    /* int state field for java.awt.Frame */
-    static jfieldID stateID;
-
-    /* boolean undecorated field for java.awt.Frame */
-    static jfieldID undecoratedID;
+    static jmethodID setExtendedStateMID;
+    static jmethodID getExtendedStateMID;
 
     /* method id for WEmbeddedFrame.requestActivate() method */
     static jmethodID activateEmbeddingTopLevelMID;

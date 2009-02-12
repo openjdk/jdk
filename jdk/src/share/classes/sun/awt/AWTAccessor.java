@@ -133,6 +133,20 @@ public final class AWTAccessor {
     }
 
     /*
+     * An accessor for the java.awt.Frame class.
+     */
+    public interface FrameAccessor {
+        /*
+         * Sets the state of this frame.
+         */
+        void setExtendedState(Frame frame, int state);
+        /*
+         * Gets the state of this frame.
+         */
+       int getExtendedState(Frame frame);
+    }
+
+    /*
      * The java.awt.Component class accessor object.
      */
     private static ComponentAccessor componentAccessor;
@@ -146,6 +160,11 @@ public final class AWTAccessor {
      * The java.awt.AWTEvent class accessor object.
      */
     private static AWTEventAccessor awtEventAccessor;
+
+    /*
+     * The java.awt.Frame class accessor object.
+     */
+    private static FrameAccessor frameAccessor;
 
     /*
      * Set an accessor object for the java.awt.Component class.
@@ -194,5 +213,22 @@ public final class AWTAccessor {
      */
     public static AWTEventAccessor getAWTEventAccessor() {
         return awtEventAccessor;
+    }
+
+    /*
+     * Set an accessor object for the java.awt.Frame class.
+     */
+    public static void setFrameAccessor(FrameAccessor fa) {
+        frameAccessor = fa;
+    }
+
+    /*
+     * Retrieve the accessor object for the java.awt.Frame class.
+     */
+    public static FrameAccessor getFrameAccessor() {
+        if (frameAccessor == null) {
+            unsafe.ensureClassInitialized(Frame.class);
+        }
+        return frameAccessor;
     }
 }
