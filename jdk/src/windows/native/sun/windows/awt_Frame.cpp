@@ -90,8 +90,10 @@ struct BlockedThreadStruct {
  */
 
 jfieldID AwtFrame::handleID;
-jfieldID AwtFrame::stateID;
+
 jfieldID AwtFrame::undecoratedID;
+jmethodID AwtFrame::getExtendedStateMID;
+jmethodID AwtFrame::setExtendedStateMID;
 
 jmethodID AwtFrame::activateEmbeddingTopLevelMID;
 
@@ -232,7 +234,7 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
                 frame->InitPeerGraphicsConfig(env, self);
                 AwtToolkit::GetInstance().RegisterEmbedderProcessId(hwndParent);
             } else {
-                jint state = env->GetIntField(target, AwtFrame::stateID);
+                jint state = env->CallIntMethod(self, AwtFrame::getExtendedStateMID);
                 DWORD exStyle;
                 DWORD style;
 
@@ -883,6 +885,11 @@ MsgRouting AwtFrame::WmSize(UINT type, int w, int h)
     if (changed != 0) {
         DTRACE_PRINTLN2("AwtFrame::WmSize: reporting state change %x -> %x",
                 oldState, newState);
+
+        // sync target with peer
+        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+        env->CallVoidMethod(GetPeer(env), AwtFrame::setExtendedStateMID, newState);
+
         // report (de)iconification to old clients
         if (changed & java_awt_Frame_ICONIFIED) {
             if (newState & java_awt_Frame_ICONIFIED) {
@@ -1594,7 +1601,7 @@ void AwtFrame::_NotifyModalBlocked(void *param)
 extern "C" {
 
 /*
- * Class:     sun_awt_windows_WFramePeer
+ * Class:     java_awt_Frame
  * Method:    initIDs
  * Signature: ()V
  */
@@ -1603,11 +1610,27 @@ Java_java_awt_Frame_initIDs(JNIEnv *env, jclass cls)
 {
     TRY;
 
-    AwtFrame::stateID = env->GetFieldID(cls, "state", "I");
-    DASSERT(AwtFrame::stateID != NULL);
-
     AwtFrame::undecoratedID = env->GetFieldID(cls,"undecorated","Z");
     DASSERT(AwtFrame::undecoratedID != NULL);
+
+    CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WFramePeer
+ * Method:    initIDs
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WFramePeer_initIDs(JNIEnv *env, jclass cls)
+{
+    TRY;
+
+    AwtFrame::setExtendedStateMID = env->GetMethodID(cls, "setExtendedState", "(I)V");
+    AwtFrame::getExtendedStateMID = env->GetMethodID(cls, "getExtendedState", "()I");
+
+    DASSERT(AwtFrame::setExtendedStateMID);
+    DASSERT(AwtFrame::getExtendedStateMID);
 
     CATCH_BAD_ALLOC;
 }
