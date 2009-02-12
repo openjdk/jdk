@@ -774,7 +774,8 @@ AwtGraphicsConfigData.monoPixmapGC	128
 AwtGraphicsConfigData.pixelStride	136
 AwtGraphicsConfigData.color_data	144
 AwtGraphicsConfigData.glxInfo	152
-AwtGraphicsConfigData	160
+AwtGraphicsConfigData.isTranslucencySupported 160
+AwtGraphicsConfigData	168
 XColor.pixel	0
 XColor.red	8
 XColor.green	10
