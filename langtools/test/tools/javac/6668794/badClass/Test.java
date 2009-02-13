@@ -54,8 +54,8 @@ public class Test {
             throw new Error("no diagnostics generated");
 
         String expected = "B.java:6:6: compiler.err.cant.access: p.A, " +
-            "(- compiler.misc.bad.class.file.header: A.class, " +
-            "(- compiler.misc.class.file.wrong.class: q.A))";
+            "(compiler.misc.bad.class.file.header: A.class, " +
+            "(compiler.misc.class.file.wrong.class: q.A))";
 
         if (!out[0].equals(expected)) {
             System.err.println("expected: " + expected);
