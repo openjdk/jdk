@@ -24,9 +24,14 @@
  */
 package com.sun.tools.javac.util;
 
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Locale;
 
+import com.sun.tools.javac.api.DiagnosticFormatter.Configuration.*;
 import com.sun.tools.javac.api.Formattable;
+import com.sun.tools.javac.util.AbstractDiagnosticFormatter.SimpleConfiguration;
+
 import static com.sun.tools.javac.api.DiagnosticFormatter.PositionKind.*;
 
 /**
@@ -35,14 +40,17 @@ import static com.sun.tools.javac.api.DiagnosticFormatter.PositionKind.*;
  * or not the source name and position are set. This formatter provides a standardized, localize-independent
  * implementation of a diagnostic formatter; as such, this formatter is best suited for testing purposes.
  */
-public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
+public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
 
     /**
      * Create a formatter based on the supplied options.
      * @param msgs
      */
-    public RawDiagnosticFormatter(Options opts) {
-        super(null, opts, false);
+    public RawDiagnosticFormatter(Options options) {
+        super(null, new SimpleConfiguration(options,
+                EnumSet.of(DiagnosticPart.SUMMARY,
+                        DiagnosticPart.DETAILS,
+                        DiagnosticPart.SUBDIAGNOSTICS)));
     }
 
     //provide common default formats
@@ -62,13 +70,39 @@ public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
             buf.append(' ');
             buf.append(formatMessage(d, null));
             if (displaySource(d))
-                buf.append("\n" + formatSourceLine(d));
+                buf.append("\n" + formatSourceLine(d, 0));
             return buf.toString();
         }
         catch (Exception e) {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public String formatMessage(JCDiagnostic d, Locale l) {
+        StringBuilder buf = new StringBuilder();
+        Collection<String> args = formatArguments(d, l);
+        buf.append(d.getCode());
+        String sep = ": ";
+        for (Object o : args) {
+            buf.append(sep);
+            buf.append(o);
+            sep = ", ";
+        }
+        if (d.isMultiline() && getConfiguration().getVisible().contains(DiagnosticPart.SUBDIAGNOSTICS)) {
+            List<String> subDiags = formatSubdiagnostics(d, null);
+            if (subDiags.nonEmpty()) {
+                sep = "";
+                buf.append(",{");
+                for (String sub : formatSubdiagnostics(d, null)) {
+                    buf.append(sep);
+                    buf.append("(" + sub + ")");
+                    sep = ",";
+                }
+                buf.append('}');
+            }
+        }
+        return buf.toString();
     }
 
     @Override
@@ -82,32 +116,5 @@ public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
             return "(" + s + ")";
         else
             return s;
-    }
-
-    @Override
-    protected String formatSubdiagnostics(JCDiagnostic d, Locale l) {
-        StringBuilder buf = new StringBuilder();
-        String sep = "";
-        buf.append(",{");
-        for (JCDiagnostic d2 : d.getSubdiagnostics()) {
-            buf.append(sep);
-            buf.append("(" + format(d2, l) + ")");
-            sep = ",";
-        }
-        buf.append('}');
-        return buf.toString();
-    }
-
-    @Override
-    protected String localize(Locale l, String s, Object... args) {
-        StringBuffer buf = new StringBuffer();
-        buf.append(s);
-        String sep = ": ";
-        for (Object o : args) {
-            buf.append(sep);
-            buf.append(o);
-            sep = ", ";
-        }
-        return buf.toString();
     }
 }

@@ -1,5 +1,5 @@
 MissingSuperRecovery.java:15: cannot access base
-class file for base not found
 public class MissingSuperRecovery extends impl {
        ^
+  class file for base not found
 1 error
