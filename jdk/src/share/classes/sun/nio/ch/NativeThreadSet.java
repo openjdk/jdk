@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ class NativeThreadSet {
 
     private long[] elts;
     private int used = 0;
+    private boolean waitingToEmpty;
 
     NativeThreadSet(int n) {
         elts = new long[n];
@@ -75,12 +76,14 @@ class NativeThreadSet {
         synchronized (this) {
             elts[i] = 0;
             used--;
+            if (used == 0 && waitingToEmpty)
+                notifyAll();
         }
     }
 
     // Signals all threads in this set.
     //
-    void signal() {
+    void signalAndWait() {
         synchronized (this) {
             int u = used;
             int n = elts.length;
@@ -92,7 +95,12 @@ class NativeThreadSet {
                 if (--u == 0)
                     break;
             }
+            waitingToEmpty = true;
+            while (used > 0) {
+                try {
+                    wait();
+                } catch (InterruptedException ignore) { }
+            }
         }
     }
-
 }

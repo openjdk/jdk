@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,26 +36,26 @@ class SocketDispatcher extends NativeDispatcher
 {
 
     int read(FileDescriptor fd, long address, int len) throws IOException {
-        return FileDispatcher.read0(fd, address, len);
+        return FileDispatcherImpl.read0(fd, address, len);
     }
 
     long readv(FileDescriptor fd, long address, int len) throws IOException {
-        return FileDispatcher.readv0(fd, address, len);
+        return FileDispatcherImpl.readv0(fd, address, len);
     }
 
     int write(FileDescriptor fd, long address, int len) throws IOException {
-        return FileDispatcher.write0(fd, address, len);
+        return FileDispatcherImpl.write0(fd, address, len);
     }
 
     long writev(FileDescriptor fd, long address, int len) throws IOException {
-        return FileDispatcher.writev0(fd, address, len);
+        return FileDispatcherImpl.writev0(fd, address, len);
     }
 
     void close(FileDescriptor fd) throws IOException {
-        FileDispatcher.close0(fd);
+        FileDispatcherImpl.close0(fd);
     }
 
     void preClose(FileDescriptor fd) throws IOException {
-        FileDispatcher.preClose0(fd);
+        FileDispatcherImpl.preClose0(fd);
     }
 }
