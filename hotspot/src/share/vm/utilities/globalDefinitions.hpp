@@ -907,6 +907,14 @@ inline int exact_log2(intptr_t x) {
   return log2_intptr(x);
 }
 
+//* the argument must be exactly a power of 2
+inline int exact_log2_long(jlong x) {
+  #ifdef ASSERT
+    if (!is_power_of_2_long(x)) basic_fatal("x must be a power of 2");
+  #endif
+  return log2_long(x);
+}
+
 
 // returns integer round-up to the nearest multiple of s (s must be a power of two)
 inline intptr_t round_to(intptr_t x, uintx s) {
