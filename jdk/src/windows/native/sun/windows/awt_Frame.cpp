@@ -321,7 +321,8 @@ LRESULT CALLBACK AwtFrame::ProxyWindowProc(HWND hwnd, UINT message,
         AwtComponent::GetComponentImpl(::GetParent(hwnd));
 
     if (!parent || parent->GetProxyFocusOwner() != hwnd ||
-        message == AwtComponent::WmAwtIsComponent)
+        message == AwtComponent::WmAwtIsComponent ||
+        message == WM_GETOBJECT)
     {
         return ComCtl32Util::GetInstance().DefWindowProc(NULL, hwnd, message, wParam, lParam);
     }
