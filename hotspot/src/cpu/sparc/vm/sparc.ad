@@ -762,7 +762,7 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
     case Assembler::stdf_op3: st_op = Op_StoreD; break;
 
     case Assembler::ldsb_op3: ld_op = Op_LoadB; break;
-    case Assembler::lduh_op3: ld_op = Op_LoadC; break;
+    case Assembler::lduh_op3: ld_op = Op_LoadUS; break;
     case Assembler::ldsh_op3: ld_op = Op_LoadS; break;
     case Assembler::ldx_op3:  // may become LoadP or stay LoadI
     case Assembler::ldsw_op3: // may become LoadP or stay LoadI
@@ -3869,6 +3869,8 @@ operand regD() %{
   constraint(ALLOC_IN_RC(dflt_reg));
   match(RegD);
 
+  match(regD_low);
+
   format %{ %}
   interface(REG_INTER);
 %}
@@ -3883,7 +3885,7 @@ operand regF() %{
 
 operand regD_low() %{
   constraint(ALLOC_IN_RC(dflt_low_reg));
-  match(RegD);
+  match(regD);
 
   format %{ %}
   interface(REG_INTER);
@@ -5314,9 +5316,9 @@ instruct loadUBL(iRegL dst, memory mem, immL_FF bytemask) %{
   ins_pipe(iload_mask_mem);
 %}
 
-// Load Char (16bit UNsigned) into a Long Register
-instruct loadUCL(iRegL dst, memory mem, immL_FFFF bytemask) %{
-  match(Set dst (AndL (ConvI2L (LoadC mem)) bytemask));
+// Load Unsigned Short/Char (16bit UNsigned) into a Long Register
+instruct loadUS2L(iRegL dst, memory mem, immL_FFFF bytemask) %{
+  match(Set dst (AndL (ConvI2L (LoadUS mem)) bytemask));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
@@ -5326,9 +5328,9 @@ instruct loadUCL(iRegL dst, memory mem, immL_FFFF bytemask) %{
   ins_pipe(iload_mask_mem);
 %}
 
-// Load Char (16bit unsigned)
-instruct loadC(iRegI dst, memory mem) %{
-  match(Set dst (LoadC mem));
+// Load Unsigned Short/Char (16bit unsigned)
+instruct loadUS(iRegI dst, memory mem) %{
+  match(Set dst (LoadUS mem));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
