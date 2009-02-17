@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ extern int BytesPerHeapOop;
 extern int BitsPerHeapOop;
 
 const int BitsPerJavaInteger = 32;
+const int BitsPerJavaLong    = 64;
 const int BitsPerSize_t      = size_tSize * BitsPerByte;
 
 // Size of a char[] needed to represent a jint as a string in decimal.
@@ -904,6 +905,14 @@ inline int exact_log2(intptr_t x) {
     if (!is_power_of_2(x)) basic_fatal("x must be a power of 2");
   #endif
   return log2_intptr(x);
+}
+
+//* the argument must be exactly a power of 2
+inline int exact_log2_long(jlong x) {
+  #ifdef ASSERT
+    if (!is_power_of_2_long(x)) basic_fatal("x must be a power of 2");
+  #endif
+  return log2_long(x);
 }
 
 
