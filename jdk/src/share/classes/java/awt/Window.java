@@ -687,9 +687,9 @@ public class Window extends Container implements Accessible {
             }
             if (peer == null) {
                 peer = getToolkit().createWindow(this);
-                synchronized (allWindows) {
-                    allWindows.add(this);
-                }
+            }
+            synchronized (allWindows) {
+                allWindows.add(this);
             }
             super.addNotify();
         }

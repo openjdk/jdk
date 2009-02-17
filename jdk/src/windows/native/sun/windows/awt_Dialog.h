@@ -113,6 +113,9 @@ private:
      */
     static void ModalPerformActivation(HWND hWnd);
 
+    static void PopupAllDialogs(HWND dialog, BOOL isModalHook, HWND prevFGWindow, BOOL onTaskbar);
+    static void PopupOneDialog(HWND dialog, HWND blocker, BOOL isModalHook, HWND prevFGWindow, BOOL onTaskbar);
+
 public:
 
     // WH_CBT hook procedure used in modality, prevents modal
