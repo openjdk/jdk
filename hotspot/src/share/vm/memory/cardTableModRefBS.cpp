@@ -217,15 +217,28 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
       (HeapWord*) align_size_up((uintptr_t)new_end, _page_size);
     assert(new_end_aligned >= (HeapWord*) new_end,
            "align up, but less");
+    // Check the other regions (excludes "ind") to ensure that
+    // the new_end_aligned does not intrude onto the committed
+    // space of another region.
     int ri = 0;
     for (ri = 0; ri < _cur_covered_regions; ri++) {
       if (ri != ind) {
         if (_committed[ri].contains(new_end_aligned)) {
-          assert((new_end_aligned >= _committed[ri].start()) &&
-                 (_committed[ri].start() > _committed[ind].start()),
+          // The prior check included in the assert
+          // (new_end_aligned >= _committed[ri].start())
+          // is redundant with the "contains" test.
+          // Any region containing the new end
+          // should start at or beyond the region found (ind)
+          // for the new end (committed regions are not expected to
+          // be proper subsets of other committed regions).
+          assert(_committed[ri].start() >= _committed[ind].start(),
                  "New end of committed region is inconsistent");
           new_end_aligned = _committed[ri].start();
-          assert(new_end_aligned > _committed[ind].start(),
+          // new_end_aligned can be equal to the start of its
+          // committed region (i.e., of "ind") if a second
+          // region following "ind" also start at the same location
+          // as "ind".
+          assert(new_end_aligned >= _committed[ind].start(),
             "New end of committed region is before start");
           debug_only(collided = true;)
           // Should only collide with 1 region
