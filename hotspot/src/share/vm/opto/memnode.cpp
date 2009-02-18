@@ -1066,11 +1066,11 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
         break;
       }
     }
-    LoadNode* load = NULL;
-    if (allocation != NULL && base->in(load_index)->is_Load()) {
-      load = base->in(load_index)->as_Load();
-    }
-    if (load != NULL && in(Memory)->is_Phi() && in(Memory)->in(0) == base->in(0)) {
+    bool has_load = ( allocation != NULL &&
+                      (base->in(load_index)->is_Load() ||
+                       base->in(load_index)->is_DecodeN() &&
+                       base->in(load_index)->in(1)->is_Load()) );
+    if (has_load && in(Memory)->is_Phi() && in(Memory)->in(0) == base->in(0)) {
       // Push the loads from the phi that comes from valueOf up
       // through it to allow elimination of the loads and the recovery
       // of the original value.
@@ -1106,11 +1106,20 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
       result->set_req(load_index, in2);
       return result;
     }
-  } else if (base->is_Load()) {
+  } else if (base->is_Load() ||
+             base->is_DecodeN() && base->in(1)->is_Load()) {
+    if (base->is_DecodeN()) {
+      // Get LoadN node which loads cached Integer object
+      base = base->in(1);
+    }
     // Eliminate the load of Integer.value for integers from the cache
     // array by deriving the value from the index into the array.
     // Capture the offset of the load and then reverse the computation.
     Node* load_base = base->in(Address)->in(AddPNode::Base);
+    if (load_base->is_DecodeN()) {
+      // Get LoadN node which loads IntegerCache.cache field
+      load_base = load_base->in(1);
+    }
     if (load_base != NULL) {
       Compile::AliasType* atp = phase->C->alias_type(load_base->adr_type());
       intptr_t cache_offset;
