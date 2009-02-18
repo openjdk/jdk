@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,15 +504,39 @@ void unpacker::read_file_header() {
   enum {
     MAGIC_BYTES = 4,
     AH_LENGTH_0 = 3,  //minver, majver, options are outside of archive_size
+    AH_LENGTH_0_MAX = AH_LENGTH_0 + 1,  // options might have 2 bytes
     AH_LENGTH   = 26, //maximum archive header length (w/ all fields)
     // Length contributions from optional header fields:
     AH_FILE_HEADER_LEN = 5, // sizehi/lo/next/modtime/files
+    AH_ARCHIVE_SIZE_LEN = 2, // sizehi/lo only; part of AH_FILE_HEADER_LEN
     AH_CP_NUMBER_LEN = 4,  // int/float/long/double
     AH_SPECIAL_FORMAT_LEN = 2, // layouts/band-headers
     AH_LENGTH_MIN = AH_LENGTH
         -(AH_FILE_HEADER_LEN+AH_SPECIAL_FORMAT_LEN+AH_CP_NUMBER_LEN),
+    ARCHIVE_SIZE_MIN = AH_LENGTH_MIN - (AH_LENGTH_0 + AH_ARCHIVE_SIZE_LEN),
     FIRST_READ  = MAGIC_BYTES + AH_LENGTH_MIN
   };
+
+  assert(AH_LENGTH_MIN    == 15); // # of UNSIGNED5 fields required after archive_magic
+  assert(ARCHIVE_SIZE_MIN == 10); // # of UNSIGNED5 fields required after archive_size
+  // An absolute minimum null archive is magic[4], {minver,majver,options}[3],
+  // archive_size[0], cp_counts[8], class_counts[4], for a total of 19 bytes.
+  // (Note that archive_size is optional; it may be 0..10 bytes in length.)
+  // The first read must capture everything up through the options field.
+  // This happens to work even if {minver,majver,options} is a pathological
+  // 15 bytes long.  Legal pack files limit those three fields to 1+1+2 bytes.
+  assert(FIRST_READ >= MAGIC_BYTES + AH_LENGTH_0 * B_MAX);
+
+  // Up through archive_size, the largest possible archive header is
+  // magic[4], {minver,majver,options}[4], archive_size[10].
+  // (Note only the low 12 bits of options are allowed to be non-zero.)
+  // In order to parse archive_size, we need at least this many bytes
+  // in the first read.  Of course, if archive_size_hi is more than
+  // a byte, we probably will fail to allocate the buffer, since it
+  // will be many gigabytes long.  This is a practical, not an
+  // architectural limit to Pack200 archive sizes.
+  assert(FIRST_READ >= MAGIC_BYTES + AH_LENGTH_0_MAX + 2*B_MAX);
+
   bool foreign_buf = (read_input_fn == null);
   byte initbuf[FIRST_READ + C_SLOP + 200];  // 200 is for JAR I/O
   if (foreign_buf) {
@@ -528,7 +552,7 @@ void unpacker::read_file_header() {
     // There is no way to tell the caller that we used only part of them.
     // Therefore, the caller must use only a bare minimum of read-ahead.
     if (inbytes.len > FIRST_READ) {
-      abort("too much pushback");
+      abort("too much read-ahead");
       return;
     }
     input.set(initbuf, sizeof(initbuf));
@@ -538,7 +562,7 @@ void unpacker::read_file_header() {
     rplimit += inbytes.len;
     bytes_read += inbytes.len;
   }
-  // Read only 19 bytes, which is certain to contain #archive_size fields,
+  // Read only 19 bytes, which is certain to contain #archive_options fields,
   // but is certain not to overflow past the archive_header.
   input.b.len = FIRST_READ;
   if (!ensure_input(FIRST_READ))
@@ -610,9 +634,9 @@ void unpacker::read_file_header() {
 #undef ORBIT
   if ((archive_options & ~OPTION_LIMIT) != 0) {
     fprintf(errstrm, "Warning: Illegal archive options 0x%x\n",
-            archive_options);
-    // Do not abort.  If the format really changes, version numbers will bump.
-    //abort("illegal archive options");
+        archive_options);
+    abort("illegal archive options");
+    return;
   }
 
   if ((archive_options & AO_HAVE_FILE_HEADERS) != 0) {
@@ -643,8 +667,17 @@ void unpacker::read_file_header() {
       return;
     }
   } else if (archive_size != 0) {
+    if (archive_size < ARCHIVE_SIZE_MIN) {
+      abort("impossible archive size");  // bad input data
+      return;
+    }
+    if (archive_size < header_size_1) {
+      abort("too much read-ahead");  // somehow we pre-fetched too much?
+      return;
+    }
     input.set(U_NEW(byte, add_size(header_size_0, archive_size, C_SLOP)),
               (size_t) header_size_0 + archive_size);
+    CHECK;
     assert(input.limit()[0] == 0);
     // Move all the bytes we read initially into the real buffer.
     input.b.copyFrom(initbuf, header_size);
@@ -659,6 +692,7 @@ void unpacker::read_file_header() {
     rp = rplimit = input.base();
     // Set up input buffer as if we already read the header:
     input.b.copyFrom(initbuf, header_size);
+    CHECK;
     rplimit += header_size;
     while (ensure_input(input.limit() - rp)) {
       size_t dataSoFar = input_remaining();
@@ -694,8 +728,10 @@ void unpacker::read_file_header() {
 
   if ((archive_options & AO_HAVE_FILE_HEADERS) != 0) {
     archive_next_count = hdr.getInt();
+    CHECK_COUNT(archive_next_count);
     archive_modtime = hdr.getInt();
     file_count = hdr.getInt();
+    CHECK_COUNT(file_count);
     hdrVals += 3;
   } else {
     hdrValsSkipped += 3;
@@ -703,7 +739,9 @@ void unpacker::read_file_header() {
 
   if ((archive_options & AO_HAVE_SPECIAL_FORMATS) != 0) {
     band_headers_size = hdr.getInt();
+    CHECK_COUNT(band_headers_size);
     attr_definition_count = hdr.getInt();
+    CHECK_COUNT(attr_definition_count);
     hdrVals += 2;
   } else {
     hdrValsSkipped += 2;
@@ -723,13 +761,16 @@ void unpacker::read_file_header() {
       }
     }
     cp_counts[k] = hdr.getInt();
+    CHECK_COUNT(cp_counts[k]);
     hdrVals += 1;
   }
 
   ic_count = hdr.getInt();
+  CHECK_COUNT(ic_count);
   default_class_minver = hdr.getInt();
   default_class_majver = hdr.getInt();
   class_count = hdr.getInt();
+  CHECK_COUNT(class_count);
   hdrVals += 4;
 
   // done with archive_header
@@ -782,7 +823,6 @@ void unpacker::read_file_header() {
   // so we are sure to throw an error if we run off the end.
   bytes::of(band_headers.limit(), C_SLOP).clear(_meta_error);
 }
-
 
 void unpacker::finish() {
   if (verbose >= 1) {
@@ -2089,6 +2129,7 @@ void unpacker::read_classes() {
 
   field_descr.readData(field_count);
   read_attrs(ATTR_CONTEXT_FIELD, field_count);
+  CHECK;
 
   method_descr.readData(method_count);
   read_attrs(ATTR_CONTEXT_METHOD, method_count);
@@ -2096,6 +2137,7 @@ void unpacker::read_classes() {
   CHECK;
 
   read_attrs(ATTR_CONTEXT_CLASS, class_count);
+  CHECK;
 
   read_code_headers();
 
@@ -2122,10 +2164,12 @@ void unpacker::read_attrs(int attrc, int obj_count) {
   assert(endsWith(xxx_flags_hi.name, "_flags_hi"));
   if (haveLongFlags)
     xxx_flags_hi.readData(obj_count);
+  CHECK;
 
   band& xxx_flags_lo = ad.xxx_flags_lo();
   assert(endsWith(xxx_flags_lo.name, "_flags_lo"));
   xxx_flags_lo.readData(obj_count);
+  CHECK;
 
   // pre-scan flags, counting occurrences of each index bit
   julong indexMask = ad.flagIndexMask();  // which flag bits are index bits?
@@ -2148,11 +2192,13 @@ void unpacker::read_attrs(int attrc, int obj_count) {
   assert(endsWith(xxx_attr_count.name, "_attr_count"));
   // There is one count element for each 1<<16 bit set in flags:
   xxx_attr_count.readData(ad.predefCount(X_ATTR_OVERFLOW));
+  CHECK;
 
   band& xxx_attr_indexes = ad.xxx_attr_indexes();
   assert(endsWith(xxx_attr_indexes.name, "_attr_indexes"));
   int overflowIndexCount = xxx_attr_count.getIntTotal();
   xxx_attr_indexes.readData(overflowIndexCount);
+  CHECK;
   // pre-scan attr indexes, counting occurrences of each value
   for (i = 0; i < overflowIndexCount; i++) {
     idx = xxx_attr_indexes.getInt();
@@ -2183,6 +2229,7 @@ void unpacker::read_attrs(int attrc, int obj_count) {
     }
   }
   ad.xxx_attr_calls().readData(backwardCounts);
+  CHECK;
 
   // Read built-in bands.
   // Mostly, these are hand-coded equivalents to readBandData().
@@ -2191,42 +2238,53 @@ void unpacker::read_attrs(int attrc, int obj_count) {
 
     count = ad.predefCount(CLASS_ATTR_SourceFile);
     class_SourceFile_RUN.readData(count);
+    CHECK;
 
     count = ad.predefCount(CLASS_ATTR_EnclosingMethod);
     class_EnclosingMethod_RC.readData(count);
     class_EnclosingMethod_RDN.readData(count);
+    CHECK;
 
     count = ad.predefCount(X_ATTR_Signature);
     class_Signature_RS.readData(count);
+    CHECK;
 
     ad.readBandData(X_ATTR_RuntimeVisibleAnnotations);
     ad.readBandData(X_ATTR_RuntimeInvisibleAnnotations);
 
     count = ad.predefCount(CLASS_ATTR_InnerClasses);
     class_InnerClasses_N.readData(count);
+    CHECK;
+
     count = class_InnerClasses_N.getIntTotal();
     class_InnerClasses_RC.readData(count);
     class_InnerClasses_F.readData(count);
+    CHECK;
     // Drop remaining columns wherever flags are zero:
     count -= class_InnerClasses_F.getIntCount(0);
     class_InnerClasses_outer_RCN.readData(count);
     class_InnerClasses_name_RUN.readData(count);
+    CHECK;
 
     count = ad.predefCount(CLASS_ATTR_ClassFile_version);
     class_ClassFile_version_minor_H.readData(count);
     class_ClassFile_version_major_H.readData(count);
+    CHECK;
     break;
 
   case ATTR_CONTEXT_FIELD:
 
     count = ad.predefCount(FIELD_ATTR_ConstantValue);
     field_ConstantValue_KQ.readData(count);
+    CHECK;
 
     count = ad.predefCount(X_ATTR_Signature);
     field_Signature_RS.readData(count);
+    CHECK;
 
     ad.readBandData(X_ATTR_RuntimeVisibleAnnotations);
     ad.readBandData(X_ATTR_RuntimeInvisibleAnnotations);
+    CHECK;
     break;
 
   case ATTR_CONTEXT_METHOD:
@@ -2238,15 +2296,18 @@ void unpacker::read_attrs(int attrc, int obj_count) {
     method_Exceptions_N.readData(count);
     count = method_Exceptions_N.getIntTotal();
     method_Exceptions_RC.readData(count);
+    CHECK;
 
     count = ad.predefCount(X_ATTR_Signature);
     method_Signature_RS.readData(count);
+    CHECK;
 
     ad.readBandData(X_ATTR_RuntimeVisibleAnnotations);
     ad.readBandData(X_ATTR_RuntimeInvisibleAnnotations);
     ad.readBandData(METHOD_ATTR_RuntimeVisibleParameterAnnotations);
     ad.readBandData(METHOD_ATTR_RuntimeInvisibleParameterAnnotations);
     ad.readBandData(METHOD_ATTR_AnnotationDefault);
+    CHECK;
     break;
 
   case ATTR_CONTEXT_CODE:
@@ -2258,8 +2319,10 @@ void unpacker::read_attrs(int attrc, int obj_count) {
       return;
     }
     code_StackMapTable_N.readData(count);
+    CHECK;
     count = code_StackMapTable_N.getIntTotal();
     code_StackMapTable_frame_T.readData(count);
+    CHECK;
     // the rest of it depends in a complicated way on frame tags
     {
       int fat_frame_count = 0;
@@ -2293,18 +2356,23 @@ void unpacker::read_attrs(int attrc, int obj_count) {
       // deal completely with fat frames:
       offset_count += fat_frame_count;
       code_StackMapTable_local_N.readData(fat_frame_count);
+      CHECK;
       type_count += code_StackMapTable_local_N.getIntTotal();
       code_StackMapTable_stack_N.readData(fat_frame_count);
       type_count += code_StackMapTable_stack_N.getIntTotal();
+      CHECK;
       // read the rest:
       code_StackMapTable_offset.readData(offset_count);
       code_StackMapTable_T.readData(type_count);
+      CHECK;
       // (7) [RCH]
       count = code_StackMapTable_T.getIntCount(7);
       code_StackMapTable_RC.readData(count);
+      CHECK;
       // (8) [PH]
       count = code_StackMapTable_T.getIntCount(8);
       code_StackMapTable_P.readData(count);
+      CHECK;
     }
 
     count = ad.predefCount(CODE_ATTR_LineNumberTable);
@@ -2626,6 +2694,7 @@ void unpacker::read_code_headers() {
   code_max_na_locals.readData();
   code_handler_count.readData();
   totalHandlerCount += code_handler_count.getIntTotal();
+  CHECK;
 
   // Read handler specifications.
   // Cf. PackageReader.readCodeHandlers.
@@ -2633,8 +2702,10 @@ void unpacker::read_code_headers() {
   code_handler_end_PO.readData(totalHandlerCount);
   code_handler_catch_PO.readData(totalHandlerCount);
   code_handler_class_RCN.readData(totalHandlerCount);
+  CHECK;
 
   read_attrs(ATTR_CONTEXT_CODE, totalFlagsCount);
+  CHECK;
 }
 
 static inline bool is_in_range(uint n, uint min, uint max) {
