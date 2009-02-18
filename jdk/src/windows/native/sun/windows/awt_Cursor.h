@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,6 @@ public:
     }
     static AwtCursor * CreateSystemCursor(jobject jCursor);
     static void UpdateCursor(AwtComponent *comp);
-    static void DirtyAllCustomCursors();
     static HCURSOR  GetCursor(JNIEnv *env, AwtComponent *comp);
 
     static void setPData(jobject cursor, jlong pdata) {
@@ -76,7 +75,6 @@ public:
 
 private:
     void Rebuild();
-    static BOOL IsWin95Cursor();
 
     HCURSOR hCursor;
     jweak jCursor;

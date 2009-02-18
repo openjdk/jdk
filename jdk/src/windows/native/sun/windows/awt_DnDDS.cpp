@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  * have any questions.
  */
 
+#include "awt.h"
 #include "jlong.h"
 #include "awt_DataTransferer.h"
 #include "awt_DnDDS.h"
@@ -36,8 +37,6 @@
 #include "sun_awt_dnd_SunDragSourceContextPeer.h"
 #include "sun_awt_windows_WDragSourceContextPeer.h"
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <memory.h>
 #include <shlobj.h>
 
