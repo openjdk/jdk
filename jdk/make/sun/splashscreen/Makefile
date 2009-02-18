@@ -67,7 +67,7 @@ ifneq ($(PLATFORM), windows)
   OTHER_LDLIBS += -L$(OPENWIN_LIB) -lX11 -lXext $(LIBM) -lpthread
 else # PLATFORM
   CFLAGS += -DWITH_WIN32
-  OTHER_LDLIBS += kernel32.lib user32.lib gdi32.lib 
+  OTHER_LDLIBS += kernel32.lib user32.lib gdi32.lib delayimp.lib /DELAYLOAD:user32.dll
 #$(JVMLIB) $(OBJDIR)/../../jpeg/$(OBJDIRNAME)/jpeg$(SUFFIX).lib
 endif # PLATFORM
 
@@ -85,13 +85,6 @@ vpath %.c   $(PLATFORM_SRC)/native/$(PKGDIR)/splashscreen
 CPPFLAGS += -I$(PLATFORM_SRC)/native/$(PKGDIR)/splashscreen -I$(SHARE_SRC)/native/$(PKGDIR)/splashscreen
 CPPFLAGS += -I$(SHARE_SRC)/native/$(PKGDIR)/image/jpeg -I$(SHARE_SRC)/native/java/util/zip/zlib-1.1.3
 
-ifeq ($(PLATFORM), linux)
-  ifeq ($(ARCH_DATA_MODEL), 64)
-    # 64-bit gcc has problems compiling MMX instructions.
-    # Google it for more details. Possibly the newer versions of
-    # the PNG-library and/or the new compiler will not need this
-    # option in the future.
-    CPPFLAGS += -DPNG_NO_MMX_CODE
-  endif
-endif
-
+# Shun the less than portable MMX assembly code in pnggccrd.c,
+# and use alternative implementations in C.
+CPPFLAGS += -DPNG_NO_MMX_CODE

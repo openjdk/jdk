@@ -23,8 +23,6 @@
  * have any questions.
  */
 
-#include <windows.h>
-#include <jni.h>
 #include <awt.h>
 #include <sun_awt_Win32GraphicsEnvironment.h>
 #include "awt_Canvas.h"
@@ -188,44 +186,6 @@ Java_sun_awt_Win32GraphicsEnvironment_getDefaultScreen(JNIEnv *env,
     return AwtWin32GraphicsDevice::GetDefaultDeviceIndex();
 }
 
-#define FR_PRIVATE 0x10 /* from wingdi.h */
-typedef int (WINAPI *AddFontResourceExType)(LPCTSTR,DWORD,VOID*);
-typedef int (WINAPI *RemoveFontResourceExType)(LPCTSTR,DWORD,VOID*);
-
-static AddFontResourceExType procAddFontResourceEx = NULL;
-static RemoveFontResourceExType procRemoveFontResourceEx = NULL;
-
-static int winVer = -1;
-
-static int getWinVer() {
-    if (winVer == -1) {
-        OSVERSIONINFO osvi;
-        osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-        GetVersionEx(&osvi);
-        winVer = osvi.dwMajorVersion;
-        if (winVer >= 5) {
-          // REMIND verify on 64 bit windows
-          HMODULE hGDI = LoadLibrary(TEXT("gdi32.dll"));
-          if (hGDI != NULL) {
-            procAddFontResourceEx =
-              (AddFontResourceExType)GetProcAddress(hGDI,"AddFontResourceExW");
-            if (procAddFontResourceEx == NULL) {
-              winVer = 0;
-            }
-            procRemoveFontResourceEx =
-              (RemoveFontResourceExType)GetProcAddress(hGDI,
-                                                      "RemoveFontResourceExW");
-            if (procRemoveFontResourceEx == NULL) {
-              winVer = 0;
-            }
-            FreeLibrary(hGDI);
-          }
-        }
-    }
-
-    return winVer;
-}
-
 /*
  * Class:     sun_awt_Win32GraphicsEnvironment
  * Method:    registerFontWithPlatform
@@ -236,9 +196,10 @@ Java_sun_awt_Win32GraphicsEnvironment_registerFontWithPlatform(JNIEnv *env,
                                                               jclass cl,
                                                               jstring fontName)
 {
-    if (getWinVer() >= 5 && procAddFontResourceEx != NULL) {
-      LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, NULL);
-      (*procAddFontResourceEx)(file, FR_PRIVATE, NULL);
+    LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, JNI_FALSE);
+    if (file) {
+        ::AddFontResourceEx(file, FR_PRIVATE, NULL);
+        JNU_ReleaseStringPlatformChars(env, fontName, file);
     }
 }
 
@@ -255,9 +216,10 @@ Java_sun_awt_Win32GraphicsEnvironment_deRegisterFontWithPlatform(JNIEnv *env,
                                                               jclass cl,
                                                               jstring fontName)
 {
-    if (getWinVer() >= 5 && procRemoveFontResourceEx != NULL) {
-      LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, NULL);
-      (*procRemoveFontResourceEx)(file, FR_PRIVATE, NULL);
+    LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, JNI_FALSE);
+    if (file) {
+        ::RemoveFontResourceEx(file, FR_PRIVATE, NULL);
+        JNU_ReleaseStringPlatformChars(env, fontName, file);
     }
 }
 

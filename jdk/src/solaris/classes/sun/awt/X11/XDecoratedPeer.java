@@ -492,7 +492,14 @@ abstract class XDecoratedPeer extends XWindowPeer {
             // do nothing but accept it.
             Rectangle reqBounds = newDimensions.getBounds();
             Rectangle newBounds = constrainBounds(reqBounds.x, reqBounds.y, reqBounds.width, reqBounds.height);
-            newDimensions = new WindowDimensions(newBounds, newDimensions.getInsets(), newDimensions.isClientSizeSet());
+            Insets insets = newDimensions.getInsets();
+            // Inherit isClientSizeSet from newDimensions
+            if (newDimensions.isClientSizeSet()) {
+                newBounds = new Rectangle(newBounds.x, newBounds.y,
+                                          newBounds.width - insets.left - insets.right,
+                                          newBounds.height - insets.top - insets.bottom);
+            }
+            newDimensions = new WindowDimensions(newBounds, insets, newDimensions.isClientSizeSet());
         }
         XToolkit.awtLock();
         try {

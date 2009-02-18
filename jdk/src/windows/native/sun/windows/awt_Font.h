@@ -28,7 +28,6 @@
 
 #include "awt.h"
 #include "awt_Object.h"
-#include "awt_Unicode.h"
 
 #include "java_awt_Font.h"
 #include "sun_awt_windows_WFontMetrics.h"
