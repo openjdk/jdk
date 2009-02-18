@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,6 +154,8 @@ enum { false, true };
 #define CHECK_NULL(p)           _CHECK_DO((p)==null, return)
 #define CHECK_NULL_(y,p)        _CHECK_DO((p)==null, return y)
 #define CHECK_NULL_0(p)         _CHECK_DO((p)==null, return 0)
+
+#define CHECK_COUNT(t)          if (t < 0){abort("bad value count");} CHECK
 
 #define STR_TRUE   "true"
 #define STR_FALSE  "false"
