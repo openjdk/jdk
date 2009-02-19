@@ -90,9 +90,11 @@ constantPoolOop oopFactory::new_constantPool(int length,
 }
 
 
-constantPoolCacheOop oopFactory::new_constantPoolCache(int length, TRAPS) {
+constantPoolCacheOop oopFactory::new_constantPoolCache(int length,
+                                                       bool is_conc_safe,
+                                                       TRAPS) {
   constantPoolCacheKlass* ck = constantPoolCacheKlass::cast(Universe::constantPoolCacheKlassObj());
-  return ck->allocate(length, CHECK_NULL);
+  return ck->allocate(length, is_conc_safe, CHECK_NULL);
 }
 
 

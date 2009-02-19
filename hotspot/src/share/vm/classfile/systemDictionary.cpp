@@ -846,6 +846,12 @@ klassOop SystemDictionary::find(symbolHandle class_name,
                                 Handle protection_domain,
                                 TRAPS) {
 
+  // UseNewReflection
+  // The result of this call should be consistent with the result
+  // of the call to resolve_instance_class_or_null().
+  // See evaluation 6790209 and 4474172 for more details.
+  class_loader = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
+
   unsigned int d_hash = dictionary()->compute_hash(class_name, class_loader);
   int d_index = dictionary()->hash_to_index(d_hash);
 

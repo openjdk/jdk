@@ -1426,10 +1426,10 @@ class CommandLineFlags {
   develop(bool, CMSOverflowEarlyRestoration, false,                         \
           "Whether preserved marks should be restored early")               \
                                                                             \
-  product(uintx, CMSMarkStackSize, 32*K,                                    \
+  product(uintx, CMSMarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),           \
           "Size of CMS marking stack")                                      \
                                                                             \
-  product(uintx, CMSMarkStackSizeMax, 4*M,                                  \
+  product(uintx, CMSMarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),       \
           "Max size of CMS marking stack")                                  \
                                                                             \
   notproduct(bool, CMSMarkStackOverflowALot, false,                         \
@@ -1654,6 +1654,13 @@ class CommandLineFlags {
                                                                             \
   develop(uintx, WorkStealingYieldsBeforeSleep, 1000,                       \
           "Number of yields before a sleep is done during workstealing")    \
+                                                                            \
+  develop(uintx, WorkStealingHardSpins, 4096,                               \
+          "Number of iterations in a spin loop between checks on "          \
+          "time out of hard spin")                                          \
+                                                                            \
+  develop(uintx, WorkStealingSpinToYieldRatio, 10,                          \
+          "Ratio of hard spins to calls to yield")                          \
                                                                             \
   product(uintx, PreserveMarkStackSize, 1024,                               \
            "Size for stack used in promotion failure handling")             \
@@ -2186,6 +2193,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, PrintVMOptions, trueInDebug,                                \
          "print VM flag settings")                                          \
+                                                                            \
+  product(bool, IgnoreUnrecognizedVMOptions, false,                         \
+         "Ignore unrecognized VM options")                                  \
                                                                             \
   diagnostic(bool, SerializeVMOutput, true,                                 \
          "Use a mutex to serialize output to tty and hotspot.log")          \

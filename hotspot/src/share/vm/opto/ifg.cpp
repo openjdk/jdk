@@ -471,11 +471,27 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
     // for the "collect_gc_info" phase later.
     IndexSet liveout(_live->live(b));
     uint last_inst = b->end_idx();
-    // Compute last phi index
-    uint last_phi;
-    for( last_phi = 1; last_phi < last_inst; last_phi++ )
-      if( !b->_nodes[last_phi]->is_Phi() )
+    // Compute first nonphi node index
+    uint first_inst;
+    for( first_inst = 1; first_inst < last_inst; first_inst++ )
+      if( !b->_nodes[first_inst]->is_Phi() )
         break;
+
+    // Spills could be inserted before CreateEx node which should be
+    // first instruction in block after Phis. Move CreateEx up.
+    for( uint insidx = first_inst; insidx < last_inst; insidx++ ) {
+      Node *ex = b->_nodes[insidx];
+      if( ex->is_SpillCopy() ) continue;
+      if( insidx > first_inst && ex->is_Mach() &&
+          ex->as_Mach()->ideal_Opcode() == Op_CreateEx ) {
+        // If the CreateEx isn't above all the MachSpillCopies
+        // then move it to the top.
+        b->_nodes.remove(insidx);
+        b->_nodes.insert(first_inst, ex);
+      }
+      // Stop once a CreateEx or any other node is found
+      break;
+    }
 
     // Reset block's register pressure values for each ifg construction
     uint pressure[2], hrp_index[2];
@@ -485,7 +501,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
     // Liveout things are presumed live for the whole block.  We accumulate
     // 'area' accordingly.  If they get killed in the block, we'll subtract
     // the unused part of the block from the area.
-    int inst_count = last_inst - last_phi;
+    int inst_count = last_inst - first_inst;
     double cost = (inst_count <= 0) ? 0.0 : b->_freq * double(inst_count);
     assert(!(cost < 0.0), "negative spill cost" );
     IndexSetIterator elements(&liveout);

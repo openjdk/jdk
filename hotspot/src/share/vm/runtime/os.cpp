@@ -74,13 +74,11 @@ char* os::iso8601_time(char* buffer, size_t buffer_length) {
   const int milliseconds_after_second =
     milliseconds_since_19700101 % milliseconds_per_microsecond;
   // Convert the time value to a tm and timezone variable
-  const struct tm *time_struct_temp = localtime(&seconds_since_19700101);
-  if (time_struct_temp == NULL) {
-    assert(false, "Failed localtime");
+  struct tm time_struct;
+  if (localtime_pd(&seconds_since_19700101, &time_struct) == NULL) {
+    assert(false, "Failed localtime_pd");
     return NULL;
   }
-  // Save the results of localtime
-  const struct tm time_struct = *time_struct_temp;
   const time_t zone = timezone;
 
   // If daylight savings time is in effect,
@@ -93,10 +91,10 @@ char* os::iso8601_time(char* buffer, size_t buffer_length) {
     UTC_to_local = UTC_to_local - seconds_per_hour;
   }
   // Compute the time zone offset.
-  //    localtime(3C) sets timezone to the difference (in seconds)
+  //    localtime_pd() sets timezone to the difference (in seconds)
   //    between UTC and and local time.
   //    ISO 8601 says we need the difference between local time and UTC,
-  //    we change the sign of the localtime(3C) result.
+  //    we change the sign of the localtime_pd() result.
   const time_t local_to_UTC = -(UTC_to_local);
   // Then we have to figure out if if we are ahead (+) or behind (-) UTC.
   char sign_local_to_UTC = '+';
