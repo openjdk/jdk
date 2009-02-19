@@ -90,7 +90,7 @@ private:
   HeapRegion* _curr_scan_only;
 
   HeapRegion* _survivor_head;
-  HeapRegion* _survivors_tail;
+  HeapRegion* _survivor_tail;
   size_t      _survivor_length;
 
   void          empty_list(HeapRegion* list);
@@ -105,6 +105,7 @@ public:
   bool          is_empty() { return _length == 0; }
   size_t        length() { return _length; }
   size_t        scan_only_length() { return _scan_only_length; }
+  size_t        survivor_length() { return _survivor_length; }
 
   void rs_length_sampling_init();
   bool rs_length_sampling_more();
@@ -120,6 +121,7 @@ public:
   HeapRegion* first_region() { return _head; }
   HeapRegion* first_scan_only_region() { return _scan_only_head; }
   HeapRegion* first_survivor_region() { return _survivor_head; }
+  HeapRegion* last_survivor_region() { return _survivor_tail; }
   HeapRegion* par_get_next_scan_only_region() {
     MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
     HeapRegion* ret = _curr_scan_only;
@@ -219,7 +221,7 @@ private:
   // The to-space memory regions into which objects are being copied during
   // a GC.
   HeapRegion* _gc_alloc_regions[GCAllocPurposeCount];
-  uint _gc_alloc_region_counts[GCAllocPurposeCount];
+  size_t _gc_alloc_region_counts[GCAllocPurposeCount];
 
   // A list of the regions that have been set to be alloc regions in the
   // current collection.
@@ -281,8 +283,8 @@ protected:
   // Returns "true" iff none of the gc alloc regions have any allocations
   // since the last call to "save_marks".
   bool all_alloc_regions_no_allocs_since_save_marks();
-  // Calls "note_end_of_copying on all gc alloc_regions.
-  void all_alloc_regions_note_end_of_copying();
+  // Perform finalization stuff on all allocation regions.
+  void retire_all_alloc_regions();
 
   // The number of regions allocated to hold humongous objects.
   int         _num_humongous_regions;
@@ -350,6 +352,10 @@ protected:
   // Ensure that no further allocations can happen in "r", bearing in mind
   // that parallel threads might be attempting allocations.
   void par_allocate_remaining_space(HeapRegion* r);
+
+  // Retires an allocation region when it is full or at the end of a
+  // GC pause.
+  void  retire_alloc_region(HeapRegion* alloc_region, bool par);
 
   // Helper function for two callbacks below.
   // "full", if true, indicates that the GC is for a System.gc() request,

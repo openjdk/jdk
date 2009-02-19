@@ -6413,9 +6413,9 @@ instruct loadUB(xRegI dst, memory mem, immI_255 bytemask) %{
   ins_pipe( ialu_reg_mem );
 %}
 
-// Load Char (16bit unsigned)
-instruct loadC(eRegI dst, memory mem) %{
-  match(Set dst (LoadC mem));
+// Load Unsigned Short/Char (16bit unsigned)
+instruct loadUS(eRegI dst, memory mem) %{
+  match(Set dst (LoadUS mem));
 
   ins_cost(125);
   format %{ "MOVZX  $dst,$mem" %}

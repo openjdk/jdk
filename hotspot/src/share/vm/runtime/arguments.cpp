@@ -2489,7 +2489,7 @@ jint Arguments::parse_options_environment_variable(const char* name, SysClassPat
     vm_args.version = JNI_VERSION_1_2;
     vm_args.options = options;
     vm_args.nOptions = i;
-    vm_args.ignoreUnrecognized = false;
+    vm_args.ignoreUnrecognized = IgnoreUnrecognizedVMOptions;
 
     if (PrintVMOptions) {
       const char* tail;
@@ -2536,13 +2536,12 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 
   // If flag "-XX:Flags=flags-file" is used it will be the first option to be processed.
   bool settings_file_specified = false;
+  const char* flags_file;
   int index;
   for (index = 0; index < args->nOptions; index++) {
     const JavaVMOption *option = args->options + index;
     if (match_option(option, "-XX:Flags=", &tail)) {
-      if (!process_settings_file(tail, true, args->ignoreUnrecognized)) {
-        return JNI_EINVAL;
-      }
+      flags_file = tail;
       settings_file_specified = true;
     }
     if (match_option(option, "-XX:+PrintVMOptions", &tail)) {
@@ -2550,6 +2549,24 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     }
     if (match_option(option, "-XX:-PrintVMOptions", &tail)) {
       PrintVMOptions = false;
+    }
+    if (match_option(option, "-XX:+IgnoreUnrecognizedVMOptions", &tail)) {
+      IgnoreUnrecognizedVMOptions = true;
+    }
+    if (match_option(option, "-XX:-IgnoreUnrecognizedVMOptions", &tail)) {
+      IgnoreUnrecognizedVMOptions = false;
+    }
+  }
+
+  if (IgnoreUnrecognizedVMOptions) {
+    // uncast const to modify the flag args->ignoreUnrecognized
+    *(jboolean*)(&args->ignoreUnrecognized) = true;
+  }
+
+  // Parse specified settings file
+  if (settings_file_specified) {
+    if (!process_settings_file(flags_file, true, args->ignoreUnrecognized)) {
+      return JNI_EINVAL;
     }
   }
 
