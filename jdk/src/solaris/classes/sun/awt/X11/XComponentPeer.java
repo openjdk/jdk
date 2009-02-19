@@ -166,7 +166,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         enableLog.log(Level.FINE, "Initial enable state: {0}", new Object[] {Boolean.valueOf(enabled)});
 
         if (target.isVisible()) {
-            show();
+            setVisible(true);
         }
     }
 
@@ -494,10 +494,6 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     public void setVisible(boolean b) {
         xSetVisible(b);
-    }
-
-    public void show() {
-        setVisible(true);
     }
 
     public void hide() {
