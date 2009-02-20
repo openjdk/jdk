@@ -250,6 +250,15 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
         assert(adr_idx == Compile::AliasIdxRaw, "address must match or be raw");
       }
       mem = mem->in(MemNode::Memory);
+    } else if (mem->Opcode() == Op_SCMemProj) {
+      assert(mem->in(0)->is_LoadStore(), "sanity");
+      const TypePtr* atype = mem->in(0)->in(MemNode::Address)->bottom_type()->is_ptr();
+      int adr_idx = Compile::current()->get_alias_index(atype);
+      if (adr_idx == alias_idx) {
+        assert(false, "Object is not scalar replaceable if a LoadStore node access its field");
+        return NULL;
+      }
+      mem = mem->in(0)->in(MemNode::Memory);
     } else {
       return mem;
     }
@@ -329,8 +338,15 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
           return NULL;
         }
         values.at_put(j, val);
+      } else if (val->Opcode() == Op_SCMemProj) {
+        assert(val->in(0)->is_LoadStore(), "sanity");
+        assert(false, "Object is not scalar replaceable if a LoadStore node access its field");
+        return NULL;
       } else {
+#ifdef ASSERT
+        val->dump();
         assert(false, "unknown node on this path");
+#endif
         return NULL;  // unknown node on this path
       }
     }

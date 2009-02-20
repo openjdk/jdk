@@ -756,6 +756,16 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       } else {
         break;
       }
+    } else if (result->Opcode() == Op_SCMemProj) {
+      assert(result->in(0)->is_LoadStore(), "sanity");
+      const Type *at = phase->type(result->in(0)->in(MemNode::Address));
+      if (at != Type::TOP) {
+        assert (at->isa_ptr() != NULL, "pointer type required.");
+        int idx = C->get_alias_index(at->is_ptr());
+        assert(idx != alias_idx, "Object is not scalar replaceable if a LoadStore node access its field");
+        break;
+      }
+      result = result->in(0)->in(MemNode::Memory);
     }
   }
   if (result->is_Phi()) {
