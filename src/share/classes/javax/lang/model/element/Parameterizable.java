@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,35 +25,21 @@
 
 package javax.lang.model.element;
 
+import java.util.List;
+
 /**
- * Represents a package program element.  Provides access to information
- * about the package and its members.
+ * A mixin interface for an element that has type parameters.
  *
  * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
- * @see javax.lang.model.util.Elements#getPackageOf
- * @since 1.6
+ * @since 1.7
  */
-public interface PackageElement extends Element, QualifiedNameable {
-
+public interface Parameterizable extends Element {
     /**
-     * Returns the fully qualified name of this package.
-     * This is also known as the package's <i>canonical</i> name.
+     * Returns the formal type parameters of the type element in
+     * declaration order.
      *
-     * @return the fully qualified name of this package, or an
-     * empty name if this is an unnamed package
-     * @jls3 6.7 Fully Qualified Names and Canonical Names
+     * @return the formal type parameters, or an empty list
+     * if there are none
      */
-    Name getQualifiedName();
-
-    /**
-     * Returns {@code true} is this is an unnamed package and {@code
-     * false} otherwise.
-     *
-     * @return {@code true} is this is an unnamed package and {@code
-     * false} otherwise
-     * @jls3 7.4.2 Unnamed Packages
-     */
-    boolean isUnnamed();
+    List<? extends TypeParameterElement> getTypeParameters();
 }
