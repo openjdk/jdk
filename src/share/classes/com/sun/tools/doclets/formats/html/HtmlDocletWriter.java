@@ -245,6 +245,29 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
+     * Check whether there are any tags to be printed.
+     *
+     * @param doc the Doc object to check for tags.
+     * @return true if there are tags to be printed else return false.
+     */
+    protected boolean hasTagsToPrint(Doc doc) {
+        if (doc instanceof MethodDoc) {
+            ClassDoc[] intfacs = ((MethodDoc)doc).containingClass().interfaces();
+            MethodDoc overriddenMethod = ((MethodDoc)doc).overriddenMethod();
+            if ((intfacs.length > 0 &&
+                new ImplementedMethods((MethodDoc)doc, this.configuration).build().length > 0) ||
+                overriddenMethod != null) {
+                return true;
+            }
+        }
+        TagletOutputImpl output = new TagletOutputImpl("");
+        TagletWriter.genTagOuput(configuration.tagletManager, doc,
+            configuration.tagletManager.getCustomTags(doc),
+                getTagletWriterInstance(false), output);
+        return (output.toString().trim().isEmpty());
+    }
+
+    /**
      * Returns a TagletWriter that knows how to write HTML.
      *
      * @return a TagletWriter that knows how to write HTML.
