@@ -41,7 +41,9 @@ import sun.awt.*;
 
 import sun.java2d.pipe.Region;
 
-public class WWindowPeer extends WPanelPeer implements WindowPeer {
+public class WWindowPeer extends WPanelPeer implements WindowPeer,
+       DisplayChangedListener
+{
 
     private static final Logger log = Logger.getLogger("sun.awt.windows.WWindowPeer");
     private static final Logger screenLog = Logger.getLogger("sun.awt.windows.screen.WWindowPeer");
@@ -198,7 +200,6 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer {
         // super.displayChanged() in WWindowPeer.displayChanged() regardless of whether
         // GraphicsDevice was really changed, or not. So we need to track it here.
         updateGC();
-        resetTargetGC();
 
         realShow();
         updateMinimumSize();
@@ -400,14 +401,6 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer {
         });
     }
 
-
-    /*
-     * Called from WCanvasPeer.displayChanged().
-     * Override to do nothing - Window and WWindowPeer GC must never be set to
-     * null!
-     */
-    void clearLocalGC() {}
-
     public void updateGC() {
         int scrn = getScreenImOn();
         if (screenLog.isLoggable(Level.FINER)) {
@@ -446,18 +439,36 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer {
             oldDev.removeDisplayChangedListener(this);
             newDev.addDisplayChangedListener(this);
         }
+
+        SunToolkit.executeOnEventHandlerThread((Component)target,
+                new Runnable() {
+                    public void run() {
+                        AWTAccessor.getComponentAccessor().
+            setGraphicsConfiguration((Component)target, winGraphicsConfig);
+                    }
+                });
     }
 
-    /*
-     * From the DisplayChangedListener interface
+    /**
+     * From the DisplayChangedListener interface.
      *
      * This method handles a display change - either when the display settings
      * are changed, or when the window has been dragged onto a different
      * display.
+     * Called after a change in the display mode.  This event
+     * triggers replacing the surfaceData object (since that object
+     * reflects the current display depth information, which has
+     * just changed).
      */
     public void displayChanged() {
         updateGC();
-        super.displayChanged();
+    }
+
+    /**
+     * Part of the DisplayChangedListener interface: components
+     * do not need to react to this event
+     */
+    public void paletteChanged() {
     }
 
     private native int getScreenImOn();

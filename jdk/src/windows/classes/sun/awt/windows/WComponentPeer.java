@@ -59,7 +59,7 @@ import java.util.logging.*;
 
 
 public abstract class WComponentPeer extends WObjectPeer
-    implements ComponentPeer, DropTargetPeer, DisplayChangedListener
+    implements ComponentPeer, DropTargetPeer
 {
     /**
      * Handle to native window
@@ -452,27 +452,13 @@ public abstract class WComponentPeer extends WObjectPeer
         }
     }
 
-    /**
-     * From the DisplayChangedListener interface.
-     *
-     * Called after a change in the display mode.  This event
-     * triggers replacing the surfaceData object (since that object
-     * reflects the current display depth information, which has
-     * just changed).
-     */
-    public void displayChanged() {
+    public void updateGraphicsData(GraphicsConfiguration gc) {
+        winGraphicsConfig = (Win32GraphicsConfig)gc;
         try {
             replaceSurfaceData();
         } catch (InvalidPipeException e) {
             // REMIND : what do we do if our surface creation failed?
         }
-    }
-
-    /**
-     * Part of the DisplayChangedListener interface: components
-     * do not need to react to this event
-     */
-    public void paletteChanged() {
     }
 
     //This will return null for Components not yet added to a Container

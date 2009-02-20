@@ -38,42 +38,10 @@ class WCanvasPeer extends WComponentPeer implements CanvasPeer {
 
     private boolean eraseBackground;
 
-    Method resetGCMethod;
-
     // Toolkit & peer internals
 
     WCanvasPeer(Component target) {
         super(target);
-    }
-
-    /*
-     * From the DisplayChangedListener interface.
-     *
-     * Overrides WComponentPeer version because Canvases can be created with
-     * a non-defulat GraphicsConfiguration, which is no longer valid.
-     * Up-called for other windows peer instances (WPanelPeer, WWindowPeer).
-     */
-    public void displayChanged() {
-        clearLocalGC();
-        resetTargetGC();
-        super.displayChanged();
-    }
-
-    /*
-     * Reset the graphicsConfiguration member of our target Component.
-     * Component.resetGC() is a package-private method, so we have to call it
-     * through reflection.
-     */
-    public void resetTargetGC() {
-        ComponentAccessor.resetGC((Component)target);
-    }
-
-    /*
-     * Clears the peer's winGraphicsConfig member.
-     * Overridden by WWindowPeer, which shouldn't have a null winGraphicsConfig.
-     */
-    void clearLocalGC() {
-        winGraphicsConfig = null;
     }
 
     native void create(WComponentPeer parent);
@@ -152,4 +120,10 @@ class WCanvasPeer extends WComponentPeer implements CanvasPeer {
      */
     private native void setNativeBackgroundErase(boolean doErase,
                                                  boolean doEraseOnResize);
+
+    public GraphicsConfiguration getAppropriateGraphicsConfiguration(
+            GraphicsConfiguration gc)
+    {
+        return gc;
+    }
 }

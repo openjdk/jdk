@@ -305,4 +305,12 @@ public class NullComponentPeer implements LightweightPeer,
       */
     public void applyShape(Region shape) {
     }
+
+    public void updateGraphicsData(GraphicsConfiguration gc) {}
+
+    public GraphicsConfiguration getAppropriateGraphicsConfiguration(
+                        GraphicsConfiguration gc)
+    {
+        return gc;
+    }
 }

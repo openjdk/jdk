@@ -300,7 +300,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see GraphicsConfiguration
      * @see #getGraphicsConfiguration
      */
-    transient GraphicsConfiguration graphicsConfig = null;
+    private transient GraphicsConfiguration graphicsConfig = null;
 
     /**
      * A reference to a <code>BufferStrategy</code> object
@@ -845,6 +845,12 @@ public abstract class Component implements ImageObserver, MenuContainer,
                     }
                 }
             }
+
+            public void setGraphicsConfiguration(Component comp,
+                    GraphicsConfiguration gc)
+            {
+                comp.setGraphicsConfiguration(gc);
+            }
         });
     }
 
@@ -1012,50 +1018,21 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     public GraphicsConfiguration getGraphicsConfiguration() {
         synchronized(getTreeLock()) {
-            if (graphicsConfig != null) {
-                return graphicsConfig;
-            } else if (getParent() != null) {
-                return getParent().getGraphicsConfiguration();
-            } else {
-                return null;
-            }
+            return getGraphicsConfiguration_NoClientCode();
         }
     }
 
     final GraphicsConfiguration getGraphicsConfiguration_NoClientCode() {
-        GraphicsConfiguration graphicsConfig = this.graphicsConfig;
-        Container parent = this.parent;
-        if (graphicsConfig != null) {
-            return graphicsConfig;
-        } else if (parent != null) {
-            return parent.getGraphicsConfiguration_NoClientCode();
-        } else {
-            return null;
-        }
+        return graphicsConfig;
     }
 
-    /**
-     * Resets this <code>Component</code>'s
-     * <code>GraphicsConfiguration</code> back to a default
-     * value.  For most componenets, this is <code>null</code>.
-     * Called from the Toolkit thread, so NO CLIENT CODE.
-     */
-    void resetGC() {
+    void setGraphicsConfiguration(GraphicsConfiguration gc) {
         synchronized(getTreeLock()) {
-            graphicsConfig = null;
-        }
-    }
+            graphicsConfig = gc;
 
-    /*
-     * Not called on Component, but needed for Canvas and Window
-     */
-    void setGCFromPeer() {
-        synchronized(getTreeLock()) {
-            if (peer != null) { // can't imagine how this will be false,
-                                // but just in case
-                graphicsConfig = peer.getGraphicsConfiguration();
-            } else {
-                graphicsConfig = null;
+            ComponentPeer peer = getPeer();
+            if (peer != null) {
+                peer.updateGraphicsData(gc);
             }
         }
     }

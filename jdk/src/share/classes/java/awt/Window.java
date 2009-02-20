@@ -394,6 +394,18 @@ public class Window extends Container implements Accessible {
         }
     }
 
+    private GraphicsConfiguration initGC(GraphicsConfiguration gc) {
+        GraphicsEnvironment.checkHeadless();
+
+        if (gc == null) {
+            gc = GraphicsEnvironment.getLocalGraphicsEnvironment().
+                getDefaultScreenDevice().getDefaultConfiguration();
+        }
+        setGraphicsConfiguration(gc);
+
+        return gc;
+    }
+
     private void init(GraphicsConfiguration gc) {
         GraphicsEnvironment.checkHeadless();
 
@@ -405,14 +417,10 @@ public class Window extends Container implements Accessible {
         setWarningString();
         this.cursor = Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
         this.visible = false;
-        if (gc == null) {
-            this.graphicsConfig =
-                GraphicsEnvironment.getLocalGraphicsEnvironment().
-             getDefaultScreenDevice().getDefaultConfiguration();
-        } else {
-            this.graphicsConfig = gc;
-        }
-        if (graphicsConfig.getDevice().getType() !=
+
+        gc = initGC(gc);
+
+        if (gc.getDevice().getType() !=
             GraphicsDevice.TYPE_RASTER_SCREEN) {
             throw new IllegalArgumentException("not a screen device");
         }
@@ -420,8 +428,8 @@ public class Window extends Container implements Accessible {
 
         /* offset the initial location with the original of the screen */
         /* and any insets                                              */
-        Rectangle screenBounds = graphicsConfig.getBounds();
-        Insets screenInsets = getToolkit().getScreenInsets(graphicsConfig);
+        Rectangle screenBounds = gc.getBounds();
+        Insets screenInsets = getToolkit().getScreenInsets(gc);
         int x = getX() + screenBounds.x + screenInsets.left;
         int y = getY() + screenBounds.y + screenInsets.top;
         if (x != this.x || y != this.y) {
@@ -2765,7 +2773,7 @@ public class Window extends Container implements Accessible {
         sun.java2d.Disposer.addRecord(anchor, new WindowDisposerRecord(appContext, this));
 
         addToWindowList();
-
+        initGC(null);
     }
 
     private void deserializeResources(ObjectInputStream s)
@@ -2939,41 +2947,18 @@ public class Window extends Container implements Accessible {
 
     } // inner class AccessibleAWTWindow
 
-    /**
-     * This method returns the GraphicsConfiguration used by this Window.
-     * @since 1.3
-     */
-    public GraphicsConfiguration getGraphicsConfiguration() {
-                //NOTE: for multiscreen, this will need to take into account
-                //which screen the window is on/mostly on instead of returning the
-                //default or constructor argument config.
-        synchronized(getTreeLock()) {
-            if (graphicsConfig == null  && !GraphicsEnvironment.isHeadless()) {
-                graphicsConfig =
-                    GraphicsEnvironment. getLocalGraphicsEnvironment().
-                    getDefaultScreenDevice().
-                    getDefaultConfiguration();
-            }
-            return graphicsConfig;
-            }
-    }
-
-    /**
-     * Reset this Window's GraphicsConfiguration to match its peer.
-     */
-    void resetGC() {
-        if (!GraphicsEnvironment.isHeadless()) {
-            // use the peer's GC
-            setGCFromPeer();
-            // if it's still null, use the default
-            if (graphicsConfig == null) {
-                graphicsConfig = GraphicsEnvironment.
+    @Override
+    void setGraphicsConfiguration(GraphicsConfiguration gc) {
+        if (gc == null) {
+            gc = GraphicsEnvironment.
                     getLocalGraphicsEnvironment().
                     getDefaultScreenDevice().
                     getDefaultConfiguration();
-            }
+        }
+        synchronized (getTreeLock()) {
+            super.setGraphicsConfiguration(gc);
             if (log.isLoggable(Level.FINER)) {
-                log.finer("+ Window.resetGC(): new GC is \n+ " + graphicsConfig + "\n+ this is " + this);
+                log.finer("+ Window.setGraphicsConfiguration(): new GC is \n+ " + getGraphicsConfiguration_NoClientCode() + "\n+ this is " + this);
             }
         }
     }
@@ -3033,7 +3018,7 @@ public class Window extends Container implements Accessible {
         // target location
         int dx = 0, dy = 0;
         // target GC
-        GraphicsConfiguration gc = this.graphicsConfig;
+        GraphicsConfiguration gc = getGraphicsConfiguration_NoClientCode();
         Rectangle gcBounds = gc.getBounds();
 
         Dimension windowSize = getSize();

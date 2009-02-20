@@ -78,6 +78,11 @@ public final class AWTAccessor {
          * See 6797587, 6776743, 6768307, and 6768332 for details
          */
         void setMixingCutoutShape(Component comp, Shape shape);
+
+        /**
+         * Sets GraphicsConfiguration value for the component.
+         */
+        void setGraphicsConfiguration(Component comp, GraphicsConfiguration gc);
     }
 
     /*
