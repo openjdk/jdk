@@ -539,4 +539,10 @@ public interface ComponentPeer {
      */
     void applyShape(Region shape);
 
+    /**
+     * Updates internal data structures related to the component's GC.
+     *
+     * @since 1.7
+     */
+    void updateGraphicsData(GraphicsConfiguration gc);
 }

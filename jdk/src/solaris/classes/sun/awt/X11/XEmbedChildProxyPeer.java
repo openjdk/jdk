@@ -379,4 +379,6 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
 
     public void applyShape(Region shape) {
     }
+
+    public void updateGraphicsData(GraphicsConfiguration gc) {}
 }

@@ -47,6 +47,7 @@ import java.util.logging.Logger;
 import sun.awt.AWTAccessor;
 import sun.awt.ComponentAccessor;
 import sun.awt.WindowAccessor;
+import sun.awt.AWTAccessor;
 import sun.awt.DisplayChangedListener;
 import sun.awt.SunToolkit;
 import sun.awt.X11GraphicsDevice;
@@ -711,6 +712,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         int curScreenNum = ((X11GraphicsDevice)getGraphicsConfiguration().getDevice()).getScreen();
         int newScreenNum = 0;
         GraphicsDevice gds[] = XToolkit.localEnv.getScreenDevices();
+        GraphicsConfiguration newGC = null;
         Rectangle screenBounds;
 
         for (int i = 0; i < gds.length; i++) {
@@ -726,11 +728,13 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                 if (intAmt == area) {
                     // Completely on this screen - done!
                     newScreenNum = i;
+                    newGC = gds[i].getDefaultConfiguration();
                     break;
                 }
                 if (intAmt > largestAmt) {
                     largestAmt = intAmt;
                     newScreenNum = i;
+                    newGC = gds[i].getDefaultConfiguration();
                 }
             }
         }
@@ -738,15 +742,8 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             if (log.isLoggable(Level.FINEST)) {
                 log.finest("XWindowPeer: Moved to a new screen");
             }
-            draggedToNewScreen(newScreenNum);
+            executeDisplayChangedOnEDT(newGC);
         }
-    }
-
-    /* Xinerama
-     * called to update our GC when dragged onto another screen
-     */
-    public void draggedToNewScreen(int screenNum) {
-        executeDisplayChangedOnEDT(screenNum);
     }
 
     /**
@@ -754,12 +751,11 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
      * the event dispatch thread.  This method is used in the Xinerama case
      * and after display mode change events.
      */
-    private void executeDisplayChangedOnEDT(final int screenNum) {
+    private void executeDisplayChangedOnEDT(final GraphicsConfiguration gc) {
         Runnable dc = new Runnable() {
             public void run() {
-                // Updates this window's GC and notifies all the children.
-                // See XPanelPeer/XCanvasPeer.displayChanged(int) for details.
-                displayChanged(screenNum);
+                AWTAccessor.getComponentAccessor().
+                    setGraphicsConfiguration((Component)target, gc);
             }
         };
         SunToolkit.executeOnEventHandlerThread((Component)target, dc);
@@ -770,9 +766,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
      * X11GraphicsDevice when the display mode has been changed.
      */
     public void displayChanged() {
-        GraphicsConfiguration gc = getGraphicsConfiguration();
-        int curScreenNum = ((X11GraphicsDevice)gc.getDevice()).getScreen();
-        executeDisplayChangedOnEDT(curScreenNum);
+        executeDisplayChangedOnEDT(getGraphicsConfiguration());
     }
 
     /**
