@@ -44,7 +44,7 @@ public interface Messages {
     void add(String bundleName) throws MissingResourceException;
 
     /**
-     * Get a localized formatted string
+     * Get a localized formatted string.
      * @param l locale in which the text is to be localized
      * @param key locale-independent message key
      * @param args misc message arguments
