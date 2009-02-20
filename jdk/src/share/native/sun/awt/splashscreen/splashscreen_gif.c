@@ -53,10 +53,6 @@ static const char szNetscape20ext[11] = "NETSCAPE2.0";
 // convert libungif samples to our ones
 #define MAKE_QUAD_GIF(c,a) MAKE_QUAD((c).Red, (c).Green, (c).Blue, (a))
 
-#define SAFE_TO_ALLOC(c, sz)                                               \
-    (((c) > 0) && ((sz) > 0) &&                                            \
-     ((0xffffffffu / ((unsigned int)(c))) > (unsigned int)(sz)))
-
 /* stdio FILE* and memory input functions for libungif */
 int
 SplashStreamGifInputFunc(GifFileType * gif, GifByteType * buf, int n)
