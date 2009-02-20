@@ -196,16 +196,18 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         hints.ai_flags = AI_CANONNAME;
         hints.ai_family = AF_UNSPEC;
 
+#ifdef __solaris__
         /*
          * Workaround for Solaris bug 4160367 - if a hostname contains a
          * white space then 0.0.0.0 is returned
          */
-        if (isspace(hostname[0])) {
+        if (isspace((unsigned char)hostname[0])) {
             JNU_ThrowByName(env, JNU_JAVANETPKG "UnknownHostException",
                             (char *)hostname);
             JNU_ReleaseStringPlatformChars(env, host, hostname);
             return NULL;
         }
+#endif
 
         error = (*getaddrinfo_ptr)(hostname, NULL, &hints, &res);
 
@@ -455,7 +457,8 @@ static jboolean
 ping6(JNIEnv *env, jint fd, struct sockaddr_in6* him, jint timeout,
       struct sockaddr_in6* netif, jint ttl) {
     jint size;
-    jint n, len;
+    jint n;
+    socklen_t len;
     char sendbuf[1500];
     unsigned char recvbuf[1500];
     struct icmp6_hdr *icmp6;

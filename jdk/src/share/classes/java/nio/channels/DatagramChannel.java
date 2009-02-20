@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@ import java.net.DatagramSocket;
 import java.net.SocketOption;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.spi.*;
+import java.nio.channels.spi.AbstractSelectableChannel;
+import java.nio.channels.spi.SelectorProvider;
 
 /**
  * A selectable channel for datagram-oriented sockets.
@@ -53,7 +54,8 @@ import java.nio.channels.spi.*;
  * be determined by invoking its {@link #isConnected isConnected} method.
  *
  * <p> Socket options are configured using the {@link #setOption(SocketOption,Object)
- * setOption} method. Datagram channels support the following options:
+ * setOption} method. A datagram channel to an Internet Protocol socket supports
+ * the following options:
  * <blockquote>
  * <table border>
  *   <tr>
@@ -211,6 +213,7 @@ public abstract class DatagramChannel
         throws IOException;
 
     /**
+     * @throws  UnsupportedOperationException           {@inheritDoc}
      * @throws  IllegalArgumentException                {@inheritDoc}
      * @throws  ClosedChannelException                  {@inheritDoc}
      * @throws  IOException                             {@inheritDoc}
@@ -219,7 +222,6 @@ public abstract class DatagramChannel
      */
     public abstract <T> DatagramChannel setOption(SocketOption<T> name, T value)
         throws IOException;
-
 
     /**
      * Retrieves a datagram socket associated with this channel.
@@ -313,15 +315,17 @@ public abstract class DatagramChannel
     /**
      * Returns the remote address to which this channel's socket is connected.
      *
-     * @return  The remote address; {@code null} if the channel is not {@link
-     *          #isOpen open} or the channel's socket is not connected
+     * @return  The remote address; {@code null} if the channel's socket is not
+     *          connected
      *
+     * @throws  ClosedChannelException
+     *          If the channel is closed
      * @throws  IOException
      *          If an I/O error occurs
      *
      * @since 1.7
      */
-    public abstract SocketAddress getConnectedAddress() throws IOException;
+    public abstract SocketAddress getRemoteAddress() throws IOException;
 
     /**
      * Receives a datagram via this channel.
