@@ -155,6 +155,10 @@ int BitmapToYXBandedRectangles(ImageRect * pSrcRect, RECT_T * out);
 
 void SplashInitFrameShape(Splash * splash, int imageIndex);
 
+#define SAFE_TO_ALLOC(c, sz)                                               \
+    (((c) > 0) && ((sz) > 0) &&                                            \
+     ((0xffffffffu / ((unsigned int)(c))) > (unsigned int)(sz)))
+
 #define dbgprintf printf
 
 #endif
