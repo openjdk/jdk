@@ -40,6 +40,7 @@ public enum OptionName {
     G_CUSTOM("-g:"),
     XLINT("-Xlint"),
     XLINT_CUSTOM("-Xlint:"),
+    DIAGS("-XDdiags="),
     NOWARN("-nowarn"),
     VERBOSE("-verbose"),
     DEPRECATION("-deprecation"),
