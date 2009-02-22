@@ -25,7 +25,7 @@
 # include "incls/_precompiled.incl"
 # include "incls/_constantPoolKlass.cpp.incl"
 
-constantPoolOop constantPoolKlass::allocate(int length, TRAPS) {
+constantPoolOop constantPoolKlass::allocate(int length, bool is_conc_safe, TRAPS) {
   int size = constantPoolOopDesc::object_size(length);
   KlassHandle klass (THREAD, as_klassOop());
   constantPoolOop c =
@@ -35,8 +35,12 @@ constantPoolOop constantPoolKlass::allocate(int length, TRAPS) {
   c->set_tags(NULL);
   c->set_cache(NULL);
   c->set_pool_holder(NULL);
+  c->set_flags(0);
   // only set to non-zero if constant pool is merged by RedefineClasses
   c->set_orig_length(0);
+  // if constant pool may change during RedefineClasses, it is created
+  // unsafe for GC concurrent processing.
+  c->set_is_conc_safe(is_conc_safe);
   // all fields are initialized; needed for GC
 
   // initialize tag array
@@ -206,6 +210,11 @@ int constantPoolKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr)
   return size;
 }
 
+bool constantPoolKlass::oop_is_conc_safe(oop obj) const {
+  assert(obj->is_constantPool(), "must be constantPool");
+  return constantPoolOop(obj)->is_conc_safe();
+}
+
 #ifndef SERIALGC
 int constantPoolKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   assert (obj->is_constantPool(), "obj must be constant pool");
@@ -261,10 +270,32 @@ constantPoolKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
 
 void constantPoolKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->is_constantPool(), "should be constant pool");
+  constantPoolOop cp = (constantPoolOop) obj;
+  if (AnonymousClasses && cp->has_pseudo_string() && cp->tags() != NULL) {
+    oop* base = (oop*)cp->base();
+    for (int i = 0; i < cp->length(); ++i, ++base) {
+      if (cp->tag_at(i).is_string()) {
+        if (PSScavenge::should_scavenge(base)) {
+          pm->claim_or_forward_breadth(base);
+        }
+      }
+    }
+  }
 }
 
 void constantPoolKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->is_constantPool(), "should be constant pool");
+  constantPoolOop cp = (constantPoolOop) obj;
+  if (AnonymousClasses && cp->has_pseudo_string() && cp->tags() != NULL) {
+    oop* base = (oop*)cp->base();
+    for (int i = 0; i < cp->length(); ++i, ++base) {
+      if (cp->tag_at(i).is_string()) {
+        if (PSScavenge::should_scavenge(base)) {
+          pm->claim_or_forward_depth(base);
+        }
+      }
+    }
+  }
 }
 #endif // SERIALGC
 
@@ -278,6 +309,11 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
   assert(obj->is_constantPool(), "must be constantPool");
   Klass::oop_print_on(obj, st);
   constantPoolOop cp = constantPoolOop(obj);
+  if (cp->flags() != 0) {
+    st->print(" - flags : 0x%x", cp->flags());
+    if (cp->has_pseudo_string()) st->print(" has_pseudo_string");
+    st->cr();
+  }
 
   // Temp. remove cache so we can do lookups with original indicies.
   constantPoolCacheHandle cache (THREAD, cp->cache());
@@ -302,7 +338,11 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
         break;
       case JVM_CONSTANT_UnresolvedString :
       case JVM_CONSTANT_String :
-        anObj = cp->string_at(index, CATCH);
+        if (cp->is_pseudo_string_at(index)) {
+          anObj = cp->pseudo_string_at(index);
+        } else {
+          anObj = cp->string_at(index, CATCH);
+        }
         anObj->print_value_on(st);
         st->print(" {0x%lx}", (address)anObj);
         break;
@@ -382,8 +422,12 @@ void constantPoolKlass::oop_verify_on(oop obj, outputStream* st) {
                   "should be symbol or instance");
       }
       if (cp->tag_at(i).is_string()) {
-        guarantee((*base)->is_perm(),     "should be in permspace");
-        guarantee((*base)->is_instance(), "should be instance");
+        if (!cp->has_pseudo_string()) {
+          guarantee((*base)->is_perm(),   "should be in permspace");
+          guarantee((*base)->is_instance(), "should be instance");
+        } else {
+          // can be non-perm, can be non-instance (array)
+        }
       }
       base++;
     }

@@ -184,12 +184,12 @@ public class ClassUseMapper {
         this.classtree = classtree;
 
         // Map subclassing, subinterfacing implementing, ...
-        for (Iterator it = classtree.baseclasses().iterator(); it.hasNext();) {
-            subclasses((ClassDoc)it.next());
+        for (Iterator<ClassDoc> it = classtree.baseclasses().iterator(); it.hasNext();) {
+            subclasses(it.next());
         }
-        for (Iterator it = classtree.baseinterfaces().iterator(); it.hasNext();) {
+        for (Iterator<ClassDoc> it = classtree.baseinterfaces().iterator(); it.hasNext();) {
             // does subinterfacing as side-effect
-            implementingClasses((ClassDoc)it.next());
+            implementingClasses(it.next());
         }
         // Map methods, fields, constructors using a class.
         ClassDoc[] classes = root.classes();
@@ -279,12 +279,12 @@ public class ClassUseMapper {
             List<ClassDoc> impl = classtree.implementingclasses(cd);
             if (impl != null) {
                 ret.addAll(impl);
-                for (Iterator it = impl.iterator(); it.hasNext();) {
-                    ret.addAll(subclasses((ClassDoc)it.next()));
+                for (Iterator<ClassDoc> it = impl.iterator(); it.hasNext();) {
+                    ret.addAll(subclasses(it.next()));
                 }
             }
-            for (Iterator it = subinterfaces(cd).iterator(); it.hasNext();) {
-                ret.addAll(implementingClasses((ClassDoc)it.next()));
+            for (Iterator<ClassDoc> it = subinterfaces(cd).iterator(); it.hasNext();) {
+                ret.addAll(implementingClasses(it.next()));
             }
             addAll(classToImplementingClass, cd, ret);
         }
@@ -328,8 +328,7 @@ public class ClassUseMapper {
     private <T> List<T> refList(Map<String,List<T>> map, ClassDoc cd) {
         List<T> list = map.get(cd.qualifiedName());
         if (list == null) {
-            @SuppressWarnings("unchecked")
-            List<T> l = new ArrayList();
+            List<T> l = new ArrayList<T>();
             list = l;
             map.put(cd.qualifiedName(), list);
         }
@@ -348,8 +347,7 @@ public class ClassUseMapper {
     private Set<ClassDoc> classSet(ClassDoc cd) {
         Set<ClassDoc> clsSet = classToClass.get(cd.qualifiedName());
         if (clsSet == null) {
-            @SuppressWarnings("unchecked")
-            Set<ClassDoc> s = new TreeSet();
+            Set<ClassDoc> s = new TreeSet<ClassDoc>();
             clsSet = s;
             classToClass.put(cd.qualifiedName(), clsSet);
         }

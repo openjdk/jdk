@@ -90,10 +90,10 @@ void PSMarkSweepDecorator::precompact() {
    */
   bool skip_dead = ((PSMarkSweep::total_invocations() % MarkSweepAlwaysCompactCount) != 0);
 
-  ssize_t allowed_deadspace = 0;
+  size_t allowed_deadspace = 0;
   if (skip_dead) {
-    int ratio = allowed_dead_ratio();
-    allowed_deadspace = (space()->capacity_in_bytes() * ratio / 100) / HeapWordSize;
+    const size_t ratio = allowed_dead_ratio();
+    allowed_deadspace = space()->capacity_in_words() * ratio / 100;
   }
 
   // Fetch the current destination decorator
@@ -152,20 +152,15 @@ void PSMarkSweepDecorator::precompact() {
         oop(q)->forward_to(oop(compact_top));
         assert(oop(q)->is_gc_marked(), "encoding the pointer should preserve the mark");
       } else {
-        // Don't clear the mark since it's confuses parallel old
-        // verification.
-        if (!UseParallelOldGC || !VerifyParallelOldWithMarkSweep) {
-          // if the object isn't moving we can just set the mark to the default
-          // mark and handle it specially later on.
-          oop(q)->init_mark();
-        }
+        // if the object isn't moving we can just set the mark to the default
+        // mark and handle it specially later on.
+        oop(q)->init_mark();
         assert(oop(q)->forwardee() == NULL, "should be forwarded to NULL");
       }
 
       // Update object start array
-      if (!UseParallelOldGC || !VerifyParallelOldWithMarkSweep) {
-        if (start_array)
-          start_array->allocate_block(compact_top);
+      if (start_array) {
+        start_array->allocate_block(compact_top);
       }
 
       VALIDATE_MARK_SWEEP_ONLY(MarkSweep::register_live_oop(oop(q), size));
@@ -219,19 +214,14 @@ void PSMarkSweepDecorator::precompact() {
             assert(oop(q)->is_gc_marked(), "encoding the pointer should preserve the mark");
           } else {
             // if the object isn't moving we can just set the mark to the default
-            // Don't clear the mark since it's confuses parallel old
-            // verification.
-            if (!UseParallelOldGC || !VerifyParallelOldWithMarkSweep) {
-              // mark and handle it specially later on.
-              oop(q)->init_mark();
-            }
+            // mark and handle it specially later on.
+            oop(q)->init_mark();
             assert(oop(q)->forwardee() == NULL, "should be forwarded to NULL");
           }
 
-          if (!UseParallelOldGC || !VerifyParallelOldWithMarkSweep) {
-            // Update object start array
-            if (start_array)
-              start_array->allocate_block(compact_top);
+          // Update object start array
+          if (start_array) {
+            start_array->allocate_block(compact_top);
           }
 
           VALIDATE_MARK_SWEEP_ONLY(MarkSweep::register_live_oop(oop(q), sz));
@@ -281,26 +271,13 @@ void PSMarkSweepDecorator::precompact() {
   dest->set_compaction_top(compact_top);
 }
 
-bool PSMarkSweepDecorator::insert_deadspace(ssize_t& allowed_deadspace_words,
-                                       HeapWord* q, size_t deadlength) {
-  allowed_deadspace_words -= deadlength;
-  if (allowed_deadspace_words >= 0) {
-    oop(q)->set_mark(markOopDesc::prototype()->set_marked());
-    const size_t aligned_min_int_array_size =
-      align_object_size(typeArrayOopDesc::header_size(T_INT));
-    if (deadlength >= aligned_min_int_array_size) {
-      oop(q)->set_klass(Universe::intArrayKlassObj());
-      assert(((deadlength - aligned_min_int_array_size) * (HeapWordSize/sizeof(jint))) < (size_t)max_jint,
-                "deadspace too big for Arrayoop");
-      typeArrayOop(q)->set_length((int)((deadlength - aligned_min_int_array_size)
-                                            * (HeapWordSize/sizeof(jint))));
-    } else {
-      assert((int) deadlength == instanceOopDesc::header_size(),
-             "size for smallest fake dead object doesn't match");
-      oop(q)->set_klass(SystemDictionary::object_klass());
-    }
-    assert((int) deadlength == oop(q)->size(),
-           "make sure size for fake dead object match");
+bool PSMarkSweepDecorator::insert_deadspace(size_t& allowed_deadspace_words,
+                                            HeapWord* q, size_t deadlength) {
+  if (allowed_deadspace_words >= deadlength) {
+    allowed_deadspace_words -= deadlength;
+    CollectedHeap::fill_with_object(q, deadlength);
+    oop(q)->set_mark(oop(q)->mark()->set_marked());
+    assert((int) deadlength == oop(q)->size(), "bad filler object size");
     // Recall that we required "q == compaction_top".
     return true;
   } else {

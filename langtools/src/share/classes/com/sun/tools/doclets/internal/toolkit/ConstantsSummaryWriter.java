@@ -103,7 +103,7 @@ public interface ConstantsSummaryWriter {
      * @param cd the class whose constants are being documented.
      * @param fields the constants being documented.
      */
-    public abstract void writeConstantMembers(ClassDoc cd, List fields);
+    public abstract void writeConstantMembers(ClassDoc cd, List<FieldDoc> fields);
 
     /**
      * Document the given constants.

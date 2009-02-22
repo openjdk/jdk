@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,10 @@ public interface LayoutCharacters {
     /** Tabulator column increment.
      */
     final static int TabInc = 8;
+
+    /** Diagnostic standard indentation
+     */
+    final static int DiagInc = 2;
 
     /** Tabulator character.
      */

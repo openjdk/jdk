@@ -25,6 +25,7 @@
  * @test
  * @bug 4823811
  * @summary Confirm that text which includes numbers with a trailing minus sign is parsed correctly.
+ * @run main/othervm -Duser.timezone=GMT+09:00 Bug4823811
  */
 
 import java.text.*;

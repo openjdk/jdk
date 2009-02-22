@@ -23,26 +23,25 @@
  */
 package com.sun.hotspot.igv.data;
 
-import com.sun.hotspot.igv.data.Properties;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public class InputGraph extends Properties.Object {
+public class InputGraph extends Properties.Entity {
 
-    private Map<Integer, InputNode> nodes;
-    private Set<InputEdge> edges;
+    private HashMap<Integer, InputNode> nodes;
+    private ArrayList<InputEdge> edges;
     private Group parent;
-    private Map<String, InputBlock> blocks;
-    private Map<Integer, InputBlock> nodeToBlock;
+    private HashMap<String, InputBlock> blocks;
+    private HashMap<Integer, InputBlock> nodeToBlock;
     private boolean isDifferenceGraph;
 
     public InputGraph(Group parent) {
@@ -61,10 +60,10 @@ public class InputGraph extends Properties.Object {
     public InputGraph(Group parent, InputGraph last, String name) {
         this.parent = parent;
         setName(name);
-        nodes = new Hashtable<Integer, InputNode>();
-        edges = new HashSet<InputEdge>();
-        blocks = new Hashtable<String, InputBlock>();
-        nodeToBlock = new Hashtable<Integer, InputBlock>();
+        nodes = new HashMap<Integer, InputNode>();
+        edges = new ArrayList<InputEdge>();
+        blocks = new HashMap<String, InputBlock>();
+        nodeToBlock = new HashMap<Integer, InputBlock>();
         if (last != null) {
 
             for (InputNode n : last.getNodes()) {
@@ -182,8 +181,8 @@ public class InputGraph extends Properties.Object {
         return nodes.remove(index);
     }
 
-    public Set<InputEdge> getEdges() {
-        return Collections.unmodifiableSet(edges);
+    public Collection<InputEdge> getEdges() {
+        return Collections.unmodifiableList(edges);
     }
 
     public void removeEdge(InputEdge c) {

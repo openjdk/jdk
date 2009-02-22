@@ -206,6 +206,14 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
   if( op1 == Op_AddI && op2 == Op_AddI && in1->in(2) == in2->in(2) )
     return new (phase->C, 3) SubINode( in1->in(1), in2->in(1) );
 
+  // Convert "(A+X) - (X+B)" into "A - B"
+  if( op1 == Op_AddI && op2 == Op_AddI && in1->in(2) == in2->in(1) )
+    return new (phase->C, 3) SubINode( in1->in(1), in2->in(2) );
+
+  // Convert "(X+A) - (B+X)" into "A - B"
+  if( op1 == Op_AddI && op2 == Op_AddI && in1->in(1) == in2->in(2) )
+    return new (phase->C, 3) SubINode( in1->in(2), in2->in(1) );
+
   // Convert "A-(B-C)" into (A+C)-B", since add is commutative and generally
   // nicer to optimize than subtract.
   if( op2 == Op_SubI && in2->outcnt() == 1) {

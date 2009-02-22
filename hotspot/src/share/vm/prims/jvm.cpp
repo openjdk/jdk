@@ -377,7 +377,11 @@ JVM_END
 JVM_ENTRY_NO_ENV(jlong, JVM_FreeMemory(void))
   JVMWrapper("JVM_FreeMemory");
   CollectedHeap* ch = Universe::heap();
-  size_t n = ch->capacity() - ch->used();
+  size_t n;
+  {
+     MutexLocker x(Heap_lock);
+     n = ch->capacity() - ch->used();
+  }
   return convert_size_t_to_jlong(n);
 JVM_END
 
@@ -624,6 +628,32 @@ JVM_ENTRY(void, JVM_ResolveClass(JNIEnv* env, jclass cls))
   if (PrintJVMWarnings) warning("JVM_ResolveClass not implemented");
 JVM_END
 
+// Common implementation for JVM_FindClassFromBootLoader and
+// JVM_FindClassFromLoader
+static jclass jvm_find_class_from_class_loader(JNIEnv* env, const char* name,
+                                  jboolean init, jobject loader,
+                                  jboolean throwError, TRAPS) {
+  // Java libraries should ensure that name is never null...
+  if (name == NULL || (int)strlen(name) > symbolOopDesc::max_length()) {
+    // It's impossible to create this class;  the name cannot fit
+    // into the constant pool.
+    if (throwError) {
+      THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), name);
+    } else {
+      THROW_MSG_0(vmSymbols::java_lang_ClassNotFoundException(), name);
+    }
+  }
+  symbolHandle h_name = oopFactory::new_symbol_handle(name, CHECK_NULL);
+  Handle h_loader(THREAD, JNIHandles::resolve(loader));
+  jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
+                                               Handle(), throwError, THREAD);
+
+  if (TraceClassResolution && result != NULL) {
+    trace_class_resolution(java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(result)));
+  }
+  return result;
+}
+
 // Rationale behind JVM_FindClassFromBootLoader
 // a> JVM_FindClassFromClassLoader was never exported in the export tables.
 // b> because of (a) java.dll has a direct dependecy on the  unexported
@@ -645,8 +675,8 @@ JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
                                               jboolean throwError))
   JVMWrapper3("JVM_FindClassFromBootLoader %s throw %s", name,
               throwError ? "error" : "exception");
-  return JVM_FindClassFromClassLoader(env, name, JNI_FALSE,
-                                      (jobject)NULL, throwError);
+  return jvm_find_class_from_class_loader(env, name, JNI_FALSE,
+                                          (jobject)NULL, throwError, THREAD);
 JVM_END
 
 JVM_ENTRY(jclass, JVM_FindClassFromClassLoader(JNIEnv* env, const char* name,
@@ -654,26 +684,8 @@ JVM_ENTRY(jclass, JVM_FindClassFromClassLoader(JNIEnv* env, const char* name,
                                                jboolean throwError))
   JVMWrapper3("JVM_FindClassFromClassLoader %s throw %s", name,
                throwError ? "error" : "exception");
-  // Java libraries should ensure that name is never null...
-  if (name == NULL || (int)strlen(name) > symbolOopDesc::max_length()) {
-    // It's impossible to create this class;  the name cannot fit
-    // into the constant pool.
-    if (throwError) {
-      THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), name);
-    } else {
-      THROW_MSG_0(vmSymbols::java_lang_ClassNotFoundException(), name);
-    }
-  }
-  symbolHandle h_name = oopFactory::new_symbol_handle(name, CHECK_NULL);
-  Handle h_loader(THREAD, JNIHandles::resolve(loader));
-  jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
-                                               Handle(), throwError, thread);
-
-  if (TraceClassResolution && result != NULL) {
-    trace_class_resolution(java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(result)));
-  }
-
-  return result;
+  return jvm_find_class_from_class_loader(env, name, init, loader,
+                                          throwError, THREAD);
 JVM_END
 
 
@@ -732,6 +744,7 @@ static void is_lock_held_by_thread(Handle loader, PerfCounter* counter, TRAPS) {
 
 // common code for JVM_DefineClass() and JVM_DefineClassWithSource()
 static jclass jvm_define_class_common(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd, const char *source, TRAPS) {
+  if (source == NULL)  source = "__JVM_DefineClass__";
 
   // Since exceptions can be thrown, class initialization can take place
   // if name is NULL no check for class name in .class stream has to be made.
@@ -770,7 +783,7 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name, jobject loa
 JVM_ENTRY(jclass, JVM_DefineClass(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd))
   JVMWrapper2("JVM_DefineClass %s", name);
 
-  return jvm_define_class_common(env, name, loader, buf, len, pd, "__JVM_DefineClass__", THREAD);
+  return jvm_define_class_common(env, name, loader, buf, len, pd, NULL, THREAD);
 JVM_END
 
 
@@ -2462,7 +2475,8 @@ void jio_print(const char* s) {
   if (Arguments::vfprintf_hook() != NULL) {
     jio_fprintf(defaultStream::output_stream(), "%s", s);
   } else {
-    ::write(defaultStream::output_fd(), s, (int)strlen(s));
+    // Make an unused local variable to avoid warning from gcc 4.x compiler.
+    size_t count = ::write(defaultStream::output_fd(), s, (int)strlen(s));
   }
 }
 

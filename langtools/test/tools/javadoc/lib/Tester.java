@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,9 @@ public class Tester {
     public void run() throws IOException {
         try {
             if (com.sun.tools.javadoc.Main.execute("javadoc",
-                                                   docletName, args) != 0) {
+                                                   docletName,
+                                                   getClass().getClassLoader(),
+                                                   args) != 0) {
                 throw new Error("Javadoc errors encountered.");
             }
             System.out.println("--> Output written to " + outputFile);

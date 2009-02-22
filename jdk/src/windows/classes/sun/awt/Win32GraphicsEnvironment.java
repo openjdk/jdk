@@ -394,6 +394,11 @@ public class Win32GraphicsEnvironment
         isDWMCompositionEnabled = enabled;
     }
 
+    @Override
+    public boolean isDisplayLocal() {
+        return true;
+    }
+
     /**
      * Used to find out if the OS is Windows Vista or later.
      *

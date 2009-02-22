@@ -98,7 +98,8 @@
         <h2><a name="MBE">Minimum Build Environments</a></h2>
         <blockquote>
             This file often describes specific requirements for what we call the
-            "minimum build environments" (MBE) for the JDK.
+            "minimum build environments" (MBE) for this 
+	    specific release of the JDK,
             Building with the MBE will generate the most compatible
             bits that install on, and run correctly on, the most variations
             of the same base OS and hardware architecture.
@@ -116,22 +117,22 @@
                     <tr>
                         <th>Base OS and Architecture</th>
                         <th>OS</th>
-                        <th>Compiler</th>
+                        <th>C/C++ Compiler</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>Linux X86 (32bit)</td>
-                        <td>Red Hat Enterprise Linux 4 </td>
+                        <td>Linux X86 (32-bit)</td>
+                        <td>Fedora 9</td>
                         <td>gcc 4 </td>
                     </tr>
                     <tr>
-                        <td>Linux X64 (64bit)</td>
-                        <td>Red Hat Enterprise Linux 4 </td>
+                        <td>Linux X64 (64-bit)</td>
+                        <td>Fedora 9</td>
                         <td>gcc 4 </td>
                     </tr>
                     <tr>
-                        <td>Solaris SPARC (32bit)</td>
+                        <td>Solaris SPARC (32-bit)</td>
                         <td>Solaris 10 + patches 
                             <br>
                             See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
@@ -140,7 +141,7 @@
                         <td>Sun Studio 12</td>
                     </tr>
                     <tr>
-                        <td>Solaris SPARCV9 (64bit)</td>
+                        <td>Solaris SPARCV9 (64-bit)</td>
                         <td>Solaris 10 + patches
                             <br>
                             See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
@@ -149,7 +150,7 @@
                         <td>Sun Studio 12</td>
                     </tr>
                     <tr>
-                        <td>Solaris X86 (32bit)</td>
+                        <td>Solaris X86 (32-bit)</td>
                         <td>Solaris 10 + patches
                             <br>
                             See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
@@ -158,7 +159,7 @@
                         <td>Sun Studio 12</td>
                     </tr>
                     <tr>
-                        <td>Solaris X64 (64bit)</td>
+                        <td>Solaris X64 (64-bit)</td>
                         <td>Solaris 10 + patches
                             <br>
                             See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
@@ -167,17 +168,28 @@
                         <td>Sun Studio 12</td>
                     </tr>
                     <tr>
-                        <td>Windows X86 (32bit)</td>
+                        <td>Windows X86 (32-bit)</td>
                         <td>Windows XP</td>
-                        <td>Microsoft Visual Studio .NET 2003 Professional</td>
+                        <td>Microsoft Visual Studio C++ 2008 Standard Edition</td>
                     </tr>
                     <tr>
-                        <td>Windows X64 (64bit)</td>
+                        <td>Windows X64 (64-bit)</td>
                         <td>Windows Server 2003 - Enterprise x64 Edition</td>
                         <td>Microsoft Platform SDK - April 2005</td>
                     </tr>
                 </tbody>
             </table>
+	    <p>
+	    These same sources do indeed build on many more systems than the
+	    above older generation systems, again the above is just a minimum.
+	    <p>
+	    Compilation problems with newer or different C/C++ compilers is a
+	    common problem.
+	    Similarly, compilation problems related to changes to the
+	    <tt>/usr/include</tt> or system header files is also a
+	    common problem with newer or unreleased OS versions.
+	    Please report these types of problems as bugs so that they
+	    can be dealt with accordingly.
         </blockquote>
         <!-- ------------------------------------------------------ -->
         <hr>
@@ -488,7 +500,7 @@
                     not work due to a lack of support for MS-DOS drive letter paths
                     like <tt>C:/</tt> or <tt>C:\</tt>.
                     Use a 3.80 version, or find a newer
-                    version that has this problem fixed, like 3.82.
+                    version that has this problem fixed.
                     The older 3.80 version of make.exe can be downloaded with this
                     <a href="http://cygwin.paracoda.com/release/make/make-3.80-1.tar.bz2" target="_blank">
                     link</a>.
@@ -575,8 +587,8 @@
                 </li>
                 <li>
                     Install
-                    <a href="#ant">Ant</a>, set
-                    <tt><a href="#ANT_HOME">ANT_HOME</a></tt>.
+                    <a href="#ant">Ant</a>, 
+                    make sure it is in your PATH.
                 </li>
             </ol>
         </blockquote>
@@ -592,7 +604,7 @@
             Approximately 1.4 GB of free disk
             space is needed for a 32-bit build.
             <p>
-            If you are building the 64bit version, you should
+            If you are building the 64-bit version, you should
             run the command "isainfo -v" to verify that you have a
             64-bit installation, it should say <tt>sparcv9</tt> or
             <tt>amd64</tt>.
@@ -640,8 +652,8 @@
                 </li>
                 <li>
                     Install
-                    <a href="#ant">Ant</a>, set
-                    <tt><a href="#ANT_HOME">ANT_HOME</a></tt>.
+                    <a href="#ant">Ant</a>, 
+                    make sure it is in your PATH.
                 </li>
             </ol>
         </blockquote>
@@ -650,11 +662,11 @@
         <h3><a name="windows">Basic Windows System Setup</a></h3>
         <blockquote> 
             <strong>i586 only:</strong>
-            The minimum recommended hardware for building the 32bit or X86
+            The minimum recommended hardware for building the 32-bit or X86
             Windows version is an Pentium class processor or better, at least
             512 MB of RAM, and approximately 600 MB of free disk space.
             <strong>
-                NOTE: The Windows 2000 build machines need to use the
+                NOTE: The Windows build machines need to use the
                 file system NTFS. 
                 Build machines formatted to FAT32 will not work 
                 because FAT32 doesn't support case-sensitivity in file names.
@@ -719,8 +731,11 @@
                 </li>
                 <li>
                     Install the
-                    <a href="#msvc">Microsoft Visual Studio .NET 2003 Professional</a> (32bit) or the 
-                    <a href="#mssdk">Microsoft Platform SDK</a> (64bit).
+                    <a href="#msvc">Microsoft Visual Studio Compilers</a> (32-bit).
+                </li>
+                <li>
+                    Install the
+                    <a href="#mssdk">Microsoft Platform SDK</a>.
                 </li>
                 <li>
                     Setup all environment variables for compilers 
@@ -732,7 +747,8 @@
                 </li>
                 <li>
                     Install
-                    <a href="#ant">Ant</a>, set
+                    <a href="#ant">Ant</a>, 
+                    make sure it is in your PATH and set
                     <tt><a href="#ANT_HOME">ANT_HOME</a></tt>.
                 </li>
             </ol>
@@ -787,7 +803,9 @@
                 you must first download and install the appropriate
                 binary plug bundles for the OpenJDK, go to the
                 <a href="http://openjdk.java.net" target="_blank">OpenJDK</a> site and select
-                the "<b>Bundles(7)</b>" link and download the binaryplugs for
+                the 
+                "<b>Bundles(7)</b>"
+                link and download the binaryplugs for
                 your particular platform.
                 The file downloaded is a jar file that must be extracted by running
                 the jar file with:
@@ -821,16 +839,14 @@
             <blockquote>
                 All OpenJDK builds require access to least Ant 1.6.5.
                 The Ant tool is available from the 
-                <a href="http://ant.apache.org/antlibs/bindownload.cgi" target="_blank">
+                <a href="http://ant.apache.org" target="_blank">
                 Ant download site</a>.
-                You should always set 
+                You should always make sure <tt>ant</tt> is in your PATH, and
+                on Windows you may also need to set 
                 <tt><a href="#ANT_HOME">ANT_HOME</a></tt>
                 to point to the location of
                 the Ant installation, this is the directory pathname
                 that contains a <tt>bin and lib</tt>.
-                It's also a good idea to also place its <tt>bin</tt> directory
-                in the <tt>PATH</tt> environment variable, although it's
-                not absolutely required.
             </blockquote>
             <!-- ------------------------------------------------------ -->
             <h4><a name="cacerts">Certificate Authority File (cacert)</a></h4>
@@ -862,25 +878,9 @@
             <blockquote>
                 <strong><a name="gcc">Linux gcc/binutils</a></strong>
                 <blockquote>
-                    The GNU gcc compiler version should be 3.2.2 or newer.
-                    The binutils package should be 2.11.93.0.2-11 or newer.
+                    The GNU gcc compiler version should be 4 or newer.
                     The compiler used should be the default compiler installed
                     in <tt>/usr/bin</tt>.
-                    <p>
-                    Older Linux systems may require a gcc and bunutils update.
-                    The Redhat Enterprise Advanced Server 2.1 update 2 system
-                    is one of these systems.
-                    RedHat Linux users can obtain this binutils package from 
-                    <a href="http://www.redhat.com" 
-                       target="_blank">Redhat web site</a>. 
-                    You will need to remove the default compiler and binutils
-                    packages and install the required packages
-                    into the default location on the system.
-                    However if you have a new video card driver, like 
-                    Geforce 4 it is best to use
-                    the same compiler as the kernel was built with to 
-                    build the new video card driver module.
-                    So you should build the modules before making this change.
                 </blockquote>
                 <strong><a name="studio">Solaris: Sun Studio</a></strong>
                 <blockquote>
@@ -903,19 +903,20 @@
                     are also an option, although these compilers have not
                     been extensively used yet.
                 </blockquote>
-                <strong><a name="msvc">Windows i586: Microsoft Visual Studio .NET 2003 Professional</a></strong>
+                <strong><a name="msvc">Windows i586: Microsoft Visual Studio Compilers</a></strong>
                 <blockquote>
                     The 32-bit OpenJDK Windows build
-                    requires Microsoft Visual Studio .NET 2003 (VS2003) Professional
+                    requires 
+                    Microsoft Visual Studio C++ 2008 (VS2008) Standard
                     Edition compiler. 
                     The compiler and other tools are expected to reside
-                    in the location defined by the variable <tt>VS71COMNTOOLS</tt> which
-                    is set by the Microsoft Visual Studio .NET installer.
+                    in the location defined by the variable 
+                    <tt>VS90COMNTOOLS</tt> which
+                    is set by the Microsoft Visual Studio installer.
                     <p> 
                     Once the compiler is installed, 
                     it is recommended that you run <tt>VCVARS32.BAT</tt> 
                     to set the compiler environment variables
-                    <tt>MSVCDIR</tt>, 
                     <tt>INCLUDE</tt>,
                     <tt>LIB</tt>, and
                     <tt>PATH</tt> 
@@ -923,16 +924,12 @@
                     OpenJDK.
                     The above environment variables <b>MUST</b> be set.
                     <p>
-                    The Microsoft Visual Studio .NET 2005 (VS2005) compiler
-                    will not work at this time due to the new runtime dll
-                    and the manifest requirements.
-                    <p>
                     <b>WARNING:</b> Make sure you check out the
                     <a href="#cygwin">CYGWIN link.exe WARNING</a>.
                     The path <tt>/usr/bin</tt> must be after the path to the
                     Visual Studio product.
                 </blockquote>
-                <strong><a name="mssdk">Windows X64: Microsoft Platform SDK April 2005</a></strong>
+                <strong><a name="mssdk">Windows: Microsoft Platform SDK</a></strong>
                 <blockquote>
                     On <b>X64</b>, the Microsoft Platform Software
                     Development Kit (SDK), April 2005 Edition compiler,
@@ -953,10 +950,9 @@
                     OpenJDK.
                     The above environment variables <b>MUST</b> be set.
                     <p>
-                    Note that this compiler may say it's version is a
-                    Microsoft Visual Studio .NET 2005 (VS2005), but be careful,
-                    it will not match the official VS2005 product.
-                    This Platform SDK compiler is only used on X64 builds.
+                    This Platform SDK compiler is only used on X64 builds
+                    but other parts of the Platform SDK may be used 
+                    for the X86 builds.
                 </blockquote>
             </blockquote>
             <!-- ------------------------------------------------------ --> 
@@ -1241,37 +1237,37 @@
             <strong><a name="msvcrt"><tt>MSVCRT.DLL</tt></a></strong>
             <blockquote> 
                 <strong>i586 only:</strong>
-                The OpenJDK 32bit build requires access to
-                <tt>MSVCRT.DLL</tt> version 6.00.8337.0 or newer.
+                The OpenJDK 32-bit build requires access to a redistributable
+                <tt>MSVCRT.DLL</tt>.
                 If the <tt>MSVCRT.DLL</tt> is not installed in 
                 the system32 directory set the 
                 <a href="#ALT_MSVCRT_DLL_PATH"><tt>ALT_MSVCRT_DLL_PATH</tt></a>
-                variable to the location.
+                variable to the location of this file.
                 <p> 
                 <strong>X64 only:</strong>
-                The OpenJDK 64bit build requires access to
-                <tt>MSVCRT.DLL</tt> version 7.0.3790.0 or newer, which is
+                The OpenJDK 64-bit build requires access to a redistributable
+                <tt>MSVCRT.DLL</tt>, which is
                 usually supplied by the
                 <a href="#mssdk">Platform SDK</a>.
                 If it is not available from the Platform SDK,
                 set the 
                 <a href="#ALT_MSVCRT_DLL_PATH"><tt>ALT_MSVCRT_DLL_PATH</tt></a>
-                variable to the location.
+                variable to the location of this file.
             </blockquote>
-            <strong><tt><a name="msvcr71">MSVCR71.DLL</a></tt></strong>
+            <strong><tt><a name="msvcr90">MSVCR90.DLL</a></tt></strong>
             <blockquote>
                 <strong>i586 only:</strong>
                 The 
                 OpenJDK
-                build requires access to 
-                MSVCR71.DLL version 7.10.3052.4 or newer which should be
+                build requires access to a redistributable
+                <tt>MSVCR90.DLL</tt> which should be
                 supplied by the
-                <a href="#msvc">Visual Studio product</a>
-                If the <tt>MSVCR71.DLL</tt> is not available from the
+                <a href="#msvc">Visual Studio product</a>.
+                If the <tt>MSVCR90.DLL</tt> is not available from the
                 Visual Studio product
                 set the 
-                <a href="#ALT_MSVCR71_DLL_PATH"><tt>ALT_MSVCR71_DLL_PATH</tt></a>
-                variable to the location.
+                <a href="#ALT_MSVCR90_DLL_PATH"><tt>ALT_MSVCR90_DLL_PATH</tt></a>
+                variable to the location of this file.
             </blockquote>
         </blockquote>
         <!-- ------------------------------------------------------ -->
@@ -1359,13 +1355,38 @@
         document) that can impact the build are:
         <blockquote>
             <dl>
-                <dt><a name="ALT_BINARY_PLUGS_PATH"><tt>ALT_BINARY_PLUGS_PATH</tt></a></dt>
+                <dt><a name="path"><tt>PATH</tt></a> </dt>
+                <dd>Typically you want to set the <tt>PATH</tt> to include:
+                    <ul>
+                        <li>The location of the GNU make binary</li>
+                        <li>The location of the Bootstrap JDK <tt>java</tt> 
+                        (see <a href="#bootjdk">Bootstrap JDK</a>)</li>
+                        <li>The location of the C/C++ compilers 
+                        (see <a href="#compilers"><tt>compilers</tt></a>)</li>
+                        <li>The location or locations for the Unix command utilities
+                        (e.g. <tt>/usr/bin</tt>)</li>
+                    </ul>
+                </dd>
+                <dt><tt>MILESTONE</tt> </dt>
                 <dd>
-                    The location of the binary plugs installation.
-                    See <a href="#binaryplugs">Binary Plugs</a> for more information.
-                    You should always have a local copy of a
-                    recent Binary Plugs install image
-                    and set this variable to that location.
+                    The milestone name for the build (<i>e.g.</i>"beta"). 
+                    The default value is "internal".
+                </dd>
+                <dt><tt>BUILD_NUMBER</tt> </dt>
+                <dd>
+                    The build number for the build (<i>e.g.</i> "b27"). 
+                    The default value is "b00".
+                </dd>
+                <dt><a name="arch_data_model"><tt>ARCH_DATA_MODEL</tt></a></dt>
+                <dd>The <tt>ARCH_DATA_MODEL</tt> variable
+                    is used to specify whether the build is to generate 32-bit or 64-bit
+                    binaries. 
+                    The Solaris build supports either 32-bit or 64-bit builds, but
+                    Windows and Linux will support only one, depending on the specific
+                    OS being used.
+                    Normally, setting this variable is only necessary on Solaris.
+                    Set <tt>ARCH_DATA_MODEL</tt> to <tt>32</tt> for generating 32-bit binaries, 
+                    or to <tt>64</tt> for generating 64-bit binaries.
                 </dd>
                 <dt><a name="ALT_BOOTDIR"><tt>ALT_BOOTDIR</tt></a></dt>
                 <dd>
@@ -1374,25 +1395,89 @@
                     You should always install your own local Bootstrap JDK and
                     always set <tt>ALT_BOOTDIR</tt> explicitly.
                 </dd>
-                <dt><a name="ALT_BUILD_BINARY_PLUGS_PATH"><tt>ALT_BUILD_BINARY_PLUGS_PATH</tt></a></dt>
+                <dt><a name="ALT_BINARY_PLUGS_PATH"><tt>ALT_BINARY_PLUGS_PATH</tt></a></dt>
                 <dd>
-                    These are useful in managing builds on multiple platforms.
-                    The default network location for all of the binary plug images
-                    for all platforms. 
-                    If <tt><a href="#ALT_BINARY_PLUGS_PATH">ALT_BINARY_PLUGS_PATH</a></tt>
-                    is not set, this directory will be used and should contain 
-                    the following directories:
-                    <tt>solaris-sparc</tt>,
-                    <tt>solaris-i586</tt>,
-                    <tt>solaris-sparcv9</tt>,
-                    <tt>solaris-amd64</tt>,
-                    <tt>linux-i586</tt>,
-                    <tt>linux-amd64</tt>,
-                    <tt>windows-i586</tt>,
-                    and
-                    <tt>windows-amd64</tt>.
-                    Where each of these directories contain the binary plugs image
-                    for that platform.
+                    The location of the binary plugs installation.
+                    See <a href="#binaryplugs">Binary Plugs</a> for more information.
+                    You should always have a local copy of a
+                    recent Binary Plugs install image
+                    and set this variable to that location.
+                </dd>
+                <dt><a name="ALT_JDK_IMPORT_PATH"><tt>ALT_JDK_IMPORT_PATH</tt></a></dt>
+                <dd>
+                    The location of a previously built JDK installation. 
+                    See <a href="#importjdk">Optional Import JDK</a> for more information.
+                </dd>
+                <dt><a name="ALT_OUTPUTDIR"><tt>ALT_OUTPUTDIR</tt></a> </dt>
+                <dd>
+                    An override for specifying the (absolute) path of where the
+                    build output is to go.
+                    The default output directory will be build/<i>platform</i>.
+                </dd>
+                <dt><a name="ALT_COMPILER_PATH"><tt>ALT_COMPILER_PATH</tt></a> </dt>
+                <dd>
+                    The location of the C/C++ compiler.
+                    The default varies depending on the platform. 
+                </dd>
+                <dt><tt><a name="ALT_CACERTS_FILE">ALT_CACERTS_FILE</a></tt></dt>
+                <dd>
+                    The location of the <a href="#cacerts">cacerts</a> file.
+                    The default will refer to 
+                    <tt>jdk/src/share/lib/security/cacerts</tt>.
+                </dd>
+                <dt><a name="ALT_CUPS_HEADERS_PATH"><tt>ALT_CUPS_HEADERS_PATH</tt></a> </dt>
+                <dd>
+                    The location of the CUPS header files.
+                    See <a href="#cups">CUPS information</a> for more information.
+                    If this path does not exist the fallback path is 
+                    <tt>/usr/include</tt>.
+                </dd>
+                <dt><a name="ALT_FREETYPE_LIB_PATH"><tt>ALT_FREETYPE_LIB_PATH</tt></a></dt>
+                <dd>
+                    The location of the FreeType shared library. 
+                    See <a href="#freetype">FreeType information</a> for details. 
+                </dd>
+                <dt><a name="ALT_FREETYPE_HEADERS_PATH"><tt>ALT_FREETYPE_HEADERS_PATH</tt></a></dt>
+                <dd>
+                    The location of the FreeType header files.
+                    See <a href="#freetype">FreeType information</a> for details. 
+                </dd>
+                <dt><a name="ALT_JDK_DEVTOOLS_PATH"><tt>ALT_JDK_DEVTOOLS_PATH</tt></a></dt>
+                <dd>
+                    The default root location of the devtools.
+                    The default value is 
+                    <tt>$(ALT_SLASH_JAVA)/devtools</tt>.
+                </dd>
+                <dt><tt><a name="ALT_DEVTOOLS_PATH">ALT_DEVTOOLS_PATH</a></tt> </dt>
+                <dd>
+                    The location of tools like the 
+                    <a href="#zip"><tt>zip</tt> and <tt>unzip</tt></a>
+                    binaries, but might also contain the GNU make utility
+                    (<tt><i>gmake</i></tt>).
+                    So this area is a bit of a grab bag, especially on Windows.
+                    The default value depends on the platform and
+                    Unix Commands being used.
+                    On Linux the default will be 
+                    <tt>$(ALT_JDK_DEVTOOLS_PATH)/linux/bin</tt>, 
+                    on Solaris
+                    <tt>$(ALT_JDK_DEVTOOLS_PATH)/<i>{sparc,i386}</i>/bin</tt>, 
+                    and on Windows with CYGWIN
+                    <tt>/usr/bin</tt>.
+                </dd>
+                <dt><a name="ALT_UNIXCCS_PATH"><tt>ALT_UNIXCCS_PATH</tt></a></dt>
+                <dd>
+                    <strong>Solaris only:</strong>
+                    An override for specifying where the Unix CCS
+                    command set are located.
+                    The default location is <tt>/usr/ccs/bin</tt> 
+                </dd>
+                <dt><a name="ALT_SLASH_JAVA"><tt>ALT_SLASH_JAVA</tt></a></dt>
+                <dd>
+                    The default root location for many of the ALT path locations
+                    of the following ALT variables.
+                    The default value is 
+                    <tt>"/java"</tt> on Solaris and Linux, 
+                    <tt>"J:"</tt> on Windows.
                 </dd>
                 <dt><a name="ALT_BUILD_JDK_IMPORT_PATH"><tt>ALT_BUILD_JDK_IMPORT_PATH</tt></a></dt>
                 <dd>
@@ -1414,166 +1499,57 @@
                     Where each of these directories contain the import JDK image
                     for that platform.
                 </dd>
-                <dt><tt><a name="ALT_CACERTS_FILE">ALT_CACERTS_FILE</a></tt></dt>
+                <dt><a name="ALT_BUILD_BINARY_PLUGS_PATH"><tt>ALT_BUILD_BINARY_PLUGS_PATH</tt></a></dt>
                 <dd>
-                    The location of the <a href="#cacerts">cacerts</a> file.
-                    The default will refer to 
-                    <tt>jdk/src/share/lib/security/cacerts</tt>.
+                    These are useful in managing builds on multiple platforms.
+                    The default network location for all of the binary plug images
+                    for all platforms. 
+                    If <tt><a href="#ALT_BINARY_PLUGS_PATH">ALT_BINARY_PLUGS_PATH</a></tt>
+                    is not set, this directory will be used and should contain 
+                    the following directories:
+                    <tt>solaris-sparc</tt>,
+                    <tt>solaris-i586</tt>,
+                    <tt>solaris-sparcv9</tt>,
+                    <tt>solaris-amd64</tt>,
+                    <tt>linux-i586</tt>,
+                    <tt>linux-amd64</tt>,
+                    <tt>windows-i586</tt>,
+                    and
+                    <tt>windows-amd64</tt>.
+                    Where each of these directories contain the binary plugs image
+                    for that platform.
                 </dd>
-                <dt><a name="ALT_COMPILER_PATH"><tt>ALT_COMPILER_PATH</tt></a> </dt>
+                <dt><strong>Windows specific:</strong></dt>
                 <dd>
-                    The location of the C/C++ compiler.
-                    The default varies depending on the platform. 
-                </dd>
-                <dt><a name="ALT_CUPS_HEADERS_PATH"><tt>ALT_CUPS_HEADERS_PATH</tt></a> </dt>
-                <dd>
-                    The location of the CUPS header files.
-                    See <a href="#cups">CUPS information</a> for more information.
-                    If this path does not exist the fallback path is 
-                    <tt>/usr/include</tt>.
-                </dd>
-                <dt><tt><a name="ALT_DEVTOOLS_PATH">ALT_DEVTOOLS_PATH</a></tt> </dt>
-                <dd>
-                    The location of tools like the 
-                    <a href="#zip"><tt>zip</tt> and <tt>unzip</tt></a>
-                    binaries, but might also contain the GNU make utility
-                    (<tt><i>gmake</i></tt>).
-                    So this area is a bit of a grab bag, especially on Windows.
-                    The default value depends on the platform and
-                    Unix Commands being used.
-                    On Linux the default will be 
-                    <tt>$(ALT_JDK_DEVTOOLS_PATH)/linux/bin</tt>, 
-                    on Solaris
-                    <tt>$(ALT_JDK_DEVTOOLS_PATH)/<i>{sparc,i386}</i>/bin</tt>, 
-                    on Windows with MKS
-                    <tt>%SYSTEMDRIVE%/UTILS</tt>, 
-                    and on Windows with CYGWIN
-                    <tt>/usr/bin</tt>.
-                </dd>
-                <dt><tt><a name="ALT_DXSDK_PATH">ALT_DXSDK_PATH</a></tt> </dt>
-                <dd>
-                    <strong>Windows Only:</strong>
-                    The location of the 
-                    <a href="#dxsdk">Microsoft DirectX 9 SDK</a>.
-                    The default will be to try and use the DirectX environment
-                    variable <tt>DXSDK_DIR</tt>,
-                    failing that, look in <tt>C:/DXSDK</tt>.
-                </dd>
-                <dt><a name="ALT_FREETYPE_HEADERS_PATH"><tt>ALT_FREETYPE_HEADERS_PATH</tt></a></dt>
-                <dd>
-                    The location of the FreeType header files.
-                    See <a href="#freetype">FreeType information</a> for details. 
-                </dd>
-                <dt><a name="ALT_FREETYPE_LIB_PATH"><tt>ALT_FREETYPE_LIB_PATH</tt></a></dt>
-                <dd>
-                    The location of the FreeType shared library. 
-                    See <a href="#freetype">FreeType information</a> for details. 
-                </dd>
-                <dt><a name="ALT_JDK_DEVTOOLS_PATH"><tt>ALT_JDK_DEVTOOLS_PATH</tt></a></dt>
-                <dd>
-                    The default root location of the devtools.
-                    The default value is 
-                    <tt>$(ALT_SLASH_JAVA)/devtools</tt>.
-                </dd>
-                <dt><a name="ALT_JDK_IMPORT_PATH"><tt>ALT_JDK_IMPORT_PATH</tt></a></dt>
-                <dd>
-                    The location of a previously built JDK installation. 
-                    See <a href="#importjdk">Optional Import JDK</a> for more information.
-                </dd>
-                <dt><a name="ALT_MSDEVTOOLS_PATH"><tt>ALT_MSDEVTOOLS_PATH</tt></a> </dt>
-                <dd>
-                    <strong>Windows Only:</strong>
-                    The location of the Microsoft Visual Studio .NET 2003
-                    tools 'bin' directory.
-                    The default is usually derived from
-                    <a href="#ALT_COMPILER_PATH"><tt>ALT_COMPILER_PATH</tt></a>.
-                </dd>
-                <dt><tt><a name="ALT_MSVCR71_DLL_PATH">ALT_MSVCR71_DLL_PATH</a></tt> </dt>
-                <dd>
-                    <strong>Windows i586 only:</strong>
-                    The location of the 
-                    <a href="#msvcr71"><tt>MSVCR71.DLL</tt></a>. 
-                </dd>
-                <dt><tt><a name="ALT_MSVCRT_DLL_PATH">ALT_MSVCRT_DLL_PATH</a></tt> </dt>
-                <dd>
-                    <strong>Windows Only:</strong>
-                    The location of the 
-                    <a href="#msvcrt"><tt>MSVCRT.DLL</tt></a>. 
-                </dd>
-                <dt><a name="ALT_OUTPUTDIR"><tt>ALT_OUTPUTDIR</tt></a> </dt>
-                <dd>
-                    An override for specifying the (absolute) path of where the
-                    build output is to go.
-                    The default output directory will be build/<i>platform</i>.
-                </dd>
-                <dt><a name="ALT_SLASH_JAVA"><tt>ALT_SLASH_JAVA</tt></a></dt>
-                <dd>
-                    The default root location for many of the ALT path locations
-                    of the following ALT variables.
-                    The default value is 
-                    <tt>"/java"</tt> on Solaris and Linux, 
-                    <tt>"J:"</tt> on Windows.
-                </dd>
-                <dt><a name="ALT_UNIXCCS_PATH"><tt>ALT_UNIXCCS_PATH</tt></a></dt>
-                <dd>
-                    <strong>Solaris only:</strong>
-                    An override for specifying where the Unix CCS
-                    command set are located.
-                    The default location is <tt>/usr/ccs/bin</tt> 
-                </dd>
-                <dt><a name="ALT_UNIXCOMMAND_PATH"><tt>ALT_UNIXCOMMAND_PATH</tt></a> </dt>
-                <dd>
-                    An override for specifying where the
-                    Unix command set are located. 
-                    The default location varies depending on the platform,
-                    <tt>"%SYSTEMDRIVE%/MKSNT"</tt> or
-                    <tt>$(ROOTDIR)</tt> on Windows with MKS, otherwise it's 
-                    <tt>"/bin"</tt> or <tt>/usr/bin</tt>.
-                </dd>
-                <dt><a name="ALT_USRBIN_PATH"><tt>ALT_USRBIN_PATH</tt></a></dt>
-                <dd>
-                    An override for specifying where the
-                    Unix <tt>/usr/bin</tt> commands are located. You usually do not need
-                    to set this variable: the default location is <tt>/usr/bin</tt>)
-                </dd>
-                <dt><a name="ANT_HOME"><tt>ANT_HOME</tt></a></dt>
-                <dd>
-                    The location of the Ant installation. 
-                    See <a href="#ant">Ant</a> for more information.
-                    You should always set <tt>ANT_HOME</tt> explicitly.
-                </dd>
-                <dt><a name="arch_data_model"><tt>ARCH_DATA_MODEL</tt></a></dt>
-                <dd>The <tt>ARCH_DATA_MODEL</tt> variable
-                    is used to specify whether the build is to generate 32-bit or 64-bit
-                    binaries. 
-                    The Solaris build supports either 32-bit or 64-bit builds, but
-                    Windows and Linux will support only one, depending on the specific
-                    OS being used.
-                    Normally, setting this variable is only necessary on Solaris.
-                    Set <tt>ARCH_DATA_MODEL</tt> to <tt>32</tt> for generating 32-bit binaries, 
-                    or to <tt>64</tt> for generating 64-bit binaries.
-                </dd>
-                <dt><tt>BUILD_NUMBER</tt> </dt>
-                <dd>
-                    The build number for the build (<i>e.g.</i> "b27"). 
-                    The default value is "b00".
-                </dd>
-                <dt><tt>MILESTONE</tt> </dt>
-                <dd>
-                    The milestone name for the build (<i>e.g.</i>"beta"). 
-                    The default value is "internal".
-                </dd>
-                <dt><a name="path"><tt>PATH</tt></a> </dt>
-                <dd>Typically you want to set the <tt>PATH</tt> to include:
-                    <ul>
-                        <li>The location of the GNU make binary</li>
-                        <li>The location of the Bootstrap JDK <tt>java</tt> 
-                        (see <a href="#bootjdk">Bootstrap JDK</a>)</li>
-                        <li>The location of the C/C++ compilers 
-                        (see <a href="#compilers"><tt>compilers</tt></a>)</li>
-                        <li>The location or locations for the Unix command utilities
-                        (e.g. <tt>/usr/bin</tt>)</li>
-                    </ul>
+                    <dl>
+                        <dt><a name="ALT_MSDEVTOOLS_PATH"><tt>ALT_MSDEVTOOLS_PATH</tt></a> </dt>
+                        <dd>
+                            The location of the 
+                            Microsoft Visual Studio
+                            tools 'bin' directory.
+                            The default is usually derived from
+                            <a href="#ALT_COMPILER_PATH"><tt>ALT_COMPILER_PATH</tt></a>.
+                        </dd>
+                        <dt><tt><a name="ALT_DXSDK_PATH">ALT_DXSDK_PATH</a></tt> </dt>
+                        <dd>
+                            The location of the 
+                            <a href="#dxsdk">Microsoft DirectX 9 SDK</a>.
+                            The default will be to try and use the DirectX environment
+                            variable <tt>DXSDK_DIR</tt>,
+                            failing that, look in <tt>C:/DXSDK</tt>.
+                        </dd>
+                        <dt><tt><a name="ALT_MSVCRT_DLL_PATH">ALT_MSVCRT_DLL_PATH</a></tt> </dt>
+                        <dd>
+                            The location of the 
+                            <a href="#msvcrt"><tt>MSVCRT.DLL</tt></a>. 
+                        </dd>
+                        <dt><tt><a name="ALT_MSVCR90_DLL_PATH">ALT_MSVCR90_DLL_PATH</a></tt> </dt>
+                        <dd>
+                            <strong>i586 only:</strong>
+                            The location of the 
+                            <a href="#msvcr90"><tt>MSVCR90.DLL</tt></a>. 
+                        </dd>
+                    </dl>
                 </dd>
             </dl>
         </blockquote>
@@ -1661,8 +1637,8 @@
                         This is caused by a missing libstdc++.a library.
                         This is installed as part of a specific package
                         (e.g. libstdc++.so.devel.386).
-                        By default some 64bit Linux versions (e.g. Fedora)
-                        only install the 64bit version of the libstdc++ package.
+                        By default some 64-bit Linux versions (e.g. Fedora)
+                        only install the 64-bit version of the libstdc++ package.
                         Various parts of the JDK build require a static
                         link of the C++ runtime libraries to allow for maximum
                         portability of the built images.

@@ -706,6 +706,30 @@ void CompactibleFreeListSpace::object_iterate(ObjectClosure* blk) {
   }
 }
 
+// Apply the given closure to each live object in the space
+//   The usage of CompactibleFreeListSpace
+// by the ConcurrentMarkSweepGeneration for concurrent GC's allows
+// objects in the space with references to objects that are no longer
+// valid.  For example, an object may reference another object
+// that has already been sweep up (collected).  This method uses
+// obj_is_alive() to determine whether it is safe to apply the closure to
+// an object.  See obj_is_alive() for details on how liveness of an
+// object is decided.
+
+void CompactibleFreeListSpace::safe_object_iterate(ObjectClosure* blk) {
+  assert_lock_strong(freelistLock());
+  NOT_PRODUCT(verify_objects_initialized());
+  HeapWord *cur, *limit;
+  size_t curSize;
+  for (cur = bottom(), limit = end(); cur < limit;
+       cur += curSize) {
+    curSize = block_size(cur);
+    if (block_is_obj(cur) && obj_is_alive(cur)) {
+      blk->do_object(oop(cur));
+    }
+  }
+}
+
 void CompactibleFreeListSpace::object_iterate_mem(MemRegion mr,
                                                   UpwardsObjectClosure* cl) {
   assert_locked();
@@ -790,7 +814,7 @@ CompactibleFreeListSpace::object_iterate_careful_m(MemRegion mr,
 }
 
 
-HeapWord* CompactibleFreeListSpace::block_start(const void* p) const {
+HeapWord* CompactibleFreeListSpace::block_start_const(const void* p) const {
   NOT_PRODUCT(verify_objects_initialized());
   return _bt.block_start(p);
 }
@@ -861,7 +885,9 @@ const {
     } else {
       // must read from what 'p' points to in each loop.
       klassOop k = ((volatile oopDesc*)p)->klass_or_null();
-      if (k != NULL && ((oopDesc*)p)->is_parsable()) {
+      if (k != NULL &&
+          ((oopDesc*)p)->is_parsable() &&
+          ((oopDesc*)p)->is_conc_safe()) {
         assert(k->is_oop(), "Should really be klass oop.");
         oop o = (oop)p;
         assert(o->is_oop(), "Should be an oop");
@@ -2286,9 +2312,9 @@ void CompactibleFreeListSpace::verifyIndexedFreeLists() const {
 }
 
 void CompactibleFreeListSpace::verifyIndexedFreeList(size_t size) const {
-  guarantee(size % 2 == 0, "Odd slots should be empty");
-  for (FreeChunk* fc = _indexedFreeList[size].head(); fc != NULL;
-    fc = fc->next()) {
+  FreeChunk* fc =  _indexedFreeList[size].head();
+  guarantee((size % 2 == 0) || fc == NULL, "Odd slots should be empty");
+  for (; fc != NULL; fc = fc->next()) {
     guarantee(fc->size() == size, "Size inconsistency");
     guarantee(fc->isFree(), "!free?");
     guarantee(fc->next() == NULL || fc->next()->prev() == fc, "Broken list");
@@ -2790,10 +2816,11 @@ initialize_sequential_subtasks_for_rescan(int n_threads) {
   assert(n_threads > 0, "Unexpected n_threads argument");
   const size_t task_size = rescan_task_size();
   size_t n_tasks = (used_region().word_size() + task_size - 1)/task_size;
-  assert((used_region().start() + (n_tasks - 1)*task_size <
-          used_region().end()) &&
-         (used_region().start() + n_tasks*task_size >=
-          used_region().end()), "n_task calculation incorrect");
+  assert((n_tasks == 0) == used_region().is_empty(), "n_tasks incorrect");
+  assert(n_tasks == 0 ||
+         ((used_region().start() + (n_tasks - 1)*task_size < used_region().end()) &&
+          (used_region().start() + n_tasks*task_size >= used_region().end())),
+         "n_tasks calculation incorrect");
   SequentialSubTasksDone* pst = conc_par_seq_tasks();
   assert(!pst->valid(), "Clobbering existing data?");
   pst->set_par_threads(n_threads);
@@ -2833,7 +2860,7 @@ initialize_sequential_subtasks_for_marking(int n_threads,
   assert(n_tasks == 0 ||
          ((span.start() + (n_tasks - 1)*task_size < span.end()) &&
           (span.start() + n_tasks*task_size >= span.end())),
-         "n_task calculation incorrect");
+         "n_tasks calculation incorrect");
   SequentialSubTasksDone* pst = conc_par_seq_tasks();
   assert(!pst->valid(), "Clobbering existing data?");
   pst->set_par_threads(n_threads);

@@ -25,6 +25,11 @@
 # include "incls/_precompiled.incl"
 # include "incls/_referenceProcessor.cpp.incl"
 
+ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
+ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
+oop              ReferenceProcessor::_sentinelRef = NULL;
+const int        subclasses_of_ref                = REF_PHANTOM - REF_OTHER;
+
 // List of discovered references.
 class DiscoveredList {
 public:
@@ -47,7 +52,9 @@ public:
   }
   bool   empty() const          { return head() == ReferenceProcessor::sentinel_ref(); }
   size_t length()               { return _len; }
-  void   set_length(size_t len) { _len = len; }
+  void   set_length(size_t len) { _len = len;  }
+  void   inc_length(size_t inc) { _len += inc; assert(_len > 0, "Error"); }
+  void   dec_length(size_t dec) { _len -= dec; }
 private:
   // Set value depending on UseCompressedOops. This could be a template class
   // but then we have to fix all the instantiations and declarations that use this class.
@@ -55,10 +62,6 @@ private:
   narrowOop _compressed_head;
   size_t _len;
 };
-
-oop  ReferenceProcessor::_sentinelRef = NULL;
-
-const int subclasses_of_ref = REF_PHANTOM - REF_OTHER;
 
 void referenceProcessor_init() {
   ReferenceProcessor::init_statics();
@@ -80,6 +83,12 @@ void ReferenceProcessor::init_statics() {
   }
   assert(_sentinelRef != NULL && _sentinelRef->is_oop(),
          "Just constructed it!");
+  _always_clear_soft_ref_policy = new AlwaysClearPolicy();
+  _default_soft_ref_policy      = new COMPILER2_PRESENT(LRUMaxHeapPolicy())
+                                      NOT_COMPILER2(LRUCurrentHeapPolicy());
+  if (_always_clear_soft_ref_policy == NULL || _default_soft_ref_policy == NULL) {
+    vm_exit_during_initialization("Could not allocate reference policy object");
+  }
   guarantee(RefDiscoveryPolicy == ReferenceBasedDiscovery ||
             RefDiscoveryPolicy == ReferentBasedDiscovery,
             "Unrecongnized RefDiscoveryPolicy");
@@ -91,7 +100,8 @@ ReferenceProcessor::create_ref_processor(MemRegion          span,
                                          bool               mt_discovery,
                                          BoolObjectClosure* is_alive_non_header,
                                          int                parallel_gc_threads,
-                                         bool               mt_processing) {
+                                         bool               mt_processing,
+                                         bool               dl_needs_barrier) {
   int mt_degree = 1;
   if (parallel_gc_threads > 1) {
     mt_degree = parallel_gc_threads;
@@ -99,11 +109,13 @@ ReferenceProcessor::create_ref_processor(MemRegion          span,
   ReferenceProcessor* rp =
     new ReferenceProcessor(span, atomic_discovery,
                            mt_discovery, mt_degree,
-                           mt_processing && (parallel_gc_threads > 0));
+                           mt_processing && (parallel_gc_threads > 0),
+                           dl_needs_barrier);
   if (rp == NULL) {
     vm_exit_during_initialization("Could not allocate ReferenceProcessor object");
   }
   rp->set_is_alive_non_header(is_alive_non_header);
+  rp->setup_policy(false /* default soft ref policy */);
   return rp;
 }
 
@@ -111,10 +123,13 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
                                        bool      atomic_discovery,
                                        bool      mt_discovery,
                                        int       mt_degree,
-                                       bool      mt_processing) :
+                                       bool      mt_processing,
+                                       bool      discovered_list_needs_barrier)  :
   _discovering_refs(false),
   _enqueuing_is_done(false),
   _is_alive_non_header(NULL),
+  _discovered_list_needs_barrier(discovered_list_needs_barrier),
+  _bs(NULL),
   _processing_is_mt(mt_processing),
   _next_id(0)
 {
@@ -134,6 +149,10 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
   for (int i = 0; i < _num_q * subclasses_of_ref; i++) {
         _discoveredSoftRefs[i].set_head(sentinel_ref());
     _discoveredSoftRefs[i].set_length(0);
+  }
+  // If we do barreirs, cache a copy of the barrier set.
+  if (discovered_list_needs_barrier) {
+    _bs = Universe::heap()->barrier_set();
   }
 }
 
@@ -183,7 +202,6 @@ void ReferenceProcessor::update_soft_ref_master_clock() {
 }
 
 void ReferenceProcessor::process_discovered_references(
-  ReferencePolicy*             policy,
   BoolObjectClosure*           is_alive,
   OopClosure*                  keep_alive,
   VoidClosure*                 complete_gc,
@@ -198,7 +216,7 @@ void ReferenceProcessor::process_discovered_references(
   // Soft references
   {
     TraceTime tt("SoftReference", trace_time, false, gclog_or_tty);
-    process_discovered_reflist(_discoveredSoftRefs, policy, true,
+    process_discovered_reflist(_discoveredSoftRefs, _current_soft_ref_policy, true,
                                is_alive, keep_alive, complete_gc, task_executor);
   }
 
@@ -427,13 +445,13 @@ public:
   // The "allow_null_referent" argument tells us to allow for the possibility
   // of a NULL referent in the discovered Reference object. This typically
   // happens in the case of concurrent collectors that may have done the
-  // discovery concurrently or interleaved with mutator execution.
+  // discovery concurrently, or interleaved, with mutator execution.
   inline void load_ptrs(DEBUG_ONLY(bool allow_null_referent));
 
   // Move to the next discovered reference.
   inline void next();
 
-  // Remove the current reference from the list and move to the next.
+  // Remove the current reference from the list
   inline void remove();
 
   // Make the Reference object active again.
@@ -467,7 +485,6 @@ public:
   inline size_t removed() const   { return _removed; }
   )
 
-private:
   inline void move_to_next();
 
 private:
@@ -544,7 +561,7 @@ inline void DiscoveredListIterator::remove() {
     oopDesc::store_heap_oop((oop*)_prev_next, _next);
   }
   NOT_PRODUCT(_removed++);
-  move_to_next();
+  _refs_list.dec_length(1);
 }
 
 inline void DiscoveredListIterator::move_to_next() {
@@ -582,12 +599,13 @@ ReferenceProcessor::process_phase1(DiscoveredList&    refs_list,
         gclog_or_tty->print_cr("Dropping reference (" INTPTR_FORMAT ": %s"  ") by policy",
                                iter.obj(), iter.obj()->blueprint()->internal_name());
       }
+      // Remove Reference object from list
+      iter.remove();
       // Make the Reference object active again
       iter.make_active();
       // keep the referent around
       iter.make_referent_alive();
-      // Remove Reference object from list
-      iter.remove();
+      iter.move_to_next();
     } else {
       iter.next();
     }
@@ -620,12 +638,13 @@ ReferenceProcessor::pp2_work(DiscoveredList&    refs_list,
                                iter.obj(), iter.obj()->blueprint()->internal_name());
       }
       // The referent is reachable after all.
+      // Remove Reference object from list.
+      iter.remove();
       // Update the referent pointer as necessary: Note that this
       // should not entail any recursive marking because the
       // referent must already have been traversed.
       iter.make_referent_alive();
-      // Remove Reference object from list
-      iter.remove();
+      iter.move_to_next();
     } else {
       iter.next();
     }
@@ -661,6 +680,7 @@ ReferenceProcessor::pp2_work_concurrent_discovery(DiscoveredList&    refs_list,
       } else {
         keep_alive->do_oop((oop*)next_addr);
       }
+      iter.move_to_next();
     } else {
       iter.next();
     }
@@ -701,12 +721,6 @@ ReferenceProcessor::process_phase3(DiscoveredList&    refs_list,
                              iter.obj(), iter.obj()->blueprint()->internal_name());
     }
     assert(iter.obj()->is_oop(UseConcMarkSweepGC), "Adding a bad reference");
-    // If discovery is concurrent, we may have objects with null referents,
-    // being those that were concurrently cleared after they were discovered
-    // (and not subsequently precleaned).
-    assert(   (discovery_is_atomic() && iter.referent()->is_oop())
-           || (!discovery_is_atomic() && iter.referent()->is_oop_or_null(UseConcMarkSweepGC)),
-           "Adding a bad referent");
     iter.next();
   }
   // Remember to keep sentinel pointer around
@@ -727,10 +741,15 @@ ReferenceProcessor::abandon_partial_discovered_list(DiscoveredList& refs_list) {
   refs_list.set_length(0);
 }
 
-void
-ReferenceProcessor::abandon_partial_discovered_list_arr(DiscoveredList refs_lists[]) {
-  for (int i = 0; i < _num_q; i++) {
-    abandon_partial_discovered_list(refs_lists[i]);
+void ReferenceProcessor::abandon_partial_discovery() {
+  // loop over the lists
+  for (int i = 0; i < _num_q * subclasses_of_ref; i++) {
+    if (TraceReferenceGC && PrintGCDetails && ((i % _num_q) == 0)) {
+      gclog_or_tty->print_cr(
+        "\nAbandoning %s discovered list",
+        list_name(i));
+    }
+    abandon_partial_discovered_list(_discoveredSoftRefs[i]);
   }
 }
 
@@ -818,9 +837,9 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
         }
         java_lang_ref_Reference::set_discovered(move_tail, ref_lists[to_idx].head());
         ref_lists[to_idx].set_head(move_head);
-        ref_lists[to_idx].set_length(ref_lists[to_idx].length() + refs_to_move);
+        ref_lists[to_idx].inc_length(refs_to_move);
         ref_lists[from_idx].set_head(new_head);
-        ref_lists[from_idx].set_length(ref_lists[from_idx].length() - refs_to_move);
+        ref_lists[from_idx].dec_length(refs_to_move);
       } else {
         ++to_idx;
       }
@@ -909,7 +928,6 @@ void ReferenceProcessor::clean_up_discovered_references() {
 void ReferenceProcessor::clean_up_discovered_reflist(DiscoveredList& refs_list) {
   assert(!discovery_is_atomic(), "Else why call this method?");
   DiscoveredListIterator iter(refs_list, NULL, NULL);
-  size_t length = refs_list.length();
   while (iter.has_next()) {
     iter.load_ptrs(DEBUG_ONLY(true /* allow_null_referent */));
     oop next = java_lang_ref_Reference::next(iter.obj());
@@ -927,12 +945,11 @@ void ReferenceProcessor::clean_up_discovered_reflist(DiscoveredList& refs_list) 
       )
       // Remove Reference object from list
       iter.remove();
-      --length;
+      iter.move_to_next();
     } else {
       iter.next();
     }
   }
-  refs_list.set_length(length);
   NOT_PRODUCT(
     if (PrintGCDetails && TraceReferenceGC) {
       gclog_or_tty->print(
@@ -994,14 +1011,27 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
   assert(_discovery_is_mt, "!_discovery_is_mt should have been handled by caller");
   // First we must make sure this object is only enqueued once. CAS in a non null
   // discovered_addr.
-  oop retest = oopDesc::atomic_compare_exchange_oop(refs_list.head(), discovered_addr,
+  oop current_head = refs_list.head();
+
+  // Note: In the case of G1, this pre-barrier is strictly
+  // not necessary because the only case we are interested in
+  // here is when *discovered_addr is NULL, so this will expand to
+  // nothing. As a result, I am just manually eliding this out for G1.
+  if (_discovered_list_needs_barrier && !UseG1GC) {
+    _bs->write_ref_field_pre((void*)discovered_addr, current_head); guarantee(false, "Needs to be fixed: YSR");
+  }
+  oop retest = oopDesc::atomic_compare_exchange_oop(current_head, discovered_addr,
                                                     NULL);
   if (retest == NULL) {
     // This thread just won the right to enqueue the object.
     // We have separate lists for enqueueing so no synchronization
     // is necessary.
     refs_list.set_head(obj);
-    refs_list.set_length(refs_list.length() + 1);
+    refs_list.inc_length(1);
+    if (_discovered_list_needs_barrier) {
+      _bs->write_ref_field((void*)discovered_addr, current_head); guarantee(false, "Needs to be fixed: YSR");
+    }
+
   } else {
     // If retest was non NULL, another thread beat us to it:
     // The reference has already been discovered...
@@ -1063,18 +1093,31 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   // reachable.
   if (is_alive_non_header() != NULL) {
     oop referent = java_lang_ref_Reference::referent(obj);
-    // We'd like to assert the following:
-    // assert(referent != NULL, "Refs with null referents already filtered");
-    // However, since this code may be executed concurrently with
-    // mutators, which can clear() the referent, it is not
-    // guaranteed that the referent is non-NULL.
+    // In the case of non-concurrent discovery, the last
+    // disjunct below should hold. It may not hold in the
+    // case of concurrent discovery because mutators may
+    // concurrently clear() a Reference.
+    assert(UseConcMarkSweepGC || UseG1GC || referent != NULL,
+           "Refs with null referents already filtered");
     if (is_alive_non_header()->do_object_b(referent)) {
       return false;  // referent is reachable
     }
   }
+  if (rt == REF_SOFT) {
+    // For soft refs we can decide now if these are not
+    // current candidates for clearing, in which case we
+    // can mark through them now, rather than delaying that
+    // to the reference-processing phase. Since all current
+    // time-stamp policies advance the soft-ref clock only
+    // at a major collection cycle, this is always currently
+    // accurate.
+    if (!_current_soft_ref_policy->should_clear_reference(obj)) {
+      return false;
+    }
+  }
 
-  HeapWord* discovered_addr = java_lang_ref_Reference::discovered_addr(obj);
-  oop  discovered = java_lang_ref_Reference::discovered(obj);
+  HeapWord* const discovered_addr = java_lang_ref_Reference::discovered_addr(obj);
+  const oop  discovered = java_lang_ref_Reference::discovered(obj);
   assert(discovered->is_oop_or_null(), "bad discovered field");
   if (discovered != NULL) {
     // The reference has already been discovered...
@@ -1094,7 +1137,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
       // discovered twice except by concurrent collectors that potentially
       // trace the same Reference object twice.
       assert(UseConcMarkSweepGC,
-             "Only possible with a concurrent collector");
+             "Only possible with an incremental-update concurrent collector");
       return true;
     }
   }
@@ -1122,14 +1165,26 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     return false;   // nothing special needs to be done
   }
 
-  // We do a raw store here, the field will be visited later when
-  // processing the discovered references.
   if (_discovery_is_mt) {
     add_to_discovered_list_mt(*list, obj, discovered_addr);
   } else {
-    oop_store_raw(discovered_addr, list->head());
+    // If "_discovered_list_needs_barrier", we do write barriers when
+    // updating the discovered reference list.  Otherwise, we do a raw store
+    // here: the field will be visited later when processing the discovered
+    // references.
+    oop current_head = list->head();
+    // As in the case further above, since we are over-writing a NULL
+    // pre-value, we can safely elide the pre-barrier here for the case of G1.
+    assert(discovered == NULL, "control point invariant");
+    if (_discovered_list_needs_barrier && !UseG1GC) { // safe to elide for G1
+      _bs->write_ref_field_pre((oop*)discovered_addr, current_head);
+    }
+    oop_store_raw(discovered_addr, current_head);
+    if (_discovered_list_needs_barrier) {
+      _bs->write_ref_field((oop*)discovered_addr, current_head);
+    }
     list->set_head(obj);
-    list->set_length(list->length() + 1);
+    list->inc_length(1);
   }
 
   // In the MT discovery case, it is currently possible to see
@@ -1170,12 +1225,12 @@ void ReferenceProcessor::preclean_discovered_references(
     TraceTime tt("Preclean SoftReferences", PrintGCDetails && PrintReferenceGC,
               false, gclog_or_tty);
     for (int i = 0; i < _num_q; i++) {
+      if (yield->should_return()) {
+        return;
+      }
       preclean_discovered_reflist(_discoveredSoftRefs[i], is_alive,
                                   keep_alive, complete_gc, yield);
     }
-  }
-  if (yield->should_return()) {
-    return;
   }
 
   // Weak references
@@ -1183,12 +1238,12 @@ void ReferenceProcessor::preclean_discovered_references(
     TraceTime tt("Preclean WeakReferences", PrintGCDetails && PrintReferenceGC,
               false, gclog_or_tty);
     for (int i = 0; i < _num_q; i++) {
+      if (yield->should_return()) {
+        return;
+      }
       preclean_discovered_reflist(_discoveredWeakRefs[i], is_alive,
                                   keep_alive, complete_gc, yield);
     }
-  }
-  if (yield->should_return()) {
-    return;
   }
 
   // Final references
@@ -1196,12 +1251,12 @@ void ReferenceProcessor::preclean_discovered_references(
     TraceTime tt("Preclean FinalReferences", PrintGCDetails && PrintReferenceGC,
               false, gclog_or_tty);
     for (int i = 0; i < _num_q; i++) {
+      if (yield->should_return()) {
+        return;
+      }
       preclean_discovered_reflist(_discoveredFinalRefs[i], is_alive,
                                   keep_alive, complete_gc, yield);
     }
-  }
-  if (yield->should_return()) {
-    return;
   }
 
   // Phantom references
@@ -1209,6 +1264,9 @@ void ReferenceProcessor::preclean_discovered_references(
     TraceTime tt("Preclean PhantomReferences", PrintGCDetails && PrintReferenceGC,
               false, gclog_or_tty);
     for (int i = 0; i < _num_q; i++) {
+      if (yield->should_return()) {
+        return;
+      }
       preclean_discovered_reflist(_discoveredPhantomRefs[i], is_alive,
                                   keep_alive, complete_gc, yield);
     }
@@ -1217,9 +1275,12 @@ void ReferenceProcessor::preclean_discovered_references(
 
 // Walk the given discovered ref list, and remove all reference objects
 // whose referents are still alive, whose referents are NULL or which
-// are not active (have a non-NULL next field). NOTE: For this to work
-// correctly, refs discovery can not be happening concurrently with this
-// step.
+// are not active (have a non-NULL next field). NOTE: When we are
+// thus precleaning the ref lists (which happens single-threaded today),
+// we do not disable refs discovery to honour the correct semantics of
+// java.lang.Reference. As a result, we need to be careful below
+// that ref removal steps interleave safely with ref discovery steps
+// (in this thread).
 void
 ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
                                                 BoolObjectClosure* is_alive,
@@ -1227,7 +1288,6 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
                                                 VoidClosure*       complete_gc,
                                                 YieldClosure*      yield) {
   DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
-  size_t length = refs_list.length();
   while (iter.has_next()) {
     iter.load_ptrs(DEBUG_ONLY(true /* allow_null_referent */));
     oop obj = iter.obj();
@@ -1242,7 +1302,6 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
       }
       // Remove Reference object from list
       iter.remove();
-      --length;
       // Keep alive its cohort.
       iter.make_referent_alive();
       if (UseCompressedOops) {
@@ -1252,12 +1311,11 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
         oop* next_addr = (oop*)java_lang_ref_Reference::next_addr(obj);
         keep_alive->do_oop(next_addr);
       }
+      iter.move_to_next();
     } else {
       iter.next();
     }
   }
-  refs_list.set_length(length);
-
   // Close the reachable set
   complete_gc->do_void();
 

@@ -1444,7 +1444,7 @@ const Type* SuperWord::container_type(const Type* t) {
 // (Start, end] half-open range defining which operands are vector
 void SuperWord::vector_opd_range(Node* n, uint* start, uint* end) {
   switch (n->Opcode()) {
-  case Op_LoadB:   case Op_LoadC:
+  case Op_LoadB:   case Op_LoadUS:
   case Op_LoadI:   case Op_LoadL:
   case Op_LoadF:   case Op_LoadD:
   case Op_LoadP:

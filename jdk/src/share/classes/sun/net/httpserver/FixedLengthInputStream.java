@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,21 +37,21 @@ import com.sun.net.httpserver.spi.*;
  */
 
 class FixedLengthInputStream extends LeftOverInputStream {
-    private int remaining;
+    private long remaining;
 
-    FixedLengthInputStream (ExchangeImpl t, InputStream src, int len) {
+    FixedLengthInputStream (ExchangeImpl t, InputStream src, long len) {
         super (t, src);
         this.remaining = len;
     }
 
     protected int readImpl (byte[]b, int off, int len) throws IOException {
 
-        eof = (remaining == 0);
+        eof = (remaining == 0L);
         if (eof) {
             return -1;
         }
         if (len > remaining) {
-            len = remaining;
+            len = (int)remaining;
         }
         int n = in.read(b, off, len);
         if (n > -1) {
@@ -65,7 +65,7 @@ class FixedLengthInputStream extends LeftOverInputStream {
             return 0;
         }
         int n = in.available();
-        return n < remaining? n: remaining;
+        return n < remaining? n: (int)remaining;
     }
 
     public boolean markSupported () {return false;}

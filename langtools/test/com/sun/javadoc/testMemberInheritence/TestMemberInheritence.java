@@ -64,13 +64,17 @@ public class TestMemberInheritence extends JavadocTester {
 
         // New labels as of 1.5.0
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
-         "<B>Nested classes/interfaces inherited from class pkg." +         "<A HREF=\"../pkg/BaseClass.html\" title=\"class in pkg\">" +         "BaseClass</A></B>"},
+         "<STRONG>Nested classes/interfaces inherited from class pkg." +
+         "<A HREF=\"../pkg/BaseClass.html\" title=\"class in pkg\">" +
+         "BaseClass</A></STRONG>"},
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
-         "<B>Nested classes/interfaces inherited from interface pkg." +         "<A HREF=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">" +         "BaseInterface</A></B>"},
+         "<STRONG>Nested classes/interfaces inherited from interface pkg." +
+         "<A HREF=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">" +
+         "BaseInterface</A></STRONG>"},
 
          // Test overriding/implementing methods with generic parameters.
                  {BUG_ID + FS + "pkg" + FS + "BaseClass.html",
-         "<DT><B>Specified by:</B><DD><CODE><A HREF=\"../pkg/BaseInterface.html#getAnnotation(java.lang.Class)\">getAnnotation</A></CODE> in interface <CODE><A HREF=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">BaseInterface</A></CODE></DL>"},
+         "<DT><STRONG>Specified by:</STRONG><DD><CODE><A HREF=\"../pkg/BaseInterface.html#getAnnotation(java.lang.Class)\">getAnnotation</A></CODE> in interface <CODE><A HREF=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">BaseInterface</A></CODE></DL>"},
 
          // Test diamond inheritence member summary (6256068)
                  {BUG_ID + FS + "diamond" + FS + "Z.html",

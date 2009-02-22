@@ -37,10 +37,10 @@
       movl     %gs:0, %eax 
       .end
 
-  // Get callers fp
-      .inline _get_previous_fp,0
+  // Get current fp
+      .inline _get_current_fp,0
+      .volatile
       movl     %ebp, %eax 
-      movl     %eax, %eax
       .end
 
   // Support for jint Atomic::add(jint inc, volatile jint* dest)

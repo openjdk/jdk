@@ -200,29 +200,6 @@ BUILD_WIN_SA = 0
 checkSA::
 	@echo     Not building SA:  ARCH = ia64
 
-!elseif exist("$(MSVCDIR)\PlatformSDK\Include\dbgeng.h")
-# These don't have to be set because the default
-# setting of INCLUDE and LIB already contain the needed dirs.
-SA_INCLUDE = 
-SA_LIB = 
-
-!elseif exist("$(SYSTEMROOT)\..\Program Files\Microsoft SDK\include\dbgeng.h")
-# These don't have to be set because the default
-# setting of INCLUDE and LIB already contain the needed dirs.
-SA_INCLUDE =
-SA_LIB = 
-
-!else
-checkSA::
-	@echo .
-	@echo ERROR:  Can't build SA because dbgeng.h does not exist here:
-	@echo     $(MSVCDIR)\PlatformSDK\Include\dbgeng.h
-	@echo nor here:
-	@echo     $(SYSTEMROOT)\..\Program Files\Microsoft SDK\include\dbgeng.h
-	@echo You must use Vis. Studio .Net 2003 on Win 32, and you must
-	@echo have the Microsoft SDK installed on Win amd64.
-	@echo You can disable building of SA by specifying BUILD_WIN_SA = 0
-	@echo . && false
 !endif  # ! "$(BUILD_WIN_SA)" != "1"
 
 #########################################################################

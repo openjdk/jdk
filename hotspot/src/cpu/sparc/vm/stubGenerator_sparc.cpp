@@ -956,7 +956,7 @@ class StubGenerator: public StubCodeGenerator {
     // Load a little early; will load 1 off the end of the array.
     // Ok for now; revisit if we have other uses of this routine.
     if (UseCompressedOops) {
-      __ ld(L1_ary_ptr,0,L2_super);// Will load a little early
+      __ lduw(L1_ary_ptr,0,L2_super);// Will load a little early
     } else {
       __ ld_ptr(L1_ary_ptr,0,L2_super);// Will load a little early
     }
@@ -973,7 +973,7 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef  _LP64
       __ subcc(L2_super,L4_ooptmp,Rret);   // Check for match; zero in Rret for a hit
       __ br( Assembler::notEqual, false, Assembler::pt, loop );
-      __ delayed()->ld(L1_ary_ptr,0,L2_super);// Will load a little early
+      __ delayed()->lduw(L1_ary_ptr,0,L2_super);// Will load a little early
 #else
       ShouldNotReachHere();
 #endif
@@ -1110,30 +1110,31 @@ class StubGenerator: public StubCodeGenerator {
   //  The input registers are overwritten.
   //
   void gen_write_ref_array_pre_barrier(Register addr, Register count) {
-#if 0 // G1 only
     BarrierSet* bs = Universe::heap()->barrier_set();
     if (bs->has_write_ref_pre_barrier()) {
       assert(bs->has_write_ref_array_pre_opt(),
              "Else unsupported barrier set.");
 
-      assert(addr->is_global() && count->is_global(),
-             "If not, then we have to fix this code to handle more "
-             "general cases.");
-      // Get some new fresh output registers.
       __ save_frame(0);
       // Save the necessary global regs... will be used after.
-      __ mov(addr, L0);
-      __ mov(count, L1);
-
-      __ mov(addr, O0);
+      if (addr->is_global()) {
+        __ mov(addr, L0);
+      }
+      if (count->is_global()) {
+        __ mov(count, L1);
+      }
+      __ mov(addr->after_save(), O0);
       // Get the count into O1
       __ call(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre));
-      __ delayed()->mov(count, O1);
-      __ mov(L0, addr);
-      __ mov(L1, count);
+      __ delayed()->mov(count->after_save(), O1);
+      if (addr->is_global()) {
+        __ mov(L0, addr);
+      }
+      if (count->is_global()) {
+        __ mov(L1, count);
+      }
       __ restore();
     }
-#endif // 0
   }
   //
   //  Generate post-write barrier for array.
@@ -1150,22 +1151,17 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSet* bs = Universe::heap()->barrier_set();
 
     switch (bs->kind()) {
-#if 0 // G1 - only
       case BarrierSet::G1SATBCT:
       case BarrierSet::G1SATBCTLogging:
         {
-          assert(addr->is_global() && count->is_global(),
-                 "If not, then we have to fix this code to handle more "
-                 "general cases.");
           // Get some new fresh output registers.
           __ save_frame(0);
-          __ mov(addr, O0);
+          __ mov(addr->after_save(), O0);
           __ call(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post));
-          __ delayed()->mov(count, O1);
+          __ delayed()->mov(count->after_save(), O1);
           __ restore();
         }
         break;
-#endif // 0 G1 - only
       case BarrierSet::CardTableModRef:
       case BarrierSet::CardTableExtension:
         {
@@ -2412,8 +2408,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
 
-    gen_write_ref_array_pre_barrier(G1, G5);
-
+    gen_write_ref_array_pre_barrier(O1, O2);
 
 #ifdef ASSERT
     // We sometimes save a frame (see partial_subtype_check below).

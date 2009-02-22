@@ -424,7 +424,7 @@ void ObjectSynchronizer::Initialize () {
 // asserts is that error message -- often something about negative array
 // indices -- is opaque.
 
-#define CTASSERT(x) { int tag[1-(2*!(x))]; printf ("Tag @%X\n", tag); }
+#define CTASSERT(x) { int tag[1-(2*!(x))]; printf ("Tag @" INTPTR_FORMAT "\n", (intptr_t)tag); }
 
 void ObjectMonitor::ctAsserts() {
   CTASSERT(offset_of (ObjectMonitor, _header) == 0);
@@ -3363,13 +3363,13 @@ void ObjectMonitor::ExitEpilog (Thread * Self, ObjectWaiter * Wakee) {
    //   If the wakee is cold then transiently setting it's affinity
    //   to the current CPU is a good idea.
    //   See http://j2se.east/~dice/PERSIST/050624-PullAffinity.txt
+   DTRACE_MONITOR_PROBE(contended__exit, this, object(), Self);
    Trigger->unpark() ;
 
    // Maintain stats and report events to JVMTI
    if (ObjectSynchronizer::_sync_Parks != NULL) {
       ObjectSynchronizer::_sync_Parks->inc() ;
    }
-   DTRACE_MONITOR_PROBE(contended__exit, this, object(), Self);
 }
 
 

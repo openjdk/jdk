@@ -949,8 +949,8 @@ public class JavacFileManager implements StandardJavaFileManager {
         Iterable<? extends File> files)
     {
         ArrayList<RegularFileObject> result;
-        if (files instanceof Collection)
-            result = new ArrayList<RegularFileObject>(((Collection)files).size());
+        if (files instanceof Collection<?>)
+            result = new ArrayList<RegularFileObject>(((Collection<?>)files).size());
         else
             result = new ArrayList<RegularFileObject>();
         for (File f: files)

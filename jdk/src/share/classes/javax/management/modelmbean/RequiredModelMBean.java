@@ -1074,7 +1074,7 @@ public class RequiredModelMBean
                 }
             }
 
-            final Class targetClass;
+            final Class<?> targetClass;
 
             if (opClassName != null) {
                 try {
@@ -1126,20 +1126,20 @@ public class RequiredModelMBean
                   "resolving " + targetClass.getName() + "." + opMethodName);
         }
 
-        final Class[] argClasses;
+        final Class<?>[] argClasses;
 
         if (sig == null)
             argClasses = null;
         else {
             final ClassLoader targetClassLoader = targetClass.getClassLoader();
-            argClasses = new Class[sig.length];
+            argClasses = new Class<?>[sig.length];
             for (int i = 0; i < sig.length; i++) {
                 if (tracing) {
                     MODELMBEAN_LOGGER.logp(Level.FINER,
                         RequiredModelMBean.class.getName(),"resolveMethod",
                             "resolve type " + sig[i]);
                 }
-                argClasses[i] = (Class) primitiveClassMap.get(sig[i]);
+                argClasses[i] = (Class<?>) primitiveClassMap.get(sig[i]);
                 if (argClasses[i] == null) {
                     try {
                         argClasses[i] =
@@ -1170,7 +1170,7 @@ public class RequiredModelMBean
 
     /* Map e.g. "int" to int.class.  Goodness knows how many time this
        particular wheel has been reinvented.  */
-    private static final Class[] primitiveClasses = {
+    private static final Class<?>[] primitiveClasses = {
         int.class, long.class, boolean.class, double.class,
         float.class, short.class, byte.class, char.class,
     };
@@ -1178,7 +1178,7 @@ public class RequiredModelMBean
         new HashMap<String,Class<?>>();
     static {
         for (int i = 0; i < primitiveClasses.length; i++) {
-            final Class c = primitiveClasses[i];
+            final Class<?> c = primitiveClasses[i];
             primitiveClassMap.put(c.getName(), c);
         }
     }
@@ -1645,7 +1645,7 @@ public class RequiredModelMBean
                             try {
                                 ClassLoader cl =
                                     response.getClass().getClassLoader();
-                                Class c = Class.forName(respType, true, cl);
+                                Class<?> c = Class.forName(respType, true, cl);
                                 subtype = c.isInstance(response);
                             } catch (Exception e) {
                                 subtype = false;
@@ -1904,7 +1904,7 @@ public class RequiredModelMBean
             if (attrSetMethod == null) {
                 if (attrValue != null) {
                     try {
-                        final Class  clazz    = loadClass(attrType);
+                        final Class<?> clazz = loadClass(attrType);
                         if (! clazz.isInstance(attrValue))  throw new
                             InvalidAttributeValueException(clazz.getName() +
                                                            " expected, "   +
@@ -2044,8 +2044,7 @@ public class RequiredModelMBean
         final AttributeList responseList = new AttributeList();
 
         // Go through the list of attributes
-        for (Iterator i = attributes.iterator(); i.hasNext();) {
-            final Attribute attr = (Attribute) i.next();
+        for (Attribute attr : attributes.asList()) {
             try {
                 setAttribute(attr);
                 responseList.add(attr);
@@ -2799,7 +2798,7 @@ public class RequiredModelMBean
         return MBeanServerFactory.getClassLoaderRepository(server);
     }
 
-    private  Class loadClass(String className)
+    private Class<?> loadClass(String className)
         throws ClassNotFoundException {
         try {
             return Class.forName(className);

@@ -100,7 +100,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         }
         ParamTag[] tags = input.isTypeVariableParamTag ?
             input.method.typeParamTags() : input.method.paramTags();
-        Map rankMap = getRankMap(input.isTypeVariableParamTag ?
+        Map<String, String> rankMap = getRankMap(input.isTypeVariableParamTag ?
             (Object[]) input.method.typeParameters() :
             (Object[]) input.method.parameters());
         for (int i = 0; i < tags.length; i++) {
@@ -262,7 +262,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      * @return the TagletOutput representation of this <code>Tag</code>.
      */
     private TagletOutput processParamTags(boolean isNonTypeParams,
-            ParamTag[] paramTags, Map rankMap, TagletWriter writer,
+            ParamTag[] paramTags, Map<String, String> rankMap, TagletWriter writer,
             Set<String> alreadyDocumented) {
         TagletOutput result = writer.getOutputInstance();
         if (paramTags.length > 0) {
@@ -277,7 +277,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                             "doclet.Type_Parameters_warn",
                         paramName);
                 }
-                String rank = (String) rankMap.get(pt.parameterName());
+                String rank = rankMap.get(pt.parameterName());
                 if (rank != null && alreadyDocumented.contains(rank)) {
                     writer.getMsgRetriever().warning(pt.position(),
                        isNonTypeParams ?

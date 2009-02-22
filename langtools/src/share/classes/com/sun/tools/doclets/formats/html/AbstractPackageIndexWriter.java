@@ -137,13 +137,13 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Highlight "Overview" in the bold format, in the navigation bar as this
+     * Highlight "Overview" in the strong format, in the navigation bar as this
      * is the overview page.
      */
     protected void navLinkContents() {
         navCellRevStart();
         fontStyle("NavBarFont1Rev");
-        boldText("doclet.Overview");
+        strongText("doclet.Overview");
         fontEnd();
         navCellEnd();
     }

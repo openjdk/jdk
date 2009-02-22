@@ -215,15 +215,15 @@ public class AnnotationProxyMaker {
             }
         }
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "rawtypes"})
         public void visitEnum(Attribute.Enum e) {
             if (returnClass.isEnum()) {
                 String constName = e.value.toString();
                 try {
-                    value = Enum.valueOf((Class) returnClass, constName);
+                    value = Enum.valueOf((Class)returnClass, constName);
                 } catch (IllegalArgumentException ex) {
                     value = new EnumConstantNotPresentExceptionProxy(
-                                        (Class) returnClass, constName);
+                                        (Class<Enum<?>>) returnClass, constName);
                 }
             } else {
                 value = null;   // indicates a type mismatch

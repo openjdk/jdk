@@ -47,11 +47,11 @@ public class TestSerializedForm extends JavadocTester implements Serializable {
 
     private static final String[][] TEST = {
         {BUG_ID + FS + "serialized-form.html",
-            "protected java.lang.Object <B>readResolve</B>()"},
+            "protected java.lang.Object <STRONG>readResolve</STRONG>()"},
         {BUG_ID + FS + "serialized-form.html",
-            "protected java.lang.Object <B>writeReplace</B>()"},
+            "protected java.lang.Object <STRONG>writeReplace</STRONG>()"},
         {BUG_ID + FS + "serialized-form.html",
-            "protected java.lang.Object <B>readObjectNoData</B>()"},
+            "protected java.lang.Object <STRONG>readObjectNoData</STRONG>()"},
         {BUG_ID + FS + "serialized-form.html",
             "See Also"},
     };

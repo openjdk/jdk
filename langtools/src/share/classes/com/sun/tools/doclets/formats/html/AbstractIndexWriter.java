@@ -78,12 +78,12 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Print the text "Index" in bold format in the navigation bar.
+     * Print the text "Index" in strong format in the navigation bar.
      */
     protected void navLinkIndex() {
         navCellRevStart();
         fontStyle("NavBarFont1Rev");
-        boldText("doclet.Index");
+        strongText("doclet.Index");
         fontEnd();
         navCellEnd();
     }
@@ -95,14 +95,14 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @param unicode Unicode for which member list information to be generated.
      * @param memberlist List of members for the unicode character.
      */
-    protected void generateContents(Character unicode, List memberlist) {
+    protected void generateContents(Character unicode, List<? extends Doc> memberlist) {
         anchor("_" + unicode + "_");
         h2();
-        bold(unicode.toString());
+        strong(unicode.toString());
         h2End();
         dl();
         for (int i = 0; i < memberlist.size(); i++) {
-            Doc element = (Doc)memberlist.get(i);
+            Doc element = memberlist.get(i);
             if (element instanceof MemberDoc) {
                 printDescription((MemberDoc)element);
             } else if (element instanceof ClassDoc) {
@@ -195,14 +195,14 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     protected void printComment(ProgramElementDoc element) {
         Tag[] tags;
         if (Util.isDeprecated(element)) {
-            boldText("doclet.Deprecated"); space();
+            strongText("doclet.Deprecated"); space();
             if ((tags = element.tags("deprecated")).length > 0)
                 printInlineDeprecatedComment(element, tags[0]);
         } else {
             ClassDoc cont = element.containingClass();
             while (cont != null) {
                 if (Util.isDeprecated(cont)) {
-                    boldText("doclet.Deprecated"); space();
+                    strongText("doclet.Deprecated"); space();
                     break;
                 }
                 cont = cont.containingClass();

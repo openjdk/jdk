@@ -65,7 +65,7 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     public void writeDefaultValueInfo(MemberDoc member) {
         writer.dl();
         writer.dt();
-        writer.bold(ConfigurationImpl.getInstance().
+        writer.strong(ConfigurationImpl.getInstance().
             getText("doclet.Default"));
         writer.dd();
         writer.print(((AnnotationTypeElementDoc) member).defaultValue());
@@ -84,7 +84,7 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
      * {@inheritDoc}
      */
     public void printSummaryLabel(ClassDoc cd) {
-        writer.boldText("doclet.Annotation_Type_Optional_Member_Summary");
+        writer.strongText("doclet.Annotation_Type_Optional_Member_Summary");
     }
 
     /**

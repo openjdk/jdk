@@ -1,5 +1,5 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ public class MethodLinks extends Doclet
 {
     public static void main(String[] args) {
         if (com.sun.tools.javadoc.Main.
-            execute("javadoc", "MethodLinks",
+            execute("javadoc", "MethodLinks", MethodLinks.class.getClassLoader(),
                     new String[] {System.getProperty("test.src", ".") +
                                   java.io.File.separatorChar + "MethodLinks.java"}
                     ) != 0)

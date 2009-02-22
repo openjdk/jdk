@@ -481,6 +481,15 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   void oop_iterate(OopClosure* cl);
 
   void object_iterate(ObjectClosure* blk);
+  // Apply the closure to each object in the space whose references
+  // point to objects in the heap.  The usage of CompactibleFreeListSpace
+  // by the ConcurrentMarkSweepGeneration for concurrent GC's allows
+  // objects in the space with references to objects that are no longer
+  // valid.  For example, an object may reference another object
+  // that has already been sweep up (collected).  This method uses
+  // obj_is_alive() to determine whether it is safe to iterate of
+  // an object.
+  void safe_object_iterate(ObjectClosure* blk);
   void object_iterate_mem(MemRegion mr, UpwardsObjectClosure* cl);
 
   // Requires that "mr" be entirely within the space.
@@ -502,7 +511,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
 
   void blk_iterate(BlkClosure* cl);
   void blk_iterate_careful(BlkClosureCareful* cl);
-  HeapWord* block_start(const void* p) const;
+  HeapWord* block_start_const(const void* p) const;
   HeapWord* block_start_careful(const void* p) const;
   size_t block_size(const HeapWord* p) const;
   size_t block_size_no_stall(HeapWord* p, const CMSCollector* c) const;

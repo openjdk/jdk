@@ -227,9 +227,11 @@ class Address VALUE_OBJ_CLASS_SPEC {
 #endif // ASSERT
 
   // accessors
-  bool uses(Register reg) const {
-    return _base == reg || _index == reg;
-  }
+  bool        uses(Register reg) const { return _base == reg || _index == reg; }
+  Register    base()             const { return _base;  }
+  Register    index()            const { return _index; }
+  ScaleFactor scale()            const { return _scale; }
+  int         disp()             const { return _disp;  }
 
   // Convert the raw encoding form into the form expected by the constructor for
   // Address.  An index of 4 (rsp) corresponds to having no index, so convert
@@ -1053,6 +1055,11 @@ private:
   void movdqa(XMMRegister dst, Address src);
   void movdqa(XMMRegister dst, XMMRegister src);
 
+  // Move Unaligned Double Quadword
+  void movdqu(Address     dst, XMMRegister src);
+  void movdqu(XMMRegister dst, Address src);
+  void movdqu(XMMRegister dst, XMMRegister src);
+
   void movl(Register dst, int32_t imm32);
   void movl(Address dst, int32_t imm32);
   void movl(Register dst, Register src);
@@ -1310,7 +1317,8 @@ private:
 // on arguments should also go in here.
 
 class MacroAssembler: public Assembler {
- friend class LIR_Assembler;
+  friend class LIR_Assembler;
+  friend class Runtime1;      // as_Address()
  protected:
 
   Address as_Address(AddressLiteral adr);
@@ -1453,6 +1461,7 @@ class MacroAssembler: public Assembler {
   // The pointer will be loaded into the thread register.
   void get_thread(Register thread);
 
+
   // Support for VM calls
   //
   // It is imperative that all calls into the VM are handled via the call_VM macros.
@@ -1526,6 +1535,22 @@ class MacroAssembler: public Assembler {
   // Stores
   void store_check(Register obj);                // store check for obj - register is destroyed afterwards
   void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
+
+  void g1_write_barrier_pre(Register obj,
+#ifndef _LP64
+                            Register thread,
+#endif
+                            Register tmp,
+                            Register tmp2,
+                            bool     tosca_live);
+  void g1_write_barrier_post(Register store_addr,
+                             Register new_val,
+#ifndef _LP64
+                             Register thread,
+#endif
+                             Register tmp,
+                             Register tmp2);
+
 
   // split store_check(Register obj) to enhance instruction interleaving
   void store_check_part_1(Register obj);
@@ -1755,7 +1780,8 @@ class MacroAssembler: public Assembler {
   // check info (currently consumed only by C1). If
   // swap_reg_contains_mark is true then returns -1 as it is assumed
   // the calling code has already passed any potential faults.
-  int biased_locking_enter(Register lock_reg, Register obj_reg, Register swap_reg, Register tmp_reg,
+  int biased_locking_enter(Register lock_reg, Register obj_reg,
+                           Register swap_reg, Register tmp_reg,
                            bool swap_reg_contains_mark,
                            Label& done, Label* slow_case = NULL,
                            BiasedLockingCounters* counters = NULL);

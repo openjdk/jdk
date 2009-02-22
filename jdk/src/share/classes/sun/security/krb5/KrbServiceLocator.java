@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2006-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ class KrbServiceLocator {
      */
     static String[] getKerberosService(String realmName, String protocol) {
 
-        String dnsUrl = "dns:///_kerberos." + protocol + realmName;
+        String dnsUrl = "dns:///_kerberos." + protocol + "." + realmName;
         String[] hostports = null;
 
         try {

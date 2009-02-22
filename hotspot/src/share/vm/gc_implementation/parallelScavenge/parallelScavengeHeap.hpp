@@ -184,8 +184,23 @@ class ParallelScavengeHeap : public CollectedHeap {
   size_t tlab_capacity(Thread* thr) const;
   size_t unsafe_max_tlab_alloc(Thread* thr) const;
 
+  // Can a compiler initialize a new object without store barriers?
+  // This permission only extends from the creation of a new object
+  // via a TLAB up to the first subsequent safepoint.
+  virtual bool can_elide_tlab_store_barriers() const {
+    return true;
+  }
+
+  // Can a compiler elide a store barrier when it writes
+  // a permanent oop into the heap?  Applies when the compiler
+  // is storing x to the heap, where x->is_perm() is true.
+  virtual bool can_elide_permanent_oop_store_barriers() const {
+    return true;
+  }
+
   void oop_iterate(OopClosure* cl);
   void object_iterate(ObjectClosure* cl);
+  void safe_object_iterate(ObjectClosure* cl) { object_iterate(cl); }
   void permanent_oop_iterate(OopClosure* cl);
   void permanent_object_iterate(ObjectClosure* cl);
 

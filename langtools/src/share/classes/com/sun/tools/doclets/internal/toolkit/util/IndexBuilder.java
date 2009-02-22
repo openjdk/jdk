@@ -114,7 +114,7 @@ public class IndexBuilder {
         this.noDeprecated = noDeprecated;
         this.classesOnly = classesOnly;
         buildIndexMap(configuration.root);
-        Set set = indexmap.keySet();
+        Set<Character> set = indexmap.keySet();
         elements =  set.toArray();
         Arrays.sort(elements);
     }
@@ -215,7 +215,7 @@ public class IndexBuilder {
      *
      * @return Map index map.
      */
-    public Map getIndexMap() {
+    public Map<Character,List<Doc>> getIndexMap() {
         return indexmap;
     }
 
@@ -225,8 +225,8 @@ public class IndexBuilder {
      * @param index index Unicode character.
      * @return List member list for specific Unicode character.
      */
-    public List getMemberList(Character index) {
-        return (List)indexmap.get(index);
+    public List<Doc> getMemberList(Character index) {
+        return indexmap.get(index);
     }
 
     /**

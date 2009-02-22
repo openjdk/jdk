@@ -61,6 +61,12 @@ $(AOUT): $(Res_Files) $(Obj_Files)
   $(LINK_FLAGS) /out:$@ /implib:$*.lib /def:vm.def $(Obj_Files) $(Res_Files)
 <<
 !endif
+!if "$(MT)" != ""
+# The previous link command created a .manifest file that we want to
+# insert into the linked artifact so we do not need to track it
+# separately.  Use ";#2" for .dll and ";#1" for .exe:
+	$(MT) /manifest $@.manifest /outputresource:$@;#2
+!endif
 
 !include $(WorkSpace)/make/windows/makefiles/shared.make
 !include $(WorkSpace)/make/windows/makefiles/sa.make

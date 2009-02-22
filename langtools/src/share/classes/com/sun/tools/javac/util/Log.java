@@ -26,10 +26,10 @@
 package com.sun.tools.javac.util;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.Locale;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
@@ -97,6 +97,16 @@ public class Log extends AbstractLog {
      */
     private DiagnosticFormatter<JCDiagnostic> diagFormatter;
 
+    /**
+     * Keys for expected diagnostics
+     */
+    public Set<String> expectDiagKeys;
+
+    /**
+     * JavacMessages object used for localization
+     */
+    private JavacMessages messages;
+
     /** Construct a log with given I/O redirections.
      */
     @Deprecated
@@ -115,13 +125,17 @@ public class Log extends AbstractLog {
         this.MaxWarnings = getIntOption(options, "-Xmaxwarns", 100);
 
         boolean rawDiagnostics = options.get("rawDiagnostics") != null;
-        Messages msgs = Messages.instance(context);
-        this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(msgs) :
-                                              new BasicDiagnosticFormatter(options, msgs);
+        messages = JavacMessages.instance(context);
+        this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(options) :
+                                              new BasicDiagnosticFormatter(options, messages);
         @SuppressWarnings("unchecked") // FIXME
-        DiagnosticListener<? super JavaFileObject> diagListener =
+        DiagnosticListener<? super JavaFileObject> dl =
             context.get(DiagnosticListener.class);
-        this.diagListener = diagListener;
+        this.diagListener = dl;
+
+        String ek = options.get("expectKeys");
+        if (ek != null)
+            expectDiagKeys = new HashSet<String>(Arrays.asList(ek.split(", *")));
     }
     // where
         private int getIntOption(Options options, String optionName, int defaultValue) {
@@ -186,9 +200,9 @@ public class Log extends AbstractLog {
         getSource(name).setEndPosTable(table);
     }
 
-    /** Return current source name.
+    /** Return current sourcefile.
      */
-    public JavaFileObject currentSource() {
+    public JavaFileObject currentSourceFile() {
         return source == null ? null : source.getFile();
     }
 
@@ -287,6 +301,9 @@ public class Log extends AbstractLog {
      * reported so far, the diagnostic may be handed off to writeDiagnostic.
      */
     public void report(JCDiagnostic diagnostic) {
+        if (expectDiagKeys != null)
+            expectDiagKeys.remove(diagnostic.getCode());
+
         switch (diagnostic.getType()) {
         case FRAGMENT:
             throw new IllegalArgumentException();
@@ -335,15 +352,7 @@ public class Log extends AbstractLog {
 
         PrintWriter writer = getWriterForDiagnosticType(diag.getType());
 
-        printLines(writer, diagFormatter.format(diag, Locale.getDefault()));
-        if (diagFormatter.displaySource(diag)) {
-            int pos = diag.getIntPosition();
-            if (pos != Position.NOPOS) {
-                JavaFileObject prev = useSource(diag.getSource());
-                printErrLine(pos, writer);
-                useSource(prev);
-            }
-        }
+        printLines(writer, diagFormatter.format(diag, messages.getCurrentLocale()));
 
         if (promptOnError) {
             switch (diag.getType()) {
@@ -384,7 +393,7 @@ public class Log extends AbstractLog {
      *  @param args   Fields to substitute into the string.
      */
     public static String getLocalizedString(String key, Object ... args) {
-        return Messages.getDefaultLocalizedString("compiler.misc." + key, args);
+        return JavacMessages.getDefaultLocalizedString("compiler.misc." + key, args);
     }
 
 /***************************************************************************
@@ -399,7 +408,7 @@ public class Log extends AbstractLog {
             printLines(errWriter, "error: " + msg);
         } else {
             int line = source.getLineNumber(pos);
-            JavaFileObject file = currentSource();
+            JavaFileObject file = source.getFile();
             if (file != null)
                 printLines(errWriter,
                            JavacFileManager.getJavacFileName(file) + ":" +
@@ -412,7 +421,7 @@ public class Log extends AbstractLog {
     /** report an error:
      */
     public void rawError(int pos, String msg) {
-        if (nerrors < MaxErrors && shouldReport(currentSource(), pos)) {
+        if (nerrors < MaxErrors && shouldReport(currentSourceFile(), pos)) {
             printRawError(pos, msg);
             prompt();
             nerrors++;

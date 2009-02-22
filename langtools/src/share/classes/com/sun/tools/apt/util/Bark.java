@@ -29,7 +29,7 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.Messages;
+import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.Position;
 
 /** A subtype of Log for use in APT.
@@ -87,7 +87,7 @@ public class Bark extends Log {
         context.put(barkKey, this);
 
         // register additional resource bundle for APT messages.
-        Messages aptMessages = Messages.instance(context);
+        JavacMessages aptMessages = JavacMessages.instance(context);
         aptMessages.add("com.sun.tools.apt.resources.apt");
         aptDiags = new JCDiagnostic.Factory(aptMessages, "apt");
 

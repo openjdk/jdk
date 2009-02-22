@@ -457,7 +457,11 @@ public abstract class MBeanServerSupport implements MBeanServer {
      * All the various flavors of {@code MBeanServer.createMBean} methods
      * will eventually call this method. A subclass that wishes to
      * support MBean creation through {@code createMBean} thus only
-     * needs to provide an implementation for this one method.
+     * needs to provide an implementation for this one method.</p>
+     *
+     * <p>A subclass implementation of this method should respect the contract
+     * of the various {@code createMBean} methods in the {@link MBeanServer}
+     * interface, in particular as regards exception wrapping.</p>
      *
      * @param className The class name of the MBean to be instantiated.
      * @param name The object name of the MBean. May be null.
@@ -488,6 +492,17 @@ public abstract class MBeanServerSupport implements MBeanServer {
      * <CODE>preRegister</CODE> (<CODE>MBeanRegistration</CODE>
      * interface) method of the MBean has thrown an exception. The
      * MBean will not be registered.
+     * @exception RuntimeMBeanException If the MBean's constructor or its
+     * {@code preRegister} or {@code postRegister} method threw
+     * a {@code RuntimeException}. If the <CODE>postRegister</CODE>
+     * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws a
+     * <CODE>RuntimeException</CODE>, the <CODE>createMBean</CODE> method will
+     * throw a <CODE>RuntimeMBeanException</CODE>, although the MBean creation
+     * and registration succeeded. In such a case, the MBean will be actually
+     * registered even though the <CODE>createMBean</CODE> method
+     * threw an exception. Note that <CODE>RuntimeMBeanException</CODE> can
+     * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
+     * will not be registered.
      * @exception MBeanException The constructor of the MBean has
      * thrown an exception
      * @exception NotCompliantMBeanException This class is not a JMX
@@ -1096,7 +1111,7 @@ public abstract class MBeanServerSupport implements MBeanServer {
             MBeanRegistrationException, MBeanException,
             NotCompliantMBeanException {
         try {
-            return safeCreateMBean(className, name, null, params, signature, true);
+            return createMBean(className, name, null, params, signature, true);
         } catch (InstanceNotFoundException ex) {
             // should not happen!
             throw new MBeanException(ex, "Unexpected exception: " + ex);
@@ -1113,7 +1128,7 @@ public abstract class MBeanServerSupport implements MBeanServer {
             throws ReflectionException, InstanceAlreadyExistsException,
             MBeanRegistrationException, MBeanException,
             NotCompliantMBeanException, InstanceNotFoundException {
-        return safeCreateMBean(className, name, loaderName, params, signature, false);
+        return createMBean(className, name, loaderName, params, signature, false);
     }
 
     /**
@@ -1126,7 +1141,7 @@ public abstract class MBeanServerSupport implements MBeanServer {
             MBeanRegistrationException, MBeanException,
             NotCompliantMBeanException {
         try {
-            return safeCreateMBean(className, name, null, null, null, true);
+            return createMBean(className, name, null, null, null, true);
         } catch (InstanceNotFoundException ex) {
             // should not happen!
             throw new MBeanException(ex, "Unexpected exception: " + ex);
@@ -1143,32 +1158,7 @@ public abstract class MBeanServerSupport implements MBeanServer {
             throws ReflectionException, InstanceAlreadyExistsException,
             MBeanRegistrationException, MBeanException,
             NotCompliantMBeanException, InstanceNotFoundException {
-        return safeCreateMBean(className, name, loaderName, null, null, false);
-    }
-
-    // make sure all exceptions are correctly wrapped in a JMXException
-    private ObjectInstance safeCreateMBean(String className,
-            ObjectName name, ObjectName loaderName, Object[] params,
-            String[] signature, boolean useRepository)
-            throws ReflectionException, InstanceAlreadyExistsException,
-            MBeanRegistrationException, MBeanException,
-            NotCompliantMBeanException, InstanceNotFoundException {
-        try {
-            return createMBean(className, name, loaderName, params,
-                               signature, useRepository);
-        } catch (ReflectionException x) { throw x;
-        } catch (InstanceAlreadyExistsException x) { throw x;
-        } catch (MBeanRegistrationException x) { throw x;
-        } catch (MBeanException x) { throw x;
-        } catch (NotCompliantMBeanException x) { throw x;
-        } catch (InstanceNotFoundException x) { throw x;
-        } catch (SecurityException x) { throw x;
-        } catch (JMRuntimeException x) { throw x;
-        } catch (RuntimeException x) {
-            throw new RuntimeOperationsException(x, x.toString());
-        } catch (Exception x) {
-            throw new MBeanException(x, x.toString());
-        }
+        return createMBean(className, name, loaderName, null, null, false);
     }
 
 

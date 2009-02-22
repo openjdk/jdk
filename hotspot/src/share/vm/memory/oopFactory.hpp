@@ -81,8 +81,12 @@ class oopFactory: AllStatic {
   static symbolHandle    new_symbol_handle(const char* name, TRAPS) { return new_symbol_handle(name, (int)strlen(name), CHECK_(symbolHandle())); }
 
   // Constant pools
-  static constantPoolOop      new_constantPool     (int length, TRAPS);
-  static constantPoolCacheOop new_constantPoolCache(int length, TRAPS);
+  static constantPoolOop      new_constantPool     (int length,
+                                                    bool is_conc_safe,
+                                                    TRAPS);
+  static constantPoolCacheOop new_constantPoolCache(int length,
+                                                    bool is_conc_safe,
+                                                    TRAPS);
 
   // Instance classes
   static klassOop        new_instanceKlass(int vtable_len, int itable_len, int static_field_size,
@@ -93,9 +97,20 @@ private:
   static constMethodOop  new_constMethod(int byte_code_size,
                                          int compressed_line_number_size,
                                          int localvariable_table_length,
-                                         int checked_exceptions_length, TRAPS);
+                                         int checked_exceptions_length,
+                                         bool is_conc_safe,
+                                         TRAPS);
 public:
-  static methodOop       new_method(int byte_code_size, AccessFlags access_flags, int compressed_line_number_size, int localvariable_table_length, int checked_exceptions_length, TRAPS);
+  // Set is_conc_safe for methods which cannot safely be
+  // processed by concurrent GC even after the return of
+  // the method.
+  static methodOop       new_method(int byte_code_size,
+                                    AccessFlags access_flags,
+                                    int compressed_line_number_size,
+                                    int localvariable_table_length,
+                                    int checked_exceptions_length,
+                                    bool is_conc_safe,
+                                    TRAPS);
 
   // Method Data containers
   static methodDataOop   new_methodData(methodHandle method, TRAPS);

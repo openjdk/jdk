@@ -296,7 +296,7 @@ public class ArrayType<T> extends OpenType<T> {
         // Check and construct state specific to ArrayType
         //
         if (elementType.isArray()) {
-            ArrayType at = (ArrayType) elementType;
+            ArrayType<?> at = (ArrayType<?>) elementType;
             this.dimension = at.getDimension() + dimension;
             this.elementType = at.getElementOpenType();
             this.primitiveArray = at.isPrimitiveArray();
@@ -384,7 +384,7 @@ public class ArrayType<T> extends OpenType<T> {
 
     /* Package-private constructor for callers we trust to get it right. */
     ArrayType(String className, String typeName, String description,
-              int dimension, OpenType elementType,
+              int dimension, OpenType<?> elementType,
               boolean primitiveArray) {
         super(className, typeName, description, true);
         this.dimension = dimension;
@@ -397,7 +397,7 @@ public class ArrayType<T> extends OpenType<T> {
         throws OpenDataException {
         boolean isPrimitiveArray = false;
         if (elementType.isArray()) {
-            isPrimitiveArray = ((ArrayType) elementType).isPrimitiveArray();
+            isPrimitiveArray = ((ArrayType<?>) elementType).isPrimitiveArray();
         }
         return buildArrayClassName(dimension, elementType, isPrimitiveArray);
     }
@@ -443,7 +443,7 @@ public class ArrayType<T> extends OpenType<T> {
         throws OpenDataException {
         boolean isPrimitiveArray = false;
         if (elementType.isArray()) {
-            isPrimitiveArray = ((ArrayType) elementType).isPrimitiveArray();
+            isPrimitiveArray = ((ArrayType<?>) elementType).isPrimitiveArray();
         }
         return buildArrayDescription(dimension, elementType, isPrimitiveArray);
     }
@@ -453,7 +453,7 @@ public class ArrayType<T> extends OpenType<T> {
                                                 boolean isPrimitiveArray)
         throws OpenDataException {
         if (elementType.isArray()) {
-            ArrayType at = (ArrayType) elementType;
+            ArrayType<?> at = (ArrayType<?>) elementType;
             dimension += at.getDimension();
             elementType = at.getElementOpenType();
             isPrimitiveArray = at.isPrimitiveArray();
@@ -551,7 +551,7 @@ public class ArrayType<T> extends OpenType<T> {
             return false;
         }
 
-        Class  objClass     = obj.getClass();
+        Class<?> objClass = obj.getClass();
         String objClassName = objClass.getName();
 
         // if obj is not an array, return false
@@ -636,8 +636,8 @@ public class ArrayType<T> extends OpenType<T> {
     }
 
     @Override
-    boolean isAssignableFrom(OpenType ot) {
-        if (!(ot instanceof ArrayType))
+    boolean isAssignableFrom(OpenType<?> ot) {
+        if (!(ot instanceof ArrayType<?>))
             return false;
         ArrayType<?> at = (ArrayType<?>) ot;
         return (at.getDimension() == getDimension() &&
@@ -675,9 +675,9 @@ public class ArrayType<T> extends OpenType<T> {
 
         // if obj is not an ArrayType, return false
         //
-        if (!(obj instanceof ArrayType))
+        if (!(obj instanceof ArrayType<?>))
             return false;
-        ArrayType other = (ArrayType) obj;
+        ArrayType<?> other = (ArrayType<?>) obj;
 
         // if other's dimension is different than this instance's, return false
         //
@@ -879,6 +879,7 @@ public class ArrayType<T> extends OpenType<T> {
         // Build primitive array
         //
         try {
+            @SuppressWarnings("rawtypes")
             ArrayType at = new ArrayType(simpleType, true);
             if (n > 1)
                 at = new ArrayType<T>(n - 1, at);
@@ -934,7 +935,7 @@ public class ArrayType<T> extends OpenType<T> {
         }
     }
 
-    private ArrayType convertFromWrapperToPrimitiveTypes() {
+    private <T> ArrayType<T> convertFromWrapperToPrimitiveTypes() {
         String cn = getClassName();
         String tn = getTypeName();
         String d = getDescription();
@@ -952,8 +953,8 @@ public class ArrayType<T> extends OpenType<T> {
                 break;
             }
         }
-        return new ArrayType(cn, tn, d,
-                             dimension, elementType, primitiveArray);
+        return new ArrayType<T>(cn, tn, d,
+                                dimension, elementType, primitiveArray);
     }
 
     /**
@@ -1002,7 +1003,7 @@ public class ArrayType<T> extends OpenType<T> {
         }
     }
 
-    private ArrayType convertFromPrimitiveToWrapperTypes() {
+    private <T> ArrayType<T> convertFromPrimitiveToWrapperTypes() {
         String cn = getClassName();
         String tn = getTypeName();
         String d = getDescription();
@@ -1020,7 +1021,7 @@ public class ArrayType<T> extends OpenType<T> {
                 break;
             }
         }
-        return new ArrayType(cn, tn, d,
-                             dimension, elementType, primitiveArray);
+        return new ArrayType<T>(cn, tn, d,
+                                dimension, elementType, primitiveArray);
     }
 }

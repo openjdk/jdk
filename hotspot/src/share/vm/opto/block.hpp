@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ public:
   void insert( uint i, Block *n );
   uint size() const { return _cnt; }
   void reset() { _cnt = 0; }
+  void print();
 };
 
 
@@ -129,7 +130,11 @@ class Block : public CFGElement {
   uint _rpo;                    // Number in reverse post order walk
 
   virtual bool is_block() { return true; }
-  float succ_prob(uint i); // return probability of i'th successor
+  float succ_prob(uint i);      // return probability of i'th successor
+  int num_fall_throughs();      // How many fall-through candidate this block has
+  void update_uncommon_branch(Block* un); // Lower branch prob to uncommon code
+  bool succ_fall_through(uint i); // Is successor "i" is a fall-through candidate
+  Block* lone_fall_through();   // Return lone fall-through Block or null
 
   Block* dom_lca(Block* that);  // Compute LCA in dominator tree.
 #ifdef ASSERT
@@ -144,6 +149,7 @@ class Block : public CFGElement {
   // Report the alignment required by this block.  Must be a power of 2.
   // The previous block will insert nops to get this alignment.
   uint code_alignment();
+  uint compute_loop_alignment();
 
   // BLOCK_FREQUENCY is a sentinel to mark uses of constant block frequencies.
   // It is currently also used to scale such frequencies relative to
@@ -184,11 +190,12 @@ class Block : public CFGElement {
       int current_alignment = current_offset & max_pad;
       if( current_alignment != 0 ) {
         uint padding = (block_alignment-current_alignment) & max_pad;
-        if( !head()->is_Loop() ||
-            padding <= (uint)MaxLoopPad ||
-            first_inst_size() > padding ) {
-          return padding;
+        if( has_loop_alignment() &&
+            padding > (uint)MaxLoopPad &&
+            first_inst_size() <= padding ) {
+          return 0;
         }
+        return padding;
       }
     }
     return 0;
@@ -201,6 +208,21 @@ class Block : public CFGElement {
   bool _connector;
   void set_connector() { _connector = true; }
   bool is_connector() const { return _connector; };
+
+  // Loop_alignment will be set for blocks which are at the top of loops.
+  // The block layout pass may rotate loops such that the loop head may not
+  // be the sequentially first block of the loop encountered in the linear
+  // list of blocks.  If the layout pass is not run, loop alignment is set
+  // for each block which is the head of a loop.
+  uint _loop_alignment;
+  void set_loop_alignment(Block *loop_top) {
+    uint new_alignment = loop_top->compute_loop_alignment();
+    if (new_alignment > _loop_alignment) {
+      _loop_alignment = new_alignment;
+    }
+  }
+  uint loop_alignment() const { return _loop_alignment; }
+  bool has_loop_alignment() const { return loop_alignment() > 0; }
 
   // Create a new Block with given head Node.
   // Creates the (empty) predecessor arrays.
@@ -219,7 +241,8 @@ class Block : public CFGElement {
       _raise_LCA_mark(0),
       _raise_LCA_visited(0),
       _first_inst_size(999999),
-      _connector(false) {
+      _connector(false),
+      _loop_alignment(0) {
     _nodes.push(headnode);
   }
 
@@ -275,6 +298,16 @@ class Block : public CFGElement {
     return s;
   }
 
+  // Return true if b is a successor of this block
+  bool has_successor(Block* b) const {
+    for (uint i = 0; i < _num_succs; i++ ) {
+      if (non_connector_successor(i) == b) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   // Successor block, after forwarding through connectors
   Block* non_connector_successor(int i) const {
     return _succs[i]->non_connector();
@@ -319,7 +352,6 @@ class PhaseCFG : public Phase {
 
   // I'll need a few machine-specific GotoNodes.  Clone from this one.
   MachNode *_goto;
-  void insert_goto_at(uint block_no, uint succ_no);
 
   Block* insert_anti_dependences(Block* LCA, Node* load, bool verify = false);
   void verify_anti_dependences(Block* LCA, Node* load) {
@@ -379,10 +411,15 @@ class PhaseCFG : public Phase {
   // Compute the instruction global latency with a backwards walk
   void ComputeLatenciesBackwards(VectorSet &visited, Node_List &stack);
 
+  // Set loop alignment
+  void set_loop_alignment();
+
   // Remove empty basic blocks
-  void RemoveEmpty();
-  bool MoveToNext(Block* bx, uint b_index);
-  void MoveToEnd(Block* bx, uint b_index);
+  void remove_empty();
+  void fixup_flow();
+  bool move_to_next(Block* bx, uint b_index);
+  void move_to_end(Block* bx, uint b_index);
+  void insert_goto_at(uint block_no, uint succ_no);
 
   // Check for NeverBranch at block end.  This needs to become a GOTO to the
   // true target.  NeverBranch are treated as a conditional branch that always
@@ -413,7 +450,7 @@ class PhaseCFG : public Phase {
 };
 
 
-//------------------------------UnionFindInfo----------------------------------
+//------------------------------UnionFind--------------------------------------
 // Map Block indices to a block-index for a cfg-cover.
 // Array lookup in the optimized case.
 class UnionFind : public ResourceObj {
@@ -507,4 +544,167 @@ class CFGLoop : public CFGElement {
   void dump( ) const;
   void dump_tree() const;
 #endif
+};
+
+
+//----------------------------------CFGEdge------------------------------------
+// A edge between two basic blocks that will be embodied by a branch or a
+// fall-through.
+class CFGEdge : public ResourceObj {
+ private:
+  Block * _from;        // Source basic block
+  Block * _to;          // Destination basic block
+  float _freq;          // Execution frequency (estimate)
+  int   _state;
+  bool  _infrequent;
+  int   _from_pct;
+  int   _to_pct;
+
+  // Private accessors
+  int  from_pct() const { return _from_pct; }
+  int  to_pct()   const { return _to_pct;   }
+  int  from_infrequent() const { return from_pct() < BlockLayoutMinDiamondPercentage; }
+  int  to_infrequent()   const { return to_pct()   < BlockLayoutMinDiamondPercentage; }
+
+ public:
+  enum {
+    open,               // initial edge state; unprocessed
+    connected,          // edge used to connect two traces together
+    interior            // edge is interior to trace (could be backedge)
+  };
+
+  CFGEdge(Block *from, Block *to, float freq, int from_pct, int to_pct) :
+    _from(from), _to(to), _freq(freq),
+    _from_pct(from_pct), _to_pct(to_pct), _state(open) {
+    _infrequent = from_infrequent() || to_infrequent();
+  }
+
+  float  freq() const { return _freq; }
+  Block* from() const { return _from; }
+  Block* to  () const { return _to;   }
+  int  infrequent() const { return _infrequent; }
+  int state() const { return _state; }
+
+  void set_state(int state) { _state = state; }
+
+#ifndef PRODUCT
+  void dump( ) const;
+#endif
+};
+
+
+//-----------------------------------Trace-------------------------------------
+// An ordered list of basic blocks.
+class Trace : public ResourceObj {
+ private:
+  uint _id;             // Unique Trace id (derived from initial block)
+  Block ** _next_list;  // Array mapping index to next block
+  Block ** _prev_list;  // Array mapping index to previous block
+  Block * _first;       // First block in the trace
+  Block * _last;        // Last block in the trace
+
+  // Return the block that follows "b" in the trace.
+  Block * next(Block *b) const { return _next_list[b->_pre_order]; }
+  void set_next(Block *b, Block *n) const { _next_list[b->_pre_order] = n; }
+
+  // Return the block that preceeds "b" in the trace.
+  Block * prev(Block *b) const { return _prev_list[b->_pre_order]; }
+  void set_prev(Block *b, Block *p) const { _prev_list[b->_pre_order] = p; }
+
+  // We've discovered a loop in this trace. Reset last to be "b", and first as
+  // the block following "b
+  void break_loop_after(Block *b) {
+    _last = b;
+    _first = next(b);
+    set_prev(_first, NULL);
+    set_next(_last, NULL);
+  }
+
+ public:
+
+  Trace(Block *b, Block **next_list, Block **prev_list) :
+    _first(b),
+    _last(b),
+    _next_list(next_list),
+    _prev_list(prev_list),
+    _id(b->_pre_order) {
+    set_next(b, NULL);
+    set_prev(b, NULL);
+  };
+
+  // Return the id number
+  uint id() const { return _id; }
+  void set_id(uint id) { _id = id; }
+
+  // Return the first block in the trace
+  Block * first_block() const { return _first; }
+
+  // Return the last block in the trace
+  Block * last_block() const { return _last; }
+
+  // Insert a trace in the middle of this one after b
+  void insert_after(Block *b, Trace *tr) {
+    set_next(tr->last_block(), next(b));
+    if (next(b) != NULL) {
+      set_prev(next(b), tr->last_block());
+    }
+
+    set_next(b, tr->first_block());
+    set_prev(tr->first_block(), b);
+
+    if (b == _last) {
+      _last = tr->last_block();
+    }
+  }
+
+  void insert_before(Block *b, Trace *tr) {
+    Block *p = prev(b);
+    assert(p != NULL, "use append instead");
+    insert_after(p, tr);
+  }
+
+  // Append another trace to this one.
+  void append(Trace *tr) {
+    insert_after(_last, tr);
+  }
+
+  // Append a block at the end of this trace
+  void append(Block *b) {
+    set_next(_last, b);
+    set_prev(b, _last);
+    _last = b;
+  }
+
+  // Adjust the the blocks in this trace
+  void fixup_blocks(PhaseCFG &cfg);
+  bool backedge(CFGEdge *e);
+
+#ifndef PRODUCT
+  void dump( ) const;
+#endif
+};
+
+//------------------------------PhaseBlockLayout-------------------------------
+// Rearrange blocks into some canonical order, based on edges and their frequencies
+class PhaseBlockLayout : public Phase {
+  PhaseCFG &_cfg;               // Control flow graph
+
+  GrowableArray<CFGEdge *> *edges;
+  Trace **traces;
+  Block **next;
+  Block **prev;
+  UnionFind *uf;
+
+  // Given a block, find its encompassing Trace
+  Trace * trace(Block *b) {
+    return traces[uf->Find_compress(b->_pre_order)];
+  }
+ public:
+  PhaseBlockLayout(PhaseCFG &cfg);
+
+  void find_edges();
+  void grow_traces();
+  void merge_traces(bool loose_connections);
+  void reorder_traces(int count);
+  void union_traces(Trace* from, Trace* to);
 };

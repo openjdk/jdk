@@ -63,8 +63,8 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             ClassDoc usedClass = content[i];
             Set<ClassDoc> usingClasses = mapper.classToClass.get(usedClass.qualifiedName());
             if (usingClasses != null) {
-                for (Iterator it = usingClasses.iterator(); it.hasNext(); ) {
-                    ClassDoc usingClass = (ClassDoc)it.next();
+                for (Iterator<ClassDoc> it = usingClasses.iterator(); it.hasNext(); ) {
+                    ClassDoc usingClass = it.next();
                     PackageDoc usingPackage = usingClass.containingPackage();
                     Set<ClassDoc> usedClasses = usingPackageToUsedClasses
                         .get(usingPackage.name());
@@ -136,9 +136,9 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         printText("doclet.ClassUse_Packages.that.use.0",
             getPackageLink(pkgdoc, Util.getPackageName(pkgdoc), false));
         tableHeaderEnd();
-        Iterator it = usingPackageToUsedClasses.keySet().iterator();
+        Iterator<String> it = usingPackageToUsedClasses.keySet().iterator();
         while (it.hasNext()) {
-            PackageDoc pkg = configuration.root.packageNamed((String)it.next());
+            PackageDoc pkg = configuration.root.packageNamed(it.next());
             generatePackageUse(pkg);
         }
         tableEnd();
@@ -147,9 +147,9 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     }
 
     protected void generateClassList() throws IOException {
-        Iterator itp = usingPackageToUsedClasses.keySet().iterator();
+        Iterator<String> itp = usingPackageToUsedClasses.keySet().iterator();
         while (itp.hasNext()) {
-            String packageName = (String)itp.next();
+            String packageName = itp.next();
             PackageDoc usingPackage = configuration.root.packageNamed(packageName);
             if (usingPackage != null) {
                 anchor(usingPackage.name());
@@ -160,11 +160,10 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 getPackageLink(pkgdoc, Util.getPackageName(pkgdoc), false),
                 getPackageLink(usingPackage,Util.getPackageName(usingPackage), false));
             tableHeaderEnd();
-            Iterator itc =
-                ((Collection)usingPackageToUsedClasses.get(packageName))
-                .iterator();
+            Iterator<ClassDoc> itc =
+                    usingPackageToUsedClasses.get(packageName).iterator();
             while (itc.hasNext()) {
-                printClassRow((ClassDoc)itc.next(), packageName);
+                printClassRow(itc.next(), packageName);
             }
             tableEnd();
             space();
@@ -178,9 +177,9 @@ public class PackageUseWriter extends SubWriterHolderWriter {
 
         trBgcolorStyle("white", "TableRowColor");
         summaryRow(0);
-        bold();
+        strong();
         printHyperLink(path, packageName, usedClass.name(), true);
-        boldEnd();
+        strongEnd();
         println(); br();
         printNbsps();
         printIndexComment(usedClass);
@@ -219,7 +218,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         hr();
         center();
         h2();
-        boldText("doclet.ClassUse_Title", packageLabel, name);
+        strongText("doclet.ClassUse_Title", packageLabel, name);
         h2End();
         centerEnd();
     }
@@ -251,7 +250,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     protected void navLinkClassUse() {
         navCellRevStart();
         fontStyle("NavBarFont1Rev");
-        boldText("doclet.navClassUse");
+        strongText("doclet.navClassUse");
         fontEnd();
         navCellEnd();
     }

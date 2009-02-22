@@ -1279,7 +1279,7 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
     // Visit all children, looking for Phis
     for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
       Node *out = cl->out(i);
-      if (!out->is_Phi())  continue; // Looking for phis
+      if (!out->is_Phi() || out == phi)  continue; // Looking for other phis
       PhiNode* phi2 = out->as_Phi();
       Node *incr2 = phi2->in( LoopNode::LoopBackControl );
       // Look for induction variables of the form:  X += constant
@@ -1387,6 +1387,37 @@ void IdealLoopTree::dump( ) const {
 }
 
 #endif
+
+static void log_loop_tree(IdealLoopTree* root, IdealLoopTree* loop, CompileLog* log) {
+  if (loop == root) {
+    if (loop->_child != NULL) {
+      log->begin_head("loop_tree");
+      log->end_head();
+      if( loop->_child ) log_loop_tree(root, loop->_child, log);
+      log->tail("loop_tree");
+      assert(loop->_next == NULL, "what?");
+    }
+  } else {
+    Node* head = loop->_head;
+    log->begin_head("loop");
+    log->print(" idx='%d' ", head->_idx);
+    if (loop->_irreducible) log->print("irreducible='1' ");
+    if (head->is_Loop()) {
+      if (head->as_Loop()->is_inner_loop()) log->print("inner_loop='1' ");
+      if (head->as_Loop()->is_partial_peel_loop()) log->print("partial_peel_loop='1' ");
+    }
+    if (head->is_CountedLoop()) {
+      CountedLoopNode* cl = head->as_CountedLoop();
+      if (cl->is_pre_loop())  log->print("pre_loop='%d' ",  cl->main_idx());
+      if (cl->is_main_loop()) log->print("main_loop='%d' ", cl->_idx);
+      if (cl->is_post_loop()) log->print("post_loop='%d' ",  cl->main_idx());
+    }
+    log->end_head();
+    if( loop->_child ) log_loop_tree(root, loop->_child, log);
+    log->tail("loop");
+    if( loop->_next  ) log_loop_tree(root, loop->_next, log);
+  }
+}
 
 //=============================================================================
 //------------------------------PhaseIdealLoop---------------------------------
@@ -1624,10 +1655,13 @@ PhaseIdealLoop::PhaseIdealLoop( PhaseIterGVN &igvn, const PhaseIdealLoop *verify
   // Cleanup any modified bits
   _igvn.optimize();
 
-  // Do not repeat loop optimizations if irreducible loops are present
-  // by claiming no-progress.
-  if( _has_irreducible_loops )
-    C->clear_major_progress();
+  // disable assert until issue with split_flow_path is resolved (6742111)
+  // assert(!_has_irreducible_loops || C->parsed_irreducible_loop() || C->is_osr_compilation(),
+  //        "shouldn't introduce irreducible loops");
+
+  if (C->log() != NULL) {
+    log_loop_tree(_ltree_root, _ltree_root, C->log());
+  }
 }
 
 #ifndef PRODUCT
@@ -2620,7 +2654,7 @@ void PhaseIdealLoop::build_loop_late_post( Node *n, const PhaseIdealLoop *verify
     case Op_ModF:
     case Op_ModD:
     case Op_LoadB:              // Same with Loads; they can sink
-    case Op_LoadC:              // during loop optimizations.
+    case Op_LoadUS:             // during loop optimizations.
     case Op_LoadD:
     case Op_LoadF:
     case Op_LoadI:
@@ -2732,11 +2766,7 @@ void PhaseIdealLoop::dump( ) const {
 }
 
 void PhaseIdealLoop::dump( IdealLoopTree *loop, uint idx, Node_List &rpo_list ) const {
-
-  // Indent by loop nesting depth
-  for( uint x = 0; x < loop->_nest; x++ )
-    tty->print("  ");
-  tty->print_cr("---- Loop N%d-N%d ----", loop->_head->_idx,loop->_tail->_idx);
+  loop->dump_head();
 
   // Now scan for CFG nodes in the same loop
   for( uint j=idx; j > 0;  j-- ) {

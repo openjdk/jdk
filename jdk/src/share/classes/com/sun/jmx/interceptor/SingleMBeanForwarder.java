@@ -55,9 +55,19 @@ import javax.management.namespace.JMXNamespaces;
 import javax.management.namespace.MBeanServerSupport;
 import javax.management.remote.IdentityMBeanServerForwarder;
 
+/**
+ * <p>An {@link MBeanServerForwarder} that simulates the existence of a
+ * given MBean.  Requests for that MBean, call it X, are intercepted by the
+ * forwarder, and requests for any other MBean are forwarded to the next
+ * forwarder in the chain.  Requests such as queryNames which can span both the
+ * X and other MBeans are handled by merging the results for X with the results
+ * from the next forwarder, unless the "visible" parameter is false, in which
+ * case X is invisible to such requests.</p>
+ */
 public class SingleMBeanForwarder extends IdentityMBeanServerForwarder {
 
     private final ObjectName mbeanName;
+    private final boolean visible;
     private DynamicMBean mbean;
 
     private MBeanServer mbeanMBS = new MBeanServerSupport() {
@@ -85,10 +95,20 @@ public class SingleMBeanForwarder extends IdentityMBeanServerForwarder {
             return null;
         }
 
+        // This will only be called if mbeanName has an empty domain.
+        // In that case a getAttribute (e.g.) of that name will have the
+        // domain replaced by MBeanServerSupport with the default domain,
+        // so we must be sure that the default domain is empty too.
+        @Override
+        public String getDefaultDomain() {
+            return mbeanName.getDomain();
+        }
     };
 
-    public SingleMBeanForwarder(ObjectName mbeanName, DynamicMBean mbean) {
+    public SingleMBeanForwarder(
+            ObjectName mbeanName, DynamicMBean mbean, boolean visible) {
         this.mbeanName = mbeanName;
+        this.visible = visible;
         setSingleMBean(mbean);
     }
 
@@ -213,8 +233,10 @@ public class SingleMBeanForwarder extends IdentityMBeanServerForwarder {
 
     @Override
     public String[] getDomains() {
-        TreeSet<String> domainSet =
-                new TreeSet<String>(Arrays.asList(super.getDomains()));
+        String[] domains = super.getDomains();
+        if (!visible)
+            return domains;
+        TreeSet<String> domainSet = new TreeSet<String>(Arrays.asList(domains));
         domainSet.add(mbeanName.getDomain());
         return domainSet.toArray(new String[domainSet.size()]);
     }
@@ -222,7 +244,7 @@ public class SingleMBeanForwarder extends IdentityMBeanServerForwarder {
     @Override
     public Integer getMBeanCount() {
         Integer count = super.getMBeanCount();
-        if (!super.isRegistered(mbeanName))
+        if (visible && !super.isRegistered(mbeanName))
             count++;
         return count;
     }
@@ -284,7 +306,7 @@ public class SingleMBeanForwarder extends IdentityMBeanServerForwarder {
      */
     private boolean applies(ObjectName pattern) {
         // we know pattern is not null.
-        if (!pattern.apply(mbeanName))
+        if (!visible || !pattern.apply(mbeanName))
             return false;
 
         final String dompat = pattern.getDomain();
@@ -306,10 +328,12 @@ public class SingleMBeanForwarder extends IdentityMBeanServerForwarder {
     @Override
     public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query) {
         Set<ObjectInstance> names = super.queryMBeans(name, query);
-        if (name == null || applies(name) ) {
-            // Don't assume mbs.queryNames returns a writable set.
-            names = Util.cloneSet(names);
-            names.addAll(mbeanMBS.queryMBeans(name, query));
+        if (visible) {
+            if (name == null || applies(name) ) {
+                // Don't assume mbs.queryNames returns a writable set.
+                names = Util.cloneSet(names);
+                names.addAll(mbeanMBS.queryMBeans(name, query));
+            }
         }
         return names;
     }
@@ -317,10 +341,12 @@ public class SingleMBeanForwarder extends IdentityMBeanServerForwarder {
     @Override
     public Set<ObjectName> queryNames(ObjectName name, QueryExp query) {
         Set<ObjectName> names = super.queryNames(name, query);
-        if (name == null || applies(name)) {
-            // Don't assume mbs.queryNames returns a writable set.
-            names = Util.cloneSet(names);
-            names.addAll(mbeanMBS.queryNames(name, query));
+        if (visible) {
+            if (name == null || applies(name)) {
+                // Don't assume mbs.queryNames returns a writable set.
+                names = Util.cloneSet(names);
+                names.addAll(mbeanMBS.queryNames(name, query));
+            }
         }
         return names;
     }

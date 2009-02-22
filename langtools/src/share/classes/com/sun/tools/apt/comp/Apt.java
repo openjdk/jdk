@@ -281,7 +281,7 @@ public class Apt extends ListBuffer<Env<AttrContext>> {
             // Discovery process
 
             // List of annotation processory factory instances
-            java.util.Iterator providers = null;
+            java.util.Iterator<AnnotationProcessorFactory> providers = null;
             {
                 /*
                  * If a factory is provided by the user, the
@@ -316,8 +316,13 @@ public class Apt extends ListBuffer<Env<AttrContext>> {
                     }
 
                     providers = list.iterator();
-                } else
-                    providers = sun.misc.Service.providers(AnnotationProcessorFactory.class, aptCL);
+                } else {
+                    @SuppressWarnings("unchecked")
+                    Iterator<AnnotationProcessorFactory> iter =
+                            sun.misc.Service.providers(AnnotationProcessorFactory.class, aptCL);
+                    providers = iter;
+
+                }
             }
 
             java.util.Map<AnnotationProcessorFactory, Set<AnnotationTypeDeclaration>> factoryToAnnotation =

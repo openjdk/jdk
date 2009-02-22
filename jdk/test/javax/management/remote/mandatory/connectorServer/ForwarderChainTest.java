@@ -86,16 +86,20 @@ public class ForwarderChainTest {
         test(cs, mbs);
 
         System.out.println("===Remove any leftover forwarders===");
-        while (cs.getSystemMBeanServer() instanceof MBeanServerForwarder) {
-            MBeanServerForwarder mbsf =
-                    (MBeanServerForwarder) cs.getSystemMBeanServer();
-            cs.removeMBeanServerForwarder(mbsf);
+        MBeanServerForwarder systemMBSF = cs.getSystemMBeanServerForwarder();
+        // Real code would just do systemMBSF.setMBeanServer(mbs).
+        while (true) {
+            MBeanServer xmbs = systemMBSF.getMBeanServer();
+            if (!(xmbs instanceof MBeanServerForwarder))
+                break;
+            cs.removeMBeanServerForwarder((MBeanServerForwarder) xmbs);
         }
         expectChain(cs, "U", mbs);
 
         System.out.println("===Ensure forwarders are called===");
         cs.setMBeanServerForwarder(forwarders[0]);
-        cs.setSystemMBeanServerForwarder(forwarders[1]);
+        systemMBSF.setMBeanServer(forwarders[1]);
+        forwarders[1].setMBeanServer(forwarders[0]);
         expectChain(cs, "1U0", mbs);
         cs.start();
         if (forwarders[0].defaultDomainCount != 0 ||
@@ -125,8 +129,8 @@ public class ForwarderChainTest {
     private static void test(JMXConnectorServer cs, MBeanServer end) {
         // A newly-created connector server might have system forwarders,
         // so get rid of those.
-        while (cs.getSystemMBeanServer() != cs.getMBeanServer())
-            cs.removeMBeanServerForwarder((MBeanServerForwarder) cs.getSystemMBeanServer());
+        MBeanServerForwarder systemMBSF = cs.getSystemMBeanServerForwarder();
+        systemMBSF.setMBeanServer(cs.getMBeanServer());
 
         expectChain(cs, "U", end);
 
@@ -139,7 +143,8 @@ public class ForwarderChainTest {
         expectChain(cs, "U10", end);
 
         System.out.println("Add a system forwarder");
-        cs.setSystemMBeanServerForwarder(forwarders[2]);
+        forwarders[2].setMBeanServer(systemMBSF.getMBeanServer());
+        systemMBSF.setMBeanServer(forwarders[2]);
         expectChain(cs, "2U10", end);
 
         System.out.println("Add another user forwarder");
@@ -147,7 +152,8 @@ public class ForwarderChainTest {
         expectChain(cs, "2U310", end);
 
         System.out.println("Add another system forwarder");
-        cs.setSystemMBeanServerForwarder(forwarders[4]);
+        forwarders[4].setMBeanServer(systemMBSF.getMBeanServer());
+        systemMBSF.setMBeanServer(forwarders[4]);
         expectChain(cs, "42U310", end);
 
         System.out.println("Remove the first user forwarder");
@@ -215,9 +221,8 @@ public class ForwarderChainTest {
                     }
                     case 2: { // add it to the system chain
                         System.out.println("Add " + c + " to system chain");
-                        if (cs.getSystemMBeanServer() == null)
-                            mbsf.setMBeanServer(null);
-                        cs.setSystemMBeanServerForwarder(mbsf);
+                        mbsf.setMBeanServer(systemMBSF.getMBeanServer());
+                        systemMBSF.setMBeanServer(mbsf);
                         chain = c + chain;
                         break;
                     }
@@ -240,7 +245,7 @@ public class ForwarderChainTest {
     private static void expectChain(
             JMXConnectorServer cs, String chain, MBeanServer end) {
         System.out.println("...expected chain: " + chain);
-        MBeanServer curr = cs.getSystemMBeanServer();
+        MBeanServer curr = cs.getSystemMBeanServerForwarder().getMBeanServer();
         int i = 0;
         while (i < chain.length()) {
             char c = chain.charAt(i);

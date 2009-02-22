@@ -25,17 +25,13 @@
 
 package sun.java2d.opengl;
 
-import java.awt.AlphaComposite;
-import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Transparency;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
-import java.awt.image.ColorModel;
 import java.lang.ref.WeakReference;
-import sun.awt.image.BufImgSurfaceData;
 import sun.java2d.SurfaceData;
 import sun.java2d.loops.Blit;
 import sun.java2d.loops.CompositeType;
@@ -84,6 +80,8 @@ class OGLBlitLoops {
                                    OGLSurfaceData.PF_INT_BGR),
             new OGLSwToSurfaceBlit(SurfaceType.IntBgrx,
                                    OGLSurfaceData.PF_INT_BGRX),
+            new OGLSwToSurfaceBlit(SurfaceType.ThreeByteBgr,
+                                   OGLSurfaceData.PF_3BYTE_BGR),
             new OGLSwToSurfaceBlit(SurfaceType.Ushort565Rgb,
                                    OGLSurfaceData.PF_USHORT_565_RGB),
             new OGLSwToSurfaceBlit(SurfaceType.Ushort555Rgb,
@@ -106,6 +104,8 @@ class OGLBlitLoops {
                                     OGLSurfaceData.PF_INT_BGR),
             new OGLSwToSurfaceScale(SurfaceType.IntBgrx,
                                     OGLSurfaceData.PF_INT_BGRX),
+            new OGLSwToSurfaceScale(SurfaceType.ThreeByteBgr,
+                                    OGLSurfaceData.PF_3BYTE_BGR),
             new OGLSwToSurfaceScale(SurfaceType.Ushort565Rgb,
                                     OGLSurfaceData.PF_USHORT_565_RGB),
             new OGLSwToSurfaceScale(SurfaceType.Ushort555Rgb,
@@ -127,6 +127,8 @@ class OGLBlitLoops {
                                         OGLSurfaceData.PF_INT_BGR),
             new OGLSwToSurfaceTransform(SurfaceType.IntBgrx,
                                         OGLSurfaceData.PF_INT_BGRX),
+            new OGLSwToSurfaceTransform(SurfaceType.ThreeByteBgr,
+                                        OGLSurfaceData.PF_3BYTE_BGR),
             new OGLSwToSurfaceTransform(SurfaceType.Ushort565Rgb,
                                         OGLSurfaceData.PF_USHORT_565_RGB),
             new OGLSwToSurfaceTransform(SurfaceType.Ushort555Rgb,
@@ -155,6 +157,8 @@ class OGLBlitLoops {
                                    OGLSurfaceData.PF_INT_BGR),
             new OGLSwToTextureBlit(SurfaceType.IntBgrx,
                                    OGLSurfaceData.PF_INT_BGRX),
+            new OGLSwToTextureBlit(SurfaceType.ThreeByteBgr,
+                                   OGLSurfaceData.PF_3BYTE_BGR),
             new OGLSwToTextureBlit(SurfaceType.Ushort565Rgb,
                                    OGLSurfaceData.PF_USHORT_565_RGB),
             new OGLSwToTextureBlit(SurfaceType.Ushort555Rgb,

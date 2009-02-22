@@ -38,7 +38,6 @@ import java.util.logging.Logger;
 
 import javax.management.MBeanServer;
 import javax.management.MBeanServerDelegate;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.QueryExp;
 import javax.management.namespace.JMXDomain;
@@ -248,21 +247,17 @@ class DomainDispatchInterceptor
         if (pattern == null) return true;
         if (pattern.isDomainPattern()) return true;
 
-        try {
-            // case b) above.
-            //
-            // This is a bit of a hack. If there's any chance that a JMXDomain
-            // MBean name is selected by the given pattern then we must include
-            // the local namespace in our search.
-            //
-            // Returning true will have this effect. see 2. above.
-            //
-            if (pattern.apply(ALL_DOMAINS.withDomain(pattern.getDomain())))
-                return true;
-        } catch (MalformedObjectNameException x) {
-            // should not happen
-            throw new IllegalArgumentException(String.valueOf(pattern), x);
-        }
+        // case b) above.
+        //
+        // This is a bit of a hack. If there's any chance that a JMXDomain
+        // MBean name is selected by the given pattern then we must include
+        // the local namespace in our search.
+        //
+        // Returning true will have this effect. see 2. above.
+        //
+        if (pattern.apply(ALL_DOMAINS.withDomain(pattern.getDomain())))
+            return true;
+
         return false;
     }
 
@@ -291,8 +286,7 @@ class DomainDispatchInterceptor
     }
 
     @Override
-    final ObjectName getHandlerNameFor(String key)
-        throws MalformedObjectNameException {
+    final ObjectName getHandlerNameFor(String key) {
         return JMXDomain.getDomainObjectName(key);
     }
 
