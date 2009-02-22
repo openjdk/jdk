@@ -279,7 +279,11 @@ void os::init_system_properties_values() {
  *        ...
  *        7: The default directories, normally /lib and /usr/lib.
  */
+#if defined(AMD64) || defined(_LP64) && (defined(SPARC) || defined(PPC) || defined(S390))
+#define DEFAULT_LIBPATH "/usr/lib64:/lib64:/lib:/usr/lib"
+#else
 #define DEFAULT_LIBPATH "/lib:/usr/lib"
+#endif
 
 #define EXTENSIONS_DIR  "/lib/ext"
 #define ENDORSED_DIR    "/lib/endorsed"
@@ -1160,7 +1164,10 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 
         /*                                     1   1   1   1   1   1   1   1   1   1   2   2   2   2   2   2   2   2   2 */
         /*              3  4  5  6  7  8   9   0   1   2   3   4   5   6   7   8   9   0   1   2   3   4   5   6   7   8 */
-        i = sscanf(s, "%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld %ld %lu %lu %ld %lu %lu %lu %lu",
+        i = sscanf(s, "%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld %ld "
+                   UINTX_FORMAT UINTX_FORMAT UINTX_FORMAT
+                   " %lu "
+                   UINTX_FORMAT UINTX_FORMAT UINTX_FORMAT,
              &state,          /* 3  %c  */
              &ppid,           /* 4  %d  */
              &pgrp,           /* 5  %d  */
@@ -1180,13 +1187,13 @@ void os::Linux::capture_initial_stack(size_t max_size) {
              &nice,           /* 19 %ld  */
              &junk,           /* 20 %ld  */
              &it_real,        /* 21 %ld  */
-             &start,          /* 22 %lu  */
-             &vsize,          /* 23 %lu  */
-             &rss,            /* 24 %ld  */
+             &start,          /* 22 UINTX_FORMAT  */
+             &vsize,          /* 23 UINTX_FORMAT  */
+             &rss,            /* 24 UINTX_FORMAT  */
              &rsslim,         /* 25 %lu  */
-             &scodes,         /* 26 %lu  */
-             &ecode,          /* 27 %lu  */
-             &stack_start);   /* 28 %lu  */
+             &scodes,         /* 26 UINTX_FORMAT  */
+             &ecode,          /* 27 UINTX_FORMAT  */
+             &stack_start);   /* 28 UINTX_FORMAT  */
       }
 
       if (i != 28 - 2) {
@@ -1259,6 +1266,17 @@ jlong os::elapsed_counter() {
 
 jlong os::elapsed_frequency() {
   return (1000 * 1000);
+}
+
+// For now, we say that linux does not support vtime.  I have no idea
+// whether it can actually be made to (DLD, 9/13/05).
+
+bool os::supports_vtime() { return false; }
+bool os::enable_vtime()   { return false; }
+bool os::vtime_enabled()  { return false; }
+double os::elapsedVTime() {
+  // better than nothing, but not much
+  return elapsedTime();
 }
 
 jlong os::javaTimeMillis() {
@@ -1412,6 +1430,10 @@ char * os::local_time_string(char *buf, size_t buflen) {
                t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
                t.tm_hour, t.tm_min, t.tm_sec);
   return buf;
+}
+
+struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
+  return localtime_r(clock, res);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2013,7 +2035,8 @@ void os::jvm_path(char *buf, jint len) {
                 CAST_FROM_FN_PTR(address, os::jvm_path),
                 dli_fname, sizeof(dli_fname), NULL);
   assert(ret != 0, "cannot locate libjvm");
-  realpath(dli_fname, buf);
+  if (realpath(dli_fname, buf) == NULL)
+    return;
 
   if (strcmp(Arguments::sun_java_launcher(), "gamma") == 0) {
     // Support for the gamma launcher.  Typical value for buf is
@@ -2037,7 +2060,8 @@ void os::jvm_path(char *buf, jint len) {
         assert(strstr(p, "/libjvm") == p, "invalid library name");
         p = strstr(p, "_g") ? "_g" : "";
 
-        realpath(java_home_var, buf);
+        if (realpath(java_home_var, buf) == NULL)
+          return;
         sprintf(buf + strlen(buf), "/jre/lib/%s", cpu_arch);
         if (0 == access(buf, F_OK)) {
           // Use current module name "libjvm[_g].so" instead of
@@ -2048,7 +2072,8 @@ void os::jvm_path(char *buf, jint len) {
           sprintf(buf + strlen(buf), "/hotspot/libjvm%s.so", p);
         } else {
           // Go back to path of .so
-          realpath(dli_fname, buf);
+          if (realpath(dli_fname, buf) == NULL)
+            return;
         }
       }
     }
@@ -2261,7 +2286,9 @@ void os::free_memory(char *addr, size_t bytes) {
   uncommit_memory(addr, bytes);
 }
 
-void os::numa_make_global(char *addr, size_t bytes)    { }
+void os::numa_make_global(char *addr, size_t bytes) {
+  Linux::numa_interleave_memory(addr, bytes);
+}
 
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint) {
   Linux::numa_tonode_memory(addr, bytes, lgrp_hint);
@@ -2303,7 +2330,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 extern "C" void numa_warn(int number, char *where, ...) { }
 extern "C" void numa_error(char *where) { }
 
-void os::Linux::libnuma_init() {
+bool os::Linux::libnuma_init() {
   // sched_getcpu() should be in libc.
   set_sched_getcpu(CAST_TO_FN_PTR(sched_getcpu_func_t,
                                   dlsym(RTLD_DEFAULT, "sched_getcpu")));
@@ -2319,31 +2346,51 @@ void os::Linux::libnuma_init() {
                                         dlsym(handle, "numa_available")));
       set_numa_tonode_memory(CAST_TO_FN_PTR(numa_tonode_memory_func_t,
                                             dlsym(handle, "numa_tonode_memory")));
+      set_numa_interleave_memory(CAST_TO_FN_PTR(numa_interleave_memory_func_t,
+                                            dlsym(handle, "numa_interleave_memory")));
+
+
       if (numa_available() != -1) {
+        set_numa_all_nodes((unsigned long*)dlsym(handle, "numa_all_nodes"));
         // Create a cpu -> node mapping
         _cpu_to_node = new (ResourceObj::C_HEAP) GrowableArray<int>(0, true);
         rebuild_cpu_to_node_map();
+        return true;
       }
     }
   }
+  return false;
 }
 
 // rebuild_cpu_to_node_map() constructs a table mapping cpud id to node id.
 // The table is later used in get_node_by_cpu().
 void os::Linux::rebuild_cpu_to_node_map() {
-  int cpu_num = os::active_processor_count();
+  const size_t NCPUS = 32768; // Since the buffer size computation is very obscure
+                              // in libnuma (possible values are starting from 16,
+                              // and continuing up with every other power of 2, but less
+                              // than the maximum number of CPUs supported by kernel), and
+                              // is a subject to change (in libnuma version 2 the requirements
+                              // are more reasonable) we'll just hardcode the number they use
+                              // in the library.
+  const size_t BitsPerCLong = sizeof(long) * CHAR_BIT;
+
+  size_t cpu_num = os::active_processor_count();
+  size_t cpu_map_size = NCPUS / BitsPerCLong;
+  size_t cpu_map_valid_size =
+    MIN2((cpu_num + BitsPerCLong - 1) / BitsPerCLong, cpu_map_size);
+
   cpu_to_node()->clear();
   cpu_to_node()->at_grow(cpu_num - 1);
-  int node_num = numa_get_groups_num();
-  int cpu_map_size = (cpu_num + BitsPerLong - 1) / BitsPerLong;
+  size_t node_num = numa_get_groups_num();
+
   unsigned long *cpu_map = NEW_C_HEAP_ARRAY(unsigned long, cpu_map_size);
-  for (int i = 0; i < node_num; i++) {
+  for (size_t i = 0; i < node_num; i++) {
     if (numa_node_to_cpus(i, cpu_map, cpu_map_size * sizeof(unsigned long)) != -1) {
-      for (int j = 0; j < cpu_map_size; j++) {
+      for (size_t j = 0; j < cpu_map_valid_size; j++) {
         if (cpu_map[j] != 0) {
-          for (int k = 0; k < BitsPerLong; k++) {
+          for (size_t k = 0; k < BitsPerCLong; k++) {
             if (cpu_map[j] & (1UL << k)) {
-              cpu_to_node()->at_put(j * BitsPerLong + k, i);
+              cpu_to_node()->at_put(j * BitsPerCLong + k, i);
             }
           }
         }
@@ -2366,7 +2413,8 @@ os::Linux::numa_node_to_cpus_func_t os::Linux::_numa_node_to_cpus;
 os::Linux::numa_max_node_func_t os::Linux::_numa_max_node;
 os::Linux::numa_available_func_t os::Linux::_numa_available;
 os::Linux::numa_tonode_memory_func_t os::Linux::_numa_tonode_memory;
-
+os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;
+unsigned long* os::Linux::_numa_all_nodes;
 
 bool os::uncommit_memory(char* addr, size_t size) {
   return ::mmap(addr, size,
@@ -2466,7 +2514,7 @@ bool os::guard_memory(char* addr, size_t size) {
 }
 
 bool os::unguard_memory(char* addr, size_t size) {
-  return linux_mprotect(addr, size, PROT_READ|PROT_WRITE|PROT_EXEC);
+  return linux_mprotect(addr, size, PROT_READ|PROT_WRITE);
 }
 
 // Large page support
@@ -3684,7 +3732,17 @@ jint os::init_2(void)
   }
 
   if (UseNUMA) {
-    Linux::libnuma_init();
+    if (!Linux::libnuma_init()) {
+      UseNUMA = false;
+    } else {
+      if ((Linux::numa_max_node() < 1)) {
+        // There's only one node(they start from 0), disable NUMA.
+        UseNUMA = false;
+      }
+    }
+    if (!UseNUMA && ForceNUMA) {
+      UseNUMA = true;
+    }
   }
 
   if (MaxFDLimit) {
@@ -4140,11 +4198,11 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   // Skip blank chars
   do s++; while (isspace(*s));
 
-  count = sscanf(s,"%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu",
-                 &idummy, &idummy, &idummy, &idummy, &idummy, &idummy,
+  count = sscanf(s,"%*c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu",
+                 &idummy, &idummy, &idummy, &idummy, &idummy,
                  &ldummy, &ldummy, &ldummy, &ldummy, &ldummy,
                  &user_time, &sys_time);
-  if ( count != 13 ) return -1;
+  if ( count != 12 ) return -1;
   if (user_sys_cpu_time) {
     return ((jlong)sys_time + (jlong)user_time) * (1000000000 / clock_tics_per_sec);
   } else {

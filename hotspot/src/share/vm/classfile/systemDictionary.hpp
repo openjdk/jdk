@@ -228,6 +228,16 @@ public:
                                Handle class_loader,
                                Handle protection_domain,
                                ClassFileStream* st,
+                               TRAPS) {
+    KlassHandle nullHandle;
+    return parse_stream(class_name, class_loader, protection_domain, st, nullHandle, NULL, THREAD);
+  }
+  static klassOop parse_stream(symbolHandle class_name,
+                               Handle class_loader,
+                               Handle protection_domain,
+                               ClassFileStream* st,
+                               KlassHandle host_klass,
+                               GrowableArray<Handle>* cp_patches,
                                TRAPS);
 
   // Resolve from stream (called by jni_DefineClass and JVM_DefineClass)
@@ -516,6 +526,7 @@ private:
   static instanceKlassHandle load_instance_class(symbolHandle class_name, Handle class_loader, TRAPS);
   static Handle compute_loader_lock_object(Handle class_loader, TRAPS);
   static void check_loader_lock_contention(Handle loader_lock, TRAPS);
+  static bool is_parallelCapable(Handle class_loader);
 
   static klassOop find_shared_class(symbolHandle class_name);
 

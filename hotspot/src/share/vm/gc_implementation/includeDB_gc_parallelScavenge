@@ -150,7 +150,6 @@ parallelScavengeHeap.hpp                psPermGen.hpp
 parallelScavengeHeap.hpp                psYoungGen.hpp
 parallelScavengeHeap.hpp                ostream.hpp
 
-parMarkBitMap.cpp			bitMap.hpp
 parMarkBitMap.cpp			bitMap.inline.hpp
 parMarkBitMap.cpp			oop.inline.hpp
 parMarkBitMap.cpp			os.hpp
@@ -159,7 +158,6 @@ parMarkBitMap.cpp			parMarkBitMap.hpp
 parMarkBitMap.cpp			parMarkBitMap.inline.hpp
 parMarkBitMap.cpp                       psParallelCompact.hpp
 
-parMarkBitMap.hpp			bitMap.hpp
 parMarkBitMap.hpp			bitMap.inline.hpp
 parMarkBitMap.hpp			psVirtualspace.hpp
 
@@ -304,6 +302,8 @@ psOldGen.hpp                         	safepoint.hpp
 psOldGen.hpp                            spaceCounters.hpp
 
 psPermGen.cpp                           gcUtil.hpp
+psPermGen.cpp                           markOop.inline.hpp
+psPermGen.cpp                           markSweep.inline.hpp
 psPermGen.cpp                           parallelScavengeHeap.hpp
 psPermGen.cpp                           psMarkSweepDecorator.hpp
 psPermGen.cpp                           psParallelCompact.hpp

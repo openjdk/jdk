@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.management.ClientContext;
 import javax.management.JMException;
 import javax.management.MBeanRegistration;
 import javax.management.MBeanServer;
@@ -61,11 +62,6 @@ import javax.management.remote.JMXServiceURL;
  * @author dfuchs
  */
 public class JMXNamespaceViewTest {
-
-    // TODO: Remove this when contexts are added.
-    public static class ClientContext {
-        public final static String NAMESPACE = "jmx.context";
-    }
 
     /**
      * Describe the configuration of a namespace

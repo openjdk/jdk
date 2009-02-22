@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,6 @@ class ADLParser {
 protected:
   char     *_curline;           // Start of current line
   char     *_ptr;               // Pointer into current location in File Buffer
-  int       _linenum;           // Count of line numbers seen so far
   char      _curchar;           // Current character from buffer
   FormDict &_globalNames;       // Global names
 
@@ -94,6 +93,7 @@ protected:
   void pipe_parse(void);        // Parse pipeline section
   void definitions_parse(void); // Parse definitions section
   void peep_parse(void);        // Parse peephole rule definitions
+  void preproc_line(void);      // Parse a #line statement
   void preproc_define(void);    // Parse a #define statement
   void preproc_undef(void);     // Parse an #undef statement
 
@@ -160,9 +160,10 @@ protected:
   Interface     *interface_parse();      // Parse operand interface rule
   Interface     *mem_interface_parse();  // Parse memory interface rule
   Interface     *cond_interface_parse(); // Parse conditional interface rule
-  char          *interface_field_parse();// Parse field contents
+  char          *interface_field_parse(const char** format = NULL);// Parse field contents
 
   FormatRule    *format_parse(void);     // Parse format rule
+  FormatRule    *template_parse(void);     // Parse format rule
   void           effect_parse(InstructForm *instr); // Parse effect rule
   ExpandRule    *expand_parse(InstructForm *instr); // Parse expand rule
   RewriteRule   *rewrite_parse(void);    // Parse rewrite rule
@@ -226,7 +227,7 @@ protected:
   void  get_effectlist(FormDict &effects, FormDict &operands); // Parse effect-operand pairs
   // Return the contents of a parenthesized expression.
   // Requires initial '(' and consumes final ')', which is replaced by '\0'.
-  char *get_paren_expr(const char *description);
+  char *get_paren_expr(const char *description, bool include_location = false);
   // Return expression up to next stop-char, which terminator replaces.
   // Does not require initial '('.  Does not consume final stop-char.
   // Final stop-char is left in _curchar, but is also is replaced by '\0'.
@@ -234,6 +235,11 @@ protected:
   char *find_cpp_block(const char *description); // Parse a C++ code block
   // Issue parser error message & go to EOL
   void parse_err(int flag, const char *fmt, ...);
+  // Create a location marker for this file and line.
+  char *get_line_string(int linenum = 0);
+  // Return a location marker which tells the C preprocessor to
+  // forget the previous location marker.  (Requires awk postprocessing.)
+  char *end_line_marker() { return (char*)"\n#line 999999\n"; }
 
   // Return pointer to current character
   inline char  cur_char(void);
@@ -263,10 +269,11 @@ public:
 
   void parse(void);             // Do the parsing & build forms lists
 
-  int getlines( ) { return _linenum; }
+  int linenum() { return _buf.linenum(); }
 
   static bool is_literal_constant(const char *hex_string);
   static bool is_hex_digit(char digit);
   static bool is_int_token(const char* token, int& intval);
+  static bool equivalent_expressions(const char* str1, const char* str2);
   static void trim(char* &token);  // trim leading & trailing spaces
 };

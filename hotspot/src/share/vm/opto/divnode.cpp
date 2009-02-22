@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,10 +110,13 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
     } else if( dividend->Opcode() == Op_AndI ) {
       // An AND mask of sufficient size clears the low bits and
       // I can avoid rounding.
-      const TypeInt *andconi = phase->type( dividend->in(2) )->isa_int();
-      if( andconi && andconi->is_con(-d) ) {
-        dividend = dividend->in(1);
-        needs_rounding = false;
+      const TypeInt *andconi_t = phase->type( dividend->in(2) )->isa_int();
+      if( andconi_t && andconi_t->is_con() ) {
+        jint andconi = andconi_t->get_con();
+        if( andconi < 0 && is_power_of_2(-andconi) && (-andconi) >= d ) {
+          dividend = dividend->in(1);
+          needs_rounding = false;
+        }
       }
     }
 
@@ -241,42 +244,73 @@ static bool magic_long_divide_constants(jlong d, jlong &M, jint &s) {
 
 //---------------------long_by_long_mulhi--------------------------------------
 // Generate ideal node graph for upper half of a 64 bit x 64 bit multiplication
-static Node *long_by_long_mulhi( PhaseGVN *phase, Node *dividend, jlong magic_const) {
+static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_const) {
   // If the architecture supports a 64x64 mulhi, there is
   // no need to synthesize it in ideal nodes.
   if (Matcher::has_match_rule(Op_MulHiL)) {
-    Node *v = phase->longcon(magic_const);
+    Node* v = phase->longcon(magic_const);
     return new (phase->C, 3) MulHiLNode(dividend, v);
   }
 
+  // Taken from Hacker's Delight, Fig. 8-2. Multiply high signed.
+  // (http://www.hackersdelight.org/HDcode/mulhs.c)
+  //
+  // int mulhs(int u, int v) {
+  //    unsigned u0, v0, w0;
+  //    int u1, v1, w1, w2, t;
+  //
+  //    u0 = u & 0xFFFF;  u1 = u >> 16;
+  //    v0 = v & 0xFFFF;  v1 = v >> 16;
+  //    w0 = u0*v0;
+  //    t  = u1*v0 + (w0 >> 16);
+  //    w1 = t & 0xFFFF;
+  //    w2 = t >> 16;
+  //    w1 = u0*v1 + w1;
+  //    return u1*v1 + w2 + (w1 >> 16);
+  // }
+  //
+  // Note: The version above is for 32x32 multiplications, while the
+  // following inline comments are adapted to 64x64.
+
   const int N = 64;
 
-  Node *u_hi = phase->transform(new (phase->C, 3) RShiftLNode(dividend, phase->intcon(N / 2)));
-  Node *u_lo = phase->transform(new (phase->C, 3) AndLNode(dividend, phase->longcon(0xFFFFFFFF)));
+  // u0 = u & 0xFFFFFFFF;  u1 = u >> 32;
+  Node* u0 = phase->transform(new (phase->C, 3) AndLNode(dividend, phase->longcon(0xFFFFFFFF)));
+  Node* u1 = phase->transform(new (phase->C, 3) RShiftLNode(dividend, phase->intcon(N / 2)));
 
-  Node *v_hi = phase->longcon(magic_const >> N/2);
-  Node *v_lo = phase->longcon(magic_const & 0XFFFFFFFF);
+  // v0 = v & 0xFFFFFFFF;  v1 = v >> 32;
+  Node* v0 = phase->longcon(magic_const & 0xFFFFFFFF);
+  Node* v1 = phase->longcon(magic_const >> (N / 2));
 
-  Node *hihi_product = phase->transform(new (phase->C, 3) MulLNode(u_hi, v_hi));
-  Node *hilo_product = phase->transform(new (phase->C, 3) MulLNode(u_hi, v_lo));
-  Node *lohi_product = phase->transform(new (phase->C, 3) MulLNode(u_lo, v_hi));
-  Node *lolo_product = phase->transform(new (phase->C, 3) MulLNode(u_lo, v_lo));
+  // w0 = u0*v0;
+  Node* w0 = phase->transform(new (phase->C, 3) MulLNode(u0, v0));
 
-  Node *t1 = phase->transform(new (phase->C, 3) URShiftLNode(lolo_product, phase->intcon(N / 2)));
-  Node *t2 = phase->transform(new (phase->C, 3) AddLNode(hilo_product, t1));
+  // t = u1*v0 + (w0 >> 32);
+  Node* u1v0 = phase->transform(new (phase->C, 3) MulLNode(u1, v0));
+  Node* temp = phase->transform(new (phase->C, 3) URShiftLNode(w0, phase->intcon(N / 2)));
+  Node* t    = phase->transform(new (phase->C, 3) AddLNode(u1v0, temp));
 
-  // Construct both t3 and t4 before transforming so t2 doesn't go dead
-  // prematurely.
-  Node *t3 = new (phase->C, 3) RShiftLNode(t2, phase->intcon(N / 2));
-  Node *t4 = new (phase->C, 3) AndLNode(t2, phase->longcon(0xFFFFFFFF));
-  t3 = phase->transform(t3);
-  t4 = phase->transform(t4);
+  // w1 = t & 0xFFFFFFFF;
+  Node* w1 = new (phase->C, 3) AndLNode(t, phase->longcon(0xFFFFFFFF));
 
-  Node *t5 = phase->transform(new (phase->C, 3) AddLNode(t4, lohi_product));
-  Node *t6 = phase->transform(new (phase->C, 3) RShiftLNode(t5, phase->intcon(N / 2)));
-  Node *t7 = phase->transform(new (phase->C, 3) AddLNode(t3, hihi_product));
+  // w2 = t >> 32;
+  Node* w2 = new (phase->C, 3) RShiftLNode(t, phase->intcon(N / 2));
 
-  return new (phase->C, 3) AddLNode(t7, t6);
+  // 6732154: Construct both w1 and w2 before transforming, so t
+  // doesn't go dead prematurely.
+  w1 = phase->transform(w1);
+  w2 = phase->transform(w2);
+
+  // w1 = u0*v1 + w1;
+  Node* u0v1 = phase->transform(new (phase->C, 3) MulLNode(u0, v1));
+  w1         = phase->transform(new (phase->C, 3) AddLNode(u0v1, w1));
+
+  // return u1*v1 + w2 + (w1 >> 32);
+  Node* u1v1  = phase->transform(new (phase->C, 3) MulLNode(u1, v1));
+  Node* temp1 = phase->transform(new (phase->C, 3) AddLNode(u1v1, w2));
+  Node* temp2 = phase->transform(new (phase->C, 3) RShiftLNode(w1, phase->intcon(N / 2)));
+
+  return new (phase->C, 3) AddLNode(temp1, temp2);
 }
 
 
@@ -316,10 +350,13 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
     } else if( dividend->Opcode() == Op_AndL ) {
       // An AND mask of sufficient size clears the low bits and
       // I can avoid rounding.
-      const TypeLong *andconl = phase->type( dividend->in(2) )->isa_long();
-      if( andconl && andconl->is_con(-d)) {
-        dividend = dividend->in(1);
-        needs_rounding = false;
+      const TypeLong *andconl_t = phase->type( dividend->in(2) )->isa_long();
+      if( andconl_t && andconl_t->is_con() ) {
+        jlong andconl = andconl_t->get_con();
+        if( andconl < 0 && is_power_of_2_long(-andconl) && (-andconl) >= d ) {
+          dividend = dividend->in(1);
+          needs_rounding = false;
+        }
       }
     }
 
@@ -704,11 +741,18 @@ const Type *DivDNode::Value( PhaseTransform *phase ) const {
   if( t2 == TypeD::ONE )
     return t1;
 
-  // If divisor is a constant and not zero, divide them numbers
-  if( t1->base() == Type::DoubleCon &&
-      t2->base() == Type::DoubleCon &&
-      t2->getd() != 0.0 ) // could be negative zero
-    return TypeD::make( t1->getd()/t2->getd() );
+#if defined(IA32)
+  if (!phase->C->method()->is_strict())
+    // Can't trust native compilers to properly fold strict double
+    // division with round-to-zero on this platform.
+#endif
+    {
+      // If divisor is a constant and not zero, divide them numbers
+      if( t1->base() == Type::DoubleCon &&
+          t2->base() == Type::DoubleCon &&
+          t2->getd() != 0.0 ) // could be negative zero
+        return TypeD::make( t1->getd()/t2->getd() );
+    }
 
   // If the dividend is a constant zero
   // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
@@ -963,7 +1007,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Expand mod
   if( con >= 0 && con < max_jlong && is_power_of_2_long(con+1) ) {
-    uint k = log2_long(con);       // Extract k
+    uint k = exact_log2_long(con+1);  // Extract k
 
     // Basic algorithm by David Detlefs.  See fastmod_long.java for gory details.
     // Used to help a popular random number generator which does a long-mod

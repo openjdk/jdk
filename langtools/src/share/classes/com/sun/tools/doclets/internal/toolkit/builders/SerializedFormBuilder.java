@@ -130,7 +130,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * Build the serialized form.
      */
-    public void buildSerializedForm(List elements) throws Exception {
+    public void buildSerializedForm(List<?> elements) throws Exception {
         build(elements);
         writer.close();
     }
@@ -138,7 +138,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * {@inheritDoc}
      */
-    public void invokeMethod(String methodName, Class[] paramClasses,
+    public void invokeMethod(String methodName, Class<?>[] paramClasses,
             Object[] params)
     throws Exception {
         if (DEBUG) {
@@ -159,7 +159,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * Build the contents.
      */
-    public void buildSerializedFormSummaries(List elements) {
+    public void buildSerializedFormSummaries(List<?> elements) {
         PackageDoc[] packages = configuration.packages;
         for (int i = 0; i < packages.length; i++) {
             currentPackage = packages[i];
@@ -170,7 +170,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * Build the package serialized for for the current package being processed.
      */
-    public void buildPackageSerializedForm(List elements) {
+    public void buildPackageSerializedForm(List<?> elements) {
         String foo = currentPackage.name();
         ClassDoc[] classes = currentPackage.allClasses(false);
         if (classes == null || classes.length == 0) {
@@ -189,7 +189,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
         writer.writePackageHeader(Util.getPackageName(currentPackage));
     }
 
-    public void buildClassSerializedForm(List elements) {
+    public void buildClassSerializedForm(List<?> elements) {
         ClassDoc[] classes = currentPackage.allClasses(false);
         Arrays.sort(classes);
         for (int j = 0; j < classes.length; j++) {
@@ -368,7 +368,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * build the information for the method.
      */
-    public void buildMethodInfo(List elements)  {
+    public void buildMethodInfo(List<?> elements)  {
         if(configuration.nocomment){
             return;
         }
@@ -402,7 +402,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
     public void buildFieldSerializationOverview(ClassDoc classDoc) {
         if (classDoc.definesSerializableFields()) {
             FieldDoc serialPersistentField =
-                (FieldDoc)((Util.asList(classDoc.serializableFields()).get(0)));
+                Util.asList(classDoc.serializableFields()).get(0);
             String comment = serialPersistentField.commentText();
             if (comment.length() > 0) {
                 fieldWriter.writeHeader(
@@ -478,7 +478,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
      * Build the summaries for the methods that belong to the given
      * class.
      */
-    public void buildSerializableMethods(List elements) {
+    public void buildSerializableMethods(List<?> elements) {
         MemberDoc[] members = currentClass.serializationMethods();
         if (members.length > 0) {
             for (int i = 0; i < members.length; i++) {
@@ -492,7 +492,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
      * Build the summaries for the fields that belong to the given
      * class.
      */
-    public void buildSerializableFields(List elements) {
+    public void buildSerializableFields(List<?> elements) {
         MemberDoc[] members = currentClass.serializableFields();
         if (members.length > 0) {
             for (int i = 0; i < members.length; i++) {

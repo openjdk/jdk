@@ -63,7 +63,14 @@ import java.beans.BeanInfo;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.management.AttributeNotFoundException;
+import javax.management.JMX;
+import javax.management.ObjectName;
+import javax.management.ObjectNameTemplate;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.MXBeanMappingFactory;
 
@@ -75,7 +82,13 @@ import javax.management.openmbean.MXBeanMappingFactory;
  */
 public class Introspector {
 
-
+    /**
+     * Pattern used to extract Attribute Names from ObjectNameTemplate Annotation
+     * For example, in the following example, the Name attribute value is
+     * retrieved : ":type=MyType, name={Name}"
+     */
+    private static Pattern OBJECT_NAME_PATTERN_TEMPLATE =
+            Pattern.compile("(\\{[^\\}]+\\})|(=\"\\{[^\\}]+\\}\")");
      /*
      * ------------------------------------------
      *  PRIVATE CONSTRUCTORS
@@ -115,7 +128,7 @@ public class Introspector {
      *         Dynamic MBeans, <code>false</code> otherwise.
      *
      **/
-    public static final boolean isDynamic(final Class c) {
+    public static final boolean isDynamic(final Class<?> c) {
         // Check if the MBean implements the DynamicMBean interface
         return javax.management.DynamicMBean.class.isAssignableFrom(c);
     }
@@ -134,7 +147,7 @@ public class Introspector {
      *            MBeanServer.
      *
      **/
-    public static void testCreation(Class c)
+    public static void testCreation(Class<?> c)
         throws NotCompliantMBeanException {
         // Check if the class is a concrete class
         final int mods = c.getModifiers();
@@ -143,7 +156,7 @@ public class Introspector {
         }
 
         // Check if the MBean has a public constructor
-        final Constructor[] consList = c.getConstructors();
+        final Constructor<?>[] consList = c.getConstructors();
         if (consList.length == 0) {
             throw new NotCompliantMBeanException("MBean class must have public constructor");
         }
@@ -253,7 +266,7 @@ public class Introspector {
      * @exception NotCompliantMBeanException The specified class is not a
      *            JMX compliant MBean
      */
-    public static MBeanInfo testCompliance(Class baseClass)
+    public static MBeanInfo testCompliance(Class<?> baseClass)
         throws NotCompliantMBeanException {
 
         // ------------------------------
@@ -267,7 +280,7 @@ public class Introspector {
         return testCompliance(baseClass, null);
     }
 
-    public static void testComplianceMXBeanInterface(Class interfaceClass,
+    public static void testComplianceMXBeanInterface(Class<?> interfaceClass,
                                                      MXBeanMappingFactory factory)
             throws NotCompliantMBeanException {
         MXBeanIntrospector.getInstance(factory).getAnalyzer(interfaceClass);
@@ -389,6 +402,42 @@ public class Introspector {
             return getStandardMBeanInterface(baseClass);
     }
 
+    public static ObjectName templateToObjectName(Descriptor descriptor,
+            DynamicMBean mbean)
+            throws NotCompliantMBeanException {
+        String template = (String)
+            descriptor.getFieldValue(JMX.OBJECT_NAME_TEMPLATE);
+        if(template == null) return null;
+        try {
+            Matcher m = OBJECT_NAME_PATTERN_TEMPLATE.matcher(template);
+            while (m.find()){
+                String grp = m.group();
+                System.out.println("GROUP " + grp);
+                String attributeName = null;
+                boolean quote = false;
+                if(grp.startsWith("=\"{")) {
+                    attributeName = grp.substring(3, grp.length() - 2);
+                    quote = true;
+                } else
+                    attributeName = grp.substring(1, grp.length() - 1);
+
+                Object attributeValue = mbean.getAttribute(attributeName);
+                String validValue = quote ?
+                    "=" + ObjectName.quote(attributeValue.toString()) :
+                    attributeValue.toString();
+                template = template.replace(grp, validValue);
+            }
+            return new ObjectName(template);
+        }catch(Exception ex) {
+            NotCompliantMBeanException ncex = new
+                    NotCompliantMBeanException(ObjectNameTemplate.class.
+                    getSimpleName() + " annotation value [" + template + "] " +
+                    "is invalid. " + ex);
+            ncex.initCause(ex);
+            throw ncex;
+        }
+    }
+
     /*
      * ------------------------------------------
      *  PRIVATE METHODS
@@ -462,11 +511,31 @@ public class Introspector {
         return null;
     }
 
-    public static Descriptor descriptorForElement(final AnnotatedElement elmt) {
+    public static Descriptor descriptorForElement(final AnnotatedElement elmt,
+            boolean isSetter) {
         if (elmt == null)
             return ImmutableDescriptor.EMPTY_DESCRIPTOR;
         final Annotation[] annots = elmt.getAnnotations();
-        return descriptorForAnnotations(annots);
+        Descriptor descr = descriptorForAnnotations(annots);
+        String[] exceptions = {};
+        if(elmt instanceof Method)
+            exceptions = getAllExceptions(((Method) elmt).getExceptionTypes());
+        else
+            if(elmt instanceof Constructor<?>)
+                exceptions = getAllExceptions(((Constructor<?>) elmt).
+                        getExceptionTypes());
+
+        if(exceptions.length > 0 ) {
+            String fieldName = isSetter ? JMX.SET_EXCEPTIONS_FIELD :
+                JMX.EXCEPTIONS_FIELD;
+
+            String[] fieldNames = {fieldName};
+            Object[] fieldValues = {exceptions};
+            descr = ImmutableDescriptor.union(descr,
+                    new ImmutableDescriptor(fieldNames, fieldValues));
+        }
+
+        return descr;
     }
 
     public static Descriptor descriptorForAnnotation(Annotation annot) {
@@ -487,6 +556,20 @@ public class Introspector {
             return ImmutableDescriptor.EMPTY_DESCRIPTOR;
         else
             return new ImmutableDescriptor(descriptorMap);
+    }
+
+    /**
+     * Array of thrown excepions.
+     * @param exceptions can be null;
+     * @return An Array of Exception class names. Size is 0 if method is null.
+     */
+    private static String[] getAllExceptions(Class<?>[] exceptions) {
+        Set<String> set = new LinkedHashSet<String>();
+        for(Class<?>ex : exceptions)
+            set.add(ex.getName());
+
+        String[] arr = new String[set.size()];
+        return set.toArray(arr);
     }
 
     private static void addDescriptorFieldsToMap(
@@ -596,10 +679,10 @@ public class Introspector {
                 ss[i] = (String) annotationToField(xx[i]);
             return ss;
         }
-        if (x instanceof Class)
+        if (x instanceof Class<?>)
             return ((Class<?>) x).getName();
-        if (x instanceof Enum)
-            return ((Enum) x).name();
+        if (x instanceof Enum<?>)
+            return ((Enum<?>) x).name();
         // The only other possibility is that the value is another
         // annotation, or that the language has evolved since this code
         // was written.  We don't allow for either of those currently.

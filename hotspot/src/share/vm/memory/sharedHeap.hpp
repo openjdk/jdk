@@ -44,6 +44,9 @@ class KlassHandle;
 class SharedHeap : public CollectedHeap {
   friend class VMStructs;
 
+  friend class VM_GC_Operation;
+  friend class VM_CGC_Operation;
+
 private:
   // For claiming strong_roots tasks.
   SubTasksDone* _process_strong_tasks;
@@ -82,6 +85,14 @@ protected:
   // function.
   SharedHeap(CollectorPolicy* policy_);
 
+  // Returns true if the calling thread holds the heap lock,
+  // or the calling thread is a par gc thread and the heap_lock is held
+  // by the vm thread doing a gc operation.
+  bool heap_lock_held_for_gc();
+  // True if the heap_lock is held by the a non-gc thread invoking a gc
+  // operation.
+  bool _thread_holds_heap_lock_for_gc;
+
 public:
   static SharedHeap* heap() { return _sh; }
 
@@ -96,14 +107,6 @@ public:
   virtual void ref_processing_init();
 
   void set_perm(PermGen* perm_gen) { _perm_gen = perm_gen; }
-
-  // A helper function that fills an allocated-but-not-yet-initialized
-  // region with a garbage object.
-  static void fill_region_with_object(MemRegion mr);
-
-  // Minimum garbage fill object size
-  static size_t min_fill_size()          { return (size_t)align_object_size(oopDesc::header_size()); }
-  static size_t min_fill_size_in_bytes() { return min_fill_size() * HeapWordSize; }
 
   // This function returns the "GenRemSet" object that allows us to scan
   // generations; at least the perm gen, possibly more in a fully
@@ -214,13 +217,12 @@ public:
   // "SharedHeap" can use in the implementation of its virtual
   // functions.
 
-protected:
+public:
 
   // Do anything common to GC's.
   virtual void gc_prologue(bool full) = 0;
   virtual void gc_epilogue(bool full) = 0;
 
-public:
   //
   // New methods from CollectedHeap
   //
@@ -266,7 +268,8 @@ public:
   }
 
   // Some utilities.
-  void print_size_transition(size_t bytes_before,
+  void print_size_transition(outputStream* out,
+                             size_t bytes_before,
                              size_t bytes_after,
                              size_t capacity);
 };

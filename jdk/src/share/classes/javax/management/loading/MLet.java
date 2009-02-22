@@ -1165,9 +1165,10 @@ public class MLet extends java.net.URLClassLoader
                      file.deleteOnExit();
                      FileOutputStream fileOutput = new FileOutputStream(file);
                      try {
-                         int c;
-                         while ((c = is.read()) != -1) {
-                             fileOutput.write(c);
+                         byte[] buf = new byte[4096];
+                         int n;
+                         while ((n = is.read(buf)) >= 0) {
+                            fileOutput.write(buf, 0, n);
                          }
                      } finally {
                          fileOutput.close();
@@ -1291,7 +1292,7 @@ public class MLet extends java.net.URLClassLoader
          if (c != null) {
             try {
                 Constructor<?> cons =
-                    c.getConstructor(new Class[] {String.class});
+                    c.getConstructor(String.class);
                 Object[] oo = new Object[1];
                 oo[0]=param;
                 return(cons.newInstance(oo));

@@ -108,7 +108,7 @@ public class ClassBuilder extends AbstractBuilder {
     /**
      * {@inheritDoc}
      */
-    public void invokeMethod(String methodName, Class[] paramClasses,
+    public void invokeMethod(String methodName, Class<?>[] paramClasses,
             Object[] params)
     throws Exception {
         if (DEBUG) {
@@ -138,7 +138,7 @@ public class ClassBuilder extends AbstractBuilder {
       *
       * @param elements the XML elements that specify how to document a class.
       */
-     public void buildClassDoc(List elements) throws Exception {
+     public void buildClassDoc(List<?> elements) throws Exception {
         build(elements);
         writer.close();
         copyDocFiles();
@@ -293,7 +293,7 @@ public class ClassBuilder extends AbstractBuilder {
      * @param elements the XML elements that specify how a member summary is
      *                 documented.
      */
-    public void buildMemberSummary(List elements) throws Exception {
+    public void buildMemberSummary(List<?> elements) throws Exception {
         configuration.getBuilderFactory().
             getMemberSummaryBuilder(writer).build(elements);
         writer.completeMemberSummaryBuild();
@@ -305,7 +305,7 @@ public class ClassBuilder extends AbstractBuilder {
      * @param elements the XML elements that specify how a enum constants are
      *                 documented.
      */
-    public void buildEnumConstantsDetails(List elements) throws Exception {
+    public void buildEnumConstantsDetails(List<?> elements) throws Exception {
         configuration.getBuilderFactory().
             getEnumConstantsBuilder(writer).build(elements);
     }
@@ -315,7 +315,7 @@ public class ClassBuilder extends AbstractBuilder {
      *
      * @param elements the XML elements that specify how a field is documented.
      */
-    public void buildFieldDetails(List elements) throws Exception {
+    public void buildFieldDetails(List<?> elements) throws Exception {
         configuration.getBuilderFactory().
             getFieldBuilder(writer).build(elements);
     }
@@ -326,7 +326,7 @@ public class ClassBuilder extends AbstractBuilder {
      * @param elements the XML elements that specify how to document a
      * constructor.
      */
-    public void buildConstructorDetails(List elements) throws Exception {
+    public void buildConstructorDetails(List<?> elements) throws Exception {
         configuration.getBuilderFactory().
             getConstructorBuilder(writer).build(elements);
     }
@@ -336,7 +336,7 @@ public class ClassBuilder extends AbstractBuilder {
      *
      * @param elements the XML elements that specify how a method is documented.
      */
-    public void buildMethodDetails(List elements) throws Exception {
+    public void buildMethodDetails(List<?> elements) throws Exception {
         configuration.getBuilderFactory().
                 getMethodBuilder(writer).build(elements);
     }

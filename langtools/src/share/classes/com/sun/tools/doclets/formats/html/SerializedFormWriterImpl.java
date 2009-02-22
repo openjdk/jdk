@@ -73,9 +73,9 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
         tableHeader();
         thAlign("center");
         font("+2");
-        boldText("doclet.Package");
+        strongText("doclet.Package");
         print(' ');
-        bold(packageName);
+        strong(packageName);
         tableFooter();
     }
 
@@ -86,7 +86,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      * @param serialUID the serial UID to print.
      */
     public void writeSerialUIDInfo(String header, String serialUID) {
-        bold(header + "&nbsp;");
+        strong(header + "&nbsp;");
         println(serialUID);
         p();
     }
@@ -131,7 +131,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
         tableHeader();
         thAlignColspan("left", 2);
         font("+2");
-        bold(className);
+        strong(className);
         tableFooter();
         p();
     }

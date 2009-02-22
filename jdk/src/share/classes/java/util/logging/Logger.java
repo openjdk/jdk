@@ -27,6 +27,7 @@
 package java.util.logging;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.security.*;
 import java.lang.ref.WeakReference;
 
@@ -165,10 +166,11 @@ public class Logger {
     private static final int offValue = Level.OFF.intValue();
     private LogManager manager;
     private String name;
-    private ArrayList<Handler> handlers;
+    private final CopyOnWriteArrayList<Handler> handlers =
+        new CopyOnWriteArrayList<Handler>();
     private String resourceBundleName;
-    private boolean useParentHandlers = true;
-    private Filter filter;
+    private volatile boolean useParentHandlers = true;
+    private volatile Filter filter;
     private boolean anonymous;
 
     private ResourceBundle catalog;     // Cached resource bundle
@@ -180,9 +182,9 @@ public class Logger {
     private static Object treeLock = new Object();
     // We keep weak references from parents to children, but strong
     // references from children to parents.
-    private Logger parent;    // our nearest parent.
+    private volatile Logger parent;    // our nearest parent.
     private ArrayList<WeakReference<Logger>> kids;   // WeakReferences to loggers that have us as parent
-    private Level levelObject;
+    private volatile Level levelObject;
     private volatile int levelValue;  // current effective level value
 
     /**
@@ -438,7 +440,7 @@ public class Logger {
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have LoggingPermission("control").
      */
-    public synchronized void setFilter(Filter newFilter) throws SecurityException {
+    public void setFilter(Filter newFilter) throws SecurityException {
         checkAccess();
         filter = newFilter;
     }
@@ -448,7 +450,7 @@ public class Logger {
      *
      * @return  a filter object (may be null)
      */
-    public synchronized Filter getFilter() {
+    public Filter getFilter() {
         return filter;
     }
 
@@ -465,10 +467,9 @@ public class Logger {
         if (record.getLevel().intValue() < levelValue || levelValue == offValue) {
             return;
         }
-        synchronized (this) {
-            if (filter != null && !filter.isLoggable(record)) {
-                return;
-            }
+        Filter theFilter = filter;
+        if (theFilter != null && !theFilter.isLoggable(record)) {
+            return;
         }
 
         // Post the LogRecord to all our Handlers, and then to
@@ -476,12 +477,8 @@ public class Logger {
 
         Logger logger = this;
         while (logger != null) {
-            Handler targets[] = logger.getHandlers();
-
-            if (targets != null) {
-                for (int i = 0; i < targets.length; i++) {
-                    targets[i].publish(record);
-                }
+            for (Handler handler : logger.handlers) {
+                handler.publish(record);
             }
 
             if (!logger.getUseParentHandlers()) {
@@ -1182,13 +1179,10 @@ public class Logger {
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have LoggingPermission("control").
      */
-    public synchronized void addHandler(Handler handler) throws SecurityException {
+    public void addHandler(Handler handler) throws SecurityException {
         // Check for null handler
         handler.getClass();
         checkAccess();
-        if (handlers == null) {
-            handlers = new ArrayList<Handler>();
-        }
         handlers.add(handler);
     }
 
@@ -1201,12 +1195,9 @@ public class Logger {
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have LoggingPermission("control").
      */
-    public synchronized void removeHandler(Handler handler) throws SecurityException {
+    public void removeHandler(Handler handler) throws SecurityException {
         checkAccess();
         if (handler == null) {
-            return;
-        }
-        if (handlers == null) {
             return;
         }
         handlers.remove(handler);
@@ -1217,11 +1208,8 @@ public class Logger {
      * <p>
      * @return  an array of all registered Handlers
      */
-    public synchronized Handler[] getHandlers() {
-        if (handlers == null) {
-            return emptyHandlers;
-        }
-        return handlers.toArray(new Handler[handlers.size()]);
+    public Handler[] getHandlers() {
+        return handlers.toArray(emptyHandlers);
     }
 
     /**
@@ -1235,7 +1223,7 @@ public class Logger {
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have LoggingPermission("control").
      */
-    public synchronized void setUseParentHandlers(boolean useParentHandlers) {
+    public void setUseParentHandlers(boolean useParentHandlers) {
         checkAccess();
         this.useParentHandlers = useParentHandlers;
     }
@@ -1246,7 +1234,7 @@ public class Logger {
      *
      * @return  true if output is to be sent to the logger's parent
      */
-    public synchronized boolean getUseParentHandlers() {
+    public boolean getUseParentHandlers() {
         return useParentHandlers;
     }
 
@@ -1354,9 +1342,12 @@ public class Logger {
      * @return nearest existing parent Logger
      */
     public Logger getParent() {
-        synchronized (treeLock) {
-            return parent;
-        }
+        // Note: this used to be synchronized on treeLock.  However, this only
+        // provided memory semantics, as there was no guarantee that the caller
+        // would synchronize on treeLock (in fact, there is no way for external
+        // callers to so synchronize).  Therefore, we have made parent volatile
+        // instead.
+        return parent;
     }
 
     /**

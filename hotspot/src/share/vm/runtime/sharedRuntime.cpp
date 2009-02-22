@@ -111,6 +111,25 @@ void SharedRuntime::print_ic_miss_histogram() {
 }
 #endif // PRODUCT
 
+#ifndef SERIALGC
+
+// G1 write-barrier pre: executed before a pointer store.
+JRT_LEAF(void, SharedRuntime::g1_wb_pre(oopDesc* orig, JavaThread *thread))
+  if (orig == NULL) {
+    assert(false, "should be optimized out");
+    return;
+  }
+  // store the original value that was in the field reference
+  thread->satb_mark_queue().enqueue(orig);
+JRT_END
+
+// G1 write-barrier post: executed after a pointer store.
+JRT_LEAF(void, SharedRuntime::g1_wb_post(void* card_addr, JavaThread* thread))
+  thread->dirty_card_queue().enqueue(card_addr);
+JRT_END
+
+#endif // !SERIALGC
+
 
 JRT_LEAF(jlong, SharedRuntime::lmul(jlong y, jlong x))
   return x * y;
@@ -173,64 +192,46 @@ JRT_END
 
 
 JRT_LEAF(jint, SharedRuntime::f2i(jfloat  x))
-  if (g_isnan(x)) {return 0;}
-  jlong lltmp = (jlong)x;
-  jint ltmp   = (jint)lltmp;
-  if (ltmp == lltmp) {
-    return ltmp;
-  } else {
-    if (x < 0) {
-      return min_jint;
-    } else {
-      return max_jint;
-    }
-  }
+  if (g_isnan(x))
+    return 0;
+  if (x >= (jfloat) max_jint)
+    return max_jint;
+  if (x <= (jfloat) min_jint)
+    return min_jint;
+  return (jint) x;
 JRT_END
 
 
 JRT_LEAF(jlong, SharedRuntime::f2l(jfloat  x))
-  if (g_isnan(x)) {return 0;}
-  jlong lltmp = (jlong)x;
-  if (lltmp != min_jlong) {
-    return lltmp;
-  } else {
-    if (x < 0) {
-      return min_jlong;
-    } else {
-      return max_jlong;
-    }
-  }
+  if (g_isnan(x))
+    return 0;
+  if (x >= (jfloat) max_jlong)
+    return max_jlong;
+  if (x <= (jfloat) min_jlong)
+    return min_jlong;
+  return (jlong) x;
 JRT_END
 
 
 JRT_LEAF(jint, SharedRuntime::d2i(jdouble x))
-  if (g_isnan(x)) {return 0;}
-  jlong lltmp = (jlong)x;
-  jint ltmp   = (jint)lltmp;
-  if (ltmp == lltmp) {
-    return ltmp;
-  } else {
-    if (x < 0) {
-      return min_jint;
-    } else {
-      return max_jint;
-    }
-  }
+  if (g_isnan(x))
+    return 0;
+  if (x >= (jdouble) max_jint)
+    return max_jint;
+  if (x <= (jdouble) min_jint)
+    return min_jint;
+  return (jint) x;
 JRT_END
 
 
 JRT_LEAF(jlong, SharedRuntime::d2l(jdouble x))
-  if (g_isnan(x)) {return 0;}
-  jlong lltmp = (jlong)x;
-  if (lltmp != min_jlong) {
-    return lltmp;
-  } else {
-    if (x < 0) {
-      return min_jlong;
-    } else {
-      return max_jlong;
-    }
-  }
+  if (g_isnan(x))
+    return 0;
+  if (x >= (jdouble) max_jlong)
+    return max_jlong;
+  if (x <= (jdouble) min_jlong)
+    return min_jlong;
+  return (jlong) x;
 JRT_END
 
 
@@ -537,7 +538,10 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
           // the caller was at a call site, it's safe to destroy all
           // caller-saved registers, as these entry points do.
           VtableStub* vt_stub = VtableStubs::stub_containing(pc);
-          guarantee(vt_stub != NULL, "unable to find SEGVing vtable stub");
+
+          // If vt_stub is NULL, then return NULL to signal handler to report the SEGV error.
+          if (vt_stub == NULL) return NULL;
+
           if (vt_stub->is_abstract_method_error(pc)) {
             assert(!vt_stub->is_vtable_stub(), "should never see AbstractMethodErrors from vtable-type VtableStubs");
             return StubRoutines::throw_AbstractMethodError_entry();
@@ -546,7 +550,9 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
           }
         } else {
           CodeBlob* cb = CodeCache::find_blob(pc);
-          guarantee(cb != NULL, "exception happened outside interpreter, nmethods and vtable stubs (1)");
+
+          // If code blob is NULL, then return NULL to signal handler to report the SEGV error.
+          if (cb == NULL) return NULL;
 
           // Exception happened in CodeCache. Must be either:
           // 1. Inline-cache check in C2I handler blob,
@@ -555,7 +561,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
 
           if (!cb->is_nmethod()) {
             guarantee(cb->is_adapter_blob(),
-                      "exception happened outside interpreter, nmethods and vtable stubs (2)");
+                      "exception happened outside interpreter, nmethods and vtable stubs (1)");
             // There is no handler here, so we will simply unwind.
             return StubRoutines::throw_NullPointerException_at_call_entry();
           }

@@ -37,6 +37,7 @@ import java.io.IOException;
  */
 public class Annotation {
     static class InvalidAnnotation extends AttributeException {
+        private static final long serialVersionUID = -4620480740735772708L;
         InvalidAnnotation(String msg) {
             super(msg);
         }

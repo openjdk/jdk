@@ -87,7 +87,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     }
 
     /**
-     * Print the "-packagesheader" string in bold format, at top of the page,
+     * Print the "-packagesheader" string in strong format, at top of the page,
      * if it is not the empty string.  Otherwise print the "-header" string.
      * Despite the name, there is actually no navigation bar for this page.
      */
@@ -95,9 +95,9 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         printTableHeader(true);
         fontSizeStyle("+1", "FrameTitleFont");
         if (configuration.packagesheader.length() > 0) {
-            bold(replaceDocRootDir(configuration.packagesheader));
+            strong(replaceDocRootDir(configuration.packagesheader));
         } else {
-            bold(replaceDocRootDir(configuration.header));
+            strong(replaceDocRootDir(configuration.header));
         }
         fontEnd();
         printTableFooter(true);

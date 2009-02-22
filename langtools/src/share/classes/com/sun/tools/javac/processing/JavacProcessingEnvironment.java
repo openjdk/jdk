@@ -69,6 +69,7 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
@@ -133,9 +134,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      */
     Source source;
 
+    /**
+     * JavacMessages object used for localization
+     */
+    private JavacMessages messages;
+
     private Context context;
 
-   public JavacProcessingEnvironment(Context context, Iterable<? extends Processor> processors) {
+    public JavacProcessingEnvironment(Context context, Iterable<? extends Processor> processors) {
         options = Options.instance(context);
         this.context = context;
         log = Log.instance(context);
@@ -157,6 +163,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         typeUtils = new JavacTypes(context);
         processorOptions = initProcessorOptions(context);
         unmatchedProcessorOptions = initUnmatchedProcessorOptions();
+        messages = JavacMessages.instance(context);
         initProcessorIterator(context, processors);
     }
 
@@ -1053,7 +1060,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             next.put(Names.namesKey, names);
         }
 
-        DiagnosticListener dl = context.get(DiagnosticListener.class);
+        DiagnosticListener<?> dl = context.get(DiagnosticListener.class);
         if (dl != null)
             next.put(DiagnosticListener.class, dl);
 
@@ -1246,7 +1253,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     public Locale getLocale() {
-        return Locale.getDefault();
+        return messages.getCurrentLocale();
     }
 
     public Set<Symbol.PackageSymbol> getSpecifiedPackages() {

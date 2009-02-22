@@ -26,7 +26,6 @@
 package javax.management;
 
 import com.sun.jmx.mbeanserver.NotificationMBeanSupport;
-import com.sun.jmx.mbeanserver.Util;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -42,6 +41,11 @@ import java.util.Set;
  * class.  Writing a custom implementation requires you to deploy it
  * on both the client and the server in the remote case, so using this class
  * instead is recommended where possible.</p>
+ *
+ * <p>Because this class was introduced in version 2.0 of the JMX API,
+ * it may not be present on a remote JMX agent that is running an earlier
+ * version.  The method {@link JMX#getSpecificationVersion
+ * JMX.getSpecificationVersion} can be used to determine the remote version.</p>
  *
  * <p>This class uses the {@linkplain Query Query API} to specify the
  * filtering logic.  For example, to select only notifications where the

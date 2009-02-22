@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 # @test
 # @bug 5008759 4998341 5018369 5032476 5060121 5096932 5096931
 # @run shell ../verifyVariables.sh
-# @build Aggregate
 # @run shell print.sh
 # @summary test availabilty of print option
 # @author Joseph D. Darcy
@@ -41,6 +40,12 @@ case "${OS}" in
 	SEP=":"
 	;;
 esac
+
+# Compile file directly, without TESTJAVACOPTS
+# Don't use @build or @compile as these implicitly use jtreg -javacoption values
+# and it is important that this file be compiled as expected, for later comparison
+# against a golden file.
+"${TESTJAVA}/bin/javac" ${TESTTOOLVMOPTS} -d ${TESTCLASSES} ${TESTSRC}/Aggregate.java
 
 # Construct path to apt executable
 APT="${TESTJAVA}/bin/apt ${TESTTOOLVMOPTS} \

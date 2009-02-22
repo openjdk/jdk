@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private FilterChain filterChain;
     private FilterChain sequenceFilterChain;
     private Diagram diagram;
+    private ChangedEvent<DiagramViewModel> groupChangedEvent;
     private ChangedEvent<DiagramViewModel> diagramChangedEvent;
     private ChangedEvent<DiagramViewModel> viewChangedEvent;
     private ChangedEvent<DiagramViewModel> viewPropertiesChangedEvent;
@@ -67,6 +68,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         }
     };
 
+    @Override
     public DiagramViewModel copy() {
         DiagramViewModel result = new DiagramViewModel(group, filterChain, sequenceFilterChain);
         result.setData(this);
@@ -79,6 +81,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         boolean viewChanged = false;
         boolean viewPropertiesChanged = false;
 
+        boolean groupChanged = (group == newModel.group);
         this.group = newModel.group;
         diagramChanged |= (filterChain != newModel.filterChain);
         this.filterChain = newModel.filterChain;
@@ -96,6 +99,10 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         this.showBlocks = newModel.showBlocks;
         viewPropertiesChanged |= (showNodeHull != newModel.showNodeHull);
         this.showNodeHull = newModel.showNodeHull;
+
+        if(groupChanged) {
+            groupChangedEvent.fire();
+        }
 
         if (diagramChanged) {
             diagramChangedEvent.fire();
@@ -143,10 +150,37 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         diagramChangedEvent = new ChangedEvent<DiagramViewModel>(this);
         viewChangedEvent = new ChangedEvent<DiagramViewModel>(this);
         viewPropertiesChangedEvent = new ChangedEvent<DiagramViewModel>(this);
+        groupChangedEvent = new ChangedEvent<DiagramViewModel>(this);
+        groupChangedEvent.addListener(groupChangedListener);
+        groupChangedEvent.fire();
 
         filterChain.getChangedEvent().addListener(filterChainChangedListener);
         sequenceFilterChain.getChangedEvent().addListener(filterChainChangedListener);
     }
+
+    private final ChangedListener<DiagramViewModel> groupChangedListener = new ChangedListener<DiagramViewModel>() {
+
+        private Group oldGroup;
+
+        public void changed(DiagramViewModel source) {
+            if(oldGroup != null) {
+                oldGroup.getChangedEvent().removeListener(groupContentChangedListener);
+            }
+            group.getChangedEvent().addListener(groupContentChangedListener);
+            oldGroup = group;
+        }
+    };
+
+
+    private final ChangedListener<Group> groupContentChangedListener = new ChangedListener<Group>() {
+
+        public void changed(Group source) {
+            assert source == group;
+            setPositions(calculateStringList(source));
+            setSelectedNodes(selectedNodes);
+        }
+
+    };
 
     public ChangedEvent<DiagramViewModel> getDiagramChangedEvent() {
         return diagramChangedEvent;
@@ -268,7 +302,10 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public InputGraph getSecondGraph() {
-        return group.getGraphs().get(getSecondPosition());
+        List<InputGraph> graphs = group.getGraphs();
+        if (graphs.size() >= getSecondPosition())
+            return group.getGraphs().get(getSecondPosition());
+        return getFirstGraph();
     }
 
     public void selectGraph(InputGraph g) {

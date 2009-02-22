@@ -39,10 +39,18 @@ import javax.management.MBeanException;
 import javax.management.remote.NotificationResult;
 
 /**
- * This class is an implementation of the {@link EventRelay} interface. It calls
+ * <p>This class is an implementation of the {@link EventRelay} interface. It calls
  * {@link EventClientDelegateMBean#fetchNotifications
  * fetchNotifications(String, long, int, long)} to get
- * notifications and then forwards them to an {@link EventReceiver} object.
+ * notifications and then forwards them to an {@link EventReceiver} object.</p>
+ *
+ * <p>A {@code fetchExecutor} parameter can be specified when creating a
+ * {@code FetchingEventRelay}.  That is then the {@code Executor} that will
+ * be used to perform the {@code fetchNotifications} operation.  Only one
+ * job at a time will be submitted to this {@code Executor}.  The behavior
+ * is unspecified if {@link Executor#execute} throws an exception, including
+ * {@link java.util.concurrent.RejectedExecutionException
+ * RejectedExecutionException}.
  *
  * @since JMX 2.0
  */
@@ -91,7 +99,7 @@ public class FetchingEventRelay implements EventRelay {
      * the fetching.
      *
      * @param delegate The {@code EventClientDelegateMBean} to work with.
-     * @param executor Used to do the fetching. A new thread is created if
+     * @param fetchExecutor Used to do the fetching. A new thread is created if
      * {@code null}.
      * @throws IOException If failed to work with the {@code delegate}.
      * @throws MBeanException if unable to add a client to the remote
@@ -101,12 +109,12 @@ public class FetchingEventRelay implements EventRelay {
      * @throws IllegalArgumentException If {@code delegate} is {@code null}.
      */
     public FetchingEventRelay(EventClientDelegateMBean delegate,
-            Executor executor) throws IOException, MBeanException {
+            Executor fetchExecutor) throws IOException, MBeanException {
         this(delegate,
                 DEFAULT_BUFFER_SIZE,
                 DEFAULT_WAITING_TIMEOUT,
                 DEFAULT_MAX_NOTIFICATIONS,
-                executor);
+                fetchExecutor);
     }
 
     /**
@@ -120,7 +128,7 @@ public class FetchingEventRelay implements EventRelay {
      * @param timeout The waiting time in millseconds when fetching
      * notifications from an {@code EventClientDelegateMBean}.
      * @param maxNotifs The maximum notifications to fetch every time.
-     * @param executor Used to do the fetching. A new thread is created if
+     * @param fetchExecutor Used to do the fetching. A new thread is created if
      * {@code null}.
      * @throws IOException if failed to communicate with the {@code delegate}.
      * @throws MBeanException if unable to add a client to the remote
@@ -133,12 +141,12 @@ public class FetchingEventRelay implements EventRelay {
             int bufferSize,
             long timeout,
             int maxNotifs,
-            Executor executor) throws IOException, MBeanException {
+            Executor fetchExecutor) throws IOException, MBeanException {
         this(delegate,
                 bufferSize,
                 timeout,
                 maxNotifs,
-                executor,
+                fetchExecutor,
                 FetchingEventForwarder.class.getName(),
                 new Object[] {bufferSize},
                 new String[] {int.class.getName()});
@@ -155,7 +163,7 @@ public class FetchingEventRelay implements EventRelay {
      * @param timeout The waiting time in millseconds when fetching
      * notifications from an {@code EventClientDelegateMBean}.
      * @param maxNotifs The maximum notifications to fetch every time.
-     * @param executor Used to do the fetching.
+     * @param fetchExecutor Used to do the fetching.
      * @param forwarderName the class name of a user specific EventForwarder
      * to create in server to forward notifications to this object. The class
      * should be a subclass of the class {@link FetchingEventForwarder}.
@@ -174,7 +182,7 @@ public class FetchingEventRelay implements EventRelay {
             int bufferSize,
             long timeout,
             int maxNotifs,
-            Executor executor,
+            Executor fetchExecutor,
             String forwarderName,
             Object[] params,
             String[] sig) throws IOException, MBeanException {
@@ -184,11 +192,11 @@ public class FetchingEventRelay implements EventRelay {
                     bufferSize+" "+
                     timeout+" "+
                     maxNotifs+" "+
-                    executor+" "+
+                    fetchExecutor+" "+
                     forwarderName+" ");
         }
 
-        if(delegate == null) {
+        if (delegate == null) {
             throw new NullPointerException("Null EventClientDelegateMBean!");
         }
 
@@ -212,16 +220,16 @@ public class FetchingEventRelay implements EventRelay {
         this.timeout = timeout;
         this.maxNotifs = maxNotifs;
 
-        if (executor == null) {
-            ScheduledThreadPoolExecutor stpe = new ScheduledThreadPoolExecutor(1,
-                    daemonThreadFactory);
-            stpe.setKeepAliveTime(1, TimeUnit.SECONDS);
-            stpe.allowCoreThreadTimeOut(true);
-            executor = stpe;
-            this.defaultExecutor = stpe;
+        if (fetchExecutor == null) {
+            ScheduledThreadPoolExecutor executor =
+                    new ScheduledThreadPoolExecutor(1, daemonThreadFactory);
+            executor.setKeepAliveTime(1, TimeUnit.SECONDS);
+            executor.allowCoreThreadTimeOut(true);
+            fetchExecutor = executor;
+            this.defaultExecutor = executor;
         } else
             this.defaultExecutor = null;
-        this.executor = executor;
+        this.fetchExecutor = fetchExecutor;
 
         startSequenceNumber = 0;
         fetchingJob = new MyJob();
@@ -258,7 +266,7 @@ public class FetchingEventRelay implements EventRelay {
 
     private class MyJob extends RepeatedSingletonJob {
         public MyJob() {
-            super(executor);
+            super(fetchExecutor);
         }
 
         public boolean isSuspended() {
@@ -368,7 +376,7 @@ public class FetchingEventRelay implements EventRelay {
     private String clientId;
     private boolean stopped = false;
 
-    private final Executor executor;
+    private final Executor fetchExecutor;
     private final ExecutorService defaultExecutor;
     private final MyJob fetchingJob;
 

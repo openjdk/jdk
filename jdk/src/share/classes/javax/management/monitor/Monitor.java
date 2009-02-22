@@ -34,7 +34,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -181,7 +180,7 @@ public abstract class Monitor
     /**
      * Executor Service.
      */
-    private static final ExecutorService executor;
+    private static final ThreadPoolExecutor executor;
     static {
         final String maximumPoolSizeSysProp = "jmx.x.monitor.maximum.pool.size";
         final String maximumPoolSizeStr = AccessController.doPrivileged(
@@ -218,7 +217,7 @@ public abstract class Monitor
                 TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new DaemonThreadFactory("Executor"));
-        ((ThreadPoolExecutor)executor).allowCoreThreadTimeOut(true);
+        executor.allowCoreThreadTimeOut(true);
     }
 
     /**
@@ -517,7 +516,7 @@ public abstract class Monitor
         //
         ObservedObject o = createObservedObject(object);
         o.setAlreadyNotified(RESET_FLAGS_ALREADY_NOTIFIED);
-        o.setDerivedGauge(null);
+        o.setDerivedGauge(INTEGER_ZERO);
         o.setDerivedGaugeTimeStamp(System.currentTimeMillis());
         observedObjects.add(o);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1110,7 +1110,7 @@ static jstring getPlatformEncoding(JNIEnv *env) {
         if (propname) {
             jclass cls;
             jmethodID mid;
-            NULL_CHECK0 (cls = (*env)->FindClass(env, "java/lang/System"));
+            NULL_CHECK0 (cls = FindBootStrapClass(env, "java/lang/System"));
             NULL_CHECK0 (mid = (*env)->GetStaticMethodID(
                                    env, cls,
                                    "getProperty",
@@ -1125,7 +1125,7 @@ static jstring getPlatformEncoding(JNIEnv *env) {
 static jboolean isEncodingSupported(JNIEnv *env, jstring enc) {
     jclass cls;
     jmethodID mid;
-    NULL_CHECK0 (cls = (*env)->FindClass(env, "java/nio/charset/Charset"));
+    NULL_CHECK0 (cls = FindBootStrapClass(env, "java/nio/charset/Charset"));
     NULL_CHECK0 (mid = (*env)->GetStaticMethodID(
                            env, cls,
                            "isSupported",
@@ -1161,7 +1161,7 @@ NewPlatformString(JNIEnv *env, char *s)
 #else
             if (isEncodingSupported(env, enc) == JNI_TRUE) {
 #endif
-                NULL_CHECK0(cls = (*env)->FindClass(env, "java/lang/String"));
+                NULL_CHECK0(cls = FindBootStrapClass(env, "java/lang/String"));
                 NULL_CHECK0(mid = (*env)->GetMethodID(env, cls, "<init>",
                                           "([BLjava/lang/String;)V"));
                 str = (*env)->NewObject(env, cls, mid, ary, enc);
@@ -1172,7 +1172,7 @@ NewPlatformString(JNIEnv *env, char *s)
                   the encoding name, in which the StringCoding class will
                   pickup the iso-8859-1 as the fallback converter for us.
                 */
-                NULL_CHECK0(cls = (*env)->FindClass(env, "java/lang/String"));
+                NULL_CHECK0(cls = FindBootStrapClass(env, "java/lang/String"));
                 NULL_CHECK0(mid = (*env)->GetMethodID(env, cls, "<init>",
                                           "([B)V"));
                 str = (*env)->NewObject(env, cls, mid, ary);
@@ -1195,7 +1195,7 @@ NewPlatformStringArray(JNIEnv *env, char **strv, int strc)
     jarray ary;
     int i;
 
-    NULL_CHECK0(cls = (*env)->FindClass(env, "java/lang/String"));
+    NULL_CHECK0(cls = FindBootStrapClass(env, "java/lang/String"));
     NULL_CHECK0(ary = (*env)->NewObjectArray(env, strc, cls, 0));
     for (i = 0; i < strc; i++) {
         jstring str = NewPlatformString(env, *strv++);
@@ -1224,6 +1224,7 @@ LoadClass(JNIEnv *env, char *name)
         c = *t++;
         *s++ = (c == '.') ? '/' : c;
     } while (c != '\0');
+    // use the application class loader for the main-class
     cls = (*env)->FindClass(env, buf);
     free(buf);
 
@@ -1250,7 +1251,7 @@ GetMainClassName(JNIEnv *env, char *jarname)
     jobject jar, man, attr;
     jstring str, result = 0;
 
-    NULL_CHECK0(cls = (*env)->FindClass(env, "java/util/jar/JarFile"));
+    NULL_CHECK0(cls = FindBootStrapClass(env, "java/util/jar/JarFile"));
     NULL_CHECK0(mid = (*env)->GetMethodID(env, cls, "<init>",
                                           "(Ljava/lang/String;)V"));
     NULL_CHECK0(str = NewPlatformString(env, jarname));
@@ -1471,7 +1472,7 @@ PrintJavaVersion(JNIEnv *env)
     jclass ver;
     jmethodID print;
 
-    NULL_CHECK(ver = (*env)->FindClass(env, "sun/misc/Version"));
+    NULL_CHECK(ver = FindBootStrapClass(env, "sun/misc/Version"));
     NULL_CHECK(print = (*env)->GetStaticMethodID(env, ver, "print", "()V"));
 
     (*env)->CallStaticVoidMethod(env, ver, print);

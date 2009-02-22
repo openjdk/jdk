@@ -32,6 +32,8 @@ import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.api.Formattable;
 import com.sun.tools.javac.api.DiagnosticFormatter.PositionKind;
 import com.sun.tools.javac.file.JavacFileManager;
+import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticType.*;
+import static com.sun.tools.javac.util.LayoutCharacters.*;
 
 /**
  * This abstract class provides a basic implementation of the functionalities that should be provided
@@ -48,22 +50,35 @@ import com.sun.tools.javac.file.JavacFileManager;
 public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter<JCDiagnostic> {
 
     /**
-     * Messages object used by this formatter for i18n
+     * JavacMessages object used by this formatter for i18n
      */
-    protected Messages messages;
+    protected JavacMessages messages;
+    protected boolean showSource;
 
     /**
-     * Initialize an AbstractDiagnosticFormatter by setting its Messages object
+     * Initialize an AbstractDiagnosticFormatter by setting its JavacMessages object
      * @param messages
      */
-    protected AbstractDiagnosticFormatter(Messages messages) {
+    protected AbstractDiagnosticFormatter(JavacMessages messages, Options options, boolean showSource) {
         this.messages = messages;
+        this.showSource = options.get("showSource") == null ? showSource :
+                          options.get("showSource").equals("true");
+    }
+
+    protected AbstractDiagnosticFormatter(JavacMessages messages, boolean showSource) {
+        this.messages = messages;
+        this.showSource = showSource;
     }
 
     public String formatMessage(JCDiagnostic d, Locale l) {
         //this code should rely on the locale settings but it's not! See RFE 6443132
+        StringBuilder buf = new StringBuilder();
         Collection<String> args = formatArguments(d, l);
-        return localize(l, d.getCode(), args.toArray());
+        buf.append(localize(l, d.getCode(), args.toArray()));
+        if (d.isMultiline()) {
+            buf.append(formatSubdiagnostics(d, l));
+        }
+        return buf.toString();
     }
 
     public String formatKind(JCDiagnostic d, Locale l) {
@@ -131,7 +146,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         else if (arg instanceof JavaFileObject)
             return JavacFileManager.getJavacBaseFileName((JavaFileObject)arg);
         else if (arg instanceof Formattable)
-            return ((Formattable)arg).toString(Messages.getDefaultBundle());
+            return ((Formattable)arg).toString(l, messages);
         else
             return String.valueOf(arg);
     }
@@ -156,6 +171,44 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
     }
 
     /**
+     * Format all the subdiagnostics attached to a given diagnostic
+     *
+     * @param d diagnostic whose subdiagnostics are to be formatted
+     * @param l locale object to be used for i18n
+     * @return string representation of the subdiagnostics
+     */
+    protected String formatSubdiagnostics(JCDiagnostic d, Locale l) {
+        StringBuilder buf = new StringBuilder();
+        for (JCDiagnostic d2 : d.getSubdiagnostics()) {
+            buf.append('\n');
+            String subdiagMsg = format(d2, l);
+            buf.append(indent(subdiagMsg, DiagInc));
+        }
+        return buf.toString();
+    }
+
+    /** Format the faulty source code line and point to the error.
+     *  @param d The diagnostic for which the error line should be printed
+     */
+    protected String formatSourceLine(JCDiagnostic d) {
+        StringBuilder buf = new StringBuilder();
+        DiagnosticSource source = d.getDiagnosticSource();
+        int pos = d.getIntPosition();
+        if (d.getIntPosition() != Position.NOPOS) {
+            String line = (source == null ? null : source.getLine(pos));
+            if (line == null)
+                return "";
+            buf.append(line+"\n");
+            int col = source.getColumnNumber(pos, false);
+            for (int i = 0; i < col - 1; i++)  {
+                buf.append((line.charAt(i) == '\t') ? "\t" : " ");
+            }
+            buf.append("^");
+         }
+         return buf.toString();
+    }
+
+    /**
      * Converts a String into a locale-dependent representation accordingly to a given locale
      *
      * @param l locale object to be used for i18n
@@ -164,6 +217,50 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
      * @return a locale-dependent string
      */
     protected String localize(Locale l, String key, Object... args) {
-        return messages.getLocalizedString(key, args);
+        return messages.getLocalizedString(l, key, args);
+    }
+
+    public boolean displaySource(JCDiagnostic d) {
+        return showSource && d.getType() != FRAGMENT;
+    }
+
+    /**
+     * Creates a string with a given amount of empty spaces. Useful for
+     * indenting the text of a diagnostic message.
+     *
+     * @param nSpaces the amount of spaces to be added to the result string
+     * @return the indentation string
+     */
+    protected String indentString(int nSpaces) {
+        String spaces = "                        ";
+        if (nSpaces <= spaces.length())
+            return spaces.substring(0, nSpaces);
+        else {
+            StringBuilder buf = new StringBuilder();
+            for (int i = 0 ; i < nSpaces ; i++)
+                buf.append(" ");
+            return buf.toString();
+        }
+    }
+
+    /**
+     * Indent a string by prepending a given amount of empty spaces to each line
+     * of the string
+     *
+     * @param s the string to be indented
+     * @param nSpaces the amount of spaces that should be prepended to each line
+     * of the string
+     * @return an indented string
+     */
+    protected String indent(String s, int nSpaces) {
+        String indent = indentString(nSpaces);
+        StringBuilder buf = new StringBuilder();
+        String nl = "";
+        for (String line : s.split("\n")) {
+            buf.append(nl);
+            buf.append(indent + line);
+            nl = "\n";
+        }
+        return buf.toString();
     }
 }

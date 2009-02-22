@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,6 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     private FilePane filePane;
     private JToggleButton listViewButton;
     private JToggleButton detailsViewButton;
-
-    private boolean useShellFolder;
 
     private boolean readOnly;
 
@@ -185,10 +183,6 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         public ListSelectionListener createListSelectionListener() {
             return SynthFileChooserUIImpl.this.createListSelectionListener(getFileChooser());
         }
-
-        public boolean usesShellFolder() {
-            return useShellFolder;
-        }
     }
 
     protected void installDefaults(JFileChooser fc) {
@@ -200,8 +194,6 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         super.installComponents(fc);
 
         SynthContext context = getContext(fc, ENABLED);
-
-        updateUseShellFolder();
 
         fc.setLayout(new BorderLayout(0, 11));
 
@@ -431,20 +423,6 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         fc.removePropertyChangeListener(JFileChooser.FILE_SELECTION_MODE_CHANGED_PROPERTY, modeListener);
         super.uninstallListeners(fc);
     }
-
-    private void updateUseShellFolder() {
-        // Decide whether to use the ShellFolder class to populate shortcut
-        // panel and combobox.
-        JFileChooser fc = getFileChooser();
-        Boolean prop =
-            (Boolean)fc.getClientProperty("FileChooser.useShellFolder");
-        if (prop != null) {
-            useShellFolder = prop.booleanValue();
-        } else {
-            useShellFolder = fc.getFileSystemView().equals(FileSystemView.getFileSystemView());
-        }
-    }
-
 
     private String fileNameString(File file) {
         if (file == null) {
@@ -760,6 +738,8 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             if (directory == null) {
                 return;
             }
+
+            boolean useShellFolder = FilePane.usesShellFolder(chooser);
 
             int oldSize = directories.size();
             directories.clear();

@@ -840,6 +840,7 @@ public:
   virtual const TypeOopPtr *cast_to_instance_id(int instance_id) const;
 
   virtual const TypeAryPtr* cast_to_size(const TypeInt* size) const;
+  virtual const TypeInt* narrow_size_type(const TypeInt* size) const;
 
   virtual bool empty(void) const;        // TRUE if type is vacuous
   virtual const TypePtr *add_offset( intptr_t offset ) const;
@@ -865,7 +866,6 @@ public:
   }
   static const TypeAryPtr *_array_body_type[T_CONFLICT+1];
   // sharpen the type of an int which is used as an array size
-  static const TypeInt* narrow_size_type(const TypeInt* size, BasicType elem);
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const; // Specialized per-Type dumping
 #endif
@@ -881,6 +881,8 @@ class TypeKlassPtr : public TypeOopPtr {
 
 public:
   ciSymbol* name()  const { return _klass->name(); }
+
+  bool  is_loaded() const { return _klass->is_loaded(); }
 
   // ptr to klass 'k'
   static const TypeKlassPtr *make( ciKlass* k ) { return make( TypePtr::Constant, k, 0); }
@@ -1183,6 +1185,9 @@ inline bool Type::is_floatingpoint() const {
 #define RShiftXNode  RShiftLNode
 // For card marks and hashcodes
 #define URShiftXNode URShiftLNode
+// UseOptoBiasInlining
+#define XorXNode     XorLNode
+#define StoreXConditionalNode StoreLConditionalNode
 // Opcodes
 #define Op_LShiftX   Op_LShiftL
 #define Op_AndX      Op_AndL
@@ -1222,6 +1227,9 @@ inline bool Type::is_floatingpoint() const {
 #define RShiftXNode  RShiftINode
 // For card marks and hashcodes
 #define URShiftXNode URShiftINode
+// UseOptoBiasInlining
+#define XorXNode     XorINode
+#define StoreXConditionalNode StoreIConditionalNode
 // Opcodes
 #define Op_LShiftX   Op_LShiftI
 #define Op_AndX      Op_AndI

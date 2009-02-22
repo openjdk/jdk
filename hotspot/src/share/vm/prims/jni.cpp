@@ -2173,7 +2173,8 @@ static char* get_bad_address() {
     size_t size = os::vm_allocation_granularity();
     bad_address = os::reserve_memory(size);
     if (bad_address != NULL) {
-      os::protect_memory(bad_address, size, os::MEM_PROT_READ);
+      os::protect_memory(bad_address, size, os::MEM_PROT_READ,
+                         /*is_committed*/false);
     }
   }
   return bad_address;
@@ -2690,8 +2691,13 @@ static bool initializeDirectBufferSupport(JNIEnv* env, JavaThread* thread) {
 
     directBufferSupportInitializeEnded = 1;
   } else {
-    ThreadInVMfromNative tivn(thread); // set state as yield_all can call os:sleep
     while (!directBufferSupportInitializeEnded && !directBufferSupportInitializeFailed) {
+      // Set state as yield_all can call os:sleep. On Solaris, yield_all calls
+      // os::sleep which requires the VM state transition. On other platforms, it
+      // is not necessary. The following call to change the VM state is purposely
+      // put inside the loop to avoid potential deadlock when multiple threads
+      // try to call this method. See 6791815 for more details.
+      ThreadInVMfromNative tivn(thread);
       os::yield_all();
     }
   }

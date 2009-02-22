@@ -111,7 +111,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
              throws IOException {
         writeHeader();
 
-        bold(configuration.getText("doclet.Contents"));
+        strong(configuration.getText("doclet.Contents"));
         ul();
         for (int i = 0; i < DeprecatedAPIListBuilder.NUM_TYPES; i++) {
             writeIndexLink(deprapi, i);
@@ -156,7 +156,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         hr();
         center();
         h2();
-        boldText("doclet.Deprecated_API");
+        strongText("doclet.Deprecated_API");
         h2End();
         centerEnd();
 
@@ -180,7 +180,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     protected void navLinkDeprecated() {
         navCellRevStart();
         fontStyle("NavBarFont1Rev");
-        boldText("doclet.navDeprecated");
+        strongText("doclet.navDeprecated");
         fontEnd();
         navCellEnd();
     }

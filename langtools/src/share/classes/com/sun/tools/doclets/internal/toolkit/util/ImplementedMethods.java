@@ -86,9 +86,9 @@ public class ImplementedMethods {
      * from the array passed.
      */
     private void buildImplementedMethodList(boolean sort) {
-        List intfacs = Util.getAllInterfaces(classdoc, configuration, sort);
-        for (Iterator iter = intfacs.iterator(); iter.hasNext(); ) {
-            Type interfaceType = (Type) iter.next();
+        List<Type> intfacs = Util.getAllInterfaces(classdoc, configuration, sort);
+        for (Iterator<Type> iter = intfacs.iterator(); iter.hasNext(); ) {
+            Type interfaceType = iter.next();
             MethodDoc found = Util.findMethod(interfaceType.asClassDoc(), method);
             if (found != null) {
                 removeOverriddenMethod(found);

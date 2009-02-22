@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,9 +68,9 @@ public:
                cmpxchg16: 1,
                         : 4,
                dca      : 1,
-                        : 4,
-               popcnt   : 1,
-                        : 8;
+               sse4_1   : 1,
+               sse4_2   : 1,
+                        : 11;
     } bits;
   };
 
@@ -177,8 +177,9 @@ protected:
      CPU_SSE2 = (1 << 7),
      CPU_SSE3 = (1 << 8),
      CPU_SSSE3= (1 << 9),
-     CPU_SSE4 = (1 <<10),
-     CPU_SSE4A= (1 <<11)
+     CPU_SSE4A= (1 <<10),
+     CPU_SSE4_1 = (1 << 11),
+     CPU_SSE4_2 = (1 << 12)
    } cpuFeatureFlags;
 
   // cpuid information block.  All info derived from executing cpuid with
@@ -240,22 +241,14 @@ protected:
   static CpuidInfo _cpuid_info;
 
   // Extractors and predicates
-  static bool is_extended_cpu_family() {
-    const uint32_t Extended_Cpu_Family = 0xf;
-    return _cpuid_info.std_cpuid1_eax.bits.family == Extended_Cpu_Family;
-  }
   static uint32_t extended_cpu_family() {
     uint32_t result = _cpuid_info.std_cpuid1_eax.bits.family;
-    if (is_extended_cpu_family()) {
-      result += _cpuid_info.std_cpuid1_eax.bits.ext_family;
-    }
+    result += _cpuid_info.std_cpuid1_eax.bits.ext_family;
     return result;
   }
   static uint32_t extended_cpu_model() {
     uint32_t result = _cpuid_info.std_cpuid1_eax.bits.model;
-    if (is_extended_cpu_family()) {
-      result |= _cpuid_info.std_cpuid1_eax.bits.ext_model << 4;
-    }
+    result |= _cpuid_info.std_cpuid1_eax.bits.ext_model << 4;
     return result;
   }
   static uint32_t cpu_stepping() {
@@ -293,6 +286,10 @@ protected:
       result |= CPU_SSSE3;
     if (is_amd() && _cpuid_info.ext_cpuid1_ecx.bits.sse4a != 0)
       result |= CPU_SSE4A;
+    if (_cpuid_info.std_cpuid1_ecx.bits.sse4_1 != 0)
+      result |= CPU_SSE4_1;
+    if (_cpuid_info.std_cpuid1_ecx.bits.sse4_2 != 0)
+      result |= CPU_SSE4_2;
     return result;
   }
 
@@ -380,7 +377,8 @@ public:
   static bool supports_sse2()     { return (_cpuFeatures & CPU_SSE2) != 0; }
   static bool supports_sse3()     { return (_cpuFeatures & CPU_SSE3) != 0; }
   static bool supports_ssse3()    { return (_cpuFeatures & CPU_SSSE3)!= 0; }
-  static bool supports_sse4()     { return (_cpuFeatures & CPU_SSE4) != 0; }
+  static bool supports_sse4_1()   { return (_cpuFeatures & CPU_SSE4_1) != 0; }
+  static bool supports_sse4_2()   { return (_cpuFeatures & CPU_SSE4_2) != 0; }
   //
   // AMD features
   //

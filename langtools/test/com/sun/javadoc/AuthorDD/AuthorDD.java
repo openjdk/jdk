@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,8 @@ public class AuthorDD
 
     /** Run javadoc */
     public static void runJavadoc(String[] javadocArgs) {
-        if (com.sun.tools.javadoc.Main.execute(javadocArgs) != 0) {
+        if (com.sun.tools.javadoc.Main.execute(AuthorDD.class.getClassLoader(),
+                                               javadocArgs) != 0) {
             throw new Error("Javadoc failed to execute");
         }
     }
@@ -85,12 +86,12 @@ public class AuthorDD
 
              // Test single @since tag:
 
-            { "<DT><B>Since:</B></DT>"+NL+"  <DD>JDK 1.0</DD>",
+            { "<DT><STRONG>Since:</STRONG></DT>"+NL+"  <DD>JDK 1.0</DD>",
                                   BUGID + FS + "p1" + FS + "C1.html" },
 
             // Test multiple @author tags:
 
-            { "<DT><B>Author:</B></DT>"+NL+"  <DD>Doug Kramer, Jamie, Neal</DD>"+NL,
+            { "<DT><STRONG>Author:</STRONG></DT>"+NL+"  <DD>Doug Kramer, Jamie, Neal</DD>"+NL,
                                   BUGID + FS + "p1" + FS + "C1.html" },
 
         };

@@ -92,7 +92,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      * {@inheritDoc}
      */
     public void writeContentsHeader() {
-        bold(configuration.getText("doclet.Contents"));
+        strong(configuration.getText("doclet.Contents"));
         ul();
     }
 
@@ -194,10 +194,10 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
-    public void writeConstantMembers(ClassDoc cd, List fields) {
+    public void writeConstantMembers(ClassDoc cd, List<FieldDoc> fields) {
         currentClassDoc = cd;
         for (int i = 0; i < fields.size(); ++i) {
-            writeConstantMember((FieldDoc)(fields.get(i)));
+            writeConstantMember(fields.get(i));
         }
     }
 

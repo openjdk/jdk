@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,6 @@ class TenuredGeneration: public OneContigSpaceCardGeneration {
 
   // Mark sweep support
   void compute_new_size();
-  int allowed_dead_ratio() const;
 
   virtual void gc_prologue(bool full);
   virtual void gc_epilogue(bool full);

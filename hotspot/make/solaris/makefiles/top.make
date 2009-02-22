@@ -54,6 +54,7 @@ Include_DBs/GC     = $(VM)/includeDB_gc \
                      $(VM)/gc_implementation/includeDB_gc_parallelScavenge \
                      $(VM)/gc_implementation/includeDB_gc_concurrentMarkSweep \
                      $(VM)/gc_implementation/includeDB_gc_parNew \
+                     $(VM)/gc_implementation/includeDB_gc_g1 \
                      $(VM)/gc_implementation/includeDB_gc_serial \
                      $(VM)/gc_implementation/includeDB_gc_shared
 
@@ -82,9 +83,9 @@ Incremental_Lists =$(GENERATED)/$(Cached_db)
 
 AD_Dir   = $(GENERATED)/adfiles
 ADLC     = $(AD_Dir)/adlc
-AD_Spec  = $(GAMMADIR)/src/cpu/$(Platform_arch)/vm/$(Platform_arch).ad
+AD_Spec  = $(GAMMADIR)/src/cpu/$(Platform_arch)/vm/$(Platform_arch_model).ad
 AD_Src   = $(GAMMADIR)/src/share/vm/adlc
-AD_Names = ad_$(Platform_arch).hpp ad_$(Platform_arch).cpp
+AD_Names = ad_$(Platform_arch_model).hpp ad_$(Platform_arch_model).cpp
 AD_Files = $(AD_Names:%=$(AD_Dir)/%)
 
 # AD_Files_If_Required/COMPILER1 = ad_stuff

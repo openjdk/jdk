@@ -147,6 +147,10 @@ class instanceKlass: public Klass {
   oop             _class_loader;
   // Protection domain.
   oop             _protection_domain;
+  // Host class, which grants its access privileges to this class also.
+  // This is only non-null for an anonymous class (AnonymousClasses enabled).
+  // The host class is either named, or a previously loaded anonymous class.
+  klassOop        _host_klass;
   // Class signers.
   objArrayOop     _signers;
   // Name of source file containing this klass, NULL if not specified.
@@ -374,6 +378,11 @@ class instanceKlass: public Klass {
   // protection domain
   oop protection_domain()                  { return _protection_domain; }
   void set_protection_domain(oop pd)       { oop_store((oop*) &_protection_domain, pd); }
+
+  // host class
+  oop host_klass() const                   { return _host_klass; }
+  void set_host_klass(oop host)            { oop_store((oop*) &_host_klass, host); }
+  bool is_anonymous() const                { return _host_klass != NULL; }
 
   // signers
   objArrayOop signers() const              { return _signers; }
@@ -655,13 +664,21 @@ class instanceKlass: public Klass {
     return oop_oop_iterate_v_m(obj, blk, mr);
   }
 
-#define InstanceKlass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)   \
-  int  oop_oop_iterate##nv_suffix(oop obj, OopClosureType* blk);        \
-  int  oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* blk,     \
+#define InstanceKlass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)      \
+  int  oop_oop_iterate##nv_suffix(oop obj, OopClosureType* blk);           \
+  int  oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* blk,        \
                                       MemRegion mr);
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_3(InstanceKlass_OOP_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_DECL)
+
+#ifndef SERIALGC
+#define InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix) \
+  int  oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* blk);
+
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
+#endif // !SERIALGC
 
   void iterate_static_fields(OopClosure* closure);
   void iterate_static_fields(OopClosure* closure, MemRegion mr);
@@ -701,6 +718,7 @@ private:
   oop* adr_constants() const         { return (oop*)&this->_constants;}
   oop* adr_class_loader() const      { return (oop*)&this->_class_loader;}
   oop* adr_protection_domain() const { return (oop*)&this->_protection_domain;}
+  oop* adr_host_klass() const        { return (oop*)&this->_host_klass;}
   oop* adr_signers() const           { return (oop*)&this->_signers;}
   oop* adr_source_file_name() const  { return (oop*)&this->_source_file_name;}
   oop* adr_source_debug_extension() const { return (oop*)&this->_source_debug_extension;}

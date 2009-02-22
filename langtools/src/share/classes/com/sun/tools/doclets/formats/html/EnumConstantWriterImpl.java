@@ -143,7 +143,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
         if (configuration().linksource) {
             writer.printSrcLink(enumConstant, enumConstant.name());
         } else {
-            bold(enumConstant.name());
+            strong(enumConstant.name());
         }
         writer.preEnd();
         writer.dl();
@@ -201,7 +201,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     }
 
     public void printSummaryLabel(ClassDoc cd) {
-        writer.boldText("doclet.Enum_Constant_Summary");
+        writer.strongText("doclet.Enum_Constant_Summary");
     }
 
     public void printSummaryAnchor(ClassDoc cd) {
@@ -216,9 +216,9 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     }
 
     protected void writeSummaryLink(int context, ClassDoc cd, ProgramElementDoc member) {
-        writer.bold();
+        writer.strong();
         writer.printDocLink(context, (MemberDoc) member, member.name(), false);
-        writer.boldEnd();
+        writer.strongEnd();
     }
 
     protected void writeInheritedSummaryLink(ClassDoc cd,

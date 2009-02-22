@@ -31,7 +31,6 @@ import java.nio.channels.spi.*;
 import java.util.*;
 import sun.misc.*;
 
-
 /**
  * An implementation of Selector for Linux 2.6+ kernels that uses
  * the epoll event notification facility.
@@ -51,7 +50,7 @@ class EPollSelectorImpl
     private Map<Integer,SelectionKeyImpl> fdToKey;
 
     // True if this Selector has been closed
-    private boolean closed = false;
+    private volatile boolean closed = false;
 
     // Lock for interrupt triggering and clearing
     private Object interruptLock = new Object();
@@ -128,40 +127,41 @@ class EPollSelectorImpl
     }
 
     protected void implClose() throws IOException {
-        if (!closed) {
-            closed = true;
+        if (closed)
+            return;
+        closed = true;
 
-            // prevent further wakeup
-            synchronized (interruptLock) {
-                interruptTriggered = true;
-            }
-
-            FileDispatcher.closeIntFD(fd0);
-            FileDispatcher.closeIntFD(fd1);
-            if (pollWrapper != null) {
-
-                pollWrapper.release(fd0);
-                pollWrapper.closeEPollFD();
-                pollWrapper = null;
-                selectedKeys = null;
-
-                // Deregister channels
-                Iterator i = keys.iterator();
-                while (i.hasNext()) {
-                    SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
-                    deregister(ski);
-                    SelectableChannel selch = ski.channel();
-                    if (!selch.isOpen() && !selch.isRegistered())
-                        ((SelChImpl)selch).kill();
-                    i.remove();
-                }
-            }
-            fd0 = -1;
-            fd1 = -1;
+        // prevent further wakeup
+        synchronized (interruptLock) {
+            interruptTriggered = true;
         }
+
+        FileDispatcher.closeIntFD(fd0);
+        FileDispatcher.closeIntFD(fd1);
+
+        pollWrapper.release(fd0);
+        pollWrapper.closeEPollFD();
+        // it is possible
+        selectedKeys = null;
+
+        // Deregister channels
+        Iterator i = keys.iterator();
+        while (i.hasNext()) {
+            SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
+            deregister(ski);
+            SelectableChannel selch = ski.channel();
+            if (!selch.isOpen() && !selch.isRegistered())
+                ((SelChImpl)selch).kill();
+            i.remove();
+        }
+
+        fd0 = -1;
+        fd1 = -1;
     }
 
     protected void implRegister(SelectionKeyImpl ski) {
+        if (closed)
+            throw new ClosedSelectorException();
         int fd = IOUtil.fdVal(ski.channel.getFD());
         fdToKey.put(Integer.valueOf(fd), ski);
         pollWrapper.add(fd);
@@ -183,6 +183,8 @@ class EPollSelectorImpl
     }
 
     void putEventOps(SelectionKeyImpl sk, int ops) {
+        if (closed)
+            throw new ClosedSelectorException();
         int fd = IOUtil.fdVal(sk.channel.getFD());
         pollWrapper.setInterest(fd, ops);
     }

@@ -37,7 +37,7 @@ import java.util.Set;
  *
  * @author Thomas Wuerthinger
  */
-public class Group extends Properties.Object implements ChangedEventProvider<Group> {
+public class Group extends Properties.Entity implements ChangedEventProvider<Group> {
 
     private List<InputGraph> graphs;
     private transient ChangedEvent<Group> changedEvent;

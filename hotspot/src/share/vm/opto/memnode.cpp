@@ -227,6 +227,14 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   const Type *t_adr = phase->type( address );
   if( t_adr == Type::TOP )              return NodeSentinel; // caller will return NULL
 
+  PhaseIterGVN *igvn = phase->is_IterGVN();
+  if( can_reshape && igvn != NULL && igvn->_worklist.member(address) ) {
+    // The address's base and type may change when the address is processed.
+    // Delay this mem node transformation until the address is processed.
+    phase->is_IterGVN()->_worklist.push(this);
+    return NodeSentinel; // caller will return NULL
+  }
+
   // Avoid independent memory operations
   Node* old_mem = mem;
 
@@ -771,14 +779,14 @@ Node *LoadNode::make( PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const Type
          "use LoadRangeNode instead");
   switch (bt) {
   case T_BOOLEAN:
-  case T_BYTE:    return new (C, 3) LoadBNode(ctl, mem, adr, adr_type, rt->is_int()    );
-  case T_INT:     return new (C, 3) LoadINode(ctl, mem, adr, adr_type, rt->is_int()    );
-  case T_CHAR:    return new (C, 3) LoadCNode(ctl, mem, adr, adr_type, rt->is_int()    );
-  case T_SHORT:   return new (C, 3) LoadSNode(ctl, mem, adr, adr_type, rt->is_int()    );
-  case T_LONG:    return new (C, 3) LoadLNode(ctl, mem, adr, adr_type, rt->is_long()   );
-  case T_FLOAT:   return new (C, 3) LoadFNode(ctl, mem, adr, adr_type, rt              );
-  case T_DOUBLE:  return new (C, 3) LoadDNode(ctl, mem, adr, adr_type, rt              );
-  case T_ADDRESS: return new (C, 3) LoadPNode(ctl, mem, adr, adr_type, rt->is_ptr()    );
+  case T_BYTE:    return new (C, 3) LoadBNode (ctl, mem, adr, adr_type, rt->is_int()    );
+  case T_INT:     return new (C, 3) LoadINode (ctl, mem, adr, adr_type, rt->is_int()    );
+  case T_CHAR:    return new (C, 3) LoadUSNode(ctl, mem, adr, adr_type, rt->is_int()    );
+  case T_SHORT:   return new (C, 3) LoadSNode (ctl, mem, adr, adr_type, rt->is_int()    );
+  case T_LONG:    return new (C, 3) LoadLNode (ctl, mem, adr, adr_type, rt->is_long()   );
+  case T_FLOAT:   return new (C, 3) LoadFNode (ctl, mem, adr, adr_type, rt              );
+  case T_DOUBLE:  return new (C, 3) LoadDNode (ctl, mem, adr, adr_type, rt              );
+  case T_ADDRESS: return new (C, 3) LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr()    );
   case T_OBJECT:
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
@@ -1068,13 +1076,14 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
       // of the original value.
       Node* mem_phi = in(Memory);
       Node* offset = in(Address)->in(AddPNode::Offset);
+      Node* region = base->in(0);
 
       Node* in1 = clone();
       Node* in1_addr = in1->in(Address)->clone();
       in1_addr->set_req(AddPNode::Base, base->in(allocation_index));
       in1_addr->set_req(AddPNode::Address, base->in(allocation_index));
       in1_addr->set_req(AddPNode::Offset, offset);
-      in1->set_req(0, base->in(allocation_index));
+      in1->set_req(0, region->in(allocation_index));
       in1->set_req(Address, in1_addr);
       in1->set_req(Memory, mem_phi->in(allocation_index));
 
@@ -1083,7 +1092,7 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
       in2_addr->set_req(AddPNode::Base, base->in(load_index));
       in2_addr->set_req(AddPNode::Address, base->in(load_index));
       in2_addr->set_req(AddPNode::Offset, offset);
-      in2->set_req(0, base->in(load_index));
+      in2->set_req(0, region->in(load_index));
       in2->set_req(Address, in2_addr);
       in2->set_req(Memory, mem_phi->in(load_index));
 
@@ -1092,7 +1101,7 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
       in2_addr = phase->transform(in2_addr);
       in2 =      phase->transform(in2);
 
-      PhiNode* result = PhiNode::make_blank(base->in(0), this);
+      PhiNode* result = PhiNode::make_blank(region, this);
       result->set_req(allocation_index, in1);
       result->set_req(load_index, in2);
       return result;
@@ -1295,6 +1304,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node*    base   = AddPNode::Ideal_base_and_offset(address, phase, ignore);
     if (base != NULL
         && phase->type(base)->higher_equal(TypePtr::NOTNULL)
+        && phase->C->get_alias_index(phase->type(address)->is_ptr()) != Compile::AliasIdxRaw
         && all_controls_dominate(base, phase->C->start())) {
       // A method-invariant, non-null address (constant or 'this' argument).
       set_req(MemNode::Control, NULL);
@@ -1348,7 +1358,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Steps (a), (b):  Walk past independent stores to find an exact match.
   if (prev_mem != NULL && prev_mem != in(MemNode::Memory)) {
     // (c) See if we can fold up on the spot, but don't fold up here.
-    // Fold-up might require truncation (for LoadB/LoadS/LoadC) or
+    // Fold-up might require truncation (for LoadB/LoadS/LoadUS) or
     // just return a prior value, which is done by Identity calls.
     if (can_see_stored_value(prev_mem, phase)) {
       // Make ready for step (d):
@@ -1597,14 +1607,14 @@ Node *LoadBNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return LoadNode::Ideal(phase, can_reshape);
 }
 
-//--------------------------LoadCNode::Ideal--------------------------------------
+//--------------------------LoadUSNode::Ideal-------------------------------------
 //
 //  If the previous store is to the same address as this load,
 //  and the value stored was larger than a char, replace this load
 //  with the value stored truncated to a char.  If no truncation is
 //  needed, the replacement is done in LoadNode::Identity().
 //
-Node *LoadCNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node *LoadUSNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
   if( value && !phase->type(value)->higher_equal( _type ) )
@@ -1887,6 +1897,38 @@ const Type *LoadRangeNode::Value( PhaseTransform *phase ) const {
   return tap->size();
 }
 
+//-------------------------------Ideal---------------------------------------
+// Feed through the length in AllocateArray(...length...)._length.
+Node *LoadRangeNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  Node* p = MemNode::Ideal_common(phase, can_reshape);
+  if (p)  return (p == NodeSentinel) ? NULL : p;
+
+  // Take apart the address into an oop and and offset.
+  // Return 'this' if we cannot.
+  Node*    adr    = in(MemNode::Address);
+  intptr_t offset = 0;
+  Node*    base   = AddPNode::Ideal_base_and_offset(adr, phase,  offset);
+  if (base == NULL)     return NULL;
+  const TypeAryPtr* tary = phase->type(adr)->isa_aryptr();
+  if (tary == NULL)     return NULL;
+
+  // We can fetch the length directly through an AllocateArrayNode.
+  // This works even if the length is not constant (clone or newArray).
+  if (offset == arrayOopDesc::length_offset_in_bytes()) {
+    AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(base, phase);
+    if (alloc != NULL) {
+      Node* allocated_length = alloc->Ideal_length();
+      Node* len = alloc->make_ideal_length(tary, phase);
+      if (allocated_length != len) {
+        // New CastII improves on this.
+        return len;
+      }
+    }
+  }
+
+  return NULL;
+}
+
 //------------------------------Identity---------------------------------------
 // Feed through the length in AllocateArray(...length...)._length.
 Node* LoadRangeNode::Identity( PhaseTransform *phase ) {
@@ -1905,15 +1947,22 @@ Node* LoadRangeNode::Identity( PhaseTransform *phase ) {
   // We can fetch the length directly through an AllocateArrayNode.
   // This works even if the length is not constant (clone or newArray).
   if (offset == arrayOopDesc::length_offset_in_bytes()) {
-    Node* allocated_length = AllocateArrayNode::Ideal_length(base, phase);
-    if (allocated_length != NULL) {
-      return allocated_length;
+    AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(base, phase);
+    if (alloc != NULL) {
+      Node* allocated_length = alloc->Ideal_length();
+      // Do not allow make_ideal_length to allocate a CastII node.
+      Node* len = alloc->make_ideal_length(tary, phase, false);
+      if (allocated_length == len) {
+        // Return allocated_length only if it would not be improved by a CastII.
+        return allocated_length;
+      }
     }
   }
 
   return this;
 
 }
+
 //=============================================================================
 //---------------------------StoreNode::make-----------------------------------
 // Polymorphic factory method:

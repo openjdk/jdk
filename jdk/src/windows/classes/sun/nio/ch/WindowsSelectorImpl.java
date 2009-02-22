@@ -80,6 +80,9 @@ final class WindowsSelectorImpl extends SelectorImpl {
     // File descriptors corresponding to source and sink
     private final int wakeupSourceFd, wakeupSinkFd;
 
+    // Lock for close cleanup
+    private Object closeLock = new Object();
+
     // Maps file descriptors to their indices in  pollArray
     private final static class FdMap extends HashMap<Integer, MapEntry> {
         static final long serialVersionUID = 0L;
@@ -473,42 +476,48 @@ final class WindowsSelectorImpl extends SelectorImpl {
     }
 
     protected void implClose() throws IOException {
-        if (channelArray != null) {
-            if (pollWrapper != null) {
-                // prevent further wakeup
-                synchronized (interruptLock) {
-                    interruptTriggered = true;
-                }
-                wakeupPipe.sink().close();
-                wakeupPipe.source().close();
-                for(int i = 1; i < totalChannels; i++) { // Deregister channels
-                    if (i % MAX_SELECTABLE_FDS != 0) { // skip wakeupEvent
-                        deregister(channelArray[i]);
-                        SelectableChannel selch = channelArray[i].channel();
-                        if (!selch.isOpen() && !selch.isRegistered())
-                            ((SelChImpl)selch).kill();
+        synchronized (closeLock) {
+            if (channelArray != null) {
+                if (pollWrapper != null) {
+                    // prevent further wakeup
+                    synchronized (interruptLock) {
+                        interruptTriggered = true;
                     }
-                }
-                pollWrapper.free();
-                pollWrapper = null;
-                selectedKeys = null;
-                channelArray = null;
-                threads.clear();
-                // Call startThreads. All remaining helper threads now exit,
-                // since threads.size() = 0;
-                startLock.startThreads();
+                    wakeupPipe.sink().close();
+                    wakeupPipe.source().close();
+                    for(int i = 1; i < totalChannels; i++) { // Deregister channels
+                        if (i % MAX_SELECTABLE_FDS != 0) { // skip wakeupEvent
+                            deregister(channelArray[i]);
+                            SelectableChannel selch = channelArray[i].channel();
+                            if (!selch.isOpen() && !selch.isRegistered())
+                                ((SelChImpl)selch).kill();
+                        }
+                    }
+                    pollWrapper.free();
+                    pollWrapper = null;
+                     selectedKeys = null;
+                     channelArray = null;
+                     threads.clear();
+                     // Call startThreads. All remaining helper threads now exit,
+                     // since threads.size() = 0;
+                     startLock.startThreads();
+                 }
             }
         }
     }
 
     protected void implRegister(SelectionKeyImpl ski) {
-        growIfNeeded();
-        channelArray[totalChannels] = ski;
-        ski.setIndex(totalChannels);
-        fdMap.put(ski);
-        keys.add(ski);
-        pollWrapper.addEntry(totalChannels, ski);
-        totalChannels++;
+        synchronized (closeLock) {
+            if (pollWrapper == null)
+                throw new ClosedSelectorException();
+            growIfNeeded();
+            channelArray[totalChannels] = ski;
+            ski.setIndex(totalChannels);
+            fdMap.put(ski);
+            keys.add(ski);
+            pollWrapper.addEntry(totalChannels, ski);
+            totalChannels++;
+        }
     }
 
     private void growIfNeeded() {
@@ -554,7 +563,11 @@ final class WindowsSelectorImpl extends SelectorImpl {
     }
 
     void putEventOps(SelectionKeyImpl sk, int ops) {
-        pollWrapper.putEventOps(sk.getIndex(), ops);
+        synchronized (closeLock) {
+            if (pollWrapper == null)
+                throw new ClosedSelectorException();
+            pollWrapper.putEventOps(sk.getIndex(), ops);
+        }
     }
 
     public Selector wakeup() {

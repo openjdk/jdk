@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,18 +95,13 @@ typedef struct {
 } PerfDataEntry;
 
 // Prefix of performance data file.
-static const char PERFDATA_NAME[] = "hsperfdata";
+extern const char PERFDATA_NAME[];
 
 // UINT_CHARS contains the number of characters holding a process id
 // (i.e. pid). pid is defined as unsigned "int" so the maximum possible pid value
 // would be 2^32 - 1 (4294967295) which can be represented as a 10 characters
 // string.
 static const size_t UINT_CHARS = 10;
-
-// Add 1 for the '_' character between PERFDATA_NAME and pid. The '\0' terminating
-// character will be included in the sizeof(PERFDATA_NAME) operation.
-static const size_t PERFDATA_FILENAME_LEN = sizeof(PERFDATA_NAME) +
-                                            UINT_CHARS + 1;
 
 /* the PerfMemory class manages creation, destruction,
  * and allocation of the PerfData region.

@@ -64,12 +64,12 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
 
         /** Create a new diagnostic factory. */
         protected Factory(Context context) {
-            this(Messages.instance(context), "compiler");
+            this(JavacMessages.instance(context), "compiler");
             context.put(diagnosticFactoryKey, this);
         }
 
         /** Create a new diagnostic factory. */
-        public Factory(Messages messages, String prefix) {
+        public Factory(JavacMessages messages, String prefix) {
             this.prefix = prefix;
             this.formatter = new BasicDiagnosticFormatter(messages);
         }
@@ -178,7 +178,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     @Deprecated
     public static DiagnosticFormatter<JCDiagnostic> getFragmentFormatter() {
         if (fragmentFormatter == null) {
-            fragmentFormatter = new BasicDiagnosticFormatter(Messages.getDefaultMessages());
+            fragmentFormatter = new BasicDiagnosticFormatter(JavacMessages.getDefaultMessages());
         }
         return fragmentFormatter;
     }
@@ -289,7 +289,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         this.source = source;
         this.position = pos;
         this.key = key;
-        this.args = args;
+            this.args = args;
 
         int n = (pos == null ? Position.NOPOS : pos.getPreferredPosition());
         if (n == Position.NOPOS || source == null)
@@ -306,6 +306,18 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
      */
     public DiagnosticType getType() {
         return type;
+    }
+
+    /**
+     * Get the subdiagnostic list
+     * @return subdiagnostic list
+     */
+    public List<JCDiagnostic> getSubdiagnostics() {
+        return List.nil();
+    }
+
+    public boolean isMultiline() {
+        return false;
     }
 
     /**
@@ -440,7 +452,32 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     }
 
     public String getMessage(Locale locale) {
-        // RFE 6406133: JCDiagnostic.getMessage ignores locale argument
         return defaultFormatter.formatMessage(this, locale);
+    }
+
+    public static class MultilineDiagnostic extends JCDiagnostic {
+
+        private final List<JCDiagnostic> subdiagnostics;
+
+        public MultilineDiagnostic(JCDiagnostic other, List<JCDiagnostic> subdiagnostics) {
+            super(other.defaultFormatter,
+                  other.getType(),
+                  other.isMandatory(),
+                  other.getDiagnosticSource(),
+                  other.position,
+                  other.getCode(),
+                  other.getArgs());
+            this.subdiagnostics = subdiagnostics;
+        }
+
+        @Override
+        public List<JCDiagnostic> getSubdiagnostics() {
+            return subdiagnostics;
+        }
+
+        @Override
+        public boolean isMultiline() {
+            return true;
+        }
     }
 }

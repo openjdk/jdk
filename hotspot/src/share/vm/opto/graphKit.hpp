@@ -24,6 +24,7 @@
 
 class FastLockNode;
 class FastUnlockNode;
+class IdealKit;
 class Parse;
 class RootNode;
 
@@ -81,6 +82,18 @@ class GraphKit : public Phase {
   Node* makecon(const Type *t)  const { return _gvn.makecon(t); }
   Node* zerocon(BasicType bt)   const { return _gvn.zerocon(bt); }
   // (See also macro MakeConX in type.hpp, which uses intcon or longcon.)
+
+  // Helper for byte_map_base
+  Node* byte_map_base_node() {
+    // Get base of card map
+    CardTableModRefBS* ct = (CardTableModRefBS*)(Universe::heap()->barrier_set());
+    assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust users of this code");
+    if (ct->byte_map_base != NULL) {
+      return makecon(TypeRawPtr::make((address)ct->byte_map_base));
+    } else {
+      return null();
+    }
+  }
 
   jint  find_int_con(Node* n, jint value_if_unknown) {
     return _gvn.find_int_con(n, value_if_unknown);
@@ -581,6 +594,27 @@ class GraphKit : public Phase {
             && Universe::heap()->can_elide_tlab_store_barriers());
   }
 
+  // G1 pre/post barriers
+  void g1_write_barrier_pre(Node* obj,
+                            Node* adr,
+                            uint alias_idx,
+                            Node* val,
+                            const Type* val_type,
+                            BasicType bt);
+
+  void g1_write_barrier_post(Node* store,
+                             Node* obj,
+                             Node* adr,
+                             uint alias_idx,
+                             Node* val,
+                             BasicType bt,
+                             bool use_precise);
+  // Helper function for g1
+  private:
+  void g1_mark_card(IdealKit* ideal, Node* card_adr, Node* store,  Node* index, Node* index_adr,
+                    Node* buffer, const TypeFunc* tf);
+
+  public:
   // Helper function to round double arguments before a call
   void round_double_arguments(ciMethod* dest_method);
   void round_double_result(ciMethod* dest_method);

@@ -52,9 +52,9 @@ public class Pair<A, B> {
 
     public boolean equals(Object other) {
         return
-            other instanceof Pair &&
-            equals(fst, ((Pair)other).fst) &&
-            equals(snd, ((Pair)other).snd);
+            other instanceof Pair<?,?> &&
+            equals(fst, ((Pair<?,?>)other).fst) &&
+            equals(snd, ((Pair<?,?>)other).snd);
     }
 
     public int hashCode() {

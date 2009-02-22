@@ -190,7 +190,7 @@ public class DefaultTableColumnModel implements TableColumnModel,
             fireColumnMoved(new TableColumnModelEvent(this, columnIndex, newIndex));
             return;
         }
-        aColumn = (TableColumn)tableColumns.elementAt(columnIndex);
+        aColumn = tableColumns.elementAt(columnIndex);
 
         tableColumns.removeElementAt(columnIndex);
         boolean selected = selectionModel.isSelectedIndex(columnIndex);
@@ -291,7 +291,7 @@ public class DefaultTableColumnModel implements TableColumnModel,
      *                          at <code>columnIndex</code>
      */
     public TableColumn getColumn(int columnIndex) {
-        return (TableColumn)tableColumns.elementAt(columnIndex);
+        return tableColumns.elementAt(columnIndex);
     }
 
     /**
@@ -504,8 +504,7 @@ public class DefaultTableColumnModel implements TableColumnModel,
      * @since 1.4
      */
     public TableColumnModelListener[] getColumnModelListeners() {
-        return (TableColumnModelListener[])listenerList.getListeners(
-                TableColumnModelListener.class);
+        return listenerList.getListeners(TableColumnModelListener.class);
     }
 
 //

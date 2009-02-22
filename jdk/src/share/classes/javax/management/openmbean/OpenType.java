@@ -206,7 +206,7 @@ public abstract class OpenType<T> implements Serializable {
         }
     }
 
-    private static boolean overridesGetClassName(final Class<? extends OpenType> c) {
+    private static boolean overridesGetClassName(final Class<?> c) {
         return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
             public Boolean run() {
                 try {

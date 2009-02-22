@@ -29,6 +29,9 @@
 #include "incls/_precompiled.incl"
 #include "incls/_gcm.cpp.incl"
 
+// To avoid float value underflow
+#define MIN_BLOCK_FREQUENCY 1.e-35f
+
 //----------------------------schedule_node_into_block-------------------------
 // Insert node n into block b. Look for projections of n and make sure they
 // are in b also.
@@ -1319,11 +1322,33 @@ void PhaseCFG::GlobalCodeMotion( Matcher &matcher, uint unique, Node_List &proj_
 //------------------------------Estimate_Block_Frequency-----------------------
 // Estimate block frequencies based on IfNode probabilities.
 void PhaseCFG::Estimate_Block_Frequency() {
-  int cnts = C->method() ? C->method()->interpreter_invocation_count() : 1;
-  // Most of our algorithms will die horribly if frequency can become
-  // negative so make sure cnts is a sane value.
-  if( cnts <= 0 ) cnts = 1;
-  float f = (float)cnts/(float)FreqCountInvocations;
+
+  // Force conditional branches leading to uncommon traps to be unlikely,
+  // not because we get to the uncommon_trap with less relative frequency,
+  // but because an uncommon_trap typically causes a deopt, so we only get
+  // there once.
+  if (C->do_freq_based_layout()) {
+    Block_List worklist;
+    Block* root_blk = _blocks[0];
+    for (uint i = 1; i < root_blk->num_preds(); i++) {
+      Block *pb = _bbs[root_blk->pred(i)->_idx];
+      if (pb->has_uncommon_code()) {
+        worklist.push(pb);
+      }
+    }
+    while (worklist.size() > 0) {
+      Block* uct = worklist.pop();
+      if (uct == _broot) continue;
+      for (uint i = 1; i < uct->num_preds(); i++) {
+        Block *pb = _bbs[uct->pred(i)->_idx];
+        if (pb->_num_succs == 1) {
+          worklist.push(pb);
+        } else if (pb->num_fall_throughs() == 2) {
+          pb->update_uncommon_branch(uct);
+        }
+      }
+    }
+  }
 
   // Create the loop tree and calculate loop depth.
   _root_loop = create_loop_tree();
@@ -1333,28 +1358,37 @@ void PhaseCFG::Estimate_Block_Frequency() {
   _root_loop->compute_freq();
 
   // Adjust all frequencies to be relative to a single method entry
-  _root_loop->_freq = f * 1.0;
+  _root_loop->_freq = 1.0;
   _root_loop->scale_freq();
 
   // force paths ending at uncommon traps to be infrequent
-  Block_List worklist;
-  Block* root_blk = _blocks[0];
-  for (uint i = 0; i < root_blk->num_preds(); i++) {
-    Block *pb = _bbs[root_blk->pred(i)->_idx];
-    if (pb->has_uncommon_code()) {
-      worklist.push(pb);
-    }
-  }
-  while (worklist.size() > 0) {
-    Block* uct = worklist.pop();
-    uct->_freq = PROB_MIN;
-    for (uint i = 0; i < uct->num_preds(); i++) {
-      Block *pb = _bbs[uct->pred(i)->_idx];
-      if (pb->_num_succs == 1 && pb->_freq > PROB_MIN) {
+  if (!C->do_freq_based_layout()) {
+    Block_List worklist;
+    Block* root_blk = _blocks[0];
+    for (uint i = 1; i < root_blk->num_preds(); i++) {
+      Block *pb = _bbs[root_blk->pred(i)->_idx];
+      if (pb->has_uncommon_code()) {
         worklist.push(pb);
       }
     }
+    while (worklist.size() > 0) {
+      Block* uct = worklist.pop();
+      uct->_freq = PROB_MIN;
+      for (uint i = 1; i < uct->num_preds(); i++) {
+        Block *pb = _bbs[uct->pred(i)->_idx];
+        if (pb->_num_succs == 1 && pb->_freq > PROB_MIN) {
+          worklist.push(pb);
+        }
+      }
+    }
   }
+
+#ifdef ASSERT
+  for (uint i = 0; i < _num_blocks; i++ ) {
+    Block *b = _blocks[i];
+    assert(b->_freq >= MIN_BLOCK_FREQUENCY, "Register Allocator requiers meaningful block frequency");
+  }
+#endif
 
 #ifndef PRODUCT
   if (PrintCFGBlockFreq) {
@@ -1556,22 +1590,6 @@ void CFGLoop::compute_freq() {
     }
   }
 
-#if 0
-  // Raise frequency of the loop backedge block, in an effort
-  // to keep it empty.  Skip the method level "loop".
-  if (_parent != NULL) {
-    CFGElement* s = _members.at(_members.length() - 1);
-    if (s->is_block()) {
-      Block* bk = s->as_Block();
-      if (bk->_num_succs == 1 && bk->_succs[0] == hd) {
-        // almost any value >= 1.0f works
-        // FIXME: raw constant
-        bk->_freq = 1.05f;
-      }
-    }
-  }
-#endif
-
   // For all loops other than the outer, "method" loop,
   // sum and normalize the exit probability. The "method" loop
   // should keep the initial exit probability of 1, so that
@@ -1589,12 +1607,15 @@ void CFGLoop::compute_freq() {
     // the probability of exit per loop entry.
     for (int i = 0; i < _exits.length(); i++) {
       Block* et = _exits.at(i).get_target();
-      float new_prob = _exits.at(i).get_prob() / exits_sum;
+      float new_prob = 0.0f;
+      if (_exits.at(i).get_prob() > 0.0f) {
+        new_prob = _exits.at(i).get_prob() / exits_sum;
+      }
       BlockProbPair bpp(et, new_prob);
       _exits.at_put(i, bpp);
     }
 
-    // Save the total, but guard against unreasoable probability,
+    // Save the total, but guard against unreasonable probability,
     // as the value is used to estimate the loop trip count.
     // An infinite trip count would blur relative block
     // frequencies.
@@ -1688,6 +1709,137 @@ float Block::succ_prob(uint i) {
   return 0.0f;
 }
 
+//------------------------------num_fall_throughs-----------------------------
+// Return the number of fall-through candidates for a block
+int Block::num_fall_throughs() {
+  int eidx = end_idx();
+  Node *n = _nodes[eidx];  // Get ending Node
+
+  int op = n->Opcode();
+  if (n->is_Mach()) {
+    if (n->is_MachNullCheck()) {
+      // In theory, either side can fall-thru, for simplicity sake,
+      // let's say only the false branch can now.
+      return 1;
+    }
+    op = n->as_Mach()->ideal_Opcode();
+  }
+
+  // Switch on branch type
+  switch( op ) {
+  case Op_CountedLoopEnd:
+  case Op_If:
+    return 2;
+
+  case Op_Root:
+  case Op_Goto:
+    return 1;
+
+  case Op_Catch: {
+    for (uint i = 0; i < _num_succs; i++) {
+      const CatchProjNode *ci = _nodes[i + eidx + 1]->as_CatchProj();
+      if (ci->_con == CatchProjNode::fall_through_index) {
+        return 1;
+      }
+    }
+    return 0;
+  }
+
+  case Op_Jump:
+  case Op_NeverBranch:
+  case Op_TailCall:
+  case Op_TailJump:
+  case Op_Return:
+  case Op_Halt:
+  case Op_Rethrow:
+    return 0;
+
+  default:
+    ShouldNotReachHere();
+  }
+
+  return 0;
+}
+
+//------------------------------succ_fall_through-----------------------------
+// Return true if a specific successor could be fall-through target.
+bool Block::succ_fall_through(uint i) {
+  int eidx = end_idx();
+  Node *n = _nodes[eidx];  // Get ending Node
+
+  int op = n->Opcode();
+  if (n->is_Mach()) {
+    if (n->is_MachNullCheck()) {
+      // In theory, either side can fall-thru, for simplicity sake,
+      // let's say only the false branch can now.
+      return _nodes[i + eidx + 1]->Opcode() == Op_IfFalse;
+    }
+    op = n->as_Mach()->ideal_Opcode();
+  }
+
+  // Switch on branch type
+  switch( op ) {
+  case Op_CountedLoopEnd:
+  case Op_If:
+  case Op_Root:
+  case Op_Goto:
+    return true;
+
+  case Op_Catch: {
+    const CatchProjNode *ci = _nodes[i + eidx + 1]->as_CatchProj();
+    return ci->_con == CatchProjNode::fall_through_index;
+  }
+
+  case Op_Jump:
+  case Op_NeverBranch:
+  case Op_TailCall:
+  case Op_TailJump:
+  case Op_Return:
+  case Op_Halt:
+  case Op_Rethrow:
+    return false;
+
+  default:
+    ShouldNotReachHere();
+  }
+
+  return false;
+}
+
+//------------------------------update_uncommon_branch------------------------
+// Update the probability of a two-branch to be uncommon
+void Block::update_uncommon_branch(Block* ub) {
+  int eidx = end_idx();
+  Node *n = _nodes[eidx];  // Get ending Node
+
+  int op = n->as_Mach()->ideal_Opcode();
+
+  assert(op == Op_CountedLoopEnd || op == Op_If, "must be a If");
+  assert(num_fall_throughs() == 2, "must be a two way branch block");
+
+  // Which successor is ub?
+  uint s;
+  for (s = 0; s <_num_succs; s++) {
+    if (_succs[s] == ub) break;
+  }
+  assert(s < 2, "uncommon successor must be found");
+
+  // If ub is the true path, make the proability small, else
+  // ub is the false path, and make the probability large
+  bool invert = (_nodes[s + eidx + 1]->Opcode() == Op_IfFalse);
+
+  // Get existing probability
+  float p = n->as_MachIf()->_prob;
+
+  if (invert) p = 1.0 - p;
+  if (p > PROB_MIN) {
+    p = PROB_MIN;
+  }
+  if (invert) p = 1.0 - p;
+
+  n->as_MachIf()->_prob = p;
+}
+
 //------------------------------update_succ_freq-------------------------------
 // Update the appropriate frequency associated with block 'b', a succesor of
 // a block in this loop.
@@ -1735,7 +1887,9 @@ void CFGLoop::scale_freq() {
   float loop_freq = _freq * trip_count();
   for (int i = 0; i < _members.length(); i++) {
     CFGElement* s = _members.at(i);
-    s->_freq *= loop_freq;
+    float block_freq = s->_freq * loop_freq;
+    if (block_freq < MIN_BLOCK_FREQUENCY) block_freq = MIN_BLOCK_FREQUENCY;
+    s->_freq = block_freq;
   }
   CFGLoop* ch = _child;
   while (ch != NULL) {

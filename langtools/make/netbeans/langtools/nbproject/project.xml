@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+
+   - Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+
+   - Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
+
+   - Neither the name of Sun Microsystems nor the names of its
+     contributors may be used to endorse or promote products derived
+     from this software without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+ IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<!DOCTYPE project [
+    <!ENTITY standard-ide-actions SYSTEM "standard-ide-actions.ent">
+    <!ENTITY standard-context-menu-items SYSTEM "standard-context-menu-items.ent">
+]>
+<project xmlns="http://www.netbeans.org/ns/project/1">
+    <type>org.netbeans.modules.ant.freeform</type>
+    <configuration>
+        <general-data xmlns="http://www.netbeans.org/ns/freeform-project/1">
+            <!-- Do not use Project Properties customizer when editing this file manually. -->
+            <name>langtools</name>
+            <properties>
+                <property name="root">../../..</property>
+            </properties>
+            <folders>
+                <source-folder>
+                    <label>langtools</label>
+                    <location>${root}</location>
+                </source-folder>
+                <source-folder>
+                    <label>Source files</label>
+                    <type>java</type>
+                    <location>${root}/src/share/classes</location>
+                </source-folder>
+                <source-folder>
+                    <label>Test files</label>
+                    <type>tests</type>
+                    <location>${root}/test</location>
+                </source-folder>
+                <source-folder>
+                    <label>Build files</label>
+                    <type>build</type>
+                    <location>${root}/make</location>
+                </source-folder>
+            </folders>
+            <ide-actions>
+                &standard-ide-actions;
+            </ide-actions>
+            <export>
+                <type>folder</type>
+                <location>${root}/build/classes</location>
+                <build-target>build</build-target>
+            </export>
+            <view>
+                <items>
+                    <source-folder style="tree">
+                        <label>Source files</label>
+                        <location>${root}/src/share/classes</location>
+                    </source-folder>
+                    <source-folder style="tree">
+                        <label>Test files</label>
+                        <location>${root}/test</location>
+                    </source-folder>
+                    <source-folder style="tree">
+                        <label>Build files</label>
+                        <location>${root}/make</location>
+                    </source-folder>
+                    <source-file>
+                        <label>README</label>
+                        <location>README</location>
+                    </source-file>
+                </items>
+                <context-menu>
+                    &standard-context-menu-items;
+                </context-menu>
+            </view>
+            <subprojects/>
+        </general-data>
+        <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
+            <compilation-unit>
+                <package-root>${root}/src/share/classes</package-root>
+                <built-to>${root}/build/classes</built-to>
+                <source-level>1.5</source-level>  <!-- FIXME -->
+            </compilation-unit>
+        </java-data>
+    </configuration>
+</project>

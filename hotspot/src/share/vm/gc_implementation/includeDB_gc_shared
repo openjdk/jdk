@@ -24,6 +24,23 @@
 
 // NOTE: DO NOT CHANGE THIS COPYRIGHT TO NEW STYLE - IT WILL BREAK makeDeps!
 
+concurrentGCThread.cpp                  concurrentGCThread.hpp
+concurrentGCThread.cpp                  init.hpp
+concurrentGCThread.cpp                  instanceRefKlass.hpp
+concurrentGCThread.cpp                  interfaceSupport.hpp
+concurrentGCThread.cpp                  java.hpp
+concurrentGCThread.cpp                  javaCalls.hpp
+concurrentGCThread.cpp                  oop.inline.hpp
+concurrentGCThread.cpp                  systemDictionary.hpp
+
+concurrentGCThread.hpp                  thread.hpp
+
+coTracker.hpp                           globalDefinitions.hpp
+coTracker.hpp                           numberSeq.hpp
+
+coTracker.cpp                           coTracker.hpp
+coTracker.cpp                           os.hpp
+
 allocationStats.cpp                     allocationStats.hpp
 allocationStats.cpp                     ostream.hpp
 
@@ -36,6 +53,13 @@ gcAdaptivePolicyCounters.hpp            gcPolicyCounters.hpp
 
 gcAdaptivePolicyCounters.cpp            resourceArea.hpp
 gcAdaptivePolicyCounters.cpp            gcAdaptivePolicyCounters.hpp
+
+gcOverheadReporter.cpp                  allocation.inline.hpp
+gcOverheadReporter.cpp                  concurrentGCThread.hpp
+gcOverheadReporter.cpp                  coTracker.hpp
+gcOverheadReporter.cpp                  gcOverheadReporter.hpp
+gcOverheadReporter.cpp                  ostream.hpp
+gcOverheadReporter.cpp                  thread_<os_family>.inline.hpp
 
 gSpaceCounters.cpp                      generation.hpp
 gSpaceCounters.cpp                      resourceArea.hpp
@@ -75,3 +99,5 @@ spaceCounters.hpp                       immutableSpace.hpp
 spaceCounters.hpp                       mutableSpace.hpp
 spaceCounters.hpp                       perfData.hpp
 spaceCounters.hpp                       generationCounters.hpp
+
+vmGCOperations.cpp                      g1CollectedHeap.inline.hpp

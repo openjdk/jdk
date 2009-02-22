@@ -121,7 +121,7 @@ public class FieldBuilder extends AbstractMemberBuilder {
          */
         public void invokeMethod(
                 String methodName,
-                Class[] paramClasses,
+                Class<?>[] paramClasses,
                 Object[] params)
                 throws Exception {
                 if (DEBUG) {
@@ -140,7 +140,7 @@ public class FieldBuilder extends AbstractMemberBuilder {
          * @param classDoc the {@link ClassDoc} we want to check.
          * @return a list of fields that will be documented.
          */
-        public List members(ClassDoc classDoc) {
+        public List<ProgramElementDoc> members(ClassDoc classDoc) {
                 return visibleMemberMap.getMembersFor(classDoc);
         }
 
@@ -166,7 +166,7 @@ public class FieldBuilder extends AbstractMemberBuilder {
          * @param elements the XML elements that specify how to construct this
          *                documentation.
          */
-        public void buildFieldDoc(List elements) {
+        public void buildFieldDoc(List<?> elements) {
                 if (writer == null) {
                         return;
                 }

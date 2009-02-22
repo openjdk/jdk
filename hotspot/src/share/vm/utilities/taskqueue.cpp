@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,12 @@
 
 # include "incls/_precompiled.incl"
 # include "incls/_taskqueue.cpp.incl"
+
+#ifdef TRACESPINNING
+uint ParallelTaskTerminator::_total_yields = 0;
+uint ParallelTaskTerminator::_total_spins = 0;
+uint ParallelTaskTerminator::_total_peeks = 0;
+#endif
 
 bool TaskQueueSuper::peek() {
   return _bottom != _age.top();
@@ -65,18 +71,66 @@ void ParallelTaskTerminator::sleep(uint millis) {
   os::sleep(Thread::current(), millis, false);
 }
 
-bool ParallelTaskTerminator::offer_termination() {
+bool
+ParallelTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   Atomic::inc(&_offered_termination);
 
-  juint yield_count = 0;
+  uint yield_count = 0;
+  // Number of hard spin loops done since last yield
+  uint hard_spin_count = 0;
+  // Number of iterations in the hard spin loop.
+  uint hard_spin_limit = WorkStealingHardSpins;
+
+  // If WorkStealingSpinToYieldRatio is 0, no hard spinning is done.
+  // If it is greater than 0, then start with a small number
+  // of spins and increase number with each turn at spinning until
+  // the count of hard spins exceeds WorkStealingSpinToYieldRatio.
+  // Then do a yield() call and start spinning afresh.
+  if (WorkStealingSpinToYieldRatio > 0) {
+    hard_spin_limit = WorkStealingHardSpins >> WorkStealingSpinToYieldRatio;
+    hard_spin_limit = MAX2(hard_spin_limit, 1U);
+  }
+  // Remember the initial spin limit.
+  uint hard_spin_start = hard_spin_limit;
+
+  // Loop waiting for all threads to offer termination or
+  // more work.
   while (true) {
+    // Are all threads offering termination?
     if (_offered_termination == _n_threads) {
-      //inner_termination_loop();
       return true;
     } else {
+      // Look for more work.
+      // Periodically sleep() instead of yield() to give threads
+      // waiting on the cores the chance to grab this code
       if (yield_count <= WorkStealingYieldsBeforeSleep) {
+        // Do a yield or hardspin.  For purposes of deciding whether
+        // to sleep, count this as a yield.
         yield_count++;
-        yield();
+
+        // Periodically call yield() instead spinning
+        // After WorkStealingSpinToYieldRatio spins, do a yield() call
+        // and reset the counts and starting limit.
+        if (hard_spin_count > WorkStealingSpinToYieldRatio) {
+          yield();
+          hard_spin_count = 0;
+          hard_spin_limit = hard_spin_start;
+#ifdef TRACESPINNING
+          _total_yields++;
+#endif
+        } else {
+          // Hard spin this time
+          // Increase the hard spinning period but only up to a limit.
+          hard_spin_limit = MIN2(2*hard_spin_limit,
+                                 (uint) WorkStealingHardSpins);
+          for (uint j = 0; j < hard_spin_limit; j++) {
+            SpinPause();
+          }
+          hard_spin_count++;
+#ifdef TRACESPINNING
+          _total_spins++;
+#endif
+        }
       } else {
         if (PrintGCDetails && Verbose) {
          gclog_or_tty->print_cr("ParallelTaskTerminator::offer_termination() "
@@ -91,13 +145,27 @@ bool ParallelTaskTerminator::offer_termination() {
         sleep(WorkStealingSleepMillis);
       }
 
-      if (peek_in_queue_set()) {
+#ifdef TRACESPINNING
+      _total_peeks++;
+#endif
+      if (peek_in_queue_set() ||
+          (terminator != NULL && terminator->should_exit_termination())) {
         Atomic::dec(&_offered_termination);
         return false;
       }
     }
   }
 }
+
+#ifdef TRACESPINNING
+void ParallelTaskTerminator::print_termination_counts() {
+  gclog_or_tty->print_cr("ParallelTaskTerminator Total yields: %lld  "
+    "Total spins: %lld  Total peeks: %lld",
+    total_yields(),
+    total_spins(),
+    total_peeks());
+}
+#endif
 
 void ParallelTaskTerminator::reset_for_reuse() {
   if (_offered_termination != 0) {
@@ -107,72 +175,72 @@ void ParallelTaskTerminator::reset_for_reuse() {
   }
 }
 
-bool ChunkTaskQueueWithOverflow::is_empty() {
-  return (_chunk_queue.size() == 0) &&
+bool RegionTaskQueueWithOverflow::is_empty() {
+  return (_region_queue.size() == 0) &&
          (_overflow_stack->length() == 0);
 }
 
-bool ChunkTaskQueueWithOverflow::stealable_is_empty() {
-  return _chunk_queue.size() == 0;
+bool RegionTaskQueueWithOverflow::stealable_is_empty() {
+  return _region_queue.size() == 0;
 }
 
-bool ChunkTaskQueueWithOverflow::overflow_is_empty() {
+bool RegionTaskQueueWithOverflow::overflow_is_empty() {
   return _overflow_stack->length() == 0;
 }
 
-void ChunkTaskQueueWithOverflow::initialize() {
-  _chunk_queue.initialize();
+void RegionTaskQueueWithOverflow::initialize() {
+  _region_queue.initialize();
   assert(_overflow_stack == 0, "Creating memory leak");
   _overflow_stack =
-    new (ResourceObj::C_HEAP) GrowableArray<ChunkTask>(10, true);
+    new (ResourceObj::C_HEAP) GrowableArray<RegionTask>(10, true);
 }
 
-void ChunkTaskQueueWithOverflow::save(ChunkTask t) {
-  if (TraceChunkTasksQueuing && Verbose) {
+void RegionTaskQueueWithOverflow::save(RegionTask t) {
+  if (TraceRegionTasksQueuing && Verbose) {
     gclog_or_tty->print_cr("CTQ: save " PTR_FORMAT, t);
   }
-  if(!_chunk_queue.push(t)) {
+  if(!_region_queue.push(t)) {
     _overflow_stack->push(t);
   }
 }
 
-// Note that using this method will retrieve all chunks
+// Note that using this method will retrieve all regions
 // that have been saved but that it will always check
 // the overflow stack.  It may be more efficient to
 // check the stealable queue and the overflow stack
 // separately.
-bool ChunkTaskQueueWithOverflow::retrieve(ChunkTask& chunk_task) {
-  bool result = retrieve_from_overflow(chunk_task);
+bool RegionTaskQueueWithOverflow::retrieve(RegionTask& region_task) {
+  bool result = retrieve_from_overflow(region_task);
   if (!result) {
-    result = retrieve_from_stealable_queue(chunk_task);
+    result = retrieve_from_stealable_queue(region_task);
   }
-  if (TraceChunkTasksQueuing && Verbose && result) {
+  if (TraceRegionTasksQueuing && Verbose && result) {
     gclog_or_tty->print_cr("  CTQ: retrieve " PTR_FORMAT, result);
   }
   return result;
 }
 
-bool ChunkTaskQueueWithOverflow::retrieve_from_stealable_queue(
-                                   ChunkTask& chunk_task) {
-  bool result = _chunk_queue.pop_local(chunk_task);
-  if (TraceChunkTasksQueuing && Verbose) {
-    gclog_or_tty->print_cr("CTQ: retrieve_stealable " PTR_FORMAT, chunk_task);
+bool RegionTaskQueueWithOverflow::retrieve_from_stealable_queue(
+                                   RegionTask& region_task) {
+  bool result = _region_queue.pop_local(region_task);
+  if (TraceRegionTasksQueuing && Verbose) {
+    gclog_or_tty->print_cr("CTQ: retrieve_stealable " PTR_FORMAT, region_task);
   }
   return result;
 }
 
-bool ChunkTaskQueueWithOverflow::retrieve_from_overflow(
-                                        ChunkTask& chunk_task) {
+bool
+RegionTaskQueueWithOverflow::retrieve_from_overflow(RegionTask& region_task) {
   bool result;
   if (!_overflow_stack->is_empty()) {
-    chunk_task = _overflow_stack->pop();
+    region_task = _overflow_stack->pop();
     result = true;
   } else {
-    chunk_task = (ChunkTask) NULL;
+    region_task = (RegionTask) NULL;
     result = false;
   }
-  if (TraceChunkTasksQueuing && Verbose) {
-    gclog_or_tty->print_cr("CTQ: retrieve_stealable " PTR_FORMAT, chunk_task);
+  if (TraceRegionTasksQueuing && Verbose) {
+    gclog_or_tty->print_cr("CTQ: retrieve_stealable " PTR_FORMAT, region_task);
   }
   return result;
 }

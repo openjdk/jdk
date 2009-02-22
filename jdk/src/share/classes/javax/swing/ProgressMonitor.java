@@ -78,7 +78,7 @@ import javax.swing.text.*;
  * @author James Gosling
  * @author Lynn Monsanto (accessibility)
  */
-public class ProgressMonitor extends Object implements Accessible
+public class ProgressMonitor implements Accessible
 {
     private ProgressMonitor root;
     private JDialog         dialog;
@@ -186,7 +186,7 @@ public class ProgressMonitor extends Object implements Accessible
             }
             if (window instanceof SwingUtilities.SharedOwnerFrame) {
                 WindowListener ownerShutdownListener =
-                    (WindowListener)SwingUtilities.getSharedOwnerFrameShutdownListener();
+                        SwingUtilities.getSharedOwnerFrameShutdownListener();
                 dialog.addWindowListener(ownerShutdownListener);
             }
             Container contentPane = dialog.getContentPane();
@@ -273,7 +273,7 @@ public class ProgressMonitor extends Object implements Accessible
                 if (dT >= millisToDecideToPopup) {
                     int predictedCompletionTime;
                     if (nv > min) {
-                        predictedCompletionTime = (int)((long)dT *
+                        predictedCompletionTime = (int)(dT *
                                                         (max - min) /
                                                         (nv - min));
                     }
@@ -691,10 +691,7 @@ public class ProgressMonitor extends Object implements Accessible
          * object does not have an Accessible parent
          */
         public Accessible getAccessibleParent() {
-            if (dialog != null) {
-                return (Accessible)dialog;
-            }
-            return null;
+            return dialog;
         }
 
         /*
@@ -768,7 +765,7 @@ public class ProgressMonitor extends Object implements Accessible
             if (myBar != null) {
                 Component c = myBar.getParent();
                 if (c instanceof Accessible) {
-                    return ((Accessible)c).getAccessibleContext();
+                    return c.getAccessibleContext();
                 }
             }
             return null;
