@@ -1,5 +1,5 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ public class SourceOnly extends com.sun.javadoc.Doclet
     public static void main(String[] args) {
         // run javadoc on package p
         int result = com.sun.tools.javadoc.Main.
-            execute("javadoc", "p.SourceOnly", new String[] {"p"});
+            execute("javadoc", "p.SourceOnly", SourceOnly.class.getClassLoader(), new String[] {"p"});
         if (result != 0)
             throw new Error();
     }

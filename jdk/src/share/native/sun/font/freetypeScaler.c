@@ -1281,7 +1281,7 @@ Java_sun_font_FreetypeFontScaler_getGlyphOutlineBoundsNative(
                                    sunFontIDs.rect2DFloatClass,
                                    sunFontIDs.rect2DFloatCtr4,
                                    F26Dot6ToFloat(bbox.xMin),
-                                   F26Dot6ToFloat(bbox.yMax),
+                                   F26Dot6ToFloat(-bbox.yMax),
                                    F26Dot6ToFloat(bbox.xMax-bbox.xMin),
                                    F26Dot6ToFloat(bbox.yMax-bbox.yMin));
     }

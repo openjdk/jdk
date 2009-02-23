@@ -96,12 +96,12 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      * @param list list of the sub-classes at this level.
      * @param isEnum true if we are generating a tree for enums.
      */
-    protected void generateLevelInfo(ClassDoc parent, List list,
+    protected void generateLevelInfo(ClassDoc parent, List<ClassDoc> list,
             boolean isEnum) {
         if (list.size() > 0) {
             ul();
             for (int i = 0; i < list.size(); i++) {
-                ClassDoc local = (ClassDoc)list.get(i);
+                ClassDoc local = list.get(i);
                 printPartialInfo(local);
                 printExtendsImplements(parent, local);
                 generateLevelInfo(local, classtree.subs(local, isEnum),
@@ -119,9 +119,9 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      * other classes in this run will derive from these classes.
      * @param heading Heading for the tree.
      */
-    protected void generateTree(List list, String heading) {
+    protected void generateTree(List<ClassDoc> list, String heading) {
         if (list.size() > 0) {
-            ClassDoc firstClassDoc = (ClassDoc)list.get(0);
+            ClassDoc firstClassDoc = list.get(0);
             printTreeHeading(heading);
             generateLevelInfo(!firstClassDoc.isInterface()? firstClassDoc : null,
                 list,
@@ -173,7 +173,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      */
     protected void printPartialInfo(ClassDoc cd) {
         li("circle");
-        printPreQualifiedBoldClassLink(LinkInfoImpl.CONTEXT_TREE, cd);
+        printPreQualifiedStrongClassLink(LinkInfoImpl.CONTEXT_TREE, cd);
     }
 
     /**
@@ -193,7 +193,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
     protected void navLinkTree() {
         navCellRevStart();
         fontStyle("NavBarFont1Rev");
-        boldText("doclet.Tree");
+        strongText("doclet.Tree");
         fontEnd();
         navCellEnd();
     }

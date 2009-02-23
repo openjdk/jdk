@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class JMRuntimeException extends RuntimeException   {
         try {
             java.lang.reflect.Method initCause =
                 Throwable.class.getMethod("initCause",
-                                          new Class[] {Throwable.class});
+                                          new Class<?>[] {Throwable.class});
             initCause.invoke(this, new Object[] {cause});
         } catch (Exception e) {
             // OK: just means we won't have debugging info

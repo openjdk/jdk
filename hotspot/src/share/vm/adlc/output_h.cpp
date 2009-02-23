@@ -355,17 +355,19 @@ static void defineConstructor(FILE *fp, const char *name, uint num_consts,
 // ---------------------------------------------------------------------------
 
 // Generate the format rule for condition codes
-static void defineCCodeDump(FILE *fp, int i) {
-  fprintf(fp, "         if( _c%d == BoolTest::eq ) st->print(\"eq\");\n",i);
-  fprintf(fp, "    else if( _c%d == BoolTest::ne ) st->print(\"ne\");\n",i);
-  fprintf(fp, "    else if( _c%d == BoolTest::le ) st->print(\"le\");\n",i);
-  fprintf(fp, "    else if( _c%d == BoolTest::ge ) st->print(\"ge\");\n",i);
-  fprintf(fp, "    else if( _c%d == BoolTest::lt ) st->print(\"lt\");\n",i);
-  fprintf(fp, "    else if( _c%d == BoolTest::gt ) st->print(\"gt\");\n",i);
+static void defineCCodeDump(OperandForm* oper, FILE *fp, int i) {
+  assert(oper != NULL, "what");
+  CondInterface* cond = oper->_interface->is_CondInterface();
+  fprintf(fp, "         if( _c%d == BoolTest::eq ) st->print(\"%s\");\n",i,cond->_equal_format);
+  fprintf(fp, "    else if( _c%d == BoolTest::ne ) st->print(\"%s\");\n",i,cond->_not_equal_format);
+  fprintf(fp, "    else if( _c%d == BoolTest::le ) st->print(\"%s\");\n",i,cond->_less_equal_format);
+  fprintf(fp, "    else if( _c%d == BoolTest::ge ) st->print(\"%s\");\n",i,cond->_greater_equal_format);
+  fprintf(fp, "    else if( _c%d == BoolTest::lt ) st->print(\"%s\");\n",i,cond->_less_format);
+  fprintf(fp, "    else if( _c%d == BoolTest::gt ) st->print(\"%s\");\n",i,cond->_greater_format);
 }
 
 // Output code that dumps constant values, increment "i" if type is constant
-static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i) {
+static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i, OperandForm* oper) {
   if (!strcmp(ideal_type, "ConI")) {
     fprintf(fp,"   st->print(\"#%%d\", _c%d);\n", i);
     ++i;
@@ -375,7 +377,7 @@ static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i) {
     ++i;
   }
   else if (!strcmp(ideal_type, "ConN")) {
-    fprintf(fp,"    _c%d->dump();\n", i);
+    fprintf(fp,"    _c%d->dump_on(st);\n", i);
     ++i;
   }
   else if (!strcmp(ideal_type, "ConL")) {
@@ -391,7 +393,7 @@ static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i) {
     ++i;
   }
   else if (!strcmp(ideal_type, "Bool")) {
-    defineCCodeDump(fp,i);
+    defineCCodeDump(oper, fp,i);
     ++i;
   }
 
@@ -476,7 +478,7 @@ void gen_oper_format(FILE *fp, FormDict &globals, OperandForm &oper, bool for_c_
   }
   // ALWAYS! Provide a special case output for condition codes.
   if( oper.is_ideal_bool() ) {
-    defineCCodeDump(fp,0);
+    defineCCodeDump(&oper, fp,0);
   }
   fprintf(fp,"}\n");
 
@@ -549,7 +551,7 @@ void gen_oper_format(FILE *fp, FormDict &globals, OperandForm &oper, bool for_c_
   }
   // ALWAYS! Provide a special case output for condition codes.
   if( oper.is_ideal_bool() ) {
-    defineCCodeDump(fp,0);
+    defineCCodeDump(&oper, fp,0);
   }
   fprintf(fp, "}\n");
   fprintf(fp, "#endif\n");
@@ -583,10 +585,53 @@ void gen_inst_format(FILE *fp, FormDict &globals, InstructForm &inst, bool for_c
     while( (string = inst._format->_strings.iter()) != NULL ) {
       fprintf(fp,"    ");
       // Check if this is a standard string or a replacement variable
-      if( string != NameList::_signal )  // Normal string.  Pass through.
+      if( string == NameList::_signal ) { // Replacement variable
+        const char* rep_var =  inst._format->_rep_vars.iter();
+        inst.rep_var_format( fp, rep_var);
+      } else if( string == NameList::_signal3 ) { // Replacement variable in raw text
+        const char* rep_var =  inst._format->_rep_vars.iter();
+        const Form *form   = inst._localNames[rep_var];
+        if (form == NULL) {
+          fprintf(stderr, "unknown replacement variable in format statement: '%s'\n", rep_var);
+          assert(false, "ShouldNotReachHere()");
+        }
+        OpClassForm *opc   = form->is_opclass();
+        assert( opc, "replacement variable was not found in local names");
+        // Lookup the index position of the replacement variable
+        int idx  = inst.operand_position_format(rep_var);
+        if ( idx == -1 ) {
+          assert( strcmp(opc->_ident,"label")==0, "Unimplemented");
+          assert( false, "ShouldNotReachHere()");
+        }
+
+        if (inst.is_noninput_operand(idx)) {
+          assert( false, "ShouldNotReachHere()");
+        } else {
+          // Output the format call for this operand
+          fprintf(fp,"opnd_array(%d)",idx);
+        }
+        rep_var =  inst._format->_rep_vars.iter();
+        inst._format->_strings.iter();
+        if ( strcmp(rep_var,"$constant") == 0 && opc->is_operand()) {
+          Form::DataType constant_type = form->is_operand()->is_base_constant(globals);
+          if ( constant_type == Form::idealD ) {
+            fprintf(fp,"->constantD()");
+          } else if ( constant_type == Form::idealF ) {
+            fprintf(fp,"->constantF()");
+          } else if ( constant_type == Form::idealL ) {
+            fprintf(fp,"->constantL()");
+          } else {
+            fprintf(fp,"->constant()");
+          }
+        } else if ( strcmp(rep_var,"$cmpcode") == 0) {
+            fprintf(fp,"->ccode()");
+        } else {
+          assert( false, "ShouldNotReachHere()");
+        }
+      } else if( string == NameList::_signal2 ) // Raw program text
+        fputs(inst._format->_strings.iter(), fp);
+      else
         fprintf(fp,"st->print(\"%s\");\n", string);
-      else                      // Replacement variable
-        inst.rep_var_format( fp, inst._format->_rep_vars.iter() );
     } // Done with all format strings
   } // Done generating the user-defined portion of the format
 
@@ -1404,7 +1449,7 @@ void ArchDesc::declareClasses(FILE *fp) {
       oper->_components.reset();
       if ((comp = oper->_components.iter()) == NULL) {
         assert(num_consts == 1, "Bad component list detected.\n");
-        i = dump_spec_constant( fp, type, i );
+        i = dump_spec_constant( fp, type, i, oper );
         // Check that type actually matched
         assert( i != 0, "Non-constant operand lacks component list.");
       } // end if NULL
@@ -1414,7 +1459,7 @@ void ArchDesc::declareClasses(FILE *fp) {
         oper->_components.reset();
         while((comp = oper->_components.iter()) != NULL) {
           type = comp->base_type(_globalNames);
-          i = dump_spec_constant( fp, type, i );
+          i = dump_spec_constant( fp, type, i, NULL );
         }
       }
       // finish line (3)

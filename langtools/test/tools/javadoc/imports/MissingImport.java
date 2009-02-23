@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ public class MissingImport extends Doclet {
         if (com.sun.tools.javadoc.Main.execute(
                 "javadoc",
                 "MissingImport",
+                MissingImport.class.getClassLoader(),
                 new String[] {thisFile}) != 0)
             throw new Error("Javadoc encountered warnings or errors.");
     }

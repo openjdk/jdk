@@ -82,15 +82,19 @@ objArrayOop oopFactory::new_system_objArray(int length, TRAPS) {
 }
 
 
-constantPoolOop oopFactory::new_constantPool(int length, TRAPS) {
+constantPoolOop oopFactory::new_constantPool(int length,
+                                             bool is_conc_safe,
+                                             TRAPS) {
   constantPoolKlass* ck = constantPoolKlass::cast(Universe::constantPoolKlassObj());
-  return ck->allocate(length, CHECK_NULL);
+  return ck->allocate(length, is_conc_safe, CHECK_NULL);
 }
 
 
-constantPoolCacheOop oopFactory::new_constantPoolCache(int length, TRAPS) {
+constantPoolCacheOop oopFactory::new_constantPoolCache(int length,
+                                                       bool is_conc_safe,
+                                                       TRAPS) {
   constantPoolCacheKlass* ck = constantPoolCacheKlass::cast(Universe::constantPoolCacheKlassObj());
-  return ck->allocate(length, CHECK_NULL);
+  return ck->allocate(length, is_conc_safe, CHECK_NULL);
 }
 
 
@@ -105,11 +109,13 @@ constMethodOop oopFactory::new_constMethod(int byte_code_size,
                                            int compressed_line_number_size,
                                            int localvariable_table_length,
                                            int checked_exceptions_length,
+                                           bool is_conc_safe,
                                            TRAPS) {
   klassOop cmkObj = Universe::constMethodKlassObj();
   constMethodKlass* cmk = constMethodKlass::cast(cmkObj);
   return cmk->allocate(byte_code_size, compressed_line_number_size,
                        localvariable_table_length, checked_exceptions_length,
+                       is_conc_safe,
                        CHECK_NULL);
 }
 
@@ -117,14 +123,17 @@ constMethodOop oopFactory::new_constMethod(int byte_code_size,
 methodOop oopFactory::new_method(int byte_code_size, AccessFlags access_flags,
                                  int compressed_line_number_size,
                                  int localvariable_table_length,
-                                 int checked_exceptions_length, TRAPS) {
+                                 int checked_exceptions_length,
+                                 bool is_conc_safe,
+                                 TRAPS) {
   methodKlass* mk = methodKlass::cast(Universe::methodKlassObj());
   assert(!access_flags.is_native() || byte_code_size == 0,
          "native methods should not contain byte codes");
   constMethodOop cm = new_constMethod(byte_code_size,
                                       compressed_line_number_size,
                                       localvariable_table_length,
-                                      checked_exceptions_length, CHECK_NULL);
+                                      checked_exceptions_length,
+                                      is_conc_safe, CHECK_NULL);
   constMethodHandle rw(THREAD, cm);
   return mk->allocate(rw, access_flags, CHECK_NULL);
 }

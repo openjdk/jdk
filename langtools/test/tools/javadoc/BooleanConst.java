@@ -1,5 +1,5 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public class BooleanConst extends Doclet
     public static void main(String[] args) {
         // run javadoc on package p
         if (com.sun.tools.javadoc.Main.
-            execute("javadoc", "BooleanConst",
+            execute("javadoc", "BooleanConst", BooleanConst.class.getClassLoader(),
                     new String[] {System.getProperty("test.src", ".") + java.io.File.separatorChar + "BooleanConst.java"}) != 0)
             throw new Error();
     }

@@ -116,7 +116,9 @@
   #ifdef _LP64
     #define NULL_WORD  0L
   #else
-    #define NULL_WORD  0
+    // Cast 0 to intptr_t rather than int32_t since they are not the same type
+    // on platforms such as Mac OS X.
+    #define NULL_WORD  ((intptr_t)0)
   #endif
 #else
   #define NULL_WORD  NULL

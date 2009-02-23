@@ -1472,7 +1472,7 @@ void AwtFrame::_SetIMMOption(void *param)
 
     int badAlloc = 0;
     LPCTSTR coption;
-    LPTSTR empty = TEXT("InputMethod");
+    LPCTSTR empty = TEXT("InputMethod");
     AwtFrame *f = NULL;
 
     PDATA pData;

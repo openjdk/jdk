@@ -478,6 +478,24 @@ void Klass::with_array_klasses_do(void f(klassOop k)) {
 
 
 const char* Klass::external_name() const {
+  if (oop_is_instance()) {
+    instanceKlass* ik = (instanceKlass*) this;
+    if (ik->is_anonymous()) {
+      assert(AnonymousClasses, "");
+      intptr_t hash = ik->java_mirror()->identity_hash();
+      char     hash_buf[40];
+      sprintf(hash_buf, "/" UINTX_FORMAT, (uintx)hash);
+      size_t   hash_len = strlen(hash_buf);
+
+      size_t result_len = name()->utf8_length();
+      char*  result     = NEW_RESOURCE_ARRAY(char, result_len + hash_len + 1);
+      name()->as_klass_external_name(result, (int) result_len + 1);
+      assert(strlen(result) == result_len, "");
+      strcpy(result + result_len, hash_buf);
+      assert(strlen(result) == result_len + hash_len, "");
+      return result;
+    }
+  }
   return name()->as_klass_external_name();
 }
 

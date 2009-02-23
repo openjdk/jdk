@@ -308,6 +308,12 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
             FileDescriptor fd = acquireFD();
             try {
                 socketConnect(address, port, timeout);
+                /* socket may have been closed during poll/select */
+                synchronized (fdLock) {
+                    if (closePending) {
+                        throw new SocketException ("Socket closed");
+                    }
+                }
                 // If we have a ref. to the Socket, then sets the flags
                 // created, bound & connected to true.
                 // This is normally done in Socket.connect() but some

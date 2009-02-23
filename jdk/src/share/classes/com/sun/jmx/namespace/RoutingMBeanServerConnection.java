@@ -46,7 +46,6 @@ import javax.management.MBeanException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServerConnection;
-import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
@@ -100,18 +99,17 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
      * the target name is "foo//X".
      * In the case of cascading - such as in NamespaceInterceptor, this method
      * will convert "foo//X" (the targetName) into "X", the source name.
+     * @throws IllegalArgumentException if the name cannot be converted.
      **/
-    protected abstract ObjectName toSource(ObjectName targetName)
-        throws MalformedObjectNameException;
-
+    protected abstract ObjectName toSource(ObjectName targetName);
     /**
      * Converts a source ObjectName to a target ObjectName.
      * (see description of toSource above for explanations)
      * In the case of cascading - such as in NamespaceInterceptor, this method
      * will convert "X" (the sourceName) into "foo//X", the target name.
+     * @throws IllegalArgumentException if the name cannot be converted.
      **/
-    protected abstract ObjectName toTarget(ObjectName sourceName)
-        throws MalformedObjectNameException;
+    protected abstract ObjectName toTarget(ObjectName sourceName);
 
     /**
      * Can be overridden by subclasses to check the validity of a new
@@ -128,17 +126,12 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         }
     }
 
-    // Calls toSource(), Wraps MalformedObjectNameException.
-    ObjectName toSourceOrRuntime(ObjectName targetName)
-        throws RuntimeOperationsException {
+    // Calls toSource(), Wraps IllegalArgumentException.
+    ObjectName toSourceOrRuntime(ObjectName targetName) {
         try {
             return toSource(targetName);
-        } catch (MalformedObjectNameException x) {
-            final IllegalArgumentException x2 =
-                    new IllegalArgumentException(String.valueOf(targetName),x);
-            final RuntimeOperationsException x3 =
-                    new RuntimeOperationsException(x2);
-            throw x3;
+        } catch (RuntimeException x) {
+            throw makeCompliantRuntimeException(x);
         }
     }
 
@@ -376,12 +369,8 @@ public abstract class RoutingMBeanServerConnection<T extends MBeanServerConnecti
         try {
             final ObjectName targetName = toTarget(sourceName);
             return new ObjectInstance(targetName,source.getClassName());
-        } catch (MalformedObjectNameException x) {
-            final IllegalArgumentException x2 =
-                    new IllegalArgumentException(String.valueOf(sourceName),x);
-            final RuntimeOperationsException x3 =
-                    new RuntimeOperationsException(x2);
-            throw x3;
+        } catch (RuntimeException x) {
+            throw makeCompliantRuntimeException(x);
         }
     }
 

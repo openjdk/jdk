@@ -238,11 +238,14 @@ void HeapInspection::heap_inspection(outputStream* st) {
   HeapWord* ref;
 
   CollectedHeap* heap = Universe::heap();
+  bool is_shared_heap = false;
   switch (heap->kind()) {
+    case CollectedHeap::G1CollectedHeap:
     case CollectedHeap::GenCollectedHeap: {
-      GenCollectedHeap* gch = (GenCollectedHeap*)heap;
-      gch->gc_prologue(false /* !full */); // get any necessary locks
-      ref = gch->perm_gen()->used_region().start();
+      is_shared_heap = true;
+      SharedHeap* sh = (SharedHeap*)heap;
+      sh->gc_prologue(false /* !full */); // get any necessary locks, etc.
+      ref = sh->perm_gen()->used_region().start();
       break;
     }
 #ifndef SERIALGC
@@ -260,6 +263,9 @@ void HeapInspection::heap_inspection(outputStream* st) {
   if (!cit.allocation_failed()) {
     // Iterate over objects in the heap
     RecordInstanceClosure ric(&cit);
+    // If this operation encounters a bad object when using CMS,
+    // consider using safe_object_iterate() which avoids perm gen
+    // objects that may contain bad references.
     Universe::heap()->object_iterate(&ric);
 
     // Report if certain classes are not counted because of
@@ -284,9 +290,9 @@ void HeapInspection::heap_inspection(outputStream* st) {
   }
   st->flush();
 
-  if (Universe::heap()->kind() == CollectedHeap::GenCollectedHeap) {
-    GenCollectedHeap* gch = GenCollectedHeap::heap();
-    gch->gc_epilogue(false /* !full */); // release all acquired locks
+  if (is_shared_heap) {
+    SharedHeap* sh = (SharedHeap*)heap;
+    sh->gc_epilogue(false /* !full */); // release all acquired locks, etc.
   }
 }
 
@@ -314,5 +320,8 @@ void HeapInspection::find_instances_at_safepoint(klassOop k, GrowableArray<oop>*
 
   // Iterate over objects in the heap
   FindInstanceClosure fic(k, result);
+  // If this operation encounters a bad object when using CMS,
+  // consider using safe_object_iterate() which avoids perm gen
+  // objects that may contain bad references.
   Universe::heap()->object_iterate(&fic);
 }

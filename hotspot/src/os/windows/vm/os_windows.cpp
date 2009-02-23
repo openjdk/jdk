@@ -327,6 +327,14 @@ size_t os::current_stack_size() {
   return sz;
 }
 
+struct tm* os::localtime_pd(const time_t* clock, struct tm* res) {
+  const struct tm* time_struct_ptr = localtime(clock);
+  if (time_struct_ptr != NULL) {
+    *res = *time_struct_ptr;
+    return res;
+  }
+  return NULL;
+}
 
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
@@ -735,6 +743,17 @@ FILETIME java_to_windows_time(jlong l) {
   result.dwHighDateTime = high(a);
   result.dwLowDateTime  = low(a);
   return result;
+}
+
+// For now, we say that Windows does not support vtime.  I have no idea
+// whether it can actually be made to (DLD, 9/13/05).
+
+bool os::supports_vtime() { return false; }
+bool os::enable_vtime() { return false; }
+bool os::vtime_enabled() { return false; }
+double os::elapsedVTime() {
+  // better than nothing, but not much
+  return elapsedTime();
 }
 
 jlong os::javaTimeMillis() {
@@ -2009,10 +2028,11 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         if (UnguardOnExecutionViolation > 0 && addr != last_addr &&
             (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
 
-          // Unguard and retry
+          // Set memory to RWX and retry
           address page_start =
             (address) align_size_down((intptr_t) addr, (intptr_t) page_size);
-          bool res = os::unguard_memory((char*) page_start, page_size);
+          bool res = os::protect_memory((char*) page_start, page_size,
+                                        os::MEM_PROT_RWX);
 
           if (PrintMiscellaneous && Verbose) {
             char buf[256];
@@ -2206,15 +2226,10 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
                 // We only expect null pointers in the stubs (vtable)
                 // the rest are checked explicitly now.
                 //
-                CodeBlob* cb = CodeCache::find_blob(pc);
-                if (cb != NULL) {
-                  if (VtableStubs::stub_containing(pc) != NULL) {
-                    if (((uintptr_t)addr) < os::vm_page_size() ) {
-                      // an access to the first page of VM--assume it is a null pointer
-                      return Handle_Exception(exceptionInfo,
-                        SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL));
-                    }
-                  }
+                if (((uintptr_t)addr) < os::vm_page_size() ) {
+                  // an access to the first page of VM--assume it is a null pointer
+                  address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
+                  if (stub != NULL) return Handle_Exception(exceptionInfo, stub);
                 }
               }
             } // in_java
@@ -2230,9 +2245,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             // Windows 98 reports faulting addresses incorrectly
             if (!MacroAssembler::needs_explicit_null_check((intptr_t)addr) ||
                 !os::win32::is_nt()) {
-
-              return Handle_Exception(exceptionInfo,
-                  SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL));
+              address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
+              if (stub != NULL) return Handle_Exception(exceptionInfo, stub);
             }
             report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
                          exceptionInfo->ContextRecord);
@@ -2582,9 +2596,104 @@ bool os::can_execute_large_page_memory() {
 }
 
 char* os::reserve_memory_special(size_t bytes) {
-  DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
-  char * res = (char *)VirtualAlloc(NULL, bytes, flag, PAGE_EXECUTE_READWRITE);
-  return res;
+
+  if (UseLargePagesIndividualAllocation) {
+    if (TracePageSizes && Verbose) {
+       tty->print_cr("Reserving large pages individually.");
+    }
+    char * p_buf;
+    // first reserve enough address space in advance since we want to be
+    // able to break a single contiguous virtual address range into multiple
+    // large page commits but WS2003 does not allow reserving large page space
+    // so we just use 4K pages for reserve, this gives us a legal contiguous
+    // address space. then we will deallocate that reservation, and re alloc
+    // using large pages
+    const size_t size_of_reserve = bytes + _large_page_size;
+    if (bytes > size_of_reserve) {
+      // Overflowed.
+      warning("Individually allocated large pages failed, "
+        "use -XX:-UseLargePagesIndividualAllocation to turn off");
+      return NULL;
+    }
+    p_buf = (char *) VirtualAlloc(NULL,
+                                 size_of_reserve,  // size of Reserve
+                                 MEM_RESERVE,
+                                 PAGE_EXECUTE_READWRITE);
+    // If reservation failed, return NULL
+    if (p_buf == NULL) return NULL;
+
+    release_memory(p_buf, bytes + _large_page_size);
+    // round up to page boundary.  If the size_of_reserve did not
+    // overflow and the reservation did not fail, this align up
+    // should not overflow.
+    p_buf = (char *) align_size_up((size_t)p_buf, _large_page_size);
+
+    // now go through and allocate one page at a time until all bytes are
+    // allocated
+    size_t  bytes_remaining = align_size_up(bytes, _large_page_size);
+    // An overflow of align_size_up() would have been caught above
+    // in the calculation of size_of_reserve.
+    char * next_alloc_addr = p_buf;
+
+#ifdef ASSERT
+    // Variable for the failure injection
+    long ran_num = os::random();
+    size_t fail_after = ran_num % bytes;
+#endif
+
+    while (bytes_remaining) {
+      size_t bytes_to_rq = MIN2(bytes_remaining, _large_page_size);
+      // Note allocate and commit
+      char * p_new;
+
+#ifdef ASSERT
+      bool inject_error = LargePagesIndividualAllocationInjectError &&
+          (bytes_remaining <= fail_after);
+#else
+      const bool inject_error = false;
+#endif
+
+      if (inject_error) {
+        p_new = NULL;
+      } else {
+        p_new = (char *) VirtualAlloc(next_alloc_addr,
+                                    bytes_to_rq,
+                                    MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES,
+                                    PAGE_EXECUTE_READWRITE);
+      }
+
+      if (p_new == NULL) {
+        // Free any allocated pages
+        if (next_alloc_addr > p_buf) {
+          // Some memory was committed so release it.
+          size_t bytes_to_release = bytes - bytes_remaining;
+          release_memory(p_buf, bytes_to_release);
+        }
+#ifdef ASSERT
+        if (UseLargePagesIndividualAllocation &&
+            LargePagesIndividualAllocationInjectError) {
+          if (TracePageSizes && Verbose) {
+             tty->print_cr("Reserving large pages individually failed.");
+          }
+        }
+#endif
+        return NULL;
+      }
+      bytes_remaining -= bytes_to_rq;
+      next_alloc_addr += bytes_to_rq;
+    }
+
+    return p_buf;
+
+  } else {
+    // normal policy just allocate it all at once
+    DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
+    char * res = (char *)VirtualAlloc(NULL,
+                                      bytes,
+                                      flag,
+                                      PAGE_EXECUTE_READWRITE);
+    return res;
+  }
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
@@ -2655,12 +2764,12 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
 
 bool os::guard_memory(char* addr, size_t bytes) {
   DWORD old_status;
-  return VirtualProtect(addr, bytes, PAGE_EXECUTE_READWRITE | PAGE_GUARD, &old_status) != 0;
+  return VirtualProtect(addr, bytes, PAGE_READWRITE | PAGE_GUARD, &old_status) != 0;
 }
 
 bool os::unguard_memory(char* addr, size_t bytes) {
   DWORD old_status;
-  return VirtualProtect(addr, bytes, PAGE_EXECUTE_READWRITE, &old_status) != 0;
+  return VirtualProtect(addr, bytes, PAGE_READWRITE, &old_status) != 0;
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
@@ -2972,6 +3081,7 @@ size_t os::win32::_default_stack_size = 0;
 volatile intx os::win32::_os_thread_count    = 0;
 
 bool   os::win32::_is_nt              = false;
+bool   os::win32::_is_windows_2003    = false;
 
 
 void os::win32::initialize_system_info() {
@@ -2994,7 +3104,15 @@ void os::win32::initialize_system_info() {
   GetVersionEx(&oi);
   switch(oi.dwPlatformId) {
     case VER_PLATFORM_WIN32_WINDOWS: _is_nt = false; break;
-    case VER_PLATFORM_WIN32_NT:      _is_nt = true;  break;
+    case VER_PLATFORM_WIN32_NT:
+      _is_nt = true;
+      {
+        int os_vers = oi.dwMajorVersion * 1000 + oi.dwMinorVersion;
+        if (os_vers == 5002) {
+          _is_windows_2003 = true;
+        }
+      }
+      break;
     default: fatal("Unknown platform");
   }
 
@@ -3092,9 +3210,13 @@ void os::init(void) {
     NoYieldsInMicrolock = true;
   }
 #endif
+  // This may be overridden later when argument processing is done.
+  FLAG_SET_ERGO(bool, UseLargePagesIndividualAllocation,
+    os::win32::is_windows_2003());
+
   // Initialize main_process and main_thread
   main_process = GetCurrentProcess();  // Remember main_process is a pseudo handle
-  if (!DuplicateHandle(main_process, GetCurrentThread(), main_process,
+ if (!DuplicateHandle(main_process, GetCurrentThread(), main_process,
                        &main_thread, THREAD_ALL_ACCESS, false, 0)) {
     fatal("DuplicateHandle failed\n");
   }
@@ -3233,6 +3355,10 @@ jint os::init_2(void) {
 
   // initialize thread priority policy
   prio_init();
+
+  if (UseNUMA && !ForceNUMA) {
+    UseNUMA = false; // Currently unsupported.
+  }
 
   return JNI_OK;
 }

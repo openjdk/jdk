@@ -67,7 +67,7 @@ public class TestHref extends JavadocTester {
         },
         //@see test.
         {BUG_ID + FS + "pkg" + FS + "C2.html",
-            "See Also:</B><DD><A HREF=\"../pkg/C1.html#method(int, int, java.util.ArrayList)\">"
+            "See Also:</STRONG><DD><A HREF=\"../pkg/C1.html#method(int, int, java.util.ArrayList)\">"
         },
 
         //Header does not link to the page itself.
@@ -77,7 +77,7 @@ public class TestHref extends JavadocTester {
 
         //Signature does not link to the page itself.
         {BUG_ID + FS + "pkg" + FS + "C4.html",
-            "public abstract class <B>C4&lt;E extends C4&lt;E&gt;&gt;</B>"
+            "public abstract class <STRONG>C4&lt;E extends C4&lt;E&gt;&gt;</STRONG>"
         },
     };
     private static final String[][] NEGATED_TEST =

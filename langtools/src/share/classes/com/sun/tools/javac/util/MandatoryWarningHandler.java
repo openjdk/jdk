@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public class MandatoryWarningHandler {
      * Report a mandatory warning.
      */
     public void report(DiagnosticPosition pos, String msg, Object... args) {
-        JavaFileObject currentSource = log.currentSource();
+        JavaFileObject currentSource = log.currentSourceFile();
 
         if (verbose) {
             if (sourcesWithReportedWarnings == null)

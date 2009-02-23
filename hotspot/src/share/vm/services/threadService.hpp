@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,6 +242,7 @@ class ThreadStackTrace : public CHeapObj {
   ThreadStackTrace(JavaThread* thread, bool with_locked_monitors);
   ~ThreadStackTrace();
 
+  JavaThread*     thread()              { return _thread; }
   StackFrameInfo* stack_frame_at(int i) { return _frames->at(i); }
   int             get_stack_depth()     { return _depth; }
 

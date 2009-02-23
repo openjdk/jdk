@@ -525,8 +525,9 @@ void GenCollectedHeap::do_collection(bool  full,
           if (rp->discovery_is_atomic()) {
             rp->verify_no_references_recorded();
             rp->enable_discovery();
+            rp->setup_policy(clear_all_soft_refs);
           } else {
-            // collect() will enable discovery as appropriate
+            // collect() below will enable discovery as appropriate
           }
           _gens[i]->collect(full, clear_all_soft_refs, size, is_tlab);
           if (!rp->enqueuing_is_done()) {
@@ -608,6 +609,10 @@ void GenCollectedHeap::do_collection(bool  full,
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
   }
+
+#ifdef TRACESPINNING
+  ParallelTaskTerminator::print_termination_counts();
+#endif
 
   if (ExitAfterGCNum > 0 && total_collections() == ExitAfterGCNum) {
     tty->print_cr("Stopping after GC #%d", ExitAfterGCNum);
@@ -907,6 +912,13 @@ void GenCollectedHeap::object_iterate(ObjectClosure* cl) {
     _gens[i]->object_iterate(cl);
   }
   perm_gen()->object_iterate(cl);
+}
+
+void GenCollectedHeap::safe_object_iterate(ObjectClosure* cl) {
+  for (int i = 0; i < _n_gens; i++) {
+    _gens[i]->safe_object_iterate(cl);
+  }
+  perm_gen()->safe_object_iterate(cl);
 }
 
 void GenCollectedHeap::object_iterate_since_last_GC(ObjectClosure* cl) {

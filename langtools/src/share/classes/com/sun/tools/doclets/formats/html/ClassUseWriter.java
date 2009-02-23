@@ -38,7 +38,7 @@ import java.util.*;
 public class ClassUseWriter extends SubWriterHolderWriter {
 
     final ClassDoc classdoc;
-    Set pkgToPackageAnnotations = null;
+    Set<PackageDoc> pkgToPackageAnnotations = null;
     final Map<String,List<ProgramElementDoc>> pkgToClassTypeParameter;
     final Map<String,List<ProgramElementDoc>> pkgToClassAnnotations;
     final Map<String,List<ProgramElementDoc>> pkgToMethodTypeParameter;
@@ -220,8 +220,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 false)));
         tableHeaderEnd();
 
-        for (Iterator it = pkgSet.iterator(); it.hasNext();) {
-            PackageDoc pkg = (PackageDoc)it.next();
+        for (Iterator<PackageDoc> it = pkgSet.iterator(); it.hasNext();) {
+            PackageDoc pkg = it.next();
             generatePackageUse(pkg);
         }
         tableEnd();
@@ -240,8 +240,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_CLASS_USE_HEADER, classdoc,
                 false)));
         tableHeaderEnd();
-        for (Iterator it = pkgToPackageAnnotations.iterator(); it.hasNext();) {
-            PackageDoc pkg = (PackageDoc)it.next();
+        for (Iterator<PackageDoc> it = pkgToPackageAnnotations.iterator(); it.hasNext();) {
+            PackageDoc pkg = it.next();
             trBgcolorStyle("white", "TableRowColor");
             summaryRow(0);
             //Just want an anchor here.
@@ -259,8 +259,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     }
 
     protected void generateClassList() throws IOException {
-        for (Iterator it = pkgSet.iterator(); it.hasNext();) {
-            PackageDoc pkg = (PackageDoc)it.next();
+        for (Iterator<PackageDoc> it = pkgSet.iterator(); it.hasNext();) {
+            PackageDoc pkg = it.next();
             anchor(pkg.name());
             tableIndexSummary();
             tableHeaderStart("#CCCCFF");
@@ -394,7 +394,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         hr();
         center();
         h2();
-        boldText("doclet.ClassUse_Title", cltype, clname);
+        strongText("doclet.ClassUse_Title", cltype, clname);
         h2End();
         centerEnd();
     }
@@ -436,7 +436,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     protected void navLinkClassUse() {
         navCellRevStart();
         fontStyle("NavBarFont1Rev");
-        boldText("doclet.navClassUse");
+        strongText("doclet.navClassUse");
         fontEnd();
         navCellEnd();
     }

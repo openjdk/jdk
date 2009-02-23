@@ -1,7 +1,7 @@
 #! /bin/sh
 
 #
-# Copyright 1999-2002 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,4 +45,4 @@ case "$OS" in
     ;;
 esac
 
-${TESTJAVA}${FILESEP}bin${FILESEP}java -Xbootclasspath:${TESTCLASSES}${PATHSEP}${TESTJAVA}${FILESEP}lib${FILESEP}classes.zip${PATHSEP}${TESTJAVA}${FILESEP}jre${FILESEP}lib${FILESEP}rt.jar${PATHSEP}${TESTJAVA}${FILESEP}classes ADatagramSocket true
+${TESTJAVA}${FILESEP}bin${FILESEP}java -Xbootclasspath/p:${TESTCLASSES} ADatagramSocket true

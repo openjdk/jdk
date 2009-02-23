@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,16 +47,16 @@ final class SecureClassLoaderRepository
     public SecureClassLoaderRepository(ClassLoaderRepository clr) {
         this.clr=clr;
     }
-    public final Class loadClass(String className)
+    public final Class<?> loadClass(String className)
         throws ClassNotFoundException {
         return clr.loadClass(className);
     }
-    public final Class loadClassWithout(ClassLoader loader,
+    public final Class<?> loadClassWithout(ClassLoader loader,
                                   String className)
         throws ClassNotFoundException {
         return clr.loadClassWithout(loader,className);
     }
-    public final Class loadClassBefore(ClassLoader loader,
+    public final Class<?> loadClassBefore(ClassLoader loader,
                                  String className)
         throws ClassNotFoundException {
         return clr.loadClassBefore(loader,className);

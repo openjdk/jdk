@@ -38,9 +38,9 @@ extern jfieldID IO_handle_fdID;
  * IO helper functions
  */
 
-int readSingle(JNIEnv *env, jobject this, jfieldID fid);
-int readBytes(JNIEnv *env, jobject this, jbyteArray bytes, jint off,
-              jint len, jfieldID fid);
+jint readSingle(JNIEnv *env, jobject this, jfieldID fid);
+jint readBytes(JNIEnv *env, jobject this, jbyteArray bytes, jint off,
+               jint len, jfieldID fid);
 void writeSingle(JNIEnv *env, jobject this, jint byte, jfieldID fid);
 void writeBytes(JNIEnv *env, jobject this, jbyteArray bytes, jint off,
                 jint len, jfieldID fid);

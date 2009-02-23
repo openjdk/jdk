@@ -25,7 +25,10 @@
 # include "incls/_precompiled.incl"
 # include "incls/_mutableSpace.cpp.incl"
 
-MutableSpace::MutableSpace(): ImmutableSpace(), _top(NULL) {
+MutableSpace::MutableSpace(size_t alignment): ImmutableSpace(), _top(NULL), _alignment(alignment) {
+  assert(MutableSpace::alignment() >= 0 &&
+         MutableSpace::alignment() % os::vm_page_size() == 0,
+         "Space should be aligned");
   _mangler = new MutableSpaceMangler(this);
 }
 
@@ -33,16 +36,88 @@ MutableSpace::~MutableSpace() {
   delete _mangler;
 }
 
+void MutableSpace::numa_setup_pages(MemRegion mr, bool clear_space) {
+  if (!mr.is_empty()) {
+    size_t page_size = UseLargePages ? alignment() : os::vm_page_size();
+    HeapWord *start = (HeapWord*)round_to((intptr_t) mr.start(), page_size);
+    HeapWord *end =  (HeapWord*)round_down((intptr_t) mr.end(), page_size);
+    if (end > start) {
+      size_t size = pointer_delta(end, start, sizeof(char));
+      if (clear_space) {
+        // Prefer page reallocation to migration.
+        os::free_memory((char*)start, size);
+      }
+      os::numa_make_global((char*)start, size);
+    }
+  }
+}
+
+void MutableSpace::pretouch_pages(MemRegion mr) {
+  for (volatile char *p = (char*)mr.start(); p < (char*)mr.end(); p += os::vm_page_size()) {
+    char t = *p; *p = t;
+  }
+}
+
 void MutableSpace::initialize(MemRegion mr,
                               bool clear_space,
-                              bool mangle_space) {
-  HeapWord* bottom = mr.start();
-  HeapWord* end    = mr.end();
+                              bool mangle_space,
+                              bool setup_pages) {
 
-  assert(Universe::on_page_boundary(bottom) && Universe::on_page_boundary(end),
+  assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
-  set_bottom(bottom);
-  set_end(end);
+
+  if (setup_pages && (UseNUMA || AlwaysPreTouch)) {
+    // The space may move left and right or expand/shrink.
+    // We'd like to enforce the desired page placement.
+    MemRegion head, tail;
+    if (last_setup_region().is_empty()) {
+      // If it's the first initialization don't limit the amount of work.
+      head = mr;
+      tail = MemRegion(mr.end(), mr.end());
+    } else {
+      // Is there an intersection with the address space?
+      MemRegion intersection = last_setup_region().intersection(mr);
+      if (intersection.is_empty()) {
+        intersection = MemRegion(mr.end(), mr.end());
+      }
+      // All the sizes below are in words.
+      size_t head_size = 0, tail_size = 0;
+      if (mr.start() <= intersection.start()) {
+        head_size = pointer_delta(intersection.start(), mr.start());
+      }
+      if(intersection.end() <= mr.end()) {
+        tail_size = pointer_delta(mr.end(), intersection.end());
+      }
+      // Limit the amount of page manipulation if necessary.
+      if (NUMASpaceResizeRate > 0 && !AlwaysPreTouch) {
+        const size_t change_size = head_size + tail_size;
+        const float setup_rate_words = NUMASpaceResizeRate >> LogBytesPerWord;
+        head_size = MIN2((size_t)(setup_rate_words * head_size / change_size),
+                         head_size);
+        tail_size = MIN2((size_t)(setup_rate_words * tail_size / change_size),
+                         tail_size);
+      }
+      head = MemRegion(intersection.start() - head_size, intersection.start());
+      tail = MemRegion(intersection.end(), intersection.end() + tail_size);
+    }
+    assert(mr.contains(head) && mr.contains(tail), "Sanity");
+
+    if (UseNUMA) {
+      numa_setup_pages(head, clear_space);
+      numa_setup_pages(tail, clear_space);
+    }
+
+    if (AlwaysPreTouch) {
+      pretouch_pages(head);
+      pretouch_pages(tail);
+    }
+
+    // Remember where we stopped so that we can continue later.
+    set_last_setup_region(MemRegion(head.start(), tail.end()));
+  }
+
+  set_bottom(mr.start());
+  set_end(mr.end());
 
   if (clear_space) {
     clear(mangle_space);

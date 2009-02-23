@@ -614,14 +614,14 @@ public class Attr extends JCTree.Visitor {
             }
 
             // Check that type parameters are well-formed.
-            chk.validateTypeParams(tree.typarams);
+            chk.validate(tree.typarams, localEnv);
             if ((owner.flags() & ANNOTATION) != 0 &&
                 tree.typarams.nonEmpty())
                 log.error(tree.typarams.head.pos(),
                           "intf.annotation.members.cant.have.type.params");
 
             // Check that result type is well-formed.
-            chk.validate(tree.restype);
+            chk.validate(tree.restype, localEnv);
             if ((owner.flags() & ANNOTATION) != 0)
                 chk.validateAnnotationType(tree.restype);
 
@@ -706,12 +706,12 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        // Check that the variable's declared type is well-formed.
-        chk.validate(tree.vartype);
-
         VarSymbol v = tree.sym;
         Lint lint = env.info.lint.augment(v.attributes_field, v.flags());
         Lint prevLint = chk.setLint(lint);
+
+        // Check that the variable's declared type is well-formed.
+        chk.validate(tree.vartype, env);
 
         try {
             chk.checkDeprecatedAnnotation(tree.pos(), v);
@@ -1322,7 +1322,7 @@ public class Attr extends JCTree.Visitor {
             // current context.  Also, capture the return type
             result = check(tree, capture(restype), VAL, pkind, pt);
         }
-        chk.validate(tree.typeargs);
+        chk.validate(tree.typeargs, localEnv);
     }
     //where
         /** Check that given application node appears as first statement
@@ -1397,7 +1397,7 @@ public class Attr extends JCTree.Visitor {
         // symbol + type back into the attributed tree.
         Type clazztype = chk.checkClassType(
             tree.clazz.pos(), attribType(clazz, env), true);
-        chk.validate(clazz);
+        chk.validate(clazz, localEnv);
         if (tree.encl != null) {
             // We have to work in this case to store
             // symbol + type back into the attributed tree.
@@ -1457,7 +1457,7 @@ public class Attr extends JCTree.Visitor {
                 localEnv.info.varArgs = false;
                 tree.constructor = rs.resolveConstructor(
                     tree.pos(), localEnv, clazztype, argtypes, typeargtypes);
-                Type ctorType = checkMethod(clazztype,
+                tree.constructorType = checkMethod(clazztype,
                                             tree.constructor,
                                             localEnv,
                                             tree.args,
@@ -1465,7 +1465,7 @@ public class Attr extends JCTree.Visitor {
                                             typeargtypes,
                                             localEnv.info.varArgs);
                 if (localEnv.info.varArgs)
-                    assert ctorType.isErroneous() || tree.varargsElement != null;
+                    assert tree.constructorType.isErroneous() || tree.varargsElement != null;
             }
 
             if (cdef != null) {
@@ -1527,13 +1527,20 @@ public class Attr extends JCTree.Visitor {
                     typeargtypes, true, tree.varargsElement != null);
                 assert sym.kind < AMBIGUOUS || tree.constructor.type.isErroneous();
                 tree.constructor = sym;
+                tree.constructorType = checkMethod(clazztype,
+                                            tree.constructor,
+                                            localEnv,
+                                            tree.args,
+                                            argtypes,
+                                            typeargtypes,
+                                            localEnv.info.varArgs);
             }
 
             if (tree.constructor != null && tree.constructor.kind == MTH)
                 owntype = clazztype;
         }
         result = check(tree, owntype, VAL, pkind, pt);
-        chk.validate(tree.typeargs);
+        chk.validate(tree.typeargs, localEnv);
     }
 
     /** Make an attributed null check tree.
@@ -1555,7 +1562,7 @@ public class Attr extends JCTree.Visitor {
         Type elemtype;
         if (tree.elemtype != null) {
             elemtype = attribType(tree.elemtype, env);
-            chk.validate(tree.elemtype);
+            chk.validate(tree.elemtype, env);
             owntype = elemtype;
             for (List<JCExpression> l = tree.dims; l.nonEmpty(); l = l.tail) {
                 attribExpr(l.head, env, syms.intType);
@@ -1711,6 +1718,7 @@ public class Attr extends JCTree.Visitor {
 
     public void visitTypeCast(JCTypeCast tree) {
         Type clazztype = attribType(tree.clazz, env);
+        chk.validate(tree.clazz, env);
         Type exprtype = attribExpr(tree.expr, env, Infer.anyPoly);
         Type owntype = chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
         if (exprtype.constValue() != null)
@@ -1723,6 +1731,7 @@ public class Attr extends JCTree.Visitor {
             tree.expr.pos(), attribExpr(tree.expr, env));
         Type clazztype = chk.checkReifiableReferenceType(
             tree.clazz.pos(), attribType(tree.clazz, env));
+        chk.validate(tree.clazz, env);
         chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
         result = check(tree, syms.booleanType, VAL, pkind, pt);
     }
@@ -2005,6 +2014,10 @@ public class Attr extends JCTree.Visitor {
                     log.error(pos, "type.var.cant.be.deref");
                     return syms.errSymbol;
                 } else {
+                    Symbol sym2 = (sym.flags() & Flags.PRIVATE) != 0 ?
+                        rs.new AccessError(env, site, sym) :
+                                sym;
+                    rs.access(sym2, pos, site, name, true);
                     return sym;
                 }
             case ERROR:
@@ -2372,16 +2385,14 @@ public class Attr extends JCTree.Visitor {
             }
 
             if (warned && sym.type.tag == FORALL) {
-                String typeargs = "";
-                if (typeargtypes != null && typeargtypes.nonEmpty()) {
-                    typeargs = "<" + Type.toString(typeargtypes) + ">";
-                }
                 chk.warnUnchecked(env.tree.pos(),
                                   "unchecked.meth.invocation.applied",
-                                  sym,
-                                  sym.location(),
-                                  typeargs,
-                                  Type.toString(argtypes));
+                                  kindName(sym),
+                                  sym.name,
+                                  rs.methodArguments(sym.type.getParameterTypes()),
+                                  rs.methodArguments(argtypes),
+                                  kindName(sym.location()),
+                                  sym.location());
                 owntype = new MethodType(owntype.getParameterTypes(),
                                          types.erasure(owntype.getReturnType()),
                                          owntype.getThrownTypes(),
@@ -2514,7 +2525,10 @@ public class Attr extends JCTree.Visitor {
             // accept class or interface or typevar as first bound.
             Type b = checkBase(bs.head, tree.bounds.head, env, false, false, false);
             boundSet.add(types.erasure(b));
-            if (b.tag == TYPEVAR) {
+            if (b.isErroneous()) {
+                a.bound = b;
+            }
+            else if (b.tag == TYPEVAR) {
                 // if first bound was a typevar, do not accept further bounds.
                 if (tree.bounds.tail.nonEmpty()) {
                     log.error(tree.bounds.tail.head.pos(),
@@ -2528,7 +2542,9 @@ public class Attr extends JCTree.Visitor {
                 for (JCExpression bound : tree.bounds.tail) {
                     bs = bs.tail;
                     Type i = checkBase(bs.head, bound, env, false, true, false);
-                    if (i.tag == CLASS)
+                    if (i.isErroneous())
+                        a.bound = i;
+                    else if (i.tag == CLASS)
                         chk.checkNotRepeated(bound.pos(), types.erasure(i), boundSet);
                 }
             }
@@ -2695,9 +2711,9 @@ public class Attr extends JCTree.Visitor {
 
         // Validate type parameters, supertype and interfaces.
         attribBounds(tree.typarams);
-        chk.validateTypeParams(tree.typarams);
-        chk.validate(tree.extending);
-        chk.validate(tree.implementing);
+        chk.validate(tree.typarams, env);
+        chk.validate(tree.extending, env);
+        chk.validate(tree.implementing, env);
 
         // If this is a non-abstract class, check that it has no abstract
         // methods or unimplemented methods of an implemented interface.

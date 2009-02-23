@@ -60,6 +60,7 @@ class MutableNUMASpace : public MutableSpace {
     MutableSpace* _space;
     MemRegion _invalid_region;
     AdaptiveWeightedAverage *_alloc_rate;
+    bool _allocation_failed;
 
     struct SpaceStats {
       size_t _local_space, _remote_space, _unbiased_space, _uncommited_space;
@@ -81,8 +82,8 @@ class MutableNUMASpace : public MutableSpace {
     char* last_page_scanned()            { return _last_page_scanned; }
     void set_last_page_scanned(char* p)  { _last_page_scanned = p;    }
    public:
-    LGRPSpace(int l) : _lgrp_id(l), _last_page_scanned(NULL) {
-      _space = new MutableSpace();
+    LGRPSpace(int l, size_t alignment) : _lgrp_id(l), _last_page_scanned(NULL), _allocation_failed(false) {
+      _space = new MutableSpace(alignment);
       _alloc_rate = new AdaptiveWeightedAverage(NUMAChunkResizeWeight);
     }
     ~LGRPSpace() {
@@ -103,8 +104,21 @@ class MutableNUMASpace : public MutableSpace {
       return *(int*)lgrp_id_value == p->lgrp_id();
     }
 
+    // Report a failed allocation.
+    void set_allocation_failed() { _allocation_failed = true;  }
+
     void sample() {
-      alloc_rate()->sample(space()->used_in_bytes());
+      // If there was a failed allocation make allocation rate equal
+      // to the size of the whole chunk. This ensures the progress of
+      // the adaptation process.
+      size_t alloc_rate_sample;
+      if (_allocation_failed) {
+        alloc_rate_sample = space()->capacity_in_bytes();
+        _allocation_failed = false;
+      } else {
+        alloc_rate_sample = space()->used_in_bytes();
+      }
+      alloc_rate()->sample(alloc_rate_sample);
     }
 
     MemRegion invalid_region() const                { return _invalid_region;      }
@@ -169,10 +183,10 @@ class MutableNUMASpace : public MutableSpace {
 
  public:
   GrowableArray<LGRPSpace*>* lgrp_spaces() const     { return _lgrp_spaces;       }
-  MutableNUMASpace();
+  MutableNUMASpace(size_t alignment);
   virtual ~MutableNUMASpace();
   // Space initialization.
-  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
+  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space, bool setup_pages = SetupPages);
   // Update space layout if necessary. Do all adaptive resizing job.
   virtual void update();
   // Update allocation rate averages.
@@ -190,6 +204,9 @@ class MutableNUMASpace : public MutableSpace {
   virtual void ensure_parsability();
   virtual size_t used_in_words() const;
   virtual size_t free_in_words() const;
+
+  using MutableSpace::capacity_in_words;
+  virtual size_t capacity_in_words(Thread* thr) const;
   virtual size_t tlab_capacity(Thread* thr) const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
 

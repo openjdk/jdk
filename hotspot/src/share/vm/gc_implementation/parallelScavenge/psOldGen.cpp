@@ -116,7 +116,7 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
   // ObjectSpace stuff
   //
 
-  _object_space = new MutableSpace();
+  _object_space = new MutableSpace(virtual_space()->alignment());
 
   if (_object_space == NULL)
     vm_exit_during_initialization("Could not allocate an old gen space");
@@ -152,9 +152,7 @@ void PSOldGen::precompact() {
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
 
   // Reset start array first.
-  debug_only(if (!UseParallelOldGC || !VerifyParallelOldWithMarkSweep) {)
   start_array()->reset();
-  debug_only(})
 
   object_mark_sweep()->precompact();
 
@@ -387,10 +385,10 @@ void PSOldGen::post_resize() {
   start_array()->set_covered_region(new_memregion);
   Universe::heap()->barrier_set()->resize_covered_region(new_memregion);
 
-  HeapWord* const virtual_space_high = (HeapWord*) virtual_space()->high();
-
   // ALWAYS do this last!!
-  object_space()->set_end(virtual_space_high);
+  object_space()->initialize(new_memregion,
+                             SpaceDecorator::DontClear,
+                             SpaceDecorator::DontMangle);
 
   assert(new_word_size == heap_word_size(object_space()->capacity_in_bytes()),
     "Sanity");

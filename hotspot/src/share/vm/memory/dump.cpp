@@ -818,6 +818,40 @@ static void print_contents() {
 // across the space while doing this, as that causes the vtables to be
 // patched, undoing our useful work.  Instead, iterate to make a list,
 // then use the list to do the fixing.
+//
+// Our constructed vtables:
+// Dump time:
+//  1. init_self_patching_vtbl_list: table of pointers to current virtual method addrs
+//  2. generate_vtable_methods: create jump table, appended to above vtbl_list
+//  3. PatchKlassVtables: for Klass list, patch the vtable entry to point to jump table
+//     rather than to current vtbl
+// Table layout: NOTE FIXED SIZE
+//   1. vtbl pointers
+//   2. #Klass X #virtual methods per Klass
+//   1 entry for each, in the order:
+//   Klass1:method1 entry, Klass1:method2 entry, ... Klass1:method<num_virtuals> entry
+//   Klass2:method1 entry, Klass2:method2 entry, ... Klass2:method<num_virtuals> entry
+//   ...
+//   Klass<vtbl_list_size>:method1 entry, Klass<vtbl_list_size>:method2 entry,
+//       ... Klass<vtbl_list_size>:method<num_virtuals> entry
+//  Sample entry: (Sparc):
+//   save(sp, -256, sp)
+//   ba,pt common_code
+//   mov XXX, %L0       %L0 gets: Klass index <<8 + method index (note: max method index 255)
+//
+// Restore time:
+//   1. initialize_oops: reserve space for table
+//   2. init_self_patching_vtbl_list: update pointers to NEW virtual method addrs in text
+//
+// Execution time:
+//   First virtual method call for any object of these Klass types:
+//   1. object->klass->klass_part
+//   2. vtable entry for that klass_part points to the jump table entries
+//   3. branches to common_code with %O0/klass_part, %L0: Klass index <<8 + method index
+//   4. common_code:
+//      Get address of new vtbl pointer for this Klass from updated table
+//      Update new vtbl pointer in the Klass: future virtual calls go direct
+//      Jump to method, using new vtbl pointer and method index
 
 class PatchKlassVtables: public ObjectClosure {
 private:

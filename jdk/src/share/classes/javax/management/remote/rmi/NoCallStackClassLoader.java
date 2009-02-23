@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,8 @@ class NoCallStackClassLoader extends ClassLoader {
      * if it is one of the classes whose byte code we have, or
      * delegate the load if it is one of the referenced classes.
      */
-    protected Class findClass(String name) throws ClassNotFoundException {
+    @Override
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
         for (int i = 0; i < classNames.length; i++) {
             if (name.equals(classNames[i])) {
                 return defineClass(classNames[i], byteCodes[i], 0,

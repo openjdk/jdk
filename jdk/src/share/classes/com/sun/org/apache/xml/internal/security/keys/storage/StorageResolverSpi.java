@@ -2,7 +2,6 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-
 /*
  * Copyright  1999-2004 The Apache Software Foundation.
  *
@@ -28,7 +27,7 @@ import java.util.Iterator;
 
 /**
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public abstract class StorageResolverSpi {
 

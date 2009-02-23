@@ -34,7 +34,6 @@ void CollectedHeap::post_allocation_setup_common(KlassHandle klass,
 void CollectedHeap::post_allocation_setup_no_klass_install(KlassHandle klass,
                                                            HeapWord* objPtr,
                                                            size_t size) {
-
   oop obj = (oop)objPtr;
 
   assert(obj != NULL, "NULL object pointer");
@@ -44,9 +43,6 @@ void CollectedHeap::post_allocation_setup_no_klass_install(KlassHandle klass,
     // May be bootstrapping
     obj->set_mark(markOopDesc::prototype());
   }
-
-  // support low memory notifications (no-op if not enabled)
-  LowMemoryDetector::detect_low_memory_for_collected_pools();
 }
 
 void CollectedHeap::post_allocation_install_obj_klass(KlassHandle klass,
@@ -65,6 +61,9 @@ void CollectedHeap::post_allocation_install_obj_klass(KlassHandle klass,
 
 // Support for jvmti and dtrace
 inline void post_allocation_notify(KlassHandle klass, oop obj) {
+  // support low memory notifications (no-op if not enabled)
+  LowMemoryDetector::detect_low_memory_for_collected_pools();
+
   // support for JVMTI VMObjectAlloc event (no-op if not enabled)
   JvmtiExport::vm_object_alloc_event_collector(obj);
 
@@ -122,7 +121,7 @@ HeapWord* CollectedHeap::common_mem_allocate_noinit(size_t size, bool is_noref, 
       return result;
     }
   }
-  bool gc_overhead_limit_was_exceeded;
+  bool gc_overhead_limit_was_exceeded = false;
   result = Universe::heap()->mem_allocate(size,
                                           is_noref,
                                           false,

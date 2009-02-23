@@ -105,10 +105,23 @@ class os: AllStatic {
   static jlong elapsed_counter();
   static jlong elapsed_frequency();
 
+  // The "virtual time" of a thread is the amount of time a thread has
+  // actually run.  The first function indicates whether the OS supports
+  // this functionality for the current thread, and if so:
+  //   * the second enables vtime tracking (if that is required).
+  //   * the third tells whether vtime is enabled.
+  //   * the fourth returns the elapsed virtual time for the current
+  //     thread.
+  static bool supports_vtime();
+  static bool enable_vtime();
+  static bool vtime_enabled();
+  static double elapsedVTime();
+
   // Return current local time in a string (YYYY-MM-DD HH:MM:SS).
   // It is MT safe, but not async-safe, as reading time zone
   // information may require a lock on some platforms.
-  static char* local_time_string(char *buf, size_t buflen);
+  static char*      local_time_string(char *buf, size_t buflen);
+  static struct tm* localtime_pd     (const time_t* clock, struct tm*  res);
   // Fill in buffer with current local time as an ISO-8601 string.
   // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
   // Returns buffer, or NULL if it failed.
@@ -196,7 +209,7 @@ class os: AllStatic {
 
   enum ProtType { MEM_PROT_NONE, MEM_PROT_READ, MEM_PROT_RW, MEM_PROT_RWX };
   static bool   protect_memory(char* addr, size_t bytes, ProtType prot,
-                               bool is_committed = false);
+                               bool is_committed = true);
 
   static bool   guard_memory(char* addr, size_t bytes);
   static bool   unguard_memory(char* addr, size_t bytes);

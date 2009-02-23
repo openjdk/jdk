@@ -395,7 +395,13 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
                    OptoReg::regname(OptoReg::c_frame_pointer),
                    regalloc->reg2offset(box_reg));
       }
-      format_helper( regalloc, st, obj, "MON-OBJ[", i, &scobjs );
+      const char* obj_msg = "MON-OBJ[";
+      if (EliminateLocks) {
+        while( !box->is_BoxLock() )  box = box->in(1);
+        if (box->as_BoxLock()->is_eliminated())
+          obj_msg = "MON-OBJ(LOCK ELIMINATED)[";
+      }
+      format_helper( regalloc, st, obj, obj_msg, i, &scobjs );
     }
 
     for (i = 0; i < (uint)scobjs.length(); i++) {
@@ -908,8 +914,9 @@ void SafePointNode::push_monitor(const FastLockNode *lock) {
     add_req(lock->box_node());
     add_req(lock->obj_node());
   } else {
-    add_req(NULL);
-    add_req(NULL);
+    Node* top = Compile::current()->top();
+    add_req(top);
+    add_req(top);
   }
   jvms()->set_scloff(nextmon+MonitorEdges);
   jvms()->set_endoff(req());
@@ -967,6 +974,7 @@ SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp,
   init_class_id(Class_SafePointScalarObject);
 }
 
+bool SafePointScalarObjectNode::pinned() const { return true; }
 
 uint SafePointScalarObjectNode::ideal_reg() const {
   return 0; // No matching to machine instruction
@@ -1033,6 +1041,39 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
 
 //=============================================================================
 uint AllocateArrayNode::size_of() const { return sizeof(*this); }
+
+// Retrieve the length from the AllocateArrayNode. Narrow the type with a
+// CastII, if appropriate.  If we are not allowed to create new nodes, and
+// a CastII is appropriate, return NULL.
+Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTransform *phase, bool allow_new_nodes) {
+  Node *length = in(AllocateNode::ALength);
+  assert(length != NULL, "length is not null");
+
+  const TypeInt* length_type = phase->find_int_type(length);
+  const TypeAryPtr* ary_type = oop_type->isa_aryptr();
+
+  if (ary_type != NULL && length_type != NULL) {
+    const TypeInt* narrow_length_type = ary_type->narrow_size_type(length_type);
+    if (narrow_length_type != length_type) {
+      // Assert one of:
+      //   - the narrow_length is 0
+      //   - the narrow_length is not wider than length
+      assert(narrow_length_type == TypeInt::ZERO ||
+             (narrow_length_type->_hi <= length_type->_hi &&
+              narrow_length_type->_lo >= length_type->_lo),
+             "narrow type must be narrower than length type");
+
+      // Return NULL if new nodes are not allowed
+      if (!allow_new_nodes) return NULL;
+      // Create a cast which is control dependent on the initialization to
+      // propagate the fact that the array length must be positive.
+      length = new (phase->C, 2) CastIINode(length, narrow_length_type);
+      length->set_req(0, initialization()->proj_out(0));
+    }
+  }
+
+  return length;
+}
 
 //=============================================================================
 uint LockNode::size_of() const { return sizeof(*this); }
@@ -1348,7 +1389,7 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     //
     // If we are locking an unescaped object, the lock/unlock is unnecessary
     //
-    ConnectionGraph *cgr = Compile::current()->congraph();
+    ConnectionGraph *cgr = phase->C->congraph();
     PointsToNode::EscapeState es = PointsToNode::GlobalEscape;
     if (cgr != NULL)
       es = cgr->escape_state(obj_node(), phase);
@@ -1416,6 +1457,7 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
           // Mark it eliminated to update any counters
           lock->set_eliminated();
+          lock->set_coarsened();
         }
       } else if (result != NULL && ctrl->is_Region() &&
                  iter->_worklist.member(ctrl)) {
@@ -1450,7 +1492,7 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     //
     // If we are unlocking an unescaped object, the lock/unlock is unnecessary.
     //
-    ConnectionGraph *cgr = Compile::current()->congraph();
+    ConnectionGraph *cgr = phase->C->congraph();
     PointsToNode::EscapeState es = PointsToNode::GlobalEscape;
     if (cgr != NULL)
       es = cgr->escape_state(obj_node(), phase);

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,10 +79,6 @@ AwtCursor::AwtCursor(JNIEnv *env, HCURSOR hCur, jobject jCur, int xH, int yH,
 
     custom = TRUE;
     dirty = FALSE;
-
-    if (IsWin95Cursor()) {
-        customCursors.Add(this);
-    }
 }
 
 AwtCursor::~AwtCursor()
@@ -96,9 +92,6 @@ void AwtCursor::Dispose()
 
     if (custom) {
         ::DestroyIcon(hCursor);
-        if (IsWin95Cursor()) {
-            customCursors.Remove(this);
-        }
     }
 
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -256,16 +249,6 @@ void AwtCursor::UpdateCursor(AwtComponent *comp) {
     env->DeleteLocalRef(jcomp);
 }
 
-void AwtCursor::DirtyAllCustomCursors() {
-    if (IsWin95Cursor()) {
-        AwtObjectListItem *cur = customCursors.m_head;
-        while (cur != NULL) {
-            ((AwtCursor *)(cur->obj))->dirty = TRUE;
-            cur = cur->next;
-        }
-    }
-}
-
 void AwtCursor::Rebuild() {
     if (!dirty) {
         return;
@@ -292,23 +275,6 @@ void AwtCursor::Rebuild() {
     }
     DASSERT(hCursor);
     dirty = FALSE;
-}
-
-/* Bug fix for 4205805:
-   Custom cursor on WIN95 needs more effort, the same API works fine on NT
-   and WIN98. On Win95, DDB has to be passed in when calling createIconIndirect
-   Since DDB depends on the DISPLAY, we have to rebuild all the custom cursors
-   when user changes the display settings.
-*/
-BOOL AwtCursor::IsWin95Cursor() {
-    static BOOL val;
-    static BOOL known = FALSE;
-    if (!known) {
-        val = (IS_WIN32 && !IS_NT && LOBYTE(LOWORD(::GetVersion())) == 4 &&
-               HIBYTE(LOWORD(::GetVersion())) == 0);
-        known = TRUE;
-    }
-    return val;
 }
 
 extern "C" {

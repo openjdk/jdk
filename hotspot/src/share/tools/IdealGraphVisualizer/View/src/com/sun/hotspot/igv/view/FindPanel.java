@@ -67,7 +67,7 @@ class FindPanel extends JPanel implements KeyListener {
 
         for (Figure f : figures) {
             Properties prop = f.getProperties();
-            for (Property p : prop.getProperties()) {
+            for (Property p : prop) {
                 if (!propertyNames.contains(p.getName())) {
                     propertyNames.add(p.getName());
                 }

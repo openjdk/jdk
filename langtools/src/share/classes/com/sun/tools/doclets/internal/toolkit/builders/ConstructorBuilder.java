@@ -138,7 +138,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
          */
         public void invokeMethod(
                 String methodName,
-                Class[] paramClasses,
+                Class<?>[] paramClasses,
                 Object[] params)
                 throws Exception {
                 if (DEBUG) {
@@ -156,7 +156,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
          *
          * @return a list of constructors that will be documented.
          */
-        public List members(ClassDoc classDoc) {
+        public List<ProgramElementDoc> members(ClassDoc classDoc) {
                 return visibleMemberMap.getMembersFor(classDoc);
         }
 
@@ -175,7 +175,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
          * @param elements the XML elements that specify how to construct this
          *                documentation.
          */
-        public void buildConstructorDoc(List elements) {
+        public void buildConstructorDoc(List<?> elements) {
                 if (writer == null) {
                         return;
                 }

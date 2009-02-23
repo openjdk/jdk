@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,9 +285,9 @@ public class RoleUnresolved implements Serializable {
         result.append("role name: " + roleName);
         if (roleValue != null) {
             result.append("; value: ");
-            for (Iterator objNameIter = roleValue.iterator();
+            for (Iterator<ObjectName> objNameIter = roleValue.iterator();
                  objNameIter.hasNext();) {
-                ObjectName currObjName = (ObjectName)(objNameIter.next());
+                ObjectName currObjName = objNameIter.next();
                 result.append(currObjName.toString());
                 if (objNameIter.hasNext()) {
                     result.append(", ");
@@ -344,7 +344,7 @@ public class RoleUnresolved implements Serializable {
         //
         ObjectOutputStream.PutField fields = out.putFields();
         fields.put("myRoleName", roleName);
-        fields.put("myRoleValue", (ArrayList)roleValue);
+        fields.put("myRoleValue", roleValue);
         fields.put("myPbType", problemType);
         out.writeFields();
       }

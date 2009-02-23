@@ -54,7 +54,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     /**
      * List to store the order groups as specified on the command line.
      */
-    private List groupList;
+    private List<String> groupList;
 
     /**
      * Construct the PackageIndexWriter. Also constructs the grouping
@@ -102,9 +102,9 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
         if(pkg != null && pkg.name().length() > 0) {
             trBgcolorStyle("white", "TableRowColor");
             summaryRow(20);
-            bold();
+            strong();
             printPackageLink(pkg, Util.getPackageName(pkg), false);
-            boldEnd();
+            strongEnd();
             summaryRowEnd();
             summaryRow(0);
             printSummaryComment(pkg);
@@ -119,7 +119,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      */
     protected void generateIndex() {
         for (int i = 0; i < groupList.size(); i++) {
-        String groupname = (String)groupList.get(i);
+        String groupname = groupList.get(i);
         List<PackageDoc> list = groupPackageMap.get(groupname);
             if (list != null && list.size() > 0) {
                 printIndexContents(list.toArray(new PackageDoc[list.size()]),
@@ -137,7 +137,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
         if (root.inlineTags().length > 0) {
             printSummaryComment(root);
             p();
-            bold(configuration.getText("doclet.See"));
+            strong(configuration.getText("doclet.See"));
             br();
             printNbsps();
             printHyperLink("", "overview_description",
@@ -152,7 +152,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     protected void printIndexHeader(String text) {
         tableIndexSummary();
         tableHeaderStart("#CCCCFF");
-        bold(text);
+        strong(text);
         tableHeaderEnd();
     }
 

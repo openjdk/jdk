@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,6 @@ import java.io.IOException;
 import java.rmi.MarshalledObject;
 
 public interface Unmarshal {
-    public Object get(MarshalledObject mo)
+    public Object get(MarshalledObject<?> mo)
             throws IOException, ClassNotFoundException;
 }

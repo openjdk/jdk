@@ -534,7 +534,7 @@ public class TransTypes extends TreeTranslator {
         tree.truepart = translate(tree.truepart, erasure(tree.type));
         tree.falsepart = translate(tree.falsepart, erasure(tree.type));
         tree.type = erasure(tree.type);
-        result = tree;
+        result = retype(tree, tree.type, pt);
     }
 
    public void visitIf(JCIf tree) {
@@ -623,8 +623,8 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitAssignop(JCAssignOp tree) {
-        tree.lhs = translate(tree.lhs, null);
-        tree.rhs = translate(tree.rhs, erasure(tree.rhs.type));
+        tree.lhs = translate(tree.lhs, tree.operator.type.getParameterTypes().head);
+        tree.rhs = translate(tree.rhs, tree.operator.type.getParameterTypes().tail.head);
         tree.type = erasure(tree.type);
         result = tree;
     }

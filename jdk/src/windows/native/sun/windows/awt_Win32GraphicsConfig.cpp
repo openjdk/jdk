@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
  * have any questions.
  */
 
-#include <windows.h>
 #include "awt.h"
 #include <sun_awt_Win32GraphicsConfig.h>
 #include "awt_Win32GraphicsConfig.h"
 #include "awt_Canvas.h"
 #include "awt_Win32GraphicsDevice.h"
+#include "Devices.h"
 
 //Info for building a ColorModel
 #include "java_awt_image_DataBuffer.h"
@@ -93,8 +93,8 @@ JNIEXPORT jobject JNICALL
     clazz = env->FindClass("java/awt/Rectangle");
     mid = env->GetMethodID(clazz, "<init>", "(IIII)V");
     if (mid != 0) {
-        RECT    rRW     = {0,0,0,0};
-        if( TRUE == ::MonitorBounds(AwtWin32GraphicsDevice::GetMonitor(screen), &rRW) ) {
+        RECT rRW = {0, 0, 0, 0};
+        if (TRUE == MonitorBounds(AwtWin32GraphicsDevice::GetMonitor(screen), &rRW)) {
             bounds = env->NewObject(clazz, mid,
                                     rRW.left, rRW.top,
                                     rRW.right - rRW.left,

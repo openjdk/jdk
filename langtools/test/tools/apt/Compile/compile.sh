@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -472,6 +472,9 @@ ${JAR} cf0 round4Apf.jar Round4Apf*.class META-INF
 
 cp ${TESTCLASSES}/Round?.class .
 ${JAR} cf0 rounds.jar Round?.class
+
+# cleanup file to prevent accidental discovery in current directory
+rm -Rf META-INF/services/*
 
 printf "%s\n" "-factorypath round1Apf.jar${SEP}round2Apf.jar${SEP}round3Apf.jar${SEP}round4Apf.jar"   > options8
 printf "%s\n" "-classpath rounds.jar"  >> options8

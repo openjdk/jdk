@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-1998 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ package java.util;
  */
 public
 class NoSuchElementException extends RuntimeException {
+    private static final long serialVersionUID = 6769829250639411880L;
+
     /**
      * Constructs a <code>NoSuchElementException</code> with <tt>null</tt>
      * as its error message string.

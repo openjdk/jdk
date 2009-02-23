@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,11 @@
 # include "incls/_referencePolicy.cpp.incl"
 
 LRUCurrentHeapPolicy::LRUCurrentHeapPolicy() {
+  setup();
+}
+
+// Capture state (of-the-VM) information needed to evaluate the policy
+void LRUCurrentHeapPolicy::setup() {
   _max_interval = (Universe::get_heap_free_at_last_gc() / M) * SoftRefLRUPolicyMSPerMB;
   assert(_max_interval >= 0,"Sanity check");
 }
@@ -47,6 +52,11 @@ bool LRUCurrentHeapPolicy::should_clear_reference(oop p) {
 /////////////////////// MaxHeap //////////////////////
 
 LRUMaxHeapPolicy::LRUMaxHeapPolicy() {
+  setup();
+}
+
+// Capture state (of-the-VM) information needed to evaluate the policy
+void LRUMaxHeapPolicy::setup() {
   size_t max_heap = MaxHeapSize;
   max_heap -= Universe::get_heap_used_at_last_gc();
   max_heap /= M;

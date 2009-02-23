@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ FileBuff::FileBuff( BufferedFile *fptr, ArchDesc& archDesc) : _fp(fptr), _AD(arc
     exit(1);                    // Exit on seek error
   }
   _filepos = ftell(_fp->_fp);      // Reset current file position
+  _linenum = 0;
 
   _bigbuf = new char[_bufferSize]; // Create buffer to hold text for parser
   if( !_bigbuf ) {
@@ -76,6 +77,7 @@ char *FileBuff::get_line(void) {
   // Check for end of file & return NULL
   if (_bufeol >= _bufmax) return NULL;
 
+  _linenum++;
   retval = ++_bufeol;      // return character following end of previous line
   if (*retval == '\0') return NULL; // Check for EOF sentinal
   // Search for newline character which must end each line

@@ -85,22 +85,22 @@ public class TestPrivateClasses extends JavadocTester {
             "<PRE>" + NL +
                 "java.lang.Object" + NL +
                 "  <IMG SRC=\"../resources/inherit.gif\" " +
-                "ALT=\"extended by \"><B>pkg.PublicChild</B>" + NL +
+                "ALT=\"extended by \"><STRONG>pkg.PublicChild</STRONG>" + NL +
             "</PRE>"
         },
 
         // Method is documented as though it is declared in the inheriting method.
         {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
-            "public void <B>methodInheritedFromParent</B>(int&nbsp;p1)"
+            "public void <STRONG>methodInheritedFromParent</STRONG>(int&nbsp;p1)"
         },
 
         //Make sure implemented interfaces from private superclass are inherited
         {BUG_ID + "-1" + FS + "pkg" + FS + "PublicInterface.html",
-            "<B>All Known Implementing Classes:</B> <DD><A HREF=\"../pkg/PublicChild.html\" " +
+            "<STRONG>All Known Implementing Classes:</STRONG> <DD><A HREF=\"../pkg/PublicChild.html\" " +
             "title=\"class in pkg\">PublicChild</A>"},
 
         {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
-            "<B>All Implemented Interfaces:</B> <DD><A HREF=\"../pkg/PublicInterface.html\" " +
+            "<STRONG>All Implemented Interfaces:</STRONG> <DD><A HREF=\"../pkg/PublicInterface.html\" " +
             "title=\"interface in pkg\">PublicInterface</A>"},
 
         //Generic interface method test.
@@ -110,12 +110,12 @@ public class TestPrivateClasses extends JavadocTester {
     private static final String[][] NEGATED_TEST1 = {
        // Should not document that a method overrides method from private class.
       {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
-        "<B>Overrides:</B>"},
+        "<STRONG>Overrides:</STRONG>"},
       // Should not document that a method specified by private interface.
       {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
-        "<B>Specified by:</B>"},
+        "<STRONG>Specified by:</STRONG>"},
       {BUG_ID + "-1" + FS + "pkg" + FS + "PublicInterface.html",
-        "<B>Specified by:</B>"},
+        "<STRONG>Specified by:</STRONG>"},
       // Should not mention that any documentation was copied.
       {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
         "Description copied from"},
@@ -137,7 +137,7 @@ public class TestPrivateClasses extends JavadocTester {
         //Do not inherit private interface method with generic parameters.
         //This method has been implemented.
         {BUG_ID + "-1" + FS + "pkg2" + FS + "C.html",
-            "<B><A HREF=\"../pkg2/I.html#hello(T)\">hello</A></B>"},
+            "<STRONG><A HREF=\"../pkg2/I.html#hello(T)\">hello</A></STRONG>"},
     };
 
     // Test output when -private flag is used.
@@ -174,14 +174,14 @@ public class TestPrivateClasses extends JavadocTester {
         },
         // Should document that a method overrides method from private class.
        {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
-            "<B>Overrides:</B><DD><CODE>" +
+            "<STRONG>Overrides:</STRONG><DD><CODE>" +
             "<A HREF=\"../pkg/PrivateParent.html#methodOverridenFromParent(char[], int, T, V, java.util.List)\">" +
             "methodOverridenFromParent</A></CODE> in class <CODE>" +
             "<A HREF=\"../pkg/PrivateParent.html\" title=\"class in pkg\">" +
             "PrivateParent</A></CODE></DL>"},
        // Should document that a method is specified by private interface.
        {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
-            "<B>Specified by:</B><DD><CODE>" +
+            "<STRONG>Specified by:</STRONG><DD><CODE>" +
             "<A HREF=\"../pkg/PrivateInterface.html#methodInterface(int)\">" +
             "methodInterface</A></CODE> in interface <CODE>" +
             "<A HREF=\"../pkg/PrivateInterface.html\" title=\"interface in pkg\">" +
@@ -209,12 +209,12 @@ public class TestPrivateClasses extends JavadocTester {
 
       //Make sure implemented interfaces from private superclass are inherited
       {BUG_ID + "-2" + FS + "pkg" + FS + "PublicInterface.html",
-        "<B>All Known Implementing Classes:</B> <DD><A HREF=\"../pkg/PrivateParent.html\" " +
+        "<STRONG>All Known Implementing Classes:</STRONG> <DD><A HREF=\"../pkg/PrivateParent.html\" " +
         "title=\"class in pkg\">PrivateParent</A>, " +
         "<A HREF=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild</A>"},
 
       {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
-        "<B>All Implemented Interfaces:</B> <DD><A HREF=\"../pkg/PrivateInterface.html\" " +
+        "<STRONG>All Implemented Interfaces:</STRONG> <DD><A HREF=\"../pkg/PrivateInterface.html\" " +
         "title=\"interface in pkg\">PrivateInterface</A>, " +
         "<A HREF=\"../pkg/PublicInterface.html\" title=\"interface in pkg\">" +
         "PublicInterface</A>"},
@@ -222,10 +222,13 @@ public class TestPrivateClasses extends JavadocTester {
       //Since private flag is used, we can document that private interface method
       //with generic parameters has been implemented.
       {BUG_ID + "-2" + FS + "pkg2" + FS + "C.html",
-            "<B>Description copied from interface: " +            "<CODE><A HREF=\"../pkg2/I.html#hello(T)\">I</A></CODE></B>"},
+            "<STRONG>Description copied from interface: " +
+            "<CODE><A HREF=\"../pkg2/I.html#hello(T)\">I</A></CODE></STRONG>"},
 
       {BUG_ID + "-2" + FS + "pkg2" + FS + "C.html",
-            "<B>Specified by:</B><DD><CODE><A HREF=\"../pkg2/I.html#hello(T)\">" +            "hello</A></CODE> in interface <CODE><A HREF=\"../pkg2/I.html\" " +            "title=\"interface in pkg2\">I</A>"},
+            "<STRONG>Specified by:</STRONG><DD><CODE><A HREF=\"../pkg2/I.html#hello(T)\">" +
+            "hello</A></CODE> in interface <CODE><A HREF=\"../pkg2/I.html\" " +
+            "title=\"interface in pkg2\">I</A>"},
     };
     private static final String[][] NEGATED_TEST2 = NO_TEST;
 

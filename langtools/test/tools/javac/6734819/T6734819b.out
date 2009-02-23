@@ -5,5 +5,5 @@
 [desugar A]
 [generate code A]
 [desugar B]
-[generate code B]
+[generate code B.C]
 [generate code B]

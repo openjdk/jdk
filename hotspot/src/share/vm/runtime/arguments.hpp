@@ -294,10 +294,14 @@ class Arguments : AllStatic {
   // CMS/ParNew garbage collectors
   static void set_parnew_gc_flags();
   static void set_cms_and_parnew_gc_flags();
-  // UseParallelGC
+  // UseParallel[Old]GC
   static void set_parallel_gc_flags();
+  // Garbage-First (UseG1GC)
+  static void set_g1_gc_flags();
   // GC ergonomics
   static void set_ergonomics_flags();
+  // Setup heap size for a server platform
+  static void set_server_heap_size();
   // Based on automatic selection criteria, should the
   // low pause collector be used.
   static bool should_auto_select_low_pause_collector();
@@ -335,9 +339,9 @@ class Arguments : AllStatic {
   }
   static bool verify_percentage(uintx value, const char* name);
   static void describe_range_error(ArgsRange errcode);
-  static ArgsRange check_memory_size(jlong size, jlong min_size);
-  static ArgsRange parse_memory_size(const char* s, jlong* long_arg,
-                                     jlong min_size);
+  static ArgsRange check_memory_size(julong size, julong min_size);
+  static ArgsRange parse_memory_size(const char* s, julong* long_arg,
+                                     julong min_size);
 
   // methods to build strings from individual args
   static void build_jvm_args(const char* arg);

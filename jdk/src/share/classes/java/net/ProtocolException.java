@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-1997 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.io.IOException;
  */
 public
 class ProtocolException extends IOException {
+    private static final long serialVersionUID = -6098449442062388080L;
+
     /**
      * Constructs a new <code>ProtocolException</code> with the
      * specified detail message.

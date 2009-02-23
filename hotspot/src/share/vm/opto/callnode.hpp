@@ -433,6 +433,10 @@ public:
   uint n_fields()    const { return _n_fields; }
   DEBUG_ONLY(AllocateNode* alloc() const { return _alloc; })
 
+  // SafePointScalarObject should be always pinned to the control edge
+  // of the SafePoint node for which it was generated.
+  virtual bool pinned() const; // { return true; }
+
   virtual uint size_of() const { return sizeof(*this); }
 
   // Assumes that "this" is an argument to a safepoint node "s", and that
@@ -755,6 +759,15 @@ public:
   virtual int Opcode() const;
   virtual uint size_of() const; // Size is bigger
 
+  // Dig the length operand out of a array allocation site.
+  Node* Ideal_length() {
+    return in(AllocateNode::ALength);
+  }
+
+  // Dig the length operand out of a array allocation site and narrow the
+  // type with a CastII, if necesssary
+  Node* make_ideal_length(const TypeOopPtr* ary_type, PhaseTransform *phase, bool can_create = true);
+
   // Pattern-match a possible usage of AllocateArrayNode.
   // Return null if no allocation is recognized.
   static AllocateArrayNode* Ideal_array_allocation(Node* ptr, PhaseTransform* phase) {
@@ -762,18 +775,13 @@ public:
     return (allo == NULL || !allo->is_AllocateArray())
            ? NULL : allo->as_AllocateArray();
   }
-
-  // Dig the length operand out of a (possible) array allocation site.
-  static Node* Ideal_length(Node* ptr, PhaseTransform* phase) {
-    AllocateArrayNode* allo = Ideal_array_allocation(ptr, phase);
-    return (allo == NULL) ? NULL : allo->in(AllocateNode::ALength);
-  }
 };
 
 //------------------------------AbstractLockNode-----------------------------------
 class AbstractLockNode: public CallNode {
 private:
- bool _eliminate;    // indicates this lock can be safely eliminated
+  bool _eliminate;    // indicates this lock can be safely eliminated
+  bool _coarsened;    // indicates this lock was coarsened
 #ifndef PRODUCT
   NamedCounter* _counter;
 #endif
@@ -794,6 +802,7 @@ protected:
 public:
   AbstractLockNode(const TypeFunc *tf)
     : CallNode(tf, NULL, TypeRawPtr::BOTTOM),
+      _coarsened(false),
       _eliminate(false)
   {
 #ifndef PRODUCT
@@ -811,6 +820,9 @@ public:
   bool is_eliminated()         {return _eliminate; }
   // mark node as eliminated and update the counter if there is one
   void set_eliminated();
+
+  bool is_coarsened()  { return _coarsened; }
+  void set_coarsened() { _coarsened = true; }
 
   // locking does not modify its arguments
   virtual bool        may_modify(const TypePtr *addr_t, PhaseTransform *phase){ return false;}

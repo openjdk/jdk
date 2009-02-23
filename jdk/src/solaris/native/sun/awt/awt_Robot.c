@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ extern struct X11GraphicsConfigIDs x11GraphicsConfigIDs;
 // 2 would be more correct, however that's how Robot originally worked
 // and tests start to fail if this value is changed
 static int32_t num_buttons = 3;
+static jint * masks;
 
 static int32_t isXTestAvailable() {
     int32_t major_opcode, first_event, first_error;
@@ -208,6 +209,26 @@ JNIEXPORT void JNICALL
 Java_sun_awt_X11_XRobotPeer_setup (JNIEnv * env, jclass cls) {
     int32_t xtestAvailable;
 
+// this should be called from XRobotPeer constructor
+    jclass inputEventClazz = (*env)->FindClass(env, "java/awt/event/InputEvent");
+    jmethodID getButtonDownMasksID = (*env)->GetStaticMethodID(env, inputEventClazz, "getButtonDownMasks", "()[I");
+    jintArray obj = (jintArray)(*env)->CallStaticObjectMethod(env, inputEventClazz, getButtonDownMasksID);
+    jsize len = (*env)->GetArrayLength(env, obj);
+    jint * tmp = (*env)->GetIntArrayElements(env, obj, JNI_FALSE);
+
+    masks  = (jint *)malloc(sizeof(jint)*len);
+    if (masks == (jint *) NULL) {
+        JNU_ThrowOutOfMemoryError((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2), NULL);
+        goto finally;
+    }
+
+    int i;
+    for (i = 0; i < len; i++) {
+        masks[i] = tmp[i];
+    }
+    (*env)->ReleaseIntArrayElements(env, obj, tmp, 0);
+    (*env)->DeleteLocalRef(env, obj);
+
     DTRACE_PRINTLN("RobotPeer: setup()");
 
     AWT_LOCK();
@@ -221,8 +242,15 @@ Java_sun_awt_X11_XRobotPeer_setup (JNIEnv * env, jclass cls) {
     }
 
     getNumButtons();
-
+    finally:
     AWT_UNLOCK();
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_awt_X11_XRobotPeer_getNumberOfButtonsImpl(JNIEnv *env,
+                                                   jclass cls) {
+    // At the moment this routine being called we already should have an initialized num_buttons variable.
+    return num_buttons;
 }
 
 JNIEXPORT void JNICALL
@@ -348,52 +376,65 @@ Java_sun_awt_X11_XRobotPeer_mouseMoveImpl (JNIEnv *env,
     AWT_UNLOCK();
 }
 
+/*
+  * Function joining the code of mousePressImpl and mouseReleaseImpl
+  */
+void mouseAction(JNIEnv *env,
+                 jclass cls,
+                 jint buttonMask,
+                 Bool isMousePress)
+{
+    AWT_LOCK();
+
+    DTRACE_PRINTLN1("RobotPeer: mouseAction(%i)", buttonMask);
+    DTRACE_PRINTLN1("RobotPeer: mouseAction, press = %d", isMousePress);
+
+    if (buttonMask & java_awt_event_InputEvent_BUTTON1_MASK ||
+        buttonMask & java_awt_event_InputEvent_BUTTON1_DOWN_MASK )
+    {
+        XTestFakeButtonEvent(awt_display, 1, isMousePress, CurrentTime);
+    }
+    if ((buttonMask & java_awt_event_InputEvent_BUTTON2_MASK ||
+         buttonMask & java_awt_event_InputEvent_BUTTON2_DOWN_MASK) &&
+        (num_buttons >= 2)) {
+        XTestFakeButtonEvent(awt_display, 2, isMousePress, CurrentTime);
+    }
+    if ((buttonMask & java_awt_event_InputEvent_BUTTON3_MASK ||
+         buttonMask & java_awt_event_InputEvent_BUTTON3_DOWN_MASK) &&
+        (num_buttons >= 3)) {
+        XTestFakeButtonEvent(awt_display, 3, isMousePress, CurrentTime);
+    }
+
+    if (num_buttons > 3){
+        int32_t i;
+        int32_t button = 0;
+        for (i = 3; i<num_buttons; i++){
+            if ((buttonMask & masks[i])) {
+                // arrays starts from zero index => +1
+                // users wants to affect 4 or 5 button but they are assigned
+                // to the wheel so => we have to shift it to the right by 2.
+                button = i + 3;
+                XTestFakeButtonEvent(awt_display, button, isMousePress, CurrentTime);
+            }
+        }
+    }
+
+    XSync(awt_display, False);
+    AWT_UNLOCK();
+}
+
 JNIEXPORT void JNICALL
 Java_sun_awt_X11_XRobotPeer_mousePressImpl (JNIEnv *env,
                            jclass cls,
                            jint buttonMask) {
-    AWT_LOCK();
-
-    DTRACE_PRINTLN1("RobotPeer: mousePressImpl(%i)", buttonMask);
-
-    if (buttonMask & java_awt_event_InputEvent_BUTTON1_MASK) {
-        XTestFakeButtonEvent(awt_display, 1, True, CurrentTime);
-    }
-    if ((buttonMask & java_awt_event_InputEvent_BUTTON2_MASK) &&
-        (num_buttons >= 2)) {
-        XTestFakeButtonEvent(awt_display, 2, True, CurrentTime);
-    }
-    if ((buttonMask & java_awt_event_InputEvent_BUTTON3_MASK) &&
-        (num_buttons >= 3)) {
-        XTestFakeButtonEvent(awt_display, 3, True, CurrentTime);
-    }
-    XSync(awt_display, False);
-
-    AWT_UNLOCK();
+    mouseAction(env, cls, buttonMask, True);
 }
 
 JNIEXPORT void JNICALL
 Java_sun_awt_X11_XRobotPeer_mouseReleaseImpl (JNIEnv *env,
                              jclass cls,
                              jint buttonMask) {
-    AWT_LOCK();
-
-    DTRACE_PRINTLN1("RobotPeer: mouseReleaseImpl(%i)", buttonMask);
-
-    if (buttonMask & java_awt_event_InputEvent_BUTTON1_MASK) {
-        XTestFakeButtonEvent(awt_display, 1, False, CurrentTime);
-    }
-    if ((buttonMask & java_awt_event_InputEvent_BUTTON2_MASK) &&
-        (num_buttons >= 2)) {
-        XTestFakeButtonEvent(awt_display, 2, False, CurrentTime);
-    }
-    if ((buttonMask & java_awt_event_InputEvent_BUTTON3_MASK) &&
-        (num_buttons >= 3)) {
-        XTestFakeButtonEvent(awt_display, 3, False, CurrentTime);
-    }
-    XSync(awt_display, False);
-
-    AWT_UNLOCK();
+    mouseAction(env, cls, buttonMask, False);
 }
 
 JNIEXPORT void JNICALL

@@ -74,7 +74,7 @@ override INCREMENTAL_BUILD = false
 #   The ALT values should never really have spaces or use \.
 #   Suspect these environment variables to have spaces and/or \ characters:
 #     SYSTEMROOT, SystemRoot, WINDIR, windir, PROGRAMFILES, ProgramFiles,
-#     DXSDK_DIR, MSTOOLS, Mstools, MSSDK, MSSdk, VC71COMNTOOLS, 
+#     DXSDK_DIR, MSTOOLS, Mstools, MSSDK, MSSdk, VCnnCOMNTOOLS, 
 #     MSVCDIR, MSVCDir.
 #     So use $(subst \,/,) on them first adding quotes and placing them in
 #         their own variable assigned with :=, then use FullPath.
@@ -247,22 +247,36 @@ ifeq ($(ARCH_DATA_MODEL), 32)
       endif
     endif
   endif
-  ifneq ($(subst MSDev98,OLDOLDOLD,$(_msvc_dir)),$(_msvc_dir))
-    _msvc_dir :=
-  endif
-  # If we still don't have it, look for VS71COMNTOOLS, setup by installer?
+  # If we still don't have it, look for VSnnCOMNTOOLS (newest first),
+  # set by installer?
   ifeq ($(_msvc_dir),)
+    ifdef VS90COMNTOOLS  # /Common/Tools directory, use ../../Vc
+      xVS90COMNTOOLS :="$(subst \,/,$(VS90COMNTOOLS))"
+      _vs90tools     :=$(call FullPath,$(xVS90COMNTOOLS))
+    endif
+    ifneq ($(_vs90tools),)
+      _msvc_dir :=$(_vs90tools)/../../Vc
+      _redist_sdk   :=$(_msvc_dir)/../SDK/v3.5/Bin
+    endif
+    ifdef VS80COMNTOOLS  # /Common/Tools directory, use ../../Vc
+      xVS80COMNTOOLS :="$(subst \,/,$(VS80COMNTOOLS))"
+      _vs80tools     :=$(call FullPath,$(xVS80COMNTOOLS))
+    endif
+    ifneq ($(_vs80tools),)
+      _msvc_dir :=$(_vs80tools)/../../Vc
+      _redist_sdk   :=$(_msvc_dir)/../SDK/v2.0/Bin
+    endif
     ifdef VS71COMNTOOLS  # /Common/Tools directory, use ../../Vc7
       xVS71COMNTOOLS :="$(subst \,/,$(VS71COMNTOOLS))"
       _vs71tools     :=$(call FullPath,$(xVS71COMNTOOLS))
     endif
     ifneq ($(_vs71tools),)
       _msvc_dir :=$(_vs71tools)/../../Vc7
+      _redist_sdk    :=$(_vs71tools)/../..
     endif
   endif
   ifneq ($(_msvc_dir),)
     _compiler_bin :=$(_msvc_dir)/Bin
-    _redist_sdk   :=$(_msvc_dir)/../SDK/v1.1/Bin
     _ms_sdk       :=$(_msvc_dir)/PlatformSDK
   endif
 endif
@@ -410,8 +424,8 @@ _REDIST_SDK_EXISTS := $(shell \
 	else \
 	  echo "false"; \
 	fi)
-_REDIST71_SDK_EXISTS := $(shell \
-	if [ -f "$(_redist_sdk)/msvcr71.dll" ]; then \
+_REDISTNN_SDK_EXISTS := $(shell \
+	if [ -f "$(_redist_sdk)/$(MSVCRNN_DLL)" ]; then \
 	  echo "true"; \
 	else \
 	  echo "false"; \
@@ -435,20 +449,20 @@ ifeq ($(ARCH_DATA_MODEL), 32)
   MSVCRT_DLL_PATH:=$(call AltCheckSpaces,MSVCRT_DLL_PATH)
   MSVCRT_DLL_PATH:=$(call AltCheckValue,MSVCRT_DLL_PATH)
   
-  # MSVCR71_DLL_PATH: location of msvcr71.dll that will be re-distributed
-  ifdef ALT_MSVCR71_DLL_PATH
-    xALT_MSVCR71_DLL_PATH :="$(subst \,/,$(ALT_MSVCR71_DLL_PATH))"
-    MSVCR71_DLL_PATH      :=$(call FullPath,$(xALT_MSVCR71_DLL_PATH))
+  # MSVCRNN_DLL_PATH: location of msvcrnn.dll that will be re-distributed
+  ifdef ALT_MSVCRNN_DLL_PATH
+    xALT_MSVCRNN_DLL_PATH :="$(subst \,/,$(ALT_MSVCRNN_DLL_PATH))"
+    MSVCRNN_DLL_PATH      :=$(call FullPath,$(xALT_MSVCRNN_DLL_PATH))
   else
-    ifeq ($(_REDIST71_SDK_EXISTS), true)
-      xREDIST71_DIR  :=$(_redist_sdk)
+    ifeq ($(_REDISTNN_SDK_EXISTS), true)
+      xREDISTNN_DIR  :=$(_redist_sdk)
     else
-      xREDIST71_DIR  :=$(_system_root)/system32
+      xREDISTNN_DIR  :=$(_system_root)/system32
     endif
-    MSVCR71_DLL_PATH :=$(call FullPath,$(xREDIST71_DIR))
+    MSVCRNN_DLL_PATH :=$(call FullPath,$(xREDISTNN_DIR))
   endif
-  MSVCR71_DLL_PATH :=$(call AltCheckSpaces,MSVCR71_DLL_PATH)
-  MSVCR71_DLL_PATH:=$(call AltCheckValue,MSVCR71_DLL_PATH)
+  MSVCRNN_DLL_PATH :=$(call AltCheckSpaces,MSVCRNN_DLL_PATH)
+  MSVCRNN_DLL_PATH:=$(call AltCheckValue,MSVCRNN_DLL_PATH)
   
 else
 

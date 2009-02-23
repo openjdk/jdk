@@ -491,6 +491,8 @@ private:
   // Verify that base pointers and derived pointers are still sane
   void verify_base_ptrs( ResourceArea *a ) const;
 
+  void verify( ResourceArea *a, bool verify_ifg = false ) const;
+
   void dump_for_spill_split_recycle() const;
 
 public:

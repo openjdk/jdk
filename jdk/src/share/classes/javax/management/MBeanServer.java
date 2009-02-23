@@ -186,11 +186,11 @@ import javax.management.loading.ClassLoaderRepository;
  * caller's permissions must imply {@link
  * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
  * MBeanPermission(mbeanServerName, null, null, null, "queryMBeans")}.
- * Additionally, for each MBean that matches <code>name</code>,
+ * Additionally, for each MBean <em>n</em> that matches <code>name</code>,
  * if the caller's permissions do not imply {@link
  * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, null, name, "queryMBeans")}, the
- * MBean server will behave as if that MBean did not exist.</p>
+ * MBeanPermission(mbeanServerName, className, null, <em>n</em>, "queryMBeans")},
+ * the MBean server will behave as if that MBean did not exist.</p>
  *
  * <p>Certain query elements perform operations on the MBean server.
  * If the caller does not have the required permissions for a given
@@ -351,11 +351,14 @@ public interface MBeanServer extends MBeanServerConnection {
 
     /**
      * <p>Registers a pre-existing object as an MBean with the MBean
-     * server. If the object name given is null, the MBean must
-     * provide its own name by implementing the {@link
+     * server.  If the object name given is null, the
+     * MBean must provide its own name in one or both of two ways: by implementing the {@link
      * javax.management.MBeanRegistration MBeanRegistration} interface
      * and returning the name from the {@link
-     * MBeanRegistration#preRegister preRegister} method.</p>
+     * MBeanRegistration#preRegister preRegister} method; or by defining
+     * an {@code objectNameTemplate} field in its {@link Descriptor},
+     * typically using the {@link ObjectNameTemplate &#64;ObjectNameTemplate}
+     * annotation.</p>
      *
      * <p>If this method successfully registers an MBean, a notification
      * is sent as described <a href="#notif">above</a>.</p>
@@ -377,19 +380,19 @@ public interface MBeanServer extends MBeanServerConnection {
      * MBean will not be registered.
      * @exception RuntimeMBeanException If the <CODE>postRegister</CODE>
      * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws a
-     * <CODE>RuntimeException</CODE>, the <CODE>registerMBean<CODE> method will
+     * <CODE>RuntimeException</CODE>, the <CODE>registerMBean</CODE> method will
      * throw a <CODE>RuntimeMBeanException</CODE>, although the MBean
      * registration succeeded. In such a case, the MBean will be actually
-     * registered even though the <CODE>registerMBean<CODE> method
+     * registered even though the <CODE>registerMBean</CODE> method
      * threw an exception.  Note that <CODE>RuntimeMBeanException</CODE> can
      * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
      * will not be registered.
      * @exception RuntimeErrorException If the <CODE>postRegister</CODE>
      * (<CODE>MBeanRegistration</CODE> interface) method of the MBean throws an
-     * <CODE>Error</CODE>, the <CODE>registerMBean<CODE> method will
+     * <CODE>Error</CODE>, the <CODE>registerMBean</CODE> method will
      * throw a <CODE>RuntimeErrorException</CODE>, although the MBean
      * registration succeeded. In such a case, the MBean will be actually
-     * registered even though the <CODE>registerMBean<CODE> method
+     * registered even though the <CODE>registerMBean</CODE> method
      * threw an exception.  Note that <CODE>RuntimeErrorException</CODE> can
      * also be thrown by <CODE>preRegister</CODE>, in which case the MBean
      * will not be registered.
@@ -411,6 +414,8 @@ public interface MBeanServer extends MBeanServerConnection {
      * is sent as described <a href="#notif">above</a>.</p>
      *
      * @throws RuntimeOperationsException {@inheritDoc}
+     * @throws RuntimeMBeanException {@inheritDoc}
+     * @throws RuntimeErrorException {@inheritDoc}
      */
     public void unregisterMBean(ObjectName name)
             throws InstanceNotFoundException, MBeanRegistrationException;
@@ -419,10 +424,16 @@ public interface MBeanServer extends MBeanServerConnection {
     public ObjectInstance getObjectInstance(ObjectName name)
             throws InstanceNotFoundException;
 
-    // doc comment inherited from MBeanServerConnection
+    /**
+     * {@inheritDoc}
+      * @throws RuntimeOperationsException {@inheritDoc}
+     */
     public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query);
 
-    // doc comment inherited from MBeanServerConnection
+    /**
+     * {@inheritDoc}
+      * @throws RuntimeOperationsException {@inheritDoc}
+    */
     public Set<ObjectName> queryNames(ObjectName name, QueryExp query);
 
     // doc comment inherited from MBeanServerConnection

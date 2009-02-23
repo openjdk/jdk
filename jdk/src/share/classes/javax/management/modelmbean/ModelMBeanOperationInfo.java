@@ -49,27 +49,48 @@ import javax.management.MBeanParameterInfo;
 import javax.management.RuntimeOperationsException;
 
 /**
- * The ModelMBeanOperationInfo object describes a management operation of the ModelMBean.
- * It is a subclass of MBeanOperationInfo with the addition of an associated Descriptor
- * and an implementation of the DescriptorAccess interface.
- * <P>
- * <PRE>
- * The fields in the descriptor are defined, but not limited to, the following:
- * name           : operation name
- * descriptorType : must be "operation"
- * class          : class where method is defined (fully qualified)
- * role           : must be "operation", "getter", or "setter
- * targetObject   : object on which to execute this method
- * targetType     : type of object reference for targetObject. Can be:
- *                  ObjectReference | Handle | EJBHandle | IOR | RMIReference.
- * value          : cached value for operation
- * currencyTimeLimit : how long cached value is valid
- * lastUpdatedTimeStamp : when cached value was set
- * visibility            : 1-4 where 1: always visible 4: rarely visible
- * presentationString :  xml formatted string to describe how to present operation
- * </PRE>
- * The default descriptor will have name, descriptorType, displayName and role fields set.
- * The default value of the name and displayName fields is the operation name.
+ * <p>The ModelMBeanOperationInfo object describes a management operation of
+ * the ModelMBean.  It is a subclass of MBeanOperationInfo with the addition
+ * of an associated Descriptor and an implementation of the DescriptorAccess
+ * interface.</p>
+ *
+ * <P id="descriptor">
+ * The fields in the descriptor are defined, but not limited to, the following.
+ * Note that when the Type in this table is Number, a String that is the decimal
+ * representation of a Long can also be used.</P>
+ *
+ * <table border="1" cellpadding="5">
+ * <tr><th>Name</th><th>Type</th><th>Meaning</th></tr>
+ * <tr><td>name</td><td>String</td>
+ *     <td>Operation name.</td></tr>
+ * <tr><td>descriptorType</td><td>String</td>
+ *     <td>Must be "operation".</td></tr>
+ * <tr><td>class</td><td>String</td>
+ *     <td>Class where method is defined (fully qualified).</td></tr>
+ * <tr><td>role</td><td>String</td>
+ *     <td>Must be "operation", "getter", or "setter".</td></tr>
+ * <tr><td>targetObject</td><td>Object</td>
+ *     <td>Object on which to execute this method.</td></tr>
+ * <tr><td>targetType</td><td>String</td>
+ *     <td>type of object reference for targetObject. Can be:
+ *         ObjectReference | Handle | EJBHandle | IOR | RMIReference.</td></tr>
+ * <tr><td>value</td><td>Object</td>
+ *     <td>Cached value for operation.</td></tr>
+ * <tr><td>displayName</td><td>String</td>
+ *     <td>Human readable display name of the operation.</td>
+ * <tr><td>currencyTimeLimit</td><td>Number</td>
+ *     <td>How long cached value is valid.</td></tr>
+ * <tr><td>lastUpdatedTimeStamp</td><td>Number</td>
+ *     <td>When cached value was set.</td></tr>
+ * <tr><td>visibility</td><td>Number</td>
+ *     <td>1-4 where 1: always visible 4: rarely visible.</td></tr>
+ * <tr><td>presentationString</td><td>String</td>
+ *     <td>XML formatted string to describe how to present operation</td></tr>
+ * </table>
+ *
+ * <p>The default descriptor will have name, descriptorType, displayName and
+ * role fields set.  The default value of the name and displayName fields is
+ * the operation name.</p>
  *
  * <p><b>Note:</b> because of inconsistencies in previous versions of
  * this specification, it is recommended not to use negative or zero

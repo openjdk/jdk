@@ -154,12 +154,14 @@ class Compile : public Phase {
   uint                  _decompile_count;       // Cumulative decompilation counts.
   bool                  _do_inlining;           // True if we intend to do inlining
   bool                  _do_scheduling;         // True if we intend to do scheduling
+  bool                  _do_freq_based_layout;  // True if we intend to do frequency based block layout
   bool                  _do_count_invocations;  // True if we generate code to count invocations
   bool                  _do_method_data_update; // True if we generate code to update methodDataOops
   int                   _AliasLevel;            // Locally-adjusted version of AliasLevel flag.
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
 #ifndef PRODUCT
   bool                  _trace_opto_output;
+  bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
 
   // Compilation environment.
@@ -306,6 +308,8 @@ class Compile : public Phase {
   void          set_do_inlining(bool z)         { _do_inlining = z; }
   bool              do_scheduling() const       { return _do_scheduling; }
   void          set_do_scheduling(bool z)       { _do_scheduling = z; }
+  bool              do_freq_based_layout() const{ return _do_freq_based_layout; }
+  void          set_do_freq_based_layout(bool z){ _do_freq_based_layout = z; }
   bool              do_count_invocations() const{ return _do_count_invocations; }
   void          set_do_count_invocations(bool z){ _do_count_invocations = z; }
   bool              do_method_data_update() const { return _do_method_data_update; }
@@ -319,6 +323,8 @@ class Compile : public Phase {
   }
 #ifndef PRODUCT
   bool          trace_opto_output() const       { return _trace_opto_output; }
+  bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
+  void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
 #endif
 
   void begin_method() {

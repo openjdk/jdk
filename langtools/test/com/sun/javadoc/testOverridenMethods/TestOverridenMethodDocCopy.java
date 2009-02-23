@@ -46,9 +46,9 @@ public class TestOverridenMethodDocCopy extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-            "<B>Description copied from class: <CODE>" +
+            "<STRONG>Description copied from class: <CODE>" +
             "<A HREF=\"../pkg1/BaseClass.html#overridenMethodWithDocsToCopy()\">" +
-            "BaseClass</A></CODE></B>"
+            "BaseClass</A></CODE></STRONG>"
         }
     };
     private static final String[][] NEGATED_TEST = NO_TEST;

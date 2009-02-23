@@ -587,7 +587,7 @@ PreserveJVMState::PreserveJVMState(GraphKit* kit, bool clone_map) {
 #ifdef ASSERT
   _bci    = kit->bci();
   Parse* parser = kit->is_Parse();
-  int block = (parser == NULL || parser->block() == NULL) ? -1 : parser->block()->pre_order();
+  int block = (parser == NULL || parser->block() == NULL) ? -1 : parser->block()->rpo();
   _block  = block;
 #endif
 }
@@ -596,7 +596,7 @@ PreserveJVMState::~PreserveJVMState() {
 #ifdef ASSERT
   assert(kit->bci() == _bci, "bci must not shift");
   Parse* parser = kit->is_Parse();
-  int block = (parser == NULL || parser->block() == NULL) ? -1 : parser->block()->pre_order();
+  int block = (parser == NULL || parser->block() == NULL) ? -1 : parser->block()->rpo();
   assert(block == _block,    "block must not shift");
 #endif
   kit->set_map(_map);
@@ -1049,10 +1049,19 @@ Node* GraphKit::load_object_klass(Node* obj) {
 //-------------------------load_array_length-----------------------------------
 Node* GraphKit::load_array_length(Node* array) {
   // Special-case a fresh allocation to avoid building nodes:
-  Node* alen = AllocateArrayNode::Ideal_length(array, &_gvn);
-  if (alen != NULL)  return alen;
-  Node *r_adr = basic_plus_adr(array, arrayOopDesc::length_offset_in_bytes());
-  return _gvn.transform( new (C, 3) LoadRangeNode(0, immutable_memory(), r_adr, TypeInt::POS));
+  AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(array, &_gvn);
+  Node *alen;
+  if (alloc == NULL) {
+    Node *r_adr = basic_plus_adr(array, arrayOopDesc::length_offset_in_bytes());
+    alen = _gvn.transform( new (C, 3) LoadRangeNode(0, immutable_memory(), r_adr, TypeInt::POS));
+  } else {
+    alen = alloc->Ideal_length();
+    Node* ccast = alloc->make_ideal_length(_gvn.type(array)->is_aryptr(), &_gvn);
+    if (ccast != alen) {
+      alen = _gvn.transform(ccast);
+    }
+  }
+  return alen;
 }
 
 //------------------------------do_null_check----------------------------------
@@ -1179,6 +1188,12 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
     reason = Deoptimization::Reason_null_check;
   else
     reason = Deoptimization::Reason_div0_check;
+
+  // %%% Since Reason_unhandled is not recorded on a per-bytecode basis,
+  // ciMethodData::has_trap_at will return a conservative -1 if any
+  // must-be-null assertion has failed.  This could cause performance
+  // problems for a method after its first do_null_assert failure.
+  // Consider using 'Reason_class_check' instead?
 
   // To cause an implicit null check, we set the not-null probability
   // to the maximum (PROB_MAX).  For an explicit check the probablity
@@ -1367,6 +1382,10 @@ void GraphKit::pre_barrier(Node* ctl,
   BarrierSet* bs = Universe::heap()->barrier_set();
   set_control(ctl);
   switch (bs->kind()) {
+    case BarrierSet::G1SATBCT:
+    case BarrierSet::G1SATBCTLogging:
+        g1_write_barrier_pre(obj, adr, adr_idx, val, val_type, bt);
+      break;
 
     case BarrierSet::CardTableModRef:
     case BarrierSet::CardTableExtension:
@@ -1391,6 +1410,10 @@ void GraphKit::post_barrier(Node* ctl,
   BarrierSet* bs = Universe::heap()->barrier_set();
   set_control(ctl);
   switch (bs->kind()) {
+    case BarrierSet::G1SATBCT:
+    case BarrierSet::G1SATBCTLogging:
+        g1_write_barrier_post(store, obj, adr, adr_idx, val, bt, use_precise);
+      break;
 
     case BarrierSet::CardTableModRef:
     case BarrierSet::CardTableExtension:
@@ -1813,10 +1836,7 @@ void GraphKit::write_barrier_post(Node* oop_store, Node* obj, Node* adr,
     (CardTableModRefBS*)(Universe::heap()->barrier_set());
   Node *b = _gvn.transform(new (C, 3) URShiftXNode( cast, _gvn.intcon(CardTableModRefBS::card_shift) ));
   // We store into a byte array, so do not bother to left-shift by zero
-  // Get base of card map
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte),
-         "adjust this code");
-  Node *c = makecon(TypeRawPtr::make((address)ct->byte_map_base));
+  Node *c = byte_map_base_node();
   // Combine
   Node *sb_ctl = control();
   Node *sb_adr = _gvn.transform(new (C, 4) AddPNode( top()/*no base ptr*/, c, b ));
@@ -2833,20 +2853,18 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
   assert(just_allocated_object(control()) == javaoop, "just allocated");
 
 #ifdef ASSERT
-  { // Verify that the AllocateNode::Ideal_foo recognizers work:
-    Node* kn = alloc->in(AllocateNode::KlassNode);
-    Node* ln = alloc->in(AllocateNode::ALength);
-    assert(AllocateNode::Ideal_klass(rawoop, &_gvn) == kn,
-           "Ideal_klass works");
-    assert(AllocateNode::Ideal_klass(javaoop, &_gvn) == kn,
-           "Ideal_klass works");
+  { // Verify that the AllocateNode::Ideal_allocation recognizers work:
+    assert(AllocateNode::Ideal_allocation(rawoop, &_gvn) == alloc,
+           "Ideal_allocation works");
+    assert(AllocateNode::Ideal_allocation(javaoop, &_gvn) == alloc,
+           "Ideal_allocation works");
     if (alloc->is_AllocateArray()) {
-      assert(AllocateArrayNode::Ideal_length(rawoop, &_gvn) == ln,
-             "Ideal_length works");
-      assert(AllocateArrayNode::Ideal_length(javaoop, &_gvn) == ln,
-             "Ideal_length works");
+      assert(AllocateArrayNode::Ideal_array_allocation(rawoop, &_gvn) == alloc->as_AllocateArray(),
+             "Ideal_allocation works");
+      assert(AllocateArrayNode::Ideal_array_allocation(javaoop, &_gvn) == alloc->as_AllocateArray(),
+             "Ideal_allocation works");
     } else {
-      assert(ln->is_top(), "no length, please");
+      assert(alloc->in(AllocateNode::ALength)->is_top(), "no length, please");
     }
   }
 #endif //ASSERT
@@ -2924,16 +2942,10 @@ Node* GraphKit::new_instance(Node* klass_node,
 
   // Now generate allocation code
 
-  // With escape analysis, the entire memory state is needed to be able to
-  // eliminate the allocation.  If the allocations cannot be eliminated, this
-  // will be optimized to the raw slice when the allocation is expanded.
-  Node *mem;
-  if (C->do_escape_analysis()) {
-    mem = reset_memory();
-    set_all_memory(mem);
-  } else {
-    mem = memory(Compile::AliasIdxRaw);
-  }
+  // The entire memory state is needed for slow path of the allocation
+  // since GC and deoptimization can happened.
+  Node *mem = reset_memory();
+  set_all_memory(mem); // Create new memory state
 
   AllocateNode* alloc
     = new (C, AllocateNode::ParmLimit)
@@ -3070,16 +3082,10 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
 
   // Now generate allocation code
 
-  // With escape analysis, the entire memory state is needed to be able to
-  // eliminate the allocation.  If the allocations cannot be eliminated, this
-  // will be optimized to the raw slice when the allocation is expanded.
-  Node *mem;
-  if (C->do_escape_analysis()) {
-    mem = reset_memory();
-    set_all_memory(mem);
-  } else {
-    mem = memory(Compile::AliasIdxRaw);
-  }
+  // The entire memory state is needed for slow path of the allocation
+  // since GC and deoptimization can happened.
+  Node *mem = reset_memory();
+  set_all_memory(mem); // Create new memory state
 
   // Create the AllocateArrayNode and its result projections
   AllocateArrayNode* alloc
@@ -3095,25 +3101,20 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
   // (This happens via a non-constant argument to inline_native_newArray.)
   // In any case, the value of klass_node provides the desired array type.
   const TypeInt* length_type = _gvn.find_int_type(length);
-  const TypeInt* narrow_length_type = NULL;
   const TypeOopPtr* ary_type = _gvn.type(klass_node)->is_klassptr()->as_instance_type();
   if (ary_type->isa_aryptr() && length_type != NULL) {
     // Try to get a better type than POS for the size
     ary_type = ary_type->is_aryptr()->cast_to_size(length_type);
-    narrow_length_type = ary_type->is_aryptr()->size();
-    if (narrow_length_type == length_type)
-      narrow_length_type = NULL;
   }
 
   Node* javaoop = set_output_for_allocation(alloc, ary_type, raw_mem_only);
 
-  // Cast length on remaining path to be positive:
-  if (narrow_length_type != NULL) {
-    Node* ccast = new (C, 2) CastIINode(length, narrow_length_type);
-    ccast->set_req(0, control());
-    _gvn.set_type_bottom(ccast);
-    record_for_igvn(ccast);
-    if (map()->find_edge(length) >= 0) {
+  // Cast length on remaining path to be as narrow as possible
+  if (map()->find_edge(length) >= 0) {
+    Node* ccast = alloc->make_ideal_length(ary_type, &_gvn);
+    if (ccast != length) {
+      _gvn.set_type_bottom(ccast);
+      record_for_igvn(ccast);
       replace_in_map(length, ccast);
     }
   }
@@ -3176,4 +3177,244 @@ InitializeNode* AllocateNode::initialization() {
     }
   }
   return NULL;
+}
+
+void GraphKit::g1_write_barrier_pre(Node* obj,
+                                    Node* adr,
+                                    uint alias_idx,
+                                    Node* val,
+                                    const Type* val_type,
+                                    BasicType bt) {
+  IdealKit ideal(gvn(), control(), merged_memory(), true);
+#define __ ideal.
+  __ declares_done();
+
+  Node* thread = __ thread();
+
+  Node* no_ctrl = NULL;
+  Node* no_base = __ top();
+  Node* zero = __ ConI(0);
+
+  float likely  = PROB_LIKELY(0.999);
+  float unlikely  = PROB_UNLIKELY(0.999);
+
+  BasicType active_type = in_bytes(PtrQueue::byte_width_of_active()) == 4 ? T_INT : T_BYTE;
+  assert(in_bytes(PtrQueue::byte_width_of_active()) == 4 || in_bytes(PtrQueue::byte_width_of_active()) == 1, "flag width");
+
+  // Offsets into the thread
+  const int marking_offset = in_bytes(JavaThread::satb_mark_queue_offset() +  // 648
+                                          PtrQueue::byte_offset_of_active());
+  const int index_offset   = in_bytes(JavaThread::satb_mark_queue_offset() +  // 656
+                                          PtrQueue::byte_offset_of_index());
+  const int buffer_offset  = in_bytes(JavaThread::satb_mark_queue_offset() +  // 652
+                                          PtrQueue::byte_offset_of_buf());
+  // Now the actual pointers into the thread
+
+  // set_control( ctl);
+
+  Node* marking_adr = __ AddP(no_base, thread, __ ConX(marking_offset));
+  Node* buffer_adr  = __ AddP(no_base, thread, __ ConX(buffer_offset));
+  Node* index_adr   = __ AddP(no_base, thread, __ ConX(index_offset));
+
+  // Now some of the values
+
+  Node* marking = __ load(__ ctrl(), marking_adr, TypeInt::INT, active_type, Compile::AliasIdxRaw);
+
+  // if (!marking)
+  __ if_then(marking, BoolTest::ne, zero); {
+    Node* index   = __ load(__ ctrl(), index_adr, TypeInt::INT, T_INT, Compile::AliasIdxRaw);
+
+    const Type* t1 = adr->bottom_type();
+    const Type* t2 = val->bottom_type();
+
+    Node* orig = __ load(no_ctrl, adr, val_type, bt, alias_idx);
+    // if (orig != NULL)
+    __ if_then(orig, BoolTest::ne, null()); {
+      Node* buffer  = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
+
+      // load original value
+      // alias_idx correct??
+
+      // is the queue for this thread full?
+      __ if_then(index, BoolTest::ne, zero, likely); {
+
+        // decrement the index
+        Node* next_index = __ SubI(index,  __ ConI(sizeof(intptr_t)));
+        Node* next_indexX = next_index;
+#ifdef _LP64
+          // We could refine the type for what it's worth
+          // const TypeLong* lidxtype = TypeLong::make(CONST64(0), get_size_from_queue);
+          next_indexX = _gvn.transform( new (C, 2) ConvI2LNode(next_index, TypeLong::make(0, max_jlong, Type::WidenMax)) );
+#endif // _LP64
+
+        // Now get the buffer location we will log the original value into and store it
+
+        Node *log_addr = __ AddP(no_base, buffer, next_indexX);
+        // __ store(__ ctrl(), log_addr, orig, T_OBJECT, C->get_alias_index(TypeOopPtr::BOTTOM));
+        __ store(__ ctrl(), log_addr, orig, T_OBJECT, Compile::AliasIdxRaw);
+
+
+        // update the index
+        // __ store(__ ctrl(), index_adr, next_index, T_INT, Compile::AliasIdxRaw);
+        // This is a hack to force this store to occur before the oop store that is coming up
+        __ store(__ ctrl(), index_adr, next_index, T_INT, C->get_alias_index(TypeOopPtr::BOTTOM));
+
+      } __ else_(); {
+
+        // logging buffer is full, call the runtime
+        const TypeFunc *tf = OptoRuntime::g1_wb_pre_Type();
+        // __ make_leaf_call(tf, OptoRuntime::g1_wb_pre_Java(), "g1_wb_pre", orig, thread);
+        __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), "g1_wb_pre", orig, thread);
+      } __ end_if();
+    } __ end_if();
+  } __ end_if();
+
+  __ drain_delay_transform();
+  set_control( __ ctrl());
+  set_all_memory( __ merged_memory());
+
+#undef __
+}
+
+//
+// Update the card table and add card address to the queue
+//
+void GraphKit::g1_mark_card(IdealKit* ideal, Node* card_adr, Node* store,  Node* index, Node* index_adr, Node* buffer, const TypeFunc* tf) {
+#define __ ideal->
+  Node* zero = __ ConI(0);
+  Node* no_base = __ top();
+  BasicType card_bt = T_BYTE;
+  // Smash zero into card. MUST BE ORDERED WRT TO STORE
+  __ storeCM(__ ctrl(), card_adr, zero, store, card_bt, Compile::AliasIdxRaw);
+
+  //  Now do the queue work
+  __ if_then(index, BoolTest::ne, zero); {
+
+    Node* next_index = __ SubI(index,  __ ConI(sizeof(intptr_t)));
+    Node* next_indexX = next_index;
+#ifdef _LP64
+    // We could refine the type for what it's worth
+    // const TypeLong* lidxtype = TypeLong::make(CONST64(0), get_size_from_queue);
+    next_indexX = _gvn.transform( new (C, 2) ConvI2LNode(next_index, TypeLong::make(0, max_jlong, Type::WidenMax)) );
+#endif // _LP64
+    Node* log_addr = __ AddP(no_base, buffer, next_indexX);
+
+    __ store(__ ctrl(), log_addr, card_adr, T_ADDRESS, Compile::AliasIdxRaw);
+    __ store(__ ctrl(), index_adr, next_index, T_INT, Compile::AliasIdxRaw);
+
+  } __ else_(); {
+    __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), "g1_wb_post", card_adr, __ thread());
+  } __ end_if();
+#undef __
+}
+
+void GraphKit::g1_write_barrier_post(Node* store,
+                                     Node* obj,
+                                     Node* adr,
+                                     uint alias_idx,
+                                     Node* val,
+                                     BasicType bt,
+                                     bool use_precise) {
+  // If we are writing a NULL then we need no post barrier
+
+  if (val != NULL && val->is_Con() && val->bottom_type() == TypePtr::NULL_PTR) {
+    // Must be NULL
+    const Type* t = val->bottom_type();
+    assert(t == Type::TOP || t == TypePtr::NULL_PTR, "must be NULL");
+    // No post barrier if writing NULLx
+    return;
+  }
+
+  if (!use_precise) {
+    // All card marks for a (non-array) instance are in one place:
+    adr = obj;
+  }
+  // (Else it's an array (or unknown), and we want more precise card marks.)
+  assert(adr != NULL, "");
+
+  IdealKit ideal(gvn(), control(), merged_memory(), true);
+#define __ ideal.
+  __ declares_done();
+
+  Node* thread = __ thread();
+
+  Node* no_ctrl = NULL;
+  Node* no_base = __ top();
+  float likely  = PROB_LIKELY(0.999);
+  float unlikely  = PROB_UNLIKELY(0.999);
+  Node* zero = __ ConI(0);
+  Node* zeroX = __ ConX(0);
+
+  // Get the alias_index for raw card-mark memory
+  const TypePtr* card_type = TypeRawPtr::BOTTOM;
+
+  const TypeFunc *tf = OptoRuntime::g1_wb_post_Type();
+
+  // Offsets into the thread
+  const int index_offset  = in_bytes(JavaThread::dirty_card_queue_offset() +
+                                     PtrQueue::byte_offset_of_index());
+  const int buffer_offset = in_bytes(JavaThread::dirty_card_queue_offset() +
+                                     PtrQueue::byte_offset_of_buf());
+
+  // Pointers into the thread
+
+  Node* buffer_adr = __ AddP(no_base, thread, __ ConX(buffer_offset));
+  Node* index_adr =  __ AddP(no_base, thread, __ ConX(index_offset));
+
+  // Now some values
+
+  Node* index  = __ load(no_ctrl, index_adr, TypeInt::INT, T_INT, Compile::AliasIdxRaw);
+  Node* buffer = __ load(no_ctrl, buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
+
+
+  // Convert the store obj pointer to an int prior to doing math on it
+  // Use addr not obj gets accurate card marks
+
+  // Node* cast = __ CastPX(no_ctrl, adr /* obj */);
+
+  // Must use ctrl to prevent "integerized oop" existing across safepoint
+  Node* cast =  __ CastPX(__ ctrl(), ( use_precise ? adr : obj ));
+
+  // Divide pointer by card size
+  Node* card_offset = __ URShiftX( cast, __ ConI(CardTableModRefBS::card_shift) );
+
+  // Combine card table base and card offset
+  Node *card_adr = __ AddP(no_base, byte_map_base_node(), card_offset );
+
+  // If we know the value being stored does it cross regions?
+
+  if (val != NULL) {
+    // Does the store cause us to cross regions?
+
+    // Should be able to do an unsigned compare of region_size instead of
+    // and extra shift. Do we have an unsigned compare??
+    // Node* region_size = __ ConI(1 << HeapRegion::LogOfHRGrainBytes);
+    Node* xor_res =  __ URShiftX ( __ XorX( cast,  __ CastPX(__ ctrl(), val)), __ ConI(HeapRegion::LogOfHRGrainBytes));
+
+    // if (xor_res == 0) same region so skip
+    __ if_then(xor_res, BoolTest::ne, zeroX); {
+
+      // No barrier if we are storing a NULL
+      __ if_then(val, BoolTest::ne, null(), unlikely); {
+
+        // Ok must mark the card if not already dirty
+
+        // load the original value of the card
+        Node* card_val = __ load(__ ctrl(), card_adr, TypeInt::INT, T_BYTE, Compile::AliasIdxRaw);
+
+        __ if_then(card_val, BoolTest::ne, zero); {
+          g1_mark_card(&ideal, card_adr, store, index, index_adr, buffer, tf);
+        } __ end_if();
+      } __ end_if();
+    } __ end_if();
+  } else {
+    g1_mark_card(&ideal, card_adr, store, index, index_adr, buffer, tf);
+  }
+
+
+  __ drain_delay_transform();
+  set_control( __ ctrl());
+  set_all_memory( __ merged_memory());
+#undef __
+
 }

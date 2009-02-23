@@ -68,6 +68,7 @@ public class JavacTaskImpl extends JavacTask {
     private JavacTool tool;
     private Main compilerMain;
     private JavaCompiler compiler;
+    private Locale locale;
     private String[] args;
     private Context context;
     private List<JavaFileObject> fileObjects;
@@ -89,6 +90,7 @@ public class JavacTaskImpl extends JavacTask {
         this.args = args;
         this.context = context;
         this.fileObjects = fileObjects;
+        setLocale(Locale.getDefault());
         // null checks
         compilerMain.getClass();
         args.getClass();
@@ -156,9 +158,9 @@ public class JavacTaskImpl extends JavacTask {
     }
 
     public void setLocale(Locale locale) {
-        // locale argument is ignored, see RFE 6443132
         if (used.get())
             throw new IllegalStateException();
+        this.locale = locale;
     }
 
     private void prepareCompiler() throws IOException {
@@ -191,6 +193,8 @@ public class JavacTaskImpl extends JavacTask {
         if (taskListener != null)
             context.put(TaskListener.class, wrap(taskListener));
         tool.beginContext(context);
+        //initialize compiler's default locale
+        JavacMessages.instance(context).setCurrentLocale(locale);
     }
     // where
     private TaskListener wrap(final TaskListener tl) {
@@ -474,23 +478,22 @@ public class JavacTaskImpl extends JavacTask {
     }
 
     abstract class Filter {
-        void run(ListBuffer<Env<AttrContext>> list, Iterable<? extends TypeElement> classes) {
+        void run(Queue<Env<AttrContext>> list, Iterable<? extends TypeElement> classes) {
             Set<TypeElement> set = new HashSet<TypeElement>();
             for (TypeElement item: classes)
                 set.add(item);
 
-            List<Env<AttrContext>> defer = List.<Env<AttrContext>>nil();
-            while (list.nonEmpty()) {
-                Env<AttrContext> env = list.next();
+            ListBuffer<Env<AttrContext>> defer = ListBuffer.<Env<AttrContext>>lb();
+            while (list.peek() != null) {
+                Env<AttrContext> env = list.remove();
                 ClassSymbol csym = env.enclClass.sym;
                 if (csym != null && set.contains(csym.outermostClass()))
                     process(env);
                 else
-                    defer = defer.prepend(env);
+                    defer = defer.append(env);
             }
 
-            for (List<Env<AttrContext>> l = defer; l.nonEmpty(); l = l.tail)
-                list.prepend(l.head);
+            list.addAll(defer);
         }
 
         abstract void process(Env<AttrContext> env);

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright 2001-2002 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,12 @@
 # CA 95054 USA or visit www.sun.com if you need additional information or
 # have any questions.
 #
+
+# @test
+# @bug 4266026
+# @summary javac no longer follows symlinks
+#
+# @run shell links.sh
 
 
 if [ "${TESTSRC}" = "" ]
@@ -58,8 +64,11 @@ case "$OS" in
     ;;
 esac
 
+mkdir tmp
+cp ${TESTSRC}/b/B.java tmp
+
 rm -rf T.class B.class b/B.class "${TESTCLASSES}/a" "${TESTCLASSES}/classes"
-ln -s "${TESTSRC}/b" "${TESTCLASSES}/a"
+ln -s `pwd`/tmp "${TESTCLASSES}/a"
 mkdir "${TESTCLASSES}/classes"
 
-exec "${TESTJAVA}/bin/javac" ${TESTTOOLVMOPTS} -sourcepath "${TESTCLASSES}" -d "${TESTCLASSES}/classes" "${TESTSRC}/T.java" 2>&1
+"${TESTJAVA}/bin/javac" ${TESTTOOLVMOPTS} -sourcepath "${TESTCLASSES}" -d "${TESTCLASSES}/classes" "${TESTSRC}/T.java" 2>&1

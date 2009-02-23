@@ -229,9 +229,10 @@ public class DescriptorSupport
             init(inDescr.descriptorMap);
     }
 
-
     /**
-     * <p>Descriptor constructor taking an XML String.</p>
+     * <p>Descriptor constructor taking an XML String or a
+     * <i>fieldName=fieldValue</i> format String. The String parameter is
+     * parsed as XML if it begins with a '<' character.</p>
      *
      * <p>The format of the XML string is not defined, but an
      * implementation must ensure that the string returned by
@@ -244,17 +245,20 @@ public class DescriptorSupport
      * programmer will have to reset or convert these fields
      * correctly.</p>
      *
-     * @param inStr An XML-formatted string used to populate this
-     * Descriptor.  The format is not defined, but any
+     * @param inStr An XML-format or a fieldName=fieldValue formatted string
+     * used to populate this Descriptor.  The XML format is not defined, but any
      * implementation must ensure that the string returned by
      * method {@link #toXMLString toXMLString} on an existing
      * descriptor can be used to instantiate an equivalent
      * descriptor when instantiated using this constructor.
      *
-     * @exception RuntimeOperationsException If the String inStr
-     * passed in parameter is null
+     * @exception RuntimeOperationsException If the String inStr passed in
+     * parameter is null or, when it is not an XML string, if the field name or
+     * field value is illegal. If inStr is not an XML string then it must
+     * contain an "=". "fieldValue", "fieldName", and "fieldValue" are illegal.
+     * FieldName cannot be empty. "fieldName=" will cause the value to be empty.
      * @exception XMLParseException XML parsing problem while parsing
-     * the input String
+     * the XML-format input String
      * @exception MBeanException Wraps a distributed communication Exception.
      */
     /* At some stage we should rewrite this code to be cleverer.  Using
@@ -283,14 +287,27 @@ public class DescriptorSupport
             throw new RuntimeOperationsException(iae, msg);
         }
 
+        // parse parameter string into structures
+
+        init(null);
+
+        if(!inStr.startsWith("<")) {
+            parseNamesValues(inStr);
+            if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
+                MODELMBEAN_LOGGER.logp(Level.FINEST,
+                    DescriptorSupport.class.getName(),
+                    "Descriptor(name=value)", "Exit");
+            }
+            return;
+        }
+
         final String lowerInStr = inStr.toLowerCase();
         if (!lowerInStr.startsWith("<descriptor>")
             || !lowerInStr.endsWith("</descriptor>")) {
             throw new XMLParseException("No <descriptor>, </descriptor> pair");
         }
 
-        // parse xmlstring into structures
-        init(null);
+
         // create dummy descriptor: should have same size
         // as number of fields in xmlstring
         // loop through structures and put them in descriptor
@@ -454,6 +471,16 @@ public class DescriptorSupport
 
         init(null);
 
+        parseNamesValues(fields);
+
+        if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
+            MODELMBEAN_LOGGER.logp(Level.FINEST,
+                    DescriptorSupport.class.getName(),
+                    "Descriptor(String... fields)", "Exit");
+        }
+    }
+
+    private void parseNamesValues(String... fields) {
         for (int i=0; i < fields.length; i++) {
             if ((fields[i] == null) || (fields[i].equals(""))) {
                 continue;
@@ -494,11 +521,6 @@ public class DescriptorSupport
             }
 
             setField(fieldName,fieldValue);
-        }
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
-            MODELMBEAN_LOGGER.logp(Level.FINEST,
-                    DescriptorSupport.class.getName(),
-                    "Descriptor(String... fields)", "Exit");
         }
     }
 
@@ -589,7 +611,7 @@ public class DescriptorSupport
         int numberOfEntries = descriptorMap.size();
 
         String[] responseFields = new String[numberOfEntries];
-        Set returnedSet = descriptorMap.entrySet();
+        Set<Map.Entry<String, Object>> returnedSet = descriptorMap.entrySet();
 
         int i = 0;
 
@@ -598,8 +620,9 @@ public class DescriptorSupport
                     DescriptorSupport.class.getName(),
                     "getFields()", "Returning " + numberOfEntries + " fields");
         }
-        for (Iterator iter = returnedSet.iterator(); iter.hasNext(); i++) {
-            Map.Entry currElement = (Map.Entry) iter.next();
+        for (Iterator<Map.Entry<String, Object>> iter = returnedSet.iterator();
+             iter.hasNext(); i++) {
+            Map.Entry<String, Object> currElement = iter.next();
 
             if (currElement == null) {
                 if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
@@ -642,7 +665,7 @@ public class DescriptorSupport
         int numberOfEntries = descriptorMap.size();
 
         String[] responseFields = new String[numberOfEntries];
-        Set returnedSet = descriptorMap.entrySet();
+        Set<Map.Entry<String, Object>> returnedSet = descriptorMap.entrySet();
 
         int i = 0;
 
@@ -653,8 +676,9 @@ public class DescriptorSupport
                     "Returning " + numberOfEntries + " fields");
         }
 
-        for (Iterator iter = returnedSet.iterator(); iter.hasNext(); i++) {
-            Map.Entry currElement = (Map.Entry) iter.next();
+        for (Iterator<Map.Entry<String, Object>> iter = returnedSet.iterator();
+             iter.hasNext(); i++) {
+            Map.Entry<String, Object> currElement = iter.next();
 
             if (( currElement == null ) || (currElement.getKey() == null)) {
                 if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
@@ -700,9 +724,8 @@ public class DescriptorSupport
         }
 
         if (fieldNames == null) {
-            for (Iterator iter = descriptorMap.values().iterator();
-                 iter.hasNext(); i++)
-                responseFields[i] = iter.next();
+            for (Object value : descriptorMap.values())
+                responseFields[i++] = value;
         } else {
             for (i=0; i < fieldNames.length; i++) {
                 if ((fieldNames[i] == null) || (fieldNames[i].equals(""))) {
@@ -883,9 +906,9 @@ public class DescriptorSupport
      * not a String with value "t", "f", "true", "false". These String
      * values must not be case sensitive.
      * <LI> visibility fieldName, if defined, is null, or not a
-     * Numeric String or a not Numeric Value >= 1 and <= 4
+     * Numeric String or a not Numeric Value >= 1 and &lt;= 4
      * <LI> severity fieldName, if defined, is null, or not a Numeric
-     * String or not a Numeric Value >= 0 and <= 6<br>
+     * String or not a Numeric Value >= 0 and &lt;= 6<br>
      * <LI> persistPolicy fieldName, if defined, is null, or not one of
      * the following strings:<br>
      *   "OnUpdate", "OnTimer", "NoMoreOftenThan", "OnUnregister", "Always",
@@ -904,7 +927,7 @@ public class DescriptorSupport
         }
         // verify that the descriptor is valid, by iterating over each field...
 
-        Set returnedSet = descriptorMap.entrySet();
+        Set<Map.Entry<String, Object>> returnedSet = descriptorMap.entrySet();
 
         if (returnedSet == null) {   // null descriptor, not valid
             if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
@@ -925,9 +948,7 @@ public class DescriptorSupport
 
         // According to the descriptor type we validate the fields contained
 
-        for (Iterator iter = returnedSet.iterator(); iter.hasNext();) {
-            Map.Entry currElement = (Map.Entry) iter.next();
-
+        for (Map.Entry<String, Object> currElement : returnedSet) {
             if (currElement != null) {
                 if (currElement.getValue() != null) {
                     // validate the field valued...
@@ -1083,10 +1104,9 @@ public class DescriptorSupport
      */
     public synchronized String toXMLString() {
         final StringBuilder buf = new StringBuilder("<Descriptor>");
-        Set returnedSet = descriptorMap.entrySet();
-        for (Iterator iter = returnedSet.iterator(); iter.hasNext(); ) {
-            final Map.Entry currElement = (Map.Entry) iter.next();
-            final String name = currElement.getKey().toString();
+        Set<Map.Entry<String, Object>> returnedSet = descriptorMap.entrySet();
+        for (Map.Entry<String, Object> currElement : returnedSet) {
+            final String name = currElement.getKey();
             Object value = currElement.getValue();
             String valueString = null;
             /* Set valueString to non-null if and only if this is a string that
@@ -1256,7 +1276,7 @@ public class DescriptorSupport
             }
             final Class<?> c =
                 Class.forName(className, false, contextClassLoader);
-            constr = c.getConstructor(new Class[] {String.class});
+            constr = c.getConstructor(new Class<?>[] {String.class});
         } catch (Exception e) {
             throw new XMLParseException(e,
                                         "Cannot parse value: <" + s + ">");

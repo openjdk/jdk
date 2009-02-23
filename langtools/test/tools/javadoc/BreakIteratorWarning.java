@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ public class BreakIteratorWarning extends Doclet {
         if (com.sun.tools.javadoc.Main.execute(
                 "javadoc",
                 "BreakIteratorWarning",
+                BreakIteratorWarning.class.getClassLoader(),
                 new String[] {"-Xwerror", thisFile}) != 0)
             throw new Error("Javadoc encountered warnings or errors.");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ JvmtiEnvBase::JvmtiEnvBase() : _env_event_enable() {
   JvmtiEventController::env_initialize((JvmtiEnv*)this);
 
 #ifdef JVMTI_TRACE
-  _jvmti_external.functions = strlen(TraceJVMTI)? &jvmtiTrace_Interface : &jvmti_Interface;
+  _jvmti_external.functions = TraceJVMTI != NULL ? &jvmtiTrace_Interface : &jvmti_Interface;
 #else
   _jvmti_external.functions = &jvmti_Interface;
 #endif
