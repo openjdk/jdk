@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,14 +34,18 @@ import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 
 /**
- * The Authority Information Access Extension (OID = 1.3.6.1.5.5.7.1.1).
+ * The Subject Information Access Extension (OID = 1.3.6.1.5.5.7.1.11).
  * <p>
- * The AIA extension identifies how to access CA information and services
- * for the certificate in which it appears. It enables CAs to issue their
- * certificates pre-configured with the URLs appropriate for contacting
- * services relevant to those certificates. For example, a CA may issue a
- * certificate that identifies the specific OCSP Responder to use when
- * performing on-line validation of that certificate.
+ * The subject information access extension indicates how to access
+ * information and services for the subject of the certificate in which
+ * the extension appears.  When the subject is a CA, information and
+ * services may include certificate validation services and CA policy
+ * data.  When the subject is an end entity, the information describes
+ * the type of services offered and how to access them.  In this case,
+ * the contents of this extension are defined in the protocol
+ * specifications for the supported services.  This extension may be
+ * included in end entity or CA certificates.  Conforming CAs MUST mark
+ * this extension as non-critical.
  * <p>
  * This extension is defined in <a href="http://www.ietf.org/rfc/rfc3280.txt">
  * Internet X.509 PKI Certificate and Certificate Revocation List
@@ -49,21 +53,21 @@ import sun.security.util.DerValue;
  * the extension to be included in end-entity or CA certificates,
  * and it must be marked as non-critical. Its ASN.1 definition is as follows:
  * <pre>
- *   id-pe-authorityInfoAccess OBJECT IDENTIFIER ::= { id-pe 1 }
+ *   id-pe-subjectInfoAccess OBJECT IDENTIFIER ::= { id-pe 11 }
  *
- *   AuthorityInfoAccessSyntax  ::=
- *         SEQUENCE SIZE (1..MAX) OF AccessDescription
+ *   SubjectInfoAccessSyntax  ::=
+ *          SEQUENCE SIZE (1..MAX) OF AccessDescription
  *
  *   AccessDescription  ::=  SEQUENCE {
- *         accessMethod          OBJECT IDENTIFIER,
- *         accessLocation        GeneralName  }
+ *          accessMethod          OBJECT IDENTIFIER,
+ *          accessLocation        GeneralName  }
  * </pre>
  * <p>
  * @see Extension
  * @see CertAttrSet
  */
 
-public class AuthorityInfoAccessExtension extends Extension
+public class SubjectInfoAccessExtension extends Extension
         implements CertAttrSet<String> {
 
     /**
@@ -71,12 +75,12 @@ public class AuthorityInfoAccessExtension extends Extension
      * get, set, delete methods of Certificate, x509 type.
      */
     public static final String IDENT =
-                                "x509.info.extensions.AuthorityInfoAccess";
+                                "x509.info.extensions.SubjectInfoAccess";
 
     /**
      * Attribute name.
      */
-    public static final String NAME = "AuthorityInfoAccess";
+    public static final String NAME = "SubjectInfoAccess";
     public static final String DESCRIPTIONS = "descriptions";
 
     /**
@@ -85,15 +89,15 @@ public class AuthorityInfoAccessExtension extends Extension
     private List<AccessDescription> accessDescriptions;
 
     /**
-     * Create an AuthorityInfoAccessExtension from a List of
+     * Create an SubjectInfoAccessExtension from a List of
      * AccessDescription; the criticality is set to false.
      *
      * @param accessDescriptions the List of AccessDescription
      * @throws IOException on error
      */
-    public AuthorityInfoAccessExtension(
+    public SubjectInfoAccessExtension(
             List<AccessDescription> accessDescriptions) throws IOException {
-        this.extensionId = PKIXExtensions.AuthInfoAccess_Id;
+        this.extensionId = PKIXExtensions.SubjectInfoAccess_Id;
         this.critical = false;
         this.accessDescriptions = accessDescriptions;
         encodeThis();
@@ -106,9 +110,9 @@ public class AuthorityInfoAccessExtension extends Extension
      * @param value Array of DER encoded bytes of the actual value.
      * @exception IOException on error.
      */
-    public AuthorityInfoAccessExtension(Boolean critical, Object value)
+    public SubjectInfoAccessExtension(Boolean critical, Object value)
             throws IOException {
-        this.extensionId = PKIXExtensions.AuthInfoAccess_Id;
+        this.extensionId = PKIXExtensions.SubjectInfoAccess_Id;
         this.critical = critical.booleanValue();
 
         if (!(value instanceof byte[])) {
@@ -119,7 +123,7 @@ public class AuthorityInfoAccessExtension extends Extension
         DerValue val = new DerValue(extensionValue);
         if (val.tag != DerValue.tag_Sequence) {
             throw new IOException("Invalid encoding for " +
-                                  "AuthorityInfoAccessExtension.");
+                                  "SubjectInfoAccessExtension.");
         }
         accessDescriptions = new ArrayList<AccessDescription>();
         while (val.data.available() != 0) {
@@ -152,7 +156,7 @@ public class AuthorityInfoAccessExtension extends Extension
     public void encode(OutputStream out) throws IOException {
         DerOutputStream tmp = new DerOutputStream();
         if (this.extensionValue == null) {
-            this.extensionId = PKIXExtensions.AuthInfoAccess_Id;
+            this.extensionId = PKIXExtensions.SubjectInfoAccess_Id;
             this.critical = false;
             encodeThis();
         }
@@ -172,7 +176,7 @@ public class AuthorityInfoAccessExtension extends Extension
         } else {
             throw new IOException("Attribute name [" + name +
                                 "] not recognized by " +
-                                "CertAttrSet:AuthorityInfoAccessExtension.");
+                                "CertAttrSet:SubjectInfoAccessExtension.");
         }
         encodeThis();
     }
@@ -186,7 +190,7 @@ public class AuthorityInfoAccessExtension extends Extension
         } else {
             throw new IOException("Attribute name [" + name +
                                 "] not recognized by " +
-                                "CertAttrSet:AuthorityInfoAccessExtension.");
+                                "CertAttrSet:SubjectInfoAccessExtension.");
         }
     }
 
@@ -199,7 +203,7 @@ public class AuthorityInfoAccessExtension extends Extension
         } else {
             throw new IOException("Attribute name [" + name +
                                 "] not recognized by " +
-                                "CertAttrSet:AuthorityInfoAccessExtension.");
+                                "CertAttrSet:SubjectInfoAccessExtension.");
         }
         encodeThis();
     }
@@ -233,7 +237,7 @@ public class AuthorityInfoAccessExtension extends Extension
      * Return the extension as user readable string.
      */
     public String toString() {
-        return super.toString() + "AuthorityInfoAccess [\n  "
+        return super.toString() + "SubjectInfoAccess [\n  "
                + accessDescriptions + "\n]\n";
     }
 

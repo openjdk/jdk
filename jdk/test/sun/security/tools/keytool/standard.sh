@@ -1,5 +1,5 @@
 #
-# Copyright 2006-2009 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 # @summary (almost) all keytool behaviors
 # @author Weijun Wang
 #
-# This test is only executed on several platforms
+# This test is always excecuted.
 #
 # set a few environment variables so that the shell-script can run stand-alone
 # in the source directory
@@ -36,69 +36,25 @@ if [ "${TESTCLASSES}" = "" ] ; then
   TESTCLASSES="."
 fi
 if [ "${TESTJAVA}" = "" ] ; then
-  echo "TESTJAVA not set.  Test cannot execute."
-  echo "FAILED!!!"
-  exit 1
+  JAVAC_CMD=`which javac`
+  TESTJAVA=`dirname $JAVAC_CMD`/..
 fi
 
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS )
-    FS="/"
-    LIBNAME=libsoftokn3.so
-    ARCH=`isainfo`
-    case "$ARCH" in
-      sparc* )
-        PF="solaris-sparc"
-        ;;
-      * )
-        echo "Will not run test on: Solaris ${ARCH}"
-        exit 0;
-        ;;
-    esac
-    ;;
-  Linux )
-    LIBNAME=libsoftokn3.so
-    ARCH=`uname -m`
-    FS="/"
-    case "$ARCH" in
-      i[3-6]86 )
-        PF="linux-i586"
-        ;;
-      * )
-        echo "Will not run test on: Linux ${ARCH}"
-        exit 0;
-        ;;
-    esac
+  Windows_* )
+    FS="\\"
     ;;
   * )
-    echo "Will not run test on: ${OS}"
-    exit 0;
+    FS="/"
     ;;
 esac
 
 ${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}KeyToolTest.java || exit 10
 
-NSS=${TESTSRC}${FS}..${FS}..${FS}pkcs11${FS}nss
-
-cp ${TESTSRC}${FS}p11-nss.txt .
-cp ${NSS}${FS}db${FS}cert8.db .
-cp ${NSS}${FS}db${FS}key3.db .
-cp ${NSS}${FS}db${FS}secmod.db .
-
-chmod u+w key3.db
-chmod u+w cert8.db
-
-echo | ${TESTJAVA}${FS}bin${FS}java -Dnss \
-   -Dnss.lib=${NSS}${FS}lib${FS}${PF}${FS}${LIBNAME} \
-   KeyToolTest
+echo | ${TESTJAVA}${FS}bin${FS}java -Dfile KeyToolTest
 status=$?
-
-rm -f p11-nss.txt
-rm -f cert8.db
-rm -f key3.db
-rm -f secmod.db
 
 rm HumanInputStream*.class
 rm KeyToolTest*.class

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,22 @@ extends Extension implements CertAttrSet<String> {
         this.names = names;
         this.extensionId = PKIXExtensions.IssuerAlternativeName_Id;
         this.critical = false;
+        encodeThis();
+    }
+
+    /**
+     * Create a IssuerAlternativeNameExtension with the passed criticality
+     * and GeneralNames.
+     *
+     * @param critical true if the extension is to be treated as critical.
+     * @param names the GeneralNames for the issuer.
+     * @exception IOException on error.
+     */
+    public IssuerAlternativeNameExtension(Boolean critical, GeneralNames names)
+    throws IOException {
+        this.names = names;
+        this.extensionId = PKIXExtensions.IssuerAlternativeName_Id;
+        this.critical = critical.booleanValue();
         encodeThis();
     }
 
