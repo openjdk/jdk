@@ -2194,6 +2194,9 @@ class CommandLineFlags {
   product(bool, PrintVMOptions, trueInDebug,                                \
          "print VM flag settings")                                          \
                                                                             \
+  product(bool, IgnoreUnrecognizedVMOptions, false,                         \
+         "Ignore unrecognized VM options")                                  \
+                                                                            \
   diagnostic(bool, SerializeVMOutput, true,                                 \
          "Use a mutex to serialize output to tty and hotspot.log")          \
                                                                             \
