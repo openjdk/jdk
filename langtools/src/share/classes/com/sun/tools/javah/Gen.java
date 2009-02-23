@@ -326,7 +326,7 @@ public abstract class Gen {
                 throws ClassNotFoundException {
         Vector<FieldDoc> fields = new Vector<FieldDoc>();
         ClassDoc cd = null;
-        Stack s = new Stack();
+        Stack<Object> s = new Stack<Object>();
 
         cd = subclazz;
         while (true) {
@@ -342,6 +342,6 @@ public abstract class Gen {
             fields.addAll(Arrays.asList(cd.fields()));
         }
 
-        return (FieldDoc[]) fields.toArray(new FieldDoc[fields.size()]);
+        return fields.toArray(new FieldDoc[fields.size()]);
     }
 }

@@ -24,6 +24,8 @@
  */
 
 #define _JNI_IMPLEMENTATION_
+
+#include "awt.h"
 #include "awt_DrawingSurface.h"
 #include "awt_Component.h"
 

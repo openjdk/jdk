@@ -48,14 +48,14 @@ public class TestInterface extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg" + FS + "Interface.html",
-            "int <B>method</B>()"},
+            "int <STRONG>method</STRONG>()"},
         {BUG_ID + FS + "pkg" + FS + "Interface.html",
-            "static final int <B>field</B>"},
+            "static final int <STRONG>field</STRONG>"},
 
 
         // Make sure known implementing class list is correct and omits type parameters.
         {BUG_ID + FS + "pkg" + FS + "Interface.html",
-            "<DT><B>All Known Implementing Classes:</B> " +
+            "<DT><STRONG>All Known Implementing Classes:</STRONG> " +
             "<DD><A HREF=\"../pkg/Child.html\" " +
             "title=\"class in pkg\">Child</A>, " +
             "<A HREF=\"../pkg/Parent.html\" title=\"class in pkg\">" +
@@ -63,34 +63,34 @@ public class TestInterface extends JavadocTester {
 
          // Make sure "All Implemented Interfaces": has substituted type parameters
          {BUG_ID + FS + "pkg" + FS + "Child.html",
-            "<B>All Implemented Interfaces:</B> <DD><A HREF=\"../pkg/Interface.html\" title=\"interface in pkg\">Interface</A>&lt;T&gt;"
+            "<STRONG>All Implemented Interfaces:</STRONG> <DD><A HREF=\"../pkg/Interface.html\" title=\"interface in pkg\">Interface</A>&lt;T&gt;"
          },
          //Make sure Class Tree has substituted type parameters.
          {BUG_ID + FS + "pkg" + FS + "Child.html",
             "<PRE>" + NL +
             "java.lang.Object" + NL +
             "  <IMG SRC=\"../resources/inherit.gif\" ALT=\"extended by \"><A HREF=\"../pkg/Parent.html\" title=\"class in pkg\">pkg.Parent</A>&lt;T&gt;" + NL +
-            "      <IMG SRC=\"../resources/inherit.gif\" ALT=\"extended by \"><B>pkg.Child&lt;T&gt;</B>" + NL +
+            "      <IMG SRC=\"../resources/inherit.gif\" ALT=\"extended by \"><STRONG>pkg.Child&lt;T&gt;</STRONG>" + NL +
             "</PRE>"
          },
          //Make sure "Direct Know Subclasses" omits type parameters
         {BUG_ID + FS + "pkg" + FS + "Parent.html",
-            "<B>Direct Known Subclasses:</B> <DD><A HREF=\"../pkg/Child.html\" title=\"class in pkg\">Child</A>"
+            "<STRONG>Direct Known Subclasses:</STRONG> <DD><A HREF=\"../pkg/Child.html\" title=\"class in pkg\">Child</A>"
         },
         //Make sure "Specified By" has substituted type parameters.
         {BUG_ID + FS + "pkg" + FS + "Child.html",
-            "<B>Specified by:</B><DD><CODE><A HREF=\"../pkg/Interface.html#method()\">method</A></CODE> in interface <CODE><A HREF=\"../pkg/Interface.html\" title=\"interface in pkg\">Interface</A>&lt;<A HREF=\"../pkg/Child.html\" title=\"type parameter in Child\">T</A>&gt;</CODE>"
+            "<STRONG>Specified by:</STRONG><DD><CODE><A HREF=\"../pkg/Interface.html#method()\">method</A></CODE> in interface <CODE><A HREF=\"../pkg/Interface.html\" title=\"interface in pkg\">Interface</A>&lt;<A HREF=\"../pkg/Child.html\" title=\"type parameter in Child\">T</A>&gt;</CODE>"
          },
         //Make sure "Overrides" has substituted type parameters.
         {BUG_ID + FS + "pkg" + FS + "Child.html",
-            "<B>Overrides:</B><DD><CODE><A HREF=\"../pkg/Parent.html#method()\">method</A></CODE> in class <CODE><A HREF=\"../pkg/Parent.html\" title=\"class in pkg\">Parent</A>&lt;<A HREF=\"../pkg/Child.html\" title=\"type parameter in Child\">T</A>&gt;</CODE>"
+            "<STRONG>Overrides:</STRONG><DD><CODE><A HREF=\"../pkg/Parent.html#method()\">method</A></CODE> in class <CODE><A HREF=\"../pkg/Parent.html\" title=\"class in pkg\">Parent</A>&lt;<A HREF=\"../pkg/Child.html\" title=\"type parameter in Child\">T</A>&gt;</CODE>"
          },
     };
     private static final String[][] NEGATED_TEST = {
         {BUG_ID + FS + "pkg" + FS + "Interface.html",
-            "public int <B>method</B>()"},
+            "public int <STRONG>method</STRONG>()"},
         {BUG_ID + FS + "pkg" + FS + "Interface.html",
-            "public static final int <B>field</B>"},
+            "public static final int <STRONG>field</STRONG>"},
     };
 
     /**

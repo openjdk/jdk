@@ -47,7 +47,7 @@ Mutex*   JfieldIdCreation_lock        = NULL;
 Monitor* JNICritical_lock             = NULL;
 Mutex*   JvmtiThreadState_lock        = NULL;
 Monitor* JvmtiPendingEvent_lock       = NULL;
-Mutex*   Heap_lock                    = NULL;
+Monitor* Heap_lock                    = NULL;
 Mutex*   ExpandHeap_lock              = NULL;
 Mutex*   AdapterHandlerLibrary_lock   = NULL;
 Mutex*   SignatureHandlerLibrary_lock = NULL;
@@ -67,7 +67,18 @@ Mutex*   STS_init_lock                = NULL;
 Monitor* SLT_lock                     = NULL;
 Monitor* iCMS_lock                    = NULL;
 Monitor* FullGCCount_lock             = NULL;
+Monitor* CMark_lock                   = NULL;
+Monitor* ZF_mon                       = NULL;
+Monitor* Cleanup_mon                  = NULL;
+Monitor* G1ConcRefine_mon             = NULL;
+Mutex*   SATB_Q_FL_lock               = NULL;
+Monitor* SATB_Q_CBL_mon               = NULL;
+Mutex*   Shared_SATB_Q_lock           = NULL;
+Mutex*   DirtyCardQ_FL_lock           = NULL;
+Monitor* DirtyCardQ_CBL_mon           = NULL;
+Mutex*   Shared_DirtyCardQ_lock       = NULL;
 Mutex*   ParGCRareEvent_lock          = NULL;
+Mutex*   EvacFailureStack_lock        = NULL;
 Mutex*   DerivedPointerTableGC_lock   = NULL;
 Mutex*   Compile_lock                 = NULL;
 Monitor* MethodCompileQueue_lock      = NULL;
@@ -101,6 +112,9 @@ Mutex*   RawMonitor_lock              = NULL;
 Mutex*   PerfDataMemAlloc_lock        = NULL;
 Mutex*   PerfDataManager_lock         = NULL;
 Mutex*   OopMapCacheAlloc_lock        = NULL;
+
+Mutex*   MMUTracker_lock              = NULL;
+Mutex*   HotCardCache_lock            = NULL;
 
 Monitor* GCTaskManager_lock           = NULL;
 
@@ -149,6 +163,23 @@ void mutex_init() {
   if (UseConcMarkSweepGC) {
     def(iCMS_lock                  , Monitor, special,     true ); // CMS incremental mode start/stop notification
     def(FullGCCount_lock           , Monitor, leaf,        true ); // in support of ExplicitGCInvokesConcurrent
+  }
+  if (UseG1GC) {
+    def(CMark_lock                 , Monitor, nonleaf,     true ); // coordinate concurrent mark thread
+    def(ZF_mon                     , Monitor, leaf,        true );
+    def(Cleanup_mon                , Monitor, nonleaf,     true );
+    def(G1ConcRefine_mon           , Monitor, nonleaf,     true );
+    def(SATB_Q_FL_lock             , Mutex  , special,     true );
+    def(SATB_Q_CBL_mon             , Monitor, nonleaf,     true );
+    def(Shared_SATB_Q_lock         , Mutex,   nonleaf,     true );
+
+    def(DirtyCardQ_FL_lock         , Mutex  , special,     true );
+    def(DirtyCardQ_CBL_mon         , Monitor, nonleaf,     true );
+    def(Shared_DirtyCardQ_lock     , Mutex,   nonleaf,     true );
+
+    def(MMUTracker_lock            , Mutex  , leaf     ,   true );
+    def(HotCardCache_lock          , Mutex  , special  ,   true );
+    def(EvacFailureStack_lock      , Mutex  , nonleaf  ,   true );
   }
   def(ParGCRareEvent_lock          , Mutex  , leaf     ,   true );
   def(DerivedPointerTableGC_lock   , Mutex,   leaf,        true );
@@ -203,7 +234,7 @@ void mutex_init() {
     def(SLT_lock                   , Monitor, nonleaf,     false );
                     // used in CMS GC for locking PLL lock
   }
-  def(Heap_lock                    , Mutex  , nonleaf+1,   false);
+  def(Heap_lock                    , Monitor, nonleaf+1,   false);
   def(JfieldIdCreation_lock        , Mutex  , nonleaf+1,   true ); // jfieldID, Used in VM_Operation
   def(JNICachedItableIndex_lock    , Mutex  , nonleaf+1,   false); // Used to cache an itable index during JNI invoke
 

@@ -59,6 +59,8 @@ dump.cpp                                vm_operations.hpp
 
 dump_<arch_model>.cpp                   assembler_<arch>.inline.hpp
 dump_<arch_model>.cpp                   compactingPermGenGen.hpp
+dump_<arch_model>.cpp                   generation.inline.hpp
+dump_<arch_model>.cpp                   space.inline.hpp
 
 forte.cpp                               collectedHeap.inline.hpp
 forte.cpp                               debugInfoRec.hpp
@@ -99,6 +101,7 @@ heapDumper.cpp                          ostream.hpp
 heapDumper.cpp                          reflectionUtils.hpp
 heapDumper.cpp                          symbolTable.hpp
 heapDumper.cpp                          systemDictionary.hpp
+heapDumper.cpp                          threadService.hpp
 heapDumper.cpp                          universe.hpp
 heapDumper.cpp                          vframe.hpp
 heapDumper.cpp                          vmGCOperations.hpp
@@ -113,6 +116,8 @@ heapInspection.cpp                      heapInspection.hpp
 heapInspection.cpp                      klassOop.hpp
 heapInspection.cpp                      os.hpp
 heapInspection.cpp                      resourceArea.hpp
+
+javaCalls.cpp                           jniCheck.hpp
 
 jniCheck.cpp                            fieldDescriptor.hpp
 jniCheck.cpp                            handles.hpp

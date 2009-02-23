@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 /*
  * @test
  * @bug 6673164
- * @summary dns_fallback parse error
+ * @bug 6552334
+ * @summary fix dns_fallback parse error, and use dns by default
  */
 
 import sun.security.krb5.*;
@@ -31,6 +32,8 @@ import java.io.*;
 
 public class DnsFallback {
     public static void main(String[] args) throws Exception {
+
+        // for 6673164
         check("true", "true", true);
         check("false", "true", false);
         check("true", "false", true);
@@ -39,6 +42,9 @@ public class DnsFallback {
         check("false", null, false);
         check(null, "true", true);
         check(null, "false", false);
+
+        // for 6552334
+        check(null, null, true);
     }
 
     static void check(String realm, String fallback, boolean output) throws Exception {

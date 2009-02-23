@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.management.relation;
 
+import com.sun.jmx.mbeanserver.Util;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -140,7 +141,7 @@ public class RoleList extends ArrayList<Object> {
                 checkTypeSafe(this);
             typeSafe = true;
         }
-        return (List<Role>) (List) this;
+        return Util.cast(this);
     }
 
     //

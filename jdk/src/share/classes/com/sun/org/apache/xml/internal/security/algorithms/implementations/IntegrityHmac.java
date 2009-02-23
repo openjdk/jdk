@@ -45,7 +45,7 @@ import org.w3c.dom.Text;
 
 /**
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
 
@@ -74,8 +74,8 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
    public IntegrityHmac() throws XMLSignatureException {
 
       String algorithmID = JCEMapper.translateURItoJCEID(this.engineGetURI());
-      if (true)
-        if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Created IntegrityHmacSHA1 using " + algorithmID);
+      if (log.isLoggable(java.util.logging.Level.FINE))
+        log.log(java.util.logging.Level.FINE, "Created IntegrityHmacSHA1 using " + algorithmID);
 
       try {
          this._macAlgorithm = Mac.getInstance(algorithmID);
@@ -97,6 +97,10 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
    protected void engineSetParameter(AlgorithmParameterSpec params)
            throws XMLSignatureException {
       throw new XMLSignatureException("empty");
+   }
+
+   public void reset() {
+           _HMACOutputLength=0;
    }
 
    /**
@@ -145,7 +149,20 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
       try {
          this._macAlgorithm.init(secretKey);
       } catch (InvalidKeyException ex) {
-         throw new XMLSignatureException("empty", ex);
+            // reinstantiate Mac object to work around bug in JDK
+            // see: http://bugs.sun.com/view_bug.do?bug_id=4953555
+            Mac mac = this._macAlgorithm;
+            try {
+                this._macAlgorithm = Mac.getInstance
+                    (_macAlgorithm.getAlgorithm());
+            } catch (Exception e) {
+                // this shouldn't occur, but if it does, restore previous Mac
+                if (log.isLoggable(java.util.logging.Level.FINE)) {
+                    log.log(java.util.logging.Level.FINE, "Exception when reinstantiating Mac:" + e);
+                }
+                this._macAlgorithm = mac;
+            }
+            throw new XMLSignatureException("empty", ex);
       }
    }
 
@@ -323,7 +340,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
     */
    protected String engineGetJCEAlgorithmString() {
 
-      if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "engineGetJCEAlgorithmString()");
+      log.log(java.util.logging.Level.FINE, "engineGetJCEAlgorithmString()");
 
       return this._macAlgorithm.getAlgorithm();
    }
@@ -397,7 +414,8 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
    /**
     * Class IntegrityHmacSHA1
     *
-    * @author $Author: raul $
+    * @author $Author: mullan $
+    * @version $Revision: 1.5 $
     */
    public static class IntegrityHmacSHA1 extends IntegrityHmac {
 
@@ -423,7 +441,8 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
    /**
     * Class IntegrityHmacSHA256
     *
-    * @author $Author: raul $
+    * @author $Author: mullan $
+    * @version $Revision: 1.5 $
     */
    public static class IntegrityHmacSHA256 extends IntegrityHmac {
 
@@ -449,7 +468,8 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
    /**
     * Class IntegrityHmacSHA384
     *
-    * @author $Author: raul $
+    * @author $Author: mullan $
+    * @version $Revision: 1.5 $
     */
    public static class IntegrityHmacSHA384 extends IntegrityHmac {
 
@@ -475,7 +495,8 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
    /**
     * Class IntegrityHmacSHA512
     *
-    * @author $Author: raul $
+    * @author $Author: mullan $
+    * @version $Revision: 1.5 $
     */
    public static class IntegrityHmacSHA512 extends IntegrityHmac {
 
@@ -501,7 +522,8 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
    /**
     * Class IntegrityHmacRIPEMD160
     *
-    * @author $Author: raul $
+    * @author $Author: mullan $
+    * @version $Revision: 1.5 $
     */
    public static class IntegrityHmacRIPEMD160 extends IntegrityHmac {
 
@@ -527,7 +549,8 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
    /**
     * Class IntegrityHmacMD5
     *
-    * @author $Author: raul $
+    * @author $Author: mullan $
+    * @version $Revision: 1.5 $
     */
    public static class IntegrityHmacMD5 extends IntegrityHmac {
 

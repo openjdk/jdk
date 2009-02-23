@@ -404,4 +404,55 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
 }
 
 
+///////////////////////////////////////////////////////////////////////////////////
+#ifndef SERIALGC
+
+void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+
+  assert(pre_val()->is_register(), "Precondition.");
+
+  Register pre_val_reg = pre_val()->as_register();
+
+  ce->mem2reg(addr(), pre_val(), T_OBJECT, patch_code(), info(), false);
+  __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
+                    pre_val_reg, _continuation);
+  __ delayed()->nop();
+
+  __ call(Runtime1::entry_for(Runtime1::Runtime1::g1_pre_barrier_slow_id));
+  __ delayed()->mov(pre_val_reg, G4);
+  __ br(Assembler::always, false, Assembler::pt, _continuation);
+  __ delayed()->nop();
+
+}
+
+jbyte* G1PostBarrierStub::_byte_map_base = NULL;
+
+jbyte* G1PostBarrierStub::byte_map_base_slow() {
+  BarrierSet* bs = Universe::heap()->barrier_set();
+  assert(bs->is_a(BarrierSet::G1SATBCTLogging),
+         "Must be if we're using this.");
+  return ((G1SATBCardTableModRefBS*)bs)->byte_map_base;
+}
+
+void G1PostBarrierStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+
+  assert(addr()->is_register(), "Precondition.");
+  assert(new_val()->is_register(), "Precondition.");
+  Register addr_reg = addr()->as_pointer_register();
+  Register new_val_reg = new_val()->as_register();
+  __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
+                    new_val_reg, _continuation);
+  __ delayed()->nop();
+
+  __ call(Runtime1::entry_for(Runtime1::Runtime1::g1_post_barrier_slow_id));
+  __ delayed()->mov(addr_reg, G4);
+  __ br(Assembler::always, false, Assembler::pt, _continuation);
+  __ delayed()->nop();
+}
+
+#endif // SERIALGC
+///////////////////////////////////////////////////////////////////////////////////
+
 #undef __

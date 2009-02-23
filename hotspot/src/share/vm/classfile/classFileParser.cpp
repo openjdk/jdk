@@ -168,9 +168,21 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
           // Got utf8 string, guarantee utf8_length+1 bytes, set stream position forward.
           cfs->guarantee_more(utf8_length+1, CHECK);  // utf8 string, tag/access_flags
           cfs->skip_u1_fast(utf8_length);
+
           // Before storing the symbol, make sure it's legal
           if (_need_verify) {
             verify_legal_utf8((unsigned char*)utf8_buffer, utf8_length, CHECK);
+          }
+
+          if (AnonymousClasses && has_cp_patch_at(index)) {
+            Handle patch = clear_cp_patch_at(index);
+            guarantee_property(java_lang_String::is_instance(patch()),
+                               "Illegal utf8 patch at %d in class file %s",
+                               index, CHECK);
+            char* str = java_lang_String::as_utf8_string(patch());
+            // (could use java_lang_String::as_symbol instead, but might as well batch them)
+            utf8_buffer = (u1*) str;
+            utf8_length = (int) strlen(str);
           }
 
           unsigned int hash;
@@ -220,7 +232,9 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
     length >= 1, "Illegal constant pool size %u in class file %s",
     length, CHECK_(nullHandle));
   constantPoolOop constant_pool =
-                      oopFactory::new_constantPool(length, CHECK_(nullHandle));
+                      oopFactory::new_constantPool(length,
+                                                   methodOopDesc::IsSafeConc,
+                                                   CHECK_(nullHandle));
   constantPoolHandle cp (THREAD, constant_pool);
 
   cp->set_partially_loaded();    // Enables heap verify to work on partial constantPoolOops
@@ -245,7 +259,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
         int klass_ref_index = cp->klass_ref_index_at(index);
         int name_and_type_ref_index = cp->name_and_type_ref_index_at(index);
         check_property(valid_cp_range(klass_ref_index, length) &&
-                       cp->tag_at(klass_ref_index).is_klass_reference(),
+                       is_klass_reference(cp, klass_ref_index),
                        "Invalid constant pool index %u in class file %s",
                        klass_ref_index,
                        CHECK_(nullHandle));
@@ -326,16 +340,46 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
     } // end of switch
   } // end of for
 
+  if (_cp_patches != NULL) {
+    // need to treat this_class specially...
+    assert(AnonymousClasses, "");
+    int this_class_index;
+    {
+      cfs->guarantee_more(8, CHECK_(nullHandle));  // flags, this_class, super_class, infs_len
+      u1* mark = cfs->current();
+      u2 flags         = cfs->get_u2_fast();
+      this_class_index = cfs->get_u2_fast();
+      cfs->set_current(mark);  // revert to mark
+    }
+
+    for (index = 1; index < length; index++) {          // Index 0 is unused
+      if (has_cp_patch_at(index)) {
+        guarantee_property(index != this_class_index,
+                           "Illegal constant pool patch to self at %d in class file %s",
+                           index, CHECK_(nullHandle));
+        patch_constant_pool(cp, index, cp_patch_at(index), CHECK_(nullHandle));
+      }
+    }
+    // Ensure that all the patches have been used.
+    for (index = 0; index < _cp_patches->length(); index++) {
+      guarantee_property(!has_cp_patch_at(index),
+                         "Unused constant pool patch at %d in class file %s",
+                         index, CHECK_(nullHandle));
+    }
+  }
+
   if (!_need_verify) {
     return cp;
   }
 
   // second verification pass - checks the strings are of the right format.
+  // but not yet to the other entries
   for (index = 1; index < length; index++) {
     jbyte tag = cp->tag_at(index).value();
     switch (tag) {
       case JVM_CONSTANT_UnresolvedClass: {
         symbolHandle class_name(THREAD, cp->unresolved_klass_at(index));
+        // check the name, even if _cp_patches will overwrite it
         verify_legal_class_name(class_name, CHECK_(nullHandle));
         break;
       }
@@ -376,6 +420,73 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
 
   return cp;
 }
+
+
+void ClassFileParser::patch_constant_pool(constantPoolHandle cp, int index, Handle patch, TRAPS) {
+  assert(AnonymousClasses, "");
+  BasicType patch_type = T_VOID;
+  switch (cp->tag_at(index).value()) {
+
+  case JVM_CONSTANT_UnresolvedClass :
+    // Patching a class means pre-resolving it.
+    // The name in the constant pool is ignored.
+    if (patch->klass() == SystemDictionary::class_klass()) { // %%% java_lang_Class::is_instance
+      guarantee_property(!java_lang_Class::is_primitive(patch()),
+                         "Illegal class patch at %d in class file %s",
+                         index, CHECK);
+      cp->klass_at_put(index, java_lang_Class::as_klassOop(patch()));
+    } else {
+      guarantee_property(java_lang_String::is_instance(patch()),
+                         "Illegal class patch at %d in class file %s",
+                         index, CHECK);
+      symbolHandle name = java_lang_String::as_symbol(patch(), CHECK);
+      cp->unresolved_klass_at_put(index, name());
+    }
+    break;
+
+  case JVM_CONSTANT_UnresolvedString :
+    // Patching a string means pre-resolving it.
+    // The spelling in the constant pool is ignored.
+    // The constant reference may be any object whatever.
+    // If it is not a real interned string, the constant is referred
+    // to as a "pseudo-string", and must be presented to the CP
+    // explicitly, because it may require scavenging.
+    cp->pseudo_string_at_put(index, patch());
+    break;
+
+  case JVM_CONSTANT_Integer : patch_type = T_INT;    goto patch_prim;
+  case JVM_CONSTANT_Float :   patch_type = T_FLOAT;  goto patch_prim;
+  case JVM_CONSTANT_Long :    patch_type = T_LONG;   goto patch_prim;
+  case JVM_CONSTANT_Double :  patch_type = T_DOUBLE; goto patch_prim;
+  patch_prim:
+    {
+      jvalue value;
+      BasicType value_type = java_lang_boxing_object::get_value(patch(), &value);
+      guarantee_property(value_type == patch_type,
+                         "Illegal primitive patch at %d in class file %s",
+                         index, CHECK);
+      switch (value_type) {
+      case T_INT:    cp->int_at_put(index,   value.i); break;
+      case T_FLOAT:  cp->float_at_put(index, value.f); break;
+      case T_LONG:   cp->long_at_put(index,  value.j); break;
+      case T_DOUBLE: cp->double_at_put(index, value.d); break;
+      default:       assert(false, "");
+      }
+    }
+    break;
+
+  default:
+    // %%% TODO: put method handles into CONSTANT_InterfaceMethodref, etc.
+    guarantee_property(!has_cp_patch_at(index),
+                       "Illegal unexpected patch at %d in class file %s",
+                       index, CHECK);
+    return;
+  }
+
+  // On fall-through, mark the patch as used.
+  clear_cp_patch_at(index);
+}
+
 
 
 class NameSigHash: public ResourceObj {
@@ -448,25 +559,33 @@ objArrayHandle ClassFileParser::parse_interfaces(constantPoolHandle cp,
   int index;
   for (index = 0; index < length; index++) {
     u2 interface_index = cfs->get_u2(CHECK_(nullHandle));
+    KlassHandle interf;
     check_property(
       valid_cp_range(interface_index, cp->length()) &&
-        cp->tag_at(interface_index).is_unresolved_klass(),
+      is_klass_reference(cp, interface_index),
       "Interface name has bad constant pool index %u in class file %s",
       interface_index, CHECK_(nullHandle));
-    symbolHandle unresolved_klass (THREAD, cp->klass_name_at(interface_index));
+    if (cp->tag_at(interface_index).is_klass()) {
+      interf = KlassHandle(THREAD, cp->resolved_klass_at(interface_index));
+    } else {
+      symbolHandle unresolved_klass (THREAD, cp->klass_name_at(interface_index));
 
-    // Don't need to check legal name because it's checked when parsing constant pool.
-    // But need to make sure it's not an array type.
-    guarantee_property(unresolved_klass->byte_at(0) != JVM_SIGNATURE_ARRAY,
-                       "Bad interface name in class file %s", CHECK_(nullHandle));
+      // Don't need to check legal name because it's checked when parsing constant pool.
+      // But need to make sure it's not an array type.
+      guarantee_property(unresolved_klass->byte_at(0) != JVM_SIGNATURE_ARRAY,
+                         "Bad interface name in class file %s", CHECK_(nullHandle));
 
-    vmtimer->suspend();  // do not count recursive loading twice
-    // Call resolve_super so classcircularity is checked
-    klassOop k = SystemDictionary::resolve_super_or_fail(class_name,
-                  unresolved_klass, class_loader, protection_domain,
-                  false, CHECK_(nullHandle));
-    KlassHandle interf (THREAD, k);
-    vmtimer->resume();
+      vmtimer->suspend();  // do not count recursive loading twice
+      // Call resolve_super so classcircularity is checked
+      klassOop k = SystemDictionary::resolve_super_or_fail(class_name,
+                    unresolved_klass, class_loader, protection_domain,
+                    false, CHECK_(nullHandle));
+      interf = KlassHandle(THREAD, k);
+      vmtimer->resume();
+
+      if (LinkWellKnownClasses)  // my super type is well known to me
+        cp->klass_at_put(interface_index, interf()); // eagerly resolve
+    }
 
     if (!Klass::cast(interf())->is_interface()) {
       THROW_MSG_(vmSymbols::java_lang_IncompatibleClassChangeError(), "Implementing class", nullHandle);
@@ -877,8 +996,7 @@ typeArrayHandle ClassFileParser::parse_exception_table(u4 code_length,
                          "Illegal exception table handler in class file %s", CHECK_(nullHandle));
       if (catch_type_index != 0) {
         guarantee_property(valid_cp_range(catch_type_index, cp->length()) &&
-                          (cp->tag_at(catch_type_index).is_klass() ||
-                           cp->tag_at(catch_type_index).is_unresolved_klass()),
+                           is_klass_reference(cp, catch_type_index),
                            "Catch type in exception table has bad constant type in class file %s", CHECK_(nullHandle));
       }
     }
@@ -1117,7 +1235,7 @@ void ClassFileParser::parse_type_array(u2 array_length, u4 code_length, u4* u1_i
     } else if (tag == ITEM_Object) {
       u2 class_index = u2_array[i2++] = cfs->get_u2(CHECK);
       guarantee_property(valid_cp_range(class_index, cp->length()) &&
-                         cp->tag_at(class_index).is_unresolved_klass(),
+                         is_klass_reference(cp, class_index),
                          "Bad class index %u in StackMap in class file %s",
                          class_index, CHECK);
     } else if (tag == ITEM_Uninitialized) {
@@ -1183,7 +1301,7 @@ u2* ClassFileParser::parse_checked_exceptions(u2* checked_exceptions_length,
       checked_exception = cfs->get_u2_fast();
       check_property(
         valid_cp_range(checked_exception, cp->length()) &&
-        cp->tag_at(checked_exception).is_klass_reference(),
+        is_klass_reference(cp, checked_exception),
         "Exception name has bad type at constant pool %u in class file %s",
         checked_exception, CHECK_NULL);
     }
@@ -1559,7 +1677,8 @@ methodHandle ClassFileParser::parse_method(constantPoolHandle cp, bool is_interf
   // All sizing information for a methodOop is finally available, now create it
   methodOop m_oop  = oopFactory::new_method(
     code_length, access_flags, linenumber_table_length,
-    total_lvt_length, checked_exceptions_length, CHECK_(nullHandle));
+    total_lvt_length, checked_exceptions_length,
+    methodOopDesc::IsSafeConc, CHECK_(nullHandle));
   methodHandle m (THREAD, m_oop);
 
   ClassLoadingService::add_class_method_size(m_oop->size()*HeapWordSize);
@@ -1918,7 +2037,7 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(constantPoolHandle c
     check_property(
       inner_class_info_index == 0 ||
         (valid_cp_range(inner_class_info_index, cp_size) &&
-        cp->tag_at(inner_class_info_index).is_klass_reference()),
+        is_klass_reference(cp, inner_class_info_index)),
       "inner_class_info_index %u has bad constant type in class file %s",
       inner_class_info_index, CHECK_0);
     // Outer class index
@@ -1926,7 +2045,7 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(constantPoolHandle c
     check_property(
       outer_class_info_index == 0 ||
         (valid_cp_range(outer_class_info_index, cp_size) &&
-        cp->tag_at(outer_class_info_index).is_klass_reference()),
+        is_klass_reference(cp, outer_class_info_index)),
       "outer_class_info_index %u has bad constant type in class file %s",
       outer_class_info_index, CHECK_0);
     // Inner class name
@@ -2088,7 +2207,7 @@ void ClassFileParser::parse_classfile_attributes(constantPoolHandle cp, instance
         }
         // Validate the constant pool indices and types
         if (!cp->is_within_bounds(class_index) ||
-            !cp->tag_at(class_index).is_klass_reference()) {
+            !is_klass_reference(cp, class_index)) {
           classfile_parse_error("Invalid or out-of-bounds class index in EnclosingMethod attribute in class file %s", CHECK);
         }
         if (method_index != 0 &&
@@ -2349,6 +2468,7 @@ void ClassFileParser::java_lang_Class_fix_post(int* next_nonstatic_oop_offset_pt
 instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
                                                     Handle class_loader,
                                                     Handle protection_domain,
+                                                    GrowableArray<Handle>* cp_patches,
                                                     symbolHandle& parsed_name,
                                                     TRAPS) {
   // So that JVMTI can cache class file in the state before retransformable agents
@@ -2380,6 +2500,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     }
   }
 
+  _cp_patches = cp_patches;
 
   instanceKlassHandle nullHandle;
 
@@ -2510,14 +2631,22 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
                      CHECK_(nullHandle));
     } else {
       check_property(valid_cp_range(super_class_index, cp_size) &&
-                     cp->tag_at(super_class_index).is_unresolved_klass(),
+                     is_klass_reference(cp, super_class_index),
                      "Invalid superclass index %u in class file %s",
                      super_class_index,
                      CHECK_(nullHandle));
       // The class name should be legal because it is checked when parsing constant pool.
       // However, make sure it is not an array type.
+      bool is_array = false;
+      if (cp->tag_at(super_class_index).is_klass()) {
+        super_klass = instanceKlassHandle(THREAD, cp->resolved_klass_at(super_class_index));
+        if (_need_verify)
+          is_array = super_klass->oop_is_array();
+      } else if (_need_verify) {
+        is_array = (cp->unresolved_klass_at(super_class_index)->byte_at(0) == JVM_SIGNATURE_ARRAY);
+      }
       if (_need_verify) {
-        guarantee_property(cp->unresolved_klass_at(super_class_index)->byte_at(0) != JVM_SIGNATURE_ARRAY,
+        guarantee_property(!is_array,
                           "Bad superclass name in class file %s", CHECK_(nullHandle));
       }
     }
@@ -2557,7 +2686,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     objArrayHandle methods_default_annotations(THREAD, methods_default_annotations_oop);
 
     // We check super class after class file is parsed and format is checked
-    if (super_class_index > 0) {
+    if (super_class_index > 0 && super_klass.is_null()) {
       symbolHandle sk (THREAD, cp->klass_name_at(super_class_index));
       if (access_flags.is_interface()) {
         // Before attempting to resolve the superclass, check for class format
@@ -2574,6 +2703,10 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
                                                            CHECK_(nullHandle));
       KlassHandle kh (THREAD, k);
       super_klass = instanceKlassHandle(THREAD, kh());
+      if (LinkWellKnownClasses)  // my super class is well known to me
+        cp->klass_at_put(super_class_index, super_klass()); // eagerly resolve
+    }
+    if (super_klass.not_null()) {
       if (super_klass->is_interface()) {
         ResourceMark rm(THREAD);
         Exceptions::fthrow(
@@ -3000,6 +3133,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     this_klass->set_method_ordering(method_ordering());
     this_klass->set_initial_method_idnum(methods->length());
     this_klass->set_name(cp->klass_name_at(this_class_index));
+    if (LinkWellKnownClasses)  // I am well known to myself
+      cp->klass_at_put(this_class_index, this_klass()); // eagerly resolve
     this_klass->set_protection_domain(protection_domain());
     this_klass->set_fields_annotations(fields_annotations());
     this_klass->set_methods_annotations(methods_annotations());

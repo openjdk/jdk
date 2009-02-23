@@ -31,8 +31,9 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp,
 
   // hook up weak ref data so it can be used during Mark-Sweep
   assert(ref_processor() == NULL, "no stomping");
-  _ref_processor = rp;
   assert(rp != NULL, "should be non-NULL");
+  _ref_processor = rp;
+  rp->setup_policy(clear_all_softrefs);
 
   TraceTime t1("Full GC", PrintGC && !PrintGCDetails, true, gclog_or_tty);
 
@@ -191,8 +192,10 @@ void GenMarkSweep::allocate_stacks() {
 
 void GenMarkSweep::deallocate_stacks() {
 
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  gch->release_scratch();
+  if (!UseG1GC) {
+    GenCollectedHeap* gch = GenCollectedHeap::heap();
+    gch->release_scratch();
+  }
 
   if (_preserved_oop_stack) {
     delete _preserved_mark_stack;
@@ -243,20 +246,9 @@ void GenMarkSweep::mark_sweep_phase1(int level,
 
   // Process reference objects found during marking
   {
-    ReferencePolicy *soft_ref_policy;
-    if (clear_all_softrefs) {
-      soft_ref_policy = new AlwaysClearPolicy();
-    } else {
-#ifdef COMPILER2
-      soft_ref_policy = new LRUMaxHeapPolicy();
-#else
-      soft_ref_policy = new LRUCurrentHeapPolicy();
-#endif // COMPILER2
-    }
-    assert(soft_ref_policy != NULL,"No soft reference policy");
+    ref_processor()->setup_policy(clear_all_softrefs);
     ref_processor()->process_discovered_references(
-      soft_ref_policy, &is_alive, &keep_alive,
-      &follow_stack_closure, NULL);
+      &is_alive, &keep_alive, &follow_stack_closure, NULL);
   }
 
   // Follow system dictionary roots and unload classes

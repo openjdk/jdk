@@ -2471,6 +2471,8 @@ const Type *TypeOopPtr::filter( const Type *kills ) const {
   const Type* ft = join(kills);
   const TypeInstPtr* ftip = ft->isa_instptr();
   const TypeInstPtr* ktip = kills->isa_instptr();
+  const TypeKlassPtr* ftkp = ft->isa_klassptr();
+  const TypeKlassPtr* ktkp = kills->isa_klassptr();
 
   if (ft->empty()) {
     // Check for evil case of 'this' being a class and 'kills' expecting an
@@ -2483,6 +2485,8 @@ const Type *TypeOopPtr::filter( const Type *kills ) const {
     // into a Phi which "knows" it's an Interface type we'll have to
     // uplift the type.
     if (!empty() && ktip != NULL && ktip->is_loaded() && ktip->klass()->is_interface())
+      return kills;             // Uplift to interface
+    if (!empty() && ktkp != NULL && ktkp->klass()->is_loaded() && ktkp->klass()->is_interface())
       return kills;             // Uplift to interface
 
     return Type::TOP;           // Canonical empty value
@@ -2498,6 +2502,12 @@ const Type *TypeOopPtr::filter( const Type *kills ) const {
       ktip->is_loaded() && !ktip->klass()->is_interface()) {
     // Happens in a CTW of rt.jar, 320-341, no extra flags
     return ktip->cast_to_ptr_type(ftip->ptr());
+  }
+  if (ftkp != NULL && ktkp != NULL &&
+      ftkp->is_loaded() &&  ftkp->klass()->is_interface() &&
+      ktkp->is_loaded() && !ktkp->klass()->is_interface()) {
+    // Happens in a CTW of rt.jar, 320-341, no extra flags
+    return ktkp->cast_to_ptr_type(ftkp->ptr());
   }
 
   return ft;
@@ -3157,17 +3167,18 @@ static jint max_array_length(BasicType etype) {
 
 // Narrow the given size type to the index range for the given array base type.
 // Return NULL if the resulting int type becomes empty.
-const TypeInt* TypeAryPtr::narrow_size_type(const TypeInt* size, BasicType elem) {
+const TypeInt* TypeAryPtr::narrow_size_type(const TypeInt* size) const {
   jint hi = size->_hi;
   jint lo = size->_lo;
   jint min_lo = 0;
-  jint max_hi = max_array_length(elem);
+  jint max_hi = max_array_length(elem()->basic_type());
   //if (index_not_size)  --max_hi;     // type of a valid array index, FTR
   bool chg = false;
   if (lo < min_lo) { lo = min_lo; chg = true; }
   if (hi > max_hi) { hi = max_hi; chg = true; }
+  // Negative length arrays will produce weird intermediate dead fath-path code
   if (lo > hi)
-    return NULL;
+    return TypeInt::ZERO;
   if (!chg)
     return size;
   return TypeInt::make(lo, hi, Type::WidenMin);
@@ -3176,9 +3187,7 @@ const TypeInt* TypeAryPtr::narrow_size_type(const TypeInt* size, BasicType elem)
 //-------------------------------cast_to_size----------------------------------
 const TypeAryPtr* TypeAryPtr::cast_to_size(const TypeInt* new_size) const {
   assert(new_size != NULL, "");
-  new_size = narrow_size_type(new_size, elem()->basic_type());
-  if (new_size == NULL)       // Negative length arrays will produce weird
-    new_size = TypeInt::ZERO; // intermediate dead fast-path goo
+  new_size = narrow_size_type(new_size);
   if (new_size == size())  return this;
   const TypeAry* new_ary = TypeAry::make(elem(), new_size);
   return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id);
@@ -3542,7 +3551,7 @@ intptr_t TypeNarrowOop::get_con() const {
 
 #ifndef PRODUCT
 void TypeNarrowOop::dump2( Dict & d, uint depth, outputStream *st ) const {
-  tty->print("narrowoop: ");
+  st->print("narrowoop: ");
   _ooptype->dump2(d, depth, st);
 }
 #endif
@@ -3658,7 +3667,7 @@ const TypePtr *TypeKlassPtr::add_offset( intptr_t offset ) const {
 
 //------------------------------cast_to_ptr_type-------------------------------
 const Type *TypeKlassPtr::cast_to_ptr_type(PTR ptr) const {
-  assert(_base == OopPtr, "subclass must override cast_to_ptr_type");
+  assert(_base == KlassPtr, "subclass must override cast_to_ptr_type");
   if( ptr == _ptr ) return this;
   return make(ptr, _klass, _offset);
 }

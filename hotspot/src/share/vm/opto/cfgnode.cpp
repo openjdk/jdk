@@ -858,9 +858,15 @@ const Type *PhiNode::Value( PhaseTransform *phase ) const {
   // convert the one to the other.
   const TypePtr* ttp = _type->make_ptr();
   const TypeInstPtr* ttip = (ttp != NULL) ? ttp->isa_instptr() : NULL;
+  const TypeKlassPtr* ttkp = (ttp != NULL) ? ttp->isa_klassptr() : NULL;
   bool is_intf = false;
   if (ttip != NULL) {
     ciKlass* k = ttip->klass();
+    if (k->is_loaded() && k->is_interface())
+      is_intf = true;
+  }
+  if (ttkp != NULL) {
+    ciKlass* k = ttkp->klass();
     if (k->is_loaded() && k->is_interface())
       is_intf = true;
   }
@@ -921,6 +927,8 @@ const Type *PhiNode::Value( PhaseTransform *phase ) const {
     // uplift the type.
     if( !t->empty() && ttip && ttip->is_loaded() && ttip->klass()->is_interface() )
       { assert(ft == _type, ""); } // Uplift to interface
+    else if( !t->empty() && ttkp && ttkp->is_loaded() && ttkp->klass()->is_interface() )
+      { assert(ft == _type, ""); } // Uplift to interface
     // Otherwise it's something stupid like non-overlapping int ranges
     // found on dying counted loops.
     else
@@ -936,12 +944,21 @@ const Type *PhiNode::Value( PhaseTransform *phase ) const {
     // because the type system doesn't interact well with interfaces.
     const TypePtr *jtp = jt->make_ptr();
     const TypeInstPtr *jtip = (jtp != NULL) ? jtp->isa_instptr() : NULL;
+    const TypeKlassPtr *jtkp = (jtp != NULL) ? jtp->isa_klassptr() : NULL;
     if( jtip && ttip ) {
       if( jtip->is_loaded() &&  jtip->klass()->is_interface() &&
           ttip->is_loaded() && !ttip->klass()->is_interface() ) {
         // Happens in a CTW of rt.jar, 320-341, no extra flags
         assert(ft == ttip->cast_to_ptr_type(jtip->ptr()) ||
                ft->isa_narrowoop() && ft->make_ptr() == ttip->cast_to_ptr_type(jtip->ptr()), "");
+        jt = ft;
+      }
+    }
+    if( jtkp && ttkp ) {
+      if( jtkp->is_loaded() &&  jtkp->klass()->is_interface() &&
+          ttkp->is_loaded() && !ttkp->klass()->is_interface() ) {
+        assert(ft == ttkp->cast_to_ptr_type(jtkp->ptr()) ||
+               ft->isa_narrowoop() && ft->make_ptr() == ttkp->cast_to_ptr_type(jtkp->ptr()), "");
         jt = ft;
       }
     }
@@ -1665,7 +1682,11 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             // compress paths and change unreachable cycles to TOP
             // If not, we can update the input infinitely along a MergeMem cycle
             // Equivalent code is in MemNode::Ideal_common
-            Node         *m  = phase->transform(n);
+            Node *m  = phase->transform(n);
+            if (outcnt() == 0) {  // Above transform() may kill us!
+              progress = phase->C->top();
+              break;
+            }
             // If tranformed to a MergeMem, get the desired slice
             // Otherwise the returned node represents memory for every slice
             Node *new_mem = (m->is_MergeMem()) ?
@@ -1765,7 +1786,58 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+#ifdef _LP64
+  // Push DecodeN down through phi.
+  // The rest of phi graph will transform by split EncodeP node though phis up.
+  if (UseCompressedOops && can_reshape && progress == NULL) {
+    bool may_push = true;
+    bool has_decodeN = false;
+    Node* in_decodeN = NULL;
+    for (uint i=1; i<req(); ++i) {// For all paths in
+      Node *ii = in(i);
+      if (ii->is_DecodeN() && ii->bottom_type() == bottom_type()) {
+        has_decodeN = true;
+        in_decodeN = ii->in(1);
+      } else if (!ii->is_Phi()) {
+        may_push = false;
+      }
+    }
+
+    if (has_decodeN && may_push) {
+      PhaseIterGVN *igvn = phase->is_IterGVN();
+      // Note: in_decodeN is used only to define the type of new phi here.
+      PhiNode *new_phi = PhiNode::make_blank(in(0), in_decodeN);
+      uint orig_cnt = req();
+      for (uint i=1; i<req(); ++i) {// For all paths in
+        Node *ii = in(i);
+        Node* new_ii = NULL;
+        if (ii->is_DecodeN()) {
+          assert(ii->bottom_type() == bottom_type(), "sanity");
+          new_ii = ii->in(1);
+        } else {
+          assert(ii->is_Phi(), "sanity");
+          if (ii->as_Phi() == this) {
+            new_ii = new_phi;
+          } else {
+            new_ii = new (phase->C, 2) EncodePNode(ii, in_decodeN->bottom_type());
+            igvn->register_new_node_with_optimizer(new_ii);
+          }
+        }
+        new_phi->set_req(i, new_ii);
+      }
+      igvn->register_new_node_with_optimizer(new_phi, this);
+      progress = new (phase->C, 2) DecodeNNode(new_phi, bottom_type());
+    }
+  }
+#endif
+
   return progress;              // Return any progress
+}
+
+//------------------------------is_tripcount-----------------------------------
+bool PhiNode::is_tripcount() const {
+  return (in(0) != NULL && in(0)->is_CountedLoop() &&
+          in(0)->as_CountedLoop()->phi() == this);
 }
 
 //------------------------------out_RegMask------------------------------------
@@ -1783,9 +1855,7 @@ const RegMask &PhiNode::out_RegMask() const {
 #ifndef PRODUCT
 void PhiNode::dump_spec(outputStream *st) const {
   TypeNode::dump_spec(st);
-  if (in(0) != NULL &&
-      in(0)->is_CountedLoop() &&
-      in(0)->as_CountedLoop()->phi() == this) {
+  if (is_tripcount()) {
     st->print(" #tripcount");
   }
 }

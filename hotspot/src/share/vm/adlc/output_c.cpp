@@ -1619,6 +1619,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
       }
 
       // Iterate over the new instruction's operands
+      int prev_pos = -1;
       for( expand_instr->reset(); (opid = expand_instr->iter()) != NULL; ) {
         // Use 'parameter' at current position in list of new instruction's formals
         // instead of 'opid' when looking up info internal to new_inst
@@ -1642,6 +1643,18 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
           // ins = (InstructForm *) _globalNames[new_id];
           exp_pos = node->operand_position_format(opid);
           assert(exp_pos != -1, "Bad expand rule");
+          if (prev_pos > exp_pos && expand_instruction->_matrule != NULL) {
+            // For the add_req calls below to work correctly they need
+            // to added in the same order that a match would add them.
+            // This means that they would need to be in the order of
+            // the components list instead of the formal parameters.
+            // This is a sort of hidden invariant that previously
+            // wasn't checked and could lead to incorrectly
+            // constructed nodes.
+            syntax_err(node->_linenum, "For expand in %s to work, parameter declaration order in %s must follow matchrule\n",
+                       node->_ident, new_inst->_ident);
+          }
+          prev_pos = exp_pos;
 
           new_pos = new_inst->operand_position(parameter,Component::USE);
           if (new_pos != -1) {
@@ -2306,7 +2319,12 @@ private:
     _processing_noninput = false;
     // A replacement variable, originally '$'
     if ( Opcode::as_opcode_type(rep_var) != Opcode::NOT_AN_OPCODE ) {
-      _inst._opcode->print_opcode(_fp, Opcode::as_opcode_type(rep_var) );
+      if (!_inst._opcode->print_opcode(_fp, Opcode::as_opcode_type(rep_var) )) {
+        // Missing opcode
+        _AD.syntax_err( _inst._linenum,
+                        "Missing $%s opcode definition in %s, used by encoding %s\n",
+                        rep_var, _inst._ident, _encoding._name);
+      }
     }
     else {
       // Lookup its position in parameter list
@@ -2348,7 +2366,13 @@ private:
       else if( Opcode::as_opcode_type(inst_rep_var) != Opcode::NOT_AN_OPCODE ) {
         // else check if "primary", "secondary", "tertiary"
         assert( _constant_status == LITERAL_ACCESSED, "Must be processing a literal constant parameter");
-        _inst._opcode->print_opcode(_fp, Opcode::as_opcode_type(inst_rep_var) );
+        if (!_inst._opcode->print_opcode(_fp, Opcode::as_opcode_type(inst_rep_var) )) {
+          // Missing opcode
+          _AD.syntax_err( _inst._linenum,
+                          "Missing $%s opcode definition in %s\n",
+                          rep_var, _inst._ident);
+
+        }
         _constant_status = LITERAL_OUTPUT;
       }
       else if((_AD.get_registers() != NULL ) && (_AD.get_registers()->getRegDef(inst_rep_var) != NULL)) {

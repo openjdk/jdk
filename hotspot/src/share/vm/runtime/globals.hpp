@@ -255,7 +255,19 @@ class CommandLineFlags {
 // diagnostic information about VM problems.  To use a VM diagnostic
 // option, you must first specify +UnlockDiagnosticVMOptions.
 // (This master switch also affects the behavior of -Xprintflags.)
-
+//
+// experimental flags are in support of features that are not
+//    part of the officially supported product, but are available
+//    for experimenting with. They could, for example, be performance
+//    features that may not have undergone full or rigorous QA, but which may
+//    help performance in some cases and released for experimentation
+//    by the community of users and developers. This flag also allows one to
+//    be able to build a fully supported product that nonetheless also
+//    ships with some unsupported, lightly tested, experimental features.
+//    Like the UnlockDiagnosticVMOptions flag above, there is a corresponding
+//    UnlockExperimentalVMOptions flag, which allows the control and
+//    modification of the experimental flags.
+//
 // manageable flags are writeable external product flags.
 //    They are dynamically writeable through the JDK management interface
 //    (com.sun.management.HotSpotDiagnosticMXBean API) and also through JConsole.
@@ -285,7 +297,7 @@ class CommandLineFlags {
 // Note that when there is a need to support develop flags to be writeable,
 // it can be done in the same way as product_rw.
 
-#define RUNTIME_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct, manageable, product_rw, lp64_product) \
+#define RUNTIME_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw, lp64_product) \
                                                                             \
   lp64_product(bool, UseCompressedOops, false,                              \
             "Use 32-bit object references in 64-bit VM. "                   \
@@ -307,7 +319,10 @@ class CommandLineFlags {
           "Prints flags that appeared on the command line")                 \
                                                                             \
   diagnostic(bool, UnlockDiagnosticVMOptions, trueInDebug,                  \
-          "Enable processing of flags relating to field diagnostics")       \
+          "Enable normal processing of flags relating to field diagnostics")\
+                                                                            \
+  experimental(bool, UnlockExperimentalVMOptions, false,                    \
+          "Enable normal processing of flags relating to experimental features")\
                                                                             \
   product(bool, JavaMonitorsInStackTrace, true,                             \
           "Print info. about Java monitor locks when the stacks are dumped")\
@@ -315,11 +330,20 @@ class CommandLineFlags {
   product_pd(bool, UseLargePages,                                           \
           "Use large page memory")                                          \
                                                                             \
+  product_pd(bool, UseLargePagesIndividualAllocation,                       \
+          "Allocate large pages individually for better affinity")          \
+                                                                            \
+  develop(bool, LargePagesIndividualAllocationInjectError, false,           \
+          "Fail large pages individual allocation")                         \
+                                                                            \
   develop(bool, TracePageSizes, false,                                      \
           "Trace page size selection and usage.")                           \
                                                                             \
   product(bool, UseNUMA, false,                                             \
           "Use NUMA if available")                                          \
+                                                                            \
+  product(bool, ForceNUMA, false,                                           \
+          "Force NUMA optimizations on single-node/UMA systems")            \
                                                                             \
   product(intx, NUMAChunkResizeWeight, 20,                                  \
           "Percentage (0-100) used to weight the current sample when "      \
@@ -472,7 +496,7 @@ class CommandLineFlags {
   develop(bool, DeoptimizeALot, false,                                      \
           "deoptimize at every exit from the runtime system")               \
                                                                             \
-  develop(ccstrlist, DeoptimizeOnlyAt, "",                                  \
+  notproduct(ccstrlist, DeoptimizeOnlyAt, "",                               \
           "a comma separated list of bcis to deoptimize at")                \
                                                                             \
   product(bool, DeoptimizeRandom, false,                                    \
@@ -601,6 +625,9 @@ class CommandLineFlags {
   develop(bool, CheckZapUnusedHeapArea, false,                              \
           "Check zapping of unused heap space")                             \
                                                                             \
+  develop(bool, ZapFillerObjects, trueInDebug,                              \
+          "Zap filler objects with 0xDEAFBABE")                             \
+                                                                            \
   develop(bool, PrintVMMessages, true,                                      \
           "Print vm messages on console")                                   \
                                                                             \
@@ -692,7 +719,7 @@ class CommandLineFlags {
   diagnostic(bool, PrintAssembly, false,                                    \
           "Print assembly code (using external disassembler.so)")           \
                                                                             \
-  diagnostic(ccstr, PrintAssemblyOptions, false,                            \
+  diagnostic(ccstr, PrintAssemblyOptions, NULL,                             \
           "Options string passed to disassembler.so")                       \
                                                                             \
   diagnostic(bool, PrintNMethods, false,                                    \
@@ -794,7 +821,7 @@ class CommandLineFlags {
   product(bool, ClassUnloading, true,                                       \
           "Do unloading of classes")                                        \
                                                                             \
-  diagnostic(bool, LinkWellKnownClasses, true,                              \
+  diagnostic(bool, LinkWellKnownClasses, false,                             \
           "Resolve a well known class as soon as its name is seen")         \
                                                                             \
   develop(bool, DisableStartThread, false,                                  \
@@ -808,8 +835,21 @@ class CommandLineFlags {
           "Prints the system dictionary at exit")                           \
                                                                             \
   diagnostic(bool, UnsyncloadClass, false,                                  \
-          "Unstable: VM calls loadClass unsynchronized. Custom classloader "\
-          "must call VM synchronized for findClass & defineClass")          \
+          "Unstable: VM calls loadClass unsynchronized. Custom "            \
+          "class loader  must call VM synchronized for findClass "          \
+          "and defineClass.")                                               \
+                                                                            \
+  product(bool, AlwaysLockClassLoader, false,                               \
+          "Require the VM to acquire the class loader lock before calling " \
+          "loadClass() even for class loaders registering "                 \
+          "as parallel capable. Default false. ")                           \
+                                                                            \
+  product(bool, AllowParallelDefineClass, false,                            \
+          "Allow parallel defineClass requests for class loaders "          \
+          "registering as parallel capable. Default false")                 \
+                                                                            \
+  product(bool, MustCallLoadClassInternal, false,                           \
+          "Call loadClassInternal() rather than loadClass().Default false") \
                                                                             \
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls (for SOLARIS only)")       \
@@ -833,7 +873,7 @@ class CommandLineFlags {
           "Use LWP-based instead of libthread-based synchronization "       \
           "(SPARC only)")                                                   \
                                                                             \
-  product(ccstr, SyncKnobs, "",                                             \
+  product(ccstr, SyncKnobs, NULL,                                           \
           "(Unstable) Various monitor synchronization tunables")            \
                                                                             \
   product(intx, EmitSync, 0,                                                \
@@ -976,6 +1016,12 @@ class CommandLineFlags {
   product(bool, UseXmmI2F, false,                                           \
           "Use SSE2 CVTDQ2PS instruction to convert Integer to Float")      \
                                                                             \
+  product(bool, UseXMMForArrayCopy, false,                                  \
+          "Use SSE2 MOVQ instruction for Arraycopy")                        \
+                                                                            \
+  product(bool, UseUnalignedLoadStores, false,                              \
+          "Use SSE2 MOVDQU instruction for Arraycopy")                      \
+                                                                            \
   product(intx, FieldsAllocationStyle, 1,                                   \
           "0 - type based with oops first, 1 - with oops last")             \
                                                                             \
@@ -1017,7 +1063,7 @@ class CommandLineFlags {
   notproduct(bool, TraceJVMCalls, false,                                    \
           "Trace JVM calls")                                                \
                                                                             \
-  product(ccstr, TraceJVMTI, "",                                            \
+  product(ccstr, TraceJVMTI, NULL,                                          \
           "Trace flags for JVMTI functions and events")                     \
                                                                             \
   /* This option can change an EMCP method into an obsolete method. */      \
@@ -1124,7 +1170,10 @@ class CommandLineFlags {
   /* gc */                                                                  \
                                                                             \
   product(bool, UseSerialGC, false,                                         \
-          "Tells whether the VM should use serial garbage collector")       \
+          "Use the serial garbage collector")                               \
+                                                                            \
+  experimental(bool, UseG1GC, false,                                        \
+          "Use the Garbage-First garbage collector")                        \
                                                                             \
   product(bool, UseParallelGC, false,                                       \
           "Use the Parallel Scavenge garbage collector")                    \
@@ -1138,10 +1187,6 @@ class CommandLineFlags {
   product(bool, UseParallelDensePrefixUpdate, true,                         \
           "In the Parallel Old garbage collector use parallel dense"        \
           " prefix update")                                                 \
-                                                                            \
-  develop(bool, UseParallelOldGCChunkPointerCalc, true,                     \
-          "In the Parallel Old garbage collector use chucks to calculate"   \
-          " new object locations")                                          \
                                                                             \
   product(uintx, HeapMaximumCompactionInterval, 20,                         \
           "How often should we maximally compact the heap (not allowing "   \
@@ -1171,21 +1216,18 @@ class CommandLineFlags {
   product(uintx, ParallelCMSThreads, 0,                                     \
           "Max number of threads CMS will use for concurrent work")         \
                                                                             \
-  develop(bool, VerifyParallelOldWithMarkSweep, false,                      \
-          "Use the MarkSweep code to verify phases of Parallel Old")        \
+  develop(bool, ParallelOldGCSplitALot, false,                              \
+          "Provoke splitting (copying data from a young gen space to"       \
+          "multiple destination spaces)")                                   \
                                                                             \
-  develop(uintx, VerifyParallelOldWithMarkSweepInterval, 1,                 \
-          "Interval at which the MarkSweep code is used to verify "         \
-          "phases of Parallel Old")                                         \
+  develop(uintx, ParallelOldGCSplitInterval, 3,                             \
+          "How often to provoke splitting a young gen space")               \
                                                                             \
-  develop(bool, ParallelOldMTUnsafeMarkBitMap, false,                       \
-          "Use the Parallel Old MT unsafe in marking the bitmap")           \
+  develop(bool, TraceRegionTasksQueuing, false,                             \
+          "Trace the queuing of the region tasks")                          \
                                                                             \
-  develop(bool, ParallelOldMTUnsafeUpdateLiveData, false,                   \
-          "Use the Parallel Old MT unsafe in update of live size")          \
-                                                                            \
-  develop(bool, TraceChunkTasksQueuing, false,                              \
-          "Trace the queuing of the chunk tasks")                           \
+  product(uintx, ParallelMarkingThreads, 0,                                 \
+          "Number of marking threads concurrent gc will use")               \
                                                                             \
   product(uintx, YoungPLABSize, 4096,                                       \
           "Size of young gen promotion labs (in HeapWords)")                \
@@ -1265,7 +1307,14 @@ class CommandLineFlags {
   product(intx, ParGCArrayScanChunk, 50,                                    \
           "Scan a subset and push remainder, if array is bigger than this") \
                                                                             \
-  product(intx, ParGCDesiredObjsFromOverflowList, 20,                       \
+  notproduct(bool, ParGCWorkQueueOverflowALot, false,                       \
+          "Whether we should simulate work queue overflow in ParNew")       \
+                                                                            \
+  notproduct(uintx, ParGCWorkQueueOverflowInterval, 1000,                   \
+          "An `interval' counter that determines how frequently"            \
+          " we simulate overflow; a smaller number increases frequency")    \
+                                                                            \
+  product(uintx, ParGCDesiredObjsFromOverflowList, 20,                      \
           "The desired number of objects to claim from the overflow list")  \
                                                                             \
   product(uintx, CMSParPromoteBlocksToClaim, 50,                            \
@@ -1282,6 +1331,12 @@ class CommandLineFlags {
   product(intx, CMSYoungGenPerWorker, 16*M,                                 \
           "The amount of young gen chosen by default per GC worker "        \
           "thread available ")                                              \
+                                                                            \
+  product(bool, GCOverheadReporting, false,                                 \
+         "Enables the GC overhead reporting facility")                      \
+                                                                            \
+  product(intx, GCOverheadReportingPeriodMS, 100,                           \
+          "Reporting period for conc GC overhead reporting, in ms ")        \
                                                                             \
   product(bool, CMSIncrementalMode, false,                                  \
           "Whether CMS GC should operate in \"incremental\" mode")          \
@@ -1371,18 +1426,18 @@ class CommandLineFlags {
   develop(bool, CMSOverflowEarlyRestoration, false,                         \
           "Whether preserved marks should be restored early")               \
                                                                             \
-  product(uintx, CMSMarkStackSize, 32*K,                                    \
+  product(uintx, CMSMarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),           \
           "Size of CMS marking stack")                                      \
                                                                             \
-  product(uintx, CMSMarkStackSizeMax, 4*M,                                  \
+  product(uintx, CMSMarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),       \
           "Max size of CMS marking stack")                                  \
                                                                             \
   notproduct(bool, CMSMarkStackOverflowALot, false,                         \
           "Whether we should simulate frequent marking stack / work queue"  \
           " overflow")                                                      \
                                                                             \
-  notproduct(intx, CMSMarkStackOverflowInterval, 1000,                      \
-          "A per-thread `interval' counter that determines how frequently"  \
+  notproduct(uintx, CMSMarkStackOverflowInterval, 1000,                     \
+          "An `interval' counter that determines how frequently"            \
           " we simulate overflow; a smaller number increases frequency")    \
                                                                             \
   product(uintx, CMSMaxAbortablePrecleanLoops, 0,                           \
@@ -1446,7 +1501,7 @@ class CommandLineFlags {
           "CMSPrecleanNumerator:CMSPrecleanDenominator yields convergence"  \
           " ratio")                                                         \
                                                                             \
-  product(bool, CMSPrecleanRefLists1, false,                                \
+  product(bool, CMSPrecleanRefLists1, true,                                 \
           "Preclean ref lists during (initial) preclean phase")             \
                                                                             \
   product(bool, CMSPrecleanRefLists2, false,                                \
@@ -1600,7 +1655,14 @@ class CommandLineFlags {
   develop(uintx, WorkStealingYieldsBeforeSleep, 1000,                       \
           "Number of yields before a sleep is done during workstealing")    \
                                                                             \
-  product(uintx, PreserveMarkStackSize, 40,                                 \
+  develop(uintx, WorkStealingHardSpins, 4096,                               \
+          "Number of iterations in a spin loop between checks on "          \
+          "time out of hard spin")                                          \
+                                                                            \
+  develop(uintx, WorkStealingSpinToYieldRatio, 10,                          \
+          "Ratio of hard spins to calls to yield")                          \
+                                                                            \
+  product(uintx, PreserveMarkStackSize, 1024,                               \
            "Size for stack used in promotion failure handling")             \
                                                                             \
   product_pd(bool, UseTLAB, "Use thread-local object allocation")           \
@@ -1610,6 +1672,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, ZeroTLAB, false,                                            \
           "Zero out the newly created TLAB")                                \
+                                                                            \
+  product(bool, FastTLABRefill, true,                                       \
+          "Use fast TLAB refill code")                                      \
                                                                             \
   product(bool, PrintTLAB, false,                                           \
           "Print various TLAB related information")                         \
@@ -1799,6 +1864,9 @@ class CommandLineFlags {
                                                                             \
   diagnostic(bool, VerifyDuringGC, false,                                   \
           "Verify memory system during GC (between phases)")                \
+                                                                            \
+  diagnostic(bool, GCParallelVerificationEnabled, true,                     \
+          "Enable parallel memory system verification")                     \
                                                                             \
   diagnostic(bool, VerifyRememberedSets, false,                             \
           "Verify GC remembered sets")                                      \
@@ -2125,6 +2193,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, PrintVMOptions, trueInDebug,                                \
          "print VM flag settings")                                          \
+                                                                            \
+  product(bool, IgnoreUnrecognizedVMOptions, false,                         \
+         "Ignore unrecognized VM options")                                  \
                                                                             \
   diagnostic(bool, SerializeVMOutput, true,                                 \
          "Use a mutex to serialize output to tty and hotspot.log")          \
@@ -2527,7 +2598,7 @@ class CommandLineFlags {
   develop(intx, MaxRecursiveInlineLevel, 1,                                 \
           "maximum number of nested recursive calls that are inlined")      \
                                                                             \
-  develop(intx, InlineSmallCode, 1000,                                      \
+  product(intx, InlineSmallCode, 1000,                                      \
           "Only inline already compiled methods if their code size is "     \
           "less than this")                                                 \
                                                                             \
@@ -2758,7 +2829,7 @@ class CommandLineFlags {
   product(intx, TargetSurvivorRatio,    50,                                 \
           "Desired percentage of survivor space used after scavenge")       \
                                                                             \
-  product(intx, MarkSweepDeadRatio,     5,                                  \
+  product(uintx, MarkSweepDeadRatio,     5,                                 \
           "Percentage (0-100) of the old gen allowed as dead wood."         \
           "Serial mark sweep treats this as both the min and max value."    \
           "CMS uses this value only if it falls back to mark sweep."        \
@@ -2767,7 +2838,7 @@ class CommandLineFlags {
           "either completely full or completely empty.  Par compact also"   \
           "has a smaller default value; see arguments.cpp.")                \
                                                                             \
-  product(intx, PermMarkSweepDeadRatio,    20,                              \
+  product(uintx, PermMarkSweepDeadRatio,    20,                             \
           "Percentage (0-100) of the perm gen allowed as dead wood."        \
           "See MarkSweepDeadRatio for collector-specific comments.")        \
                                                                             \
@@ -2810,6 +2881,12 @@ class CommandLineFlags {
   product(uintx, GCDrainStackTargetSize, 64,                                \
           "how many entries we'll try to leave on the stack during "        \
           "parallel GC")                                                    \
+                                                                            \
+  product(intx, DCQBarrierQueueBufferSize, 256,                             \
+          "Number of elements in a dirty card queue buffer")                \
+                                                                            \
+  product(intx, DCQBarrierProcessCompletedThreshold, 5,                     \
+          "Number of completed dirty card buffers to trigger processing.")  \
                                                                             \
   /* stack parameters */                                                    \
   product_pd(intx, StackYellowPages,                                        \
@@ -3190,6 +3267,9 @@ class CommandLineFlags {
           "Skip assert() and verify() which page-in unwanted shared "       \
           "objects. ")                                                      \
                                                                             \
+  product(bool, AnonymousClasses, false,                                    \
+          "support sun.misc.Unsafe.defineAnonymousClass")                   \
+                                                                            \
   product(bool, TaggedStackInterpreter, false,                              \
           "Insert tags in interpreter execution stack for oopmap generaion")\
                                                                             \
@@ -3219,9 +3299,10 @@ class CommandLineFlags {
   diagnostic(bool, PrintDTraceDOF, false,                                   \
              "Print the DTrace DOF passed to the system for JSDT probes")   \
                                                                             \
-  product(bool, UseVMInterruptibleIO, true,                                 \
+  product(bool, UseVMInterruptibleIO, false,                                \
           "(Unstable, Solaris-specific) Thread interrupt before or with "   \
-          "EINTR for I/O operations results in OS_INTRPT")
+          "EINTR for I/O operations results in OS_INTRPT. The default value"\
+          " of this flag is true for JDK 6 and earliers")
 
 
 /*
@@ -3232,6 +3313,7 @@ class CommandLineFlags {
 #define DECLARE_PRODUCT_FLAG(type, name, value, doc)    extern "C" type name;
 #define DECLARE_PD_PRODUCT_FLAG(type, name, doc)        extern "C" type name;
 #define DECLARE_DIAGNOSTIC_FLAG(type, name, value, doc) extern "C" type name;
+#define DECLARE_EXPERIMENTAL_FLAG(type, name, value, doc) extern "C" type name;
 #define DECLARE_MANAGEABLE_FLAG(type, name, value, doc) extern "C" type name;
 #define DECLARE_PRODUCT_RW_FLAG(type, name, value, doc) extern "C" type name;
 #ifdef PRODUCT
@@ -3254,6 +3336,7 @@ class CommandLineFlags {
 #define MATERIALIZE_PRODUCT_FLAG(type, name, value, doc)   type name = value;
 #define MATERIALIZE_PD_PRODUCT_FLAG(type, name, doc)       type name = pd_##name;
 #define MATERIALIZE_DIAGNOSTIC_FLAG(type, name, value, doc) type name = value;
+#define MATERIALIZE_EXPERIMENTAL_FLAG(type, name, value, doc) type name = value;
 #define MATERIALIZE_MANAGEABLE_FLAG(type, name, value, doc) type name = value;
 #define MATERIALIZE_PRODUCT_RW_FLAG(type, name, value, doc) type name = value;
 #ifdef PRODUCT
@@ -3271,6 +3354,6 @@ class CommandLineFlags {
 #define MATERIALIZE_LP64_PRODUCT_FLAG(type, name, value, doc) /* flag is constant */
 #endif // _LP64
 
-RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG, DECLARE_LP64_PRODUCT_FLAG)
+RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG, DECLARE_LP64_PRODUCT_FLAG)
 
 RUNTIME_OS_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG)

@@ -41,7 +41,6 @@
 
 #define JVM_DLL "jvm.dll"
 #define JAVA_DLL "java.dll"
-#define CRT_DLL "msvcr71.dll"
 
 /*
  * Prototypes.
@@ -206,7 +205,15 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
      * assumed to be present in the "JRE path" directory.  If it is not found
      * there (or "JRE path" fails to resolve), skip the explicit load and let
      * nature take its course, which is likely to be a failure to execute.
+     *
+     * (NOTE: the above statement is only true for Visual Studio 2003 and
+     *  msvcr71.dll.)
      */
+#ifdef _MSC_VER
+#if _MSC_VER < 1400
+#define CRT_DLL "msvcr71.dll"
+#endif
+#ifdef CRT_DLL
     if (GetJREPath(crtpath, MAXPATHLEN)) {
         (void)JLI_StrCat(crtpath, "\\bin\\" CRT_DLL);   /* Add crt dll */
         JLI_TraceLauncher("CRT path is %s\n", crtpath);
@@ -217,6 +224,8 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
             }
         }
     }
+#endif /* CRT_DLL */
+#endif /* _MSC_VER */
 
     /* Load the Java VM DLL */
     if ((handle = LoadLibrary(jvmpath)) == 0) {
@@ -993,8 +1002,38 @@ ContinueInNewThread0(int (JNICALL *continuation)(void *), jlong stack_size, void
     return rslt;
 }
 
-/* Linux only, empty on windows. */
+/* Unix only, empty on windows. */
 void SetJavaLauncherPlatformProps() {}
+
+/*
+ * The implementation for finding classes from the bootstrap
+ * class loader, refer to java.h
+ */
+static FindClassFromBootLoader_t *findBootClass = NULL;
+
+#ifdef _M_AMD64
+#define JVM_BCLOADER "JVM_FindClassFromClassLoader"
+#else
+#define JVM_BCLOADER "_JVM_FindClassFromClassLoader@20"
+#endif /* _M_AMD64 */
+
+jclass FindBootStrapClass(JNIEnv *env, const char *classname)
+{
+   HMODULE hJvm;
+
+   if (findBootClass == NULL) {
+       hJvm = GetModuleHandle(JVM_DLL);
+       if (hJvm == NULL) return NULL;
+       /* need to use the demangled entry point */
+       findBootClass = (FindClassFromBootLoader_t *)GetProcAddress(hJvm,
+            JVM_BCLOADER);
+       if (findBootClass == NULL) {
+          JLI_ReportErrorMessage(DLL_ERROR4, JVM_BCLOADER);
+          return NULL;
+       }
+   }
+   return findBootClass(env, classname, JNI_FALSE, (jobject)NULL, JNI_FALSE);
+}
 
 void
 InitLauncher(boolean javaw)

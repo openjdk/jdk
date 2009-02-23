@@ -100,16 +100,17 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type* *result2) {
 
   // Do the range check
   if (GenerateRangeChecks && need_range_check) {
-    // Range is constant in array-oop, so we can use the original state of mem
-    Node* len = load_array_length(ary);
     Node* tst;
     if (sizetype->_hi <= 0) {
-      // If the greatest array bound is negative, we can conclude that we're
+      // The greatest array bound is negative, so we can conclude that we're
       // compiling unreachable code, but the unsigned compare trick used below
       // only works with non-negative lengths.  Instead, hack "tst" to be zero so
       // the uncommon_trap path will always be taken.
       tst = _gvn.intcon(0);
     } else {
+      // Range is constant in array-oop, so we can use the original state of mem
+      Node* len = load_array_length(ary);
+
       // Test length vs index (standard trick using unsigned compare)
       Node* chk = _gvn.transform( new (C, 3) CmpUNode(idx, len) );
       BoolTest::mask btest = BoolTest::lt;
@@ -137,9 +138,12 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type* *result2) {
   // Check for always knowing you are throwing a range-check exception
   if (stopped())  return top();
 
-  Node* ptr = array_element_address( ary, idx, type, sizetype);
+  Node* ptr = array_element_address(ary, idx, type, sizetype);
 
   if (result2 != NULL)  *result2 = elemtype;
+
+  assert(ptr != top(), "top should go hand-in-hand with stopped");
+
   return ptr;
 }
 

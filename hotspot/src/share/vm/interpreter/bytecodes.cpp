@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,19 @@ Bytecodes::Code Bytecodes::non_breakpoint_code_at(address bcp, methodOop method)
   return method->orig_bytecode_at(method->bci_from(bcp));
 }
 
-int Bytecodes::special_length_at(address bcp) {
+int Bytecodes::special_length_at(address bcp, address end) {
   Code code = code_at(bcp);
   switch (code) {
   case _wide:
+    if (end != NULL && bcp + 1 >= end) {
+      return -1; // don't read past end of code buffer
+    }
     return wide_length_for(cast(*(bcp + 1)));
   case _tableswitch:
     { address aligned_bcp = (address)round_to((intptr_t)bcp + 1, jintSize);
+      if (end != NULL && aligned_bcp + 3*jintSize >= end) {
+        return -1; // don't read past end of code buffer
+      }
       jlong lo = (jint)Bytes::get_Java_u4(aligned_bcp + 1*jintSize);
       jlong hi = (jint)Bytes::get_Java_u4(aligned_bcp + 2*jintSize);
       jlong len = (aligned_bcp - bcp) + (3 + hi - lo + 1)*jintSize;
@@ -73,6 +79,9 @@ int Bytecodes::special_length_at(address bcp) {
   case _fast_binaryswitch: // fall through
   case _fast_linearswitch:
     { address aligned_bcp = (address)round_to((intptr_t)bcp + 1, jintSize);
+      if (end != NULL && aligned_bcp + 2*jintSize >= end) {
+        return -1; // don't read past end of code buffer
+      }
       jlong npairs = (jint)Bytes::get_Java_u4(aligned_bcp + jintSize);
       jlong len = (aligned_bcp - bcp) + (2 + 2*npairs)*jintSize;
       // only return len if it can be represented as a positive int;
@@ -90,14 +99,17 @@ int Bytecodes::special_length_at(address bcp) {
 // verifier when reading in bytecode to verify.  Other mechanisms that
 // run at runtime (such as generateOopMaps) need to iterate over the code
 // and don't expect to see breakpoints: they want to see the instruction
-// which was replaces so that they can get the correct length and find
+// which was replaced so that they can get the correct length and find
 // the next bytecode.
-int Bytecodes::raw_special_length_at(address bcp) {
+//
+// 'end' indicates the end of the code buffer, which we should not try to read
+// past.
+int Bytecodes::raw_special_length_at(address bcp, address end) {
   Code code = code_or_bp_at(bcp);
   if (code == _breakpoint) {
     return 1;
   } else {
-    return special_length_at(bcp);
+    return special_length_at(bcp, end);
   }
 }
 

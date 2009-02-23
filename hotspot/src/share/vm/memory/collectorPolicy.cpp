@@ -31,11 +31,11 @@ void CollectorPolicy::initialize_flags() {
   if (PermSize > MaxPermSize) {
     MaxPermSize = PermSize;
   }
-  PermSize = align_size_down(PermSize, min_alignment());
+  PermSize = MAX2(min_alignment(), align_size_down_(PermSize, min_alignment()));
   MaxPermSize = align_size_up(MaxPermSize, max_alignment());
 
-  MinPermHeapExpansion = align_size_down(MinPermHeapExpansion, min_alignment());
-  MaxPermHeapExpansion = align_size_down(MaxPermHeapExpansion, min_alignment());
+  MinPermHeapExpansion = MAX2(min_alignment(), align_size_down_(MinPermHeapExpansion, min_alignment()));
+  MaxPermHeapExpansion = MAX2(min_alignment(), align_size_down_(MaxPermHeapExpansion, min_alignment()));
 
   MinHeapDeltaBytes = align_size_up(MinHeapDeltaBytes, min_alignment());
 
@@ -55,25 +55,21 @@ void CollectorPolicy::initialize_flags() {
 
 void CollectorPolicy::initialize_size_info() {
   // User inputs from -mx and ms are aligned
-  _initial_heap_byte_size = align_size_up(Arguments::initial_heap_size(),
-                                          min_alignment());
-  set_min_heap_byte_size(align_size_up(Arguments::min_heap_size(),
-                                          min_alignment()));
-  set_max_heap_byte_size(align_size_up(MaxHeapSize, max_alignment()));
-
-  // Check validity of heap parameters from launcher
+  set_initial_heap_byte_size(Arguments::initial_heap_size());
   if (initial_heap_byte_size() == 0) {
     set_initial_heap_byte_size(NewSize + OldSize);
-  } else {
-    Universe::check_alignment(initial_heap_byte_size(), min_alignment(),
-                            "initial heap");
   }
+  set_initial_heap_byte_size(align_size_up(_initial_heap_byte_size,
+                                           min_alignment()));
+
+  set_min_heap_byte_size(Arguments::min_heap_size());
   if (min_heap_byte_size() == 0) {
     set_min_heap_byte_size(NewSize + OldSize);
-  } else {
-    Universe::check_alignment(min_heap_byte_size(), min_alignment(),
-                            "initial heap");
   }
+  set_min_heap_byte_size(align_size_up(_min_heap_byte_size,
+                                       min_alignment()));
+
+  set_max_heap_byte_size(align_size_up(MaxHeapSize, max_alignment()));
 
   // Check heap parameter properties
   if (initial_heap_byte_size() < M) {
@@ -121,8 +117,6 @@ GenRemSet* CollectorPolicy::create_rem_set(MemRegion whole_heap,
                                            int max_covered_regions) {
   switch (rem_set_name()) {
   case GenRemSet::CardTable: {
-    if (barrier_set_name() != BarrierSet::CardTableModRef)
-      vm_exit_during_initialization("Mismatch between RS and BS.");
     CardTableRS* res = new CardTableRS(whole_heap, max_covered_regions);
     return res;
   }
@@ -345,7 +339,7 @@ void GenCollectorPolicy::initialize_size_info() {
 
     // At this point all three sizes have been checked against the
     // maximum sizes but have not been checked for consistency
-    // amoung the three.
+    // among the three.
 
     // Final check min <= initial <= max
     set_min_gen0_size(MIN2(_min_gen0_size, _max_gen0_size));

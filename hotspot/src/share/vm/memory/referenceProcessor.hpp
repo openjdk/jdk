@@ -23,7 +23,7 @@
  */
 
 // ReferenceProcessor class encapsulates the per-"collector" processing
-// of "weak" references for GC. The interface is useful for supporting
+// of java.lang.Reference objects for GC. The interface is useful for supporting
 // a generational abstraction, in particular when there are multiple
 // generations that are being independently collected -- possibly
 // concurrently and/or incrementally.  Note, however, that the
@@ -54,6 +54,14 @@ class ReferenceProcessor : public CHeapObj {
   bool        _discovery_is_atomic;   // if discovery is atomic wrt
                                       // other collectors in configuration
   bool        _discovery_is_mt;       // true if reference discovery is MT.
+  // If true, setting "next" field of a discovered refs list requires
+  // write barrier(s).  (Must be true if used in a collector in which
+  // elements of a discovered list may be moved during discovery: for
+  // example, a collector like Garbage-First that moves objects during a
+  // long-term concurrent marking phase that does weak reference
+  // discovery.)
+  bool        _discovered_list_needs_barrier;
+  BarrierSet* _bs;                    // Cached copy of BarrierSet.
   bool        _enqueuing_is_done;     // true if all weak references enqueued
   bool        _processing_is_mt;      // true during phases when
                                       // reference processing is MT.
@@ -66,6 +74,14 @@ class ReferenceProcessor : public CHeapObj {
   // of an oop (the field is currently initialized to NULL for
   // all collectors but the CMS collector).
   BoolObjectClosure* _is_alive_non_header;
+
+  // Soft ref clearing policies
+  // . the default policy
+  static ReferencePolicy*   _default_soft_ref_policy;
+  // . the "clear all" policy
+  static ReferencePolicy*   _always_clear_soft_ref_policy;
+  // . the current policy below is either one of the above
+  ReferencePolicy*          _current_soft_ref_policy;
 
   // The discovered ref lists themselves
 
@@ -82,6 +98,12 @@ class ReferenceProcessor : public CHeapObj {
   DiscoveredList* discovered_soft_refs() { return _discoveredSoftRefs; }
   static oop  sentinel_ref()             { return _sentinelRef; }
   static oop* adr_sentinel_ref()         { return &_sentinelRef; }
+  ReferencePolicy* setup_policy(bool always_clear) {
+    _current_soft_ref_policy = always_clear ?
+      _always_clear_soft_ref_policy : _default_soft_ref_policy;
+    _current_soft_ref_policy->setup();   // snapshot the policy threshold
+    return _current_soft_ref_policy;
+  }
 
  public:
   // Process references with a certain reachability level.
@@ -196,7 +218,6 @@ class ReferenceProcessor : public CHeapObj {
   void verify_ok_to_handle_reflists() PRODUCT_RETURN;
 
   void abandon_partial_discovered_list(DiscoveredList& refs_list);
-  void abandon_partial_discovered_list_arr(DiscoveredList refs_lists[]);
 
   // Calculate the number of jni handles.
   unsigned int count_jni_refs();
@@ -217,6 +238,8 @@ class ReferenceProcessor : public CHeapObj {
     _discovery_is_atomic(true),
     _enqueuing_is_done(false),
     _discovery_is_mt(false),
+    _discovered_list_needs_barrier(false),
+    _bs(NULL),
     _is_alive_non_header(NULL),
     _num_q(0),
     _processing_is_mt(false),
@@ -224,8 +247,10 @@ class ReferenceProcessor : public CHeapObj {
   {}
 
   ReferenceProcessor(MemRegion span, bool atomic_discovery,
-                     bool mt_discovery, int mt_degree = 1,
-                     bool mt_processing = false);
+                     bool mt_discovery,
+                     int mt_degree = 1,
+                     bool mt_processing = false,
+                     bool discovered_list_needs_barrier = false);
 
   // Allocates and initializes a reference processor.
   static ReferenceProcessor* create_ref_processor(
@@ -234,8 +259,8 @@ class ReferenceProcessor : public CHeapObj {
     bool               mt_discovery,
     BoolObjectClosure* is_alive_non_header = NULL,
     int                parallel_gc_threads = 1,
-    bool               mt_processing = false);
-
+    bool               mt_processing = false,
+    bool               discovered_list_needs_barrier = false);
   // RefDiscoveryPolicy values
   enum {
     ReferenceBasedDiscovery = 0,
@@ -286,8 +311,7 @@ class ReferenceProcessor : public CHeapObj {
   bool discover_reference(oop obj, ReferenceType rt);
 
   // Process references found during GC (called by the garbage collector)
-  void process_discovered_references(ReferencePolicy*             policy,
-                                     BoolObjectClosure*           is_alive,
+  void process_discovered_references(BoolObjectClosure*           is_alive,
                                      OopClosure*                  keep_alive,
                                      VoidClosure*                 complete_gc,
                                      AbstractRefProcTaskExecutor* task_executor);
@@ -295,6 +319,11 @@ class ReferenceProcessor : public CHeapObj {
  public:
   // Enqueue references at end of GC (called by the garbage collector)
   bool enqueue_discovered_references(AbstractRefProcTaskExecutor* task_executor = NULL);
+
+  // If a discovery is in process that is being superceded, abandon it: all
+  // the discovered lists will be empty, and all the objects on them will
+  // have NULL discovered fields.  Must be called only at a safepoint.
+  void abandon_partial_discovery();
 
   // debugging
   void verify_no_references_recorded() PRODUCT_RETURN;

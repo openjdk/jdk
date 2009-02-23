@@ -25,20 +25,18 @@
 
 package com.sun.tools.javadoc;
 
+import java.lang.reflect.Modifier;
+import java.text.CollationKey;
+
 import com.sun.javadoc.*;
 
+import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Position;
-import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
-
-import java.text.CollationKey;
-
-import java.lang.reflect.Modifier;
 
 /**
  * Represents a method or constructor of a java class.
@@ -267,7 +265,7 @@ public abstract class ExecutableMemberDocImpl
      */
     public SourcePosition position() {
         if (sym.enclClass().sourcefile == null) return null;
-        return SourcePositionImpl.make(sym.enclClass().sourcefile.toString(),
+        return SourcePositionImpl.make(sym.enclClass().sourcefile,
                                        (tree==null) ? 0 : tree.pos,
                                        lineMap);
     }

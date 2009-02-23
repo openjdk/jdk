@@ -263,7 +263,7 @@ void VMError::report(outputStream* st) {
          st->print("# java.lang.OutOfMemoryError: ");
          if (_size) {
            st->print("requested ");
-           sprintf(buf,"%d",_size);
+           sprintf(buf,SIZE_FORMAT,_size);
            st->print(buf);
            st->print(" bytes");
            if (_message != NULL) {
@@ -332,6 +332,8 @@ void VMError::report(outputStream* st) {
 
      // VM version
      st->print_cr("#");
+     JDK_Version::current().to_string(buf, sizeof(buf));
+     st->print_cr("# JRE version: %s", buf);
      st->print_cr("# Java VM: %s (%s %s %s %s)",
                    Abstract_VM_Version::vm_name(),
                    Abstract_VM_Version::vm_release(),
@@ -672,6 +674,11 @@ void VMError::report_and_die() {
     reset_signal_handlers();
 
   } else {
+    // If UseOsErrorReporting we call this for each level of the call stack
+    // while searching for the exception handler.  Only the first level needs
+    // to be reported.
+    if (UseOSErrorReporting && log_done) return;
+
     // This is not the first error, see if it happened in a different thread
     // or in the same thread during error reporting.
     if (first_error_tid != mytid) {

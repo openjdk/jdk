@@ -113,9 +113,9 @@ public abstract class Configuration {
     public boolean keywords = false;
 
     /**
-     * The meta tag keywords sole-instance.
+     * The meta tag keywords instance.
      */
-    public final MetaKeywords metakeywords = MetaKeywords.getInstance(this);
+    public final MetaKeywords metakeywords = new MetaKeywords(this);
 
     /**
      * The list of doc-file subdirectories to exclude
@@ -211,12 +211,12 @@ public abstract class Configuration {
     public boolean notimestamp= false;
 
     /**
-     * The package grouping sole-instance.
+     * The package grouping instance.
      */
-    public final Group group = Group.getInstance(this);
+    public final Group group = new Group(this);
 
     /**
-     * The tracker of external package links (sole-instance).
+     * The tracker of external package links.
      */
     public final Extern extern = new Extern(this);
 
@@ -441,13 +441,13 @@ public abstract class Configuration {
      * @param customTagStrs the set two dimentional arrays of strings.  These arrays contain
      * either -tag or -taglet arguments.
      */
-    private void initTagletManager(Set customTagStrs) {
+    private void initTagletManager(Set<String[]> customTagStrs) {
         tagletManager = tagletManager == null ?
             new TagletManager(nosince, showversion, showauthor, message) :
             tagletManager;
         String[] args;
-        for (Iterator it = customTagStrs.iterator(); it.hasNext(); ) {
-            args = (String[]) it.next();
+        for (Iterator<String[]> it = customTagStrs.iterator(); it.hasNext(); ) {
+            args = it.next();
             if (args[0].equals("-taglet")) {
                 tagletManager.addCustomTag(args[1], tagletpath);
                 continue;
@@ -705,6 +705,11 @@ public abstract class Configuration {
             Configuration.class.getResourceAsStream(DEFAULT_BUILDER_XML) :
             new FileInputStream(new File(builderXMLPath));
     }
+
+    /**
+     * Return the Locale for this document.
+     */
+    public abstract Locale getLocale();
 
     /**
      * Return the comparator that will be used to sort member documentation.

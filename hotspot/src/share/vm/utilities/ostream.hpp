@@ -86,6 +86,10 @@ class outputStream : public ResourceObj {
    // Time stamp
    TimeStamp& time_stamp() { return _stamp; }
    void stamp();
+   void stamp(bool guard, const char* prefix, const char* suffix);
+   void stamp(bool guard) {
+     stamp(guard, "", ": ");
+   }
    // Date stamp
    void date_stamp(bool guard, const char* prefix, const char* suffix);
    // A simplified call that includes a suffix of ": "

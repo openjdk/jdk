@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,10 @@ package com.sun.tools.javadoc;
 import com.sun.javadoc.*;
 
 import com.sun.tools.javac.main.CommandLine;
-import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Options;
-
-import com.sun.tools.javadoc.Messager;
-import com.sun.tools.javadoc.DocletInvoker;
-import com.sun.tools.javadoc.RootDocImpl;
-import com.sun.tools.javadoc.ModifierFilter;
 
 import java.io.IOException;
 import java.io.File;
@@ -60,10 +54,8 @@ class Start {
     /** Context for this invocation. */
     private final Context context;
 
-    /**
-     * Name of the program
-     */
     private final String defaultDocletClassName;
+    private final ClassLoader docletParentClassLoader;
 
     private static final String javadocName = "javadoc";
 
@@ -97,19 +89,43 @@ class Start {
           PrintWriter warnWriter,
           PrintWriter noticeWriter,
           String defaultDocletClassName) {
+        this(programName, errWriter, warnWriter, noticeWriter, defaultDocletClassName, null);
+    }
+
+    Start(String programName,
+          PrintWriter errWriter,
+          PrintWriter warnWriter,
+          PrintWriter noticeWriter,
+          String defaultDocletClassName,
+          ClassLoader docletParentClassLoader) {
         context = new Context();
         messager = new Messager(context, programName, errWriter, warnWriter, noticeWriter);
         this.defaultDocletClassName = defaultDocletClassName;
+        this.docletParentClassLoader = docletParentClassLoader;
     }
 
     Start(String programName, String defaultDocletClassName) {
+        this(programName, defaultDocletClassName, null);
+    }
+
+    Start(String programName, String defaultDocletClassName,
+          ClassLoader docletParentClassLoader) {
         context = new Context();
         messager = new Messager(context, programName);
         this.defaultDocletClassName = defaultDocletClassName;
+        this.docletParentClassLoader = docletParentClassLoader;
+    }
+
+    Start(String programName, ClassLoader docletParentClassLoader) {
+        this(programName, standardDocletClassName, docletParentClassLoader);
     }
 
     Start(String programName) {
         this(programName, standardDocletClassName);
+    }
+
+    Start(ClassLoader docletParentClassLoader) {
+        this(javadocName, docletParentClassLoader);
     }
 
     Start() {
@@ -139,7 +155,7 @@ class Start {
     /**
      * Main program - external wrapper
      */
-    int begin(String argv[]) {
+    int begin(String... argv) {
         boolean failed = false;
 
         try {
@@ -178,7 +194,7 @@ class Start {
     /**
      * Main program - internal
      */
-    private boolean parseAndExecute(String argv[]) throws IOException {
+    private boolean parseAndExecute(String... argv) throws IOException {
         long tm = System.currentTimeMillis();
 
         ListBuffer<String> javaNames = new ListBuffer<String>();
@@ -396,7 +412,8 @@ class Start {
 
         // attempt to find doclet
         docletInvoker = new DocletInvoker(messager,
-                                          docletClassName, docletPath);
+                                          docletClassName, docletPath,
+                                          docletParentClassLoader);
     }
 
     private void setFilter(long filterBits) {

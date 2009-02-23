@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  * have any questions.
  */
 
+#include "awt.h"
 #include <math.h>
 #include "jlong.h"
 #include "awt_Font.h"
@@ -195,7 +196,7 @@ AwtFont* AwtFont::GetFont(JNIEnv *env, jobject font,
 }
 
 // Get suitable CHARSET from charset string provided by font configuration.
-static int GetNativeCharset(WCHAR* name)
+static int GetNativeCharset(LPCWSTR name)
 {
     if (wcsstr(name, L"ANSI_CHARSET"))
         return ANSI_CHARSET;
@@ -259,7 +260,7 @@ AwtFont* AwtFont::Create(JNIEnv *env, jobject font, jint angle, jfloat awScale)
             cfnum = 0;
         }
 
-        WCHAR* wName;
+        LPCWSTR wName;
 
         awtFont = new AwtFont(cfnum, env, font);
 
@@ -269,9 +270,7 @@ AwtFont* AwtFont::Create(JNIEnv *env, jobject font, jint angle, jfloat awScale)
         if (cfnum > 0) {
             // Ask peer class for the text component font name
             jstring jTextComponentFontName = GetTextComponentFontName(env, font);
-            WCHAR* textComponentFontName = TO_WSTRING(jTextComponentFontName);
-
-            env->DeleteLocalRef(jTextComponentFontName);
+            LPCWSTR textComponentFontName = JNU_GetStringPlatformChars(env, jTextComponentFontName, NULL);
 
             awtFont->m_textInput = -1;
             for (int i = 0; i < cfnum; i++) {
@@ -282,13 +281,13 @@ AwtFont* AwtFont::Create(JNIEnv *env, jobject font, jint angle, jfloat awScale)
                 jstring nativeName =
                     (jstring)env->GetObjectField(fontDescriptor,
                                                  AwtFont::nativeNameID);
-                wName = TO_WSTRING(nativeName);
+                wName = JNU_GetStringPlatformChars(env, nativeName, NULL);
                 DASSERT(wName);
 
                 //On NT platforms, if the font is not Symbol or Dingbats
                 //use "W" version of Win32 APIs directly, info the FontDescription
                 //no need to convert characters from Unicode to locale encodings.
-                if (IS_NT && GetNativeCharset(wName) != SYMBOL_CHARSET) {
+                if (GetNativeCharset(wName) != SYMBOL_CHARSET) {
                     env->SetBooleanField(fontDescriptor, AwtFont::useUnicodeID, TRUE);
                 }
 
@@ -299,9 +298,11 @@ AwtFont* AwtFont::Create(JNIEnv *env, jobject font, jint angle, jfloat awScale)
                         (wcscmp(wName, textComponentFontName) == 0)) {
                     awtFont->m_textInput = i;
                 }
-                HFONT hfonttmp = CreateHFont(wName, fontStyle, fontSize,
+                HFONT hfonttmp = CreateHFont(const_cast<LPWSTR>(wName), fontStyle, fontSize,
                                              angle, awScale);
                 awtFont->m_hFont[i] = hfonttmp;
+
+                JNU_ReleaseStringPlatformChars(env, nativeName, wName);
 
                 env->DeleteLocalRef(fontDescriptor);
                 env->DeleteLocalRef(nativeName);
@@ -311,11 +312,14 @@ AwtFont* AwtFont::Create(JNIEnv *env, jobject font, jint angle, jfloat awScale)
                 // to first component
                 awtFont->m_textInput = 0;
             }
+
+            JNU_ReleaseStringPlatformChars(env, jTextComponentFontName, textComponentFontName);
+            env->DeleteLocalRef(jTextComponentFontName);
         } else {
             // Instantiation for English version.
             jstring fontName = (jstring)env->GetObjectField(font,
                                                             AwtFont::nameID);
-            wName = TO_WSTRING(fontName);
+            wName = JNU_GetStringPlatformChars(env, fontName, NULL);
 
             WCHAR* wEName;
             if (!wcscmp(wName, L"Helvetica") || !wcscmp(wName, L"SansSerif")) {
@@ -338,6 +342,9 @@ AwtFont* AwtFont::Create(JNIEnv *env, jobject font, jint angle, jfloat awScale)
             awtFont->m_textInput = 0;
             awtFont->m_hFont[0] = CreateHFont(wEName, fontStyle, fontSize,
                                               angle, awScale);
+
+            JNU_ReleaseStringPlatformChars(env, fontName, wName);
+
             env->DeleteLocalRef(fontName);
         }
         /* The several callers of this method also set the pData field.
@@ -381,7 +388,7 @@ static void strip_tail(wchar_t* text, wchar_t* tail) { // strips tail and any po
 
 }
 
-static HFONT CreateHFont_sub(WCHAR* name, int style, int height,
+static HFONT CreateHFont_sub(LPCWSTR name, int style, int height,
                              int angle=0, float awScale=1.0f)
 {
     LOGFONTW logFont;
@@ -420,18 +427,7 @@ static HFONT CreateHFont_sub(WCHAR* name, int style, int height,
     strip_tail(tmpname,L"Italic");
     strip_tail(tmpname,L"Bold");
     wcscpy(&(logFont.lfFaceName[0]), tmpname);
-    HFONT hFont;
-    if (IS_WIN95) {
-#ifdef WIN32
-        DASSERT(IS_WIN95);
-#endif
-        HDC hdc = ::GetDC(NULL);
-        ::EnumFontFamiliesEx(hdc, &logFont, (FONTENUMPROC)FindFamilyName,
-                             (LPARAM)tmpname, 0L);
-        ::ReleaseDC(NULL, hdc);
-        wcscpy(&logFont.lfFaceName[0], tmpname);
-    }
-    hFont = ::CreateFontIndirectW(&logFont);
+    HFONT hFont = ::CreateFontIndirect(&logFont);
     DASSERT(hFont != NULL);
     // get a expanded or condensed version if its specified.
     if (awScale != 1.0f) {
@@ -446,7 +442,7 @@ static HFONT CreateHFont_sub(WCHAR* name, int style, int height,
         }
         avgWidth = tm.tmAveCharWidth;
         logFont.lfWidth = (LONG)((fabs)(avgWidth*awScale));
-        hFont = CreateFontIndirectW(&logFont);
+        hFont = ::CreateFontIndirect(&logFont);
         DASSERT(hFont != NULL);
         VERIFY(::ReleaseDC(0, hDC));
     }
@@ -460,15 +456,8 @@ HFONT AwtFont::CreateHFont(WCHAR* name, int style, int height,
     WCHAR longName[80];
     // 80 > (max face name(=30) + strlen("CHINESEBIG5_CHARSET"))
     // longName doesn't have to be printable.  So, it is OK not to convert.
-    if (IS_NT) {
-        //wsprintfW only works on NT.  See bugid 4123362
-        wsprintfW(longName, L"%ls-%d-%d", name, style, height);
-    } else {
-#ifdef WIN32
-        DASSERT(IS_WIN95);
-#endif
-        swprintf(longName, L"%ls-%d-%d", name, style, height);
-    }
+
+    wsprintf(longName, L"%ls-%d-%d", name, style, height);
 
     HFONT hFont = NULL;
 
@@ -682,28 +671,16 @@ SIZE  AwtFont::DrawStringSize_sub(jstring str, HDC hDC,
 
     if (arrayLength == 0) {
         int length = env->GetStringLength(str);
-        WCHAR* string = TO_WSTRING(str);
+        LPCWSTR strW = JNU_GetStringPlatformChars(env, str, NULL);
         VERIFY(::SelectObject(hDC, awtFont->GetHFont()));
         if (AwtComponent::GetRTLReadingOrder()){
-            if (IS_WIN95) {
-                // Start of conversion Code to fix arabic shaping problems
-                // with unicode support in win 95
-                LPSTR buffer =  (LPSTR) alloca((wcslen(string) + 1) * 2);
-                int count = ::WideCharToMultiByte(codePage, 0, string, length,
-                                                  buffer,
-                                                  static_cast<int>((wcslen(string) + 1) * 2),
-                                                  NULL, NULL);
-                VERIFY(!draw || ::ExtTextOutA(hDC, x, y,  ETO_RTLREADING, NULL,
-                                              buffer, count, NULL));
-                // End Of Conversion Code
-            } else {
-                VERIFY(!draw || ::ExtTextOutW(hDC, x, y, ETO_RTLREADING, NULL,
-                                              string, length, NULL));
-            }
+            VERIFY(!draw || ::ExtTextOut(hDC, x, y, ETO_RTLREADING, NULL,
+                                          strW, length, NULL));
         } else {
-            VERIFY(!draw || ::TextOutW(hDC, x, y, string, length));
+            VERIFY(!draw || ::TextOut(hDC, x, y, strW, length));
         }
-        VERIFY(::GetTextExtentPoint32W(hDC, string, length, &size));
+        VERIFY(::GetTextExtentPoint32(hDC, strW, length, &size));
+        JNU_ReleaseStringPlatformChars(env, str, strW);
     } else {
         for (int i = 0; i < arrayLength; i = i + 2) {
             jobject fontDescriptor = env->GetObjectArrayElement(array, i);
@@ -732,7 +709,7 @@ SIZE  AwtFont::DrawStringSize_sub(jstring str, HDC hDC,
              * extend buflen and bad things will happen.
              */
             unsigned char* buffer = NULL;
-            jboolean unicodeUsed = env->GetBooleanField(fontDescriptor,AwtFont::useUnicodeID);
+            jboolean unicodeUsed = env->GetBooleanField(fontDescriptor, AwtFont::useUnicodeID);
             try {
                 buffer = (unsigned char *)
                     env->GetPrimitiveArrayCritical(convertedBytes, 0);
@@ -1231,7 +1208,7 @@ class CSegTableComponent
 public:
     CSegTableComponent();
     virtual ~CSegTableComponent();
-    virtual void Create(LPWSTR name);
+    virtual void Create(LPCWSTR name);
     virtual BOOL In(USHORT iChar) { DASSERT(FALSE); return FALSE; };
     LPWSTR GetFontName(){
         DASSERT(m_lpszFontName != NULL); return m_lpszFontName;
@@ -1254,7 +1231,7 @@ CSegTableComponent::~CSegTableComponent()
     }
 }
 
-void CSegTableComponent::Create(LPWSTR name)
+void CSegTableComponent::Create(LPCWSTR name)
 {
     if (m_lpszFontName != NULL) {
         free(m_lpszFontName);
@@ -1453,7 +1430,7 @@ public:
     CStdSegTable();
     virtual ~CStdSegTable();
     BOOL IsEUDC() { return FALSE; };
-    virtual void Create(LPWSTR name);
+    virtual void Create(LPCWSTR name);
 
 protected:
     void GetData(DWORD dwOffset, LPVOID lpData, DWORD cbData);
@@ -1481,7 +1458,7 @@ inline void CStdSegTable::GetData(DWORD dwOffset,
     DASSERT(nBytes != GDI_ERROR);
 }
 
-void CStdSegTable::Create(LPWSTR name)
+void CStdSegTable::Create(LPCWSTR name)
 {
     CSegTableComponent::Create(name);
 
@@ -1509,7 +1486,7 @@ public:
     CEUDCSegTable();
     virtual ~CEUDCSegTable();
     BOOL IsEUDC() { return TRUE; };
-    virtual void Create(LPWSTR name);
+    virtual void Create(LPCWSTR name);
 
 protected:
     void GetData(DWORD dwOffset, LPVOID lpData, DWORD cbData);
@@ -1543,7 +1520,7 @@ inline void CEUDCSegTable::GetData(DWORD dwOffset,
     DASSERT(dwRead == cbData);
 }
 
-void CEUDCSegTable::Create(LPWSTR name)
+void CEUDCSegTable::Create(LPCWSTR name)
 {
 typedef struct tagHEAD{
     FIXED   sfnt_version;
@@ -1564,19 +1541,8 @@ typedef struct tagENTRY{
 
     // create EUDC font file and make EUDCSegTable
     // after wrapper function for CreateFileW, we use only CreateFileW
-    if (IS_NT) {
-        m_hTmpFile = ::CreateFileW(name, GENERIC_READ,
-            FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    } else {
-#ifdef WIN32
-        DASSERT(IS_WIN95);
-#endif
-        char szFileName[_MAX_PATH];
-        ::WideCharToMultiByte(CP_ACP, 0, name, -1,
-            szFileName, sizeof(szFileName), NULL, NULL);
-        m_hTmpFile = ::CreateFileA(szFileName, GENERIC_READ,
-            FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    }
+    m_hTmpFile = ::CreateFile(name, GENERIC_READ,
+                               FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (m_hTmpFile == INVALID_HANDLE_VALUE){
         m_hTmpFile = NULL;
         return;
@@ -1654,10 +1620,10 @@ void CSegTableManagerComponent::MakeBiggerTable()
 class CSegTableManager : public CSegTableManagerComponent
 {
 public:
-    CSegTable* GetTable(LPWSTR lpszFontName, BOOL fEUDC);
+    CSegTable* GetTable(LPCWSTR lpszFontName, BOOL fEUDC);
 };
 
-CSegTable* CSegTableManager::GetTable(LPWSTR lpszFontName, BOOL fEUDC)
+CSegTable* CSegTableManager::GetTable(LPCWSTR lpszFontName, BOOL fEUDC)
 {
     for (int i = 0; i < m_nTable; i++) {
         if ((((CSegTable*)m_tables[i])->IsEUDC() == fEUDC) &&
@@ -1685,7 +1651,7 @@ class CCombinedSegTable : public CSegTableComponent
 {
 public:
     CCombinedSegTable();
-    void Create(LPWSTR name);
+    void Create(LPCWSTR name);
     BOOL In(USHORT iChar);
 
 private:
@@ -1807,7 +1773,7 @@ void CCombinedSegTable::GetEUDCFileName(LPWSTR lpszFileName, int cchFileName)
         wcscpy(m_szDefaultEUDCFile, lpszFileName);
 }
 
-void CCombinedSegTable::Create(LPWSTR name)
+void CCombinedSegTable::Create(LPCWSTR name)
 {
     CSegTableComponent::Create(name);
 
@@ -1840,10 +1806,10 @@ BOOL CCombinedSegTable::In(USHORT iChar)
 class CCombinedSegTableManager : public CSegTableManagerComponent
 {
 public:
-    CCombinedSegTable* GetTable(LPWSTR lpszFontName);
+    CCombinedSegTable* GetTable(LPCWSTR lpszFontName);
 };
 
-CCombinedSegTable* CCombinedSegTableManager::GetTable(LPWSTR lpszFontName)
+CCombinedSegTable* CCombinedSegTableManager::GetTable(LPCWSTR lpszFontName)
 {
     for (int i = 0; i < m_nTable; i++) {
         if (wcscmp(m_tables[i]->GetFontName(),lpszFontName) == 0)
@@ -1901,8 +1867,9 @@ Java_sun_awt_windows_WDefaultFontCharset_canConvert(JNIEnv *env, jobject self,
 
     jstring fontName = (jstring)env->GetObjectField(self, AwtFont::fontNameID);
     DASSERT(fontName != NULL);
-    LPWSTR fontNameWStr = TO_WSTRING(fontName);
-    CCombinedSegTable* pTable = tableManager.GetTable(fontNameWStr);
+    LPCWSTR fontNameW = JNU_GetStringPlatformChars(env, fontName, NULL);
+    CCombinedSegTable* pTable = tableManager.GetTable(fontNameW);
+    JNU_ReleaseStringPlatformChars(env, fontName, fontNameW);
     return (pTable->In((USHORT) ch) ? JNI_TRUE : JNI_FALSE);
 
     CATCH_BAD_ALLOC_RET(FALSE);

@@ -120,12 +120,14 @@ public class GLXGraphicsConfig
                 new GLXGetConfigInfo(device.getScreen(), visualnum);
             rq.flushAndInvokeNow(action);
             cfginfo = action.getConfigInfo();
-            OGLContext.setScratchSurface(cfginfo);
-            rq.flushAndInvokeNow(new Runnable() {
-                public void run() {
-                    ids[0] = OGLContext.getOGLIdString();
-                }
-            });
+            if (cfginfo != 0L) {
+                OGLContext.setScratchSurface(cfginfo);
+                rq.flushAndInvokeNow(new Runnable() {
+                    public void run() {
+                        ids[0] = OGLContext.getOGLIdString();
+                    }
+                });
+            }
         } finally {
             rq.unlock();
         }

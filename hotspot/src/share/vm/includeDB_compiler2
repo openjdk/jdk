@@ -140,6 +140,7 @@ c2_globals_<os_family>.hpp              globalDefinitions.hpp
 c2_globals_<os_family>.hpp              macros.hpp
 
 c2_init_<arch>.cpp                      compile.hpp
+c2_init_<arch>.cpp                      node.hpp
 
 c2compiler.cpp                          ad_<arch_model>.hpp
 c2compiler.cpp                          c2compiler.hpp
@@ -461,10 +462,13 @@ globals.cpp                             c2_globals.hpp
 graphKit.cpp                            addnode.hpp
 graphKit.cpp                            barrierSet.hpp
 graphKit.cpp                            cardTableModRefBS.hpp
+graphKit.cpp                            g1SATBCardTableModRefBS.hpp
 graphKit.cpp                            collectedHeap.hpp
 graphKit.cpp                            compileLog.hpp
 graphKit.cpp                            deoptimization.hpp
 graphKit.cpp                            graphKit.hpp
+graphKit.cpp                            heapRegion.hpp
+graphKit.cpp                            idealKit.hpp
 graphKit.cpp                            locknode.hpp
 graphKit.cpp                            machnode.hpp
 graphKit.cpp                            parse.hpp
@@ -484,6 +488,7 @@ idealKit.cpp                            addnode.hpp
 idealKit.cpp                            callnode.hpp
 idealKit.cpp                            cfgnode.hpp
 idealKit.cpp                            idealKit.hpp
+idealKit.cpp				runtime.hpp
 
 idealKit.hpp                            connode.hpp
 idealKit.hpp                            mulnode.hpp
@@ -582,6 +587,7 @@ locknode.hpp                            subnode.hpp
 loopTransform.cpp                       addnode.hpp
 loopTransform.cpp                       allocation.inline.hpp
 loopTransform.cpp                       connode.hpp
+loopTransform.cpp                       compileLog.hpp
 loopTransform.cpp                       divnode.hpp
 loopTransform.cpp                       loopnode.hpp
 loopTransform.cpp                       mulnode.hpp
@@ -597,6 +603,7 @@ loopnode.cpp                            addnode.hpp
 loopnode.cpp                            allocation.inline.hpp
 loopnode.cpp                            callnode.hpp
 loopnode.cpp                            ciMethodData.hpp
+loopnode.cpp                            compileLog.hpp
 loopnode.cpp                            connode.hpp
 loopnode.cpp                            divnode.hpp
 loopnode.cpp                            loopnode.hpp
@@ -833,6 +840,7 @@ parseHelper.cpp                         systemDictionary.hpp
 phase.cpp                               compile.hpp
 phase.cpp                               compileBroker.hpp
 phase.cpp                               nmethod.hpp
+phase.cpp                               node.hpp
 phase.cpp                               phase.hpp
 
 phase.hpp                               port.hpp
@@ -915,9 +923,11 @@ runtime.cpp                             compilerOracle.hpp
 runtime.cpp                             connode.hpp
 runtime.cpp                             copy.hpp
 runtime.cpp                             fprofiler.hpp
+runtime.cpp                             g1SATBCardTableModRefBS.hpp
 runtime.cpp                             gcLocker.inline.hpp
 runtime.cpp                             graphKit.hpp
 runtime.cpp                             handles.inline.hpp
+runtime.cpp                             heapRegion.hpp
 runtime.cpp                             icBuffer.hpp
 runtime.cpp                             interfaceSupport.hpp
 runtime.cpp                             interpreter.hpp

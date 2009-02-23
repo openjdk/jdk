@@ -35,6 +35,8 @@ Arena *Form::generate_arena() {
 //------------------------------NameList---------------------------------------
 // reserved user-defined string
 const char  *NameList::_signal   = "$$SIGNAL$$";
+const char  *NameList::_signal2  = "$$SIGNAL2$$";
+const char  *NameList::_signal3  = "$$SIGNAL3$$";
 
 // Constructor and Destructor
 NameList::NameList() : _cur(0), _max(4), _iter(0), _justReset(true) {
@@ -246,7 +248,7 @@ Form::DataType Form::ideal_to_Reg_type(const char *name) const {
 // True if 'opType', an ideal name, loads or stores.
 Form::DataType Form::is_load_from_memory(const char *opType) const {
   if( strcmp(opType,"LoadB")==0 )  return Form::idealB;
-  if( strcmp(opType,"LoadC")==0 )  return Form::idealC;
+  if( strcmp(opType,"LoadUS")==0 )  return Form::idealC;
   if( strcmp(opType,"LoadD")==0 )  return Form::idealD;
   if( strcmp(opType,"LoadD_unaligned")==0 )  return Form::idealD;
   if( strcmp(opType,"LoadF")==0 )  return Form::idealF;

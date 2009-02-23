@@ -38,6 +38,7 @@ import java.io.IOException;
  */
 public class Descriptor {
     public class InvalidDescriptor extends DescriptorException {
+        private static final long serialVersionUID = 1L;
         InvalidDescriptor(String desc) {
             this.desc = desc;
             this.index = -1;

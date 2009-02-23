@@ -41,8 +41,8 @@ public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
      * Create a formatter based on the supplied options.
      * @param msgs
      */
-    public RawDiagnosticFormatter(Messages msgs) {
-        super(null);
+    public RawDiagnosticFormatter(Options opts) {
+        super(null, opts, false);
     }
 
     //provide common default formats
@@ -61,6 +61,8 @@ public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
                 buf.append('-');
             buf.append(' ');
             buf.append(formatMessage(d, null));
+            if (displaySource(d))
+                buf.append("\n" + formatSourceLine(d));
             return buf.toString();
         }
         catch (Exception e) {
@@ -83,6 +85,20 @@ public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
     }
 
     @Override
+    protected String formatSubdiagnostics(JCDiagnostic d, Locale l) {
+        StringBuilder buf = new StringBuilder();
+        String sep = "";
+        buf.append(",{");
+        for (JCDiagnostic d2 : d.getSubdiagnostics()) {
+            buf.append(sep);
+            buf.append("(" + format(d2, l) + ")");
+            sep = ",";
+        }
+        buf.append('}');
+        return buf.toString();
+    }
+
+    @Override
     protected String localize(Locale l, String s, Object... args) {
         StringBuffer buf = new StringBuffer();
         buf.append(s);
@@ -93,9 +109,5 @@ public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
             sep = ", ";
         }
         return buf.toString();
-    }
-
-    public boolean displaySource(JCDiagnostic d) {
-        return false;
     }
 }

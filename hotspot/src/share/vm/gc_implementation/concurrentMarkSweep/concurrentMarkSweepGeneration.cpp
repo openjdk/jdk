@@ -538,6 +538,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _survivor_chunk_capacity(0), // -- ditto --
   _survivor_chunk_index(0),    // -- ditto --
   _ser_pmc_preclean_ovflw(0),
+  _ser_kac_preclean_ovflw(0),
   _ser_pmc_remark_ovflw(0),
   _par_pmc_remark_ovflw(0),
   _ser_kac_ovflw(0),
@@ -1960,6 +1961,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
 
   ref_processor()->set_enqueuing_is_done(false);
   ref_processor()->enable_discovery();
+  ref_processor()->setup_policy(clear_all_soft_refs);
   // If an asynchronous collection finishes, the _modUnionTable is
   // all clear.  If we are assuming the collection from an asynchronous
   // collection, clear the _modUnionTable.
@@ -2383,6 +2385,9 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
     Universe::verify(true);
   }
 
+  // Snapshot the soft reference policy to be used in this collection cycle.
+  ref_processor()->setup_policy(clear_all_soft_refs);
+
   bool init_mark_was_synchronous = false; // until proven otherwise
   while (_collectorState != Idling) {
     if (TraceCMSState) {
@@ -2761,13 +2766,14 @@ class VerifyMarkedClosure: public BitMapClosure {
  public:
   VerifyMarkedClosure(CMSBitMap* bm): _marks(bm), _failed(false) {}
 
-  void do_bit(size_t offset) {
+  bool do_bit(size_t offset) {
     HeapWord* addr = _marks->offsetToHeapWord(offset);
     if (!_marks->isMarked(addr)) {
       oop(addr)->print();
       gclog_or_tty->print_cr(" ("INTPTR_FORMAT" should have been marked)", addr);
       _failed = true;
     }
+    return true;
   }
 
   bool failed() { return _failed; }
@@ -3008,6 +3014,16 @@ ConcurrentMarkSweepGeneration::object_iterate(ObjectClosure* cl) {
   } else {
     MutexLockerEx x(freelistLock(), Mutex::_no_safepoint_check_flag);
     Generation::object_iterate(cl);
+  }
+}
+
+void
+ConcurrentMarkSweepGeneration::safe_object_iterate(ObjectClosure* cl) {
+  if (freelistLock()->owned_by_self()) {
+    Generation::safe_object_iterate(cl);
+  } else {
+    MutexLockerEx x(freelistLock(), Mutex::_no_safepoint_check_flag);
+    Generation::safe_object_iterate(cl);
   }
 }
 
@@ -3650,6 +3666,7 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
   CompactibleFreeListSpace*  _cms_space;
   CompactibleFreeListSpace* _perm_space;
   HeapWord*     _global_finger;
+  HeapWord*     _restart_addr;
 
   //  Exposed here for yielding support
   Mutex* const _bit_map_lock;
@@ -3680,7 +3697,7 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
     _term.set_task(this);
     assert(_cms_space->bottom() < _perm_space->bottom(),
            "Finger incorrectly initialized below");
-    _global_finger = _cms_space->bottom();
+    _restart_addr = _global_finger = _cms_space->bottom();
   }
 
 
@@ -3698,6 +3715,10 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
   bool result() { return _result; }
 
   void reset(HeapWord* ra) {
+    assert(_global_finger >= _cms_space->end(),  "Postcondition of ::work(i)");
+    assert(_global_finger >= _perm_space->end(), "Postcondition of ::work(i)");
+    assert(ra             <  _perm_space->end(), "ra too large");
+    _restart_addr = _global_finger = ra;
     _term.reset_for_reuse();
   }
 
@@ -3842,16 +3863,24 @@ void CMSConcMarkingTask::do_scan_and_mark(int i, CompactibleFreeListSpace* sp) {
   int n_tasks = pst->n_tasks();
   // We allow that there may be no tasks to do here because
   // we are restarting after a stack overflow.
-  assert(pst->valid() || n_tasks == 0, "Uninitializd use?");
+  assert(pst->valid() || n_tasks == 0, "Uninitialized use?");
   int nth_task = 0;
 
-  HeapWord* start = sp->bottom();
+  HeapWord* aligned_start = sp->bottom();
+  if (sp->used_region().contains(_restart_addr)) {
+    // Align down to a card boundary for the start of 0th task
+    // for this space.
+    aligned_start =
+      (HeapWord*)align_size_down((uintptr_t)_restart_addr,
+                                 CardTableModRefBS::card_size);
+  }
+
   size_t chunk_size = sp->marking_task_size();
   while (!pst->is_task_claimed(/* reference */ nth_task)) {
     // Having claimed the nth task in this space,
     // compute the chunk that it corresponds to:
-    MemRegion span = MemRegion(start + nth_task*chunk_size,
-                               start + (nth_task+1)*chunk_size);
+    MemRegion span = MemRegion(aligned_start + nth_task*chunk_size,
+                               aligned_start + (nth_task+1)*chunk_size);
     // Try and bump the global finger via a CAS;
     // note that we need to do the global finger bump
     // _before_ taking the intersection below, because
@@ -3866,26 +3895,40 @@ void CMSConcMarkingTask::do_scan_and_mark(int i, CompactibleFreeListSpace* sp) {
     // beyond the "top" address of the space.
     span = span.intersection(sp->used_region());
     if (!span.is_empty()) {  // Non-null task
-      // We want to skip the first object because
-      // the protocol is to scan any object in its entirety
-      // that _starts_ in this span; a fortiori, any
-      // object starting in an earlier span is scanned
-      // as part of an earlier claimed task.
-      // Below we use the "careful" version of block_start
-      // so we do not try to navigate uninitialized objects.
-      HeapWord* prev_obj = sp->block_start_careful(span.start());
-      // Below we use a variant of block_size that uses the
-      // Printezis bits to avoid waiting for allocated
-      // objects to become initialized/parsable.
-      while (prev_obj < span.start()) {
-        size_t sz = sp->block_size_no_stall(prev_obj, _collector);
-        if (sz > 0) {
-          prev_obj += sz;
+      HeapWord* prev_obj;
+      assert(!span.contains(_restart_addr) || nth_task == 0,
+             "Inconsistency");
+      if (nth_task == 0) {
+        // For the 0th task, we'll not need to compute a block_start.
+        if (span.contains(_restart_addr)) {
+          // In the case of a restart because of stack overflow,
+          // we might additionally skip a chunk prefix.
+          prev_obj = _restart_addr;
         } else {
-          // In this case we may end up doing a bit of redundant
-          // scanning, but that appears unavoidable, short of
-          // locking the free list locks; see bug 6324141.
-          break;
+          prev_obj = span.start();
+        }
+      } else {
+        // We want to skip the first object because
+        // the protocol is to scan any object in its entirety
+        // that _starts_ in this span; a fortiori, any
+        // object starting in an earlier span is scanned
+        // as part of an earlier claimed task.
+        // Below we use the "careful" version of block_start
+        // so we do not try to navigate uninitialized objects.
+        prev_obj = sp->block_start_careful(span.start());
+        // Below we use a variant of block_size that uses the
+        // Printezis bits to avoid waiting for allocated
+        // objects to become initialized/parsable.
+        while (prev_obj < span.start()) {
+          size_t sz = sp->block_size_no_stall(prev_obj, _collector);
+          if (sz > 0) {
+            prev_obj += sz;
+          } else {
+            // In this case we may end up doing a bit of redundant
+            // scanning, but that appears unavoidable, short of
+            // locking the free list locks; see bug 6324141.
+            break;
+          }
         }
       }
       if (prev_obj < span.end()) {
@@ -3938,12 +3981,14 @@ class Par_ConcMarkingClosure: public OopClosure {
   void handle_stack_overflow(HeapWord* lost);
 };
 
-// Grey object rescan during work stealing phase --
-// the salient assumption here is that stolen oops must
-// always be initialized, so we do not need to check for
-// uninitialized objects before scanning here.
+// Grey object scanning during work stealing phase --
+// the salient assumption here is that any references
+// that are in these stolen objects being scanned must
+// already have been initialized (else they would not have
+// been published), so we do not need to check for
+// uninitialized objects before pushing here.
 void Par_ConcMarkingClosure::do_oop(oop obj) {
-  assert(obj->is_oop_or_null(), "expected an oop or NULL");
+  assert(obj->is_oop_or_null(true), "expected an oop or NULL");
   HeapWord* addr = (HeapWord*)obj;
   // Check if oop points into the CMS generation
   // and is not marked
@@ -4001,7 +4046,7 @@ void Par_ConcMarkingClosure::trim_queue(size_t max) {
 // in CMSCollector's _restart_address.
 void Par_ConcMarkingClosure::handle_stack_overflow(HeapWord* lost) {
   // We need to do this under a mutex to prevent other
-  // workers from interfering with the expansion below.
+  // workers from interfering with the work done below.
   MutexLockerEx ml(_overflow_stack->par_lock(),
                    Mutex::_no_safepoint_check_flag);
   // Remember the least grey address discarded
@@ -4358,10 +4403,10 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
     CMSPrecleanRefsYieldClosure yield_cl(this);
     assert(rp->span().equals(_span), "Spans should be equal");
     CMSKeepAliveClosure keep_alive(this, _span, &_markBitMap,
-                                   &_markStack);
+                                   &_markStack, true /* preclean */);
     CMSDrainMarkingStackClosure complete_trace(this,
-                                  _span, &_markBitMap, &_markStack,
-                                  &keep_alive);
+                                   _span, &_markBitMap, &_markStack,
+                                   &keep_alive, true /* preclean */);
 
     // We don't want this step to interfere with a young
     // collection because we don't want to take CPU
@@ -4560,11 +4605,11 @@ size_t CMSCollector::preclean_mod_union_table(
     if (!dirtyRegion.is_empty()) {
       assert(numDirtyCards > 0, "consistency check");
       HeapWord* stop_point = NULL;
+      stopTimer();
+      CMSTokenSyncWithLocks ts(true, gen->freelistLock(),
+                               bitMapLock());
+      startTimer();
       {
-        stopTimer();
-        CMSTokenSyncWithLocks ts(true, gen->freelistLock(),
-                                 bitMapLock());
-        startTimer();
         verify_work_stacks_empty();
         verify_overflow_empty();
         sample_eden();
@@ -4581,10 +4626,6 @@ size_t CMSCollector::preclean_mod_union_table(
         assert((CMSPermGenPrecleaningEnabled && (gen == _permGen)) ||
                (_collectorState == AbortablePreclean && should_abort_preclean()),
                "Unparsable objects should only be in perm gen.");
-
-        stopTimer();
-        CMSTokenSyncWithLocks ts(true, bitMapLock());
-        startTimer();
         _modUnionTable.mark_range(MemRegion(stop_point, dirtyRegion.end()));
         if (should_abort_preclean()) {
           break; // out of preclean loop
@@ -4640,8 +4681,11 @@ size_t CMSCollector::preclean_card_table(ConcurrentMarkSweepGeneration* gen,
       startTimer();
       sample_eden();
       // Get and clear dirty region from card table
-      dirtyRegion = _ct->ct_bs()->dirty_card_range_after_preclean(
-                                    MemRegion(nextAddr, endAddr));
+      dirtyRegion = _ct->ct_bs()->dirty_card_range_after_reset(
+                                    MemRegion(nextAddr, endAddr),
+                                    true,
+                                    CardTableModRefBS::precleaned_card_val());
+
       assert(dirtyRegion.start() >= nextAddr,
              "returned region inconsistent?");
     }
@@ -4819,17 +4863,19 @@ void CMSCollector::checkpointRootsFinalWork(bool asynch,
   // recurrence of that condition.
   assert(_markStack.isEmpty(), "No grey objects");
   size_t ser_ovflw = _ser_pmc_remark_ovflw + _ser_pmc_preclean_ovflw +
-                     _ser_kac_ovflw;
+                     _ser_kac_ovflw        + _ser_kac_preclean_ovflw;
   if (ser_ovflw > 0) {
     if (PrintCMSStatistics != 0) {
       gclog_or_tty->print_cr("Marking stack overflow (benign) "
-        "(pmc_pc="SIZE_FORMAT", pmc_rm="SIZE_FORMAT", kac="SIZE_FORMAT")",
+        "(pmc_pc="SIZE_FORMAT", pmc_rm="SIZE_FORMAT", kac="SIZE_FORMAT
+        ", kac_preclean="SIZE_FORMAT")",
         _ser_pmc_preclean_ovflw, _ser_pmc_remark_ovflw,
-        _ser_kac_ovflw);
+        _ser_kac_ovflw, _ser_kac_preclean_ovflw);
     }
     _markStack.expand();
     _ser_pmc_remark_ovflw = 0;
     _ser_pmc_preclean_ovflw = 0;
+    _ser_kac_preclean_ovflw = 0;
     _ser_kac_ovflw = 0;
   }
   if (_par_pmc_remark_ovflw > 0 || _par_kac_ovflw > 0) {
@@ -5409,8 +5455,8 @@ void CMSCollector::do_remark_non_parallel() {
                               &mrias_cl);
   {
     TraceTime t("grey object rescan", PrintGCDetails, false, gclog_or_tty);
-    // Iterate over the dirty cards, marking them precleaned, and
-    // setting the corresponding bits in the mod union table.
+    // Iterate over the dirty cards, setting the corresponding bits in the
+    // mod union table.
     {
       ModUnionClosure modUnionClosure(&_modUnionTable);
       _ct->ct_bs()->dirty_card_iterate(
@@ -5642,40 +5688,29 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
 
   ResourceMark rm;
   HandleMark   hm;
-  ReferencePolicy* soft_ref_policy;
-
-  assert(!ref_processor()->enqueuing_is_done(), "Enqueuing should not be complete");
-  // Process weak references.
-  if (clear_all_soft_refs) {
-    soft_ref_policy = new AlwaysClearPolicy();
-  } else {
-#ifdef COMPILER2
-    soft_ref_policy = new LRUMaxHeapPolicy();
-#else
-    soft_ref_policy = new LRUCurrentHeapPolicy();
-#endif // COMPILER2
-  }
-  verify_work_stacks_empty();
 
   ReferenceProcessor* rp = ref_processor();
   assert(rp->span().equals(_span), "Spans should be equal");
+  assert(!rp->enqueuing_is_done(), "Enqueuing should not be complete");
+  // Process weak references.
+  rp->setup_policy(clear_all_soft_refs);
+  verify_work_stacks_empty();
+
   CMSKeepAliveClosure cmsKeepAliveClosure(this, _span, &_markBitMap,
-                                          &_markStack);
+                                          &_markStack, false /* !preclean */);
   CMSDrainMarkingStackClosure cmsDrainMarkingStackClosure(this,
                                 _span, &_markBitMap, &_markStack,
-                                &cmsKeepAliveClosure);
+                                &cmsKeepAliveClosure, false /* !preclean */);
   {
     TraceTime t("weak refs processing", PrintGCDetails, false, gclog_or_tty);
     if (rp->processing_is_mt()) {
       CMSRefProcTaskExecutor task_executor(*this);
-      rp->process_discovered_references(soft_ref_policy,
-                                        &_is_alive_closure,
+      rp->process_discovered_references(&_is_alive_closure,
                                         &cmsKeepAliveClosure,
                                         &cmsDrainMarkingStackClosure,
                                         &task_executor);
     } else {
-      rp->process_discovered_references(soft_ref_policy,
-                                        &_is_alive_closure,
+      rp->process_discovered_references(&_is_alive_closure,
                                         &cmsKeepAliveClosure,
                                         &cmsDrainMarkingStackClosure,
                                         NULL);
@@ -6130,8 +6165,8 @@ void CMSCollector::verify_ok_to_terminate() const {
 #endif
 
 size_t CMSCollector::block_size_using_printezis_bits(HeapWord* addr) const {
-  assert(_markBitMap.isMarked(addr) && _markBitMap.isMarked(addr + 1),
-         "missing Printezis mark?");
+   assert(_markBitMap.isMarked(addr) && _markBitMap.isMarked(addr + 1),
+          "missing Printezis mark?");
   HeapWord* nextOneAddr = _markBitMap.getNextMarkedWordAddress(addr + 2);
   size_t size = pointer_delta(nextOneAddr + 1, addr);
   assert(size == CompactibleFreeListSpace::adjustObjectSize(size),
@@ -6182,7 +6217,7 @@ HeapWord* CMSCollector::next_card_start_after_block(HeapWord* addr) const {
 // bit vector itself. That is done by a separate call CMSBitMap::allocate()
 // further below.
 CMSBitMap::CMSBitMap(int shifter, int mutex_rank, const char* mutex_name):
-  _bm(NULL,0),
+  _bm(),
   _shifter(shifter),
   _lock(mutex_rank >= 0 ? new Mutex(mutex_rank, mutex_name, true) : NULL)
 {
@@ -6207,7 +6242,7 @@ bool CMSBitMap::allocate(MemRegion mr) {
   }
   assert(_virtual_space.committed_size() == brs.size(),
          "didn't reserve backing store for all of CMS bit map?");
-  _bm.set_map((uintptr_t*)_virtual_space.low());
+  _bm.set_map((BitMap::bm_word_t*)_virtual_space.low());
   assert(_virtual_space.committed_size() << (_shifter + LogBitsPerByte) >=
          _bmWordSize, "inconsistency in bit map sizing");
   _bm.set_size(_bmWordSize >> _shifter);
@@ -6554,7 +6589,7 @@ void Par_MarkRefsIntoAndScanClosure::do_oop(oop obj) {
   if (obj != NULL) {
     // Ignore mark word because this could be an already marked oop
     // that may be chained at the end of the overflow list.
-    assert(obj->is_oop(), "expected an oop");
+    assert(obj->is_oop(true), "expected an oop");
     HeapWord* addr = (HeapWord*)obj;
     if (_span.contains(addr) &&
         !_bit_map->isMarked(addr)) {
@@ -6598,7 +6633,11 @@ size_t ScanMarkedObjectsAgainCarefullyClosure::do_object_careful_m(
   if (_bitMap->isMarked(addr)) {
     // it's marked; is it potentially uninitialized?
     if (p->klass_or_null() != NULL) {
-      if (CMSPermGenPrecleaningEnabled && !p->is_parsable()) {
+      // If is_conc_safe is false, the object may be undergoing
+      // change by the VM outside a safepoint.  Don't try to
+      // scan it, but rather leave it for the remark phase.
+      if (CMSPermGenPrecleaningEnabled &&
+          (!p->is_conc_safe() || !p->is_parsable())) {
         // Signal precleaning to redirty the card since
         // the klass pointer is already installed.
         assert(size == 0, "Initial value");
@@ -6845,10 +6884,10 @@ void MarkFromRootsClosure::reset(HeapWord* addr) {
 
 // Should revisit to see if this should be restructured for
 // greater efficiency.
-void MarkFromRootsClosure::do_bit(size_t offset) {
+bool MarkFromRootsClosure::do_bit(size_t offset) {
   if (_skipBits > 0) {
     _skipBits--;
-    return;
+    return true;
   }
   // convert offset into a HeapWord*
   HeapWord* addr = _bitMap->startWord() + offset;
@@ -6886,10 +6925,11 @@ void MarkFromRootsClosure::do_bit(size_t offset) {
           } // ...else the setting of klass will dirty the card anyway.
         }
       DEBUG_ONLY(})
-      return;
+      return true;
     }
   }
   scanOopsInOop(addr);
+  return true;
 }
 
 // We take a break if we've been at this for a while,
@@ -6975,7 +7015,6 @@ void MarkFromRootsClosure::scanOopsInOop(HeapWord* ptr) {
       _mut->clear_range(mr);
     }
   DEBUG_ONLY(})
-
   // Note: the finger doesn't advance while we drain
   // the stack below.
   PushOrMarkClosure pushOrMarkClosure(_collector,
@@ -7023,10 +7062,10 @@ Par_MarkFromRootsClosure::Par_MarkFromRootsClosure(CMSConcMarkingTask* task,
 
 // Should revisit to see if this should be restructured for
 // greater efficiency.
-void Par_MarkFromRootsClosure::do_bit(size_t offset) {
+bool Par_MarkFromRootsClosure::do_bit(size_t offset) {
   if (_skip_bits > 0) {
     _skip_bits--;
-    return;
+    return true;
   }
   // convert offset into a HeapWord*
   HeapWord* addr = _bit_map->startWord() + offset;
@@ -7041,10 +7080,11 @@ void Par_MarkFromRootsClosure::do_bit(size_t offset) {
     if (p->klass_or_null() == NULL || !p->is_parsable()) {
       // in the case of Clean-on-Enter optimization, redirty card
       // and avoid clearing card by increasing  the threshold.
-      return;
+      return true;
     }
   }
   scan_oops_in_oop(addr);
+  return true;
 }
 
 void Par_MarkFromRootsClosure::scan_oops_in_oop(HeapWord* ptr) {
@@ -7167,7 +7207,7 @@ void MarkFromRootsVerifyClosure::reset(HeapWord* addr) {
 
 // Should revisit to see if this should be restructured for
 // greater efficiency.
-void MarkFromRootsVerifyClosure::do_bit(size_t offset) {
+bool MarkFromRootsVerifyClosure::do_bit(size_t offset) {
   // convert offset into a HeapWord*
   HeapWord* addr = _verification_bm->startWord() + offset;
   assert(_verification_bm->endWord() && addr < _verification_bm->endWord(),
@@ -7195,6 +7235,7 @@ void MarkFromRootsVerifyClosure::do_bit(size_t offset) {
     new_oop->oop_iterate(&_pam_verify_closure);
   }
   assert(_mark_stack->isEmpty(), "tautology, emphasizing post-condition");
+  return true;
 }
 
 PushAndMarkVerifyClosure::PushAndMarkVerifyClosure(
@@ -7289,6 +7330,8 @@ Par_PushOrMarkClosure::Par_PushOrMarkClosure(CMSCollector* collector,
   _should_remember_klasses(collector->should_unload_classes())
 { }
 
+// Assumes thread-safe access by callers, who are
+// responsible for mutual exclusion.
 void CMSCollector::lower_restart_addr(HeapWord* low) {
   assert(_span.contains(low), "Out of bounds addr");
   if (_restart_addr == NULL) {
@@ -7314,7 +7357,7 @@ void PushOrMarkClosure::handle_stack_overflow(HeapWord* lost) {
 // in CMSCollector's _restart_address.
 void Par_PushOrMarkClosure::handle_stack_overflow(HeapWord* lost) {
   // We need to do this under a mutex to prevent other
-  // workers from interfering with the expansion below.
+  // workers from interfering with the work done below.
   MutexLockerEx ml(_overflow_stack->par_lock(),
                    Mutex::_no_safepoint_check_flag);
   // Remember the least grey address discarded
@@ -7438,8 +7481,12 @@ PushAndMarkClosure::PushAndMarkClosure(CMSCollector* collector,
 // Grey object rescan during pre-cleaning and second checkpoint phases --
 // the non-parallel version (the parallel version appears further below.)
 void PushAndMarkClosure::do_oop(oop obj) {
-  // If _concurrent_precleaning, ignore mark word verification
-  assert(obj->is_oop_or_null(_concurrent_precleaning),
+  // Ignore mark word verification. If during concurrent precleaning,
+  // the object monitor may be locked. If during the checkpoint
+  // phases, the object may already have been reached by a  different
+  // path and may be at the end of the global overflow list (so
+  // the mark word may be NULL).
+  assert(obj->is_oop_or_null(true /* ignore mark word */),
          "expected an oop or NULL");
   HeapWord* addr = (HeapWord*)obj;
   // Check if oop points into the CMS generation
@@ -8028,9 +8075,13 @@ size_t SweepClosure::doLiveChunk(FreeChunk* fc) {
     #ifdef DEBUG
       if (oop(addr)->klass_or_null() != NULL &&
           (   !_collector->should_unload_classes()
-           || oop(addr)->is_parsable())) {
+           || (oop(addr)->is_parsable()) &&
+               oop(addr)->is_conc_safe())) {
         // Ignore mark word because we are running concurrent with mutators
         assert(oop(addr)->is_oop(true), "live block should be an oop");
+        // is_conc_safe is checked before performing this assertion
+        // because an object that is not is_conc_safe may yet have
+        // the return from size() correct.
         assert(size ==
                CompactibleFreeListSpace::adjustObjectSize(oop(addr)->size()),
                "P-mark and computed size do not agree");
@@ -8043,6 +8094,13 @@ size_t SweepClosure::doLiveChunk(FreeChunk* fc) {
            (!_collector->should_unload_classes()
             || oop(addr)->is_parsable()),
            "Should be an initialized object");
+    // Note that there are objects used during class redefinition
+    // (e.g., merge_cp in VM_RedefineClasses::merge_cp_and_rewrite()
+    // which are discarded with their is_conc_safe state still
+    // false.  These object may be floating garbage so may be
+    // seen here.  If they are floating garbage their size
+    // should be attainable from their klass.  Do not that
+    // is_conc_safe() is true for oop(addr).
     // Ignore mark word because we are running concurrent with mutators
     assert(oop(addr)->is_oop(true), "live block should be an oop");
     // Verify that the bit map has no bits marked between
@@ -8260,8 +8318,29 @@ void CMSKeepAliveClosure::do_oop(oop obj) {
       }
     )
     if (simulate_overflow || !_mark_stack->push(obj)) {
-      _collector->push_on_overflow_list(obj);
-      _collector->_ser_kac_ovflw++;
+      if (_concurrent_precleaning) {
+        // We dirty the overflown object and let the remark
+        // phase deal with it.
+        assert(_collector->overflow_list_is_empty(), "Error");
+        // In the case of object arrays, we need to dirty all of
+        // the cards that the object spans. No locking or atomics
+        // are needed since no one else can be mutating the mod union
+        // table.
+        if (obj->is_objArray()) {
+          size_t sz = obj->size();
+          HeapWord* end_card_addr =
+            (HeapWord*)round_to((intptr_t)(addr+sz), CardTableModRefBS::card_size);
+          MemRegion redirty_range = MemRegion(addr, end_card_addr);
+          assert(!redirty_range.is_empty(), "Arithmetical tautology");
+          _collector->_modUnionTable.mark_range(redirty_range);
+        } else {
+          _collector->_modUnionTable.mark(addr);
+        }
+        _collector->_ser_kac_preclean_ovflw++;
+      } else {
+        _collector->push_on_overflow_list(obj);
+        _collector->_ser_kac_ovflw++;
+      }
     }
   }
 }
@@ -8358,6 +8437,8 @@ const char* CMSExpansionCause::to_string(CMSExpansionCause::Cause cause) {
 void CMSDrainMarkingStackClosure::do_void() {
   // the max number to take from overflow list at a time
   const size_t num = _mark_stack->capacity()/4;
+  assert(!_concurrent_precleaning || _collector->overflow_list_is_empty(),
+         "Overflow list should be NULL during concurrent phases");
   while (!_mark_stack->isEmpty() ||
          // if stack is empty, check the overflow list
          _collector->take_from_overflow_list(num, _mark_stack)) {
@@ -8427,7 +8508,7 @@ bool CMSCollector::take_from_overflow_list(size_t num, CMSMarkStack* stack) {
   size_t i = num;
   oop  cur = _overflow_list;
   const markOop proto = markOopDesc::prototype();
-  NOT_PRODUCT(size_t n = 0;)
+  NOT_PRODUCT(ssize_t n = 0;)
   for (oop next; i > 0 && cur != NULL; cur = next, i--) {
     next = oop(cur->mark());
     cur->set_mark(proto);   // until proven otherwise
@@ -8444,45 +8525,131 @@ bool CMSCollector::take_from_overflow_list(size_t num, CMSMarkStack* stack) {
   return !stack->isEmpty();
 }
 
-// Multi-threaded; use CAS to break off a prefix
+#define BUSY  (oop(0x1aff1aff))
+// (MT-safe) Get a prefix of at most "num" from the list.
+// The overflow list is chained through the mark word of
+// each object in the list. We fetch the entire list,
+// break off a prefix of the right size and return the
+// remainder. If other threads try to take objects from
+// the overflow list at that time, they will wait for
+// some time to see if data becomes available. If (and
+// only if) another thread places one or more object(s)
+// on the global list before we have returned the suffix
+// to the global list, we will walk down our local list
+// to find its end and append the global list to
+// our suffix before returning it. This suffix walk can
+// prove to be expensive (quadratic in the amount of traffic)
+// when there are many objects in the overflow list and
+// there is much producer-consumer contention on the list.
+// *NOTE*: The overflow list manipulation code here and
+// in ParNewGeneration:: are very similar in shape,
+// except that in the ParNew case we use the old (from/eden)
+// copy of the object to thread the list via its klass word.
+// Because of the common code, if you make any changes in
+// the code below, please check the ParNew version to see if
+// similar changes might be needed.
+// CR 6797058 has been filed to consolidate the common code.
 bool CMSCollector::par_take_from_overflow_list(size_t num,
                                                OopTaskQueue* work_q) {
-  assert(work_q->size() == 0, "That's the current policy");
+  assert(work_q->size() == 0, "First empty local work queue");
   assert(num < work_q->max_elems(), "Can't bite more than we can chew");
   if (_overflow_list == NULL) {
     return false;
   }
   // Grab the entire list; we'll put back a suffix
-  oop prefix = (oop)Atomic::xchg_ptr(NULL, &_overflow_list);
-  if (prefix == NULL) {  // someone grabbed it before we did ...
-    // ... we could spin for a short while, but for now we don't
-    return false;
+  oop prefix = (oop)Atomic::xchg_ptr(BUSY, &_overflow_list);
+  Thread* tid = Thread::current();
+  size_t CMSOverflowSpinCount = (size_t)ParallelGCThreads;
+  size_t sleep_time_millis = MAX2((size_t)1, num/100);
+  // If the list is busy, we spin for a short while,
+  // sleeping between attempts to get the list.
+  for (size_t spin = 0; prefix == BUSY && spin < CMSOverflowSpinCount; spin++) {
+    os::sleep(tid, sleep_time_millis, false);
+    if (_overflow_list == NULL) {
+      // Nothing left to take
+      return false;
+    } else if (_overflow_list != BUSY) {
+      // Try and grab the prefix
+      prefix = (oop)Atomic::xchg_ptr(BUSY, &_overflow_list);
+    }
   }
+  // If the list was found to be empty, or we spun long
+  // enough, we give up and return empty-handed. If we leave
+  // the list in the BUSY state below, it must be the case that
+  // some other thread holds the overflow list and will set it
+  // to a non-BUSY state in the future.
+  if (prefix == NULL || prefix == BUSY) {
+     // Nothing to take or waited long enough
+     if (prefix == NULL) {
+       // Write back the NULL in case we overwrote it with BUSY above
+       // and it is still the same value.
+       (void) Atomic::cmpxchg_ptr(NULL, &_overflow_list, BUSY);
+     }
+     return false;
+  }
+  assert(prefix != NULL && prefix != BUSY, "Error");
   size_t i = num;
   oop cur = prefix;
+  // Walk down the first "num" objects, unless we reach the end.
   for (; i > 1 && cur->mark() != NULL; cur = oop(cur->mark()), i--);
-  if (cur->mark() != NULL) {
+  if (cur->mark() == NULL) {
+    // We have "num" or fewer elements in the list, so there
+    // is nothing to return to the global list.
+    // Write back the NULL in lieu of the BUSY we wrote
+    // above, if it is still the same value.
+    if (_overflow_list == BUSY) {
+      (void) Atomic::cmpxchg_ptr(NULL, &_overflow_list, BUSY);
+    }
+  } else {
+    // Chop off the suffix and rerturn it to the global list.
+    assert(cur->mark() != BUSY, "Error");
     oop suffix_head = cur->mark(); // suffix will be put back on global list
     cur->set_mark(NULL);           // break off suffix
-    // Find tail of suffix so we can prepend suffix to global list
-    for (cur = suffix_head; cur->mark() != NULL; cur = (oop)(cur->mark()));
-    oop suffix_tail = cur;
-    assert(suffix_tail != NULL && suffix_tail->mark() == NULL,
-           "Tautology");
+    // It's possible that the list is still in the empty(busy) state
+    // we left it in a short while ago; in that case we may be
+    // able to place back the suffix without incurring the cost
+    // of a walk down the list.
     oop observed_overflow_list = _overflow_list;
-    do {
-      cur = observed_overflow_list;
-      suffix_tail->set_mark(markOop(cur));
+    oop cur_overflow_list = observed_overflow_list;
+    bool attached = false;
+    while (observed_overflow_list == BUSY || observed_overflow_list == NULL) {
       observed_overflow_list =
-        (oop) Atomic::cmpxchg_ptr(suffix_head, &_overflow_list, cur);
-    } while (cur != observed_overflow_list);
+        (oop) Atomic::cmpxchg_ptr(suffix_head, &_overflow_list, cur_overflow_list);
+      if (cur_overflow_list == observed_overflow_list) {
+        attached = true;
+        break;
+      } else cur_overflow_list = observed_overflow_list;
+    }
+    if (!attached) {
+      // Too bad, someone else sneaked in (at least) an element; we'll need
+      // to do a splice. Find tail of suffix so we can prepend suffix to global
+      // list.
+      for (cur = suffix_head; cur->mark() != NULL; cur = (oop)(cur->mark()));
+      oop suffix_tail = cur;
+      assert(suffix_tail != NULL && suffix_tail->mark() == NULL,
+             "Tautology");
+      observed_overflow_list = _overflow_list;
+      do {
+        cur_overflow_list = observed_overflow_list;
+        if (cur_overflow_list != BUSY) {
+          // Do the splice ...
+          suffix_tail->set_mark(markOop(cur_overflow_list));
+        } else { // cur_overflow_list == BUSY
+          suffix_tail->set_mark(NULL);
+        }
+        // ... and try to place spliced list back on overflow_list ...
+        observed_overflow_list =
+          (oop) Atomic::cmpxchg_ptr(suffix_head, &_overflow_list, cur_overflow_list);
+      } while (cur_overflow_list != observed_overflow_list);
+      // ... until we have succeeded in doing so.
+    }
   }
 
   // Push the prefix elements on work_q
   assert(prefix != NULL, "control point invariant");
   const markOop proto = markOopDesc::prototype();
   oop next;
-  NOT_PRODUCT(size_t n = 0;)
+  NOT_PRODUCT(ssize_t n = 0;)
   for (cur = prefix; cur != NULL; cur = next) {
     next = oop(cur->mark());
     cur->set_mark(proto);   // until proven otherwise
@@ -8516,11 +8683,16 @@ void CMSCollector::par_push_on_overflow_list(oop p) {
   oop cur_overflow_list;
   do {
     cur_overflow_list = observed_overflow_list;
-    p->set_mark(markOop(cur_overflow_list));
+    if (cur_overflow_list != BUSY) {
+      p->set_mark(markOop(cur_overflow_list));
+    } else {
+      p->set_mark(NULL);
+    }
     observed_overflow_list =
       (oop) Atomic::cmpxchg_ptr(p, &_overflow_list, cur_overflow_list);
   } while (cur_overflow_list != observed_overflow_list);
 }
+#undef BUSY
 
 // Single threaded
 // General Note on GrowableArray: pushes may silently fail
@@ -8529,7 +8701,7 @@ void CMSCollector::par_push_on_overflow_list(oop p) {
 // a lot of code in the JVM. The prudent thing for GrowableArray
 // to do (for now) is to exit with an error. However, that may
 // be too draconian in some cases because the caller may be
-// able to recover without much harm. For suych cases, we
+// able to recover without much harm. For such cases, we
 // should probably introduce a "soft_push" method which returns
 // an indication of success or failure with the assumption that
 // the caller may be able to recover from a failure; code in
@@ -8537,8 +8709,6 @@ void CMSCollector::par_push_on_overflow_list(oop p) {
 // failures where possible, thus, incrementally hardening the VM
 // in such low resource situations.
 void CMSCollector::preserve_mark_work(oop p, markOop m) {
-  int PreserveMarkStackSize = 128;
-
   if (_preserved_oop_stack == NULL) {
     assert(_preserved_mark_stack == NULL,
            "bijection with preserved_oop_stack");

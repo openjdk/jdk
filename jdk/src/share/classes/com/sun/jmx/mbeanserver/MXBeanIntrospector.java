@@ -32,6 +32,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -159,7 +160,7 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
             // matched to the corresponding Java type, except when that
             // type is primitive.
             Type t = m.getGenericParameterTypes()[paramNo];
-            return (!(t instanceof Class) || !((Class) t).isPrimitive());
+            return (!(t instanceof Class<?>) || !((Class<?>) t).isPrimitive());
         } else {
             Object v;
             try {
@@ -291,7 +292,7 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
         Descriptor descriptor =
             typeDescriptor(returnType, originalReturnType);
         descriptor = ImmutableDescriptor.union(descriptor,
-                Introspector.descriptorForElement(method));
+                Introspector.descriptorForElement(method, false));
         final MBeanOperationInfo oi;
         if (openReturnType && openParameterTypes) {
             /* If the return value and all the parameters can be faithfully
@@ -353,7 +354,7 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
         }
     }
 
-    private static Descriptor typeDescriptor(OpenType openType,
+    private static Descriptor typeDescriptor(OpenType<?> openType,
                                              Type originalType) {
         return new ImmutableDescriptor(
             new String[] {"openType",
@@ -379,18 +380,42 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
         if (type instanceof GenericArrayType) {
             return canUseOpenInfo(
                 ((GenericArrayType) type).getGenericComponentType());
-        } else if (type instanceof Class && ((Class<?>) type).isArray()) {
+        } else if (type instanceof Class<?> && ((Class<?>) type).isArray()) {
             return canUseOpenInfo(
                 ((Class<?>) type).getComponentType());
         }
-        return (!(type instanceof Class && ((Class<?>) type).isPrimitive()));
+        return (!(type instanceof Class<?> && ((Class<?>) type).isPrimitive()));
     }
 
     private static String originalTypeString(Type type) {
-        if (type instanceof Class)
-            return ((Class) type).getName();
+        if (type instanceof Class<?>)
+            return ((Class<?>) type).getName();
         else
-            return type.toString();
+            return typeName(type);
+    }
+
+    static String typeName(Type type) {
+        if (type instanceof Class<?>) {
+            Class<?> c = (Class<?>) type;
+            if (c.isArray())
+                return typeName(c.getComponentType()) + "[]";
+            else
+                return c.getName();
+        } else if (type instanceof GenericArrayType) {
+            GenericArrayType gat = (GenericArrayType) type;
+            return typeName(gat.getGenericComponentType()) + "[]";
+        } else if (type instanceof ParameterizedType) {
+            ParameterizedType pt = (ParameterizedType) type;
+            StringBuilder sb = new StringBuilder();
+            sb.append(typeName(pt.getRawType())).append("<");
+            String sep = "";
+            for (Type t : pt.getActualTypeArguments()) {
+                sb.append(sep).append(typeName(t));
+                sep = ", ";
+            }
+            return sb.append(">").toString();
+        } else
+            return "???";
     }
 
     private final PerInterfaceMap<ConvertingMethod>

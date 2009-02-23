@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class ClassLogger {
            people to use at least J2SE 1.4.  */
         boolean loaded = false;
         try {
-            Class c = java.util.logging.Logger.class;
+            Class<?> c = java.util.logging.Logger.class;
             loaded = true;
         } catch (Error e) {
             // OK.

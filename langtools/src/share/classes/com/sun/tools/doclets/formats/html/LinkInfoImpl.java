@@ -235,15 +235,15 @@ public class LinkInfoImpl extends LinkInfo {
      * @param classDoc   the class to link to.
      * @param where      the value of the marker #.
      * @param label      the label for the link.
-     * @param isBold       true if the link should be bold.
+     * @param isStrong       true if the link should be strong.
      * @param styleName  String style of text defined in style sheet.
      */
     public LinkInfoImpl (int context, ClassDoc classDoc, String where, String label,
-            boolean isBold, String styleName){
+            boolean isStrong, String styleName){
         this.classDoc = classDoc;
         this.where = where;
         this.label = label;
-        this.isBold = isBold;
+        this.isStrong = isStrong;
         this.styleName = styleName;
         setContext(context);
     }
@@ -255,14 +255,14 @@ public class LinkInfoImpl extends LinkInfo {
      * @param classDoc   the class to link to.
      * @param where      the value of the marker #.
      * @param label      the label for the link.
-     * @param isBold       true if the link should be bold.
+     * @param isStrong       true if the link should be strong.
      */
     public LinkInfoImpl (int context, ClassDoc classDoc, String where, String label,
-            boolean isBold){
+            boolean isStrong){
         this.classDoc = classDoc;
         this.where = where;
         this.label = label;
-        this.isBold = isBold;
+        this.isStrong = isStrong;
         setContext(context);
     }
 
@@ -283,12 +283,12 @@ public class LinkInfoImpl extends LinkInfo {
      *
      * @param context               the context of the link.
      * @param executableMemberDoc   the member to link to.
-     * @param isBold                true if the link should be bold.
+     * @param isStrong                true if the link should be strong.
      */
     public LinkInfoImpl (int context, ExecutableMemberDoc executableMemberDoc,
-            boolean isBold){
+            boolean isStrong){
         this.executableMemberDoc = executableMemberDoc;
-        this.isBold = isBold;
+        this.isStrong = isStrong;
         setContext(context);
     }
 
@@ -297,11 +297,11 @@ public class LinkInfoImpl extends LinkInfo {
      *
      * @param context    the context of the link.
      * @param classDoc   the class to link to.
-     * @param isBold       true if the link should be bold.
+     * @param isStrong       true if the link should be strong.
      */
-    public LinkInfoImpl (int context, ClassDoc classDoc,  boolean isBold){
+    public LinkInfoImpl (int context, ClassDoc classDoc,  boolean isStrong){
         this.classDoc = classDoc;
-        this.isBold = isBold;
+        this.isStrong = isStrong;
         setContext(context);
     }
 
@@ -335,13 +335,13 @@ public class LinkInfoImpl extends LinkInfo {
      * @param context    the context of the link.
      * @param type       the class to link to.
      * @param label      the label for the link.
-     * @param isBold     true if the link should be bold.
+     * @param isStrong     true if the link should be strong.
      */
     public LinkInfoImpl (int context, Type type, String label,
-            boolean isBold){
+            boolean isStrong){
         this.type = type;
         this.label = label;
-        this.isBold = isBold;
+        this.isStrong = isStrong;
         setContext(context);
     }
 
@@ -351,13 +351,13 @@ public class LinkInfoImpl extends LinkInfo {
      * @param context    the context of the link.
      * @param classDoc   the class to link to.
      * @param label      the label for the link.
-     * @param isBold       true if the link should be bold.
+     * @param isStrong       true if the link should be strong.
      */
     public LinkInfoImpl (int context, ClassDoc classDoc, String label,
-            boolean isBold){
+            boolean isStrong){
         this.classDoc = classDoc;
         this.label = label;
-        this.isBold = isBold;
+        this.isStrong = isStrong;
         setContext(context);
     }
 

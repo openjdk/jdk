@@ -39,7 +39,7 @@ public class LLNI extends Gen {
 
     protected final char  pathChar = File.separatorChar;
     protected final char  innerDelim = '$';     /* For inner classes */
-    protected Hashtable   doneHandleTypes;
+    protected Hashtable<Object, Object>   doneHandleTypes;
     MemberDoc []fields;
     MemberDoc [] methods;
     private boolean       doubleAlign;
@@ -68,7 +68,7 @@ public class LLNI extends Gen {
     protected void generateDeclsForClass(PrintWriter pw,
                                          ClassDoc clazz, String cname)
         throws ClassNotFoundException {
-        doneHandleTypes  = new Hashtable();
+        doneHandleTypes  = new Hashtable<Object, Object>();
         /* The following handle types are predefined in "typedefs.h". Suppress
            inclusion in the output by generating them "into the blue" here. */
         genHandleType(null, "java.lang.Class");

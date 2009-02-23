@@ -46,14 +46,14 @@ class DevPollSelectorImpl
     // The poll object
     DevPollArrayWrapper pollWrapper;
 
-    // The number of valid channels in this Selector's poll array
-    private int totalChannels;
-
     // Maps from file descriptors to keys
     private Map<Integer,SelectionKeyImpl> fdToKey;
 
     // True if this Selector has been closed
     private boolean closed = false;
+
+    // Lock for close/cleanup
+    private Object closeLock = new Object();
 
     // Lock for interrupt triggering and clearing
     private Object interruptLock = new Object();
@@ -72,7 +72,6 @@ class DevPollSelectorImpl
         pollWrapper = new DevPollArrayWrapper();
         pollWrapper.initInterrupt(fd0, fd1);
         fdToKey = new HashMap<Integer,SelectionKeyImpl>();
-        totalChannels = 1;
     }
 
     protected int doSelect(long timeout)
@@ -131,45 +130,39 @@ class DevPollSelectorImpl
     }
 
     protected void implClose() throws IOException {
-        if (!closed) {
-            closed = true;
+        if (closed)
+            return;
+        closed = true;
 
-            // prevent further wakeup
-            synchronized (interruptLock) {
-                interruptTriggered = true;
-            }
-
-            FileDispatcher.closeIntFD(fd0);
-            FileDispatcher.closeIntFD(fd1);
-            if (pollWrapper != null) {
-
-                pollWrapper.release(fd0);
-                pollWrapper.closeDevPollFD();
-                pollWrapper = null;
-                selectedKeys = null;
-
-                // Deregister channels
-                Iterator i = keys.iterator();
-                while (i.hasNext()) {
-                    SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
-                    deregister(ski);
-                    SelectableChannel selch = ski.channel();
-                    if (!selch.isOpen() && !selch.isRegistered())
-                        ((SelChImpl)selch).kill();
-                    i.remove();
-                }
-                totalChannels = 0;
-
-            }
-            fd0 = -1;
-            fd1 = -1;
+        // prevent further wakeup
+        synchronized (interruptLock) {
+            interruptTriggered = true;
         }
+
+        FileDispatcher.closeIntFD(fd0);
+        FileDispatcher.closeIntFD(fd1);
+
+        pollWrapper.release(fd0);
+        pollWrapper.closeDevPollFD();
+        selectedKeys = null;
+
+        // Deregister channels
+        Iterator i = keys.iterator();
+        while (i.hasNext()) {
+            SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
+            deregister(ski);
+            SelectableChannel selch = ski.channel();
+            if (!selch.isOpen() && !selch.isRegistered())
+                ((SelChImpl)selch).kill();
+            i.remove();
+        }
+        fd0 = -1;
+        fd1 = -1;
     }
 
     protected void implRegister(SelectionKeyImpl ski) {
         int fd = IOUtil.fdVal(ski.channel.getFD());
         fdToKey.put(Integer.valueOf(fd), ski);
-        totalChannels++;
         keys.add(ski);
     }
 
@@ -179,7 +172,6 @@ class DevPollSelectorImpl
         int fd = ski.channel.getFDVal();
         fdToKey.remove(Integer.valueOf(fd));
         pollWrapper.release(fd);
-        totalChannels--;
         ski.setIndex(-1);
         keys.remove(ski);
         selectedKeys.remove(ski);
@@ -190,6 +182,8 @@ class DevPollSelectorImpl
     }
 
     void putEventOps(SelectionKeyImpl sk, int ops) {
+        if (closed)
+            throw new ClosedSelectorException();
         int fd = IOUtil.fdVal(sk.channel.getFD());
         pollWrapper.setInterest(fd, ops);
     }

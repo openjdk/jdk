@@ -20,8 +20,6 @@
  */
 package com.sun.org.apache.xml.internal.security.signature;
 
-
-
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.IdResolver;
@@ -41,10 +39,6 @@ import org.w3c.dom.Element;
  *
  */
 public class SignatureProperties extends SignatureElementProxy {
-
-   /** {@link java.util.logging} logging facility */
-    static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(SignatureProperties.class.getName());
 
    /**
     * Constructor SignatureProperties
@@ -115,7 +109,7 @@ public class SignatureProperties extends SignatureElementProxy {
     */
    public void setId(String Id) {
 
-      if ((this._state == MODE_SIGN) && (Id != null)) {
+      if ((Id != null)) {
          this._constructionElement.setAttributeNS(null, Constants._ATT_ID, Id);
          IdResolver.registerElementById(this._constructionElement, Id);
       }

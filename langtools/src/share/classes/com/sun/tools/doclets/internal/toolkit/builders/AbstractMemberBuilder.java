@@ -69,7 +69,7 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
      *
      * @param elements {@inheritDoc}
      */
-    public void build(List elements) {
+    public void build(List<?> elements) {
         if (hasMembersToDocument()) {
             super.build(elements);
         }

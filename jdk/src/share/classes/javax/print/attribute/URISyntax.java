@@ -28,7 +28,6 @@ package javax.print.attribute;
 
 import java.io.Serializable;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * Class URISyntax is an abstract base class providing the common

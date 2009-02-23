@@ -107,7 +107,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     was_store = false;
     switch( mach->ideal_Opcode() ) {
     case Op_LoadB:
-    case Op_LoadC:
+    case Op_LoadUS:
     case Op_LoadD:
     case Op_LoadF:
     case Op_LoadI:
@@ -595,7 +595,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
 
       // A few node types require changing a required edge to a precedence edge
       // before allocation.
-      if( UseConcMarkSweepGC ) {
+      if( UseConcMarkSweepGC || UseG1GC ) {
         if( n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_StoreCM ) {
           // Note: Required edges with an index greater than oper_input_base
           // are not supported by the allocator.

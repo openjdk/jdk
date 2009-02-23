@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-1997 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ package java.lang;
  */
 public
 class UnsatisfiedLinkError extends LinkageError {
+    private static final long serialVersionUID = -4019343241616879428L;
+
     /**
      * Constructs an <code>UnsatisfiedLinkError</code> with no detail message.
      */

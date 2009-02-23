@@ -322,10 +322,12 @@ public class JMXConnectorFactory {
                 JMXConnectorProvider.class;
         final String protocol = serviceURL.getProtocol();
         final String providerClassName = "ClientProvider";
+        final JMXServiceURL providerURL = serviceURL;
 
-        JMXConnectorProvider provider =
-            getProvider(serviceURL, envcopy, providerClassName,
-                        targetInterface, loader);
+        JMXConnectorProvider provider = getProvider(providerURL, envcopy,
+                                               providerClassName,
+                                               targetInterface,
+                                               loader);
 
         IOException exception = null;
         if (provider == null) {
@@ -336,7 +338,7 @@ public class JMXConnectorFactory {
             if (loader != null) {
                 try {
                     JMXConnector connection =
-                        getConnectorAsService(loader, serviceURL, envcopy);
+                        getConnectorAsService(loader, providerURL, envcopy);
                     if (connection != null)
                         return connection;
                 } catch (JMXProviderException e) {
@@ -345,8 +347,7 @@ public class JMXConnectorFactory {
                     exception = e;
                 }
             }
-            provider =
-                getProvider(protocol, PROTOCOL_PROVIDER_DEFAULT_PACKAGE,
+            provider = getProvider(protocol, PROTOCOL_PROVIDER_DEFAULT_PACKAGE,
                             JMXConnectorFactory.class.getClassLoader(),
                             providerClassName, targetInterface);
         }
@@ -367,7 +368,8 @@ public class JMXConnectorFactory {
         return provider.newJMXConnector(serviceURL, fixedenv);
     }
 
-    private static String resolvePkgs(Map env) throws JMXProviderException {
+    private static String resolvePkgs(Map<String, ?> env)
+            throws JMXProviderException {
 
         Object pkgsObject = null;
 
@@ -447,9 +449,10 @@ public class JMXConnectorFactory {
                 getProviderIterator(JMXConnectorProvider.class, loader);
         JMXConnector connection;
         IOException exception = null;
-        while(providers.hasNext()) {
+        while (providers.hasNext()) {
+            JMXConnectorProvider provider = providers.next();
             try {
-                connection = providers.next().newJMXConnector(url, map);
+                connection = provider.newJMXConnector(url, map);
                 return connection;
             } catch (JMXProviderException e) {
                 throw e;
@@ -521,7 +524,7 @@ public class JMXConnectorFactory {
         return null;
     }
 
-    static ClassLoader resolveClassLoader(Map environment) {
+    static ClassLoader resolveClassLoader(Map<String, ?> environment) {
         ClassLoader loader = null;
 
         if (environment != null) {
@@ -552,4 +555,5 @@ public class JMXConnectorFactory {
     private static String protocol2package(String protocol) {
         return protocol.replace('+', '.').replace('-', '_');
     }
+
 }

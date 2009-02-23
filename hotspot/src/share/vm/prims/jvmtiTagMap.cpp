@@ -400,16 +400,28 @@ MemRegion JvmtiTagMap::_young_gen;
 
 // get the memory region used for the young generation
 void JvmtiTagMap::get_young_generation() {
-  if (Universe::heap()->kind() == CollectedHeap::GenCollectedHeap) {
-    GenCollectedHeap* gch = GenCollectedHeap::heap();
-    _young_gen = gch->get_gen(0)->reserved();
-  } else {
+  CollectedHeap* ch = Universe::heap();
+  switch (ch->kind()) {
+    case (CollectedHeap::GenCollectedHeap): {
+      _young_gen = ((GenCollectedHeap*)ch)->get_gen(0)->reserved();
+      break;
+    }
 #ifndef SERIALGC
-    ParallelScavengeHeap* psh = ParallelScavengeHeap::heap();
-    _young_gen= psh->young_gen()->reserved();
-#else  // SERIALGC
-    fatal("SerialGC only supported in this configuration.");
-#endif // SERIALGC
+    case (CollectedHeap::ParallelScavengeHeap): {
+      _young_gen = ((ParallelScavengeHeap*)ch)->young_gen()->reserved();
+      break;
+    }
+    case (CollectedHeap::G1CollectedHeap): {
+      // Until a more satisfactory solution is implemented, all
+      // oops in the tag map will require rehash at each gc.
+      // This is a correct, if extremely inefficient solution.
+      // See RFE 6621729 for related commentary.
+      _young_gen = ch->reserved_region();
+      break;
+    }
+#endif  // !SERIALGC
+    default:
+      ShouldNotReachHere();
   }
 }
 
@@ -1308,6 +1320,9 @@ class VM_HeapIterateOperation: public VM_Operation {
     }
 
     // do the iteration
+    // If this operation encounters a bad object when using CMS,
+    // consider using safe_object_iterate() which avoids perm gen
+    // objects that may contain bad references.
     Universe::heap()->object_iterate(_blk);
 
     // when sharing is enabled we must iterate over the shared spaces

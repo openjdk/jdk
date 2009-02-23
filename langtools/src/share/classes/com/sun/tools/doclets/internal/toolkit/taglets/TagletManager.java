@@ -212,7 +212,7 @@ public class TagletManager {
             URLClassLoader appClassLoader = new URLClassLoader(pathToURLs(cpString));
             customTagClass = appClassLoader.loadClass(classname);
             Method meth = customTagClass.getMethod("register",
-                                                   new Class[] {Class.forName("java.util.Map")});
+                                                   new Class<?>[] {java.util.Map.class});
             Object[] list = customTags.values().toArray();
             Taglet lastTag = (list != null && list.length > 0)
                 ? (Taglet) list[list.length-1] : null;
@@ -705,9 +705,9 @@ public class TagletManager {
      * Initialize lowercase version of standard Javadoc tags.
      */
     private void initStandardTagsLowercase() {
-        Iterator it = standardTags.iterator();
+        Iterator<String> it = standardTags.iterator();
         while (it.hasNext()) {
-            standardTagsLowercase.add(((String)it.next()).toLowerCase());
+            standardTagsLowercase.add(it.next().toLowerCase());
         }
     }
 

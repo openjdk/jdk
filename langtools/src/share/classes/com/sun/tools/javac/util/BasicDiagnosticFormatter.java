@@ -59,10 +59,12 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
      * Create a basic formatter based on the supplied options.
      *
      * @param opts list of command-line options
-     * @param msgs Messages object used for i18n
+     * @param msgs JavacMessages object used for i18n
      */
-    BasicDiagnosticFormatter(Options opts, Messages msgs) {
-        this(msgs); //common init
+    @SuppressWarnings("fallthrough")
+    BasicDiagnosticFormatter(Options opts, JavacMessages msgs) {
+        super(msgs, opts, true);
+        initAvailableFormats();
         String fmt = opts.get("diags");
         if (fmt != null) {
             String[] formats = fmt.split("\\|");
@@ -80,10 +82,14 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
     /**
      * Create a standard basic formatter
      *
-     * @param msgs Messages object used for i18n
+     * @param msgs JavacMessages object used for i18n
      */
-    public BasicDiagnosticFormatter(Messages msgs) {
-        super(msgs);
+    public BasicDiagnosticFormatter(JavacMessages msgs) {
+        super(msgs, true);
+        initAvailableFormats();
+    }
+
+    public void initAvailableFormats() {
         availableFormats = new HashMap<BasicFormatKind, String>();
         availableFormats.put(DEFAULT_POS_FORMAT, "%f:%l:%_%t%m");
         availableFormats.put(DEFAULT_NO_POS_FORMAT, "%p%m");
@@ -91,6 +97,8 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
     }
 
     public String format(JCDiagnostic d, Locale l) {
+        if (l == null)
+            l = messages.getCurrentLocale();
         String format = selectFormat(d);
         StringBuilder buf = new StringBuilder();
         for (int i = 0; i < format.length(); i++) {
@@ -101,6 +109,9 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
                 c = format.charAt(++i);
             }
             buf.append(meta ? formatMeta(c, d, l) : String.valueOf(c));
+        }
+        if (displaySource(d)) {
+            buf.append("\n" + formatSourceLine(d));
         }
         return buf.toString();
     }
@@ -163,10 +174,6 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
             }
         }
         return format;
-    }
-
-    public boolean displaySource(JCDiagnostic d) {
-        return true;
     }
 
     /**

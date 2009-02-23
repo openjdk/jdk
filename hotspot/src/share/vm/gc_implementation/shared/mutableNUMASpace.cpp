@@ -27,7 +27,7 @@
 # include "incls/_mutableNUMASpace.cpp.incl"
 
 
-MutableNUMASpace::MutableNUMASpace() {
+MutableNUMASpace::MutableNUMASpace(size_t alignment) : MutableSpace(alignment) {
   _lgrp_spaces = new (ResourceObj::C_HEAP) GrowableArray<LGRPSpace*>(0, true);
   _page_size = os::vm_page_size();
   _adaptation_cycles = 0;
@@ -76,8 +76,8 @@ void MutableNUMASpace::ensure_parsability() {
     MutableSpace *s = ls->space();
     if (s->top() < top()) { // For all spaces preceeding the one containing top()
       if (s->free_in_words() > 0) {
-        SharedHeap::fill_region_with_object(MemRegion(s->top(), s->end()));
         size_t area_touched_words = pointer_delta(s->end(), s->top());
+        CollectedHeap::fill_with_object(s->top(), area_touched_words);
 #ifndef ASSERT
         if (!ZapUnusedHeapArea) {
           area_touched_words = MIN2((size_t)align_object_size(typeArrayOopDesc::header_size(T_INT)),
@@ -181,6 +181,25 @@ size_t MutableNUMASpace::unsafe_max_tlab_alloc(Thread *thr) const {
   return lgrp_spaces()->at(i)->space()->free_in_bytes();
 }
 
+
+size_t MutableNUMASpace::capacity_in_words(Thread* thr) const {
+  guarantee(thr != NULL, "No thread");
+  int lgrp_id = thr->lgrp_id();
+  if (lgrp_id == -1) {
+    if (lgrp_spaces()->length() > 0) {
+      return capacity_in_words() / lgrp_spaces()->length();
+    } else {
+      assert(false, "There should be at least one locality group");
+      return 0;
+    }
+  }
+  int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
+  if (i == -1) {
+    return 0;
+  }
+  return lgrp_spaces()->at(i)->space()->capacity_in_words();
+}
+
 // Check if the NUMA topology has changed. Add and remove spaces if needed.
 // The update can be forced by setting the force parameter equal to true.
 bool MutableNUMASpace::update_layout(bool force) {
@@ -202,7 +221,7 @@ bool MutableNUMASpace::update_layout(bool force) {
         }
       }
       if (!found) {
-        lgrp_spaces()->append(new LGRPSpace(lgrp_ids[i]));
+        lgrp_spaces()->append(new LGRPSpace(lgrp_ids[i], alignment()));
       }
     }
 
@@ -372,6 +391,8 @@ size_t MutableNUMASpace::default_chunk_size() {
 }
 
 // Produce a new chunk size. page_size() aligned.
+// This function is expected to be called on sequence of i's from 0 to
+// lgrp_spaces()->length().
 size_t MutableNUMASpace::adaptive_chunk_size(int i, size_t limit) {
   size_t pages_available = base_space_size();
   for (int j = 0; j < i; j++) {
@@ -386,16 +407,27 @@ size_t MutableNUMASpace::adaptive_chunk_size(int i, size_t limit) {
   size_t chunk_size = 0;
   if (alloc_rate > 0) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
-    chunk_size = (size_t)(ls->alloc_rate()->average() * pages_available / alloc_rate) * page_size();
+    chunk_size = (size_t)(ls->alloc_rate()->average() / alloc_rate * pages_available) * page_size();
   }
   chunk_size = MAX2(chunk_size, page_size());
 
   if (limit > 0) {
     limit = round_down(limit, page_size());
     if (chunk_size > current_chunk_size(i)) {
-      chunk_size = MIN2((off_t)chunk_size, (off_t)current_chunk_size(i) + (off_t)limit);
+      size_t upper_bound = pages_available * page_size();
+      if (upper_bound > limit &&
+          current_chunk_size(i) < upper_bound - limit) {
+        // The resulting upper bound should not exceed the available
+        // amount of memory (pages_available * page_size()).
+        upper_bound = current_chunk_size(i) + limit;
+      }
+      chunk_size = MIN2(chunk_size, upper_bound);
     } else {
-      chunk_size = MAX2((off_t)chunk_size, (off_t)current_chunk_size(i) - (off_t)limit);
+      size_t lower_bound = page_size();
+      if (current_chunk_size(i) > limit) { // lower_bound shouldn't underflow.
+        lower_bound = current_chunk_size(i) - limit;
+      }
+      chunk_size = MAX2(chunk_size, lower_bound);
     }
   }
   assert(chunk_size <= pages_available * page_size(), "Chunk size out of range");
@@ -411,10 +443,10 @@ void MutableNUMASpace::select_tails(MemRegion new_region, MemRegion intersection
   // Is there bottom?
   if (new_region.start() < intersection.start()) { // Yes
     // Try to coalesce small pages into a large one.
-    if (UseLargePages && page_size() >= os::large_page_size()) {
-      HeapWord* p = (HeapWord*)round_to((intptr_t) intersection.start(), os::large_page_size());
+    if (UseLargePages && page_size() >= alignment()) {
+      HeapWord* p = (HeapWord*)round_to((intptr_t) intersection.start(), alignment());
       if (new_region.contains(p)
-          && pointer_delta(p, new_region.start(), sizeof(char)) >= os::large_page_size()) {
+          && pointer_delta(p, new_region.start(), sizeof(char)) >= alignment()) {
         if (intersection.contains(p)) {
           intersection = MemRegion(p, intersection.end());
         } else {
@@ -430,10 +462,10 @@ void MutableNUMASpace::select_tails(MemRegion new_region, MemRegion intersection
   // Is there top?
   if (intersection.end() < new_region.end()) { // Yes
     // Try to coalesce small pages into a large one.
-    if (UseLargePages && page_size() >= os::large_page_size()) {
-      HeapWord* p = (HeapWord*)round_down((intptr_t) intersection.end(), os::large_page_size());
+    if (UseLargePages && page_size() >= alignment()) {
+      HeapWord* p = (HeapWord*)round_down((intptr_t) intersection.end(), alignment());
       if (new_region.contains(p)
-          && pointer_delta(new_region.end(), p, sizeof(char)) >= os::large_page_size()) {
+          && pointer_delta(new_region.end(), p, sizeof(char)) >= alignment()) {
         if (intersection.contains(p)) {
           intersection = MemRegion(intersection.start(), p);
         } else {
@@ -472,12 +504,12 @@ void MutableNUMASpace::merge_regions(MemRegion new_region, MemRegion* intersecti
             // That's the only case we have to make an additional bias_region() call.
             HeapWord* start = invalid_region->start();
             HeapWord* end = invalid_region->end();
-            if (UseLargePages && page_size() >= os::large_page_size()) {
-              HeapWord *p = (HeapWord*)round_down((intptr_t) start, os::large_page_size());
+            if (UseLargePages && page_size() >= alignment()) {
+              HeapWord *p = (HeapWord*)round_down((intptr_t) start, alignment());
               if (new_region.contains(p)) {
                 start = p;
               }
-              p = (HeapWord*)round_to((intptr_t) end, os::large_page_size());
+              p = (HeapWord*)round_to((intptr_t) end, alignment());
               if (new_region.contains(end)) {
                 end = p;
               }
@@ -494,7 +526,8 @@ void MutableNUMASpace::merge_regions(MemRegion new_region, MemRegion* intersecti
 
 void MutableNUMASpace::initialize(MemRegion mr,
                                   bool clear_space,
-                                  bool mangle_space) {
+                                  bool mangle_space,
+                                  bool setup_pages) {
   assert(clear_space, "Reallocation will destory data!");
   assert(lgrp_spaces()->length() > 0, "There should be at least one space");
 
@@ -506,7 +539,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
 
   // Compute chunk sizes
   size_t prev_page_size = page_size();
-  set_page_size(UseLargePages ? os::large_page_size() : os::vm_page_size());
+  set_page_size(UseLargePages ? alignment() : os::vm_page_size());
   HeapWord* rounded_bottom = (HeapWord*)round_to((intptr_t) bottom(), page_size());
   HeapWord* rounded_end = (HeapWord*)round_down((intptr_t) end(), page_size());
   size_t base_space_size_pages = pointer_delta(rounded_end, rounded_bottom, sizeof(char)) / page_size();
@@ -634,7 +667,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
     }
 
     // Clear space (set top = bottom) but never mangle.
-    s->initialize(new_region, SpaceDecorator::Clear, SpaceDecorator::DontMangle);
+    s->initialize(new_region, SpaceDecorator::Clear, SpaceDecorator::DontMangle, MutableSpace::DontSetupPages);
 
     set_adaptation_cycles(samples_count());
   }
@@ -654,11 +687,11 @@ void MutableNUMASpace::set_top(HeapWord* value) {
       // a minimal object; assuming that's not the last chunk in which case we don't care.
       if (i < lgrp_spaces()->length() - 1) {
         size_t remainder = pointer_delta(s->end(), value);
-        const size_t minimal_object_size = oopDesc::header_size();
-        if (remainder < minimal_object_size && remainder > 0) {
-          // Add a filler object of a minimal size, it will cross the chunk boundary.
-          SharedHeap::fill_region_with_object(MemRegion(value, minimal_object_size));
-          value += minimal_object_size;
+        const size_t min_fill_size = CollectedHeap::min_fill_size();
+        if (remainder < min_fill_size && remainder > 0) {
+          // Add a minimum size filler object; it will cross the chunk boundary.
+          CollectedHeap::fill_with_object(value, min_fill_size);
+          value += min_fill_size;
           assert(!s->contains(value), "Should be in the next chunk");
           // Restart the loop from the same chunk, since the value has moved
           // to the next one.
@@ -722,7 +755,8 @@ HeapWord* MutableNUMASpace::allocate(size_t size) {
     i = os::random() % lgrp_spaces()->length();
   }
 
-  MutableSpace *s = lgrp_spaces()->at(i)->space();
+  LGRPSpace* ls = lgrp_spaces()->at(i);
+  MutableSpace *s = ls->space();
   HeapWord *p = s->allocate(size);
 
   if (p != NULL) {
@@ -743,6 +777,9 @@ HeapWord* MutableNUMASpace::allocate(size_t size) {
       *(int*)i = 0;
     }
   }
+  if (p == NULL) {
+    ls->set_allocation_failed();
+  }
   return p;
 }
 
@@ -761,7 +798,8 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   if (i == -1) {
     i = os::random() % lgrp_spaces()->length();
   }
-  MutableSpace *s = lgrp_spaces()->at(i)->space();
+  LGRPSpace *ls = lgrp_spaces()->at(i);
+  MutableSpace *s = ls->space();
   HeapWord *p = s->cas_allocate(size);
   if (p != NULL) {
     size_t remainder = pointer_delta(s->end(), p + size);
@@ -789,6 +827,9 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
     for (HeapWord *i = p; i < p + size; i += os::vm_page_size() >> LogHeapWordSize) {
       *(int*)i = 0;
     }
+  }
+  if (p == NULL) {
+    ls->set_allocation_failed();
   }
   return p;
 }
