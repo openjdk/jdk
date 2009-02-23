@@ -39,7 +39,6 @@ import sun.security.krb5.RealmException;
 import sun.security.krb5.internal.Krb5;
 import sun.security.util.*;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.Stack;
@@ -364,7 +363,6 @@ public class Realm implements Cloneable {
         }
 
         String tempTarget = null, tempRealm = null;
-        StringTokenizer strTok = null;
         Stack<String> iStack = new Stack<String> ();
 
         /*
@@ -382,7 +380,7 @@ public class Realm implements Cloneable {
             tempTarget = sRealm;
         }
 
-        do {
+        out: do {
             if (DEBUG) {
                 count++;
                 System.out.println(">>> Realm parseCapaths: loop " +
@@ -400,15 +398,21 @@ public class Realm implements Cloneable {
 
                 /*
                  * We have one or more space-separated intermediary realms.
-                 * Stack them.
+                 * Stack them. A null is always added between intermedies of
+                 * different targets. When this null is popped, it means none
+                 * of the intermedies for this target is useful (because of
+                 * infinite loop), the target is then removed from the partial
+                 * tempList, and the next possible intermediary is tried.
                  */
-                strTok = new StringTokenizer(intermediaries, " ");
-                while (strTok.hasMoreTokens())
+                iStack.push(null);
+                String[] ints = intermediaries.split("\\s+");
+                for (int i = ints.length-1; i>=0; i--)
                 {
-                    tempRealm = strTok.nextToken();
-                    if (!tempRealm.equals(PrincipalName.
-                                          REALM_COMPONENT_SEPARATOR_STR) &&
-                        !iStack.contains(tempRealm)) {
+                    tempRealm = ints[i];
+                    if (tempRealm.equals(PrincipalName.REALM_COMPONENT_SEPARATOR_STR)) {
+                        break out;
+                    }
+                    if (!tempList.contains(tempRealm)) {
                         iStack.push(tempRealm);
                         if (DEBUG) {
                             System.out.println(">>> Realm parseCapaths: loop " +
@@ -418,16 +422,18 @@ public class Realm implements Cloneable {
                         }
                     } else if (DEBUG) {
                         System.out.println(">>> Realm parseCapaths: loop " +
-
                                            count +
                                            ": ignoring realm: [" +
                                            tempRealm + "]");
                     }
                 }
-            } else if (DEBUG) {
-                System.out.println(">>> Realm parseCapaths: loop " +
-                                   count +
-                                   ": no intermediaries");
+            } else {
+                if (DEBUG) {
+                    System.out.println(">>> Realm parseCapaths: loop " +
+                                       count +
+                                       ": no intermediaries");
+                }
+                break;
             }
 
             /*
@@ -435,7 +441,12 @@ public class Realm implements Cloneable {
              */
 
             try {
-                tempTarget = iStack.pop();
+                while ((tempTarget = iStack.pop()) == null) {
+                    tempList.removeElementAt(tempList.size()-1);
+                    if (DEBUG) {
+                        System.out.println(">>> Realm parseCapaths: backtrack, remove tail");
+                    }
+                }
             } catch (EmptyStackException exc) {
                 tempTarget = null;
             }
