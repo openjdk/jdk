@@ -28,6 +28,7 @@ package java.nio.file;
 import java.nio.file.attribute.*;
 import java.io.IOException;
 import java.util.*;
+import sun.nio.fs.BasicFileAttributesHolder;
 
 /**
  * Simple file tree walker that works in a similar manner to nftw(3C).
@@ -65,6 +66,10 @@ class FileTreeWalker {
      * Walk file tree starting at the given file
      */
     void walk(Path start, int maxDepth) {
+        // don't use attributes of starting file as they may be stale
+        if (start instanceof BasicFileAttributesHolder) {
+            ((BasicFileAttributesHolder)start).invalidate();
+        }
         FileVisitResult result = walk(start,
                                       maxDepth,
                                       new ArrayList<AncestorDirectory>());
@@ -75,11 +80,9 @@ class FileTreeWalker {
 
     /**
      * @param   file
-     *          The directory to visit
-     * @param   path
-     *          list of directories that is relative path from starting file
+     *          the directory to visit
      * @param   depth
-     *          Depth remaining
+     *          depth remaining
      * @param   ancestors
      *          use when cycle detection is enabled
      */
@@ -91,28 +94,36 @@ class FileTreeWalker {
         if (depth-- < 0)
             return FileVisitResult.CONTINUE;
 
+        // if attributes are cached then use them if possible
         BasicFileAttributes attrs = null;
+        if (file instanceof BasicFileAttributesHolder) {
+            BasicFileAttributes cached = ((BasicFileAttributesHolder)file).get();
+            if (!followLinks || !cached.isSymbolicLink())
+                attrs = cached;
+        }
         IOException exc = null;
 
         // attempt to get attributes of file. If fails and we are following
         // links then a link target might not exist so get attributes of link
-        try {
+        if (attrs == null) {
             try {
-                attrs = Attributes.readBasicFileAttributes(file, linkOptions);
-            } catch (IOException x1) {
-                if (followLinks) {
-                    try {
-                        attrs = Attributes
-                            .readBasicFileAttributes(file, LinkOption.NOFOLLOW_LINKS);
-                    } catch (IOException x2) {
-                        exc = x2;
+                try {
+                    attrs = Attributes.readBasicFileAttributes(file, linkOptions);
+                } catch (IOException x1) {
+                    if (followLinks) {
+                        try {
+                            attrs = Attributes
+                                .readBasicFileAttributes(file, LinkOption.NOFOLLOW_LINKS);
+                        } catch (IOException x2) {
+                            exc = x2;
+                        }
+                    } else {
+                        exc = x1;
                     }
-                } else {
-                    exc = x1;
                 }
+            } catch (SecurityException x) {
+                return FileVisitResult.CONTINUE;
             }
-        } catch (SecurityException x) {
-            return FileVisitResult.CONTINUE;
         }
 
         // unable to get attributes of file

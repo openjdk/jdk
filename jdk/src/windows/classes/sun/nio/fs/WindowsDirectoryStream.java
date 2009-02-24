@@ -26,6 +26,7 @@
 package sun.nio.fs;
 
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Iterator;
 import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
@@ -48,6 +49,9 @@ class WindowsDirectoryStream
     private final long handle;
     // first entry in the directory
     private final String firstName;
+
+    // buffer for WIN32_FIND_DATA structure that receives information about file
+    private final NativeBuffer findDataBuffer;
 
     private final Object closeLock = new Object();
 
@@ -75,6 +79,7 @@ class WindowsDirectoryStream
             FirstFile first = FindFirstFile(search);
             this.handle = first.handle();
             this.firstName = first.name();
+            this.findDataBuffer = WindowsFileAttributes.getBufferForFindData();
         } catch (WindowsException x) {
             if (x.lastError() == ERROR_DIRECTORY) {
                 throw new NotDirectoryException(dir.getPathForExceptionMessage());
@@ -95,6 +100,7 @@ class WindowsDirectoryStream
                 return;
             isOpen = false;
         }
+        findDataBuffer.release();
         try {
             FindClose(handle);
         } catch (WindowsException x) {
@@ -133,11 +139,19 @@ class WindowsDirectoryStream
         }
 
         // applies filter and also ignores "." and ".."
-        private Path acceptEntry(String s) {
+        private Path acceptEntry(String s, BasicFileAttributes attrs) {
             if (s.equals(".") || s.equals(".."))
                 return null;
+            if (dir.needsSlashWhenResolving()) {
+                StringBuilder sb = new StringBuilder(dir.toString());
+                sb.append('\\');
+                sb.append(s);
+                s = sb.toString();
+            } else {
+                s = dir + s;
+            }
             Path entry = WindowsPath
-                .createFromNormalizedPath(dir.getFileSystem(), dir + "\\" + s);
+                .createFromNormalizedPath(dir.getFileSystem(), s, attrs);
             if (filter.accept(entry)) {
                 return entry;
             } else {
@@ -149,21 +163,27 @@ class WindowsDirectoryStream
         private Path readNextEntry() {
             // handle first element returned by search
             if (first != null) {
-                nextEntry = acceptEntry(first);
+                nextEntry = acceptEntry(first, null);
                 first = null;
                 if (nextEntry != null)
                     return nextEntry;
             }
 
-            String name = null;
             for (;;) {
+                String name = null;
+                WindowsFileAttributes attrs;
+
                 // synchronize on closeLock to prevent close while reading
                 synchronized (closeLock) {
                     if (!isOpen)
                         throwAsConcurrentModificationException(new
                             IllegalStateException("Directory stream is closed"));
                     try {
-                        name = FindNextFile(handle);
+                        name = FindNextFile(handle, findDataBuffer.address());
+                        if (name == null) {
+                            // NO_MORE_FILES
+                            return null;
+                        }
                     } catch (WindowsException x) {
                         try {
                             x.rethrowAsIOException(dir);
@@ -171,13 +191,16 @@ class WindowsDirectoryStream
                             throwAsConcurrentModificationException(ioe);
                         }
                     }
+
+                    // grab the attributes from the WIN32_FIND_DATA structure
+                    // (needs to be done while holding closeLock because close
+                    // will release the buffer)
+                    attrs = WindowsFileAttributes
+                        .fromFindData(findDataBuffer.address());
                 }
 
-                // EOF
-                if (name == null)
-                    return null;
-
-                Path entry = acceptEntry(name);
+                // return entry if accepted by filter
+                Path entry = acceptEntry(name, attrs);
                 if (entry != null)
                     return entry;
             }

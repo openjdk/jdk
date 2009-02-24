@@ -392,16 +392,16 @@ Java_sun_nio_fs_WindowsNativeDispatcher_FindFirstFile1(JNIEnv* env, jclass this,
 
 JNIEXPORT jstring JNICALL
 Java_sun_nio_fs_WindowsNativeDispatcher_FindNextFile(JNIEnv* env, jclass this,
-    jlong handle)
+    jlong handle, jlong dataAddress)
 {
-    WIN32_FIND_DATAW data;
     HANDLE h = (HANDLE)jlong_to_ptr(handle);
+    WIN32_FIND_DATAW* data = (WIN32_FIND_DATAW*)jlong_to_ptr(dataAddress);
 
-    if (FindNextFileW(h, &data) != 0) {
-        return (*env)->NewString(env, data.cFileName, wcslen(data.cFileName));
+    if (FindNextFileW(h, data) != 0) {
+        return (*env)->NewString(env, data->cFileName, wcslen(data->cFileName));
     } else {
-        if (GetLastError() != ERROR_NO_MORE_FILES)
-            throwWindowsException(env, GetLastError());
+    if (GetLastError() != ERROR_NO_MORE_FILES)
+        throwWindowsException(env, GetLastError());
         return NULL;
     }
 }

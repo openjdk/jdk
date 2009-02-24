@@ -236,10 +236,8 @@ class WindowsFileSystem
 
     @Override
     public Path getPath(String path) {
-        WindowsPathParser.Result result = WindowsPathParser.parse(path);
-        return new WindowsPath(this, result.type(), result.root(), result.path());
+        return WindowsPath.parse(this, path);
     }
-
 
     @Override
     public UserPrincipalLookupService getUserPrincipalLookupService() {

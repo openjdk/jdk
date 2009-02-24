@@ -211,9 +211,10 @@ class WindowsNativeDispatcher {
      *   LPWIN32_FIND_DATA lpFindFileData
      * )
      *
-     * @return  lpFindFileData->cFileName
+     * @return  lpFindFileData->cFileName or null
      */
-    static native String FindNextFile(long handle) throws WindowsException;
+    static native String FindNextFile(long handle, long address)
+        throws WindowsException;
 
     /**
      * HANDLE FindFirstStreamW(

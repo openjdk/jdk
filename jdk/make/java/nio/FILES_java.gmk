@@ -252,6 +252,7 @@ FILES_src = \
 	sun/nio/fs/AbstractUserDefinedFileAttributeView.java \
 	sun/nio/fs/AbstractWatchKey.java \
 	sun/nio/fs/AbstractWatchService.java \
+	sun/nio/fs/BasicFileAttributesHolder.java \
 	sun/nio/fs/Cancellable.java \
 	sun/nio/fs/DefaultFileSystemProvider.java \
 	sun/nio/fs/DefaultFileTypeDetector.java \
