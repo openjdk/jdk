@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,54 +23,43 @@
  * have any questions.
  */
 
-package com.sun.tools.doclets.formats.html;
+package pkg1;
 
-import com.sun.tools.doclets.internal.toolkit.taglets.*;
+import java.io.Serializable;
 
 /**
- * The output for HTML taglets.
+ * Test for Serializable
  *
- * @since 1.5
- * @author Jamie Ho
+ * @author Bhavesh Patel
+ * @deprecated This class is no longer used.
  */
+@Deprecated
+public abstract class C3 implements Serializable {
 
-public class TagletOutputImpl implements TagletOutput {
+    /**
+     * The name for this class.
+     *
+     * @serial
+     */
+    private String name;
 
-    private StringBuffer output;
+    /**
+     * @serial
+     */
+    private int publicKey;
 
-    public TagletOutputImpl(String o) {
-        setOutput(o);
+    /**
+     * Constructor for serialization only.
+     */
+    protected C3() {
+
     }
 
     /**
-     * {@inheritDoc}
+     * Prints general information.
+     *
      */
-    public void setOutput (Object o) {
-        output = new StringBuffer(o == null ? "" : (String) o);
-    }
+    public void printInfo() {
 
-    /**
-     * {@inheritDoc}
-     */
-    public void appendOutput(TagletOutput o) {
-        output.append(o.toString());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean hasInheritDocTag() {
-        return output.indexOf(InheritDocTaglet.INHERIT_DOC_INLINE_TAG) != -1;
-    }
-
-    public String toString() {
-        return output.toString();
-    }
-
-    /**
-     * Check whether the taglet output is empty.
-     */
-    public boolean isEmpty() {
-        return (toString().trim().isEmpty());
     }
 }
