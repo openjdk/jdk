@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,54 +23,64 @@
  * have any questions.
  */
 
-package com.sun.tools.doclets.formats.html;
+package pkg1;
 
-import com.sun.tools.doclets.internal.toolkit.taglets.*;
+import java.io.ObjectInputStream;
+import java.io.IOException;
+import java.io.Serializable;
 
 /**
- * The output for HTML taglets.
+ * A class comment for testing.
  *
- * @since 1.5
- * @author Jamie Ho
+ * @author      Bhavesh Patel
+ * @see C1
+ * @since       JDK1.0
  */
 
-public class TagletOutputImpl implements TagletOutput {
-
-    private StringBuffer output;
-
-    public TagletOutputImpl(String o) {
-        setOutput(o);
-    }
+public class C2 implements Serializable {
 
     /**
-     * {@inheritDoc}
+     * This field indicates title.
      */
-    public void setOutput (Object o) {
-        output = new StringBuffer(o == null ? "" : (String) o);
-    }
+    String title;
+
+    public static enum ModalType {
+        NO_EXCLUDE
+    };
 
     /**
-     * {@inheritDoc}
+     * Constructor.
+     *
      */
-    public void appendOutput(TagletOutput o) {
-        output.append(o.toString());
-    }
+     public C2() {
 
-    /**
-     * {@inheritDoc}
+     }
+
+     public C2(String title) {
+
+     }
+
+     /**
+     * Set visible.
+     *
+     * @param set boolean
+     * @since 1.4
+     * @deprecated As of JDK version 1.5, replaced by
+     * {@link C1#setUndecorated(boolean) setUndecorated(boolean)}.
      */
-    public boolean hasInheritDocTag() {
-        return output.indexOf(InheritDocTaglet.INHERIT_DOC_INLINE_TAG) != -1;
-    }
+     @Deprecated
+     public void setVisible(boolean set) {
+     }
 
-    public String toString() {
-        return output.toString();
-    }
-
-    /**
-     * Check whether the taglet output is empty.
+     /**
+     * Reads the object stream.
+     *
+     * @param s ObjectInputStream
+     * @throws <code>IOException</code>
+     * @deprecated As of JDK version 1.5, replaced by
+     * {@link C1#setUndecorated(boolean) setUndecorated(boolean)}.
      */
-    public boolean isEmpty() {
-        return (toString().trim().isEmpty());
-    }
+     @Deprecated
+     public void readObject(ObjectInputStream s) throws IOException {
+     }
 }

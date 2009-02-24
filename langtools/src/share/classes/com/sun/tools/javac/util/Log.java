@@ -93,17 +93,17 @@ public class Log extends AbstractLog {
     protected DiagnosticListener<? super JavaFileObject> diagListener;
 
     /**
-     * Formatter for diagnostics
+     * Formatter for diagnostics.
      */
     private DiagnosticFormatter<JCDiagnostic> diagFormatter;
 
     /**
-     * Keys for expected diagnostics
+     * Keys for expected diagnostics.
      */
     public Set<String> expectDiagKeys;
 
     /**
-     * JavacMessages object used for localization
+     * JavacMessages object used for localization.
      */
     private JavacMessages messages;
 
@@ -204,6 +204,18 @@ public class Log extends AbstractLog {
      */
     public JavaFileObject currentSourceFile() {
         return source == null ? null : source.getFile();
+    }
+
+    /** Get the current diagnostic formatter.
+     */
+    public DiagnosticFormatter<JCDiagnostic> getDiagnosticFormatter() {
+        return diagFormatter;
+    }
+
+    /** Set the current diagnostic formatter.
+     */
+    public void setDiagnosticFormatter(DiagnosticFormatter<JCDiagnostic> diagFormatter) {
+        this.diagFormatter = diagFormatter;
     }
 
     /** Flush the logs
