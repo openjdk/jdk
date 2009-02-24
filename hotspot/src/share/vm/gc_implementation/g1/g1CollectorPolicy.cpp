@@ -1014,7 +1014,7 @@ void G1CollectorPolicy::record_full_collection_end() {
 
   _all_full_gc_times_ms->add(full_gc_time_ms);
 
-  update_recent_gc_times(end_sec, full_gc_time_sec);
+  update_recent_gc_times(end_sec, full_gc_time_ms);
 
   _g1->clear_full_collection();
 
@@ -1475,6 +1475,7 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
   size_t cur_used_bytes = _g1->used();
   assert(cur_used_bytes == _g1->recalculate_used(), "It should!");
   bool last_pause_included_initial_mark = false;
+  bool update_stats = !abandoned && !_g1->evacuation_failed();
 
 #ifndef PRODUCT
   if (G1YoungSurvRateVerbose) {
@@ -1535,7 +1536,7 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
 
   _n_pauses++;
 
-  if (!abandoned) {
+  if (update_stats) {
     _recent_CH_strong_roots_times_ms->add(_cur_CH_strong_roots_dur_ms);
     _recent_G1_strong_roots_times_ms->add(_cur_G1_strong_roots_dur_ms);
     _recent_evac_times_ms->add(evac_ms);
@@ -1636,7 +1637,7 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
   double termination_time = avg_value(_par_last_termination_times_ms);
 
   double parallel_other_time;
-  if (!abandoned) {
+  if (update_stats) {
     MainBodySummary* body_summary = summary->main_body_summary();
     guarantee(body_summary != NULL, "should not be null!");
 
@@ -1852,7 +1853,7 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
 
   // <NEW PREDICTION>
 
-  if (!popular && !abandoned) {
+  if (!popular && update_stats) {
     double pause_time_ms = elapsed_ms;
 
     size_t diff = 0;
