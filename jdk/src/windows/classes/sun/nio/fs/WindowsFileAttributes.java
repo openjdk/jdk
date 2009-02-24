@@ -87,6 +87,29 @@ class WindowsFileAttributes
     private static final short OFFSETOF_FILE_ATTRIBUTE_DATA_SIZEHIGH        = 28;
     private static final short OFFSETOF_FILE_ATTRIBUTE_DATA_SIZELOW         = 32;
 
+    /**
+     * typedef struct _WIN32_FIND_DATA {
+     *   DWORD dwFileAttributes;
+     *   FILETIME ftCreationTime;
+     *   FILETIME ftLastAccessTime;
+     *   FILETIME ftLastWriteTime;
+     *   DWORD nFileSizeHigh;
+     *   DWORD nFileSizeLow;
+     *   DWORD dwReserved0;
+     *   DWORD dwReserved1;
+     *   TCHAR cFileName[MAX_PATH];
+     *   TCHAR cAlternateFileName[14];
+     * } WIN32_FIND_DATA;
+     */
+    private static final short SIZEOF_FIND_DATA = 592;
+    private static final short OFFSETOF_FIND_DATA_ATTRIBUTES = 0;
+    private static final short OFFSETOF_FIND_DATA_CREATETIME = 4;
+    private static final short OFFSETOF_FIND_DATA_LASTACCESSTIME = 12;
+    private static final short OFFSETOF_FIND_DATA_LASTWRITETIME = 20;
+    private static final short OFFSETOF_FIND_DATA_SIZEHIGH = 28;
+    private static final short OFFSETOF_FIND_DATA_SIZELOW = 32;
+    private static final short OFFSETOF_FIND_DATA_RESERVED0 = 36;
+
     // indicates if accurate metadata is required (interesting on NTFS only)
     private static final boolean ensureAccurateMetadata;
     static {
@@ -198,6 +221,41 @@ class WindowsFileAttributes
             toJavaTime(unsafe.getLong(address + OFFSETOF_FILE_ATTRIBUTE_DATA_LASTWRITETIME));
         long size = ((long)(unsafe.getInt(address + OFFSETOF_FILE_ATTRIBUTE_DATA_SIZEHIGH)) << 32)
             + (unsafe.getInt(address + OFFSETOF_FILE_ATTRIBUTE_DATA_SIZELOW) & 0xFFFFFFFFL);
+        return new WindowsFileAttributes(fileAttrs,
+                                         creationTime,
+                                         lastAccessTime,
+                                         lastWriteTime,
+                                         size,
+                                         reparseTag,
+                                         1,  // linkCount
+                                         0,  // volSerialNumber
+                                         0,  // fileIndexHigh
+                                         0); // fileIndexLow
+    }
+
+
+    /**
+     * Allocates a native buffer for a WIN32_FIND_DATA structure
+     */
+    static NativeBuffer getBufferForFindData() {
+        return NativeBuffers.getNativeBuffer(SIZEOF_FIND_DATA);
+    }
+
+    /**
+     * Create a WindowsFileAttributes from a WIN32_FIND_DATA structure
+     */
+    static WindowsFileAttributes fromFindData(long address) {
+        int fileAttrs = unsafe.getInt(address + OFFSETOF_FIND_DATA_ATTRIBUTES);
+        long creationTime =
+            toJavaTime(unsafe.getLong(address + OFFSETOF_FIND_DATA_CREATETIME));
+        long lastAccessTime =
+            toJavaTime(unsafe.getLong(address + OFFSETOF_FIND_DATA_LASTACCESSTIME));
+        long lastWriteTime =
+            toJavaTime(unsafe.getLong(address + OFFSETOF_FIND_DATA_LASTWRITETIME));
+        long size = ((long)(unsafe.getInt(address + OFFSETOF_FIND_DATA_SIZEHIGH)) << 32)
+            + (unsafe.getInt(address + OFFSETOF_FIND_DATA_SIZELOW) & 0xFFFFFFFFL);
+        int reparseTag = ((fileAttrs & FILE_ATTRIBUTE_REPARSE_POINT) != 0) ?
+            + unsafe.getInt(address + OFFSETOF_FIND_DATA_RESERVED0) : 0;
         return new WindowsFileAttributes(fileAttrs,
                                          creationTime,
                                          lastAccessTime,

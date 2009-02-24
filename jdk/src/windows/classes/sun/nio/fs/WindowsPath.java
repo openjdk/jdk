@@ -83,10 +83,10 @@ class WindowsPath extends AbstractPath {
     /**
      * Initializes a new instance of this class.
      */
-    WindowsPath(WindowsFileSystem fs,
-                WindowsPathType type,
-                String root,
-                String path)
+    private WindowsPath(WindowsFileSystem fs,
+                        WindowsPathType type,
+                        String root,
+                        String path)
     {
         this.fs = fs;
         this.type = type;
@@ -95,7 +95,7 @@ class WindowsPath extends AbstractPath {
     }
 
     /**
-     * Creates a WindowsPath by parsing the given path.
+     * Creates a Path by parsing the given path.
      */
     static WindowsPath parse(WindowsFileSystem fs, String path) {
         WindowsPathParser.Result result = WindowsPathParser.parse(path);
@@ -103,15 +103,68 @@ class WindowsPath extends AbstractPath {
     }
 
     /**
-     * Creates a WindowsPath from a given path that is known to be normalized.
+     * Creates a Path from a given path that is known to be normalized.
      */
-    static WindowsPath createFromNormalizedPath(WindowsFileSystem fs, String path) {
+    static WindowsPath createFromNormalizedPath(WindowsFileSystem fs,
+                                                String path,
+                                                BasicFileAttributes attrs)
+    {
         try {
             WindowsPathParser.Result result =
                 WindowsPathParser.parseNormalizedPath(path);
-            return new WindowsPath(fs, result.type(), result.root(), result.path());
+            if (attrs == null) {
+                return new WindowsPath(fs,
+                                       result.type(),
+                                       result.root(),
+                                       result.path());
+            } else {
+                return new WindowsPathWithAttributes(fs,
+                                                     result.type(),
+                                                     result.root(),
+                                                     result.path(),
+                                                     attrs);
+            }
         } catch (InvalidPathException x) {
             throw new AssertionError(x.getMessage());
+        }
+    }
+
+    /**
+     * Creates a WindowsPath from a given path that is known to be normalized.
+     */
+    static WindowsPath createFromNormalizedPath(WindowsFileSystem fs,
+                                                String path)
+    {
+        return createFromNormalizedPath(fs, path, null);
+    }
+
+    /**
+     * Special implementation with attached/cached attributes (used to quicken
+     * file tree traveral)
+     */
+    private static class WindowsPathWithAttributes
+        extends WindowsPath implements BasicFileAttributesHolder
+    {
+        final WeakReference<BasicFileAttributes> ref;
+
+        WindowsPathWithAttributes(WindowsFileSystem fs,
+                                  WindowsPathType type,
+                                  String root,
+                                  String path,
+                                  BasicFileAttributes attrs)
+        {
+            super(fs, type, root, path);
+            ref = new WeakReference<BasicFileAttributes>(attrs);
+        }
+
+        @Override
+        public BasicFileAttributes get() {
+            return ref.get();
+        }
+
+        @Override
+        public void invalidate() {
+            ref.clear();
         }
     }
 
@@ -288,6 +341,12 @@ class WindowsPath extends AbstractPath {
     // package-private
     boolean isUnc() {
         return type == WindowsPathType.UNC;
+    }
+
+    boolean needsSlashWhenResolving() {
+        if (path.endsWith("\\"))
+            return false;
+        return path.length() > root.length();
     }
 
     @Override
