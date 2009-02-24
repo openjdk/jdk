@@ -45,13 +45,23 @@ public class Paths {
      * getPath} method of the {@link FileSystems#getDefault default} {@link
      * FileSystem}.
      *
-     * @param   path
-     *          The path string to convert
+     * <p> Note that while this method is very convenient, using it will
+     * imply an assumed reference to the default FileSystem and limit the
+     * utility of the calling code. Hence it should not be used in library code
+     * intended for flexible reuse. A more flexible alternative is to use an
+     * existing {@code Path} instance as an anchor, such as:
+     * <pre>
+     *     Path dir = ...
+     *     Path path = dir.resolve("file");
+     * </pre>
      *
-     * @return  The resulting {@code Path}
+     * @param   path
+     *          the path string to convert
+     *
+     * @return  the resulting {@code Path}
      *
      * @throws  InvalidPathException
-     *          If the path string cannot be converted to a {@code Path}
+     *          if the path string cannot be converted to a {@code Path}
      *
      * @see FileSystem#getPath
      */
@@ -88,18 +98,18 @@ public class Paths {
      * provider specific and therefore unspecified.
      *
      * @param   uri
-     *          The URI to convert
+     *          the URI to convert
      *
-     * @return  The resulting {@code Path}
+     * @return  the resulting {@code Path}
      *
      * @throws  IllegalArgumentException
-     *          If preconditions on the {@code uri} parameter do not hold. The
+     *          if preconditions on the {@code uri} parameter do not hold. The
      *          format of the URI is provider specific.
      * @throws  FileSystemNotFoundException
-     *          If the file system identified by the URI does not exist or the
+     *          if the file system identified by the URI does not exist or the
      *          provider identified by the URI's scheme component is not installed
      * @throws  SecurityException
-     *          If a security manager is installed and it denies an unspecified
+     *          if a security manager is installed and it denies an unspecified
      *          permission to access the file system
      */
     public static Path get(URI uri) {

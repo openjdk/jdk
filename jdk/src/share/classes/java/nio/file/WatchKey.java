@@ -103,7 +103,7 @@ public abstract class WatchKey {
      *
      * <p> Note that this method does not wait if there are no events pending.
      *
-     * @return  The list of the events retrieved
+     * @return  the list of the events retrieved
      */
     public abstract List<WatchEvent<?>> pollEvents();
 
@@ -117,7 +117,7 @@ public abstract class WatchKey {
      * events then the watch key is put into the ready state and will remain in
      * that state until an event is detected or the watch key is cancelled.
      *
-     * @return  {@code true} if the watch key is valid and has been reset;
+     * @return  {@code true} if the watch key is valid and has been reset, and
      *          {@code false} if the watch key could not be reset because it is
      *          no longer {@link #isValid valid}
      */

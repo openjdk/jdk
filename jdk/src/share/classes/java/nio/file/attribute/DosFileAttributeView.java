@@ -106,10 +106,10 @@ public interface DosFileAttributeView
      * the DOS attribute in order to update this attribute.
      *
      * @param   value
-     *          The new value of the attribute
+     *          the new value of the attribute
      *
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default, and a security manager is installed,
      *          its  {@link SecurityManager#checkWrite(String) checkWrite} method
@@ -126,10 +126,10 @@ public interface DosFileAttributeView
      * the DOS attribute in order to update this attribute.
      *
      * @param   value
-     *          The new value of the attribute
+     *          the new value of the attribute
      *
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default, and a security manager is installed,
      *          its  {@link SecurityManager#checkWrite(String) checkWrite} method
@@ -146,10 +146,10 @@ public interface DosFileAttributeView
      * the DOS attribute in order to update this attribute.
      *
      * @param   value
-     *          The new value of the attribute
+     *          the new value of the attribute
      *
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default, and a security manager is installed,
      *          its  {@link SecurityManager#checkWrite(String) checkWrite} method
@@ -166,10 +166,10 @@ public interface DosFileAttributeView
      * the DOS attribute in order to update this attribute.
      *
      * @param   value
-     *          The new value of the attribute
+     *          the new value of the attribute
      *
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default, and a security manager is installed,
      *          its  {@link SecurityManager#checkWrite(String) checkWrite} method

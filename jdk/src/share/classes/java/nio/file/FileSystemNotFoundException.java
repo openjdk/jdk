@@ -44,7 +44,7 @@ public class FileSystemNotFoundException
      * Constructs an instance of this class.
      *
      * @param   msg
-     *          The detail message
+     *          the detail message
      */
     public FileSystemNotFoundException(String msg) {
         super(msg);

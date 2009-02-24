@@ -78,12 +78,12 @@ public final class DirectoryStreamFilters {
      * </pre>
      *
      * @param   type
-     *          The content type
+     *          the content type
      *
-     * @return  A new directory stream filter
+     * @return  a new directory stream filter
      *
      * @throws  IllegalArgumentException
-     *          If the {@code type} parameter cannot be parsed as a MIME type
+     *          if the {@code type} parameter cannot be parsed as a MIME type
      *          or it has parameters
      */
     public static <T extends FileRef> DirectoryStream.Filter<T>
@@ -128,9 +128,9 @@ public final class DirectoryStreamFilters {
      * </pre>
      *
      * @param   filters
-     *          The sequence of filters
+     *          the sequence of filters
      *
-     * @return  The resulting filter
+     * @return  the resulting filter
      */
     public static <T> DirectoryStream.Filter<T>
         allOf(final Iterable<? extends DirectoryStream.Filter<? super T>> filters)
@@ -162,9 +162,9 @@ public final class DirectoryStreamFilters {
      * entries.
      *
      * @param   filters
-     *          The sequence of filters
+     *          the sequence of filters
      *
-     * @return  The resulting filter
+     * @return  the resulting filter
      */
     public static <T> DirectoryStream.Filter<T>
         anyOf(final Iterable<? extends DirectoryStream.Filter<? super T>> filters)
@@ -191,9 +191,9 @@ public final class DirectoryStreamFilters {
      * by the given filter.
      *
      * @param   filter
-     *          The given filter
+     *          the given filter
      *
-     * @return  The resulting filter that is the complement of the given filter
+     * @return  the resulting filter that is the complement of the given filter
      */
     public static <T> DirectoryStream.Filter<T>
         complementOf(final DirectoryStream.Filter<T> filter)

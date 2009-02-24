@@ -88,7 +88,7 @@ public abstract class WatchEvent<T> {
     /**
      * Returns the event kind.
      *
-     * @return  The event kind
+     * @return  the event kind
      */
     public abstract Kind<T> kind();
 
@@ -96,7 +96,7 @@ public abstract class WatchEvent<T> {
      * Returns the event count. If the event count is greater than {@code 1}
      * then this is a repeated event.
      *
-     * @return  The event count
+     * @return  the event count
      */
     public abstract int count();
 
@@ -110,7 +110,7 @@ public abstract class WatchEvent<T> {
      * the directory registered with the watch service, and the entry that is
      * created, deleted, or modified.
      *
-     * @return  The event context; may be {@code null}
+     * @return  the event context; may be {@code null}
      */
     public abstract T context();
 }

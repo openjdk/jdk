@@ -65,7 +65,7 @@ public interface FileOwnerAttributeView
      * @return  the file owner
      *
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, a security manager is
      *          installed, and it denies {@link
@@ -84,10 +84,10 @@ public interface FileOwnerAttributeView
      * to set the file owner to a user principal that is not a group.
      *
      * @param   owner
-     *          The new file owner
+     *          the new file owner
      *
      * @throws  IOException
-     *          If an I/O error occurs, or the {@code owner} parameter is a
+     *          if an I/O error occurs, or the {@code owner} parameter is a
      *          group and this implementation does not support setting the owner
      *          to a group
      * @throws  SecurityException

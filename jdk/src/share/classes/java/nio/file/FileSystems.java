@@ -201,14 +201,14 @@ public final class FileSystems {
      * default} file system, no permission check is required.
      *
      * @throws  IllegalArgumentException
-     *          If the pre-conditions for the {@code uri} parameter aren't met
+     *          if the pre-conditions for the {@code uri} parameter are not met
      * @throws  FileSystemNotFoundException
-     *          If the file system, identified by the URI, does not exist
+     *          if the file system, identified by the URI, does not exist
      * @throws  ProviderNotFoundException
-     *          If a provider supporting the URI scheme is not installed
+     *          if a provider supporting the URI scheme is not installed
      * @throws  SecurityException
-     *          If a security manager is installed and it denies an unspecified
-     *          permission.
+     *          if a security manager is installed and it denies an unspecified
+     *          permission
      */
     public static FileSystem getFileSystem(URI uri) {
         String scheme = uri.getScheme();
@@ -245,25 +245,25 @@ public final class FileSystems {
      * </pre>
      *
      * @param   uri
-     *          The URI identifying the file system
+     *          the URI identifying the file system
      * @param   env
-     *          A map of provider specific properties to configure the file system;
+     *          a map of provider specific properties to configure the file system;
      *          may be empty
      *
-     * @return  A new file system
+     * @return  a new file system
      *
      * @throws  IllegalArgumentException
-     *          If the pre-conditions for the {@code uri} parameter aren't met,
+     *          if the pre-conditions for the {@code uri} parameter are not met,
      *          or the {@code env} parameter does not contain properties required
      *          by the provider, or a property value is invalid
      * @throws  FileSystemAlreadyExistsException
-     *          If the file system has already been created
+     *          if the file system has already been created
      * @throws  ProviderNotFoundException
-     *          If a provider supporting the URI scheme is not installed
+     *          if a provider supporting the URI scheme is not installed
      * @throws  IOException
-     *          An I/O error occurs creating the file system
+     *          if an I/O error occurs creating the file system
      * @throws  SecurityException
-     *          If a security manager is installed and it denies an unspecified
+     *          if a security manager is installed and it denies an unspecified
      *          permission required by the file system provider implementation
      */
     public static FileSystem newFileSystem(URI uri, Map<String,?> env)
@@ -284,31 +284,31 @@ public final class FileSystems {
      * invoked to construct the new file system.
      *
      * @param   uri
-     *          The URI identifying the file system
+     *          the URI identifying the file system
      * @param   env
-     *          A map of provider specific properties to configure the file system;
+     *          a map of provider specific properties to configure the file system;
      *          may be empty
      * @param   loader
-     *          The class loader to locate the provider or {@code null} to only
+     *          the class loader to locate the provider or {@code null} to only
      *          attempt to locate an installed provider
      *
-     * @return  A new file system
+     * @return  a new file system
      *
      * @throws  IllegalArgumentException
-     *          If the pre-conditions for the {@code uri} parameter aren't met,
+     *          if the pre-conditions for the {@code uri} parameter are not met,
      *          or the {@code env} parameter does not contain properties required
      *          by the provider, or a property value is invalid
      * @throws  FileSystemAlreadyExistsException
-     *          If the URI scheme identifies an installed provider and the file
+     *          if the URI scheme identifies an installed provider and the file
      *          system has already been created
      * @throws  ProviderNotFoundException
-     *          If a provider supporting the URI scheme is not found
+     *          if a provider supporting the URI scheme is not found
      * @throws  ServiceConfigurationError
-     *          When an error occurs while loading a service provider
+     *          when an error occurs while loading a service provider
      * @throws  IOException
-     *          An I/O error occurs creating the file system
+     *          an I/O error occurs creating the file system
      * @throws  SecurityException
-     *          If a security manager is installed and it denies an unspecified
+     *          if a security manager is installed and it denies an unspecified
      *          permission required by the file system provider implementation
      */
     public static FileSystem newFileSystem(URI uri, Map<String,?> env, ClassLoader loader)
@@ -357,28 +357,28 @@ public final class FileSystems {
      * terminates and the file system is returned.
      *
      * @param   file
-     *          A reference to a file
+     *          a reference to a file
      * @param   env
-     *          A map of provider specific properties to configure the file system;
+     *          a map of provider specific properties to configure the file system;
      *          may be empty
      * @param   loader
-     *          The class loader to locate the provider or {@code null} to only
+     *          the class loader to locate the provider or {@code null} to only
      *          attempt to locate an installed provider
      *
-     * @return  A new file system
+     * @return  a new file system
      *
      * @throws  IllegalArgumentException
-     *          If the {@code env} parameter does not contain properties required
+     *          if the {@code env} parameter does not contain properties required
      *          by the provider, or a property value is invalid
      * @throws  ProviderNotFoundException
-     *          If a provider supporting this file type cannot be located
+     *          if a provider supporting this file type cannot be located
      * @throws  ServiceConfigurationError
-     *          When an error occurs while loading a service provider
+     *          when an error occurs while loading a service provider
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
-     *          If a security manager is installed and it denies an unspecified
-     *          permission.
+     *          if a security manager is installed and it denies an unspecified
+     *          permission
      */
     public static FileSystem newFileSystem(FileRef file,
                                            Map<String,?> env,

@@ -125,10 +125,10 @@ public interface BasicFileAttributeView
      * <p> It is implementation specific if all file attributes are read as an
      * atomic operation with respect to other file system operations.
      *
-     * @return  The file attributes
+     * @return  the file attributes
      *
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, a security manager is
      *          installed, its {@link SecurityManager#checkRead(String) checkRead}
@@ -158,22 +158,22 @@ public interface BasicFileAttributeView
      * this method has no effect.
      *
      * @param   lastModifiedTime
-     *          The new last modified time, or {@code -1L} to update it to
+     *          the new last modified time, or {@code -1L} to update it to
      *          the current time, or {@code null} to not change the attribute
      * @param   lastAccessTime
-     *          The last access time, or {@code -1L} to update it to
+     *          the last access time, or {@code -1L} to update it to
      *          the current time, or {@code null} to not change the attribute.
      * @param   createTime
-     *          The file's create time, or {@code -1L} to update it to
+     *          the file's create time, or {@code -1L} to update it to
      *          the current time, or {@code null} to not change the attribute
      * @param   unit
-     *          A {@code TimeUnit} determining how to interpret the time values
+     *          a {@code TimeUnit} determining how to interpret the time values
      *
      * @throws  IllegalArgumentException
-     *          If any of the parameters is a negative value other than {@code
+     *          if any of the parameters is a negative value other than {@code
      *          -1L}
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, a security manager is
      *          installed, its  {@link SecurityManager#checkWrite(String) checkWrite}

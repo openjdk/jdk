@@ -41,7 +41,7 @@ public class NoSuchFileException
      * Constructs an instance of this class.
      *
      * @param   file
-     *          A string identifying the file or {@code null} if not known.
+     *          a string identifying the file or {@code null} if not known.
      */
     public NoSuchFileException(String file) {
         super(file);
@@ -51,11 +51,11 @@ public class NoSuchFileException
      * Constructs an instance of this class.
      *
      * @param   file
-     *          A string identifying the file or {@code null} if not known.
+     *          a string identifying the file or {@code null} if not known.
      * @param   other
-     *          A string identifying the other file or {@code null} if not known.
+     *          a string identifying the other file or {@code null} if not known.
      * @param   reason
-     *          A reason message with additional information or {@code null}
+     *          a reason message with additional information or {@code null}
      */
     public NoSuchFileException(String file, String other, String reason) {
         super(file, other, reason);

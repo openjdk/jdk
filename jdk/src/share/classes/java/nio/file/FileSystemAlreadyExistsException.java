@@ -45,7 +45,7 @@ public class FileSystemAlreadyExistsException
      * Constructs an instance of this class.
      *
      * @param   msg
-     *          The detail message
+     *          the detail message
      */
     public FileSystemAlreadyExistsException(String msg) {
         super(msg);

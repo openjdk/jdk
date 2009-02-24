@@ -112,7 +112,7 @@ public interface FileVisitor<T extends FileRef> {
      * directory (and any descendants) will not be visited.
      *
      * @param   dir
-     *          A reference to the directory
+     *          a reference to the directory
      *
      * @return  the visit result
      */
@@ -122,9 +122,9 @@ public interface FileVisitor<T extends FileRef> {
      * Invoked for a directory that could not be opened.
      *
      * @param   dir
-     *          A reference to the directory
+     *          a reference to the directory
      * @param   exc
-     *          The I/O exception thrown from the attempt to open the directory
+     *          the I/O exception thrown from the attempt to open the directory
      *
      * @return  the visit result
      */
@@ -134,9 +134,9 @@ public interface FileVisitor<T extends FileRef> {
      * Invoked for a file in a directory.
      *
      * @param   file
-     *          A reference to the file
+     *          a reference to the file
      * @param   attrs
-     *          The file's basic attributes
+     *          the file's basic attributes
      *
      * @return  the visit result
      */
@@ -146,9 +146,9 @@ public interface FileVisitor<T extends FileRef> {
      * Invoked for a file when its basic file attributes could not be read.
      *
      * @param   file
-     *          A reference to the file
+     *          a reference to the file
      * @param   exc
-     *          The I/O exception thrown from the attempt to read the file
+     *          the I/O exception thrown from the attempt to read the file
      *          attributes
      *
      * @return  the visit result
@@ -163,7 +163,7 @@ public interface FileVisitor<T extends FileRef> {
      * or an I/O error when iterating over the directory).
      *
      * @param   dir
-     *          A reference to the directory
+     *          a reference to the directory
      * @param   exc
      *          {@code null} if the iteration of the directory completes without
      *          an error; otherwise the I/O exception that caused the iteration

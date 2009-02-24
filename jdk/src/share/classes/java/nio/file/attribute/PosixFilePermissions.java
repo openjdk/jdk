@@ -64,9 +64,9 @@ public class PosixFilePermissions {
      * {@code PosixFilePermission} then these elements are ignored.
      *
      * @param   perms
-     *          The set of permissions
+     *          the set of permissions
      *
-     * @return  The string representation of the permission set
+     * @return  the string representation of the permission set
      *
      * @see #fromString
      */
@@ -114,12 +114,12 @@ public class PosixFilePermissions {
      * </pre>
      *
      * @param   perms
-     *          String representing a set of permissions
+     *          string representing a set of permissions
      *
-     * @return  The resulting set of permissions
+     * @return  the resulting set of permissions
      *
      * @throws  IllegalArgumentException
-     *          If the string cannot be converted to a set of permissions
+     *          if the string cannot be converted to a set of permissions
      *
      * @see #toString(Set)
      */
@@ -146,13 +146,13 @@ public class PosixFilePermissions {
      * methods.
      *
      * @param   perms
-     *          The set of permissions
+     *          the set of permissions
      *
-     * @return  An attribute encapsulating the given file permissions with
+     * @return  an attribute encapsulating the given file permissions with
      *          {@link FileAttribute#name name} {@code "posix:permissions"}
      *
      * @throws  ClassCastException
-     *          If the sets contains elements that are not of type {@code
+     *          if the set contains elements that are not of type {@code
      *          PosixFilePermission}
      */
     public static FileAttribute<Set<PosixFilePermission>>

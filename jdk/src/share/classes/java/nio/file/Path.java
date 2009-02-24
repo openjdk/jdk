@@ -37,7 +37,8 @@ import java.util.*;
  *
  * <p> On many platforms a <em>path</em> is the means to locate and access files
  * in a file system. A path is hierarchical and composed of a sequence of
- * directory names separated by a special separator or delimiter.
+ * directory and file name elements separated by a special separator or
+ * delimiter.
  *
  * <h4>Path operations</h4>
  *
@@ -141,7 +142,7 @@ public abstract class Path
     /**
      * Returns the file system that created this object.
      *
-     * @return  The file system that created this object
+     * @return  the file system that created this object
      */
     public abstract FileSystem getFileSystem();
 
@@ -159,7 +160,7 @@ public abstract class Path
      * Returns the root component of this path as a {@code Path} object,
      * or {@code null} if this path does not have a root component.
      *
-     * @return  A path representing the root component of this path,
+     * @return  a path representing the root component of this path,
      *          or {@code null}
      */
     public abstract Path getRoot();
@@ -169,7 +170,7 @@ public abstract class Path
      * file name is the <em>farthest</em> element from the root in the directory
      * hierarchy.
      *
-     * @return  A path representing the name of the file or directory, or
+     * @return  a path representing the name of the file or directory, or
      *          {@code null} if this path has zero elements
      */
     public abstract Path getName();
@@ -195,14 +196,14 @@ public abstract class Path
      * subpath(0,&nbsp;getNameCount()-1);
      * </pre></blockquote>
      *
-     * @return  A path representing the path's parent
+     * @return  a path representing the path's parent
      */
     public abstract Path getParent();
 
     /**
      * Returns the number of name elements in the path.
      *
-     * @return  The number of elements in the path, or {@code 0} if this path
+     * @return  the number of elements in the path, or {@code 0} if this path
      *          only represents a root component
      */
     public abstract int getNameCount();
@@ -216,14 +217,14 @@ public abstract class Path
      * has index {@link #getNameCount count}{@code -1}.
      *
      * @param   index
-     *          The index of the element
+     *          the index of the element
      *
-     * @return  The name element
+     * @return  the name element
      *
      * @throws  IllegalArgumentException
-     *          If {@code index} is negative, {@code index} is greater than or
+     *          if {@code index} is negative, {@code index} is greater than or
      *          equal to the number of elements, or this path has zero name
-     *          elements.
+     *          elements
      */
     public abstract Path getName(int index);
 
@@ -240,15 +241,15 @@ public abstract class Path
      * endIndex-1}.
      *
      * @param   beginIndex
-     *          The index of the first element, inclusive
+     *          the index of the first element, inclusive
      * @param   endIndex
-     *          The index of the last element, exclusive
+     *          the index of the last element, exclusive
      *
-     * @return  A new {@code Path} object that is a subsequence of the name
+     * @return  a new {@code Path} object that is a subsequence of the name
      *          elements in this {@code Path}
      *
      * @throws  IllegalArgumentException
-     *          If {@code beginIndex} is negative, or greater than or equal to
+     *          if {@code beginIndex} is negative, or greater than or equal to
      *          the number of elements. If {@code endIndex} is less than or
      *          equal to {@code beginIndex}, or larger than the number of elements.
      */
@@ -269,7 +270,7 @@ public abstract class Path
      * this path does not start with the given path.
      *
      * @param   other
-     *          The given path
+     *          the given path
      *
      * @return  {@code true} if this path starts with the given path; otherwise
      *          {@code false}
@@ -293,7 +294,7 @@ public abstract class Path
      * then this path does not end with the given path.
      *
      * @param   other
-     *          The given path
+     *          the given path
      *
      * @return  {@code true} if this path ends with the given path; otherwise
      *          {@code false}
@@ -318,9 +319,9 @@ public abstract class Path
      * path may result in the path that locates a different file than the original
      * path. This can arise when the preceding name is a symbolic link.
      *
-     * @return  The resulting path, or this path if it does not contain
+     * @return  the resulting path, or this path if it does not contain
      *          redundant name elements, or {@code null} if this path does not
-     *          have a root component and all name elements are redundant.
+     *          have a root component and all name elements are redundant
      *
      * @see #getParent
      * @see #toRealPath
@@ -344,9 +345,9 @@ public abstract class Path
      * unspecified.
      *
      * @param   other
-     *          The path to resolve against this path; can be {@code null}
+     *          the path to resolve against this path; can be {@code null}
      *
-     * @return  The resulting path
+     * @return  the resulting path
      *
      * @see #relativize
      */
@@ -358,9 +359,9 @@ public abstract class Path
      * #resolve(Path) resolve} method.
      *
      * @param   other
-     *          The path string to resolve against this path
+     *          the path string to resolve against this path
      *
-     * @return  The resulting path
+     * @return  the resulting path
      *
      * @throws  InvalidPathException
      *          If the path string cannot be converted to a Path.
@@ -400,13 +401,13 @@ public abstract class Path
      * dependent if {@code "a/b/../x"} would locate the same file as {@code "/a/x"}.
      *
      * @param   other
-     *          The resulting path
+     *          the resulting path
      *
-     * @return  The resulting relative path, or {@code null} if both paths are
+     * @return  the resulting relative path, or {@code null} if both paths are
      *          equal
      *
      * @throws  IllegalArgumentException
-     *          If {@code other} is not a {@code Path} that can be relativized
+     *          if {@code other} is not a {@code Path} that can be relativized
      *          against this path
      */
     public abstract Path relativize(Path other);
@@ -440,18 +441,18 @@ public abstract class Path
      *          exist
      *
      * @throws  NoSuchFileException
-     *          If the value of the {@code failIfNotExists} is {@code true} and
+     *          if the value of the {@code failIfNotExists} is {@code true} and
      *          the file does not exist <i>(optional specific exception)</i>
      * @throws  DirectoryNotEmptyException
-     *          If the file is a directory and could not otherwise be deleted
+     *          if the file is a directory and could not otherwise be deleted
      *          because the directory is not empty <i>(optional specific
      *          exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkDelete(String)} method
-     *          is invoked to check delete access to the file
+     *          is invoked to check delete access to the file.
      */
     public abstract void delete(boolean failIfNotExists) throws IOException;
 
@@ -476,22 +477,22 @@ public abstract class Path
      * create symbolic links, in which case this method may throw {@code IOException}.
      *
      * @param   target
-     *          The target of the link
+     *          the target of the link
      * @param   attrs
-     *          The array of attributes to set atomically when creating the
+     *          the array of attributes to set atomically when creating the
      *          symbolic link
      *
      * @return  this path
      *
      * @throws  UnsupportedOperationException
-     *          If the implementation does not support symbolic links or the
+     *          if the implementation does not support symbolic links or the
      *          array contains an attribute that cannot be set atomically when
      *          creating the symbolic link
      * @throws  FileAlreadyExistsException
-     *          If a file with the name already exists <i>(optional specific
+     *          if a file with the name already exists <i>(optional specific
      *          exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the the default provider, and a security manager
      *          is installed, it denies {@link LinkPermission}<tt>("symbolic")</tt>
@@ -517,24 +518,24 @@ public abstract class Path
      * create hard links or to create links to directories.
      *
      * @param   existing
-     *          A reference to an existing file
+     *          a reference to an existing file
      *
      * @return  this path
      *
      * @throws  UnsupportedOperationException
-     *          If the implementation does not support adding an existing file
+     *          if the implementation does not support adding an existing file
      *          to a directory
      * @throws  FileAlreadyExistsException
-     *          If the entry could not otherwise be created because a file of
+     *          if the entry could not otherwise be created because a file of
      *          that name already exists <i>(optional specific exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the the default provider, and a security manager
      *          is installed, it denies {@link LinkPermission}<tt>("hard")</tt>
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to both this path and the path of the
-     *          existing file
+     *          existing file.
      *
      * @see BasicFileAttributes#linkCount
      */
@@ -549,15 +550,15 @@ public abstract class Path
      * returned {@code Path} object will be associated with the same file
      * system as this {@code Path}.
      *
-     * @return  A {@code Path} object representing the target of the link
+     * @return  a {@code Path} object representing the target of the link
      *
      * @throws  UnsupportedOperationException
-     *          If the implementation does not support symbolic links
+     *          if the implementation does not support symbolic links
      * @throws  NotLinkException
-     *          If the target could otherwise not be read because the file
+     *          if the target could otherwise not be read because the file
      *          is not a link <i>(optional specific exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the the default provider, and a security manager
      *          is installed, it checks that {@code FilePermission} has been
@@ -605,13 +606,13 @@ public abstract class Path
      * A format for compound URIs is not defined in this release; such a scheme
      * may be added in a future release.
      *
-     * @return  An absolute, hierarchical URI with a non-empty path component
+     * @return  an absolute, hierarchical URI with a non-empty path component
      *
      * @throws  IOError
-     *          If an I/O error occurs obtaining the absolute path, or where a
+     *          if an I/O error occurs obtaining the absolute path, or where a
      *          file system is constructed to access the contents of a file as
-     *          a file system, the URI of the enclosing file system cannot be
-     *          obtained.
+     *          a file system, and the URI of the enclosing file system cannot be
+     *          obtained
      *
      * @throws  SecurityException
      *          In the case of the the default provider, and a security manager
@@ -630,10 +631,10 @@ public abstract class Path
      * against a file system default directory. Depending on the implementation,
      * this method may throw an I/O error if the file system is not accessible.
      *
-     * @return  A {@code Path} object representing the absolute path
+     * @return  a {@code Path} object representing the absolute path
      *
      * @throws  IOError
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the the default provider, and a security manager
      *          is installed, its {@link SecurityManager#checkPropertyAccess(String)
@@ -670,11 +671,11 @@ public abstract class Path
      * name is a symbolic link then the names are only removed if it guaranteed
      * that the resulting path will locate the same file as this path.
      *
-     * @return  An absolute path represent the <em>real</em> path of the file
+     * @return  an absolute path represent the <em>real</em> path of the file
      *          located by this object
      *
      * @throws  IOException
-     *          If the file does not exist or an I/O error occurs
+     *          if the file does not exist or an I/O error occurs
      * @throws  SecurityException
      *          In the case of the the default provider, and a security manager
      *          is installed, its {@link SecurityManager#checkRead(String) checkRead}
@@ -743,20 +744,20 @@ public abstract class Path
      * file system activities.
      *
      * @param   target
-     *          The target location
+     *          the target location
      * @param   options
-     *          Options specifying how the copy should be done
+     *          options specifying how the copy should be done
      *
-     * @return  The target
+     * @return  the target
      *
      * @throws  UnsupportedOperationException
-     *          If the array contains a copy option that is not supported
+     *          if the array contains a copy option that is not supported
      * @throws  FileAlreadyExistsException
-     *          The target file exists and cannot be replaced because the
+     *          if the target file exists and cannot be replaced because the
      *          {@code REPLACE_EXISTING} option is not specified, or the target
      *          file is a non-empty directory <i>(optional specific exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
@@ -829,23 +830,23 @@ public abstract class Path
      * original file.
      *
      * @param   target
-     *          The target location
+     *          the target location
      * @param   options
-     *          Options specifying how the move should be done
+     *          options specifying how the move should be done
      *
-     * @return  The target
+     * @return  the target
      *
      * @throws  UnsupportedOperationException
-     *          If the array contains a copy option that is not supported
+     *          if the array contains a copy option that is not supported
      * @throws  FileAlreadyExistsException
-     *          The target file exists and cannot be replaced because the
+     *          if the target file exists and cannot be replaced because the
      *          {@code REPLACE_EXISTING} option is not specified, or the target
      *          file is a non-empty directory
      * @throws  AtomicMoveNotSupportedException
-     *          The options array contains the {@code ATOMIC_MOVE} option but
+     *          if the options array contains the {@code ATOMIC_MOVE} option but
      *          the file cannot be moved as an atomic file system operation.
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
@@ -875,13 +876,13 @@ public abstract class Path
      * directory that execute in a race-free manner then the returned directory
      * stream is a {@link SecureDirectoryStream}.
      *
-     * @return  A new and open {@code DirectoryStream} object
+     * @return  a new and open {@code DirectoryStream} object
      *
      * @throws  NotDirectoryException
-     *          If the file could not otherwise be opened because it is not
+     *          if the file could not otherwise be opened because it is not
      *          a directory <i>(optional specific exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
@@ -920,19 +921,19 @@ public abstract class Path
      * stream is a {@link SecureDirectoryStream}.
      *
      * @param   glob
-     *          The glob pattern
+     *          the glob pattern
      *
-     * @return  A new and open {@code DirectoryStream} object
+     * @return  a new and open {@code DirectoryStream} object
      *
      * @throws  java.util.regex.PatternSyntaxException
-     *          If the pattern is invalid
+     *          if the pattern is invalid
      * @throws  UnsupportedOperationException
-     *          If the pattern syntax is not known to the implementation
+     *          if the pattern syntax is not known to the implementation
      * @throws  NotDirectoryException
-     *          If the file could not otherwise be opened because it is not
+     *          if the file could not otherwise be opened because it is not
      *          a directory <i>(optional specific exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
@@ -986,15 +987,15 @@ public abstract class Path
      *     DirectoryStream&lt;Path&gt; stream = dir.newDirectoryStream(filter);
      * </pre>
      * @param   filter
-     *          The directory stream filter
+     *          the directory stream filter
      *
-     * @return  A new and open {@code DirectoryStream} object
+     * @return  a new and open {@code DirectoryStream} object
      *
      * @throws  NotDirectoryException
-     *          If the file could not otherwise be opened because it is not
+     *          if the file could not otherwise be opened because it is not
      *          a directory <i>(optional specific exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
@@ -1018,19 +1019,19 @@ public abstract class Path
      * occurrence is ignored.
      *
      * @param   attrs
-     *          An optional list of file attributes to set atomically when
+     *          an optional list of file attributes to set atomically when
      *          creating the file
      *
-     * @return  This path
+     * @return  this path
      *
      * @throws  UnsupportedOperationException
-     *          If the array contains an attribute that cannot be set atomically
+     *          if the array contains an attribute that cannot be set atomically
      *          when creating the file
      * @throws  FileAlreadyExistsException
-     *          If a file of that name already exists
+     *          if a file of that name already exists
      *          <i>(optional specific exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
@@ -1053,19 +1054,19 @@ public abstract class Path
      * but the last occurrence is ignored.
      *
      * @param   attrs
-     *          An optional list of file attributes to set atomically when
+     *          an optional list of file attributes to set atomically when
      *          creating the directory
      *
-     * @return  This path
+     * @return  this path
      *
      * @throws  UnsupportedOperationException
-     *          If the array contains an attribute that cannot be set atomically
+     *          if the array contains an attribute that cannot be set atomically
      *          when creating the directory
      * @throws  FileAlreadyExistsException
-     *          If a directory could not otherwise be created because a file of
+     *          if a directory could not otherwise be created because a file of
      *          that name already exists <i>(optional specific exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
@@ -1185,16 +1186,16 @@ public abstract class Path
      * @return  a new seekable byte channel
      *
      * @throws  IllegalArgumentException
-     *          If the set contains an invalid combination of options
+     *          if the set contains an invalid combination of options
      * @throws  UnsupportedOperationException
-     *          If an unsupported open option is specified or the array contains
+     *          if an unsupported open option is specified or the array contains
      *          attributes that cannot be set atomically when creating the file
      * @throws  FileAlreadyExistsException
-     *          If a file of that name already exists and the {@link
+     *          if a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          <i>(optional specific exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
@@ -1219,16 +1220,16 @@ public abstract class Path
      * FileChannel}.
      *
      * @param   options
-     *          Options specifying how the file is opened
+     *          options specifying how the file is opened
      *
      * @return  a new seekable byte channel
      *
      * @throws  IllegalArgumentException
-     *          If the set contains an invalid combination of options
+     *          if the set contains an invalid combination of options
      * @throws  UnsupportedOperationException
-     *          If an unsupported open option is specified
+     *          if an unsupported open option is specified
      * @throws  FileAlreadyExistsException
-     *          If a file of that name already exists and the {@link
+     *          if a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          <i>(optional specific exception)</i>
      * @throws  IOException                 {@inheritDoc}
@@ -1245,10 +1246,10 @@ public abstract class Path
      * InputStream#reset reset} methods. The stream will be safe for access by
      * multiple concurrent threads. Reading commences at the beginning of the file.
      *
-     * @return  An input stream to read bytes from the file
+     * @return  an input stream to read bytes from the file
      *
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
@@ -1279,16 +1280,16 @@ public abstract class Path
      * </pre>
      *
      * @param   options
-     *          Options specifying how the file is opened
+     *          options specifying how the file is opened
      *
      * @return  a new seekable byte channel
      *
      * @throws  IllegalArgumentException
-     *          If {@code options} contains an invalid combination of options
+     *          if {@code options} contains an invalid combination of options
      * @throws  UnsupportedOperationException
-     *          If an unsupported open option is specified
+     *          if an unsupported open option is specified
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
@@ -1312,20 +1313,20 @@ public abstract class Path
      * for access by multiple concurrent threads.
      *
      * @param   options
-     *          Options specifying how the file is opened
+     *          options specifying how the file is opened
      * @param   attrs
-     *          An optional list of file attributes to set atomically when
+     *          an optional list of file attributes to set atomically when
      *          creating the file
      *
-     * @return  A new output stream
+     * @return  a new output stream
      *
      * @throws  IllegalArgumentException
-     *          If the set contains an invalid combination of options
+     *          if the set contains an invalid combination of options
      * @throws  UnsupportedOperationException
-     *          If an unsupported open option is specified or the array contains
+     *          if an unsupported open option is specified or the array contains
      *          attributes that cannot be set atomically when creating the file
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
@@ -1349,7 +1350,7 @@ public abstract class Path
      * @return  {@code true} if the file is considered hidden
      *
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
@@ -1448,26 +1449,26 @@ public abstract class Path
      * on the existence of the link after it is registered.
      *
      * @param   watcher
-     *          The watch service to which this object is to be registered
+     *          the watch service to which this object is to be registered
      * @param   events
-     *          The events for which this object should be registered
+     *          the events for which this object should be registered
      * @param   modifiers
-     *          The modifiers, if any, that modify how the object is registered
+     *          the modifiers, if any, that modify how the object is registered
      *
-     * @return  A key representing the registration of this object with the
+     * @return  a key representing the registration of this object with the
      *          given watch service
      *
      * @throws  UnsupportedOperationException
-     *          If unsupported events or modifiers are specified
+     *          if unsupported events or modifiers are specified
      * @throws  IllegalArgumentException
-     *          If an invalid combination of events or modifiers is specified
+     *          if an invalid combination of events or modifiers is specified
      * @throws  ClosedWatchServiceException
-     *          If the watch service is closed
+     *          if the watch service is closed
      * @throws  NotDirectoryException
-     *          If the file is registered to watch the entries in a directory
+     *          if the file is registered to watch the entries in a directory
      *          and the file is not a directory  <i>(optional specific exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
@@ -1537,7 +1538,7 @@ public abstract class Path
      * is the name of the file or directory denoted by this path. The {@link
      * #getRoot root} component, if present, is not returned by the iterator.
      *
-     * @return  An iterator over the name elements of this path.
+     * @return  an iterator over the name elements of this path.
      */
     @Override
     public abstract Iterator<Path> iterator();
@@ -1550,9 +1551,9 @@ public abstract class Path
      * provider, platform specific. This method does not access the file system
      * and neither file is required to exist.
      *
-     * @param   other  The path compared to this path.
+     * @param   other  the path compared to this path.
      *
-     * @return  Zero if the argument is {@link #equals equal} to this path, a
+     * @return  zero if the argument is {@link #equals equal} to this path, a
      *          value less than zero if this path is lexicographically less than
      *          the argument, or a value greater than zero if this path is
      *          lexicographically greater than the argument
@@ -1574,14 +1575,14 @@ public abstract class Path
      * <p> This method satisfies the general contract of the {@link
      * java.lang.Object#equals(Object) Object.equals} method. </p>
      *
-     * @param   ob
-     *          The object to which this object is to be compared
+     * @param   other
+     *          the object to which this object is to be compared
      *
      * @return  {@code true} if, and only if, the given object is a {@code Path}
      *          that is identical to this {@code Path}
      */
     @Override
-    public abstract boolean equals(Object ob);
+    public abstract boolean equals(Object other);
 
     /**
      * Computes a hash code for this path.
@@ -1590,7 +1591,7 @@ public abstract class Path
      * satisfies the general contract of the {@link Object#hashCode
      * Object.hashCode} method.
      *
-     * @return  The hash-code value for this Path
+     * @return  the hash-code value for this path
      */
     @Override
     public abstract int hashCode();
@@ -1605,7 +1606,7 @@ public abstract class Path
      * <p> The returned path string uses the default name {@link
      * FileSystem#getSeparator separator} to separate names in the path.
      *
-     * @return  The string representation of this path
+     * @return  the string representation of this path
      */
     @Override
     public abstract String toString();

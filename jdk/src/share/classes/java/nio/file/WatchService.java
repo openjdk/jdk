@@ -126,7 +126,7 @@ public abstract class WatchService
      * has no effect.
      *
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      */
     @Override
     public abstract void close() throws IOException;
@@ -135,10 +135,10 @@ public abstract class WatchService
      * Retrieves and removes the next watch key, or {@code null} if none are
      * present.
      *
-     * @return  The next watch key, or {@code null}
+     * @return  the next watch key, or {@code null}
      *
      * @throws  ClosedWatchServiceException
-     *          If this watch service is closed
+     *          if this watch service is closed
      */
     public abstract WatchKey poll();
 
@@ -152,13 +152,13 @@ public abstract class WatchService
      *          a {@code TimeUnit} determining how to interpret the timeout
      *          parameter
      *
-     * @return  The next watch key, or {@code null}
+     * @return  the next watch key, or {@code null}
      *
      * @throws  ClosedWatchServiceException
-     *          If this watch service is closed, or it is closed while waiting
+     *          if this watch service is closed, or it is closed while waiting
      *          for the next key
      * @throws  InterruptedException
-     *          If interrupted while waiting
+     *          if interrupted while waiting
      */
     public abstract WatchKey poll(long timeout, TimeUnit unit)
         throws InterruptedException;
@@ -166,13 +166,13 @@ public abstract class WatchService
     /**
      * Retrieves and removes next watch key, waiting if none are yet present.
      *
-     * @return  The next watch key
+     * @return  the next watch key
      *
      * @throws  ClosedWatchServiceException
-     *          If this watch service is closed, or it is closed while waiting
+     *          if this watch service is closed, or it is closed while waiting
      *          for the next key
      * @throws  InterruptedException
-     *          If interrupted while waiting
+     *          if interrupted while waiting
      */
     public abstract WatchKey take() throws InterruptedException;
 }

@@ -65,7 +65,7 @@ public class SimpleFileVisitor<T extends FileRef> implements FileVisitor<T> {
      * exception as cause.
      *
      * @throws  IOError
-     *          With the I/O exception thrown when the attempt to open the
+     *          with the I/O exception thrown when the attempt to open the
      *          directory failed
      */
     @Override
@@ -91,7 +91,7 @@ public class SimpleFileVisitor<T extends FileRef> implements FileVisitor<T> {
      * exception as cause.
      *
      * @throws  IOError
-     *          With the I/O exception thrown when the attempt to read the file
+     *          with the I/O exception thrown when the attempt to read the file
      *          attributes failed
      */
     @Override
@@ -109,7 +109,7 @@ public class SimpleFileVisitor<T extends FileRef> implements FileVisitor<T> {
      * cause.
      *
      * @throws  IOError
-     *          If iteration of the directory completed prematurely due to an
+     *          if iteration of the directory completed prematurely due to an
      *          I/O error
      */
     @Override

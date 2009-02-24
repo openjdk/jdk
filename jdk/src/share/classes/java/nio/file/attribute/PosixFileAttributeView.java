@@ -163,13 +163,13 @@ public interface PosixFileAttributeView
      * Updates the file permissions.
      *
      * @param   perms
-     *          The new set of permissions
+     *          the new set of permissions
      *
      * @throws  ClassCastException
-     *          If the sets contains elements that are not of type {@code
+     *          if the sets contains elements that are not of type {@code
      *          PosixFilePermission}
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, a security manager is
      *          installed, and it denies {@link RuntimePermission}<tt>("accessUserInformation")</tt>
@@ -182,10 +182,10 @@ public interface PosixFileAttributeView
      * Updates the file group-owner.
      *
      * @param   group
-     *          The new file group-owner
-
+     *          the new file group-owner
+     *
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, it denies {@link RuntimePermission}<tt>("accessUserInformation")</tt>

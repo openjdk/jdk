@@ -62,14 +62,14 @@ public abstract class UserPrincipalLookupService {
      * Lookup a user principal by name.
      *
      * @param   name
-     *          The string representation of the user principal to lookup
+     *          the string representation of the user principal to lookup
      *
-     * @return  A user principal
+     * @return  a user principal
      *
      * @throws  UserPrincipalNotFoundException
-     *          The principal does not exist
+     *          the principal does not exist
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, it checks {@link RuntimePermission}<tt>("lookupUserInformation")</tt>
@@ -87,14 +87,14 @@ public abstract class UserPrincipalLookupService {
      * lookupPrincipalByName}.
      *
      * @param   group
-     *          The string representation of the group to lookup
+     *          the string representation of the group to lookup
      *
-     * @return  A user principal.
+     * @return  a user principal
      *
      * @throws  UserPrincipalNotFoundException
-     *          The principal does not exist or is not a group
+     *          the principal does not exist or is not a group
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, it checks {@link RuntimePermission}<tt>("lookupUserInformation")</tt>

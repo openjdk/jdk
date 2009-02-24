@@ -41,11 +41,11 @@ public class AtomicMoveNotSupportedException
      * Constructs an instance of this class.
      *
      * @param   source
-     *          A string identifying the source file or {@code null} if not known.
+     *          a string identifying the source file or {@code null} if not known
      * @param   target
-     *          A string identifying the target file or {@code null} if not known.
+     *          a string identifying the target file or {@code null} if not known
      * @param   reason
-     *          A reason message with additional information
+     *          a reason message with additional information
      */
     public AtomicMoveNotSupportedException(String source,
                                            String target,

@@ -45,7 +45,7 @@ public class UserPrincipalNotFoundException
      * Constructs an instance of this class.
      *
      * @param   name
-     *          The principal name; may be {@code null}
+     *          the principal name; may be {@code null}
      */
     public UserPrincipalNotFoundException(String name) {
         super();
@@ -56,7 +56,7 @@ public class UserPrincipalNotFoundException
      * Returns the user principal name if this exception was created with the
      * user principal name that was not found, otherwise <tt>null</tt>.
      *
-     * @return  The user principal name or {@code null}
+     * @return  the user principal name or {@code null}
      */
     public String getName() {
         return name;

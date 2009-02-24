@@ -75,10 +75,10 @@ public final class LinkPermission extends BasicPermission {
      * Constructs a {@code LinkPermission} with the specified name.
      *
      * @param   name
-     *          The name of the permission. It must be "hard" or "symbolic".
+     *          the name of the permission. It must be "hard" or "symbolic".
      *
      * @throws  IllegalArgumentException
-     *          If name is empty or invalid.
+     *          if name is empty or invalid
      */
     public LinkPermission(String name) {
         super(name);
@@ -89,13 +89,13 @@ public final class LinkPermission extends BasicPermission {
      * Constructs a {@code LinkPermission} with the specified name.
      *
      * @param   name
-     *          The name of the permission; must be "hard" or "symbolic".
+     *          the name of the permission; must be "hard" or "symbolic".
      * @param   actions
-     *          The actions for the permission; must be the empty string or
+     *          the actions for the permission; must be the empty string or
      *          {@code null}
      *
      * @throws  IllegalArgumentException
-     *          If name is empty or invalid.
+     *          if name is empty or invalid
      */
     public LinkPermission(String name, String actions) {
         super(name);

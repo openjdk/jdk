@@ -45,7 +45,7 @@ import java.io.IOException;
  *     });
  * </pre>
  *
- * @param   <T>     The type of file reference
+ * @param   <T>     the type of file reference
  *
  * @since 1.7
  */
@@ -55,10 +55,10 @@ public interface FileAction<T extends FileRef> {
      * Invoked for a file.
      *
      * @param   file
-     *          The file
+     *          the file
      *
      * @throws  IOException
-     *          If the block terminates due an uncaught I/O exception
+     *          if the block terminates due an uncaught I/O exception
      */
     void invoke(T file) throws IOException;
 }
