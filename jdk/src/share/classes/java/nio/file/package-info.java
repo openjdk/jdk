@@ -24,7 +24,7 @@
  */
 
 /**
- * Define interfaces and classes for the Java virtual machine to access files,
+ * Defines interfaces and classes for the Java virtual machine to access files,
  * file attributes, and file systems.
  *
  * <p> The java.nio.file package defines classes to access files and file

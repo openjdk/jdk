@@ -53,7 +53,7 @@ public interface BasicFileAttributes {
      * <p> The {@link #resolution() resolution} method returns the {@link TimeUnit}
      * to interpret the return value of this method.
      *
-     * @return  A <code>long</code> value representing the time the file was
+     * @return  a <code>long</code> value representing the time the file was
      *          last modified since the epoch (00:00:00 GMT, January 1, 1970),
      *          or {@code -1L} if the attribute is not supported.
      */
@@ -65,7 +65,7 @@ public interface BasicFileAttributes {
      * <p> The {@link #resolution() resolution} method returns the {@link TimeUnit}
      * to interpret the return value of this method.
      *
-     * @return  A <code>long</code> value representing the time of last access
+     * @return  a <code>long</code> value representing the time of last access
      *          since the epoch (00:00:00 GMT, January 1, 1970), or {@code -1L}
      *          if the attribute is not supported.
      */
@@ -78,7 +78,7 @@ public interface BasicFileAttributes {
      * <p> The {@link #resolution() resolution} method returns the {@link TimeUnit}
      * to interpret the return value of this method.
      *
-     * @return  A <code>long</code> value representing the time the file was
+     * @return  a <code>long</code> value representing the time the file was
      *          created since the epoch (00:00:00 GMT, January 1, 1970), or
      *          {@code -1L} if the attribute is not supported.
      */
@@ -88,7 +88,7 @@ public interface BasicFileAttributes {
      * Returns the {@link TimeUnit} required to interpret the time of last
      * modification, time of last access, and creation time.
      *
-     * @return  The {@code TimeUnit} required to interpret the file time stamps
+     * @return  the {@code TimeUnit} required to interpret the file time stamps
      */
     TimeUnit resolution();
 
@@ -120,7 +120,7 @@ public interface BasicFileAttributes {
      * #isRegularFile regular} files is implementation specific and
      * therefore unspecified.
      *
-     * @return  The file size, in bytes
+     * @return  the file size, in bytes
      */
     long size();
 

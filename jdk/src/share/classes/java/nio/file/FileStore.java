@@ -61,7 +61,7 @@ public abstract class FileStore {
      * <p> The string returned by this method may differ from the string
      * returned by the {@link Object#toString() toString} method.
      *
-     * @return  The name of this file store
+     * @return  the name of this file store
      */
     public abstract String name();
 
@@ -71,7 +71,7 @@ public abstract class FileStore {
      * indicate, for example, the format used or if the file store is local
      * or remote.
      *
-     * @return  A string representing the type of this file store
+     * @return  a string representing the type of this file store
      */
     public abstract String type();
 
@@ -96,7 +96,7 @@ public abstract class FileStore {
      * this are implementation specific and therefore unspecified.
      *
      * @param   type
-     *          The file attribute view type
+     *          the file attribute view type
      *
      * @return  {@code true} if, and only if, the file attribute view is
      *          supported
@@ -115,7 +115,7 @@ public abstract class FileStore {
      * specific and therefore unspecified.
      *
      * @param   name
-     *          The {@link FileAttributeView#name name} of file attribute view
+     *          the {@link FileAttributeView#name name} of file attribute view
      *
      * @return  {@code true} if, and only if, the file attribute view is
      *          supported
@@ -137,9 +137,9 @@ public abstract class FileStore {
      * always return an instance of that class.
      *
      * @param   type
-     *          The {@code Class} object corresponding to the attribute view
+     *          the {@code Class} object corresponding to the attribute view
      *
-     * @return  A file store attribute view of the specified type or
+     * @return  a file store attribute view of the specified type or
      *          {@code null} if the attribute view is not available
      */
     public abstract <V extends FileStoreAttributeView> V
@@ -160,9 +160,9 @@ public abstract class FileStore {
      * of that class.
      *
      * @param   name
-     *          The name of the attribute view
+     *          the name of the attribute view
      *
-     * @return  A file store attribute view of the given name, or {@code null}
+     * @return  a file store attribute view of the given name, or {@code null}
      *          if the attribute view is not available
      */
     public abstract FileStoreAttributeView getFileStoreAttributeView(String name);

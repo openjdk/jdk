@@ -53,15 +53,15 @@ public interface AttributeView {
      * Reads the value of an attribute.
      *
      * @param   attribute
-     *          The attribute name (case sensitive)
+     *          the attribute name (case sensitive)
      *
-     * @return  The value of the attribute, or {@code null} if the attribute is
+     * @return  the value of the attribute, or {@code null} if the attribute is
      *          not supported
      *
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
-     *          If a security manager is set and it denies access
+     *          if a security manager is set and it denies access
      */
     Object getAttribute(String attribute) throws IOException;
 
@@ -69,24 +69,24 @@ public interface AttributeView {
      * Sets/updates the value of an attribute.
      *
      * @param   attribute
-     *          The attribute name (case sensitive)
+     *          the attribute name (case sensitive)
      * @param   value
-     *          The attribute value
+     *          the attribute value
      *
      * @throws  UnsupportedOperationException
-     *          If the attribute is not supported or this attribute view does
+     *          if the attribute is not supported or this attribute view does
      *          not support updating the value of the attribute
      * @throws  IllegalArgumentException
-     *          If the attribute value is of the correct type but has an
+     *          if the attribute value is of the correct type but has an
      *          inappropriate value
      * @throws  ClassCastException
-     *          If the attribute value is not of the expected type or is a
+     *          if the attribute value is not of the expected type or is a
      *          collection containing elements that are not of the expected
      *          type
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
-     *          If a security manager is set and it denies access
+     *          if a security manager is set and it denies access
      */
     void setAttribute(String attribute, Object value) throws IOException;
 
@@ -102,17 +102,17 @@ public interface AttributeView {
      * to other file system operations.
      *
      * @param   first
-     *          The name of an attribute to read (case sensitive)
+     *          the name of an attribute to read (case sensitive)
      * @param   rest
-     *          The names of others attributes to read (case sensitive)
+     *          the names of other attributes to read (case sensitive)
      *
-     * @return  An unmodifiable map of the attributes; may be empty. Its keys are
+     * @return  an unmodifiable map of the attributes; may be empty. Its keys are
      *          the attribute names, its values are the attribute values
      *
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
-     *          If a security manager is set and it denies access
+     *          if a security manager is set and it denies access
      */
     Map<String,?> readAttributes(String first, String... rest) throws IOException;
 }

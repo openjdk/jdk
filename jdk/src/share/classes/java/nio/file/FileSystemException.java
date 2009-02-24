@@ -48,7 +48,7 @@ public class FileSystemException
      * information to explain the reason.
      *
      * @param   file
-     *          A string identifying the file or {@code null} if not known.
+     *          a string identifying the file or {@code null} if not known.
      */
     public FileSystemException(String file) {
         super((String)null);
@@ -62,12 +62,12 @@ public class FileSystemException
      * information to explain the reason.
      *
      * @param   file
-     *          A string identifying the file or {@code null} if not known.
+     *          a string identifying the file or {@code null} if not known.
      * @param   other
-     *          A string identifying the other file or {@code null} if there
+     *          a string identifying the other file or {@code null} if there
      *          isn't another file or if not known
      * @param   reason
-     *          A reason message with additional information or {@code null}
+     *          a reason message with additional information or {@code null}
      */
     public FileSystemException(String file, String other, String reason) {
         super(reason);
@@ -78,7 +78,7 @@ public class FileSystemException
     /**
      * Returns the file used to create this exception.
      *
-     * @return  The file (can be {@code null})
+     * @return  the file (can be {@code null})
      */
     public String getFile() {
         return file;
@@ -87,7 +87,7 @@ public class FileSystemException
     /**
      * Returns the other file used to create this exception.
      *
-     * @return  The other file (can be {@code null})
+     * @return  the other file (can be {@code null})
      */
     public String getOtherFile() {
         return other;
@@ -96,7 +96,7 @@ public class FileSystemException
     /**
      * Returns the string explaining why the file system operation failed.
      *
-     * @return  The string explaining why the file system operation failed
+     * @return  the string explaining why the file system operation failed
      */
     public String getReason() {
         return super.getMessage();

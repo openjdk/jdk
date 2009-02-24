@@ -118,10 +118,10 @@ public final class AclEntry {
          * The type and who components are required to have been set in order
          * to construct an {@code AclEntry}.
          *
-         * @return  A new ACL entry
+         * @return  a new ACL entry
          *
          * @throws  IllegalStateException
-         *          If the type or who component have not been set.
+         *          if the type or who component have not been set
          */
         public AclEntry build() {
             if (type == null)
@@ -134,7 +134,7 @@ public final class AclEntry {
         /**
          * Sets the type component of this builder.
          *
-         * @return  This builder
+         * @return  this builder
          */
         public Builder setType(AclEntryType type) {
             if (type == null)
@@ -146,7 +146,7 @@ public final class AclEntry {
         /**
          * Sets the principal component of this builder.
          *
-         * @return  This builder
+         * @return  this builder
          */
         public Builder setPrincipal(UserPrincipal who) {
             if (who == null)
@@ -168,10 +168,10 @@ public final class AclEntry {
          * Sets the permissions component of this builder. On return, the
          * permissions component of this builder is a copy of the given set.
          *
-         * @return  This builder
+         * @return  this builder
          *
          * @throws  ClassCastException
-         *          If the sets contains elements that are not of type {@code
+         *          if the set contains elements that are not of type {@code
          *          AclEntryPermission}
          */
         public Builder setPermissions(Set<AclEntryPermission> perms) {
@@ -187,7 +187,7 @@ public final class AclEntry {
          * permissions component of this builder is a copy of the permissions in
          * the given array.
          *
-         * @return  This builder
+         * @return  this builder
          */
         public Builder setPermissions(AclEntryPermission... perms) {
             Set<AclEntryPermission> set =
@@ -206,10 +206,10 @@ public final class AclEntry {
          * Sets the flags component of this builder. On return, the flags
          * component of this builder is a copy of the given set.
          *
-         * @return  This builder
+         * @return  this builder
          *
          * @throws  ClassCastException
-         *          If the sets contains elements that are not of type {@code
+         *          if the set contains elements that are not of type {@code
          *          AclEntryFlag}
          */
         public Builder setFlags(Set<AclEntryFlag> flags) {
@@ -225,7 +225,7 @@ public final class AclEntry {
          * component of this builder is a copy of the flags in the given
          * array.
          *
-         * @return  This builder
+         * @return  this builder
          */
         public Builder setFlags(AclEntryFlag... flags) {
             Set<AclEntryFlag> set = new HashSet<AclEntryFlag>(flags.length);
@@ -245,7 +245,7 @@ public final class AclEntry {
      * components is {@code null}. The initial value of the permissions and
      * flags components is the empty set.
      *
-     * @return  A new builder
+     * @return  a new builder
      */
     public static Builder newBuilder() {
         Set<AclEntryPermission> perms = Collections.emptySet();
@@ -257,9 +257,9 @@ public final class AclEntry {
      * Constructs a new builder with the components of an existing ACL entry.
      *
      * @param   entry
-     *          An ACL entry
+     *          an ACL entry
      *
-     * @return  A new builder
+     * @return  a new builder
      */
     public static Builder newBuilder(AclEntry entry) {
         return new Builder(entry.type, entry.who, entry.perms, entry.flags);
@@ -310,7 +310,7 @@ public final class AclEntry {
      * <p> This method satisfies the general contract of the {@link
      * java.lang.Object#equals(Object) Object.equals} method. </p>
      *
-     * @param   ob   The object to which this object is to be compared
+     * @param   ob   the object to which this object is to be compared
      *
      * @return  {@code true} if, and only if, the given object is an AclEntry that
      *          is identical to this AclEntry
@@ -341,7 +341,7 @@ public final class AclEntry {
      * Returns the hash-code value for this ACL entry.
      *
      * <p> This method satisfies the general contract of the {@link
-     * Object#hashCode method}.
+     * Object#hashCode} method.
      */
     @Override
     public int hashCode() {
@@ -359,7 +359,7 @@ public final class AclEntry {
     /**
      * Returns the string representation of this ACL entry.
      *
-     * @return  The string representation of this entry
+     * @return  the string representation of this entry
      */
     @Override
     public String toString() {

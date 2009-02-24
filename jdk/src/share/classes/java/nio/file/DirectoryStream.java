@@ -59,9 +59,9 @@ import java.io.Closeable;
  * with cause {@link ClosedDirectoryStreamException}.
  *
  * <p> A directory stream is not required to be <i>asynchronously closeable</i>.
- * If a thread is blocked on the directory stream's iterator, reading from the
- * directory, and another thread invokes the {@code close} method then it may
- * require to block until the read operation is complete.
+ * If a thread is blocked on the directory stream's iterator reading from the
+ * directory, and another thread invokes the {@code close} method, then the
+ * second thread may block until the read operation is complete.
  *
  * <p> The {@link Iterator#hasNext() hasNext} and {@link Iterator#next() next}
  * methods can encounter an I/O error when iterating over the directory in which
@@ -108,7 +108,7 @@ public interface DirectoryStream<T>
      * create filters for a number of common usages and also methods to combine
      * filters.
      *
-     * @param   <T>     The type of the directory entry
+     * @param   <T>     the type of the directory entry
      *
      * @since 1.7
      */
@@ -117,7 +117,7 @@ public interface DirectoryStream<T>
          * Decides if the given directory entry should be accepted or filtered.
          *
          * @param   entry
-         *          The directory entry to be tested
+         *          the directory entry to be tested
          *
          * @return  {@code true} if the directory entry should be accepted
          */
@@ -127,10 +127,10 @@ public interface DirectoryStream<T>
     /**
      * Returns the iterator associated with this {@code DirectoryStream}.
      *
-     * @return  The iterator associated with this {@code DirectoryStream}
+     * @return  the iterator associated with this {@code DirectoryStream}
      *
      * @throws  IllegalStateException
-     *          If this directory stream is closed or the iterator has already
+     *          if this directory stream is closed or the iterator has already
      *          been returned
      */
     @Override

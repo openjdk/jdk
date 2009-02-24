@@ -40,7 +40,7 @@ public interface PathMatcher {
      * Tells if given path matches this matcher's pattern.
      *
      * @param   path
-     *          The path to match
+     *          the path to match
      *
      * @return  {@code true} if, and only if, the path matches this
      *          matcher's pattern

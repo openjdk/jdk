@@ -49,7 +49,7 @@ public interface DosFileAttributes
      * or platform does any enforcement to prevent <em>read-only</em> files
      * from being updated is implementation specific.
      *
-     * @return  The value of the read-only attribute.
+     * @return  the value of the read-only attribute
      */
     boolean isReadOnly();
 
@@ -59,7 +59,7 @@ public interface DosFileAttributes
      * <p> This attribute is often used to indicate if the file is visible to
      * users.
      *
-     * @return  The value of the hidden attribute.
+     * @return  the value of the hidden attribute
      */
     boolean isHidden();
 
@@ -68,7 +68,7 @@ public interface DosFileAttributes
      *
      * <p> This attribute is typically used by backup programs.
      *
-     * @return  The value of the archive attribute.
+     * @return  the value of the archive attribute
      */
     boolean isArchive();
 
@@ -78,7 +78,7 @@ public interface DosFileAttributes
      * <p> This attribute is often used to indicate that the file is a component
      * of the operating system.
      *
-     * @return  The value of the system attribute.
+     * @return  the value of the system attribute
      */
     boolean isSystem();
 }

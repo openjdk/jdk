@@ -160,11 +160,11 @@ public interface AclFileAttributeView
      * existing ACL. The {@link #setAcl setAcl} method is used to update
      * the file's ACL attribute.
      *
-     * @return  An ordered list of {@link AclEntry entries} representing the
+     * @return  an ordered list of {@link AclEntry entries} representing the
      *          ACL
      *
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, a security manager is
      *          installed, and it denies {@link RuntimePermission}<tt>("accessUserInformation")</tt>
@@ -197,10 +197,10 @@ public interface AclFileAttributeView
      * may also cause these security related attributes to be updated.
      *
      * @param   acl
-     *          The new access control list
+     *          the new access control list
      *
      * @throws  IOException
-     *          If an I/O error occurs or the ACL is invalid
+     *          if an I/O error occurs or the ACL is invalid
      * @throws  SecurityException
      *          In the case of the default provider, a security manager is
      *          installed, it denies {@link RuntimePermission}<tt>("accessUserInformation")</tt>

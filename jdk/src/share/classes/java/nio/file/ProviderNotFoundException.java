@@ -44,7 +44,7 @@ public class ProviderNotFoundException
      * Constructs an instance of this class.
      *
      * @param   msg
-     *          The detail message
+     *          the detail message
      */
     public ProviderNotFoundException(String msg) {
         super(msg);

@@ -91,21 +91,21 @@ public abstract class SecureDirectoryStream
      * effect upon newly created directory stream.
      *
      * @param   path
-     *          The path to the directory to open
+     *          the path to the directory to open
      * @param   followLinks
      *          {@code true} if the links should be followed
      * @param   filter
-     *          The directory stream filter or {@code null}.
+     *          the directory stream filter or {@code null}.
      *
-     * @return  A new and open {@code SecureDirectoryStream} object
+     * @return  a new and open {@code SecureDirectoryStream} object
      *
      * @throws  ClosedDirectoryStreamException
-     *          If the directory stream is closed
+     *          if the directory stream is closed
      * @throws  NotDirectoryException
-     *          If the file could not otherwise be opened because it is not
+     *          if the file could not otherwise be opened because it is not
      *          a directory <i>(optional specific exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
@@ -134,26 +134,26 @@ public abstract class SecureDirectoryStream
      * channel.
      *
      * @param   path
-     *          The path of the file to open open or create
+     *          the path of the file to open open or create
      * @param   options
-     *          Options specifying how the file is opened
+     *          options specifying how the file is opened
      * @param   attrs
-     *          An optional list of attributes to set atomically when creating
+     *          an optional list of attributes to set atomically when creating
      *          the file
      *
      * @throws  ClosedDirectoryStreamException
-     *          If the directory stream is closed
+     *          if the directory stream is closed
      * @throws  IllegalArgumentException
-     *          If the set contains an invalid combination of options
+     *          if the set contains an invalid combination of options
      * @throws  UnsupportedOperationException
-     *          If an unsupported open option is specified or the array contains
+     *          if an unsupported open option is specified or the array contains
      *          attributes that cannot be set atomically when creating the file
      * @throws  FileAlreadyExistsException
-     *          If a file of that name already exists and the {@link
+     *          if a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          <i>(optional specific exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
@@ -178,14 +178,14 @@ public abstract class SecureDirectoryStream
      * relative path then the file to delete is relative to this open directory.
      *
      * @param   path
-     *          The path of the file to delete
+     *          the path of the file to delete
      *
      * @throws  ClosedDirectoryStreamException
-     *          If the directory stream is closed
+     *          if the directory stream is closed
      * @throws  NoSuchFileException
-     *          If the the file does not exist <i>(optional specific exception)</i>
+     *          if the file does not exist <i>(optional specific exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkDelete(String) checkDelete}
@@ -203,17 +203,17 @@ public abstract class SecureDirectoryStream
      * directory to delete is relative to this open directory.
      *
      * @param   path
-     *          The path of the directory to delete
+     *          the path of the directory to delete
      *
      * @throws  ClosedDirectoryStreamException
-     *          If the directory stream is closed
+     *          if the directory stream is closed
      * @throws  NoSuchFileException
-     *          If the the directory does not exist <i>(optional specific exception)</i>
+     *          if the the directory does not exist <i>(optional specific exception)</i>
      * @throws  DirectoryNotEmptyException
-     *          If the directory could not otherwise be deleted because it is
+     *          if the directory could not otherwise be deleted because it is
      *          not empty <i>(optional specific exception)</i>
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkDelete(String) checkDelete}
@@ -238,21 +238,21 @@ public abstract class SecureDirectoryStream
      * method fails.
      *
      * @param   srcpath
-     *          The name of the file to move
+     *          the name of the file to move
      * @param   targetdir
-     *          The destination directory
+     *          the destination directory
      * @param   targetpath
-     *          The name to give the file in the destination directory
+     *          the name to give the file in the destination directory
      *
      * @throws  ClosedDirectoryStreamException
-     *          If this or the target directory stream is closed
+     *          if this or the target directory stream is closed
      * @throws  FileAlreadyExistsException
-     *          The file already exists in the target directory and cannot
+     *          if the file already exists in the target directory and cannot
      *          be replaced <i>(optional specific exception)</i>
      * @throws  AtomicMoveNotSupportedException
-     *          The file cannot be moved as an atomic file system operation
+     *          if the file cannot be moved as an atomic file system operation
      * @throws  IOException
-     *          If an I/O error occurs
+     *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
@@ -279,9 +279,9 @@ public abstract class SecureDirectoryStream
      * ClosedDirectoryStreamException ClosedDirectoryStreamException}.
      *
      * @param   type
-     *          The {@code Class} object corresponding to the file attribute view
+     *          the {@code Class} object corresponding to the file attribute view
      *
-     * @return  A new file attribute view of the specified type bound to
+     * @return  a new file attribute view of the specified type bound to
      *          this directory stream, or {@code null} if the attribute view
      *          type is not available
      */
@@ -307,13 +307,13 @@ public abstract class SecureDirectoryStream
      * fail when invoked and the file does not exist.
      *
      * @param   path
-     *          The path of the file
+     *          the path of the file
      * @param   type
-     *          The {@code Class} object corresponding to the file attribute view
+     *          the {@code Class} object corresponding to the file attribute view
      * @param   options
-     *          Options indicating how symbolic links are handled
+     *          options indicating how symbolic links are handled
      *
-     * @return  A new file attribute view of the specified type bound to a
+     * @return  a new file attribute view of the specified type bound to a
      *          this directory stream, or {@code null} if the attribute view
      *          type is not available
      *

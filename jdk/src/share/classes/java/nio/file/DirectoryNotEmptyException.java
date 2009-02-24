@@ -41,7 +41,7 @@ public class DirectoryNotEmptyException
      * Constructs an instance of this class.
      *
      * @param   dir
-     *          A string identifying the directory or {@code null} if not known.
+     *          a string identifying the directory or {@code null} if not known
      */
     public DirectoryNotEmptyException(String dir) {
         super(dir);
