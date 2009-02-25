@@ -2626,9 +2626,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
 #endif // SCAN_ONLY_VERBOSE
 
     double end_time_sec = os::elapsedTime();
-    if (!evacuation_failed()) {
-      g1_policy()->record_pause_time((end_time_sec - start_time_sec)*1000.0);
-    }
+    double pause_time_ms = (end_time_sec - start_time_sec) * MILLIUNITS;
+    g1_policy()->record_pause_time_ms(pause_time_ms);
     GCOverheadReporter::recordSTWEnd(end_time_sec);
     g1_policy()->record_collection_pause_end(popular_region != NULL,
                                              abandoned);
