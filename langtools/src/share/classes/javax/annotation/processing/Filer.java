@@ -35,9 +35,11 @@ import java.io.IOException;
  * processor.  Files created in this way will be known to the
  * annotation processing tool implementing this interface, better
  * enabling the tool to manage them.  Source and class files so
- * created will be considered for processing by the tool after the
- * {@code close} method has been called on the {@code Writer} or
- * {@code OutputStream} used to write the contents of the file.
+ * created will be {@linkplain RoundEnvironment#getRootElements
+ * considered for processing} by the tool in a subsequent {@linkplain
+ * RoundEnvironment round of processing} after the {@code close}
+ * method has been called on the {@code Writer} or {@code
+ * OutputStream} used to write the contents of the file.
  *
  * Three kinds of files are distinguished: source files, class files,
  * and auxiliary resource files.
