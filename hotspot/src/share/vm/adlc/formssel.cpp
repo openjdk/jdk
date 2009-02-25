@@ -1217,13 +1217,17 @@ void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
 // Seach through operands to determine parameters unique positions.
 void InstructForm::set_unique_opnds() {
   uint* uniq_idx = NULL;
-  uint  nopnds = num_opnds();
+  int  nopnds = num_opnds();
   uint  num_uniq = nopnds;
-  uint i;
+  int i;
+  _uniq_idx_length = 0;
   if ( nopnds > 0 ) {
-    // Allocate index array with reserve.
-    uniq_idx = (uint*) malloc(sizeof(uint)*(nopnds + 2));
-    for( i = 0; i < nopnds+2; i++ ) {
+    // Allocate index array.  Worst case we're mapping from each
+    // component back to an index and any DEF always goes at 0 so the
+    // length of the array has to be the number of components + 1.
+    _uniq_idx_length = _components.count() + 1;
+    uniq_idx = (uint*) malloc(sizeof(uint)*(_uniq_idx_length));
+    for( i = 0; i < _uniq_idx_length; i++ ) {
       uniq_idx[i] = i;
     }
   }
@@ -1238,8 +1242,8 @@ void InstructForm::set_unique_opnds() {
     _parameters.reset();
     while( (name = _parameters.iter()) != NULL ) {
       count = 0;
-      uint position = 0;
-      uint uniq_position = 0;
+      int position = 0;
+      int uniq_position = 0;
       _components.reset();
       Component *comp = NULL;
       if( sets_result() ) {
@@ -1255,6 +1259,7 @@ void InstructForm::set_unique_opnds() {
         }
         if( strcmp(name, comp->_name)==0 ) {
           if( ++count > 1 ) {
+            assert(position < _uniq_idx_length, "out of bounds");
             uniq_idx[position] = uniq_position;
             has_dupl_use = true;
           } else {
