@@ -1,6 +1,5 @@
-
 /*
- * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,18 +54,24 @@ public enum LauncherHelper {
     INSTANCE;
     private static final String defaultBundleName =
             "sun.launcher.resources.launcher";
-    private static ResourceBundle javarb =
-            ResourceBundle.getBundle(defaultBundleName);
     private static final String MAIN_CLASS = "Main-Class";
 
     private static StringBuilder outBuf = new StringBuilder();
+
+    private static ResourceBundle javarb = null;
+    private static synchronized ResourceBundle getLauncherResourceBundle() {
+        if (javarb == null) {
+            javarb = ResourceBundle.getBundle(defaultBundleName);
+        }
+        return javarb;
+    }
 
     /**
      * A private helper method to get a localized message and also
      * apply any arguments that we might pass.
      */
     private static String getLocalizedMessage(String key, Object... args) {
-        String msg = javarb.getString(key);
+        String msg = getLauncherResourceBundle().getString(key);
         return (args != null) ? MessageFormat.format(msg, args) : msg;
     }
 
