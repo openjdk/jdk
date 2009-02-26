@@ -57,6 +57,37 @@ void PhaseCFG::schedule_node_into_block( Node *n, Block *b ) {
   }
 }
 
+//----------------------------replace_block_proj_ctrl-------------------------
+// Nodes that have is_block_proj() nodes as their control need to use
+// the appropriate Region for their actual block as their control since
+// the projection will be in a predecessor block.
+void PhaseCFG::replace_block_proj_ctrl( Node *n ) {
+  const Node *in0 = n->in(0);
+  assert(in0 != NULL, "Only control-dependent");
+  const Node *p = in0->is_block_proj();
+  if (p != NULL && p != n) {    // Control from a block projection?
+    assert(!n->pinned() || n->is_SafePointScalarObject(), "only SafePointScalarObject pinned node is expected here");
+    // Find trailing Region
+    Block *pb = _bbs[in0->_idx]; // Block-projection already has basic block
+    uint j = 0;
+    if (pb->_num_succs != 1) {  // More then 1 successor?
+      // Search for successor
+      uint max = pb->_nodes.size();
+      assert( max > 1, "" );
+      uint start = max - pb->_num_succs;
+      // Find which output path belongs to projection
+      for (j = start; j < max; j++) {
+        if( pb->_nodes[j] == in0 )
+          break;
+      }
+      assert( j < max, "must find" );
+      // Change control to match head of successor basic block
+      j -= start;
+    }
+    n->set_req(0, pb->_succs[j]->head());
+  }
+}
+
 
 //------------------------------schedule_pinned_nodes--------------------------
 // Set the basic block for Nodes pinned into blocks
@@ -68,8 +99,10 @@ void PhaseCFG::schedule_pinned_nodes( VectorSet &visited ) {
     Node *n = spstack.pop();
     if( !visited.test_set(n->_idx) ) { // Test node and flag it as visited
       if( n->pinned() && !_bbs.lookup(n->_idx) ) {  // Pinned?  Nail it down!
+        assert( n->in(0), "pinned Node must have Control" );
+        // Before setting block replace block_proj control edge
+        replace_block_proj_ctrl(n);
         Node *input = n->in(0);
-        assert( input, "pinned Node must have Control" );
         while( !input->is_block_start() )
           input = input->in(0);
         Block *b = _bbs[input->_idx];  // Basic block of controlling input
@@ -158,34 +191,12 @@ bool PhaseCFG::schedule_early(VectorSet &visited, Node_List &roots) {
       uint  i = nstack_top_i;
 
       if (i == 0) {
-        // Special control input processing.
-        // While I am here, go ahead and look for Nodes which are taking control
-        // from a is_block_proj Node.  After I inserted RegionNodes to make proper
-        // blocks, the control at a is_block_proj more properly comes from the
-        // Region being controlled by the block_proj Node.
+        // Fixup some control.  Constants without control get attached
+        // to root and nodes that use is_block_proj() nodes should be attached
+        // to the region that starts their block.
         const Node *in0 = n->in(0);
         if (in0 != NULL) {              // Control-dependent?
-          const Node *p = in0->is_block_proj();
-          if (p != NULL && p != n) {    // Control from a block projection?
-            // Find trailing Region
-            Block *pb = _bbs[in0->_idx]; // Block-projection already has basic block
-            uint j = 0;
-            if (pb->_num_succs != 1) {  // More then 1 successor?
-              // Search for successor
-              uint max = pb->_nodes.size();
-              assert( max > 1, "" );
-              uint start = max - pb->_num_succs;
-              // Find which output path belongs to projection
-              for (j = start; j < max; j++) {
-                if( pb->_nodes[j] == in0 )
-                  break;
-              }
-              assert( j < max, "must find" );
-              // Change control to match head of successor basic block
-              j -= start;
-            }
-            n->set_req(0, pb->_succs[j]->head());
-          }
+          replace_block_proj_ctrl(n);
         } else {               // n->in(0) == NULL
           if (n->req() == 1) { // This guy is a constant with NO inputs?
             n->set_req(0, _root);
@@ -226,6 +237,8 @@ bool PhaseCFG::schedule_early(VectorSet &visited, Node_List &roots) {
         if (!n->pinned()) {
           // Set earliest legal block.
           _bbs.map(n->_idx, find_deepest_input(n, _bbs));
+        } else {
+          assert(_bbs[n->_idx] == _bbs[n->in(0)->_idx], "Pinned Node should be at the same block as its control edge");
         }
 
         if (nstack.is_empty()) {
