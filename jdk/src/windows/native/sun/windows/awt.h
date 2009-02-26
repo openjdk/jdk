@@ -26,10 +26,21 @@
 #ifndef _AWT_H_
 #define _AWT_H_
 
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600
+#endif
+
+#ifndef _WIN32_IE
+#define _WIN32_IE 0x0600
+#endif
+
+//#ifndef NTDDI_VERSION
+//#define NTDDI_VERSION NTDDI_LONGHORN
+//#endif
+
 #include "stdhdrs.h"
 #include "alloc.h"
 #include "awt_Debug.h"
-#include "UnicowsLoader.h"
 
 extern COLORREF DesktopColor2RGB(int colorIndex);
 
@@ -129,40 +140,23 @@ typedef AwtObject* PDATA;
 /*  /NEW JNI */
 
 /*
- * IS_NT returns TRUE on NT, 2000, XP
- * IS_WIN2000 returns TRUE on 2000, XP
- * IS_WINXP returns TRUE on XP
- * IS_WIN95 returns TRUE on 95, 98, ME
- * IS_WIN98 returns TRUE on 98, ME
- * IS_WINME returns TRUE on ME
- * IS_WIN32 returns TRUE on 32-bit Pentium and
- * 64-bit Itanium.
  * IS_WIN64 returns TRUE on 64-bit Itanium
- *
- * uname -s returns Windows_95 on 95
- * uname -s returns Windows_98 on 98 and ME
- * uname -s returns Windows_NT on NT and 2000 and XP
  */
-#if defined (WIN32)
-    #define IS_WIN32 TRUE
-#else
-    #define IS_WIN32 FALSE
-#endif
 #if defined (_WIN64)
     #define IS_WIN64 TRUE
 #else
     #define IS_WIN64 FALSE
 #endif
-#define IS_NT      (IS_WIN32 && !(::GetVersion() & 0x80000000))
-#define IS_WIN2000 (IS_NT && LOBYTE(LOWORD(::GetVersion())) >= 5)
-#define IS_WIN2003 (IS_NT && LOBYTE(LOWORD(::GetVersion())) == 5 && HIBYTE(LOWORD(::GetVersion())) >= 2)
-#define IS_WINXP   (IS_NT && (IS_WIN2000 && HIBYTE(LOWORD(::GetVersion())) >= 1) || LOBYTE(LOWORD(::GetVersion())) > 5)
-#define IS_WINVISTA (IS_NT && LOBYTE(LOWORD(::GetVersion())) >= 6)
-#define IS_WIN32S  (IS_WIN32 && !IS_NT && LOBYTE(LOWORD(::GetVersion())) < 4)
-#define IS_WIN95   (IS_WIN32 && !IS_NT && LOBYTE(LOWORD(::GetVersion())) >= 4)
-#define IS_WIN98   (IS_WIN95 && HIBYTE(LOWORD(::GetVersion())) >= 10)
-#define IS_WINME   (IS_WIN95 && HIBYTE(LOWORD(::GetVersion())) >= 90)
-#define IS_WIN4X   (IS_WIN32 && LOBYTE(::GetVersion()) >= 4)
+
+/*
+ * IS_WIN2000 returns TRUE on 2000, XP and Vista
+ * IS_WINXP returns TRUE on XP and Vista
+ * IS_WINVISTA returns TRUE on Vista
+ */
+#define IS_WIN2000 (LOBYTE(LOWORD(::GetVersion())) >= 5)
+#define IS_WINXP ((IS_WIN2000 && HIBYTE(LOWORD(::GetVersion())) >= 1) || LOBYTE(LOWORD(::GetVersion())) > 5)
+#define IS_WINVISTA (LOBYTE(LOWORD(::GetVersion())) >= 6)
+
 #define IS_WINVER_ATLEAST(maj, min) \
                    ((maj) < LOBYTE(LOWORD(::GetVersion())) || \
                       (maj) == LOBYTE(LOWORD(::GetVersion())) && \
@@ -176,6 +170,12 @@ typedef AwtObject* PDATA;
 #define HI_INT(l)           ((int)(short)(((DWORD)(l) >> 16) & 0xFFFF))
 
 extern JavaVM *jvm;
+
+// Platform encoding is Unicode (UTF-16), re-define JNU_ functions
+// to proper JNI functions.
+#define JNU_NewStringPlatform(env, x) env->NewString(reinterpret_cast<jchar*>(x), static_cast<jsize>(_tcslen(x)))
+#define JNU_GetStringPlatformChars(env, x, y) reinterpret_cast<LPCWSTR>(env->GetStringChars(x, y))
+#define JNU_ReleaseStringPlatformChars(env, x, y) env->ReleaseStringChars(x, reinterpret_cast<const jchar*>(y))
 
 /*
  * Itanium symbols needed for 64-bit compilation.
@@ -211,17 +211,12 @@ extern JavaVM *jvm;
  * NOTE: float.h must be defined if using these macros
  */
 #define SAVE_CONTROLWORD  \
-   unsigned int fpu_cw = _CW_DEFAULT;   \
-   if (IS_WIN95) {  \
-       fpu_cw = _control87(0, 0);  \
-   }
+  unsigned int fpu_cw = _control87(0, 0);
 
-#define RESTORE_CONTROLWORD   \
-   if (IS_WIN95) { \
-       if ( _control87(0, 0) != fpu_cw) {  \
-              _control87(fpu_cw, 0xfffff);   \
-       }   \
-   }
+#define RESTORE_CONTROLWORD  \
+  if (_control87(0, 0) != fpu_cw) {  \
+    _control87(fpu_cw, 0xffffffff);  \
+  }
 
 /*
  * checks if the current thread is/isn't the toolkit thread
