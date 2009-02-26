@@ -909,6 +909,10 @@ void PhaseCFG::verify( ) const {
               !(n->jvms() != NULL && n->jvms()->is_monitor_use(k)) ) {
             assert( b->find_node(def) < j, "uses must follow definitions" );
           }
+          if( def->is_SafePointScalarObject() ) {
+            assert(_bbs[def->_idx] == b, "SafePointScalarObject Node should be at the same block as its SafePoint node");
+            assert(_bbs[def->_idx] == _bbs[def->in(0)->_idx], "SafePointScalarObject Node should be at the same block as its control edge");
+          }
         }
       }
     }

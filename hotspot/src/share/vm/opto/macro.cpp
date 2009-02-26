@@ -64,6 +64,7 @@ void PhaseMacroExpand::copy_call_debug_info(CallNode *oldcall, CallNode * newcal
       uint old_unique = C->unique();
       Node* new_in = old_sosn->clone(jvms_adj, sosn_map);
       if (old_unique != C->unique()) {
+        new_in->set_req(0, newcall->in(0)); // reset control edge
         new_in = transform_later(new_in); // Register new node.
       }
       old_in = new_in;
