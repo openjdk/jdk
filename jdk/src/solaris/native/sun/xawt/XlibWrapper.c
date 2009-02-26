@@ -1641,6 +1641,13 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XdbeSwapBuffers
     AWT_CHECK_HAVE_LOCK();
     return XdbeSwapBuffers((Display*) jlong_to_ptr(display), (XdbeSwapInfo *) jlong_to_ptr(swap_info), num_windows);
 }
+JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XQueryKeymap
+(JNIEnv *env, jclass clazz, jlong display, jlong vector)
+{
+
+    AWT_CHECK_HAVE_LOCK();
+    XQueryKeymap( (Display *) jlong_to_ptr(display), (char *) jlong_to_ptr(vector));
+}
 
 JNIEXPORT jlong JNICALL
 Java_sun_awt_X11_XlibWrapper_XKeycodeToKeysym(JNIEnv *env, jclass clazz,
@@ -1911,19 +1918,30 @@ Java_sun_awt_X11_XlibWrapper_SetRectangularShape
  jint x1, jint y1, jint x2, jint y2,
  jobject region)
 {
-    XRectangle rects[256];
-    XRectangle *pRect = rects;
-    int numrects;
-
     AWT_CHECK_HAVE_LOCK();
 
-    numrects = RegionToYXBandedRectangles(env, x1, y1, x2, y2, region,
-            &pRect, 256);
+    // If all the params are zeros, the shape must be simply reset.
+    // Otherwise, the shape may be not rectangular.
+    if (region || x1 || x2 || y1 || y2) {
+        XRectangle rects[256];
+        XRectangle *pRect = rects;
 
-    XShapeCombineRectangles((Display *)jlong_to_ptr(display), (Window)jlong_to_ptr(window),
+        int numrects = RegionToYXBandedRectangles(env, x1, y1, x2, y2, region,
+                &pRect, 256);
+
+        XShapeCombineRectangles((Display *)jlong_to_ptr(display), (Window)jlong_to_ptr(window),
+                ShapeClip, 0, 0, pRect, numrects, ShapeSet, YXBanded);
+        XShapeCombineRectangles((Display *)jlong_to_ptr(display), (Window)jlong_to_ptr(window),
                 ShapeBounding, 0, 0, pRect, numrects, ShapeSet, YXBanded);
 
-    if (pRect != rects) {
-        free(pRect);
+        if (pRect != rects) {
+            free(pRect);
+        }
+    } else {
+        // Reset the shape to a rectangular form.
+        XShapeCombineMask((Display *)jlong_to_ptr(display), (Window)jlong_to_ptr(window),
+                ShapeClip, 0, 0, None, ShapeSet);
+        XShapeCombineMask((Display *)jlong_to_ptr(display), (Window)jlong_to_ptr(window),
+                ShapeBounding, 0, 0, None, ShapeSet);
     }
 }

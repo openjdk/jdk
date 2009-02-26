@@ -694,8 +694,8 @@ public final class XDragSourceContextPeer
             } finally {
                 xmotion.dispose();
             }
-            if (xbutton.get_button() == XConstants.Button1
-                    || xbutton.get_button() == XConstants.Button2) {
+            if (xbutton.get_button() == XConstants.buttons[0]
+                || xbutton.get_button() == XConstants.buttons[1]) {
                 // drag is initiated with Button1 or Button2 pressed and
                 // ended on release of either of these buttons (as the same
                 // behavior was with our old Motif DnD-based implementation)

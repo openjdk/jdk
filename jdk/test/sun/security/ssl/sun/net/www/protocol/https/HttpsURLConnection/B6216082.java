@@ -136,6 +136,7 @@ public class B6216082 {
                                 server.getLocalPort(), "/");
             HttpURLConnection uc = (HttpURLConnection)url.openConnection();
             System.out.println(uc.getResponseCode());
+            uc.disconnect();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
