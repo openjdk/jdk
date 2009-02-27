@@ -941,7 +941,7 @@ public class Dialog extends Window {
                 // does not invoke the super.show(). So wried... :(
                 mixOnShowing();
 
-                peer.show(); // now guaranteed never to block
+                peer.setVisible(true); // now guaranteed never to block
                 if (isModalBlocked()) {
                     modalBlocker.toFront();
                 }

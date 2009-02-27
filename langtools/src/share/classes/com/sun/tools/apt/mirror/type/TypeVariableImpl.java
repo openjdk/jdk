@@ -64,7 +64,7 @@ public class TypeVariableImpl extends TypeMirrorImpl implements TypeVariable {
      * {@inheritDoc}
      */
     public TypeParameterDeclaration getDeclaration() {
-        TypeSymbol sym = (TypeSymbol) type.tsym;
+        TypeSymbol sym = type.tsym;
         return env.declMaker.getTypeParameterDeclaration(sym);
     }
 

@@ -25,12 +25,11 @@
 
 package com.sun.tools.doclets.formats.html.markup;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-
-import com.sun.javadoc.*;
 import java.io.*;
 import java.util.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 
 /**
@@ -56,8 +55,9 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         super(configuration,
               null, configuration.destDirName + filename,
               configuration.docencoding);
+        // use File to normalize file separators
         configuration.message.notice("doclet.Generating_0",
-                                     configuration.destDirName + filename);
+            new File(configuration.destDirName, filename));
     }
 
     public HtmlDocWriter(Configuration configuration,
@@ -65,10 +65,10 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         super(configuration,
               configuration.destDirName + path, filename,
               configuration.docencoding);
+        // use File to normalize file separators
         configuration.message.notice("doclet.Generating_0",
-                                     configuration.destDirName +
-                                         ((path.length() > 0)?
-                                              path + File.separator: "") + filename);
+            new File(configuration.destDirName,
+                    ((path.length() > 0)? path + File.separator: "") + filename));
     }
 
     /**

@@ -182,18 +182,6 @@ extern const UINT SYSCOMMAND_IMM;
 #endif //AW_BLEND
 
 
-
-
-// WM_MOUSEWHEEL should be WM_MOUSELAST, but
-// is not being defined.  See winuser.h
-#ifdef WM_MOUSELAST
-#if WM_MOUSELAST <= 0x020A
-#define WM_AWT_MOUSELAST                0x020A
-#else
-#error Unexpected value of WM_MOUSELAST
-#endif //WM_MOUSELAST <= 0x0209
-#endif //WM_MOUSELAST
-
 // AwtComponent messages
 enum {
     // 6427323: unfortunately WM_APP+nnn conflicts with edit control messages

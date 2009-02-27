@@ -82,8 +82,8 @@ class MutableNUMASpace : public MutableSpace {
     char* last_page_scanned()            { return _last_page_scanned; }
     void set_last_page_scanned(char* p)  { _last_page_scanned = p;    }
    public:
-    LGRPSpace(int l) : _lgrp_id(l), _last_page_scanned(NULL), _allocation_failed(false) {
-      _space = new MutableSpace();
+    LGRPSpace(int l, size_t alignment) : _lgrp_id(l), _last_page_scanned(NULL), _allocation_failed(false) {
+      _space = new MutableSpace(alignment);
       _alloc_rate = new AdaptiveWeightedAverage(NUMAChunkResizeWeight);
     }
     ~LGRPSpace() {
@@ -183,10 +183,10 @@ class MutableNUMASpace : public MutableSpace {
 
  public:
   GrowableArray<LGRPSpace*>* lgrp_spaces() const     { return _lgrp_spaces;       }
-  MutableNUMASpace();
+  MutableNUMASpace(size_t alignment);
   virtual ~MutableNUMASpace();
   // Space initialization.
-  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
+  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space, bool setup_pages = SetupPages);
   // Update space layout if necessary. Do all adaptive resizing job.
   virtual void update();
   // Update allocation rate averages.

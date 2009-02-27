@@ -402,7 +402,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
     public void buildFieldSerializationOverview(ClassDoc classDoc) {
         if (classDoc.definesSerializableFields()) {
             FieldDoc serialPersistentField =
-                (FieldDoc)((Util.asList(classDoc.serializableFields()).get(0)));
+                Util.asList(classDoc.serializableFields()).get(0);
             String comment = serialPersistentField.commentText();
             if (comment.length() > 0) {
                 fieldWriter.writeHeader(

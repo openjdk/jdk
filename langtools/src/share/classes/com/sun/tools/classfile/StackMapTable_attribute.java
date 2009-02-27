@@ -37,6 +37,7 @@ import java.io.IOException;
  */
 public class StackMapTable_attribute extends Attribute {
     static class InvalidStackMap extends AttributeException {
+        private static final long serialVersionUID = -5659038410855089780L;
         InvalidStackMap(String msg) {
             super(msg);
         }

@@ -719,6 +719,7 @@ public class JavapPrinter {
     /**
      * Print constant pool entry information.
      */
+    @SuppressWarnings("fallthrough")
     public int PrintlnConstantEntry(int cpx) {
         int size=1;
         byte tag=0;
@@ -757,6 +758,7 @@ public class JavapPrinter {
         case CONSTANT_LONG:
         case CONSTANT_DOUBLE:
             size=2;
+            // fall through
         default:
             out.println(str+";");
         }

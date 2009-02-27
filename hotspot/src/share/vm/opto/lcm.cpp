@@ -107,7 +107,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     was_store = false;
     switch( mach->ideal_Opcode() ) {
     case Op_LoadB:
-    case Op_LoadC:
+    case Op_LoadUS:
     case Op_LoadD:
     case Op_LoadF:
     case Op_LoadI:

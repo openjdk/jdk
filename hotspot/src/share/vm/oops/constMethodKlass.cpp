@@ -49,10 +49,16 @@ bool constMethodKlass::oop_is_parsable(oop obj) const {
   return constMethodOop(obj)->object_is_parsable();
 }
 
+bool constMethodKlass::oop_is_conc_safe(oop obj) const {
+  assert(obj->is_constMethod(), "must be constMethod oop");
+  return constMethodOop(obj)->is_conc_safe();
+}
+
 constMethodOop constMethodKlass::allocate(int byte_code_size,
                                           int compressed_line_number_size,
                                           int localvariable_table_length,
                                           int checked_exceptions_length,
+                                          bool is_conc_safe,
                                           TRAPS) {
 
   int size = constMethodOopDesc::object_size(byte_code_size,
@@ -75,6 +81,7 @@ constMethodOop constMethodKlass::allocate(int byte_code_size,
                                 compressed_line_number_size,
                                 localvariable_table_length);
   assert(cm->size() == size, "wrong size for object");
+  cm->set_is_conc_safe(is_conc_safe);
   cm->set_partially_loaded();
   assert(cm->is_parsable(), "Is safely parsable by gc");
   return cm;
