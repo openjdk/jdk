@@ -523,7 +523,7 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
 #ifdef _LP64
   // Make sure stack is properly aligned and sized for the abi
   __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
-  __ andptr(rsp, -16); // must be 16 byte boundry (see amd64 ABI)
+  __ andptr(rsp, -16); // must be 16 byte boundary (see amd64 ABI)
 #endif // _LP64
 
 
@@ -970,7 +970,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 #ifdef _LP64
     // duplicate the alignment rsp got after setting stack_base
     __ subptr(rax, frame::arg_reg_save_area_bytes); // windows
-    __ andptr(rax, -16); // must be 16 byte boundry (see amd64 ABI)
+    __ andptr(rax, -16); // must be 16 byte boundary (see amd64 ABI)
 #endif // _LP64
     __ cmpptr(rax, rsp);
     __ jcc(Assembler::equal, L);
@@ -1067,7 +1067,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 #ifdef _LP64
   __ subptr(rsp, t);
   __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
-  __ andptr(rsp, -16); // must be 16 byte boundry (see amd64 ABI)
+  __ andptr(rsp, -16); // must be 16 byte boundary (see amd64 ABI)
 #else
   __ addptr(t, 2*wordSize);     // allocate two more slots for JNIEnv and possible mirror
   __ subptr(rsp, t);

@@ -196,7 +196,7 @@ void NodeHash::hash_insert( Node *n ) {
 }
 
 //------------------------------hash_delete------------------------------------
-// Replace in hash table with sentinal
+// Replace in hash table with sentinel
 bool NodeHash::hash_delete( const Node *n ) {
   Node *k;
   uint hash = n->hash();
@@ -207,7 +207,7 @@ bool NodeHash::hash_delete( const Node *n ) {
   uint key = hash & (_max-1);
   uint stride = key | 0x01;
   debug_only( uint counter = 0; );
-  for( ; /* (k != NULL) && (k != _sentinal) */; ) {
+  for( ; /* (k != NULL) && (k != _sentinel) */; ) {
     debug_only( counter++ );
     debug_only( _delete_probes++ );
     k = _table[key];            // Get hashed value
@@ -715,7 +715,7 @@ Node *PhaseGVN::transform_no_reclaim( Node *n ) {
 
 #ifdef ASSERT
 //------------------------------dead_loop_check--------------------------------
-// Check for a simple dead loop when a data node references itself direcly
+// Check for a simple dead loop when a data node references itself directly
 // or through an other data node excluding cons and phis.
 void PhaseGVN::dead_loop_check( Node *n ) {
   // Phi may reference itself in a loop
@@ -1359,7 +1359,7 @@ void PhaseCCP::analyze() {
               worklist.push(p); // Propagate change to user
           }
         }
-        // If we changed the reciever type to a call, we need to revisit
+        // If we changed the receiver type to a call, we need to revisit
         // the Catch following the call.  It's looking for a non-NULL
         // receiver to know when to enable the regular fall-through path
         // in addition to the NullPtrException path

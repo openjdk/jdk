@@ -4555,7 +4555,7 @@ void ADLParser::parse_err(int flag, const char *fmt, ...) {
 
 //---------------------------ensure_start_of_line------------------------------
 // A preprocessor directive has been encountered.  Be sure it has fallen at
-// the begining of a line, or else report an error.
+// the beginning of a line, or else report an error.
 void ADLParser::ensure_start_of_line(void) {
   if (_curchar == '\n') { next_line(); return; }
   assert( _ptr >= _curline && _ptr < _curline+strlen(_curline),

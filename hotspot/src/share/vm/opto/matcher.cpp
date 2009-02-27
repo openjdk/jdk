@@ -897,7 +897,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
 #ifdef ASSERT
           _new2old_map.map(m->_idx, n);
 #endif
-          mstack.push(m, Post_Visit, n, i); // Don't neet to visit
+          mstack.push(m, Post_Visit, n, i); // Don't need to visit
           mstack.push(m->in(0), Visit, m, 0);
         } else {
           mstack.push(m, Visit, n, i);
@@ -1267,7 +1267,7 @@ static bool match_into_reg( const Node *n, Node *m, Node *control, int i, bool s
     }
   }
 
-  // Not forceably cloning.  If shared, put it into a register.
+  // Not forceable cloning.  If shared, put it into a register.
   return shared;
 }
 
@@ -1542,7 +1542,7 @@ void Matcher::ReduceInst_Chain_Rule( State *s, int rule, Node *&mem, MachNode *m
   // This is what my child will give me.
   int opnd_class_instance = s->_rule[op];
   // Choose between operand class or not.
-  // This is what I will recieve.
+  // This is what I will receive.
   int catch_op = (FIRST_OPERAND_CLASS <= op && op < NUM_OPERANDS) ? opnd_class_instance : op;
   // New rule for child.  Chase operand classes to get the actual rule.
   int newrule = s->_rule[catch_op];
@@ -1966,7 +1966,7 @@ void Matcher::find_shared( Node *n ) {
       // BoolNode::match_edge always returns a zero.
 
       // We reorder the Op_If in a pre-order manner, so we can visit without
-      // accidently sharing the Cmp (the Bool and the If make 2 users).
+      // accidentally sharing the Cmp (the Bool and the If make 2 users).
       n->add_req( n->in(1)->in(1) ); // Add the Cmp next to the Bool
     }
     else if (nstate == Post_Visit) {

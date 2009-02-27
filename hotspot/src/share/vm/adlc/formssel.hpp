@@ -277,7 +277,7 @@ public:
   //
   // Generate the format call for the replacement variable
   void                rep_var_format(FILE *fp, const char *rep_var);
-  // Generate index values needed for determing the operand position
+  // Generate index values needed for determining the operand position
   void                index_temps   (FILE *fp, FormDict &globals, const char *prefix = "", const char *receiver = "");
   // ---------------------------
 
@@ -344,7 +344,7 @@ public:
 
   // --------------------------- Code Block
   // Add code
-  void add_code(const char *string_preceeding_replacement_var);
+  void add_code(const char *string_preceding_replacement_var);
   // Add a replacement variable or one of its subfields
   // Subfields are stored with a leading '$'
   void add_rep_var(char *replacement_var);

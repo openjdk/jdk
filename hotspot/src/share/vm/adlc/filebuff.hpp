@@ -37,7 +37,7 @@ class ArchDesc;
 
 //------------------------------FileBuff--------------------------------------
 // This class defines a nicely behaved buffer of text.  Entire file of text
-// is read into buffer at creation, with sentinals at start and end.
+// is read into buffer at creation, with sentinels at start and end.
 class FileBuff {
   friend class FileBuffRegion;
  private:
@@ -46,8 +46,8 @@ class FileBuff {
   long  _bufoff;                // Start of buffer file offset
 
   char *_buf;                   // The buffer itself.
-  char *_bigbuf;                // The buffer plus sentinals; actual heap area
-  char *_bufmax;                // A pointer to the buffer end sentinal
+  char *_bigbuf;                // The buffer plus sentinels; actual heap area
+  char *_bufmax;                // A pointer to the buffer end sentinel
   char *_bufeol;                // A pointer to the last complete line end
 
   int   _err;                   // Error flag for file seek/read operations

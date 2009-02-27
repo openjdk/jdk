@@ -71,7 +71,7 @@ testing.
 to figure out which test post-dominates.  The real problem is that it doesn't
 matter which one you pick.  After you pick up, the dominating-test elider in
 IGVN can remove the test and allow you to hoist up to the dominating test on
-the choosen oop bypassing the test on the not-choosen oop.  Seen in testing.
+the chosen oop bypassing the test on the not-chosen oop.  Seen in testing.
 Oops.
 
 (3) Leave the CastPP's in.  This makes the graph more accurate in some sense;

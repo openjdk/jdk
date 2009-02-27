@@ -22,7 +22,7 @@
  *
  */
 
-// This file contains platform-independant assembler declarations.
+// This file contains platform-independent assembler declarations.
 
 class CodeBuffer;
 class MacroAssembler;

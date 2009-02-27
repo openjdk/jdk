@@ -31,7 +31,7 @@
 // The AbstractAssembler is generating code into a CodeBuffer. To make code generation faster,
 // the assembler keeps a copy of the code buffers boundaries & modifies them when
 // emitting bytes rather than using the code buffers accessor functions all the time.
-// The code buffer is updated via set_code_end(...) after emiting a whole instruction.
+// The code buffer is updated via set_code_end(...) after emitting a whole instruction.
 
 AbstractAssembler::AbstractAssembler(CodeBuffer* code) {
   if (code == NULL)  return;

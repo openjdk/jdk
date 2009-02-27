@@ -606,7 +606,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
           if (pred_block != early) {
             // If any predecessor of the Phi matches the load's "early block",
             // we do not need a precedence edge between the Phi and 'load'
-            // since the load will be forced into a block preceeding the Phi.
+            // since the load will be forced into a block preceding the Phi.
             pred_block->set_raise_LCA_mark(load_index);
             assert(!LCA_orig->dominates(pred_block) ||
                    early->dominates(pred_block), "early is high enough");
@@ -1399,7 +1399,7 @@ void PhaseCFG::Estimate_Block_Frequency() {
 #ifdef ASSERT
   for (uint i = 0; i < _num_blocks; i++ ) {
     Block *b = _blocks[i];
-    assert(b->_freq >= MIN_BLOCK_FREQUENCY, "Register Allocator requiers meaningful block frequency");
+    assert(b->_freq >= MIN_BLOCK_FREQUENCY, "Register Allocator requires meaningful block frequency");
   }
 #endif
 
@@ -1652,7 +1652,7 @@ float Block::succ_prob(uint i) {
       // successor blocks.
       assert(_num_succs == 2, "expecting 2 successors of a null check");
       // If either successor has only one predecessor, then the
-      // probabiltity estimate can be derived using the
+      // probability estimate can be derived using the
       // relative frequency of the successor and this block.
       if (_succs[i]->num_preds() == 2) {
         return _succs[i]->_freq / _freq;
@@ -1854,7 +1854,7 @@ void Block::update_uncommon_branch(Block* ub) {
 }
 
 //------------------------------update_succ_freq-------------------------------
-// Update the appropriate frequency associated with block 'b', a succesor of
+// Update the appropriate frequency associated with block 'b', a successor of
 // a block in this loop.
 void CFGLoop::update_succ_freq(Block* b, float freq) {
   if (b->_loop == this) {
