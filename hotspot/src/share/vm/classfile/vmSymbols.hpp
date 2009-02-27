@@ -362,6 +362,7 @@
   template(class_signature,                           "Ljava/lang/Class;")                                        \
   template(string_signature,                          "Ljava/lang/String;")                                       \
   template(reference_signature,                       "Ljava/lang/ref/Reference;")                                \
+  template(concurrenthashmap_signature,               "Ljava/util/concurrent/ConcurrentHashMap;")                 \
   /* signature symbols needed by intrinsics */                                                                    \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, template, VM_ALIAS_IGNORE)            \
                                                                                                                   \
@@ -373,6 +374,9 @@
                                                                                                                   \
   /* used by ClassFormatError when class name is not known yet */                                                 \
   template(unknown_class_name,                        "<Unknown>")                                                \
+                                                                                                                  \
+  /* used to identify class loaders handling parallel class loading */                                            \
+  template(parallelCapable_name,                      "parallelLockMap;")                                         \
                                                                                                                   \
   /* JVM monitoring and management support */                                                                     \
   template(java_lang_StackTraceElement_array,          "[Ljava/lang/StackTraceElement;")                          \

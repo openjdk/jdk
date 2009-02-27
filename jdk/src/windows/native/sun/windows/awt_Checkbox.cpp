@@ -23,6 +23,7 @@
  * have any questions.
  */
 
+#include "awt.h"
 #include "awt_Toolkit.h"
 #include "awt_Checkbox.h"
 #include "awt_KeyboardFocusManager.h"
@@ -106,7 +107,7 @@ AwtCheckbox* AwtCheckbox::Create(jobject peer, jobject parent)
 
             label = (jstring)env->GetObjectField(target, AwtCheckbox::labelID);
             if (label != NULL) {
-                labelStr = env->GetStringChars(label, 0);
+                labelStr = JNU_GetStringPlatformChars(env, label, 0);
             }
             if (labelStr != 0) {
                 jint x = env->GetIntField(target, AwtComponent::xID);
@@ -123,7 +124,7 @@ AwtCheckbox* AwtCheckbox::Create(jobject peer, jobject parent)
                                      peer);
 
                 if (labelStr != defaultLabelStr) {
-                    env->ReleaseStringChars(label, labelStr);
+                    JNU_ReleaseStringPlatformChars(env, label, labelStr);
                 }
             } else {
                 throw std::bad_alloc();

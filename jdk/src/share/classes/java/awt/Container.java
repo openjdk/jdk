@@ -343,7 +343,7 @@ public class Container extends Component {
         ComponentPeer peer = this.peer;
         if (peer instanceof ContainerPeer) {
             ContainerPeer cpeer = (ContainerPeer)peer;
-            return (Insets)cpeer.insets().clone();
+            return (Insets)cpeer.getInsets().clone();
         }
         return new Insets(0, 0, 0, 0);
     }
@@ -569,7 +569,7 @@ public class Container extends Component {
      * @return true if there is at least one heavyweight children in a container, false otherwise
      * @since 1.5
      */
-    private boolean hasHeavyweightDescendants() {
+    final boolean hasHeavyweightDescendants() {
         checkTreeLock();
         return numOfHWComponents > 0;
     }
@@ -580,7 +580,7 @@ public class Container extends Component {
      * @return true if there is at least one lightweight children in a container, false otherwise
      * @since 1.7
      */
-    private boolean hasLightweightDescendants() {
+    final boolean hasLightweightDescendants() {
         checkTreeLock();
         return numOfLWComponents > 0;
     }
@@ -3861,6 +3861,28 @@ public class Container extends Component {
         return -1;
     }
 
+    /*
+     * This method is overriden to handle opaque children in non-opaque
+     * containers.
+     */
+    @Override
+    final Region getOpaqueShape() {
+        checkTreeLock();
+        if (isLightweight() && isNonOpaqueForMixing()
+                && hasLightweightDescendants())
+        {
+            Region s = Region.EMPTY_REGION;
+            for (int index = 0; index < getComponentCount(); index++) {
+                Component c = getComponent(index);
+                if (c.isLightweight() && c.isShowing()) {
+                    s = s.getUnion(c.getOpaqueShape());
+                }
+            }
+            return s.getIntersection(getNormalShape());
+        }
+        return super.getOpaqueShape();
+    }
+
     final void recursiveSubtractAndApplyShape(Region shape) {
         recursiveSubtractAndApplyShape(shape, getTopmostComponentIndex(), getBottommostComponentIndex());
     }
@@ -3876,6 +3898,15 @@ public class Container extends Component {
                 "; shape=" + shape + "; fromZ=" + fromZorder + "; toZ=" + toZorder);
         }
         if (fromZorder == -1) {
+            return;
+        }
+        if (shape.isEmpty()) {
+            return;
+        }
+        // An invalid container with not-null layout should be ignored
+        // by the mixing code, the container will be validated later
+        // and the mixing code will be executed later.
+        if (getLayout() != null && !isValid()) {
             return;
         }
         for (int index = fromZorder; index <= toZorder; index++) {
@@ -3906,10 +3937,19 @@ public class Container extends Component {
         if (fromZorder == -1) {
             return;
         }
+        // An invalid container with not-null layout should be ignored
+        // by the mixing code, the container will be validated later
+        // and the mixing code will be executed later.
+        if (getLayout() != null && !isValid()) {
+            return;
+        }
         for (int index = fromZorder; index <= toZorder; index++) {
             Component comp = getComponent(index);
             if (!comp.isLightweight()) {
                 comp.applyCurrentShape();
+                if (comp instanceof Container && ((Container)comp).getLayout() == null) {
+                    ((Container)comp).recursiveApplyCurrentShape();
+                }
             } else if (comp instanceof Container &&
                     ((Container)comp).hasHeavyweightDescendants()) {
                 ((Container)comp).recursiveApplyCurrentShape();
@@ -3931,7 +3971,7 @@ public class Container extends Component {
                 if (comp.isVisible()) {
                     ComponentPeer peer = comp.getPeer();
                     if (peer != null) {
-                        peer.show();
+                        peer.setVisible(true);
                     }
                 }
             }
@@ -3952,7 +3992,7 @@ public class Container extends Component {
                 if (comp.isVisible()) {
                     ComponentPeer peer = comp.getPeer();
                     if (peer != null) {
-                        peer.hide();
+                        peer.setVisible(false);
                     }
                 }
             }
@@ -4000,6 +4040,10 @@ public class Container extends Component {
                 mixingLog.fine("this = " + this);
             }
 
+            if (!isMixingNeeded()) {
+                return;
+            }
+
             boolean isLightweight = isLightweight();
 
             if (isLightweight && isRecursivelyVisibleUpToHeavyweightContainer()) {
@@ -4034,6 +4078,9 @@ public class Container extends Component {
             if (mixingLog.isLoggable(Level.FINE)) {
                 mixingLog.fine("this = " + this);
             }
+
+            boolean isMixingNeeded = isMixingNeeded();
+
             if (isLightweight() && hasHeavyweightDescendants()) {
                 final Point origin = new Point(getX(), getY());
                 for (Container cont = getContainer();
@@ -4044,7 +4091,18 @@ public class Container extends Component {
                 }
 
                 recursiveRelocateHeavyweightChildren(origin);
+
+                if (!isMixingNeeded) {
+                    return;
+                }
+
+                recursiveApplyCurrentShape();
             }
+
+            if (!isMixingNeeded) {
+                return;
+            }
+
             super.mixOnReshaping();
         }
     }
@@ -4055,6 +4113,10 @@ public class Container extends Component {
             if (mixingLog.isLoggable(Level.FINE)) {
                 mixingLog.fine("this = " + this +
                     "; oldZ=" + oldZorder + "; newZ=" + newZorder);
+            }
+
+            if (!isMixingNeeded()) {
+                return;
             }
 
             boolean becameHigher = newZorder < oldZorder;
@@ -4073,8 +4135,16 @@ public class Container extends Component {
                 mixingLog.fine("this = " + this);
             }
 
+            if (!isMixingNeeded()) {
+                return;
+            }
+
             if (hasHeavyweightDescendants()) {
                 recursiveApplyCurrentShape();
+            }
+
+            if (isLightweight() && isNonOpaqueForMixing()) {
+                subtractAndApplyShapeBelowMe();
             }
 
             super.mixOnValidating();

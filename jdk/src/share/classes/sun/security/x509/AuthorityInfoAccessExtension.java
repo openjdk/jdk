@@ -43,8 +43,9 @@ import sun.security.util.DerValue;
  * certificate that identifies the specific OCSP Responder to use when
  * performing on-line validation of that certificate.
  * <p>
- * This extension is defined in
- * <a href="http://www.ietf.org/rfc/rfc3280.txt">Internet X.509 PKI Certificate and Certificate Revocation List (CRL) Profile</a>. The profile permits
+ * This extension is defined in <a href="http://www.ietf.org/rfc/rfc3280.txt">
+ * Internet X.509 PKI Certificate and Certificate Revocation List
+ * (CRL) Profile</a>. The profile permits
  * the extension to be included in end-entity or CA certificates,
  * and it must be marked as non-critical. Its ASN.1 definition is as follows:
  * <pre>

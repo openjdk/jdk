@@ -41,7 +41,7 @@ include FILES_java.gmk
 # Resources
 #
 LOCALE_SET_DEFINITION = j2sdk
-RESOURCE_BUNDLES_PROPERTIES = sun/tools/javac/resources/javac.properties
+RESOURCE_BUNDLES_UNCOMPILED_PROPERTIES = sun/tools/javac/resources/javac.properties
 
 #
 # Rules

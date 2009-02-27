@@ -152,6 +152,17 @@ public interface SerializedFormWriter {
          * @param member the member to write the header for.
          */
         public void writeMemberFooter(FieldDoc member);
+
+        /**
+         * Check to see if member details should be printed. If
+         * nocomment option set or if there is no text to be printed
+         * for deprecation info, inline comment, no serial tag or inline tags,
+         * do not print member details.
+         *
+         * @param member the member to check details for.
+         * @return true if details need to be printed
+         */
+        public boolean shouldPrintMemberDetails(FieldDoc member);
     }
 
     /**

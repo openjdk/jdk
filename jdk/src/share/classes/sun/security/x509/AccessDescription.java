@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,17 @@ public final class AccessDescription {
     public static final ObjectIdentifier Ad_CAISSUERS_Id =
         ObjectIdentifier.newInternal(new int[] {1, 3, 6, 1, 5, 5, 7, 48, 2});
 
+    public static final ObjectIdentifier Ad_TIMESTAMPING_Id =
+        ObjectIdentifier.newInternal(new int[] {1, 3, 6, 1, 5, 5, 7, 48, 3});
+
+    public static final ObjectIdentifier Ad_CAREPOSITORY_Id =
+        ObjectIdentifier.newInternal(new int[] {1, 3, 6, 1, 5, 5, 7, 48, 5});
+
+    public AccessDescription(ObjectIdentifier accessMethod, GeneralName accessLocation) {
+        this.accessMethod = accessMethod;
+        this.accessLocation = accessLocation;
+    }
+
     public AccessDescription(DerValue derValue) throws IOException {
         DerInputStream derIn = derValue.getData();
         accessMethod = derIn.getOID();
@@ -90,7 +101,19 @@ public final class AccessDescription {
     }
 
     public String toString() {
-        return ("accessMethod: " + accessMethod.toString() +
-                "\n   accessLocation: " + accessLocation.toString());
+        String method = null;
+        if (accessMethod.equals(Ad_CAISSUERS_Id)) {
+            method = "caIssuers";
+        } else if (accessMethod.equals(Ad_CAREPOSITORY_Id)) {
+            method = "caRepository";
+        } else if (accessMethod.equals(Ad_TIMESTAMPING_Id)) {
+            method = "timeStamping";
+        } else if (accessMethod.equals(Ad_OCSP_Id)) {
+            method = "ocsp";
+        } else {
+            method = accessMethod.toString();
+        }
+        return ("accessMethod: " + method +
+                "\n   accessLocation: " + accessLocation.toString() + "\n");
     }
 }

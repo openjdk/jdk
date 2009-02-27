@@ -170,7 +170,6 @@ class DefaultSwatchChooserPanel extends AbstractColorChooserPanel {
         superHolder.add(mainHolder, gbc);
         gbc.insets = oldInsets;
 
-        recentSwatchPanel.addMouseListener(recentSwatchListener);
         recentSwatchPanel.setInheritsPopupMenu(true);
         JPanel recentHolder = new JPanel( new BorderLayout() );
         recentHolder.setBorder(border);
@@ -212,16 +211,20 @@ class DefaultSwatchChooserPanel extends AbstractColorChooserPanel {
 
     class RecentSwatchListener extends MouseAdapter implements Serializable {
         public void mousePressed(MouseEvent e) {
-            Color color = recentSwatchPanel.getColorForLocation(e.getX(), e.getY());
-            setSelectedColor(color);
+            if (isEnabled()) {
+                Color color = recentSwatchPanel.getColorForLocation(e.getX(), e.getY());
+                setSelectedColor(color);
+            }
         }
     }
 
     class MainSwatchListener extends MouseAdapter implements Serializable {
         public void mousePressed(MouseEvent e) {
-            Color color = swatchPanel.getColorForLocation(e.getX(), e.getY());
-            setSelectedColor(color);
-            recentSwatchPanel.setMostRecentColor(color);
+            if (isEnabled()) {
+                Color color = swatchPanel.getColorForLocation(e.getX(), e.getY());
+                setSelectedColor(color);
+                recentSwatchPanel.setMostRecentColor(color);
+            }
         }
     }
 

@@ -402,17 +402,18 @@ public class SerializedFormBuilder extends AbstractBuilder {
     public void buildFieldSerializationOverview(ClassDoc classDoc) {
         if (classDoc.definesSerializableFields()) {
             FieldDoc serialPersistentField =
-                (FieldDoc)((Util.asList(classDoc.serializableFields()).get(0)));
-            String comment = serialPersistentField.commentText();
-            if (comment.length() > 0) {
+                Util.asList(classDoc.serializableFields()).get(0);
+            // Check to see if there are inline comments, tags or deprecation
+            // information to be printed.
+            if (fieldWriter.shouldPrintMemberDetails(serialPersistentField)) {
                 fieldWriter.writeHeader(
                     configuration.getText("doclet.Serialized_Form_class"));
+                fieldWriter.writeMemberDeprecatedInfo(serialPersistentField);
                 if (!configuration.nocomment) {
-                    fieldWriter.writeMemberDeprecatedInfo(serialPersistentField);
                     fieldWriter.writeMemberDescription(serialPersistentField);
                     fieldWriter.writeMemberTags(serialPersistentField);
-                    fieldWriter.writeMemberFooter(serialPersistentField);
                 }
+                fieldWriter.writeMemberFooter(serialPersistentField);
             }
         }
     }
@@ -425,6 +426,16 @@ public class SerializedFormBuilder extends AbstractBuilder {
             FieldDoc field = (FieldDoc) currentMember;
             fieldWriter.writeMemberHeader(field.type().asClassDoc(),
                 field.type().typeName(), field.type().dimension(), field.name());
+        }
+    }
+
+    /**
+     * Build the field deprecation information.
+     */
+    public void buildFieldDeprecationInfo() {
+        if (!currentClass.definesSerializableFields()) {
+            FieldDoc field = (FieldDoc)currentMember;
+            fieldWriter.writeMemberDeprecatedInfo(field);
         }
     }
 
@@ -459,7 +470,6 @@ public class SerializedFormBuilder extends AbstractBuilder {
                         "doclet.MissingSerialTag", cd.qualifiedName(),
                         field.name());
             }
-            fieldWriter.writeMemberDeprecatedInfo(field);
             fieldWriter.writeMemberDescription(field);
             fieldWriter.writeMemberTags(field);
         }

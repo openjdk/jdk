@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,13 +103,14 @@ public class NetworkChannelTests {
 
         // closed
         ch.close();
-        if (ch.getLocalAddress() != null) {
-            throw new RuntimeException("Local address return when closed");
-        }
+        try {
+            ch.getLocalAddress();
+            throw new RuntimeException("ClosedChannelException expected");
+        } catch (ClosedChannelException e) { }
     }
 
     /**
-     * Exercise getConnectedAddress method (SocketChannel only)
+     * Exercise getRemoteAddress method (SocketChannel only)
      */
     static void connectedAddressTests() throws IOException {
         ServerSocketChannel ssc = ServerSocketChannel.open()
@@ -121,19 +122,21 @@ public class NetworkChannelTests {
         SocketChannel sc = SocketChannel.open();
 
         // not connected
-        if (sc.getConnectedAddress() != null)
-            throw new RuntimeException("getConnectedAddress returned address when not connected");
+        if (sc.getRemoteAddress() != null)
+            throw new RuntimeException("getRemoteAddress returned address when not connected");
 
         // connected
         sc.connect(server);
-        SocketAddress remote = sc.getConnectedAddress();
+        SocketAddress remote = sc.getRemoteAddress();
         if (!remote.equals(server))
-            throw new RuntimeException("getConnectedAddress returned incorrect address");
+            throw new RuntimeException("getRemoteAddress returned incorrect address");
 
         // closed
         sc.close();
-        if (sc.getConnectedAddress() != null)
-            throw new RuntimeException("getConnectedAddress returned address when closed");
+        try {
+            sc.getRemoteAddress();
+            throw new RuntimeException("ClosedChannelException expected");
+        } catch (ClosedChannelException e) { }
 
         ssc.close();
     }
