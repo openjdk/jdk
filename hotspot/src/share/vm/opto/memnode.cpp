@@ -779,14 +779,14 @@ Node *LoadNode::make( PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const Type
          "use LoadRangeNode instead");
   switch (bt) {
   case T_BOOLEAN:
-  case T_BYTE:    return new (C, 3) LoadBNode(ctl, mem, adr, adr_type, rt->is_int()    );
-  case T_INT:     return new (C, 3) LoadINode(ctl, mem, adr, adr_type, rt->is_int()    );
-  case T_CHAR:    return new (C, 3) LoadCNode(ctl, mem, adr, adr_type, rt->is_int()    );
-  case T_SHORT:   return new (C, 3) LoadSNode(ctl, mem, adr, adr_type, rt->is_int()    );
-  case T_LONG:    return new (C, 3) LoadLNode(ctl, mem, adr, adr_type, rt->is_long()   );
-  case T_FLOAT:   return new (C, 3) LoadFNode(ctl, mem, adr, adr_type, rt              );
-  case T_DOUBLE:  return new (C, 3) LoadDNode(ctl, mem, adr, adr_type, rt              );
-  case T_ADDRESS: return new (C, 3) LoadPNode(ctl, mem, adr, adr_type, rt->is_ptr()    );
+  case T_BYTE:    return new (C, 3) LoadBNode (ctl, mem, adr, adr_type, rt->is_int()    );
+  case T_INT:     return new (C, 3) LoadINode (ctl, mem, adr, adr_type, rt->is_int()    );
+  case T_CHAR:    return new (C, 3) LoadUSNode(ctl, mem, adr, adr_type, rt->is_int()    );
+  case T_SHORT:   return new (C, 3) LoadSNode (ctl, mem, adr, adr_type, rt->is_int()    );
+  case T_LONG:    return new (C, 3) LoadLNode (ctl, mem, adr, adr_type, rt->is_long()   );
+  case T_FLOAT:   return new (C, 3) LoadFNode (ctl, mem, adr, adr_type, rt              );
+  case T_DOUBLE:  return new (C, 3) LoadDNode (ctl, mem, adr, adr_type, rt              );
+  case T_ADDRESS: return new (C, 3) LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr()    );
   case T_OBJECT:
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
@@ -1076,13 +1076,14 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
       // of the original value.
       Node* mem_phi = in(Memory);
       Node* offset = in(Address)->in(AddPNode::Offset);
+      Node* region = base->in(0);
 
       Node* in1 = clone();
       Node* in1_addr = in1->in(Address)->clone();
       in1_addr->set_req(AddPNode::Base, base->in(allocation_index));
       in1_addr->set_req(AddPNode::Address, base->in(allocation_index));
       in1_addr->set_req(AddPNode::Offset, offset);
-      in1->set_req(0, base->in(allocation_index));
+      in1->set_req(0, region->in(allocation_index));
       in1->set_req(Address, in1_addr);
       in1->set_req(Memory, mem_phi->in(allocation_index));
 
@@ -1091,7 +1092,7 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
       in2_addr->set_req(AddPNode::Base, base->in(load_index));
       in2_addr->set_req(AddPNode::Address, base->in(load_index));
       in2_addr->set_req(AddPNode::Offset, offset);
-      in2->set_req(0, base->in(load_index));
+      in2->set_req(0, region->in(load_index));
       in2->set_req(Address, in2_addr);
       in2->set_req(Memory, mem_phi->in(load_index));
 
@@ -1100,7 +1101,7 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
       in2_addr = phase->transform(in2_addr);
       in2 =      phase->transform(in2);
 
-      PhiNode* result = PhiNode::make_blank(base->in(0), this);
+      PhiNode* result = PhiNode::make_blank(region, this);
       result->set_req(allocation_index, in1);
       result->set_req(load_index, in2);
       return result;
@@ -1303,6 +1304,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node*    base   = AddPNode::Ideal_base_and_offset(address, phase, ignore);
     if (base != NULL
         && phase->type(base)->higher_equal(TypePtr::NOTNULL)
+        && phase->C->get_alias_index(phase->type(address)->is_ptr()) != Compile::AliasIdxRaw
         && all_controls_dominate(base, phase->C->start())) {
       // A method-invariant, non-null address (constant or 'this' argument).
       set_req(MemNode::Control, NULL);
@@ -1356,7 +1358,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Steps (a), (b):  Walk past independent stores to find an exact match.
   if (prev_mem != NULL && prev_mem != in(MemNode::Memory)) {
     // (c) See if we can fold up on the spot, but don't fold up here.
-    // Fold-up might require truncation (for LoadB/LoadS/LoadC) or
+    // Fold-up might require truncation (for LoadB/LoadS/LoadUS) or
     // just return a prior value, which is done by Identity calls.
     if (can_see_stored_value(prev_mem, phase)) {
       // Make ready for step (d):
@@ -1605,14 +1607,14 @@ Node *LoadBNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return LoadNode::Ideal(phase, can_reshape);
 }
 
-//--------------------------LoadCNode::Ideal--------------------------------------
+//--------------------------LoadUSNode::Ideal-------------------------------------
 //
 //  If the previous store is to the same address as this load,
 //  and the value stored was larger than a char, replace this load
 //  with the value stored truncated to a char.  If no truncation is
 //  needed, the replacement is done in LoadNode::Identity().
 //
-Node *LoadCNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node *LoadUSNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
   if( value && !phase->type(value)->higher_equal( _type ) )

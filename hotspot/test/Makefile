@@ -28,9 +28,9 @@
 
 # Get OS/ARCH specifics
 OSNAME = $(shell uname -s)
-SLASH_JAVA = /java
 ifeq ($(OSNAME), SunOS)
   PLATFORM = solaris
+  SLASH_JAVA = /java
   ARCH = $(shell uname -p)
   ifeq ($(ARCH), i386)
     ARCH=i586
@@ -38,6 +38,7 @@ ifeq ($(OSNAME), SunOS)
 endif
 ifeq ($(OSNAME), Linux)
   PLATFORM = linux
+  SLASH_JAVA = /java
   ARCH = $(shell uname -m)
   ifeq ($(ARCH), i386)
     ARCH = i586
@@ -60,6 +61,10 @@ ifeq ($(OSNAME), Windows_NT)
     endif
   endif
   EXESUFFIX = .exe
+endif
+
+ifdef ALT_SLASH_JAVA
+  SLASH_JAVA = $(ALT_SLASH_JAVA)
 endif
 
 # Utilities used

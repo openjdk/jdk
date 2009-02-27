@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,17 @@
  * have any questions.
  */
 
-#include "stdhdrs.h"
+#include "awt.h"
 #include "mmsystem.h"
 #include "jlong.h"
-#include "awt.h"
 #include "awt_DesktopProperties.h"
-#include "awt_dlls.h"
+#include "awt_Toolkit.h"
 #include "sun_awt_windows_WDesktopProperties.h"
 #include "java_awt_Font.h"
 #include "awtmsg.h"
-#include "Zmouse.h"
-#include "shellapi.h"
+#include "zmouse.h"
+#include <shellapi.h>
+#include <shlobj.h>
 
 // WDesktopProperties fields
 jfieldID AwtDesktopProperties::pDataID = 0;
@@ -43,10 +43,6 @@ jmethodID AwtDesktopProperties::setStringPropertyID = 0;
 jmethodID AwtDesktopProperties::setColorPropertyID = 0;
 jmethodID AwtDesktopProperties::setFontPropertyID = 0;
 jmethodID AwtDesktopProperties::setSoundPropertyID = 0;
-
-typedef VOID (WINAPI *SHGetSettingsType)(LPSHELLFLAGSTATE, DWORD);
-static HMODULE libShell32 = NULL;
-static SHGetSettingsType fn_SHGetSettings;
 
 AwtDesktopProperties::AwtDesktopProperties(jobject self) {
     this->self = GetEnv()->NewGlobalRef(self);
@@ -431,14 +427,12 @@ void CheckFontSmoothingSettings(HWND hWnd) {
 
 void AwtDesktopProperties::GetColorParameters() {
 
-    if (IS_WIN98 || IS_WIN2000) {
-        SetColorProperty(TEXT("win.frame.activeCaptionGradientColor"),
-                              GetSysColor(COLOR_GRADIENTACTIVECAPTION));
-        SetColorProperty(TEXT("win.frame.inactiveCaptionGradientColor"),
-                              GetSysColor(COLOR_GRADIENTINACTIVECAPTION));
-        SetColorProperty(TEXT("win.item.hotTrackedColor"),
-                              GetSysColor(COLOR_HOTLIGHT));
-    }
+    SetColorProperty(TEXT("win.frame.activeCaptionGradientColor"),
+                     GetSysColor(COLOR_GRADIENTACTIVECAPTION));
+    SetColorProperty(TEXT("win.frame.inactiveCaptionGradientColor"),
+                     GetSysColor(COLOR_GRADIENTINACTIVECAPTION));
+    SetColorProperty(TEXT("win.item.hotTrackedColor"),
+                     GetSysColor(COLOR_HOTLIGHT));
     SetColorProperty(TEXT("win.3d.darkShadowColor"), GetSysColor(COLOR_3DDKSHADOW));
     SetColorProperty(TEXT("win.3d.backgroundColor"), GetSysColor(COLOR_3DFACE));
     SetColorProperty(TEXT("win.3d.highlightColor"), GetSysColor(COLOR_3DHIGHLIGHT));
@@ -510,40 +504,18 @@ void AwtDesktopProperties::GetOtherParameters() {
     // This property is called "win.frame.fullWindowDragsOn" above
     // This is one of the properties that don't trigger WM_SETTINGCHANGE
     SetBooleanProperty(TEXT("awt.dynamicLayoutSupported"), GetBooleanParameter(SPI_GETDRAGFULLWINDOWS));
-
-    // 95 MouseWheel support
-    // More or less copied from the MSH_MOUSEWHEEL MSDN entry
-    if (IS_WIN95 && !IS_WIN98) {
-        HWND hdlMSHWHEEL = NULL;
-        UINT msgMSHWheelSupported = NULL;
-        BOOL wheelSupported = FALSE;
-
-        msgMSHWheelSupported = RegisterWindowMessage(MSH_WHEELSUPPORT);
-        hdlMSHWHEEL = FindWindow(MSH_WHEELMODULE_CLASS, MSH_WHEELMODULE_TITLE);
-        if (hdlMSHWHEEL && msgMSHWheelSupported) {
-            wheelSupported = (BOOL)::SendMessage(hdlMSHWHEEL,
-                                                 msgMSHWheelSupported, 0, 0);
-        }
-        SetBooleanProperty(TEXT("awt.wheelMousePresent"), wheelSupported);
-    }
-    else {
-        SetBooleanProperty(TEXT("awt.wheelMousePresent"),
-                           ::GetSystemMetrics(SM_MOUSEWHEELPRESENT));
-    }
+    SetBooleanProperty(TEXT("awt.wheelMousePresent"),
+                       ::GetSystemMetrics(SM_MOUSEWHEELPRESENT));
 
     // END cross-platform properties
 
-    if (IS_WIN98 || IS_WIN2000) {
-      //DWORD   menuShowDelay;
-        //SystemParametersInfo(SPI_GETMENUSHOWDELAY, 0, &menuShowDelay, 0);
-        // SetIntegerProperty(TEXT("win.menu.showDelay"), menuShowDelay);
-        SetBooleanProperty(TEXT("win.frame.captionGradientsOn"), GetBooleanParameter(SPI_GETGRADIENTCAPTIONS));
-        SetBooleanProperty(TEXT("win.item.hotTrackingOn"), GetBooleanParameter(SPI_GETHOTTRACKING));
-    }
+    //DWORD   menuShowDelay;
+    //SystemParametersInfo(SPI_GETMENUSHOWDELAY, 0, &menuShowDelay, 0);
+    // SetIntegerProperty(TEXT("win.menu.showDelay"), menuShowDelay);
+    SetBooleanProperty(TEXT("win.frame.captionGradientsOn"), GetBooleanParameter(SPI_GETGRADIENTCAPTIONS));
+    SetBooleanProperty(TEXT("win.item.hotTrackingOn"), GetBooleanParameter(SPI_GETHOTTRACKING));
 
-    if (IS_WIN2000) {
-        SetBooleanProperty(TEXT("win.menu.keyboardCuesOn"), GetBooleanParameter(SPI_GETKEYBOARDCUES));
-    }
+    SetBooleanProperty(TEXT("win.menu.keyboardCuesOn"), GetBooleanParameter(SPI_GETKEYBOARDCUES));
 
     // High contrast accessibility property
     HIGHCONTRAST contrast;
@@ -557,21 +529,19 @@ void AwtDesktopProperties::GetOtherParameters() {
       SetBooleanProperty(TEXT("win.highContrast.on"), FALSE);
     }
 
-    if (fn_SHGetSettings != NULL) {
-        SHELLFLAGSTATE sfs;
-        fn_SHGetSettings(&sfs, SSF_SHOWALLOBJECTS | SSF_SHOWATTRIBCOL);
-        if (sfs.fShowAllObjects) {
-            SetBooleanProperty(TEXT("awt.file.showHiddenFiles"), TRUE);
-        }
-        else {
-            SetBooleanProperty(TEXT("awt.file.showHiddenFiles"), FALSE);
-        }
-        if (sfs.fShowAttribCol) {
-            SetBooleanProperty(TEXT("awt.file.showAttribCol"), TRUE);
-        }
-        else {
-            SetBooleanProperty(TEXT("awt.file.showAttribCol"), FALSE);
-        }
+    SHELLFLAGSTATE sfs;
+    ::SHGetSettings(&sfs, SSF_SHOWALLOBJECTS | SSF_SHOWATTRIBCOL);
+    if (sfs.fShowAllObjects) {
+        SetBooleanProperty(TEXT("awt.file.showHiddenFiles"), TRUE);
+    }
+    else {
+        SetBooleanProperty(TEXT("awt.file.showHiddenFiles"), FALSE);
+    }
+    if (sfs.fShowAttribCol) {
+        SetBooleanProperty(TEXT("awt.file.showAttribCol"), TRUE);
+    }
+    else {
+        SetBooleanProperty(TEXT("awt.file.showAttribCol"), FALSE);
     }
 
     LPTSTR value;
@@ -667,7 +637,7 @@ UINT AwtDesktopProperties::GetIntegerParameter(UINT spi) {
 }
 
 void AwtDesktopProperties::SetStringProperty(LPCTSTR propName, LPTSTR value) {
-    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    jstring key = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(propName));
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setStringPropertyID,
                              key, JNU_NewStringPlatform(GetEnv(), value));
@@ -675,7 +645,7 @@ void AwtDesktopProperties::SetStringProperty(LPCTSTR propName, LPTSTR value) {
 }
 
 void AwtDesktopProperties::SetIntegerProperty(LPCTSTR propName, int value) {
-    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    jstring key = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(propName));
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setIntegerPropertyID,
                              key, (jint)value);
@@ -683,7 +653,7 @@ void AwtDesktopProperties::SetIntegerProperty(LPCTSTR propName, int value) {
 }
 
 void AwtDesktopProperties::SetBooleanProperty(LPCTSTR propName, BOOL value) {
-    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    jstring key = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(propName));
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setBooleanPropertyID,
                              key, value ? JNI_TRUE : JNI_FALSE);
@@ -691,7 +661,7 @@ void AwtDesktopProperties::SetBooleanProperty(LPCTSTR propName, BOOL value) {
 }
 
 void AwtDesktopProperties::SetColorProperty(LPCTSTR propName, DWORD value) {
-    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    jstring key = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(propName));
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setColorPropertyID,
                              key, GetRValue(value), GetGValue(value),
@@ -743,7 +713,7 @@ void AwtDesktopProperties::SetFontProperty(HDC dc, int fontID,
                         style |= java_awt_Font_ITALIC;
                     }
 
-                    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+                    jstring key = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(propName));
                     GetEnv()->CallVoidMethod(self,
                               AwtDesktopProperties::setFontPropertyID,
                               key, fontName, style, pointSize);
@@ -761,7 +731,7 @@ void AwtDesktopProperties::SetFontProperty(LPCTSTR propName, const LOGFONT & fon
     jint pointSize;
     jint style;
 
-    fontName = JNU_NewStringPlatform(GetEnv(), font.lfFaceName);
+    fontName = JNU_NewStringPlatform(GetEnv(), const_cast<LPWSTR>(font.lfFaceName));
 
 #if 0
     HDC         hdc;
@@ -784,7 +754,7 @@ void AwtDesktopProperties::SetFontProperty(LPCTSTR propName, const LOGFONT & fon
         style |= java_awt_Font_ITALIC;
     }
 
-    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    jstring key = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(propName));
     GetEnv()->CallVoidMethod(self, AwtDesktopProperties::setFontPropertyID,
                              key, fontName, style, pointSize);
 
@@ -793,8 +763,8 @@ void AwtDesktopProperties::SetFontProperty(LPCTSTR propName, const LOGFONT & fon
 }
 
 void AwtDesktopProperties::SetSoundProperty(LPCTSTR propName, LPCTSTR winEventName) {
-    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
-    jstring event = JNU_NewStringPlatform(GetEnv(), winEventName);
+    jstring key = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(propName));
+    jstring event = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(winEventName));
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setSoundPropertyID,
                              key, event);
@@ -805,9 +775,9 @@ void AwtDesktopProperties::SetSoundProperty(LPCTSTR propName, LPCTSTR winEventNa
 
 void AwtDesktopProperties::PlayWindowsSound(LPCTSTR event) {
     // stop any currently playing sounds
-    AwtWinMM::PlaySoundWrapper(NULL, NULL, SND_PURGE);
+    ::PlaySound(NULL, NULL, SND_PURGE);
     // play the sound for the given event name
-    AwtWinMM::PlaySoundWrapper(event, NULL, SND_ASYNC|SND_ALIAS|SND_NODEFAULT);
+    ::PlaySound(event, NULL, SND_ASYNC|SND_ALIAS|SND_NODEFAULT);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -851,16 +821,6 @@ Java_sun_awt_windows_WDesktopProperties_initIDs(JNIEnv *env, jclass cls) {
 JNIEXPORT void JNICALL
 Java_sun_awt_windows_WDesktopProperties_init(JNIEnv *env, jobject self) {
     TRY;
-
-    // Open shell32.dll, get the symbol for SHGetSettings
-    libShell32 = LoadLibrary(TEXT("shell32.dll"));
-    if (libShell32 == NULL) {
-        fn_SHGetSettings = NULL;
-    }
-    else {
-        fn_SHGetSettings = (SHGetSettingsType)GetProcAddress(
-                libShell32, "SHGetSettings");
-    }
 
     new AwtDesktopProperties(self);
 

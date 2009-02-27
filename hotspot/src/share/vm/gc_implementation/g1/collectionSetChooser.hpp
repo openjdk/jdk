@@ -24,7 +24,7 @@
 
 // We need to sort heap regions by collection desirability.
 
-class CSetChooserCache {
+class CSetChooserCache VALUE_OBJ_CLASS_SPEC {
 private:
   enum {
     CacheLength = 16

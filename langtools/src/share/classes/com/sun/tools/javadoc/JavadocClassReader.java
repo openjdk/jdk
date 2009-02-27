@@ -25,17 +25,12 @@
 
 package com.sun.tools.javadoc;
 
-import com.sun.tools.javac.code.Symbol.PackageSymbol;
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.file.ZipArchive.ZipFileObject;
-import com.sun.tools.javac.file.Old199;
-import com.sun.tools.javac.file.ZipFileIndexArchive;
-import com.sun.tools.javac.jvm.ClassReader;
-import com.sun.tools.javac.util.Context;
-
-import java.io.File;
 import java.util.EnumSet;
 import javax.tools.JavaFileObject;
+
+import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.jvm.ClassReader;
+import com.sun.tools.javac.util.Context;
 
 /** Javadoc uses an extended class reader that records package.html entries
  *  @author Neal Gafter
@@ -82,32 +77,7 @@ class JavadocClassReader extends ClassReader {
      */
     @Override
     protected void extraFileActions(PackageSymbol pack, JavaFileObject fo) {
-        CharSequence fileName = Old199.getName(fo);
-        if (docenv != null && fileName.equals("package.html")) {
-            if (fo instanceof ZipFileObject) {
-                ZipFileObject zfo = (ZipFileObject) fo;
-                String zipName = zfo.getZipName();
-                String entryName = zfo.getZipEntryName();
-                int lastSep = entryName.lastIndexOf("/");
-                String classPathName = entryName.substring(0, lastSep + 1);
-                docenv.getPackageDoc(pack).setDocPath(zipName, classPathName);
-            }
-            else if (fo instanceof ZipFileIndexArchive.ZipFileIndexFileObject) {
-                ZipFileIndexArchive.ZipFileIndexFileObject zfo = (ZipFileIndexArchive.ZipFileIndexFileObject) fo;
-                String zipName = zfo.getZipName();
-                String entryName = zfo.getZipEntryName();
-                if (File.separatorChar != '/') {
-                    entryName = entryName.replace(File.separatorChar, '/');
-                }
-
-                int lastSep = entryName.lastIndexOf("/");
-                String classPathName = entryName.substring(0, lastSep + 1);
-                docenv.getPackageDoc(pack).setDocPath(zipName, classPathName);
-            }
-            else {
-                File fileDir = new File(Old199.getPath(fo)).getParentFile();
-                docenv.getPackageDoc(pack).setDocPath(fileDir.getAbsolutePath());
-            }
-        }
+        if (fo.isNameCompatible("package", JavaFileObject.Kind.HTML))
+            docenv.getPackageDoc(pack).setDocPath(fo);
     }
 }

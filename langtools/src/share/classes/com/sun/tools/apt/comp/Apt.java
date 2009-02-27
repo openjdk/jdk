@@ -316,8 +316,13 @@ public class Apt extends ListBuffer<Env<AttrContext>> {
                     }
 
                     providers = list.iterator();
-                } else
-                    providers = sun.misc.Service.providers(AnnotationProcessorFactory.class, aptCL);
+                } else {
+                    @SuppressWarnings("unchecked")
+                    Iterator<AnnotationProcessorFactory> iter =
+                            sun.misc.Service.providers(AnnotationProcessorFactory.class, aptCL);
+                    providers = iter;
+
+                }
             }
 
             java.util.Map<AnnotationProcessorFactory, Set<AnnotationTypeDeclaration>> factoryToAnnotation =

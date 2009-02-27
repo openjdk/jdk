@@ -119,7 +119,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      */
     protected void generateIndex() {
         for (int i = 0; i < groupList.size(); i++) {
-        String groupname = (String)groupList.get(i);
+        String groupname = groupList.get(i);
         List<PackageDoc> list = groupPackageMap.get(groupname);
             if (list != null && list.size() > 0) {
                 printIndexContents(list.toArray(new PackageDoc[list.size()]),
