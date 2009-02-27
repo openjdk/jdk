@@ -347,7 +347,7 @@ class PhaseCFG : public Phase {
   // Helper function to insert a node into a block
   void schedule_node_into_block( Node *n, Block *b );
 
-  void PhaseCFG::replace_block_proj_ctrl( Node *n );
+  void replace_block_proj_ctrl( Node *n );
 
   // Set the basic block for pinned Nodes
   void schedule_pinned_nodes( VectorSet &visited );
