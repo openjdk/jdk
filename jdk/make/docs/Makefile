@@ -45,6 +45,7 @@ endif
 DOCSTMPDIR          = $(TEMPDIR)/doctmp
 
 COMMON_JAVADOCFLAGS =					\
+		$(NO_PROPRIETARY_API_WARNINGS)		\
 		-source 1.5				\
 		-quiet					\
                 -use					\
