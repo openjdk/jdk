@@ -32,6 +32,7 @@ package com.sun.tools.javap;
  *  deletion without notice.</b>
  */
 public class InternalError extends Error {
+    private static final long serialVersionUID = 8114054446416187030L;
     InternalError(Throwable t, Object... args) {
         super("Internal error", t);
         this.args = args;

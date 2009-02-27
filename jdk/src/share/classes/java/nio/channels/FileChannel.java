@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,23 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
-
+import java.nio.file.*;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.spi.*;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collections;
 
 /**
  * A channel for reading, writing, mapping, and manipulating a file.
  *
- * <p> A file channel has a current <i>position</i> within its file which can
- * be both {@link #position() </code>queried<code>} and {@link #position(long)
- * </code>modified<code>}.  The file itself contains a variable-length sequence
+ * <p> {@note revised}
+ * A file channel is a {@link SeekableByteChannel} that is connected to
+ * a file. It has a current <i>position</i> within its file which can
+ * be both {@link #position() <i>queried</i>} and {@link #position(long)
+ * <i>modified</i>}.  The file itself contains a variable-length sequence
  * of bytes that can be read and written and whose current {@link #size
- * </code><i>size</i><code>} can be queried.  The size of the file increases
+ * <i>size</i>} can be queried.  The size of the file increases
  * when bytes are written beyond its current size; the size of the file
  * decreases when it is {@link #truncate </code><i>truncated</i><code>}.  The
  * file may also have some associated <i>metadata</i> such as access
@@ -50,27 +57,27 @@ import java.nio.channels.spi.AbstractInterruptibleChannel;
  *
  * <ul>
  *
- *   <li><p> Bytes may be {@link #read(ByteBuffer, long) </code>read<code>} or
- *   {@link #write(ByteBuffer, long) </code>written<code>} at an absolute
+ *   <li><p> Bytes may be {@link #read(ByteBuffer, long) read} or
+ *   {@link #write(ByteBuffer, long) <i>written</i>} at an absolute
  *   position in a file in a way that does not affect the channel's current
  *   position.  </p></li>
  *
- *   <li><p> A region of a file may be {@link #map </code>mapped<code>}
+ *   <li><p> A region of a file may be {@link #map <i>mapped</i>}
  *   directly into memory; for large files this is often much more efficient
  *   than invoking the usual <tt>read</tt> or <tt>write</tt> methods.
  *   </p></li>
  *
- *   <li><p> Updates made to a file may be {@link #force </code>forced
- *   out<code>} to the underlying storage device, ensuring that data are not
+ *   <li><p> Updates made to a file may be {@link #force <i>forced
+ *   out</i>} to the underlying storage device, ensuring that data are not
  *   lost in the event of a system crash.  </p></li>
  *
- *   <li><p> Bytes can be transferred from a file {@link #transferTo </code>to
- *   some other channel<code>}, and {@link #transferFrom </code>vice
- *   versa<code>}, in a way that can be optimized by many operating systems
+ *   <li><p> Bytes can be transferred from a file {@link #transferTo <i>to
+ *   some other channel</i>}, and {@link #transferFrom <i>vice
+ *   versa</i>}, in a way that can be optimized by many operating systems
  *   into a very fast transfer directly to or from the filesystem cache.
  *   </p></li>
  *
- *   <li><p> A region of a file may be {@link FileLock </code>locked<code>}
+ *   <li><p> A region of a file may be {@link FileLock <i>locked</i>}
  *   against access by other programs.  </p></li>
  *
  * </ul>
@@ -96,25 +103,23 @@ import java.nio.channels.spi.AbstractInterruptibleChannel;
  * machine.  The exact nature of any such inconsistencies are system-dependent
  * and are therefore unspecified.
  *
- * <p> This class does not define methods for opening existing files or for
- * creating new ones; such methods may be added in a future release.  In this
- * release a file channel can be obtained from an existing {@link
- * java.io.FileInputStream#getChannel FileInputStream}, {@link
+ * <p> A file channel is created by invoking one of the {@link #open open}
+ * methods defined by this class. A file channel can also be obtained from an
+ * existing {@link java.io.FileInputStream#getChannel FileInputStream}, {@link
  * java.io.FileOutputStream#getChannel FileOutputStream}, or {@link
  * java.io.RandomAccessFile#getChannel RandomAccessFile} object by invoking
  * that object's <tt>getChannel</tt> method, which returns a file channel that
- * is connected to the same underlying file.
+ * is connected to the same underlying file. Where the file channel is obtained
+ * from an existing stream or random access file then the state of the file
+ * channel is intimately connected to that of the object whose <tt>getChannel</tt>
+ * method returned the channel.  Changing the channel's position, whether
+ * explicitly or by reading or writing bytes, will change the file position of
+ * the originating object, and vice versa. Changing the file's length via the
+ * file channel will change the length seen via the originating object, and vice
+ * versa.  Changing the file's content by writing bytes will change the content
+ * seen by the originating object, and vice versa.
  *
- * <p> The state of a file channel is intimately connected to that of the
- * object whose <tt>getChannel</tt> method returned the channel.  Changing the
- * channel's position, whether explicitly or by reading or writing bytes, will
- * change the file position of the originating object, and vice versa.
- * Changing the file's length via the file channel will change the length seen
- * via the originating object, and vice versa.  Changing the file's content by
- * writing bytes will change the content seen by the originating object, and
- * vice versa.
- *
- * <a name="open-mode"><p> At various points this class specifies that an
+ * <a name="open-mode"></a> <p> At various points this class specifies that an
  * instance that is "open for reading," "open for writing," or "open for
  * reading and writing" is required.  A channel obtained via the {@link
  * java.io.FileInputStream#getChannel getChannel} method of a {@link
@@ -127,7 +132,7 @@ import java.nio.channels.spi.AbstractInterruptibleChannel;
  * was created with mode <tt>"r"</tt> and will be open for reading and writing
  * if the instance was created with mode <tt>"rw"</tt>.
  *
- * <a name="append-mode"><p> A file channel that is open for writing may be in
+ * <a name="append-mode"></a><p> A file channel that is open for writing may be in
  * <i>append mode</i>, for example if it was obtained from a file-output stream
  * that was created by invoking the {@link
  * java.io.FileOutputStream#FileOutputStream(java.io.File,boolean)
@@ -138,7 +143,6 @@ import java.nio.channels.spi.AbstractInterruptibleChannel;
  * of the data are done in a single atomic operation is system-dependent and
  * therefore unspecified.
  *
- *
  * @see java.io.FileInputStream#getChannel()
  * @see java.io.FileOutputStream#getChannel()
  * @see java.io.RandomAccessFile#getChannel()
@@ -147,18 +151,190 @@ import java.nio.channels.spi.AbstractInterruptibleChannel;
  * @author Mike McCloskey
  * @author JSR-51 Expert Group
  * @since 1.4
+ * @updated 1.7
  */
 
 public abstract class FileChannel
     extends AbstractInterruptibleChannel
-    implements ByteChannel, GatheringByteChannel, ScatteringByteChannel
+    implements SeekableByteChannel, GatheringByteChannel, ScatteringByteChannel
 {
-
     /**
      * Initializes a new instance of this class.
      */
     protected FileChannel() { }
 
+    /**
+     * {@note new}
+     * Opens or creates a file, returning a file channel to access the file.
+     *
+     * <p> The {@code options} parameter determines how the file is opened.
+     * The {@link StandardOpenOption#READ READ} and {@link StandardOpenOption#WRITE
+     * WRITE} options determine if the file should be opened for reading and/or
+     * writing. If neither option (or the {@link StandardOpenOption#APPEND APPEND}
+     * option) is contained in the array then the file is opened for reading.
+     * By default reading or writing commences at the beginning of the file.
+     *
+     * <p> In the addition to {@code READ} and {@code WRITE}, the following
+     * options may be present:
+     *
+     * <table border=1 cellpadding=5 summary="">
+     * <tr> <th>Option</th> <th>Description</th> </tr>
+     * <tr>
+     *   <td> {@link StandardOpenOption#APPEND APPEND} </td>
+     *   <td> If this option is present then the file is opened for writing and
+     *     each invocation of the channel's {@code write} method first advances
+     *     the position to the end of the file and then writes the requested
+     *     data. Whether the advancement of the position and the writing of the
+     *     data are done in a single atomic operation is system-dependent and
+     *     therefore unspecified. This option may not be used in conjunction
+     *     with the {@code READ} or {@code TRUNCATE_EXISTING} options. </td>
+     * </tr>
+     * <tr>
+     *   <td> {@link StandardOpenOption#TRUNCATE_EXISTING TRUNCATE_EXISTING} </td>
+     *   <td> If this option is present then the existing file is truncated to
+     *   a size of 0 bytes. This option is ignored when the file is opened only
+     *   for reading. </td>
+     * </tr>
+     * <tr>
+     *   <td> {@link StandardOpenOption#CREATE_NEW CREATE_NEW} </td>
+     *   <td> If this option is present then a new file is created, failing if
+     *   the file already exists. When creating a file the check for the
+     *   existence of the file and the creation of the file if it does not exist
+     *   is atomic with respect to other file system operations. This option is
+     *   ignored when the file is opened only for reading. </td>
+     * </tr>
+     * <tr>
+     *   <td > {@link StandardOpenOption#CREATE CREATE} </td>
+     *   <td> If this option is present then an existing file is opened if it
+     *   exists, otherwise a new file is created. When creating a file the check
+     *   for the existence of the file and the creation of the file if it does
+     *   not exist is atomic with respect to other file system operations. This
+     *   option is ignored if the {@code CREATE_NEW} option is also present or
+     *   the file is opened only for reading. </td>
+     * </tr>
+     * <tr>
+     *   <td > {@link StandardOpenOption#DELETE_ON_CLOSE DELETE_ON_CLOSE} </td>
+     *   <td> When this option is present then the implementation makes a
+     *   <em>best effort</em> attempt to delete the file when closed by the
+     *   the {@link #close close} method. If the {@code close} method is not
+     *   invoked then a <em>best effort</em> attempt is made to delete the file
+     *   when the Java virtual machine terminates. </td>
+     * </tr>
+     * <tr>
+     *   <td>{@link StandardOpenOption#SPARSE SPARSE} </td>
+     *   <td> When creating a new file this option is a <em>hint</em> that the
+     *   new file will be sparse. This option is ignored when not creating
+     *   a new file. </td>
+     * </tr>
+     * <tr>
+     *   <td> {@link StandardOpenOption#SYNC SYNC} </td>
+     *   <td> Requires that every update to the file's content or metadata be
+     *   written synchronously to the underlying storage device. (see <a
+     *   href="../file/package-summary.html#integrity"> Synchronized I/O file
+     *   integrity</a>). </td>
+     * <tr>
+     * <tr>
+     *   <td> {@link StandardOpenOption#DSYNC DSYNC} </td>
+     *   <td> Requires that every update to the file's content be written
+     *   synchronously to the underlying storage device. (see <a
+     *   href="../file/package-summary.html#integrity"> Synchronized I/O file
+     *   integrity</a>). </td>
+     * </tr>
+     * </table>
+     *
+     * <p> An implementation may also support additional options.
+     *
+     * <p> The {@code attrs} parameter is an optional array of file {@link
+     * FileAttribute file-attributes} to set atomically when creating the file.
+     *
+     * <p> The new channel is created by invoking the {@link
+     * FileSystemProvider#newFileChannel newFileChannel} method on the
+     * provider that created the {@code Path}.
+     *
+     * @param   file
+     *          The path of the file to open or create
+     * @param   options
+     *          Options specifying how the file is opened
+     * @param   attrs
+     *          An optional list of file attributes to set atomically when
+     *          creating the file
+     *
+     * @return  A new file channel
+     *
+     * @throws  IllegalArgumentException
+     *          If the set contains an invalid combination of options
+     * @throws  UnsupportedOperationException
+     *          If the {@code file} is associated with a provider that does not
+     *          support creating file channels, or an unsupported open option is
+     *          specified, or the array contains an attribute that cannot be set
+     *          atomically when creating the file
+     * @throws  IOException
+     *          If an I/O error occurs
+     * @throws  SecurityException
+     *          If a security manager is installed and it denies an
+     *          unspecified permission required by the implementation.
+     *          In the case of the default provider, the {@link
+     *          SecurityManager#checkRead(String)} method is invoked to check
+     *          read access if the file is opened for reading. The {@link
+     *          SecurityManager#checkWrite(String)} method is invoked to check
+     *          write access if the file is opened for writing
+     *
+     * @since   1.7
+     */
+    public static FileChannel open(Path file,
+                                   Set<? extends OpenOption> options,
+                                   FileAttribute<?>... attrs)
+        throws IOException
+    {
+        FileSystemProvider provider = file.getFileSystem().provider();
+        return provider.newFileChannel(file, options, attrs);
+    }
+
+    private static final FileAttribute<?>[] NO_ATTRIBUTES = new FileAttribute[0];
+
+    /**
+     * {@note new}
+     * Opens or creates a file, returning a file channel to access the file.
+     *
+     * <p> An invocation of this method behaves in exactly the same way as the
+     * invocation
+     * <pre>
+     *     fc.{@link #open(Path,Set,FileAttribute[]) open}(file, options, new FileAttribute&lt;?&gt;[0]);
+     * </pre>
+     *
+     * @param   file
+     *          The path of the file to open or create
+     * @param   options
+     *          Options specifying how the file is opened
+     *
+     * @return  A new file channel
+     *
+     * @throws  IllegalArgumentException
+     *          If the set contains an invalid combination of options
+     * @throws  UnsupportedOperationException
+     *          If the {@code file} is associated with a provider that does not
+     *          support creating file channels, or an unsupported open option is
+     *          specified
+     * @throws  IOException
+     *          If an I/O error occurs
+     * @throws  SecurityException
+     *          If a security manager is installed and it denies an
+     *          unspecified permission required by the implementation.
+     *          In the case of the default provider, the {@link
+     *          SecurityManager#checkRead(String)} method is invoked to check
+     *          read access if the file is opened for reading. The {@link
+     *          SecurityManager#checkWrite(String)} method is invoked to check
+     *          write access if the file is opened for writing
+     *
+     * @since   1.7
+     */
+    public static FileChannel open(Path file, OpenOption... options)
+        throws IOException
+    {
+        Set<OpenOption> set = new HashSet<OpenOption>(options.length);
+        Collections.addAll(set, options);
+        return open(file, set, NO_ATTRIBUTES);
+    }
 
     // -- Channel operations --
 
@@ -286,7 +462,7 @@ public abstract class FileChannel
     public abstract FileChannel position(long newPosition) throws IOException;
 
     /**
-     * Returns the current size of this channel's file. </p>
+     * Returns the current size of this channel's file.  </p>
      *
      * @return  The current size of this channel's file,
      *          measured in bytes
@@ -359,7 +535,7 @@ public abstract class FileChannel
      * <p> This method is only guaranteed to force changes that were made to
      * this channel's file via the methods defined in this class.  It may or
      * may not force changes that were made by modifying the content of a
-     * {@link MappedByteBuffer </code>mapped byte buffer<code>} obtained by
+     * {@link MappedByteBuffer <i>mapped byte buffer</i>} obtained by
      * invoking the {@link #map map} method.  Invoking the {@link
      * MappedByteBuffer#force force} method of the mapped byte buffer will
      * force changes made to the buffer's content to be written.  </p>
@@ -678,7 +854,7 @@ public abstract class FileChannel
      * reading; for a read/write or private mapping, this channel must have
      * been opened for both reading and writing.
      *
-     * <p> The {@link MappedByteBuffer </code>mapped byte buffer<code>}
+     * <p> The {@link MappedByteBuffer <i>mapped byte buffer</i>}
      * returned by this method will have a position of zero and a limit and
      * capacity of <tt>size</tt>; its mark will be undefined.  The buffer and
      * the mapping that it represents will remain valid until the buffer itself
@@ -716,6 +892,8 @@ public abstract class FileChannel
      * @param  size
      *         The size of the region to be mapped; must be non-negative and
      *         no greater than {@link java.lang.Integer#MAX_VALUE}
+     *
+     * @return  The mapped byte buffer
      *
      * @throws NonReadableChannelException
      *         If the <tt>mode</tt> is {@link MapMode#READ_ONLY READ_ONLY} but

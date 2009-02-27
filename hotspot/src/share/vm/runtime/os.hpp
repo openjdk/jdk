@@ -120,7 +120,8 @@ class os: AllStatic {
   // Return current local time in a string (YYYY-MM-DD HH:MM:SS).
   // It is MT safe, but not async-safe, as reading time zone
   // information may require a lock on some platforms.
-  static char* local_time_string(char *buf, size_t buflen);
+  static char*      local_time_string(char *buf, size_t buflen);
+  static struct tm* localtime_pd     (const time_t* clock, struct tm*  res);
   // Fill in buffer with current local time as an ISO-8601 string.
   // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
   // Returns buffer, or NULL if it failed.

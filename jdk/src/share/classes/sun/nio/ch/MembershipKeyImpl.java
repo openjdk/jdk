@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ class MembershipKeyImpl
             this.sourceAddress = sourceAddress;
         }
 
-        int group() {
+        int groupAddress() {
             return groupAddress;
         }
 
@@ -120,7 +120,7 @@ class MembershipKeyImpl
             this.sourceAddress = sourceAddress;
         }
 
-        byte[] group() {
+        byte[] groupAddress() {
             return groupAddress;
         }
 
@@ -142,28 +142,28 @@ class MembershipKeyImpl
         valid = false;
     }
 
-    public void drop() throws IOException {
+    public void drop() {
         // delegate to channel
         ((DatagramChannelImpl)ch).drop(this);
     }
 
     @Override
-    public MulticastChannel getChannel() {
+    public MulticastChannel channel() {
         return ch;
     }
 
     @Override
-    public InetAddress getGroup() {
+    public InetAddress group() {
         return group;
     }
 
     @Override
-    public NetworkInterface getNetworkInterface() {
+    public NetworkInterface networkInterface() {
         return interf;
     }
 
     @Override
-    public InetAddress getSourceAddress() {
+    public InetAddress sourceAddress() {
         return source;
     }
 
@@ -191,9 +191,7 @@ class MembershipKeyImpl
     }
 
     @Override
-    public MembershipKey unblock(InetAddress toUnblock)
-        throws IOException
-    {
+    public MembershipKey unblock(InetAddress toUnblock) {
         synchronized (stateLock) {
             if ((blockedSet == null) || !blockedSet.contains(toUnblock))
                 throw new IllegalStateException("not blocked");

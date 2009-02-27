@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,13 @@
  * have any questions.
  */
 
+#include "awt.h"
 #include "awt_Toolkit.h"
 #include "awt_Component.h"
 #include "awt_Robot.h"
 #include "sun_awt_windows_WRobotPeer.h"
 #include "java_awt_event_InputEvent.h"
 #include <winuser.h>
-
-static const int MOUSE_MAX = 65535;
 
 AwtRobot::AwtRobot( jobject peer )
 {
@@ -44,11 +43,11 @@ AwtRobot::~AwtRobot()
 }
 
 #ifndef SPI_GETMOUSESPEED
-#define SPI_GETMOUSESPEED   112
+#define SPI_GETMOUSESPEED 112
 #endif
 
 #ifndef SPI_SETMOUSESPEED
-#define   SPI_SETMOUSESPEED   113
+#define SPI_SETMOUSESPEED 113
 #endif
 
 void AwtRobot::MouseMove( jint x, jint y)
@@ -102,19 +101,38 @@ void AwtRobot::MousePress( jint buttonMask )
     // left handed mouse setup
     BOOL bSwap = ::GetSystemMetrics(SM_SWAPBUTTON);
 
-    if ( buttonMask & java_awt_event_InputEvent_BUTTON1_MASK ) {
+    if ( buttonMask & java_awt_event_InputEvent_BUTTON1_MASK ||
+        buttonMask & java_awt_event_InputEvent_BUTTON1_DOWN_MASK)
+    {
         dwFlags |= !bSwap ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_RIGHTDOWN;
     }
 
-    if ( buttonMask & java_awt_event_InputEvent_BUTTON3_MASK ) {
+    if ( buttonMask & java_awt_event_InputEvent_BUTTON3_MASK ||
+         buttonMask & java_awt_event_InputEvent_BUTTON3_DOWN_MASK)
+    {
         dwFlags |= !bSwap ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_LEFTDOWN;
     }
 
-    if ( buttonMask & java_awt_event_InputEvent_BUTTON2_MASK ) {
+    if ( buttonMask & java_awt_event_InputEvent_BUTTON2_MASK ||
+         buttonMask & java_awt_event_InputEvent_BUTTON2_DOWN_MASK)
+    {
         dwFlags |= MOUSEEVENTF_MIDDLEDOWN;
     }
 
-    mouse_event(dwFlags, 0, 0, 0, 0 );
+    INPUT mouseInput = {0};
+    mouseInput.type = INPUT_MOUSE;
+    mouseInput.mi.time = 0;
+    mouseInput.mi.dwFlags = dwFlags;
+    if ( buttonMask & AwtComponent::masks[3] ) {
+        mouseInput.mi.dwFlags = mouseInput.mi.dwFlags | MOUSEEVENTF_XDOWN;
+        mouseInput.mi.mouseData = XBUTTON1;
+    }
+
+    if ( buttonMask & AwtComponent::masks[4] ) {
+        mouseInput.mi.dwFlags = mouseInput.mi.dwFlags | MOUSEEVENTF_XDOWN;
+        mouseInput.mi.mouseData = XBUTTON2;
+    }
+    ::SendInput(1, &mouseInput, sizeof(mouseInput));
 }
 
 void AwtRobot::MouseRelease( jint buttonMask )
@@ -125,61 +143,43 @@ void AwtRobot::MouseRelease( jint buttonMask )
     // left handed mouse setup
     BOOL bSwap = ::GetSystemMetrics(SM_SWAPBUTTON);
 
-    if ( buttonMask & java_awt_event_InputEvent_BUTTON1_MASK ) {
+    if ( buttonMask & java_awt_event_InputEvent_BUTTON1_MASK ||
+        buttonMask & java_awt_event_InputEvent_BUTTON1_DOWN_MASK)
+    {
         dwFlags |= !bSwap ? MOUSEEVENTF_LEFTUP : MOUSEEVENTF_RIGHTUP;
     }
 
-    if ( buttonMask & java_awt_event_InputEvent_BUTTON3_MASK ) {
+    if ( buttonMask & java_awt_event_InputEvent_BUTTON3_MASK ||
+         buttonMask & java_awt_event_InputEvent_BUTTON3_DOWN_MASK)
+    {
         dwFlags |= !bSwap ? MOUSEEVENTF_RIGHTUP : MOUSEEVENTF_LEFTUP;
     }
 
-    if ( buttonMask & java_awt_event_InputEvent_BUTTON2_MASK ) {
+    if ( buttonMask & java_awt_event_InputEvent_BUTTON2_MASK ||
+        buttonMask & java_awt_event_InputEvent_BUTTON2_DOWN_MASK)
+    {
         dwFlags |= MOUSEEVENTF_MIDDLEUP;
     }
 
-    mouse_event(dwFlags, 0, 0, 0, 0 );
+    INPUT mouseInput = {0};
+    mouseInput.type = INPUT_MOUSE;
+    mouseInput.mi.time = 0;
+    mouseInput.mi.dwFlags = dwFlags;
+
+    if ( buttonMask & AwtComponent::masks[3] ) {
+        mouseInput.mi.dwFlags = mouseInput.mi.dwFlags | MOUSEEVENTF_XUP;
+        mouseInput.mi.mouseData = XBUTTON1;
+    }
+
+    if ( buttonMask & AwtComponent::masks[4] ) {
+        mouseInput.mi.dwFlags = mouseInput.mi.dwFlags | MOUSEEVENTF_XUP;
+        mouseInput.mi.mouseData = XBUTTON2;
+    }
+    ::SendInput(1, &mouseInput, sizeof(mouseInput));
 }
 
 void AwtRobot::MouseWheel (jint wheelAmt) {
-    if (IS_WIN95 && !IS_WIN98) {
-        // Other win32 platforms do nothing for mouse_event(0), so
-        // do nothing on 95, too.
-        if (wheelAmt == 0) {
-            return;
-        }
-
-        // Win95 doesn't understand MOUSEEVENTF_WHEEL, so use PostEvent
-        POINT curPos;
-        HWND mouseOver = NULL;
-        HWND topLevel = NULL;
-        UINT wheelMsg = NULL;
-
-        if (::GetCursorPos((LPPOINT)&curPos) == 0) {
-            return;
-        }
-        // get hwnd of top-level container
-        mouseOver = ::WindowFromPoint(curPos);
-        DASSERT(mouseOver);
-        topLevel = AwtComponent::GetTopLevelParentForWindow(mouseOver);
-        DASSERT(topLevel);
-
-        if (::ScreenToClient(topLevel, (LPPOINT)&curPos) == 0) {
-            return;
-        }
-        wheelMsg = AwtComponent::Wheel95GetMsg();
-
-        if (wheelMsg == NULL) {
-            return;
-        }
-
-        ::PostMessage(topLevel,
-                      wheelMsg,
-                      wheelAmt * -1 * WHEEL_DELTA,
-                      MAKELPARAM((WORD)curPos.x, (WORD)curPos.y));
-    }
-    else {
-        mouse_event(MOUSEEVENTF_WHEEL, 0, 0, wheelAmt * -1 * WHEEL_DELTA, 0);
-    }
+    mouse_event(MOUSEEVENTF_WHEEL, 0, 0, wheelAmt * -1 * WHEEL_DELTA, 0);
 }
 
 inline jint AwtRobot::WinToJavaPixel(USHORT r, USHORT g, USHORT b)
@@ -436,4 +436,10 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WRobotPeer_keyRelease(
     AwtRobot::GetRobot(self)->KeyRelease(javakey);
 
     CATCH_BAD_ALLOC;
+}
+
+JNIEXPORT jint JNICALL Java_sun_awt_windows_WRobotPeer_getNumberOfButtons(
+  JNIEnv *, jobject self)
+{
+    return GetSystemMetrics(SM_CMOUSEBUTTONS);
 }

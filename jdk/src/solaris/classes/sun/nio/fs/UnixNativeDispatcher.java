@@ -1,0 +1,556 @@
+/*
+ * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package sun.nio.fs;
+
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
+/**
+ * Unix system and library calls.
+ */
+
+class UnixNativeDispatcher {
+    protected UnixNativeDispatcher() { }
+
+    // returns a NativeBuffer containing the given path
+    private static NativeBuffer copyToNativeBuffer(UnixPath path) {
+        byte[] cstr = path.getByteArrayForSysCalls();
+        int size = cstr.length + 1;
+        NativeBuffer buffer = NativeBuffers.getNativeBufferFromCache(size);
+        if (buffer == null) {
+            buffer = NativeBuffers.allocNativeBuffer(size);
+        } else {
+            // buffer already contains the path
+            if (buffer.owner() == path)
+                return buffer;
+        }
+        NativeBuffers.copyCStringToNativeBuffer(cstr, buffer);
+        buffer.setOwner(path);
+        return buffer;
+    }
+
+    /**
+     * char *getcwd(char *buf, size_t size);
+     */
+    static native byte[] getcwd();
+
+    /**
+     * int dup(int filedes)
+     */
+    static native int dup(int filedes) throws UnixException;
+
+    /**
+     * int open(const char* path, int oflag, mode_t mode)
+     */
+    static int open(UnixPath path, int flags, int mode) throws UnixException {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            return open0(buffer.address(), flags, mode);
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native int open0(long pathAddress, int flags, int mode)
+        throws UnixException;
+
+    /**
+     * int openat(int dfd, const char* path, int oflag, mode_t mode)
+     */
+    static int openat(int dfd, byte[] path, int flags, int mode) throws UnixException {
+        NativeBuffer buffer = NativeBuffers.asNativeBuffer(path);
+        try {
+            return openat0(dfd, buffer.address(), flags, mode);
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native int openat0(int dfd, long pathAddress, int flags, int mode)
+        throws UnixException;
+
+    /**
+     * close(int filedes)
+     */
+    static native void close(int fd);
+
+    /**
+     * FILE* fopen(const char *filename, const char* mode);
+     */
+    static long fopen(UnixPath filename, String mode) throws UnixException {
+        NativeBuffer pathBuffer = copyToNativeBuffer(filename);
+        NativeBuffer modeBuffer = NativeBuffers.asNativeBuffer(mode.getBytes());
+        try {
+            return fopen0(pathBuffer.address(), modeBuffer.address());
+        } finally {
+            modeBuffer.release();
+            pathBuffer.release();
+        }
+    }
+    private static native long fopen0(long pathAddress, long modeAddress)
+        throws UnixException;
+
+    /**
+     * fclose(FILE* stream)
+     */
+    static native void fclose(long stream) throws UnixException;
+
+    /**
+     * link(const char* existing, const char* new)
+     */
+    static void link(UnixPath existing, UnixPath newfile) throws UnixException {
+        NativeBuffer existingBuffer = copyToNativeBuffer(existing);
+        NativeBuffer newBuffer = copyToNativeBuffer(newfile);
+        try {
+            link0(existingBuffer.address(), newBuffer.address());
+        } finally {
+            newBuffer.release();
+            existingBuffer.release();
+        }
+    }
+    private static native void link0(long existingAddress, long newAddress)
+        throws UnixException;
+
+    /**
+     * unlink(const char* path)
+     */
+    static void unlink(UnixPath path) throws UnixException {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            unlink0(buffer.address());
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native void unlink0(long pathAddress) throws UnixException;
+
+    /**
+     * unlinkat(int dfd, const char* path, int flag)
+     */
+    static void unlinkat(int dfd, byte[] path, int flag) throws UnixException {
+        NativeBuffer buffer = NativeBuffers.asNativeBuffer(path);
+        try {
+            unlinkat0(dfd, buffer.address(), flag);
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native void unlinkat0(int dfd, long pathAddress, int flag)
+        throws UnixException;
+
+    /**
+     * mknod(const char* path, mode_t mode, dev_t dev)
+     */
+    static void mknod(UnixPath path, int mode, long dev) throws UnixException {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            mknod0(buffer.address(), mode, dev);
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native void mknod0(long pathAddress, int mode, long dev)
+        throws UnixException;
+
+    /**
+     *  rename(const char* old, const char* new)
+     */
+    static void rename(UnixPath from, UnixPath to) throws UnixException {
+        NativeBuffer fromBuffer = copyToNativeBuffer(from);
+        NativeBuffer toBuffer = copyToNativeBuffer(to);
+        try {
+            rename0(fromBuffer.address(), toBuffer.address());
+        } finally {
+            toBuffer.release();
+            fromBuffer.release();
+        }
+    }
+    private static native void rename0(long fromAddress, long toAddress)
+        throws UnixException;
+
+    /**
+     *  renameat(int fromfd, const char* old, int tofd, const char* new)
+     */
+    static void renameat(int fromfd, byte[] from, int tofd, byte[] to) throws UnixException {
+        NativeBuffer fromBuffer = NativeBuffers.asNativeBuffer(from);
+        NativeBuffer toBuffer = NativeBuffers.asNativeBuffer(to);
+        try {
+            renameat0(fromfd, fromBuffer.address(), tofd, toBuffer.address());
+        } finally {
+            toBuffer.release();
+            fromBuffer.release();
+        }
+    }
+    private static native void renameat0(int fromfd, long fromAddress, int tofd, long toAddress)
+        throws UnixException;
+
+    /**
+     * mkdir(const char* path, mode_t mode)
+     */
+    static void mkdir(UnixPath path, int mode) throws UnixException {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            mkdir0(buffer.address(), mode);
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native void mkdir0(long pathAddress, int mode) throws UnixException;
+
+    /**
+     * rmdir(const char* path)
+     */
+    static void rmdir(UnixPath path) throws UnixException {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            rmdir0(buffer.address());
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native void rmdir0(long pathAddress) throws UnixException;
+
+    /**
+     * readlink(const char* path, char* buf, size_t bufsize)
+     *
+     * @return  link target
+     */
+    static byte[] readlink(UnixPath path) throws UnixException {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            return readlink0(buffer.address());
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native byte[] readlink0(long pathAddress) throws UnixException;
+
+    /**
+     * realpath(const char* path, char* resolved_name)
+     *
+     * @return  resolved path
+     */
+    static byte[] realpath(UnixPath path) throws UnixException {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            return realpath0(buffer.address());
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native byte[] realpath0(long pathAddress) throws UnixException;
+
+    /**
+     * symlink(const char* name1, const char* name2)
+     */
+    static void symlink(byte[] name1, UnixPath name2) throws UnixException {
+        NativeBuffer targetBuffer = NativeBuffers.asNativeBuffer(name1);
+        NativeBuffer linkBuffer = copyToNativeBuffer(name2);
+        try {
+            symlink0(targetBuffer.address(), linkBuffer.address());
+        } finally {
+            linkBuffer.release();
+            targetBuffer.release();
+        }
+    }
+    private static native void symlink0(long name1, long name2)
+        throws UnixException;
+
+    /**
+     * stat(const char* path, struct stat* buf)
+     */
+    static void stat(UnixPath path, UnixFileAttributes attrs) throws UnixException {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            stat0(buffer.address(), attrs);
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native void stat0(long pathAddress, UnixFileAttributes attrs)
+        throws UnixException;
+
+    /**
+     * lstat(const char* path, struct stat* buf)
+     */
+    static void lstat(UnixPath path, UnixFileAttributes attrs) throws UnixException {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            lstat0(buffer.address(), attrs);
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native void lstat0(long pathAddress, UnixFileAttributes attrs)
+        throws UnixException;
+
+    /**
+     * fstat(int filedes, struct stat* buf)
+     */
+    static native void fstat(int fd, UnixFileAttributes attrs) throws UnixException;
+
+    /**
+     * fstatat(int filedes,const char* path,  struct stat* buf, int flag)
+     */
+    static void fstatat(int dfd, byte[] path, int flag, UnixFileAttributes attrs)
+        throws UnixException
+    {
+        NativeBuffer buffer = NativeBuffers.asNativeBuffer(path);
+        try {
+            fstatat0(dfd, buffer.address(), flag, attrs);
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native void fstatat0(int dfd, long pathAddress, int flag,
+        UnixFileAttributes attrs) throws UnixException;
+
+    /**
+     * chown(const char* path, uid_t owner, gid_t group)
+     */
+    static void chown(UnixPath path, int uid, int gid) throws UnixException {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            chown0(buffer.address(), uid, gid);
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native void chown0(long pathAddress, int uid, int gid)
+        throws UnixException;
+
+    /**
+     * lchown(const char* path, uid_t owner, gid_t group)
+     */
+    static void lchown(UnixPath path, int uid, int gid) throws UnixException {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            lchown0(buffer.address(), uid, gid);
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native void lchown0(long pathAddress, int uid, int gid)
+        throws UnixException;
+
+    /**
+     * fchown(int filedes, uid_t owner, gid_t group)
+     */
+    static native void fchown(int fd, int uid, int gid) throws UnixException;
+
+    /**
+     * chmod(const char* path, mode_t mode)
+     */
+    static void chmod(UnixPath path, int mode) throws UnixException {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            chmod0(buffer.address(), mode);
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native void chmod0(long pathAddress, int mode)
+        throws UnixException;
+
+    /**
+     * fchmod(int fildes, mode_t mode)
+     */
+    static native void fchmod(int fd, int mode) throws UnixException;
+
+    /**
+     * utimes(conar char* path, const struct timeval times[2])
+     */
+    static void utimes(UnixPath path, long times0, long times1)
+        throws UnixException
+    {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            utimes0(buffer.address(), times0, times1);
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native void utimes0(long pathAddress, long times0, long times1)
+        throws UnixException;
+
+    /**
+     * futimes(int fildes,, const struct timeval times[2])
+     */
+    static native void futimes(int fd, long times0, long times1) throws UnixException;
+
+    /**
+     * DIR *opendir(const char* dirname)
+     */
+    static long opendir(UnixPath path) throws UnixException {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            return opendir0(buffer.address());
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native long opendir0(long pathAddress) throws UnixException;
+
+    /**
+     * DIR* fdopendir(int filedes)
+     */
+    static native long fdopendir(int dfd) throws UnixException;
+
+
+    /**
+     * closedir(DIR* dirp)
+     */
+    static native void closedir(long dir) throws UnixException;
+
+    /**
+     * struct dirent* readdir(DIR *dirp)
+     *
+     * @return  dirent->d_name
+     */
+    static native byte[] readdir(long dir) throws UnixException;
+
+    /**
+     * size_t read(int fildes, void* buf, size_t nbyte)
+     */
+    static native int read(int fildes, long buf, int nbyte) throws UnixException;
+
+    /**
+     * size_t writeint fildes, void* buf, size_t nbyte)
+     */
+    static native int write(int fildes, long buf, int nbyte) throws UnixException;
+
+    /**
+     * access(const char* path, int amode);
+     */
+    static void access(UnixPath path, int amode) throws UnixException {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            access0(buffer.address(), amode);
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native void access0(long pathAddress, int amode) throws UnixException;
+
+    /**
+     * struct passwd *getpwuid(uid_t uid);
+     *
+     * @return  passwd->pw_name
+     */
+    static native byte[] getpwuid(int uid) throws UnixException;
+
+    /**
+     * struct group *getgrgid(gid_t gid);
+     *
+     * @return  group->gr_name
+     */
+    static native byte[] getgrgid(int gid) throws UnixException;
+
+    /**
+     * struct passwd *getpwnam(const char *name);
+     *
+     * @return  passwd->pw_uid
+     */
+    static int getpwnam(String name) throws UnixException {
+        NativeBuffer buffer = NativeBuffers.asNativeBuffer(name.getBytes());
+        try {
+            return getpwnam0(buffer.address());
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native int getpwnam0(long nameAddress) throws UnixException;
+
+    /**
+     * struct group *getgrnam(const char *name);
+     *
+     * @return  group->gr_name
+     */
+    static int getgrnam(String name) throws UnixException {
+        NativeBuffer buffer = NativeBuffers.asNativeBuffer(name.getBytes());
+        try {
+            return getgrnam0(buffer.address());
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native int getgrnam0(long nameAddress) throws UnixException;
+
+    /**
+     * int getextmntent(FILE *fp, struct extmnttab *mp, int len);
+     */
+    static native int getextmntent(long fp, UnixMountEntry entry) throws UnixException;
+
+    /**
+     * statvfs(const char* path, struct statvfs *buf)
+     */
+    static void statvfs(UnixPath path, UnixFileStoreAttributes attrs)
+        throws UnixException
+    {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            statvfs0(buffer.address(), attrs);
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native void statvfs0(long pathAddress, UnixFileStoreAttributes attrs)
+        throws UnixException;
+
+    /**
+     * long int pathconf(const char *path, int name);
+     */
+    static long pathconf(UnixPath path, int name) throws UnixException {
+        NativeBuffer buffer = copyToNativeBuffer(path);
+        try {
+            return pathconf0(buffer.address(), name);
+        } finally {
+            buffer.release();
+        }
+    }
+    private static native long pathconf0(long pathAddress, int name)
+        throws UnixException;
+
+    /**
+     * long fpathconf(int fildes, int name);
+     */
+    static native long fpathconf(int filedes, int name) throws UnixException;
+
+    /**
+     * char* strerror(int errnum)
+     */
+    static native byte[] strerror(int errnum);
+
+    // initialize field IDs
+    private static native void initIDs();
+
+    static {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
+                System.loadLibrary("nio");
+                return null;
+        }});
+        initIDs();
+    }
+}

@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.StringTokenizer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -74,7 +73,7 @@ public class Config {
     private String defaultRealm;   // default kdc realm.
 
     // used for native interface
-    private static native String getWindowsDirectory();
+    private static native String getWindowsDirectory(boolean isSystem);
 
 
     /**
@@ -156,11 +155,7 @@ public class Config {
                 configFile = loadConfigFile();
                 stanzaTable = parseStanzaTable(configFile);
             } catch (IOException ioe) {
-                KrbException ke = new KrbException("Could not load " +
-                                                   "configuration file " +
-                                                   ioe.getMessage());
-                ke.initCause(ioe);
-                throw(ke);
+                // No krb5.conf, no problem. We'll use DNS etc.
             }
         }
     }
@@ -661,38 +656,37 @@ public class Config {
     }
 
     /**
-     * Gets the default configuration file name. The file will be searched
-     * in a list of possible loations in the following order:
-     * 1. the location and file name defined by system property
-     * "java.security.krb5.conf",
-     * 2. at Java home lib\security directory with "krb5.conf" name,
-     * 3. "krb5.ini" at Java home,
-     * 4. at windows directory with the name of "krb5.ini" for Windows,
-     * /etc/krb5/krb5.conf for Solaris, /etc/krb5.conf for Linux.
+     * Gets the default configuration file name. This method will never
+     * return null.
+     *
+     * If the system property "java.security.krb5.conf" is defined, we'll
+     * use its value, no matter if the file exists or not. Otherwise,
+     * the file will be searched in a list of possible loations in the
+     * following order:
+     *
+     * 1. at Java home lib\security directory with "krb5.conf" name,
+     * 2. at windows directory with the name of "krb5.ini" for Windows,
+     * /etc/krb5/krb5.conf for Solaris, /etc/krb5.conf otherwise.
+     *
+     * Note: When the Terminal Service is started in Windows (from 2003),
+     * there are two kinds of Windows directories: A system one (say,
+     * C:\Windows), and a user-private one (say, C:\Users\Me\Windows).
+     * We will first look for krb5.ini in the user-private one. If not
+     * found, try the system one instead.
      */
     private String getFileName() {
         String name =
             java.security.AccessController.doPrivileged(
                                 new sun.security.action.
                                 GetPropertyAction("java.security.krb5.conf"));
-        if (name != null) {
-            boolean temp =
-                java.security.AccessController.doPrivileged(
-                                new FileExistsAction(name));
-            if (temp)
-                return name;
-        } else {
+        if (name == null) {
             name = java.security.AccessController.doPrivileged(
                         new sun.security.action.
                         GetPropertyAction("java.home")) + File.separator +
                                 "lib" + File.separator + "security" +
                                 File.separator + "krb5.conf";
-            boolean temp =
-                java.security.AccessController.doPrivileged(
-                                new FileExistsAction(name));
-            if (temp) {
-                return name;
-            } else {
+            if (!fileExists(name)) {
+                name = null;
                 String osname =
                         java.security.AccessController.doPrivileged(
                         new sun.security.action.GetPropertyAction("os.name"));
@@ -703,19 +697,35 @@ public class Config {
                         // ignore exceptions
                     }
                     if (Credentials.alreadyLoaded) {
-                        if ((name = getWindowsDirectory()) == null) {
-                            name = "c:\\winnt\\krb5.ini";
-                        } else if (name.endsWith("\\")) {
-                            name += "krb5.ini";
-                        } else {
-                            name += "\\krb5.ini";
+                        String path = getWindowsDirectory(false);
+                        if (path != null) {
+                            if (path.endsWith("\\")) {
+                                path = path + "krb5.ini";
+                            } else {
+                                path = path + "\\krb5.ini";
+                            }
+                            if (fileExists(path)) {
+                                name = path;
+                            }
                         }
-                    } else {
+                        if (name == null) {
+                            path = getWindowsDirectory(true);
+                            if (path != null) {
+                                if (path.endsWith("\\")) {
+                                    path = path + "krb5.ini";
+                                } else {
+                                    path = path + "\\krb5.ini";
+                                }
+                                name = path;
+                            }
+                        }
+                    }
+                    if (name == null) {
                         name = "c:\\winnt\\krb5.ini";
                     }
                 } else if (osname.startsWith("SunOS")) {
                     name =  "/etc/krb5/krb5.conf";
-                } else if (osname.startsWith("Linux")) {
+                } else {
                     name =  "/etc/krb5.conf";
                 }
             }
@@ -1042,7 +1052,12 @@ public class Config {
     public boolean useDNS(String name) {
         String value = getDefault(name, "libdefaults");
         if (value == null) {
-            return getDefaultBooleanValue("dns_fallback", "libdefaults");
+            value = getDefault("dns_fallback", "libdefaults");
+            if ("false".equalsIgnoreCase(value)) {
+                return false;
+            } else {
+                return true;
+            }
         } else {
             return value.equalsIgnoreCase("true");
         }
@@ -1064,12 +1079,39 @@ public class Config {
 
     /**
      * Gets default realm.
+     * @throws KrbException where no realm can be located
+     * @return the default realm, always non null
      */
     public String getDefaultRealm() throws KrbException {
+        Exception cause = null;
         String realm = getDefault("default_realm", "libdefaults");
         if ((realm == null) && useDNS_Realm()) {
             // use DNS to locate Kerberos realm
-            realm = getRealmFromDNS();
+            try {
+                realm = getRealmFromDNS();
+            } catch (KrbException ke) {
+                cause = ke;
+            }
+        }
+        if (realm == null) {
+            realm = java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<String>() {
+                @Override
+                public String run() {
+                    String osname = System.getProperty("os.name");
+                    if (osname.startsWith("Windows")) {
+                        return System.getenv("USERDNSDOMAIN");
+                    }
+                    return null;
+                }
+            });
+        }
+        if (realm == null) {
+            KrbException ke = new KrbException("Cannot locate default realm");
+            if (cause != null) {
+                ke.initCause(cause);
+            }
+            throw ke;
         }
         return realm;
     }
@@ -1077,17 +1119,48 @@ public class Config {
     /**
      * Returns a list of KDC's with each KDC separated by a space
      *
-     * @param realm the realm for which the master KDC is desired
-     * @return the list of KDCs
+     * @param realm the realm for which the KDC list is desired
+     * @throws KrbException if there's no way to find KDC for the realm
+     * @return the list of KDCs separated by a space, always non null
      */
     public String getKDCList(String realm) throws KrbException {
         if (realm == null) {
             realm = getDefaultRealm();
         }
+        Exception cause = null;
         String kdcs = getDefault("kdc", realm);
         if ((kdcs == null) && useDNS_KDC()) {
             // use DNS to locate KDC
-            kdcs = getKDCFromDNS(realm);
+            try {
+                kdcs = getKDCFromDNS(realm);
+            } catch (KrbException ke) {
+                cause = ke;
+            }
+        }
+        if (kdcs == null) {
+            kdcs = java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<String>() {
+                @Override
+                public String run() {
+                    String osname = System.getProperty("os.name");
+                    if (osname.startsWith("Windows")) {
+                        String logonServer = System.getenv("LOGONSERVER");
+                        if (logonServer != null
+                                && logonServer.startsWith("\\\\")) {
+                            logonServer = logonServer.substring(2);
+                        }
+                        return logonServer;
+                    }
+                    return null;
+                }
+            });
+        }
+        if (kdcs == null) {
+            KrbException ke = new KrbException("Cannot locate KDC");
+            if (cause != null) {
+                ke.initCause(cause);
+            }
+            throw ke;
         }
         return kdcs;
     }
@@ -1102,7 +1175,7 @@ public class Config {
         String realm = null;
         String hostName = null;
         try {
-            hostName = InetAddress.getLocalHost().getHostName();
+            hostName = InetAddress.getLocalHost().getCanonicalHostName();
         } catch (UnknownHostException e) {
             KrbException ke = new KrbException(Krb5.KRB_ERR_GENERIC,
                 "Unable to locate Kerberos realm: " + e.getMessage());
@@ -1169,6 +1242,11 @@ public class Config {
             }
         }
         return kdcs;
+    }
+
+    private boolean fileExists(String name) {
+        return java.security.AccessController.doPrivileged(
+                                new FileExistsAction(name));
     }
 
     static class FileExistsAction

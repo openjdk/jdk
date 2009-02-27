@@ -44,12 +44,8 @@
 #
 #   NEW_RESOURCE_BUNDLES_JAVA        - new resource bundles implemented in
 #                                      Java, not localized
-#   NEW_RESOURCE_BUNDLES_PROPERTIES  - new resource bundles implemented as
-#                                      properties files, not localized
 #   RESOURCE_BUNDLES_JAVA            - resource bundles implemented in
 #                                      Java, localized
-#   RESOURCE_BUNDLES_PROPERTIES      - new resource bundles implemented as
-#                                      properties files, localized
 #
 # The following variable is now used for most .properties files in the JDK. 
 # These properties files are converted into java and compiled with javac.
@@ -60,6 +56,13 @@
 #   RESOURCE_BUNDLES_COMPILED_PROPERTIES - resource bundles implemented as
 #                                          properties files, localized
 #   NEW_RESOURCE_BUNDLES_COMPILED_PROPERTIES - same as above, not localized
+#
+# For non-compiled properties files, use the following variables:
+#
+#   NEW_RESOURCE_BUNDLES_UNCOMPILED_PROPERTIES  - new resource bundles implemented as
+#                                      properties files, not localized
+#   RESOURCE_BUNDLES_UNCOMPILED_PROPERTIES      - resource bundles implemented as
+#                                      properties files, localized
 #
 # Other properties files to be installed are identified using the variable:
 #
@@ -109,11 +112,12 @@ COMPILED_PROPERTIES += $(RESOURCE_BUNDLES_COMPILED_PROPERTIES) \
 FILES_java += $(COMPILED_PROPERTIES:%.properties=%.java)
 
 # Non-compiled files
-PROPERTIES_FILES += $(NEW_RESOURCE_BUNDLES_PROPERTIES)
-PROPERTIES_FILES += $(RESOURCE_BUNDLES_PROPERTIES) \
-    $(foreach file,$(RESOURCE_BUNDLES_PROPERTIES), \
+PROPERTIES_FILES += $(NEW_RESOURCE_BUNDLES_UNCOMPILED_PROPERTIES)
+PROPERTIES_FILES += $(RESOURCE_BUNDLES_UNCOMPILED_PROPERTIES) \
+    $(foreach file,$(RESOURCE_BUNDLES_UNCOMPILED_PROPERTIES), \
        $(foreach locale,$(LOCALE_SUFFIXES), \
 	  $(basename $(file))_$(locale)$(suffix $(file))))
+# other properties
 PROPERTIES_FILES += $(OTHER_PROPERTIES)
 
 #

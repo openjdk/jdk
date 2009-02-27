@@ -133,7 +133,7 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
                              + in_ByteSize(wordSize));
   switch (state) {
     case atos: movptr(rax, oop_addr);
-               movptr(oop_addr, (int32_t)NULL_WORD);
+               movptr(oop_addr, NULL_WORD);
                verify_oop(rax, state);                break;
     case ltos:
                movl(rdx, val_addr1);               // fall through
@@ -148,8 +148,8 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
   }
   // Clean up tos value in the thread object
   movl(tos_addr,  (int32_t) ilgl);
-  movptr(val_addr,  (int32_t)NULL_WORD);
-  NOT_LP64(movl(val_addr1, (int32_t)NULL_WORD));
+  movptr(val_addr,  NULL_WORD);
+  NOT_LP64(movptr(val_addr1, NULL_WORD));
 }
 
 
@@ -944,7 +944,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     movptr(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes ()));
 
     // Free entry
-    movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()), (int32_t)NULL_WORD);
+    movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()), NULL_WORD);
 
     if (UseBiasedLocking) {
       biased_locking_exit(obj_reg, header_reg, done);

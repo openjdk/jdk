@@ -191,6 +191,9 @@
   notproduct(bool, VerifyHashTableKeys, true,                               \
           "Verify the immutability of keys in the VN hash tables")          \
                                                                             \
+  notproduct(bool, VerifyRegisterAllocator , false,                         \
+          "Verify Register Allocator")                                      \
+                                                                            \
   develop_pd(intx, FLOATPRESSURE,                                           \
           "Number of float LRG's that constitute high register pressure")   \
                                                                             \
