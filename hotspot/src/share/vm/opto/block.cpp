@@ -181,7 +181,7 @@ int Block::is_Empty() const {
 }
 
 //------------------------------has_uncommon_code------------------------------
-// Return true if the block's code implies that it is not likely to be
+// Return true if the block's code implies that it is likely to be
 // executed infrequently.  Check to see if the block ends in a Halt or
 // a low probability call.
 bool Block::has_uncommon_code() const {
@@ -1311,7 +1311,7 @@ void PhaseBlockLayout::merge_traces(bool fall_thru_only)
       }
     } else if (e->state() == CFGEdge::open) {
       // Append traces, even without a fall-thru connection.
-      // But leave root entry at the begining of the block list.
+      // But leave root entry at the beginning of the block list.
       if (targ_trace != trace(_cfg._broot)) {
         e->set_state(CFGEdge::connected);
         src_trace->append(targ_trace);
@@ -1434,7 +1434,7 @@ bool Trace::backedge(CFGEdge *e) {
     }
 
     // Backbranch to the top of a trace
-    // Scroll foward through the trace from the targ_block. If we find
+    // Scroll forward through the trace from the targ_block. If we find
     // a loop head before another loop top, use the the loop head alignment.
     for (Block *b = targ_block; b != NULL; b = next(b)) {
       if (b->has_loop_alignment()) {

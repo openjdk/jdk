@@ -216,7 +216,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
   const TypeOopPtr *tinst = phase->C->get_adr_type(alias_idx)->isa_oopptr();
   while (true) {
     if (mem == alloc_mem || mem == start_mem ) {
-      return mem;  // hit one of our sentinals
+      return mem;  // hit one of our sentinels
     } else if (mem->is_MergeMem()) {
       mem = mem->as_MergeMem()->memory_at(alias_idx);
     } else if (mem->is_Proj() && mem->as_Proj()->_con == TypeFunc::Memory) {
@@ -1668,7 +1668,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 
   if (UseOptoBiasInlining) {
     /*
-     *  See the full descrition in MacroAssembler::biased_locking_enter().
+     *  See the full description in MacroAssembler::biased_locking_enter().
      *
      *  if( (mark_word & biased_lock_mask) == biased_lock_pattern ) {
      *    // The object is biased.
@@ -1904,7 +1904,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
 
   if (UseOptoBiasInlining) {
     // Check for biased locking unlock case, which is a no-op.
-    // See the full descrition in MacroAssembler::biased_locking_exit().
+    // See the full description in MacroAssembler::biased_locking_exit().
     region  = new (C, 4) RegionNode(4);
     // create a Phi for the memory state
     mem_phi = new (C, 4) PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);

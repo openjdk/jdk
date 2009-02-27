@@ -1281,7 +1281,7 @@ void InstructForm::set_unique_opnds() {
   _num_uniq = num_uniq;
 }
 
-// Generate index values needed for determing the operand position
+// Generate index values needed for determining the operand position
 void InstructForm::index_temps(FILE *fp, FormDict &globals, const char *prefix, const char *receiver) {
   uint  idx = 0;                  // position of operand in match rule
   int   cur_num_opnds = num_opnds();
@@ -2197,7 +2197,7 @@ int OperandForm::operand_position(const char *name, int usedef) {
 // Return zero-based position in component list, only counting constants;
 // Return -1 if not in list.
 int OperandForm::constant_position(FormDict &globals, const Component *last) {
-  // Iterate through components and count constants preceeding 'constant'
+  // Iterate through components and count constants preceding 'constant'
   int position = 0;
   Component *comp;
   _components.reset();
@@ -2235,7 +2235,7 @@ int OperandForm::constant_position(FormDict &globals, const char *name) {
 // Return zero-based position in component list, only counting constants;
 // Return -1 if not in list.
 int OperandForm::register_position(FormDict &globals, const char *reg_name) {
-  // Iterate through components and count registers preceeding 'last'
+  // Iterate through components and count registers preceding 'last'
   uint  position = 0;
   Component *comp;
   _components.reset();

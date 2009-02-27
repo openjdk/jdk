@@ -23,7 +23,7 @@
  */
 
 // An ExtendedPC contains the _pc from a signal handler in a platform
-// independant way.
+// independent way.
 
 class ExtendedPC VALUE_OBJ_CLASS_SPEC {
  private:

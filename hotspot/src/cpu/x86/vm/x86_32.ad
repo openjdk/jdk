@@ -130,7 +130,7 @@ reg_def XMM7b( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next());
 // allocation.  Highest priority is first.  A useful heuristic is to
 // give registers a low priority when they are required by machine
 // instructions, like EAX and EDX.  Registers which are used as
-// pairs must fall on an even boundry (witness the FPR#L's in this list).
+// pairs must fall on an even boundary (witness the FPR#L's in this list).
 // For the Intel integer registers, the equivalent Long pairs are
 // EDX:EAX, EBX:ECX, and EDI:EBP.
 alloc_class chunk0( ECX,   EBX,   EBP,   EDI,   EAX,   EDX,   ESI, ESP,
@@ -5857,7 +5857,7 @@ operand cmpOp_commute() %{
 
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used as to simplify
-// instruction definitions by not requiring the AD writer to specify seperate
+// instruction definitions by not requiring the AD writer to specify separate
 // instructions for every form of operand when the instruction accepts
 // multiple operand types with the same basic encoding and format.  The classic
 // case of this is memory operands.
@@ -13220,7 +13220,7 @@ instruct safePoint_poll(eFlagsReg cr) %{
 // These must follow all instruction definitions as they use the names
 // defined in the instructions definitions.
 //
-// peepmatch ( root_instr_name [preceeding_instruction]* );
+// peepmatch ( root_instr_name [preceding_instruction]* );
 //
 // peepconstraint %{
 // (instruction_number.operand_name relational_op instruction_number.operand_name

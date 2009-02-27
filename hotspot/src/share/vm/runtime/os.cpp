@@ -943,7 +943,7 @@ bool os::stack_shadow_pages_available(Thread *thread, methodHandle method) {
   assert(StackRedPages > 0 && StackYellowPages > 0,"Sanity check");
   address sp = current_stack_pointer();
   // Check if we have StackShadowPages above the yellow zone.  This parameter
-  // is dependant on the depth of the maximum VM call stack possible from
+  // is dependent on the depth of the maximum VM call stack possible from
   // the handler for stack overflow.  'instanceof' in the stack overflow
   // handler or a println uses at least 8k stack of VM and native code
   // respectively.

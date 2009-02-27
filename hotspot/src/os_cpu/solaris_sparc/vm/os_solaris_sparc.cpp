@@ -532,7 +532,7 @@ int JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid, int abort_
     if (oldAct.sa_sigaction != signalHandler) {
       void* sighand = oldAct.sa_sigaction ? CAST_FROM_FN_PTR(void*, oldAct.sa_sigaction)
                                           : CAST_FROM_FN_PTR(void*, oldAct.sa_handler);
-      warning("Unexpected Signal %d occured under user-defined signal handler " INTPTR_FORMAT, sig, (intptr_t)sighand);
+      warning("Unexpected Signal %d occurred under user-defined signal handler " INTPTR_FORMAT, sig, (intptr_t)sighand);
     }
   }
 

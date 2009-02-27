@@ -757,10 +757,10 @@ public:
 // Model.  Monitor-enter and volatile-load act as Aquires: no following ref
 // can be moved to before them.  We insert a MemBar-Acquire after a FastLock or
 // volatile-load.  Monitor-exit and volatile-store act as Release: no
-// preceeding ref can be moved to after them.  We insert a MemBar-Release
+// preceding ref can be moved to after them.  We insert a MemBar-Release
 // before a FastUnlock or volatile-store.  All volatiles need to be
 // serialized, so we follow all volatile-stores with a MemBar-Volatile to
-// seperate it from any following volatile-load.
+// separate it from any following volatile-load.
 class MemBarNode: public MultiNode {
   virtual uint hash() const ;                  // { return NO_HASH; }
   virtual uint cmp( const Node &n ) const ;    // Always fail, except on self

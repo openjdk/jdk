@@ -609,7 +609,7 @@ class Trace : public ResourceObj {
   Block * next(Block *b) const { return _next_list[b->_pre_order]; }
   void set_next(Block *b, Block *n) const { _next_list[b->_pre_order] = n; }
 
-  // Return the block that preceeds "b" in the trace.
+  // Return the block that precedes "b" in the trace.
   Block * prev(Block *b) const { return _prev_list[b->_pre_order]; }
   void set_prev(Block *b, Block *p) const { _prev_list[b->_pre_order] = p; }
 

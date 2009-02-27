@@ -574,7 +574,7 @@ void gen_inst_format(FILE *fp, FormDict &globals, InstructForm &inst, bool for_c
   // Generate the user-defined portion of the format
   if( inst._format ) {
     // If there are replacement variables,
-    // Generate index values needed for determing the operand position
+    // Generate index values needed for determining the operand position
     if( inst._format->_rep_vars.count() )
       inst.index_temps(fp, globals);
 

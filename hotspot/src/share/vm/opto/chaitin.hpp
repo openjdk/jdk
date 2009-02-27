@@ -327,7 +327,7 @@ class PhaseChaitin : public PhaseRegAlloc {
   // True if lidx is used before any real register is def'd in the block
   bool prompt_use( Block *b, uint lidx );
   Node *get_spillcopy_wide( Node *def, Node *use, uint uidx );
-  // Insert the spill at chosen location.  Skip over any interveneing Proj's or
+  // Insert the spill at chosen location.  Skip over any intervening Proj's or
   // Phis.  Skip over a CatchNode and projs, inserting in the fall-through block
   // instead.  Update high-pressure indices.  Create a new live range.
   void insert_proj( Block *b, uint i, Node *spill, uint maxlrg );
@@ -431,7 +431,7 @@ private:
   void Simplify();
 
   // Select colors by re-inserting edges into the IFG.
-  // Return TRUE if any spills occured.
+  // Return TRUE if any spills occurred.
   uint Select( );
   // Helper function for select which allows biased coloring
   OptoReg::Name choose_color( LRG &lrg, int chunk );
