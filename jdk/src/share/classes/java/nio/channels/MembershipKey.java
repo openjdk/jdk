@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package java.nio.channels;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.io.IOException;
-import java.util.List;
 
 /**
  * A token representing the membership of an Internet Protocol (IP) multicast
@@ -38,7 +37,7 @@ import java.util.List;
  * to the group, or it may be <em>source-specific</em>, meaning that it
  * represents a membership that receives only datagrams from a specific source
  * address. Whether or not a membership key is source-specific may be determined
- * by invoking its {@link #getSourceAddress() getSourceAddress} method.
+ * by invoking its {@link #sourceAddress() sourceAddress} method.
  *
  * <p> A membership key is valid upon creation and remains valid until the
  * membership is dropped by invoking the {@link #drop() drop} method, or
@@ -93,11 +92,8 @@ public abstract class MembershipKey {
      * If the multicast group membership is already invalid then invoking this
      * method has no effect. Once a multicast group membership is invalid,
      * it remains invalid forever.
-     *
-     * @throws  IOException
-     *          If an I/O error occurs
      */
-    public abstract void drop() throws IOException;
+    public abstract void drop();
 
     /**
      * Block multicast datagrams from the given source address.
@@ -140,10 +136,8 @@ public abstract class MembershipKey {
      * @throws  IllegalStateException
      *          If the given source address is not currently blocked or the
      *          membership key is no longer valid
-     * @throws  IOException
-     *          If an I/O error occurs
      */
-    public abstract MembershipKey unblock(InetAddress source) throws IOException;
+    public abstract MembershipKey unblock(InetAddress source);
 
     /**
      * Returns the channel for which this membership key was created. This
@@ -152,7 +146,7 @@ public abstract class MembershipKey {
      *
      * @return  the channel
      */
-    public abstract MulticastChannel getChannel();
+    public abstract MulticastChannel channel();
 
     /**
      * Returns the multicast group for which this membership key was created.
@@ -161,7 +155,7 @@ public abstract class MembershipKey {
      *
      * @return  the multicast group
      */
-    public abstract InetAddress getGroup();
+    public abstract InetAddress group();
 
     /**
      * Returns the network interface for which this membership key was created.
@@ -170,7 +164,7 @@ public abstract class MembershipKey {
      *
      * @return  the network interface
      */
-    public abstract NetworkInterface getNetworkInterface();
+    public abstract NetworkInterface networkInterface();
 
     /**
      * Returns the source address if this membership key is source-specific,
@@ -179,5 +173,5 @@ public abstract class MembershipKey {
      * @return  The source address if this membership key is source-specific,
      *          otherwise {@code null}
      */
-    public abstract InetAddress getSourceAddress();
+    public abstract InetAddress sourceAddress();
 }

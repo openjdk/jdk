@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ class Reflect {                                 // package-private
     {
         try {
             Class<?> cl = Class.forName(className);
-            Constructor c = cl.getDeclaredConstructor(paramTypes);
+            Constructor<?> c = cl.getDeclaredConstructor(paramTypes);
             setAccessible(c);
             return c;
         } catch (ClassNotFoundException x) {
@@ -79,7 +79,7 @@ class Reflect {                                 // package-private
 
     static Method lookupMethod(String className,
                                String methodName,
-                               Class[] paramTypes)
+                               Class... paramTypes)
     {
         try {
             Class<?> cl = Class.forName(className);
