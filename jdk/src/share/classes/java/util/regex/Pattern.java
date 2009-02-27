@@ -29,6 +29,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.CharacterIterator;
 import java.text.Normalizer;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Arrays;
@@ -298,6 +299,10 @@ import java.util.Arrays;
  *     <td valign="bottom" headers="matches">Whatever the <i>n</i><sup>th</sup>
  *     <a href="#cg">capturing group</a> matched</td></tr>
  *
+ * <tr><td valign="bottom" headers="construct backref"><tt>\</tt><i>k</i>&lt;<i>name</i>&gt;</td>
+ *     <td valign="bottom" headers="matches">Whatever the
+ *     <a href="#groupname">named-capturing group</a> "name" matched</td></tr>
+ *
  * <tr><th>&nbsp;</th></tr>
  * <tr align="left"><th colspan="2" id="quot">Quotation</th></tr>
  *
@@ -310,8 +315,10 @@ import java.util.Arrays;
  *     <!-- Metachars: !$()*+.<>?[\]^{|} -->
  *
  * <tr><th>&nbsp;</th></tr>
- * <tr align="left"><th colspan="2" id="special">Special constructs (non-capturing)</th></tr>
+ * <tr align="left"><th colspan="2" id="special">Special constructs (named-capturing and non-capturing)</th></tr>
  *
+ * <tr><td valign="top" headers="construct special"><tt>(?&lt;<a href="#groupname">name</a>&gt;</tt><i>X</i><tt>)</tt></td>
+ *     <td headers="matches"><i>X</i>, as a named-capturing group</td></tr>
  * <tr><td valign="top" headers="construct special"><tt>(?:</tt><i>X</i><tt>)</tt></td>
  *     <td headers="matches"><i>X</i>, as a non-capturing group</td></tr>
  * <tr><td valign="top" headers="construct special"><tt>(?idmsux-idmsux)&nbsp;</tt></td>
@@ -449,6 +456,8 @@ import java.util.Arrays;
  * <a name="cg">
  * <h4> Groups and capturing </h4>
  *
+ * <a name="gnumber">
+ * <h5> Group number </h5>
  * <p> Capturing groups are numbered by counting their opening parentheses from
  * left to right.  In the expression <tt>((A)(B(C)))</tt>, for example, there
  * are four such groups: </p>
@@ -471,6 +480,24 @@ import java.util.Arrays;
  * subsequence may be used later in the expression, via a back reference, and
  * may also be retrieved from the matcher once the match operation is complete.
  *
+ * <a name="groupname">
+ * <h5> Group name </h5>
+ * <p>A capturing group can also be assigned a "name", a <tt>named-capturing group</tt>,
+ * and then be back-referenced later by the "name". Group names are composed of
+ * the following characters:
+ *
+ * <ul>
+ *   <li> The uppercase letters <tt>'A'</tt> through <tt>'Z'</tt>
+ *        (<tt>'&#92;u0041'</tt>&nbsp;through&nbsp;<tt>'&#92;u005a'</tt>),
+ *   <li> The lowercase letters <tt>'a'</tt> through <tt>'z'</tt>
+ *        (<tt>'&#92;u0061'</tt>&nbsp;through&nbsp;<tt>'&#92;u007a'</tt>),
+ *   <li> The digits <tt>'0'</tt> through <tt>'9'</tt>
+ *        (<tt>'&#92;u0030'</tt>&nbsp;through&nbsp;<tt>'&#92;u0039'</tt>),
+ * </ul>
+ *
+ * <p> A <tt>named-capturing group</tt> is still numbered as described in
+ * <a href="#gnumber">Group number</a>.
+ *
  * <p> The captured input associated with a group is always the subsequence
  * that the group most recently matched.  If a group is evaluated a second time
  * because of quantification then its previously-captured value, if any, will
@@ -479,9 +506,9 @@ import java.util.Arrays;
  * group two set to <tt>"b"</tt>.  All captured input is discarded at the
  * beginning of each match.
  *
- * <p> Groups beginning with <tt>(?</tt> are pure, <i>non-capturing</i> groups
- * that do not capture text and do not count towards the group total.
- *
+ * <p> Groups beginning with <tt>(?</tt> are either pure, <i>non-capturing</i> groups
+ * that do not capture text and do not count towards the group total, or
+ * <i>named-capturing</i> group.
  *
  * <h4> Unicode support </h4>
  *
@@ -793,6 +820,12 @@ public final class Pattern
      * Temporary storage used by parsing pattern slice.
      */
     transient int[] buffer;
+
+    /**
+     * Map the "name" of the "named capturing group" to its group id
+     * node.
+     */
+    transient volatile Map<String, Integer> namedGroups;
 
     /**
      * Temporary storage used while parsing group references.
@@ -1467,6 +1500,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         // Allocate all temporary objects here.
         buffer = new int[32];
         groupNodes = new GroupHead[10];
+        namedGroups = null;
 
         if (has(LITERAL)) {
             // Literal pattern handling
@@ -1503,6 +1537,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         groupNodes = null;
         patternLength = 0;
         compiled = true;
+    }
+
+    Map<String, Integer> namedGroups() {
+        if (namedGroups == null)
+            namedGroups = new HashMap<String, Integer>(2);
+        return namedGroups;
     }
 
     /**
@@ -2156,7 +2196,22 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         case 'h':
         case 'i':
         case 'j':
+            break;
         case 'k':
+            if (inclass)
+                break;
+            if (read() != '<')
+                throw error("\\k is not followed by '<' for named capturing group");
+            String name = groupname(read());
+            if (!namedGroups().containsKey(name))
+                throw error("(named capturing group <"+ name+"> does not exit");
+            if (create) {
+                if (has(CASE_INSENSITIVE))
+                    root = new CIBackRef(namedGroups().get(name), has(UNICODE_CASE));
+                else
+                    root = new BackRef(namedGroups().get(name));
+            }
+            return -1;
         case 'l':
         case 'm':
             break;
@@ -2456,6 +2511,24 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
     }
 
     /**
+     * Parses and returns the name of a "named capturing group", the trailing
+     * ">" is consumed after parsing.
+     */
+    private String groupname(int ch) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(Character.toChars(ch));
+        while (ASCII.isLower(ch=read()) || ASCII.isUpper(ch) ||
+               ASCII.isDigit(ch)) {
+            sb.append(Character.toChars(ch));
+        }
+        if (sb.length() == 0)
+            throw error("named capturing group has 0 length name");
+        if (ch != '>')
+            throw error("named capturing group is missing trailing '>'");
+        return sb.toString();
+    }
+
+    /**
      * Parses a group and returns the head node of a set of nodes that process
      * the group. Sometimes a double return system is used where the tail is
      * returned in root.
@@ -2494,6 +2567,18 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 break;
             case '<':   // (?<xxx)  look behind
                 ch = read();
+                if (Character.isLetter(ch)) {     // named captured group
+                    String name = groupname(ch);
+                    if (namedGroups().containsKey(name))
+                        throw error("Named capturing group <" + name
+                                    + "> is already defined");
+                    capturingGroup = true;
+                    head = createGroup(false);
+                    tail = root;
+                    namedGroups().put(name, capturingGroupCount-1);
+                    head.next = expr(tail);
+                    break;
+                }
                 int start = cursor;
                 head = createGroup(true);
                 tail = root;

@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,18 +58,25 @@ class AppOutputStream extends OutputStream {
      */
     synchronized public void write(byte b[], int off, int len)
             throws IOException {
+        if (b == null) {
+            throw new NullPointerException();
+        } else if (off < 0 || len < 0 || len > b.length - off) {
+            throw new IndexOutOfBoundsException();
+        } else if (len == 0) {
+            return;
+        }
+
         // check if the Socket is invalid (error or closed)
         c.checkWrite();
-        //
+
         // Always flush at the end of each application level record.
         // This lets application synchronize read and write streams
         // however they like; if we buffered here, they couldn't.
-        //
-        // NOTE: *must* call c.writeRecord() even for len == 0
         try {
             do {
                 int howmuch = Math.min(len, r.availableDataBytes());
 
+                // NOTE: *must* call c.writeRecord() even for howmuch == 0
                 if (howmuch > 0) {
                     r.write(b, off, howmuch);
                     off += howmuch;
