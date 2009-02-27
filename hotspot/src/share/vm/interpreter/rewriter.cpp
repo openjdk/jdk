@@ -48,9 +48,14 @@ void Rewriter::compute_index_maps(constantPoolHandle pool, intArray*& index_map,
 
 
 // Creates a constant pool cache given an inverse_index_map
+// This creates the constant pool cache initially in a state
+// that is unsafe for concurrent GC processing but sets it to
+// a safe mode before the constant pool cache is returned.
 constantPoolCacheHandle Rewriter::new_constant_pool_cache(intArray& inverse_index_map, TRAPS) {
   const int length = inverse_index_map.length();
-  constantPoolCacheOop cache = oopFactory::new_constantPoolCache(length, CHECK_(constantPoolCacheHandle()));
+  constantPoolCacheOop cache = oopFactory::new_constantPoolCache(length,
+                                             methodOopDesc::IsUnsafeConc,
+                                             CHECK_(constantPoolCacheHandle()));
   cache->initialize(inverse_index_map);
   return constantPoolCacheHandle(THREAD, cache);
 }

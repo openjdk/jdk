@@ -1,5 +1,5 @@
 /*
- * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,12 +150,6 @@ class GDIHashtable : public Hashtable {
          * method is called when a new GDI resource is created.
          */
         INLINE void decrementCounter() { m_nCounter--; }
-
-        /**
-         * Depending on the amount of free space in GDI heaps flushes
-         * all GDIHashtables and sets the initial counter value.
-         */
-        void update();
 
         INLINE CriticalSection& getLock() { return m_managerLock; }
     };

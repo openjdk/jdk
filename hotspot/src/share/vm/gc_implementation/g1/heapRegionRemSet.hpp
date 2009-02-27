@@ -58,7 +58,7 @@ class SparsePRT;
 //      is represented.  If a deleted PRT is re-used, a thread adding a bit,
 //      thinking the PRT is for a different region, does no harm.
 
-class OtherRegionsTable: public CHeapObj {
+class OtherRegionsTable VALUE_OBJ_CLASS_SPEC {
   friend class HeapRegionRemSetIterator;
 
   G1CollectedHeap* _g1h;

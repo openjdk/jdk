@@ -281,7 +281,7 @@ public class TextField extends TextComponent {
             echoChar = c;
             TextFieldPeer peer = (TextFieldPeer)this.peer;
             if (peer != null) {
-                peer.setEchoCharacter(c);
+                peer.setEchoChar(c);
             }
         }
     }
@@ -376,7 +376,7 @@ public class TextField extends TextComponent {
         synchronized (getTreeLock()) {
             TextFieldPeer peer = (TextFieldPeer)this.peer;
             return (peer != null) ?
-                       peer.preferredSize(columns) :
+                       peer.getPreferredSize(columns) :
                        super.preferredSize();
         }
     }
@@ -424,7 +424,7 @@ public class TextField extends TextComponent {
         synchronized (getTreeLock()) {
             TextFieldPeer peer = (TextFieldPeer)this.peer;
             return (peer != null) ?
-                       peer.minimumSize(columns) :
+                       peer.getMinimumSize(columns) :
                        super.minimumSize();
         }
     }

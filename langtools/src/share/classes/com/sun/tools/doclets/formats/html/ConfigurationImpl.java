@@ -493,4 +493,14 @@ public class ConfigurationImpl extends Configuration {
     public Comparator<ProgramElementDoc> getMemberComparator() {
         return null;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Locale getLocale() {
+        if (root instanceof com.sun.tools.javadoc.RootDocImpl)
+            return ((com.sun.tools.javadoc.RootDocImpl)root).getLocale();
+        else
+            return Locale.getDefault();
+    }
 }

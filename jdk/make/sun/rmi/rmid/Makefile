@@ -39,7 +39,7 @@ build: stubs
 # Resources
 #
 LOCALE_SET_DEFINITION = jre
-RESOURCE_BUNDLES_PROPERTIES = sun/rmi/server/resources/rmid.properties
+RESOURCE_BUNDLES_UNCOMPILED_PROPERTIES = sun/rmi/server/resources/rmid.properties
 
 #
 # Extra dependencies.

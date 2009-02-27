@@ -25,6 +25,8 @@
 
 package com.sun.tools.javadoc;
 
+import java.lang.reflect.Modifier;
+
 import com.sun.javadoc.*;
 
 import static com.sun.javadoc.LanguageVersion.*;
@@ -37,9 +39,6 @@ import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 
 import com.sun.tools.javac.util.Position;
-
-import java.lang.reflect.Modifier;
-
 
 /**
  * Represents a field in a java class.
@@ -260,7 +259,7 @@ public class FieldDocImpl extends MemberDocImpl implements FieldDoc {
      */
     public SourcePosition position() {
         if (sym.enclClass().sourcefile == null) return null;
-        return SourcePositionImpl.make(sym.enclClass().sourcefile.toString(),
+        return SourcePositionImpl.make(sym.enclClass().sourcefile,
                                        (tree==null) ? 0 : tree.pos,
                                        lineMap);
     }

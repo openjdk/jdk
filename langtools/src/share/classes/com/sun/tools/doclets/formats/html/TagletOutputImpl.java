@@ -67,4 +67,10 @@ public class TagletOutputImpl implements TagletOutput {
         return output.toString();
     }
 
+    /**
+     * Check whether the taglet output is empty.
+     */
+    public boolean isEmpty() {
+        return (toString().trim().isEmpty());
+    }
 }

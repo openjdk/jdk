@@ -135,11 +135,6 @@ ZFILE_Close(ZFILE zfd) {
 #endif
 }
 
-static jlong
-ZFILE_Lseek(ZFILE zfd, off_t offset, int whence) {
-    return IO_Lseek(zfd, offset, whence);
-}
-
 static int
 ZFILE_read(ZFILE zfd, char *buf, jint nbytes) {
 #ifdef WIN32
@@ -216,7 +211,7 @@ readFully(ZFILE zfd, void *buf, jlong len) {
 static int
 readFullyAt(ZFILE zfd, void *buf, jlong len, jlong offset)
 {
-    if (ZFILE_Lseek(zfd, (off_t) offset, SEEK_SET) == -1) {
+    if (IO_Lseek(zfd, offset, SEEK_SET) == -1) {
         return -1; /* lseek failure. */
     }
 
@@ -476,7 +471,7 @@ readCEN(jzfile *zip, jint knownTotal)
     unsigned char *cp;
 #ifdef USE_MMAP
     static jlong pagesize;
-    off_t offset;
+    jlong offset;
 #endif
     unsigned char endbuf[ENDHDR];
     jzcell *entries;
@@ -534,7 +529,7 @@ readCEN(jzfile *zip, jint knownTotal)
         */
         zip->mlen = cenpos - offset + cenlen + ENDHDR;
         zip->offset = offset;
-        mappedAddr = mmap(0, zip->mlen, PROT_READ, MAP_SHARED, zip->zfd, offset);
+        mappedAddr = mmap64(0, zip->mlen, PROT_READ, MAP_SHARED, zip->zfd, (off64_t) offset);
         zip->maddr = (mappedAddr == (void*) MAP_FAILED) ? NULL :
             (unsigned char*)mappedAddr;
 
@@ -720,7 +715,7 @@ ZIP_Put_In_Cache(const char *name, ZFILE zfd, char **pmsg, jlong lastModified)
         return NULL;
     }
 
-    len = zip->len = ZFILE_Lseek(zfd, 0, SEEK_END);
+    len = zip->len = IO_Lseek(zfd, 0, SEEK_END);
     if (len <= 0) {
         if (len == 0) { /* zip file is empty */
             if (pmsg) {

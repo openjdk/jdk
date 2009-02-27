@@ -90,7 +90,7 @@ private:
   HeapRegion* _curr_scan_only;
 
   HeapRegion* _survivor_head;
-  HeapRegion* _survivors_tail;
+  HeapRegion* _survivor_tail;
   size_t      _survivor_length;
 
   void          empty_list(HeapRegion* list);
@@ -105,6 +105,7 @@ public:
   bool          is_empty() { return _length == 0; }
   size_t        length() { return _length; }
   size_t        scan_only_length() { return _scan_only_length; }
+  size_t        survivor_length() { return _survivor_length; }
 
   void rs_length_sampling_init();
   bool rs_length_sampling_more();
@@ -120,6 +121,7 @@ public:
   HeapRegion* first_region() { return _head; }
   HeapRegion* first_scan_only_region() { return _scan_only_head; }
   HeapRegion* first_survivor_region() { return _survivor_head; }
+  HeapRegion* last_survivor_region() { return _survivor_tail; }
   HeapRegion* par_get_next_scan_only_region() {
     MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
     HeapRegion* ret = _curr_scan_only;
@@ -219,7 +221,7 @@ private:
   // The to-space memory regions into which objects are being copied during
   // a GC.
   HeapRegion* _gc_alloc_regions[GCAllocPurposeCount];
-  uint _gc_alloc_region_counts[GCAllocPurposeCount];
+  size_t _gc_alloc_region_counts[GCAllocPurposeCount];
 
   // A list of the regions that have been set to be alloc regions in the
   // current collection.
@@ -247,6 +249,27 @@ private:
   NumberSeq _pop_obj_rc_at_copy;
   void print_popularity_summary_info() const;
 
+  // This is used for a quick test on whether a reference points into
+  // the collection set or not. Basically, we have an array, with one
+  // byte per region, and that byte denotes whether the corresponding
+  // region is in the collection set or not. The entry corresponding
+  // the bottom of the heap, i.e., region 0, is pointed to by
+  // _in_cset_fast_test_base.  The _in_cset_fast_test field has been
+  // biased so that it actually points to address 0 of the address
+  // space, to make the test as fast as possible (we can simply shift
+  // the address to address into it, instead of having to subtract the
+  // bottom of the heap from the address before shifting it; basically
+  // it works in the same way the card table works).
+  bool* _in_cset_fast_test;
+
+  // The allocated array used for the fast test on whether a reference
+  // points into the collection set or not. This field is also used to
+  // free the array.
+  bool* _in_cset_fast_test_base;
+
+  // The length of the _in_cset_fast_test_base array.
+  size_t _in_cset_fast_test_length;
+
   volatile unsigned _gc_time_stamp;
 
   size_t* _surviving_young_words;
@@ -260,8 +283,8 @@ protected:
   // Returns "true" iff none of the gc alloc regions have any allocations
   // since the last call to "save_marks".
   bool all_alloc_regions_no_allocs_since_save_marks();
-  // Calls "note_end_of_copying on all gc alloc_regions.
-  void all_alloc_regions_note_end_of_copying();
+  // Perform finalization stuff on all allocation regions.
+  void retire_all_alloc_regions();
 
   // The number of regions allocated to hold humongous objects.
   int         _num_humongous_regions;
@@ -330,6 +353,10 @@ protected:
   // that parallel threads might be attempting allocations.
   void par_allocate_remaining_space(HeapRegion* r);
 
+  // Retires an allocation region when it is full or at the end of a
+  // GC pause.
+  void  retire_alloc_region(HeapRegion* alloc_region, bool par);
+
   // Helper function for two callbacks below.
   // "full", if true, indicates that the GC is for a System.gc() request,
   // and should collect the entire heap.  If "clear_all_soft_refs" is true,
@@ -367,6 +394,38 @@ public:
   // Do anything common to GC's.
   virtual void gc_prologue(bool full);
   virtual void gc_epilogue(bool full);
+
+  // We register a region with the fast "in collection set" test. We
+  // simply set to true the array slot corresponding to this region.
+  void register_region_with_in_cset_fast_test(HeapRegion* r) {
+    assert(_in_cset_fast_test_base != NULL, "sanity");
+    assert(r->in_collection_set(), "invariant");
+    int index = r->hrs_index();
+    assert(0 <= (size_t) index && (size_t) index < _in_cset_fast_test_length,
+           "invariant");
+    assert(!_in_cset_fast_test_base[index], "invariant");
+    _in_cset_fast_test_base[index] = true;
+  }
+
+  // This is a fast test on whether a reference points into the
+  // collection set or not. It does not assume that the reference
+  // points into the heap; if it doesn't, it will return false.
+  bool in_cset_fast_test(oop obj) {
+    assert(_in_cset_fast_test != NULL, "sanity");
+    if (_g1_committed.contains((HeapWord*) obj)) {
+      // no need to subtract the bottom of the heap from obj,
+      // _in_cset_fast_test is biased
+      size_t index = ((size_t) obj) >> HeapRegion::LogOfHRGrainBytes;
+      bool ret = _in_cset_fast_test[index];
+      // let's make sure the result is consistent with what the slower
+      // test returns
+      assert( ret || !obj_in_cs(obj), "sanity");
+      assert(!ret ||  obj_in_cs(obj), "sanity");
+      return ret;
+    } else {
+      return false;
+    }
+  }
 
 protected:
 
@@ -850,6 +909,7 @@ public:
 
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl);
+  virtual void safe_object_iterate(ObjectClosure* cl) { object_iterate(cl); }
 
   // Iterate over all objects allocated since the last collection, calling
   // "cl.do_object" on each.  The heap must have been initialized properly

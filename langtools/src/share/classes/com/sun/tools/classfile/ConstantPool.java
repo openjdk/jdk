@@ -38,6 +38,7 @@ import java.io.IOException;
 public class ConstantPool {
 
     public class InvalidIndex extends ConstantPoolException {
+        private static final long serialVersionUID = -4350294289300939730L;
         InvalidIndex(int index) {
             super(index);
         }
@@ -50,6 +51,7 @@ public class ConstantPool {
     }
 
     public class UnexpectedEntry extends ConstantPoolException {
+        private static final long serialVersionUID = 6986335935377933211L;
         UnexpectedEntry(int index, int expected_tag, int found_tag) {
             super(index);
             this.expected_tag = expected_tag;
@@ -67,6 +69,7 @@ public class ConstantPool {
     }
 
     public class InvalidEntry extends ConstantPoolException {
+        private static final long serialVersionUID = 1000087545585204447L;
         InvalidEntry(int index, int tag) {
             super(index);
             this.tag = tag;
@@ -82,6 +85,7 @@ public class ConstantPool {
     }
 
     public class EntryNotFound extends ConstantPoolException {
+        private static final long serialVersionUID = 2885537606468581850L;
         EntryNotFound(Object value) {
             super(-1);
             this.value = value;

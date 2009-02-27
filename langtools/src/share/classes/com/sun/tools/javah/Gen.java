@@ -342,6 +342,6 @@ public abstract class Gen {
             fields.addAll(Arrays.asList(cd.fields()));
         }
 
-        return (FieldDoc[]) fields.toArray(new FieldDoc[fields.size()]);
+        return fields.toArray(new FieldDoc[fields.size()]);
     }
 }

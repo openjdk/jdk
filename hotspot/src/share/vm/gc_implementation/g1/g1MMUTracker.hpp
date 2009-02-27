@@ -28,7 +28,7 @@
 /***** ALL TIMES ARE IN SECS!!!!!!! *****/
 
 // this is the "interface"
-class G1MMUTracker {
+class G1MMUTracker: public CHeapObj {
 protected:
   double          _time_slice;
   double          _max_gc_time; // this is per time slice
@@ -67,7 +67,7 @@ public:
   }
 };
 
-class G1MMUTrackerQueueElem {
+class G1MMUTrackerQueueElem VALUE_OBJ_CLASS_SPEC {
 private:
   double _start_time;
   double _end_time;

@@ -108,6 +108,13 @@ class oopDesc {
   // installation of their klass pointer.
   bool is_parsable();
 
+  // Some perm gen objects that have been allocated and initialized
+  // can be changed by the VM when not at a safe point (class rededfinition
+  // is an example).  Such objects should not be examined by the
+  // concurrent processing of a garbage collector if is_conc_safe()
+  // returns false.
+  bool is_conc_safe();
+
   // type test operations (inlined in oop.inline.h)
   bool is_instance()           const;
   bool is_instanceRef()        const;

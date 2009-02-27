@@ -407,7 +407,7 @@ class StubGenerator: public StubCodeGenerator {
     __ get_thread(rcx);
     __ pop(rdx);
     __ movptr(rax, Address(rcx, Thread::pending_exception_offset()));
-    __ movptr(Address(rcx, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+    __ movptr(Address(rcx, Thread::pending_exception_offset()), NULL_WORD);
 
 #ifdef ASSERT
     // make sure exception is set

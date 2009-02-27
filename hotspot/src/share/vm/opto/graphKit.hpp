@@ -83,6 +83,18 @@ class GraphKit : public Phase {
   Node* zerocon(BasicType bt)   const { return _gvn.zerocon(bt); }
   // (See also macro MakeConX in type.hpp, which uses intcon or longcon.)
 
+  // Helper for byte_map_base
+  Node* byte_map_base_node() {
+    // Get base of card map
+    CardTableModRefBS* ct = (CardTableModRefBS*)(Universe::heap()->barrier_set());
+    assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust users of this code");
+    if (ct->byte_map_base != NULL) {
+      return makecon(TypeRawPtr::make((address)ct->byte_map_base));
+    } else {
+      return null();
+    }
+  }
+
   jint  find_int_con(Node* n, jint value_if_unknown) {
     return _gvn.find_int_con(n, value_if_unknown);
   }

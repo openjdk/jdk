@@ -404,6 +404,8 @@ void ParEvacuateFollowersClosure::do_void() {
     if (terminator()->offer_termination()) break;
     par_scan_state()->end_term_time();
   }
+  assert(par_gen()->_overflow_list == NULL && par_gen()->_num_par_pushes == 0,
+         "Broken overflow list?");
   // Finish the last termination pause.
   par_scan_state()->end_term_time();
 }
@@ -456,6 +458,8 @@ ParNewGeneration(ReservedSpace rs, size_t initial_byte_size, int level)
   _is_alive_closure(this),
   _plab_stats(YoungPLABSize, PLABWeight)
 {
+  NOT_PRODUCT(_overflow_counter = ParGCWorkQueueOverflowInterval;)
+  NOT_PRODUCT(_num_par_pushes = 0;)
   _task_queues = new ObjToScanQueueSet(ParallelGCThreads);
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
 
@@ -993,12 +997,19 @@ oop ParNewGeneration::copy_to_survivor_space_avoiding_promotion_undo(
              "push forwarded object");
     }
     // Push it on one of the queues of to-be-scanned objects.
-    if (!par_scan_state->work_queue()->push(obj_to_push)) {
+    bool simulate_overflow = false;
+    NOT_PRODUCT(
+      if (ParGCWorkQueueOverflowALot && should_simulate_overflow()) {
+        // simulate a stack overflow
+        simulate_overflow = true;
+      }
+    )
+    if (simulate_overflow || !par_scan_state->work_queue()->push(obj_to_push)) {
       // Add stats for overflow pushes.
       if (Verbose && PrintGCDetails) {
         gclog_or_tty->print("queue overflow!\n");
       }
-      push_on_overflow_list(old);
+      push_on_overflow_list(old, par_scan_state);
       par_scan_state->note_overflow_push();
     }
     par_scan_state->note_push();
@@ -1110,9 +1121,16 @@ oop ParNewGeneration::copy_to_survivor_space_with_undo(
              "push forwarded object");
     }
     // Push it on one of the queues of to-be-scanned objects.
-    if (!par_scan_state->work_queue()->push(obj_to_push)) {
+    bool simulate_overflow = false;
+    NOT_PRODUCT(
+      if (ParGCWorkQueueOverflowALot && should_simulate_overflow()) {
+        // simulate a stack overflow
+        simulate_overflow = true;
+      }
+    )
+    if (simulate_overflow || !par_scan_state->work_queue()->push(obj_to_push)) {
       // Add stats for overflow pushes.
-      push_on_overflow_list(old);
+      push_on_overflow_list(old, par_scan_state);
       par_scan_state->note_overflow_push();
     }
     par_scan_state->note_push();
@@ -1135,89 +1153,190 @@ oop ParNewGeneration::copy_to_survivor_space_with_undo(
   return forward_ptr;
 }
 
-void ParNewGeneration::push_on_overflow_list(oop from_space_obj) {
-  oop cur_overflow_list = _overflow_list;
+#ifndef PRODUCT
+// It's OK to call this multi-threaded;  the worst thing
+// that can happen is that we'll get a bunch of closely
+// spaced simulated oveflows, but that's OK, in fact
+// probably good as it would exercise the overflow code
+// under contention.
+bool ParNewGeneration::should_simulate_overflow() {
+  if (_overflow_counter-- <= 0) { // just being defensive
+    _overflow_counter = ParGCWorkQueueOverflowInterval;
+    return true;
+  } else {
+    return false;
+  }
+}
+#endif
+
+#define BUSY (oop(0x1aff1aff))
+void ParNewGeneration::push_on_overflow_list(oop from_space_obj, ParScanThreadState* par_scan_state) {
   // if the object has been forwarded to itself, then we cannot
   // use the klass pointer for the linked list.  Instead we have
   // to allocate an oopDesc in the C-Heap and use that for the linked list.
+  // XXX This is horribly inefficient when a promotion failure occurs
+  // and should be fixed. XXX FIX ME !!!
+#ifndef PRODUCT
+  Atomic::inc_ptr(&_num_par_pushes);
+  assert(_num_par_pushes > 0, "Tautology");
+#endif
   if (from_space_obj->forwardee() == from_space_obj) {
     oopDesc* listhead = NEW_C_HEAP_ARRAY(oopDesc, 1);
     listhead->forward_to(from_space_obj);
     from_space_obj = listhead;
   }
-  while (true) {
-    from_space_obj->set_klass_to_list_ptr(cur_overflow_list);
-    oop observed_overflow_list =
-      (oop)Atomic::cmpxchg_ptr(from_space_obj, &_overflow_list, cur_overflow_list);
-    if (observed_overflow_list == cur_overflow_list) break;
-    // Otherwise...
+  oop observed_overflow_list = _overflow_list;
+  oop cur_overflow_list;
+  do {
     cur_overflow_list = observed_overflow_list;
-  }
+    if (cur_overflow_list != BUSY) {
+      from_space_obj->set_klass_to_list_ptr(cur_overflow_list);
+    } else {
+      from_space_obj->set_klass_to_list_ptr(NULL);
+    }
+    observed_overflow_list =
+      (oop)Atomic::cmpxchg_ptr(from_space_obj, &_overflow_list, cur_overflow_list);
+  } while (cur_overflow_list != observed_overflow_list);
 }
 
+// *NOTE*: The overflow list manipulation code here and
+// in CMSCollector:: are very similar in shape,
+// except that in the CMS case we thread the objects
+// directly into the list via their mark word, and do
+// not need to deal with special cases below related
+// to chunking of object arrays and promotion failure
+// handling.
+// CR 6797058 has been filed to attempt consolidation of
+// the common code.
+// Because of the common code, if you make any changes in
+// the code below, please check the CMS version to see if
+// similar changes might be needed.
+// See CMSCollector::par_take_from_overflow_list() for
+// more extensive documentation comments.
 bool
 ParNewGeneration::take_from_overflow_list(ParScanThreadState* par_scan_state) {
   ObjToScanQueue* work_q = par_scan_state->work_queue();
+  assert(work_q->size() == 0, "Should first empty local work queue");
   // How many to take?
-  int objsFromOverflow = MIN2(work_q->max_elems()/4,
-                              (juint)ParGCDesiredObjsFromOverflowList);
+  size_t objsFromOverflow = MIN2((size_t)work_q->max_elems()/4,
+                                 (size_t)ParGCDesiredObjsFromOverflowList);
 
   if (_overflow_list == NULL) return false;
 
   // Otherwise, there was something there; try claiming the list.
-  oop prefix = (oop)Atomic::xchg_ptr(NULL, &_overflow_list);
-
-  if (prefix == NULL) {
-    return false;
-  }
+  oop prefix = (oop)Atomic::xchg_ptr(BUSY, &_overflow_list);
   // Trim off a prefix of at most objsFromOverflow items
-  int i = 1;
+  Thread* tid = Thread::current();
+  size_t spin_count = (size_t)ParallelGCThreads;
+  size_t sleep_time_millis = MAX2((size_t)1, objsFromOverflow/100);
+  for (size_t spin = 0; prefix == BUSY && spin < spin_count; spin++) {
+    // someone grabbed it before we did ...
+    // ... we spin for a short while...
+    os::sleep(tid, sleep_time_millis, false);
+    if (_overflow_list == NULL) {
+      // nothing left to take
+      return false;
+    } else if (_overflow_list != BUSY) {
+     // try and grab the prefix
+     prefix = (oop)Atomic::xchg_ptr(BUSY, &_overflow_list);
+    }
+  }
+  if (prefix == NULL || prefix == BUSY) {
+     // Nothing to take or waited long enough
+     if (prefix == NULL) {
+       // Write back the NULL in case we overwrote it with BUSY above
+       // and it is still the same value.
+       (void) Atomic::cmpxchg_ptr(NULL, &_overflow_list, BUSY);
+     }
+     return false;
+  }
+  assert(prefix != NULL && prefix != BUSY, "Error");
+  size_t i = 1;
   oop cur = prefix;
   while (i < objsFromOverflow && cur->klass_or_null() != NULL) {
     i++; cur = oop(cur->klass());
   }
 
   // Reattach remaining (suffix) to overflow list
-  if (cur->klass_or_null() != NULL) {
-    oop suffix = oop(cur->klass());
-    cur->set_klass_to_list_ptr(NULL);
-
-    // Find last item of suffix list
-    oop last = suffix;
-    while (last->klass_or_null() != NULL) {
-      last = oop(last->klass());
+  if (cur->klass_or_null() == NULL) {
+    // Write back the NULL in lieu of the BUSY we wrote
+    // above and it is still the same value.
+    if (_overflow_list == BUSY) {
+      (void) Atomic::cmpxchg_ptr(NULL, &_overflow_list, BUSY);
     }
-    // Atomically prepend suffix to current overflow list
-    oop cur_overflow_list = _overflow_list;
-    while (true) {
-      last->set_klass_to_list_ptr(cur_overflow_list);
-      oop observed_overflow_list =
-        (oop)Atomic::cmpxchg_ptr(suffix, &_overflow_list, cur_overflow_list);
-      if (observed_overflow_list == cur_overflow_list) break;
-      // Otherwise...
-      cur_overflow_list = observed_overflow_list;
+  } else {
+    assert(cur->klass_or_null() != BUSY, "Error");
+    oop suffix = oop(cur->klass());       // suffix will be put back on global list
+    cur->set_klass_to_list_ptr(NULL);     // break off suffix
+    // It's possible that the list is still in the empty(busy) state
+    // we left it in a short while ago; in that case we may be
+    // able to place back the suffix.
+    oop observed_overflow_list = _overflow_list;
+    oop cur_overflow_list = observed_overflow_list;
+    bool attached = false;
+    while (observed_overflow_list == BUSY || observed_overflow_list == NULL) {
+      observed_overflow_list =
+        (oop) Atomic::cmpxchg_ptr(suffix, &_overflow_list, cur_overflow_list);
+      if (cur_overflow_list == observed_overflow_list) {
+        attached = true;
+        break;
+      } else cur_overflow_list = observed_overflow_list;
+    }
+    if (!attached) {
+      // Too bad, someone else got in in between; we'll need to do a splice.
+      // Find the last item of suffix list
+      oop last = suffix;
+      while (last->klass_or_null() != NULL) {
+        last = oop(last->klass());
+      }
+      // Atomically prepend suffix to current overflow list
+      observed_overflow_list = _overflow_list;
+      do {
+        cur_overflow_list = observed_overflow_list;
+        if (cur_overflow_list != BUSY) {
+          // Do the splice ...
+          last->set_klass_to_list_ptr(cur_overflow_list);
+        } else { // cur_overflow_list == BUSY
+          last->set_klass_to_list_ptr(NULL);
+        }
+        observed_overflow_list =
+          (oop)Atomic::cmpxchg_ptr(suffix, &_overflow_list, cur_overflow_list);
+      } while (cur_overflow_list != observed_overflow_list);
     }
   }
 
   // Push objects on prefix list onto this thread's work queue
-  assert(cur != NULL, "program logic");
+  assert(prefix != NULL && prefix != BUSY, "program logic");
   cur = prefix;
-  int n = 0;
+  ssize_t n = 0;
   while (cur != NULL) {
     oop obj_to_push = cur->forwardee();
     oop next        = oop(cur->klass_or_null());
     cur->set_klass(obj_to_push->klass());
-    if (par_scan_state->should_be_partially_scanned(obj_to_push, cur)) {
-      obj_to_push = cur;
+    // This may be an array object that is self-forwarded. In that case, the list pointer
+    // space, cur, is not in the Java heap, but rather in the C-heap and should be freed.
+    if (!is_in_reserved(cur)) {
+      // This can become a scaling bottleneck when there is work queue overflow coincident
+      // with promotion failure.
+      oopDesc* f = cur;
+      FREE_C_HEAP_ARRAY(oopDesc, f);
+    } else if (par_scan_state->should_be_partially_scanned(obj_to_push, cur)) {
       assert(arrayOop(cur)->length() == 0, "entire array remaining to be scanned");
+      obj_to_push = cur;
     }
-    work_q->push(obj_to_push);
+    bool ok = work_q->push(obj_to_push);
+    assert(ok, "Should have succeeded");
     cur = next;
     n++;
   }
   par_scan_state->note_overflow_refill(n);
+#ifndef PRODUCT
+  assert(_num_par_pushes >= n, "Too many pops?");
+  Atomic::add_ptr(-(intptr_t)n, &_num_par_pushes);
+#endif
   return true;
 }
+#undef BUSY
 
 void ParNewGeneration::ref_processor_init()
 {

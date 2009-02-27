@@ -26,6 +26,7 @@
 package com.sun.tools.javac.util;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -92,12 +93,17 @@ public class Log extends AbstractLog {
     protected DiagnosticListener<? super JavaFileObject> diagListener;
 
     /**
-     * Formatter for diagnostics
+     * Formatter for diagnostics.
      */
     private DiagnosticFormatter<JCDiagnostic> diagFormatter;
 
     /**
-     * JavacMessages object used for localization
+     * Keys for expected diagnostics.
+     */
+    public Set<String> expectDiagKeys;
+
+    /**
+     * JavacMessages object used for localization.
      */
     private JavacMessages messages;
 
@@ -123,9 +129,13 @@ public class Log extends AbstractLog {
         this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(options) :
                                               new BasicDiagnosticFormatter(options, messages);
         @SuppressWarnings("unchecked") // FIXME
-        DiagnosticListener<? super JavaFileObject> diagListener =
+        DiagnosticListener<? super JavaFileObject> dl =
             context.get(DiagnosticListener.class);
-        this.diagListener = diagListener;
+        this.diagListener = dl;
+
+        String ek = options.get("expectKeys");
+        if (ek != null)
+            expectDiagKeys = new HashSet<String>(Arrays.asList(ek.split(", *")));
     }
     // where
         private int getIntOption(Options options, String optionName, int defaultValue) {
@@ -194,6 +204,18 @@ public class Log extends AbstractLog {
      */
     public JavaFileObject currentSourceFile() {
         return source == null ? null : source.getFile();
+    }
+
+    /** Get the current diagnostic formatter.
+     */
+    public DiagnosticFormatter<JCDiagnostic> getDiagnosticFormatter() {
+        return diagFormatter;
+    }
+
+    /** Set the current diagnostic formatter.
+     */
+    public void setDiagnosticFormatter(DiagnosticFormatter<JCDiagnostic> diagFormatter) {
+        this.diagFormatter = diagFormatter;
     }
 
     /** Flush the logs
@@ -291,6 +313,9 @@ public class Log extends AbstractLog {
      * reported so far, the diagnostic may be handed off to writeDiagnostic.
      */
     public void report(JCDiagnostic diagnostic) {
+        if (expectDiagKeys != null)
+            expectDiagKeys.remove(diagnostic.getCode());
+
         switch (diagnostic.getType()) {
         case FRAGMENT:
             throw new IllegalArgumentException();

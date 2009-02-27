@@ -90,7 +90,7 @@ public abstract class InputStream implements Closeable {
      *
      * @param      b   the buffer into which the data is read.
      * @return     the total number of bytes read into the buffer, or
-     *             <code>-1</code> is there is no more data because the end of
+     *             <code>-1</code> if there is no more data because the end of
      *             the stream has been reached.
      * @exception  IOException  If the first byte cannot be read for any reason
      * other than the end of the file, if the input stream has been closed, or
