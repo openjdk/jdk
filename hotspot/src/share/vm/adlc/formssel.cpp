@@ -858,19 +858,7 @@ void InstructForm::build_components() {
         OperandForm* kill = (OperandForm*)_localNames[kill_name];
         globalAD->syntax_err(_linenum, "%s: %s %s must be at the end of the argument list\n",
                              _ident, kill->_ident, kill_name);
-      } else if (e->isa(Component::KILL)) {
-        kill_name = name;
-      }
-
-      // TEMPs are real uses and need to be among the first parameters
-      // listed, otherwise the numbering of operands and inputs gets
-      // screwy, so enforce this restriction during parse.
-      if (kill_name != NULL &&
-          e->isa(Component::TEMP) && !e->isa(Component::DEF)) {
-        OperandForm* kill = (OperandForm*)_localNames[kill_name];
-        globalAD->syntax_err(_linenum, "%s: %s %s must follow %s %s in the argument list\n",
-                             _ident, kill->_ident, kill_name, opForm->_ident, name);
-      } else if (e->isa(Component::KILL)) {
+      } else if (e->isa(Component::KILL) && !e->isa(Component::USE)) {
         kill_name = name;
       }
     }
