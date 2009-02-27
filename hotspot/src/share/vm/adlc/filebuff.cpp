@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 // FILEBUFF.CPP - Routines for handling a parser file buffer
 #include "adlc.hpp"
+
+using namespace std;
 
 //------------------------------FileBuff---------------------------------------
 // Create a new parsing buffer
@@ -217,7 +219,7 @@ static int printline( ostream& os, const char *fname, int line,
     off = expandtab(os,off,*s++,'-','-');
   if( i == len ) os << '^';     // Mark end of region
   os << '\n';                   // End of marked line
-  return 0L;                    // All done
+  return 0;                     // All done
 }
 
 //------------------------------print------------------------------------------
