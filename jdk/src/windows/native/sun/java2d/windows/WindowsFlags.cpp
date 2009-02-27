@@ -23,8 +23,6 @@
  * have any questions.
  */
 
-
-#include <jni.h>
 #include <awt.h>
 #include "Trace.h"
 #include "WindowsFlags.h"

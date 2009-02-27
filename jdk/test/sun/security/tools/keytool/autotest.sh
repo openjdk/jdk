@@ -1,5 +1,5 @@
 #
-# Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2006-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 # @test
 # @summary (almost) all keytool behaviors
 # @author Weijun Wang
+#
+# This test is only executed on several platforms
 #
 # set a few environment variables so that the shell-script can run stand-alone
 # in the source directory
@@ -88,7 +90,7 @@ cp ${NSS}${FS}db${FS}secmod.db .
 chmod u+w key3.db
 chmod u+w cert8.db
 
-echo | ${TESTJAVA}${FS}bin${FS}java -Dfile -Dnss \
+echo | ${TESTJAVA}${FS}bin${FS}java -Dnss \
    -Dnss.lib=${NSS}${FS}lib${FS}${PF}${FS}${LIBNAME} \
    KeyToolTest
 status=$?
@@ -99,8 +101,8 @@ rm -f key3.db
 rm -f secmod.db
 
 rm HumanInputStream*.class
-rm KeyToolTest.class
-rm TestException.class 
+rm KeyToolTest*.class
+rm TestException.class
 
 exit $status
 

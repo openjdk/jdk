@@ -129,11 +129,11 @@ void OptoRuntime::generate_exception_blob() {
   // Get the exception pc in case we are deoptimized
   __ movptr(rdx, Address(rcx, JavaThread::exception_pc_offset()));
 #ifdef ASSERT
-  __ movptr(Address(rcx, JavaThread::exception_handler_pc_offset()), (int32_t)NULL_WORD);
-  __ movptr(Address(rcx, JavaThread::exception_pc_offset()), (int32_t)NULL_WORD);
+  __ movptr(Address(rcx, JavaThread::exception_handler_pc_offset()), NULL_WORD);
+  __ movptr(Address(rcx, JavaThread::exception_pc_offset()), NULL_WORD);
 #endif
   // Clear the exception oop so GC no longer processes it as a root.
-  __ movptr(Address(rcx, JavaThread::exception_oop_offset()), (int32_t)NULL_WORD);
+  __ movptr(Address(rcx, JavaThread::exception_oop_offset()), NULL_WORD);
 
   __ pop(rcx);
 

@@ -338,13 +338,13 @@ public class Main {
                 return EXIT_CMDERR;
             }
 
-            List<File> filenames;
+            List<File> files;
             try {
-                filenames = processArgs(CommandLine.parse(args));
-                if (filenames == null) {
+                files = processArgs(CommandLine.parse(args));
+                if (files == null) {
                     // null signals an error in options, abort
                     return EXIT_CMDERR;
-                } else if (filenames.isEmpty() && fileObjects.isEmpty() && classnames.isEmpty()) {
+                } else if (files.isEmpty() && fileObjects.isEmpty() && classnames.isEmpty()) {
                     // it is allowed to compile nothing if just asking for help or version info
                     if (options.get("-help") != null
                         || options.get("-X") != null
@@ -380,12 +380,14 @@ public class Main {
             comp = JavaCompiler.instance(context);
             if (comp == null) return EXIT_SYSERR;
 
-            if (!filenames.isEmpty()) {
+            Log log = Log.instance(context);
+
+            if (!files.isEmpty()) {
                 // add filenames to fileObjects
                 comp = JavaCompiler.instance(context);
                 List<JavaFileObject> otherFiles = List.nil();
                 JavacFileManager dfm = (JavacFileManager)fileManager;
-                for (JavaFileObject fo : dfm.getJavaFileObjectsFromFiles(filenames))
+                for (JavaFileObject fo : dfm.getJavaFileObjectsFromFiles(files))
                     otherFiles = otherFiles.prepend(fo);
                 for (JavaFileObject fo : otherFiles)
                     fileObjects = fileObjects.prepend(fo);
@@ -394,8 +396,17 @@ public class Main {
                          classnames.toList(),
                          processors);
 
-            if (comp.errorCount() != 0 ||
-                options.get("-Werror") != null && comp.warningCount() != 0)
+            if (log.expectDiagKeys != null) {
+                if (log.expectDiagKeys.size() == 0) {
+                    Log.printLines(log.noticeWriter, "all expected diagnostics found");
+                    return EXIT_OK;
+                } else {
+                    Log.printLines(log.noticeWriter, "expected diagnostic keys not found: " + log.expectDiagKeys);
+                    return EXIT_ERROR;
+                }
+            }
+
+            if (comp.errorCount() != 0)
                 return EXIT_ERROR;
         } catch (IOException ex) {
             ioMessage(ex);

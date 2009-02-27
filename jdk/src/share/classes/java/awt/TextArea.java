@@ -321,7 +321,7 @@ public class TextArea extends TextComponent {
     public synchronized void insertText(String str, int pos) {
         TextAreaPeer peer = (TextAreaPeer)this.peer;
         if (peer != null) {
-            peer.insertText(str, pos);
+            peer.insert(str, pos);
         } else {
             text = text.substring(0, pos) + str + text.substring(pos);
         }
@@ -385,7 +385,7 @@ public class TextArea extends TextComponent {
     public synchronized void replaceText(String str, int start, int end) {
         TextAreaPeer peer = (TextAreaPeer)this.peer;
         if (peer != null) {
-            peer.replaceText(str, start, end);
+            peer.replaceRange(str, start, end);
         } else {
             text = text.substring(0, start) + str + text.substring(end);
         }
@@ -500,7 +500,7 @@ public class TextArea extends TextComponent {
         synchronized (getTreeLock()) {
             TextAreaPeer peer = (TextAreaPeer)this.peer;
             return (peer != null) ?
-                       peer.preferredSize(rows, columns) :
+                       peer.getPreferredSize(rows, columns) :
                        super.preferredSize();
         }
     }
@@ -552,7 +552,7 @@ public class TextArea extends TextComponent {
         synchronized (getTreeLock()) {
             TextAreaPeer peer = (TextAreaPeer)this.peer;
             return (peer != null) ?
-                       peer.minimumSize(rows, columns) :
+                       peer.getMinimumSize(rows, columns) :
                        super.minimumSize();
         }
     }

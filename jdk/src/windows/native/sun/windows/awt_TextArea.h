@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,6 @@ public:
     MsgRouting WmNcHitTest(UINT x, UINT y, LRESULT &retVal);
     MsgRouting HandleEvent(MSG *msg, BOOL synthetic);
 
-    INLINE virtual int GetText(LPTSTR buffer, int size);
-
     INLINE void SetIgnoreEnChange(BOOL b) { m_bIgnoreEnChange = b; }
 
     virtual void SetColor(COLORREF c);
@@ -96,10 +94,6 @@ protected:
     void EditGetSel(CHARRANGE &cr);
     LONG EditGetCharFromPos(POINT& pt);
   private:
-
-    // TRUE if the rich edit version is 2.0
-    static BOOL    sm_RichEdit20;
-
     // RichEdit 1.0 control generates EN_CHANGE notifications not only
     // on text changes, but also on any character formatting change.
     // This flag is true when the latter case is detected.

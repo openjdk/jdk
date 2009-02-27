@@ -709,12 +709,31 @@ public class Types {
         case UNDETVAR:
             if (s.tag == WILDCARD) {
                 UndetVar undetvar = (UndetVar)t;
-                undetvar.inst = glb(upperBound(s), undetvar.inst);
-                // We should check instantiated type against any of the
-                // undetvar's lower bounds.
-                for (Type t2 : undetvar.lobounds) {
-                    if (!isSubtype(t2, undetvar.inst))
-                        return false;
+                WildcardType wt = (WildcardType)s;
+                switch(wt.kind) {
+                    case UNBOUND: //similar to ? extends Object
+                    case EXTENDS: {
+                        Type bound = upperBound(s);
+                        // We should check the new upper bound against any of the
+                        // undetvar's lower bounds.
+                        for (Type t2 : undetvar.lobounds) {
+                            if (!isSubtype(t2, bound))
+                                return false;
+                        }
+                        undetvar.hibounds = undetvar.hibounds.prepend(bound);
+                        break;
+                    }
+                    case SUPER: {
+                        Type bound = lowerBound(s);
+                        // We should check the new lower bound against any of the
+                        // undetvar's lower bounds.
+                        for (Type t2 : undetvar.hibounds) {
+                            if (!isSubtype(bound, t2))
+                                return false;
+                        }
+                        undetvar.lobounds = undetvar.lobounds.prepend(bound);
+                        break;
+                    }
                 }
                 return true;
             } else {
@@ -930,12 +949,16 @@ public class Types {
                 }
 
                 if (t.isCompound()) {
+                    Warner oldWarner = warnStack.head;
+                    warnStack.head = Warner.noWarnings;
                     if (!visit(supertype(t), s))
                         return false;
                     for (Type intf : interfaces(t)) {
                         if (!visit(intf, s))
                             return false;
                     }
+                    if (warnStack.head.unchecked == true)
+                        oldWarner.warnUnchecked();
                     return true;
                 }
 
@@ -2108,9 +2131,6 @@ public class Types {
                                   List<Type> to) {
         if (tvars.isEmpty())
             return tvars;
-        if (tvars.tail.isEmpty())
-            // fast common case
-            return List.<Type>of(substBound((TypeVar)tvars.head, from, to));
         ListBuffer<Type> newBoundsBuf = lb();
         boolean changed = false;
         // calculate new bounds
@@ -2150,8 +2170,14 @@ public class Types {
         Type bound1 = subst(t.bound, from, to);
         if (bound1 == t.bound)
             return t;
-        else
-            return new TypeVar(t.tsym, bound1, syms.botType);
+        else {
+            // create new type variable without bounds
+            TypeVar tv = new TypeVar(t.tsym, null, syms.botType);
+            // the new bound should use the new type variable in place
+            // of the old
+            tv.bound = subst(bound1, List.<Type>of(t), List.<Type>of(tv));
+            return tv;
+        }
     }
     // </editor-fold>
 
@@ -2825,6 +2851,16 @@ public class Types {
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Greatest lower bound">
+    public Type glb(List<Type> ts) {
+        Type t1 = ts.head;
+        for (Type t2 : ts.tail) {
+            if (t1.isErroneous())
+                return t1;
+            t1 = glb(t1, t2);
+        }
+        return t1;
+    }
+    //where
     public Type glb(Type t, Type s) {
         if (s == null)
             return t;

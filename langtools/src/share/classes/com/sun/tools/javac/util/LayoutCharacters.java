@@ -39,9 +39,13 @@ public interface LayoutCharacters {
      */
     final static int TabInc = 8;
 
-    /** Diagnostic standard indentation
+    /** Standard indentation for subdiagnostics
      */
-    final static int DiagInc = 2;
+    final static int DiagInc = 4;
+
+    /** Standard indentation for additional diagnostic lines
+     */
+    final static int DetailsInc = 2;
 
     /** Tabulator character.
      */

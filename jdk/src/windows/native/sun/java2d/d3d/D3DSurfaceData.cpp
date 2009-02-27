@@ -23,8 +23,7 @@
  * have any questions.
  */
 
-#include <jni.h>
-#include <jni_util.h>
+#include "D3DPipeline.h"
 #include <jlong.h>
 #include "D3DSurfaceData.h"
 #include "D3DPipelineManager.h"

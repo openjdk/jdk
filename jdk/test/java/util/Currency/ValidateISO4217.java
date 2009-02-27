@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 4691089 4819436 4942982 5104960 6544471
+ * @bug 4691089 4819436 4942982 5104960 6544471 6627549
  * @summary Validate ISO 4217 data for Currency class.
  */
 
@@ -86,6 +86,8 @@ public class ValidateISO4217 {
         {"JE", "GBP", "826", "2"},      // Jersey
         {"GG", "GBP", "826", "2"},      // Guernsey
         {"IM", "GBP", "826", "2"},      // Isle of Man
+        {"BL", "EUR", "978", "2"},      // Saint Barthelemy
+        {"MF", "EUR", "978", "2"},      // Saint Martin
     };
 
     /* Codes that are obsolete, do not have related country */
