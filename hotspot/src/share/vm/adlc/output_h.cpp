@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1832,7 +1832,7 @@ void ArchDesc::declareClasses(FILE *fp) {
         break;
       case Form::idealP:
       case Form::idealN:
-        fprintf(fp,"    return  opnd_array(1)->type();\n",result);
+        fprintf(fp,"    return  opnd_array(1)->type();\n");
         break;
       case Form::idealD:
         fprintf(fp,"    return  TypeD::make(opnd_array(1)->constantD());\n");

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -920,8 +920,8 @@ public:
   // return 1 if found and position is incremented by operand offset in rule
   bool       find_name(const char *str, int &position) const;
   bool       find_type(const char *str, int &position) const;
-  void       append_components(FormDict &locals, ComponentList &components,
-                               bool def_flag) const;
+  virtual void append_components(FormDict& locals, ComponentList& components,
+                                 bool def_flag = false) const;
   bool       base_operand(uint &position, FormDict &globals,
                          const char * &result, const char * &name,
                          const char * &opType) const;
@@ -947,12 +947,12 @@ public:
   const char *reduce_left (FormDict &globals)  const;
 
   // Recursive version of check in MatchRule
-  int        cisc_spill_match(FormDict &globals, RegisterForm *registers,
-                              MatchNode *mRule2, const char * &operand,
-                              const char * &reg_type);
+  int        cisc_spill_match(FormDict& globals, RegisterForm* registers,
+                              MatchNode* mRule2, const char* &operand,
+                              const char* &reg_type);
   int        cisc_spill_merge(int left_result, int right_result);
 
-  bool       equivalent(FormDict &globals, MatchNode *mNode2);
+  virtual bool equivalent(FormDict& globals, MatchNode* mNode2);
 
   void       count_commutative_op(int& count);
   void       swap_commutative_op(bool atroot, int count);
@@ -979,7 +979,7 @@ public:
   MatchRule(ArchDesc &ad, MatchNode* mroot, int depth, char* construct, int numleaves);
   ~MatchRule();
 
-  void       append_components(FormDict &locals, ComponentList &components) const;
+  virtual void append_components(FormDict& locals, ComponentList& components, bool def_flag = false) const;
   // Recursive call on all operands' match rules in my match rule.
   bool       base_operand(uint &position, FormDict &globals,
                          const char * &result, const char * &name,
@@ -1006,14 +1006,14 @@ public:
   Form::DataType is_ideal_store() const;// node matches ideal 'StoreXNode'
 
   // Check if 'mRule2' is a cisc-spill variant of this MatchRule
-  int        cisc_spill_match(FormDict &globals, RegisterForm *registers,
-                              MatchRule *mRule2, const char * &operand,
-                              const char * &reg_type);
+  int        matchrule_cisc_spill_match(FormDict &globals, RegisterForm* registers,
+                                        MatchRule* mRule2, const char* &operand,
+                                        const char* &reg_type);
 
   // Check if 'mRule2' is equivalent to this MatchRule
-  bool       equivalent(FormDict &globals, MatchRule *mRule2);
+  virtual bool equivalent(FormDict& globals, MatchNode* mRule2);
 
-  void       swap_commutative_op(const char* instr_ident, int count, int& match_rules_cnt);
+  void       matchrule_swap_commutative_op(const char* instr_ident, int count, int& match_rules_cnt);
 
   void dump();
   void output(FILE *fp);
