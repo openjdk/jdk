@@ -48,12 +48,12 @@ public class TestParamTaglet extends JavadocTester {
     private static final String[][] TEST = {
         //Regular param tags.
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<STRONG>Parameters:</STRONG><DD><CODE>param1</CODE> - testing 1 2 3." +
+            "<STRONG>Parameters:</STRONG></DT><DD><CODE>param1</CODE> - testing 1 2 3.</DD>" +
                 "<DD><CODE>param2</CODE> - testing 1 2 3."
         },
         //Param tags that don't match with any real parameters.
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<STRONG>Parameters:</STRONG><DD><CODE><I>p1</I></CODE> - testing 1 2 3." +
+            "<STRONG>Parameters:</STRONG></DT><DD><CODE><I>p1</I></CODE> - testing 1 2 3.</DD>" +
                 "<DD><CODE><I>p2</I></CODE> - testing 1 2 3."
         },
         //{@inherit} doc misuse does not cause doclet to throw exception.
