@@ -25,12 +25,12 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.taglets.*;
+import java.lang.reflect.Modifier;
+import java.util.*;
 
 import com.sun.javadoc.*;
-import java.util.*;
-import java.lang.reflect.Modifier;
+import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.internal.toolkit.taglets.*;
 
 /**
  * The base class for member writers.
@@ -38,6 +38,7 @@ import java.lang.reflect.Modifier;
  * @author Robert Field
  * @author Atul M Dambalkar
  * @author Jamie Ho (Re-write)
+ * @author Bhavesh Patel (Modified)
  */
 public abstract class AbstractMemberWriter {
 
@@ -232,10 +233,26 @@ public abstract class AbstractMemberWriter {
         }
     }
 
+    /**
+     * Print the deprecated output for the given member.
+     *
+     * @param member the member being documented.
+     */
+    protected void printDeprecated(ProgramElementDoc member) {
+        String output = (new DeprecatedTaglet()).getTagletOutput(member,
+            writer.getTagletWriterInstance(false)).toString().trim();
+        if (!output.isEmpty()) {
+            writer.printMemberDetailsListStartTag();
+            writer.print(output);
+        }
+    }
+
     protected void printComment(ProgramElementDoc member) {
         if (member.inlineTags().length > 0) {
+            writer.printMemberDetailsListStartTag();
             writer.dd();
             writer.printInlineComment(member);
+            writer.ddEnd();
         }
     }
 
@@ -264,6 +281,14 @@ public abstract class AbstractMemberWriter {
     protected void printCommentAndTags(ProgramElementDoc member) {
         printComment(member);
         writer.printTags(member);
+    }
+
+    /**
+     * Write the member footer.
+     */
+    protected void printMemberFooter() {
+        writer.printMemberDetailsListEndTag();
+        assert !writer.getMemberDetailsListPrinted();
     }
 
     /**
