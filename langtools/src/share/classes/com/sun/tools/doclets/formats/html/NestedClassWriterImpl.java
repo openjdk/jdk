@@ -25,11 +25,11 @@
 
 package com.sun.tools.doclets.formats.html;
 
+import java.io.*;
+
+import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.javadoc.*;
-
-import java.io.*;
 
 /**
  * Writes nested class documentation in HTML format.
@@ -129,7 +129,6 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
             writer.println("");
         }
         writer.anchor(nestedClass.name());
-        writer.dl();
         writer.h3();
         writer.print(nestedClass.name());
         writer.h3End();
