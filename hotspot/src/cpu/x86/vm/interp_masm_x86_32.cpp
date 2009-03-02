@@ -1512,6 +1512,15 @@ void InterpreterMacroAssembler::notify_method_entry() {
     call_VM_leaf(
       CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry), rcx, rbx);
   }
+
+  // RedefineClasses() tracing support for obsolete method entry
+  if (RC_TRACE_IN_RANGE(0x00001000, 0x00002000)) {
+    get_thread(rcx);
+    get_method(rbx);
+    call_VM_leaf(
+      CAST_FROM_FN_PTR(address, SharedRuntime::rc_trace_method_entry),
+      rcx, rbx);
+  }
 }
 
 

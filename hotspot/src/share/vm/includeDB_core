@@ -2093,6 +2093,7 @@ interp_masm_<arch_model>.cpp            interp_masm_<arch_model>.hpp
 interp_masm_<arch_model>.cpp            interpreterRuntime.hpp
 interp_masm_<arch_model>.cpp            interpreter.hpp
 interp_masm_<arch_model>.cpp            jvmtiExport.hpp
+interp_masm_<arch_model>.cpp            jvmtiRedefineClassesTrace.hpp
 interp_masm_<arch_model>.cpp            jvmtiThreadState.hpp
 interp_masm_<arch_model>.cpp            markOop.hpp
 interp_masm_<arch_model>.cpp            methodDataOop.hpp
@@ -3669,6 +3670,7 @@ sharedRuntime.cpp                       interpreterRuntime.hpp
 sharedRuntime.cpp                       interpreter.hpp
 sharedRuntime.cpp                       javaCalls.hpp
 sharedRuntime.cpp                       jvmtiExport.hpp
+sharedRuntime.cpp                       jvmtiRedefineClassesTrace.hpp
 sharedRuntime.cpp                       nativeInst_<arch>.hpp
 sharedRuntime.cpp                       nativeLookup.hpp
 sharedRuntime.cpp                       oop.inline.hpp
@@ -3698,6 +3700,7 @@ sharedRuntime_<arch_model>.cpp          compiledICHolderOop.hpp
 sharedRuntime_<arch_model>.cpp          debugInfoRec.hpp
 sharedRuntime_<arch_model>.cpp          icBuffer.hpp
 sharedRuntime_<arch_model>.cpp          interpreter.hpp
+sharedRuntime_<arch_model>.cpp          jvmtiRedefineClassesTrace.hpp
 sharedRuntime_<arch_model>.cpp          sharedRuntime.hpp
 sharedRuntime_<arch_model>.cpp          vframeArray.hpp
 sharedRuntime_<arch_model>.cpp          vmreg_<arch>.inline.hpp
