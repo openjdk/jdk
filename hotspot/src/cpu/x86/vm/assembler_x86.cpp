@@ -6463,7 +6463,8 @@ void MacroAssembler::serialize_memory(Register thread, Register tmp) {
   Address index(noreg, tmp, Address::times_1);
   ExternalAddress page(os::get_memory_serialize_page());
 
-  movptr(ArrayAddress(page, index), tmp);
+  // Size of store must match masking code above
+  movl(as_Address(ArrayAddress(page, index)), tmp);
 }
 
 // Calls to C land
