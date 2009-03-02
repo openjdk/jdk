@@ -314,6 +314,7 @@ class JvmtiThreadState : public CHeapObj {
   void update_for_pop_top_frame();
 
   // already holding JvmtiThreadState_lock - retrieve or create JvmtiThreadState
+  // Can return NULL if JavaThread is exiting.
   inline static JvmtiThreadState *state_for_while_locked(JavaThread *thread) {
     assert(JvmtiThreadState_lock->is_locked(), "sanity check");
 
@@ -330,6 +331,7 @@ class JvmtiThreadState : public CHeapObj {
   }
 
   // retrieve or create JvmtiThreadState
+  // Can return NULL if JavaThread is exiting.
   inline static JvmtiThreadState *state_for(JavaThread *thread) {
     JvmtiThreadState *state = thread->jvmti_thread_state();
     if (state == NULL) {
