@@ -25,12 +25,12 @@
 
 package com.sun.tools.doclets.formats.html;
 
+import java.io.*;
+import java.util.*;
+
+import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.taglets.*;
-import com.sun.javadoc.*;
-import java.util.*;
-import java.io.*;
 
 /**
  * Writes constructor documentation.
@@ -149,7 +149,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         writeParameters(constructor);
         writeExceptions(constructor);
         writer.preEnd();
-        writer.dl();
+        assert !writer.getMemberDetailsListPrinted();
     }
 
     /**
@@ -158,12 +158,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      * @param constructor the constructor being documented.
      */
     public void writeDeprecated(ConstructorDoc constructor) {
-        String output = ((TagletOutputImpl)
-            (new DeprecatedTaglet()).getTagletOutput(constructor,
-            writer.getTagletWriterInstance(false))).toString();
-        if (output != null && output.trim().length() > 0) {
-            writer.print(output);
-        }
+        printDeprecated(constructor);
     }
 
     /**
@@ -172,10 +167,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      * @param constructor the constructor being documented.
      */
     public void writeComments(ConstructorDoc constructor) {
-        if (constructor.inlineTags().length > 0) {
-            writer.dd();
-            writer.printInlineComment(constructor);
-        }
+        printComment(constructor);
     }
 
     /**
@@ -191,7 +183,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      * Write the constructor footer.
      */
     public void writeConstructorFooter() {
-        writer.dlEnd();
+        printMemberFooter();
     }
 
     /**
