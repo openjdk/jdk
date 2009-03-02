@@ -1322,15 +1322,18 @@ JvmtiEnvBase::force_early_return(JavaThread* java_thread, jvalue value, TosState
   HandleMark   hm(current_thread);
   uint32_t debug_bits = 0;
 
+  // retrieve or create the state
+  JvmtiThreadState* state = JvmtiThreadState::state_for(java_thread);
+  if (state == NULL) {
+    return JVMTI_ERROR_THREAD_NOT_ALIVE;
+  }
+
   // Check if java_thread is fully suspended
   if (!is_thread_fully_suspended(java_thread,
                                  true /* wait for suspend completion */,
                                  &debug_bits)) {
     return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
   }
-
-  // retreive or create the state
-  JvmtiThreadState* state = JvmtiThreadState::state_for(java_thread);
 
   // Check to see if a ForceEarlyReturn was already in progress
   if (state->is_earlyret_pending()) {
