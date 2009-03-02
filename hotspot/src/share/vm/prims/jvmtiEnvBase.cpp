@@ -94,6 +94,35 @@ JvmtiEnvBase::initialize() {
 }
 
 
+bool
+JvmtiEnvBase::is_valid() {
+  jint value = 0;
+
+  // This object might not be a JvmtiEnvBase so we can't assume
+  // the _magic field is properly aligned. Get the value in a safe
+  // way and then check against JVMTI_MAGIC.
+
+  switch (sizeof(_magic)) {
+  case 2:
+    value = Bytes::get_native_u2((address)&_magic);
+    break;
+
+  case 4:
+    value = Bytes::get_native_u4((address)&_magic);
+    break;
+
+  case 8:
+    value = Bytes::get_native_u8((address)&_magic);
+    break;
+
+  default:
+    guarantee(false, "_magic field is an unexpected size");
+  }
+
+  return value == JVMTI_MAGIC;
+}
+
+
 JvmtiEnvBase::JvmtiEnvBase() : _env_event_enable() {
   _env_local_storage = NULL;
   _tag_map = NULL;
