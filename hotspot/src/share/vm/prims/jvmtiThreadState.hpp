@@ -319,6 +319,11 @@ class JvmtiThreadState : public CHeapObj {
 
     JvmtiThreadState *state = thread->jvmti_thread_state();
     if (state == NULL) {
+      if (thread->is_exiting()) {
+        // don't add a JvmtiThreadState to a thread that is exiting
+        return NULL;
+      }
+
       state = new JvmtiThreadState(thread);
     }
     return state;
