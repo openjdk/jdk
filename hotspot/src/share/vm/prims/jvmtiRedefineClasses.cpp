@@ -831,6 +831,9 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
   ResourceMark rm(THREAD);
 
   JvmtiThreadState *state = JvmtiThreadState::state_for(JavaThread::current());
+  // state can only be NULL if the current thread is exiting which
+  // should not happen since we're trying to do a RedefineClasses
+  guarantee(state != NULL, "exiting thread calling load_new_class_versions");
   for (int i = 0; i < _class_count; i++) {
     oop mirror = JNIHandles::resolve_non_null(_class_defs[i].klass);
     // classes for primitives cannot be redefined
