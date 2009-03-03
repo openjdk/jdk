@@ -183,8 +183,8 @@
                     <MethodHeader/>
                     <SerializableMethods>
                         <MethodSubHeader/>
+                        <DeprecatedMethodInfo/>
                         <MethodInfo>
-                            <DeprecatedMethodInfo/>
                             <MethodDescription/>
                             <MethodTags/>
                         </MethodInfo>
@@ -193,6 +193,7 @@
                     <FieldHeader/>
                     <SerializableFields>
                         <FieldSubHeader/>
+                        <FieldDeprecationInfo/>
                         <FieldInfo/>
                         <FieldFooter/>
                     </SerializableFields>                  

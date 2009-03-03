@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,54 +23,23 @@
  * have any questions.
  */
 
-package com.sun.tools.doclets.formats.html;
+package javax.lang.model.element;
 
-import com.sun.tools.doclets.internal.toolkit.taglets.*;
+import java.util.List;
 
 /**
- * The output for HTML taglets.
+ * A mixin interface for an element that has type parameters.
  *
- * @since 1.5
- * @author Jamie Ho
+ * @author Joseph D. Darcy
+ * @since 1.7
  */
-
-public class TagletOutputImpl implements TagletOutput {
-
-    private StringBuffer output;
-
-    public TagletOutputImpl(String o) {
-        setOutput(o);
-    }
-
+public interface Parameterizable extends Element {
     /**
-     * {@inheritDoc}
+     * Returns the formal type parameters of the type element in
+     * declaration order.
+     *
+     * @return the formal type parameters, or an empty list
+     * if there are none
      */
-    public void setOutput (Object o) {
-        output = new StringBuffer(o == null ? "" : (String) o);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void appendOutput(TagletOutput o) {
-        output.append(o.toString());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean hasInheritDocTag() {
-        return output.indexOf(InheritDocTaglet.INHERIT_DOC_INLINE_TAG) != -1;
-    }
-
-    public String toString() {
-        return output.toString();
-    }
-
-    /**
-     * Check whether the taglet output is empty.
-     */
-    public boolean isEmpty() {
-        return (toString().trim().isEmpty());
-    }
+    List<? extends TypeParameterElement> getTypeParameters();
 }
