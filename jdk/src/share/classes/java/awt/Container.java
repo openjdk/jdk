@@ -506,7 +506,9 @@ public class Container extends Component {
             adjustDescendants(-(comp.countHierarchyMembers()));
 
             comp.parent = null;
-            comp.setGraphicsConfiguration(null);
+            if (needRemoveNotify) {
+                comp.setGraphicsConfiguration(null);
+            }
             component.remove(index);
 
             invalidateIfValid();
