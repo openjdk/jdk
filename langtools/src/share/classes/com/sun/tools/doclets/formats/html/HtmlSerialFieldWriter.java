@@ -164,4 +164,20 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     public void writeMemberFooter(FieldDoc member) {
         writer.dlEnd();
     }
+
+    /**
+     * Check to see if member details should be printed. If
+     * nocomment option set or if there is no text to be printed
+     * for deprecation info, inline comment, no serial tag or inline tags,
+     * do not print member details.
+     */
+    public boolean shouldPrintMemberDetails(FieldDoc field) {
+        if (!configuration().nocomment)
+            if((field.inlineTags().length > 0) ||
+                (field.tags("serial").length > 0) || (writer.hasTagsToPrint(field)))
+                return true;
+        if (!Util.isDeprecated(field))
+            return true;
+        return false;
+    }
 }

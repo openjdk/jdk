@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package javax.lang.model.element;
 
-
 /**
  * Represents a package program element.  Provides access to information
  * about the package and its members.
@@ -36,8 +35,7 @@ package javax.lang.model.element;
  * @see javax.lang.model.util.Elements#getPackageOf
  * @since 1.6
  */
-
-public interface PackageElement extends Element {
+public interface PackageElement extends Element, QualifiedNameable {
 
     /**
      * Returns the fully qualified name of this package.

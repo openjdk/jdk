@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,54 +23,19 @@
  * have any questions.
  */
 
-package com.sun.tools.doclets.formats.html;
-
-import com.sun.tools.doclets.internal.toolkit.taglets.*;
+package javax.lang.model.element;
 
 /**
- * The output for HTML taglets.
+ * A mixin interface for an element that has a qualified name.
  *
- * @since 1.5
- * @author Jamie Ho
+ * @author Joseph D. Darcy
+ * @since 1.7
  */
-
-public class TagletOutputImpl implements TagletOutput {
-
-    private StringBuffer output;
-
-    public TagletOutputImpl(String o) {
-        setOutput(o);
-    }
-
+public interface QualifiedNameable extends Element {
     /**
-     * {@inheritDoc}
+     * Returns the fully qualified name of an element.
+     *
+     * @return the fully qualified name of an element
      */
-    public void setOutput (Object o) {
-        output = new StringBuffer(o == null ? "" : (String) o);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void appendOutput(TagletOutput o) {
-        output.append(o.toString());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean hasInheritDocTag() {
-        return output.indexOf(InheritDocTaglet.INHERIT_DOC_INLINE_TAG) != -1;
-    }
-
-    public String toString() {
-        return output.toString();
-    }
-
-    /**
-     * Check whether the taglet output is empty.
-     */
-    public boolean isEmpty() {
-        return (toString().trim().isEmpty());
-    }
+    Name getQualifiedName();
 }
