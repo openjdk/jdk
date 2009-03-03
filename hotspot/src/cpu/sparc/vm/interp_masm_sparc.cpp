@@ -2465,7 +2465,7 @@ void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
 //   InterpreterRuntime::post_method_entry();
 // }
 // if (DTraceMethodProbes) {
-//   SharedRuntime::dtrace_method_entry(method, reciever);
+//   SharedRuntime::dtrace_method_entry(method, receiver);
 // }
 
 void InterpreterMacroAssembler::notify_method_entry() {

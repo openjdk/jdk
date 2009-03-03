@@ -2513,7 +2513,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
     }
     save_marks();
 
-    // We must do this before any possible evacuation that should propogate
+    // We must do this before any possible evacuation that should propagate
     // marks, including evacuation of popular objects in a popular pause.
     if (mark_in_progress()) {
       double start_time_sec = os::elapsedTime();

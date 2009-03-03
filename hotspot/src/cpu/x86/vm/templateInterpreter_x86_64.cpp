@@ -826,7 +826,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   __ subptr(rsp, t);
   __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
-  __ andptr(rsp, -16); // must be 16 byte boundry (see amd64 ABI)
+  __ andptr(rsp, -16); // must be 16 byte boundary (see amd64 ABI)
 
   // get signature handler
   {

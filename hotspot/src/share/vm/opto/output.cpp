@@ -1171,7 +1171,7 @@ void Compile::Fill_buffer() {
         cb->flush_bundle(false);
 
       // The following logic is duplicated in the code ifdeffed for
-      // ENABLE_ZAP_DEAD_LOCALS which apppears above in this file.  It
+      // ENABLE_ZAP_DEAD_LOCALS which appears above in this file.  It
       // should be factored out.  Or maybe dispersed to the nodes?
 
       // Special handling for SafePoint/Call Nodes
@@ -1275,7 +1275,7 @@ void Compile::Fill_buffer() {
         }
 
 #ifdef ASSERT
-        // Check that oop-store preceeds the card-mark
+        // Check that oop-store precedes the card-mark
         else if( mach->ideal_Opcode() == Op_StoreCM ) {
           uint storeCM_idx = j;
           Node *oop_store = mach->in(mach->_cnt);  // First precedence edge
@@ -1291,7 +1291,7 @@ void Compile::Fill_buffer() {
 #endif
 
         else if( !n->is_Proj() ) {
-          // Remember the begining of the previous instruction, in case
+          // Remember the beginning of the previous instruction, in case
           // it's followed by a flag-kill and a null-check.  Happens on
           // Intel all the time, with add-to-memory kind of opcodes.
           previous_offset = current_offset;
@@ -1567,7 +1567,7 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
 
   compile.set_node_bundling_limit(_node_bundling_limit);
 
-  // This one is persistant within the Compile class
+  // This one is persistent within the Compile class
   _node_bundling_base = NEW_ARENA_ARRAY(compile.comp_arena(), Bundle, node_max);
 
   // Allocate space for fixed-size arrays
@@ -1666,7 +1666,7 @@ void Compile::ScheduleAndBundle() {
 // Compute the latency of all the instructions.  This is fairly simple,
 // because we already have a legal ordering.  Walk over the instructions
 // from first to last, and compute the latency of the instruction based
-// on the latency of the preceeding instruction(s).
+// on the latency of the preceding instruction(s).
 void Scheduling::ComputeLocalLatenciesForward(const Block *bb) {
 #ifndef PRODUCT
   if (_cfg->C->trace_opto_output())
@@ -1931,7 +1931,7 @@ void Scheduling::AddNodeToBundle(Node *n, const Block *bb) {
     uint siz = _available.size();
 
     // Conditional branches can support an instruction that
-    // is unconditionally executed and not dependant by the
+    // is unconditionally executed and not dependent by the
     // branch, OR a conditionally executed instruction if
     // the branch is taken.  In practice, this means that
     // the first instruction at the branch target is
@@ -1947,7 +1947,7 @@ void Scheduling::AddNodeToBundle(Node *n, const Block *bb) {
 #endif
 
       // At least 1 instruction is on the available list
-      // that is not dependant on the branch
+      // that is not dependent on the branch
       for (uint i = 0; i < siz; i++) {
         Node *d = _available[i];
         const Pipeline *avail_pipeline = d->pipeline();

@@ -100,12 +100,12 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, 
   while (prev != result) {
     prev = result;
     if (result == start_mem)
-      break;  // hit one of our sentinals
+      break;  // hit one of our sentinels
     // skip over a call which does not affect this memory slice
     if (result->is_Proj() && result->as_Proj()->_con == TypeFunc::Memory) {
       Node *proj_in = result->in(0);
       if (proj_in->is_Allocate() && proj_in->_idx == instance_id) {
-        break;  // hit one of our sentinals
+        break;  // hit one of our sentinels
       } else if (proj_in->is_Call()) {
         CallNode *call = proj_in->as_Call();
         if (!call->may_modify(t_adr, phase)) {
@@ -198,7 +198,7 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
     // If not, we can update the input infinitely along a MergeMem cycle
     // Equivalent code in PhiNode::Ideal
     Node* m  = phase->transform(mmem);
-    // If tranformed to a MergeMem, get the desired slice
+    // If transformed to a MergeMem, get the desired slice
     // Otherwise the returned node represents memory for every slice
     mem = (m->is_MergeMem())? m->as_MergeMem()->memory_at(alias_idx) : m;
     // Update input if it is progress over what we have now
@@ -970,7 +970,7 @@ Node *LoadNode::Identity( PhaseTransform *phase ) {
   }
 
   // Search for an existing data phi which was generated before for the same
-  // instance's field to avoid infinite genertion of phis in a loop.
+  // instance's field to avoid infinite generation of phis in a loop.
   Node *region = mem->in(0);
   if (is_instance_field_load_with_local_phi(region)) {
     const TypePtr *addr_t = in(MemNode::Address)->bottom_type()->isa_ptr();
@@ -1254,7 +1254,7 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
       // (This tweaking with igvn only works because x is a new node.)
       igvn->set_type(x, t);
       // If x is a TypeNode, capture any more-precise type permanently into Node
-      // othewise it will be not updated during igvn->transform since
+      // otherwise it will be not updated during igvn->transform since
       // igvn->type(x) is set to x->Value() already.
       x->raise_bottom_type(t);
       Node *y = x->Identity(igvn);
@@ -2591,7 +2591,7 @@ Node *MemBarNode::match( const ProjNode *proj, const Matcher *m ) {
 // capturing of nearby memory operations.
 //
 // During macro-expansion, all captured initializations which store
-// constant values of 32 bits or smaller are coalesced (if advantagous)
+// constant values of 32 bits or smaller are coalesced (if advantageous)
 // into larger 'tiles' 32 or 64 bits.  This allows an object to be
 // initialized in fewer memory operations.  Memory words which are
 // covered by neither tiles nor non-constant stores are pre-zeroed
@@ -3678,7 +3678,7 @@ Node *MergeMemNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     else if (old_mmem != NULL) {
       new_mem = old_mmem->memory_at(i);
     }
-    // else preceeding memory was not a MergeMem
+    // else preceding memory was not a MergeMem
 
     // replace equivalent phis (unfortunately, they do not GVN together)
     if (new_mem != NULL && new_mem != new_base &&

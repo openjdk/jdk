@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,7 +370,7 @@ bool FormDict::operator ==(const FormDict &d) const {
 }
 
 // Print out the dictionary contents as key-value pairs
-static void dumpkey (const void* key)  { fprintf(stdout, "%s", key); }
+static void dumpkey (const void* key)  { fprintf(stdout, "%s", (char*) key); }
 static void dumpform(const void* form) { fflush(stdout); ((Form*)form)->dump(); }
 
 void FormDict::dump() {
