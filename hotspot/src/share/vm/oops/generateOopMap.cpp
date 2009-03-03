@@ -2003,7 +2003,7 @@ void GenerateOopMap::print_time() {
 //  ============ Main Entry Point ===========
 //
 GenerateOopMap::GenerateOopMap(methodHandle method) {
-  // We have to initialize all variables here, that can be queried direcly
+  // We have to initialize all variables here, that can be queried directly
   _method = method;
   _max_locals=0;
   _init_vars = NULL;

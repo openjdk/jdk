@@ -22,7 +22,7 @@
  *
  */
 
-// This file contains the platform-independant parts
+// This file contains the platform-independent parts
 // of the abstract interpreter and the abstract interpreter generator.
 
 // Organization of the interpreter(s). There exists two different interpreters in hotpot

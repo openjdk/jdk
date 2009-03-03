@@ -292,7 +292,7 @@ class GenerateOopMap VALUE_OBJ_CLASS_SPEC {
   int          _max_stack;                  // Cached value of max. stack depth
   int          _max_monitors;               // Cached value of max. monitor stack depth
   int          _has_exceptions;             // True, if exceptions exist for method
-  bool         _got_error;                  // True, if an error occured during interpretation.
+  bool         _got_error;                  // True, if an error occurred during interpretation.
   Handle       _exception;                  // Exception if got_error is true.
   bool         _did_rewriting;              // was bytecodes rewritten
   bool         _did_relocation;             // was relocation neccessary
@@ -422,7 +422,7 @@ class GenerateOopMap VALUE_OBJ_CLASS_SPEC {
   void  add_to_ref_init_set                 (int localNo);
 
   // Conflicts rewrite logic
-  bool      _conflict;                      // True, if a conflict occured during interpretation
+  bool      _conflict;                      // True, if a conflict occurred during interpretation
   int       _nof_refval_conflicts;          // No. of conflicts that require rewrites
   int *     _new_var_map;
 

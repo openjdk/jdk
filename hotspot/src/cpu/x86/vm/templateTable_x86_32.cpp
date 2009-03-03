@@ -1586,7 +1586,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // Handle all the JSR stuff here, then exit.
   // It's much shorter and cleaner than intermingling with the
-  // non-JSR normal-branch stuff occuring below.
+  // non-JSR normal-branch stuff occurring below.
   if (is_jsr) {
     // Pre-load the next target bytecode into EBX
     __ load_unsigned_byte(rbx, Address(rsi, rdx, Address::times_1, 0));

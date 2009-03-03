@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -457,10 +457,10 @@ public:
 
   // Access info about instructions in the peep-match rule
   int   max_position();
-  const char *instruction_name(intptr_t position);
+  const char *instruction_name(int position);
   // Iterate through all info on matched instructions
   void  reset();
-  void  next_instruction( intptr_t &parent, intptr_t &position, const char * &name, intptr_t &input );
+  void  next_instruction(int &parent, int &position, const char* &name, int &input);
   // 'true' if current position in iteration is a placeholder, not matched.
   bool  is_placeholder();
 
@@ -474,20 +474,20 @@ private:
   PeepConstraint *_next;           // Additional constraints ANDed together
 
 public:
-  const intptr_t  _left_inst;
-  const char      *_left_op;
-  const char      *_relation;
-  const intptr_t  _right_inst;
-  const char      *_right_op;
+  const int   _left_inst;
+  const char* _left_op;
+  const char* _relation;
+  const int   _right_inst;
+  const char* _right_op;
 
 public:
   // Public Methods
-  PeepConstraint(intptr_t  left_inst,  char *left_op, char *relation,
-                 intptr_t  right_inst, char *right_op);
+  PeepConstraint(int left_inst,  char* left_op, char* relation,
+                 int right_inst, char* right_op);
   ~PeepConstraint();
 
   // Check if constraints use instruction at position
-  bool constrains_instruction(intptr_t position);
+  bool constrains_instruction(int position);
 
   // Add another constraint
   void append(PeepConstraint *next_peep_constraint);
@@ -519,7 +519,7 @@ public:
   // Access contents of peepreplace
   void  reset();
   void  next_instruction(const char * &root);
-  void  next_operand( intptr_t &inst_num, const char * &inst_operand );
+  void  next_operand(int &inst_num, const char * &inst_operand );
 
   // Utilities
   void dump();
