@@ -296,7 +296,7 @@ void TemplateTable::bipush() {
 
 void TemplateTable::sipush() {
   transition(vtos, itos);
-  __ load_unsigned_word(rax, at_bcp(1));
+  __ load_unsigned_short(rax, at_bcp(1));
   __ bswapl(rax);
   __ sarl(rax, 16);
 }
@@ -662,7 +662,7 @@ void TemplateTable::caload() {
   index_check(rdx, rax);  // kills rbx,
   // rax,: index
   // can do better code for P5 - may want to improve this at some point
-  __ load_unsigned_word(rbx, Address(rdx, rax, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
+  __ load_unsigned_short(rbx, Address(rdx, rax, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
   __ mov(rax, rbx);
 }
 
@@ -677,7 +677,7 @@ void TemplateTable::fast_icaload() {
   // rdx: array
   index_check(rdx, rax);
   // rax,: index
-  __ load_unsigned_word(rbx, Address(rdx, rax, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
+  __ load_unsigned_short(rbx, Address(rdx, rax, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
   __ mov(rax, rbx);
 }
 
@@ -687,7 +687,7 @@ void TemplateTable::saload() {
   index_check(rdx, rax);  // kills rbx,
   // rax,: index
   // can do better code for P5 - may want to improve this at some point
-  __ load_signed_word(rbx, Address(rdx, rax, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_SHORT)));
+  __ load_signed_short(rbx, Address(rdx, rax, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_SHORT)));
   __ mov(rax, rbx);
 }
 
@@ -2310,7 +2310,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   __ cmpl(flags, ctos );
   __ jcc(Assembler::notEqual, notChar);
 
-  __ load_unsigned_word(rax, lo );
+  __ load_unsigned_short(rax, lo );
   __ push(ctos);
   if (!is_static) {
     patch_bytecode(Bytecodes::_fast_cgetfield, rcx, rbx);
@@ -2322,7 +2322,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   __ cmpl(flags, stos );
   __ jcc(Assembler::notEqual, notShort);
 
-  __ load_signed_word(rax, lo );
+  __ load_signed_short(rax, lo );
   __ push(stos);
   if (!is_static) {
     patch_bytecode(Bytecodes::_fast_sgetfield, rcx, rbx);
@@ -2830,8 +2830,8 @@ void TemplateTable::fast_accessfield(TosState state) {
   // access field
   switch (bytecode()) {
     case Bytecodes::_fast_bgetfield: __ movsbl(rax, lo );                 break;
-    case Bytecodes::_fast_sgetfield: __ load_signed_word(rax, lo );       break;
-    case Bytecodes::_fast_cgetfield: __ load_unsigned_word(rax, lo );     break;
+    case Bytecodes::_fast_sgetfield: __ load_signed_short(rax, lo );      break;
+    case Bytecodes::_fast_cgetfield: __ load_unsigned_short(rax, lo );    break;
     case Bytecodes::_fast_igetfield: __ movl(rax, lo);                    break;
     case Bytecodes::_fast_lgetfield: __ stop("should not be rewritten");  break;
     case Bytecodes::_fast_fgetfield: __ fld_s(lo);                        break;
