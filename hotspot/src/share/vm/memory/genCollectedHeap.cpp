@@ -610,6 +610,10 @@ void GenCollectedHeap::do_collection(bool  full,
     Universe::print_heap_after_gc();
   }
 
+#ifdef TRACESPINNING
+  ParallelTaskTerminator::print_termination_counts();
+#endif
+
   if (ExitAfterGCNum > 0 && total_collections() == ExitAfterGCNum) {
     tty->print_cr("Stopping after GC #%d", ExitAfterGCNum);
     vm_exit(-1);
@@ -908,6 +912,13 @@ void GenCollectedHeap::object_iterate(ObjectClosure* cl) {
     _gens[i]->object_iterate(cl);
   }
   perm_gen()->object_iterate(cl);
+}
+
+void GenCollectedHeap::safe_object_iterate(ObjectClosure* cl) {
+  for (int i = 0; i < _n_gens; i++) {
+    _gens[i]->safe_object_iterate(cl);
+  }
+  perm_gen()->safe_object_iterate(cl);
 }
 
 void GenCollectedHeap::object_iterate_since_last_GC(ObjectClosure* cl) {

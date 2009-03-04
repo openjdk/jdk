@@ -123,6 +123,10 @@ CodeBuffer::~CodeBuffer() {
     // addresses constructed before expansions will not be confused.
     cb->free_blob();
   }
+
+  // free any overflow storage
+  delete _overflow_arena;
+
 #ifdef ASSERT
   Copy::fill_to_bytes(this, sizeof(*this), badResourceValue);
 #endif

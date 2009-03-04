@@ -1534,13 +1534,23 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
             }
             XToolkit.awtLock();
             try {
-                XlibWrapper.SetRectangularShape(
-                        XToolkit.getDisplay(),
-                        getWindow(),
-                        shape.getLoX(), shape.getLoY(),
-                        shape.getHiX(), shape.getHiY(),
-                        (shape.isRectangular() ? null : shape)
-                        );
+                if (shape != null) {
+                    XlibWrapper.SetRectangularShape(
+                            XToolkit.getDisplay(),
+                            getWindow(),
+                            shape.getLoX(), shape.getLoY(),
+                            shape.getHiX(), shape.getHiY(),
+                            (shape.isRectangular() ? null : shape)
+                            );
+                } else {
+                    XlibWrapper.SetRectangularShape(
+                            XToolkit.getDisplay(),
+                            getWindow(),
+                            0, 0,
+                            0, 0,
+                            null
+                            );
+                }
             } finally {
                 XToolkit.awtUnlock();
             }

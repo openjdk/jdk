@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,20 +55,20 @@ class MembershipRegistry {
             List<MembershipKeyImpl> keys = groups.get(group);
             if (keys != null) {
                 for (MembershipKeyImpl key: keys) {
-                    if (key.getNetworkInterface().equals(interf)) {
+                    if (key.networkInterface().equals(interf)) {
                         // already a member to receive all packets so return
                         // existing key or detect conflict
                         if (source == null) {
-                            if (key.getSourceAddress() == null)
+                            if (key.sourceAddress() == null)
                                 return key;
                             throw new IllegalStateException("Already a member to receive all packets");
                         }
 
                         // already have source-specific membership so return key
                         // or detect conflict
-                        if (key.getSourceAddress() == null)
+                        if (key.sourceAddress() == null)
                             throw new IllegalStateException("Already have source-specific membership");
-                        if (source.equals(key.getSourceAddress()))
+                        if (source.equals(key.sourceAddress()))
                             return key;
                     }
                 }
@@ -81,7 +81,7 @@ class MembershipRegistry {
      * Add membership to the registry, returning a new membership key.
      */
     void add(MembershipKeyImpl key) {
-        InetAddress group = key.getGroup();
+        InetAddress group = key.group();
         List<MembershipKeyImpl> keys;
         if (groups == null) {
             groups = new HashMap<InetAddress,List<MembershipKeyImpl>>();
@@ -100,7 +100,7 @@ class MembershipRegistry {
      * Remove a key from the registry
      */
     void remove(MembershipKeyImpl key) {
-        InetAddress group = key.getGroup();
+        InetAddress group = key.group();
         List<MembershipKeyImpl> keys = groups.get(group);
         if (keys != null) {
             Iterator<MembershipKeyImpl> i = keys.iterator();
@@ -120,9 +120,11 @@ class MembershipRegistry {
      * Invalidate all keys in the registry
      */
     void invalidateAll() {
-        for (InetAddress group: groups.keySet()) {
-            for (MembershipKeyImpl key: groups.get(group)) {
-                key.invalidate();
+        if (groups != null) {
+            for (InetAddress group: groups.keySet()) {
+                for (MembershipKeyImpl key: groups.get(group)) {
+                    key.invalidate();
+                }
             }
         }
     }

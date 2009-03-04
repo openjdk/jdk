@@ -36,56 +36,10 @@
 #define TRAY_ICON_X_HOTSPOT 0
 #define TRAY_ICON_Y_HOTSPOT 0
 
-#define TRAY_ICON_TOOLTIP_MAX_SIZE (IS_WIN2000 ? 128 : 64)
+#define TRAY_ICON_TOOLTIP_MAX_SIZE 128
 
 #define TRAY_ICON_BALLOON_TITLE_MAX_SIZE 64
 #define TRAY_ICON_BALLOON_INFO_MAX_SIZE  256
-
-// **********************************************************************
-// The following definitions are duplicates for those from the shellapi.h
-// **********************************************************************
-
-#define AWT_NOTIFYICON_VERSION 3
-
-#define AWT_NIM_SETVERSION  0x00000004
-
-#define AWT_NIN_SELECT          (WM_USER + 0)
-#define AWT_NINF_KEY            0x1
-#define AWT_NIN_KEYSELECT       (AWT_NIN_SELECT | AWT_NINF_KEY)
-#define AWT_NIN_BALLOONSHOW     (WM_USER + 2)
-#define AWT_NIN_BALLOONHIDE     (WM_USER + 3)
-#define AWT_NIN_BALLOONTIMEOUT  (WM_USER + 4)
-#define AWT_NIN_BALLOONUSERCLICK (WM_USER + 5)
-
-#define AWT_NIIF_NONE       0x00000000
-#define AWT_NIIF_INFO       0x00000001
-#define AWT_NIIF_WARNING    0x00000002
-#define AWT_NIIF_ERROR      0x00000003
-
-#define AWT_NIF_INFO        0x00000010
-
-typedef struct _AWT_NOTIFYICONDATA {
-    DWORD cbSize;
-    HWND hWnd;
-    UINT uID;
-    UINT uFlags;
-    UINT uCallbackMessage;
-    HICON hIcon;
-    TCHAR szTip[128];
-
-    DWORD dwState;        // _WIN32_IE >= 0x0500
-    DWORD dwStateMask;
-    TCHAR szInfo[256];
-    union {
-        UINT  uTimeout;
-        UINT  uVersion;
-    } DUMMYUNIONNAME;
-    TCHAR szInfoTitle[64];
-    DWORD dwInfoFlags;
-
-    GUID guidItem;        // _WIN32_IE >= 0x600
-} AWT_NOTIFYICONDATA, *PAWT_NOTIFYICONDATA;
-
 
 /************************************************************************
  * AwtTrayIcon class
@@ -174,7 +128,7 @@ public:
     static int sm_instCount;
 
 private:
-    AWT_NOTIFYICONDATA m_nid;
+    NOTIFYICONDATA m_nid;
 
     /* A bitmask keeps the button's numbers as MK_LBUTTON, MK_MBUTTON, MK_RBUTTON
      * which are allowed to

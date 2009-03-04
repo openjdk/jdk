@@ -83,7 +83,7 @@ public class DocletInvoker {
         cpString = appendPath(docletPath, cpString);
         URL[] urls = pathToURLs(cpString);
         if (docletParentClassLoader == null)
-            appClassLoader = new URLClassLoader(urls);
+            appClassLoader = new URLClassLoader(urls, getDelegationClassLoader(docletClassName));
         else
             appClassLoader = new URLClassLoader(urls, docletParentClassLoader);
 
@@ -96,6 +96,57 @@ public class DocletInvoker {
             messager.exit();
         }
         docletClass = dc;
+    }
+
+    /*
+     * Returns the delegation class loader to use when creating
+     * appClassLoader (used to load the doclet).  The context class
+     * loader is the best choice, but legacy behavior was to use the
+     * default delegation class loader (aka system class loader).
+     *
+     * Here we favor using the context class loader.  To ensure
+     * compatibility with existing apps, we revert to legacy
+     * behavior if either or both of the following conditions hold:
+     *
+     * 1) the doclet is loadable from the system class loader but not
+     *    from the context class loader,
+     *
+     * 2) this.getClass() is loadable from the system class loader but not
+     *    from the context class loader.
+     */
+    private ClassLoader getDelegationClassLoader(String docletClassName) {
+        ClassLoader ctxCL = Thread.currentThread().getContextClassLoader();
+        ClassLoader sysCL = ClassLoader.getSystemClassLoader();
+        if (sysCL == null)
+            return ctxCL;
+        if (ctxCL == null)
+            return sysCL;
+
+        // Condition 1.
+        try {
+            sysCL.loadClass(docletClassName);
+            try {
+                ctxCL.loadClass(docletClassName);
+            } catch (ClassNotFoundException e) {
+                return sysCL;
+            }
+        } catch (ClassNotFoundException e) {
+        }
+
+        // Condition 2.
+        try {
+            if (getClass() == sysCL.loadClass(getClass().getName())) {
+                try {
+                    if (getClass() != ctxCL.loadClass(getClass().getName()))
+                        return sysCL;
+                } catch (ClassNotFoundException e) {
+                    return sysCL;
+                }
+            }
+        } catch (ClassNotFoundException e) {
+        }
+
+        return ctxCL;
     }
 
     /**
@@ -231,6 +282,8 @@ public class DocletInvoker {
                                docletClassName, methodName);
                 throw new DocletInvokeException();
             }
+            ClassLoader savedCCL =
+                Thread.currentThread().getContextClassLoader();
             try {
                 Thread.currentThread().setContextClassLoader(appClassLoader);
                 return meth.invoke(null , params);
@@ -256,6 +309,8 @@ public class DocletInvoker {
                     exc.getTargetException().printStackTrace();
                 }
                 throw new DocletInvokeException();
+            } finally {
+                Thread.currentThread().setContextClassLoader(savedCCL);
             }
     }
 

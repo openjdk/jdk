@@ -23,8 +23,8 @@
  * have any questions.
  */
 
+#include "D3DPipeline.h"
 #include <malloc.h>
-#include <jni.h>
 #include "sun_java2d_pipe_BufferedOpCodes.h"
 
 #include "jlong.h"

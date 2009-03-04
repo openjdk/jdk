@@ -42,6 +42,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import test.java.awt.regtesthelpers.Util;
+import com.sun.awt.AWTUtilities;
 
 
 
@@ -78,6 +79,7 @@ public class OpaqueTest
                 {
                     public void actionPerformed(java.awt.event.ActionEvent e) {
                         p.setComponentZOrder(light, 0);
+                        f.validate();
                         testSeq = testSeq + "0";
                     }
                 }
@@ -87,6 +89,7 @@ public class OpaqueTest
                 {
                     public void actionPerformed(java.awt.event.ActionEvent e) {
                         p.setComponentZOrder(heavy, 0);
+                        f.validate();
                         testSeq = testSeq + "1";
                     }
                 }
@@ -120,10 +123,12 @@ public class OpaqueTest
         // flag value.
         for (int i = 0; i < 9; ++i) {
             if (i == 3) {
-                light.setOpaque(false);
+                AWTUtilities.setComponentMixingCutoutShape(light,
+                        new Rectangle());
             }
             if (i == 6) {
-                light.setOpaque(true);
+                AWTUtilities.setComponentMixingCutoutShape(light,
+                        null);
             }
 
             robot.mousePress(InputEvent.BUTTON1_MASK);

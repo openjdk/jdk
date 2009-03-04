@@ -779,7 +779,7 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
     case T_OBJECT:  // fall through
     case T_ARRAY:
       if (c->as_jobject() == NULL) {
-        __ movptr(as_Address(addr), (int32_t)NULL_WORD);
+        __ movptr(as_Address(addr), NULL_WORD);
       } else {
         if (is_literal_address(addr)) {
           ShouldNotReachHere();
