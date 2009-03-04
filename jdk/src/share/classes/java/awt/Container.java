@@ -270,9 +270,13 @@ public class Container extends Component {
 
     /**
      * Gets the number of components in this panel.
+     * <p>
+     * Note: This method should be called under AWT tree lock.
+     *
      * @return    the number of components in this panel.
      * @see       #getComponent
      * @since     JDK1.1
+     * @see Component#getTreeLock()
      */
     public int getComponentCount() {
         return countComponents();
@@ -284,43 +288,65 @@ public class Container extends Component {
      */
     @Deprecated
     public int countComponents() {
-        synchronized (getTreeLock()) {
-            return component.size();
-        }
+        // This method is not synchronized under AWT tree lock.
+        // Instead, the calling code is responsible for the
+        // synchronization. See 6784816 for details.
+        return component.size();
     }
 
     /**
      * Gets the nth component in this container.
+     * <p>
+     * Note: This method should be called under AWT tree lock.
+     *
      * @param      n   the index of the component to get.
      * @return     the n<sup>th</sup> component in this container.
      * @exception  ArrayIndexOutOfBoundsException
      *                 if the n<sup>th</sup> value does not exist.
+     * @see Component#getTreeLock()
      */
     public Component getComponent(int n) {
-        synchronized (getTreeLock()) {
-            if ((n < 0) || (n >= component.size())) {
-                throw new ArrayIndexOutOfBoundsException("No such child: " + n);
-            }
+        // This method is not synchronized under AWT tree lock.
+        // Instead, the calling code is responsible for the
+        // synchronization. See 6784816 for details.
+        try {
             return component.get(n);
+        } catch (IndexOutOfBoundsException z) {
+            throw new ArrayIndexOutOfBoundsException("No such child: " + n);
         }
     }
 
     /**
      * Gets all the components in this container.
+     * <p>
+     * Note: This method should be called under AWT tree lock.
+     *
      * @return    an array of all the components in this container.
+     * @see Component#getTreeLock()
      */
     public Component[] getComponents() {
+        // This method is not synchronized under AWT tree lock.
+        // Instead, the calling code is responsible for the
+        // synchronization. See 6784816 for details.
         return getComponents_NoClientCode();
     }
+
     // NOTE: This method may be called by privileged threads.
     //       This functionality is implemented in a package-private method
     //       to insure that it cannot be overridden by client subclasses.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
     final Component[] getComponents_NoClientCode() {
+        return component.toArray(EMPTY_ARRAY);
+    }
+
+    /*
+     * Wrapper for getComponents() method with a proper synchronization.
+     */
+    Component[] getComponentsSync() {
         synchronized (getTreeLock()) {
-            return component.toArray(EMPTY_ARRAY);
+            return getComponents();
         }
-    } // getComponents_NoClientCode()
+    }
 
     /**
      * Determines the insets of this container, which indicate the size
@@ -1028,9 +1054,9 @@ public class Container extends Component {
             }
             checkAddToSelf(comp);
             checkNotAWindow(comp);
-        if (thisGC != null) {
-            comp.checkGD(thisGC.getDevice().getIDstring());
-        }
+            if (thisGC != null) {
+                comp.checkGD(thisGC.getDevice().getIDstring());
+            }
 
             /* Reparent the component and tidy up the tree's state. */
             if (comp.parent != null) {
@@ -1349,7 +1375,7 @@ public class Container extends Component {
     }
 
     private int getListenersCount(int id, boolean enabledOnToolkit) {
-        assert Thread.holdsLock(getTreeLock());
+        checkTreeLock();
         if (enabledOnToolkit) {
             return descendantsCount;
         }
@@ -1367,7 +1393,7 @@ public class Container extends Component {
     final int createHierarchyEvents(int id, Component changed,
         Container changedParent, long changeFlags, boolean enabledOnToolkit)
     {
-        assert Thread.holdsLock(getTreeLock());
+        checkTreeLock();
         int listeners = getListenersCount(id, enabledOnToolkit);
 
         for (int count = listeners, i = 0; count > 0; i++) {
@@ -1382,7 +1408,7 @@ public class Container extends Component {
     final void createChildHierarchyEvents(int id, long changeFlags,
         boolean enabledOnToolkit)
     {
-        assert Thread.holdsLock(getTreeLock());
+        checkTreeLock();
         if (component.isEmpty()) {
             return;
         }
@@ -1517,6 +1543,7 @@ public class Container extends Component {
      * @see #validate
      */
     protected void validateTree() {
+        checkTreeLock();
         if (!isValid()) {
             if (peer instanceof ContainerPeer) {
                 ((ContainerPeer)peer).beginLayout();
@@ -1793,7 +1820,7 @@ public class Container extends Component {
             // super.paint(); -- Don't bother, since it's a NOP.
 
             GraphicsCallback.PaintCallback.getInstance().
-                runComponents(component.toArray(EMPTY_ARRAY), g, GraphicsCallback.LIGHTWEIGHTS);
+                runComponents(getComponentsSync(), g, GraphicsCallback.LIGHTWEIGHTS);
         }
     }
 
@@ -1848,7 +1875,7 @@ public class Container extends Component {
             }
 
             GraphicsCallback.PrintCallback.getInstance().
-                runComponents(component.toArray(EMPTY_ARRAY), g, GraphicsCallback.LIGHTWEIGHTS);
+                runComponents(getComponentsSync(), g, GraphicsCallback.LIGHTWEIGHTS);
         }
     }
 
@@ -1861,7 +1888,7 @@ public class Container extends Component {
     public void paintComponents(Graphics g) {
         if (isShowing()) {
             GraphicsCallback.PaintAllCallback.getInstance().
-                runComponents(component.toArray(EMPTY_ARRAY), g, GraphicsCallback.TWO_PASSES);
+                runComponents(getComponentsSync(), g, GraphicsCallback.TWO_PASSES);
         }
     }
 
@@ -1883,8 +1910,8 @@ public class Container extends Component {
     void paintHeavyweightComponents(Graphics g) {
         if (isShowing()) {
             GraphicsCallback.PaintHeavyweightComponentsCallback.getInstance().
-                runComponents(component.toArray(EMPTY_ARRAY), g, GraphicsCallback.LIGHTWEIGHTS |
-                                            GraphicsCallback.HEAVYWEIGHTS);
+                runComponents(getComponentsSync(), g,
+                              GraphicsCallback.LIGHTWEIGHTS | GraphicsCallback.HEAVYWEIGHTS);
         }
     }
 
@@ -1897,7 +1924,7 @@ public class Container extends Component {
     public void printComponents(Graphics g) {
         if (isShowing()) {
             GraphicsCallback.PrintAllCallback.getInstance().
-                runComponents(component.toArray(EMPTY_ARRAY), g, GraphicsCallback.TWO_PASSES);
+                runComponents(getComponentsSync(), g, GraphicsCallback.TWO_PASSES);
         }
     }
 
@@ -1919,8 +1946,8 @@ public class Container extends Component {
     void printHeavyweightComponents(Graphics g) {
         if (isShowing()) {
             GraphicsCallback.PrintHeavyweightComponentsCallback.getInstance().
-                runComponents(component.toArray(EMPTY_ARRAY), g, GraphicsCallback.LIGHTWEIGHTS |
-                                            GraphicsCallback.HEAVYWEIGHTS);
+                runComponents(getComponentsSync(), g,
+                              GraphicsCallback.LIGHTWEIGHTS | GraphicsCallback.HEAVYWEIGHTS);
         }
     }
 
@@ -2470,9 +2497,7 @@ public class Container extends Component {
      * @since 1.2
      */
     public Component findComponentAt(int x, int y) {
-        synchronized (getTreeLock()) {
-            return findComponentAt(x, y, true);
-        }
+        return findComponentAt(x, y, true);
     }
 
     /**
@@ -2485,58 +2510,60 @@ public class Container extends Component {
      * The addition of this feature is temporary, pending the
      * adoption of new, public API which exports this feature.
      */
-    final Component findComponentAt(int x, int y, boolean ignoreEnabled)
-    {
-        if (isRecursivelyVisible()){
-            return findComponentAtImpl(x, y, ignoreEnabled);
+    final Component findComponentAt(int x, int y, boolean ignoreEnabled) {
+        synchronized (getTreeLock()) {
+            if (isRecursivelyVisible()){
+                return findComponentAtImpl(x, y, ignoreEnabled);
+            }
         }
         return null;
     }
 
     final Component findComponentAtImpl(int x, int y, boolean ignoreEnabled){
+        checkTreeLock();
+
         if (!(contains(x, y) && visible && (ignoreEnabled || enabled))) {
             return null;
         }
 
         // Two passes: see comment in sun.awt.SunGraphicsCallback
-        synchronized (getTreeLock()) {
-            for (int i = 0; i < component.size(); i++) {
-                Component comp = component.get(i);
-                if (comp != null &&
-                    !(comp.peer instanceof LightweightPeer)) {
-                    if (comp instanceof Container) {
-                        comp = ((Container)comp).findComponentAtImpl(x - comp.x,
-                                                                     y - comp.y,
-                                                                     ignoreEnabled);
-                    } else {
-                        comp = comp.locate(x - comp.x, y - comp.y);
-                    }
-                    if (comp != null && comp.visible &&
-                        (ignoreEnabled || comp.enabled))
-                        {
-                            return comp;
-                        }
+        for (int i = 0; i < component.size(); i++) {
+            Component comp = component.get(i);
+            if (comp != null &&
+                !(comp.peer instanceof LightweightPeer)) {
+                if (comp instanceof Container) {
+                    comp = ((Container)comp).findComponentAtImpl(x - comp.x,
+                                                                 y - comp.y,
+                                                                 ignoreEnabled);
+                } else {
+                    comp = comp.locate(x - comp.x, y - comp.y);
                 }
-            }
-            for (int i = 0; i < component.size(); i++) {
-                Component comp = component.get(i);
-                if (comp != null &&
-                    comp.peer instanceof LightweightPeer) {
-                    if (comp instanceof Container) {
-                        comp = ((Container)comp).findComponentAtImpl(x - comp.x,
-                                                                     y - comp.y,
-                                                                     ignoreEnabled);
-                    } else {
-                        comp = comp.locate(x - comp.x, y - comp.y);
-                    }
-                    if (comp != null && comp.visible &&
-                        (ignoreEnabled || comp.enabled))
-                        {
-                            return comp;
-                        }
+                if (comp != null && comp.visible &&
+                    (ignoreEnabled || comp.enabled))
+                {
+                    return comp;
                 }
             }
         }
+        for (int i = 0; i < component.size(); i++) {
+            Component comp = component.get(i);
+            if (comp != null &&
+                comp.peer instanceof LightweightPeer) {
+                if (comp instanceof Container) {
+                    comp = ((Container)comp).findComponentAtImpl(x - comp.x,
+                                                                 y - comp.y,
+                                                                 ignoreEnabled);
+                } else {
+                    comp = comp.locate(x - comp.x, y - comp.y);
+                }
+                if (comp != null && comp.visible &&
+                    (ignoreEnabled || comp.enabled))
+                {
+                    return comp;
+                }
+            }
+        }
+
         return this;
     }
 
@@ -3491,7 +3518,7 @@ public class Container extends Component {
     private void writeObject(ObjectOutputStream s) throws IOException {
         ObjectOutputStream.PutField f = s.putFields();
         f.put("ncomponents", component.size());
-        f.put("component", component.toArray(EMPTY_ARRAY));
+        f.put("component", getComponentsSync());
         f.put("layoutMgr", layoutMgr);
         f.put("dispatcher", dispatcher);
         f.put("maxSize", maxSize);
