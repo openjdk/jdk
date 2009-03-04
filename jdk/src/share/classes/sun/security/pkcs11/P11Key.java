@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.pkcs11;
 
 import java.io.*;
+import java.lang.ref.*;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -67,9 +68,6 @@ abstract class P11Key implements Key {
     // type of key, one of (PUBLIC, PRIVATE, SECRET)
     final String type;
 
-    // session in which the key was created, relevant for session objects
-    final Session session;
-
     // token instance
     final Token token;
 
@@ -85,10 +83,12 @@ abstract class P11Key implements Key {
     // flags indicating whether the key is a token object, sensitive, extractable
     final boolean tokenObject, sensitive, extractable;
 
+    // weak reference notification clean up for session keys
+    private final SessionKeyRef sessionKeyRef;
+
     P11Key(String type, Session session, long keyID, String algorithm,
             int keyLength, CK_ATTRIBUTE[] attributes) {
         this.type = type;
-        this.session = session;
         this.token = session.token;
         this.keyID = keyID;
         this.algorithm = algorithm;
@@ -111,7 +111,9 @@ abstract class P11Key implements Key {
         this.sensitive = sensitive;
         this.extractable = extractable;
         if (tokenObject == false) {
-            session.addObject();
+            sessionKeyRef = new SessionKeyRef(this, keyID, session);
+        } else {
+            sessionKeyRef = null;
         }
     }
 
@@ -233,24 +235,6 @@ abstract class P11Key implements Key {
             throw new ProviderException(e);
         } finally {
             token.releaseSession(tempSession);
-        }
-    }
-
-    protected void finalize() throws Throwable {
-        if (tokenObject || (token.isValid() == false)) {
-            super.finalize();
-            return;
-        }
-        Session newSession = null;
-        try {
-            newSession = token.getOpSession();
-            token.p11.C_DestroyObject(newSession.id(), keyID);
-        } catch (PKCS11Exception e) {
-            // ignore
-        } finally {
-            token.releaseSession(newSession);
-            session.removeObject();
-            super.finalize();
         }
     }
 
@@ -1055,5 +1039,65 @@ abstract class P11Key implements Key {
                 + "\n  parameters: " + params;
         }
     }
+}
 
+final class SessionKeyRef extends WeakReference<P11Key>
+    implements Comparable<SessionKeyRef> {
+    private static ReferenceQueue<P11Key> refQueue =
+        new ReferenceQueue<P11Key>();
+    private static Set<SessionKeyRef> refList =
+        Collections.synchronizedSortedSet(new TreeSet<SessionKeyRef>());
+
+    static ReferenceQueue<P11Key> referenceQueue() {
+        return refQueue;
+    }
+
+    static final private int MAX_ITERATIONS = 2;
+
+    private static void drainRefQueueBounded() {
+        int iterations = 0;
+        while (iterations < MAX_ITERATIONS) {
+            SessionKeyRef next = (SessionKeyRef) refQueue.poll();
+            if (next != null) next.dispose();
+            ++iterations;
+        }
+    }
+
+    // handle to the native key
+    private long keyID;
+    private Session session;
+
+    SessionKeyRef(P11Key key , long keyID, Session session) {
+        super(key, refQueue);
+        this.keyID = keyID;
+        this.session = session;
+        this.session.addObject();
+        refList.add(this);
+        // TBD: run at some interval and not every time?
+        drainRefQueueBounded();
+    }
+
+    void dispose() {
+        refList.remove(this);
+        if (session.token.isValid()) {
+            Session newSession = null;
+            try {
+                newSession = session.token.getOpSession();
+                session.token.p11.C_DestroyObject(newSession.id(), keyID);
+            } catch (PKCS11Exception e) {
+                // ignore
+            } finally {
+                session.token.releaseSession(newSession);
+                session.removeObject();
+            }
+        }
+    }
+
+    public int compareTo(SessionKeyRef other) {
+        if (this.keyID == other.keyID) {
+            return 0;
+        } else {
+            return (this.keyID < other.keyID) ? -1 : 1;
+        }
+    }
 }

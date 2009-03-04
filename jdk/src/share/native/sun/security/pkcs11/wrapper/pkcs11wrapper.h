@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -154,6 +154,7 @@
 
 #include "pkcs11.h"
 #include <jni.h>
+#include <jni_util.h>
 
 #define MAX_STACK_BUFFER_LEN (4 * 1024)
 #define MAX_HEAP_BUFFER_LEN (64 * 1024)
@@ -277,11 +278,13 @@
  */
 
 jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue);
-void throwPKCS11RuntimeException(JNIEnv *env, jstring jmessage);
-void throwFileNotFoundException(JNIEnv *env, jstring jmessage);
 void throwIOException(JNIEnv *env, const char *message);
-void throwIOExceptionUnicodeMessage(JNIEnv *env, const short *message);
+void throwPKCS11RuntimeException(JNIEnv *env, const char *message);
 void throwDisconnectedRuntimeException(JNIEnv *env);
+
+/* function to free CK_ATTRIBUTE array
+ */
+void freeCKAttributeArray(CK_ATTRIBUTE_PTR attrPtr, int len);
 
 /* funktions to convert Java arrays to a CK-type array and the array length */
 
@@ -438,3 +441,15 @@ extern jobject notifyListLock;
 extern jobject jInitArgsObject;
 extern CK_C_INITIALIZE_ARGS_PTR ckpGlobalInitArgs;
 #endif /* NO_CALLBACKS */
+
+#ifdef P11_MEMORYDEBUG
+#include <stdlib.h>
+
+/* Simple malloc/free dumper */
+void *p11malloc(size_t c, char *file, int line);
+void p11free(void *p, char *file, int line);
+
+#define malloc(c)       (p11malloc((c), __FILE__, __LINE__))
+#define free(c)         (p11free((c), __FILE__, __LINE__))
+
+#endif
