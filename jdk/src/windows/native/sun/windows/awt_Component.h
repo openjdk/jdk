@@ -680,6 +680,7 @@ public:
     static jintArray _CreatePrintedPixels(void *param);
     static jboolean _NativeHandlesWheelScrolling(void *param);
     static void _SetRectangularShape(void *param);
+    static void _SetZOrder(void *param);
 
     static HWND sm_focusOwner;
     static HWND sm_focusedWindow;

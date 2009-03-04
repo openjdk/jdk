@@ -533,6 +533,7 @@ static native String XSetLocaleModifiers(String modifier_list);
     static native void SetRectangularShape(long display, long window,
             int lox, int loy, int hix, int hiy,
             sun.java2d.pipe.Region region);
+    static native void SetZOrder(long display, long window, long above);
 
 /* Global memory area used for X lib parameter passing */
 

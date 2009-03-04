@@ -6656,23 +6656,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
 
             // Update stacking order
-            if (parent != null && parent.peer != null) {
-                ContainerPeer parentContPeer = (ContainerPeer) parent.peer;
-                // if our parent is lightweight and we are not
-                // we should call restack on nearest heavyweight
-                // container.
-                if (parentContPeer instanceof LightweightPeer
-                    && ! (peer instanceof LightweightPeer))
-                {
-                    Container hwParent = getNativeContainer();
-                    if (hwParent != null && hwParent.peer != null) {
-                        parentContPeer = (ContainerPeer) hwParent.peer;
-                    }
-                }
-                if (parentContPeer.isRestackSupported()) {
-                    parentContPeer.restack();
-                }
-            }
+            peer.setZOrder(getHWPeerAboveMe());
 
             if (!isAddNotifyComplete) {
                 mixOnShowing();
@@ -9544,6 +9528,27 @@ public abstract class Component implements ImageObserver, MenuContainer,
         int nextAbove = parent.getComponentZOrder(this) - 1;
 
         return nextAbove < 0 ? -1 : nextAbove;
+    }
+
+    final ComponentPeer getHWPeerAboveMe() {
+        checkTreeLock();
+
+        Container cont = getContainer();
+        int indexAbove = getSiblingIndexAbove();
+
+        while (cont != null) {
+            for (int i = indexAbove; i > -1; i--) {
+                Component comp = cont.getComponent(i);
+                if (comp != null && comp.isDisplayable() && !comp.isLightweight()) {
+                    return comp.getPeer();
+                }
+            }
+
+            indexAbove = cont.getSiblingIndexAbove();
+            cont = cont.getContainer();
+        }
+
+        return null;
     }
 
     final int getSiblingIndexBelow() {

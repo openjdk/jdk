@@ -649,10 +649,7 @@ public class Container extends Component {
             // each HW descendant independently.
             return !comp.peer.isReparentSupported();
         } else {
-            // if container didn't change we still might need to recreate component's window as
-            // changes to zorder should be reflected in native window stacking order and it might
-            // not be supported by the platform. This is important only for heavyweight child
-            return !((ContainerPeer)(newNativeContainer.peer)).isRestackSupported();
+            return false;
         }
     }
 
@@ -809,11 +806,6 @@ public class Container extends Component {
         if (peer != null) {
             if (comp.peer == null) { // Remove notify was called or it didn't have peer - create new one
                 comp.addNotify();
-                // New created peer creates component on top of the stacking order
-                Container newNativeContainer = getHeavyweightContainer();
-                if (((ContainerPeer)newNativeContainer.getPeer()).isRestackSupported()) {
-                    ((ContainerPeer)newNativeContainer.getPeer()).restack();
-                }
             } else { // Both container and child have peers, it means child peer should be reparented.
                 // In both cases we need to reparent native widgets.
                 Container newNativeContainer = getHeavyweightContainer();
@@ -822,13 +814,8 @@ public class Container extends Component {
                     // Native container changed - need to reparent native widgets
                     newNativeContainer.reparentChild(comp);
                 }
-                // If component still has a peer and it is either container or heavyweight
-                // and restack is supported we have to restack native windows since order might have changed
-                if ((!comp.isLightweight() || (comp instanceof Container))
-                    && ((ContainerPeer)newNativeContainer.getPeer()).isRestackSupported())
-                {
-                    ((ContainerPeer)newNativeContainer.getPeer()).restack();
-                }
+                comp.peer.setZOrder(comp.getHWPeerAboveMe());
+
                 if (!comp.isLightweight() && isLightweight()) {
                     // If component is heavyweight and one of the containers is lightweight
                     // the location of the component should be fixed.
@@ -2607,13 +2594,6 @@ public class Container extends Component {
             for (int i = 0; i < component.size(); i++) {
                 component.get(i).addNotify();
             }
-            // Update stacking order if native platform allows
-            ContainerPeer cpeer = (ContainerPeer)peer;
-            if (cpeer.isRestackSupported()) {
-                cpeer.restack();
-            }
-
-
         }
     }
 

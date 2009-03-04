@@ -540,6 +540,12 @@ public interface ComponentPeer {
     void applyShape(Region shape);
 
     /**
+     * Lowers this component at the bottom of the above HW peer. If the above parameter
+     * is null then the method places this component at the top of the Z-order.
+     */
+    void setZOrder(ComponentPeer above);
+
+    /**
      * Updates internal data structures related to the component's GC.
      *
      * @since 1.7

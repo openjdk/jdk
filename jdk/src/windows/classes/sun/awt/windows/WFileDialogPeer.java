@@ -231,20 +231,6 @@ public class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
      */
     private static native void initIDs();
 
-    /**
-     * WFileDialogPeer doesn't have native pData so we don't do restack on it
-     * @see java.awt.peer.ContainerPeer#restack
-     */
-    public void restack() {
-    }
-
-    /**
-     * @see java.awt.peer.ContainerPeer#isRestackSupported
-     */
-    public boolean isRestackSupported() {
-        return false;
-    }
-
     // The effects are not supported for system dialogs.
     public void applyShape(sun.java2d.pipe.Region shape) {}
     public void setOpacity(float opacity) {}
