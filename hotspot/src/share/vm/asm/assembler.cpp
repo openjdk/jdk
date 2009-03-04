@@ -239,6 +239,78 @@ void Label::patch_instructions(MacroAssembler* masm) {
   }
 }
 
+struct DelayedConstant {
+  typedef void (*value_fn_t)();
+  BasicType type;
+  intptr_t value;
+  value_fn_t value_fn;
+  // This limit of 20 is generous for initial uses.
+  // The limit needs to be large enough to store the field offsets
+  // into classes which do not have statically fixed layouts.
+  // (Initial use is for method handle object offsets.)
+  // Look for uses of "delayed_value" in the source code
+  // and make sure this number is generous enough to handle all of them.
+  enum { DC_LIMIT = 20 };
+  static DelayedConstant delayed_constants[DC_LIMIT];
+  static DelayedConstant* add(BasicType type, value_fn_t value_fn);
+  bool match(BasicType t, value_fn_t cfn) {
+    return type == t && value_fn == cfn;
+  }
+  static void update_all();
+};
+
+DelayedConstant DelayedConstant::delayed_constants[DC_LIMIT];
+// Default C structure initialization rules have the following effect here:
+// = { { (BasicType)0, (intptr_t)NULL }, ... };
+
+DelayedConstant* DelayedConstant::add(BasicType type,
+                                      DelayedConstant::value_fn_t cfn) {
+  for (int i = 0; i < DC_LIMIT; i++) {
+    DelayedConstant* dcon = &delayed_constants[i];
+    if (dcon->match(type, cfn))
+      return dcon;
+    if (dcon->value_fn == NULL) {
+      // (cmpxchg not because this is multi-threaded but because I'm paranoid)
+      if (Atomic::cmpxchg_ptr(CAST_FROM_FN_PTR(void*, cfn), &dcon->value_fn, NULL) == NULL) {
+        dcon->type = type;
+        return dcon;
+      }
+    }
+  }
+  // If this assert is hit (in pre-integration testing!) then re-evaluate
+  // the comment on the definition of DC_LIMIT.
+  guarantee(false, "too many delayed constants");
+  return NULL;
+}
+
+void DelayedConstant::update_all() {
+  for (int i = 0; i < DC_LIMIT; i++) {
+    DelayedConstant* dcon = &delayed_constants[i];
+    if (dcon->value_fn != NULL && dcon->value == 0) {
+      typedef int     (*int_fn_t)();
+      typedef address (*address_fn_t)();
+      switch (dcon->type) {
+      case T_INT:     dcon->value = (intptr_t) ((int_fn_t)    dcon->value_fn)(); break;
+      case T_ADDRESS: dcon->value = (intptr_t) ((address_fn_t)dcon->value_fn)(); break;
+      }
+    }
+  }
+}
+
+intptr_t* AbstractAssembler::delayed_value_addr(int(*value_fn)()) {
+  DelayedConstant* dcon = DelayedConstant::add(T_INT, (DelayedConstant::value_fn_t) value_fn);
+  return &dcon->value;
+}
+intptr_t* AbstractAssembler::delayed_value_addr(address(*value_fn)()) {
+  DelayedConstant* dcon = DelayedConstant::add(T_ADDRESS, (DelayedConstant::value_fn_t) value_fn);
+  return &dcon->value;
+}
+void AbstractAssembler::update_delayed_values() {
+  DelayedConstant::update_all();
+}
+
+
+
 
 void AbstractAssembler::block_comment(const char* comment) {
   if (sect() == CodeBuffer::SECT_INSTS) {

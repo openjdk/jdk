@@ -2615,6 +2615,29 @@ void MacroAssembler::cas_under_lock(Register top_ptr_reg, Register top_reg, Regi
   }
 }
 
+RegisterConstant MacroAssembler::delayed_value(intptr_t* delayed_value_addr,
+                                               Register tmp,
+                                               int offset) {
+  intptr_t value = *delayed_value_addr;
+  if (value != 0)
+    return RegisterConstant(value + offset);
+
+  // load indirectly to solve generation ordering problem
+  Address a(tmp, (address) delayed_value_addr);
+  load_ptr_contents(a, tmp);
+
+#ifdef ASSERT
+  tst(tmp);
+  breakpoint_trap(zero, xcc);
+#endif
+
+  if (offset != 0)
+    add(tmp, offset, tmp);
+
+  return RegisterConstant(tmp);
+}
+
+
 void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
                                           Register temp_reg,
                                           Label& done, Label* slow_case,
@@ -4056,6 +4079,24 @@ void MacroAssembler::card_write_barrier_post(Register store_addr, Register new_v
          bs->kind() == BarrierSet::CardTableExtension, "wrong barrier");
   card_table_write(bs->byte_map_base, tmp, store_addr);
 }
+
+// Loading values by size and signed-ness
+void MacroAssembler::load_sized_value(Register s1, RegisterConstant s2, Register d,
+                                      int size_in_bytes, bool is_signed) {
+  switch (size_in_bytes ^ (is_signed ? -1 : 0)) {
+  case ~8:  // fall through:
+  case  8:  ld_long( s1, s2, d ); break;
+  case ~4:  ldsw(    s1, s2, d ); break;
+  case  4:  lduw(    s1, s2, d ); break;
+  case ~2:  ldsh(    s1, s2, d ); break;
+  case  2:  lduh(    s1, s2, d ); break;
+  case ~1:  ldsb(    s1, s2, d ); break;
+  case  1:  ldub(    s1, s2, d ); break;
+  default:  ShouldNotReachHere();
+  }
+}
+
+
 
 void MacroAssembler::load_klass(Register src_oop, Register klass) {
   // The number of bytes in this code is used by

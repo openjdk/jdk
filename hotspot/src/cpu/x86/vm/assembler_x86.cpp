@@ -6197,8 +6197,11 @@ int MacroAssembler::load_signed_byte(Register dst, Address src) {
   return off;
 }
 
-// word => int32 which seems bad for 64bit
-int MacroAssembler::load_signed_word(Register dst, Address src) {
+// Note: load_signed_short used to be called load_signed_word.
+// Although the 'w' in x86 opcodes refers to the term "word" in the assembler
+// manual, which means 16 bits, that usage is found nowhere in HotSpot code.
+// The term "word" in HotSpot means a 32- or 64-bit machine word.
+int MacroAssembler::load_signed_short(Register dst, Address src) {
   int off;
   if (LP64_ONLY(true ||) VM_Version::is_P6()) {
     // This is dubious to me since it seems safe to do a signed 16 => 64 bit
@@ -6207,7 +6210,7 @@ int MacroAssembler::load_signed_word(Register dst, Address src) {
     off = offset();
     movswl(dst, src); // movsxw
   } else {
-    off = load_unsigned_word(dst, src);
+    off = load_unsigned_short(dst, src);
     shll(dst, 16);
     sarl(dst, 16);
   }
@@ -6229,7 +6232,8 @@ int MacroAssembler::load_unsigned_byte(Register dst, Address src) {
   return off;
 }
 
-int MacroAssembler::load_unsigned_word(Register dst, Address src) {
+// Note: load_unsigned_short used to be called load_unsigned_word.
+int MacroAssembler::load_unsigned_short(Register dst, Address src) {
   // According to Intel Doc. AP-526, "Zero-Extension of Short", p.16,
   // and "3.9 Partial Register Penalties", p. 22).
   int off;
@@ -6242,6 +6246,28 @@ int MacroAssembler::load_unsigned_word(Register dst, Address src) {
     movw(dst, src);
   }
   return off;
+}
+
+void MacroAssembler::load_sized_value(Register dst, Address src,
+                                      int size_in_bytes, bool is_signed) {
+  switch (size_in_bytes ^ (is_signed ? -1 : 0)) {
+#ifndef _LP64
+  // For case 8, caller is responsible for manually loading
+  // the second word into another register.
+  case ~8:  // fall through:
+  case  8:  movl(                dst, src ); break;
+#else
+  case ~8:  // fall through:
+  case  8:  movq(                dst, src ); break;
+#endif
+  case ~4:  // fall through:
+  case  4:  movl(                dst, src ); break;
+  case ~2:  load_signed_short(   dst, src ); break;
+  case  2:  load_unsigned_short( dst, src ); break;
+  case ~1:  load_signed_byte(    dst, src ); break;
+  case  1:  load_unsigned_byte(  dst, src ); break;
+  default:  ShouldNotReachHere();
+  }
 }
 
 void MacroAssembler::mov32(AddressLiteral dst, Register src) {
@@ -7092,6 +7118,31 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
   // call indirectly to solve generation ordering problem
   movptr(rax, ExternalAddress(StubRoutines::verify_oop_subroutine_entry_address()));
   call(rax);
+}
+
+
+RegisterConstant MacroAssembler::delayed_value(intptr_t* delayed_value_addr,
+                                               Register tmp,
+                                               int offset) {
+  intptr_t value = *delayed_value_addr;
+  if (value != 0)
+    return RegisterConstant(value + offset);
+
+  // load indirectly to solve generation ordering problem
+  movptr(tmp, ExternalAddress((address) delayed_value_addr));
+
+#ifdef ASSERT
+  Label L;
+  testl(tmp, tmp);
+  jccb(Assembler::notZero, L);
+  hlt();
+  bind(L);
+#endif
+
+  if (offset != 0)
+    addptr(tmp, offset);
+
+  return RegisterConstant(tmp);
 }
 
 
