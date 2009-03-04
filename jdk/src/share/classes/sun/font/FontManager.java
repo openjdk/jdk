@@ -2361,7 +2361,7 @@ public final class FontManager {
                 font2D = new TrueTypeFont(fontFilePath, null, 0, true);
                 break;
             case Font.TYPE1_FONT:
-                font2D = new Type1Font(fontFilePath, null);
+                font2D = new Type1Font(fontFilePath, null, isCopy);
                 break;
             default:
                 throw new FontFormatException("Unrecognised Font Format");
