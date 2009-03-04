@@ -1901,7 +1901,8 @@ void CFGLoop::scale_freq() {
   for (int i = 0; i < _members.length(); i++) {
     CFGElement* s = _members.at(i);
     float block_freq = s->_freq * loop_freq;
-    if (block_freq < MIN_BLOCK_FREQUENCY) block_freq = MIN_BLOCK_FREQUENCY;
+    if (g_isnan(block_freq) || block_freq < MIN_BLOCK_FREQUENCY)
+      block_freq = MIN_BLOCK_FREQUENCY;
     s->_freq = block_freq;
   }
   CFGLoop* ch = _child;
