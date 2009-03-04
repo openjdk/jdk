@@ -302,6 +302,8 @@ psOldGen.hpp                         	safepoint.hpp
 psOldGen.hpp                            spaceCounters.hpp
 
 psPermGen.cpp                           gcUtil.hpp
+psPermGen.cpp                           markOop.inline.hpp
+psPermGen.cpp                           markSweep.inline.hpp
 psPermGen.cpp                           parallelScavengeHeap.hpp
 psPermGen.cpp                           psMarkSweepDecorator.hpp
 psPermGen.cpp                           psParallelCompact.hpp

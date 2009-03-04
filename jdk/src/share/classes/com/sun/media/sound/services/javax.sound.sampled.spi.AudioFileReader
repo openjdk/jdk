@@ -2,3 +2,5 @@
 com.sun.media.sound.AuFileReader
 com.sun.media.sound.AiffFileReader
 com.sun.media.sound.WaveFileReader
+com.sun.media.sound.WaveFloatFileReader
+com.sun.media.sound.SoftMidiAudioFileReader

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import javax.lang.model.type.*;
  * @see ExecutableType
  * @since 1.6
  */
-public interface ExecutableElement extends Element {
+public interface ExecutableElement extends Element, Parameterizable {
     /**
      * Returns the formal type parameters of this executable
      * in declaration order.

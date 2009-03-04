@@ -34,6 +34,7 @@ import javax.swing.plaf.RootPaneUI;
 import java.util.Vector;
 import java.io.Serializable;
 import javax.swing.border.*;
+import sun.awt.AWTAccessor;
 import sun.security.action.GetBooleanAction;
 
 
@@ -687,6 +688,9 @@ public class JRootPane extends JComponent implements Accessible {
         if (glass == null) {
             throw new NullPointerException("glassPane cannot be set to null.");
         }
+
+        AWTAccessor.getComponentAccessor().setMixingCutoutShape(glass,
+                new Rectangle());
 
         boolean visible = false;
         if (glassPane != null && glassPane.getParent() == this) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package javax.lang.model.element;
 
+import javax.lang.model.UnknownEntityException;
+
 /**
  * Indicates that an unknown kind of element was encountered.  This
  * can occur if the language evolves and new kinds of elements are
@@ -38,7 +40,7 @@ package javax.lang.model.element;
  * @see ElementVisitor#visitUnknown
  * @since 1.6
  */
-public class UnknownElementException extends RuntimeException {
+public class UnknownElementException extends UnknownEntityException {
 
     private static final long serialVersionUID = 269L;
 

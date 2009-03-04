@@ -25,8 +25,9 @@
 
 package com.sun.tools.javadoc;
 
-import java.util.*;
 import java.lang.reflect.Modifier;
+import java.util.*;
+import javax.tools.JavaFileManager;
 
 import com.sun.javadoc.*;
 
@@ -39,7 +40,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Position;
-
 
 /**
  * Holds the environment for a run of javadoc.
@@ -103,6 +103,7 @@ public class DocEnv {
 
     Check chk;
     Types types;
+    JavaFileManager fileManager;
 
     /** Allow documenting from class files? */
     boolean docClasses = false;
@@ -133,6 +134,7 @@ public class DocEnv {
         externalizableSym = reader.enterClass(names.fromString("java.io.Externalizable"));
         chk = Check.instance(context);
         types = Types.instance(context);
+        fileManager = context.get(JavaFileManager.class);
 
         // Default.  Should normally be reset with setLocale.
         this.doclocale = new DocLocale(this, "", breakiterator);

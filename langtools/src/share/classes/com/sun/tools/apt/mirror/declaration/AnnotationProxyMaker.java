@@ -252,6 +252,7 @@ class AnnotationProxyMaker {
          */
         private void typeMismatch(final Method method, final Attribute attr) {
             value = new ExceptionProxy() {
+                private static final long serialVersionUID = 8473323277815075163L;
                 public String toString() {
                     return "<error>";   // eg:  @Anno(value=<error>)
                 }
@@ -270,6 +271,7 @@ class AnnotationProxyMaker {
      * type.
      */
     private static class MirroredTypeExceptionProxy extends ExceptionProxy {
+        private static final long serialVersionUID = 6662035281599933545L;
 
         private MirroredTypeException ex;
 
@@ -311,6 +313,7 @@ class AnnotationProxyMaker {
      * types.
      */
     private static class MirroredTypesExceptionProxy extends ExceptionProxy {
+        private static final long serialVersionUID = -6670822532616693951L;
 
         private MirroredTypesException ex;
 

@@ -111,6 +111,7 @@ public class Messager extends Log implements DocErrorReporter {
      * @param warnWriter   Stream for warnings
      * @param noticeWriter Stream for other messages
      */
+    @SuppressWarnings("deprecation")
     protected Messager(Context context,
                        String programName,
                        PrintWriter errWriter,

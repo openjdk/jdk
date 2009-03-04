@@ -5518,3 +5518,11 @@ FormatData/is_IS/NumberPatterns/1=#,##0. \u00A4;-#,##0. \u00A4
 FormatData/sv/AmPmMarkers/0=fm
 FormatData/sv/AmPmMarkers/1=em
 
+# JE, GG, IM (6544471)
+LocaleNames//JE=Jersey
+LocaleNames//GG=Guernsey
+LocaleNames//IM=Isle Of Man
+
+# BL, MF (6627549)
+LocaleNames//BL=Saint Barth\u00e9lemy
+LocaleNames//MF=Saint Martin

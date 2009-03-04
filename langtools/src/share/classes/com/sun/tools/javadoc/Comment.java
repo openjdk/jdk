@@ -74,6 +74,7 @@ class Comment {
          * the tag text.
          * </pre>
          */
+        @SuppressWarnings("fallthrough")
         class CommentStringParser {
             /**
              * The entry point to the comment string parser

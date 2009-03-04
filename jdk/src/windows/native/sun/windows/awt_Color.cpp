@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-1999 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ Java_sun_awt_windows_WColor_getDefaultColor(JNIEnv *env, jclass cls,
         iColor = COLOR_MENUTEXT;
         break;
     case sun_awt_windows_WColor_BUTTON_BKGND:
-        iColor = (IS_NT) ? COLOR_BTNFACE : COLOR_3DFACE;
+        iColor = COLOR_BTNFACE;
         break;
     case sun_awt_windows_WColor_BUTTON_TEXT:
         iColor = COLOR_BTNTEXT;

@@ -23,14 +23,14 @@
 # have any questions.
 #
 
-SPP='sh ../../../../make/java/nio/spp.sh'
+javac -d . ../../../../make/tools/src/build/tools/spp/Spp.java
 
 gen() {
 #  if [ $3 = "true" ]
 #  then $SPP -K$1 -Dtype=$1 -DType=$2 -Kprim<Basic-X.java >Basic$2.java
 #  else $SPP -K$1 -Dtype=$1 -DType=$2 -K$3 <Basic-X.java >Basic$2.java
 #  fi
- $SPP -K$1 -Dtype=$1 -DType=$2 -K$3 -K$4 -K$5 -K$6 <Basic-X.java >Basic$2.java
+    java build.tools.spp.Spp -K$1 -Dtype=$1 -DType=$2 -K$3 -K$4 -K$5 -K$6 <Basic-X.java >Basic$2.java
 }
 
 gen boolean Boolean       prim  ""  ""   ""
@@ -54,3 +54,5 @@ gen Double DoubleObject   ""    fp  ""   ""
 gen BigDecimal BigDecimal ""    fp  ""   ""
 
 gen Calendar DateTime     ""    ""  ""   datetime
+
+rm -rf build

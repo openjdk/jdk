@@ -28,6 +28,7 @@ binaryTreeDictionary.cpp                allocationStats.hpp
 binaryTreeDictionary.cpp                binaryTreeDictionary.hpp
 binaryTreeDictionary.cpp                globals.hpp
 binaryTreeDictionary.cpp                ostream.hpp
+binaryTreeDictionary.cpp                space.inline.hpp
 binaryTreeDictionary.cpp                spaceDecorator.hpp
 
 binaryTreeDictionary.hpp                freeBlockDictionary.hpp

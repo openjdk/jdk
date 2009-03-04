@@ -145,6 +145,7 @@ public class RecognizedOptions {
         TARGET,
         VERSION,
         FULLVERSION,
+        DIAGS,
         HELP,
         A,
         X,
@@ -372,6 +373,21 @@ public class RecognizedOptions {
                 return super.process(options, option);
             }
         },
+        new HiddenOption(DIAGS) {
+            @Override
+            public boolean process(Options options, String option) {
+                Option xd = getOptions(helper, EnumSet.of(XD))[0];
+                option = option.substring(option.indexOf('=') + 1);
+                String diagsOption = option.contains("%") ?
+                    "-XDdiagsFormat=" :
+                    "-XDdiags=";
+                diagsOption += option;
+                if (xd.matches(diagsOption))
+                    return xd.process(options, diagsOption);
+                else
+                    return false;
+            }
+        },
         new Option(HELP,                                        "opt.help") {
             @Override
             public boolean process(Options options, String option) {
@@ -449,7 +465,7 @@ public class RecognizedOptions {
         },
 
         // treat warnings as errors
-        new HiddenOption(WERROR),
+        new Option(WERROR,                                      "opt.Werror"),
 
         // use complex inference from context in the position of a method call argument
         new HiddenOption(COMPLEXINFERENCE),

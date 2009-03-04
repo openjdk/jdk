@@ -151,6 +151,7 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11_XRobotPeer_mouseReleaseImpl;
         Java_sun_awt_X11_XRobotPeer_mouseWheelImpl;
         Java_sun_awt_X11_XRobotPeer_setup;
+        Java_sun_awt_X11_XRobotPeer_getNumberOfButtonsImpl;
         Java_java_awt_Component_initIDs;
         Java_java_awt_Container_initIDs;
         Java_java_awt_Button_initIDs;
@@ -288,6 +289,7 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11_XlibWrapper_XGetIconSizes;
         Java_sun_awt_X11_XlibWrapper_XKeycodeToKeysym;
         Java_sun_awt_X11_XlibWrapper_XKeysymToKeycode;
+        Java_sun_awt_X11_XlibWrapper_XQueryKeymap;
         Java_sun_awt_X11_XlibWrapper_XGetModifierMapping;
         Java_sun_awt_X11_XlibWrapper_XFreeModifiermap;        
         Java_sun_awt_X11_XlibWrapper_XChangeActivePointerGrab;

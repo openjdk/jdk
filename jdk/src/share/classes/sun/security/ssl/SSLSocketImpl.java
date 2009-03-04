@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -368,7 +368,9 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         super();
         this.host = host;
         init(context, false);
-        SocketAddress socketAddress = new InetSocketAddress(host, port);
+        SocketAddress socketAddress =
+               host != null ? new InetSocketAddress(host, port) :
+               new InetSocketAddress(InetAddress.getByName(null), port);
         connect(socketAddress, 0);
     }
 
@@ -409,7 +411,9 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         this.host = host;
         init(context, false);
         bind(new InetSocketAddress(localAddr, localPort));
-        SocketAddress socketAddress = new InetSocketAddress(host, port);
+        SocketAddress socketAddress =
+               host != null ? new InetSocketAddress(host, port) :
+               new InetSocketAddress(InetAddress.getByName(null), port);
         connect(socketAddress, 0);
     }
 
@@ -1829,7 +1833,8 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     }
 
     synchronized String getHost() {
-        if (host == null) {
+        // Note that the host may be null or empty for localhost.
+        if (host == null || host.length() == 0) {
             host = getInetAddress().getHostName();
         }
         return host;
