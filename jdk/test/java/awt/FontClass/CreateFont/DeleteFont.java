@@ -55,17 +55,23 @@ public class DeleteFont {
         if (!gotException) {
             throw new RuntimeException("No expected IOException");
         }
-        badRead(-2);
-        badRead(8193);
+        badRead(-2, Font.TRUETYPE_FONT);
+        badRead(8193, Font.TRUETYPE_FONT);
+
+        badRead(-2, Font.TYPE1_FONT);
+        badRead(8193, Font.TYPE1_FONT);
+
+        // Make sure GC has a chance to clean up before we exit.
+        System.gc(); System.gc();
     }
 
-    static void badRead(final int retval) {
+    static void badRead(final int retval, int fontType) {
         int num = 2;
         byte[] buff = new byte[16*8192]; // Multiple of 8192 is important.
         for (int ct=0; ct<num; ++ct) {
             try {
                 Font.createFont(
-                    Font.TRUETYPE_FONT,
+                    fontType,
                     new ByteArrayInputStream(buff) {
                         @Override
                         public int read(byte[] buff, int off, int len) {
