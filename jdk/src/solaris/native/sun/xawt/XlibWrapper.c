@@ -1945,3 +1945,31 @@ Java_sun_awt_X11_XlibWrapper_SetRectangularShape
                 ShapeBounding, 0, 0, None, ShapeSet);
     }
 }
+
+/*
+ * Class:     XlibWrapper
+ * Method:    SetZOrder
+ */
+
+JNIEXPORT void JNICALL
+Java_sun_awt_X11_XlibWrapper_SetZOrder
+(JNIEnv *env, jclass clazz, jlong display, jlong window, jlong above)
+{
+    AWT_CHECK_HAVE_LOCK();
+
+    XWindowChanges wc;
+    wc.sibling = (Window)jlong_to_ptr(above);
+
+    unsigned int value_mask = CWStackMode;
+
+    if (above == 0) {
+        wc.stack_mode = Above;
+    } else {
+        wc.stack_mode = Below;
+        value_mask |= CWSibling;
+    }
+
+    XConfigureWindow((Display *)jlong_to_ptr(display),
+                     (Window)jlong_to_ptr(window),
+                     value_mask, &wc );
+}

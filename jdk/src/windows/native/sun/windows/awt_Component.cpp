@@ -149,6 +149,11 @@ struct GetInsetsStruct {
     jobject window;
     RECT *insets;
 };
+// Struct for _SetZOrder function
+struct SetZOrderStruct {
+    jobject component;
+    jlong above;
+};
 /************************************************************************/
 
 //////////////////////////////////////////////////////////////////////////
@@ -6170,6 +6175,33 @@ ret:
     delete data;
 }
 
+void AwtComponent::_SetZOrder(void *param) {
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    SetZOrderStruct *data = (SetZOrderStruct *)param;
+    jobject self = data->component;
+    HWND above = HWND_TOP;
+    if (data->above != 0) {
+        above = reinterpret_cast<HWND>(data->above);
+    }
+
+    AwtComponent *c = NULL;
+
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+
+    c = (AwtComponent *)pData;
+    if (::IsWindow(c->GetHWnd())) {
+        ::SetWindowPos(c->GetHWnd(), above, 0, 0, 0, 0,
+                       SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_DEFERERASE | SWP_ASYNCWINDOWPOS);
+    }
+
+ret:
+    env->DeleteGlobalRef(self);
+
+    delete data;
+}
+
 void AwtComponent::PostUngrabEvent() {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     jobject target = GetTarget(env);
@@ -6892,6 +6924,21 @@ Java_sun_awt_windows_WComponentPeer_setRectangularShape(JNIEnv* env, jobject sel
 
     AwtToolkit::GetInstance().SyncCall(AwtComponent::_SetRectangularShape, data);
     // global refs and data are deleted in _SetRectangularShape
+
+    CATCH_BAD_ALLOC;
+}
+
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WComponentPeer_setZOrder(JNIEnv* env, jobject self, jlong above)
+{
+    TRY;
+
+    SetZOrderStruct * data = new SetZOrderStruct;
+    data->component = env->NewGlobalRef(self);
+    data->above = above;
+
+    AwtToolkit::GetInstance().SyncCall(AwtComponent::_SetZOrder, data);
+    // global refs and data are deleted in _SetLower
 
     CATCH_BAD_ALLOC;
 }

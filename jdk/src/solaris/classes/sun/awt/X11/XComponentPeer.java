@@ -1415,57 +1415,19 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         }
     }
 
-    public void restack() {
-        synchronized(target.getTreeLock()) {
-            // Build the list of X windows in the window corresponding to this container
-            // This list is already in correct Java stacking order
-            Container cont = (Container)target;
-            Vector order = new Vector(cont.getComponentCount());
-            HashSet set = new HashSet();
+    /**
+     * Lowers this component at the bottom of the above HW peer. If the above parameter
+     * is null then the method places this component at the top of the Z-order.
+     */
+    public void setZOrder(ComponentPeer above) {
+        long aboveWindow = (above != null) ? ((XComponentPeer)above).getWindow() : 0;
 
-            addTree(order, set, cont);
-
-            XToolkit.awtLock();
-            try {
-                // Get the current list of X window in X window. Some of the windows
-                // might be only native
-                XQueryTree qt = new XQueryTree(getContentWindow());
-                try {
-                    if (qt.execute() != 0) {
-                        if (qt.get_nchildren() != 0) {
-                            long pchildren = qt.get_children();
-                            int j = 0; // index to insert
-                            for (int i = 0; i < qt.get_nchildren(); i++) {
-                                Long w = Long.valueOf(Native.getLong(pchildren, i));
-                                if (!set.contains(w)) {
-                                    set.add(w);
-                                    order.add(j++, w);
-                                }
-                            }
-                        }
-                    }
-
-                    if (order.size() != 0) {
-                        // Create native array of the windows
-                        long windows = Native.allocateLongArray(order.size());
-                        Native.putLong(windows, order);
-
-                        // Restack native window according to the new order
-                        XlibWrapper.XRestackWindows(XToolkit.getDisplay(), windows, order.size());
-
-                        XlibWrapper.unsafe.freeMemory(windows);
-                    }
-                } finally {
-                    qt.dispose();
-                }
-            } finally {
-                XToolkit.awtUnlock();
-            }
+        XToolkit.awtLock();
+        try{
+            XlibWrapper.SetZOrder(XToolkit.getDisplay(), getWindow(), aboveWindow);
+        }finally{
+            XToolkit.awtUnlock();
         }
-    }
-
-    public boolean isRestackSupported() {
-        return true;
     }
 
     private void addTree(Collection order, Set set, Container cont) {

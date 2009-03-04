@@ -941,4 +941,15 @@ public abstract class WComponentPeer extends WObjectPeer
         }
     }
 
+    /**
+     * Lowers this component at the bottom of the above component. If the above parameter
+     * is null then the method places this component at the top of the Z-order.
+     */
+    public void setZOrder(ComponentPeer above) {
+        long aboveHWND = (above != null) ? ((WComponentPeer)above).getHWnd() : 0;
+
+        setZOrder(aboveHWND);
+    }
+
+    private native void setZOrder(long above);
 }
