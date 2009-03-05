@@ -3059,14 +3059,12 @@ public final
     }
 
 
-    private static Annotation[] EMPTY_ANNOTATIONS_ARRAY = new Annotation[0];
-
     /**
      * @since 1.5
      */
     public Annotation[] getAnnotations() {
         initAnnotationsIfNecessary();
-        return annotations.values().toArray(EMPTY_ANNOTATIONS_ARRAY);
+        return AnnotationParser.toArray(annotations);
     }
 
     /**
@@ -3074,7 +3072,7 @@ public final
      */
     public Annotation[] getDeclaredAnnotations()  {
         initAnnotationsIfNecessary();
-        return declaredAnnotations.values().toArray(EMPTY_ANNOTATIONS_ARRAY);
+        return AnnotationParser.toArray(declaredAnnotations);
     }
 
     // Annotations cache

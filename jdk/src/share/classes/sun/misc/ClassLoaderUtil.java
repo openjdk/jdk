@@ -77,8 +77,6 @@ public class ClassLoaderUtil {
                 jarsClosed.clear();
             }
 
-            System.out.println ("classLoader = " + classLoader);
-            System.out.println ("SharedSecrets.getJavaNetAccess()="+SharedSecrets.getJavaNetAccess());
             URLClassPath ucp = SharedSecrets.getJavaNetAccess()
                                                 .getURLClassPath(classLoader);
             ArrayList loaders = ucp.loaders;
