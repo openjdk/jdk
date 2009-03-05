@@ -1010,8 +1010,8 @@ public class Types {
                                 && !disjointTypes(aHigh.allparams(), lowSub.allparams())
                                 && !disjointTypes(aLow.allparams(), highSub.allparams())
                                 && !disjointTypes(aLow.allparams(), lowSub.allparams())) {
-                                if (upcast ? giveWarning(a, highSub) || giveWarning(a, lowSub)
-                                           : giveWarning(highSub, a) || giveWarning(lowSub, a))
+                                if (upcast ? giveWarning(a, b) :
+                                    giveWarning(b, a))
                                     warnStack.head.warnUnchecked();
                                 return true;
                             }
@@ -3224,9 +3224,11 @@ public class Types {
     }
 
     private boolean giveWarning(Type from, Type to) {
-        // To and from are (possibly different) parameterizations
-        // of the same class or interface
-        return to.isParameterized() && !containsType(to.allparams(), from.allparams());
+        Type subFrom = asSub(from, to.tsym);
+        return to.isParameterized() &&
+                (!(isUnbounded(to) ||
+                isSubtype(from, to) ||
+                ((subFrom != null) && isSameType(subFrom, to))));
     }
 
     private List<Type> superClosure(Type t, Type s) {
