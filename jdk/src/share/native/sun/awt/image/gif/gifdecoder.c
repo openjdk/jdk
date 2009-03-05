@@ -191,6 +191,11 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
     int passht = passinc;
     int len;
 
+    /* We have verified the initial code size on the java layer.
+     * Here we just check bounds for particular indexes. */
+    if (freeCode >= 4096 || maxCode >= 4096) {
+        return 0;
+    }
     if (blockh == 0 || raslineh == 0
         || prefixh == 0 || suffixh == 0
         || outCodeh == 0)
