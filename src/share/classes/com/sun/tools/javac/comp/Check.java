@@ -1545,10 +1545,10 @@ public class Check {
 
 
     void checkNonCyclic(DiagnosticPosition pos, TypeVar t) {
-        checkNonCyclic1(pos, t, new HashSet<TypeVar>());
+        checkNonCyclic1(pos, t, List.<TypeVar>nil());
     }
 
-    private void checkNonCyclic1(DiagnosticPosition pos, Type t, Set<TypeVar> seen) {
+    private void checkNonCyclic1(DiagnosticPosition pos, Type t, List<TypeVar> seen) {
         final TypeVar tv;
         if  (t.tag == TYPEVAR && (t.tsym.flags() & UNATTRIBUTED) != 0)
             return;
@@ -1558,7 +1558,7 @@ public class Check {
             log.error(pos, "cyclic.inheritance", t);
         } else if (t.tag == TYPEVAR) {
             tv = (TypeVar)t;
-            seen.add(tv);
+            seen = seen.prepend(tv);
             for (Type b : types.getBounds(tv))
                 checkNonCyclic1(pos, b, seen);
         }
