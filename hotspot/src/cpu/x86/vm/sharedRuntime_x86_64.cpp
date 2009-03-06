@@ -1350,7 +1350,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     {
       Label L;
       __ mov(rax, rsp);
-      __ andptr(rax, -16); // must be 16 byte boundry (see amd64 ABI)
+      __ andptr(rax, -16); // must be 16 byte boundary (see amd64 ABI)
       __ cmpptr(rax, rsp);
       __ jcc(Assembler::equal, L);
       __ stop("improperly aligned stack");

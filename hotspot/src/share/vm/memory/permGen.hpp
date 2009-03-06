@@ -36,7 +36,7 @@ class PermGen : public CHeapObj {
   friend class VMStructs;
  protected:
   size_t _capacity_expansion_limit;  // maximum expansion allowed without a
-                                     // full gc occuring
+                                     // full gc occurring
 
   HeapWord* mem_allocate_in_gen(size_t size, Generation* gen);
 

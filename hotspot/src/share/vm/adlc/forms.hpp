@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ protected:
 public:
   // Public Data
   Form *_next;                     // Next pointer for form lists
-  long  _linenum;                  // Line number for debugging
+  int   _linenum;                  // Line number for debugging
 
   // Dynamic type check for common forms.
   virtual OpClassForm   *is_opclass()     const;

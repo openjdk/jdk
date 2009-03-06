@@ -5483,7 +5483,7 @@ operand cmpOpUCF2() %{
 
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used as to simplify
-// instruction definitions by not requiring the AD writer to specify seperate
+// instruction definitions by not requiring the AD writer to specify separate
 // instructions for every form of operand when the instruction accepts
 // multiple operand types with the same basic encoding and format.  The classic
 // case of this is memory operands.
@@ -8363,7 +8363,7 @@ instruct divModL_rReg_divmod(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
 //----------- DivL-By-Constant-Expansions--------------------------------------
 // DivI cases are handled by the compiler
 
-// Magic constant, reciprical of 10
+// Magic constant, reciprocal of 10
 instruct loadConL_0x6666666666666667(rRegL dst)
 %{
   effect(DEF dst);
@@ -12082,7 +12082,7 @@ instruct RethrowException()
 // These must follow all instruction definitions as they use the names
 // defined in the instructions definitions.
 //
-// peepmatch ( root_instr_name [precerding_instruction]* );
+// peepmatch ( root_instr_name [preceding_instruction]* );
 //
 // peepconstraint %{
 // (instruction_number.operand_name relational_op instruction_number.operand_name

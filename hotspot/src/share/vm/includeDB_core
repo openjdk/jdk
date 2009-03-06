@@ -474,6 +474,7 @@ cardTableModRefBS.cpp                   java.hpp
 cardTableModRefBS.cpp                   mutexLocker.hpp
 cardTableModRefBS.cpp                   sharedHeap.hpp
 cardTableModRefBS.cpp                   space.hpp
+cardTableModRefBS.cpp                   space.inline.hpp
 cardTableModRefBS.cpp                   universe.hpp
 cardTableModRefBS.cpp                   virtualspace.hpp
 
