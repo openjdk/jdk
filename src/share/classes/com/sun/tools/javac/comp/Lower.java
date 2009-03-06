@@ -3012,6 +3012,7 @@ public class Lower extends TreeTranslator {
                                                   vardefinit).setType(tree.var.type);
             indexDef.sym = tree.var.sym;
             JCBlock body = make.Block(0, List.of(indexDef, tree.body));
+            body.endpos = TreeInfo.endPos(tree.body);
             result = translate(make.
                 ForLoop(List.of(init),
                         cond,
