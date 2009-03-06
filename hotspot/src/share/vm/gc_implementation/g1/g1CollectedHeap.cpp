@@ -136,6 +136,14 @@ public:
   int calls() { return _calls; }
 };
 
+class RedirtyLoggedCardTableEntryFastClosure : public CardTableEntryClosure {
+public:
+  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
+    *card_ptr = CardTableModRefBS::dirty_card_val();
+    return true;
+  }
+};
+
 YoungList::YoungList(G1CollectedHeap* g1h)
   : _g1h(g1h), _head(NULL),
     _scan_only_head(NULL), _scan_only_tail(NULL), _curr_scan_only(NULL),
@@ -961,7 +969,8 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     // dirtied, so this should abandon those logs, and set "do_traversal"
     // to true.
     concurrent_g1_refine()->set_pya_restart();
-
+    assert(!G1DeferredRSUpdate
+           || (G1DeferredRSUpdate && (dirty_card_queue_set().completed_buffers_num() == 0)), "Should not be any");
     assert(regions_accounted_for(), "Region leakage!");
   }
 
@@ -1465,6 +1474,13 @@ jint G1CollectedHeap::initialize() {
                                                   DirtyCardQ_FL_lock,
                                                   G1DirtyCardQueueMax,
                                                   Shared_DirtyCardQ_lock);
+  }
+  if (G1DeferredRSUpdate) {
+    dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
+                                      DirtyCardQ_FL_lock,
+                                      0,
+                                      Shared_DirtyCardQ_lock,
+                                      &JavaThread::dirty_card_queue_set());
   }
   // In case we're keeping closure specialization stats, initialize those
   // counts and that mechanism.
@@ -2918,26 +2934,50 @@ public:
   }
 };
 
-class RecreateRSetEntriesClosure: public OopClosure {
+class UpdateRSetImmediate : public OopsInHeapRegionClosure {
 private:
   G1CollectedHeap* _g1;
   G1RemSet* _g1_rem_set;
-  HeapRegion* _from;
 public:
-  RecreateRSetEntriesClosure(G1CollectedHeap* g1, HeapRegion* from) :
-    _g1(g1), _g1_rem_set(g1->g1_rem_set()), _from(from)
-  {}
+  UpdateRSetImmediate(G1CollectedHeap* g1) :
+    _g1(g1), _g1_rem_set(g1->g1_rem_set()) {}
 
   void do_oop(narrowOop* p) {
     guarantee(false, "NYI");
   }
   void do_oop(oop* p) {
     assert(_from->is_in_reserved(p), "paranoia");
-    if (*p != NULL) {
-      _g1_rem_set->write_ref(_from, p);
+    if (*p != NULL && !_from->is_survivor()) {
+      _g1_rem_set->par_write_ref(_from, p, 0);
     }
   }
 };
+
+class UpdateRSetDeferred : public OopsInHeapRegionClosure {
+private:
+  G1CollectedHeap* _g1;
+  DirtyCardQueue *_dcq;
+  CardTableModRefBS* _ct_bs;
+
+public:
+  UpdateRSetDeferred(G1CollectedHeap* g1, DirtyCardQueue* dcq) :
+    _g1(g1), _ct_bs((CardTableModRefBS*)_g1->barrier_set()), _dcq(dcq) {}
+
+  void do_oop(narrowOop* p) {
+    guarantee(false, "NYI");
+  }
+  void do_oop(oop* p) {
+    assert(_from->is_in_reserved(p), "paranoia");
+    if (!_from->is_in_reserved(*p) && !_from->is_survivor()) {
+      size_t card_index = _ct_bs->index_for(p);
+      if (_ct_bs->mark_card_deferred(card_index)) {
+        _dcq->enqueue((jbyte*)_ct_bs->byte_for_index(card_index));
+      }
+    }
+  }
+};
+
+
 
 class RemoveSelfPointerClosure: public ObjectClosure {
 private:
@@ -2946,11 +2986,11 @@ private:
   HeapRegion* _hr;
   size_t _prev_marked_bytes;
   size_t _next_marked_bytes;
+  OopsInHeapRegionClosure *_cl;
 public:
-  RemoveSelfPointerClosure(G1CollectedHeap* g1, HeapRegion* hr) :
-    _g1(g1), _cm(_g1->concurrent_mark()), _hr(hr),
-    _prev_marked_bytes(0), _next_marked_bytes(0)
-  {}
+  RemoveSelfPointerClosure(G1CollectedHeap* g1, OopsInHeapRegionClosure* cl) :
+    _g1(g1), _cm(_g1->concurrent_mark()),  _prev_marked_bytes(0),
+    _next_marked_bytes(0), _cl(cl) {}
 
   size_t prev_marked_bytes() { return _prev_marked_bytes; }
   size_t next_marked_bytes() { return _next_marked_bytes; }
@@ -2988,8 +3028,7 @@ public:
       // that, if evacuation fails, we might have remembered set
       // entries missing given that we skipped cards on the
       // collection set. So, we'll recreate such entries now.
-      RecreateRSetEntriesClosure cl(_g1, _hr);
-      obj->oop_iterate(&cl);
+      obj->oop_iterate(_cl);
       assert(_cm->isPrevMarked(obj), "Should be marked!");
     } else {
       // The object has been either evacuated or is dead. Fill it with a
@@ -3002,14 +3041,23 @@ public:
 };
 
 void G1CollectedHeap::remove_self_forwarding_pointers() {
+  UpdateRSetImmediate immediate_update(_g1h);
+  DirtyCardQueue dcq(&_g1h->dirty_card_queue_set());
+  UpdateRSetDeferred deferred_update(_g1h, &dcq);
+  OopsInHeapRegionClosure *cl;
+  if (G1DeferredRSUpdate) {
+    cl = &deferred_update;
+  } else {
+    cl = &immediate_update;
+  }
   HeapRegion* cur = g1_policy()->collection_set();
-
   while (cur != NULL) {
     assert(g1_policy()->assertMarkedBytesDataOK(), "Should be!");
 
+    RemoveSelfPointerClosure rspc(_g1h, cl);
     if (cur->evacuation_failed()) {
-      RemoveSelfPointerClosure rspc(_g1h, cur);
       assert(cur->in_collection_set(), "bad CS");
+      cl->set_region(cur);
       cur->object_iterate(&rspc);
 
       // A number of manipulations to make the TAMS be the current top,
@@ -3518,6 +3566,9 @@ class G1ParScanThreadState : public StackObj {
 protected:
   G1CollectedHeap* _g1h;
   RefToScanQueue*  _refs;
+  DirtyCardQueue   _dcq;
+  CardTableModRefBS* _ct_bs;
+  G1RemSet* _g1_rem;
 
   typedef GrowableArray<oop*> OverflowQueue;
   OverflowQueue* _overflowed_refs;
@@ -3559,10 +3610,32 @@ protected:
 
   void   add_to_undo_waste(size_t waste)         { _undo_waste += waste; }
 
+  DirtyCardQueue& dirty_card_queue()             { return _dcq;  }
+  CardTableModRefBS* ctbs()                      { return _ct_bs; }
+
+  void immediate_rs_update(HeapRegion* from, oop* p, int tid) {
+    _g1_rem->par_write_ref(from, p, tid);
+  }
+
+  void deferred_rs_update(HeapRegion* from, oop* p, int tid) {
+    // If the new value of the field points to the same region or
+    // is the to-space, we don't need to include it in the Rset updates.
+    if (!from->is_in_reserved(*p) && !from->is_survivor()) {
+      size_t card_index = ctbs()->index_for(p);
+      // If the card hasn't been added to the buffer, do it.
+      if (ctbs()->mark_card_deferred(card_index)) {
+        dirty_card_queue().enqueue((jbyte*)ctbs()->byte_for_index(card_index));
+      }
+    }
+  }
+
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h, int queue_num)
     : _g1h(g1h),
       _refs(g1h->task_queue(queue_num)),
+      _dcq(&g1h->dirty_card_queue_set()),
+      _ct_bs((CardTableModRefBS*)_g1h->barrier_set()),
+      _g1_rem(g1h->g1_rem_set()),
       _hash_seed(17), _queue_num(queue_num),
       _term_attempts(0),
       _age_table(false),
@@ -3639,6 +3712,14 @@ public:
 
   int refs_to_scan()                             { return refs()->size();                 }
   int overflowed_refs_to_scan()                  { return overflowed_refs()->length();    }
+
+  void update_rs(HeapRegion* from, oop* p, int tid) {
+    if (G1DeferredRSUpdate) {
+      deferred_rs_update(from, p, tid);
+    } else {
+      immediate_rs_update(from, p, tid);
+    }
+  }
 
   HeapWord* allocate_slow(GCAllocPurpose purpose, size_t word_sz) {
 
@@ -3808,7 +3889,6 @@ public:
   }
 };
 
-
 G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
   _g1(g1), _g1_rem(_g1->g1_rem_set()), _cm(_g1->concurrent_mark()),
   _par_scan_state(par_scan_state) { }
@@ -3834,7 +3914,7 @@ void G1ParScanClosure::do_oop_nv(oop* p) {
       assert(obj == *p, "the value of *p should not have changed");
       _par_scan_state->push_on_queue(p);
     } else {
-      _g1_rem->par_write_ref(_from, p, _par_scan_state->queue_num());
+      _par_scan_state->update_rs(_from, p, _par_scan_state->queue_num());
     }
   }
 }
@@ -3972,13 +4052,13 @@ void G1ParCopyClosure<do_gen_barrier, barrier,
     }
     // When scanning the RS, we only care about objs in CS.
     if (barrier == G1BarrierRS) {
-      _g1_rem->par_write_ref(_from, p, _par_scan_state->queue_num());
+      _par_scan_state->update_rs(_from, p, _par_scan_state->queue_num());
     }
   }
 
   // When scanning moved objs, must look at all oops.
   if (barrier == G1BarrierEvac && obj != NULL) {
-    _g1_rem->par_write_ref(_from, p, _par_scan_state->queue_num());
+    _par_scan_state->update_rs(_from, p, _par_scan_state->queue_num());
   }
 
   if (do_gen_barrier && obj != NULL) {
@@ -4127,6 +4207,7 @@ public:
     G1ParScanExtRootClosure         only_scan_root_cl(_g1h, &pss);
     G1ParScanPermClosure            only_scan_perm_cl(_g1h, &pss);
     G1ParScanHeapRSClosure          only_scan_heap_rs_cl(_g1h, &pss);
+
     G1ParScanAndMarkExtRootClosure  scan_mark_root_cl(_g1h, &pss);
     G1ParScanAndMarkPermClosure     scan_mark_perm_cl(_g1h, &pss);
     G1ParScanAndMarkHeapRSClosure   scan_mark_heap_rs_cl(_g1h, &pss);
@@ -4382,7 +4463,6 @@ void G1CollectedHeap::evacuate_collection_set() {
   g1_rem_set()->prepare_for_oops_into_collection_set_do();
   concurrent_g1_refine()->set_use_cache(false);
   int n_workers = (ParallelGCThreads > 0 ? workers()->total_workers() : 1);
-
   set_par_threads(n_workers);
   G1ParTask g1_par_task(this, n_workers, _task_queues);
 
@@ -4390,8 +4470,9 @@ void G1CollectedHeap::evacuate_collection_set() {
 
   change_strong_roots_parity();  // In preparation for parallel strong roots.
   rem_set()->prepare_for_younger_refs_iterate(true);
-  double start_par = os::elapsedTime();
 
+  assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
+  double start_par = os::elapsedTime();
   if (ParallelGCThreads > 0) {
     // The individual threads will set their evac-failure closures.
     workers()->run_task(&g1_par_task);
@@ -4411,8 +4492,8 @@ void G1CollectedHeap::evacuate_collection_set() {
     G1KeepAliveClosure keep_alive(this);
     JNIHandles::weak_oops_do(&is_alive, &keep_alive);
   }
-
   g1_rem_set()->cleanup_after_oops_into_collection_set_do();
+
   concurrent_g1_refine()->set_use_cache(true);
 
   finalize_for_evac_failure();
@@ -4423,12 +4504,19 @@ void G1CollectedHeap::evacuate_collection_set() {
 
   if (evacuation_failed()) {
     remove_self_forwarding_pointers();
-
     if (PrintGCDetails) {
       gclog_or_tty->print(" (evacuation failed)");
     } else if (PrintGC) {
       gclog_or_tty->print("--");
     }
+  }
+
+  if (G1DeferredRSUpdate) {
+    RedirtyLoggedCardTableEntryFastClosure redirty;
+    dirty_card_queue_set().set_closure(&redirty);
+    dirty_card_queue_set().apply_closure_to_all_completed_buffers();
+    JavaThread::dirty_card_queue_set().merge_bufferlists(&dirty_card_queue_set());
+    assert(dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
   }
 
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
