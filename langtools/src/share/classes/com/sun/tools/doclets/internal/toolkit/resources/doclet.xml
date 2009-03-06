@@ -195,8 +195,8 @@
                         <FieldSubHeader/>
                         <FieldDeprecationInfo/>
                         <FieldInfo/>
-                        <FieldFooter/>
-                    </SerializableFields>                  
+                        <FieldSubFooter/>
+                    </SerializableFields>
                 </ClassSerializedForm>
             </PackageSerializedForm>
         </SerializedFormSummaries>
