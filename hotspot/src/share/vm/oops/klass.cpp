@@ -71,7 +71,7 @@ Klass *Klass::up_cast_abstract() {
   return r;                   // Return the 1 concrete class
 }
 
-// Find LCA in class heirarchy
+// Find LCA in class hierarchy
 Klass *Klass::LCA( Klass *k2 ) {
   Klass *k1 = this;
   while( 1 ) {

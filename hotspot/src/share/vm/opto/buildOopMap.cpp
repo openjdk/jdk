@@ -55,7 +55,7 @@
 // breadth-first approach but it was worse (showed O(n^2) in the
 // pick-next-block code).
 //
-// The relevent data is kept in a struct of arrays (it could just as well be
+// The relevant data is kept in a struct of arrays (it could just as well be
 // an array of structs, but the struct-of-arrays is generally a little more
 // efficient).  The arrays are indexed by register number (including
 // stack-slots as registers) and so is bounded by 200 to 300 elements in

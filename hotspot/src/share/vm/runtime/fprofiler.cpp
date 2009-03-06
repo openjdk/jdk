@@ -988,7 +988,7 @@ extern "C" void find(int x);
 
 
 void ThreadProfiler::record_tick_for_running_frame(JavaThread* thread, frame fr) {
-  // The tick happend in real code -> non VM code
+  // The tick happened in real code -> non VM code
   if (fr.is_interpreted_frame()) {
     interval_data_ref()->inc_interpreted();
     record_interpreted_tick(thread, fr, tp_code, FlatProfiler::bytecode_ticks);
@@ -1019,7 +1019,7 @@ void ThreadProfiler::record_tick_for_running_frame(JavaThread* thread, frame fr)
 }
 
 void ThreadProfiler::record_tick_for_calling_frame(JavaThread* thread, frame fr) {
-  // The tick happend in VM code
+  // The tick happened in VM code
   interval_data_ref()->inc_native();
   if (fr.is_interpreted_frame()) {
     record_interpreted_tick(thread, fr, tp_native, FlatProfiler::bytecode_ticks_stub);
