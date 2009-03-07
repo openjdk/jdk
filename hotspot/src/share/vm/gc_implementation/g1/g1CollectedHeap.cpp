@@ -2509,7 +2509,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
 
     guarantee(_in_cset_fast_test == NULL, "invariant");
     guarantee(_in_cset_fast_test_base == NULL, "invariant");
-    _in_cset_fast_test_length = n_regions();
+    _in_cset_fast_test_length = max_regions();
     _in_cset_fast_test_base =
                              NEW_C_HEAP_ARRAY(bool, _in_cset_fast_test_length);
     memset(_in_cset_fast_test_base, false,
