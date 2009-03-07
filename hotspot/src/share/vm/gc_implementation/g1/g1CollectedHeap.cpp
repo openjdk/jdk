@@ -2332,7 +2332,6 @@ class VerifyMarkedObjsClosure: public ObjectClosure {
 void
 G1CollectedHeap::checkConcurrentMark() {
     VerifyMarkedObjsClosure verifycl(this);
-    doConcurrentMark();
     //    MutexLockerEx x(getMarkBitMapLock(),
     //              Mutex::_no_safepoint_check_flag);
     object_iterate(&verifycl);
