@@ -7076,6 +7076,81 @@ void MacroAssembler::trigfunc(char trig, int num_fpu_regs_in_use) {
 }
 
 
+// Look up the method for a megamorphic invokeinterface call.
+// The target method is determined by <intf_klass, itable_index>.
+// The receiver klass is in recv_klass.
+// On success, the result will be in method_result, and execution falls through.
+// On failure, execution transfers to the given label.
+void MacroAssembler::lookup_interface_method(Register recv_klass,
+                                             Register intf_klass,
+                                             RegisterConstant itable_index,
+                                             Register method_result,
+                                             Register scan_temp,
+                                             Label& L_no_such_interface) {
+  assert_different_registers(recv_klass, intf_klass, method_result, scan_temp);
+  assert(itable_index.is_constant() || itable_index.as_register() == method_result,
+         "caller must use same register for non-constant itable index as for method");
+
+  // Compute start of first itableOffsetEntry (which is at the end of the vtable)
+  int vtable_base = instanceKlass::vtable_start_offset() * wordSize;
+  int itentry_off = itableMethodEntry::method_offset_in_bytes();
+  int scan_step   = itableOffsetEntry::size() * wordSize;
+  int vte_size    = vtableEntry::size() * wordSize;
+  Address::ScaleFactor times_vte_scale = Address::times_ptr;
+  assert(vte_size == wordSize, "else adjust times_vte_scale");
+
+  movl(scan_temp, Address(recv_klass, instanceKlass::vtable_length_offset() * wordSize));
+
+  // %%% Could store the aligned, prescaled offset in the klassoop.
+  lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base));
+  if (HeapWordsPerLong > 1) {
+    // Round up to align_object_offset boundary
+    // see code for instanceKlass::start_of_itable!
+    round_to(scan_temp, BytesPerLong);
+  }
+
+  // Adjust recv_klass by scaled itable_index, so we can free itable_index.
+  assert(itableMethodEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
+  lea(recv_klass, Address(recv_klass, itable_index, Address::times_ptr, itentry_off));
+
+  // for (scan = klass->itable(); scan->interface() != NULL; scan += scan_step) {
+  //   if (scan->interface() == intf) {
+  //     result = (klass + scan->offset() + itable_index);
+  //   }
+  // }
+  Label search, found_method;
+
+  for (int peel = 1; peel >= 0; peel--) {
+    movptr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+    cmpptr(intf_klass, method_result);
+
+    if (peel) {
+      jccb(Assembler::equal, found_method);
+    } else {
+      jccb(Assembler::notEqual, search);
+      // (invert the test to fall through to found_method...)
+    }
+
+    if (!peel)  break;
+
+    bind(search);
+
+    // Check that the previous entry is non-null.  A null entry means that
+    // the receiver class doesn't implement the interface, and wasn't the
+    // same as when the caller was compiled.
+    testptr(method_result, method_result);
+    jcc(Assembler::zero, L_no_such_interface);
+    addptr(scan_temp, scan_step);
+  }
+
+  bind(found_method);
+
+  // Got a hit.
+  movl(scan_temp, Address(scan_temp, itableOffsetEntry::offset_offset_in_bytes()));
+  movptr(method_result, Address(recv_klass, scan_temp, Address::times_1));
+}
+
+
 void MacroAssembler::ucomisd(XMMRegister dst, AddressLiteral src) {
   ucomisd(dst, as_Address(src));
 }

@@ -455,6 +455,11 @@ inline void MacroAssembler::srl_ptr( Register s1, int imm6a,   Register d ) {
 #endif
 }
 
+inline void MacroAssembler::sll_ptr( Register s1, RegisterConstant s2, Register d ) {
+  if (s2.is_register())  sll_ptr(s1, s2.as_register(), d);
+  else                   sll_ptr(s1, s2.as_constant(), d);
+}
+
 // Use the right branch for the platform
 
 inline void MacroAssembler::br( Condition c, bool a, Predict p, address d, relocInfo::relocType rt ) {
