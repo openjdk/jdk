@@ -3010,96 +3010,54 @@ void TemplateTable::invokeinterface(int byte_no) {
   // profile this call
   __ profile_virtual_call(rdx, r13, r14);
 
-  __ mov(r14, rdx); // Save klassOop in r14
+  Label no_such_interface, no_such_method;
 
-  // Compute start of first itableOffsetEntry (which is at the end of
-  // the vtable)
-  const int base = instanceKlass::vtable_start_offset() * wordSize;
-  // Get length of vtable
-  assert(vtableEntry::size() * wordSize == 8,
-         "adjust the scaling in the code below");
-  __ movl(r13, Address(rdx,
-                       instanceKlass::vtable_length_offset() * wordSize));
-  __ lea(rdx, Address(rdx, r13, Address::times_8, base));
+  __ lookup_interface_method(// inputs: rec. class, interface, itable index
+                             rdx, rax, rbx,
+                             // outputs: method, scan temp. reg
+                             rbx, r13,
+                             no_such_interface);
 
-  if (HeapWordsPerLong > 1) {
-    // Round up to align_object_offset boundary
-    __ round_to(rdx, BytesPerLong);
-  }
+  // rbx,: methodOop to call
+  // rcx: receiver
+  // Check for abstract method error
+  // Note: This should be done more efficiently via a throw_abstract_method_error
+  //       interpreter entry point and a conditional jump to it in case of a null
+  //       method.
+  __ testptr(rbx, rbx);
+  __ jcc(Assembler::zero, no_such_method);
 
-  Label entry, search, interface_ok;
+  // do the call
+  // rcx: receiver
+  // rbx,: methodOop
+  __ jump_from_interpreted(rbx, rdx);
+  __ should_not_reach_here();
 
-  __ jmpb(entry);
-  __ bind(search);
-  __ addptr(rdx, itableOffsetEntry::size() * wordSize);
+  // exception handling code follows...
+  // note: must restore interpreter registers to canonical
+  //       state for exception handling to work correctly!
 
-  __ bind(entry);
-
-  // Check that the entry is non-null.  A null entry means that the
-  // receiver class doesn't implement the interface, and wasn't the
-  // same as the receiver class checked when the interface was
-  // resolved.
-  __ push(rdx);
-  __ movptr(rdx, Address(rdx, itableOffsetEntry::interface_offset_in_bytes()));
-  __ testptr(rdx, rdx);
-  __ jcc(Assembler::notZero, interface_ok);
+  __ bind(no_such_method);
   // throw exception
-  __ pop(rdx); // pop saved register first.
-  __ pop(rbx); // pop return address (pushed by prepare_invoke)
-  __ restore_bcp(); // r13 must be correct for exception handler (was
-                    // destroyed)
-  __ restore_locals(); // make sure locals pointer is correct as well
-                       // (was destroyed)
+  __ pop(rbx);           // pop return address (pushed by prepare_invoke)
+  __ restore_bcp();      // r13 must be correct for exception handler   (was destroyed)
+  __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
+  // the call_VM checks for exception, so we should never return here.
+  __ should_not_reach_here();
+
+  __ bind(no_such_interface);
+  // throw exception
+  __ pop(rbx);           // pop return address (pushed by prepare_invoke)
+  __ restore_bcp();      // r13 must be correct for exception handler   (was destroyed)
+  __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                    InterpreterRuntime::throw_IncompatibleClassChangeError));
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
-  __ bind(interface_ok);
-
-  __ pop(rdx);
-
-  __ cmpptr(rax, Address(rdx, itableOffsetEntry::interface_offset_in_bytes()));
-  __ jcc(Assembler::notEqual, search);
-
-  __ movl(rdx, Address(rdx, itableOffsetEntry::offset_offset_in_bytes()));
-
-  __ addptr(rdx, r14); // Add offset to klassOop
-  assert(itableMethodEntry::size() * wordSize == 8,
-         "adjust the scaling in the code below");
-  __ movptr(rbx, Address(rdx, rbx, Address::times_8));
-  // rbx: methodOop to call
-  // rcx: receiver
-  // Check for abstract method error
-  // Note: This should be done more efficiently via a
-  // throw_abstract_method_error interpreter entry point and a
-  // conditional jump to it in case of a null method.
-  {
-    Label L;
-    __ testptr(rbx, rbx);
-    __ jcc(Assembler::notZero, L);
-    // throw exception
-    // note: must restore interpreter registers to canonical
-    //       state for exception handling to work correctly!
-    __ pop(rbx);  // pop return address (pushed by prepare_invoke)
-    __ restore_bcp(); // r13 must be correct for exception handler
-                      // (was destroyed)
-    __ restore_locals(); // make sure locals pointer is correct as
-                         // well (was destroyed)
-    __ call_VM(noreg,
-               CAST_FROM_FN_PTR(address,
-                             InterpreterRuntime::throw_AbstractMethodError));
-    // the call_VM checks for exception, so we should never return here.
-    __ should_not_reach_here();
-    __ bind(L);
-  }
-
-  __ movptr(rcx, Address(rbx, methodOopDesc::interpreter_entry_offset()));
-
-  // do the call
-  // rcx: receiver
-  // rbx: methodOop
-  __ jump_from_interpreted(rbx, rdx);
+  return;
 }
+
 
 //-----------------------------------------------------------------------------
 // Allocation

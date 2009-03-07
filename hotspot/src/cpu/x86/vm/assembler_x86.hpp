@@ -1765,6 +1765,14 @@ class MacroAssembler: public Assembler {
   );
   void tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case);
 
+  // interface method calling
+  void lookup_interface_method(Register recv_klass,
+                               Register intf_klass,
+                               RegisterConstant itable_index,
+                               Register method_result,
+                               Register scan_temp,
+                               Label& no_such_interface);
+
   //----
   void set_word_if_not_zero(Register reg); // sets reg to 1 if not zero, otherwise 0
 

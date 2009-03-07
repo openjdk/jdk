@@ -2638,6 +2638,135 @@ RegisterConstant MacroAssembler::delayed_value(intptr_t* delayed_value_addr,
 }
 
 
+void MacroAssembler::regcon_inc_ptr( RegisterConstant& dest, RegisterConstant src, Register temp ) {
+  assert(dest.register_or_noreg() != G0, "lost side effect");
+  if ((src.is_constant() && src.as_constant() == 0) ||
+      (src.is_register() && src.as_register() == G0)) {
+    // do nothing
+  } else if (dest.is_register()) {
+    add(dest.as_register(), ensure_rs2(src, temp), dest.as_register());
+  } else if (src.is_constant()) {
+    intptr_t res = dest.as_constant() + src.as_constant();
+    dest = RegisterConstant(res); // side effect seen by caller
+  } else {
+    assert(temp != noreg, "cannot handle constant += register");
+    add(src.as_register(), ensure_rs2(dest, temp), temp);
+    dest = RegisterConstant(temp); // side effect seen by caller
+  }
+}
+
+void MacroAssembler::regcon_sll_ptr( RegisterConstant& dest, RegisterConstant src, Register temp ) {
+  assert(dest.register_or_noreg() != G0, "lost side effect");
+  if (!is_simm13(src.constant_or_zero()))
+    src = (src.as_constant() & 0xFF);
+  if ((src.is_constant() && src.as_constant() == 0) ||
+      (src.is_register() && src.as_register() == G0)) {
+    // do nothing
+  } else if (dest.is_register()) {
+    sll_ptr(dest.as_register(), src, dest.as_register());
+  } else if (src.is_constant()) {
+    intptr_t res = dest.as_constant() << src.as_constant();
+    dest = RegisterConstant(res); // side effect seen by caller
+  } else {
+    assert(temp != noreg, "cannot handle constant <<= register");
+    set(dest.as_constant(), temp);
+    sll_ptr(temp, src, temp);
+    dest = RegisterConstant(temp); // side effect seen by caller
+  }
+}
+
+
+// Look up the method for a megamorphic invokeinterface call.
+// The target method is determined by <intf_klass, itable_index>.
+// The receiver klass is in recv_klass.
+// On success, the result will be in method_result, and execution falls through.
+// On failure, execution transfers to the given label.
+void MacroAssembler::lookup_interface_method(Register recv_klass,
+                                             Register intf_klass,
+                                             RegisterConstant itable_index,
+                                             Register method_result,
+                                             Register scan_temp,
+                                             Register sethi_temp,
+                                             Label& L_no_such_interface) {
+  assert_different_registers(recv_klass, intf_klass, method_result, scan_temp);
+  assert(itable_index.is_constant() || itable_index.as_register() == method_result,
+         "caller must use same register for non-constant itable index as for method");
+
+  // Compute start of first itableOffsetEntry (which is at the end of the vtable)
+  int vtable_base = instanceKlass::vtable_start_offset() * wordSize;
+  int scan_step   = itableOffsetEntry::size() * wordSize;
+  int vte_size    = vtableEntry::size() * wordSize;
+
+  lduw(recv_klass, instanceKlass::vtable_length_offset() * wordSize, scan_temp);
+  // %%% We should store the aligned, prescaled offset in the klassoop.
+  // Then the next several instructions would fold away.
+
+  int round_to_unit = ((HeapWordsPerLong > 1) ? BytesPerLong : 0);
+  int itb_offset = vtable_base;
+  if (round_to_unit != 0) {
+    // hoist first instruction of round_to(scan_temp, BytesPerLong):
+    itb_offset += round_to_unit - wordSize;
+  }
+  int itb_scale = exact_log2(vtableEntry::size() * wordSize);
+  sll(scan_temp, itb_scale,  scan_temp);
+  add(scan_temp, itb_offset, scan_temp);
+  if (round_to_unit != 0) {
+    // Round up to align_object_offset boundary
+    // see code for instanceKlass::start_of_itable!
+    // Was: round_to(scan_temp, BytesPerLong);
+    // Hoisted: add(scan_temp, BytesPerLong-1, scan_temp);
+    and3(scan_temp, -round_to_unit, scan_temp);
+  }
+  add(recv_klass, scan_temp, scan_temp);
+
+  // Adjust recv_klass by scaled itable_index, so we can free itable_index.
+  RegisterConstant itable_offset = itable_index;
+  regcon_sll_ptr(itable_offset, exact_log2(itableMethodEntry::size() * wordSize));
+  regcon_inc_ptr(itable_offset, itableMethodEntry::method_offset_in_bytes());
+  add(recv_klass, ensure_rs2(itable_offset, sethi_temp), recv_klass);
+
+  // for (scan = klass->itable(); scan->interface() != NULL; scan += scan_step) {
+  //   if (scan->interface() == intf) {
+  //     result = (klass + scan->offset() + itable_index);
+  //   }
+  // }
+  Label search, found_method;
+
+  for (int peel = 1; peel >= 0; peel--) {
+    // %%%% Could load both offset and interface in one ldx, if they were
+    // in the opposite order.  This would save a load.
+    ld_ptr(scan_temp, itableOffsetEntry::interface_offset_in_bytes(), method_result);
+
+    // Check that this entry is non-null.  A null entry means that
+    // the receiver class doesn't implement the interface, and wasn't the
+    // same as when the caller was compiled.
+    bpr(Assembler::rc_z, false, Assembler::pn, method_result, L_no_such_interface);
+    delayed()->cmp(method_result, intf_klass);
+
+    if (peel) {
+      brx(Assembler::equal,    false, Assembler::pt, found_method);
+    } else {
+      brx(Assembler::notEqual, false, Assembler::pn, search);
+      // (invert the test to fall through to found_method...)
+    }
+    delayed()->add(scan_temp, scan_step, scan_temp);
+
+    if (!peel)  break;
+
+    bind(search);
+  }
+
+  bind(found_method);
+
+  // Got a hit.
+  int ito_offset = itableOffsetEntry::offset_offset_in_bytes();
+  // scan_temp[-scan_step] points to the vtable offset we need
+  ito_offset -= scan_step;
+  lduw(scan_temp, ito_offset, scan_temp);
+  ld_ptr(recv_klass, scan_temp, method_result);
+}
+
+
 void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
                                           Register temp_reg,
                                           Label& done, Label* slow_case,

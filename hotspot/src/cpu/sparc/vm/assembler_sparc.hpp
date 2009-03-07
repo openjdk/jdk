@@ -1859,6 +1859,7 @@ class MacroAssembler: public Assembler {
   // Functions for isolating 64 bit shifts for LP64
   inline void sll_ptr( Register s1, Register s2, Register d );
   inline void sll_ptr( Register s1, int imm6a,   Register d );
+  inline void sll_ptr( Register s1, RegisterConstant s2, Register d );
   inline void srl_ptr( Register s1, Register s2, Register d );
   inline void srl_ptr( Register s1, int imm6a,   Register d );
 
@@ -1985,6 +1986,25 @@ class MacroAssembler: public Assembler {
   // Loading values by size and signed-ness
   void load_sized_value(Register s1, RegisterConstant s2, Register d,
                         int size_in_bytes, bool is_signed);
+
+  // Helpers for address formation.
+  // They update the dest in place, whether it is a register or constant.
+  // They emit no code at all if src is a constant zero.
+  // If dest is a constant and src is a register, the temp argument
+  // is required, and becomes the result.
+  // If dest is a register and src is a non-simm13 constant,
+  // the temp argument is required, and is used to materialize the constant.
+  void regcon_inc_ptr( RegisterConstant& dest, RegisterConstant src,
+                       Register temp = noreg );
+  void regcon_sll_ptr( RegisterConstant& dest, RegisterConstant src,
+                       Register temp = noreg );
+  RegisterConstant ensure_rs2(RegisterConstant rs2, Register sethi_temp) {
+    guarantee(sethi_temp != noreg, "constant offset overflow");
+    if (is_simm13(rs2.constant_or_zero()))
+      return rs2;               // register or short constant
+    set(rs2.as_constant(), sethi_temp);
+    return sethi_temp;
+  }
 
   // --------------------------------------------------
 
@@ -2298,6 +2318,14 @@ class MacroAssembler: public Assembler {
     Label&   slow_case                 // continuation point if fast allocation fails
   );
   void tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case);
+
+  // interface method calling
+  void lookup_interface_method(Register recv_klass,
+                               Register intf_klass,
+                               RegisterConstant itable_index,
+                               Register method_result,
+                               Register temp_reg, Register temp2_reg,
+                               Label& no_such_interface);
 
   // Stack overflow checking
 
