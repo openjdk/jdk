@@ -2139,8 +2139,59 @@ public:
         // A subfield variable, '$$' prefix
         emit_field( rep_var );
       } else {
-        // A replacement variable, '$' prefix
-        emit_rep_var( rep_var );
+        if (_strings_to_emit.peek() != NULL &&
+            strcmp(_strings_to_emit.peek(), "$Address") == 0) {
+          fprintf(_fp, "Address::make_raw(");
+
+          emit_rep_var( rep_var );
+          fprintf(_fp,"->base(ra_,this,idx%d), ", _operand_idx);
+
+          _reg_status = LITERAL_ACCESSED;
+          emit_rep_var( rep_var );
+          fprintf(_fp,"->index(ra_,this,idx%d), ", _operand_idx);
+
+          _reg_status = LITERAL_ACCESSED;
+          emit_rep_var( rep_var );
+          fprintf(_fp,"->scale(), ");
+
+          _reg_status = LITERAL_ACCESSED;
+          emit_rep_var( rep_var );
+          Form::DataType stack_type = _operand ? _operand->is_user_name_for_sReg() : Form::none;
+          if( _operand  && _operand_idx==0 && stack_type != Form::none ) {
+            fprintf(_fp,"->disp(ra_,this,0), ");
+          } else {
+            fprintf(_fp,"->disp(ra_,this,idx%d), ", _operand_idx);
+          }
+
+          _reg_status = LITERAL_ACCESSED;
+          emit_rep_var( rep_var );
+          fprintf(_fp,"->disp_is_oop())");
+
+          // skip trailing $Address
+          _strings_to_emit.iter();
+        } else {
+          // A replacement variable, '$' prefix
+          const char* next = _strings_to_emit.peek();
+          const char* next2 = _strings_to_emit.peek(2);
+          if (next != NULL && next2 != NULL && strcmp(next2, "$Register") == 0 &&
+              (strcmp(next, "$base") == 0 || strcmp(next, "$index") == 0)) {
+            // handle $rev_var$$base$$Register and $rev_var$$index$$Register by
+            // producing as_Register(opnd_array(#)->base(ra_,this,idx1)).
+            fprintf(_fp, "as_Register(");
+            // emit the operand reference
+            emit_rep_var( rep_var );
+            rep_var = _strings_to_emit.iter();
+            assert(strcmp(rep_var, "$base") == 0 || strcmp(rep_var, "$index") == 0, "bad pattern");
+            // handle base or index
+            emit_field(rep_var);
+            rep_var = _strings_to_emit.iter();
+            assert(strcmp(rep_var, "$Register") == 0, "bad pattern");
+            // close up the parens
+            fprintf(_fp, ")");
+          } else {
+            emit_rep_var( rep_var );
+          }
+        }
       } // end replacement and/or subfield
     }
   }
