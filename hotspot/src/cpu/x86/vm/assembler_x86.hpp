@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,7 @@ class Address VALUE_OBJ_CLASS_SPEC {
   // Convert the raw encoding form into the form expected by the constructor for
   // Address.  An index of 4 (rsp) corresponds to having no index, so convert
   // that to noreg for the Address constructor.
-  static Address make_raw(int base, int index, int scale, int disp);
+  static Address make_raw(int base, int index, int scale, int disp, bool disp_is_oop);
 
   static Address make_array(ArrayAddress);
 
@@ -1138,6 +1138,9 @@ private:
   void movsbl(Register dst, Register src);
 
 #ifdef _LP64
+  void movsbq(Register dst, Address src);
+  void movsbq(Register dst, Register src);
+
   // Move signed 32bit immediate to 64bit extending sign
   void movslq(Address dst, int32_t imm64);
   void movslq(Register dst, int32_t imm64);
@@ -1150,6 +1153,11 @@ private:
   void movswl(Register dst, Address src);
   void movswl(Register dst, Register src);
 
+#ifdef _LP64
+  void movswq(Register dst, Address src);
+  void movswq(Register dst, Register src);
+#endif
+
   void movw(Address dst, int imm16);
   void movw(Register dst, Address src);
   void movw(Address dst, Register src);
@@ -1157,8 +1165,18 @@ private:
   void movzbl(Register dst, Address src);
   void movzbl(Register dst, Register src);
 
+#ifdef _LP64
+  void movzbq(Register dst, Address src);
+  void movzbq(Register dst, Register src);
+#endif
+
   void movzwl(Register dst, Address src);
   void movzwl(Register dst, Register src);
+
+#ifdef _LP64
+  void movzwq(Register dst, Address src);
+  void movzwq(Register dst, Register src);
+#endif
 
   void mull(Address src);
   void mull(Register src);

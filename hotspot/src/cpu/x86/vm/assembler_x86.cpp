@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,13 +129,19 @@ Address::Address(address loc, RelocationHolder spec) {
 // Convert the raw encoding form into the form expected by the constructor for
 // Address.  An index of 4 (rsp) corresponds to having no index, so convert
 // that to noreg for the Address constructor.
-Address Address::make_raw(int base, int index, int scale, int disp) {
+Address Address::make_raw(int base, int index, int scale, int disp, bool disp_is_oop) {
+  RelocationHolder rspec;
+  if (disp_is_oop) {
+    rspec = Relocation::spec_simple(relocInfo::oop_type);
+  }
   bool valid_index = index != rsp->encoding();
   if (valid_index) {
     Address madr(as_Register(base), as_Register(index), (Address::ScaleFactor)scale, in_ByteSize(disp));
+    madr._rspec = rspec;
     return madr;
   } else {
     Address madr(as_Register(base), noreg, Address::no_scale, in_ByteSize(disp));
+    madr._rspec = rspec;
     return madr;
   }
 }
@@ -3892,6 +3898,21 @@ void Assembler::movq(Address dst, Register src) {
   emit_operand(src, dst);
 }
 
+void Assembler::movsbq(Register dst, Address src) {
+  InstructionMark im(this);
+  prefixq(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0xBE);
+  emit_operand(dst, src);
+}
+
+void Assembler::movsbq(Register dst, Register src) {
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xBE);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::movslq(Register dst, int32_t imm32) {
   // dbx shows movslq(rcx, 3) as movq     $0x0000000049000000,(%rbx)
   // and movslq(r8, 3); as movl     $0x0000000048000000,(%rbx)
@@ -3922,6 +3943,51 @@ void Assembler::movslq(Register dst, Address src) {
 void Assembler::movslq(Register dst, Register src) {
   int encode = prefixq_and_encode(dst->encoding(), src->encoding());
   emit_byte(0x63);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::movswq(Register dst, Address src) {
+  InstructionMark im(this);
+  prefixq(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0xBF);
+  emit_operand(dst, src);
+}
+
+void Assembler::movswq(Register dst, Register src) {
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xBF);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::movzbq(Register dst, Address src) {
+  InstructionMark im(this);
+  prefixq(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0xB6);
+  emit_operand(dst, src);
+}
+
+void Assembler::movzbq(Register dst, Register src) {
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xB6);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::movzwq(Register dst, Address src) {
+  InstructionMark im(this);
+  prefixq(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0xB7);
+  emit_operand(dst, src);
+}
+
+void Assembler::movzwq(Register dst, Register src) {
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xB7);
   emit_byte(0xC0 | encode);
 }
 

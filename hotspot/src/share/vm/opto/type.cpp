@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,6 +226,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeInt::CC_LE   = TypeInt::make(-1, 0, WidenMin);
   TypeInt::CC_GE   = TypeInt::make( 0, 1, WidenMin);  // == TypeInt::BOOL
   TypeInt::BYTE    = TypeInt::make(-128,127,     WidenMin); // Bytes
+  TypeInt::UBYTE   = TypeInt::make(0, 255,       WidenMin); // Unsigned Bytes
   TypeInt::CHAR    = TypeInt::make(0,65535,      WidenMin); // Java chars
   TypeInt::SHORT   = TypeInt::make(-32768,32767, WidenMin); // Java shorts
   TypeInt::POS     = TypeInt::make(0,max_jint,   WidenMin); // Non-neg values
@@ -1022,6 +1023,7 @@ const TypeInt *TypeInt::CC_EQ;  // [0]   == ZERO
 const TypeInt *TypeInt::CC_LE;  // [-1,0]
 const TypeInt *TypeInt::CC_GE;  // [0,1] == BOOL (!)
 const TypeInt *TypeInt::BYTE;   // Bytes, -128 to 127
+const TypeInt *TypeInt::UBYTE;  // Unsigned Bytes, 0 to 255
 const TypeInt *TypeInt::CHAR;   // Java chars, 0-65535
 const TypeInt *TypeInt::SHORT;  // Java shorts, -32768-32767
 const TypeInt *TypeInt::POS;    // Positive 32-bit integers or zero
