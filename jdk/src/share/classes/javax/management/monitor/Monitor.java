@@ -33,8 +33,9 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -174,14 +175,20 @@ public abstract class Monitor
             new DaemonThreadFactory("Scheduler"));
 
     /**
+     * Map containing the thread pool executor per thread group.
+     */
+    private static final Map<ThreadPoolExecutor, Void> executors =
+            new WeakHashMap<ThreadPoolExecutor, Void>();
+
+    /**
+     * Lock for executors map.
+     */
+    private static final Object executorsLock = new Object();
+
+    /**
      * Maximum Pool Size
      */
     private static final int maximumPoolSize;
-
-    /**
-     * Executor Service.
-     */
-    private static final ExecutorService executor;
     static {
         final String maximumPoolSizeSysProp = "jmx.x.monitor.maximum.pool.size";
         final String maximumPoolSizeStr = AccessController.doPrivileged(
@@ -211,20 +218,7 @@ public abstract class Monitor
                 maximumPoolSize = maximumPoolSizeTmp;
             }
         }
-        executor = new ThreadPoolExecutor(
-                maximumPoolSize,
-                maximumPoolSize,
-                60L,
-                TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>(),
-                new DaemonThreadFactory("Executor"));
-        ((ThreadPoolExecutor)executor).allowCoreThreadTimeOut(true);
     }
-
-    /**
-     * Monitor task to be executed by the Executor Service.
-     */
-    private final MonitorTask monitorTask = new MonitorTask();
 
     /**
      * Future associated to the current monitor task.
@@ -234,7 +228,7 @@ public abstract class Monitor
     /**
      * Scheduler task to be executed by the Scheduler Service.
      */
-    private final SchedulerTask schedulerTask = new SchedulerTask(monitorTask);
+    private final SchedulerTask schedulerTask = new SchedulerTask();
 
     /**
      * ScheduledFuture associated to the current scheduler task.
@@ -720,6 +714,7 @@ public abstract class Monitor
             // Start the scheduler.
             //
             cleanupFutures();
+            schedulerTask.setMonitorTask(new MonitorTask());
             schedulerFuture = scheduler.schedule(schedulerTask,
                                                  getGranularityPeriod(),
                                                  TimeUnit.MILLISECONDS);
@@ -1468,7 +1463,7 @@ public abstract class Monitor
      */
     private class SchedulerTask implements Runnable {
 
-        private Runnable task = null;
+        private MonitorTask task;
 
         /*
          * ------------------------------------------
@@ -1476,7 +1471,16 @@ public abstract class Monitor
          * ------------------------------------------
          */
 
-        public SchedulerTask(Runnable task) {
+        public SchedulerTask() {
+        }
+
+        /*
+         * ------------------------------------------
+         *  GETTERS/SETTERS
+         * ------------------------------------------
+         */
+
+        public void setMonitorTask(MonitorTask task) {
             this.task = task;
         }
 
@@ -1488,7 +1492,7 @@ public abstract class Monitor
 
         public void run() {
             synchronized (Monitor.this) {
-                Monitor.this.monitorFuture = executor.submit(task);
+                Monitor.this.monitorFuture = task.submit();
             }
         }
     }
@@ -1501,6 +1505,8 @@ public abstract class Monitor
      */
     private class MonitorTask implements Runnable {
 
+        private ThreadPoolExecutor executor;
+
         /*
          * ------------------------------------------
          *  CONSTRUCTORS
@@ -1508,6 +1514,38 @@ public abstract class Monitor
          */
 
         public MonitorTask() {
+            // Find out if there's already an existing executor for the calling
+            // thread and reuse it. Otherwise, create a new one and store it in
+            // the executors map. If there is a SecurityManager, the group of
+            // System.getSecurityManager() is used, else the group of the thread
+            // instantiating this MonitorTask, i.e. the group of the thread that
+            // calls "Monitor.start()".
+            SecurityManager s = System.getSecurityManager();
+            ThreadGroup group = (s != null) ? s.getThreadGroup() :
+                Thread.currentThread().getThreadGroup();
+            synchronized (executorsLock) {
+                for (ThreadPoolExecutor e : executors.keySet()) {
+                    DaemonThreadFactory tf =
+                            (DaemonThreadFactory) e.getThreadFactory();
+                    ThreadGroup tg = tf.getThreadGroup();
+                    if (tg == group) {
+                        executor = e;
+                        break;
+                    }
+                }
+                if (executor == null) {
+                    executor = new ThreadPoolExecutor(
+                            maximumPoolSize,
+                            maximumPoolSize,
+                            60L,
+                            TimeUnit.SECONDS,
+                            new LinkedBlockingQueue<Runnable>(),
+                            new DaemonThreadFactory("ThreadGroup<" +
+                            group.getName() + "> Executor", group));
+                    executor.allowCoreThreadTimeOut(true);
+                    executors.put(executor, null);
+                }
+            }
         }
 
         /*
@@ -1515,6 +1553,10 @@ public abstract class Monitor
          *  PUBLIC METHODS
          * ------------------------------------------
          */
+
+        public Future<?> submit() {
+            return executor.submit(this);
+        }
 
         public void run() {
             final ScheduledFuture<?> sf;
@@ -1572,6 +1614,15 @@ public abstract class Monitor
             group = (s != null) ? s.getThreadGroup() :
                                   Thread.currentThread().getThreadGroup();
             namePrefix = "JMX Monitor " + poolName + " Pool [Thread-";
+        }
+
+        public DaemonThreadFactory(String poolName, ThreadGroup threadGroup) {
+            group = threadGroup;
+            namePrefix = "JMX Monitor " + poolName + " Pool [Thread-";
+        }
+
+        public ThreadGroup getThreadGroup() {
+            return group;
         }
 
         public Thread newThread(Runnable r) {
