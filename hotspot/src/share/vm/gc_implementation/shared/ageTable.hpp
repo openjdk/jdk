@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-/* Copyright 1992 Sun Microsystems, Inc. and Stanford University.
+/* Copyright 1992-2009 Sun Microsystems, Inc. and Stanford University.
    See the LICENSE file for license information. */
 
 // Age table for adaptive feedback-mediated tenuring (scavenging)
