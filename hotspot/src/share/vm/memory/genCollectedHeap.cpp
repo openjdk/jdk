@@ -456,6 +456,9 @@ void GenCollectedHeap::do_collection(bool  full,
     int max_level_collected = starting_level;
     for (int i = starting_level; i <= max_level; i++) {
       if (_gens[i]->should_collect(full, size, is_tlab)) {
+        if (i == n_gens() - 1) {  // a major collection is to happen
+          pre_full_gc_dump();    // do any pre full gc dumps
+        }
         // Timer for individual generations. Last argument is false: no CR
         TraceTime t1(_gens[i]->short_name(), PrintGCDetails, false, gclog_or_tty);
         TraceCollectorStats tcs(_gens[i]->counters());
@@ -572,6 +575,10 @@ void GenCollectedHeap::do_collection(bool  full,
     // for instance, a promotion failure could have led to
     // a whole heap collection.
     complete = complete || (max_level_collected == n_gens() - 1);
+
+    if (complete) { // We did a "major" collection
+      post_full_gc_dump();   // do any post full gc dumps
+    }
 
     if (PrintGCDetails) {
       print_heap_change(gch_prev_used);
