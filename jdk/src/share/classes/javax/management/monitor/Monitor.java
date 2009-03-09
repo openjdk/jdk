@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -164,7 +165,10 @@ public abstract class Monitor
     /**
      * AccessControlContext of the Monitor.start() caller.
      */
-    private AccessControlContext acc;
+    private static final AccessControlContext noPermissionsACC =
+            new AccessControlContext(
+            new ProtectionDomain[] {new ProtectionDomain(null, null)});
+    private volatile AccessControlContext acc = noPermissionsACC;
 
     /**
      * Scheduler Service.
@@ -749,7 +753,7 @@ public abstract class Monitor
 
             // Reset the AccessControlContext.
             //
-            acc = null;
+            acc = noPermissionsACC;
 
             // Reset the complex type attribute information
             // such that it is recalculated again.
@@ -1518,10 +1522,12 @@ public abstract class Monitor
 
         public void run() {
             final ScheduledFuture<?> sf;
+            final AccessControlContext ac;
             synchronized (Monitor.this) {
                 sf = Monitor.this.schedulerFuture;
+                ac = Monitor.this.acc;
             }
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            PrivilegedAction<Void> action = new PrivilegedAction<Void>() {
                 public Void run() {
                     if (Monitor.this.isActive()) {
                         final int an[] = alreadyNotifieds;
@@ -1534,7 +1540,11 @@ public abstract class Monitor
                     }
                     return null;
                 }
-            }, Monitor.this.acc);
+            };
+            if (ac == null) {
+                throw new SecurityException("AccessControlContext cannot be null");
+            }
+            AccessController.doPrivileged(action, ac);
             synchronized (Monitor.this) {
                 if (Monitor.this.isActive() &&
                     Monitor.this.schedulerFuture == sf) {
