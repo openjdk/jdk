@@ -155,6 +155,7 @@ protected:
   bool _par_traversal_in_progress;
   void set_par_traversal(bool b);
   GrowableArray<oop*>** _new_refs;
+  void new_refs_iterate(OopClosure* cl);
 
 public:
   // This is called to reset dual hash tables after the gc pause
