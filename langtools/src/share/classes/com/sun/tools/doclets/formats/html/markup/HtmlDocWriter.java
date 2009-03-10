@@ -245,6 +245,31 @@ public abstract class HtmlDocWriter extends HtmlWriter {
     }
 
     /**
+     * Keep track of member details list. Print the definition list start tag
+     * if it is not printed yet.
+     */
+    public void printMemberDetailsListStartTag () {
+        if (!getMemberDetailsListPrinted()) {
+            dl();
+            memberDetailsListPrinted = true;
+        }
+    }
+
+    /**
+     * Print the definition list end tag if the list start tag was printed.
+     */
+    public void printMemberDetailsListEndTag () {
+        if (getMemberDetailsListPrinted()) {
+            dlEnd();
+            memberDetailsListPrinted = false;
+        }
+    }
+
+    public boolean getMemberDetailsListPrinted() {
+        return memberDetailsListPrinted;
+    }
+
+    /**
      * Print the frameset version of the Html file header.
      * Called only when generating an HTML frameset file.
      *

@@ -25,12 +25,11 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.tools.doclets.internal.toolkit.taglets.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.javadoc.*;
-
 import java.io.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Writes field documentation in HTML format.
@@ -156,7 +155,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
             strong(field.name());
         }
         writer.preEnd();
-        writer.dl();
+        assert !writer.getMemberDetailsListPrinted();
     }
 
     /**
@@ -165,9 +164,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
      * @param field the field being documented.
      */
     public void writeDeprecated(FieldDoc field) {
-        print(((TagletOutputImpl)
-            (new DeprecatedTaglet()).getTagletOutput(field,
-            writer.getTagletWriterInstance(false))).toString());
+        printDeprecated(field);
     }
 
     /**
@@ -178,10 +175,12 @@ public class FieldWriterImpl extends AbstractMemberWriter
     public void writeComments(FieldDoc field) {
         ClassDoc holder = field.containingClass();
         if (field.inlineTags().length > 0) {
+            writer.printMemberDetailsListStartTag();
             if (holder.equals(classdoc) ||
                 (! (holder.isPublic() || Util.isLinkable(holder, configuration())))) {
                 writer.dd();
                 writer.printInlineComment(field);
+                writer.ddEnd();
             } else {
                 String classlink = writer.codeText(
                     writer.getDocLink(LinkInfoImpl.CONTEXT_FIELD_DOC_COPY,
@@ -196,6 +195,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
                 writer.ddEnd();
                 writer.dd();
                 writer.printInlineComment(field);
+                writer.ddEnd();
             }
         }
     }
@@ -213,7 +213,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
      * Write the field footer.
      */
     public void writeFieldFooter() {
-        writer.dlEnd();
+        printMemberFooter();
     }
 
     /**
