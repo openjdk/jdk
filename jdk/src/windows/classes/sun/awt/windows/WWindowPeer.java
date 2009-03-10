@@ -77,6 +77,12 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     private final static PropertyChangeListener guiDisposedListener =
         new GuiDisposedListener();
 
+    /*
+     * Called (on the Toolkit thread) before the appropriate
+     * WindowStateEvent is posted to the EventQueue.
+     */
+    private WindowListener windowListener;
+
     /**
      * Initialize JNI field IDs
      */
@@ -232,25 +238,62 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
                                   int[] smallIconRaster, int smw, int smh);
 
     synchronized native void reshapeFrame(int x, int y, int width, int height);
-    public boolean requestWindowFocus() {
-        // Win32 window doesn't need this
-        return false;
+
+    public boolean requestWindowFocus(CausedFocusEvent.Cause cause) {
+        if (!focusAllowedFor()) {
+            return false;
+        }
+        return requestWindowFocus(cause == CausedFocusEvent.Cause.MOUSE_EVENT);
     }
+    public native boolean requestWindowFocus(boolean isMouseEventCause);
 
     public boolean focusAllowedFor() {
-        Window target = (Window)this.target;
-        if (!target.isVisible() ||
-            !target.isEnabled() ||
-            !target.isFocusable())
+        Window window = (Window)this.target;
+        if (!window.isVisible() ||
+            !window.isEnabled() ||
+            !window.isFocusableWindow())
         {
             return false;
         }
-
         if (isModalBlocked()) {
             return false;
         }
-
         return true;
+    }
+
+    public void hide() {
+        WindowListener listener = windowListener;
+        if (listener != null) {
+            // We're not getting WINDOW_CLOSING from the native code when hiding
+            // the window programmatically. So, create it and notify the listener.
+            listener.windowClosing(new WindowEvent((Window)target, WindowEvent.WINDOW_CLOSING));
+        }
+        super.hide();
+    }
+
+    // WARNING: it's called on the Toolkit thread!
+    void preprocessPostEvent(AWTEvent event) {
+        if (event instanceof WindowEvent) {
+            WindowListener listener = windowListener;
+            if (listener != null) {
+                switch(event.getID()) {
+                    case WindowEvent.WINDOW_CLOSING:
+                        listener.windowClosing((WindowEvent)event);
+                        break;
+                    case WindowEvent.WINDOW_ICONIFIED:
+                        listener.windowIconified((WindowEvent)event);
+                        break;
+                }
+            }
+        }
+    }
+
+    synchronized void addWindowListener(WindowListener l) {
+        windowListener = AWTEventMulticaster.add(windowListener, l);
+    }
+
+    synchronized void removeWindowListener(WindowListener l) {
+        windowListener = AWTEventMulticaster.remove(windowListener, l);
     }
 
     public void updateMinimumSize() {

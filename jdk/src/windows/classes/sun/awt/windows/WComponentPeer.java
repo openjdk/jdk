@@ -38,6 +38,10 @@ import java.awt.image.ColorModel;
 import java.awt.event.PaintEvent;
 import java.awt.event.InvocationEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.InputEvent;
 import sun.awt.Win32GraphicsConfig;
 import sun.awt.Win32GraphicsEnvironment;
 import sun.java2d.InvalidPipeException;
@@ -68,6 +72,7 @@ public abstract class WComponentPeer extends WObjectPeer
 
     private static final Logger log = Logger.getLogger("sun.awt.windows.WComponentPeer");
     private static final Logger shapeLog = Logger.getLogger("sun.awt.windows.shape.WComponentPeer");
+    private static final Logger focusLog = Logger.getLogger("sun.awt.windows.focus.WComponentPeer");
 
     // ComponentPeer implementation
     SurfaceData surfaceData;
@@ -296,14 +301,35 @@ public abstract class WComponentPeer extends WObjectPeer
     // on handling '\n' to prevent it from being passed to native code
     public boolean handleJavaKeyEvent(KeyEvent e) { return false; }
 
+    public void handleJavaMouseEvent(MouseEvent e) {
+        switch (e.getID()) {
+          case MouseEvent.MOUSE_PRESSED:
+              // Note that Swing requests focus in its own mouse event handler.
+              if (target == e.getSource() &&
+                  !((Component)target).isFocusOwner() &&
+                  WKeyboardFocusManagerPeer.shouldFocusOnClick((Component)target))
+              {
+                  WKeyboardFocusManagerPeer.requestFocusFor((Component)target,
+                                                            CausedFocusEvent.Cause.MOUSE_EVENT);
+              }
+              break;
+        }
+    }
+
     native void nativeHandleEvent(AWTEvent e);
 
     public void handleEvent(AWTEvent e) {
         int id = e.getID();
 
-        if (((Component)target).isEnabled() && (e instanceof KeyEvent) && !((KeyEvent)e).isConsumed())  {
-            if (handleJavaKeyEvent((KeyEvent)e)) {
-                return;
+        if ((e instanceof InputEvent) && !((InputEvent)e).isConsumed() &&
+            ((Component)target).isEnabled())
+        {
+            if (e instanceof MouseEvent && !(e instanceof MouseWheelEvent)) {
+                handleJavaMouseEvent((MouseEvent) e);
+            } else if (e instanceof KeyEvent) {
+                if (handleJavaKeyEvent((KeyEvent)e)) {
+                    return;
+                }
             }
         }
 
@@ -319,6 +345,9 @@ public abstract class WComponentPeer extends WObjectPeer
                     paintArea.paint(target,shouldClearRectBeforePaint());
                 }
                 return;
+            case FocusEvent.FOCUS_LOST:
+            case FocusEvent.FOCUS_GAINED:
+                handleJavaFocusEvent((FocusEvent)e);
             default:
             break;
         }
@@ -326,6 +355,13 @@ public abstract class WComponentPeer extends WObjectPeer
         // Call the native code
         nativeHandleEvent(e);
     }
+
+    void handleJavaFocusEvent(FocusEvent fe) {
+        if (focusLog.isLoggable(Level.FINER)) focusLog.finer(fe.toString());
+        setFocus(fe.getID() == FocusEvent.FOCUS_GAINED);
+    }
+
+    native void setFocus(boolean doSetFocus);
 
     public Dimension getMinimumSize() {
         return ((Component)target).getSize();
@@ -572,22 +608,64 @@ public abstract class WComponentPeer extends WObjectPeer
         WGlobalCursorManager.getCursorManager().updateCursorImmediately();
     }
 
-    native static boolean processSynchronousLightweightTransfer(Component heavyweight, Component descendant,
-                                                                boolean temporary, boolean focusedWindowChangeAllowed,
-                                                                long time);
-    public boolean requestFocus
-        (Component lightweightChild, boolean temporary,
-         boolean focusedWindowChangeAllowed, long time, CausedFocusEvent.Cause cause) {
-        if (processSynchronousLightweightTransfer((Component)target, lightweightChild, temporary,
-                                                                      focusedWindowChangeAllowed, time)) {
+    // TODO: consider moving it to KeyboardFocusManagerPeerImpl
+    public boolean requestFocus(Component lightweightChild, boolean temporary,
+                                boolean focusedWindowChangeAllowed, long time,
+                                CausedFocusEvent.Cause cause)
+    {
+        if (WKeyboardFocusManagerPeer.
+            processSynchronousLightweightTransfer((Component)target, lightweightChild, temporary,
+                                                  focusedWindowChangeAllowed, time))
+        {
             return true;
-        } else {
-            return _requestFocus(lightweightChild, temporary, focusedWindowChangeAllowed, time, cause);
         }
+
+        int result = WKeyboardFocusManagerPeer
+            .shouldNativelyFocusHeavyweight((Component)target, lightweightChild,
+                                            temporary, focusedWindowChangeAllowed,
+                                            time, cause);
+
+        switch (result) {
+          case WKeyboardFocusManagerPeer.SNFH_FAILURE:
+              return false;
+          case WKeyboardFocusManagerPeer.SNFH_SUCCESS_PROCEED:
+              if (focusLog.isLoggable(Level.FINER)) {
+                  focusLog.finer("Proceeding with request to " + lightweightChild + " in " + target);
+              }
+              Window parentWindow = SunToolkit.getContainingWindow((Component)target);
+              if (parentWindow == null) {
+                  return rejectFocusRequestHelper("WARNING: Parent window is null");
+              }
+              WWindowPeer wpeer = (WWindowPeer)parentWindow.getPeer();
+              if (wpeer == null) {
+                  return rejectFocusRequestHelper("WARNING: Parent window's peer is null");
+              }
+              boolean res = wpeer.requestWindowFocus(cause);
+
+              if (focusLog.isLoggable(Level.FINER)) focusLog.finer("Requested window focus: " + res);
+              // If parent window can be made focused and has been made focused(synchronously)
+              // then we can proceed with children, otherwise we retreat.
+              if (!(res && parentWindow.isFocused())) {
+                  return rejectFocusRequestHelper("Waiting for asynchronous processing of the request");
+              }
+              return WKeyboardFocusManagerPeer.deliverFocus(lightweightChild,
+                                                            (Component)target,
+                                                            temporary,
+                                                            focusedWindowChangeAllowed,
+                                                            time, cause);
+
+          case WKeyboardFocusManagerPeer.SNFH_SUCCESS_HANDLED:
+              // Either lightweight or excessive request - all events are generated.
+              return true;
+        }
+        return false;
     }
-    public native boolean _requestFocus
-        (Component lightweightChild, boolean temporary,
-         boolean focusedWindowChangeAllowed, long time, CausedFocusEvent.Cause cause);
+
+    private boolean rejectFocusRequestHelper(String logMsg) {
+        if (focusLog.isLoggable(Level.FINER)) focusLog.finer(logMsg);
+        WKeyboardFocusManagerPeer.removeLastFocusRequest((Component)target);
+        return false;
+    }
 
     public Image createImage(ImageProducer producer) {
         return new ToolkitImage(producer);
@@ -718,8 +796,11 @@ public abstract class WComponentPeer extends WObjectPeer
      * Post an event. Queue it for execution by the callback thread.
      */
     void postEvent(AWTEvent event) {
+        preprocessPostEvent(event);
         WToolkit.postEvent(WToolkit.targetToAppContext(target), event);
     }
+
+    void preprocessPostEvent(AWTEvent event) {}
 
     // Routines to support deferred window positioning.
     public void beginLayout() {

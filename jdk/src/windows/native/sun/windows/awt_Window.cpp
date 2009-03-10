@@ -131,6 +131,11 @@ struct UpdateWindowStruct {
     HBITMAP hBitmap;
     jint width, height;
 };
+// Struct for _RequestWindowFocus() method
+struct RequestWindowFocusStruct {
+    jobject component;
+    jboolean isMouseEventCause;
+};
 
 /************************************************************************
  * AwtWindow fields
@@ -395,7 +400,7 @@ AwtWindow* AwtWindow::Create(jobject self, jobject parent)
                 window->m_isRetainingHierarchyZOrder = TRUE;
             }
             DWORD style = WS_CLIPCHILDREN | WS_POPUP;
-            DWORD exStyle = 0;
+            DWORD exStyle = WS_EX_NOACTIVATE;
             if (GetRTL()) {
                 exStyle |= WS_EX_RIGHT | WS_EX_LEFTSCROLLBAR;
                 if (GetRTLReadingOrder())
@@ -886,43 +891,90 @@ void AwtWindow::SendWindowEvent(jint id, HWND opposite,
     env->DeleteLocalRef(event);
 }
 
+BOOL AwtWindow::AwtSetActiveWindow(BOOL isMouseEventCause, UINT hittest)
+{
+    // Fix for 6458497.
+    // Retreat if current foreground window is out of both our and embedder process.
+    // The exception is when activation is requested due to a mouse event.
+    if (!isMouseEventCause) {
+        HWND fgWindow = ::GetForegroundWindow();
+        if (NULL != fgWindow) {
+            DWORD fgProcessID;
+            ::GetWindowThreadProcessId(fgWindow, &fgProcessID);
+            if (fgProcessID != ::GetCurrentProcessId()
+                && !AwtToolkit::GetInstance().IsEmbedderProcessId(fgProcessID))
+            {
+                return FALSE;
+            }
+        }
+    }
+
+    HWND proxyContainerHWnd = GetProxyToplevelContainer();
+    HWND proxyHWnd = GetProxyFocusOwner();
+
+    if (proxyContainerHWnd == NULL || proxyHWnd == NULL) {
+        return FALSE;
+    }
+
+    // Activate the proxy toplevel container
+    if (::GetActiveWindow() != proxyContainerHWnd) {
+        sm_suppressFocusAndActivation = TRUE;
+        ::BringWindowToTop(proxyContainerHWnd);
+        ::SetForegroundWindow(proxyContainerHWnd);
+        sm_suppressFocusAndActivation = FALSE;
+
+        if (::GetActiveWindow() != proxyContainerHWnd) {
+            return FALSE; // activation has been rejected
+        }
+    }
+
+    // Focus the proxy itself
+    if (::GetFocus() != proxyHWnd) {
+        sm_suppressFocusAndActivation = TRUE;
+        ::SetFocus(proxyHWnd);
+        sm_suppressFocusAndActivation = FALSE;
+
+        if (::GetFocus() != proxyHWnd) {
+            return FALSE; // focus has been rejected (that is unlikely)
+        }
+    }
+
+    if (sm_focusedWindow != GetHWnd()) {
+        if (sm_focusedWindow != NULL) {
+            // Deactivate the old focused window
+            AwtWindow::SynthesizeWmActivate(FALSE, sm_focusedWindow, GetHWnd());
+        }
+        // Activate the new focused window.
+        AwtWindow::SynthesizeWmActivate(TRUE, GetHWnd(), sm_focusedWindow);
+    }
+    return TRUE;
+}
+
 MsgRouting AwtWindow::WmActivate(UINT nState, BOOL fMinimized, HWND opposite)
 {
     jint type;
 
     if (nState != WA_INACTIVE) {
-        ::SetFocus((sm_focusOwner == NULL ||
-                    AwtComponent::GetTopLevelParentForWindow(sm_focusOwner) !=
-                    GetHWnd()) ? NULL : sm_focusOwner);
         type = java_awt_event_WindowEvent_WINDOW_GAINED_FOCUS;
-        AwtToolkit::GetInstance().
-            InvokeFunctionLater(BounceActivation, this);
         sm_focusedWindow = GetHWnd();
     } else {
+        // The owner is not necassarily getting WM_ACTIVATE(WA_INACTIVE).
+        // So, initiate retaining the actualFocusedWindow.
+        AwtFrame *owner = GetOwningFrameOrDialog();
+        if (owner) {
+            owner->CheckRetainActualFocusedWindow(opposite);
+        }
+
         if (m_grabbedWindow != NULL && !m_grabbedWindow->IsOneOfOwnersOf(this)) {
             m_grabbedWindow->Ungrab();
         }
         type = java_awt_event_WindowEvent_WINDOW_LOST_FOCUS;
         sm_focusedWindow = NULL;
+        sm_focusOwner = NULL;
     }
 
     SendWindowEvent(type, opposite);
     return mrConsume;
-}
-
-void AwtWindow::BounceActivation(void *self) {
-    AwtWindow *wSelf = (AwtWindow *)self;
-
-    if (::GetActiveWindow() == wSelf->GetHWnd()) {
-        AwtFrame *owner = wSelf->GetOwningFrameOrDialog();
-
-        if (owner != NULL) {
-            sm_suppressFocusAndActivation = TRUE;
-            ::SetActiveWindow(owner->GetHWnd());
-            ::SetFocus(owner->GetProxyFocusOwner());
-            sm_suppressFocusAndActivation = FALSE;
-        }
-    }
 }
 
 MsgRouting AwtWindow::WmCreate()
@@ -948,17 +1000,20 @@ MsgRouting AwtWindow::WmShowWindow(BOOL show, UINT status)
 {
     /*
      * Original fix for 4810575. Modified for 6386592.
-     * If an owned window (not frame/dialog) gets disposed we should synthesize
+     * If a simple window gets disposed we should synthesize
      * WM_ACTIVATE for its nearest owner. This is not performed by default because
      * the owner frame/dialog is natively active.
      */
     HWND hwndSelf = GetHWnd();
-    HWND hwndParent = ::GetParent(hwndSelf);
+    HWND hwndOwner = ::GetParent(hwndSelf);
 
     if (!show && IsSimpleWindow() && hwndSelf == sm_focusedWindow &&
-        hwndParent != NULL && ::IsWindowVisible(hwndParent))
+        hwndOwner != NULL && ::IsWindowVisible(hwndOwner))
     {
-        ::PostMessage(hwndParent, WM_ACTIVATE, (WPARAM)WA_ACTIVE, (LPARAM)hwndSelf);
+        AwtFrame *owner = (AwtFrame*)AwtComponent::GetComponent(hwndOwner);
+        if (owner != NULL) {
+            owner->AwtSetActiveWindow();
+        }
     }
 
     //Fixed 4842599: REGRESSION: JPopupMenu not Hidden Properly After Iconified and Deiconified
@@ -1451,6 +1506,38 @@ void AwtWindow::FlashWindowEx(HWND hWnd, UINT count, DWORD timeout, DWORD flags)
     fi.uCount = count;
     fi.dwTimeout = timeout;
     ::FlashWindowEx(&fi);
+}
+
+jboolean
+AwtWindow::_RequestWindowFocus(void *param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    RequestWindowFocusStruct *rfs = (RequestWindowFocusStruct *)param;
+    jobject self = rfs->component;
+    jboolean isMouseEventCause = rfs->isMouseEventCause;
+
+    jboolean result = JNI_FALSE;
+    AwtWindow *window = NULL;
+
+    PDATA pData;
+    JNI_CHECK_NULL_GOTO(self, "peer", ret);
+    pData = JNI_GET_PDATA(self);
+    if (pData == NULL) {
+        // do nothing just return false
+        goto ret;
+    }
+
+    window = (AwtWindow *)pData;
+    if (::IsWindow(window->GetHWnd())) {
+        result = (jboolean)window->SendMessage(WM_AWT_WINDOW_SETACTIVE, (WPARAM)isMouseEventCause, 0);
+    }
+ret:
+    env->DeleteGlobalRef(self);
+
+    delete rfs;
+
+    return result;
 }
 
 void AwtWindow::_ToFront(void *param)
@@ -2173,11 +2260,14 @@ void AwtWindow::_SetFocusableWindow(void *param)
 
     window->m_isFocusableWindow = isFocusableWindow;
 
-    if (!window->m_isFocusableWindow) {
-        LONG isPopup = window->GetStyle() & WS_POPUP;
-        window->SetStyleEx(window->GetStyleEx() | (isPopup ? 0 : WS_EX_APPWINDOW) | AWT_WS_EX_NOACTIVATE);
-    } else {
-        window->SetStyleEx(window->GetStyleEx() & ~WS_EX_APPWINDOW & ~AWT_WS_EX_NOACTIVATE);
+    // A simple window is permanently set to WS_EX_NOACTIVATE
+    if (!window->IsSimpleWindow()) {
+        if (!window->m_isFocusableWindow) {
+            LONG isPopup = window->GetStyle() & WS_POPUP;
+            window->SetStyleEx(window->GetStyleEx() | (isPopup ? 0 : WS_EX_APPWINDOW) | WS_EX_NOACTIVATE);
+        } else {
+            window->SetStyleEx(window->GetStyleEx() & ~WS_EX_APPWINDOW & ~WS_EX_NOACTIVATE);
+        }
     }
 
   ret:
@@ -2841,6 +2931,29 @@ void AwtWindow_UpdateWindow(JNIEnv *env, jobject peer,
     // global refs and mds are deleted in _UpdateWindow
 
     CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WComponentPeer
+ * Method:    requestFocus
+ * Signature: (Z)Z
+ */
+JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WWindowPeer_requestWindowFocus
+    (JNIEnv *env, jobject self, jboolean isMouseEventCause)
+{
+    TRY;
+
+    jobject selfGlobalRef = env->NewGlobalRef(self);
+
+    RequestWindowFocusStruct *rfs = new RequestWindowFocusStruct;
+    rfs->component = selfGlobalRef;
+    rfs->isMouseEventCause = isMouseEventCause;
+
+    return (jboolean)AwtToolkit::GetInstance().SyncCall(
+        (void*(*)(void*))AwtWindow::_RequestWindowFocus, rfs);
+    // global refs and rfs are deleted in _RequestWindowFocus
+
+    CATCH_BAD_ALLOC_RET(JNI_FALSE);
 }
 
 } /* extern "C" */
