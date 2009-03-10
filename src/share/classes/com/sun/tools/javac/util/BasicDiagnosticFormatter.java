@@ -82,7 +82,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
         super(msgs, new BasicConfiguration());
     }
 
-    public String format(JCDiagnostic d, Locale l) {
+    public String formatDiagnostic(JCDiagnostic d, Locale l) {
         if (l == null)
             l = messages.getCurrentLocale();
         String format = selectFormat(d);
