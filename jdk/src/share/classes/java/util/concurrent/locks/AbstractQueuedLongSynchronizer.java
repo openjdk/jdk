@@ -1222,8 +1222,10 @@ public abstract class AbstractQueuedLongSynchronizer
         // The correctness of this depends on head being initialized
         // before tail and on head.next being accurate if the current
         // thread is first in queue.
-        Node h, s;
-        return (h = head) != tail &&
+        Node t = tail; // Read fields in reverse initialization order
+        Node h = head;
+        Node s;
+        return h != t &&
             ((s = h.next) == null || s.thread != Thread.currentThread());
     }
 

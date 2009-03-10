@@ -129,6 +129,9 @@ JAVACFLAGS  += $(OTHER_JAVACFLAGS)
 # Needed for javah
 JAVAHFLAGS += -bootclasspath $(CLASSBINDIR)
 
+# Needed for JAVADOC and BOOT_JAVACFLAGS
+NO_PROPRIETARY_API_WARNINGS = -XDignore.symbol.file=true
+
 # Langtools
 ifdef LANGTOOLS_DIST
   JAVAC_JAR   = $(LANGTOOLS_DIST)/bootstrap/lib/javac.jar
@@ -191,6 +194,8 @@ ifeq ($(JAVAC_WARNINGS_FATAL), true)
 endif
 BOOT_JAVACFLAGS  += -encoding ascii
 BOOT_JAR_JFLAGS += $(JAR_JFLAGS)
+
+BOOT_JAVACFLAGS  += $(NO_PROPRIETARY_API_WARNINGS)
 
 BOOT_JAVA_CMD      = $(BOOTDIR)/bin/java $(JAVA_TOOLS_FLAGS)
 BOOT_JAVAC_CMD     = $(BOOTDIR)/bin/javac $(JAVAC_JVM_FLAGS) $(BOOT_JAVACFLAGS)
