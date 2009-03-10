@@ -596,7 +596,7 @@ public class CounterMonitor extends Monitor implements CounterMonitorMBean {
      * types sent by the counter monitor.
      */
     public MBeanNotificationInfo[] getNotificationInfo() {
-        return notifsInfo;
+        return notifsInfo.clone();
     }
 
     /*
