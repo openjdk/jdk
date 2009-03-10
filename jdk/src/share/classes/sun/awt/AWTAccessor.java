@@ -31,7 +31,8 @@ import java.awt.image.BufferedImage;
 
 import sun.misc.Unsafe;
 
-/** The AWTAccessor utility class.
+/**
+ * The AWTAccessor utility class.
  * The main purpose of this class is to enable accessing
  * private and package-private fields of classes from
  * different classes/packages. See sun.misc.SharedSecretes
@@ -83,6 +84,14 @@ public final class AWTAccessor {
          * Sets GraphicsConfiguration value for the component.
          */
         void setGraphicsConfiguration(Component comp, GraphicsConfiguration gc);
+        /*
+         * Requests focus to the component.
+         */
+        boolean requestFocus(Component comp, CausedFocusEvent.Cause cause);
+        /*
+         * Determines if the component can gain focus.
+         */
+        boolean canBeFocusOwner(Component comp);
     }
 
     /*
@@ -152,6 +161,35 @@ public final class AWTAccessor {
     }
 
     /*
+     * An interface of accessor for the java.awt.Component class.
+     */
+    public interface KeyboardFocusManagerAccessor {
+        /*
+         * Indicates whether the native implementation should
+         * proceed with a pending focus request for the heavyweight.
+         */
+        int shouldNativelyFocusHeavyweight(Component heavyweight,
+                                           Component descendant,
+                                           boolean temporary,
+                                           boolean focusedWindowChangeAllowed,
+                                           long time,
+                                           CausedFocusEvent.Cause cause);
+        /*
+         * Delivers focus for the lightweight descendant of the heavyweight
+         * synchronously.
+         */
+        boolean processSynchronousLightweightTransfer(Component heavyweight,
+                                                      Component descendant,
+                                                      boolean temporary,
+                                                      boolean focusedWindowChangeAllowed,
+                                                      long time);
+        /*
+         * Removes the last focus request for the heavyweight from the queue.
+         */
+        void removeLastFocusRequest(Component heavyweight);
+    }
+
+    /*
      * The java.awt.Component class accessor object.
      */
     private static ComponentAccessor componentAccessor;
@@ -170,6 +208,11 @@ public final class AWTAccessor {
      * The java.awt.Frame class accessor object.
      */
     private static FrameAccessor frameAccessor;
+
+    /*
+     * The java.awt.KeyboardFocusManager class accessor object.
+     */
+    private static KeyboardFocusManagerAccessor kfmAccessor;
 
     /*
      * Set an accessor object for the java.awt.Component class.
@@ -235,5 +278,22 @@ public final class AWTAccessor {
             unsafe.ensureClassInitialized(Frame.class);
         }
         return frameAccessor;
+    }
+
+    /*
+     * Set an accessor object for the java.awt.KeyboardFocusManager class.
+     */
+    public static void setKeyboardFocusManagerAccessor(KeyboardFocusManagerAccessor kfma) {
+        kfmAccessor = kfma;
+    }
+
+    /*
+     * Retrieve the accessor object for the java.awt.KeyboardFocusManager class.
+     */
+    public static KeyboardFocusManagerAccessor getKeyboardFocusManagerAccessor() {
+        if (kfmAccessor == null) {
+            unsafe.ensureClassInitialized(KeyboardFocusManager.class);
+        }
+        return kfmAccessor;
     }
 }

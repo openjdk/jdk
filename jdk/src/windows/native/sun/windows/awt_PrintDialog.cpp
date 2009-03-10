@@ -88,7 +88,7 @@ PrintDialogHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
             DWORD style = ::GetClassLong(hdlg, GCL_STYLE);
             ::SetClassLong(hdlg,GCL_STYLE, style & ~CS_SAVEBITS);
 
-            ::SetFocus(hdlg);
+            ::SetFocus(hdlg); // will not break synthetic focus as hdlg is a native toplevel
 
             // set appropriate icon for parentless dialogs
             jobject awtParent = env->GetObjectField(peer, AwtPrintDialog::parentID);

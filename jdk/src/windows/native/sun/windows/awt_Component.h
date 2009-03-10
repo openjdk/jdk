@@ -78,8 +78,6 @@ class AwtPopupMenu;
 
 class AwtDropTarget;
 
-struct WmComponentSetFocusData;
-
 /*
  * Message routing codes
  */
@@ -221,17 +219,10 @@ public:
     virtual BOOL IsContainer() { return FALSE;} // Plain components can't
 
     /**
-     * Perform some actions which by default are being performed by Default Window procedure of
-     * this window class
-     * For detailed comments see implementation in awt_Component.cpp
+     * Returns TRUE if this message will trigger native focus change, FALSE otherwise.
      */
-    virtual BOOL ActMouseMessage(MSG * pMsg);
-    /**
-     * Returns TRUE if this message will this component to become focused. Returns FALSE otherwise.
-     */
-    inline BOOL IsFocusingMessage(UINT message) {
-        return message == WM_LBUTTONDOWN || message == WM_LBUTTONUP || message == WM_LBUTTONDBLCLK;
-    }
+    virtual BOOL IsFocusingKeyMessage(MSG *pMsg);
+    virtual BOOL IsFocusingMouseMessage(MSG *pMsg);
 
     BOOL IsFocusable();
 
@@ -477,6 +468,12 @@ public:
     HIMC ImmGetContext();
     HIMC ImmAssociateContext(HIMC himc);
     HWND GetProxyFocusOwner();
+
+    INLINE HWND GetProxyToplevelContainer() {
+        HWND proxyHWnd = GetProxyFocusOwner();
+        return ::GetAncestor(proxyHWnd, GA_ROOT); // a browser in case of EmbeddedFrame
+    }
+
     void CallProxyDefWindowProc(UINT message,
                                 WPARAM wParam,
                                 LPARAM lParam,
@@ -514,11 +511,6 @@ public:
     virtual MsgRouting WmShowWindow(BOOL show, UINT status);
     virtual MsgRouting WmSetFocus(HWND hWndLost);
     virtual MsgRouting WmKillFocus(HWND hWndGot);
-    jboolean WmComponentSetFocus(WmComponentSetFocusData *data);
-    // Use instead of ::SetFocus to maintain special focusing semantics for
-    // Windows which are not Frames/Dialogs.
-    BOOL AwtSetFocus();
-
     virtual MsgRouting WmCtlColor(HDC hDC, HWND hCtrl,
                                   UINT ctlColor, HBRUSH& retBrush);
     virtual MsgRouting WmHScroll(UINT scrollCode, UINT pos, HWND hScrollBar);
@@ -608,10 +600,6 @@ public:
 
     jintArray CreatePrintedPixels(SIZE &loc, SIZE &size);
 
-    static void * GetNativeFocusOwner();
-    static void * GetNativeFocusedWindow();
-    static void   ClearGlobalFocusOwner();
-
     /*
      * HWND, AwtComponent and Java Peer interaction
      *
@@ -670,7 +658,6 @@ public:
     static void _SetForeground(void *param);
     static void _SetBackground(void *param);
     static void _SetFont(void *param);
-    static jboolean _RequestFocus(void *param);
     static void _Start(void *param);
     static void _BeginValidate(void *param);
     static void _EndValidate(void *param);
@@ -684,6 +671,29 @@ public:
 
     static HWND sm_focusOwner;
     static HWND sm_focusedWindow;
+
+    static void _SetFocus(void *param);
+
+    static void *SetNativeFocusOwner(void *self);
+    static void *GetNativeFocusedWindow();
+    static void *GetNativeFocusOwner();
+
+    static BOOL sm_inSynthesizeFocus;
+
+    // Execute on Toolkit only.
+    INLINE static LRESULT SynthesizeWmSetFocus(HWND targetHWnd, HWND oppositeHWnd) {
+        sm_inSynthesizeFocus = TRUE;
+        LRESULT res = ::SendMessage(targetHWnd, WM_SETFOCUS, (WPARAM)oppositeHWnd, 0);
+        sm_inSynthesizeFocus = FALSE;
+        return res;
+    }
+    // Execute on Toolkit only.
+    INLINE static LRESULT SynthesizeWmKillFocus(HWND targetHWnd, HWND oppositeHWnd) {
+        sm_inSynthesizeFocus = TRUE;
+        LRESULT res = ::SendMessage(targetHWnd, WM_KILLFOCUS, (WPARAM)oppositeHWnd, 0);
+        sm_inSynthesizeFocus = FALSE;
+        return res;
+    }
 
     static BOOL sm_bMenuLoop;
     static INLINE BOOL isMenuLoopActive() {
@@ -708,7 +718,18 @@ protected:
     BOOL     m_visible;         /* copy of Component.visible */
 
     static BOOL sm_suppressFocusAndActivation;
-    static HWND sm_realFocusOpposite;
+    static BOOL sm_restoreFocusAndActivation;
+
+    /*
+     * The function sets the focus-restore flag ON/OFF.
+     * When the flag is ON, focus is restored immidiately after the proxy loses it.
+     * All focus messages are suppressed. It's also assumed that sm_focusedWindow and
+     * sm_focusOwner don't change after the flag is set ON and before it's set OFF.
+     */
+    static INLINE void SetRestoreFocus(BOOL doSet) {
+        sm_suppressFocusAndActivation = doSet;
+        sm_restoreFocusAndActivation = doSet;
+    }
 
     virtual void SetDragCapture(UINT flags);
     virtual void ReleaseDragCapture(UINT flags);
@@ -777,8 +798,6 @@ private:
     static HWND sm_cursorOn;
 
     static BOOL m_QueryNewPaletteCalled;
-
-    BOOL m_skipNextSetFocus;
 
     static AwtComponent* sm_getComponentCache; // a cache for the GetComponent(..) method.
 
@@ -872,14 +891,6 @@ public:
     DCItem          *RemoveDC(HDC hDC);
     DCItem          *RemoveAllDCs(HWND hWnd);
     void            RealizePalettes(int screen);
-};
-
-struct WmComponentSetFocusData {
-    jobject lightweightChild;
-    jboolean temporary;
-    jboolean focusedWindowChangeAllowed;
-    jlong time;
-    jobject cause;
 };
 
 void ReleaseDCList(HWND hwnd, DCList &list);

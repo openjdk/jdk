@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,6 +194,7 @@ enum {
     WM_AWT_COMPONENT_SHOW,
     WM_AWT_COMPONENT_HIDE,
     WM_AWT_COMPONENT_SETFOCUS,
+    WM_AWT_WINDOW_SETACTIVE,
     WM_AWT_LIST_SETMULTISELECT,
     WM_AWT_HANDLE_EVENT,
     WM_AWT_PRINT_COMPONENT,

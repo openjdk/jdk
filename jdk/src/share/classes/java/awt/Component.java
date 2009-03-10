@@ -851,6 +851,12 @@ public abstract class Component implements ImageObserver, MenuContainer,
             {
                 comp.setGraphicsConfiguration(gc);
             }
+            public boolean requestFocus(Component comp, CausedFocusEvent.Cause cause) {
+                return comp.requestFocus(cause);
+            }
+            public boolean canBeFocusOwner(Component comp) {
+                return comp.canBeFocusOwner();
+            }
         });
     }
 
@@ -7147,8 +7153,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
         requestFocusHelper(false, true);
     }
 
-    void requestFocus(CausedFocusEvent.Cause cause) {
-        requestFocusHelper(false, true, cause);
+    boolean requestFocus(CausedFocusEvent.Cause cause) {
+        return requestFocusHelper(false, true, cause);
     }
 
     /**

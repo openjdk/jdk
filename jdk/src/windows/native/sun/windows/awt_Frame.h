@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,11 +133,6 @@ public:
     // adjusts the IME candidate window position if needed
     void AdjustCandidateWindowPos();
 
-    void SynthesizeWmActivate(BOOL doActivate, HWND opposite);
-
-    BOOL activateEmbeddedFrameOnSetFocus(HWND hWndLostFocus);
-    BOOL deactivateEmbeddedFrameOnKillFocus(HWND hWndGotFocus);
-
     // invoked on Toolkit thread
     static jobject _GetBoundsPrivate(void *param);
 
@@ -152,6 +147,14 @@ public:
     static void _NotifyModalBlocked(void *param);
 
     virtual void Reshape(int x, int y, int width, int height);
+
+    virtual BOOL AwtSetActiveWindow(BOOL isMouseEventCause = FALSE, UINT hittest = HTCLIENT);
+
+    void CheckRetainActualFocusedWindow(HWND activatedOpositeHWnd);
+    BOOL CheckActivateActualFocusedWindow(HWND deactivatedOpositeHWnd);
+
+    INLINE HWND GetLastProxiedFocusOwner() { return m_lastProxiedFocusOwner; }
+    INLINE void SetLastProxiedFocusOwner(HWND hwnd) { m_lastProxiedFocusOwner = hwnd; }
 
 protected:
     /* The frame is undecorated. */
@@ -188,6 +191,10 @@ private:
     /* Receives all keyboard input when an AwtWindow which is not an AwtFrame
        or an AwtDialog (or one of its children) has the logical input focus. */
     HWND m_proxyFocusOwner;
+
+    /* Retains the last/current sm_focusOwner proxied. Actually, it should be
+     * a component of an owned window last/currently active. */
+    HWND m_lastProxiedFocusOwner;
 
     /*
      * Fix for 4823903.

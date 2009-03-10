@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,79 +22,40 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-package sun.awt.X11;
 
-import java.awt.Component;
+package sun.awt.windows;
+
 import java.awt.KeyboardFocusManager;
 import java.awt.Window;
-
-import java.awt.event.FocusEvent;
-
-import java.awt.peer.KeyboardFocusManagerPeer;
+import java.awt.Component;
 import java.awt.peer.ComponentPeer;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import sun.awt.CausedFocusEvent;
-import sun.awt.SunToolkit;
 import sun.awt.KeyboardFocusManagerPeerImpl;
+import sun.awt.CausedFocusEvent;
 
-public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
-    private static final Logger focusLog = Logger.getLogger("sun.awt.X11.focus.XKeyboardFocusManagerPeer");
+class WKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
+    static native void setNativeFocusOwner(ComponentPeer peer);
+    static native Component getNativeFocusOwner();
+    static native Window getNativeFocusedWindow();
 
-    private static Object lock = new Object() {};
-    private static Component currentFocusOwner;
-    private static Window currentFocusedWindow;
-
-    XKeyboardFocusManagerPeer(KeyboardFocusManager manager) {
+    WKeyboardFocusManagerPeer(KeyboardFocusManager manager) {
         super(manager);
     }
 
     @Override
     public void setCurrentFocusOwner(Component comp) {
-        setCurrentNativeFocusOwner(comp);
+        setNativeFocusOwner(comp != null ? comp.getPeer() : null);
     }
 
     @Override
     public Component getCurrentFocusOwner() {
-        return getCurrentNativeFocusOwner();
+        return getNativeFocusOwner();
     }
 
     @Override
     public Window getCurrentFocusedWindow() {
-        return getCurrentNativeFocusedWindow();
+        return getNativeFocusedWindow();
     }
 
-    public static void setCurrentNativeFocusOwner(Component comp) {
-        synchronized (lock) {
-            currentFocusOwner = comp;
-        }
-    }
-
-    public static Component getCurrentNativeFocusOwner() {
-        synchronized(lock) {
-            return currentFocusOwner;
-        }
-    }
-
-    public static void setCurrentNativeFocusedWindow(Window win) {
-        if (focusLog.isLoggable(Level.FINER)) focusLog.finer("Setting current native focused window " + win);
-        synchronized(lock) {
-            currentFocusedWindow = win;
-        }
-    }
-
-    public static Window getCurrentNativeFocusedWindow() {
-        synchronized(lock) {
-            return currentFocusedWindow;
-        }
-    }
-
-    // TODO: do something to eliminate this forwarding
     public static boolean deliverFocus(Component lightweightChild,
                                        Component target,
                                        boolean temporary,
@@ -102,12 +63,13 @@ public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
                                        long time,
                                        CausedFocusEvent.Cause cause)
     {
+        // TODO: do something to eliminate this forwarding
         return KeyboardFocusManagerPeerImpl.deliverFocus(lightweightChild,
                                                          target,
                                                          temporary,
                                                          focusedWindowChangeAllowed,
                                                          time,
                                                          cause,
-                                                         getCurrentNativeFocusOwner());
+                                                         getNativeFocusOwner());
     }
 }

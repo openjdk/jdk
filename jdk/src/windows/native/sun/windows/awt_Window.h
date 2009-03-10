@@ -40,9 +40,6 @@ static LPCTSTR NativeDialogWndProcProp = TEXT("SunAwtNativeDialogWndProcProp");
 #define WH_MOUSE_LL 14
 #endif
 
-// WS_EX_NOACTIVATE is not defined in the headers we build with
-#define AWT_WS_EX_NOACTIVATE        0x08000000L
-
 class AwtFrame;
 
 /************************************************************************
@@ -157,7 +154,6 @@ public:
      * Windows message handler functions
      */
     virtual MsgRouting WmActivate(UINT nState, BOOL fMinimized, HWND opposite);
-    static void BounceActivation(void *self); // used by WmActivate
     virtual MsgRouting WmCreate();
     virtual MsgRouting WmClose();
     virtual MsgRouting WmDestroy();
@@ -180,6 +176,20 @@ public:
 
     virtual MsgRouting HandleEvent(MSG *msg, BOOL synthetic);
     virtual void WindowResized();
+
+    static jboolean _RequestWindowFocus(void *param);
+
+    virtual BOOL AwtSetActiveWindow(BOOL isMouseEventCause = FALSE, UINT hittest = HTCLIENT);
+
+    // Execute on Toolkit only.
+    INLINE static LRESULT SynthesizeWmActivate(BOOL doActivate, HWND targetHWnd, HWND oppositeHWnd) {
+        if (::IsWindowVisible(targetHWnd)) {
+            return ::SendMessage(targetHWnd, WM_ACTIVATE,
+                                 MAKEWPARAM(doActivate ? WA_ACTIVE : WA_INACTIVE, FALSE),
+                                 (LPARAM) oppositeHWnd);
+        }
+        return 1; // if not processed
+    }
 
     void moveToDefaultLocation(); /* moves Window to X,Y specified by Window Manger */
 
