@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -102,6 +102,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_initializeLibrary
 
 jclass fetchClass(JNIEnv *env, const char *name) {
     jclass tmpClass = (*env)->FindClass(env, name);
+    if (tmpClass == NULL) { return NULL; }
     return (*env)->NewGlobalRef(env, tmpClass);
 }
 
@@ -110,14 +111,18 @@ void prefetchFields(JNIEnv *env, jclass thisClass) {
 
     /* PKCS11 */
     pNativeDataID = (*env)->GetFieldID(env, thisClass, "pNativeData", "J");
+    if (pNativeDataID == NULL) { return; }
 
     /* CK_MECHANISM */
     tmpClass = (*env)->FindClass(env, CLASS_MECHANISM);
+    if (tmpClass == NULL) { return; }
     mech_mechanismID = (*env)->GetFieldID(env, tmpClass, "mechanism", "J");
+    if (mech_mechanismID == NULL) { return; }
     mech_pParameterID = (*env)->GetFieldID(env, tmpClass, "pParameter",
                                            "Ljava/lang/Object;");
-
+    if (mech_pParameterID == NULL) { return; }
     jByteArrayClass = fetchClass(env, "[B");
+    if (jByteArrayClass == NULL) { return; }
     jLongClass = fetchClass(env, "java/lang/Long");
 }
 
@@ -252,10 +257,9 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetInfo
     if (ckpFunctions == NULL) { return NULL; }
 
     rv = (*ckpFunctions->C_GetInfo)(&ckLibInfo);
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
-
-    jInfoObject = ckInfoPtrToJInfo(env, &ckLibInfo);
-
+    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+        jInfoObject = ckInfoPtrToJInfo(env, &ckLibInfo);
+    }
     return jInfoObject ;
 }
 
@@ -279,28 +283,31 @@ jobject ckInfoPtrToJInfo(JNIEnv *env, const CK_INFO_PTR ckpInfo)
 
     /* load CK_INFO class */
     jInfoClass = (*env)->FindClass(env, CLASS_INFO);
-    assert(jInfoClass != 0);
+    if (jInfoClass == NULL) { return NULL; };
 
     /* load CK_INFO constructor */
     jCtrId = (*env)->GetMethodID
       (env, jInfoClass, "<init>",
        "(Lsun/security/pkcs11/wrapper/CK_VERSION;[CJ[CLsun/security/pkcs11/wrapper/CK_VERSION;)V");
-
-    assert(jCtrId != 0);
+    if (jCtrId == NULL) { return NULL; }
 
     /* prep all fields */
     jCryptokiVer = ckVersionPtrToJVersion(env, &(ckpInfo->cryptokiVersion));
+    if (jCryptokiVer == NULL) { return NULL; }
     jVendor =
       ckUTF8CharArrayToJCharArray(env, &(ckpInfo->manufacturerID[0]), 32);
+    if (jVendor == NULL) { return NULL; }
     jFlags = ckULongToJLong(ckpInfo->flags);
     jLibraryDesc =
       ckUTF8CharArrayToJCharArray(env, &(ckpInfo->libraryDescription[0]), 32);
+    if (jLibraryDesc == NULL) { return NULL; }
     jLibraryVer = ckVersionPtrToJVersion(env, &(ckpInfo->libraryVersion));
+    if (jLibraryVer == NULL) { return NULL; }
 
     /* create new CK_INFO object */
     jInfoObject = (*env)->NewObject(env, jInfoClass, jCtrId, jCryptokiVer,
                                     jVendor, jFlags, jLibraryDesc, jLibraryVer);
-    assert(jInfoObject != 0);
+    if (jInfoObject == NULL) { return NULL; }
 
     /* free local references */
     (*env)->DeleteLocalRef(env, jInfoClass);
@@ -343,14 +350,17 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetSlotList
     if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
 
     ckpSlotList = (CK_SLOT_ID_PTR) malloc(ckTokenNumber * sizeof(CK_SLOT_ID));
+    if (ckpSlotList == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
 
     rv = (*ckpFunctions->C_GetSlotList)(ckTokenPresent, ckpSlotList,
                                         &ckTokenNumber);
-
-    jSlotList = ckULongArrayToJLongArray(env, ckpSlotList, ckTokenNumber);
+    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+        jSlotList = ckULongArrayToJLongArray(env, ckpSlotList, ckTokenNumber);
+    }
     free(ckpSlotList);
-
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
 
     return jSlotList ;
 }
@@ -380,10 +390,9 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetSlotInfo
     ckSlotID = jLongToCKULong(jSlotID);
 
     rv = (*ckpFunctions->C_GetSlotInfo)(ckSlotID, &ckSlotInfo);
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
-
-    jSlotInfoObject = ckSlotInfoPtrToJSlotInfo(env, &ckSlotInfo);
-
+    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+        jSlotInfoObject = ckSlotInfoPtrToJSlotInfo(env, &ckSlotInfo);
+    }
     return jSlotInfoObject ;
 }
 
@@ -410,28 +419,32 @@ ckSlotInfoPtrToJSlotInfo
 
     /* load CK_SLOT_INFO class */
     jSlotInfoClass = (*env)->FindClass(env, CLASS_SLOT_INFO);
-    assert(jSlotInfoClass != 0);
+    if (jSlotInfoClass == NULL) { return NULL; };
 
     /* load CK_SLOT_INFO constructor */
     jCtrId = (*env)->GetMethodID
       (env, jSlotInfoClass, "<init>",
        "([C[CJLsun/security/pkcs11/wrapper/CK_VERSION;Lsun/security/pkcs11/wrapper/CK_VERSION;)V");
-    assert(jCtrId != 0);
+    if (jCtrId == NULL) { return NULL; }
 
     /* prep all fields */
     jSlotDesc =
       ckUTF8CharArrayToJCharArray(env, &(ckpSlotInfo->slotDescription[0]), 64);
+    if (jSlotDesc == NULL) { return NULL; }
     jVendor =
       ckUTF8CharArrayToJCharArray(env, &(ckpSlotInfo->manufacturerID[0]), 32);
+    if (jVendor == NULL) { return NULL; }
     jFlags = ckULongToJLong(ckpSlotInfo->flags);
     jHardwareVer = ckVersionPtrToJVersion(env, &(ckpSlotInfo->hardwareVersion));
+    if (jHardwareVer == NULL) { return NULL; }
     jFirmwareVer = ckVersionPtrToJVersion(env, &(ckpSlotInfo->firmwareVersion));
+    if (jFirmwareVer == NULL) { return NULL; }
 
     /* create new CK_SLOT_INFO object */
     jSlotInfoObject = (*env)->NewObject
       (env, jSlotInfoClass, jCtrId, jSlotDesc, jVendor, jFlags,
        jHardwareVer, jFirmwareVer);
-    assert(jSlotInfoObject != 0);
+    if (jSlotInfoObject == NULL) { return NULL; }
 
     /* free local references */
     (*env)->DeleteLocalRef(env, jSlotInfoClass);
@@ -460,7 +473,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetTokenInfo
 {
     CK_SLOT_ID ckSlotID;
     CK_TOKEN_INFO ckTokenInfo;
-    jobject jInfoTokenObject;
+    jobject jInfoTokenObject = NULL;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -469,10 +482,9 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetTokenInfo
     ckSlotID = jLongToCKULong(jSlotID);
 
     rv = (*ckpFunctions->C_GetTokenInfo)(ckSlotID, &ckTokenInfo);
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
-
-    jInfoTokenObject = ckTokenInfoPtrToJTokenInfo(env, &ckTokenInfo);
-
+    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+        jInfoTokenObject = ckTokenInfoPtrToJTokenInfo(env, &ckTokenInfo);
+    }
     return jInfoTokenObject ;
 }
 
@@ -512,21 +524,25 @@ ckTokenInfoPtrToJTokenInfo
 
     /* load CK_TOKEN_INFO class */
     jTokenInfoClass = (*env)->FindClass(env, CLASS_TOKEN_INFO);
-    assert(jTokenInfoClass != 0);
+    if (jTokenInfoClass == NULL)  { return NULL; };
 
     /* load CK_TOKEN_INFO constructor */
     jCtrId = (*env)->GetMethodID
       (env, jTokenInfoClass, "<init>",
        "([C[C[C[CJJJJJJJJJJJLsun/security/pkcs11/wrapper/CK_VERSION;Lsun/security/pkcs11/wrapper/CK_VERSION;[C)V");
-    assert(jCtrId != 0);
+    if (jCtrId == NULL)  { return NULL; };
 
     /* prep all fields */
     jLabel = ckUTF8CharArrayToJCharArray(env, &(ckpTokenInfo->label[0]), 32);
+    if (jLabel == NULL)  { return NULL; };
     jVendor =
       ckUTF8CharArrayToJCharArray(env, &(ckpTokenInfo->manufacturerID[0]), 32);
+    if (jVendor == NULL)  { return NULL; };
     jModel = ckUTF8CharArrayToJCharArray(env, &(ckpTokenInfo->model[0]), 16);
+    if (jModel == NULL)  { return NULL; };
     jSerialNo =
       ckUTF8CharArrayToJCharArray(env, &(ckpTokenInfo->serialNumber[0]), 16);
+    if (jSerialNo == NULL)  { return NULL; };
     jFlags = ckULongToJLong(ckpTokenInfo->flags);
     jMaxSnCnt = ckULongSpecialToJLong(ckpTokenInfo->ulMaxSessionCount);
     jSnCnt = ckULongSpecialToJLong(ckpTokenInfo->ulSessionCount);
@@ -540,10 +556,13 @@ ckTokenInfoPtrToJTokenInfo
     jFreePrivMem = ckULongSpecialToJLong(ckpTokenInfo->ulFreePrivateMemory);
     jHardwareVer =
       ckVersionPtrToJVersion(env, &(ckpTokenInfo->hardwareVersion));
+    if (jHardwareVer == NULL) { return NULL; }
     jFirmwareVer =
       ckVersionPtrToJVersion(env, &(ckpTokenInfo->firmwareVersion));
+    if (jFirmwareVer == NULL) { return NULL; }
     jUtcTime =
       ckUTF8CharArrayToJCharArray(env, &(ckpTokenInfo->utcTime[0]), 16);
+    if (jUtcTime == NULL) { return NULL; }
 
     /* create new CK_TOKEN_INFO object */
     jTokenInfoObject =
@@ -553,7 +572,7 @@ ckTokenInfoPtrToJTokenInfo
                         jMaxPinLen, jMinPinLen,
                         jTotalPubMem, jFreePubMem, jTotalPrivMem, jFreePrivMem,
                         jHardwareVer, jFirmwareVer, jUtcTime);
-    assert(jTokenInfoObject != 0);
+    if (jTokenInfoObject == NULL) { return NULL; }
 
     /* free local references */
     (*env)->DeleteLocalRef(env, jTokenInfoClass);
@@ -584,7 +603,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1WaitForSlotEvent
 {
     CK_FLAGS ckFlags;
     CK_SLOT_ID ckSlotID;
-    jlong jSlotID;
+    jlong jSlotID = 0L;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -593,9 +612,9 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1WaitForSlotEvent
     ckFlags = jLongToCKULong(jFlags);
 
     rv = (*ckpFunctions->C_WaitForSlotEvent)(ckFlags, &ckSlotID, NULL_PTR);
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return 0L; }
-
-    jSlotID = ckULongToJLong(ckSlotID);
+    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+        jSlotID = ckULongToJLong(ckSlotID);
+    }
 
     return jSlotID ;
 }
@@ -632,15 +651,18 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetMechanismList
 
     ckpMechanismList = (CK_MECHANISM_TYPE_PTR)
       malloc(ckMechanismNumber * sizeof(CK_MECHANISM_TYPE));
+    if (ckpMechanismList == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
 
     rv = (*ckpFunctions->C_GetMechanismList)(ckSlotID, ckpMechanismList,
                                              &ckMechanismNumber);
-
-    jMechanismList = ckULongArrayToJLongArray(env, ckpMechanismList,
-                                              ckMechanismNumber);
+    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+        jMechanismList = ckULongArrayToJLongArray(env, ckpMechanismList,
+                                                  ckMechanismNumber);
+    }
     free(ckpMechanismList);
-
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
 
     return jMechanismList ;
 }
@@ -663,7 +685,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetMechanismInfo
     CK_SLOT_ID ckSlotID;
     CK_MECHANISM_TYPE ckMechanismType;
     CK_MECHANISM_INFO ckMechanismInfo;
-    jobject jMechanismInfo;
+    jobject jMechanismInfo = NULL;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -674,10 +696,9 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetMechanismInfo
 
     rv = (*ckpFunctions->C_GetMechanismInfo)(ckSlotID, ckMechanismType,
                                              &ckMechanismInfo);
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
-
-    jMechanismInfo = ckMechanismInfoPtrToJMechanismInfo(env, &ckMechanismInfo);
-
+    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+        jMechanismInfo = ckMechanismInfoPtrToJMechanismInfo(env, &ckMechanismInfo);
+    }
     return jMechanismInfo ;
 }
 
@@ -703,11 +724,11 @@ ckMechanismInfoPtrToJMechanismInfo
 
     /* load CK_MECHANISM_INFO class */
     jMechanismInfoClass = (*env)->FindClass(env, CLASS_MECHANISM_INFO);
-    assert(jMechanismInfoClass != 0);
+    if (jMechanismInfoClass == NULL) { return NULL; };
 
     /* load CK_MECHANISM_INFO constructor */
     jCtrId = (*env)->GetMethodID(env, jMechanismInfoClass, "<init>", "(JJJ)V");
-    assert(jCtrId != 0);
+    if (jCtrId == NULL) { return NULL; };
 
     /* prep all fields */
     jMinKeySize = ckULongToJLong(ckpMechanismInfo->ulMinKeySize);
@@ -717,7 +738,7 @@ ckMechanismInfoPtrToJMechanismInfo
     /* create new CK_MECHANISM_INFO object */
     jMechanismInfoObject = (*env)->NewObject(env, jMechanismInfoClass, jCtrId,
                                              jMinKeySize, jMaxKeySize, jFlags);
-    assert(jMechanismInfoObject != 0);
+    if (jMechanismInfoObject == NULL) { return NULL; };
 
     /* free local references */
     (*env)->DeleteLocalRef(env, jMechanismInfoClass);
@@ -753,8 +774,13 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1InitToken
 
     ckSlotID = jLongToCKULong(jSlotID);
     jCharArrayToCKCharArray(env, jPin, &ckpPin, &ckPinLength);
-    jCharArrayToCKUTF8CharArray(env, jLabel, &ckpLabel, &ckLabelLength);
+    if ((*env)->ExceptionCheck(env)) { return; }
     /* ckLabelLength <= 32 !!! */
+    jCharArrayToCKUTF8CharArray(env, jLabel, &ckpLabel, &ckLabelLength);
+    if ((*env)->ExceptionCheck(env)) {
+        free(ckpPin);
+        return;
+    }
 
     rv = (*ckpFunctions->C_InitToken)(ckSlotID, ckpPin, ckPinLength, ckpLabel);
     TRACE1("InitToken return code: %d", rv);
@@ -790,6 +816,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1InitPIN
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     jCharArrayToCKCharArray(env, jPin, &ckpPin, &ckPinLength);
+    if ((*env)->ExceptionCheck(env)) { return; }
 
     rv = (*ckpFunctions->C_InitPIN)(ckSessionHandle, ckpPin, ckPinLength);
 
@@ -828,7 +855,12 @@ jcharArray jNewPin)
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     jCharArrayToCKCharArray(env, jOldPin, &ckpOldPin, &ckOldPinLength);
+    if ((*env)->ExceptionCheck(env)) { return; }
     jCharArrayToCKCharArray(env, jNewPin, &ckpNewPin, &ckNewPinLength);
+    if ((*env)->ExceptionCheck(env)) {
+        free(ckpOldPin);
+        return;
+    }
 
     rv = (*ckpFunctions->C_SetPIN)(ckSessionHandle, ckpOldPin, ckOldPinLength,
                                    ckpNewPin, ckNewPinLength);
