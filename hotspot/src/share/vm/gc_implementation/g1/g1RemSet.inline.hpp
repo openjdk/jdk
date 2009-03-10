@@ -94,3 +94,12 @@ inline void HRInto_G1RemSet::par_write_ref(HeapRegion* from, oop* p, int tid) {
     }
   }
 }
+
+inline void UpdateRSOopClosure::do_oop(narrowOop* p) {
+  guarantee(false, "NYI");
+}
+
+inline void UpdateRSOopClosure::do_oop(oop* p) {
+  assert(_from != NULL, "from region must be non-NULL");
+  _rs->par_write_ref(_from, p, _worker_i);
+}

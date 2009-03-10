@@ -105,33 +105,6 @@ StupidG1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
   _g1->heap_region_iterate(&rc);
 }
 
-class UpdateRSOopClosure: public OopClosure {
-  HeapRegion* _from;
-  HRInto_G1RemSet* _rs;
-  int _worker_i;
-public:
-  UpdateRSOopClosure(HRInto_G1RemSet* rs, int worker_i = 0) :
-    _from(NULL), _rs(rs), _worker_i(worker_i) {
-    guarantee(_rs != NULL, "Requires an HRIntoG1RemSet");
-  }
-
-  void set_from(HeapRegion* from) {
-    assert(from != NULL, "from region must be non-NULL");
-    _from = from;
-  }
-
-  virtual void do_oop(narrowOop* p) {
-    guarantee(false, "NYI");
-  }
-  virtual void do_oop(oop* p) {
-    assert(_from != NULL, "from region must be non-NULL");
-    _rs->par_write_ref(_from, p, _worker_i);
-  }
-  // Override: this closure is idempotent.
-  //  bool idempotent() { return true; }
-  bool apply_to_weak_ref_discovered_field() { return true; }
-};
-
 class UpdateRSOutOfRegionClosure: public HeapRegionClosure {
   G1CollectedHeap*    _g1h;
   ModRefBarrierSet*   _mr_bs;
