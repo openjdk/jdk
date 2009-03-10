@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,6 +207,19 @@ public:
   virtual BasicType memory_type() const { return T_BYTE; }
 };
 
+//------------------------------LoadUBNode-------------------------------------
+// Load a unsigned byte (8bits unsigned) from memory
+class LoadUBNode : public LoadNode {
+public:
+  LoadUBNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeInt* ti = TypeInt::UBYTE )
+    : LoadNode(c, mem, adr, at, ti) {}
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual int store_Opcode() const { return Op_StoreB; }
+  virtual BasicType memory_type() const { return T_BYTE; }
+};
+
 //------------------------------LoadUSNode-------------------------------------
 // Load an unsigned short/char (16bits unsigned) from memory
 class LoadUSNode : public LoadNode {
@@ -230,6 +243,18 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual int store_Opcode() const { return Op_StoreI; }
   virtual BasicType memory_type() const { return T_INT; }
+};
+
+//------------------------------LoadUI2LNode-----------------------------------
+// Load an unsigned integer into long from memory
+class LoadUI2LNode : public LoadNode {
+public:
+  LoadUI2LNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeLong* t = TypeLong::UINT)
+    : LoadNode(c, mem, adr, at, t) {}
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegL; }
+  virtual int store_Opcode() const { return Op_StoreL; }
+  virtual BasicType memory_type() const { return T_LONG; }
 };
 
 //------------------------------LoadRangeNode----------------------------------

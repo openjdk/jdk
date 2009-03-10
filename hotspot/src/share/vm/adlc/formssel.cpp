@@ -3310,8 +3310,8 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
   static const char *needs_ideal_memory_list[] = {
     "StoreI","StoreL","StoreP","StoreN","StoreD","StoreF" ,
     "StoreB","StoreC","Store" ,"StoreFP",
-    "LoadI" ,"LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
-    "LoadB" ,"LoadUS" ,"LoadS" ,"Load"   ,
+    "LoadI", "LoadUI2L", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
+    "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load"   ,
     "Store4I","Store2I","Store2L","Store2D","Store4F","Store2F","Store16B",
     "Store8B","Store4B","Store8C","Store4C","Store2C",
     "Load4I" ,"Load2I" ,"Load2L" ,"Load2D" ,"Load4F" ,"Load2F" ,"Load16B" ,
@@ -3431,10 +3431,16 @@ int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, Matc
     const InstructForm *form2_inst = form2 ? form2->is_instruction() : NULL;
     const char *name_left  = mRule2->_lChild ? mRule2->_lChild->_opType : NULL;
     const char *name_right = mRule2->_rChild ? mRule2->_rChild->_opType : NULL;
+    DataType data_type = Form::none;
+    if (form->is_operand()) {
+      // Make sure the loadX matches the type of the reg
+      data_type = form->ideal_to_Reg_type(form->is_operand()->ideal_type(globals));
+    }
     // Detect reg vs (loadX memory)
     if( form->is_cisc_reg(globals)
         && form2_inst
-        && (is_load_from_memory(mRule2->_opType) != Form::none) // reg vs. (load memory)
+        && data_type != Form::none
+        && (is_load_from_memory(mRule2->_opType) == data_type) // reg vs. (load memory)
         && (name_left != NULL)       // NOT (load)
         && (name_right == NULL) ) {  // NOT (load memory foo)
       const Form *form2_left = name_left ? globals[name_left] : NULL;
