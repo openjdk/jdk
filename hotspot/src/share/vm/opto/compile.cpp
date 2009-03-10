@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2005,8 +2005,10 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_StoreP:
   case Op_StoreN:
   case Op_LoadB:
+  case Op_LoadUB:
   case Op_LoadUS:
   case Op_LoadI:
+  case Op_LoadUI2L:
   case Op_LoadKlass:
   case Op_LoadNKlass:
   case Op_LoadL:

@@ -34,10 +34,16 @@
 extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int index);
 #endif
 
-// used by compiler only; may use only caller saved registers rax, rbx, rcx.
-// rdx holds first int arg, rsi, rdi, rbp are callee-save & must be preserved.
-// Leave receiver in rcx; required behavior when +OptoArgsInRegisters
-// is modifed to put first oop in rcx.
+// These stubs are used by the compiler only.
+// Argument registers, which must be preserved:
+//   rcx - receiver (always first argument)
+//   rdx - second argument (if any)
+// Other registers that might be usable:
+//   rax - inline cache register (is interface for itable stub)
+//   rbx - method (used when calling out to interpreter)
+// Available now, but may become callee-save at some point:
+//   rsi, rdi
+// Note that rax and rdx are also used for return values.
 //
 VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   const int i486_code_length = VtableStub::pd_code_size_limit(true);
@@ -94,16 +100,25 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   __ jmp( Address(method, methodOopDesc::from_compiled_offset()));
 
   masm->flush();
+
+  if (PrintMiscellaneous && (WizardMode || Verbose)) {
+    tty->print_cr("vtable #%d at "PTR_FORMAT"[%d] left over: %d",
+                  vtable_index, s->entry_point(),
+                  (int)(s->code_end() - s->entry_point()),
+                  (int)(s->code_end() - __ pc()));
+  }
+  guarantee(__ pc() <= s->code_end(), "overflowed buffer");
+
   s->set_exception_points(npe_addr, ame_addr);
   return s;
 }
 
 
-VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
+VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // Note well: pd_code_size_limit is the absolute minimum we can get away with.  If you
   //            add code here, bump the code stub size returned by pd_code_size_limit!
   const int i486_code_length = VtableStub::pd_code_size_limit(false);
-  VtableStub* s = new(i486_code_length) VtableStub(false, vtable_index);
+  VtableStub* s = new(i486_code_length) VtableStub(false, itable_index);
   ResourceMark rm;
   CodeBuffer cb(s->entry_point(), i486_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
@@ -123,50 +138,19 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
 
   // get receiver klass (also an implicit null-check)
   address npe_addr = __ pc();
-  __ movptr(rbx, Address(rcx, oopDesc::klass_offset_in_bytes()));
+  __ movptr(rsi, Address(rcx, oopDesc::klass_offset_in_bytes()));
 
-  __ mov(rsi, rbx);   // Save klass in free register
-  // Most registers are in use, so save a few
-  __ push(rdx);
-  // compute itable entry offset (in words)
-  const int base = instanceKlass::vtable_start_offset() * wordSize;
-  assert(vtableEntry::size() * wordSize == 4, "adjust the scaling in the code below");
-  __ movl(rdx, Address(rbx, instanceKlass::vtable_length_offset() * wordSize)); // Get length of vtable
-  __ lea(rbx, Address(rbx, rdx, Address::times_ptr, base));
-  if (HeapWordsPerLong > 1) {
-    // Round up to align_object_offset boundary
-    __ round_to(rbx, BytesPerLong);
-  }
-
-  Label hit, next, entry, throw_icce;
-
-  __ jmpb(entry);
-
-  __ bind(next);
-  __ addptr(rbx, itableOffsetEntry::size() * wordSize);
-
-  __ bind(entry);
-
-  // If the entry is NULL then we've reached the end of the table
-  // without finding the expected interface, so throw an exception
-  __ movptr(rdx, Address(rbx, itableOffsetEntry::interface_offset_in_bytes()));
-  __ testptr(rdx, rdx);
-  __ jcc(Assembler::zero, throw_icce);
-  __ cmpptr(rax, rdx);
-  __ jcc(Assembler::notEqual, next);
-
-  // We found a hit, move offset into rbx,
-  __ movl(rdx, Address(rbx, itableOffsetEntry::offset_offset_in_bytes()));
-
-  // Compute itableMethodEntry.
-  const int method_offset = (itableMethodEntry::size() * wordSize * vtable_index) + itableMethodEntry::method_offset_in_bytes();
+  // Most registers are in use; we'll use rax, rbx, rsi, rdi
+  // (If we need to make rsi, rdi callee-save, do a push/pop here.)
+  const Register method = rbx;
+  Label throw_icce;
 
   // Get methodOop and entrypoint for compiler
-  const Register method = rbx;
-  __ movptr(method, Address(rsi, rdx, Address::times_1, method_offset));
-
-  // Restore saved register, before possible trap.
-  __ pop(rdx);
+  __ lookup_interface_method(// inputs: rec. class, interface, itable index
+                             rsi, rax, itable_index,
+                             // outputs: method, scan temp. reg
+                             method, rdi,
+                             throw_icce);
 
   // method (rbx): methodOop
   // rcx: receiver
@@ -187,12 +171,15 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   __ jmp(Address(method, methodOopDesc::from_compiled_offset()));
 
   __ bind(throw_icce);
-  // Restore saved register
-  __ pop(rdx);
   __ jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
-
   masm->flush();
 
+  if (PrintMiscellaneous && (WizardMode || Verbose)) {
+    tty->print_cr("itable #%d at "PTR_FORMAT"[%d] left over: %d",
+                  itable_index, s->entry_point(),
+                  (int)(s->code_end() - s->entry_point()),
+                  (int)(s->code_end() - __ pc()));
+  }
   guarantee(__ pc() <= s->code_end(), "overflowed buffer");
 
   s->set_exception_points(npe_addr, ame_addr);
@@ -207,7 +194,7 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
     return (DebugVtables ? 210 : 16) + (CountCompiledCalls ? 6 : 0);
   } else {
     // Itable stub size
-    return (DebugVtables ? 144 : 64) + (CountCompiledCalls ? 6 : 0);
+    return (DebugVtables ? 256 : 66) + (CountCompiledCalls ? 6 : 0);
   }
 }
 

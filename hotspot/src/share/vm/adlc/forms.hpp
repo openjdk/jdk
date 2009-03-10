@@ -342,6 +342,7 @@ public:
   void  reset();                   // Reset iteration
   const char *iter();              // after reset(), first element : else next
   const char *current();           // return current element in iteration.
+  const char *peek(int skip = 1);  // returns element + skip in iteration if there is one
 
   bool  current_is_signal();       // Return 'true' if current entry is signal
   bool  is_signal(const char *entry); // Return true if entry is a signal
