@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ void VM_Version::initialize() {
   }
 
   char buf[512];
-  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s",
                (has_v8() ? ", has_v8" : ""),
                (has_v9() ? ", has_v9" : ""),
                (has_vis1() ? ", has_vis1" : ""),
@@ -98,7 +98,9 @@ void VM_Version::initialize() {
                (is_ultra3() ? ", is_ultra3" : ""),
                (is_sun4v() ? ", is_sun4v" : ""),
                (is_niagara1() ? ", is_niagara1" : ""),
-               (!has_hardware_int_muldiv() ? ", no-muldiv" : ""),
+               (is_niagara1_plus() ? ", is_niagara1_plus" : ""),
+               (!has_hardware_mul32() ? ", no-mul32" : ""),
+               (!has_hardware_div32() ? ", no-div32" : ""),
                (!has_hardware_fsmuld() ? ", no-fsmuld" : ""));
 
   // buf is started with ", " or is empty
