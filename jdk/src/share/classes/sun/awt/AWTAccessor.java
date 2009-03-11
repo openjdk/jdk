@@ -161,7 +161,7 @@ public final class AWTAccessor {
     }
 
     /*
-     * An interface of accessor for the java.awt.Component class.
+     * An interface of accessor for the java.awt.KeyboardFocusManager class.
      */
     public interface KeyboardFocusManagerAccessor {
         /*
