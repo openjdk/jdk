@@ -727,7 +727,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   }
 
 #ifdef _LP64
-  assert(false, "fix locate_operand");
+  assert(which == narrow_oop_operand && !is_64bit, "instruction is not a movl adr, imm32");
 #else
   assert(which == imm_operand, "instruction has only an imm field");
 #endif // LP64
@@ -3224,12 +3224,6 @@ void Assembler::fyl2x() {
   emit_byte(0xF1);
 }
 
-void Assembler::mov_literal32(Register dst, int32_t imm32, RelocationHolder const& rspec, int format) {
-  InstructionMark im(this);
-  int encode = prefix_and_encode(dst->encoding());
-  emit_byte(0xB8 | encode);
-  emit_data((int)imm32, rspec, format);
-}
 
 #ifndef _LP64
 
@@ -3249,6 +3243,12 @@ void Assembler::mov_literal32(Address dst, int32_t imm32,  RelocationHolder cons
   emit_data((int)imm32, rspec, 0);
 }
 
+void Assembler::mov_literal32(Register dst, int32_t imm32, RelocationHolder const& rspec) {
+  InstructionMark im(this);
+  int encode = prefix_and_encode(dst->encoding());
+  emit_byte(0xB8 | encode);
+  emit_data((int)imm32, rspec, 0);
+}
 
 void Assembler::popa() { // 32bit
   emit_byte(0x61);
@@ -3855,6 +3855,37 @@ void Assembler::mov_literal64(Register dst, intptr_t imm64, RelocationHolder con
   int encode = prefixq_and_encode(dst->encoding());
   emit_byte(0xB8 | encode);
   emit_data64(imm64, rspec);
+}
+
+void Assembler::mov_narrow_oop(Register dst, int32_t imm32, RelocationHolder const& rspec) {
+  InstructionMark im(this);
+  int encode = prefix_and_encode(dst->encoding());
+  emit_byte(0xB8 | encode);
+  emit_data((int)imm32, rspec, narrow_oop_operand);
+}
+
+void Assembler::mov_narrow_oop(Address dst, int32_t imm32,  RelocationHolder const& rspec) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_byte(0xC7);
+  emit_operand(rax, dst, 4);
+  emit_data((int)imm32, rspec, narrow_oop_operand);
+}
+
+void Assembler::cmp_narrow_oop(Register src1, int32_t imm32, RelocationHolder const& rspec) {
+  InstructionMark im(this);
+  int encode = prefix_and_encode(src1->encoding());
+  emit_byte(0x81);
+  emit_byte(0xF8 | encode);
+  emit_data((int)imm32, rspec, narrow_oop_operand);
+}
+
+void Assembler::cmp_narrow_oop(Address src1, int32_t imm32, RelocationHolder const& rspec) {
+  InstructionMark im(this);
+  prefix(src1);
+  emit_byte(0x81);
+  emit_operand(rax, src1, 4);
+  emit_data((int)imm32, rspec, narrow_oop_operand);
 }
 
 void Assembler::movdq(XMMRegister dst, Register src) {
@@ -7710,14 +7741,21 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 void MacroAssembler::load_prototype_header(Register dst, Register src) {
 #ifdef _LP64
   if (UseCompressedOops) {
+    assert (Universe::heap() != NULL, "java heap should be initialized");
     movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+    if (Universe::narrow_oop_shift() != 0) {
+      assert(Address::times_8 == LogMinObjAlignmentInBytes &&
+             Address::times_8 == Universe::narrow_oop_shift(), "decode alg wrong");
+      movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+    } else {
+      movq(dst, Address(dst, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+    }
   } else
 #endif
-    {
-      movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-      movptr(dst, Address(dst, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
-    }
+  {
+    movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+    movptr(dst, Address(dst, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+  }
 }
 
 void MacroAssembler::store_klass(Register dst, Register src) {
@@ -7760,11 +7798,20 @@ void MacroAssembler::store_heap_oop(Address dst, Register src) {
 // Algorithm must match oop.inline.hpp encode_heap_oop.
 void MacroAssembler::encode_heap_oop(Register r) {
   assert (UseCompressedOops, "should be compressed");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
+  if (Universe::narrow_oop_base() == NULL) {
+    verify_oop(r, "broken oop in encode_heap_oop");
+    if (Universe::narrow_oop_shift() != 0) {
+      assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+      shrq(r, LogMinObjAlignmentInBytes);
+    }
+    return;
+  }
 #ifdef ASSERT
   if (CheckCompressedOops) {
     Label ok;
     push(rscratch1); // cmpptr trashes rscratch1
-    cmpptr(r12_heapbase, ExternalAddress((address)Universe::heap_base_addr()));
+    cmpptr(r12_heapbase, ExternalAddress((address)Universe::narrow_oop_base_addr()));
     jcc(Assembler::equal, ok);
     stop("MacroAssembler::encode_heap_oop: heap base corrupted?");
     bind(ok);
@@ -7780,6 +7827,7 @@ void MacroAssembler::encode_heap_oop(Register r) {
 
 void MacroAssembler::encode_heap_oop_not_null(Register r) {
   assert (UseCompressedOops, "should be compressed");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
 #ifdef ASSERT
   if (CheckCompressedOops) {
     Label ok;
@@ -7790,12 +7838,18 @@ void MacroAssembler::encode_heap_oop_not_null(Register r) {
   }
 #endif
   verify_oop(r, "broken oop in encode_heap_oop_not_null");
-  subq(r, r12_heapbase);
-  shrq(r, LogMinObjAlignmentInBytes);
+  if (Universe::narrow_oop_base() != NULL) {
+    subq(r, r12_heapbase);
+  }
+  if (Universe::narrow_oop_shift() != 0) {
+    assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+    shrq(r, LogMinObjAlignmentInBytes);
+  }
 }
 
 void MacroAssembler::encode_heap_oop_not_null(Register dst, Register src) {
   assert (UseCompressedOops, "should be compressed");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
 #ifdef ASSERT
   if (CheckCompressedOops) {
     Label ok;
@@ -7809,18 +7863,32 @@ void MacroAssembler::encode_heap_oop_not_null(Register dst, Register src) {
   if (dst != src) {
     movq(dst, src);
   }
-  subq(dst, r12_heapbase);
-  shrq(dst, LogMinObjAlignmentInBytes);
+  if (Universe::narrow_oop_base() != NULL) {
+    subq(dst, r12_heapbase);
+  }
+  if (Universe::narrow_oop_shift() != 0) {
+    assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+    shrq(dst, LogMinObjAlignmentInBytes);
+  }
 }
 
 void  MacroAssembler::decode_heap_oop(Register r) {
   assert (UseCompressedOops, "should be compressed");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
+  if (Universe::narrow_oop_base() == NULL) {
+    if (Universe::narrow_oop_shift() != 0) {
+      assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+      shlq(r, LogMinObjAlignmentInBytes);
+    }
+    verify_oop(r, "broken oop in decode_heap_oop");
+    return;
+  }
 #ifdef ASSERT
   if (CheckCompressedOops) {
     Label ok;
     push(rscratch1);
     cmpptr(r12_heapbase,
-           ExternalAddress((address)Universe::heap_base_addr()));
+           ExternalAddress((address)Universe::narrow_oop_base_addr()));
     jcc(Assembler::equal, ok);
     stop("MacroAssembler::decode_heap_oop: heap base corrupted?");
     bind(ok);
@@ -7844,32 +7912,76 @@ void  MacroAssembler::decode_heap_oop(Register r) {
 
 void  MacroAssembler::decode_heap_oop_not_null(Register r) {
   assert (UseCompressedOops, "should only be used for compressed headers");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
   // Cannot assert, unverified entry point counts instructions (see .ad file)
   // vtableStubs also counts instructions in pd_code_size_limit.
   // Also do not verify_oop as this is called by verify_oop.
-  assert(Address::times_8 == LogMinObjAlignmentInBytes, "decode alg wrong");
-  leaq(r, Address(r12_heapbase, r, Address::times_8, 0));
+  if (Universe::narrow_oop_base() == NULL) {
+    if (Universe::narrow_oop_shift() != 0) {
+      assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+      shlq(r, LogMinObjAlignmentInBytes);
+    }
+  } else {
+      assert (Address::times_8 == LogMinObjAlignmentInBytes &&
+              Address::times_8 == Universe::narrow_oop_shift(), "decode alg wrong");
+    leaq(r, Address(r12_heapbase, r, Address::times_8, 0));
+  }
 }
 
 void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
   assert (UseCompressedOops, "should only be used for compressed headers");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
   // Cannot assert, unverified entry point counts instructions (see .ad file)
   // vtableStubs also counts instructions in pd_code_size_limit.
   // Also do not verify_oop as this is called by verify_oop.
-  assert(Address::times_8 == LogMinObjAlignmentInBytes, "decode alg wrong");
-  leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
+  if (Universe::narrow_oop_shift() != 0) {
+    assert (Address::times_8 == LogMinObjAlignmentInBytes &&
+            Address::times_8 == Universe::narrow_oop_shift(), "decode alg wrong");
+    leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
+  } else if (dst != src) {
+    movq(dst, src);
+  }
 }
 
 void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
-  assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  assert (UseCompressedOops, "should only be used for compressed headers");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
   int oop_index = oop_recorder()->find_index(obj);
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
-  mov_literal32(dst, oop_index, rspec, narrow_oop_operand);
+  mov_narrow_oop(dst, oop_index, rspec);
+}
+
+void  MacroAssembler::set_narrow_oop(Address dst, jobject obj) {
+  assert (UseCompressedOops, "should only be used for compressed headers");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int oop_index = oop_recorder()->find_index(obj);
+  RelocationHolder rspec = oop_Relocation::spec(oop_index);
+  mov_narrow_oop(dst, oop_index, rspec);
+}
+
+void  MacroAssembler::cmp_narrow_oop(Register dst, jobject obj) {
+  assert (UseCompressedOops, "should only be used for compressed headers");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int oop_index = oop_recorder()->find_index(obj);
+  RelocationHolder rspec = oop_Relocation::spec(oop_index);
+  Assembler::cmp_narrow_oop(dst, oop_index, rspec);
+}
+
+void  MacroAssembler::cmp_narrow_oop(Address dst, jobject obj) {
+  assert (UseCompressedOops, "should only be used for compressed headers");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int oop_index = oop_recorder()->find_index(obj);
+  RelocationHolder rspec = oop_Relocation::spec(oop_index);
+  Assembler::cmp_narrow_oop(dst, oop_index, rspec);
 }
 
 void MacroAssembler::reinit_heapbase() {
   if (UseCompressedOops) {
-    movptr(r12_heapbase, ExternalAddress((address)Universe::heap_base_addr()));
+    movptr(r12_heapbase, ExternalAddress((address)Universe::narrow_oop_base_addr()));
   }
 }
 #endif // _LP64

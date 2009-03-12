@@ -2595,7 +2595,7 @@ bool os::can_execute_large_page_memory() {
   return true;
 }
 
-char* os::reserve_memory_special(size_t bytes) {
+char* os::reserve_memory_special(size_t bytes, char* addr) {
 
   if (UseLargePagesIndividualAllocation) {
     if (TracePageSizes && Verbose) {
@@ -2615,7 +2615,7 @@ char* os::reserve_memory_special(size_t bytes) {
         "use -XX:-UseLargePagesIndividualAllocation to turn off");
       return NULL;
     }
-    p_buf = (char *) VirtualAlloc(NULL,
+    p_buf = (char *) VirtualAlloc(addr,
                                  size_of_reserve,  // size of Reserve
                                  MEM_RESERVE,
                                  PAGE_EXECUTE_READWRITE);

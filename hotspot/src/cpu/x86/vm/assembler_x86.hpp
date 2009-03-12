@@ -578,20 +578,25 @@ private:
 
   // These are all easily abused and hence protected
 
-  void mov_literal32(Register dst, int32_t imm32, RelocationHolder const& rspec, int format = 0);
-
   // 32BIT ONLY SECTION
 #ifndef _LP64
   // Make these disappear in 64bit mode since they would never be correct
   void cmp_literal32(Register src1, int32_t imm32, RelocationHolder const& rspec);   // 32BIT ONLY
   void cmp_literal32(Address src1, int32_t imm32, RelocationHolder const& rspec);    // 32BIT ONLY
 
+  void mov_literal32(Register dst, int32_t imm32, RelocationHolder const& rspec);    // 32BIT ONLY
   void mov_literal32(Address dst, int32_t imm32, RelocationHolder const& rspec);     // 32BIT ONLY
 
   void push_literal32(int32_t imm32, RelocationHolder const& rspec);                 // 32BIT ONLY
 #else
   // 64BIT ONLY SECTION
   void mov_literal64(Register dst, intptr_t imm64, RelocationHolder const& rspec);   // 64BIT ONLY
+
+  void cmp_narrow_oop(Register src1, int32_t imm32, RelocationHolder const& rspec);
+  void cmp_narrow_oop(Address src1, int32_t imm32, RelocationHolder const& rspec);
+
+  void mov_narrow_oop(Register dst, int32_t imm32, RelocationHolder const& rspec);
+  void mov_narrow_oop(Address dst, int32_t imm32, RelocationHolder const& rspec);
 #endif // _LP64
 
   // These are unique in that we are ensured by the caller that the 32bit
@@ -1647,6 +1652,9 @@ class MacroAssembler: public Assembler {
   void decode_heap_oop_not_null(Register dst, Register src);
 
   void set_narrow_oop(Register dst, jobject obj);
+  void set_narrow_oop(Address dst, jobject obj);
+  void cmp_narrow_oop(Register dst, jobject obj);
+  void cmp_narrow_oop(Address dst, jobject obj);
 
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();

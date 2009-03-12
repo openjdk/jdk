@@ -3220,7 +3220,7 @@ bool os::Solaris::set_mpss_range(caddr_t start, size_t bytes, size_t align) {
   return true;
 }
 
-char* os::reserve_memory_special(size_t bytes) {
+char* os::reserve_memory_special(size_t bytes, char* addr) {
   assert(UseLargePages && UseISM, "only for ISM large pages");
 
   size_t size = bytes;

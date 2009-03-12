@@ -72,6 +72,9 @@ void VM_Version::initialize() {
         FLAG_SET_ERGO(bool, UseCompressedOops, false);
       }
     }
+    // 32-bit oops don't make sense for the 64-bit VM on sparc
+    // since the 32-bit VM has the same registers and smaller objects.
+    Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
 #endif // _LP64
 #ifdef COMPILER2
     // Indirect branch is the same cost as direct

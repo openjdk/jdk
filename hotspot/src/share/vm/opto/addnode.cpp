@@ -756,7 +756,13 @@ const Type *AddPNode::mach_bottom_type( const MachNode* n) {
       if ( eti == NULL ) {
         // there must be one pointer among the operands
         guarantee(tptr == NULL, "must be only one pointer operand");
-        tptr = et->isa_oopptr();
+        if (UseCompressedOops && Universe::narrow_oop_shift() == 0) {
+          // 32-bits narrow oop can be the base of address expressions
+          tptr = et->make_ptr()->isa_oopptr();
+        } else {
+          // only regular oops are expected here
+          tptr = et->isa_oopptr();
+        }
         guarantee(tptr != NULL, "non-int operand must be pointer");
         if (tptr->higher_equal(tp->add_offset(tptr->offset())))
           tp = tptr; // Set more precise type for bailout
