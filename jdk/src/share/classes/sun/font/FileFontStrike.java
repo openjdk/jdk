@@ -842,8 +842,22 @@ public class FileFontStrike extends PhysicalStrike {
         return fileFont.getGlyphOutlineBounds(pScalerContext, glyphCode);
     }
 
+    private ConcurrentHashMap<Integer, GeneralPath> outlineMap;
+
     GeneralPath getGlyphOutline(int glyphCode, float x, float y) {
-        return fileFont.getGlyphOutline(pScalerContext, glyphCode, x, y);
+        if (outlineMap == null) {
+            outlineMap = new ConcurrentHashMap<Integer, GeneralPath>();
+        }
+        GeneralPath gp = (GeneralPath)outlineMap.get(glyphCode);
+        if (gp == null) {
+            gp = fileFont.getGlyphOutline(pScalerContext, glyphCode, 0, 0);
+            outlineMap.put(glyphCode, gp);
+        }
+        gp = (GeneralPath)gp.clone(); // mutable!
+        if (x != 0f || y != 0f) {
+            gp.transform(AffineTransform.getTranslateInstance(x, y));
+        }
+        return gp;
     }
 
     GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
