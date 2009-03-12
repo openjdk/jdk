@@ -820,6 +820,40 @@ public:
   }
 };
 
+class RebuildRSOutOfRegionClosure: public HeapRegionClosure {
+  G1CollectedHeap*   _g1h;
+  UpdateRSOopClosure _cl;
+  int                _worker_i;
+public:
+  RebuildRSOutOfRegionClosure(G1CollectedHeap* g1, int worker_i = 0) :
+    _cl(g1->g1_rem_set()->as_HRInto_G1RemSet(), worker_i),
+    _worker_i(worker_i),
+    _g1h(g1)
+  { }
+  bool doHeapRegion(HeapRegion* r) {
+    if (!r->continuesHumongous()) {
+      _cl.set_from(r);
+      r->oop_iterate(&_cl);
+    }
+    return false;
+  }
+};
+
+class ParRebuildRSTask: public AbstractGangTask {
+  G1CollectedHeap* _g1;
+public:
+  ParRebuildRSTask(G1CollectedHeap* g1)
+    : AbstractGangTask("ParRebuildRSTask"),
+      _g1(g1)
+  { }
+
+  void work(int i) {
+    RebuildRSOutOfRegionClosure rebuild_rs(_g1, i);
+    _g1->heap_region_par_iterate_chunked(&rebuild_rs, i,
+                                         HeapRegion::RebuildRSClaimValue);
+  }
+};
+
 void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
                                     size_t word_size) {
   ResourceMark rm;
@@ -926,22 +960,33 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
 
     reset_gc_time_stamp();
     // Since everything potentially moved, we will clear all remembered
-    // sets, and clear all cards.  Later we will also cards in the used
-    // portion of the heap after the resizing (which could be a shrinking.)
-    // We will also reset the GC time stamps of the regions.
+    // sets, and clear all cards.  Later we will rebuild remebered
+    // sets. We will also reset the GC time stamps of the regions.
     PostMCRemSetClearClosure rs_clear(mr_bs());
     heap_region_iterate(&rs_clear);
 
     // Resize the heap if necessary.
     resize_if_necessary_after_full_collection(full ? 0 : word_size);
 
-    // Since everything potentially moved, we will clear all remembered
-    // sets, but also dirty all cards corresponding to used regions.
-    PostMCRemSetInvalidateClosure rs_invalidate(mr_bs());
-    heap_region_iterate(&rs_invalidate);
     if (_cg1r->use_cache()) {
       _cg1r->clear_and_record_card_counts();
       _cg1r->clear_hot_cache();
+    }
+
+    // Rebuild remembered sets of all regions.
+    if (ParallelGCThreads > 0) {
+      ParRebuildRSTask rebuild_rs_task(this);
+      assert(check_heap_region_claim_values(
+             HeapRegion::InitialClaimValue), "sanity check");
+      set_par_threads(workers()->total_workers());
+      workers()->run_task(&rebuild_rs_task);
+      set_par_threads(0);
+      assert(check_heap_region_claim_values(
+             HeapRegion::RebuildRSClaimValue), "sanity check");
+      reset_heap_region_claim_values();
+    } else {
+      RebuildRSOutOfRegionClosure rebuild_rs(this);
+      heap_region_iterate(&rebuild_rs);
     }
 
     if (PrintGC) {
