@@ -109,6 +109,7 @@ ReservedSpace::ReservedSpace(const size_t prefix_size,
                              const size_t prefix_align,
                              const size_t suffix_size,
                              const size_t suffix_align,
+                             char* requested_address,
                              const size_t noaccess_prefix)
 {
   assert(prefix_size != 0, "sanity");
@@ -131,7 +132,7 @@ ReservedSpace::ReservedSpace(const size_t prefix_size,
   const bool try_reserve_special = UseLargePages &&
     prefix_align == os::large_page_size();
   if (!os::can_commit_large_page_memory() && try_reserve_special) {
-    initialize(size, prefix_align, true, NULL, noaccess_prefix);
+    initialize(size, prefix_align, true, requested_address, noaccess_prefix);
     return;
   }
 
@@ -146,7 +147,13 @@ ReservedSpace::ReservedSpace(const size_t prefix_size,
          noaccess_prefix == prefix_align, "noaccess prefix wrong");
 
   // Optimistically try to reserve the exact size needed.
-  char* addr = os::reserve_memory(size, NULL, prefix_align);
+  char* addr;
+  if (requested_address != 0) {
+    addr = os::attempt_reserve_memory_at(size,
+                                         requested_address-noaccess_prefix);
+  } else {
+    addr = os::reserve_memory(size, NULL, prefix_align);
+  }
   if (addr == NULL) return;
 
   // Check whether the result has the needed alignment (unlikely unless
@@ -206,12 +213,8 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
   char* base = NULL;
 
   if (special) {
-    // It's not hard to implement reserve_memory_special() such that it can
-    // allocate at fixed address, but there seems no use of this feature
-    // for now, so it's not implemented.
-    assert(requested_address == NULL, "not implemented");
 
-    base = os::reserve_memory_special(size);
+    base = os::reserve_memory_special(size, requested_address);
 
     if (base != NULL) {
       // Check alignment constraints
@@ -372,7 +375,8 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment,
                                      bool large, char* requested_address) :
   ReservedSpace(size, alignment, large,
                 requested_address,
-                UseCompressedOops && UseImplicitNullCheckForNarrowOop ?
+                (UseCompressedOops && (Universe::narrow_oop_base() != NULL) &&
+                 Universe::narrow_oop_use_implicit_null_checks()) ?
                   lcm(os::vm_page_size(), alignment) : 0) {
   // Only reserved space for the java heap should have a noaccess_prefix
   // if using compressed oops.
@@ -382,9 +386,12 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment,
 ReservedHeapSpace::ReservedHeapSpace(const size_t prefix_size,
                                      const size_t prefix_align,
                                      const size_t suffix_size,
-                                     const size_t suffix_align) :
+                                     const size_t suffix_align,
+                                     char* requested_address) :
   ReservedSpace(prefix_size, prefix_align, suffix_size, suffix_align,
-                UseCompressedOops && UseImplicitNullCheckForNarrowOop ?
+                requested_address,
+                (UseCompressedOops && (Universe::narrow_oop_base() != NULL) &&
+                 Universe::narrow_oop_use_implicit_null_checks()) ?
                   lcm(os::vm_page_size(), prefix_align) : 0) {
   protect_noaccess_prefix(prefix_size+suffix_size);
 }

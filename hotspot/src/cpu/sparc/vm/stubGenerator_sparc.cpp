@@ -2942,14 +2942,15 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_add_ptr_entry      = StubRoutines::_atomic_add_entry;
     StubRoutines::_fence_entry               = generate_fence();
 #endif  // COMPILER2 !=> _LP64
-
-    StubRoutines::Sparc::_partial_subtype_check                = generate_partial_subtype_check();
   }
 
 
   void generate_all() {
     // Generates all stubs and initializes the entry points
 
+    // Generate partial_subtype_check first here since its code depends on
+    // UseZeroBaseCompressedOops which is defined after heap initialization.
+    StubRoutines::Sparc::_partial_subtype_check                = generate_partial_subtype_check();
     // These entry points require SharedInfo::stack0 to be set up in non-core builds
     StubRoutines::_throw_AbstractMethodError_entry         = generate_throw_exception("AbstractMethodError throw_exception",          CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError),  false);
     StubRoutines::_throw_IncompatibleClassChangeError_entry= generate_throw_exception("IncompatibleClassChangeError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError),  false);
