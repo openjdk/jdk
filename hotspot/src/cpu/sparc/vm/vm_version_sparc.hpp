@@ -29,10 +29,11 @@ protected:
     hardware_mul32     = 1,
     hardware_div32     = 2,
     hardware_fsmuld    = 3,
-    v9_instructions    = 4,
-    vis1_instructions  = 5,
-    vis2_instructions  = 6,
-    sun4v_instructions = 7
+    hardware_popc      = 4,
+    v9_instructions    = 5,
+    vis1_instructions  = 6,
+    vis2_instructions  = 7,
+    sun4v_instructions = 8
   };
 
   enum Feature_Flag_Set {
@@ -43,6 +44,7 @@ protected:
     hardware_mul32_m    = 1 << hardware_mul32,
     hardware_div32_m    = 1 << hardware_div32,
     hardware_fsmuld_m   = 1 << hardware_fsmuld,
+    hardware_popc_m     = 1 << hardware_popc,
     v9_instructions_m   = 1 << v9_instructions,
     vis1_instructions_m = 1 << vis1_instructions,
     vis2_instructions_m = 1 << vis2_instructions,
@@ -81,6 +83,7 @@ public:
   static bool has_hardware_mul32()      { return (_features & hardware_mul32_m) != 0; }
   static bool has_hardware_div32()      { return (_features & hardware_div32_m) != 0; }
   static bool has_hardware_fsmuld()     { return (_features & hardware_fsmuld_m) != 0; }
+  static bool has_hardware_popc()       { return (_features & hardware_popc_m) != 0; }
   static bool has_vis1()                { return (_features & vis1_instructions_m) != 0; }
   static bool has_vis2()                { return (_features & vis2_instructions_m) != 0; }
 

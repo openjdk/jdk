@@ -9015,6 +9015,33 @@ instruct string_compare(o0RegP str1, o1RegP str2, g3RegP tmp1, g4RegP tmp2, note
   ins_pipe(long_memory_op);
 %}
 
+
+//---------- Population Count Instructions -------------------------------------
+
+instruct popCountI(iRegI dst, iRegI src) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountI src));
+
+  format %{ "POPC   $src, $dst" %}
+  ins_encode %{
+    __ popc($src$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Note: Long.bitCount(long) returns an int.
+instruct popCountL(iRegI dst, iRegL src) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountL src));
+
+  format %{ "POPC   $src, $dst" %}
+  ins_encode %{
+    __ popc($src$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+
 // ============================================================================
 //------------Bytes reverse--------------------------------------------------
 

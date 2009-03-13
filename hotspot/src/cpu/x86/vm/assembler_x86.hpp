@@ -1224,6 +1224,14 @@ private:
   void popq(Address dst);
 #endif
 
+  void popcntl(Register dst, Address src);
+  void popcntl(Register dst, Register src);
+
+#ifdef _LP64
+  void popcntq(Register dst, Address src);
+  void popcntq(Register dst, Register src);
+#endif
+
   // Prefetches (SSE, SSE2, 3DNOW only)
 
   void prefetchnta(Address src);
