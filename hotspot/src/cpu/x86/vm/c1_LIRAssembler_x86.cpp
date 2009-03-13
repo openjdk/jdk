@@ -554,8 +554,8 @@ void LIR_Assembler::emit_string_compare(LIR_Opr arg0, LIR_Opr arg1, LIR_Opr dst,
   __ jcc (Assembler::zero, noLoop);
 
   // compare first characters
-  __ load_unsigned_word(rcx, Address(rdi, 0));
-  __ load_unsigned_word(rbx, Address(rsi, 0));
+  __ load_unsigned_short(rcx, Address(rdi, 0));
+  __ load_unsigned_short(rbx, Address(rsi, 0));
   __ subl(rcx, rbx);
   __ jcc(Assembler::notZero, haveResult);
   // starting loop
@@ -574,8 +574,8 @@ void LIR_Assembler::emit_string_compare(LIR_Opr arg0, LIR_Opr arg1, LIR_Opr dst,
   Label loop;
   __ align(wordSize);
   __ bind(loop);
-  __ load_unsigned_word(rcx, Address(rdi, rax, Address::times_2, 0));
-  __ load_unsigned_word(rbx, Address(rsi, rax, Address::times_2, 0));
+  __ load_unsigned_short(rcx, Address(rdi, rax, Address::times_2, 0));
+  __ load_unsigned_short(rbx, Address(rsi, rax, Address::times_2, 0));
   __ subl(rcx, rbx);
   __ jcc(Assembler::notZero, haveResult);
   __ increment(rax);

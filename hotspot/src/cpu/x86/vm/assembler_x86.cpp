@@ -129,13 +129,19 @@ Address::Address(address loc, RelocationHolder spec) {
 // Convert the raw encoding form into the form expected by the constructor for
 // Address.  An index of 4 (rsp) corresponds to having no index, so convert
 // that to noreg for the Address constructor.
-Address Address::make_raw(int base, int index, int scale, int disp) {
+Address Address::make_raw(int base, int index, int scale, int disp, bool disp_is_oop) {
+  RelocationHolder rspec;
+  if (disp_is_oop) {
+    rspec = Relocation::spec_simple(relocInfo::oop_type);
+  }
   bool valid_index = index != rsp->encoding();
   if (valid_index) {
     Address madr(as_Register(base), as_Register(index), (Address::ScaleFactor)scale, in_ByteSize(disp));
+    madr._rspec = rspec;
     return madr;
   } else {
     Address madr(as_Register(base), noreg, Address::no_scale, in_ByteSize(disp));
+    madr._rspec = rspec;
     return madr;
   }
 }
@@ -3892,6 +3898,21 @@ void Assembler::movq(Address dst, Register src) {
   emit_operand(src, dst);
 }
 
+void Assembler::movsbq(Register dst, Address src) {
+  InstructionMark im(this);
+  prefixq(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0xBE);
+  emit_operand(dst, src);
+}
+
+void Assembler::movsbq(Register dst, Register src) {
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xBE);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::movslq(Register dst, int32_t imm32) {
   // dbx shows movslq(rcx, 3) as movq     $0x0000000049000000,(%rbx)
   // and movslq(r8, 3); as movl     $0x0000000048000000,(%rbx)
@@ -3922,6 +3943,51 @@ void Assembler::movslq(Register dst, Address src) {
 void Assembler::movslq(Register dst, Register src) {
   int encode = prefixq_and_encode(dst->encoding(), src->encoding());
   emit_byte(0x63);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::movswq(Register dst, Address src) {
+  InstructionMark im(this);
+  prefixq(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0xBF);
+  emit_operand(dst, src);
+}
+
+void Assembler::movswq(Register dst, Register src) {
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xBF);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::movzbq(Register dst, Address src) {
+  InstructionMark im(this);
+  prefixq(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0xB6);
+  emit_operand(dst, src);
+}
+
+void Assembler::movzbq(Register dst, Register src) {
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xB6);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::movzwq(Register dst, Address src) {
+  InstructionMark im(this);
+  prefixq(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0xB7);
+  emit_operand(dst, src);
+}
+
+void Assembler::movzwq(Register dst, Register src) {
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xB7);
   emit_byte(0xC0 | encode);
 }
 
@@ -6197,8 +6263,11 @@ int MacroAssembler::load_signed_byte(Register dst, Address src) {
   return off;
 }
 
-// word => int32 which seems bad for 64bit
-int MacroAssembler::load_signed_word(Register dst, Address src) {
+// Note: load_signed_short used to be called load_signed_word.
+// Although the 'w' in x86 opcodes refers to the term "word" in the assembler
+// manual, which means 16 bits, that usage is found nowhere in HotSpot code.
+// The term "word" in HotSpot means a 32- or 64-bit machine word.
+int MacroAssembler::load_signed_short(Register dst, Address src) {
   int off;
   if (LP64_ONLY(true ||) VM_Version::is_P6()) {
     // This is dubious to me since it seems safe to do a signed 16 => 64 bit
@@ -6207,7 +6276,7 @@ int MacroAssembler::load_signed_word(Register dst, Address src) {
     off = offset();
     movswl(dst, src); // movsxw
   } else {
-    off = load_unsigned_word(dst, src);
+    off = load_unsigned_short(dst, src);
     shll(dst, 16);
     sarl(dst, 16);
   }
@@ -6229,7 +6298,8 @@ int MacroAssembler::load_unsigned_byte(Register dst, Address src) {
   return off;
 }
 
-int MacroAssembler::load_unsigned_word(Register dst, Address src) {
+// Note: load_unsigned_short used to be called load_unsigned_word.
+int MacroAssembler::load_unsigned_short(Register dst, Address src) {
   // According to Intel Doc. AP-526, "Zero-Extension of Short", p.16,
   // and "3.9 Partial Register Penalties", p. 22).
   int off;
@@ -6242,6 +6312,28 @@ int MacroAssembler::load_unsigned_word(Register dst, Address src) {
     movw(dst, src);
   }
   return off;
+}
+
+void MacroAssembler::load_sized_value(Register dst, Address src,
+                                      int size_in_bytes, bool is_signed) {
+  switch (size_in_bytes ^ (is_signed ? -1 : 0)) {
+#ifndef _LP64
+  // For case 8, caller is responsible for manually loading
+  // the second word into another register.
+  case ~8:  // fall through:
+  case  8:  movl(                dst, src ); break;
+#else
+  case ~8:  // fall through:
+  case  8:  movq(                dst, src ); break;
+#endif
+  case ~4:  // fall through:
+  case  4:  movl(                dst, src ); break;
+  case ~2:  load_signed_short(   dst, src ); break;
+  case  2:  load_unsigned_short( dst, src ); break;
+  case ~1:  load_signed_byte(    dst, src ); break;
+  case  1:  load_unsigned_byte(  dst, src ); break;
+  default:  ShouldNotReachHere();
+  }
 }
 
 void MacroAssembler::mov32(AddressLiteral dst, Register src) {
@@ -6463,7 +6555,8 @@ void MacroAssembler::serialize_memory(Register thread, Register tmp) {
   Address index(noreg, tmp, Address::times_1);
   ExternalAddress page(os::get_memory_serialize_page());
 
-  movptr(ArrayAddress(page, index), tmp);
+  // Size of store must match masking code above
+  movl(as_Address(ArrayAddress(page, index)), tmp);
 }
 
 // Calls to C land
@@ -7049,6 +7142,81 @@ void MacroAssembler::trigfunc(char trig, int num_fpu_regs_in_use) {
 }
 
 
+// Look up the method for a megamorphic invokeinterface call.
+// The target method is determined by <intf_klass, itable_index>.
+// The receiver klass is in recv_klass.
+// On success, the result will be in method_result, and execution falls through.
+// On failure, execution transfers to the given label.
+void MacroAssembler::lookup_interface_method(Register recv_klass,
+                                             Register intf_klass,
+                                             RegisterConstant itable_index,
+                                             Register method_result,
+                                             Register scan_temp,
+                                             Label& L_no_such_interface) {
+  assert_different_registers(recv_klass, intf_klass, method_result, scan_temp);
+  assert(itable_index.is_constant() || itable_index.as_register() == method_result,
+         "caller must use same register for non-constant itable index as for method");
+
+  // Compute start of first itableOffsetEntry (which is at the end of the vtable)
+  int vtable_base = instanceKlass::vtable_start_offset() * wordSize;
+  int itentry_off = itableMethodEntry::method_offset_in_bytes();
+  int scan_step   = itableOffsetEntry::size() * wordSize;
+  int vte_size    = vtableEntry::size() * wordSize;
+  Address::ScaleFactor times_vte_scale = Address::times_ptr;
+  assert(vte_size == wordSize, "else adjust times_vte_scale");
+
+  movl(scan_temp, Address(recv_klass, instanceKlass::vtable_length_offset() * wordSize));
+
+  // %%% Could store the aligned, prescaled offset in the klassoop.
+  lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base));
+  if (HeapWordsPerLong > 1) {
+    // Round up to align_object_offset boundary
+    // see code for instanceKlass::start_of_itable!
+    round_to(scan_temp, BytesPerLong);
+  }
+
+  // Adjust recv_klass by scaled itable_index, so we can free itable_index.
+  assert(itableMethodEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
+  lea(recv_klass, Address(recv_klass, itable_index, Address::times_ptr, itentry_off));
+
+  // for (scan = klass->itable(); scan->interface() != NULL; scan += scan_step) {
+  //   if (scan->interface() == intf) {
+  //     result = (klass + scan->offset() + itable_index);
+  //   }
+  // }
+  Label search, found_method;
+
+  for (int peel = 1; peel >= 0; peel--) {
+    movptr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+    cmpptr(intf_klass, method_result);
+
+    if (peel) {
+      jccb(Assembler::equal, found_method);
+    } else {
+      jccb(Assembler::notEqual, search);
+      // (invert the test to fall through to found_method...)
+    }
+
+    if (!peel)  break;
+
+    bind(search);
+
+    // Check that the previous entry is non-null.  A null entry means that
+    // the receiver class doesn't implement the interface, and wasn't the
+    // same as when the caller was compiled.
+    testptr(method_result, method_result);
+    jcc(Assembler::zero, L_no_such_interface);
+    addptr(scan_temp, scan_step);
+  }
+
+  bind(found_method);
+
+  // Got a hit.
+  movl(scan_temp, Address(scan_temp, itableOffsetEntry::offset_offset_in_bytes()));
+  movptr(method_result, Address(recv_klass, scan_temp, Address::times_1));
+}
+
+
 void MacroAssembler::ucomisd(XMMRegister dst, AddressLiteral src) {
   ucomisd(dst, as_Address(src));
 }
@@ -7091,6 +7259,31 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
   // call indirectly to solve generation ordering problem
   movptr(rax, ExternalAddress(StubRoutines::verify_oop_subroutine_entry_address()));
   call(rax);
+}
+
+
+RegisterConstant MacroAssembler::delayed_value(intptr_t* delayed_value_addr,
+                                               Register tmp,
+                                               int offset) {
+  intptr_t value = *delayed_value_addr;
+  if (value != 0)
+    return RegisterConstant(value + offset);
+
+  // load indirectly to solve generation ordering problem
+  movptr(tmp, ExternalAddress((address) delayed_value_addr));
+
+#ifdef ASSERT
+  Label L;
+  testl(tmp, tmp);
+  jccb(Assembler::notZero, L);
+  hlt();
+  bind(L);
+#endif
+
+  if (offset != 0)
+    addptr(tmp, offset);
+
+  return RegisterConstant(tmp);
 }
 
 

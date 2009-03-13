@@ -22,7 +22,7 @@
  *
  */
 
-// This file holds platform-independant bodies of inline functions for frames.
+// This file holds platform-independent bodies of inline functions for frames.
 
 // Note: The bcx usually contains the bcp; however during GC it contains the bci
 //       (changed by gc_prologue() and gc_epilogue()) to be methodOop position

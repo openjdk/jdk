@@ -125,6 +125,8 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     perm_gen->verify_object_start_array();
   }
 
+  heap->pre_full_gc_dump();
+
   // Filled in below to track the state of the young gen after the collection.
   bool eden_empty;
   bool survivors_empty;
@@ -362,6 +364,8 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
   }
+
+  heap->post_full_gc_dump();
 
 #ifdef TRACESPINNING
   ParallelTaskTerminator::print_termination_counts();

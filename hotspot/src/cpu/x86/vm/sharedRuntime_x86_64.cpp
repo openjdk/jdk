@@ -1350,7 +1350,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     {
       Label L;
       __ mov(rax, rsp);
-      __ andptr(rax, -16); // must be 16 byte boundry (see amd64 ABI)
+      __ andptr(rax, -16); // must be 16 byte boundary (see amd64 ABI)
       __ cmpptr(rax, rsp);
       __ jcc(Assembler::equal, L);
       __ stop("improperly aligned stack");
@@ -1504,6 +1504,17 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ movoop(c_rarg1, JNIHandles::make_local(method()));
     __ call_VM_leaf(
       CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
+      r15_thread, c_rarg1);
+    restore_args(masm, total_c_args, c_arg, out_regs);
+  }
+
+  // RedefineClasses() tracing support for obsolete method entry
+  if (RC_TRACE_IN_RANGE(0x00001000, 0x00002000)) {
+    // protect the args we've loaded
+    save_args(masm, total_c_args, c_arg, out_regs);
+    __ movoop(c_rarg1, JNIHandles::make_local(method()));
+    __ call_VM_leaf(
+      CAST_FROM_FN_PTR(address, SharedRuntime::rc_trace_method_entry),
       r15_thread, c_rarg1);
     restore_args(masm, total_c_args, c_arg, out_regs);
   }

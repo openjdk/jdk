@@ -67,6 +67,8 @@ ifndef USE_GCC
 endif
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
+# Compiler warnings are treated as errors
+CFLAGS_WARN = +w -errwarn
 CFLAGS += $(CFLAGS_WARN)
 
 ifeq ("${Platform_compiler}", "sparcWorks")

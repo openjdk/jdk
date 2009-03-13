@@ -130,7 +130,7 @@ reg_def XMM7b( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next());
 // allocation.  Highest priority is first.  A useful heuristic is to
 // give registers a low priority when they are required by machine
 // instructions, like EAX and EDX.  Registers which are used as
-// pairs must fall on an even boundry (witness the FPR#L's in this list).
+// pairs must fall on an even boundary (witness the FPR#L's in this list).
 // For the Intel integer registers, the equivalent Long pairs are
 // EDX:EAX, EBX:ECX, and EDI:EBP.
 alloc_class chunk0( ECX,   EBX,   EBP,   EDI,   EAX,   EDX,   ESI, ESP,
@@ -3126,14 +3126,12 @@ encode %{
 
   enc_class movq_ld(regXD dst, memory mem) %{
     MacroAssembler _masm(&cbuf);
-    Address madr = Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
-    __ movq(as_XMMRegister($dst$$reg), madr);
+    __ movq($dst$$XMMRegister, $mem$$Address);
   %}
 
   enc_class movq_st(memory mem, regXD src) %{
     MacroAssembler _masm(&cbuf);
-    Address madr = Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
-    __ movq(madr, as_XMMRegister($src$$reg));
+    __ movq($mem$$Address, $src$$XMMRegister);
   %}
 
   enc_class pshufd_8x8(regX dst, regX src) %{
@@ -3751,8 +3749,8 @@ encode %{
     masm.jcc(Assembler::zero, LENGTH_DIFF_LABEL);
 
     // Load first characters
-    masm.load_unsigned_word(rcx, Address(rbx, 0));
-    masm.load_unsigned_word(rdi, Address(rax, 0));
+    masm.load_unsigned_short(rcx, Address(rbx, 0));
+    masm.load_unsigned_short(rdi, Address(rax, 0));
 
     // Compare first characters
     masm.subl(rcx, rdi);
@@ -3782,8 +3780,8 @@ encode %{
 
     // Compare the rest of the characters
     masm.bind(WHILE_HEAD_LABEL);
-    masm.load_unsigned_word(rcx, Address(rbx, rsi, Address::times_2, 0));
-    masm.load_unsigned_word(rdi, Address(rax, rsi, Address::times_2, 0));
+    masm.load_unsigned_short(rcx, Address(rbx, rsi, Address::times_2, 0));
+    masm.load_unsigned_short(rdi, Address(rax, rsi, Address::times_2, 0));
     masm.subl(rcx, rdi);
     masm.jcc(Assembler::notZero, POP_LABEL);
     masm.incrementl(rsi);
@@ -3840,8 +3838,8 @@ encode %{
     masm.jcc(Assembler::zero, COMPARE_LOOP_HDR);
 
     // Compare 2-byte "tail" at end of arrays
-    masm.load_unsigned_word(tmp1Reg, Address(ary1Reg, resultReg, Address::times_4, base_offset));
-    masm.load_unsigned_word(tmp2Reg, Address(ary2Reg, resultReg, Address::times_4, base_offset));
+    masm.load_unsigned_short(tmp1Reg, Address(ary1Reg, resultReg, Address::times_4, base_offset));
+    masm.load_unsigned_short(tmp2Reg, Address(ary2Reg, resultReg, Address::times_4, base_offset));
     masm.cmpl(tmp1Reg, tmp2Reg);
     masm.jcc(Assembler::notEqual, FALSE_LABEL);
     masm.testl(resultReg, resultReg);
@@ -5857,7 +5855,7 @@ operand cmpOp_commute() %{
 
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used as to simplify
-// instruction definitions by not requiring the AD writer to specify seperate
+// instruction definitions by not requiring the AD writer to specify separate
 // instructions for every form of operand when the instruction accepts
 // multiple operand types with the same basic encoding and format.  The classic
 // case of this is memory operands.
@@ -6396,21 +6394,94 @@ instruct loadB(xRegI dst, memory mem) %{
   match(Set dst (LoadB mem));
 
   ins_cost(125);
-  format %{ "MOVSX8 $dst,$mem" %}
-  opcode(0xBE, 0x0F);
-  ins_encode( OpcS, OpcP, RegMem(dst,mem));
-  ins_pipe( ialu_reg_mem );
+  format %{ "MOVSX8 $dst,$mem\t# byte" %}
+
+  ins_encode %{
+    __ movsbl($dst$$Register, $mem$$Address);
+  %}
+
+  ins_pipe(ialu_reg_mem);
 %}
 
-// Load Byte (8bit UNsigned)
-instruct loadUB(xRegI dst, memory mem, immI_255 bytemask) %{
-  match(Set dst (AndI (LoadB mem) bytemask));
+// Load Byte (8bit signed) into Long Register
+instruct loadB2L(eRegL dst, memory mem) %{
+  match(Set dst (ConvI2L (LoadB mem)));
+
+  ins_cost(375);
+  format %{ "MOVSX8 $dst.lo,$mem\t# byte -> long\n\t"
+            "MOV    $dst.hi,$dst.lo\n\t"
+            "SAR    $dst.hi,7" %}
+
+  ins_encode %{
+    __ movsbl($dst$$Register, $mem$$Address);
+    __ movl(HIGH_FROM_LOW($dst$$Register), $dst$$Register); // This is always a different register.
+    __ sarl(HIGH_FROM_LOW($dst$$Register), 7); // 24+1 MSB are already signed extended.
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Unsigned Byte (8bit UNsigned)
+instruct loadUB(xRegI dst, memory mem) %{
+  match(Set dst (LoadUB mem));
 
   ins_cost(125);
-  format %{ "MOVZX8 $dst,$mem" %}
-  opcode(0xB6, 0x0F);
-  ins_encode( OpcS, OpcP, RegMem(dst,mem));
-  ins_pipe( ialu_reg_mem );
+  format %{ "MOVZX8 $dst,$mem\t# ubyte -> int" %}
+
+  ins_encode %{
+    __ movzbl($dst$$Register, $mem$$Address);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Unsigned Byte (8 bit UNsigned) into Long Register
+instruct loadUB2L(eRegL dst, memory mem)
+%{
+  match(Set dst (ConvI2L (LoadUB mem)));
+
+  ins_cost(250);
+  format %{ "MOVZX8 $dst.lo,$mem\t# ubyte -> long\n\t"
+            "XOR    $dst.hi,$dst.hi" %}
+
+  ins_encode %{
+    __ movzbl($dst$$Register, $mem$$Address);
+    __ xorl(HIGH_FROM_LOW($dst$$Register), HIGH_FROM_LOW($dst$$Register));
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Short (16bit signed)
+instruct loadS(eRegI dst, memory mem) %{
+  match(Set dst (LoadS mem));
+
+  ins_cost(125);
+  format %{ "MOVSX  $dst,$mem\t# short" %}
+
+  ins_encode %{
+    __ movswl($dst$$Register, $mem$$Address);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Short (16bit signed) into Long Register
+instruct loadS2L(eRegL dst, memory mem) %{
+  match(Set dst (ConvI2L (LoadS mem)));
+
+  ins_cost(375);
+  format %{ "MOVSX  $dst.lo,$mem\t# short -> long\n\t"
+            "MOV    $dst.hi,$dst.lo\n\t"
+            "SAR    $dst.hi,15" %}
+
+  ins_encode %{
+    __ movswl($dst$$Register, $mem$$Address);
+    __ movl(HIGH_FROM_LOW($dst$$Register), $dst$$Register); // This is always a different register.
+    __ sarl(HIGH_FROM_LOW($dst$$Register), 15); // 16+1 MSB are already signed extended.
+  %}
+
+  ins_pipe(ialu_reg_mem);
 %}
 
 // Load Unsigned Short/Char (16bit unsigned)
@@ -6418,10 +6489,30 @@ instruct loadUS(eRegI dst, memory mem) %{
   match(Set dst (LoadUS mem));
 
   ins_cost(125);
-  format %{ "MOVZX  $dst,$mem" %}
-  opcode(0xB7, 0x0F);
-  ins_encode( OpcS, OpcP, RegMem(dst,mem));
-  ins_pipe( ialu_reg_mem );
+  format %{ "MOVZX  $dst,$mem\t# ushort/char -> int" %}
+
+  ins_encode %{
+    __ movzwl($dst$$Register, $mem$$Address);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Unsigned Short/Char (16 bit UNsigned) into Long Register
+instruct loadUS2L(eRegL dst, memory mem)
+%{
+  match(Set dst (ConvI2L (LoadUS mem)));
+
+  ins_cost(250);
+  format %{ "MOVZX  $dst.lo,$mem\t# ushort/char -> long\n\t"
+            "XOR    $dst.hi,$dst.hi" %}
+
+  ins_encode %{
+    __ movzwl($dst$$Register, $mem$$Address);
+    __ xorl(HIGH_FROM_LOW($dst$$Register), HIGH_FROM_LOW($dst$$Register));
+  %}
+
+  ins_pipe(ialu_reg_mem);
 %}
 
 // Load Integer
@@ -6429,10 +6520,47 @@ instruct loadI(eRegI dst, memory mem) %{
   match(Set dst (LoadI mem));
 
   ins_cost(125);
-  format %{ "MOV    $dst,$mem" %}
-  opcode(0x8B);
-  ins_encode( OpcP, RegMem(dst,mem));
-  ins_pipe( ialu_reg_mem );
+  format %{ "MOV    $dst,$mem\t# int" %}
+
+  ins_encode %{
+    __ movl($dst$$Register, $mem$$Address);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Integer into Long Register
+instruct loadI2L(eRegL dst, memory mem) %{
+  match(Set dst (ConvI2L (LoadI mem)));
+
+  ins_cost(375);
+  format %{ "MOV    $dst.lo,$mem\t# int -> long\n\t"
+            "MOV    $dst.hi,$dst.lo\n\t"
+            "SAR    $dst.hi,31" %}
+
+  ins_encode %{
+    __ movl($dst$$Register, $mem$$Address);
+    __ movl(HIGH_FROM_LOW($dst$$Register), $dst$$Register); // This is always a different register.
+    __ sarl(HIGH_FROM_LOW($dst$$Register), 31);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Unsigned Integer into Long Register
+instruct loadUI2L(eRegL dst, memory mem) %{
+  match(Set dst (LoadUI2L mem));
+
+  ins_cost(250);
+  format %{ "MOV    $dst.lo,$mem\t# uint -> long\n\t"
+            "XOR    $dst.hi,$dst.hi" %}
+
+  ins_encode %{
+    __ movl($dst$$Register, $mem$$Address);
+    __ xorl(HIGH_FROM_LOW($dst$$Register), HIGH_FROM_LOW($dst$$Register));
+  %}
+
+  ins_pipe(ialu_reg_mem);
 %}
 
 // Load Long.  Cannot clobber address while loading, so restrict address
@@ -6442,11 +6570,17 @@ instruct loadL(eRegL dst, load_long_memory mem) %{
   match(Set dst (LoadL mem));
 
   ins_cost(250);
-  format %{ "MOV    $dst.lo,$mem\n\t"
+  format %{ "MOV    $dst.lo,$mem\t# long\n\t"
             "MOV    $dst.hi,$mem+4" %}
-  opcode(0x8B, 0x8B);
-  ins_encode( OpcP, RegMem(dst,mem), OpcS, RegMem_Hi(dst,mem));
-  ins_pipe( ialu_reg_long_mem );
+
+  ins_encode %{
+    Address Amemlo = Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp, false);
+    Address Amemhi = Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp + 4, false);
+    __ movl($dst$$Register, Amemlo);
+    __ movl(HIGH_FROM_LOW($dst$$Register), Amemhi);
+  %}
+
+  ins_pipe(ialu_reg_long_mem);
 %}
 
 // Volatile Load Long.  Must be atomic, so do 64-bit FILD
@@ -6518,17 +6652,6 @@ instruct loadKlass(eRegP dst, memory mem) %{
   format %{ "MOV    $dst,$mem" %}
   opcode(0x8B);
   ins_encode( OpcP, RegMem(dst,mem));
-  ins_pipe( ialu_reg_mem );
-%}
-
-// Load Short (16bit signed)
-instruct loadS(eRegI dst, memory mem) %{
-  match(Set dst (LoadS mem));
-
-  ins_cost(125);
-  format %{ "MOVSX  $dst,$mem" %}
-  opcode(0xBF, 0x0F);
-  ins_encode( OpcS, OpcP, RegMem(dst,mem));
   ins_pipe( ialu_reg_mem );
 %}
 
@@ -7957,7 +8080,7 @@ instruct storeLConditional( memory mem, eADXRegL oldval, eBCXRegL newval, eFlags
     __ xchgl(as_Register(EBX_enc), as_Register(ECX_enc));
     if( os::is_MP() )
       __ lock();
-    __ cmpxchg8(Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp));
+    __ cmpxchg8($mem$$Address);
     __ xchgl(as_Register(EBX_enc), as_Register(ECX_enc));
   %}
   ins_pipe( pipe_cmpxchg );
@@ -11467,6 +11590,7 @@ instruct convI2X_reg(regX dst, eRegI src) %{
 instruct convI2L_reg( eRegL dst, eRegI src, eFlagsReg cr) %{
   match(Set dst (ConvI2L src));
   effect(KILL cr);
+  ins_cost(375);
   format %{ "MOV    $dst.lo,$src\n\t"
             "MOV    $dst.hi,$src\n\t"
             "SAR    $dst.hi,31" %}
@@ -11478,6 +11602,7 @@ instruct convI2L_reg( eRegL dst, eRegI src, eFlagsReg cr) %{
 instruct convI2L_reg_zex(eRegL dst, eRegI src, immL_32bits mask, eFlagsReg flags ) %{
   match(Set dst (AndL (ConvI2L src) mask) );
   effect( KILL flags );
+  ins_cost(250);
   format %{ "MOV    $dst.lo,$src\n\t"
             "XOR    $dst.hi,$dst.hi" %}
   opcode(0x33); // XOR
@@ -11489,6 +11614,7 @@ instruct convI2L_reg_zex(eRegL dst, eRegI src, immL_32bits mask, eFlagsReg flags
 instruct zerox_long(eRegL dst, eRegL src, immL_32bits mask, eFlagsReg flags ) %{
   match(Set dst (AndL src mask) );
   effect( KILL flags );
+  ins_cost(250);
   format %{ "MOV    $dst.lo,$src.lo\n\t"
             "XOR    $dst.hi,$dst.hi\n\t" %}
   opcode(0x33); // XOR
@@ -13220,7 +13346,7 @@ instruct safePoint_poll(eFlagsReg cr) %{
 // These must follow all instruction definitions as they use the names
 // defined in the instructions definitions.
 //
-// peepmatch ( root_instr_name [preceeding_instruction]* );
+// peepmatch ( root_instr_name [preceding_instruction]* );
 //
 // peepconstraint %{
 // (instruction_number.operand_name relational_op instruction_number.operand_name

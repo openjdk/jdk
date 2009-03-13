@@ -420,6 +420,10 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
 
   _has_overflown(false),
   _concurrent(false),
+  _has_aborted(false),
+  _restart_for_overflow(false),
+  _concurrent_marking_in_progress(false),
+  _should_gray_objects(false),
 
   // _verbose_level set below
 

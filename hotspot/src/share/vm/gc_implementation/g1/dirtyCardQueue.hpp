@@ -88,7 +88,7 @@ public:
 
   void initialize(Monitor* cbl_mon, Mutex* fl_lock,
                   int max_completed_queue = 0,
-                  Mutex* lock = NULL);
+                  Mutex* lock = NULL, PtrQueueSet* fl_owner = NULL);
 
   // The number of parallel ids that can be claimed to allow collector or
   // mutator threads to do card-processing work.

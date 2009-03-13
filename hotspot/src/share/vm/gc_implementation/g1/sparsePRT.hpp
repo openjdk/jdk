@@ -274,7 +274,7 @@ public:
 
   // Clean up all tables on the expanded list.  Called single threaded.
   static void cleanup_all();
-  RSHashTable* next() const { return _next; }
+  RSHashTable* cur() const { return _cur; }
 
 
   void init_iterator(SparsePRTIter* sprt_iter);
@@ -300,7 +300,7 @@ public:
   {}
 
   void init(const SparsePRT* sprt) {
-    RSHashTableIter::init(sprt->next());
+    RSHashTableIter::init(sprt->cur());
   }
   bool has_next(size_t& card_index) {
     return RSHashTableIter::has_next(card_index);

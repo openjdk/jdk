@@ -189,7 +189,7 @@ reg_def R_F31( SOC, SOC, Op_RegF, 31, F31->as_VMReg());
 // double fp register numbers.  FloatRegisterImpl in register_sparc.hpp
 // wants 0-63, so we have to convert every time we want to use fp regs
 // with the macroassembler, using reg_to_DoubleFloatRegister_object().
-// 255 is a flag meaning 'dont go here'.
+// 255 is a flag meaning "don't go here".
 // I believe we can't handle callee-save doubles D32 and up until
 // the place in the sparc stack crawler that asserts on the 255 is
 // fixed up.
@@ -462,7 +462,7 @@ extern bool can_branch_register( Node *bol, Node *cmp );
 
 // Macros to extract hi & lo halves from a long pair.
 // G0 is not part of any long pair, so assert on that.
-// Prevents accidently using G1 instead of G0.
+// Prevents accidentally using G1 instead of G0.
 #define LONG_HI_REG(x) (x)
 #define LONG_LO_REG(x) (x)
 
@@ -1431,7 +1431,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
 
 #ifndef _LP64
   // In the LP64 build, all registers can be moved as aligned/adjacent
-  // pairs, so there's never any need to move the high bits seperately.
+  // pairs, so there's never any need to move the high bits separately.
   // The 32-bit builds have to deal with the 32-bit ABI which can force
   // all sorts of silly alignment problems.
 
@@ -1624,7 +1624,7 @@ void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Register temp_reg   = G3;
   assert( G5_ic_reg != temp_reg, "conflicting registers" );
 
-  // Load klass from reciever
+  // Load klass from receiver
   __ load_klass(O0, temp_reg);
   // Compare against expected klass
   __ cmp(temp_reg, G5_ic_reg);
@@ -4149,7 +4149,7 @@ operand cmpOp_commute() %{
 
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used to simplify
-// instruction definitions by not requiring the AD writer to specify seperate
+// instruction definitions by not requiring the AD writer to specify separate
 // instructions for every form of operand when the instruction accepts
 // multiple operand types with the same basic encoding and format.  The classic
 // case of this is memory operands.
@@ -5286,55 +5286,91 @@ instruct loadB(iRegI dst, memory mem) %{
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "LDSB   $mem,$dst" %}
+  format %{ "LDSB   $mem,$dst\t! byte" %}
   opcode(Assembler::ldsb_op3);
   ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
 %}
 
-// Load Byte (8bit UNsigned) into an int reg
-instruct loadUB(iRegI dst, memory mem, immI_255 bytemask) %{
-  match(Set dst (AndI (LoadB mem) bytemask));
+// Load Byte (8bit signed) into a Long Register
+instruct loadB2L(iRegL dst, memory mem) %{
+  match(Set dst (ConvI2L (LoadB mem)));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "LDUB   $mem,$dst" %}
+  format %{ "LDSB   $mem,$dst\t! byte -> long" %}
+  opcode(Assembler::ldsb_op3);
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_pipe(iload_mask_mem);
+%}
+
+// Load Unsigned Byte (8bit UNsigned) into an int reg
+instruct loadUB(iRegI dst, memory mem) %{
+  match(Set dst (LoadUB mem));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  format %{ "LDUB   $mem,$dst\t! ubyte" %}
   opcode(Assembler::ldub_op3);
   ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
 %}
 
-// Load Byte (8bit UNsigned) into a Long Register
-instruct loadUBL(iRegL dst, memory mem, immL_FF bytemask) %{
-  match(Set dst (AndL (ConvI2L (LoadB mem)) bytemask));
+// Load Unsigned Byte (8bit UNsigned) into a Long Register
+instruct loadUB2L(iRegL dst, memory mem) %{
+  match(Set dst (ConvI2L (LoadUB mem)));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "LDUB   $mem,$dst" %}
+  format %{ "LDUB   $mem,$dst\t! ubyte -> long" %}
   opcode(Assembler::ldub_op3);
   ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
 %}
 
-// Load Unsigned Short/Char (16bit UNsigned) into a Long Register
-instruct loadUS2L(iRegL dst, memory mem, immL_FFFF bytemask) %{
-  match(Set dst (AndL (ConvI2L (LoadUS mem)) bytemask));
+// Load Short (16bit signed)
+instruct loadS(iRegI dst, memory mem) %{
+  match(Set dst (LoadS mem));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "LDUH   $mem,$dst" %}
-  opcode(Assembler::lduh_op3);
+  format %{ "LDSH   $mem,$dst\t! short" %}
+  opcode(Assembler::ldsh_op3);
   ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
 %}
 
-// Load Unsigned Short/Char (16bit unsigned)
+// Load Short (16bit signed) into a Long Register
+instruct loadS2L(iRegL dst, memory mem) %{
+  match(Set dst (ConvI2L (LoadS mem)));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  format %{ "LDSH   $mem,$dst\t! short -> long" %}
+  opcode(Assembler::ldsh_op3);
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_pipe(iload_mask_mem);
+%}
+
+// Load Unsigned Short/Char (16bit UNsigned)
 instruct loadUS(iRegI dst, memory mem) %{
   match(Set dst (LoadUS mem));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "LDUH   $mem,$dst" %}
+  format %{ "LDUH   $mem,$dst\t! ushort/char" %}
+  opcode(Assembler::lduh_op3);
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_pipe(iload_mask_mem);
+%}
+
+// Load Unsigned Short/Char (16bit UNsigned) into a Long Register
+instruct loadUS2L(iRegL dst, memory mem) %{
+  match(Set dst (ConvI2L (LoadUS mem)));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  format %{ "LDUH   $mem,$dst\t! ushort/char -> long" %}
   opcode(Assembler::lduh_op3);
   ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
@@ -5344,9 +5380,33 @@ instruct loadUS(iRegI dst, memory mem) %{
 instruct loadI(iRegI dst, memory mem) %{
   match(Set dst (LoadI mem));
   ins_cost(MEMORY_REF_COST);
-  size(4);
 
-  format %{ "LDUW   $mem,$dst" %}
+  size(4);
+  format %{ "LDUW   $mem,$dst\t! int" %}
+  opcode(Assembler::lduw_op3);
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_pipe(iload_mem);
+%}
+
+// Load Integer into a Long Register
+instruct loadI2L(iRegL dst, memory mem) %{
+  match(Set dst (ConvI2L (LoadI mem)));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  format %{ "LDSW   $mem,$dst\t! int -> long" %}
+  opcode(Assembler::ldsw_op3);
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_pipe(iload_mem);
+%}
+
+// Load Unsigned Integer into a Long Register
+instruct loadUI2L(iRegL dst, memory mem) %{
+  match(Set dst (LoadUI2L mem));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  format %{ "LDUW   $mem,$dst\t! uint -> long" %}
   opcode(Assembler::lduw_op3);
   ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mem);
@@ -5356,6 +5416,7 @@ instruct loadI(iRegI dst, memory mem) %{
 instruct loadL(iRegL dst, memory mem ) %{
   match(Set dst (LoadL mem));
   ins_cost(MEMORY_REF_COST);
+
   size(4);
   format %{ "LDX    $mem,$dst\t! long" %}
   opcode(Assembler::ldx_op3);
@@ -5471,13 +5532,11 @@ instruct loadN(iRegN dst, memory mem) %{
 
    format %{ "LDUW   $mem,$dst\t! compressed ptr" %}
    ins_encode %{
-     Register base = as_Register($mem$$base);
-     Register index = as_Register($mem$$index);
-     Register dst = $dst$$Register;
+     Register index = $mem$$index$$Register;
      if (index != G0) {
-       __ lduw(base, index, dst);
+       __ lduw($mem$$base$$Register, index, $dst$$Register);
      } else {
-       __ lduw(base, $mem$$disp, dst);
+       __ lduw($mem$$base$$Register, $mem$$disp, $dst$$Register);
      }
    %}
    ins_pipe(iload_mem);
@@ -5519,18 +5578,6 @@ instruct loadNKlass(iRegN dst, memory mem) %{
      }
   %}
   ins_pipe(iload_mem);
-%}
-
-// Load Short (16bit signed)
-instruct loadS(iRegI dst, memory mem) %{
-  match(Set dst (LoadS mem));
-  ins_cost(MEMORY_REF_COST);
-
-  size(4);
-  format %{ "LDSH   $mem,$dst" %}
-  opcode(Assembler::ldsh_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
-  ins_pipe(iload_mask_mem);
 %}
 
 // Load Double
@@ -6847,7 +6894,7 @@ instruct mul_hi(iRegIsafe dst, iRegIsafe src1, iRegIsafe src2 ) %{
   ins_pipe(sdiv_reg_reg);
 %}
 
-// Magic constant, reciprical of 10
+// Magic constant, reciprocal of 10
 instruct loadConI_x66666667(iRegIsafe dst) %{
   effect( DEF dst );
 
@@ -6857,7 +6904,7 @@ instruct loadConI_x66666667(iRegIsafe dst) %{
   ins_pipe(ialu_hi_lo_reg);
 %}
 
-// Register Shift Right Arithmatic Long by 32-63
+// Register Shift Right Arithmetic Long by 32-63
 instruct sra_31( iRegI dst, iRegI src ) %{
   effect( DEF dst, USE src );
   format %{ "SRA    $src,31,$dst\t! Used in div-by-10" %}
@@ -9048,7 +9095,7 @@ instruct storeL_reversed(memory dst, iRegL src) %{
 // These must follow all instruction definitions as they use the names
 // defined in the instructions definitions.
 //
-// peepmatch ( root_instr_name [preceeding_instruction]* );
+// peepmatch ( root_instr_name [preceding_instruction]* );
 //
 // peepconstraint %{
 // (instruction_number.operand_name relational_op instruction_number.operand_name

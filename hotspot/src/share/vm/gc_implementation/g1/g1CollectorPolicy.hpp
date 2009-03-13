@@ -966,7 +966,7 @@ public:
     record_termination_time(0, ms);
   }
 
-  void record_pause_time(double ms) {
+  void record_pause_time_ms(double ms) {
     _last_pause_time_ms = ms;
   }
 

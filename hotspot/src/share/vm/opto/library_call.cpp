@@ -992,7 +992,7 @@ bool LibraryCallKit::inline_string_indexOf() {
   Node *argument = pop();  // pop non-receiver first:  it was pushed second
   Node *receiver = pop();
 
-  // don't intrinsify is argument isn't a constant string.
+  // don't intrinsify if argument isn't a constant string.
   if (!argument->is_Con()) {
     return false;
   }
@@ -1267,7 +1267,7 @@ bool LibraryCallKit::inline_pow(vmIntrinsics::ID id) {
   //   result = DPow(x,y);
   // }
   // if (result != result)?  {
-  //   ucommon_trap();
+  //   uncommon_trap();
   // }
   // return result;
 
@@ -1324,7 +1324,7 @@ bool LibraryCallKit::inline_pow(vmIntrinsics::ID id) {
     // Check if (y isn't int) then go to slow path
 
     Node *bol2 = _gvn.transform( new (C, 2) BoolNode( cmpinty, BoolTest::ne ) );
-    // Branch eith way
+    // Branch either way
     IfNode *if2 = create_and_xform_if(complex_path,bol2, PROB_STATIC_INFREQUENT, COUNT_UNKNOWN);
     Node *slow_path = opt_iff(r,if2); // Set region path 2
 
@@ -1715,8 +1715,8 @@ inline Node* LibraryCallKit::make_unsafe_address(Node* base, Node* offset) {
 }
 
 //----------------------------inline_reverseBytes_int/long-------------------
-// inline Int.reverseBytes(int)
-// inline Long.reverseByes(long)
+// inline Integer.reverseBytes(int)
+// inline Long.reverseBytes(long)
 bool LibraryCallKit::inline_reverseBytes(vmIntrinsics::ID id) {
   assert(id == vmIntrinsics::_reverseBytes_i || id == vmIntrinsics::_reverseBytes_l, "not reverse Bytes");
   if (id == vmIntrinsics::_reverseBytes_i && !Matcher::has_match_rule(Op_ReverseBytesI)) return false;
@@ -1915,7 +1915,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
     // addition to memory membars when is_volatile. This is a little
     // too strong, but avoids the need to insert per-alias-type
     // volatile membars (for stores; compare Parse::do_put_xxx), which
-    // we cannot do effctively here because we probably only have a
+    // we cannot do effectively here because we probably only have a
     // rough approximation of type.
     need_mem_bar = true;
     // For Stores, place a memory ordering barrier now.
@@ -2099,7 +2099,7 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
   // overly confusing.  (This is a true fact! I originally combined
   // them, but even I was confused by it!) As much code/comments as
   // possible are retained from inline_unsafe_access though to make
-  // the correspondances clearer. - dl
+  // the correspondences clearer. - dl
 
   if (callee()->is_static())  return false;  // caller must have the capability!
 
@@ -2166,7 +2166,7 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
   int alias_idx = C->get_alias_index(adr_type);
 
   // Memory-model-wise, a CAS acts like a little synchronized block,
-  // so needs barriers on each side.  These don't't translate into
+  // so needs barriers on each side.  These don't translate into
   // actual barriers on most machines, but we still need rest of
   // compiler to respect ordering.
 
@@ -3208,7 +3208,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   Node *hash_shift     = _gvn.intcon(markOopDesc::hash_shift);
   Node *hshifted_header= _gvn.transform( new (C, 3) URShiftXNode(header, hash_shift) );
   // This hack lets the hash bits live anywhere in the mark object now, as long
-  // as the shift drops the relevent bits into the low 32 bits.  Note that
+  // as the shift drops the relevant bits into the low 32 bits.  Note that
   // Java spec says that HashCode is an int so there's no point in capturing
   // an 'X'-sized hashcode (32 in 32-bit build or 64 in 64-bit build).
   hshifted_header      = ConvX2I(hshifted_header);
@@ -3255,7 +3255,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
 }
 
 //---------------------------inline_native_getClass----------------------------
-// Build special case code for calls to hashCode on an object.
+// Build special case code for calls to getClass on an object.
 bool LibraryCallKit::inline_native_getClass() {
   Node* obj = null_check_receiver(callee());
   if (stopped())  return true;
@@ -4594,7 +4594,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
   }
 
   // The memory edges above are precise in order to model effects around
-  // array copyies accurately to allow value numbering of field loads around
+  // array copies accurately to allow value numbering of field loads around
   // arraycopy.  Such field loads, both before and after, are common in Java
   // collections and similar classes involving header/array data structures.
   //

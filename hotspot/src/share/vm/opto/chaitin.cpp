@@ -1246,7 +1246,7 @@ uint PhaseChaitin::Select( ) {
 
       // If the live range is not bound, then we actually had some choices
       // to make.  In this case, the mask has more bits in it than the colors
-      // choosen.  Restrict the mask to just what was picked.
+      // chosen.  Restrict the mask to just what was picked.
       if( lrg->num_regs() == 1 ) { // Size 1 live range
         lrg->Clear();           // Clear the mask
         lrg->Insert(reg);       // Set regmask to match selected reg
