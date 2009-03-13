@@ -7429,6 +7429,56 @@ instruct storeL_reversed(memory dst, rRegL src) %{
   ins_pipe( ialu_mem_reg );
 %}
 
+
+//---------- Population Count Instructions -------------------------------------
+
+instruct popCountI(rRegI dst, rRegI src) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountI src));
+
+  format %{ "popcnt  $dst, $src" %}
+  ins_encode %{
+    __ popcntl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct popCountI_mem(rRegI dst, memory mem) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountI (LoadI mem)));
+
+  format %{ "popcnt  $dst, $mem" %}
+  ins_encode %{
+    __ popcntl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Note: Long.bitCount(long) returns an int.
+instruct popCountL(rRegI dst, rRegL src) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountL src));
+
+  format %{ "popcnt  $dst, $src" %}
+  ins_encode %{
+    __ popcntq($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Note: Long.bitCount(long) returns an int.
+instruct popCountL_mem(rRegI dst, memory mem) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountL (LoadL mem)));
+
+  format %{ "popcnt  $dst, $mem" %}
+  ins_encode %{
+    __ popcntq($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+
 //----------MemBar Instructions-----------------------------------------------
 // Memory barrier flavors
 

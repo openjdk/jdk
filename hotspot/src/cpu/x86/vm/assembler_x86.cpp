@@ -2193,6 +2193,25 @@ void Assembler::pop(Register dst) {
   emit_byte(0x58 | encode);
 }
 
+void Assembler::popcntl(Register dst, Address src) {
+  assert(VM_Version::supports_popcnt(), "must support");
+  InstructionMark im(this);
+  emit_byte(0xF3);
+  prefix(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0xB8);
+  emit_operand(dst, src);
+}
+
+void Assembler::popcntl(Register dst, Register src) {
+  assert(VM_Version::supports_popcnt(), "must support");
+  emit_byte(0xF3);
+  int encode = prefix_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xB8);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::popf() {
   emit_byte(0x9D);
 }
@@ -4078,6 +4097,25 @@ void Assembler::popa() { // 64bit
   movq(rax, Address(rsp, 15 * wordSize));
 
   addq(rsp, 16 * wordSize);
+}
+
+void Assembler::popcntq(Register dst, Address src) {
+  assert(VM_Version::supports_popcnt(), "must support");
+  InstructionMark im(this);
+  emit_byte(0xF3);
+  prefixq(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0xB8);
+  emit_operand(dst, src);
+}
+
+void Assembler::popcntq(Register dst, Register src) {
+  assert(VM_Version::supports_popcnt(), "must support");
+  emit_byte(0xF3);
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xB8);
+  emit_byte(0xC0 | encode);
 }
 
 void Assembler::popq(Address dst) {

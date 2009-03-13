@@ -92,10 +92,18 @@ void VM_Version::initialize() {
 #endif
   }
 
+  // Use hardware population count instruction if available.
+  if (has_hardware_popc()) {
+    if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+      UsePopCountInstruction = true;
+    }
+  }
+
   char buf[512];
-  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s",
                (has_v8() ? ", has_v8" : ""),
                (has_v9() ? ", has_v9" : ""),
+               (has_hardware_popc() ? ", popc" : ""),
                (has_vis1() ? ", has_vis1" : ""),
                (has_vis2() ? ", has_vis2" : ""),
                (is_ultra3() ? ", is_ultra3" : ""),

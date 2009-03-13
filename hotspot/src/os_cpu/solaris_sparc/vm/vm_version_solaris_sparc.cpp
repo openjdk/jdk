@@ -85,6 +85,7 @@ int VM_Version::platform_features(int features) {
     if (av & AV_SPARC_DIV32)  features |= hardware_div32_m;
     if (av & AV_SPARC_FSMULD) features |= hardware_fsmuld_m;
     if (av & AV_SPARC_V8PLUS) features |= v9_instructions_m;
+    if (av & AV_SPARC_POPC)   features |= hardware_popc_m;
     if (av & AV_SPARC_VIS)    features |= vis1_instructions_m;
     if (av & AV_SPARC_VIS2)   features |= vis2_instructions_m;
   } else {
