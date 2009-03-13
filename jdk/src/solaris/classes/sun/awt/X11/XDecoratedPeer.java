@@ -383,7 +383,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
             dimensions.setInsets(getRealInsets());
             insets_corrected = true;
 
-            if (isMaximized() || isNull(correction)) {
+            if (isMaximized()) {
                 return;
             }
 
