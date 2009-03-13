@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,20 +112,6 @@ public:
     } bits;
   };
 
-  union ExtCpuid1Edx {
-    uint32_t value;
-    struct {
-      uint32_t           : 22,
-               mmx_amd   : 1,
-               mmx       : 1,
-               fxsr      : 1,
-                         : 4,
-               long_mode : 1,
-               tdnow2    : 1,
-               tdnow     : 1;
-    } bits;
-  };
-
   union ExtCpuid1Ecx {
     uint32_t value;
     struct {
@@ -137,6 +123,20 @@ public:
                misalignsse  : 1,
                prefetchw    : 1,
                             : 22;
+    } bits;
+  };
+
+  union ExtCpuid1Edx {
+    uint32_t value;
+    struct {
+      uint32_t           : 22,
+               mmx_amd   : 1,
+               mmx       : 1,
+               fxsr      : 1,
+                         : 4,
+               long_mode : 1,
+               tdnow2    : 1,
+               tdnow     : 1;
     } bits;
   };
 
@@ -167,17 +167,17 @@ protected:
    static const char* _features_str;
 
    enum {
-     CPU_CX8  = (1 << 0), // next bits are from cpuid 1 (EDX)
-     CPU_CMOV = (1 << 1),
-     CPU_FXSR = (1 << 2),
-     CPU_HT   = (1 << 3),
-     CPU_MMX  = (1 << 4),
-     CPU_3DNOW= (1 << 5),
-     CPU_SSE  = (1 << 6),
-     CPU_SSE2 = (1 << 7),
-     CPU_SSE3 = (1 << 8),
-     CPU_SSSE3= (1 << 9),
-     CPU_SSE4A= (1 <<10),
+     CPU_CX8    = (1 << 0), // next bits are from cpuid 1 (EDX)
+     CPU_CMOV   = (1 << 1),
+     CPU_FXSR   = (1 << 2),
+     CPU_HT     = (1 << 3),
+     CPU_MMX    = (1 << 4),
+     CPU_3DNOW  = (1 << 5), // 3DNow comes from cpuid 0x80000001 (EDX)
+     CPU_SSE    = (1 << 6),
+     CPU_SSE2   = (1 << 7),
+     CPU_SSE3   = (1 << 8), // SSE3 comes from cpuid 1 (ECX)
+     CPU_SSSE3  = (1 << 9),
+     CPU_SSE4A  = (1 << 10),
      CPU_SSE4_1 = (1 << 11),
      CPU_SSE4_2 = (1 << 12)
    } cpuFeatureFlags;
@@ -360,7 +360,7 @@ public:
       result = _cpuid_info.ext_cpuid5_ecx.bits.L1_line_size;
     }
     if (result < 32) // not defined ?
-      result = 32;   // 32 bytes by default for other x64
+      result = 32;   // 32 bytes by default on x86 and other x64
     return result;
   }
 
@@ -395,26 +395,36 @@ public:
     // This method should be called before allocate_prefetch_style().
     //
     // Hardware prefetching (distance/size in bytes):
+    // Pentium 3 -  64 /  32
     // Pentium 4 - 256 / 128
+    // Athlon    -  64 /  32 ????
     // Opteron   - 128 /  64 only when 2 sequential cache lines accessed
     // Core      - 128 /  64
     //
     // Software prefetching (distance in bytes / instruction with best score):
+    // Pentium 3 - 128 / prefetchnta
     // Pentium 4 - 512 / prefetchnta
+    // Athlon    - 128 / prefetchnta
     // Opteron   - 256 / prefetchnta
     // Core      - 256 / prefetchnta
     // It will be used only when AllocatePrefetchStyle > 0
 
     intx count = AllocatePrefetchDistance;
-    if (count < 0) {  // default ?
-      if (is_amd()) { // AMD
-        count = 256;  // Opteron
-      } else {        // Intel
-        if (cpu_family() == 6) {
-          count = 256;// Pentium M, Core, Core2
-        } else {
-          count = 512;// Pentium 4
-        }
+    if (count < 0) {   // default ?
+      if (is_amd()) {  // AMD
+        if (supports_sse2())
+          count = 256; // Opteron
+        else
+          count = 128; // Athlon
+      } else {         // Intel
+        if (supports_sse2())
+          if (cpu_family() == 6) {
+            count = 256; // Pentium M, Core, Core2
+          } else {
+            count = 512; // Pentium 4
+          }
+        else
+          count = 128; // Pentium 3 (and all other old CPUs)
       }
     }
     return count;

@@ -390,7 +390,7 @@ public:
 
   // Return TRUE or FALSE if the loop should be cache-line aligned.
   // Gather the expression that does the alignment.  Note that only
-  // one array base can be aligned in a loop (unless the VM guarentees
+  // one array base can be aligned in a loop (unless the VM guarantees
   // mutual alignment).  Note that if we vectorize short memory ops
   // into longer memory ops, we may want to increase alignment.
   bool policy_align( PhaseIdealLoop *phase ) const;
@@ -403,7 +403,7 @@ public:
   // Reassociate invariant add and subtract expressions.
   Node* reassociate_add_sub(Node* n1, PhaseIdealLoop *phase);
   // Return nonzero index of invariant operand if invariant and variant
-  // are combined with an Add or Sub. Helper for reassoicate_invariants.
+  // are combined with an Add or Sub. Helper for reassociate_invariants.
   int is_invariant_addition(Node* n, PhaseIdealLoop *phase);
 
   // Return true if n is invariant

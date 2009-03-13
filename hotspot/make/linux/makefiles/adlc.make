@@ -61,8 +61,8 @@ CPPFLAGS = $(SYSDEFS) $(INCLUDES)
 CPPFLAGS += -DASSERT
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
-# Suppress warnings (for now)
-CFLAGS_WARN = -w
+# Compiler warnings are treated as errors
+CFLAGS_WARN = -Werror
 CFLAGS += $(CFLAGS_WARN)
 
 OBJECTNAMES = \

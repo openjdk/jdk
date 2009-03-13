@@ -4178,7 +4178,7 @@ bool CMSCollector::do_marking_mt(bool asynch) {
     // and is deferred for now; see CR# TBF. 07252005YSR. XXX
     assert(!CMSAbortSemantics || tsk.aborted(), "Inconsistency");
     // If _restart_addr is non-NULL, a marking stack overflow
-    // occured; we need to do a fresh marking iteration from the
+    // occurred; we need to do a fresh marking iteration from the
     // indicated restart address.
     if (_foregroundGCIsActive && asynch) {
       // We may be running into repeated stack overflows, having
@@ -4221,7 +4221,7 @@ bool CMSCollector::do_marking_st(bool asynch) {
   // should be incremental with periodic yields.
   _markBitMap.iterate(&markFromRootsClosure);
   // If _restart_addr is non-NULL, a marking stack overflow
-  // occured; we need to do a fresh iteration from the
+  // occurred; we need to do a fresh iteration from the
   // indicated restart address.
   while (_restart_addr != NULL) {
     if (_foregroundGCIsActive && asynch) {

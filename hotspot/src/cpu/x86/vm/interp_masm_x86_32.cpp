@@ -192,7 +192,7 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, i
 void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Register index, int bcp_offset) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   assert(cache != index, "must use different registers");
-  load_unsigned_word(index, Address(rsi, bcp_offset));
+  load_unsigned_short(index, Address(rsi, bcp_offset));
   movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
   assert(sizeof(ConstantPoolCacheEntry) == 4*wordSize, "adjust code below");
   shlptr(index, 2); // convert from field index to ConstantPoolCacheEntry index
@@ -202,7 +202,7 @@ void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Regis
 void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   assert(cache != tmp, "must use different register");
-  load_unsigned_word(tmp, Address(rsi, bcp_offset));
+  load_unsigned_short(tmp, Address(rsi, bcp_offset));
   assert(sizeof(ConstantPoolCacheEntry) == 4*wordSize, "adjust code below");
                                // convert from field index to ConstantPoolCacheEntry index
                                // and from word offset to byte offset
@@ -1031,7 +1031,7 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
 
   // If the mdp is valid, it will point to a DataLayout header which is
   // consistent with the bcp.  The converse is highly probable also.
-  load_unsigned_word(rdx, Address(rcx, in_bytes(DataLayout::bci_offset())));
+  load_unsigned_short(rdx, Address(rcx, in_bytes(DataLayout::bci_offset())));
   addptr(rdx, Address(rbx, methodOopDesc::const_offset()));
   lea(rdx, Address(rdx, constMethodOopDesc::codes_offset()));
   cmpptr(rdx, rsi);
@@ -1511,6 +1511,15 @@ void InterpreterMacroAssembler::notify_method_entry() {
     get_method(rbx);
     call_VM_leaf(
       CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry), rcx, rbx);
+  }
+
+  // RedefineClasses() tracing support for obsolete method entry
+  if (RC_TRACE_IN_RANGE(0x00001000, 0x00002000)) {
+    get_thread(rcx);
+    get_method(rbx);
+    call_VM_leaf(
+      CAST_FROM_FN_PTR(address, SharedRuntime::rc_trace_method_entry),
+      rcx, rbx);
   }
 }
 

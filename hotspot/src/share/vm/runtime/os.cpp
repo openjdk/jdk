@@ -207,7 +207,8 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
         VMThread::execute(&op1);
         Universe::print_heap_at_SIGBREAK();
         if (PrintClassHistogram) {
-          VM_GC_HeapInspection op1(gclog_or_tty, true /* force full GC before heap inspection */);
+          VM_GC_HeapInspection op1(gclog_or_tty, true /* force full GC before heap inspection */,
+                                   true /* need_prologue */);
           VMThread::execute(&op1);
         }
         if (JvmtiExport::should_post_data_dump()) {
@@ -943,7 +944,7 @@ bool os::stack_shadow_pages_available(Thread *thread, methodHandle method) {
   assert(StackRedPages > 0 && StackYellowPages > 0,"Sanity check");
   address sp = current_stack_pointer();
   // Check if we have StackShadowPages above the yellow zone.  This parameter
-  // is dependant on the depth of the maximum VM call stack possible from
+  // is dependent on the depth of the maximum VM call stack possible from
   // the handler for stack overflow.  'instanceof' in the stack overflow
   // handler or a println uses at least 8k stack of VM and native code
   // respectively.

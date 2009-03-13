@@ -471,7 +471,7 @@ class Klass : public Klass_vtbl {
   }
   bool search_secondary_supers(klassOop k) const;
 
-  // Find LCA in class heirarchy
+  // Find LCA in class hierarchy
   Klass *LCA( Klass *k );
 
   // Check whether reflection/jni/jvm code is allowed to instantiate this class;
