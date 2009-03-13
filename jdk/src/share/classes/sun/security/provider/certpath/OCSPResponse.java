@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package sun.security.provider.certpath;
 import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CRLReason;
 import java.security.cert.X509Certificate;
@@ -335,7 +333,7 @@ class OCSPResponse {
 
             // Check whether the cert returned by the responder is trusted
             if (x509Certs != null && x509Certs[0] != null) {
-                X509Certificate cert = x509Certs[0];
+                X509CertImpl cert = x509Certs[0];
 
                 // First check if the cert matches the responder cert which
                 // was set locally.
@@ -344,8 +342,8 @@ class OCSPResponse {
 
                 // Next check if the cert was issued by the responder cert
                 // which was set locally.
-                } else if (cert.getIssuerDN().equals(
-                    responderCert.getSubjectDN())) {
+                } else if (cert.getIssuerX500Principal().equals(
+                    responderCert.getSubjectX500Principal())) {
 
                     // Check for the OCSPSigning key purpose
                     List<String> keyPurposes = cert.getExtendedKeyUsage();
@@ -360,6 +358,43 @@ class OCSPResponse {
                             "OCSP responses");
                     }
 
+                    // check the validity
+                    try {
+                        Date dateCheckedAgainst = params.getDate();
+                        if (dateCheckedAgainst == null) {
+                            cert.checkValidity();
+                        } else {
+                            cert.checkValidity(dateCheckedAgainst);
+                        }
+                    } catch (GeneralSecurityException e) {
+                        if (DEBUG != null) {
+                            DEBUG.println("Responder's certificate is not " +
+                                "within the validity period.");
+                        }
+                        throw new CertPathValidatorException(
+                            "Responder's certificate not within the " +
+                            "validity period");
+                    }
+
+                    // check for revocation
+                    //
+                    // A CA may specify that an OCSP client can trust a
+                    // responder for the lifetime of the responder's
+                    // certificate. The CA does so by including the
+                    // extension id-pkix-ocsp-nocheck.
+                    //
+                    Extension noCheck =
+                            cert.getExtension(PKIXExtensions.OCSPNoCheck_Id);
+                    if (noCheck != null) {
+                        if (DEBUG != null) {
+                            DEBUG.println("Responder's certificate includes " +
+                                "the extension id-pkix-ocsp-nocheck.");
+                        }
+                    } else {
+                        // we should do the revocating checking of the
+                        // authorized responder in a future update.
+                    }
+
                     // verify the signature
                     try {
                         cert.verify(responderCert.getPublicKey());
@@ -369,6 +404,14 @@ class OCSPResponse {
                     } catch (GeneralSecurityException e) {
                         responderCert = null;
                     }
+                } else {
+                    if (DEBUG != null) {
+                        DEBUG.println("Responder's certificate is not " +
+                            "authorized to sign OCSP responses.");
+                    }
+                    throw new CertPathValidatorException(
+                        "Responder's certificate not authorized to sign " +
+                        "OCSP responses");
                 }
             }
 
