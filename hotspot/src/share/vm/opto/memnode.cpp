@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -778,7 +778,7 @@ Node *LoadNode::make( PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const Type
            adr_type->offset() == arrayOopDesc::length_offset_in_bytes()),
          "use LoadRangeNode instead");
   switch (bt) {
-  case T_BOOLEAN:
+  case T_BOOLEAN: return new (C, 3) LoadUBNode(ctl, mem, adr, adr_type, rt->is_int()    );
   case T_BYTE:    return new (C, 3) LoadBNode (ctl, mem, adr, adr_type, rt->is_int()    );
   case T_INT:     return new (C, 3) LoadINode (ctl, mem, adr, adr_type, rt->is_int()    );
   case T_CHAR:    return new (C, 3) LoadUSNode(ctl, mem, adr, adr_type, rt->is_int()    );
@@ -1612,6 +1612,22 @@ Node *LoadBNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node *result = phase->transform( new (phase->C, 3) LShiftINode(value, phase->intcon(24)) );
     return new (phase->C, 3) RShiftINode(result, phase->intcon(24));
   }
+  // Identity call will handle the case where truncation is not needed.
+  return LoadNode::Ideal(phase, can_reshape);
+}
+
+//--------------------------LoadUBNode::Ideal-------------------------------------
+//
+//  If the previous store is to the same address as this load,
+//  and the value stored was larger than a byte, replace this load
+//  with the value stored truncated to a byte.  If no truncation is
+//  needed, the replacement is done in LoadNode::Identity().
+//
+Node* LoadUBNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* mem = in(MemNode::Memory);
+  Node* value = can_see_stored_value(mem, phase);
+  if (value && !phase->type(value)->higher_equal(_type))
+    return new (phase->C, 3) AndINode(value, phase->intcon(0xFF));
   // Identity call will handle the case where truncation is not needed.
   return LoadNode::Ideal(phase, can_reshape);
 }
