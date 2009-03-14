@@ -1,5 +1,5 @@
 //
-// Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+// Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -5286,55 +5286,91 @@ instruct loadB(iRegI dst, memory mem) %{
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "LDSB   $mem,$dst" %}
+  format %{ "LDSB   $mem,$dst\t! byte" %}
   opcode(Assembler::ldsb_op3);
   ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
 %}
 
-// Load Byte (8bit UNsigned) into an int reg
-instruct loadUB(iRegI dst, memory mem, immI_255 bytemask) %{
-  match(Set dst (AndI (LoadB mem) bytemask));
+// Load Byte (8bit signed) into a Long Register
+instruct loadB2L(iRegL dst, memory mem) %{
+  match(Set dst (ConvI2L (LoadB mem)));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "LDUB   $mem,$dst" %}
+  format %{ "LDSB   $mem,$dst\t! byte -> long" %}
+  opcode(Assembler::ldsb_op3);
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_pipe(iload_mask_mem);
+%}
+
+// Load Unsigned Byte (8bit UNsigned) into an int reg
+instruct loadUB(iRegI dst, memory mem) %{
+  match(Set dst (LoadUB mem));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  format %{ "LDUB   $mem,$dst\t! ubyte" %}
   opcode(Assembler::ldub_op3);
   ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
 %}
 
-// Load Byte (8bit UNsigned) into a Long Register
-instruct loadUBL(iRegL dst, memory mem, immL_FF bytemask) %{
-  match(Set dst (AndL (ConvI2L (LoadB mem)) bytemask));
+// Load Unsigned Byte (8bit UNsigned) into a Long Register
+instruct loadUB2L(iRegL dst, memory mem) %{
+  match(Set dst (ConvI2L (LoadUB mem)));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "LDUB   $mem,$dst" %}
+  format %{ "LDUB   $mem,$dst\t! ubyte -> long" %}
   opcode(Assembler::ldub_op3);
   ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
 %}
 
-// Load Unsigned Short/Char (16bit UNsigned) into a Long Register
-instruct loadUS2L(iRegL dst, memory mem, immL_FFFF bytemask) %{
-  match(Set dst (AndL (ConvI2L (LoadUS mem)) bytemask));
+// Load Short (16bit signed)
+instruct loadS(iRegI dst, memory mem) %{
+  match(Set dst (LoadS mem));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "LDUH   $mem,$dst" %}
-  opcode(Assembler::lduh_op3);
+  format %{ "LDSH   $mem,$dst\t! short" %}
+  opcode(Assembler::ldsh_op3);
   ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
 %}
 
-// Load Unsigned Short/Char (16bit unsigned)
+// Load Short (16bit signed) into a Long Register
+instruct loadS2L(iRegL dst, memory mem) %{
+  match(Set dst (ConvI2L (LoadS mem)));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  format %{ "LDSH   $mem,$dst\t! short -> long" %}
+  opcode(Assembler::ldsh_op3);
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_pipe(iload_mask_mem);
+%}
+
+// Load Unsigned Short/Char (16bit UNsigned)
 instruct loadUS(iRegI dst, memory mem) %{
   match(Set dst (LoadUS mem));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "LDUH   $mem,$dst" %}
+  format %{ "LDUH   $mem,$dst\t! ushort/char" %}
+  opcode(Assembler::lduh_op3);
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_pipe(iload_mask_mem);
+%}
+
+// Load Unsigned Short/Char (16bit UNsigned) into a Long Register
+instruct loadUS2L(iRegL dst, memory mem) %{
+  match(Set dst (ConvI2L (LoadUS mem)));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  format %{ "LDUH   $mem,$dst\t! ushort/char -> long" %}
   opcode(Assembler::lduh_op3);
   ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mask_mem);
@@ -5344,9 +5380,33 @@ instruct loadUS(iRegI dst, memory mem) %{
 instruct loadI(iRegI dst, memory mem) %{
   match(Set dst (LoadI mem));
   ins_cost(MEMORY_REF_COST);
-  size(4);
 
-  format %{ "LDUW   $mem,$dst" %}
+  size(4);
+  format %{ "LDUW   $mem,$dst\t! int" %}
+  opcode(Assembler::lduw_op3);
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_pipe(iload_mem);
+%}
+
+// Load Integer into a Long Register
+instruct loadI2L(iRegL dst, memory mem) %{
+  match(Set dst (ConvI2L (LoadI mem)));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  format %{ "LDSW   $mem,$dst\t! int -> long" %}
+  opcode(Assembler::ldsw_op3);
+  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_pipe(iload_mem);
+%}
+
+// Load Unsigned Integer into a Long Register
+instruct loadUI2L(iRegL dst, memory mem) %{
+  match(Set dst (LoadUI2L mem));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  format %{ "LDUW   $mem,$dst\t! uint -> long" %}
   opcode(Assembler::lduw_op3);
   ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mem);
@@ -5356,6 +5416,7 @@ instruct loadI(iRegI dst, memory mem) %{
 instruct loadL(iRegL dst, memory mem ) %{
   match(Set dst (LoadL mem));
   ins_cost(MEMORY_REF_COST);
+
   size(4);
   format %{ "LDX    $mem,$dst\t! long" %}
   opcode(Assembler::ldx_op3);
@@ -5471,13 +5532,11 @@ instruct loadN(iRegN dst, memory mem) %{
 
    format %{ "LDUW   $mem,$dst\t! compressed ptr" %}
    ins_encode %{
-     Register base = as_Register($mem$$base);
-     Register index = as_Register($mem$$index);
-     Register dst = $dst$$Register;
+     Register index = $mem$$index$$Register;
      if (index != G0) {
-       __ lduw(base, index, dst);
+       __ lduw($mem$$base$$Register, index, $dst$$Register);
      } else {
-       __ lduw(base, $mem$$disp, dst);
+       __ lduw($mem$$base$$Register, $mem$$disp, $dst$$Register);
      }
    %}
    ins_pipe(iload_mem);
@@ -5519,18 +5578,6 @@ instruct loadNKlass(iRegN dst, memory mem) %{
      }
   %}
   ins_pipe(iload_mem);
-%}
-
-// Load Short (16bit signed)
-instruct loadS(iRegI dst, memory mem) %{
-  match(Set dst (LoadS mem));
-  ins_cost(MEMORY_REF_COST);
-
-  size(4);
-  format %{ "LDSH   $mem,$dst" %}
-  opcode(Assembler::ldsh_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
-  ins_pipe(iload_mask_mem);
 %}
 
 // Load Double
