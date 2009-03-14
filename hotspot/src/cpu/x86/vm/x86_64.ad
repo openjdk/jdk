@@ -2575,43 +2575,13 @@ encode %{
     Register Rrax = as_Register(RAX_enc); // super class
     Register Rrcx = as_Register(RCX_enc); // killed
     Register Rrsi = as_Register(RSI_enc); // sub class
-    Label hit, miss, cmiss;
+    Label miss;
+    const bool set_cond_codes = true;
 
     MacroAssembler _masm(&cbuf);
-    // Compare super with sub directly, since super is not in its own SSA.
-    // The compiler used to emit this test, but we fold it in here,
-    // to allow platform-specific tweaking on sparc.
-    __ cmpptr(Rrax, Rrsi);
-    __ jcc(Assembler::equal, hit);
-#ifndef PRODUCT
-    __ lea(Rrcx, ExternalAddress((address)&SharedRuntime::_partial_subtype_ctr));
-    __ incrementl(Address(Rrcx, 0));
-#endif //PRODUCT
-    __ movptr(Rrdi, Address(Rrsi, 
-                          sizeof(oopDesc) + 
-                          Klass::secondary_supers_offset_in_bytes()));
-    __ movl(Rrcx, Address(Rrdi, arrayOopDesc::length_offset_in_bytes()));
-    __ addptr(Rrdi, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
-    if (UseCompressedOops) {
-      __ push(Rrax);
-      __ encode_heap_oop(Rrax);
-      __ repne_scanl();
-      __ pop(Rrax);
-      __ jccb(Assembler::notEqual, miss);
-      __ movptr(Address(Rrsi,
-                      sizeof(oopDesc) +
-                      Klass::secondary_super_cache_offset_in_bytes()),
-              Rrax);
-      __ jmp(hit);
-    } else {
-      __ repne_scan();
-      __ jccb(Assembler::notEqual, miss);
-      __ movptr(Address(Rrsi,
-                      sizeof(oopDesc) +
-                      Klass::secondary_super_cache_offset_in_bytes()),
-              Rrax);
-    }
-    __ bind(hit);
+    __ check_klass_subtype_slow_path(Rrsi, Rrax, Rrcx, Rrdi,
+                                     NULL, &miss,
+                                     /*set_cond_codes:*/ true);
     if ($primary) {
       __ xorptr(Rrdi, Rrdi);
     }
@@ -12179,15 +12149,12 @@ instruct partialSubtypeCheck(rdi_RegP result,
   effect(KILL rcx, KILL cr);
 
   ins_cost(1100);  // slightly larger than the next version
-  format %{ "cmpq    rax, rsi\n\t"
-            "jeq,s   hit\n\t"
-            "movq    rdi, [$sub + (sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes())]\n\t"
+  format %{ "movq    rdi, [$sub + (sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes())]\n\t"
             "movl    rcx, [rdi + arrayOopDesc::length_offset_in_bytes()]\t# length to scan\n\t"
             "addq    rdi, arrayOopDex::base_offset_in_bytes(T_OBJECT)\t# Skip to start of data; set NZ in case count is zero\n\t"
             "repne   scasq\t# Scan *rdi++ for a match with rax while rcx--\n\t"
             "jne,s   miss\t\t# Missed: rdi not-zero\n\t"
             "movq    [$sub + (sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes())], $super\t# Hit: update cache\n\t"
-    "hit:\n\t"
             "xorq    $result, $result\t\t Hit: rdi zero\n\t"
     "miss:\t" %}
 
@@ -12205,9 +12172,7 @@ instruct partialSubtypeCheck_vs_Zero(rFlagsReg cr,
   effect(KILL rcx, KILL result);
 
   ins_cost(1000);
-  format %{ "cmpq    rax, rsi\n\t"
-            "jeq,s   miss\t# Actually a hit; we are done.\n\t"
-            "movq    rdi, [$sub + (sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes())]\n\t"
+  format %{ "movq    rdi, [$sub + (sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes())]\n\t"
             "movl    rcx, [rdi + arrayOopDesc::length_offset_in_bytes()]\t# length to scan\n\t"
             "addq    rdi, arrayOopDex::base_offset_in_bytes(T_OBJECT)\t# Skip to start of data; set NZ in case count is zero\n\t"
             "repne   scasq\t# Scan *rdi++ for a match with rax while cx-- != 0\n\t"
