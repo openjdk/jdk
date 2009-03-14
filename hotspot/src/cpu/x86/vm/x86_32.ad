@@ -1692,26 +1692,15 @@ encode %{
     Register Reax = as_Register(EAX_enc); // super class
     Register Recx = as_Register(ECX_enc); // killed
     Register Resi = as_Register(ESI_enc); // sub class
-    Label hit, miss;
+    Label miss;
 
     MacroAssembler _masm(&cbuf);
-    // Compare super with sub directly, since super is not in its own SSA.
-    // The compiler used to emit this test, but we fold it in here,
-    // to allow platform-specific tweaking on sparc.
-    __ cmpptr(Reax, Resi);
-    __ jcc(Assembler::equal, hit);
-#ifndef PRODUCT
-    __ incrementl(ExternalAddress((address)&SharedRuntime::_partial_subtype_ctr));
-#endif //PRODUCT
-    __ movptr(Redi,Address(Resi,sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes()));
-    __ movl(Recx,Address(Redi,arrayOopDesc::length_offset_in_bytes()));
-    __ addptr(Redi,arrayOopDesc::base_offset_in_bytes(T_OBJECT));
-    __ repne_scan();
-    __ jcc(Assembler::notEqual, miss);
-    __ movptr(Address(Resi,sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes()),Reax);
-    __ bind(hit);
-    if( $primary )
-      __ xorptr(Redi,Redi);
+    __ check_klass_subtype_slow_path(Resi, Reax, Recx, Redi,
+                                     NULL, &miss,
+                                     /*set_cond_codes:*/ true);
+    if ($primary) {
+      __ xorptr(Redi, Redi);
+    }
     __ bind(miss);
   %}
 
@@ -12566,15 +12555,12 @@ instruct partialSubtypeCheck( eDIRegP result, eSIRegP sub, eAXRegP super, eCXReg
   effect( KILL rcx, KILL cr );
 
   ins_cost(1100);  // slightly larger than the next version
-  format %{ "CMPL   EAX,ESI\n\t"
-            "JEQ,s  hit\n\t"
-            "MOV    EDI,[$sub+Klass::secondary_supers]\n\t"
+  format %{ "MOV    EDI,[$sub+Klass::secondary_supers]\n\t"
             "MOV    ECX,[EDI+arrayKlass::length]\t# length to scan\n\t"
             "ADD    EDI,arrayKlass::base_offset\t# Skip to start of data; set NZ in case count is zero\n\t"
             "REPNE SCASD\t# Scan *EDI++ for a match with EAX while CX-- != 0\n\t"
             "JNE,s  miss\t\t# Missed: EDI not-zero\n\t"
             "MOV    [$sub+Klass::secondary_super_cache],$super\t# Hit: update cache\n\t"
-     "hit:\n\t"
             "XOR    $result,$result\t\t Hit: EDI zero\n\t"
      "miss:\t" %}
 
@@ -12588,9 +12574,7 @@ instruct partialSubtypeCheck_vs_Zero( eFlagsReg cr, eSIRegP sub, eAXRegP super, 
   effect( KILL rcx, KILL result );
 
   ins_cost(1000);
-  format %{ "CMPL   EAX,ESI\n\t"
-            "JEQ,s  miss\t# Actually a hit; we are done.\n\t"
-            "MOV    EDI,[$sub+Klass::secondary_supers]\n\t"
+  format %{ "MOV    EDI,[$sub+Klass::secondary_supers]\n\t"
             "MOV    ECX,[EDI+arrayKlass::length]\t# length to scan\n\t"
             "ADD    EDI,arrayKlass::base_offset\t# Skip to start of data; set NZ in case count is zero\n\t"
             "REPNE SCASD\t# Scan *EDI++ for a match with EAX while CX-- != 0\n\t"
