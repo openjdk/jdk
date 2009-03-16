@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -81,6 +81,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptInit
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     ckKeyHandle = jLongToCKULong(jKeyHandle);
     jMechanismToCKMechanism(env, jMechanism, &ckMechanism);
+    if ((*env)->ExceptionCheck(env)) { return; }
 
     rv = (*ckpFunctions->C_EncryptInit)(ckSessionHandle, &ckMechanism,
                                         ckKeyHandle);
@@ -126,14 +127,29 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Encrypt
 
     if (jInLen > MAX_STACK_BUFFER_LEN) {
       inBufP = (CK_BYTE_PTR)malloc((size_t)jInLen);
+      if (inBufP == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return 0;
+      }
     } else {
       inBufP = IBUF;
     }
     (*env)->GetByteArrayRegion(env, jIn, jInOfs, jInLen, (jbyte *)inBufP);
+    if ((*env)->ExceptionCheck(env)) {
+      if (inBufP != IBUF) { free(inBufP); }
+      return 0;
+    }
 
     ckEncryptedPartLen = jOutLen;
     if (jOutLen > MAX_STACK_BUFFER_LEN) {
       outBufP = (CK_BYTE_PTR)malloc((size_t)jOutLen);
+      if (outBufP == NULL) {
+        if (inBufP != IBUF) {
+          free(inBufP);
+        }
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return 0;
+      }
     } else {
       outBufP = OBUF;
     }
@@ -193,10 +209,18 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptUpdate
     } else {
       if (jInLen > MAX_STACK_BUFFER_LEN) {
         inBufP = (CK_BYTE_PTR)malloc((size_t)jInLen);
+        if (inBufP == NULL) {
+          JNU_ThrowOutOfMemoryError(env, 0);
+          return 0;
+        }
       } else {
         inBufP = IBUF;
       }
       (*env)->GetByteArrayRegion(env, jIn, jInOfs, jInLen, (jbyte *)inBufP);
+      if ((*env)->ExceptionCheck(env)) {
+        if (directIn == 0 && inBufP != IBUF) { free(inBufP); }
+        return 0;
+      }
     }
 
     ckEncryptedPartLen = jOutLen;
@@ -205,6 +229,13 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptUpdate
     } else {
       if (jOutLen > MAX_STACK_BUFFER_LEN) {
         outBufP = (CK_BYTE_PTR)malloc((size_t)jOutLen);
+        if (outBufP == NULL) {
+          if (directIn == 0 && inBufP != IBUF) {
+            free(inBufP);
+          }
+          JNU_ThrowOutOfMemoryError(env, 0);
+          return 0;
+        }
       } else {
         outBufP = OBUF;
       }
@@ -317,6 +348,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptInit
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     ckKeyHandle = jLongToCKULong(jKeyHandle);
     jMechanismToCKMechanism(env, jMechanism, &ckMechanism);
+    if ((*env)->ExceptionCheck(env)) { return; }
 
     rv = (*ckpFunctions->C_DecryptInit)(ckSessionHandle, &ckMechanism,
                                         ckKeyHandle);
@@ -362,14 +394,29 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Decrypt
 
     if (jInLen > MAX_STACK_BUFFER_LEN) {
       inBufP = (CK_BYTE_PTR)malloc((size_t)jInLen);
+      if (inBufP == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return 0;
+      }
     } else {
       inBufP = IBUF;
     }
     (*env)->GetByteArrayRegion(env, jIn, jInOfs, jInLen, (jbyte *)inBufP);
+    if ((*env)->ExceptionCheck(env)) {
+      if (inBufP != IBUF) { free(inBufP); }
+      return 0;
+    }
 
     ckPartLen = jOutLen;
     if (jOutLen > MAX_STACK_BUFFER_LEN) {
       outBufP = (CK_BYTE_PTR)malloc((size_t)jOutLen);
+      if (outBufP == NULL) {
+        if (inBufP != IBUF) {
+          free(inBufP);
+        }
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return 0;
+      }
     } else {
       outBufP = OBUF;
     }
@@ -429,10 +476,18 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptUpdate
     } else {
       if (jInLen > MAX_STACK_BUFFER_LEN) {
         inBufP = (CK_BYTE_PTR)malloc((size_t)jInLen);
+        if (inBufP == NULL) {
+          JNU_ThrowOutOfMemoryError(env, 0);
+          return 0;
+        }
       } else {
         inBufP = IBUF;
       }
       (*env)->GetByteArrayRegion(env, jIn, jInOfs, jInLen, (jbyte *)inBufP);
+      if ((*env)->ExceptionCheck(env)) {
+        if (directIn == 0 && inBufP != IBUF) { free(inBufP); }
+        return 0;
+      }
     }
 
     ckDecryptedPartLen = jOutLen;
@@ -441,6 +496,13 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptUpdate
     } else {
       if (jOutLen > MAX_STACK_BUFFER_LEN) {
         outBufP = (CK_BYTE_PTR)malloc((size_t)jOutLen);
+        if (outBufP == NULL) {
+          if (directIn == 0 && inBufP != IBUF) {
+            free(inBufP);
+          }
+          JNU_ThrowOutOfMemoryError(env, 0);
+          return 0;
+      }
       } else {
         outBufP = OBUF;
       }
