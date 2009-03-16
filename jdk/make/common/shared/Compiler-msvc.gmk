@@ -112,6 +112,12 @@ ifeq ($(PLATFORM), windows)
         endif
       endif
     endif
+    ifeq ($(CC_MAJORVER), 15)
+      COMPILER_NAME=Microsoft Windows SDK with Visual Studio 9 (6001.18000.367)
+      COMPILER_VERSION=VS2008
+      RC = $(MSSDK61)/Bin/X64/rc.exe
+      MT = $(MSSDK61)/Bin/X64/mt.exe
+    endif
     # This will cause problems if ALT_COMPILER_PATH is defined to ""
     # which is a directive to use the PATH.
     REBASE         = $(COMPILER_PATH)../REBASE
