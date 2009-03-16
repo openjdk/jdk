@@ -199,6 +199,7 @@ else
 endif
 ifeq ($(ARCH_DATA_MODEL), 32)
   _program_files     :=$(call FullPath,$(xPROGRAMFILES))
+  _program_files32   :=$(_program_files)
 else
   ifdef PROGRAMW6432
     xPROGRAMW6432    :="$(subst \,/,$(PROGRAMW6432))"
@@ -252,39 +253,51 @@ ifeq ($(ARCH_DATA_MODEL), 32)
       _vs90tools     :=$(call FullPath,$(xVS90COMNTOOLS))
     endif
     ifneq ($(_vs90tools),)
-      _msvc_dir :=$(_vs90tools)/../../Vc
-      _redist_sdk   :=$(_msvc_dir)/../SDK/v3.5/Bin
-    endif
-    ifdef VS80COMNTOOLS  # /Common/Tools directory, use ../../Vc
-      xVS80COMNTOOLS :="$(subst \,/,$(VS80COMNTOOLS))"
-      _vs80tools     :=$(call FullPath,$(xVS80COMNTOOLS))
-    endif
-    ifneq ($(_vs80tools),)
-      _msvc_dir :=$(_vs80tools)/../../Vc
-      _redist_sdk   :=$(_msvc_dir)/../SDK/v2.0/Bin
-    endif
-    ifdef VS71COMNTOOLS  # /Common/Tools directory, use ../../Vc7
-      xVS71COMNTOOLS :="$(subst \,/,$(VS71COMNTOOLS))"
-      _vs71tools     :=$(call FullPath,$(xVS71COMNTOOLS))
-    endif
-    ifneq ($(_vs71tools),)
-      _msvc_dir :=$(_vs71tools)/../../Vc7
-      _redist_sdk    :=$(_vs71tools)/../..
+      _msvc_dir   :=$(_vs90tools)/../../Vc
+    else
+      ifdef VS80COMNTOOLS  # /Common/Tools directory, use ../../Vc
+        xVS80COMNTOOLS :="$(subst \,/,$(VS80COMNTOOLS))"
+        _vs80tools     :=$(call FullPath,$(xVS80COMNTOOLS))
+      endif
+      ifneq ($(_vs80tools),)
+        _msvc_dir   :=$(_vs80tools)/../../Vc
+      else
+        ifdef VS71COMNTOOLS  # /Common/Tools directory, use ../../Vc7
+          xVS71COMNTOOLS :="$(subst \,/,$(VS71COMNTOOLS))"
+          _vs71tools     :=$(call FullPath,$(xVS71COMNTOOLS))
+        endif
+        ifneq ($(_vs71tools),)
+          _msvc_dir   :=$(_vs71tools)/../../Vc7
+        endif
+      endif
     endif
   endif
   ifneq ($(_msvc_dir),)
     _compiler_bin :=$(_msvc_dir)/Bin
-    _ms_sdk       :=$(_msvc_dir)/PlatformSDK
+    # Assume PlatformSDK is in VS71 (will be empty if VS90)
+    _ms_sdk       :=$(call FullPath,$(_msvc_dir)/PlatformSDK)
+    # Assume VS90, then VS80, then VS71
+    _redist_sdk   :=$(call FullPath,$(_msvc_dir)/../SDK/v3.5/Bin)
+    ifeq ($(_redist_sdk),)
+      _redist_sdk   :=$(call FullPath,$(_msvc_dir)/../SDK/v2.0/Bin)
+      ifeq ($(_redist_sdk),)
+        _redist_sdk   :=$(call FullPath,$(_msvc_dir)/../SDK/v1.1/Bin)
+      endif
+    endif
   endif
 endif
 
 # The Microsoft Platform SDK installed by itself
 ifneq ($(_program_files),)
-  xPSDK  :="$(_program_files)/Microsoft Platform SDK"
-  _psdk  :=$(call FullPath,$(xPSDK))
+  _PSDK :="$(_program_files)/Microsoft SDKs/Windows/v6.1/"
+  _psdk :=$(call FullPath,$(xMSSDK61))
   ifeq ($(_psdk),)
-    xPSDK  :="$(_program_files)/Microsoft SDK"
-    _psdk :=$(call FullPath,$(xMSSDK))
+    xPSDK  :="$(_program_files)/Microsoft Platform SDK"
+    _psdk  :=$(call FullPath,$(xPSDK))
+    ifeq ($(_psdk),)
+      xPSDK  :="$(_program_files)/Microsoft SDK"
+      _psdk :=$(call FullPath,$(xMSSDK))
+    endif
   endif
 endif
 
@@ -305,13 +318,22 @@ endif
 
 # Compilers for 64bit are from SDK
 ifeq ($(ARCH_DATA_MODEL), 64)
-  ifneq ($(_ms_sdk),)
-    ifeq ($(ARCH), ia64)
-      _compiler_bin :=$(_ms_sdk)/Bin/Win64
-    endif
-    ifeq ($(ARCH), amd64)
-      _compiler_bin :=$(_ms_sdk)/Bin/Win64/x86/$(ARCH)
-      _redist_sdk   :=$(_ms_sdk)/redist/win64/AMD64
+  xVS2008 :="$(_program_files32)/Microsoft Visual Studio 9.0/"
+  VS2008 :=$(call FullPath,$(xVS2008))
+  ifneq ($(VS2008),)
+    _compiler_bin :=$(VS2008)/VC/Bin/$(ARCH)
+    xMSSDK61      :="$(_program_files)/Microsoft SDKs/Windows/v6.1/"
+    MSSDK61       :=$(call FullPath,$(xMSSDK61))
+    _redist_sdk   :=$(VS2008)/VC/redist/x86/Microsoft.VC90.CRT
+  else
+    ifneq ($(_ms_sdk),)
+      ifeq ($(ARCH), ia64)
+        _compiler_bin :=$(_ms_sdk)/Bin/Win64
+      endif
+      ifeq ($(ARCH), amd64)
+        _compiler_bin :=$(_ms_sdk)/Bin/Win64/x86/$(ARCH)
+        _redist_sdk   :=$(_ms_sdk)/redist/win64/AMD64
+      endif
     endif
   endif
 endif
@@ -414,70 +436,39 @@ ifndef ALT_BOOTDIR
   _BOOTDIR2  =$(USRJDKINSTANCES_PATH)/jdk$(PREVIOUS_JDK_VERSION)
 endif
 
-# See if SDK area has a msvcrt.dll file, directory may exist w/o msvcr* files
-_REDIST_SDK_EXISTS := $(shell \
-	if [ -f "$(_redist_sdk)/msvcrt.dll" ]; then \
-	  echo "true"; \
-	else \
-	  echo "false"; \
-	fi)
-_REDISTNN_SDK_EXISTS := $(shell \
-	if [ -f "$(_redist_sdk)/$(MSVCRNN_DLL)" ]; then \
-	  echo "true"; \
-	else \
-	  echo "false"; \
-	fi)
+# 32 bit always needs 2 runtimes, 64 bit usually does too
 
-# 32 bit needs 2 runtimes
+# MSVCRT_DLL_PATH: location of msvcrt.dll that will be re-distributed
+ifdef ALT_MSVCRT_DLL_PATH
+  xALT_MSVCRT_DLL_PATH :="$(subst \,/,$(ALT_MSVCRT_DLL_PATH))"
+  MSVCRT_DLL_PATH      :=$(call FullPath,$(xALT_MSVCRT_DLL_PATH))
+else
+  MSVCRT_DLL_PATH :=$(call FullPath,$(_system_root)/system32/)
+endif
+MSVCRT_DLL_PATH:=$(call AltCheckSpaces,MSVCRT_DLL_PATH)
+MSVCRT_DLL_PATH:=$(call AltCheckValue,MSVCRT_DLL_PATH)
+
+# 32bit always needs the MSVCRNN runtime, 64bit does when using VS2008
 ifeq ($(ARCH_DATA_MODEL), 32)
-
-  # MSVCRT_DLL_PATH: location of msvcrt.dll that will be re-distributed
-  ifdef ALT_MSVCRT_DLL_PATH
-    xALT_MSVCRT_DLL_PATH :="$(subst \,/,$(ALT_MSVCRT_DLL_PATH))"
-    MSVCRT_DLL_PATH      :=$(call FullPath,$(xALT_MSVCRT_DLL_PATH))
+  _NEEDS_MSVCRNN = true
+else
+  ifeq ($(VS2008),)
+    _NEEDS_MSVCRNN = false
   else
-    ifeq ($(_REDIST_SDK_EXISTS), true)
-      xREDIST_DIR   :=$(_redist_sdk)
-    else
-      xREDIST_DIR   :=$(_system_root)/system32
-    endif
-    MSVCRT_DLL_PATH :=$(call FullPath,$(xREDIST_DIR))
+    _NEEDS_MSVCRNN = true
   endif
-  MSVCRT_DLL_PATH:=$(call AltCheckSpaces,MSVCRT_DLL_PATH)
-  MSVCRT_DLL_PATH:=$(call AltCheckValue,MSVCRT_DLL_PATH)
-  
+endif
+
+ifeq ($(_NEEDS_MSVCRNN), true)
   # MSVCRNN_DLL_PATH: location of msvcrnn.dll that will be re-distributed
   ifdef ALT_MSVCRNN_DLL_PATH
     xALT_MSVCRNN_DLL_PATH :="$(subst \,/,$(ALT_MSVCRNN_DLL_PATH))"
     MSVCRNN_DLL_PATH      :=$(call FullPath,$(xALT_MSVCRNN_DLL_PATH))
   else
-    ifeq ($(_REDISTNN_SDK_EXISTS), true)
-      xREDISTNN_DIR  :=$(_redist_sdk)
-    else
-      xREDISTNN_DIR  :=$(_system_root)/system32
-    endif
-    MSVCRNN_DLL_PATH :=$(call FullPath,$(xREDISTNN_DIR))
+    MSVCRNN_DLL_PATH :=$(_redist_sdk)
   endif
   MSVCRNN_DLL_PATH :=$(call AltCheckSpaces,MSVCRNN_DLL_PATH)
   MSVCRNN_DLL_PATH:=$(call AltCheckValue,MSVCRNN_DLL_PATH)
-  
-else
-
-  # MSVCRT_DLL_PATH: location of msvcrt.dll that will be re-distributed
-  ifdef ALT_MSVCRT_DLL_PATH
-    xALT_MSVCRT_DLL_PATH :="$(subst \,/,$(ALT_MSVCRT_DLL_PATH))"
-    MSVCRT_DLL_PATH      :=$(call FullPath,$(xALT_MSVCRT_DLL_PATH))
-  else
-    ifeq ($(_REDIST_SDK_EXISTS), true)
-      xREDIST_DIR   :=$(_redist_sdk)
-    else
-      xREDIST_DIR   :=$(_system_root)/SysWOW64
-    endif
-    MSVCRT_DLL_PATH  :=$(call FullPath,$(xREDIST_DIR))
-  endif
-  MSVCRT_DLL_PATH:=$(call AltCheckSpaces,MSVCRT_DLL_PATH)
-  MSVCRT_DLL_PATH:=$(call AltCheckValue,MSVCRT_DLL_PATH)
-  
 endif
 
 # DXSDK_PATH: path to Microsoft DirectX SDK Include and Lib
@@ -536,7 +527,7 @@ ifdef ALT_INSTALL_MSIVAL2
   xALT_INSTALL_MSIVAL2 :="$(subst \,/,$(ALT_INSTALL_MSIVAL2))"
   INSTALL_MSIVAL2      :=$(call FullPath,$(xALT_INSTALL_MSIVAL2))
 else
-  INSTALL_MSIVAL2      :=$(_program_files)/MsiVal2
+  INSTALL_MSIVAL2      :=$(_program_files32)/MsiVal2
 endif
 INSTALL_MSIVAL2:=$(call AltCheckSpaces,INSTALL_MSIVAL2)
 
