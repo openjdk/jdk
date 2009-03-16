@@ -961,6 +961,7 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     if (VerifyAfterGC && total_collections() >= VerifyGCStartAt) {
       HandleMark hm;  // Discard invalid handles created during verification
       gclog_or_tty->print(" VerifyAfterGC:");
+      prepare_for_verify();
       Universe::verify(false);
     }
     NOT_PRODUCT(ref_processor()->verify_no_references_recorded());
@@ -2135,15 +2136,7 @@ public:
   bool doHeapRegion(HeapRegion* r) {
     guarantee(_par || r->claim_value() == HeapRegion::InitialClaimValue,
               "Should be unclaimed at verify points.");
-    if (r->isHumongous()) {
-      if (r->startsHumongous()) {
-        // Verify the single H object.
-        oop(r->bottom())->verify();
-        size_t word_sz = oop(r->bottom())->size();
-        guarantee(r->top() == r->bottom() + word_sz,
-                  "Only one object in a humongous region");
-      }
-    } else {
+    if (!r->continuesHumongous()) {
       VerifyObjsInRegionClosure not_dead_yet_cl(r);
       r->verify(_allow_dirty);
       r->object_iterate(&not_dead_yet_cl);
@@ -2195,6 +2188,7 @@ public:
     _g1h(g1h), _allow_dirty(allow_dirty) { }
 
   void work(int worker_i) {
+    HandleMark hm;
     VerifyRegionClosure blk(_allow_dirty, true);
     _g1h->heap_region_par_iterate_chunked(&blk, worker_i,
                                           HeapRegion::ParVerifyClaimValue);
@@ -2713,6 +2707,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
     if (VerifyAfterGC && total_collections() >= VerifyGCStartAt) {
       HandleMark hm;  // Discard invalid handles created during verification
       gclog_or_tty->print(" VerifyAfterGC:");
+      prepare_for_verify();
       Universe::verify(false);
     }
 
@@ -2844,6 +2839,12 @@ void G1CollectedHeap::forget_alloc_region_list() {
   while (_gc_alloc_region_list != NULL) {
     HeapRegion* r = _gc_alloc_region_list;
     assert(r->is_gc_alloc_region(), "Invariant.");
+    // We need HeapRegion::oops_on_card_seq_iterate_careful() to work on
+    // newly allocated data in order to be able to apply deferred updates
+    // before the GC is done for verification purposes (i.e to allow
+    // G1HRRSFlushLogBuffersOnVerify). It's safe thing to do after the
+    // collection.
+    r->ContiguousSpace::set_saved_mark();
     _gc_alloc_region_list = r->next_gc_alloc_region();
     r->set_next_gc_alloc_region(NULL);
     r->set_is_gc_alloc_region(false);
@@ -3738,7 +3739,9 @@ protected:
   CardTableModRefBS* ctbs()                      { return _ct_bs; }
 
   void immediate_rs_update(HeapRegion* from, oop* p, int tid) {
-    _g1_rem->par_write_ref(from, p, tid);
+    if (!from->is_survivor()) {
+      _g1_rem->par_write_ref(from, p, tid);
+    }
   }
 
   void deferred_rs_update(HeapRegion* from, oop* p, int tid) {
