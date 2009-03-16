@@ -716,8 +716,7 @@ public:
   bool doHeapRegion(HeapRegion* r) {
     if (!r->in_collection_set() &&
         !r->continuesHumongous() &&
-        !r->is_young() &&
-        !r->is_survivor()) {
+        !r->is_young()) {
       _update_rs_oop_cl.set_from(r);
       UpdateRSObjectClosure update_rs_obj_cl(&_update_rs_oop_cl);
 
@@ -854,7 +853,7 @@ void HRInto_G1RemSet::concurrentRefineOneCard(jbyte* card_ptr, int worker_i) {
   // before all the cards on the region are dirtied. This is unlikely,
   // and it doesn't happen often, but it can happen. So, the extra
   // check below filters out those cards.
-  if (r->is_young() || r->is_survivor()) {
+  if (r->is_young()) {
     return;
   }
   // While we are processing RSet buffers during the collection, we
@@ -1025,7 +1024,9 @@ void HRInto_G1RemSet::print_summary_info() {
   }
 }
 void HRInto_G1RemSet::prepare_for_verify() {
-  if (G1HRRSFlushLogBuffersOnVerify && VerifyBeforeGC && !_g1->full_collection()) {
+  if (G1HRRSFlushLogBuffersOnVerify &&
+      (VerifyBeforeGC || VerifyAfterGC)
+      &&  !_g1->full_collection()) {
     cleanupHRRS();
     _g1->set_refine_cte_cl_concurrency(false);
     if (SafepointSynchronize::is_at_safepoint()) {
@@ -1036,5 +1037,7 @@ void HRInto_G1RemSet::prepare_for_verify() {
     _cg1r->set_use_cache(false);
     updateRS(0);
     _cg1r->set_use_cache(cg1r_use_cache);
+
+    assert(JavaThread::dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
   }
 }
