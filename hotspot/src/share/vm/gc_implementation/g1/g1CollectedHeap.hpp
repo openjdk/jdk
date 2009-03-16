@@ -172,7 +172,6 @@ private:
     NumAPIs = HeapRegion::MaxAge
   };
 
-
   // The one and only G1CollectedHeap, so static functions can find it.
   static G1CollectedHeap* _g1h;
 
@@ -217,11 +216,20 @@ private:
 
   // Postcondition: cur_alloc_region == NULL.
   void abandon_cur_alloc_region();
+  void abandon_gc_alloc_regions();
 
   // The to-space memory regions into which objects are being copied during
   // a GC.
   HeapRegion* _gc_alloc_regions[GCAllocPurposeCount];
   size_t _gc_alloc_region_counts[GCAllocPurposeCount];
+  // These are the regions, one per GCAllocPurpose, that are half-full
+  // at the end of a collection and that we want to reuse during the
+  // next collection.
+  HeapRegion* _retained_gc_alloc_regions[GCAllocPurposeCount];
+  // This specifies whether we will keep the last half-full region at
+  // the end of a collection so that it can be reused during the next
+  // collection (this is specified per GCAllocPurpose)
+  bool _retain_gc_alloc_region[GCAllocPurposeCount];
 
   // A list of the regions that have been set to be alloc regions in the
   // current collection.
@@ -589,8 +597,21 @@ protected:
 
   // Ensure that the relevant gc_alloc regions are set.
   void get_gc_alloc_regions();
-  // We're done with GC alloc regions; release them, as appropriate.
-  void release_gc_alloc_regions();
+  // We're done with GC alloc regions. We are going to tear down the
+  // gc alloc list and remove the gc alloc tag from all the regions on
+  // that list. However, we will also retain the last (i.e., the one
+  // that is half-full) GC alloc region, per GCAllocPurpose, for
+  // possible reuse during the next collection, provided
+  // _retain_gc_alloc_region[] indicates that it should be the
+  // case. Said regions are kept in the _retained_gc_alloc_regions[]
+  // array. If the parameter totally is set, we will not retain any
+  // regions, irrespective of what _retain_gc_alloc_region[]
+  // indicates.
+  void release_gc_alloc_regions(bool totally);
+#ifndef PRODUCT
+  // Useful for debugging.
+  void print_gc_alloc_regions();
+#endif // !PRODUCT
 
   // ("Weak") Reference processing support
   ReferenceProcessor* _ref_processor;
