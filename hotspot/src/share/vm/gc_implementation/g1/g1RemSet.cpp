@@ -502,14 +502,17 @@ HRInto_G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
   }
 
   if (ParallelGCThreads > 0) {
-    // This is a temporary change to serialize the update and scanning
-    // of remembered sets. There are some race conditions when this is
-    // done in parallel and they are causing failures. When we resolve
-    // said race conditions, we'll revert back to parallel remembered
-    // set updating and scanning. See CRs 6677707 and 6677708.
-    if (worker_i == 0) {
+    // The two flags below were introduced temporarily to serialize
+    // the updating and scanning of remembered sets. There are some
+    // race conditions when these two operations are done in parallel
+    // and they are causing failures. When we resolve said race
+    // conditions, we'll revert back to parallel remembered set
+    // updating and scanning. See CRs 6677707 and 6677708.
+    if (G1EnableParallelRSetUpdating || (worker_i == 0)) {
       updateRS(worker_i);
       scanNewRefsRS(oc, worker_i);
+    }
+    if (G1EnableParallelRSetScanning || (worker_i == 0)) {
       scanRS(oc, worker_i);
     }
   } else {
