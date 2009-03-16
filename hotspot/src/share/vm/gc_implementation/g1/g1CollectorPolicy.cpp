@@ -1087,6 +1087,7 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
 
   assert(_g1->used_regions() == _g1->recalculate_used_regions(),
          "sanity");
+  assert(_g1->used() == _g1->recalculate_used(), "sanity");
 
   double s_w_t_ms = (start_time_sec - _stop_world_start) * 1000.0;
   _all_stop_world_times_ms->add(s_w_t_ms);
