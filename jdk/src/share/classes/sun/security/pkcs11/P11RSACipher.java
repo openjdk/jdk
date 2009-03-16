@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,9 @@ final class P11RSACipher extends CipherSpi {
                 throw new InvalidKeyException
                                 ("Unwrap has to be used with private keys");
             }
-            encrypt = false;
+            // No further setup needed for C_Unwrap(). We'll initialize later
+            // if we can't use C_Unwrap().
+            return;
         } else {
             throw new InvalidKeyException("Unsupported mode: " + opmode);
         }
@@ -452,7 +454,7 @@ final class P11RSACipher extends CipherSpi {
                 long keyID = token.p11.C_UnwrapKey(s.id(),
                         new CK_MECHANISM(mechanism), p11Key.keyID, wrappedKey,
                         attributes);
-                return P11Key.secretKey(session, keyID, algorithm, 48 << 3,
+                return P11Key.secretKey(s, keyID, algorithm, 48 << 3,
                         attributes);
             } catch (PKCS11Exception e) {
                 throw new InvalidKeyException("unwrap() failed", e);
@@ -461,6 +463,7 @@ final class P11RSACipher extends CipherSpi {
             }
         }
         // XXX implement unwrap using C_Unwrap() for all keys
+        implInit(Cipher.DECRYPT_MODE, p11Key);
         if (wrappedKey.length > maxInputSize) {
             throw new InvalidKeyException("Key is too long for unwrapping");
         }
