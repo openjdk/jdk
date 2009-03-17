@@ -29,6 +29,8 @@ import java.awt.event.*;
 import java.beans.*;
 import java.io.*;
 import java.util.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -749,7 +751,11 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
 
             File[] baseFolders;
             if (useShellFolder) {
-                baseFolders = (File[])ShellFolder.get("fileChooserComboBoxFolders");
+                baseFolders = AccessController.doPrivileged(new PrivilegedAction<File[]>() {
+                    public File[] run() {
+                        return (File[]) ShellFolder.get("fileChooserComboBoxFolders");
+                    }
+                });
             } else {
                 baseFolders = fsv.getRoots();
             }
