@@ -1232,7 +1232,16 @@ public:
     if (!_final && _regions_done == 0)
       _start_vtime_sec = os::elapsedVTime();
 
-    if (hr->continuesHumongous()) return false;
+    if (hr->continuesHumongous()) {
+      HeapRegion* hum_start = hr->humongous_start_region();
+      // If the head region of the humongous region has been determined
+      // to be alive, then all the tail regions should be marked
+      // such as well.
+      if (_region_bm->at(hum_start->hrs_index())) {
+        _region_bm->par_at_put(hr->hrs_index(), 1);
+      }
+      return false;
+    }
 
     HeapWord* nextTop = hr->next_top_at_mark_start();
     HeapWord* start   = hr->top_at_conc_mark_count();
