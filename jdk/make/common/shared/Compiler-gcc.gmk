@@ -68,24 +68,6 @@ ifeq ($(PLATFORM), linux)
   else
     CXX            = $(COMPILER_PATH)g++
   endif
-  ifneq ("$(findstring sparc,$(ARCH))", "")
-    # sparc or sparcv9
-    REQUIRED_CC_VER = 4.0
-    REQUIRED_GCC_VER = 4.0.*
-  else
-    REQUIRED_CC_VER = 3.2
-    ifeq ($(ARCH_DATA_MODEL), 32)
-      REQUIRED_GCC_VER = 3.2.1*
-      REQUIRED_GCC_VER_INT = 3.2.1-7a
-    else
-      ifeq ($(ARCH), amd64)
-        REQUIRED_GCC_VER = 3.2.*
-      endif
-      ifeq ($(ARCH), ia64)
-        REQUIRED_GCC_VER = 2.9[56789].*
-      endif
-    endif
-  endif
   # Option used to create a shared library
   SHARED_LIBRARY_FLAG = -shared -mimpure-text
   SUN_COMP_VER := $(shell $(CC) --verbose 2>&1 )
@@ -98,18 +80,10 @@ ifeq ($(PLATFORM), solaris)
   CC             = $(COMPILER_PATH)gcc
   CPP            = $(COMPILER_PATH)gcc -E
   CXX            = $(COMPILER_PATH)g++
-  REQUIRED_CC_VER = 3.2
 
   # Option used to create a shared library
   SHARED_LIBRARY_FLAG = -G
-  # But gcc is still needed no matter what on 32bit
-  ifeq ($(ARCH_DATA_MODEL), 32)
-    REQUIRED_GCC_VER = 2.95
-    GCC =$(GCC_COMPILER_PATH)gcc
-    _GCC_VER :=$(shell $(GCC) -dumpversion 2>&1 )
-    GCC_VER  :=$(call GetVersion,"$(_GCC_VER)")
-  endif
-
+  
 endif
 
 # Get gcc version
