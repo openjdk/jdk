@@ -2747,9 +2747,10 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
                                                       super_klass(),
                                                       methods(),
                                                       access_flags,
-                                                      class_loader(),
-                                                      class_name(),
-                                                      local_interfaces());
+                                                      class_loader,
+                                                      class_name,
+                                                      local_interfaces(),
+                                                      CHECK_(nullHandle));
 
     // Size of Java itable (in words)
     itable_size = access_flags.is_interface() ? 0 : klassItable::compute_itable_size(transitive_interfaces);
