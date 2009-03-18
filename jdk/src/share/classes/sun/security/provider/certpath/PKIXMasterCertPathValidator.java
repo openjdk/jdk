@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,11 +143,15 @@ class PKIXMasterCertPathValidator {
                     }
 
                 } catch (CertPathValidatorException cpve) {
-                    // Throw the saved OCSP exception
-                    // (when the CRL check has also failed)
+                    // Throw the saved OCSP exception unless the CRL
+                    // checker has determined that the cert is revoked
                     if (ocspCause != null &&
-                        currChecker instanceof CrlRevocationChecker) {
-                        throw ocspCause;
+                            currChecker instanceof CrlRevocationChecker) {
+                        if (cpve.getReason() == BasicReason.REVOKED) {
+                            throw cpve;
+                        } else {
+                            throw ocspCause;
+                        }
                     }
                     /*
                      * Handle failover from OCSP to CRLs
