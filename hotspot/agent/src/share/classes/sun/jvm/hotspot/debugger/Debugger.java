@@ -118,9 +118,9 @@ public interface Debugger extends SymbolLookup, ThreadAccess {
   public long getJIntSize();
   public long getJLongSize();
   public long getJShortSize();
-  public long getHeapBase();
   public long getHeapOopSize();
-  public long getLogMinObjAlignmentInBytes();
+  public long getNarrowOopBase();
+  public int  getNarrowOopShift();
 
   public ReadResult readBytesFromProcess(long address, long numBytes)
     throws DebuggerException;
