@@ -107,7 +107,7 @@ void CMBitMapRO::mostly_disjoint_range_union(BitMap*   from_bitmap,
 #ifndef PRODUCT
 bool CMBitMapRO::covers(ReservedSpace rs) const {
   // assert(_bm.map() == _virtual_space.low(), "map inconsistency");
-  assert(((size_t)_bm.size() * (1 << _shifter)) == _bmWordSize,
+  assert(((size_t)_bm.size() * (size_t)(1 << _shifter)) == _bmWordSize,
          "size inconsistency");
   return _bmStartWord == (HeapWord*)(rs.base()) &&
          _bmWordSize  == rs.size()>>LogHeapWordSize;

@@ -1422,9 +1422,34 @@ jint G1CollectedHeap::initialize() {
   // Reserve the maximum.
   PermanentGenerationSpec* pgs = collector_policy()->permanent_generation();
   // Includes the perm-gen.
+
+  const size_t total_reserved = max_byte_size + pgs->max_size();
+  char* addr = Universe::preferred_heap_base(total_reserved, Universe::UnscaledNarrowOop);
+
   ReservedSpace heap_rs(max_byte_size + pgs->max_size(),
                         HeapRegion::GrainBytes,
-                        false /*ism*/);
+                        false /*ism*/, addr);
+
+  if (UseCompressedOops) {
+    if (addr != NULL && !heap_rs.is_reserved()) {
+      // Failed to reserve at specified address - the requested memory
+      // region is taken already, for example, by 'java' launcher.
+      // Try again to reserver heap higher.
+      addr = Universe::preferred_heap_base(total_reserved, Universe::ZeroBasedNarrowOop);
+      ReservedSpace heap_rs0(total_reserved, HeapRegion::GrainBytes,
+                             false /*ism*/, addr);
+      if (addr != NULL && !heap_rs0.is_reserved()) {
+        // Failed to reserve at specified address again - give up.
+        addr = Universe::preferred_heap_base(total_reserved, Universe::HeapBasedNarrowOop);
+        assert(addr == NULL, "");
+        ReservedSpace heap_rs1(total_reserved, HeapRegion::GrainBytes,
+                               false /*ism*/, addr);
+        heap_rs = heap_rs1;
+      } else {
+        heap_rs = heap_rs0;
+      }
+    }
+  }
 
   if (!heap_rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for object heap");

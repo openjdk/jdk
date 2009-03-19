@@ -162,7 +162,7 @@ inline int vsnprintf(char* buf, size_t count, const char* fmt, va_list argptr) {
 }
 
 // Visual Studio 2005 deprecates POSIX names - use ISO C++ names instead
-#if _MSC_VER >= 1400 && !defined(_WIN64)
+#if _MSC_VER >= 1400
 #define open _open
 #define close _close
 #define read  _read

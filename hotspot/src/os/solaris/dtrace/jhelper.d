@@ -46,7 +46,10 @@ extern pointer __JvmOffsets;
 extern pointer __1cJCodeCacheF_heap_;
 extern pointer __1cIUniverseP_methodKlassObj_;
 extern pointer __1cIUniverseO_collectedHeap_;
-extern pointer __1cIUniverseK_heap_base_;
+extern pointer __1cIUniverseL_narrow_oop_;
+#ifdef _LP64
+extern pointer UseCompressedOops;
+#endif
 
 extern pointer __1cHnmethodG__vtbl_;
 extern pointer __1cKBufferBlobG__vtbl_;
@@ -56,6 +59,7 @@ extern pointer __1cKBufferBlobG__vtbl_;
 #define copyin_uint16(ADDR) *(uint16_t*) copyin((pointer) (ADDR), sizeof(uint16_t))
 #define copyin_uint32(ADDR) *(uint32_t*) copyin((pointer) (ADDR), sizeof(uint32_t))
 #define copyin_int32(ADDR)  *(int32_t*)  copyin((pointer) (ADDR), sizeof(int32_t))
+#define copyin_uint8(ADDR)  *(uint8_t*)  copyin((pointer) (ADDR), sizeof(uint8_t))
 
 #define SAME(x) x
 #define copyin_offset(JVM_CONST)  JVM_CONST = \
@@ -132,6 +136,9 @@ dtrace:helper:ustack:
   copyin_offset(SIZE_oopDesc);
   copyin_offset(SIZE_constantPoolOopDesc);
 
+  copyin_offset(OFFSET_NarrowOopStruct_base);
+  copyin_offset(OFFSET_NarrowOopStruct_shift);
+
   /*
    * The PC to translate is in arg0.
    */
@@ -151,9 +158,19 @@ dtrace:helper:ustack:
 
   this->Universe_methodKlassOop = copyin_ptr(&``__1cIUniverseP_methodKlassObj_);
   this->CodeCache_heap_address = copyin_ptr(&``__1cJCodeCacheF_heap_);
-  this->Universe_heap_base = copyin_ptr(&``__1cIUniverseK_heap_base_);
 
   /* Reading volatile values */
+#ifdef _LP64
+  this->Use_Compressed_Oops  = copyin_uint8(&``UseCompressedOops);
+#else
+  this->Use_Compressed_Oops  = 0;
+#endif
+
+  this->Universe_narrow_oop_base  = copyin_ptr(&``__1cIUniverseL_narrow_oop_ +
+                                               OFFSET_NarrowOopStruct_base);
+  this->Universe_narrow_oop_shift = copyin_int32(&``__1cIUniverseL_narrow_oop_ +
+                                                 OFFSET_NarrowOopStruct_shift);
+
   this->CodeCache_low = copyin_ptr(this->CodeCache_heap_address + 
       OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_low);
 
@@ -295,7 +312,7 @@ dtrace:helper:ustack:
 
 dtrace:helper:ustack:
 /!this->done && this->vtbl == this->BufferBlob_vtbl &&
-this->Universe_heap_base == NULL &&
+this->Use_Compressed_Oops == 0 &&
 this->methodOopPtr > this->heap_start && this->methodOopPtr < this->heap_end/
 {
   MARK_LINE;
@@ -306,7 +323,7 @@ this->methodOopPtr > this->heap_start && this->methodOopPtr < this->heap_end/
 
 dtrace:helper:ustack:
 /!this->done && this->vtbl == this->BufferBlob_vtbl &&
-this->Universe_heap_base != NULL &&
+this->Use_Compressed_Oops != 0 &&
 this->methodOopPtr > this->heap_start && this->methodOopPtr < this->heap_end/
 {
   MARK_LINE;
@@ -314,8 +331,8 @@ this->methodOopPtr > this->heap_start && this->methodOopPtr < this->heap_end/
    * Read compressed pointer and  decode heap oop, same as oop.inline.hpp
    */
   this->cklass = copyin_uint32(this->methodOopPtr + OFFSET_oopDesc_metadata);
-  this->klass = (uint64_t)((uintptr_t)this->Universe_heap_base +
-                ((uintptr_t)this->cklass << 3));
+  this->klass = (uint64_t)((uintptr_t)this->Universe_narrow_oop_base +
+                ((uintptr_t)this->cklass << this->Universe_narrow_oop_shift));
   this->methodOop = this->klass == this->Universe_methodKlassOop;
   this->done = !this->methodOop;
 }

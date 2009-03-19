@@ -243,7 +243,7 @@ class os: AllStatic {
 
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
-  static char*  reserve_memory_special(size_t size);
+  static char*  reserve_memory_special(size_t size, char* addr = NULL);
   static bool   release_memory_special(char* addr, size_t bytes);
   static bool   large_page_init();
   static size_t large_page_size();
