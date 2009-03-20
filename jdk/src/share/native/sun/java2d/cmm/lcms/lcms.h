@@ -1838,6 +1838,7 @@ typedef struct _lcms_iccprofile_struct {
                BOOL   (* Seek)(struct _lcms_iccprofile_struct* Icc, size_t offset);
                BOOL   (* Close)(struct _lcms_iccprofile_struct* Icc);
                size_t (* Tell)(struct _lcms_iccprofile_struct* Icc);
+               BOOL   (* Grow)(struct _lcms_iccprofile_struct* Icc, size_t amount);
 
                // Writting
 
