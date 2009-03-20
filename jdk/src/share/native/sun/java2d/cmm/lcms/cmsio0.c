@@ -157,11 +157,28 @@ BOOL MemoryWrite(struct _lcms_iccprofile_struct* Icc, size_t size, void *Ptr)
        if (size == 0) return TRUE;
 
        if (ResData != NULL)
-           CopyMemory(ResData ->Block + Icc ->UsedSpace, Ptr, size);
+           CopyMemory(ResData ->Block + ResData ->Pointer, Ptr, size);
 
+       ResData->Pointer += size;
        Icc->UsedSpace += size;
 
        return TRUE;
+}
+
+
+static
+BOOL MemoryGrow(struct _lcms_iccprofile_struct* Icc, size_t size)
+{
+    FILEMEM* ResData = (FILEMEM*) Icc->stream;
+
+    void* newBlock = realloc(ResData->Block, ResData->Size + size);
+
+    if (!newBlock) {
+        return FALSE;
+    }
+    ResData->Block = newBlock;
+    ResData->Size += size;
+    return TRUE;
 }
 
 
@@ -235,6 +252,13 @@ BOOL FileWrite(struct _lcms_iccprofile_struct* Icc, size_t size, LPVOID Ptr)
        }
 
        return (fwrite(Ptr, size, 1, (FILE*) Icc->stream) == 1);
+}
+
+
+static
+BOOL FileGrow(struct _lcms_iccprofile_struct* Icc, size_t size)
+{
+  return TRUE;
 }
 
 
@@ -382,6 +406,7 @@ LPLCMSICCPROFILE _cmsCreateProfileFromFilePlaceholder(const char* FileName)
     NewIcc ->Seek  = FileSeek;
     NewIcc ->Tell  = FileTell;
     NewIcc ->Close = FileClose;
+    NewIcc ->Grow  = FileGrow;
     NewIcc ->Write = NULL;
 
     NewIcc ->IsWrite = FALSE;
@@ -419,7 +444,8 @@ LPLCMSICCPROFILE _cmsCreateProfileFromMemPlaceholder(LPVOID MemPtr, DWORD dwSize
     NewIcc ->Seek  = MemorySeek;
     NewIcc ->Tell  = MemoryTell;
     NewIcc ->Close = MemoryClose;
-    NewIcc ->Write = NULL;
+    NewIcc ->Grow  = MemoryGrow;
+    NewIcc ->Write = MemoryWrite;
 
     NewIcc ->IsWrite = FALSE;
 
