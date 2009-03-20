@@ -236,17 +236,19 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             configuration.tagletManager.getCustomTags(doc),
                 getTagletWriterInstance(false), output);
         String outputString = output.toString().trim();
-        // For RootDoc and ClassDoc, this section is not the definition description
-        // but the start of definition list.
+        // For RootDoc, ClassDoc and PackageDoc, this section is not the
+        // definition description but the start of definition list.
         if (!outputString.isEmpty()) {
-            if (!(doc instanceof RootDoc || doc instanceof ClassDoc)) {
+            if (!(doc instanceof RootDoc || doc instanceof ClassDoc ||
+                    doc instanceof PackageDoc)) {
                 printMemberDetailsListStartTag();
                 dd();
             }
             printTagsInfoHeader();
             print(outputString);
             printTagsInfoFooter();
-            if (!(doc instanceof RootDoc || doc instanceof ClassDoc))
+            if (!(doc instanceof RootDoc || doc instanceof ClassDoc ||
+                    doc instanceof PackageDoc))
                 ddEnd();
         }
     }
