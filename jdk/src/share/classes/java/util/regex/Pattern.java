@@ -2567,7 +2567,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 break;
             case '<':   // (?<xxx)  look behind
                 ch = read();
-                if (Character.isLetter(ch)) {     // named captured group
+                if (ASCII.isLower(ch) || ASCII.isUpper(ch) || ASCII.isDigit(ch)) {
+                    // named captured group
                     String name = groupname(ch);
                     if (namedGroups().containsKey(name))
                         throw error("Named capturing group <" + name
