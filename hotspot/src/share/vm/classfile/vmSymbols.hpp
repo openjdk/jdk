@@ -376,7 +376,7 @@
   template(unknown_class_name,                        "<Unknown>")                                                \
                                                                                                                   \
   /* used to identify class loaders handling parallel class loading */                                            \
-  template(parallelCapable_name,                      "parallelLockMap;")                                         \
+  template(parallelCapable_name,                      "parallelLockMap")                                          \
                                                                                                                   \
   /* JVM monitoring and management support */                                                                     \
   template(java_lang_StackTraceElement_array,          "[Ljava/lang/StackTraceElement;")                          \
