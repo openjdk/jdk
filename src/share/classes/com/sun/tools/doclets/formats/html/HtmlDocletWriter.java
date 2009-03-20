@@ -785,6 +785,15 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
+     * Print the Html table tag for the index summary tables.
+     *
+     * @param summary the summary for the table tag summary attribute.
+     */
+    public void tableIndexSummary(String summary) {
+        table(1, "100%", 3, 0, summary);
+    }
+
+    /**
      * Same as {@link #tableIndexSummary()}.
      */
     public void tableIndexDetail() {
@@ -797,6 +806,40 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public void tdIndex() {
         print("<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\">");
+    }
+
+    /**
+     * Print table caption.
+     */
+    public void tableCaptionStart() {
+        captionStyle("TableCaption");
+    }
+
+    /**
+     * Print table sub-caption.
+     */
+    public void tableSubCaptionStart() {
+        captionStyle("TableSubCaption");
+    }
+
+    /**
+     * Print table caption end tags.
+     */
+    public void tableCaptionEnd() {
+        captionEnd();
+    }
+
+    /**
+     * Print summary table header.
+     */
+    public void summaryTableHeader(String[] header, String scope) {
+        tr();
+        for ( int i=0; i < header.length; i++ ) {
+            thScopeNoWrap("TableHeader", scope);
+            print(header[i]);
+            thEnd();
+        }
+        trEnd();
     }
 
     /**
