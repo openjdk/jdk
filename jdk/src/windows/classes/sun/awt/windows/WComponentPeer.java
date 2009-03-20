@@ -778,7 +778,7 @@ public abstract class WComponentPeer extends WObjectPeer
      * NOTE: This is called on the privileged toolkit thread. Do not
      *       call directly into user code using this thread!
      */
-    void handlePaint(int x, int y, int w, int h) {
+    public void handlePaint(int x, int y, int w, int h) {
         postPaintIfNecessary(x, y, w, h);
     }
 
