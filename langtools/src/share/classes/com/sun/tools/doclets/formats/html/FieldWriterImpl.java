@@ -37,6 +37,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Robert Field
  * @author Atul M Dambalkar
  * @author Jamie Ho (rewrite)
+ * @author Bhavesh Patel (Modified)
  */
 public class FieldWriterImpl extends AbstractMemberWriter
     implements FieldWriter, MemberSummaryWriter {
@@ -236,8 +237,24 @@ public class FieldWriterImpl extends AbstractMemberWriter
         return VisibleMemberMap.FIELDS;
     }
 
-    public void printSummaryLabel(ClassDoc cd) {
-        writer.strongText("doclet.Field_Summary");
+    public void printSummaryLabel() {
+        writer.printText("doclet.Field_Summary");
+    }
+
+    public void printTableSummary() {
+        writer.tableIndexSummary(configuration().getText("doclet.Member_Table_Summary",
+                configuration().getText("doclet.Field_Summary"),
+                configuration().getText("doclet.fields")));
+    }
+
+    public void printSummaryTableHeader(ProgramElementDoc member) {
+        String[] header = new String[] {
+            writer.getModifierTypeHeader(),
+            configuration().getText("doclet.0_and_1",
+                    configuration().getText("doclet.Field"),
+                    configuration().getText("doclet.Description"))
+        };
+        writer.summaryTableHeader(header, "col");
     }
 
     public void printSummaryAnchor(ClassDoc cd) {

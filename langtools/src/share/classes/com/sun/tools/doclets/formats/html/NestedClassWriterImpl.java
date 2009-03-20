@@ -37,6 +37,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Robert Field
  * @author Atul M Dambalkar
  * @author Jamie Ho (rewrite)
+ * @author Bhavesh Patel (Modified)
  */
 public class NestedClassWriterImpl extends AbstractMemberWriter
     implements MemberSummaryWriter {
@@ -147,8 +148,35 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
         return VisibleMemberMap.INNERCLASSES;
     }
 
-    public void printSummaryLabel(ClassDoc cd) {
-        writer.strongText("doclet.Nested_Class_Summary");
+    public void printSummaryLabel() {
+        writer.printText("doclet.Nested_Class_Summary");
+    }
+
+    public void printTableSummary() {
+        writer.tableIndexSummary(configuration().getText("doclet.Member_Table_Summary",
+                configuration().getText("doclet.Nested_Class_Summary"),
+                configuration().getText("doclet.nested_classes")));
+    }
+
+    public void printSummaryTableHeader(ProgramElementDoc member) {
+        String[] header;
+        if (member.isInterface()) {
+            header = new String[] {
+                writer.getModifierTypeHeader(),
+                configuration().getText("doclet.0_and_1",
+                        configuration().getText("doclet.Interface"),
+                        configuration().getText("doclet.Description"))
+            };
+        }
+        else {
+            header = new String[] {
+                writer.getModifierTypeHeader(),
+                configuration().getText("doclet.0_and_1",
+                        configuration().getText("doclet.Class"),
+                        configuration().getText("doclet.Description"))
+            };
+        }
+        writer.summaryTableHeader(header, "col");
     }
 
     public void printSummaryAnchor(ClassDoc cd) {
