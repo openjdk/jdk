@@ -875,6 +875,18 @@ public final class KeyTool {
             if (filename != null) {
                 inStream = new FileInputStream(filename);
             }
+            // Read the full stream before feeding to X509Factory,
+            // otherwise, keytool -gencert | keytool -importcert
+            // might not work properly, since -gencert is slow
+            // and there's no data in the pipe at the beginning.
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            byte[] b = new byte[4096];
+            while (true) {
+                int len = inStream.read(b);
+                if (len < 0) break;
+                bout.write(b, 0, len);
+            }
+            inStream = new ByteArrayInputStream(bout.toByteArray());
             try {
                 String importAlias = (alias!=null)?alias:keyAlias;
                 if (keyStore.entryInstanceOf(importAlias, KeyStore.PrivateKeyEntry.class)) {
@@ -1910,7 +1922,9 @@ public final class KeyTool {
             ObjectIdentifier oid = attr.getAttributeId();
             if (oid.equals(PKCS9Attribute.EXTENSION_REQUEST_OID)) {
                 CertificateExtensions exts = (CertificateExtensions)attr.getAttributeValue();
-                printExtensions(rb.getString("Extension Request:"), exts, out);
+                if (exts != null) {
+                    printExtensions(rb.getString("Extension Request:"), exts, out);
+                }
             } else {
                 out.println(attr.getAttributeId());
                 out.println(attr.getAttributeValue());
@@ -2495,7 +2509,9 @@ public final class KeyTool {
                                                            X509CertImpl.INFO);
             CertificateExtensions exts = (CertificateExtensions)
                     certInfo.get(X509CertInfo.EXTENSIONS);
-            printExtensions(rb.getString("Extensions: "), exts, out);
+            if (exts != null) {
+                printExtensions(rb.getString("Extensions: "), exts, out);
+            }
         }
     }
 

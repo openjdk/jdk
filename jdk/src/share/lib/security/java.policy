@@ -15,7 +15,8 @@ grant {
 	// It is strongly recommended that you either remove this permission
 	// from this policy file or further restrict it to code sources
 	// that you specify, because Thread.stop() is potentially unsafe.
-	// See "http://java.sun.com/notes" for more information.
+	// See the API specification of java.lang.Thread.stop() for more 
+        // information.
 	permission java.lang.RuntimePermission "stopThread";
 
 	// allows anyone to listen on un-privileged ports
