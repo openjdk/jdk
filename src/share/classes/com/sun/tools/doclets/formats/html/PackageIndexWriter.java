@@ -36,6 +36,7 @@ import java.util.*;
  * with the "pacakge-summary.html" file for the clicked package.
  *
  * @author Atul M Dambalkar
+ * @author Bhavesh Patel (Modified)
  */
 public class PackageIndexWriter extends AbstractPackageIndexWriter {
 
@@ -123,7 +124,10 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
         List<PackageDoc> list = groupPackageMap.get(groupname);
             if (list != null && list.size() > 0) {
                 printIndexContents(list.toArray(new PackageDoc[list.size()]),
-                                    groupname);
+                        groupname,
+                        configuration.getText("doclet.Member_Table_Summary",
+                        groupname,
+                        configuration.getText("doclet.packages")));
             }
         }
     }
@@ -149,11 +153,12 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     /**
      * Print Html tags for the table for this package index.
      */
-    protected void printIndexHeader(String text) {
-        tableIndexSummary();
-        tableHeaderStart("#CCCCFF");
-        strong(text);
-        tableHeaderEnd();
+    protected void printIndexHeader(String text, String tableSummary) {
+        tableIndexSummary(tableSummary);
+        tableCaptionStart();
+        print(text);
+        tableCaptionEnd();
+        summaryTableHeader(packageTableHeader, "col");
     }
 
     /**
