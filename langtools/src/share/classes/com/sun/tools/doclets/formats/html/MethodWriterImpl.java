@@ -38,6 +38,7 @@ import com.sun.tools.doclets.internal.toolkit.taglets.*;
  * @author Robert Field
  * @author Atul M Dambalkar
  * @author Jamie Ho (rewrite)
+ * @author Bhavesh Patel (Modified)
  */
 public class MethodWriterImpl extends AbstractExecutableMemberWriter
         implements MethodWriter, MemberSummaryWriter {
@@ -255,8 +256,24 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         return VisibleMemberMap.METHODS;
     }
 
-    public void printSummaryLabel(ClassDoc cd) {
-        writer.strongText("doclet.Method_Summary");
+    public void printSummaryLabel() {
+        writer.printText("doclet.Method_Summary");
+    }
+
+    public void printTableSummary() {
+        writer.tableIndexSummary(configuration().getText("doclet.Member_Table_Summary",
+                configuration().getText("doclet.Method_Summary"),
+                configuration().getText("doclet.methods")));
+    }
+
+    public void printSummaryTableHeader(ProgramElementDoc member) {
+        String[] header = new String[] {
+            writer.getModifierTypeHeader(),
+            configuration().getText("doclet.0_and_1",
+                    configuration().getText("doclet.Method"),
+                    configuration().getText("doclet.Description"))
+        };
+        writer.summaryTableHeader(header, "col");
     }
 
     public void printSummaryAnchor(ClassDoc cd) {
