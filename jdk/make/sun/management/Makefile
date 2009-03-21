@@ -35,7 +35,16 @@ MGMT_LIB_SRC = $(SHARE_SRC)/lib/management
 
 all build:: properties aclfile jmxremotefiles
 
-SUBDIRS = snmp jmxremote
+# When building the openjdk, build snmp only if importing binary plugs,
+ifdef OPENJDK
+  ifeq ($(IMPORT_BINARY_PLUGS),true)
+    SUBDIRS = snmp
+  endif
+else
+  SUBDIRS = snmp
+endif
+SUBDIRS += jmxremote
+ 
 all build clean clobber::
 	$(SUBDIRS-loop)
 
