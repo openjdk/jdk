@@ -212,7 +212,7 @@ class Address VALUE_OBJ_CLASS_SPEC {
            "inconsistent address");
   }
 
-  Address(Register base, RegisterConstant index, ScaleFactor scale = times_1, int disp = 0)
+  Address(Register base, RegisterOrConstant index, ScaleFactor scale = times_1, int disp = 0)
     : _base (base),
       _index(index.register_or_noreg()),
       _scale(scale),
@@ -256,7 +256,7 @@ class Address VALUE_OBJ_CLASS_SPEC {
            "inconsistent address");
   }
 
-  Address(Register base, RegisterConstant index, ScaleFactor scale, ByteSize disp)
+  Address(Register base, RegisterOrConstant index, ScaleFactor scale, ByteSize disp)
     : _base (base),
       _index(index.register_or_noreg()),
       _scale(scale),
@@ -1802,7 +1802,7 @@ class MacroAssembler: public Assembler {
   // interface method calling
   void lookup_interface_method(Register recv_klass,
                                Register intf_klass,
-                               RegisterConstant itable_index,
+                               RegisterOrConstant itable_index,
                                Register method_result,
                                Register scan_temp,
                                Label& no_such_interface);
@@ -1819,7 +1819,7 @@ class MacroAssembler: public Assembler {
                                      Label* L_success,
                                      Label* L_failure,
                                      Label* L_slow_path,
-                RegisterConstant super_check_offset = RegisterConstant(-1));
+                RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
 
   // The rest of the type check; must be wired to a corresponding fast path.
   // It does not repeat the fast path logic, so don't use it standalone.
@@ -1883,9 +1883,9 @@ class MacroAssembler: public Assembler {
   // stack overflow + shadow pages.  Also, clobbers tmp
   void bang_stack_size(Register size, Register tmp);
 
-  virtual RegisterConstant delayed_value(intptr_t* delayed_value_addr,
-                                         Register tmp,
-                                         int offset);
+  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
+                                                Register tmp,
+                                                int offset);
 
   // Support for serializing memory accesses between threads
   void serialize_memory(Register thread, Register tmp);
