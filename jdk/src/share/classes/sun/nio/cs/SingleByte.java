@@ -32,6 +32,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import java.util.Arrays;
 import static sun.nio.cs.CharsetMapping.*;
 
 public class SingleByte
@@ -45,7 +46,8 @@ public class SingleByte
         return cr;
     }
 
-    public static class Decoder extends CharsetDecoder {
+    final public static class Decoder extends CharsetDecoder
+                                      implements ArrayDecoder {
         private final char[] b2c;
 
         public Decoder(Charset cs, char[] b2c) {
@@ -108,9 +110,29 @@ public class SingleByte
         private final char decode(int b) {
             return b2c[b + 128];
         }
+
+        private char repl = '\uFFFD';
+        protected void implReplaceWith(String newReplacement) {
+            repl = newReplacement.charAt(0);
+        }
+
+        public int decode(byte[] src, int sp, int len, char[] dst) {
+            if (len > dst.length)
+                len = dst.length;
+            int dp = 0;
+            while (dp < len) {
+                dst[dp] = decode(src[sp++]);
+                if (dst[dp] == UNMAPPABLE_DECODING) {
+                    dst[dp] = repl;
+                }
+                dp++;
+            }
+            return dp;
+        }
     }
 
-    public static class Encoder extends CharsetEncoder {
+    final public static class Encoder extends CharsetEncoder
+                                      implements ArrayEncoder {
         private Surrogate.Parser sgp;
         private final char[] c2b;
         private final char[] c2bIndex;
@@ -123,6 +145,11 @@ public class SingleByte
 
         public boolean canEncode(char c) {
             return encode(c) != UNMAPPABLE_ENCODING;
+        }
+
+        public boolean isLegalReplacement(byte[] repl) {
+            return ((repl.length == 1 && repl[0] == (byte)'?') ||
+                    super.isLegalReplacement(repl));
         }
 
         private CoderResult encodeArrayLoop(CharBuffer src, ByteBuffer dst) {
@@ -199,6 +226,34 @@ public class SingleByte
             if (index == UNMAPPABLE_ENCODING)
                 return UNMAPPABLE_ENCODING;
             return c2b[index + (ch & 0xff)];
+        }
+
+        private byte repl = (byte)'?';
+        protected void implReplaceWith(byte[] newReplacement) {
+            repl = newReplacement[0];
+        }
+
+        public int encode(char[] src, int sp, int len, byte[] dst) {
+            int dp = 0;
+            int sl = sp + Math.min(len, dst.length);
+            while (sp < sl) {
+                char c = src[sp++];
+                int b = encode(c);
+                if (b != UNMAPPABLE_ENCODING) {
+                    dst[dp++] = (byte)b;
+                    continue;
+                }
+                if (Surrogate.isHigh(c) && sp < sl &&
+                    Surrogate.isLow(src[sp])) {
+                    if (len > dst.length) {
+                        sl++;
+                        len--;
+                    }
+                    sp++;
+                }
+                dst[dp++] = repl;
+            }
+            return dp;
         }
     }
 
