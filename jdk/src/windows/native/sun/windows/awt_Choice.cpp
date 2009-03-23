@@ -77,6 +77,8 @@ BOOL AwtChoice::skipNextMouseUp = FALSE;
 
 BOOL AwtChoice::sm_isMouseMoveInList = FALSE;
 
+static const UINT MINIMUM_NUMBER_OF_VISIBLE_ITEMS = 8;
+
 /*************************************************************************
  * AwtChoice class methods
  */
@@ -176,6 +178,10 @@ AwtChoice* AwtChoice::Create(jobject peer, jobject parent) {
             env->SetIntField(target, AwtComponent::widthID,  (jint) rc.right);
             env->SetIntField(target, AwtComponent::heightID, (jint) rc.bottom);
 
+            if (IS_WINXP) {
+                ::SendMessage(c->GetHWnd(), CB_SETMINVISIBLE, (WPARAM) MINIMUM_NUMBER_OF_VISIBLE_ITEMS, 0);
+            }
+
             env->DeleteLocalRef(dimension);
         }
     } catch (...) {
@@ -195,7 +201,7 @@ int AwtChoice::GetDropDownHeight()
 {
     int itemHeight =(int)::SendMessage(GetHWnd(), CB_GETITEMHEIGHT, (UINT)0,0);
     int numItemsToShow = (int)::SendMessage(GetHWnd(), CB_GETCOUNT, 0,0);
-    numItemsToShow = numItemsToShow > 8 ? 8 : numItemsToShow;
+    numItemsToShow = min(MINIMUM_NUMBER_OF_VISIBLE_ITEMS, numItemsToShow);
     // drop-down height snaps to nearest line, so add a
     // fudge factor of 1/2 line to ensure last line shows
     return itemHeight*numItemsToShow + itemHeight/2;
